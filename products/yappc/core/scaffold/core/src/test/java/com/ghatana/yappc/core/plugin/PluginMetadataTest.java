@@ -39,14 +39,14 @@ class PluginMetadataTest {
     @Test
     void testBuilderCreatesValidMetadata() { // GH-90000
         PluginMetadata metadata = PluginMetadata.builder() // GH-90000
-                .id("test-plugin [GH-90000]")
-                .name("Test Plugin [GH-90000]")
-                .version("1.0.0 [GH-90000]")
-                .description("A test plugin [GH-90000]")
-                .author("Test Author [GH-90000]")
+                .id("test-plugin")
+                .name("Test Plugin")
+                .version("1.0.0")
+                .description("A test plugin")
+                .author("Test Author")
                 .capabilities(List.of(PluginCapability.BUILD_SYSTEM)) // GH-90000
-                .supportedLanguages(List.of("java [GH-90000]"))
-                .supportedBuildSystems(List.of("gradle [GH-90000]"))
+                .supportedLanguages(List.of("java"))
+                .supportedBuildSystems(List.of("gradle"))
                 .stability(PluginMetadata.StabilityLevel.STABLE) // GH-90000
                 .build(); // GH-90000
 
@@ -64,8 +64,8 @@ class PluginMetadataTest {
     void testBuilderRequiresId() { // GH-90000
         assertThrows(IllegalStateException.class, () -> { // GH-90000
             PluginMetadata.builder() // GH-90000
-                    .name("Test Plugin [GH-90000]")
-                    .version("1.0.0 [GH-90000]")
+                    .name("Test Plugin")
+                    .version("1.0.0")
                     .build(); // GH-90000
         });
     }
@@ -74,8 +74,8 @@ class PluginMetadataTest {
     void testBuilderRequiresName() { // GH-90000
         assertThrows(IllegalStateException.class, () -> { // GH-90000
             PluginMetadata.builder() // GH-90000
-                    .id("test-plugin [GH-90000]")
-                    .version("1.0.0 [GH-90000]")
+                    .id("test-plugin")
+                    .version("1.0.0")
                     .build(); // GH-90000
         });
     }
@@ -84,8 +84,8 @@ class PluginMetadataTest {
     void testBuilderRequiresVersion() { // GH-90000
         assertThrows(IllegalStateException.class, () -> { // GH-90000
             PluginMetadata.builder() // GH-90000
-                    .id("test-plugin [GH-90000]")
-                    .name("Test Plugin [GH-90000]")
+                    .id("test-plugin")
+                    .name("Test Plugin")
                     .build(); // GH-90000
         });
     }
@@ -93,9 +93,9 @@ class PluginMetadataTest {
     @Test
     void testBuilderWithDefaults() { // GH-90000
         PluginMetadata metadata = PluginMetadata.builder() // GH-90000
-                .id("test-plugin [GH-90000]")
-                .name("Test Plugin [GH-90000]")
-                .version("1.0.0 [GH-90000]")
+                .id("test-plugin")
+                .name("Test Plugin")
+                .version("1.0.0")
                 .build(); // GH-90000
 
         assertTrue(metadata.capabilities().isEmpty()); // GH-90000
@@ -113,17 +113,17 @@ class PluginMetadataTest {
         Map<String, String> optionalConfig = Map.of("timeout", "Request timeout in seconds"); // GH-90000
 
         PluginMetadata metadata = PluginMetadata.builder() // GH-90000
-                .id("test-plugin [GH-90000]")
-                .name("Test Plugin [GH-90000]")
-                .version("1.0.0 [GH-90000]")
+                .id("test-plugin")
+                .name("Test Plugin")
+                .version("1.0.0")
                 .requiredConfig(requiredConfig) // GH-90000
                 .optionalConfig(optionalConfig) // GH-90000
                 .build(); // GH-90000
 
         assertEquals(1, metadata.requiredConfig().size()); // GH-90000
-        assertEquals("API key for service", metadata.requiredConfig().get("apiKey [GH-90000]"));
+        assertEquals("API key for service", metadata.requiredConfig().get("apiKey"));
         assertEquals(1, metadata.optionalConfig().size()); // GH-90000
-        assertEquals("Request timeout in seconds", metadata.optionalConfig().get("timeout [GH-90000]"));
+        assertEquals("Request timeout in seconds", metadata.optionalConfig().get("timeout"));
     }
 
     @Test
@@ -131,14 +131,14 @@ class PluginMetadataTest {
         List<String> dependencies = List.of("plugin-a", "plugin-b"); // GH-90000
 
         PluginMetadata metadata = PluginMetadata.builder() // GH-90000
-                .id("test-plugin [GH-90000]")
-                .name("Test Plugin [GH-90000]")
-                .version("1.0.0 [GH-90000]")
+                .id("test-plugin")
+                .name("Test Plugin")
+                .version("1.0.0")
                 .dependencies(dependencies) // GH-90000
                 .build(); // GH-90000
 
         assertEquals(2, metadata.dependencies().size()); // GH-90000
-        assertTrue(metadata.dependencies().contains("plugin-a [GH-90000]"));
-        assertTrue(metadata.dependencies().contains("plugin-b [GH-90000]"));
+        assertTrue(metadata.dependencies().contains("plugin-a"));
+        assertTrue(metadata.dependencies().contains("plugin-b"));
     }
 }

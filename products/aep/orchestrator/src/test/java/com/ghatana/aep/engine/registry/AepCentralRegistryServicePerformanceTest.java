@@ -14,17 +14,17 @@ import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("AEP Central Registry Service Performance [GH-90000]")
+@DisplayName("AEP Central Registry Service Performance")
 class AepCentralRegistryServicePerformanceTest extends EventloopTestBase {
 
     @Test
-    @DisplayName("listAll returns 1000 agents within the latency budget [GH-90000]")
+    @DisplayName("listAll returns 1000 agents within the latency budget")
     void listAllReturnsThousandAgentsWithinLatencyBudget() { // GH-90000
         List<CatalogAgentEntry> entries = IntStream.range(0, 1_000) // GH-90000
             .mapToObj(index -> CatalogAgentEntry.builder() // GH-90000
                 .id("agent-" + index) // GH-90000
                 .name("Agent " + index) // GH-90000
-                .catalogId("catalog-aep [GH-90000]")
+                .catalogId("catalog-aep")
                 .capabilities(Set.of("plan", "execute")) // GH-90000
                 .build()) // GH-90000
             .toList(); // GH-90000

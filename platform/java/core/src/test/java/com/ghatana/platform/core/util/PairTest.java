@@ -76,8 +76,8 @@ class PairTest {
         String str = pair.toString(); // GH-90000
 
         assertNotNull(str); // GH-90000
-        assertTrue(str.contains("key [GH-90000]"));
-        assertTrue(str.contains("123 [GH-90000]"));
+        assertTrue(str.contains("key"));
+        assertTrue(str.contains("123"));
     }
 
     @Test

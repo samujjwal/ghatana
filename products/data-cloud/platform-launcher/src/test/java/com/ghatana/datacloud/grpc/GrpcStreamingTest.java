@@ -61,7 +61,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@DisplayName("EventLogGrpcService – Streaming Tests [GH-90000]")
+@DisplayName("EventLogGrpcService – Streaming Tests")
 class GrpcStreamingTest {
 
     private static Server server;
@@ -113,7 +113,7 @@ class GrpcStreamingTest {
         EventProto event = EventProto.newBuilder() // GH-90000
                 .setType(type) // GH-90000
                 .setTenantId(tenantId) // GH-90000
-                .setTypeVersion("1.0.0 [GH-90000]")
+                .setTypeVersion("1.0.0")
                 .setPayloadJson(payloadJson) // GH-90000
                 .build(); // GH-90000
         return AppendRequest.newBuilder().setEvent(event).build(); // GH-90000
@@ -154,11 +154,11 @@ class GrpcStreamingTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Append + ReadByType round-trip [GH-90000]")
+    @DisplayName("Append + ReadByType round-trip")
     class AppendAndStreamRoundTripTests {
 
         @Test
-        @DisplayName("Events appended via gRPC appear in readByType stream [GH-90000]")
+        @DisplayName("Events appended via gRPC appear in readByType stream")
         void appendedEventsReturnedByStream() throws InterruptedException { // GH-90000
             String type = "STREAM_TEST_" + UUID.randomUUID().toString().replace("-", ""); // GH-90000
             int count = 5;
@@ -172,7 +172,7 @@ class GrpcStreamingTest {
         }
 
         @Test
-        @DisplayName("AppendResponse returns a non-null record for a valid event [GH-90000]")
+        @DisplayName("AppendResponse returns a non-null record for a valid event")
         void appendResponse_recordIsPresent() { // GH-90000
             String type = "APPEND_RESP_" + UUID.randomUUID().toString().replace("-", ""); // GH-90000
             AppendResponse resp = blockingStub.append(buildAppend(type, TENANT_A, "{\"k\":\"v\"}")); // GH-90000
@@ -182,7 +182,7 @@ class GrpcStreamingTest {
         }
 
         @Test
-        @DisplayName("AppendResponse.duplicate is false for a first-time event [GH-90000]")
+        @DisplayName("AppendResponse.duplicate is false for a first-time event")
         void appendResponse_duplicateFalseForNewEvent() { // GH-90000
             String type = "DEDUP_TEST_" + UUID.randomUUID().toString().replace("-", ""); // GH-90000
             AppendResponse resp = blockingStub.append(buildAppend(type, TENANT_A, "{\"x\":1}")); // GH-90000
@@ -196,11 +196,11 @@ class GrpcStreamingTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Server-streaming readByType edge cases [GH-90000]")
+    @DisplayName("Server-streaming readByType edge cases")
     class StreamingEdgeCaseTests {
 
         @Test
-        @DisplayName("readByType with no matching events completes stream with zero records [GH-90000]")
+        @DisplayName("readByType with no matching events completes stream with zero records")
         void readByType_noMatchingEvents_zeroRecords() throws InterruptedException { // GH-90000
             String unknownType = "NEVER_APPENDED_" + UUID.randomUUID().toString().replace("-", ""); // GH-90000
 
@@ -211,7 +211,7 @@ class GrpcStreamingTest {
 
         @ParameterizedTest
         @ValueSource(ints = {1, 5, 10, 20}) // GH-90000
-        @DisplayName("readByType respects the requested limit [GH-90000]")
+        @DisplayName("readByType respects the requested limit")
         void readByType_respectsLimit(int limit) throws InterruptedException { // GH-90000
             String type = "LIMIT_" + limit + "_" + UUID.randomUUID().toString().replace("-", ""); // GH-90000
             // Append more events than the limit
@@ -225,7 +225,7 @@ class GrpcStreamingTest {
         }
 
         @Test
-        @DisplayName("readByType records contain the correct event type field [GH-90000]")
+        @DisplayName("readByType records contain the correct event type field")
         void readByType_recordContainsCorrectType() throws InterruptedException { // GH-90000
             String type = "TYPED_EVT_" + UUID.randomUUID().toString().replace("-", ""); // GH-90000
             blockingStub.append(buildAppend(type, TENANT_A, "{\"v\":\"typed\"}")); // GH-90000
@@ -237,7 +237,7 @@ class GrpcStreamingTest {
         }
 
         @Test
-        @DisplayName("Large batch (50 events) streams all events without drops [GH-90000]")
+        @DisplayName("Large batch (50 events) streams all events without drops")
         void largeBatch_allEventsStreamed() throws InterruptedException { // GH-90000
             int batchSize = 50;
             String type = "LARGE_BATCH_" + UUID.randomUUID().toString().replace("-", ""); // GH-90000
@@ -256,11 +256,11 @@ class GrpcStreamingTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Multi-tenant streaming isolation [GH-90000]")
+    @DisplayName("Multi-tenant streaming isolation")
     class MultiTenantStreamingTests {
 
         @Test
-        @DisplayName("Tenant A stream omits events appended for tenant B [GH-90000]")
+        @DisplayName("Tenant A stream omits events appended for tenant B")
         void tenantAStream_omitsTenantBEvents() throws InterruptedException { // GH-90000
             String type = "ISOLATION_" + UUID.randomUUID().toString().replace("-", ""); // GH-90000
 
@@ -274,11 +274,11 @@ class GrpcStreamingTest {
             // Exactly 1 event was appended for TENANT_A with this type
             assertThat(tenantARecords).hasSize(1); // GH-90000
             // Payload confirms it's the TENANT_A event
-            assertThat(tenantARecords.get(0).getEvent().getPayloadJson()).contains("A [GH-90000]");
+            assertThat(tenantARecords.get(0).getEvent().getPayloadJson()).contains("A");
         }
 
         @Test
-        @DisplayName("Concurrent streaming from different tenants maintains isolation [GH-90000]")
+        @DisplayName("Concurrent streaming from different tenants maintains isolation")
         void concurrentStreaming_tenantIsolationMaintained() throws InterruptedException { // GH-90000
             String typeA = "CONCURRENT_A_" + UUID.randomUUID().toString().replace("-", ""); // GH-90000
             String typeB = "CONCURRENT_B_" + UUID.randomUUID().toString().replace("-", ""); // GH-90000
@@ -320,11 +320,11 @@ class GrpcStreamingTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Minimal and unicode payload streaming [GH-90000]")
+    @DisplayName("Minimal and unicode payload streaming")
     class MinimalPayloadStreamingTests {
 
         @Test
-        @DisplayName("Events with empty JSON object payload are streamed correctly [GH-90000]")
+        @DisplayName("Events with empty JSON object payload are streamed correctly")
         void emptyPayload_streamedCorrectly() throws InterruptedException { // GH-90000
             String type = "EMPTY_PAYLOAD_" + UUID.randomUUID().toString().replace("-", ""); // GH-90000
             blockingStub.append(buildAppend(type, TENANT_A, "{}")); // GH-90000
@@ -332,11 +332,11 @@ class GrpcStreamingTest {
             List<EventRecordProto> records = streamRecords(type, TENANT_A, 5); // GH-90000
 
             assertThat(records).hasSize(1); // GH-90000
-            assertThat(records.get(0).getEvent().getPayloadJson()).isEqualTo("{} [GH-90000]");
+            assertThat(records.get(0).getEvent().getPayloadJson()).isEqualTo("{}");
         }
 
         @Test
-        @DisplayName("Events with unicode payload are streamed without corruption [GH-90000]")
+        @DisplayName("Events with unicode payload are streamed without corruption")
         void unicodePayload_streamedWithoutCorruption() throws InterruptedException { // GH-90000
             String type = "UNICODE_EVT_" + UUID.randomUUID().toString().replace("-", ""); // GH-90000
             String payload = "{\"text\":\"\uD83D\uDE00 \u4E2D\u6587\"}";
@@ -354,11 +354,11 @@ class GrpcStreamingTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Concurrent append throughput [GH-90000]")
+    @DisplayName("Concurrent append throughput")
     class AppendThroughputTests {
 
         @Test
-        @DisplayName("Sequential append of 50 events completes within 5 seconds [GH-90000]")
+        @DisplayName("Sequential append of 50 events completes within 5 seconds")
         void append50Events_completesWithinTimeout() { // GH-90000
             String type = "THROUGHPUT_" + UUID.randomUUID().toString().replace("-", ""); // GH-90000
             long start = System.currentTimeMillis(); // GH-90000
@@ -372,7 +372,7 @@ class GrpcStreamingTest {
         }
 
         @Test
-        @DisplayName("Concurrent appends from 5 virtual threads all succeed [GH-90000]")
+        @DisplayName("Concurrent appends from 5 virtual threads all succeed")
         void concurrentAppends_allSucceed() throws InterruptedException { // GH-90000
             String type = "CONCURRENT_APPEND_" + UUID.randomUUID().toString().replace("-", ""); // GH-90000
             int threadCount = 5;

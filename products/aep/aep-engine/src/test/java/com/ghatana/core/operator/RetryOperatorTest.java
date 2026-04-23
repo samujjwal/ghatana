@@ -21,11 +21,11 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("RetryOperator [GH-90000]")
+@DisplayName("RetryOperator")
 class RetryOperatorTest extends EventloopTestBase {
 
     @Test
-    @DisplayName("process() delays before retrying failed results [GH-90000]")
+    @DisplayName("process() delays before retrying failed results")
     void shouldDelayRetriesForFailedResults() { // GH-90000
         UnifiedOperator delegate = mock(UnifiedOperator.class); // GH-90000
         Event event = mock(Event.class); // GH-90000
@@ -33,7 +33,7 @@ class RetryOperatorTest extends EventloopTestBase {
 
         when(delegate.process(event)).thenAnswer(invocation -> { // GH-90000
             if (attempts.getAndIncrement() == 0) { // GH-90000
-                return Promise.of(OperatorResult.failed("transient [GH-90000]"));
+                return Promise.of(OperatorResult.failed("transient"));
             }
             return Promise.of(OperatorResult.empty()); // GH-90000
         });
@@ -56,7 +56,7 @@ class RetryOperatorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("process() respects retry predicate for thrown exceptions [GH-90000]")
+    @DisplayName("process() respects retry predicate for thrown exceptions")
     void shouldRespectRetryPredicate() { // GH-90000
         UnifiedOperator delegate = mock(UnifiedOperator.class); // GH-90000
         Event event = mock(Event.class); // GH-90000
@@ -64,7 +64,7 @@ class RetryOperatorTest extends EventloopTestBase {
 
         when(delegate.process(event)).thenAnswer(invocation -> { // GH-90000
             attempts.incrementAndGet(); // GH-90000
-            return Promise.ofException(new IllegalStateException("fatal [GH-90000]"));
+            return Promise.ofException(new IllegalStateException("fatal"));
         });
 
         RetryOperator retryOperator = RetryOperator.builder() // GH-90000
@@ -76,7 +76,7 @@ class RetryOperatorTest extends EventloopTestBase {
         OperatorResult result = runPromise(() -> retryOperator.process(event)); // GH-90000
 
         assertThat(result.isSuccess()).isFalse(); // GH-90000
-        assertThat(result.getErrorMessage()).contains("fatal [GH-90000]");
+        assertThat(result.getErrorMessage()).contains("fatal");
         assertThat(attempts.get()).isEqualTo(1); // GH-90000
     }
 }

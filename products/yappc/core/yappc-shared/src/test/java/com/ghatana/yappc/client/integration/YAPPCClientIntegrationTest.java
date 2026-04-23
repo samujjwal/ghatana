@@ -27,8 +27,8 @@ class YAPPCClientIntegrationTest extends EventloopTestBase {
     @BeforeEach
     void setUp() { // GH-90000
         YAPPCConfig config = YAPPCConfig.builder() // GH-90000
-            .aiProvider("ollama [GH-90000]")
-            .storagePlugin("memory [GH-90000]")
+            .aiProvider("ollama")
+            .storagePlugin("memory")
             .build(); // GH-90000
 
         client = new EmbeddedYAPPCClient(config); // GH-90000
@@ -46,10 +46,10 @@ class YAPPCClientIntegrationTest extends EventloopTestBase {
     void testCompleteWorkflow() throws Exception { // GH-90000
         // 1. Register a task
         TaskDefinition task = TaskDefinition.builder() // GH-90000
-            .id("architecture-task [GH-90000]")
-            .name("Create Architecture [GH-90000]")
-            .description("Creates software architecture [GH-90000]")
-            .category("architecture [GH-90000]")
+            .id("architecture-task")
+            .name("Create Architecture")
+            .description("Creates software architecture")
+            .category("architecture")
             .build(); // GH-90000
 
         TaskRegistrationResult regResult = runPromise(() -> client.registerTask(task)); // GH-90000
@@ -61,8 +61,8 @@ class YAPPCClientIntegrationTest extends EventloopTestBase {
 
         // 3. Execute task
         TaskContext context = TaskContext.builder() // GH-90000
-            .tenantId("test-tenant [GH-90000]")
-            .userId("test-user [GH-90000]")
+            .tenantId("test-tenant")
+            .userId("test-user")
             .build(); // GH-90000
 
         TaskResult<Map<String, Object>> execResult = runPromise(() -> client.<Map<String, Object>>executeTask( // GH-90000
@@ -87,7 +87,7 @@ class YAPPCClientIntegrationTest extends EventloopTestBase {
         // 5. Validate canvas
         ValidationReport validation = runPromise(() -> client.validateCanvas( // GH-90000
             canvasResult.getCanvasId(), // GH-90000
-            ValidationContext.forPhase("planning [GH-90000]")
+            ValidationContext.forPhase("planning")
         ));
 
         assertTrue(validation.isValid()); // GH-90000
@@ -122,7 +122,7 @@ class YAPPCClientIntegrationTest extends EventloopTestBase {
         runPromise(() -> client.ingestKnowledge(doc)); // GH-90000
 
         // 9. Manage lifecycle
-        LifecycleState state = runPromise(() -> client.getLifecycleState("test-project [GH-90000]"));
+        LifecycleState state = runPromise(() -> client.getLifecycleState("test-project"));
         assertEquals("planning", state.getCurrentPhase()); // GH-90000
 
         AdvancePhaseRequest advanceRequest = new AdvancePhaseRequest("implementation", false); // GH-90000
@@ -136,19 +136,19 @@ class YAPPCClientIntegrationTest extends EventloopTestBase {
 
         // 11. Get metrics
         Map<String, Object> metrics = runPromise(() -> client.getMetrics()); // GH-90000
-        assertTrue((Boolean) metrics.get("started [GH-90000]"));
-        assertEquals(1, metrics.get("registeredTasks [GH-90000]"));
+        assertTrue((Boolean) metrics.get("started"));
+        assertEquals(1, metrics.get("registeredTasks"));
     }
 
     @Test
     void testAgentWorkflow() throws Exception { // GH-90000
         StepContext context = StepContext.builder() // GH-90000
-            .projectId("test-project [GH-90000]")
-            .phase("planning [GH-90000]")
+            .projectId("test-project")
+            .phase("planning")
             .build(); // GH-90000
 
         // Execute multiple agent steps
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         StepResult<Map<String, Object>> result1 = (StepResult<Map<String, Object>>) (StepResult<?>) runPromise(() -> client.invokeAgent( // GH-90000
             "planning",
             "create-architecture",
@@ -159,7 +159,7 @@ class YAPPCClientIntegrationTest extends EventloopTestBase {
         assertTrue(result1.isSuccess()); // GH-90000
         assertEquals("create-architecture", result1.getStepName()); // GH-90000
 
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         StepResult<Map<String, Object>> result2 = (StepResult<Map<String, Object>>) (StepResult<?>) runPromise(() -> client.invokeAgent( // GH-90000
             "planning",
             "validate-architecture",

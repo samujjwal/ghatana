@@ -29,8 +29,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("SDK Smoke Tests [GH-90000]")
-@Tag("smoke [GH-90000]")
+@DisplayName("SDK Smoke Tests")
+@Tag("smoke")
 class SDKSmokeTest {
 
     private DataCloudClient backendClient;
@@ -61,7 +61,7 @@ class SDKSmokeTest {
     }
 
     @Test
-    @DisplayName("generated SDK reports health from the running launcher [GH-90000]")
+    @DisplayName("generated SDK reports health from the running launcher")
     void generatedSdkReportsHealth() { // GH-90000
         Map<String, Object> response = sdk.health(); // GH-90000
 
@@ -69,25 +69,25 @@ class SDKSmokeTest {
     }
 
     @Test
-    @DisplayName("generated SDK performs entity CRUD round-trip against running launcher [GH-90000]")
+    @DisplayName("generated SDK performs entity CRUD round-trip against running launcher")
     void generatedSdkPerformsEntityCrudRoundTrip() { // GH-90000
         Map<String, Object> created = sdk.createEntity("sdk_smoke_entities", Map.of("name", "Ada", "role", "admin")); // GH-90000
-        String entityId = created.get("id [GH-90000]").toString();
+        String entityId = created.get("id").toString();
 
         Map<String, Object> fetched = sdk.getEntity("sdk_smoke_entities", entityId); // GH-90000
         Map<String, Object> queried = sdk.queryEntities("sdk_smoke_entities", 10); // GH-90000
         Map<String, Object> deleted = sdk.deleteEntity("sdk_smoke_entities", entityId); // GH-90000
-        Object data = fetched.get("data [GH-90000]");
-        Object entities = queried.get("entities [GH-90000]");
+        Object data = fetched.get("data");
+        Object entities = queried.get("entities");
         List<String> entityIds = asObjectList(entities).stream() // GH-90000
-            .map(item -> ((Map<?, ?>) item).get("id [GH-90000]"))
+            .map(item -> ((Map<?, ?>) item).get("id"))
             .map(String::valueOf) // GH-90000
             .toList(); // GH-90000
 
         assertThat(created).containsEntry("collection", "sdk_smoke_entities"); // GH-90000
         assertThat(fetched).containsEntry("id", entityId); // GH-90000
         assertThat(data).isInstanceOf(Map.class); // GH-90000
-        assertThat(asObjectMap(data).get("name [GH-90000]")).isEqualTo("Ada [GH-90000]");
+        assertThat(asObjectMap(data).get("name")).isEqualTo("Ada");
         assertThat(queried).containsEntry("count", 1); // GH-90000
         assertThat(entities).isInstanceOf(List.class); // GH-90000
         assertThat(entityIds).contains(entityId); // GH-90000
@@ -100,12 +100,12 @@ class SDKSmokeTest {
         }
     }
 
-    @SuppressWarnings("unchecked [GH-90000]")
+    @SuppressWarnings("unchecked")
     private Map<String, Object> asObjectMap(Object value) { // GH-90000
         return (Map<String, Object>) value; // GH-90000
     }
 
-    @SuppressWarnings("unchecked [GH-90000]")
+    @SuppressWarnings("unchecked")
     private List<Object> asObjectList(Object value) { // GH-90000
         return (List<Object>) value; // GH-90000
     }

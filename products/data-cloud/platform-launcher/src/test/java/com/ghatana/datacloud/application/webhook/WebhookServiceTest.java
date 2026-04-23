@@ -29,7 +29,7 @@ import static org.mockito.Mockito.*;
  * @doc.purpose Validate webhook registration, listing, enabling/disabling, URL update, and deletion
  * @doc.layer application
  */
-@DisplayName("WebhookService Tests [GH-90000]")
+@DisplayName("WebhookService Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class WebhookServiceTest extends EventloopTestBase {
 
@@ -64,18 +64,18 @@ class WebhookServiceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Construction [GH-90000]")
+    @DisplayName("Construction")
     class Construction {
 
         @Test
-        @DisplayName("should throw NullPointerException when repository is null [GH-90000]")
+        @DisplayName("should throw NullPointerException when repository is null")
         void shouldThrowForNullRepository() { // GH-90000
             assertThatThrownBy(() -> new WebhookService(null, metrics)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("should throw NullPointerException when metrics is null [GH-90000]")
+        @DisplayName("should throw NullPointerException when metrics is null")
         void shouldThrowForNullMetrics() { // GH-90000
             assertThatThrownBy(() -> new WebhookService(webhookRepository, null)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
@@ -87,11 +87,11 @@ class WebhookServiceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Register Webhook [GH-90000]")
+    @DisplayName("Register Webhook")
     class RegisterWebhook {
 
         @Test
-        @DisplayName("should register a new webhook and return saved entity [GH-90000]")
+        @DisplayName("should register a new webhook and return saved entity")
         void shouldRegisterWebhook() { // GH-90000
             when(webhookRepository.save(any())).thenReturn(Promise.of(sampleWebhook)); // GH-90000
 
@@ -106,13 +106,13 @@ class WebhookServiceTest extends EventloopTestBase {
             ));
 
             assertThat(result).isNotNull(); // GH-90000
-            assertThat(result.getTenantId()).isEqualTo("tenant-1 [GH-90000]");
+            assertThat(result.getTenantId()).isEqualTo("tenant-1");
             assertThat(result.getEventType()).isEqualTo(WebhookEventType.ENTITY_CREATED); // GH-90000
             verify(webhookRepository).save(any(Webhook.class)); // GH-90000
         }
 
         @Test
-        @DisplayName("should generate a non-null ID for registered webhook [GH-90000]")
+        @DisplayName("should generate a non-null ID for registered webhook")
         void shouldPersistWithGeneratedId() { // GH-90000
             when(webhookRepository.save(any())).thenAnswer(inv -> Promise.of(inv.getArgument(0))); // GH-90000
 
@@ -135,21 +135,21 @@ class WebhookServiceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("List Webhooks [GH-90000]")
+    @DisplayName("List Webhooks")
     class ListWebhooks {
 
         @Test
-        @DisplayName("should list all webhooks for a tenant [GH-90000]")
+        @DisplayName("should list all webhooks for a tenant")
         void shouldListWebhooksForTenant() { // GH-90000
-            when(webhookRepository.findByTenant("tenant-1 [GH-90000]"))
+            when(webhookRepository.findByTenant("tenant-1"))
                     .thenReturn(Promise.of(List.of(sampleWebhook))); // GH-90000
 
-            List<Webhook> webhooks = runPromise(() -> webhookService.listWebhooks("tenant-1 [GH-90000]"));
+            List<Webhook> webhooks = runPromise(() -> webhookService.listWebhooks("tenant-1"));
             assertThat(webhooks).hasSize(1); // GH-90000
         }
 
         @Test
-        @DisplayName("should list webhooks by event type [GH-90000]")
+        @DisplayName("should list webhooks by event type")
         void shouldListByEventType() { // GH-90000
             when(webhookRepository.findByTenantAndEventType("tenant-1", WebhookEventType.ENTITY_CREATED)) // GH-90000
                     .thenReturn(Promise.of(List.of(sampleWebhook))); // GH-90000
@@ -160,12 +160,12 @@ class WebhookServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should return empty list when no webhooks for tenant [GH-90000]")
+        @DisplayName("should return empty list when no webhooks for tenant")
         void shouldReturnEmptyListForUnknownTenant() { // GH-90000
-            when(webhookRepository.findByTenant("unknown-tenant [GH-90000]"))
+            when(webhookRepository.findByTenant("unknown-tenant"))
                     .thenReturn(Promise.of(List.of())); // GH-90000
 
-            List<Webhook> webhooks = runPromise(() -> webhookService.listWebhooks("unknown-tenant [GH-90000]"));
+            List<Webhook> webhooks = runPromise(() -> webhookService.listWebhooks("unknown-tenant"));
             assertThat(webhooks).isEmpty(); // GH-90000
         }
     }
@@ -175,11 +175,11 @@ class WebhookServiceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Get Webhook [GH-90000]")
+    @DisplayName("Get Webhook")
     class GetWebhook {
 
         @Test
-        @DisplayName("should return webhook by ID and tenant [GH-90000]")
+        @DisplayName("should return webhook by ID and tenant")
         void shouldReturnWebhook() { // GH-90000
             UUID id = sampleWebhook.getId(); // GH-90000
             when(webhookRepository.findById(id, "tenant-1")) // GH-90000
@@ -190,7 +190,7 @@ class WebhookServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should return empty when webhook not found [GH-90000]")
+        @DisplayName("should return empty when webhook not found")
         void shouldReturnEmptyWhenNotFound() { // GH-90000
             UUID id = UUID.randomUUID(); // GH-90000
             when(webhookRepository.findById(id, "tenant-1")) // GH-90000
@@ -206,11 +206,11 @@ class WebhookServiceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Enable and Disable [GH-90000]")
+    @DisplayName("Enable and Disable")
     class EnableDisable {
 
         @Test
-        @DisplayName("should disable a webhook [GH-90000]")
+        @DisplayName("should disable a webhook")
         void shouldDisableWebhook() { // GH-90000
             UUID id = sampleWebhook.getId(); // GH-90000
             Webhook disabled = new Webhook(id, "tenant-1", WebhookEventType.ENTITY_CREATED, // GH-90000
@@ -225,7 +225,7 @@ class WebhookServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should enable a disabled webhook [GH-90000]")
+        @DisplayName("should enable a disabled webhook")
         void shouldEnableWebhook() { // GH-90000
             Webhook disabledHook = new Webhook(sampleWebhook.getId(), "tenant-1", // GH-90000
                     WebhookEventType.ENTITY_CREATED, "https://example.com/hook", "prod",
@@ -246,11 +246,11 @@ class WebhookServiceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Delete Webhook [GH-90000]")
+    @DisplayName("Delete Webhook")
     class DeleteWebhook {
 
         @Test
-        @DisplayName("should delete a webhook by ID and tenant [GH-90000]")
+        @DisplayName("should delete a webhook by ID and tenant")
         void shouldDeleteWebhook() { // GH-90000
             UUID id = sampleWebhook.getId(); // GH-90000
             when(webhookRepository.deleteById(id, "tenant-1")).thenReturn(Promise.complete()); // GH-90000

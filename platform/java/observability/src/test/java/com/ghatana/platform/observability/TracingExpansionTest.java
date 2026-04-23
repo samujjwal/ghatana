@@ -15,11 +15,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Tracing - Phase 3 Expansion [GH-90000]")
+@DisplayName("Tracing - Phase 3 Expansion")
 class TracingExpansionTest {
 
     @Test
-    @DisplayName("Tracer available when tracing disabled returns no-op [GH-90000]")
+    @DisplayName("Tracer available when tracing disabled returns no-op")
     void tracerWhenDisabled() { // GH-90000
         // Disable tracing explicitly
         Tracing.init(false, null, null); // GH-90000
@@ -30,7 +30,7 @@ class TracingExpansionTest {
     }
 
     @Test
-    @DisplayName("Tracer available when enabled with default values [GH-90000]")
+    @DisplayName("Tracer available when enabled with default values")
     void tracerWhenEnabledDefault() { // GH-90000
         // Enable tracing with defaults
         Tracing.init(true, null, null); // GH-90000
@@ -41,7 +41,7 @@ class TracingExpansionTest {
     }
 
     @Test
-    @DisplayName("Tracer available when enabled with custom endpoint [GH-90000]")
+    @DisplayName("Tracer available when enabled with custom endpoint")
     void tracerWithCustomEndpoint() { // GH-90000
         // Enable with custom endpoint
         Tracing.init(true, "http://localhost:4317", null); // GH-90000
@@ -52,7 +52,7 @@ class TracingExpansionTest {
     }
 
     @Test
-    @DisplayName("Tracer available when enabled with custom service name [GH-90000]")
+    @DisplayName("Tracer available when enabled with custom service name")
     void tracerWithCustomService() { // GH-90000
         // Enable with custom service name
         Tracing.init(true, null, "custom-service"); // GH-90000

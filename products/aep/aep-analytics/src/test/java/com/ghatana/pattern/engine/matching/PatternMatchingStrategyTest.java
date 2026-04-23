@@ -30,15 +30,15 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.purpose Unit tests for pattern matching strategies
  * @doc.layer test
  */
-@DisplayName("Pattern Matching Strategy Tests [GH-90000]")
+@DisplayName("Pattern Matching Strategy Tests")
 class PatternMatchingStrategyTest {
 
     @Test
-    @DisplayName("deterministic strategy matches exact state transitions [GH-90000]")
+    @DisplayName("deterministic strategy matches exact state transitions")
     void deterministicStrategy_matchesExactTransitions() { // GH-90000
         DeterministicMatchingStrategy strategy = new DeterministicMatchingStrategy(); // GH-90000
         
-        NFA nfa = createSimpleNFA("test-pattern [GH-90000]");
+        NFA nfa = createSimpleNFA("test-pattern");
         PatternMatchingStrategy.MatchingContext context = PatternMatchingStrategy.MatchingContext.empty(); // GH-90000
         
         GEvent event1 = createEvent("type1", Map.of("value", "a")); // GH-90000
@@ -54,7 +54,7 @@ class PatternMatchingStrategyTest {
     }
 
     @Test
-    @DisplayName("deterministic strategy resets after reset [GH-90000]")
+    @DisplayName("deterministic strategy resets after reset")
     void deterministicStrategy_resetsAfterReset() { // GH-90000
         DeterministicMatchingStrategy strategy = new DeterministicMatchingStrategy(); // GH-90000
         
@@ -63,15 +63,15 @@ class PatternMatchingStrategyTest {
     }
 
     @Test
-    @DisplayName("rule-based strategy matches all rules in sequence [GH-90000]")
+    @DisplayName("rule-based strategy matches all rules in sequence")
     void ruleBasedStrategy_matchesAllRules() { // GH-90000
         RuleBasedMatchingStrategy strategy = new RuleBasedMatchingStrategy(); // GH-90000
         
-        strategy.addRule(event -> event.getType().equals("type1 [GH-90000]"));
-        strategy.addRule(event -> event.getPayload().containsKey("value [GH-90000]"));
-        strategy.addRule(event -> event.getPayload().get("value [GH-90000]").equals("c [GH-90000]"));
+        strategy.addRule(event -> event.getType().equals("type1"));
+        strategy.addRule(event -> event.getPayload().containsKey("value"));
+        strategy.addRule(event -> event.getPayload().get("value").equals("c"));
         
-        NFA nfa = createSimpleNFA("test-pattern [GH-90000]");
+        NFA nfa = createSimpleNFA("test-pattern");
         PatternMatchingStrategy.MatchingContext context = PatternMatchingStrategy.MatchingContext.empty(); // GH-90000
         
         GEvent event1 = createEvent("type1", Map.of("step", 1)); // GH-90000
@@ -99,18 +99,18 @@ class PatternMatchingStrategyTest {
     }
 
     @Test
-    @DisplayName("probabilistic rule-based strategy scores matches with confidence [GH-90000]")
+    @DisplayName("probabilistic rule-based strategy scores matches with confidence")
     void probabilisticRuleBasedStrategy_scoresMatches() { // GH-90000
         ProbabilisticRuleBasedMatchingStrategy strategy = new ProbabilisticRuleBasedMatchingStrategy(); // GH-90000
         
         ProbabilisticRuleBasedMatchingStrategy.Rule rule1 = new ProbabilisticRuleBasedMatchingStrategy.RuleBuilder() // GH-90000
-            .predicate(event -> event.getType().equals("type1 [GH-90000]"))
+            .predicate(event -> event.getType().equals("type1"))
             .scorer(event -> 0.9) // GH-90000
             .threshold(0.5) // GH-90000
             .build(); // GH-90000
         
         ProbabilisticRuleBasedMatchingStrategy.Rule rule2 = new ProbabilisticRuleBasedMatchingStrategy.RuleBuilder() // GH-90000
-            .predicate(event -> event.getPayload().containsKey("value [GH-90000]"))
+            .predicate(event -> event.getPayload().containsKey("value"))
             .scorer(event -> 0.8) // GH-90000
             .threshold(0.5) // GH-90000
             .build(); // GH-90000
@@ -118,7 +118,7 @@ class PatternMatchingStrategyTest {
         strategy.addRule(rule1); // GH-90000
         strategy.addRule(rule2); // GH-90000
         
-        NFA nfa = createSimpleNFA("test-pattern [GH-90000]");
+        NFA nfa = createSimpleNFA("test-pattern");
         PatternMatchingStrategy.MatchingContext context = PatternMatchingStrategy.MatchingContext.empty(); // GH-90000
         
         GEvent event1 = createEvent("type1", Map.of("step", 1)); // GH-90000
@@ -134,11 +134,11 @@ class PatternMatchingStrategyTest {
     }
 
     @Test
-    @DisplayName("flexible matcher switches between strategies [GH-90000]")
+    @DisplayName("flexible matcher switches between strategies")
     void flexibleMatcher_switchesStrategies() { // GH-90000
         FlexiblePatternMatcher matcher = new FlexiblePatternMatcher(); // GH-90000
         
-        NFA nfa = createSimpleNFA("test-pattern [GH-90000]");
+        NFA nfa = createSimpleNFA("test-pattern");
         PatternMatchingStrategy.MatchingContext context = PatternMatchingStrategy.MatchingContext.empty(); // GH-90000
         GEvent event = createEvent("type1", Map.of("value", "test")); // GH-90000
         
@@ -163,7 +163,7 @@ class PatternMatchingStrategyTest {
     }
 
     @Test
-    @DisplayName("flexible matcher allows custom strategy registration [GH-90000]")
+    @DisplayName("flexible matcher allows custom strategy registration")
     void flexibleMatcher_registersCustomStrategy() { // GH-90000
         FlexiblePatternMatcher matcher = new FlexiblePatternMatcher(); // GH-90000
         

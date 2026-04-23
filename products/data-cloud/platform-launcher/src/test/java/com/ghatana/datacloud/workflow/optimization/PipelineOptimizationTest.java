@@ -26,8 +26,8 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("PipelineOptimizationTest [GH-90000]")
-@Tag("optimization [GH-90000]")
+@DisplayName("PipelineOptimizationTest")
+@Tag("optimization")
 class PipelineOptimizationTest {
 
     private PipelineOptimizer optimizer;
@@ -40,7 +40,7 @@ class PipelineOptimizationTest {
     // ── Parallel scheduling ───────────────────────────────────────────────────
 
     @Test
-    @DisplayName("independent stages are scheduled in parallel [GH-90000]")
+    @DisplayName("independent stages are scheduled in parallel")
     void independentStagesScheduledInParallel() { // GH-90000
         Pipeline pipeline = Pipeline.of( // GH-90000
                 Stage.of("A", List.of()),          // no dependencies // GH-90000
@@ -55,25 +55,25 @@ class PipelineOptimizationTest {
     }
 
     @Test
-    @DisplayName("stage with dependency is executed after its dependency [GH-90000]")
+    @DisplayName("stage with dependency is executed after its dependency")
     void dependentStageExecutedAfterDependency() { // GH-90000
         Pipeline pipeline = Pipeline.of( // GH-90000
                 Stage.of("X", List.of()), // GH-90000
-                Stage.of("Y", List.of("X [GH-90000]"))
+                Stage.of("Y", List.of("X"))
         );
         ExecutionPlan plan = optimizer.optimize(pipeline); // GH-90000
         List<List<String>> groups = plan.parallelGroups(); // GH-90000
         // X must appear in an earlier group than Y
         int xGroup = -1, yGroup = -1;
         for (int i = 0; i < groups.size(); i++) { // GH-90000
-            if (groups.get(i).contains("X [GH-90000]")) xGroup = i;
-            if (groups.get(i).contains("Y [GH-90000]")) yGroup = i;
+            if (groups.get(i).contains("X")) xGroup = i;
+            if (groups.get(i).contains("Y")) yGroup = i;
         }
         assertThat(xGroup).isLessThan(yGroup); // GH-90000
     }
 
     @Test
-    @DisplayName("single-stage pipeline produces a single execution group [GH-90000]")
+    @DisplayName("single-stage pipeline produces a single execution group")
     void singleStagePipelineHasOneGroup() { // GH-90000
         Pipeline pipeline = Pipeline.of(Stage.of("solo", List.of())); // GH-90000
         ExecutionPlan plan = optimizer.optimize(pipeline); // GH-90000
@@ -83,7 +83,7 @@ class PipelineOptimizationTest {
     // ── Stage pruning ─────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("disabled stages are pruned from the execution plan [GH-90000]")
+    @DisplayName("disabled stages are pruned from the execution plan")
     void disabledStagesArePruned() { // GH-90000
         Pipeline pipeline = Pipeline.of( // GH-90000
                 Stage.of("enabled-1", List.of()), // GH-90000
@@ -93,12 +93,12 @@ class PipelineOptimizationTest {
         ExecutionPlan plan = optimizer.optimize(pipeline); // GH-90000
         List<String> allStages = plan.parallelGroups().stream() // GH-90000
                 .flatMap(Collection::stream).toList(); // GH-90000
-        assertThat(allStages).doesNotContain("disabled-2 [GH-90000]");
+        assertThat(allStages).doesNotContain("disabled-2");
         assertThat(allStages).containsExactlyInAnyOrder("enabled-1", "enabled-3"); // GH-90000
     }
 
     @Test
-    @DisplayName("empty pipeline produces empty execution plan [GH-90000]")
+    @DisplayName("empty pipeline produces empty execution plan")
     void emptyPipelineProducesEmptyPlan() { // GH-90000
         ExecutionPlan plan = optimizer.optimize(Pipeline.of()); // GH-90000
         assertThat(plan.parallelGroups()).isEmpty(); // GH-90000
@@ -107,7 +107,7 @@ class PipelineOptimizationTest {
     // ── Throughput ────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("parallel plan has shorter critical path than sequential baseline [GH-90000]")
+    @DisplayName("parallel plan has shorter critical path than sequential baseline")
     void parallelPlanShorterCriticalPath() { // GH-90000
         // Chain: A → C, B → C (A and B can run together) // GH-90000
         Pipeline pipeline = Pipeline.of( // GH-90000
@@ -126,7 +126,7 @@ class PipelineOptimizationTest {
         "2, 10",   // 2 parallel stages, critical path = 10s
         "4, 10",   // 4 parallel stages, critical path = 10s (all parallel) // GH-90000
     })
-    @DisplayName("critical path calculation for N independent stages [GH-90000]")
+    @DisplayName("critical path calculation for N independent stages")
     void criticalPathForNParallelStages(int stageCount, int durationEachSeconds) { // GH-90000
         List<Stage> stages = IntStream.rangeClosed(1, stageCount) // GH-90000
                 .mapToObj(i -> Stage.of("s" + i, List.of()).withDuration(Duration.ofSeconds(durationEachSeconds))) // GH-90000
@@ -140,7 +140,7 @@ class PipelineOptimizationTest {
     // ── Resource allocation ───────────────────────────────────────────────────
 
     @Test
-    @DisplayName("optimizer respects max parallelism limit [GH-90000]")
+    @DisplayName("optimizer respects max parallelism limit")
     void maxParallelismLimitRespected() { // GH-90000
         optimizer.setMaxParallelism(2); // GH-90000
         Pipeline pipeline = Pipeline.of( // GH-90000

@@ -47,7 +47,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Unit Test, Performance Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("Advanced Performance Tests [GH-90000]")
+@DisplayName("Advanced Performance Tests")
 class AdvancedPerformanceTest extends EventloopTestBase {
 
     private static final String COLLECTION = "perf-test";
@@ -67,12 +67,12 @@ class AdvancedPerformanceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Sustained Load Testing [GH-90000]")
+    @DisplayName("Sustained Load Testing")
     class SustainedLoadTests {
 
         @ParameterizedTest
         @ValueSource(ints = {100, 500, 1000, 5000}) // GH-90000
-        @DisplayName("Should maintain latency SLA under sustained RPS [GH-90000]")
+        @DisplayName("Should maintain latency SLA under sustained RPS")
         void shouldMaintainLatencySLAUnderSustainedLoad(int rps) { // GH-90000
             LoadProfile profile = LoadProfile.builder() // GH-90000
                     .rps(rps) // GH-90000
@@ -89,7 +89,7 @@ class AdvancedPerformanceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should not degrade with extended sustained load [GH-90000]")
+        @DisplayName("Should not degrade with extended sustained load")
         void shouldNotDegradeOverTime() { // GH-90000
             LoadProfile profile = LoadProfile.builder() // GH-90000
                     .rps(500) // GH-90000
@@ -108,11 +108,11 @@ class AdvancedPerformanceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Ramp-Up Load Testing [GH-90000]")
+    @DisplayName("Ramp-Up Load Testing")
     class RampUpLoadTests {
 
         @Test
-        @DisplayName("Should handle gradual load increase without instability [GH-90000]")
+        @DisplayName("Should handle gradual load increase without instability")
         void shouldHandleGradualLoadIncrease() { // GH-90000
             LoadProfile profile = LoadProfile.builder() // GH-90000
                     .initialRps(100) // GH-90000
@@ -131,7 +131,7 @@ class AdvancedPerformanceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should recover after load ramp-down [GH-90000]")
+        @DisplayName("Should recover after load ramp-down")
         void shouldRecoverAfterRampDown() { // GH-90000
             LoadProfile profile = LoadProfile.builder() // GH-90000
                     .initialRps(100) // GH-90000
@@ -145,19 +145,19 @@ class AdvancedPerformanceTest extends EventloopTestBase {
 
             // After ramp down, should return to baseline latency
             Map<String, LatencyStats> phaseStats = result.statsByPhase(); // GH-90000
-            LatencyStats rampDownStats = phaseStats.get("ramp_down [GH-90000]");
-            LatencyStats cooldownStats = phaseStats.get("cooldown [GH-90000]");
+            LatencyStats rampDownStats = phaseStats.get("ramp_down");
+            LatencyStats cooldownStats = phaseStats.get("cooldown");
 
             assertThat(cooldownStats.p50()).isCloseTo(rampDownStats.p50(), within(50L)); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Spike Testing [GH-90000]")
+    @DisplayName("Spike Testing")
     class SpikeLoadTests {
 
         @Test
-        @DisplayName("Should handle sudden traffic spikes without queue buildup [GH-90000]")
+        @DisplayName("Should handle sudden traffic spikes without queue buildup")
         void shouldHandleSuddenSpikes() { // GH-90000
             LoadProfile profile = LoadProfile.builder() // GH-90000
                     .baselineRps(500) // GH-90000
@@ -176,7 +176,7 @@ class AdvancedPerformanceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should drop requests gracefully under extreme load [GH-90000]")
+        @DisplayName("Should drop requests gracefully under extreme load")
         void shouldDropRequestsGracefully() { // GH-90000
             LoadProfile profile = LoadProfile.builder() // GH-90000
                     .rps(50000)  // Extreme load // GH-90000
@@ -192,11 +192,11 @@ class AdvancedPerformanceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Soak Testing [GH-90000]")
+    @DisplayName("Soak Testing")
     class SoakTests {
 
         @Test
-        @DisplayName("Should maintain stability over 1 hour of continuous load [GH-90000]")
+        @DisplayName("Should maintain stability over 1 hour of continuous load")
         void shouldHandleLongRunningLoad() { // GH-90000
             LoadProfile profile = LoadProfile.builder() // GH-90000
                     .rps(1000) // GH-90000
@@ -217,11 +217,11 @@ class AdvancedPerformanceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Storage Tier Performance [GH-90000]")
+    @DisplayName("Storage Tier Performance")
     class StorageTierPerformanceTests {
 
         @Test
-        @DisplayName("Should perform differently for hot tier (cache hit) vs cold tier (disk read) [GH-90000]")
+        @DisplayName("Should perform differently for hot tier (cache hit) vs cold tier (disk read)")
         void shouldShowTierDifference() { // GH-90000
             // Hot tier: recently accessed, likely in cache
             LoadProfile hotProfile = LoadProfile.builder() // GH-90000
@@ -251,12 +251,12 @@ class AdvancedPerformanceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Complex Query Scaling [GH-90000]")
+    @DisplayName("Complex Query Scaling")
     class ComplexQueryTests {
 
         @ParameterizedTest
         @ValueSource(strings = {"SIMPLE", "MEDIUM", "COMPLEX"}) // GH-90000
-        @DisplayName("Should scale appropriately with query complexity [GH-90000]")
+        @DisplayName("Should scale appropriately with query complexity")
         void shouldScaleWithQueryComplexity(String complexityLevel) { // GH-90000
             LoadProfile profile = LoadProfile.builder() // GH-90000
                     .rps(1000) // GH-90000
@@ -278,12 +278,12 @@ class AdvancedPerformanceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Concurrency Scaling [GH-90000]")
+    @DisplayName("Concurrency Scaling")
     class ConcurrencyScalingTests {
 
         @ParameterizedTest
         @ValueSource(ints = {1, 10, 50, 100, 500, 1000}) // GH-90000
-        @DisplayName("Should scale linearly with concurrent users [GH-90000]")
+        @DisplayName("Should scale linearly with concurrent users")
         void shouldScaleWithConcurrentUsers(int concurrentUsers) { // GH-90000
             LoadProfile profile = LoadProfile.builder() // GH-90000
                     .concurrentUsers(concurrentUsers) // GH-90000
@@ -302,22 +302,22 @@ class AdvancedPerformanceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Multi-Tenant Load Isolation [GH-90000]")
+    @DisplayName("Multi-Tenant Load Isolation")
     class MultiTenantLoadTests {
 
         @Test
-        @DisplayName("Should isolate load across tenants [GH-90000]")
+        @DisplayName("Should isolate load across tenants")
         void shouldIsolateTenantLoad() { // GH-90000
             // Tenant A: High load
             LoadProfile profileA = LoadProfile.builder() // GH-90000
-                    .tenantId("tenant-a [GH-90000]")
+                    .tenantId("tenant-a")
                     .rps(5000) // GH-90000
                     .duration(60) // GH-90000
                     .build(); // GH-90000
 
             // Tenant B: Moderate load
             LoadProfile profileB = LoadProfile.builder() // GH-90000
-                    .tenantId("tenant-b [GH-90000]")
+                    .tenantId("tenant-b")
                     .rps(500) // GH-90000
                     .duration(60) // GH-90000
                     .build(); // GH-90000

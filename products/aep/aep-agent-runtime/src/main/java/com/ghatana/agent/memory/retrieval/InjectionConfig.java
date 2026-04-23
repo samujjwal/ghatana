@@ -10,7 +10,8 @@ import org.jetbrains.annotations.NotNull;
  * @doc.type value-object
  * @doc.purpose Context injection configuration
  * @doc.layer agent-memory
- */
+  * @doc.pattern Configuration
+*/
 @Value
 @Builder
 public class InjectionConfig {

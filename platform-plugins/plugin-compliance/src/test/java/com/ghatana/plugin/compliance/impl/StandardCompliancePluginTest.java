@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("StandardCompliancePlugin Tests [GH-90000]")
+@DisplayName("StandardCompliancePlugin Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class StandardCompliancePluginTest extends EventloopTestBase {
 
@@ -40,7 +40,7 @@ class StandardCompliancePluginTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should initialize compliance plugin [GH-90000]")
+    @DisplayName("Should initialize compliance plugin")
     void testInitialize() { // GH-90000
         assertThat(compliancePlugin.getState()).isEqualTo(PluginState.UNLOADED); // GH-90000
         Promise<Void> result = compliancePlugin.initialize(mockContext); // GH-90000
@@ -49,7 +49,7 @@ class StandardCompliancePluginTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should start compliance plugin [GH-90000]")
+    @DisplayName("Should start compliance plugin")
     void testStart() { // GH-90000
         runPromise(() -> compliancePlugin.initialize(mockContext)); // GH-90000
         Promise<Void> result = compliancePlugin.start(); // GH-90000
@@ -58,15 +58,15 @@ class StandardCompliancePluginTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should return correct metadata [GH-90000]")
+    @DisplayName("Should return correct metadata")
     void testMetadata() { // GH-90000
         var metadata = compliancePlugin.metadata(); // GH-90000
-        assertThat(metadata.name()).isEqualTo("Compliance Plugin [GH-90000]");
-        assertThat(metadata.version()).isEqualTo("1.0.0 [GH-90000]");
+        assertThat(metadata.name()).isEqualTo("Compliance Plugin");
+        assertThat(metadata.version()).isEqualTo("1.0.0");
     }
 
     @Test
-    @DisplayName("Should evaluate compliance against SOX rules [GH-90000]")
+    @DisplayName("Should evaluate compliance against SOX rules")
     void testEvaluateCompliance_SOX() { // GH-90000
         runPromise(() -> compliancePlugin.initialize(mockContext) // GH-90000
                 .then(v -> compliancePlugin.start())); // GH-90000
@@ -79,12 +79,12 @@ class StandardCompliancePluginTest extends EventloopTestBase {
                 compliancePlugin.evaluate("SOX", context); // GH-90000
         CompliancePlugin.ComplianceResult evaluation = runPromise(() -> result); // GH-90000
 
-        assertThat(evaluation.ruleSetId()).isEqualTo("SOX [GH-90000]");
+        assertThat(evaluation.ruleSetId()).isEqualTo("SOX");
         assertThat(evaluation.evaluatedAt()).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should evaluate compliance against HIPAA rules [GH-90000]")
+    @DisplayName("Should evaluate compliance against HIPAA rules")
     void testEvaluateCompliance_HIPAA() { // GH-90000
         runPromise(() -> compliancePlugin.initialize(mockContext) // GH-90000
                 .then(v -> compliancePlugin.start())); // GH-90000
@@ -97,11 +97,11 @@ class StandardCompliancePluginTest extends EventloopTestBase {
                 compliancePlugin.evaluate("HIPAA", context); // GH-90000
         CompliancePlugin.ComplianceResult evaluation = runPromise(() -> result); // GH-90000
 
-        assertThat(evaluation.ruleSetId()).isEqualTo("HIPAA [GH-90000]");
+        assertThat(evaluation.ruleSetId()).isEqualTo("HIPAA");
     }
 
     @Test
-    @DisplayName("Should register custom rules [GH-90000]")
+    @DisplayName("Should register custom rules")
     void testRegisterRuleSet() { // GH-90000
         runPromise(() -> compliancePlugin.initialize(mockContext) // GH-90000
                 .then(v -> compliancePlugin.start())); // GH-90000
@@ -122,11 +122,11 @@ class StandardCompliancePluginTest extends EventloopTestBase {
                 compliancePlugin.evaluate("CUSTOM", context); // GH-90000
         CompliancePlugin.ComplianceResult evaluation = runPromise(() -> evalResult); // GH-90000
 
-        assertThat(evaluation.ruleSetId()).isEqualTo("CUSTOM [GH-90000]");
+        assertThat(evaluation.ruleSetId()).isEqualTo("CUSTOM");
     }
 
     @Test
-    @DisplayName("Should get audit trail for entity [GH-90000]")
+    @DisplayName("Should get audit trail for entity")
     void testGetAuditTrail() { // GH-90000
         runPromise(() -> compliancePlugin.initialize(mockContext) // GH-90000
                 .then(v -> compliancePlugin.start())); // GH-90000
@@ -146,20 +146,20 @@ class StandardCompliancePluginTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should track active violations [GH-90000]")
+    @DisplayName("Should track active violations")
     void testGetActiveViolations() { // GH-90000
         runPromise(() -> compliancePlugin.initialize(mockContext) // GH-90000
                 .then(v -> compliancePlugin.start())); // GH-90000
 
         Promise<List<CompliancePlugin.ComplianceViolation>> result =
-                compliancePlugin.getActiveViolations("SOX [GH-90000]");
+                compliancePlugin.getActiveViolations("SOX");
         List<CompliancePlugin.ComplianceViolation> violations = runPromise(() -> result); // GH-90000
 
         assertThat(violations).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should shutdown compliance plugin [GH-90000]")
+    @DisplayName("Should shutdown compliance plugin")
     void testShutdown() { // GH-90000
         runPromise(() -> compliancePlugin.initialize(mockContext) // GH-90000
                 .then(v -> compliancePlugin.start())); // GH-90000

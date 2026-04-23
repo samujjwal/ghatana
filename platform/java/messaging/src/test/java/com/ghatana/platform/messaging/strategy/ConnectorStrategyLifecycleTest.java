@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("Connector strategy lifecycle [GH-90000]")
+@DisplayName("Connector strategy lifecycle")
 class ConnectorStrategyLifecycleTest extends EventloopTestBase {
 
     private HttpServer server;
@@ -45,14 +45,14 @@ class ConnectorStrategyLifecycleTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("HttpWebhookEgressStrategy posts payload and headers to configured endpoint [GH-90000]")
+    @DisplayName("HttpWebhookEgressStrategy posts payload and headers to configured endpoint")
     void shouldDeliverWebhookPayload() throws Exception { // GH-90000
         CountDownLatch requestReceived = new CountDownLatch(1); // GH-90000
         AtomicReference<String> bodyRef = new AtomicReference<>(); // GH-90000
         AtomicReference<String> headerRef = new AtomicReference<>(); // GH-90000
         server = startHttpServer("/events", exchange -> { // GH-90000
             bodyRef.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8)); // GH-90000
-            headerRef.set(exchange.getRequestHeaders().getFirst("X-Test-Header [GH-90000]"));
+            headerRef.set(exchange.getRequestHeaders().getFirst("X-Test-Header"));
             exchange.sendResponseHeaders(202, -1); // GH-90000
             exchange.close(); // GH-90000
             requestReceived.countDown(); // GH-90000
@@ -70,14 +70,14 @@ class ConnectorStrategyLifecycleTest extends EventloopTestBase {
         assertThat(sent).isTrue(); // GH-90000
         assertThat(requestReceived.await(2, TimeUnit.SECONDS)).isTrue(); // GH-90000
         assertThat(bodyRef.get()).isEqualTo("{\"event\":\"created\"}"); // GH-90000
-        assertThat(headerRef.get()).isEqualTo("present [GH-90000]");
+        assertThat(headerRef.get()).isEqualTo("present");
 
         runPromise(strategy::stop); // GH-90000
         assertThat(strategy.isRunning()).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("HttpPollingIngressStrategy polls endpoint and forwards non-empty responses [GH-90000]")
+    @DisplayName("HttpPollingIngressStrategy polls endpoint and forwards non-empty responses")
     void shouldPollHttpEndpoint() throws Exception { // GH-90000
         CountDownLatch bodyReceived = new CountDownLatch(1); // GH-90000
         AtomicReference<String> bodyRef = new AtomicReference<>(); // GH-90000
@@ -92,7 +92,7 @@ class ConnectorStrategyLifecycleTest extends EventloopTestBase {
         HttpPollingIngressStrategy strategy = new HttpPollingIngressStrategy( // GH-90000
             HttpIngressConfig.builder() // GH-90000
                 .endpoint("http://localhost:" + server.getAddress().getPort()) // GH-90000
-                .path("/poll [GH-90000]")
+                .path("/poll")
                 .retryConfig(RetryConfig.NO_RETRY) // GH-90000
                 .build(), // GH-90000
             body -> {
@@ -105,18 +105,18 @@ class ConnectorStrategyLifecycleTest extends EventloopTestBase {
         runPromise(strategy::start); // GH-90000
 
         assertThat(bodyReceived.await(2, TimeUnit.SECONDS)).isTrue(); // GH-90000
-        assertThat(bodyRef.get()).isEqualTo("queued-message [GH-90000]");
+        assertThat(bodyRef.get()).isEqualTo("queued-message");
 
         runPromise(strategy::stop); // GH-90000
         assertThat(strategy.isRunning()).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("DefaultS3StorageStrategy toggles lifecycle state and accepts messages [GH-90000]")
+    @DisplayName("DefaultS3StorageStrategy toggles lifecycle state and accepts messages")
     void shouldToggleS3LifecycleState() { // GH-90000
         DefaultS3StorageStrategy strategy = new DefaultS3StorageStrategy(S3Config.builder() // GH-90000
-            .bucketName("audit-bucket [GH-90000]")
-            .region("us-east-1 [GH-90000]")
+            .bucketName("audit-bucket")
+            .region("us-east-1")
             .build()); // GH-90000
 
         assertThat(strategy.isRunning()).isFalse(); // GH-90000
@@ -132,7 +132,7 @@ class ConnectorStrategyLifecycleTest extends EventloopTestBase {
     private static HttpIngressConfig httpConfig(HttpServer server) { // GH-90000
         return HttpIngressConfig.builder() // GH-90000
             .endpoint("http://localhost:" + server.getAddress().getPort()) // GH-90000
-            .path("/events [GH-90000]")
+            .path("/events")
             .retryConfig(RetryConfig.NO_RETRY) // GH-90000
             .build(); // GH-90000
     }

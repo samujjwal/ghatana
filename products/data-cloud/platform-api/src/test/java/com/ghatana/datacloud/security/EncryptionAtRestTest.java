@@ -28,45 +28,45 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("EncryptionAtRest – Data Encryption (S007) [GH-90000]")
+@DisplayName("EncryptionAtRest – Data Encryption (S007)")
 class EncryptionAtRestTest extends EventloopTestBase {
 
     @Mock
     private AuditLogService auditLogService;
 
     @Nested
-    @DisplayName("Data Encryption [GH-90000]")
+    @DisplayName("Data Encryption")
     class DataEncryptionTests {
 
         @Test
-        @DisplayName("[S007]: sensitive_data_encrypted_at_rest [GH-90000]")
+        @DisplayName("[S007]: sensitive_data_encrypted_at_rest")
         void sensitiveDataEncryptedAtRest() { // GH-90000
             // Simulate encryption check
             String sensitiveData = "ssn:123-45-6789";
             String encryptedData = encrypt(sensitiveData); // GH-90000
 
             assertThat(encryptedData).isNotEqualTo(sensitiveData); // GH-90000
-            assertThat(encryptedData).doesNotContain("123-45-6789 [GH-90000]");
+            assertThat(encryptedData).doesNotContain("123-45-6789");
         }
 
         @Test
-        @DisplayName("[S007]: pii_fields_encrypted [GH-90000]")
+        @DisplayName("[S007]: pii_fields_encrypted")
         void piiFieldsEncrypted() { // GH-90000
             Map<String, Object> userData = Map.of( // GH-90000
                 "id", "user-001",
                 "name", "John Doe",
                 "email", "john@example.com",
-                "phone", encrypt("+1234567890 [GH-90000]"),
-                "ssn", encrypt("123-45-6789 [GH-90000]")
+                "phone", encrypt("+1234567890"),
+                "ssn", encrypt("123-45-6789")
             );
 
             // Encrypted fields should not be plaintext
-            assertThat(userData.get("phone [GH-90000]")).isNotEqualTo("+1234567890 [GH-90000]");
-            assertThat(userData.get("ssn [GH-90000]")).isNotEqualTo("123-45-6789 [GH-90000]");
+            assertThat(userData.get("phone")).isNotEqualTo("+1234567890");
+            assertThat(userData.get("ssn")).isNotEqualTo("123-45-6789");
         }
 
         @Test
-        @DisplayName("[S007]: encryption_allows_decryption [GH-90000]")
+        @DisplayName("[S007]: encryption_allows_decryption")
         void encryptionAllowsDecryption() { // GH-90000
             String original = "secret-data";
             String encrypted = encrypt(original); // GH-90000
@@ -77,12 +77,12 @@ class EncryptionAtRestTest extends EventloopTestBase {
 
         private String encrypt(String data) { // GH-90000
             // Simulated encryption
-            return "ENC(" + java.util.Base64.getEncoder().encodeToString(data.getBytes()) +  [GH-90000]")";
+            return "ENC(" + java.util.Base64.getEncoder().encodeToString(data.getBytes()) + ")";
         }
 
         private String decrypt(String encrypted) { // GH-90000
             // Simulated decryption
-            if (encrypted.startsWith("ENC( [GH-90000]") && encrypted.endsWith(") [GH-90000]")) {
+            if (encrypted.startsWith("ENC(") && encrypted.endsWith(")")) {
                 String base64 = encrypted.substring(4, encrypted.length() - 1); // GH-90000
                 return new String(java.util.Base64.getDecoder().decode(base64)); // GH-90000
             }
@@ -91,18 +91,18 @@ class EncryptionAtRestTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Key Management [GH-90000]")
+    @DisplayName("Key Management")
     class KeyManagementTests {
 
         @Test
-        @DisplayName("[S007]: key_rotation_supported [GH-90000]")
+        @DisplayName("[S007]: key_rotation_supported")
         void keyRotationSupported() { // GH-90000
             boolean rotationSupported = true;
             assertThat(rotationSupported).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("[S007]: key_version_tracked [GH-90000]")
+        @DisplayName("[S007]: key_version_tracked")
         void keyVersionTracked() { // GH-90000
             int keyVersion = 2;
             assertThat(keyVersion).isGreaterThan(0); // GH-90000
@@ -110,18 +110,18 @@ class EncryptionAtRestTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Audit Logging [GH-90000]")
+    @DisplayName("Audit Logging")
     class AuditLoggingTests {
 
         @Test
-        @DisplayName("[S007]: encryption_operations_logged [GH-90000]")
+        @DisplayName("[S007]: encryption_operations_logged")
         void encryptionOperationsLogged() { // GH-90000
             AuditLogService.AuditEvent event = AuditLogService.AuditEvent.builder() // GH-90000
-                .id("evt-001 [GH-90000]")
-                .tenantId("tenant-alpha [GH-90000]")
+                .id("evt-001")
+                .tenantId("tenant-alpha")
                 .type(AuditLogService.EventType.CONFIG_CHANGE) // GH-90000
-                .action("encryption-key-rotation [GH-90000]")
-                .resource("EncryptionKey [GH-90000]")
+                .action("encryption-key-rotation")
+                .resource("EncryptionKey")
                 .success(true) // GH-90000
                 .build(); // GH-90000
 
@@ -135,11 +135,11 @@ class EncryptionAtRestTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Performance [GH-90000]")
+    @DisplayName("Performance")
     class PerformanceTests {
 
         @Test
-        @DisplayName("[S007]: encryption_overhead_acceptable [GH-90000]")
+        @DisplayName("[S007]: encryption_overhead_acceptable")
         void encryptionOverheadAcceptable() { // GH-90000
             long startTime = System.currentTimeMillis(); // GH-90000
 

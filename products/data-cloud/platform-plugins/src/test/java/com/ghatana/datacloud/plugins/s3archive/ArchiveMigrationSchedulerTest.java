@@ -28,7 +28,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.purpose Validate scheduler lifecycle, stats tracking, and idempotent start/stop behavior
  * @doc.layer product
  */
-@DisplayName("ArchiveMigrationScheduler Tests [GH-90000]")
+@DisplayName("ArchiveMigrationScheduler Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class ArchiveMigrationSchedulerTest {
 
@@ -66,11 +66,11 @@ class ArchiveMigrationSchedulerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Construction [GH-90000]")
+    @DisplayName("Construction")
     class Construction {
 
         @Test
-        @DisplayName("should build scheduler without errors [GH-90000]")
+        @DisplayName("should build scheduler without errors")
         void shouldBuildScheduler() { // GH-90000
             assertThatCode(() -> ArchiveMigrationScheduler.builder() // GH-90000
                     .sourcePlugin(sourcePlugin) // GH-90000
@@ -80,7 +80,7 @@ class ArchiveMigrationSchedulerTest {
         }
 
         @Test
-        @DisplayName("should not be running by default [GH-90000]")
+        @DisplayName("should not be running by default")
         void shouldNotBeRunningByDefault() { // GH-90000
             MigrationStats stats = scheduler.getStats(); // GH-90000
             assertThat(stats.running()).isFalse(); // GH-90000
@@ -92,11 +92,11 @@ class ArchiveMigrationSchedulerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("start and stop lifecycle [GH-90000]")
+    @DisplayName("start and stop lifecycle")
     class Lifecycle {
 
         @Test
-        @DisplayName("should start successfully [GH-90000]")
+        @DisplayName("should start successfully")
         void shouldStartSuccessfully() { // GH-90000
             assertThatCode(() -> scheduler.start()).doesNotThrowAnyException(); // GH-90000
 
@@ -105,7 +105,7 @@ class ArchiveMigrationSchedulerTest {
         }
 
         @Test
-        @DisplayName("should stop successfully after start [GH-90000]")
+        @DisplayName("should stop successfully after start")
         void shouldStopSuccessfully() { // GH-90000
             scheduler.start(); // GH-90000
             assertThatCode(() -> scheduler.stop()).doesNotThrowAnyException(); // GH-90000
@@ -115,20 +115,20 @@ class ArchiveMigrationSchedulerTest {
         }
 
         @Test
-        @DisplayName("start should be idempotent (no error when started twice) [GH-90000]")
+        @DisplayName("start should be idempotent (no error when started twice)")
         void startShouldBeIdempotent() { // GH-90000
             scheduler.start(); // GH-90000
             assertThatCode(() -> scheduler.start()).doesNotThrowAnyException(); // GH-90000
         }
 
         @Test
-        @DisplayName("stop should be safe when not running [GH-90000]")
+        @DisplayName("stop should be safe when not running")
         void stopShouldBeSafeWhenNotRunning() { // GH-90000
             assertThatCode(() -> scheduler.stop()).doesNotThrowAnyException(); // GH-90000
         }
 
         @Test
-        @DisplayName("close should stop the scheduler [GH-90000]")
+        @DisplayName("close should stop the scheduler")
         void closeShouldStopScheduler() { // GH-90000
             scheduler.start(); // GH-90000
             assertThatCode(() -> scheduler.close()).doesNotThrowAnyException(); // GH-90000
@@ -140,11 +140,11 @@ class ArchiveMigrationSchedulerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("getStats [GH-90000]")
+    @DisplayName("getStats")
     class Stats {
 
         @Test
-        @DisplayName("should return stats with zero counts when no migration has occurred [GH-90000]")
+        @DisplayName("should return stats with zero counts when no migration has occurred")
         void shouldReturnZeroStatsInitially() { // GH-90000
             MigrationStats stats = scheduler.getStats(); // GH-90000
 
@@ -155,7 +155,7 @@ class ArchiveMigrationSchedulerTest {
         }
 
         @Test
-        @DisplayName("should reflect running state in stats [GH-90000]")
+        @DisplayName("should reflect running state in stats")
         void shouldReflectRunningStateInStats() { // GH-90000
             scheduler.start(); // GH-90000
             assertThat(scheduler.getStats().running()).isTrue(); // GH-90000
@@ -170,11 +170,11 @@ class ArchiveMigrationSchedulerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Builder configuration [GH-90000]")
+    @DisplayName("Builder configuration")
     class BuilderConfiguration {
 
         @Test
-        @DisplayName("should accept dry-run mode [GH-90000]")
+        @DisplayName("should accept dry-run mode")
         void shouldAcceptDryRunMode() { // GH-90000
             ArchiveMigrationScheduler dryRunScheduler = ArchiveMigrationScheduler.builder() // GH-90000
                     .sourcePlugin(sourcePlugin) // GH-90000
@@ -188,7 +188,7 @@ class ArchiveMigrationSchedulerTest {
         }
 
         @Test
-        @DisplayName("should accept custom retention threshold [GH-90000]")
+        @DisplayName("should accept custom retention threshold")
         void shouldAcceptCustomRetentionThreshold() { // GH-90000
             ArchiveMigrationScheduler customScheduler = ArchiveMigrationScheduler.builder() // GH-90000
                     .sourcePlugin(sourcePlugin) // GH-90000

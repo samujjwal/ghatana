@@ -13,7 +13,8 @@ import java.time.Instant;
  * @doc.type class
  * @doc.purpose Skill version record
  * @doc.layer agent-learning
- */
+  * @doc.pattern Component
+*/
 @Value
 @Builder
 public class SkillVersion {

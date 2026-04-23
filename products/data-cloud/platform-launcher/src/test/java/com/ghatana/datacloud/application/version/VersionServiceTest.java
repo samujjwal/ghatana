@@ -32,7 +32,7 @@ import static org.mockito.Mockito.*;
  * @doc.purpose Validate entity versioning, version history retrieval, comparison, and deletion
  * @doc.layer application
  */
-@DisplayName("VersionService Tests [GH-90000]")
+@DisplayName("VersionService Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class VersionServiceTest extends EventloopTestBase {
 
@@ -54,8 +54,8 @@ class VersionServiceTest extends EventloopTestBase {
         entityId = UUID.randomUUID(); // GH-90000
         sampleEntity = Entity.builder() // GH-90000
                 .id(entityId) // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("products [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("products")
                 .data(new HashMap<>(Map.of("name", "Widget"))) // GH-90000
                 .createdAt(Instant.now()) // GH-90000
                 .build(); // GH-90000
@@ -68,18 +68,18 @@ class VersionServiceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Construction [GH-90000]")
+    @DisplayName("Construction")
     class Construction {
 
         @Test
-        @DisplayName("should throw NullPointerException for null repository [GH-90000]")
+        @DisplayName("should throw NullPointerException for null repository")
         void shouldThrowForNullRepository() { // GH-90000
             assertThatThrownBy(() -> new VersionService(null, versionComparator)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("should throw NullPointerException for null comparator [GH-90000]")
+        @DisplayName("should throw NullPointerException for null comparator")
         void shouldThrowForNullComparator() { // GH-90000
             assertThatThrownBy(() -> new VersionService(versionRepository, null)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
@@ -91,31 +91,31 @@ class VersionServiceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("createVersion [GH-90000]")
+    @DisplayName("createVersion")
     class CreateVersion {
 
         @Test
-        @DisplayName("should create and return new version on save [GH-90000]")
+        @DisplayName("should create and return new version on save")
         void shouldCreateVersion() { // GH-90000
-            when(versionRepository.saveVersion(eq("tenant-1 [GH-90000]"), eq(sampleEntity), any()))
+            when(versionRepository.saveVersion(eq("tenant-1"), eq(sampleEntity), any()))
                     .thenReturn(Promise.of(sampleVersion)); // GH-90000
 
             EntityVersion result = runPromise(() -> service.createVersion("tenant-1", sampleEntity, "user-1", "initial")); // GH-90000
 
             assertThat(result).isNotNull(); // GH-90000
             assertThat(result.getVersionNumber()).isEqualTo(1); // GH-90000
-            verify(versionRepository).saveVersion(eq("tenant-1 [GH-90000]"), eq(sampleEntity), any());
+            verify(versionRepository).saveVersion(eq("tenant-1"), eq(sampleEntity), any());
         }
 
         @Test
-        @DisplayName("should throw NullPointerException for null entity [GH-90000]")
+        @DisplayName("should throw NullPointerException for null entity")
         void shouldThrowForNullEntity() { // GH-90000
             assertThatThrownBy(() -> runPromise(() -> service.createVersion("tenant-1", null, "user-1", "reason"))) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("should throw NullPointerException for null tenantId [GH-90000]")
+        @DisplayName("should throw NullPointerException for null tenantId")
         void shouldThrowForNullTenantId() { // GH-90000
             assertThatThrownBy(() -> runPromise(() -> service.createVersion(null, sampleEntity, "user-1", "reason"))) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
@@ -127,11 +127,11 @@ class VersionServiceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("getVersionHistory [GH-90000]")
+    @DisplayName("getVersionHistory")
     class GetVersionHistory {
 
         @Test
-        @DisplayName("should return version history for entity [GH-90000]")
+        @DisplayName("should return version history for entity")
         void shouldReturnVersionHistory() { // GH-90000
             when(versionRepository.getVersionHistory("tenant-1", entityId)) // GH-90000
                     .thenReturn(Promise.of(List.of(sampleVersion))); // GH-90000
@@ -141,7 +141,7 @@ class VersionServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should return empty list when no versions exist [GH-90000]")
+        @DisplayName("should return empty list when no versions exist")
         void shouldReturnEmptyListWhenNoVersions() { // GH-90000
             when(versionRepository.getVersionHistory("tenant-1", entityId)) // GH-90000
                     .thenReturn(Promise.of(List.of())); // GH-90000
@@ -156,11 +156,11 @@ class VersionServiceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("getVersion [GH-90000]")
+    @DisplayName("getVersion")
     class GetVersion {
 
         @Test
-        @DisplayName("should return specific version by version number [GH-90000]")
+        @DisplayName("should return specific version by version number")
         void shouldReturnSpecificVersion() { // GH-90000
             when(versionRepository.getVersion("tenant-1", entityId, 1)) // GH-90000
                     .thenReturn(Promise.of(sampleVersion)); // GH-90000
@@ -176,11 +176,11 @@ class VersionServiceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("getLatestVersion [GH-90000]")
+    @DisplayName("getLatestVersion")
     class GetLatestVersion {
 
         @Test
-        @DisplayName("should return latest version for entity [GH-90000]")
+        @DisplayName("should return latest version for entity")
         void shouldReturnLatestVersion() { // GH-90000
             when(versionRepository.getLatestVersion("tenant-1", entityId)) // GH-90000
                     .thenReturn(Promise.of(sampleVersion)); // GH-90000
@@ -195,11 +195,11 @@ class VersionServiceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("compareVersions [GH-90000]")
+    @DisplayName("compareVersions")
     class CompareVersions {
 
         @Test
-        @DisplayName("should delegate version comparison to repository [GH-90000]")
+        @DisplayName("should delegate version comparison to repository")
         void shouldCompareVersions() { // GH-90000
             VersionDiff diff = mock(VersionDiff.class); // GH-90000
             when(versionRepository.computeDiff("tenant-1", entityId, 1, 2)) // GH-90000
@@ -215,11 +215,11 @@ class VersionServiceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("countVersions and hasVersions [GH-90000]")
+    @DisplayName("countVersions and hasVersions")
     class CountHasVersions {
 
         @Test
-        @DisplayName("should return count of versions for entity [GH-90000]")
+        @DisplayName("should return count of versions for entity")
         void shouldReturnVersionCount() { // GH-90000
             when(versionRepository.countVersions("tenant-1", entityId)) // GH-90000
                     .thenReturn(Promise.of(3)); // GH-90000
@@ -229,7 +229,7 @@ class VersionServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should return true when entity has versions [GH-90000]")
+        @DisplayName("should return true when entity has versions")
         void shouldReturnTrueWhenHasVersions() { // GH-90000
             when(versionRepository.countVersions("tenant-1", entityId)) // GH-90000
                     .thenReturn(Promise.of(2)); // GH-90000
@@ -239,7 +239,7 @@ class VersionServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should return false when entity has no versions [GH-90000]")
+        @DisplayName("should return false when entity has no versions")
         void shouldReturnFalseWhenNoVersions() { // GH-90000
             when(versionRepository.countVersions("tenant-1", entityId)) // GH-90000
                     .thenReturn(Promise.of(0)); // GH-90000
@@ -254,11 +254,11 @@ class VersionServiceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("deleteVersionHistory [GH-90000]")
+    @DisplayName("deleteVersionHistory")
     class DeleteVersionHistory {
 
         @Test
-        @DisplayName("should delete all versions and return deleted count [GH-90000]")
+        @DisplayName("should delete all versions and return deleted count")
         void shouldDeleteVersionHistory() { // GH-90000
             when(versionRepository.deleteVersionHistory("tenant-1", entityId)) // GH-90000
                     .thenReturn(Promise.of(5)); // GH-90000

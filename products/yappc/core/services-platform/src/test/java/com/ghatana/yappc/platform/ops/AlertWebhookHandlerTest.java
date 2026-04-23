@@ -17,14 +17,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-@DisplayName("AlertWebhookHandler Tests [GH-90000]")
+@DisplayName("AlertWebhookHandler Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class AlertWebhookHandlerTest extends EventloopTestBase {
 
   @Mock private IncidentCorrelator incidentCorrelator;
 
   @Test
-  @DisplayName("handle ingests alert batches and records metrics [GH-90000]")
+  @DisplayName("handle ingests alert batches and records metrics")
   void handleIngestsAlertBatchesAndRecordsMetrics() { // GH-90000
     AtomicInteger alertsReceived = new AtomicInteger(); // GH-90000
     AtomicInteger incidentsCreated = new AtomicInteger(); // GH-90000
@@ -46,7 +46,7 @@ class AlertWebhookHandlerTest extends EventloopTestBase {
               }
             },
             new ObjectMapper(), // GH-90000
-            Clock.fixed(Instant.parse("2026-04-06T12:00:00Z [GH-90000]"), ZoneOffset.UTC));
+            Clock.fixed(Instant.parse("2026-04-06T12:00:00Z"), ZoneOffset.UTC));
 
     AlertWebhookHandler.AlertHandlingResult result =
         runPromise( // GH-90000
@@ -80,7 +80,7 @@ class AlertWebhookHandlerTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("handle rejects malformed webhook payloads [GH-90000]")
+  @DisplayName("handle rejects malformed webhook payloads")
   void handleRejectsMalformedWebhookPayloads() { // GH-90000
     AlertWebhookHandler handler =
         new AlertWebhookHandler( // GH-90000
@@ -93,8 +93,8 @@ class AlertWebhookHandlerTest extends EventloopTestBase {
               public void recordIncidentsCreated(int count) {} // GH-90000
             });
 
-    assertThatThrownBy(() -> runPromise(() -> handler.handle("not-json [GH-90000]")))
+    assertThatThrownBy(() -> runPromise(() -> handler.handle("not-json")))
         .isInstanceOf(IllegalArgumentException.class) // GH-90000
-        .hasMessageContaining("Invalid alert webhook payload [GH-90000]");
+        .hasMessageContaining("Invalid alert webhook payload");
   }
 }

@@ -57,27 +57,27 @@ import java.util.List;
  *
  * // 2. With Flyway migrations
  * try (DatabaseTestContainer db = DatabaseTestContainer.postgres() // GH-90000
- *         .withMigrations("classpath:db/migration [GH-90000]")) {
+ *         .withMigrations("classpath:db/migration")) {
  *     db.start(); // GH-90000
  *
  *     // Database ready with schema from migrations
  *     List<User> users = db.query( // GH-90000
  *         "SELECT * FROM users WHERE active = ?",
  *         User.class,
- *         rs -> new User(rs.getLong("id [GH-90000]"), rs.getString("email [GH-90000]")),
+ *         rs -> new User(rs.getLong("id"), rs.getString("email")),
  *         true
  *     );
  * }
  *
  * // 3. Custom PostgreSQL version and config
  * try (DatabaseTestContainer db = DatabaseTestContainer.builder() // GH-90000
- *         .image("postgres:15.4-alpine [GH-90000]")
- *         .database("integration_test_db [GH-90000]")
- *         .username("testuser [GH-90000]")
- *         .password("testpass [GH-90000]")
+ *         .image("postgres:15.4-alpine")
+ *         .database("integration_test_db")
+ *         .username("testuser")
+ *         .password("testpass")
  *         .poolSize(10) // GH-90000
  *         .startupTimeout(Duration.ofSeconds(120)) // GH-90000
- *         .withMigrations("classpath:db/migration [GH-90000]")
+ *         .withMigrations("classpath:db/migration")
  *         .build()) { // GH-90000
  *     db.start(); // GH-90000
  *
@@ -92,7 +92,7 @@ import java.util.List;
  *     @BeforeEach
  *     void setup() throws Exception { // GH-90000
  *         db = DatabaseTestContainer.postgres() // GH-90000
- *             .withMigrations("classpath:db/migration [GH-90000]");
+ *             .withMigrations("classpath:db/migration");
  *         db.start(); // GH-90000
  *
  *         EntityManagerFactory emf = createEMF(db.getDataSource()); // GH-90000
@@ -101,12 +101,12 @@ import java.util.List;
  *
  *     @Test
  *     void shouldSaveUser() { // GH-90000
- *         User user = new User("john@example.com [GH-90000]");
+ *         User user = new User("john@example.com");
  *         repository.save(user); // GH-90000
  *
  *         Optional<User> found = repository.findById(user.getId()); // GH-90000
  *         assertThat(found).isPresent(); // GH-90000
- *         assertThat(found.get().getEmail()).isEqualTo("john@example.com [GH-90000]");
+ *         assertThat(found.get().getEmail()).isEqualTo("john@example.com");
  *     }
  *
  *     @AfterEach
@@ -117,7 +117,7 @@ import java.util.List;
  *
  * // 5. Query utilities for assertions
  * try (DatabaseTestContainer db = DatabaseTestContainer.postgres() // GH-90000
- *         .withMigrations("classpath:db/migration [GH-90000]")) {
+ *         .withMigrations("classpath:db/migration")) {
  *     db.start(); // GH-90000
  *
  *     // Insert test data
@@ -130,11 +130,11 @@ import java.util.List;
  *     List<String> activeEmails = db.query( // GH-90000
  *         "SELECT email FROM users WHERE active = ? ORDER BY email",
  *         String.class,
- *         rs -> rs.getString("email [GH-90000]"),
+ *         rs -> rs.getString("email"),
  *         true
  *     );
  *
- *     assertThat(activeEmails).containsExactly("john@example.com [GH-90000]");
+ *     assertThat(activeEmails).containsExactly("john@example.com");
  *
  *     // Count all users
  *     Integer count = db.queryForObject( // GH-90000
@@ -147,7 +147,7 @@ import java.util.List;
  *
  * // 6. Batch operations for test data setup
  * try (DatabaseTestContainer db = DatabaseTestContainer.postgres() // GH-90000
- *         .withMigrations("classpath:db/migration [GH-90000]")) {
+ *         .withMigrations("classpath:db/migration")) {
  *     db.start(); // GH-90000
  *
  *     // Load 1000 test users efficiently
@@ -180,7 +180,7 @@ import java.util.List;
  *     @BeforeAll
  *     static void setupContainer() throws Exception { // GH-90000
  *         db = DatabaseTestContainer.postgres() // GH-90000
- *             .withMigrations("classpath:db/migration [GH-90000]");
+ *             .withMigrations("classpath:db/migration");
  *         db.start(); // GH-90000
  *
  *         // Load test data once
@@ -197,7 +197,7 @@ import java.util.List;
  *         List<User> users = db.query( // GH-90000
  *             "SELECT * FROM users LIMIT 100",
  *             User.class,
- *             rs -> new User(rs.getLong("id [GH-90000]"), rs.getString("email [GH-90000]"))
+ *             rs -> new User(rs.getLong("id"), rs.getString("email"))
  *         );
  *         long durationMs = (System.nanoTime() - start) / 1_000_000; // GH-90000
  *
@@ -231,8 +231,8 @@ import java.util.List;
  * Automatic Flyway migration execution:
  * <pre>{@code
  * DatabaseTestContainer db = DatabaseTestContainer.postgres() // GH-90000
- *     .withMigrations("classpath:db/migration [GH-90000]")
- *     .withBaselineVersion("1.0.0 [GH-90000]")
+ *     .withMigrations("classpath:db/migration")
+ *     .withBaselineVersion("1.0.0")
  *     .withValidateOnMigrate(true); // GH-90000
  *
  * db.start();  // Migrations applied automatically // GH-90000
@@ -255,14 +255,14 @@ import java.util.List;
  * <p><b>Builder Pattern</b><br>
  * <pre>{@code
  * DatabaseTestContainer db = DatabaseTestContainer.builder() // GH-90000
- *     .image("postgres:14.9-alpine [GH-90000]")      // Custom version
- *     .database("mydb [GH-90000]")                   // Custom database name
- *     .username("admin [GH-90000]")                  // Custom username
- *     .password("secret [GH-90000]")                 // Custom password
+ *     .image("postgres:14.9-alpine")      // Custom version
+ *     .database("mydb")                   // Custom database name
+ *     .username("admin")                  // Custom username
+ *     .password("secret")                 // Custom password
  *     .poolSize(20)                       // Custom pool size // GH-90000
  *     .startupTimeout(Duration.ofMinutes(2))  // Custom timeout // GH-90000
- *     .withMigrations("classpath:db/migration [GH-90000]")
- *     .withBaselineVersion("2.0.0 [GH-90000]")
+ *     .withMigrations("classpath:db/migration")
+ *     .withBaselineVersion("2.0.0")
  *     .withValidateOnMigrate(true) // GH-90000
  *     .build(); // GH-90000
  * }</pre>
@@ -337,11 +337,11 @@ public final class DatabaseTestContainer implements AutoCloseable {
      */
     public void start() { // GH-90000
         if (started) { // GH-90000
-            LOG.debug("Container already started [GH-90000]");
+            LOG.debug("Container already started");
             return;
         }
 
-        LOG.info("Starting database test container... [GH-90000]");
+        LOG.info("Starting database test container...");
 
         try {
             container.start(); // GH-90000
@@ -375,14 +375,14 @@ public final class DatabaseTestContainer implements AutoCloseable {
             return;
         }
 
-        LOG.info("Stopping database test container... [GH-90000]");
+        LOG.info("Stopping database test container...");
 
         try {
             if (container.isRunning()) { // GH-90000
                 container.stop(); // GH-90000
             }
             started = false;
-            LOG.info("Database test container stopped [GH-90000]");
+            LOG.info("Database test container stopped");
         } catch (Exception e) { // GH-90000
             LOG.error("Error stopping database test container", e); // GH-90000
         }
@@ -495,7 +495,7 @@ public final class DatabaseTestContainer implements AutoCloseable {
         checkStarted(); // GH-90000
 
         if (migrationLocations.length == 0) { // GH-90000
-            LOG.debug("No migration locations configured [GH-90000]");
+            LOG.debug("No migration locations configured");
             return;
         }
 
@@ -532,17 +532,17 @@ public final class DatabaseTestContainer implements AutoCloseable {
     public void clean() { // GH-90000
         checkStarted(); // GH-90000
 
-        LOG.info("Cleaning database... [GH-90000]");
+        LOG.info("Cleaning database...");
 
         if (migration != null) { // GH-90000
             migration.clean(); // GH-90000
         } else {
             // Manual cleanup if no migration configured
-            execute("DROP SCHEMA public CASCADE [GH-90000]");
-            execute("CREATE SCHEMA public [GH-90000]");
+            execute("DROP SCHEMA public CASCADE");
+            execute("CREATE SCHEMA public");
         }
 
-        LOG.info("Database cleaned [GH-90000]");
+        LOG.info("Database cleaned");
     }
 
     /**
@@ -553,14 +553,14 @@ public final class DatabaseTestContainer implements AutoCloseable {
     public void reset() { // GH-90000
         checkStarted(); // GH-90000
 
-        LOG.info("Resetting database... [GH-90000]");
+        LOG.info("Resetting database...");
 
         clean(); // GH-90000
         if (autoMigrate && migrationLocations.length > 0) { // GH-90000
             runMigrations(); // GH-90000
         }
 
-        LOG.info("Database reset completed [GH-90000]");
+        LOG.info("Database reset completed");
     }
 
     /**
@@ -581,7 +581,7 @@ public final class DatabaseTestContainer implements AutoCloseable {
             .poolSize(5) // Smaller pool for tests // GH-90000
             .showSql(true) // Enable SQL logging in tests // GH-90000
             .formatSql(true) // GH-90000
-            .ddlAuto("validate [GH-90000]") // Validate schema in tests
+            .ddlAuto("validate") // Validate schema in tests
             .enableCache(false) // Disable second-level cache in tests // GH-90000
             .build(); // GH-90000
     }
@@ -652,7 +652,7 @@ public final class DatabaseTestContainer implements AutoCloseable {
      */
     private void checkStarted() { // GH-90000
         if (!started) { // GH-90000
-            throw new IllegalStateException("Database test container is not started [GH-90000]");
+            throw new IllegalStateException("Database test container is not started");
         }
     }
 

@@ -15,11 +15,11 @@ import org.junit.jupiter.api.Test;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("InMemoryKgService [GH-90000]")
+@DisplayName("InMemoryKgService")
 class InMemoryKgServiceTest extends EventloopTestBase {
 
     @Test
-    @DisplayName("wraps invalid pattern submission metadata in typed operation exception [GH-90000]")
+    @DisplayName("wraps invalid pattern submission metadata in typed operation exception")
     void wrapsInvalidPatternSubmissionMetadataInTypedOperationException() { // GH-90000
         InMemoryKgService service = new InMemoryKgService(); // GH-90000
 
@@ -33,7 +33,7 @@ class InMemoryKgServiceTest extends EventloopTestBase {
                                         "SEQ(login,logout)", // GH-90000
                                         Map.of("confidence", "not-a-number")))); // GH-90000
 
-        assertThat(exception.getMessage()).contains("not-a-number [GH-90000]");
+        assertThat(exception.getMessage()).contains("not-a-number");
         assertThat(exception.getCause()).isInstanceOf(NumberFormatException.class); // GH-90000
     }
 }

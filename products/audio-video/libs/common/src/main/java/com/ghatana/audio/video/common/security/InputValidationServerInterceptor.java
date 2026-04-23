@@ -27,7 +27,11 @@ import com.google.protobuf.MessageLite;
  * <p>The check is performed on the first message received (streaming calls are not
  * gated per-chunk; callers should use {@code maxInboundMessageSize} on the ServerBuilder
  * for hard byte limits at the transport layer).
- */
+  * @doc.type class
+ * @doc.purpose Provides input validation server interceptor functionality.
+ * @doc.layer product
+ * @doc.pattern Filter
+*/
 public class InputValidationServerInterceptor implements ServerInterceptor {
 
     private static final Logger LOG = LoggerFactory.getLogger(InputValidationServerInterceptor.class);

@@ -27,21 +27,21 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@Tag("integration [GH-90000]")
+@Tag("integration")
 @Testcontainers(disabledWithoutDocker = true) // GH-90000
-@DisplayName("PostgresIntegrationTest [GH-90000]")
+@DisplayName("PostgresIntegrationTest")
 class PostgresIntegrationTest {
 
     @Container
-    @SuppressWarnings("resource [GH-90000]") // Managed by Testcontainers/JUnit lifecycle
+    @SuppressWarnings("resource") // Managed by Testcontainers/JUnit lifecycle
     private static final PostgreSQLContainer<?> POSTGRES =
-        new PostgreSQLContainer<>("postgres:15-alpine [GH-90000]")
-            .withDatabaseName("aep_integration [GH-90000]")
-            .withUsername("aep [GH-90000]")
-            .withPassword("aep [GH-90000]");
+        new PostgreSQLContainer<>("postgres:15-alpine")
+            .withDatabaseName("aep_integration")
+            .withUsername("aep")
+            .withPassword("aep");
 
     @Test
-    @DisplayName("can create a table and round-trip a row [GH-90000]")
+    @DisplayName("can create a table and round-trip a row")
     void canCreateTableAndRoundTripRow() throws Exception { // GH-90000
         HikariConfig config = new HikariConfig(); // GH-90000
         config.setJdbcUrl(POSTGRES.getJdbcUrl()); // GH-90000
@@ -51,12 +51,12 @@ class PostgresIntegrationTest {
         try (HikariDataSource dataSource = new HikariDataSource(config); // GH-90000
              Connection connection = dataSource.getConnection(); // GH-90000
              Statement statement = connection.createStatement()) { // GH-90000
-            statement.execute("CREATE TABLE IF NOT EXISTS aep_probe (id TEXT PRIMARY KEY, value TEXT NOT NULL) [GH-90000]");
-            statement.execute("INSERT INTO aep_probe (id, value) VALUES ('probe-1', 'ok') [GH-90000]");
+            statement.execute("CREATE TABLE IF NOT EXISTS aep_probe (id TEXT PRIMARY KEY, value TEXT NOT NULL)");
+            statement.execute("INSERT INTO aep_probe (id, value) VALUES ('probe-1', 'ok')");
 
-            try (ResultSet resultSet = statement.executeQuery("SELECT value FROM aep_probe WHERE id = 'probe-1' [GH-90000]")) {
+            try (ResultSet resultSet = statement.executeQuery("SELECT value FROM aep_probe WHERE id = 'probe-1'")) {
                 assertThat(resultSet.next()).isTrue(); // GH-90000
-                assertThat(resultSet.getString(1)).isEqualTo("ok [GH-90000]");
+                assertThat(resultSet.getString(1)).isEqualTo("ok");
             }
         }
     }

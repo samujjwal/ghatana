@@ -15,32 +15,32 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("PlatformVersion [GH-90000]")
+@DisplayName("PlatformVersion")
 class PlatformVersionTest {
 
     @Test
-    @DisplayName("should load platform version from properties file [GH-90000]")
+    @DisplayName("should load platform version from properties file")
     void shouldLoadPlatformVersion() { // GH-90000
         PlatformVersion version = PlatformVersion.get(); // GH-90000
         assertThat(version.platformVersion()).isNotNull().isNotEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("should load SDK version from properties file [GH-90000]")
+    @DisplayName("should load SDK version from properties file")
     void shouldLoadSdkVersion() { // GH-90000
         PlatformVersion version = PlatformVersion.get(); // GH-90000
         assertThat(version.sdkVersion()).isNotNull().isNotEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("should load instrumentation version from properties file [GH-90000]")
+    @DisplayName("should load instrumentation version from properties file")
     void shouldLoadInstrumentationVersion() { // GH-90000
         PlatformVersion version = PlatformVersion.get(); // GH-90000
         assertThat(version.instrumentationVersion()).isNotNull().isNotEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("should return singleton instance [GH-90000]")
+    @DisplayName("should return singleton instance")
     void shouldReturnSingleton() { // GH-90000
         assertThat(PlatformVersion.get()).isSameAs(PlatformVersion.get()); // GH-90000
     }

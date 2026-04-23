@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Ghatana Kernel Team
  * @since 1.1.0
  */
-@DisplayName("Architecture Drift Detection Tests [GH-90000]")
+@DisplayName("Architecture Drift Detection Tests")
 public class KernelArchitectureDriftTest {
 
     /**
@@ -93,16 +93,16 @@ public class KernelArchitectureDriftTest {
      * Patterns indicating product-aware branching in source code.
      */
     private static final List<Pattern> PRODUCT_BRANCHING_PATTERNS = List.of( // GH-90000
-            // equals("phr [GH-90000]"), equals("finance [GH-90000]"), etc.
+            // equals("phr"), equals("finance"), etc.
             Pattern.compile("\\.equals\\(\"(phr|finance|flashit|aura|insurance|banking)\"\\)"), // GH-90000
             // getSourceProduct().equals(...) or getTargetProduct().equals(...) // GH-90000
-            Pattern.compile("get(Source|Target)Product\\(\\)\\.equals [GH-90000]"),
+            Pattern.compile("get(Source|Target)Product\\(\\)\\.equals"),
             // switch or if on getProductId() // GH-90000
-            Pattern.compile("getProductId\\(\\) [GH-90000]")
+            Pattern.compile("getProductId\\(\\)")
     );
 
     @Test
-    @DisplayName("Canonical kernel packages must not contain hardcoded product literals [GH-90000]")
+    @DisplayName("Canonical kernel packages must not contain hardcoded product literals")
     void canonicalPackagesMustNotContainProductLiterals() { // GH-90000
         Path srcRoot = findKernelSourceRoot(); // GH-90000
         if (srcRoot == null) { // GH-90000
@@ -119,17 +119,17 @@ public class KernelArchitectureDriftTest {
         }
 
         if (!violations.isEmpty()) { // GH-90000
-            StringBuilder sb = new StringBuilder("Product literals found in canonical kernel packages:\n [GH-90000]");
+            StringBuilder sb = new StringBuilder("Product literals found in canonical kernel packages:\n");
             violations.forEach((file, matches) -> { // GH-90000
-                sb.append("   [GH-90000]").append(file).append(":\n [GH-90000]");
-                matches.forEach(m -> sb.append("    -  [GH-90000]").append(m).append("\n [GH-90000]"));
+                sb.append("  ").append(file).append(":\n");
+                matches.forEach(m -> sb.append("    - ").append(m).append("\n"));
             });
             fail(sb.toString()); // GH-90000
         }
     }
 
     @Test
-    @DisplayName("Canonical kernel packages must not contain product-aware branching [GH-90000]")
+    @DisplayName("Canonical kernel packages must not contain product-aware branching")
     void canonicalPackagesMustNotContainProductBranching() { // GH-90000
         Path srcRoot = findKernelSourceRoot(); // GH-90000
         if (srcRoot == null) return; // GH-90000
@@ -144,17 +144,17 @@ public class KernelArchitectureDriftTest {
         }
 
         if (!violations.isEmpty()) { // GH-90000
-            StringBuilder sb = new StringBuilder("Product-aware branching in canonical kernel packages:\n [GH-90000]");
+            StringBuilder sb = new StringBuilder("Product-aware branching in canonical kernel packages:\n");
             violations.forEach((file, matches) -> { // GH-90000
-                sb.append("   [GH-90000]").append(file).append(":\n [GH-90000]");
-                matches.forEach(m -> sb.append("    -  [GH-90000]").append(m).append("\n [GH-90000]"));
+                sb.append("  ").append(file).append(":\n");
+                matches.forEach(m -> sb.append("    - ").append(m).append("\n"));
             });
             fail(sb.toString()); // GH-90000
         }
     }
 
     @Test
-    @DisplayName("Report product-aware code in transitional packages (informational) [GH-90000]")
+    @DisplayName("Report product-aware code in transitional packages (informational)")
     void reportProductAwareCodeInTransitionalPackages() { // GH-90000
         Path srcRoot = findKernelSourceRoot(); // GH-90000
         if (srcRoot == null) return; // GH-90000
@@ -175,15 +175,15 @@ public class KernelArchitectureDriftTest {
             StringBuilder sb = new StringBuilder( // GH-90000
                     "Product-aware code in transitional packages (expected during migration):\n"); // GH-90000
             warnings.forEach((file, matches) -> { // GH-90000
-                sb.append("   [GH-90000]").append(file).append(":\n [GH-90000]");
-                matches.forEach(m -> sb.append("    -  [GH-90000]").append(m).append("\n [GH-90000]"));
+                sb.append("  ").append(file).append(":\n");
+                matches.forEach(m -> sb.append("    - ").append(m).append("\n"));
             });
             System.out.println(sb); // GH-90000
         }
     }
 
     @Test
-    @DisplayName("No new non-deprecated classes in legacy capability package [GH-90000]")
+    @DisplayName("No new non-deprecated classes in legacy capability package")
     void noNewClassesInLegacyCapabilityPackage() { // GH-90000
         // capability.KernelCapability is the only class that should exist in this package
         // and it must be deprecated. This prevents new code from being added to the
@@ -191,18 +191,18 @@ public class KernelArchitectureDriftTest {
         Path srcRoot = findKernelSourceRoot(); // GH-90000
         if (srcRoot == null) return; // GH-90000
 
-        Path legacyPkg = srcRoot.resolve("com/ghatana/kernel/capability [GH-90000]");
+        Path legacyPkg = srcRoot.resolve("com/ghatana/kernel/capability");
         if (!Files.isDirectory(legacyPkg)) return; // GH-90000
 
         try {
             List<Path> javaFiles = Files.list(legacyPkg) // GH-90000
-                    .filter(p -> p.toString().endsWith(".java [GH-90000]"))
+                    .filter(p -> p.toString().endsWith(".java"))
                     .collect(Collectors.toList()); // GH-90000
 
             assertTrue(javaFiles.size() <= 1, // GH-90000
                     "Legacy capability package should contain at most 1 class (KernelCapability). " + // GH-90000
                     "Found: " + javaFiles.stream().map(p -> p.getFileName().toString()) // GH-90000
-                            .collect(Collectors.joining(",  [GH-90000]")) +
+                            .collect(Collectors.joining(", ")) +
                     ". New capabilities must use the descriptor package.");
         } catch (IOException e) { // GH-90000
             // Skip if filesystem access fails
@@ -210,7 +210,7 @@ public class KernelArchitectureDriftTest {
     }
 
     @Test
-    @DisplayName("Canonical packages must not directly instantiate deprecated transitional types [GH-90000]")
+    @DisplayName("Canonical packages must not directly instantiate deprecated transitional types")
     void canonicalPackagesMustNotInstantiateDeprecatedTypes() { // GH-90000
         // Detects if a developer re-introduces usage of legacy cross-product types
         // (e.g. new CrossProductAuditService(...)) inside canonical product-agnostic packages. // GH-90000
@@ -228,7 +228,7 @@ public class KernelArchitectureDriftTest {
                 Files.walkFileTree(pkgDir, new SimpleFileVisitor<>() { // GH-90000
                     @Override
                     public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException { // GH-90000
-                        if (!file.toString().endsWith(".java [GH-90000]")) return FileVisitResult.CONTINUE;
+                        if (!file.toString().endsWith(".java")) return FileVisitResult.CONTINUE;
                         String content = Files.readString(file); // GH-90000
 
                         List<String> matches = new ArrayList<>(); // GH-90000
@@ -238,7 +238,7 @@ public class KernelArchitectureDriftTest {
                                 matches.add("Direct instantiation of deprecated type: new " + type + "("); // GH-90000
                             }
                             // Check for import of the deprecated type
-                            if (content.contains("import com.ghatana.kernel. [GH-90000]") && content.contains(type + ";")) {
+                            if (content.contains("import com.ghatana.kernel.") && content.contains(type + ";")) {
                                 matches.add("Import of deprecated transitional type: " + type); // GH-90000
                             }
                         }
@@ -257,15 +257,15 @@ public class KernelArchitectureDriftTest {
             StringBuilder sb = new StringBuilder( // GH-90000
                 "Deprecated transitional types instantiated/imported in canonical kernel packages:\n");
             violations.forEach((file, matches) -> { // GH-90000
-                sb.append("   [GH-90000]").append(file).append(":\n [GH-90000]");
-                matches.forEach(m -> sb.append("    -  [GH-90000]").append(m).append("\n [GH-90000]"));
+                sb.append("  ").append(file).append(":\n");
+                matches.forEach(m -> sb.append("    - ").append(m).append("\n"));
             });
-            sb.append("\nCanonical packages must use the scope-aware replacements:\n [GH-90000]")
-              .append("  CrossProductAuditService     → CrossScopeAuditService\n [GH-90000]")
-              .append("  ProductBoundaryEnforcer      → ScopeBoundaryEnforcer\n [GH-90000]")
-              .append("  KernelInterProductBus        → KernelInterScopeBus\n [GH-90000]")
-              .append("  CrossProductWorkflowEngine   → CrossScopeWorkflowEngine\n [GH-90000]")
-              .append("  ProductPlugin                → KernelPlugin\n [GH-90000]");
+            sb.append("\nCanonical packages must use the scope-aware replacements:\n")
+              .append("  CrossProductAuditService     → CrossScopeAuditService\n")
+              .append("  ProductBoundaryEnforcer      → ScopeBoundaryEnforcer\n")
+              .append("  KernelInterProductBus        → KernelInterScopeBus\n")
+              .append("  CrossProductWorkflowEngine   → CrossScopeWorkflowEngine\n")
+              .append("  ProductPlugin                → KernelPlugin\n");
             fail(sb.toString()); // GH-90000
         }
     }
@@ -277,11 +277,11 @@ public class KernelArchitectureDriftTest {
             Files.walkFileTree(dir, new SimpleFileVisitor<>() { // GH-90000
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException { // GH-90000
-                    if (!file.toString().endsWith(".java [GH-90000]")) return FileVisitResult.CONTINUE;
+                    if (!file.toString().endsWith(".java")) return FileVisitResult.CONTINUE;
                     String content = Files.readString(file); // GH-90000
 
                     // Skip deprecated files — they have known product-aware code
-                    if (content.contains("@Deprecated [GH-90000]")) return FileVisitResult.CONTINUE;
+                    if (content.contains("@Deprecated")) return FileVisitResult.CONTINUE;
 
                     List<String> matches = new ArrayList<>(); // GH-90000
                     for (String literal : FORBIDDEN_PRODUCT_LITERALS) { // GH-90000
@@ -305,11 +305,11 @@ public class KernelArchitectureDriftTest {
             Files.walkFileTree(dir, new SimpleFileVisitor<>() { // GH-90000
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException { // GH-90000
-                    if (!file.toString().endsWith(".java [GH-90000]")) return FileVisitResult.CONTINUE;
+                    if (!file.toString().endsWith(".java")) return FileVisitResult.CONTINUE;
                     String content = Files.readString(file); // GH-90000
 
                     // Skip deprecated files
-                    if (content.contains("@Deprecated [GH-90000]")) return FileVisitResult.CONTINUE;
+                    if (content.contains("@Deprecated")) return FileVisitResult.CONTINUE;
 
                     List<String> matches = new ArrayList<>(); // GH-90000
                     for (Pattern pattern : PRODUCT_BRANCHING_PATTERNS) { // GH-90000
@@ -332,9 +332,9 @@ public class KernelArchitectureDriftTest {
     private Path findKernelSourceRoot() { // GH-90000
         // Try common project layouts
         Path[] candidates = {
-                Path.of("platform/java/kernel/src/main/java [GH-90000]"),
-                Path.of("src/main/java [GH-90000]"),
-                Path.of(System.getProperty("user.dir [GH-90000]"), "platform/java/kernel/src/main/java")
+                Path.of("platform/java/kernel/src/main/java"),
+                Path.of("src/main/java"),
+                Path.of(System.getProperty("user.dir"), "platform/java/kernel/src/main/java")
         };
         for (Path p : candidates) { // GH-90000
             if (Files.isDirectory(p)) return p; // GH-90000

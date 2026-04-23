@@ -38,7 +38,11 @@ import java.util.function.Supplier;
  *   // on shutdown:
  *   hms.stop();
  * }</pre>
- */
+  * @doc.type class
+ * @doc.purpose Provides health metrics server functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 public class HealthMetricsServer implements AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(HealthMetricsServer.class);

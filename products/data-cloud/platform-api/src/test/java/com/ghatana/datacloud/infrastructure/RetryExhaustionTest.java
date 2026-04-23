@@ -29,18 +29,18 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Infrastructure Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("RetryExhaustion – Retry Behavior (IE004) [GH-90000]")
+@DisplayName("RetryExhaustion – Retry Behavior (IE004)")
 class RetryExhaustionTest extends EventloopTestBase {
 
     @Mock
     private RetryableService service;
 
     @Nested
-    @DisplayName("Retry Policy [GH-90000]")
+    @DisplayName("Retry Policy")
     class RetryPolicyTests {
 
         @Test
-        @DisplayName("[IE004]: transient_errors_retried [GH-90000]")
+        @DisplayName("[IE004]: transient_errors_retried")
         void transientErrorsRetried() { // GH-90000
             AtomicInteger attempts = new AtomicInteger(0); // GH-90000
 
@@ -48,22 +48,22 @@ class RetryExhaustionTest extends EventloopTestBase {
                 .thenAnswer(inv -> { // GH-90000
                     int attempt = attempts.incrementAndGet(); // GH-90000
                     if (attempt < 3) { // GH-90000
-                        return Promise.ofException(new RuntimeException("Transient error [GH-90000]"));
+                        return Promise.ofException(new RuntimeException("Transient error"));
                     }
-                    return Promise.of("success [GH-90000]");
+                    return Promise.of("success");
                 });
 
             String result = runPromise(() -> retry(() -> service.call(), 3, Duration.ofMillis(100))); // GH-90000
 
-            assertThat(result).isEqualTo("success [GH-90000]");
+            assertThat(result).isEqualTo("success");
             assertThat(attempts.get()).isEqualTo(3); // GH-90000
         }
 
         @Test
-        @DisplayName("[IE004]: permanent_errors_not_retried [GH-90000]")
+        @DisplayName("[IE004]: permanent_errors_not_retried")
         void permanentErrorsNotRetried() { // GH-90000
             when(service.call()) // GH-90000
-                .thenReturn(Promise.ofException(new IllegalArgumentException("Bad request [GH-90000]")));
+                .thenReturn(Promise.ofException(new IllegalArgumentException("Bad request")));
 
             AtomicInteger attempts = new AtomicInteger(0); // GH-90000
             try {
@@ -79,15 +79,15 @@ class RetryExhaustionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[IE004]: max_retries_exhausted_throws [GH-90000]")
+        @DisplayName("[IE004]: max_retries_exhausted_throws")
         void maxRetriesExhaustedThrows() { // GH-90000
             when(service.call()) // GH-90000
-                .thenReturn(Promise.ofException(new RuntimeException("Persistent error [GH-90000]")));
+                .thenReturn(Promise.ofException(new RuntimeException("Persistent error")));
 
             try {
                 runPromise(() -> retry(() -> service.call(), 3, Duration.ofMillis(100))); // GH-90000
             } catch (Exception e) { // GH-90000
-                assertThat(e).hasMessageContaining("Persistent error [GH-90000]");
+                assertThat(e).hasMessageContaining("Persistent error");
             }
 
             verify(service, times(3)).call(); // GH-90000
@@ -95,11 +95,11 @@ class RetryExhaustionTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Backoff Strategy [GH-90000]")
+    @DisplayName("Backoff Strategy")
     class BackoffStrategyTests {
 
         @Test
-        @DisplayName("[IE004]: exponential_backoff_increases_delay [GH-90000]")
+        @DisplayName("[IE004]: exponential_backoff_increases_delay")
         void exponentialBackoffIncreasesDelay() { // GH-90000
             Duration baseDelay = Duration.ofMillis(100); // GH-90000
 
@@ -113,7 +113,7 @@ class RetryExhaustionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[IE004]: max_backoff_limit_enforced [GH-90000]")
+        @DisplayName("[IE004]: max_backoff_limit_enforced")
         void maxBackoffLimitEnforced() { // GH-90000
             Duration baseDelay = Duration.ofMillis(100); // GH-90000
             Duration maxDelay = Duration.ofSeconds(5); // GH-90000
@@ -124,7 +124,7 @@ class RetryExhaustionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[IE004]: jitter_prevents_thundering_herd [GH-90000]")
+        @DisplayName("[IE004]: jitter_prevents_thundering_herd")
         void jitterPreventsThunderingHerd() { // GH-90000
             Duration baseDelay = Duration.ofMillis(1000); // GH-90000
 
@@ -145,19 +145,19 @@ class RetryExhaustionTest extends EventloopTestBase {
 
             // At least one delay should differ from the first (with 10 iterations, highly probable) // GH-90000
             assertThat(foundVariation) // GH-90000
-                .as("Jitter should produce variation in delays across multiple calls [GH-90000]")
+                .as("Jitter should produce variation in delays across multiple calls")
                 .isTrue(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Retry Exhaustion [GH-90000]")
+    @DisplayName("Retry Exhaustion")
     class RetryExhaustionTests {
 
         @Test
-        @DisplayName("[IE004]: exhausted_retry_throws_original_exception [GH-90000]")
+        @DisplayName("[IE004]: exhausted_retry_throws_original_exception")
         void exhaustedRetryThrowsOriginalException() { // GH-90000
-            RuntimeException original = new RuntimeException("Database connection failed [GH-90000]");
+            RuntimeException original = new RuntimeException("Database connection failed");
 
             when(service.call()) // GH-90000
                 .thenReturn(Promise.ofException(original)); // GH-90000
@@ -166,12 +166,12 @@ class RetryExhaustionTest extends EventloopTestBase {
                 runPromise(() -> retry(() -> service.call(), 3, Duration.ofMillis(100))); // GH-90000
             } catch (Exception e) { // GH-90000
                 assertThat(e).isInstanceOf(RuntimeException.class); // GH-90000
-                assertThat(e.getMessage()).contains("Database connection failed [GH-90000]");
+                assertThat(e.getMessage()).contains("Database connection failed");
             }
         }
 
         @Test
-        @DisplayName("[IE004]: retry_history_preserved [GH-90000]")
+        @DisplayName("[IE004]: retry_history_preserved")
         void retryHistoryPreserved() { // GH-90000
             // Retry attempts should be logged
             int maxAttempts = 3;
@@ -181,15 +181,15 @@ class RetryExhaustionTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Conditional Retry [GH-90000]")
+    @DisplayName("Conditional Retry")
     class ConditionalRetryTests {
 
         @Test
-        @DisplayName("[IE004]: retry_only_on_specific_exceptions [GH-90000]")
+        @DisplayName("[IE004]: retry_only_on_specific_exceptions")
         void retryOnlyOnSpecificExceptions() { // GH-90000
             // Only retry on IOException, not on IllegalArgumentException
-            boolean shouldRetry = shouldRetryOnException(new java.io.IOException("Network error [GH-90000]"));
-            boolean shouldNotRetry = shouldRetryOnException(new IllegalArgumentException("Bad input [GH-90000]"));
+            boolean shouldRetry = shouldRetryOnException(new java.io.IOException("Network error"));
+            boolean shouldNotRetry = shouldRetryOnException(new IllegalArgumentException("Bad input"));
 
             assertThat(shouldRetry).isTrue(); // GH-90000
             assertThat(shouldNotRetry).isFalse(); // GH-90000

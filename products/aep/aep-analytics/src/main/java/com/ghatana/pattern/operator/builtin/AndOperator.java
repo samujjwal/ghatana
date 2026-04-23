@@ -54,7 +54,10 @@ import java.util.Map;
  * @doc.limitation Compile-Time Only - This implementation validates pattern structure at compile time.
  *                 Runtime execution logic (partial match tracking, time window enforcement, event buffering)
  *                 is handled by the pattern engine's execution layer. Does not provide runtime matching logic.
- */
+  * @doc.type class
+ * @doc.purpose Provides and operator functionality.
+ * @doc.layer product
+*/
 public class AndOperator implements Operator {
 
     private static final String TYPE = "AND";

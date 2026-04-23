@@ -13,7 +13,11 @@ import io.activej.promise.Promise;
  *
  * Day 27 Implementation: Supports both RocksDB and Redis backends with
  * consistent API for pattern engine state persistence.
- */
+  * @doc.type interface
+ * @doc.purpose Provides state store functionality.
+ * @doc.layer product
+ * @doc.pattern Repository
+*/
 public interface StateStore {
 
     /**

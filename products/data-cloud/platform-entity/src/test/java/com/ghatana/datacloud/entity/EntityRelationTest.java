@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 class EntityRelationTest {
 
-    private static final UUID TEST_UUID = UUID.fromString("550e8400-e29b-41d4-a716-446655440000 [GH-90000]");
+    private static final UUID TEST_UUID = UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
 
     @Test
     void shouldCreateValidEntityRelation() { // GH-90000
@@ -28,7 +28,7 @@ class EntityRelationTest {
         );
 
         assertThat(relation.relatedEntityId()).isEqualTo(TEST_UUID); // GH-90000
-        assertThat(relation.collectionName()).isEqualTo("products [GH-90000]");
+        assertThat(relation.collectionName()).isEqualTo("products");
         assertThat(relation.relationType()).isEqualTo(RelationType.SIMILAR); // GH-90000
         assertThat(relation.similarity()).isEqualTo(0.87); // GH-90000
     }
@@ -41,7 +41,7 @@ class EntityRelationTest {
             RelationType.SIMILAR,
             0.5
         )).isInstanceOf(IllegalArgumentException.class) // GH-90000
-            .hasMessageContaining("Related entity ID must not be null [GH-90000]");
+            .hasMessageContaining("Related entity ID must not be null");
     }
 
     @Test
@@ -52,7 +52,7 @@ class EntityRelationTest {
             RelationType.SIMILAR,
             0.5
         )).isInstanceOf(IllegalArgumentException.class) // GH-90000
-            .hasMessageContaining("Collection name must not be blank [GH-90000]");
+            .hasMessageContaining("Collection name must not be blank");
     }
 
     @Test
@@ -63,7 +63,7 @@ class EntityRelationTest {
             RelationType.SIMILAR,
             0.5
         )).isInstanceOf(IllegalArgumentException.class) // GH-90000
-            .hasMessageContaining("Collection name must not be blank [GH-90000]");
+            .hasMessageContaining("Collection name must not be blank");
     }
 
     @Test
@@ -74,7 +74,7 @@ class EntityRelationTest {
             null,
             0.5
         )).isInstanceOf(IllegalArgumentException.class) // GH-90000
-            .hasMessageContaining("Relation type must not be null [GH-90000]");
+            .hasMessageContaining("Relation type must not be null");
     }
 
     @Test
@@ -85,7 +85,7 @@ class EntityRelationTest {
             RelationType.SIMILAR,
             -0.1
         )).isInstanceOf(IllegalArgumentException.class) // GH-90000
-            .hasMessageContaining("Similarity must be between 0.0 and 1.0 [GH-90000]");
+            .hasMessageContaining("Similarity must be between 0.0 and 1.0");
     }
 
     @Test
@@ -96,7 +96,7 @@ class EntityRelationTest {
             RelationType.SIMILAR,
             1.1
         )).isInstanceOf(IllegalArgumentException.class) // GH-90000
-            .hasMessageContaining("Similarity must be between 0.0 and 1.0 [GH-90000]");
+            .hasMessageContaining("Similarity must be between 0.0 and 1.0");
     }
 
     @Test
@@ -190,6 +190,6 @@ class EntityRelationTest {
         EntityRelation relation = new EntityRelation( // GH-90000
             TEST_UUID, "products", RelationType.SIMILAR, 0.87
         );
-        assertThat(relation.toString()).contains("EntityRelation [GH-90000]");
+        assertThat(relation.toString()).contains("EntityRelation");
     }
 }

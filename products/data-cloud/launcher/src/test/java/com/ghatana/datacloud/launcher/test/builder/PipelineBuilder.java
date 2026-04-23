@@ -18,13 +18,13 @@ import java.util.Map;
  * <p><strong>Example:</strong>
  * <pre>
  * {@code
- * Map<String, Object> pipeline = PipelineBuilder.create("etl-001 [GH-90000]")
- *     .withName("Daily ETL [GH-90000]")
+ * Map<String, Object> pipeline = PipelineBuilder.create("etl-001")
+ *     .withName("Daily ETL")
  *     .withStep("extract", Map.of("source", "jdbc")) // GH-90000
  *     .withStep("transform", Map.of("type", "sql")) // GH-90000
  *     .withStep("load", Map.of("target", "warehouse")) // GH-90000
- *     .withTenant("tenant-alpha [GH-90000]")
- *     .withSchedule("0 0 * * * [GH-90000]")
+ *     .withTenant("tenant-alpha")
+ *     .withSchedule("0 0 * * *")
  *     .build(); // GH-90000
  * }
  * </pre>
@@ -51,7 +51,7 @@ public final class PipelineBuilder {
     private PipelineBuilder(String id) { // GH-90000
         this.id = id;
         this.name = "Pipeline-" + id;
-        this.createdAt = Instant.parse("2026-01-01T00:00:00Z [GH-90000]");
+        this.createdAt = Instant.parse("2026-01-01T00:00:00Z");
         this.updatedAt = createdAt;
     }
 
@@ -261,6 +261,6 @@ public final class PipelineBuilder {
             .withExtractStep("file", Map.of("path", "/data/input.csv", "format", "csv")) // GH-90000
             .withTransformStep("python", Map.of("script", "transform.py")) // GH-90000
             .withLoadStep("file", Map.of("path", "/data/output.parquet")) // GH-90000
-            .withSchedule("0 2 * * * [GH-90000]"); // Daily at 2 AM
+            .withSchedule("0 2 * * *"); // Daily at 2 AM
     }
 }

@@ -18,12 +18,12 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Database Transaction Integration Tests [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("Database Transaction Integration Tests")
+@Tag("integration")
 class DatabaseTransactionIntegrationTest extends EventloopTestBase {
 
     @Test
-    @DisplayName("should commit transaction successfully [GH-90000]")
+    @DisplayName("should commit transaction successfully")
     void shouldCommitTransactionSuccessfully() { // GH-90000
         AtomicBoolean committed = new AtomicBoolean(false); // GH-90000
 
@@ -41,14 +41,14 @@ class DatabaseTransactionIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should rollback transaction on error [GH-90000]")
+    @DisplayName("should rollback transaction on error")
     void shouldRollbackTransactionOnError() { // GH-90000
         AtomicBoolean rolledBack = new AtomicBoolean(false); // GH-90000
 
         try {
             // Begin transaction
             // Simulate error
-            throw new RuntimeException("Simulated error [GH-90000]");
+            throw new RuntimeException("Simulated error");
         } catch (Exception e) { // GH-90000
             // Rollback on error
             rolledBack.set(true); // GH-90000
@@ -58,7 +58,7 @@ class DatabaseTransactionIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should handle nested transactions with savepoints [GH-90000]")
+    @DisplayName("should handle nested transactions with savepoints")
     void shouldHandleNestedTransactionsWithSavepoints() { // GH-90000
         AtomicInteger savepointCount = new AtomicInteger(0); // GH-90000
 
@@ -76,7 +76,7 @@ class DatabaseTransactionIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should enforce transaction isolation levels [GH-90000]")
+    @DisplayName("should enforce transaction isolation levels")
     void shouldEnforceTransactionIsolationLevels() { // GH-90000
         // Test READ_COMMITTED isolation
         AtomicBoolean isolationEnforced = new AtomicBoolean(true); // GH-90000
@@ -88,7 +88,7 @@ class DatabaseTransactionIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should handle concurrent transactions correctly [GH-90000]")
+    @DisplayName("should handle concurrent transactions correctly")
     void shouldHandleConcurrentTransactionsCorrectly() { // GH-90000
         AtomicInteger transactionCount = new AtomicInteger(0); // GH-90000
 
@@ -101,7 +101,7 @@ class DatabaseTransactionIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should detect and prevent deadlocks [GH-90000]")
+    @DisplayName("should detect and prevent deadlocks")
     void shouldDetectAndPreventDeadlocks() { // GH-90000
         AtomicBoolean deadlockDetected = new AtomicBoolean(false); // GH-90000
 
@@ -112,7 +112,7 @@ class DatabaseTransactionIntegrationTest extends EventloopTestBase {
 
             // Deadlock detection should trigger
         } catch (Exception e) { // GH-90000
-            if (e.getMessage().contains("deadlock [GH-90000]")) {
+            if (e.getMessage().contains("deadlock")) {
                 deadlockDetected.set(true); // GH-90000
             }
         }
@@ -122,7 +122,7 @@ class DatabaseTransactionIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should handle transaction timeout [GH-90000]")
+    @DisplayName("should handle transaction timeout")
     void shouldHandleTransactionTimeout() { // GH-90000
         AtomicBoolean timeoutHandled = new AtomicBoolean(false); // GH-90000
 
@@ -141,7 +141,7 @@ class DatabaseTransactionIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should maintain ACID properties [GH-90000]")
+    @DisplayName("should maintain ACID properties")
     void shouldMaintainAcidProperties() { // GH-90000
         // Atomicity: All or nothing
         AtomicBoolean atomicity = new AtomicBoolean(true); // GH-90000
@@ -162,7 +162,7 @@ class DatabaseTransactionIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should handle optimistic locking conflicts [GH-90000]")
+    @DisplayName("should handle optimistic locking conflicts")
     void shouldHandleOptimisticLockingConflicts() { // GH-90000
         AtomicBoolean conflictDetected = new AtomicBoolean(false); // GH-90000
 
@@ -172,9 +172,9 @@ class DatabaseTransactionIntegrationTest extends EventloopTestBase {
             // Transaction 1: Try to update with version 1
             // Should detect version conflict
 
-            throw new RuntimeException("Optimistic lock exception [GH-90000]");
+            throw new RuntimeException("Optimistic lock exception");
         } catch (Exception e) { // GH-90000
-            if (e.getMessage().contains("lock [GH-90000]")) {
+            if (e.getMessage().contains("lock")) {
                 conflictDetected.set(true); // GH-90000
             }
         }
@@ -183,7 +183,7 @@ class DatabaseTransactionIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should support read-only transactions [GH-90000]")
+    @DisplayName("should support read-only transactions")
     void shouldSupportReadOnlyTransactions() { // GH-90000
         AtomicBoolean readOnlyEnforced = new AtomicBoolean(true); // GH-90000
 
@@ -201,7 +201,7 @@ class DatabaseTransactionIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should handle transaction propagation correctly [GH-90000]")
+    @DisplayName("should handle transaction propagation correctly")
     void shouldHandleTransactionPropagationCorrectly() { // GH-90000
         AtomicInteger transactionDepth = new AtomicInteger(0); // GH-90000
 
@@ -218,7 +218,7 @@ class DatabaseTransactionIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should cleanup resources on transaction completion [GH-90000]")
+    @DisplayName("should cleanup resources on transaction completion")
     void shouldCleanupResourcesOnTransactionCompletion() { // GH-90000
         AtomicBoolean resourcesCleaned = new AtomicBoolean(false); // GH-90000
 
@@ -235,7 +235,7 @@ class DatabaseTransactionIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should handle distributed transactions [GH-90000]")
+    @DisplayName("should handle distributed transactions")
     void shouldHandleDistributedTransactions() { // GH-90000
         AtomicBoolean distributedTxSupported = new AtomicBoolean(true); // GH-90000
 
@@ -251,7 +251,7 @@ class DatabaseTransactionIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should support transaction callbacks [GH-90000]")
+    @DisplayName("should support transaction callbacks")
     void shouldSupportTransactionCallbacks() { // GH-90000
         AtomicBoolean beforeCommitCalled = new AtomicBoolean(false); // GH-90000
         AtomicBoolean afterCommitCalled = new AtomicBoolean(false); // GH-90000
@@ -268,7 +268,7 @@ class DatabaseTransactionIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should handle transaction retry logic [GH-90000]")
+    @DisplayName("should handle transaction retry logic")
     void shouldHandleTransactionRetryLogic() { // GH-90000
         AtomicInteger retryCount = new AtomicInteger(0); // GH-90000
         int maxRetries = 3;
@@ -278,7 +278,7 @@ class DatabaseTransactionIntegrationTest extends EventloopTestBase {
                 // Attempt transaction
                 if (retryCount.get() < 2) { // GH-90000
                     retryCount.incrementAndGet(); // GH-90000
-                    throw new RuntimeException("Transient error [GH-90000]");
+                    throw new RuntimeException("Transient error");
                 }
                 // Success on third attempt
                 break;

@@ -30,7 +30,7 @@ import org.junit.jupiter.api.io.TempDir;
  * Tests cross-language refactoring using mock implementations. This test ensures that the
  * RefactoringOrchestrator can handle refactorings across different languages.
  */
-@Disabled("Temporarily disabled until cross-language refactoring is fully implemented [GH-90000]")
+@Disabled("Temporarily disabled until cross-language refactoring is fully implemented")
 /**
  * @doc.type class
  * @doc.purpose Handles cross language refactoring test operations
@@ -84,8 +84,8 @@ public class CrossLanguageRefactoringTest {
         orchestrator.registerRefactoring(typescriptRefactoring); // GH-90000
 
         // Create test files
-        pythonFile = tempDir.resolve("module.py [GH-90000]");
-        typescriptFile = tempDir.resolve("component.ts [GH-90000]");
+        pythonFile = tempDir.resolve("module.py");
+        typescriptFile = tempDir.resolve("component.ts");
 
         // Create Python file
         String pythonCode =
@@ -126,13 +126,13 @@ public class CrossLanguageRefactoringTest {
         CrossLanguageReference pyToTsRef =
                 CrossLanguageReference.builder() // GH-90000
                         .sourceFile(pythonFile.toString()) // GH-90000
-                        .sourceLanguage("python [GH-90000]")
-                        .sourceElement("use_typescript_function [GH-90000]")
-                        .sourceElementType("METHOD [GH-90000]")
+                        .sourceLanguage("python")
+                        .sourceElement("use_typescript_function")
+                        .sourceElementType("METHOD")
                         .sourcePosition(4, 4) // GH-90000
                         .targetFile(typescriptFile.toString()) // GH-90000
                         .targetLanguage(TYPESCRIPT) // GH-90000
-                        .targetElement("typescript_function [GH-90000]")
+                        .targetElement("typescript_function")
                         .targetElementType(FUNCTION) // GH-90000
                         .referenceType(ReferenceType.METHOD_CALL) // GH-90000
                         .build(); // GH-90000
@@ -141,12 +141,12 @@ public class CrossLanguageRefactoringTest {
                 CrossLanguageReference.builder() // GH-90000
                         .sourceFile(typescriptFile.toString()) // GH-90000
                         .sourceLanguage(TYPESCRIPT) // GH-90000
-                        .sourceElement("callPythonFunction [GH-90000]")
-                        .sourceElementType("METHOD [GH-90000]")
+                        .sourceElement("callPythonFunction")
+                        .sourceElementType("METHOD")
                         .sourcePosition(6, 4) // GH-90000
                         .targetFile(pythonFile.toString()) // GH-90000
-                        .targetLanguage("python [GH-90000]")
-                        .targetElement("old_function [GH-90000]")
+                        .targetLanguage("python")
+                        .targetElement("old_function")
                         .targetElementType(FUNCTION) // GH-90000
                         .referenceType(ReferenceType.METHOD_CALL) // GH-90000
                         .build(); // GH-90000
@@ -169,19 +169,19 @@ public class CrossLanguageRefactoringTest {
 
         // Verify Python file was updated
         String pythonContent = readFileContent(pythonFile); // GH-90000
-        assertThat(pythonContent).contains("def new_function() [GH-90000]");
-        assertThat(pythonContent).doesNotContain("def old_function() [GH-90000]");
+        assertThat(pythonContent).contains("def new_function()");
+        assertThat(pythonContent).doesNotContain("def old_function()");
 
         // Verify TypeScript file was updated
         String tsContent = readFileContent(typescriptFile); // GH-90000
-        assertThat(tsContent).contains("Calling new_function [GH-90000]");
-        assertThat(tsContent).doesNotContain("Calling old_function [GH-90000]");
+        assertThat(tsContent).contains("Calling new_function");
+        assertThat(tsContent).doesNotContain("Calling old_function");
     }
 
     @Test
     void shouldHandleTypeScriptToJavaScriptRefactoring() { // GH-90000
         // Create JavaScript file
-        Path jsFile = tempDir.resolve("script.js [GH-90000]");
+        Path jsFile = tempDir.resolve("script.js");
         try {
             String jsCode =
                     "// JavaScript code that uses TypeScript function\n"
@@ -194,13 +194,13 @@ public class CrossLanguageRefactoringTest {
             CrossLanguageReference jsToTsRef =
                     CrossLanguageReference.builder() // GH-90000
                             .sourceFile(jsFile.toString()) // GH-90000
-                            .sourceLanguage("javascript [GH-90000]")
-                            .sourceElement("jsFunction [GH-90000]")
-                            .sourceElementType("FUNCTION [GH-90000]")
+                            .sourceLanguage("javascript")
+                            .sourceElement("jsFunction")
+                            .sourceElementType("FUNCTION")
                             .sourcePosition(3, 4) // GH-90000
                             .targetFile(typescriptFile.toString()) // GH-90000
                             .targetLanguage(TYPESCRIPT) // GH-90000
-                            .targetElement("typescript_function [GH-90000]")
+                            .targetElement("typescript_function")
                             .targetElementType(FUNCTION) // GH-90000
                             .referenceType(ReferenceType.METHOD_CALL) // GH-90000
                             .build(); // GH-90000
@@ -226,13 +226,13 @@ public class CrossLanguageRefactoringTest {
 
             // Verify TypeScript file was updated
             String tsContent = readFileContent(typescriptFile); // GH-90000
-            assertThat(tsContent).contains("function renamed_typescript_function() [GH-90000]");
-            assertThat(tsContent).doesNotContain("function typescript_function() [GH-90000]");
+            assertThat(tsContent).contains("function renamed_typescript_function()");
+            assertThat(tsContent).doesNotContain("function typescript_function()");
 
             // Verify JavaScript file was updated
             String jsContent = readFileContent(jsFile); // GH-90000
-            assertThat(jsContent).contains("return renamed_typescript_function() [GH-90000]");
-            assertThat(jsContent).doesNotContain("return typescript_function() [GH-90000]");
+            assertThat(jsContent).contains("return renamed_typescript_function()");
+            assertThat(jsContent).doesNotContain("return typescript_function()");
         } catch (IOException e) { // GH-90000
             throw new RuntimeException("Failed to create test file", e); // GH-90000
         }

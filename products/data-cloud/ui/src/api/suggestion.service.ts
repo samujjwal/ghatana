@@ -1,7 +1,7 @@
-import { SUGGESTION_SERVICE_BOUNDARY_MESSAGE } from '@/lib/runtime-boundaries';
+import { SUGGESTION_SERVICE_BOUNDARY_MESSAGE } from "@/lib/runtime-boundaries";
 
 /**
- * Suggestion service for AI-powered workflow recommendations.
+ * Suggestion service for assisted workflow recommendations.
  *
  * <p><b>Purpose</b><br>
  * Provides API integration for fetching AI suggestions.
@@ -41,7 +41,7 @@ export interface Suggestion {
   id: string;
   text: string;
   confidence: number;
-  type: 'field' | 'transformation' | 'validation';
+  type: "field" | "transformation" | "validation";
   explanation?: string;
 }
 
@@ -58,7 +58,7 @@ export interface SuggestionFeedback {
   timestamp: number;
 }
 
-export { SUGGESTION_SERVICE_BOUNDARY_MESSAGE } from '@/lib/runtime-boundaries';
+export { SUGGESTION_SERVICE_BOUNDARY_MESSAGE } from "@/lib/runtime-boundaries";
 
 const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
@@ -68,7 +68,8 @@ interface CacheEntry<T> {
 }
 
 class SuggestionService {
-  private suggestionCache: Map<string, CacheEntry<SuggestionResponse>> = new Map();
+  private suggestionCache: Map<string, CacheEntry<SuggestionResponse>> =
+    new Map();
   private feedbackHistory: SuggestionFeedback[] = [];
 
   /**
@@ -76,7 +77,7 @@ class SuggestionService {
    *
    * <p>GIVEN: A workflow ID and suggestion context
    * WHEN: getSuggestions() is called
-   * THEN: Returns AI-powered suggestions from backend
+   * THEN: Returns assisted suggestions from backend
    *
    * @param workflowId the workflow identifier
    * @param context the suggestion context
@@ -87,7 +88,7 @@ class SuggestionService {
   async getSuggestions(
     workflowId: string,
     context: string,
-    type: 'field' | 'transformation' | 'validation'
+    type: "field" | "transformation" | "validation",
   ): Promise<SuggestionResponse> {
     void workflowId;
     void context;
@@ -107,7 +108,10 @@ class SuggestionService {
    * @returns void
    * @throws Error if request fails
    */
-  async acceptSuggestion(workflowId: string, suggestionId: string): Promise<void> {
+  async acceptSuggestion(
+    workflowId: string,
+    suggestionId: string,
+  ): Promise<void> {
     void workflowId;
     void suggestionId;
     throw new Error(SUGGESTION_SERVICE_BOUNDARY_MESSAGE);
@@ -129,7 +133,7 @@ class SuggestionService {
   async rejectSuggestion(
     workflowId: string,
     suggestionId: string,
-    reason?: string
+    reason?: string,
   ): Promise<void> {
     void workflowId;
     void suggestionId;
@@ -149,7 +153,7 @@ class SuggestionService {
     workflowId: string,
     suggestionId: string,
     accepted: boolean,
-    reason?: string
+    reason?: string,
   ): void {
     const feedback: SuggestionFeedback = {
       suggestionId,
@@ -209,7 +213,7 @@ class SuggestionService {
    */
   clearCache(): void {
     this.suggestionCache.clear();
-    console.debug('Suggestion cache cleared');
+    console.debug("Suggestion cache cleared");
   }
 
   /**
@@ -217,7 +221,7 @@ class SuggestionService {
    */
   clearFeedbackHistory(): void {
     this.feedbackHistory = [];
-    console.debug('Feedback history cleared');
+    console.debug("Feedback history cleared");
   }
 
   /**
@@ -234,7 +238,6 @@ class SuggestionService {
       feedbackCount: this.feedbackHistory.length,
     };
   }
-
 }
 
 // Export singleton instance

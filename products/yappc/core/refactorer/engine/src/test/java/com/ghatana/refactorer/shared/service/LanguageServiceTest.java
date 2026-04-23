@@ -43,7 +43,7 @@ class LanguageServiceTest extends EventloopTestBase {
 
         @Override
         public boolean supports(Path file) { // GH-90000
-            return file.toString().endsWith(".txt [GH-90000]");
+            return file.toString().endsWith(".txt");
         }
 
         @Override
@@ -65,7 +65,7 @@ class LanguageServiceTest extends EventloopTestBase {
         @Override
         public List<String> getSupportedFileExtensions() { // GH-90000
             List<String> extensions = new ArrayList<>(); // GH-90000
-            extensions.add(".txt [GH-90000]");
+            extensions.add(".txt");
             return extensions;
         }
     }
@@ -87,7 +87,7 @@ class LanguageServiceTest extends EventloopTestBase {
         // Given
         LanguageService service = new LanguageServiceTestImpl(); // GH-90000
         Path supportedFile = Path.of(TEST_TXT); // GH-90000
-        Path unsupportedFile = Path.of("test.test [GH-90000]");
+        Path unsupportedFile = Path.of("test.test");
 
         // When / Then
         assertTrue(service.supports(supportedFile)); // GH-90000
@@ -100,7 +100,7 @@ class LanguageServiceTest extends EventloopTestBase {
         LanguageService service = new LanguageServiceTestImpl(); // GH-90000
         PolyfixProjectContext context =
                 new PolyfixProjectContext( // GH-90000
-                        Path.of(". [GH-90000]"),
+                        Path.of("."),
                         null, // config
                         null, // languages
                         null, // executor
@@ -122,7 +122,7 @@ class LanguageServiceTest extends EventloopTestBase {
         assertEquals(1, diagnostic.line()); // GH-90000
         assertEquals(1, diagnostic.column()); // GH-90000
         assertEquals(Severity.ERROR, diagnostic.severity()); // GH-90000
-        assertEquals("test-value", diagnostic.metadata().get("test-key [GH-90000]"));
+        assertEquals("test-value", diagnostic.metadata().get("test-key"));
     }
 
     @Test
@@ -131,7 +131,7 @@ class LanguageServiceTest extends EventloopTestBase {
         LanguageService service = new LanguageServiceTestImpl(); // GH-90000
         PolyfixProjectContext context =
                 new PolyfixProjectContext( // GH-90000
-                        Path.of(". [GH-90000]"),
+                        Path.of("."),
                         null, // config
                         null, // languages
                         null, // executor

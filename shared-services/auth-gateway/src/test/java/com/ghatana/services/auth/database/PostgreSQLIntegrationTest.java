@@ -29,17 +29,17 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer   product
  * @doc.pattern IntegrationTest
  */
-@Tag("integration [GH-90000]")
+@Tag("integration")
 @Testcontainers
-@DisplayName("Auth-Gateway — PostgreSQL integration tests [GH-90000]")
+@DisplayName("Auth-Gateway — PostgreSQL integration tests")
 class PostgreSQLIntegrationTest {
 
     @Container
     private static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>("postgres:15-alpine [GH-90000]")
-                    .withDatabaseName("auth_integration_test [GH-90000]")
-                    .withUsername("auth_test [GH-90000]")
-                    .withPassword("auth_test_pw [GH-90000]");
+            new PostgreSQLContainer<>("postgres:15-alpine")
+                    .withDatabaseName("auth_integration_test")
+                    .withUsername("auth_test")
+                    .withPassword("auth_test_pw");
 
     private HikariDataSource dataSource;
 
@@ -60,7 +60,7 @@ class PostgreSQLIntegrationTest {
     void tearDown() throws Exception { // GH-90000
         try (Connection conn = dataSource.getConnection(); // GH-90000
              Statement stmt = conn.createStatement()) { // GH-90000
-            stmt.execute("DROP TABLE IF EXISTS auth_sessions, auth_tokens, auth_credentials CASCADE [GH-90000]");
+            stmt.execute("DROP TABLE IF EXISTS auth_sessions, auth_tokens, auth_credentials CASCADE");
         }
         dataSource.close(); // GH-90000
     }
@@ -68,7 +68,7 @@ class PostgreSQLIntegrationTest {
     // ── Credential storage ────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("credential is persisted and readable by username [GH-90000]")
+    @DisplayName("credential is persisted and readable by username")
     void credentialPersistAndRead() throws Exception { // GH-90000
         String username = "user_" + uid(); // GH-90000
         insertCredential(username, "hashed_pw", "tenant-1"); // GH-90000
@@ -78,13 +78,13 @@ class PostgreSQLIntegrationTest {
             ps.setString(1, username); // GH-90000
             ResultSet rs = ps.executeQuery(); // GH-90000
             assertThat(rs.next()).isTrue(); // GH-90000
-            assertThat(rs.getString("username [GH-90000]")).isEqualTo(username);
-            assertThat(rs.getString("tenant_id [GH-90000]")).isEqualTo("tenant-1 [GH-90000]");
+            assertThat(rs.getString("username")).isEqualTo(username);
+            assertThat(rs.getString("tenant_id")).isEqualTo("tenant-1");
         }
     }
 
     @Test
-    @DisplayName("credential update modifies password_hash [GH-90000]")
+    @DisplayName("credential update modifies password_hash")
     void credentialUpdate() throws Exception { // GH-90000
         String username = "user_" + uid(); // GH-90000
         insertCredential(username, "old_hash", "tenant-1"); // GH-90000
@@ -102,12 +102,12 @@ class PostgreSQLIntegrationTest {
             ps.setString(1, username); // GH-90000
             ResultSet rs = ps.executeQuery(); // GH-90000
             assertThat(rs.next()).isTrue(); // GH-90000
-            assertThat(rs.getString("password_hash [GH-90000]")).isEqualTo("new_hash [GH-90000]");
+            assertThat(rs.getString("password_hash")).isEqualTo("new_hash");
         }
     }
 
     @Test
-    @DisplayName("credential deletion removes the row [GH-90000]")
+    @DisplayName("credential deletion removes the row")
     void credentialDelete() throws Exception { // GH-90000
         String username = "user_" + uid(); // GH-90000
         insertCredential(username, "hash", "tenant-2"); // GH-90000
@@ -129,7 +129,7 @@ class PostgreSQLIntegrationTest {
     }
 
     @Test
-    @DisplayName("duplicate username violates unique constraint [GH-90000]")
+    @DisplayName("duplicate username violates unique constraint")
     void duplicateUsernameViolatesConstraint() throws Exception { // GH-90000
         String username = "user_" + uid(); // GH-90000
         insertCredential(username, "hash", "tenant-1"); // GH-90000
@@ -140,7 +140,7 @@ class PostgreSQLIntegrationTest {
     // ── Token storage ─────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("token is persisted and retrievable by token_id [GH-90000]")
+    @DisplayName("token is persisted and retrievable by token_id")
     void tokenPersistAndRead() throws Exception { // GH-90000
         String tokenId = uid(); // GH-90000
         String username = "user_" + uid(); // GH-90000
@@ -153,12 +153,12 @@ class PostgreSQLIntegrationTest {
             ps.setString(1, tokenId); // GH-90000
             ResultSet rs = ps.executeQuery(); // GH-90000
             assertThat(rs.next()).isTrue(); // GH-90000
-            assertThat(rs.getString("token_type [GH-90000]")).isEqualTo("ACCESS [GH-90000]");
+            assertThat(rs.getString("token_type")).isEqualTo("ACCESS");
         }
     }
 
     @Test
-    @DisplayName("expired tokens can be queried by expiry [GH-90000]")
+    @DisplayName("expired tokens can be queried by expiry")
     void expiredTokensQuery() throws Exception { // GH-90000
         String username = "user_" + uid(); // GH-90000
         insertCredential(username, "hash", "tenant-1"); // GH-90000
@@ -178,7 +178,7 @@ class PostgreSQLIntegrationTest {
     // ── Session storage ───────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("session is persisted and readable by session_id [GH-90000]")
+    @DisplayName("session is persisted and readable by session_id")
     void sessionPersistAndRead() throws Exception { // GH-90000
         String sessionId = uid(); // GH-90000
         String username = "user_" + uid(); // GH-90000
@@ -191,12 +191,12 @@ class PostgreSQLIntegrationTest {
             ps.setString(1, sessionId); // GH-90000
             ResultSet rs = ps.executeQuery(); // GH-90000
             assertThat(rs.next()).isTrue(); // GH-90000
-            assertThat(rs.getString("username [GH-90000]")).isEqualTo(username);
+            assertThat(rs.getString("username")).isEqualTo(username);
         }
     }
 
     @Test
-    @DisplayName("session deletion removes the session [GH-90000]")
+    @DisplayName("session deletion removes the session")
     void sessionDelete() throws Exception { // GH-90000
         String sessionId = uid(); // GH-90000
         String username = "user_" + uid(); // GH-90000
@@ -215,7 +215,7 @@ class PostgreSQLIntegrationTest {
     // ── Connection pool behavior ──────────────────────────────────────────────
 
     @Test
-    @DisplayName("connection pool provides connections within timeout [GH-90000]")
+    @DisplayName("connection pool provides connections within timeout")
     void connectionPoolRespondsWithinTimeout() throws Exception { // GH-90000
         for (int i = 0; i < 5; i++) { // GH-90000
             try (Connection conn = dataSource.getConnection()) { // GH-90000
@@ -226,7 +226,7 @@ class PostgreSQLIntegrationTest {
 
     @ParameterizedTest(name = "concurrent={0}") // GH-90000
     @ValueSource(ints = {2, 5, 8}) // GH-90000
-    @DisplayName("concurrent connections do not exceed pool max or deadlock [GH-90000]")
+    @DisplayName("concurrent connections do not exceed pool max or deadlock")
     void concurrentConnectionsWithinPool(int threads) throws Exception { // GH-90000
         CountDownLatch latch = new CountDownLatch(1); // GH-90000
         AtomicInteger successCount = new AtomicInteger(0); // GH-90000
@@ -236,7 +236,7 @@ class PostgreSQLIntegrationTest {
                 try {
                     latch.await(); // GH-90000
                     try (Connection conn = dataSource.getConnection(); // GH-90000
-                         ResultSet rs = conn.createStatement().executeQuery("SELECT 1 [GH-90000]")) {
+                         ResultSet rs = conn.createStatement().executeQuery("SELECT 1")) {
                         if (rs.next()) successCount.incrementAndGet(); // GH-90000
                     }
                 } catch (Exception ignored) {} // GH-90000
@@ -251,7 +251,7 @@ class PostgreSQLIntegrationTest {
     // ── Transaction behavior ──────────────────────────────────────────────────
 
     @Test
-    @DisplayName("committed transaction is visible to subsequent reads [GH-90000]")
+    @DisplayName("committed transaction is visible to subsequent reads")
     void committedTransactionIsVisible() throws Exception { // GH-90000
         String username = "txn_user_" + uid(); // GH-90000
         try (Connection conn = dataSource.getConnection()) { // GH-90000
@@ -276,7 +276,7 @@ class PostgreSQLIntegrationTest {
     }
 
     @Test
-    @DisplayName("rolled-back transaction is not visible to subsequent reads [GH-90000]")
+    @DisplayName("rolled-back transaction is not visible to subsequent reads")
     void rolledBackTransactionNotVisible() throws Exception { // GH-90000
         String username = "rollback_user_" + uid(); // GH-90000
         try (Connection conn = dataSource.getConnection()) { // GH-90000

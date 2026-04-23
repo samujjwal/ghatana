@@ -39,7 +39,7 @@ import static org.mockito.Mockito.*;
  * @since 1.0.0
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("RequirementAIController Tests [GH-90000]")
+@DisplayName("RequirementAIController Tests")
 class RequirementAIControllerTest extends EventloopTestBase {
 
     @Mock
@@ -62,16 +62,16 @@ class RequirementAIControllerTest extends EventloopTestBase {
      * called THEN: Returns Promise with generated requirements
      */
     @Test
-    @DisplayName("A2.1.1: Should generate requirements successfully [GH-90000]")
+    @DisplayName("A2.1.1: Should generate requirements successfully")
     void shouldGenerateRequirementsSuccessfully() { // GH-90000
         // GIVEN
         RequirementGenerationRequest request = RequirementGenerationRequest.builder() // GH-90000
-                .featureDescription("User authentication with OAuth [GH-90000]")
+                .featureDescription("User authentication with OAuth")
                 .count(5) // GH-90000
                 .build(); // GH-90000
 
         RequirementGenerationResponse expectedResponse = RequirementGenerationResponse.builder() // GH-90000
-                .model("gpt-4 [GH-90000]")
+                .model("gpt-4")
                 .tokensUsed(2500) // GH-90000
                 .latencyMs(3000) // GH-90000
                 .build(); // GH-90000
@@ -94,7 +94,7 @@ class RequirementAIControllerTest extends EventloopTestBase {
      * is called THEN: Returns Promise with similar requirements
      */
     @Test
-    @DisplayName("A2.1.2: Should search similar requirements successfully [GH-90000]")
+    @DisplayName("A2.1.2: Should search similar requirements successfully")
     void shouldSearchSimilarRequirementsSuccessfully() { // GH-90000
         // GIVEN
         String query = "authentication";
@@ -123,7 +123,7 @@ class RequirementAIControllerTest extends EventloopTestBase {
      * Promise with improvement suggestions
      */
     @Test
-    @DisplayName("A2.1.3: Should get improvement suggestions successfully [GH-90000]")
+    @DisplayName("A2.1.3: Should get improvement suggestions successfully")
     void shouldGetImprovementSuggestionsSuccessfully() { // GH-90000
         // GIVEN
         String requirement = "System must be fast";
@@ -151,7 +151,7 @@ class RequirementAIControllerTest extends EventloopTestBase {
      * Returns Promise with acceptance criteria
      */
     @Test
-    @DisplayName("A2.1.4: Should extract acceptance criteria successfully [GH-90000]")
+    @DisplayName("A2.1.4: Should extract acceptance criteria successfully")
     void shouldExtractAcceptanceCriteriaSuccessfully() { // GH-90000
         // GIVEN
         String requirement = "User can login with email and password";
@@ -179,7 +179,7 @@ class RequirementAIControllerTest extends EventloopTestBase {
      * Promise with classification
      */
     @Test
-    @DisplayName("A2.1.5: Should classify requirement successfully [GH-90000]")
+    @DisplayName("A2.1.5: Should classify requirement successfully")
     void shouldClassifyRequirementSuccessfully() { // GH-90000
         // GIVEN
         String requirement = "System must support 10,000 concurrent users";
@@ -202,7 +202,7 @@ class RequirementAIControllerTest extends EventloopTestBase {
      * Promise with quality result
      */
     @Test
-    @DisplayName("A2.1.6: Should validate requirement quality successfully [GH-90000]")
+    @DisplayName("A2.1.6: Should validate requirement quality successfully")
     void shouldValidateRequirementQualitySuccessfully() { // GH-90000
         // GIVEN
         String requirement = "Comprehensive, measurable requirement";
@@ -231,7 +231,7 @@ class RequirementAIControllerTest extends EventloopTestBase {
      * Promise<Boolean> indicating service health
      */
     @Test
-    @DisplayName("A2.1.7: Should perform health check successfully [GH-90000]")
+    @DisplayName("A2.1.7: Should perform health check successfully")
     void shouldPerformHealthCheckSuccessfully() { // GH-90000
         // GIVEN
         when(mockAiService.healthCheck()).thenReturn(Promise.of(true)); // GH-90000
@@ -251,13 +251,13 @@ class RequirementAIControllerTest extends EventloopTestBase {
      * A2.1.8: Test LLM service timeout
      */
     @Test
-    @DisplayName("A2.1.8: Should handle LLM service timeout [GH-90000]")
+    @DisplayName("A2.1.8: Should handle LLM service timeout")
     void shouldHandleLLMServiceTimeout() { // GH-90000
         // GIVEN
         RequirementGenerationRequest request = RequirementGenerationRequest.builder() // GH-90000
-                .featureDescription("Feature [GH-90000]")
+                .featureDescription("Feature")
                 .build(); // GH-90000
-        Exception timeout = new RuntimeException("LLM timeout after 30s [GH-90000]");
+        Exception timeout = new RuntimeException("LLM timeout after 30s");
 
         when(mockAiService.generateRequirements(request)) // GH-90000
                 .thenReturn(Promise.ofException(timeout)); // GH-90000
@@ -273,7 +273,7 @@ class RequirementAIControllerTest extends EventloopTestBase {
      * A2.1.9: Test empty search results
      */
     @Test
-    @DisplayName("A2.1.9: Should handle empty search results [GH-90000]")
+    @DisplayName("A2.1.9: Should handle empty search results")
     void shouldHandleEmptySearchResults() { // GH-90000
         // GIVEN
         when(mockAiService.findSimilarRequirements("nonexistent", "proj", 10, 0.7f)) // GH-90000
@@ -291,7 +291,7 @@ class RequirementAIControllerTest extends EventloopTestBase {
      * A2.1.10: Test service dependency failure
      */
     @Test
-    @DisplayName("A2.1.10: Should handle service dependency failure [GH-90000]")
+    @DisplayName("A2.1.10: Should handle service dependency failure")
     void shouldHandleServiceDependencyFailure() { // GH-90000
         // GIVEN
         when(mockAiService.healthCheck()) // GH-90000
@@ -311,11 +311,11 @@ class RequirementAIControllerTest extends EventloopTestBase {
      * A2.1.11: Test all endpoints are callable
      */
     @Test
-    @DisplayName("A2.1.11: Should have all 7 endpoints callable [GH-90000]")
+    @DisplayName("A2.1.11: Should have all 7 endpoints callable")
     void shouldHaveAllEndpointsCallable() { // GH-90000
         // Setup all endpoints
         when(mockAiService.generateRequirements(any())) // GH-90000
-                .thenReturn(Promise.of(RequirementGenerationResponse.builder().model("gpt-4 [GH-90000]").build()));
+                .thenReturn(Promise.of(RequirementGenerationResponse.builder().model("gpt-4").build()));
         when(mockAiService.findSimilarRequirements(anyString(), anyString(), anyInt(), anyFloat())) // GH-90000
                 .thenReturn(Promise.of(Collections.emptyList())); // GH-90000
         when(mockAiService.suggestImprovements(anyString())) // GH-90000
@@ -337,12 +337,12 @@ class RequirementAIControllerTest extends EventloopTestBase {
 
         // Call all endpoints
         controller.generateRequirements(RequirementGenerationRequest.builder() // GH-90000
-                .featureDescription("test [GH-90000]").build());
+                .featureDescription("test").build());
         controller.searchSimilarRequirements("q", "p", 10, 0.7f); // GH-90000
-        controller.improveRequirement("r [GH-90000]");
-        controller.extractAcceptanceCriteria("r [GH-90000]");
-        controller.classifyRequirement("r [GH-90000]");
-        controller.validateQuality("r [GH-90000]");
+        controller.improveRequirement("r");
+        controller.extractAcceptanceCriteria("r");
+        controller.classifyRequirement("r");
+        controller.validateQuality("r");
         controller.healthCheck(); // GH-90000
 
         // All should be invoked
@@ -359,19 +359,19 @@ class RequirementAIControllerTest extends EventloopTestBase {
      * A2.1.12: Test Promise completion
      */
     @Test
-    @DisplayName("A2.1.12: Should complete Promise operations correctly [GH-90000]")
+    @DisplayName("A2.1.12: Should complete Promise operations correctly")
     void shouldCompletePromiseOperationsCorrectly() { // GH-90000
         // GIVEN
         when(mockAiService.generateRequirements(any())) // GH-90000
                 .thenReturn(Promise.of(RequirementGenerationResponse.builder() // GH-90000
-                        .model("gpt-4 [GH-90000]")
+                        .model("gpt-4")
                         .tokensUsed(1000) // GH-90000
                         .latencyMs(2000) // GH-90000
                         .build())); // GH-90000
 
         // WHEN
         Promise<RequirementGenerationResponse> result = controller.generateRequirements( // GH-90000
-                RequirementGenerationRequest.builder().featureDescription("test [GH-90000]").build()
+                RequirementGenerationRequest.builder().featureDescription("test").build()
         );
 
         // THEN

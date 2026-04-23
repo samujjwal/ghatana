@@ -40,11 +40,11 @@ class PluginSandboxTest {
 
     @Test
     void testPermissiveSandbox() { // GH-90000
-        Path workspace = Paths.get("/workspace [GH-90000]");
+        Path workspace = Paths.get("/workspace");
         PluginSandbox sandbox = PluginSandbox.permissive(workspace); // GH-90000
 
-        assertTrue(sandbox.isWriteAllowed(workspace.resolve("file.txt [GH-90000]")));
-        assertTrue(sandbox.isWriteAllowed(workspace.resolve("subdir/file.txt [GH-90000]")));
+        assertTrue(sandbox.isWriteAllowed(workspace.resolve("file.txt")));
+        assertTrue(sandbox.isWriteAllowed(workspace.resolve("subdir/file.txt")));
         assertEquals(Duration.ofMinutes(5), sandbox.timeout()); // GH-90000
         assertFalse(sandbox.dryRunOnly()); // GH-90000
         assertTrue(sandbox.allowNetworkAccess()); // GH-90000
@@ -52,12 +52,12 @@ class PluginSandboxTest {
 
     @Test
     void testRestrictiveSandbox() { // GH-90000
-        Path allowed = Paths.get("/workspace [GH-90000]");
+        Path allowed = Paths.get("/workspace");
         PluginSandbox sandbox = PluginSandbox.restrictive(List.of(allowed)); // GH-90000
 
-        assertTrue(sandbox.isWriteAllowed(allowed.resolve("file.txt [GH-90000]")));
-        assertFalse(sandbox.isWriteAllowed(Paths.get("/etc/passwd [GH-90000]")));
-        assertFalse(sandbox.isWriteAllowed(Paths.get("/sys/config [GH-90000]")));
+        assertTrue(sandbox.isWriteAllowed(allowed.resolve("file.txt")));
+        assertFalse(sandbox.isWriteAllowed(Paths.get("/etc/passwd")));
+        assertFalse(sandbox.isWriteAllowed(Paths.get("/sys/config")));
         assertEquals(Duration.ofMinutes(1), sandbox.timeout()); // GH-90000
         assertFalse(sandbox.dryRunOnly()); // GH-90000
         assertFalse(sandbox.allowNetworkAccess()); // GH-90000
@@ -67,7 +67,7 @@ class PluginSandboxTest {
     void testDryRunSandbox() { // GH-90000
         PluginSandbox sandbox = PluginSandbox.dryRun(); // GH-90000
 
-        assertFalse(sandbox.isWriteAllowed(Paths.get("/any/path [GH-90000]")));
+        assertFalse(sandbox.isWriteAllowed(Paths.get("/any/path")));
         assertEquals(Duration.ofSeconds(30), sandbox.timeout()); // GH-90000
         assertTrue(sandbox.dryRunOnly()); // GH-90000
         assertFalse(sandbox.allowNetworkAccess()); // GH-90000
@@ -75,8 +75,8 @@ class PluginSandboxTest {
 
     @Test
     void testIsWriteAllowedWithDeniedPaths() { // GH-90000
-        Path workspace = Paths.get("/workspace [GH-90000]");
-        Path denied = workspace.resolve("restricted [GH-90000]");
+        Path workspace = Paths.get("/workspace");
+        Path denied = workspace.resolve("restricted");
 
         PluginSandbox sandbox = new PluginSandbox( // GH-90000
                 List.of(workspace), // GH-90000
@@ -85,13 +85,13 @@ class PluginSandboxTest {
                 false,
                 true);
 
-        assertTrue(sandbox.isWriteAllowed(workspace.resolve("file.txt [GH-90000]")));
-        assertFalse(sandbox.isWriteAllowed(denied.resolve("file.txt [GH-90000]")));
+        assertTrue(sandbox.isWriteAllowed(workspace.resolve("file.txt")));
+        assertFalse(sandbox.isWriteAllowed(denied.resolve("file.txt")));
     }
 
     @Test
     void testIsWriteAllowedOutsideAllowedPaths() { // GH-90000
-        Path workspace = Paths.get("/workspace [GH-90000]");
+        Path workspace = Paths.get("/workspace");
         PluginSandbox sandbox = new PluginSandbox( // GH-90000
                 List.of(workspace), // GH-90000
                 List.of(), // GH-90000
@@ -99,13 +99,13 @@ class PluginSandboxTest {
                 false,
                 true);
 
-        assertTrue(sandbox.isWriteAllowed(workspace.resolve("file.txt [GH-90000]")));
-        assertFalse(sandbox.isWriteAllowed(Paths.get("/other/file.txt [GH-90000]")));
+        assertTrue(sandbox.isWriteAllowed(workspace.resolve("file.txt")));
+        assertFalse(sandbox.isWriteAllowed(Paths.get("/other/file.txt")));
     }
 
     @Test
     void testDryRunBlocksAllWrites() { // GH-90000
-        Path workspace = Paths.get("/workspace [GH-90000]");
+        Path workspace = Paths.get("/workspace");
         PluginSandbox sandbox = new PluginSandbox( // GH-90000
                 List.of(workspace), // GH-90000
                 List.of(), // GH-90000
@@ -113,6 +113,6 @@ class PluginSandboxTest {
                 true, // dry run
                 true);
 
-        assertFalse(sandbox.isWriteAllowed(workspace.resolve("file.txt [GH-90000]")));
+        assertFalse(sandbox.isWriteAllowed(workspace.resolve("file.txt")));
     }
 }

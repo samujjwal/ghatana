@@ -32,17 +32,17 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern Test
  */
-@Tag("integration [GH-90000]")
+@Tag("integration")
 @Testcontainers
-@DisplayName("PostgresRetentionPolicyEnforcer — integration tests [GH-90000]")
+@DisplayName("PostgresRetentionPolicyEnforcer — integration tests")
 class PostgresRetentionPolicyEnforcerTest extends EventloopTestBase {
 
     @Container
     private static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>("postgres:15-alpine [GH-90000]")
-                    .withDatabaseName("aep_retention_test [GH-90000]")
-                    .withUsername("aep_test [GH-90000]")
-                    .withPassword("aep_test [GH-90000]");
+            new PostgreSQLContainer<>("postgres:15-alpine")
+                    .withDatabaseName("aep_retention_test")
+                    .withUsername("aep_test")
+                    .withPassword("aep_test");
 
     private HikariDataSource dataSource;
     private PostgresRetentionPolicyEnforcer enforcer;
@@ -64,13 +64,13 @@ class PostgresRetentionPolicyEnforcerTest extends EventloopTestBase {
     void tearDown() throws Exception { // GH-90000
         try (Connection conn = dataSource.getConnection(); // GH-90000
              Statement stmt = conn.createStatement()) { // GH-90000
-            stmt.execute("DROP TABLE IF EXISTS retention_policies [GH-90000]");
+            stmt.execute("DROP TABLE IF EXISTS retention_policies");
         }
         dataSource.close(); // GH-90000
     }
 
     @Test
-    @DisplayName("registerRetention then checkRetention within TTL succeeds [GH-90000]")
+    @DisplayName("registerRetention then checkRetention within TTL succeeds")
     void registerRetention_checkWithinTtl_passes() { // GH-90000
         String tenantId = "tenant-1";
         String dataId   = "data-object-1";
@@ -83,14 +83,14 @@ class PostgresRetentionPolicyEnforcerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("checkRetention for unknown data passes (open policy) [GH-90000]")
+    @DisplayName("checkRetention for unknown data passes (open policy)")
     void checkRetention_unknownData_passes() { // GH-90000
         assertThatCode(() -> runPromise(() -> enforcer.checkRetention("tenant-x", "unknown-data"))) // GH-90000
                 .doesNotThrowAnyException(); // GH-90000
     }
 
     @Test
-    @DisplayName("registerRetention with zero TTL causes immediate expiry [GH-90000]")
+    @DisplayName("registerRetention with zero TTL causes immediate expiry")
     void registerRetention_zeroTtl_isExpiredImmediately() { // GH-90000
         String tenantId = "tenant-2";
         String dataId   = "expired-data";
@@ -103,7 +103,7 @@ class PostgresRetentionPolicyEnforcerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("scheduleDeletion completes without error for registered data [GH-90000]")
+    @DisplayName("scheduleDeletion completes without error for registered data")
     void scheduleDeletion_registeredData_completes() { // GH-90000
         String tenantId = "tenant-3";
         String dataId   = "to-delete";
@@ -114,7 +114,7 @@ class PostgresRetentionPolicyEnforcerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("re-registering with longer TTL extends the deadline (upsert semantics) [GH-90000]")
+    @DisplayName("re-registering with longer TTL extends the deadline (upsert semantics)")
     void registerRetention_upsert_extendsDeadline() { // GH-90000
         String tenantId = "tenant-4";
         String dataId   = "updatable-data";

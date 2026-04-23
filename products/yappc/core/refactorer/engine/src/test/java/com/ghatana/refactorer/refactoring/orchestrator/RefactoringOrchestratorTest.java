@@ -69,10 +69,10 @@ class RefactoringOrchestratorTest {
         projectContext = new PolyfixProjectContext(tempDir, config, List.of(), executor, null); // GH-90000
 
         // Setup mocks
-        doReturn("java.rename [GH-90000]").when(javaRefactoring).getId();
+        doReturn("java.rename").when(javaRefactoring).getId();
         when(javaRefactoring.canApply(any())).thenReturn(false); // Default to false // GH-90000
 
-        doReturn("python.rename [GH-90000]").when(pythonRefactoring).getId();
+        doReturn("python.rename").when(pythonRefactoring).getId();
         when(pythonRefactoring.canApply(any())).thenReturn(false); // Default to false // GH-90000
 
         // Create orchestrator with mocks
@@ -96,7 +96,7 @@ class RefactoringOrchestratorTest {
 
         RefactoringResult successResult =
                 RefactoringResult.success( // GH-90000
-                        List.of(Path.of("src/main/java/Example.java [GH-90000]")), 1, "Renamed method");
+                        List.of(Path.of("src/main/java/Example.java")), 1, "Renamed method");
         when(javaRefactoring.apply(any())).thenReturn(successResult); // GH-90000
 
         // Act
@@ -117,12 +117,12 @@ class RefactoringOrchestratorTest {
 
         // Create a simple test refactoring that always succeeds
         RenameRefactoring testRefactoring = mock(RenameRefactoring.class); // GH-90000
-        when(testRefactoring.getId()).thenReturn("test.rename [GH-90000]");
+        when(testRefactoring.getId()).thenReturn("test.rename");
         when(testRefactoring.canApply(any())).thenReturn(true); // GH-90000
         when(testRefactoring.apply(any())) // GH-90000
                 .thenReturn( // GH-90000
                         RefactoringResult.success( // GH-90000
-                                List.of(Path.of("test.file [GH-90000]")), 1, "Successfully renamed"));
+                                List.of(Path.of("test.file")), 1, "Successfully renamed"));
 
         // Register our test refactoring
         crossLangOrchestrator.registerRefactoring(testRefactoring); // GH-90000
@@ -150,7 +150,7 @@ class RefactoringOrchestratorTest {
         // Assert
         assertFalse(result.isSuccess()); // GH-90000
         assertNotNull(result.getErrorMessage()); // GH-90000
-        assertTrue(result.getErrorMessage().contains("No refactoring implementation found [GH-90000]"));
+        assertTrue(result.getErrorMessage().contains("No refactoring implementation found"));
     }
 
     @Test
@@ -158,7 +158,7 @@ class RefactoringOrchestratorTest {
         // Setup for this test
         when(javaRefactoring.canApply(any())).thenReturn(true); // GH-90000
         when(referenceResolver.findReferences(any(), any(), any(), any())) // GH-90000
-                .thenThrow(new RuntimeException("Reference resolution failed [GH-90000]"));
+                .thenThrow(new RuntimeException("Reference resolution failed"));
 
         // Act
         RefactoringResult result =
@@ -166,7 +166,7 @@ class RefactoringOrchestratorTest {
 
         // Assert
         assertFalse(result.isSuccess()); // GH-90000
-        assertTrue(result.getErrorMessage().contains("Reference resolution failed [GH-90000]"));
+        assertTrue(result.getErrorMessage().contains("Reference resolution failed"));
     }
 
     @Test
@@ -177,7 +177,7 @@ class RefactoringOrchestratorTest {
 
         // Create a custom refactoring mock
         RenameRefactoring customRefactoring = mock(RenameRefactoring.class); // GH-90000
-        doReturn("custom.rename [GH-90000]").when(customRefactoring).getId();
+        doReturn("custom.rename").when(customRefactoring).getId();
         when(customRefactoring.canApply(any())).thenReturn(true); // GH-90000
         when(customRefactoring.apply(any())) // GH-90000
                 .thenReturn(RefactoringResult.success(List.of(), 0, "custom")); // GH-90000

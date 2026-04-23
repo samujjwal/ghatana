@@ -14,7 +14,7 @@ public final class TestDenyAllConsentProvider implements ConsentProvider {
 
     @Override
     public Promise<ConsentDecision> evaluateConsent(String tenantId, AepEngine.Event event) { // GH-90000
-        return Promise.of(ConsentDecision.deny("test provider denied consent [GH-90000]"));
+        return Promise.of(ConsentDecision.deny("test provider denied consent"));
     }
 
     @Override

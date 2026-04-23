@@ -43,7 +43,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern ValidationTest
  */
-@DisplayName("JWT Server Interceptor Tests [GH-90000]")
+@DisplayName("JWT Server Interceptor Tests")
 class JwtServerInterceptorTest {
 
     private static final String HEALTH_METHOD = "/grpc.health.v1.Health/Check";
@@ -54,38 +54,38 @@ class JwtServerInterceptorTest {
     * behavior by reading the actual env values (expected to be absent in CI). // GH-90000
      */
     @Nested
-    @DisplayName("Startup validation [GH-90000]")
+    @DisplayName("Startup validation")
     class StartupValidation {
 
         @Test
-        @DisplayName("Constructor throws when AV_JWT_SECRET is absent [GH-90000]")
+        @DisplayName("Constructor throws when AV_JWT_SECRET is absent")
         void constructorThrowsWhenSecretAbsent() { // GH-90000
-            String secret = System.getenv("AV_JWT_SECRET [GH-90000]");
+            String secret = System.getenv("AV_JWT_SECRET");
             if (secret != null && !secret.isBlank()) { // GH-90000
                 return;
             }
             assertThatThrownBy(JwtServerInterceptor::new) // GH-90000
                     .isInstanceOf(IllegalStateException.class) // GH-90000
-                    .hasMessageContaining("AV_JWT_SECRET [GH-90000]")
-                    .hasMessageContaining("does not support permissive bypass mode [GH-90000]");
+                    .hasMessageContaining("AV_JWT_SECRET")
+                    .hasMessageContaining("does not support permissive bypass mode");
         }
     }
 
     @Nested
-    @DisplayName("Health method exemption [GH-90000]")
+    @DisplayName("Health method exemption")
     class HealthMethodExemption {
 
         @Test
-        @DisplayName("Health Check method bypasses JWT validation [GH-90000]")
+        @DisplayName("Health Check method bypasses JWT validation")
         void healthCheckBypassesValidation() { // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             ConfigurableJWTProcessor<SecurityContext> processor = mock(ConfigurableJWTProcessor.class); // GH-90000
             JwtServerInterceptor interceptor = new JwtServerInterceptor(processor, disabledTokenValidator()); // GH-90000
 
             ServerCall<Object, Object> call = mockCall(HEALTH_METHOD); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             ServerCallHandler<Object, Object> handler = mock(ServerCallHandler.class); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             ServerCall.Listener<Object> listener = mock(ServerCall.Listener.class); // GH-90000
             when(handler.startCall(any(), any())).thenReturn(listener); // GH-90000
 
@@ -98,13 +98,13 @@ class JwtServerInterceptorTest {
     }
 
     @Nested
-    @DisplayName("Missing token rejection [GH-90000]")
+    @DisplayName("Missing token rejection")
     class MissingTokenRejection {
 
         @Test
-        @DisplayName("Strict mode rejects requests with no Authorization header [GH-90000]")
+        @DisplayName("Strict mode rejects requests with no Authorization header")
         void strictModeRejectsMissingAuthorizationHeader() { // GH-90000
-            String secret = System.getenv("AV_JWT_SECRET [GH-90000]");
+            String secret = System.getenv("AV_JWT_SECRET");
             if (secret == null || secret.isBlank()) { // GH-90000
                 // Cannot run strict-mode test without a real secret
                 return;
@@ -112,7 +112,7 @@ class JwtServerInterceptorTest {
 
             JwtServerInterceptor interceptor = new JwtServerInterceptor(); // GH-90000
             ServerCall<Object, Object> call = mockCall(SECURE_METHOD); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             ServerCallHandler<Object, Object> handler = mock(ServerCallHandler.class); // GH-90000
 
             interceptor.interceptCall(call, new Metadata(), handler); // GH-90000
@@ -125,12 +125,12 @@ class JwtServerInterceptorTest {
     }
 
     @Nested
-    @DisplayName("Tenant context propagation [GH-90000]")
+    @DisplayName("Tenant context propagation")
     class TenantContextPropagation {
 
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         @Test
-        @DisplayName("validated JWT exposes subject and tenant in gRPC context [GH-90000]")
+        @DisplayName("validated JWT exposes subject and tenant in gRPC context")
         void validatedJwtExposesSubjectAndTenantContext() throws Exception { // GH-90000
             ConfigurableJWTProcessor<SecurityContext> processor = mock(ConfigurableJWTProcessor.class); // GH-90000
             when(processor.process(any(SignedJWT.class), eq(null))).thenReturn(null); // GH-90000
@@ -157,14 +157,14 @@ class JwtServerInterceptorTest {
 
             interceptor.interceptCall(call, headers, handler); // GH-90000
 
-            assertThat(subjectRef.get()).isEqualTo("user-1 [GH-90000]");
-            assertThat(tenantRef.get()).isEqualTo("tenant-42 [GH-90000]");
+            assertThat(subjectRef.get()).isEqualTo("user-1");
+            assertThat(tenantRef.get()).isEqualTo("tenant-42");
             verify(call, never()).close(any(), any()); // GH-90000
         }
 
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         @Test
-        @DisplayName("validated JWT without tenant claim is rejected [GH-90000]")
+        @DisplayName("validated JWT without tenant claim is rejected")
         void validatedJwtWithoutTenantClaimIsRejected() throws Exception { // GH-90000
             ConfigurableJWTProcessor<SecurityContext> processor = mock(ConfigurableJWTProcessor.class); // GH-90000
             when(processor.process(any(SignedJWT.class), eq(null))).thenReturn(null); // GH-90000
@@ -186,7 +186,7 @@ class JwtServerInterceptorTest {
             ArgumentCaptor<Status> statusCaptor = ArgumentCaptor.forClass(Status.class); // GH-90000
             verify(call).close(statusCaptor.capture(), any()); // GH-90000
             assertThat(statusCaptor.getValue().getCode()).isEqualTo(Status.Code.UNAUTHENTICATED); // GH-90000
-            assertThat(statusCaptor.getValue().getDescription()).contains("Missing tenant claim [GH-90000]");
+            assertThat(statusCaptor.getValue().getDescription()).contains("Missing tenant claim");
             verify(handler, never()).startCall(any(), any()); // GH-90000
         }
     }
@@ -195,7 +195,7 @@ class JwtServerInterceptorTest {
     // Helpers
     // -------------------------------------------------------------------------
 
-    @SuppressWarnings("unchecked [GH-90000]")
+    @SuppressWarnings("unchecked")
     private static <ReqT, RespT> ServerCall<ReqT, RespT> mockCall(String fullMethod) { // GH-90000
         ServerCall<ReqT, RespT> call = mock(ServerCall.class); // GH-90000
         MethodDescriptor<ReqT, RespT> descriptor = MethodDescriptor.<ReqT, RespT>newBuilder() // GH-90000
@@ -243,7 +243,7 @@ class JwtServerInterceptorTest {
         }
 
         @Override
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         public T parse(InputStream stream) { // GH-90000
             return (T) new Object(); // GH-90000
         }

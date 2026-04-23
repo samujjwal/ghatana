@@ -18,12 +18,12 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Security Framework Integration Tests [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("Security Framework Integration Tests")
+@Tag("integration")
 class SecurityFrameworkIntegrationTest extends EventloopTestBase {
 
     @Test
-    @DisplayName("should authenticate user with valid credentials [GH-90000]")
+    @DisplayName("should authenticate user with valid credentials")
     void shouldAuthenticateUserWithValidCredentials() { // GH-90000
         String username = "testuser";
         String password = "validPassword123";
@@ -31,7 +31,7 @@ class SecurityFrameworkIntegrationTest extends EventloopTestBase {
         AtomicBoolean authenticated = new AtomicBoolean(false); // GH-90000
 
         // Simulate authentication
-        if (username.equals("testuser [GH-90000]") && password.equals("validPassword123 [GH-90000]")) {
+        if (username.equals("testuser") && password.equals("validPassword123")) {
             authenticated.set(true); // GH-90000
         }
 
@@ -39,7 +39,7 @@ class SecurityFrameworkIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should reject authentication with invalid credentials [GH-90000]")
+    @DisplayName("should reject authentication with invalid credentials")
     void shouldRejectAuthenticationWithInvalidCredentials() { // GH-90000
         String username = "testuser";
         String password = "wrongPassword";
@@ -47,7 +47,7 @@ class SecurityFrameworkIntegrationTest extends EventloopTestBase {
         AtomicBoolean authenticated = new AtomicBoolean(true); // GH-90000
 
         // Simulate authentication
-        if (!password.equals("validPassword123 [GH-90000]")) {
+        if (!password.equals("validPassword123")) {
             authenticated.set(false); // GH-90000
         }
 
@@ -55,7 +55,7 @@ class SecurityFrameworkIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should generate JWT token on successful authentication [GH-90000]")
+    @DisplayName("should generate JWT token on successful authentication")
     void shouldGenerateJwtTokenOnSuccessfulAuthentication() { // GH-90000
         AtomicBoolean tokenGenerated = new AtomicBoolean(false); // GH-90000
 
@@ -72,14 +72,14 @@ class SecurityFrameworkIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should validate JWT token correctly [GH-90000]")
+    @DisplayName("should validate JWT token correctly")
     void shouldValidateJwtTokenCorrectly() { // GH-90000
         String validToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
 
         AtomicBoolean tokenValid = new AtomicBoolean(false); // GH-90000
 
         // Validate token signature, expiration, claims
-        if (validToken.startsWith("eyJ [GH-90000]")) {
+        if (validToken.startsWith("eyJ")) {
             tokenValid.set(true); // GH-90000
         }
 
@@ -87,7 +87,7 @@ class SecurityFrameworkIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should reject expired JWT tokens [GH-90000]")
+    @DisplayName("should reject expired JWT tokens")
     void shouldRejectExpiredJwtTokens() { // GH-90000
         AtomicBoolean tokenExpired = new AtomicBoolean(true); // GH-90000
 
@@ -103,7 +103,7 @@ class SecurityFrameworkIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should enforce role-based access control [GH-90000]")
+    @DisplayName("should enforce role-based access control")
     void shouldEnforceRoleBasedAccessControl() { // GH-90000
         String userRole = "USER";
         String requiredRole = "ADMIN";
@@ -119,7 +119,7 @@ class SecurityFrameworkIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should support multiple roles per user [GH-90000]")
+    @DisplayName("should support multiple roles per user")
     void shouldSupportMultipleRolesPerUser() { // GH-90000
         String[] userRoles = {"USER", "EDITOR", "VIEWER"};
         String requiredRole = "EDITOR";
@@ -137,7 +137,7 @@ class SecurityFrameworkIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should enforce permission-based access control [GH-90000]")
+    @DisplayName("should enforce permission-based access control")
     void shouldEnforcePermissionBasedAccessControl() { // GH-90000
         String[] userPermissions = {"read:documents", "write:documents"};
         String requiredPermission = "write:documents";
@@ -155,7 +155,7 @@ class SecurityFrameworkIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should implement attribute-based access control [GH-90000]")
+    @DisplayName("should implement attribute-based access control")
     void shouldImplementAttributeBasedAccessControl() { // GH-90000
         // User attributes
         String department = "Engineering";
@@ -176,7 +176,7 @@ class SecurityFrameworkIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should hash passwords securely [GH-90000]")
+    @DisplayName("should hash passwords securely")
     void shouldHashPasswordsSecurely() { // GH-90000
         String password = "mySecurePassword123";
 
@@ -184,11 +184,11 @@ class SecurityFrameworkIntegrationTest extends EventloopTestBase {
         String hashedPassword = "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy";
 
         assertThat(hashedPassword).isNotEqualTo(password); // GH-90000
-        assertThat(hashedPassword).startsWith("$2a$ [GH-90000]");
+        assertThat(hashedPassword).startsWith("$2a$");
     }
 
     @Test
-    @DisplayName("should verify hashed passwords correctly [GH-90000]")
+    @DisplayName("should verify hashed passwords correctly")
     void shouldVerifyHashedPasswordsCorrectly() { // GH-90000
         String password = "mySecurePassword123";
         String hashedPassword = "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy";
@@ -202,7 +202,7 @@ class SecurityFrameworkIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should implement rate limiting for authentication attempts [GH-90000]")
+    @DisplayName("should implement rate limiting for authentication attempts")
     void shouldImplementRateLimitingForAuthenticationAttempts() { // GH-90000
         AtomicInteger attemptCount = new AtomicInteger(0); // GH-90000
         int maxAttempts = 5;
@@ -221,7 +221,7 @@ class SecurityFrameworkIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should lock account after multiple failed attempts [GH-90000]")
+    @DisplayName("should lock account after multiple failed attempts")
     void shouldLockAccountAfterMultipleFailedAttempts() { // GH-90000
         AtomicInteger failedAttempts = new AtomicInteger(0); // GH-90000
         AtomicBoolean accountLocked = new AtomicBoolean(false); // GH-90000
@@ -239,7 +239,7 @@ class SecurityFrameworkIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should support multi-factor authentication [GH-90000]")
+    @DisplayName("should support multi-factor authentication")
     void shouldSupportMultiFactorAuthentication() { // GH-90000
         AtomicBoolean primaryAuthSuccess = new AtomicBoolean(true); // GH-90000
         AtomicBoolean mfaCodeValid = new AtomicBoolean(true); // GH-90000
@@ -250,7 +250,7 @@ class SecurityFrameworkIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should encrypt sensitive data at rest [GH-90000]")
+    @DisplayName("should encrypt sensitive data at rest")
     void shouldEncryptSensitiveDataAtRest() { // GH-90000
         String sensitiveData = "SSN: 123-45-6789";
 
@@ -262,7 +262,7 @@ class SecurityFrameworkIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should decrypt encrypted data correctly [GH-90000]")
+    @DisplayName("should decrypt encrypted data correctly")
     void shouldDecryptEncryptedDataCorrectly() { // GH-90000
         String encryptedData = "U2FsdGVkX1+vupppZksvRf5pq5g5XjFRIipRkwB0K1Y=";
         String expectedData = "SSN: 123-45-6789";
@@ -274,7 +274,7 @@ class SecurityFrameworkIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should implement secure session management [GH-90000]")
+    @DisplayName("should implement secure session management")
     void shouldImplementSecureSessionManagement() { // GH-90000
         AtomicBoolean sessionCreated = new AtomicBoolean(false); // GH-90000
 
@@ -289,7 +289,7 @@ class SecurityFrameworkIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should expire sessions after timeout [GH-90000]")
+    @DisplayName("should expire sessions after timeout")
     void shouldExpireSessionsAfterTimeout() { // GH-90000
         AtomicBoolean sessionExpired = new AtomicBoolean(false); // GH-90000
 
@@ -305,7 +305,7 @@ class SecurityFrameworkIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should prevent session fixation attacks [GH-90000]")
+    @DisplayName("should prevent session fixation attacks")
     void shouldPreventSessionFixationAttacks() { // GH-90000
         String oldSessionId = "old-session-id";
         AtomicBoolean sessionRegeneratedOnLogin = new AtomicBoolean(false); // GH-90000
@@ -321,7 +321,7 @@ class SecurityFrameworkIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should implement CSRF protection [GH-90000]")
+    @DisplayName("should implement CSRF protection")
     void shouldImplementCsrfProtection() { // GH-90000
         String csrfToken = "csrf-token-" + System.currentTimeMillis(); // GH-90000
         String submittedToken = csrfToken;
@@ -336,7 +336,7 @@ class SecurityFrameworkIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should audit security events [GH-90000]")
+    @DisplayName("should audit security events")
     void shouldAuditSecurityEvents() { // GH-90000
         AtomicInteger auditLogCount = new AtomicInteger(0); // GH-90000
 
@@ -353,7 +353,7 @@ class SecurityFrameworkIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should support API key authentication [GH-90000]")
+    @DisplayName("should support API key authentication")
     void shouldSupportApiKeyAuthentication() { // GH-90000
         String apiKey = "api-key-12345";
         String validApiKey = "api-key-12345";

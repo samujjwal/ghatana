@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer observability
  * @doc.pattern Test
  */
-@DisplayName("HealthCheckRegistry [GH-90000]")
+@DisplayName("HealthCheckRegistry")
 class HealthCheckRegistryTest extends EventloopTestBase {
 
     private HealthCheckRegistry registry;
@@ -52,7 +52,7 @@ class HealthCheckRegistryTest extends EventloopTestBase {
     }
 
     private static void resetSingleton() throws Exception { // GH-90000
-        Field instanceField = HealthCheckRegistry.class.getDeclaredField("INSTANCE [GH-90000]");
+        Field instanceField = HealthCheckRegistry.class.getDeclaredField("INSTANCE");
         instanceField.setAccessible(true); // GH-90000
         ((AtomicReference<?>) instanceField.get(null)).set(null); // GH-90000
     }
@@ -60,43 +60,43 @@ class HealthCheckRegistryTest extends EventloopTestBase {
     // ─── getInstance ─────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("getInstance: returns the initialized registry [GH-90000]")
+    @DisplayName("getInstance: returns the initialized registry")
     void getInstance_returnsRegistry() { // GH-90000
         assertThat(HealthCheckRegistry.getInstance()).isSameAs(registry); // GH-90000
     }
 
     @Test
-    @DisplayName("getInstance: throws if not initialized [GH-90000]")
+    @DisplayName("getInstance: throws if not initialized")
     void getInstance_notInitialized_throws() throws Exception { // GH-90000
         resetSingleton(); // GH-90000
         assertThatThrownBy(HealthCheckRegistry::getInstance) // GH-90000
                 .isInstanceOf(IllegalStateException.class) // GH-90000
-                .hasMessageContaining("not initialized [GH-90000]");
+                .hasMessageContaining("not initialized");
     }
 
     // ─── register / unregister ────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("register() / unregister() [GH-90000]")
+    @DisplayName("register() / unregister()")
     class RegisterUnregister {
 
         @Test
-        @DisplayName("registered check appears in getHealthCheckNames() [GH-90000]")
+        @DisplayName("registered check appears in getHealthCheckNames()")
         void register_checkVisible() { // GH-90000
             registry.register(stubCheck("db", true, true)); // GH-90000
-            assertThat(registry.getHealthCheckNames()).contains("db [GH-90000]");
+            assertThat(registry.getHealthCheckNames()).contains("db");
         }
 
         @Test
-        @DisplayName("unregistered check is removed from getHealthCheckNames() [GH-90000]")
+        @DisplayName("unregistered check is removed from getHealthCheckNames()")
         void unregister_checkRemoved() { // GH-90000
             registry.register(stubCheck("cache", false, true)); // GH-90000
-            registry.unregister("cache [GH-90000]");
-            assertThat(registry.getHealthCheckNames()).doesNotContain("cache [GH-90000]");
+            registry.unregister("cache");
+            assertThat(registry.getHealthCheckNames()).doesNotContain("cache");
         }
 
         @Test
-        @DisplayName("multiple checks can be registered simultaneously [GH-90000]")
+        @DisplayName("multiple checks can be registered simultaneously")
         void register_multiple() { // GH-90000
             registry.register(stubCheck("db", true, true)); // GH-90000
             registry.register(stubCheck("redis", false, true)); // GH-90000
@@ -107,11 +107,11 @@ class HealthCheckRegistryTest extends EventloopTestBase {
     // ─── readiness ────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("readiness() [GH-90000]")
+    @DisplayName("readiness()")
     class Readiness {
 
         @Test
-        @DisplayName("all healthy checks → overall UP status [GH-90000]")
+        @DisplayName("all healthy checks → overall UP status")
         void readiness_allHealthy_statusUp() { // GH-90000
             registry.register(stubCheck("s1", false, true)); // GH-90000
             registry.register(stubCheck("s2", false, true)); // GH-90000
@@ -124,20 +124,20 @@ class HealthCheckRegistryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("one unhealthy check → overall DOWN status [GH-90000]")
+        @DisplayName("one unhealthy check → overall DOWN status")
         void readiness_oneUnhealthy_statusDown() { // GH-90000
             registry.register(stubCheck("s1", false, true)); // GH-90000
-            registry.register(unhealthyCheck("s2 [GH-90000]"));
+            registry.register(unhealthyCheck("s2"));
 
             HealthCheckRegistry.OverallHealthResult result =
                     runPromise(() -> registry.readiness()); // GH-90000
 
             assertThat(result.isUnhealthy()).isTrue(); // GH-90000
-            assertThat(result.getMessage()).contains("s2 [GH-90000]");
+            assertThat(result.getMessage()).contains("s2");
         }
 
         @Test
-        @DisplayName("empty registry → healthy (no failing checks) [GH-90000]")
+        @DisplayName("empty registry → healthy (no failing checks)")
         void readiness_empty_healthy() { // GH-90000
             HealthCheckRegistry.OverallHealthResult result =
                     runPromise(() -> registry.readiness()); // GH-90000
@@ -145,22 +145,22 @@ class HealthCheckRegistryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("check type is 'readiness' [GH-90000]")
+        @DisplayName("check type is 'readiness'")
         void readiness_checkType_correct() { // GH-90000
             HealthCheckRegistry.OverallHealthResult result =
                     runPromise(() -> registry.readiness()); // GH-90000
-            assertThat(result.getCheckType()).isEqualTo("readiness [GH-90000]");
+            assertThat(result.getCheckType()).isEqualTo("readiness");
         }
     }
 
     // ─── liveness ─────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("liveness() [GH-90000]")
+    @DisplayName("liveness()")
     class Liveness {
 
         @Test
-        @DisplayName("critical internal check healthy → liveness UP [GH-90000]")
+        @DisplayName("critical internal check healthy → liveness UP")
         void liveness_criticalHealthy_up() { // GH-90000
             registry.register(stubCheck("jvm-health", true, true)); // critical, healthy // GH-90000
             HealthCheckRegistry.OverallHealthResult result =
@@ -169,10 +169,10 @@ class HealthCheckRegistryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("non-critical checks are excluded from liveness [GH-90000]")
+        @DisplayName("non-critical checks are excluded from liveness")
         void liveness_nonCritical_excluded() { // GH-90000
             // Only non-critical check is unhealthy — liveness should still pass
-            registry.register(stubNonCriticalUnhealthyCheck("database [GH-90000]"));
+            registry.register(stubNonCriticalUnhealthyCheck("database"));
             HealthCheckRegistry.OverallHealthResult result =
                     runPromise(() -> registry.liveness()); // GH-90000
             assertThat(result.isHealthy()).isTrue(); // GH-90000
@@ -182,7 +182,7 @@ class HealthCheckRegistryTest extends EventloopTestBase {
     // ─── runAllChecks ─────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("runAllChecks: returns map keyed by check name [GH-90000]")
+    @DisplayName("runAllChecks: returns map keyed by check name")
     void runAllChecks_returnsMap() { // GH-90000
         registry.register(stubCheck("alpha", false, true)); // GH-90000
         registry.register(stubCheck("beta", false, true)); // GH-90000
@@ -196,17 +196,17 @@ class HealthCheckRegistryTest extends EventloopTestBase {
     // ─── getLastResult ────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("getLastResult: populated after a check runs [GH-90000]")
+    @DisplayName("getLastResult: populated after a check runs")
     void getLastResult_afterRun_present() { // GH-90000
         registry.register(stubCheck("srv", false, true)); // GH-90000
         runPromise(() -> registry.health()); // GH-90000
-        assertThat(registry.getLastResult("srv [GH-90000]")).isPresent();
+        assertThat(registry.getLastResult("srv")).isPresent();
     }
 
     @Test
-    @DisplayName("getLastResult: empty for unregistered name [GH-90000]")
+    @DisplayName("getLastResult: empty for unregistered name")
     void getLastResult_unknown_empty() { // GH-90000
-        assertThat(registry.getLastResult("nonexistent [GH-90000]")).isEmpty();
+        assertThat(registry.getLastResult("nonexistent")).isEmpty();
     }
 
     // ─── helpers ─────────────────────────────────────────────────────────────
@@ -218,8 +218,8 @@ class HealthCheckRegistryTest extends EventloopTestBase {
             @Override
             public Promise<HealthCheckResult> check() { // GH-90000
                 return Promise.of(healthy // GH-90000
-                        ? HealthCheckResult.healthy("OK [GH-90000]")
-                        : HealthCheckResult.unhealthy("FAIL [GH-90000]"));
+                        ? HealthCheckResult.healthy("OK")
+                        : HealthCheckResult.unhealthy("FAIL"));
             }
         };
     }
@@ -234,7 +234,7 @@ class HealthCheckRegistryTest extends EventloopTestBase {
             @Override public boolean isCritical() { return false; } // GH-90000
             @Override
             public Promise<HealthCheckResult> check() { // GH-90000
-                return Promise.of(HealthCheckResult.unhealthy("FAIL [GH-90000]"));
+                return Promise.of(HealthCheckResult.unhealthy("FAIL"));
             }
         };
     }

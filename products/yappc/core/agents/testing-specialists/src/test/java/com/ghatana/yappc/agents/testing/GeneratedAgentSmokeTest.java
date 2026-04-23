@@ -25,7 +25,7 @@ import com.ghatana.yappc.agents.code.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("Generated Agent Smoke Tests [GH-90000]")
+@DisplayName("Generated Agent Smoke Tests")
 class GeneratedAgentSmokeTest extends EventloopTestBase {
 
   private MemoryStore memoryStore;
@@ -45,18 +45,18 @@ class GeneratedAgentSmokeTest extends EventloopTestBase {
   // ===== L1 Strategic Agents =====
 
   @Test
-  @DisplayName("ProductsOfficerAgent should execute [GH-90000]")
+  @DisplayName("ProductsOfficerAgent should execute")
   void productsOfficer() { // GH-90000
     var agent = new ProductsOfficerAgent(memoryStore, // GH-90000
         new ProductsOfficerAgent.ProductsOfficerGenerator()); // GH-90000
     var result = runPromise(() -> agent.execute( // GH-90000
         new ProductsOfficerInput("portfolio-1", List.of("grow", "scale"), Map.of()), ctx())); // GH-90000
     assertThat(result.success()).isTrue(); // GH-90000
-    assertThat(agent.stepName()).isEqualTo("strategic.products-officer [GH-90000]");
+    assertThat(agent.stepName()).isEqualTo("strategic.products-officer");
   }
 
   @Test
-  @DisplayName("SystemsArchitectAgent should execute [GH-90000]")
+  @DisplayName("SystemsArchitectAgent should execute")
   void systemsArchitect() { // GH-90000
     var agent = new SystemsArchitectAgent(memoryStore, // GH-90000
         new SystemsArchitectAgent.SystemsArchitectGenerator()); // GH-90000
@@ -66,7 +66,7 @@ class GeneratedAgentSmokeTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("FullLifecycleOrchestratorAgent should execute [GH-90000]")
+  @DisplayName("FullLifecycleOrchestratorAgent should execute")
   void fullLifecycle() { // GH-90000
     var agent = new FullLifecycleOrchestratorAgent(memoryStore, // GH-90000
         new FullLifecycleOrchestratorAgent.FullLifecycleOrchestratorGenerator()); // GH-90000
@@ -78,7 +78,7 @@ class GeneratedAgentSmokeTest extends EventloopTestBase {
   // ===== L2 Expert Agents =====
 
   @Test
-  @DisplayName("JavaExpertAgent should execute [GH-90000]")
+  @DisplayName("JavaExpertAgent should execute")
   void javaExpert() { // GH-90000
     var agent = new JavaExpertAgent(memoryStore, // GH-90000
         new JavaExpertAgent.JavaExpertGenerator()); // GH-90000
@@ -88,7 +88,7 @@ class GeneratedAgentSmokeTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("SentinelAgent should execute [GH-90000]")
+  @DisplayName("SentinelAgent should execute")
   void sentinel() { // GH-90000
     var agent = new SentinelAgent(memoryStore, // GH-90000
         new SentinelAgent.SentinelGenerator()); // GH-90000
@@ -98,7 +98,7 @@ class GeneratedAgentSmokeTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("DebugOrchestratorAgent should execute [GH-90000]")
+  @DisplayName("DebugOrchestratorAgent should execute")
   void debugOrchestrator() { // GH-90000
     var agent = new DebugOrchestratorAgent(memoryStore, // GH-90000
         new DebugOrchestratorAgent.DebugOrchestratorGenerator()); // GH-90000
@@ -110,7 +110,7 @@ class GeneratedAgentSmokeTest extends EventloopTestBase {
   // ===== L3 Worker Agents: Code Generation =====
 
   @Test
-  @DisplayName("JavaClassWriterAgent should execute [GH-90000]")
+  @DisplayName("JavaClassWriterAgent should execute")
   void javaClassWriter() { // GH-90000
     var agent = new JavaClassWriterAgent(memoryStore, // GH-90000
         new JavaClassWriterAgent.JavaClassWriterGenerator()); // GH-90000
@@ -120,7 +120,7 @@ class GeneratedAgentSmokeTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("UnitTestWriterAgent should execute [GH-90000]")
+  @DisplayName("UnitTestWriterAgent should execute")
   void unitTestWriter() { // GH-90000
     var agent = new UnitTestWriterAgent(memoryStore, // GH-90000
         new UnitTestWriterAgent.UnitTestWriterGenerator()); // GH-90000
@@ -132,7 +132,7 @@ class GeneratedAgentSmokeTest extends EventloopTestBase {
   // ===== L3 Worker Agents: Debug =====
 
   @Test
-  @DisplayName("LogAnalysisAgent should execute [GH-90000]")
+  @DisplayName("LogAnalysisAgent should execute")
   void logAnalysis() { // GH-90000
     var agent = new LogAnalysisAgent(memoryStore, // GH-90000
         new LogAnalysisAgent.LogAnalysisGenerator()); // GH-90000
@@ -142,7 +142,7 @@ class GeneratedAgentSmokeTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("StackTraceAnalyzerAgent should execute [GH-90000]")
+  @DisplayName("StackTraceAnalyzerAgent should execute")
   void stackTraceAnalyzer() { // GH-90000
     var agent = new StackTraceAnalyzerAgent(memoryStore, // GH-90000
         new StackTraceAnalyzerAgent.StackTraceAnalyzerGenerator()); // GH-90000
@@ -152,7 +152,7 @@ class GeneratedAgentSmokeTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("RootCauseAnalysisAgent should execute [GH-90000]")
+  @DisplayName("RootCauseAnalysisAgent should execute")
   void rootCauseAnalysis() { // GH-90000
     var agent = new RootCauseAnalysisAgent(memoryStore, // GH-90000
         new RootCauseAnalysisAgent.RootCauseAnalysisGenerator()); // GH-90000
@@ -164,7 +164,7 @@ class GeneratedAgentSmokeTest extends EventloopTestBase {
   // ===== L3 Worker Agents: Release Governance =====
 
   @Test
-  @DisplayName("SbomGeneratorAgent should execute [GH-90000]")
+  @DisplayName("SbomGeneratorAgent should execute")
   void sbomGenerator() { // GH-90000
     var agent = new SbomGeneratorAgent(memoryStore, // GH-90000
         new SbomGeneratorAgent.SbomGeneratorGenerator()); // GH-90000
@@ -174,7 +174,7 @@ class GeneratedAgentSmokeTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("ReleaseGateAgent should execute [GH-90000]")
+  @DisplayName("ReleaseGateAgent should execute")
   void releaseGate() { // GH-90000
     var agent = new ReleaseGateAgent(memoryStore, // GH-90000
         new ReleaseGateAgent.ReleaseGateGenerator()); // GH-90000
@@ -186,7 +186,7 @@ class GeneratedAgentSmokeTest extends EventloopTestBase {
   // ===== L3 Worker Agents: Integration Bridges =====
 
   @Test
-  @DisplayName("RepoIntegrationAgent should execute [GH-90000]")
+  @DisplayName("RepoIntegrationAgent should execute")
   void repoIntegration() { // GH-90000
     var agent = new RepoIntegrationAgent(memoryStore, // GH-90000
         new RepoIntegrationAgent.RepoIntegrationGenerator()); // GH-90000
@@ -196,7 +196,7 @@ class GeneratedAgentSmokeTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("NotificationAgent should execute [GH-90000]")
+  @DisplayName("NotificationAgent should execute")
   void notification() { // GH-90000
     var agent = new NotificationAgent(memoryStore, // GH-90000
         new NotificationAgent.NotificationGenerator()); // GH-90000
@@ -208,7 +208,7 @@ class GeneratedAgentSmokeTest extends EventloopTestBase {
   // ===== L3 Worker Agents: Governance =====
 
   @Test
-  @DisplayName("BudgetGateAgent should execute [GH-90000]")
+  @DisplayName("BudgetGateAgent should execute")
   void budgetGate() { // GH-90000
     var agent = new BudgetGateAgent(memoryStore, // GH-90000
         new BudgetGateAgent.BudgetGateGenerator()); // GH-90000
@@ -220,7 +220,7 @@ class GeneratedAgentSmokeTest extends EventloopTestBase {
   // ===== L3 Worker Agents: Stack Experts =====
 
   @Test
-  @DisplayName("ActivejExpertAgent should execute [GH-90000]")
+  @DisplayName("ActivejExpertAgent should execute")
   void activejExpert() { // GH-90000
     var agent = new ActivejExpertAgent(memoryStore, // GH-90000
         new ActivejExpertAgent.ActivejExpertGenerator()); // GH-90000
@@ -230,7 +230,7 @@ class GeneratedAgentSmokeTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("PrismaExpertAgent should execute [GH-90000]")
+  @DisplayName("PrismaExpertAgent should execute")
   void prismaExpert() { // GH-90000
     var agent = new PrismaExpertAgent(memoryStore, // GH-90000
         new PrismaExpertAgent.PrismaExpertGenerator()); // GH-90000

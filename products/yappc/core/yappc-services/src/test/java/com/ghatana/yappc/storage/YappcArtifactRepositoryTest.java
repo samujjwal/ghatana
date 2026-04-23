@@ -74,8 +74,8 @@ class YappcArtifactRepositoryTest extends EventloopTestBase {
         // THEN - metadata stored successfully and can be retrieved
         Map<String, String> retrieved = runPromise(() -> store.getMetadata( // GH-90000
             String.format("products/%s/phases/%s/%s/metadata", productId, phase.name().toLowerCase(), version))); // GH-90000
-        assertEquals("test", retrieved.get("author [GH-90000]"));
-        assertEquals("2025-01-07", retrieved.get("timestamp [GH-90000]"));
+        assertEquals("test", retrieved.get("author"));
+        assertEquals("2025-01-07", retrieved.get("timestamp"));
     }
 
     @Test
@@ -88,6 +88,6 @@ class YappcArtifactRepositoryTest extends EventloopTestBase {
         // WHEN/THEN
         Exception e = assertThrows(Exception.class, () -> // GH-90000
                 runPromise(() -> repository.getArtifact(productId, phase, version))); // GH-90000
-        assertTrue(e.getMessage().contains("not found [GH-90000]"));
+        assertTrue(e.getMessage().contains("not found"));
     }
 }

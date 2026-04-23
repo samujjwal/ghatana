@@ -4,7 +4,7 @@
  */
 package com.ghatana.contracts.openapi;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -32,23 +32,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("OpenAPI Schema Validation Tests")
 class OpenApiSchemaValidationTest {
 
+    private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {
+    };
     private static final YAMLMapper yamlMapper = new YAMLMapper();
-    private static final ObjectMapper jsonMapper = new ObjectMapper();
 
     @Test
     @DisplayName("should validate all OpenAPI YAML files are well-formed")
     void shouldValidateOpenApiYamlFilesAreWellFormed() throws IOException {
-        Path openapiDir = Paths.get("openapi");
-        List<File> yamlFiles = Files.walk(openapiDir)
-                .filter(Files::isRegularFile)
-                .filter(p -> p.toString().endsWith(".yaml"))
-                .map(Path::toFile)
-                .toList();
+        List<File> yamlFiles = findYamlFiles();
 
         assertThat(yamlFiles).isNotEmpty();
 
         for (File yamlFile : yamlFiles) {
-            Map<String, Object> schema = yamlMapper.readValue(yamlFile, Map.class);
+            Map<String, Object> schema = readYamlMap(yamlFile);
             assertThat(schema).containsKey("openapi");
             assertThat(schema).containsKey("info");
             // Only check for paths if this is an API specification (not a schema definition)
@@ -62,15 +58,10 @@ class OpenApiSchemaValidationTest {
     @Test
     @DisplayName("should validate OpenAPI version is 3.0 or higher")
     void shouldValidateOpenApiVersion() throws IOException {
-        Path openapiDir = Paths.get("openapi");
-        List<File> yamlFiles = Files.walk(openapiDir)
-                .filter(Files::isRegularFile)
-                .filter(p -> p.toString().endsWith(".yaml"))
-                .map(Path::toFile)
-                .toList();
+        List<File> yamlFiles = findYamlFiles();
 
         for (File yamlFile : yamlFiles) {
-            Map<String, Object> schema = yamlMapper.readValue(yamlFile, Map.class);
+            Map<String, Object> schema = readYamlMap(yamlFile);
             String openapiVersion = (String) schema.get("openapi");
             assertThat(openapiVersion).startsWith("3.");
         }
@@ -79,27 +70,45 @@ class OpenApiSchemaValidationTest {
     @Test
     @DisplayName("should validate required OpenAPI fields exist")
     void shouldValidateRequiredFieldsExist() throws IOException {
-        Path openapiDir = Paths.get("openapi");
-        List<File> yamlFiles = Files.walk(openapiDir)
-                .filter(Files::isRegularFile)
-                .filter(p -> p.toString().endsWith(".yaml"))
-                .map(Path::toFile)
-                .toList();
+        List<File> yamlFiles = findYamlFiles();
 
         for (File yamlFile : yamlFiles) {
-            Map<String, Object> schema = yamlMapper.readValue(yamlFile, Map.class);
+            Map<String, Object> schema = readYamlMap(yamlFile);
 
             // Check info section
             assertThat(schema).containsKey("info");
-            Map<String, Object> info = (Map<String, Object>) schema.get("info");
+            Map<String, Object> info = requireNestedMap(schema, "info");
             assertThat(info).containsKey("title");
             assertThat(info).containsKey("version");
 
             // Check paths section only if this is an API specification
             if (schema.containsKey("paths")) {
-                Map<String, Object> paths = (Map<String, Object>) schema.get("paths");
+                Map<String, Object> paths = requireNestedMap(schema, "paths");
                 assertThat(paths).isNotEmpty();
             }
         }
+    }
+
+    private static List<File> findYamlFiles() throws IOException {
+        Path openapiDir = Paths.get("openapi");
+        try (var paths = Files.walk(openapiDir)) {
+            return paths
+                    .filter(Files::isRegularFile)
+                    .filter(path -> path.toString().endsWith(".yaml"))
+                    .map(Path::toFile)
+                    .toList();
+        }
+    }
+
+    private static Map<String, Object> readYamlMap(File yamlFile) throws IOException {
+        return yamlMapper.readValue(yamlFile, MAP_TYPE);
+    }
+
+    private static Map<String, Object> requireNestedMap(Map<String, Object> parent, String key) {
+        Object value = parent.get(key);
+        assertThat(value).as("field '%s' must be a map", key).isInstanceOf(Map.class);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> nested = (Map<String, Object>) value;
+        return nested;
     }
 }

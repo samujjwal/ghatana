@@ -41,7 +41,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("YAPPC Security Hardening [GH-90000]")
+@DisplayName("YAPPC Security Hardening")
 class SecurityHardeningTest extends EventloopTestBase {
 
     private EncryptionService    encryptionService;
@@ -67,30 +67,30 @@ class SecurityHardeningTest extends EventloopTestBase {
     // ── Encryption at rest (SEC-001) ───────────────────────────────────────── // GH-90000
 
     @Nested
-    @DisplayName("SEC-001: Encryption at rest [GH-90000]")
+    @DisplayName("SEC-001: Encryption at rest")
     class EncryptionAtRest {
 
         @Test
-        @DisplayName("sensitive API key is stored as ciphertext, not plaintext [GH-90000]")
+        @DisplayName("sensitive API key is stored as ciphertext, not plaintext")
         void apiKeyStoredAsCiphertext() { // GH-90000
             String apiKey     = "sk-prod-supersecret12345";
             String ciphertext = encryptionService.encrypt(apiKey); // GH-90000
 
             assertThat(ciphertext).doesNotContain(apiKey); // GH-90000
-            assertThat(ciphertext).doesNotContain("sk-prod [GH-90000]");
+            assertThat(ciphertext).doesNotContain("sk-prod");
         }
 
         @Test
-        @DisplayName("ciphertext is Base64 encoded (safe for column storage) [GH-90000]")
+        @DisplayName("ciphertext is Base64 encoded (safe for column storage)")
         void ciphertextIsBase64() { // GH-90000
-            String ciphertext = encryptionService.encrypt("sensitive-value [GH-90000]");
+            String ciphertext = encryptionService.encrypt("sensitive-value");
             // Validate Base64 by decoding — no exception means it is valid Base64
             byte[] raw = Base64.getDecoder().decode(ciphertext); // GH-90000
             assertThat(raw).hasSizeGreaterThan(12); // IV (12) + at least 1 byte of data // GH-90000
         }
 
         @Test
-        @DisplayName("round-trip of API key preserves original value [GH-90000]")
+        @DisplayName("round-trip of API key preserves original value")
         void roundTripPreservesApiKey() { // GH-90000
             String apiKey   = "sk-prod-supersecret12345";
             String decrypted = encryptionService.decrypt(encryptionService.encrypt(apiKey)); // GH-90000
@@ -98,9 +98,9 @@ class SecurityHardeningTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("tampered ciphertext raises EncryptionException (no silent failure) [GH-90000]")
+        @DisplayName("tampered ciphertext raises EncryptionException (no silent failure)")
         void tamperedCiphertextRaisesException() { // GH-90000
-            String ciphertext = encryptionService.encrypt("secret [GH-90000]");
+            String ciphertext = encryptionService.encrypt("secret");
             // Flip the last character to corrupt the GCM tag
             String tampered = ciphertext.substring(0, ciphertext.length() - 1) + "X"; // GH-90000
             assertThatThrownBy(() -> encryptionService.decrypt(tampered)) // GH-90000
@@ -111,11 +111,11 @@ class SecurityHardeningTest extends EventloopTestBase {
     // ── Audit trail completeness (SEC-002) ─────────────────────────────────── // GH-90000
 
     @Nested
-    @DisplayName("SEC-002: Audit trail completeness [GH-90000]")
+    @DisplayName("SEC-002: Audit trail completeness")
     class AuditTrail {
 
         @Test
-        @DisplayName("every login attempt — success or failure — is audited [GH-90000]")
+        @DisplayName("every login attempt — success or failure — is audited")
         void loginAttemptsAreAudited() { // GH-90000
             auditLogger.loginSuccess("alice", "tenant-1", "10.0.0.1"); // GH-90000
             auditLogger.loginFailure("eve",   "tenant-1", "bad-key"); // GH-90000
@@ -128,7 +128,7 @@ class SecurityHardeningTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("RBAC deny decision produces an AUTHZ_DENY audit event [GH-90000]")
+        @DisplayName("RBAC deny decision produces an AUTHZ_DENY audit event")
         void rbacDenyIsAudited() { // GH-90000
             auditLogger.authorizationDecision(false, "viewer", "tenant-1", "admin-api", "delete"); // GH-90000
 
@@ -139,7 +139,7 @@ class SecurityHardeningTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("sensitive data read is audited with SENSITIVE_DATA_ACCESSED [GH-90000]")
+        @DisplayName("sensitive data read is audited with SENSITIVE_DATA_ACCESSED")
         void sensitiveDataReadIsAudited() { // GH-90000
             auditLogger.sensitiveDataAccess("alice", "tenant-1", "encryption-key", "READ"); // GH-90000
 
@@ -151,11 +151,11 @@ class SecurityHardeningTest extends EventloopTestBase {
     // ── Tenant isolation (SEC-003) ──────────────────────────────────────────── // GH-90000
 
     @Nested
-    @DisplayName("SEC-003: Tenant isolation [GH-90000]")
+    @DisplayName("SEC-003: Tenant isolation")
     class TenantIsolation {
 
         @Test
-        @DisplayName("cross-tenant access attempt is audited as a TENANT_ISOLATION_VIOLATION [GH-90000]")
+        @DisplayName("cross-tenant access attempt is audited as a TENANT_ISOLATION_VIOLATION")
         void crossTenantViolationIsAudited() { // GH-90000
             auditLogger.tenantIsolationViolation("alice", "tenant-A", "tenant-B", "/projects/secret"); // GH-90000
 
@@ -171,17 +171,17 @@ class SecurityHardeningTest extends EventloopTestBase {
     // ── Feature flag security guards (SEC-004) ──────────────────────────────── // GH-90000
 
     @Nested
-    @DisplayName("SEC-004: Feature flag security controls [GH-90000]")
+    @DisplayName("SEC-004: Feature flag security controls")
     class FeatureFlagSecurityControls {
 
         @Test
-        @DisplayName("AEP_INTEGRATION flag defaults to disabled — prevents accidental exposure [GH-90000]")
+        @DisplayName("AEP_INTEGRATION flag defaults to disabled — prevents accidental exposure")
         void aepIntegrationDefaultsToDisabled() { // GH-90000
             assertThat(featureFlagService.isDisabled(FeatureFlag.AEP_INTEGRATION)).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("snapshot lists all flags — no hidden flags [GH-90000]")
+        @DisplayName("snapshot lists all flags — no hidden flags")
         void snapshotListsAllFlags() { // GH-90000
             Map<FeatureFlag, Boolean> snapshot = featureFlagService.snapshot(); // GH-90000
             // All enum constants must be represented in the snapshot
@@ -191,7 +191,7 @@ class SecurityHardeningTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("enableing a flag in test overrides does not affect production path when cleared [GH-90000]")
+        @DisplayName("enableing a flag in test overrides does not affect production path when cleared")
         void testOverrideDoesNotPersist() { // GH-90000
             FeatureFlags.override(FeatureFlag.AI_CANVAS_GENERATION, true); // GH-90000
             assertThat(featureFlagService.isEnabled(FeatureFlag.AI_CANVAS_GENERATION)).isTrue(); // GH-90000
@@ -204,17 +204,17 @@ class SecurityHardeningTest extends EventloopTestBase {
     // ── Input validation at security boundary (SEC-005) ─────────────────────── // GH-90000
 
     @Nested
-    @DisplayName("SEC-005: Input validation at security boundary [GH-90000]")
+    @DisplayName("SEC-005: Input validation at security boundary")
     class InputValidation {
 
         @Test
-        @DisplayName("encrypting empty string does not crash [GH-90000]")
+        @DisplayName("encrypting empty string does not crash")
         void encryptingEmptyStringDoesNotCrash() { // GH-90000
-            assertThat(encryptionService.encrypt(" [GH-90000]")).isNotBlank();
+            assertThat(encryptionService.encrypt("")).isNotBlank();
         }
 
         @Test
-        @DisplayName("null login principal is replaced with 'anonymous' — no crash, no PII leak [GH-90000]")
+        @DisplayName("null login principal is replaced with 'anonymous' — no crash, no PII leak")
         void nullPrincipalReplacedWithAnonymous() { // GH-90000
             auditLogger.loginFailure(null, "tenant-1", "bad-key"); // GH-90000
 
@@ -223,7 +223,7 @@ class SecurityHardeningTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("encrypting null plaintext throws NullPointerException (fail-fast) [GH-90000]")
+        @DisplayName("encrypting null plaintext throws NullPointerException (fail-fast)")
         void encryptingNullThrowsNPE() { // GH-90000
             assertThatThrownBy(() -> encryptionService.encrypt(null)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000

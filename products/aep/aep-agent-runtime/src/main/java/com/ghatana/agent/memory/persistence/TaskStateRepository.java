@@ -14,7 +14,8 @@ import java.util.List;
  * @doc.type interface
  * @doc.purpose Task state persistence SPI
  * @doc.layer agent-memory
- */
+  * @doc.pattern Repository
+*/
 public interface TaskStateRepository {
 
     @NotNull Promise<TaskState> save(@NotNull TaskState task);

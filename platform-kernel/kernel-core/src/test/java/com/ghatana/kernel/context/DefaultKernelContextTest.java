@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @doc.layer test
  * @author Ghatana Kernel Team
  */
-@DisplayName("DefaultKernelContext Tests [GH-90000]")
+@DisplayName("DefaultKernelContext Tests")
 class DefaultKernelContextTest {
 
     private DefaultKernelContext context;
@@ -42,20 +42,20 @@ class DefaultKernelContextTest {
     }
 
     @Test
-    @DisplayName("Should return correct kernel metadata [GH-90000]")
+    @DisplayName("Should return correct kernel metadata")
     void shouldReturnCorrectKernelMetadata() { // GH-90000
         assertEquals("1.0.0", context.getKernelVersion()); // GH-90000
         assertEquals("test", context.getEnvironment()); // GH-90000
     }
 
     @Test
-    @DisplayName("Should return eventloop instance [GH-90000]")
+    @DisplayName("Should return eventloop instance")
     void shouldReturnEventloopInstance() { // GH-90000
         assertSame(eventloop, context.getEventloop()); // GH-90000
     }
 
     @Test
-    @DisplayName("Should register and retrieve typed dependencies [GH-90000]")
+    @DisplayName("Should register and retrieve typed dependencies")
     void shouldRegisterAndRetrieveTypedDependencies() { // GH-90000
         TestService service = new TestService(); // GH-90000
 
@@ -67,22 +67,22 @@ class DefaultKernelContextTest {
     }
 
     @Test
-    @DisplayName("Should throw exception for missing typed dependency [GH-90000]")
+    @DisplayName("Should throw exception for missing typed dependency")
     void shouldThrowExceptionForMissingTypedDependency() { // GH-90000
         IllegalStateException exception = assertThrows(IllegalStateException.class, // GH-90000
             () -> context.getDependency(TestService.class)); // GH-90000
-        assertTrue(exception.getMessage().contains("not found [GH-90000]"));
+        assertTrue(exception.getMessage().contains("not found"));
     }
 
     @Test
-    @DisplayName("Should return empty optional for missing optional dependency [GH-90000]")
+    @DisplayName("Should return empty optional for missing optional dependency")
     void shouldReturnEmptyOptionalForMissingOptionalDependency() { // GH-90000
         Optional<TestService> optional = context.getOptionalDependency(TestService.class); // GH-90000
         assertTrue(optional.isEmpty()); // GH-90000
     }
 
     @Test
-    @DisplayName("Should register and retrieve named dependencies [GH-90000]")
+    @DisplayName("Should register and retrieve named dependencies")
     void shouldRegisterAndRetrieveNamedDependencies() { // GH-90000
         TestService service = new TestService(); // GH-90000
 
@@ -92,26 +92,26 @@ class DefaultKernelContextTest {
     }
 
     @Test
-    @DisplayName("Should throw exception for missing named dependency [GH-90000]")
+    @DisplayName("Should throw exception for missing named dependency")
     void shouldThrowExceptionForMissingNamedDependency() { // GH-90000
         IllegalStateException exception = assertThrows(IllegalStateException.class, // GH-90000
             () -> context.getDependency("missing-service", TestService.class)); // GH-90000
-        assertTrue(exception.getMessage().contains("not found [GH-90000]"));
+        assertTrue(exception.getMessage().contains("not found"));
     }
 
     @Test
-    @DisplayName("Should throw exception for type mismatch in named dependency [GH-90000]")
+    @DisplayName("Should throw exception for type mismatch in named dependency")
     void shouldThrowExceptionForTypeMismatchInNamedDependency() { // GH-90000
         TestService service = new TestService(); // GH-90000
         context.registerDependency("my-service", service); // GH-90000
 
         IllegalStateException exception = assertThrows(IllegalStateException.class, // GH-90000
             () -> context.getDependency("my-service", String.class)); // GH-90000
-        assertTrue(exception.getMessage().contains("type mismatch [GH-90000]"));
+        assertTrue(exception.getMessage().contains("type mismatch"));
     }
 
     @Test
-    @DisplayName("Should register and invoke event handlers [GH-90000]")
+    @DisplayName("Should register and invoke event handlers")
     void shouldRegisterAndInvokeEventHandlers() { // GH-90000
         AtomicBoolean handled = new AtomicBoolean(false); // GH-90000
         AtomicReference<TestEvent> capturedEvent = new AtomicReference<>(); // GH-90000
@@ -123,7 +123,7 @@ class DefaultKernelContextTest {
 
         context.registerEventHandler(TestEvent.class, handler); // GH-90000
 
-        TestEvent event = new TestEvent("test-data [GH-90000]");
+        TestEvent event = new TestEvent("test-data");
         context.publishEvent(event); // GH-90000
 
         assertTrue(handled.get()); // GH-90000
@@ -131,7 +131,7 @@ class DefaultKernelContextTest {
     }
 
     @Test
-    @DisplayName("Should unregister event handlers [GH-90000]")
+    @DisplayName("Should unregister event handlers")
     void shouldUnregisterEventHandlers() { // GH-90000
         AtomicBoolean handled = new AtomicBoolean(false); // GH-90000
 
@@ -142,13 +142,13 @@ class DefaultKernelContextTest {
         context.registerEventHandler(TestEvent.class, handler); // GH-90000
         context.unregisterEventHandler(TestEvent.class, handler); // GH-90000
 
-        context.publishEvent(new TestEvent("test [GH-90000]"));
+        context.publishEvent(new TestEvent("test"));
 
         assertFalse(handled.get()); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle multiple event handlers [GH-90000]")
+    @DisplayName("Should handle multiple event handlers")
     void shouldHandleMultipleEventHandlers() { // GH-90000
         AtomicBoolean handler1Called = new AtomicBoolean(false); // GH-90000
         AtomicBoolean handler2Called = new AtomicBoolean(false); // GH-90000
@@ -161,19 +161,19 @@ class DefaultKernelContextTest {
             handler2Called.set(true); // GH-90000
         });
 
-        context.publishEvent(new TestEvent("test [GH-90000]"));
+        context.publishEvent(new TestEvent("test"));
 
         assertTrue(handler1Called.get()); // GH-90000
         assertTrue(handler2Called.get()); // GH-90000
     }
 
     @Test
-    @DisplayName("Should continue with other handlers when one throws [GH-90000]")
+    @DisplayName("Should continue with other handlers when one throws")
     void shouldContinueWithOtherHandlersWhenOneThrows() { // GH-90000
         AtomicBoolean goodHandlerCalled = new AtomicBoolean(false); // GH-90000
 
         context.registerEventHandler(TestEvent.class, event -> { // GH-90000
-            throw new RuntimeException("Handler error [GH-90000]");
+            throw new RuntimeException("Handler error");
         });
 
         context.registerEventHandler(TestEvent.class, event -> { // GH-90000
@@ -181,18 +181,18 @@ class DefaultKernelContextTest {
         });
 
         // Should not throw
-        assertDoesNotThrow(() -> context.publishEvent(new TestEvent("test [GH-90000]")));
+        assertDoesNotThrow(() -> context.publishEvent(new TestEvent("test")));
         assertTrue(goodHandlerCalled.get()); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle null events gracefully [GH-90000]")
+    @DisplayName("Should handle null events gracefully")
     void shouldHandleNullEventsGracefully() { // GH-90000
         assertDoesNotThrow(() -> context.publishEvent(null)); // GH-90000
     }
 
     @Test
-    @DisplayName("Should return available capabilities from registry [GH-90000]")
+    @DisplayName("Should return available capabilities from registry")
     void shouldReturnAvailableCapabilitiesFromRegistry() { // GH-90000
         Set<KernelCapability> capabilities = context.getAvailableCapabilities(); // GH-90000
         assertNotNull(capabilities); // GH-90000
@@ -200,21 +200,21 @@ class DefaultKernelContextTest {
     }
 
     @Test
-    @DisplayName("Should check capability availability [GH-90000]")
+    @DisplayName("Should check capability availability")
     void shouldCheckCapabilityAvailability() { // GH-90000
         assertTrue(context.hasCapability(KernelCapability.Core.DATA_STORAGE)); // GH-90000
         assertFalse(context.hasCapability(new KernelCapability("nonexistent", "Non-existent", "Test", KernelCapability.CapabilityType.DATA_MANAGEMENT, java.util.Map.of()))); // GH-90000
     }
 
     @Test
-    @DisplayName("Should get config from resolver [GH-90000]")
+    @DisplayName("Should get config from resolver")
     void shouldGetConfigFromResolver() { // GH-90000
         String configValue = context.getConfig("test.key", String.class); // GH-90000
         assertEquals("test-value", configValue); // GH-90000
     }
 
     @Test
-    @DisplayName("Should get optional config [GH-90000]")
+    @DisplayName("Should get optional config")
     void shouldGetOptionalConfig() { // GH-90000
         Optional<String> configValue = context.getOptionalConfig("optional.key", String.class); // GH-90000
         assertTrue(configValue.isPresent()); // GH-90000
@@ -222,7 +222,7 @@ class DefaultKernelContextTest {
     }
 
     @Test
-    @DisplayName("Should return default tenant context [GH-90000]")
+    @DisplayName("Should return default tenant context")
     void shouldReturnDefaultTenantContext() { // GH-90000
         KernelTenantContext tenantContext = context.getTenantContext(); // GH-90000
 
@@ -232,7 +232,7 @@ class DefaultKernelContextTest {
     }
 
     @Test
-    @DisplayName("Should register and retrieve tenant context [GH-90000]")
+    @DisplayName("Should register and retrieve tenant context")
     void shouldRegisterAndRetrieveTenantContext() { // GH-90000
         KernelTenantContext customTenant = new KernelTenantContext( // GH-90000
             "tenant-123",
@@ -245,34 +245,34 @@ class DefaultKernelContextTest {
 
         context.registerTenantContext("tenant-123", customTenant); // GH-90000
 
-        KernelTenantContext retrieved = context.getTenantContext("tenant-123 [GH-90000]");
+        KernelTenantContext retrieved = context.getTenantContext("tenant-123");
         assertEquals("tenant-123", retrieved.getTenantId()); // GH-90000
         assertEquals(KernelTenantContext.TenantType.ENTERPRISE, retrieved.getTenantType()); // GH-90000
     }
 
     @Test
-    @DisplayName("Should throw exception for non-existent tenant [GH-90000]")
+    @DisplayName("Should throw exception for non-existent tenant")
     void shouldThrowExceptionForNonExistentTenant() { // GH-90000
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, // GH-90000
-            () -> context.getTenantContext("non-existent [GH-90000]"));
-        assertTrue(exception.getMessage().contains("not found [GH-90000]"));
+            () -> context.getTenantContext("non-existent"));
+        assertTrue(exception.getMessage().contains("not found"));
     }
 
     @Test
-    @DisplayName("Should return registry [GH-90000]")
+    @DisplayName("Should return registry")
     void shouldReturnRegistry() { // GH-90000
         assertSame(mockRegistry, context.getRegistry()); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle unknown event types gracefully [GH-90000]")
+    @DisplayName("Should handle unknown event types gracefully")
     void shouldHandleUnknownEventTypesGracefully() { // GH-90000
         // Publish event with no handlers registered
         assertDoesNotThrow(() -> context.publishEvent(new UnhandledEvent())); // GH-90000
     }
 
     @Test
-    @DisplayName("Should maintain separate handler lists for different event types [GH-90000]")
+    @DisplayName("Should maintain separate handler lists for different event types")
     void shouldMaintainSeparateHandlerListsForDifferentEventTypes() { // GH-90000
         AtomicBoolean testHandlerCalled = new AtomicBoolean(false); // GH-90000
         AtomicBoolean otherHandlerCalled = new AtomicBoolean(false); // GH-90000
@@ -285,7 +285,7 @@ class DefaultKernelContextTest {
             otherHandlerCalled.set(true); // GH-90000
         });
 
-        context.publishEvent(new TestEvent("test [GH-90000]"));
+        context.publishEvent(new TestEvent("test"));
 
         assertTrue(testHandlerCalled.get()); // GH-90000
         assertFalse(otherHandlerCalled.get()); // GH-90000
@@ -323,7 +323,7 @@ class DefaultKernelContextTest {
         return new KernelConfigResolver() { // GH-90000
             @Override public <T> T resolve(String key, Class<T> type, KernelTenantContext tenantContext) { // GH-90000
                 if ("test.key".equals(key)) { // GH-90000
-                    return type.cast("test-value [GH-90000]");
+                    return type.cast("test-value");
                 }
                 throw new IllegalArgumentException("Config key not found: " + key); // GH-90000
             }
@@ -333,10 +333,10 @@ class DefaultKernelContextTest {
             }
             @Override public <T> java.util.Optional<T> resolveOptional(String key, Class<T> type, KernelTenantContext tenantContext) { // GH-90000
                 if ("optional.key".equals(key)) { // GH-90000
-                    return java.util.Optional.of(type.cast("optional-value [GH-90000]"));
+                    return java.util.Optional.of(type.cast("optional-value"));
                 }
                 if ("test.key".equals(key)) { // GH-90000
-                    return java.util.Optional.of(type.cast("test-value [GH-90000]"));
+                    return java.util.Optional.of(type.cast("test-value"));
                 }
                 return java.util.Optional.empty(); // GH-90000
             }

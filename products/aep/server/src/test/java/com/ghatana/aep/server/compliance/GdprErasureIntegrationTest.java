@@ -43,7 +43,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Integration Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("GDPR Erasure Integration Test [GH-90000]")
+@DisplayName("GDPR Erasure Integration Test")
 class GdprErasureIntegrationTest extends EventloopTestBase {
 
     private static final String TENANT = "test-tenant";
@@ -82,7 +82,7 @@ class GdprErasureIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("GDPR erasure deletes from dc_memory, EventLogStore, and all caches [GH-90000]")
+    @DisplayName("GDPR erasure deletes from dc_memory, EventLogStore, and all caches")
     void gdprErasure_deletesFromAllCollections() { // GH-90000
         // Verify initial data exists
         assertThat(storage.get(DC_MEMORY_COLLECTION)).hasSize(3); // GH-90000
@@ -97,7 +97,7 @@ class GdprErasureIntegrationTest extends EventloopTestBase {
 
         // Verify deletion succeeded
         assertThat(report.success()).isTrue(); // GH-90000
-        assertThat(report.operation()).isEqualTo("GDPR_ERASURE [GH-90000]");
+        assertThat(report.operation()).isEqualTo("GDPR_ERASURE");
         assertThat(report.recordsAffected()).isEqualTo(8L); // 3 + 2 + 1 + 2 // GH-90000
 
         // Verify data was deleted from all collections
@@ -115,7 +115,7 @@ class GdprErasureIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("GDPR erasure only deletes records matching subjectId [GH-90000]")
+    @DisplayName("GDPR erasure only deletes records matching subjectId")
     void gdprErasure_onlyDeletesMatchingSubjectId() { // GH-90000
         // Add records for a different subject
         String otherSubject = "user-456";
@@ -137,12 +137,12 @@ class GdprErasureIntegrationTest extends EventloopTestBase {
         assertThat(report.recordsAffected()).isEqualTo(8L); // GH-90000
         assertThat(storage.get(DC_MEMORY_COLLECTION)).hasSize(1); // GH-90000
         assertThat(storage.get(EVENT_LOG_COLLECTION)).hasSize(1); // GH-90000
-        assertThat(storage.get(DC_MEMORY_COLLECTION).get("mem-4 [GH-90000]").get("_subjectId [GH-90000]")).isEqualTo(otherSubject);
-        assertThat(storage.get(EVENT_LOG_COLLECTION).get("audit-3 [GH-90000]").get("_subjectId [GH-90000]")).isEqualTo(otherSubject);
+        assertThat(storage.get(DC_MEMORY_COLLECTION).get("mem-4").get("_subjectId")).isEqualTo(otherSubject);
+        assertThat(storage.get(EVENT_LOG_COLLECTION).get("audit-3").get("_subjectId")).isEqualTo(otherSubject);
     }
 
     @Test
-    @DisplayName("GDPR erasure deletes subject records across multiple result pages [GH-90000]")
+    @DisplayName("GDPR erasure deletes subject records across multiple result pages")
     void gdprErasure_deletesAcrossMultiplePages() { // GH-90000
         for (int index = 0; index < 550; index++) { // GH-90000
             addEntity(DC_MEMORY_COLLECTION, "bulk-" + index, Map.of( // GH-90000
@@ -162,7 +162,7 @@ class GdprErasureIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("GDPR erasure handles empty collections gracefully [GH-90000]")
+    @DisplayName("GDPR erasure handles empty collections gracefully")
     void gdprErasure_handlesEmptyCollections() { // GH-90000
         // Clear one collection
         storage.get(CACHE_COLLECTION).clear(); // GH-90000
@@ -177,7 +177,7 @@ class GdprErasureIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("GDPR erasure is idempotent - multiple calls are safe [GH-90000]")
+    @DisplayName("GDPR erasure is idempotent - multiple calls are safe")
     void gdprErasure_isIdempotent() { // GH-90000
         // First deletion
         AepComplianceReport report1 = eventloop().submit(() -> // GH-90000
@@ -290,8 +290,8 @@ class GdprErasureIntegrationTest extends EventloopTestBase {
         }
         List<Entity> filtered = collectionStorage.values().stream() // GH-90000
             .filter(data -> matchesFilters(data, query)) // GH-90000
-            .sorted(Comparator.comparing(data -> String.valueOf(data.get("id [GH-90000]"))))
-            .map(data -> Entity.of((String) data.get("id [GH-90000]"), collection, data))
+            .sorted(Comparator.comparing(data -> String.valueOf(data.get("id"))))
+            .map(data -> Entity.of((String) data.get("id"), collection, data))
             .toList(); // GH-90000
         int fromIndex = Math.min(query.offset(), filtered.size()); // GH-90000
         int toIndex = Math.min(fromIndex + query.limit(), filtered.size()); // GH-90000

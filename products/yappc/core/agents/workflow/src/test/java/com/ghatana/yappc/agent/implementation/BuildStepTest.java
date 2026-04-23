@@ -18,7 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Implementation BuildStep Tests [GH-90000]")
+@DisplayName("Implementation BuildStep Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles build step test operations
@@ -39,13 +39,13 @@ class BuildStepTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should return correct step ID [GH-90000]")
+  @DisplayName("Should return correct step ID")
   void shouldReturnCorrectStepId() { // GH-90000
-    assertThat(step.getStepId()).isEqualTo("implementation.build [GH-90000]");
+    assertThat(step.getStepId()).isEqualTo("implementation.build");
   }
 
   @Test
-  @DisplayName("Should execute CI builds for implementation units [GH-90000]")
+  @DisplayName("Should execute CI builds for implementation units")
   void shouldExecuteBuilds() { // GH-90000
     // GIVEN
     WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000

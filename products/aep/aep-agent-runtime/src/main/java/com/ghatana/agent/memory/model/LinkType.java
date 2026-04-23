@@ -6,7 +6,8 @@ package com.ghatana.agent.memory.model;
  * @doc.type enum
  * @doc.purpose Memory link classification
  * @doc.layer agent-memory
- */
+  * @doc.pattern Enum
+*/
 public enum LinkType {
 
     /** Source item provides evidence for target item. */

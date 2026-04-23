@@ -28,7 +28,11 @@ import java.util.UUID;
  * it can be used before the OTel agent is available. When the OTel Java agent is attached
  * it will automatically instrument gRPC calls via the {@code opentelemetry-grpc} auto-instrumentation,
  * and this interceptor's structured logs will be correlated via the MDC {@code traceId} field.
- */
+  * @doc.type class
+ * @doc.purpose Provides tracing server interceptor functionality.
+ * @doc.layer product
+ * @doc.pattern Filter
+*/
 public class TracingServerInterceptor implements ServerInterceptor {
 
     private static final Logger LOG = LoggerFactory.getLogger(TracingServerInterceptor.class);

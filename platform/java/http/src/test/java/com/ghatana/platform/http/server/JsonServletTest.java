@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("JsonServlet — JSON request parsing and response helpers [GH-90000]")
+@DisplayName("JsonServlet — JSON request parsing and response helpers")
 class JsonServletTest extends EventloopTestBase {
 
     /**
@@ -82,24 +82,24 @@ class JsonServletTest extends EventloopTestBase {
     // ── ok ────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("ok() returns 200 status code [GH-90000]")
+    @DisplayName("ok() returns 200 status code")
     void okReturns200() { // GH-90000
         HttpResponse response = servlet.doOk(Map.of("result", "value")); // GH-90000
         assertThat(response.getCode()).isEqualTo(200); // GH-90000
     }
 
     @Test
-    @DisplayName("ok() response has application/json content type [GH-90000]")
+    @DisplayName("ok() response has application/json content type")
     void okHasJsonContentType() { // GH-90000
         HttpResponse response = servlet.doOk(Map.of("key", "val")); // GH-90000
         String contentType = response.getHeader(io.activej.http.HttpHeaders.CONTENT_TYPE); // GH-90000
-        assertThat(contentType).contains("application/json [GH-90000]");
+        assertThat(contentType).contains("application/json");
     }
 
     // ── created ───────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("created() returns 201 status code [GH-90000]")
+    @DisplayName("created() returns 201 status code")
     void createdReturns201() { // GH-90000
         HttpResponse response = servlet.doCreated(Map.of("id", "123")); // GH-90000
         assertThat(response.getCode()).isEqualTo(201); // GH-90000
@@ -108,7 +108,7 @@ class JsonServletTest extends EventloopTestBase {
     // ── noContent ────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("noContent() returns 204 status code [GH-90000]")
+    @DisplayName("noContent() returns 204 status code")
     void noContentReturns204() { // GH-90000
         HttpResponse response = servlet.doNoContent(); // GH-90000
         assertThat(response.getCode()).isEqualTo(204); // GH-90000
@@ -117,44 +117,44 @@ class JsonServletTest extends EventloopTestBase {
     // ── error responses ───────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("badRequest() returns 400 status code [GH-90000]")
+    @DisplayName("badRequest() returns 400 status code")
     void badRequestReturns400() { // GH-90000
-        HttpResponse response = servlet.doBadRequest("Invalid input [GH-90000]");
+        HttpResponse response = servlet.doBadRequest("Invalid input");
         assertThat(response.getCode()).isEqualTo(400); // GH-90000
     }
 
     @Test
-    @DisplayName("unauthorized() returns 401 status code [GH-90000]")
+    @DisplayName("unauthorized() returns 401 status code")
     void unauthorizedReturns401() { // GH-90000
-        HttpResponse response = servlet.doUnauthorized("Not authenticated [GH-90000]");
+        HttpResponse response = servlet.doUnauthorized("Not authenticated");
         assertThat(response.getCode()).isEqualTo(401); // GH-90000
     }
 
     @Test
-    @DisplayName("forbidden() returns 403 status code [GH-90000]")
+    @DisplayName("forbidden() returns 403 status code")
     void forbiddenReturns403() { // GH-90000
-        HttpResponse response = servlet.doForbidden("No access [GH-90000]");
+        HttpResponse response = servlet.doForbidden("No access");
         assertThat(response.getCode()).isEqualTo(403); // GH-90000
     }
 
     @Test
-    @DisplayName("notFound() returns 404 status code [GH-90000]")
+    @DisplayName("notFound() returns 404 status code")
     void notFoundReturns404() { // GH-90000
-        HttpResponse response = servlet.doNotFound("Resource not found [GH-90000]");
+        HttpResponse response = servlet.doNotFound("Resource not found");
         assertThat(response.getCode()).isEqualTo(404); // GH-90000
     }
 
     @Test
-    @DisplayName("internalError(String) returns 500 status code [GH-90000]")
+    @DisplayName("internalError(String) returns 500 status code")
     void internalErrorReturns500() { // GH-90000
-        HttpResponse response = servlet.doInternalError("Something broke [GH-90000]");
+        HttpResponse response = servlet.doInternalError("Something broke");
         assertThat(response.getCode()).isEqualTo(500); // GH-90000
     }
 
     // ── jsonResponse ──────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("jsonResponse() with custom code serializes body to JSON [GH-90000]")
+    @DisplayName("jsonResponse() with custom code serializes body to JSON")
     void jsonResponseSerializesBody() { // GH-90000
         HttpResponse response = servlet.doJsonResponse(202, Map.of("status", "queued")); // GH-90000
 
@@ -162,11 +162,11 @@ class JsonServletTest extends EventloopTestBase {
         String body = response.getBody() != null // GH-90000
                 ? new String(response.getBody().asArray(), StandardCharsets.UTF_8) // GH-90000
                 : "";
-        assertThat(body).contains("queued [GH-90000]");
+        assertThat(body).contains("queued");
     }
 
     @Test
-    @DisplayName("jsonResponse() falls back to 500 when body cannot be serialized [GH-90000]")
+    @DisplayName("jsonResponse() falls back to 500 when body cannot be serialized")
     void jsonResponseFallsBackOn500WhenSerializationFails() { // GH-90000
         // An object that cannot be serialized by Jackson (no-arg constructor missing, not a Map/POJO) // GH-90000
         Object unserializable = new Object() { // GH-90000
@@ -181,7 +181,7 @@ class JsonServletTest extends EventloopTestBase {
     // ── promiseOf ────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("promiseOf() wraps an HttpResponse in a resolved Promise [GH-90000]")
+    @DisplayName("promiseOf() wraps an HttpResponse in a resolved Promise")
     void promiseOfWrapsResponse() { // GH-90000
         HttpResponse inner = HttpResponse.ok200().build(); // GH-90000
         HttpResponse result = runPromise(() -> servlet.doPromiseOf(inner)); // GH-90000
@@ -191,16 +191,16 @@ class JsonServletTest extends EventloopTestBase {
     // ── parseBodyAsync ────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("parseBodyAsync() deserializes JSON body from request [GH-90000]")
+    @DisplayName("parseBodyAsync() deserializes JSON body from request")
     void parseBodyAsyncDeserializesBody() { // GH-90000
         String json = "{\"name\":\"test\"}";
-        HttpRequest request = HttpRequest.post("http://localhost/data [GH-90000]")
+        HttpRequest request = HttpRequest.post("http://localhost/data")
                 .withBody(json.getBytes(StandardCharsets.UTF_8)) // GH-90000
                 .build(); // GH-90000
 
         Map<?, ?> result = runPromise(() -> // GH-90000
                 servlet.doParseBodyAsync(request, Map.class)); // GH-90000
 
-        assertThat((Map<String, Object>) result).containsKey("name [GH-90000]");
+        assertThat((Map<String, Object>) result).containsKey("name");
     }
 }

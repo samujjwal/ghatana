@@ -52,8 +52,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern PerformanceTest
  */
-@Tag("performance [GH-90000]")
-@DisplayName("YAPPC Domain Performance Tests [GH-90000]")
+@Tag("performance")
+@DisplayName("YAPPC Domain Performance Tests")
 class DomainPerformanceTest {
 
     private static final int BULK_SIZE = 1000;
@@ -61,11 +61,11 @@ class DomainPerformanceTest {
     private static final int OPS_PER_THREAD = 1000;
 
     @Nested
-    @DisplayName("Dashboard Performance [GH-90000]")
+    @DisplayName("Dashboard Performance")
     class DashboardPerformanceTests {
 
         @Test
-        @DisplayName("Single dashboard creation should be under 1ms [GH-90000]")
+        @DisplayName("Single dashboard creation should be under 1ms")
         @Timeout(value = 100, unit = TimeUnit.MILLISECONDS) // GH-90000
         void singleCreationPerformance() { // GH-90000
             UUID workspaceId = UUID.randomUUID(); // GH-90000
@@ -79,7 +79,7 @@ class DomainPerformanceTest {
         }
 
         @Test
-        @DisplayName("Bulk dashboard creation (1000) should be under 100ms [GH-90000]")
+        @DisplayName("Bulk dashboard creation (1000) should be under 100ms")
         @Timeout(value = 200, unit = TimeUnit.MILLISECONDS) // GH-90000
         void bulkCreationPerformance() { // GH-90000
             UUID workspaceId = UUID.randomUUID(); // GH-90000
@@ -101,7 +101,7 @@ class DomainPerformanceTest {
         }
 
         @Test
-        @DisplayName("Concurrent dashboard creation should scale linearly [GH-90000]")
+        @DisplayName("Concurrent dashboard creation should scale linearly")
         void concurrentCreationPerformance() throws InterruptedException { // GH-90000
             UUID workspaceId = UUID.randomUUID(); // GH-90000
             ExecutorService executor = Executors.newFixedThreadPool(CONCURRENT_THREADS); // GH-90000
@@ -145,11 +145,11 @@ class DomainPerformanceTest {
     }
 
     @Nested
-    @DisplayName("ScanJob Performance [GH-90000]")
+    @DisplayName("ScanJob Performance")
     class ScanJobPerformanceTests {
 
         @Test
-        @DisplayName("ScanJob lifecycle should complete under 1ms [GH-90000]")
+        @DisplayName("ScanJob lifecycle should complete under 1ms")
         @Timeout(value = 100, unit = TimeUnit.MILLISECONDS) // GH-90000
         void lifecyclePerformance() { // GH-90000
             UUID workspaceId = UUID.randomUUID(); // GH-90000
@@ -166,7 +166,7 @@ class DomainPerformanceTest {
         }
 
         @Test
-        @DisplayName("Bulk ScanJob creation with state transitions [GH-90000]")
+        @DisplayName("Bulk ScanJob creation with state transitions")
         @Timeout(value = 500, unit = TimeUnit.MILLISECONDS) // GH-90000
         void bulkLifecyclePerformance() { // GH-90000
             UUID workspaceId = UUID.randomUUID(); // GH-90000
@@ -178,7 +178,7 @@ class DomainPerformanceTest {
                 ScanJob job = ScanJob.pending(workspaceId, projectId, ScanType.SAST); // GH-90000
                 job.start(); // GH-90000
                 if (i % 10 == 0) { // GH-90000
-                    job.fail("Simulated failure [GH-90000]");
+                    job.fail("Simulated failure");
                 } else {
                     job.complete(); // GH-90000
                 }
@@ -197,7 +197,7 @@ class DomainPerformanceTest {
         }
 
         @Test
-        @DisplayName("State transition should be under 0.1ms [GH-90000]")
+        @DisplayName("State transition should be under 0.1ms")
         void stateTransitionPerformance() { // GH-90000
             UUID workspaceId = UUID.randomUUID(); // GH-90000
             UUID projectId = UUID.randomUUID(); // GH-90000
@@ -227,11 +227,11 @@ class DomainPerformanceTest {
     }
 
     @Nested
-    @DisplayName("Incident Performance [GH-90000]")
+    @DisplayName("Incident Performance")
     class IncidentPerformanceTests {
 
         @Test
-        @DisplayName("Incident creation and resolution should be fast [GH-90000]")
+        @DisplayName("Incident creation and resolution should be fast")
         @Timeout(value = 100, unit = TimeUnit.MILLISECONDS) // GH-90000
         void incidentLifecyclePerformance() { // GH-90000
             UUID workspaceId = UUID.randomUUID(); // GH-90000
@@ -239,15 +239,15 @@ class DomainPerformanceTest {
             long startNanos = System.nanoTime(); // GH-90000
             Incident incident = Incident.of(workspaceId, "Performance Test Incident", "CRITICAL"); // GH-90000
             incident.startInvestigation(); // GH-90000
-            incident.resolve("Resolved via performance test [GH-90000]");
+            incident.resolve("Resolved via performance test");
             long durationNanos = System.nanoTime() - startNanos; // GH-90000
 
-            assertThat(incident.getStatus()).isEqualTo("RESOLVED [GH-90000]");
+            assertThat(incident.getStatus()).isEqualTo("RESOLVED");
             assertThat(Duration.ofNanos(durationNanos).toMillis()).isLessThan(1); // GH-90000
         }
 
         @Test
-        @DisplayName("Bulk incident processing [GH-90000]")
+        @DisplayName("Bulk incident processing")
         @Timeout(value = 500, unit = TimeUnit.MILLISECONDS) // GH-90000
         void bulkIncidentPerformance() { // GH-90000
             UUID workspaceId = UUID.randomUUID(); // GH-90000
@@ -264,7 +264,7 @@ class DomainPerformanceTest {
                 Incident incident = Incident.of(workspaceId, "Incident " + i, severity); // GH-90000
                 if (i % 2 == 0) { // GH-90000
                     incident.startInvestigation(); // GH-90000
-                    incident.resolve("Resolved [GH-90000]");
+                    incident.resolve("Resolved");
                 }
                 incidents.add(incident); // GH-90000
             }
@@ -281,11 +281,11 @@ class DomainPerformanceTest {
     }
 
     @Nested
-    @DisplayName("CloudAccount Performance [GH-90000]")
+    @DisplayName("CloudAccount Performance")
     class CloudAccountPerformanceTests {
 
         @Test
-        @DisplayName("CloudAccount creation for all providers [GH-90000]")
+        @DisplayName("CloudAccount creation for all providers")
         @Timeout(value = 100, unit = TimeUnit.MILLISECONDS) // GH-90000
         void multiProviderCreationPerformance() { // GH-90000
             UUID workspaceId = UUID.randomUUID(); // GH-90000
@@ -303,7 +303,7 @@ class DomainPerformanceTest {
         }
 
         @Test
-        @DisplayName("Bulk CloudAccount creation [GH-90000]")
+        @DisplayName("Bulk CloudAccount creation")
         @Timeout(value = 200, unit = TimeUnit.MILLISECONDS) // GH-90000
         void bulkCloudAccountPerformance() { // GH-90000
             UUID workspaceId = UUID.randomUUID(); // GH-90000
@@ -329,11 +329,11 @@ class DomainPerformanceTest {
     }
 
     @Nested
-    @DisplayName("SecurityAlert Performance [GH-90000]")
+    @DisplayName("SecurityAlert Performance")
     class SecurityAlertPerformanceTests {
 
         @Test
-        @DisplayName("SecurityAlert lifecycle performance [GH-90000]")
+        @DisplayName("SecurityAlert lifecycle performance")
         @Timeout(value = 100, unit = TimeUnit.MILLISECONDS) // GH-90000
         void alertLifecyclePerformance() { // GH-90000
             UUID workspaceId = UUID.randomUUID(); // GH-90000
@@ -345,12 +345,12 @@ class DomainPerformanceTest {
             alert.resolve(userId); // GH-90000
             long durationNanos = System.nanoTime() - startNanos; // GH-90000
 
-            assertThat(alert.getStatus()).isEqualTo("RESOLVED [GH-90000]");
+            assertThat(alert.getStatus()).isEqualTo("RESOLVED");
             assertThat(Duration.ofNanos(durationNanos).toMillis()).isLessThan(1); // GH-90000
         }
 
         @Test
-        @DisplayName("High-volume alert processing [GH-90000]")
+        @DisplayName("High-volume alert processing")
         @Timeout(value = 500, unit = TimeUnit.MILLISECONDS) // GH-90000
         void highVolumeAlertPerformance() { // GH-90000
             UUID workspaceId = UUID.randomUUID(); // GH-90000
@@ -391,11 +391,11 @@ class DomainPerformanceTest {
     }
 
     @Nested
-    @DisplayName("Memory Allocation Performance [GH-90000]")
+    @DisplayName("Memory Allocation Performance")
     class MemoryPerformanceTests {
 
         @Test
-        @DisplayName("Object creation should not cause excessive GC [GH-90000]")
+        @DisplayName("Object creation should not cause excessive GC")
         void memoryAllocationPerformance() { // GH-90000
             UUID workspaceId = UUID.randomUUID(); // GH-90000
             UUID projectId = UUID.randomUUID(); // GH-90000
@@ -434,11 +434,11 @@ class DomainPerformanceTest {
     }
 
     @Nested
-    @DisplayName("Throughput Baseline Tests [GH-90000]")
+    @DisplayName("Throughput Baseline Tests")
     class ThroughputBaselineTests {
 
         @RepeatedTest(3) // GH-90000
-        @DisplayName("Mixed workload throughput should exceed 10,000 ops/sec [GH-90000]")
+        @DisplayName("Mixed workload throughput should exceed 10,000 ops/sec")
         @Timeout(value = 5, unit = TimeUnit.SECONDS) // GH-90000
         void mixedWorkloadThroughput() { // GH-90000
             UUID workspaceId = UUID.randomUUID(); // GH-90000

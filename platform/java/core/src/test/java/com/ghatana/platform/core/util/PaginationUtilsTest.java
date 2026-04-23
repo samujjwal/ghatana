@@ -14,11 +14,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * Unit tests for {@link PaginationUtils}.
  */
-@DisplayName("PaginationUtils [GH-90000]")
+@DisplayName("PaginationUtils")
 class PaginationUtilsTest {
 
     @Nested
-    @DisplayName("validateRequest [GH-90000]")
+    @DisplayName("validateRequest")
     class ValidateRequest {
 
         @Test
@@ -47,26 +47,26 @@ class PaginationUtilsTest {
         void rejectsNegativePage() { // GH-90000
             assertThatThrownBy(() -> PaginationUtils.validateRequest(-1, 10)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("Page must be >= 0 [GH-90000]");
+                .hasMessageContaining("Page must be >= 0");
         }
 
         @Test
         void rejectsPageSizeAboveMax() { // GH-90000
             assertThatThrownBy(() -> PaginationUtils.validateRequest(0, PaginationUtils.MAX_PAGE_SIZE + 1)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("Page size must be between [GH-90000]");
+                .hasMessageContaining("Page size must be between");
         }
 
         @Test
         void rejectsZeroPageSize() { // GH-90000
             assertThatThrownBy(() -> PaginationUtils.validateRequest(0, 0)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("Page size must be between [GH-90000]");
+                .hasMessageContaining("Page size must be between");
         }
     }
 
     @Nested
-    @DisplayName("clampPageSize [GH-90000]")
+    @DisplayName("clampPageSize")
     class ClampPageSize {
 
         @Test
@@ -86,7 +86,7 @@ class PaginationUtilsTest {
     }
 
     @Nested
-    @DisplayName("calculateOffset [GH-90000]")
+    @DisplayName("calculateOffset")
     class CalculateOffset {
 
         @Test
@@ -106,7 +106,7 @@ class PaginationUtilsTest {
     }
 
     @Nested
-    @DisplayName("calculateTotalPages [GH-90000]")
+    @DisplayName("calculateTotalPages")
     class CalculateTotalPages {
 
         @Test
@@ -126,7 +126,7 @@ class PaginationUtilsTest {
     }
 
     @Nested
-    @DisplayName("toPage [GH-90000]")
+    @DisplayName("toPage")
     class ToPage {
 
         @Test
@@ -145,20 +145,20 @@ class PaginationUtilsTest {
         @Test
         void hasNextWhenNotLastPage() { // GH-90000
             PageRequest req = PageRequest.of(0, 10); // GH-90000
-            Page<String> page = PaginationUtils.toPage(List.of("x [GH-90000]"), req, 25);
+            Page<String> page = PaginationUtils.toPage(List.of("x"), req, 25);
             assertThat(page.hasNext()).isTrue(); // GH-90000
         }
 
         @Test
         void hasNoPreviousOnFirstPage() { // GH-90000
             PageRequest req = PageRequest.of(0, 10); // GH-90000
-            Page<String> page = PaginationUtils.toPage(List.of("x [GH-90000]"), req, 5);
+            Page<String> page = PaginationUtils.toPage(List.of("x"), req, 5);
             assertThat(page.hasPrevious()).isFalse(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("cursor encoding [GH-90000]")
+    @DisplayName("cursor encoding")
     class CursorEncoding {
 
         @Test
@@ -166,8 +166,8 @@ class PaginationUtilsTest {
             String cursor = PaginationUtils.encodeCursor("entity-42", "2026-01-15T10:00:00Z"); // GH-90000
             PaginationUtils.CursorData data = PaginationUtils.decodeCursor(cursor); // GH-90000
 
-            assertThat(data.lastId()).isEqualTo("entity-42 [GH-90000]");
-            assertThat(data.lastSortValue()).isEqualTo("2026-01-15T10:00:00Z [GH-90000]");
+            assertThat(data.lastId()).isEqualTo("entity-42");
+            assertThat(data.lastSortValue()).isEqualTo("2026-01-15T10:00:00Z");
         }
 
         @Test
@@ -175,7 +175,7 @@ class PaginationUtilsTest {
             String cursor = PaginationUtils.encodeCursor("entity-99", null); // GH-90000
             PaginationUtils.CursorData data = PaginationUtils.decodeCursor(cursor); // GH-90000
 
-            assertThat(data.lastId()).isEqualTo("entity-99 [GH-90000]");
+            assertThat(data.lastId()).isEqualTo("entity-99");
             assertThat(data.lastSortValue()).isNull(); // GH-90000
         }
 
@@ -187,9 +187,9 @@ class PaginationUtilsTest {
 
         @Test
         void decodingInvalidCursorThrows() { // GH-90000
-            assertThatThrownBy(() -> PaginationUtils.decodeCursor("not-base64!!! [GH-90000]"))
+            assertThatThrownBy(() -> PaginationUtils.decodeCursor("not-base64!!!"))
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("Invalid cursor [GH-90000]");
+                .hasMessageContaining("Invalid cursor");
         }
 
         @Test

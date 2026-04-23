@@ -11,7 +11,8 @@ import org.jetbrains.annotations.NotNull;
  * @doc.type interface
  * @doc.purpose Memory conflict resolution SPI
  * @doc.layer agent-learning
- */
+  * @doc.pattern Interface
+*/
 public interface ConflictResolver {
 
     /**

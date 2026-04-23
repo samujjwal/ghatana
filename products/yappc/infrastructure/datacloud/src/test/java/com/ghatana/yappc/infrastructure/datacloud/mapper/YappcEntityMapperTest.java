@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Tests for YappcEntityMapper.
  */
-@DisplayName("YappcEntityMapper Tests [GH-90000]")
+@DisplayName("YappcEntityMapper Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles yappc entity mapper test operations
@@ -38,7 +38,7 @@ class YappcEntityMapperTest {
     }
 
     @Test
-    @DisplayName("Should convert simple object to entity data map [GH-90000]")
+    @DisplayName("Should convert simple object to entity data map")
     void shouldConvertToEntity() { // GH-90000
         TestEntity source = new TestEntity(UUID.randomUUID(), "Test", 42); // GH-90000
 
@@ -49,7 +49,7 @@ class YappcEntityMapperTest {
     }
 
     @Test
-    @DisplayName("Should convert Entity back to domain object [GH-90000]")
+    @DisplayName("Should convert Entity back to domain object")
     void shouldConvertFromEntity() { // GH-90000
         UUID id = UUID.randomUUID(); // GH-90000
         DataCloudClient.Entity entity = DataCloudClient.Entity.of( // GH-90000
@@ -58,12 +58,12 @@ class YappcEntityMapperTest {
 
         TestEntity result = mapper.fromEntity(entity, TestEntity.class); // GH-90000
 
-        assertThat(result.name()).isEqualTo("Test [GH-90000]");
+        assertThat(result.name()).isEqualTo("Test");
         assertThat(result.value()).isEqualTo(42); // GH-90000
     }
 
     @Test
-    @DisplayName("Should encrypt and restore project environment variables [GH-90000]")
+    @DisplayName("Should encrypt and restore project environment variables")
     void shouldEncryptAndRestoreProjectEnvironmentVariables() { // GH-90000
         YappcEntityMapper encryptedMapper = new YappcEntityMapper(objectMapper, createEncryptionService()); // GH-90000
         ProjectEntity project = new ProjectEntity("Encrypted Project", "Desc", "user-1"); // GH-90000
@@ -73,15 +73,15 @@ class YappcEntityMapperTest {
         ));
 
         Map<String, Object> payload = encryptedMapper.toEntityData(project); // GH-90000
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         Map<String, String> storedEnvironmentVariables =
-            (Map<String, String>) payload.get("environmentVariables [GH-90000]");
+            (Map<String, String>) payload.get("environmentVariables");
 
         assertThat(storedEnvironmentVariables) // GH-90000
             .containsKeys("OPENAI_API_KEY", "DATABASE_URL"); // GH-90000
-        assertThat(storedEnvironmentVariables.get("OPENAI_API_KEY [GH-90000]"))
-            .startsWith("enc:: [GH-90000]")
-            .isNotEqualTo("sk-test-secret [GH-90000]");
+        assertThat(storedEnvironmentVariables.get("OPENAI_API_KEY"))
+            .startsWith("enc::")
+            .isNotEqualTo("sk-test-secret");
 
         DataCloudClient.Entity entity = DataCloudClient.Entity.of( // GH-90000
             project.getId().toString(), // GH-90000
@@ -96,18 +96,18 @@ class YappcEntityMapperTest {
     }
 
     @Test
-    @DisplayName("Should reject persisting project environment variables without encryption service [GH-90000]")
+    @DisplayName("Should reject persisting project environment variables without encryption service")
     void shouldRejectPersistingProjectEnvironmentVariablesWithoutEncryptionService() { // GH-90000
         ProjectEntity project = new ProjectEntity("Missing Key", "Desc", "user-1"); // GH-90000
         project.setEnvironmentVariables(Map.of("OPENAI_API_KEY", "sk-test-secret")); // GH-90000
 
         assertThatThrownBy(() -> mapper.toEntityData(project)) // GH-90000
             .isInstanceOf(IllegalStateException.class) // GH-90000
-            .hasMessageContaining("secret manager [GH-90000]");
+            .hasMessageContaining("secret manager");
     }
 
     @Test
-    @DisplayName("Should continue reading legacy plaintext project environment variables [GH-90000]")
+    @DisplayName("Should continue reading legacy plaintext project environment variables")
     void shouldContinueReadingLegacyPlaintextProjectEnvironmentVariables() { // GH-90000
         UUID id = UUID.randomUUID(); // GH-90000
         DataCloudClient.Entity entity = DataCloudClient.Entity.of( // GH-90000

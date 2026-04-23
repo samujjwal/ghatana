@@ -12,7 +12,8 @@ import java.util.Map;
  * @doc.type value-object
  * @doc.purpose Scored retrieval result
  * @doc.layer agent-memory
- */
+  * @doc.pattern Component
+*/
 @Value
 public class ScoredMemoryItem {
 

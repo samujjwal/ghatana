@@ -2,7 +2,11 @@ package com.ghatana.statestore.factory;
 
 /**
  * Types of state stores supported by the factory.
- */
+  * @doc.type enum
+ * @doc.purpose Provides state store type functionality.
+ * @doc.layer product
+ * @doc.pattern Repository
+*/
 public enum StateStoreType {
     /**
      * In-memory state store (testing only - data lost on restart).

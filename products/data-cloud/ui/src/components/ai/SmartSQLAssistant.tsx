@@ -238,9 +238,6 @@ export function SmartSQLAssistant({
                 <div className="flex items-center gap-2 text-white">
                     <Brain className="h-5 w-5" />
                     <span className="font-semibold">Smart SQL Assistant</span>
-                    <span className="px-2 py-1 text-xs font-medium rounded bg-white/20 text-white">
-                        AI-Powered
-                    </span>
                 </div>
             </div>
 

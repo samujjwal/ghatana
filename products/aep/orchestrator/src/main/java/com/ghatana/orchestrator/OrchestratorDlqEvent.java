@@ -3,6 +3,12 @@ package com.ghatana.orchestrator;
 import java.time.Instant;
 import java.util.Map;
 
+/**
+ * @doc.type class
+ * @doc.purpose Provides orchestrator dlq event functionality.
+ * @doc.layer product
+ * @doc.pattern Event
+ */
 public class OrchestratorDlqEvent {
     public String agentId;
     public String error;

@@ -40,7 +40,7 @@ class CircuitBreakerSttEngineTest {
         executor.submit(() -> eventloop.run()); // GH-90000
 
         // Create circuit breaker with sensitive settings for testing
-        CircuitBreaker circuitBreaker = CircuitBreaker.builder("test-stt-circuit [GH-90000]")
+        CircuitBreaker circuitBreaker = CircuitBreaker.builder("test-stt-circuit")
             .failureThreshold(3) // GH-90000
             .successThreshold(1) // GH-90000
             .resetTimeout(Duration.ofMillis(100)) // GH-90000
@@ -59,12 +59,12 @@ class CircuitBreakerSttEngineTest {
     }
 
     @Test
-    @DisplayName("Should allow normal transcription when circuit is closed [GH-90000]")
+    @DisplayName("Should allow normal transcription when circuit is closed")
     void testNormalTranscription() { // GH-90000
         // Given
         AudioData audio = createTestAudio(); // GH-90000
         TranscriptionOptions options = TranscriptionOptions.defaults(); // GH-90000
-        TranscriptionResult expectedResult = createTestResult("Hello world [GH-90000]");
+        TranscriptionResult expectedResult = createTestResult("Hello world");
 
         when(mockDelegate.transcribe(audio, options)).thenReturn(expectedResult); // GH-90000
         when(mockDelegate.getActiveModel()).thenReturn(new ModelInfo("test-model", "Test", "1.0", new Locale[]{Locale.ENGLISH}, 1000L, false)); // GH-90000
@@ -79,14 +79,14 @@ class CircuitBreakerSttEngineTest {
     }
 
     @Test
-    @DisplayName("Should count failures and open circuit after threshold [GH-90000]")
+    @DisplayName("Should count failures and open circuit after threshold")
     void testCircuitOpensAfterFailures() { // GH-90000
         // Given
         AudioData audio = createTestAudio(); // GH-90000
         TranscriptionOptions options = TranscriptionOptions.defaults(); // GH-90000
 
         when(mockDelegate.transcribe(any(), any())) // GH-90000
-            .thenThrow(new InferenceError("Test failure", new RuntimeException("fail [GH-90000]"), false));
+            .thenThrow(new InferenceError("Test failure", new RuntimeException("fail"), false));
         when(mockDelegate.getActiveModel()).thenReturn(new ModelInfo("test-model", "Test", "1.0", new Locale[]{Locale.ENGLISH}, 1000L, false)); // GH-90000
 
         // When - trigger 3 failures
@@ -108,10 +108,10 @@ class CircuitBreakerSttEngineTest {
     }
 
     @Test
-    @DisplayName("Should return degraded result when circuit is open [GH-90000]")
+    @DisplayName("Should return degraded result when circuit is open")
     void testDegradedResultWhenOpen() throws Exception { // GH-90000
         // Given - manually create engine with open circuit
-        CircuitBreaker openCircuitBreaker = CircuitBreaker.builder("open-test-circuit [GH-90000]")
+        CircuitBreaker openCircuitBreaker = CircuitBreaker.builder("open-test-circuit")
             .failureThreshold(1) // GH-90000
             .successThreshold(1) // GH-90000
             .resetTimeout(Duration.ofHours(1)) // Long timeout to keep it open // GH-90000
@@ -119,7 +119,7 @@ class CircuitBreakerSttEngineTest {
 
         // Force circuit open by triggering failure
         when(mockDelegate.transcribe(any(), any())) // GH-90000
-            .thenThrow(new InferenceError("Test failure", new RuntimeException("fail [GH-90000]"), false));
+            .thenThrow(new InferenceError("Test failure", new RuntimeException("fail"), false));
         when(mockDelegate.getActiveModel()).thenReturn(new ModelInfo("test-model", "Test", "1.0", new Locale[]{Locale.ENGLISH}, 1000L, false)); // GH-90000
 
         CircuitBreakerSttEngine engineWithOpenCircuit = new CircuitBreakerSttEngine( // GH-90000
@@ -150,7 +150,7 @@ class CircuitBreakerSttEngineTest {
     }
 
     @Test
-    @DisplayName("Should include circuit breaker metrics in engine metrics [GH-90000]")
+    @DisplayName("Should include circuit breaker metrics in engine metrics")
     void testCircuitBreakerMetrics() { // GH-90000
         // Given
         EngineMetrics delegateMetrics = new EngineMetrics(100, 5, 50, 2, 0); // GH-90000
@@ -166,7 +166,7 @@ class CircuitBreakerSttEngineTest {
     }
 
     @Test
-    @DisplayName("Should include circuit breaker state in engine status [GH-90000]")
+    @DisplayName("Should include circuit breaker state in engine status")
     void testCircuitBreakerStateInStatus() { // GH-90000
         // Given
         EngineStatus delegateStatus = new EngineStatus( // GH-90000
@@ -180,14 +180,14 @@ class CircuitBreakerSttEngineTest {
 
         // Then
         assertNotNull(status.state().name()); // GH-90000
-        assertTrue(status.errorMessage().contains("CLOSED [GH-90000]"));
+        assertTrue(status.errorMessage().contains("CLOSED"));
     }
 
     @Test
-    @DisplayName("Should show ERROR state in status when circuit is open [GH-90000]")
+    @DisplayName("Should show ERROR state in status when circuit is open")
     void testErrorStateWhenCircuitOpen() throws Exception { // GH-90000
         // Given - create engine with quickly opening circuit
-        CircuitBreaker sensitiveBreaker = CircuitBreaker.builder("sensitive-circuit [GH-90000]")
+        CircuitBreaker sensitiveBreaker = CircuitBreaker.builder("sensitive-circuit")
             .failureThreshold(1) // GH-90000
             .resetTimeout(Duration.ofHours(1)) // GH-90000
             .build(); // GH-90000
@@ -214,11 +214,11 @@ class CircuitBreakerSttEngineTest {
 
         // Then
         assertEquals(EngineStatus.State.ERROR, status.state()); // GH-90000
-        assertTrue(status.errorMessage().contains("OPEN [GH-90000]"));
+        assertTrue(status.errorMessage().contains("OPEN"));
     }
 
     @Test
-    @DisplayName("Should expose detailed circuit breaker metrics [GH-90000]")
+    @DisplayName("Should expose detailed circuit breaker metrics")
     void testDetailedCircuitBreakerMetrics() { // GH-90000
         // When
         CircuitBreakerSttEngine.CircuitBreakerMetrics metrics = protectedEngine.getCircuitBreakerMetrics(); // GH-90000
@@ -230,10 +230,10 @@ class CircuitBreakerSttEngineTest {
     }
 
     @Test
-    @DisplayName("Should allow manual circuit breaker reset [GH-90000]")
+    @DisplayName("Should allow manual circuit breaker reset")
     void testManualReset() throws Exception { // GH-90000
         // Given - open the circuit
-        CircuitBreaker breaker = CircuitBreaker.builder("reset-test-circuit [GH-90000]")
+        CircuitBreaker breaker = CircuitBreaker.builder("reset-test-circuit")
             .failureThreshold(1) // GH-90000
             .resetTimeout(Duration.ofHours(1)) // GH-90000
             .build(); // GH-90000
@@ -260,10 +260,10 @@ class CircuitBreakerSttEngineTest {
     }
 
     @Test
-    @DisplayName("Should provide degraded streaming session when circuit open [GH-90000]")
+    @DisplayName("Should provide degraded streaming session when circuit open")
     void testDegradedStreamingSession() throws Exception { // GH-90000
         // Given - circuit is open
-        CircuitBreaker breaker = CircuitBreaker.builder("streaming-test-circuit [GH-90000]")
+        CircuitBreaker breaker = CircuitBreaker.builder("streaming-test-circuit")
             .failureThreshold(1) // GH-90000
             .resetTimeout(Duration.ofHours(1)) // GH-90000
             .build(); // GH-90000
@@ -271,7 +271,7 @@ class CircuitBreakerSttEngineTest {
         CircuitBreakerSttEngine engine = new CircuitBreakerSttEngine(mockDelegate, eventloop, breaker); // GH-90000
         when(mockDelegate.getActiveModel()).thenReturn(new ModelInfo("test-model", "Test", "1.0", new Locale[]{Locale.ENGLISH}, 1000L, false)); // GH-90000
         when(mockDelegate.createStreamingSession(any())) // GH-90000
-            .thenThrow(new RuntimeException("Session creation failed [GH-90000]"));
+            .thenThrow(new RuntimeException("Session creation failed"));
 
         // Open circuit
         try {
@@ -294,16 +294,16 @@ class CircuitBreakerSttEngineTest {
     }
 
     @Test
-    @DisplayName("Should delegate non-protected methods directly [GH-90000]")
+    @DisplayName("Should delegate non-protected methods directly")
     void testDirectDelegation() { // GH-90000
         // Given
         List<ModelInfo> models = List.of(new ModelInfo("m1", "Model 1", "1.0", new Locale[]{Locale.ENGLISH}, 1000L, false)); // GH-90000
         when(mockDelegate.getAvailableModels()).thenReturn(models); // GH-90000
-        when(mockDelegate.listProfiles()).thenReturn(List.of("profile1 [GH-90000]"));
+        when(mockDelegate.listProfiles()).thenReturn(List.of("profile1"));
 
         // When & Then - these should delegate directly
         assertEquals(models, protectedEngine.getAvailableModels()); // GH-90000
-        assertEquals(List.of("profile1 [GH-90000]"), protectedEngine.listProfiles());
+        assertEquals(List.of("profile1"), protectedEngine.listProfiles());
 
         verify(mockDelegate).getAvailableModels(); // GH-90000
         verify(mockDelegate).listProfiles(); // GH-90000

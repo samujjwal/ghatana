@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @doc.layer test
  * @author Ghatana Kernel Team
  */
-@DisplayName("KernelCapability Tests [GH-90000]")
+@DisplayName("KernelCapability Tests")
 class KernelCapabilityTest {
 
     private static KernelCapability make(String id, String name) { // GH-90000
@@ -27,7 +27,7 @@ class KernelCapabilityTest {
     }
 
     @Test
-    @DisplayName("Should create capability with all fields [GH-90000]")
+    @DisplayName("Should create capability with all fields")
     void shouldCreateCapabilityWithAllFields() { // GH-90000
         Map<String, Object> metadata = Map.of( // GH-90000
             "required_services", "auth-service,storage-service",
@@ -51,7 +51,7 @@ class KernelCapabilityTest {
     }
 
     @Test
-    @DisplayName("Should create capability with default type [GH-90000]")
+    @DisplayName("Should create capability with default type")
     void shouldCreateCapabilityWithDefaultType() { // GH-90000
         KernelCapability capability = new KernelCapability( // GH-90000
             "simple.capability",
@@ -68,7 +68,7 @@ class KernelCapabilityTest {
     }
 
     @Test
-    @DisplayName("Should throw exception for null capabilityId [GH-90000]")
+    @DisplayName("Should throw exception for null capabilityId")
     void shouldThrowExceptionForNullCapabilityId() { // GH-90000
         assertThrows(Exception.class, () -> // GH-90000
             new KernelCapability(null, "Name", "", KernelCapability.CapabilityType.DATA_MANAGEMENT, Map.of()) // GH-90000
@@ -76,7 +76,7 @@ class KernelCapabilityTest {
     }
 
     @Test
-    @DisplayName("Should throw exception for empty capabilityId [GH-90000]")
+    @DisplayName("Should throw exception for empty capabilityId")
     void shouldThrowExceptionForEmptyCapabilityId() { // GH-90000
         assertThrows(Exception.class, () -> // GH-90000
             new KernelCapability("  ", "Name", "", KernelCapability.CapabilityType.DATA_MANAGEMENT, Map.of()) // GH-90000
@@ -84,7 +84,7 @@ class KernelCapabilityTest {
     }
 
     @Test
-    @DisplayName("Should throw exception for null name [GH-90000]")
+    @DisplayName("Should throw exception for null name")
     void shouldThrowExceptionForNullName() { // GH-90000
         assertThrows(Exception.class, () -> // GH-90000
             new KernelCapability("capability", null, "", KernelCapability.CapabilityType.DATA_MANAGEMENT, Map.of()) // GH-90000
@@ -92,7 +92,7 @@ class KernelCapabilityTest {
     }
 
     @Test
-    @DisplayName("Should get metadata value correctly [GH-90000]")
+    @DisplayName("Should get metadata value correctly")
     void shouldGetMetadataValueCorrectly() { // GH-90000
         KernelCapability capability = new KernelCapability( // GH-90000
             "test.capability",
@@ -107,7 +107,7 @@ class KernelCapabilityTest {
     }
 
     @Test
-    @DisplayName("Should check supportsProduct correctly [GH-90000]")
+    @DisplayName("Should check supportsProduct correctly")
     void shouldCheckSupportsProductCorrectly() { // GH-90000
         KernelCapability capability = new KernelCapability( // GH-90000
             "test.capability",
@@ -117,22 +117,22 @@ class KernelCapabilityTest {
             Map.of("supported_products", "phr,finance,flashit") // GH-90000
         );
 
-        assertTrue(capability.supportsProduct("phr [GH-90000]"));
-        assertTrue(capability.supportsProduct("finance [GH-90000]"));
-        assertFalse(capability.supportsProduct("unknown [GH-90000]"));
+        assertTrue(capability.supportsProduct("phr"));
+        assertTrue(capability.supportsProduct("finance"));
+        assertFalse(capability.supportsProduct("unknown"));
     }
 
     @Test
-    @DisplayName("Should return true for supportsProduct when no products specified [GH-90000]")
+    @DisplayName("Should return true for supportsProduct when no products specified")
     void shouldReturnTrueForSupportsProductWhenNoProductsSpecified() { // GH-90000
         KernelCapability capability = make("universal.capability", "Universal"); // GH-90000
 
-        assertTrue(capability.supportsProduct("any [GH-90000]"));
-        assertTrue(capability.supportsProduct("phr [GH-90000]"));
+        assertTrue(capability.supportsProduct("any"));
+        assertTrue(capability.supportsProduct("phr"));
     }
 
     @Test
-    @DisplayName("Should check requiresService correctly [GH-90000]")
+    @DisplayName("Should check requiresService correctly")
     void shouldCheckRequiresServiceCorrectly() { // GH-90000
         KernelCapability capability = new KernelCapability( // GH-90000
             "test.capability",
@@ -142,13 +142,13 @@ class KernelCapabilityTest {
             Map.of("required_services", "auth-service,storage-service") // GH-90000
         );
 
-        assertTrue(capability.requiresService("auth-service [GH-90000]"));
-        assertTrue(capability.requiresService("storage-service [GH-90000]"));
-        assertFalse(capability.requiresService("cache-service [GH-90000]"));
+        assertTrue(capability.requiresService("auth-service"));
+        assertTrue(capability.requiresService("storage-service"));
+        assertFalse(capability.requiresService("cache-service"));
     }
 
     @Test
-    @DisplayName("Should return empty set for getRequiredServices when none specified [GH-90000]")
+    @DisplayName("Should return empty set for getRequiredServices when none specified")
     void shouldReturnEmptySetForGetRequiredServicesWhenNoneSpecified() { // GH-90000
         KernelCapability capability = make("simple.capability", "Simple"); // GH-90000
 
@@ -156,7 +156,7 @@ class KernelCapabilityTest {
     }
 
     @Test
-    @DisplayName("Should parse required services correctly [GH-90000]")
+    @DisplayName("Should parse required services correctly")
     void shouldParseRequiredServicesCorrectly() { // GH-90000
         KernelCapability capability = new KernelCapability( // GH-90000
             "test.capability",
@@ -168,13 +168,13 @@ class KernelCapabilityTest {
 
         Set<String> services = capability.getRequiredServices(); // GH-90000
         assertEquals(3, services.size()); // GH-90000
-        assertTrue(services.contains("service1 [GH-90000]"));
-        assertTrue(services.contains("service2 [GH-90000]"));
-        assertTrue(services.contains("service3 [GH-90000]"));
+        assertTrue(services.contains("service1"));
+        assertTrue(services.contains("service2"));
+        assertTrue(services.contains("service3"));
     }
 
     @Test
-    @DisplayName("Should check hasOptionalDependencies correctly [GH-90000]")
+    @DisplayName("Should check hasOptionalDependencies correctly")
     void shouldCheckHasOptionalDependenciesCorrectly() { // GH-90000
         KernelCapability capability = new KernelCapability( // GH-90000
             "test.capability",
@@ -188,7 +188,7 @@ class KernelCapabilityTest {
     }
 
     @Test
-    @DisplayName("Should return empty for getOptionalDependencies when none [GH-90000]")
+    @DisplayName("Should return empty for getOptionalDependencies when none")
     void shouldReturnFalseForHasOptionalDependenciesWhenNone() { // GH-90000
         KernelCapability capability = make("simple.capability", "Simple"); // GH-90000
 
@@ -196,7 +196,7 @@ class KernelCapabilityTest {
     }
 
     @Test
-    @DisplayName("Should implement equals and hashCode correctly [GH-90000]")
+    @DisplayName("Should implement equals and hashCode correctly")
     void shouldImplementEqualsAndHashCodeCorrectly() { // GH-90000
         KernelCapability cap1 = make("test.cap", "Test"); // GH-90000
         KernelCapability cap2 = make("test.cap", "Different"); // GH-90000
@@ -208,17 +208,17 @@ class KernelCapabilityTest {
     }
 
     @Test
-    @DisplayName("Should implement toString correctly [GH-90000]")
+    @DisplayName("Should implement toString correctly")
     void shouldImplementToStringCorrectly() { // GH-90000
         KernelCapability capability = make("test.capability", "Test Capability"); // GH-90000
 
         String toString = capability.toString(); // GH-90000
-        assertTrue(toString.contains("test.capability [GH-90000]"));
-        assertTrue(toString.contains("Test Capability [GH-90000]"));
+        assertTrue(toString.contains("test.capability"));
+        assertTrue(toString.contains("Test Capability"));
     }
 
     @Test
-    @DisplayName("Should have all core capabilities defined [GH-90000]")
+    @DisplayName("Should have all core capabilities defined")
     void shouldHaveAllCoreCapabilitiesDefined() { // GH-90000
         assertNotNull(KernelCapability.Core.DATA_STORAGE); // GH-90000
         assertNotNull(KernelCapability.Core.USER_AUTHENTICATION); // GH-90000
@@ -233,7 +233,7 @@ class KernelCapabilityTest {
     }
 
     @Test
-    @DisplayName("Core capabilities should have correct IDs [GH-90000]")
+    @DisplayName("Core capabilities should have correct IDs")
     void coreCapabilitiesShouldHaveCorrectIds() { // GH-90000
         assertEquals("data.storage", KernelCapability.Core.DATA_STORAGE.getCapabilityId()); // GH-90000
         assertEquals("user.authentication", KernelCapability.Core.USER_AUTHENTICATION.getCapabilityId()); // GH-90000
@@ -248,7 +248,7 @@ class KernelCapabilityTest {
     }
 
     @Test
-    @DisplayName("Core capabilities should be correct types [GH-90000]")
+    @DisplayName("Core capabilities should be correct types")
     void coreCapabilitiesShouldBeCorrectTypes() { // GH-90000
         assertEquals(KernelCapability.CapabilityType.DATA_MANAGEMENT, KernelCapability.Core.DATA_STORAGE.getType()); // GH-90000
         assertEquals(KernelCapability.CapabilityType.SECURITY, KernelCapability.Core.USER_AUTHENTICATION.getType()); // GH-90000
@@ -266,14 +266,14 @@ class KernelCapabilityTest {
         "INTEGRATION",
         "MONITORING"
     })
-    @DisplayName("Should have all capability types defined [GH-90000]")
+    @DisplayName("Should have all capability types defined")
     void shouldHaveAllCapabilityTypesDefined(String typeName) { // GH-90000
         KernelCapability.CapabilityType type = KernelCapability.CapabilityType.valueOf(typeName); // GH-90000
         assertNotNull(type); // GH-90000
     }
 
     @Test
-    @DisplayName("Should create immutable metadata copy [GH-90000]")
+    @DisplayName("Should create immutable metadata copy")
     void shouldCreateImmutableMetadataCopy() { // GH-90000
         Map<String, Object> metadata = new HashMap<>(); // GH-90000
         metadata.put("key", "value"); // GH-90000
@@ -288,7 +288,7 @@ class KernelCapabilityTest {
 
         metadata.put("newKey", "newValue"); // GH-90000
 
-        assertFalse(capability.getMetadata().containsKey("newKey [GH-90000]"));
+        assertFalse(capability.getMetadata().containsKey("newKey"));
         assertEquals("value", capability.getMetadata("key", (String) null)); // GH-90000
     }
 }

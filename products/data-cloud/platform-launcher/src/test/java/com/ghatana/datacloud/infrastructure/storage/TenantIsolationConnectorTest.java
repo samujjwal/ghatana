@@ -47,7 +47,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("Tenant Isolation — Storage Connector Layer [GH-90000]")
+@DisplayName("Tenant Isolation — Storage Connector Layer")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class TenantIsolationConnectorTest extends EventloopTestBase {
 
@@ -80,11 +80,11 @@ class TenantIsolationConnectorTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Create: tenant propagation [GH-90000]")
+    @DisplayName("Create: tenant propagation")
     class CreateTenantPropagation {
 
         @Test
-        @DisplayName("create() passes entity's own tenantId to repository.save() [GH-90000]")
+        @DisplayName("create() passes entity's own tenantId to repository.save()")
         void create_passesEntityTenantToRepository() { // GH-90000
             Entity entityA = entityFor(TENANT_A); // GH-90000
             when(entityRepository.save(eq(TENANT_A), any(Entity.class))) // GH-90000
@@ -98,7 +98,7 @@ class TenantIsolationConnectorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("create() never passes tenant-B's ID when entity belongs to tenant-A [GH-90000]")
+        @DisplayName("create() never passes tenant-B's ID when entity belongs to tenant-A")
         void create_neverUsesDifferentTenant() { // GH-90000
             Entity entityA = entityFor(TENANT_A); // GH-90000
             when(entityRepository.save(eq(TENANT_A), any(Entity.class))) // GH-90000
@@ -111,7 +111,7 @@ class TenantIsolationConnectorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("create() rejects entity with null tenantId before touching repository [GH-90000]")
+        @DisplayName("create() rejects entity with null tenantId before touching repository")
         void create_nullTenantId_rejectsBeforeRepository() { // GH-90000
             Entity noTenant = entityFor(null); // GH-90000
 
@@ -122,10 +122,10 @@ class TenantIsolationConnectorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("create() rejects entity with blank tenantId before touching repository [GH-90000]")
+        @DisplayName("create() rejects entity with blank tenantId before touching repository")
         void create_blankTenantId_rejectsBeforeRepository() { // GH-90000
             Entity blankTenant = Entity.builder() // GH-90000
-                    .tenantId("   [GH-90000]")
+                    .tenantId("  ")
                     .collectionName(COLLECTION_NAME) // GH-90000
                     .data(Map.of("k", "v")) // GH-90000
                     .build(); // GH-90000
@@ -143,11 +143,11 @@ class TenantIsolationConnectorTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Read: tenant propagation and cross-tenant opacity [GH-90000]")
+    @DisplayName("Read: tenant propagation and cross-tenant opacity")
     class ReadTenantPropagation {
 
         @Test
-        @DisplayName("read() passes the calling tenant's ID to repository.findById() [GH-90000]")
+        @DisplayName("read() passes the calling tenant's ID to repository.findById()")
         void read_passesCallerTenantToRepository() { // GH-90000
             UUID entityId = UUID.randomUUID(); // GH-90000
             when(entityRepository.findById(TENANT_A, COLLECTION_NAME, entityId)) // GH-90000
@@ -161,7 +161,7 @@ class TenantIsolationConnectorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("read() with tenant-B context never asks repository for tenant-A data [GH-90000]")
+        @DisplayName("read() with tenant-B context never asks repository for tenant-A data")
         void read_tenantBContext_neverQueriesTenantA() { // GH-90000
             UUID entityId = UUID.randomUUID(); // GH-90000
             when(entityRepository.findById(TENANT_B, COLLECTION_NAME, entityId)) // GH-90000
@@ -173,7 +173,7 @@ class TenantIsolationConnectorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("cross-tenant read returns empty when repository returns empty [GH-90000]")
+        @DisplayName("cross-tenant read returns empty when repository returns empty")
         void read_crossTenant_returnsEmpty() { // GH-90000
             UUID entityId = UUID.randomUUID(); // GH-90000
             // Repository simulates isolation: returns empty for wrong tenant
@@ -187,7 +187,7 @@ class TenantIsolationConnectorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("read() with null tenantId fails fast without repository call [GH-90000]")
+        @DisplayName("read() with null tenantId fails fast without repository call")
         void read_nullTenantId_failsFast() { // GH-90000
             UUID id = UUID.randomUUID(); // GH-90000
             assertThatNullPointerException() // GH-90000
@@ -201,11 +201,11 @@ class TenantIsolationConnectorTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Update: tenant propagation [GH-90000]")
+    @DisplayName("Update: tenant propagation")
     class UpdateTenantPropagation {
 
         @Test
-        @DisplayName("update() calls repository.save() with entity's tenantId [GH-90000]")
+        @DisplayName("update() calls repository.save() with entity's tenantId")
         void update_passesEntityTenantToRepository() { // GH-90000
             Entity entityA = entityFor(TENANT_A); // GH-90000
             entityA.setId(UUID.randomUUID()); // GH-90000
@@ -220,7 +220,7 @@ class TenantIsolationConnectorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("update() never writes to tenant-B's scope when entity belongs to tenant-A [GH-90000]")
+        @DisplayName("update() never writes to tenant-B's scope when entity belongs to tenant-A")
         void update_entityA_neverWritesToTenantB() { // GH-90000
             Entity entityA = entityFor(TENANT_A); // GH-90000
             entityA.setId(UUID.randomUUID()); // GH-90000
@@ -238,11 +238,11 @@ class TenantIsolationConnectorTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Delete: tenant scoping [GH-90000]")
+    @DisplayName("Delete: tenant scoping")
     class DeleteTenantScoping {
 
         @Test
-        @DisplayName("delete() passes caller's tenantId to repository.delete() [GH-90000]")
+        @DisplayName("delete() passes caller's tenantId to repository.delete()")
         void delete_passesCallerTenantToRepository() { // GH-90000
             UUID entityId = UUID.randomUUID(); // GH-90000
             when(entityRepository.delete(TENANT_A, COLLECTION_NAME, entityId)) // GH-90000
@@ -256,7 +256,7 @@ class TenantIsolationConnectorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("delete() with tenant-A context never deletes in tenant-B's namespace [GH-90000]")
+        @DisplayName("delete() with tenant-A context never deletes in tenant-B's namespace")
         void delete_tenantA_neverTouchtesTenantB() { // GH-90000
             UUID entityId = UUID.randomUUID(); // GH-90000
             when(entityRepository.delete(TENANT_A, COLLECTION_NAME, entityId)) // GH-90000
@@ -268,7 +268,7 @@ class TenantIsolationConnectorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("delete() with null tenantId fails fast without repository call [GH-90000]")
+        @DisplayName("delete() with null tenantId fails fast without repository call")
         void delete_nullTenantId_failsFast() { // GH-90000
             UUID id = UUID.randomUUID(); // GH-90000
             assertThatNullPointerException() // GH-90000
@@ -282,11 +282,11 @@ class TenantIsolationConnectorTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Query: tenant scoping [GH-90000]")
+    @DisplayName("Query: tenant scoping")
     class QueryTenantScoping {
 
         @Test
-        @DisplayName("query() passes caller's tenantId to repository.findByQuery() [GH-90000]")
+        @DisplayName("query() passes caller's tenantId to repository.findByQuery()")
         void query_passesCallerTenantToFindAll() { // GH-90000
             when(entityRepository.findByQuery(eq(TENANT_A), anyString(), any())) // GH-90000
                     .thenReturn(Promise.of(List.of())); // GH-90000
@@ -302,7 +302,7 @@ class TenantIsolationConnectorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("query() with tenant-B context never returns tenant-A data [GH-90000]")
+        @DisplayName("query() with tenant-B context never returns tenant-A data")
         void query_tenantBContext_neverReturnsTenantAEntities() { // GH-90000
             // Repository returns empty for tenant-B (correct scoping) // GH-90000
             when(entityRepository.findByQuery(eq(TENANT_B), anyString(), any())) // GH-90000
@@ -320,7 +320,7 @@ class TenantIsolationConnectorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("query() with null tenantId fails fast without repository call [GH-90000]")
+        @DisplayName("query() with null tenantId fails fast without repository call")
         void query_nullTenantId_failsFast() { // GH-90000
             QuerySpec spec = QuerySpec.builder().limit(10).offset(0).build(); // GH-90000
             assertThatNullPointerException() // GH-90000
@@ -329,7 +329,7 @@ class TenantIsolationConnectorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("query() results contain only entities for the requested tenant [GH-90000]")
+        @DisplayName("query() results contain only entities for the requested tenant")
         void query_resultsContainOnlyRequestedTenant() { // GH-90000
             Entity entityA1 = entityFor(TENANT_A); // GH-90000
             Entity entityA2 = entityFor(TENANT_A); // GH-90000
@@ -354,11 +354,11 @@ class TenantIsolationConnectorTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Audit: tenant reported correctly [GH-90000]")
+    @DisplayName("Audit: tenant reported correctly")
     class AuditTenantCorrectness {
 
         @Test
-        @DisplayName("create() reports tenant-A to audit log, not tenant-B [GH-90000]")
+        @DisplayName("create() reports tenant-A to audit log, not tenant-B")
         void create_reportsCorrectTenantToAuditLog() { // GH-90000
             Entity entityA = entityFor(TENANT_A); // GH-90000
             when(entityRepository.save(eq(TENANT_A), any(Entity.class))) // GH-90000
@@ -368,12 +368,12 @@ class TenantIsolationConnectorTest extends EventloopTestBase {
 
             ArgumentCaptor<String> tenantCaptor = ArgumentCaptor.forClass(String.class); // GH-90000
             verify(auditLogger).logDataModification( // GH-90000
-                    tenantCaptor.capture(), eq("CREATE [GH-90000]"), anyString(), anyString(), eq(true));
+                    tenantCaptor.capture(), eq("CREATE"), anyString(), anyString(), eq(true));
             assertThat(tenantCaptor.getValue()).isEqualTo(TENANT_A); // GH-90000
         }
 
         @Test
-        @DisplayName("delete() reports the caller's tenant to audit, not another tenant [GH-90000]")
+        @DisplayName("delete() reports the caller's tenant to audit, not another tenant")
         void delete_reportsCorrectTenantToAuditLog() { // GH-90000
             UUID entityId = UUID.randomUUID(); // GH-90000
             when(entityRepository.delete(TENANT_A, COLLECTION_NAME, entityId)) // GH-90000
@@ -383,7 +383,7 @@ class TenantIsolationConnectorTest extends EventloopTestBase {
 
             ArgumentCaptor<String> tenantCaptor = ArgumentCaptor.forClass(String.class); // GH-90000
             verify(auditLogger).logDataModification( // GH-90000
-                    tenantCaptor.capture(), eq("DELETE [GH-90000]"), anyString(), anyString(), eq(true));
+                    tenantCaptor.capture(), eq("DELETE"), anyString(), anyString(), eq(true));
             assertThat(tenantCaptor.getValue()).isEqualTo(TENANT_A); // GH-90000
         }
     }

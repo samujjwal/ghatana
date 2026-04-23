@@ -16,11 +16,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test system performance under load with concurrent operations.
  */
-@DisplayName("Load Tests [GH-90000]")
+@DisplayName("Load Tests")
 class LoadTest {
 
     @Test
-    @DisplayName("Should handle concurrent audio processing [GH-90000]")
+    @DisplayName("Should handle concurrent audio processing")
     void shouldHandleConcurrentAudioProcessing() { // GH-90000
         int concurrentTasks = 100;
         int maxCapacity = 1000;
@@ -31,7 +31,7 @@ class LoadTest {
     }
 
     @Test
-    @DisplayName("Should handle concurrent video processing [GH-90000]")
+    @DisplayName("Should handle concurrent video processing")
     void shouldHandleConcurrentVideoProcessing() { // GH-90000
         int concurrentTasks = 50;
         int maxCapacity = 500;
@@ -42,7 +42,7 @@ class LoadTest {
     }
 
     @Test
-    @DisplayName("Should handle high throughput streaming [GH-90000]")
+    @DisplayName("Should handle high throughput streaming")
     void shouldHandleHighThroughputStreaming() { // GH-90000
         int streamsPerSecond = 1000;
         int targetThroughput = 500;
@@ -51,7 +51,7 @@ class LoadTest {
     }
 
     @Test
-    @DisplayName("Should maintain performance under load [GH-90000]")
+    @DisplayName("Should maintain performance under load")
     void shouldMaintainPerformanceUnderLoad() { // GH-90000
         long baselineLatency = 50L;
         long loadedLatency = 75L;
@@ -62,7 +62,7 @@ class LoadTest {
     }
 
     @Test
-    @DisplayName("Should handle resource exhaustion [GH-90000]")
+    @DisplayName("Should handle resource exhaustion")
     void shouldHandleResourceExhaustion() { // GH-90000
         double cpuUtilization = 0.95;
         double memoryUtilization = 0.90;
@@ -73,7 +73,7 @@ class LoadTest {
     }
 
     @Test
-    @DisplayName("Should handle graceful degradation [GH-90000]")
+    @DisplayName("Should handle graceful degradation")
     void shouldHandleGracefulDegradation() { // GH-90000
         boolean degraded = true;
         boolean operational = true;

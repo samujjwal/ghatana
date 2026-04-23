@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("TtsSynthesisEngineTest [GH-90000]")
+@DisplayName("TtsSynthesisEngineTest")
 class TtsSynthesisEngineTest {
 
     private static final Set<String> VOICES = Set.of( // GH-90000
@@ -34,7 +34,7 @@ class TtsSynthesisEngineTest {
     // ── Default voice synthesis ───────────────────────────────────────────────
 
     @Test
-    @DisplayName("synthesis with default voice produces non-empty audio [GH-90000]")
+    @DisplayName("synthesis with default voice produces non-empty audio")
     void synthesisDefaultVoiceProducesAudio() { // GH-90000
         VoiceConfig voice = VoiceConfig.defaults(); // GH-90000
         SynthesisResult result = engine.synthesize("Hello world", voice, AudioEncoding.PCM_16BIT); // GH-90000
@@ -44,7 +44,7 @@ class TtsSynthesisEngineTest {
     }
 
     @Test
-    @DisplayName("synthesis result carries the voice ID from the config [GH-90000]")
+    @DisplayName("synthesis result carries the voice ID from the config")
     void synthesisResultHasVoiceId() { // GH-90000
         VoiceConfig voice = VoiceConfig.defaults(); // GH-90000
         SynthesisResult result = engine.synthesize("Test input", voice, AudioEncoding.PCM_16BIT); // GH-90000
@@ -55,14 +55,14 @@ class TtsSynthesisEngineTest {
 
     @ParameterizedTest(name = "voice={0}") // GH-90000
     @EnumSource(AudioEncoding.class) // GH-90000
-    @DisplayName("all output encodings are accepted for the default voice [GH-90000]")
+    @DisplayName("all output encodings are accepted for the default voice")
     void allEncodingsAccepted(AudioEncoding encoding) { // GH-90000
         SynthesisResult result = engine.synthesize("Test", VoiceConfig.defaults(), encoding); // GH-90000
         assertThat(result.encoding()).isEqualTo(encoding); // GH-90000
     }
 
     @Test
-    @DisplayName("second registered voice produces audio [GH-90000]")
+    @DisplayName("second registered voice produces audio")
     void secondVoiceProducesAudio() { // GH-90000
         VoiceConfig voice = new VoiceConfig("en-US-standard-b", "en-US", "MALE", 1.0f, 0.0f, 0.0f); // GH-90000
         SynthesisResult result = engine.synthesize("Hello again", voice, AudioEncoding.PCM_16BIT); // GH-90000
@@ -70,7 +70,7 @@ class TtsSynthesisEngineTest {
     }
 
     @Test
-    @DisplayName("French voice produces audio [GH-90000]")
+    @DisplayName("French voice produces audio")
     void frenchVoiceProducesAudio() { // GH-90000
         VoiceConfig voice = new VoiceConfig("fr-FR-standard-a", "fr-FR", "FEMALE", 1.0f, 0.0f, 0.0f); // GH-90000
         SynthesisResult result = engine.synthesize("Bonjour le monde", voice, AudioEncoding.OPUS); // GH-90000
@@ -80,7 +80,7 @@ class TtsSynthesisEngineTest {
     // ── SSML synthesis ────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("SSML break tag is accepted without error [GH-90000]")
+    @DisplayName("SSML break tag is accepted without error")
     void ssmlBreakAccepted() { // GH-90000
         String ssml = "<speak>Hello <break time=\"500ms\"/> world.</speak>";
         assertThatCode(() -> engine.synthesize(ssml, VoiceConfig.defaults(), AudioEncoding.PCM_16BIT)) // GH-90000
@@ -88,7 +88,7 @@ class TtsSynthesisEngineTest {
     }
 
     @Test
-    @DisplayName("SSML prosody tag is accepted without error [GH-90000]")
+    @DisplayName("SSML prosody tag is accepted without error")
     void ssmlProsodyAccepted() { // GH-90000
         String ssml = "<speak><prosody rate=\"slow\">Test text to speak.</prosody></speak>";
         assertThatCode(() -> engine.synthesize(ssml, VoiceConfig.defaults(), AudioEncoding.MP3)) // GH-90000
@@ -96,7 +96,7 @@ class TtsSynthesisEngineTest {
     }
 
     @Test
-    @DisplayName("SSML emphasis tag produces non-empty audio [GH-90000]")
+    @DisplayName("SSML emphasis tag produces non-empty audio")
     void ssmlEmphasisProducesAudio() { // GH-90000
         String ssml = "<speak>This is <emphasis level=\"strong\">important</emphasis>.</speak>";
         SynthesisResult result = engine.synthesize(ssml, VoiceConfig.defaults(), AudioEncoding.PCM_16BIT); // GH-90000
@@ -106,7 +106,7 @@ class TtsSynthesisEngineTest {
     // ── Prosody control ───────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("faster speaking rate produces shorter estimated duration [GH-90000]")
+    @DisplayName("faster speaking rate produces shorter estimated duration")
     void fasterRateShortsDuration() { // GH-90000
         VoiceConfig fast = new VoiceConfig("en-US-standard-a", "en-US", "NEUTRAL", 2.0f, 0.0f, 0.0f); // GH-90000
         VoiceConfig slow = new VoiceConfig("en-US-standard-a", "en-US", "NEUTRAL", 0.5f, 0.0f, 0.0f); // GH-90000
@@ -117,7 +117,7 @@ class TtsSynthesisEngineTest {
     }
 
     @Test
-    @DisplayName("pitch and volume settings do not cause exceptions [GH-90000]")
+    @DisplayName("pitch and volume settings do not cause exceptions")
     void pitchAndVolumeAccepted() { // GH-90000
         VoiceConfig voice = new VoiceConfig("en-US-standard-a", "en-US", "NEUTRAL", 1.0f, 2.0f, -3.0f); // GH-90000
         assertThatCode(() -> engine.synthesize("Test pitch and volume", voice, AudioEncoding.PCM_16BIT)) // GH-90000
@@ -127,21 +127,21 @@ class TtsSynthesisEngineTest {
     // ── Synthesis quality attributes ──────────────────────────────────────────
 
     @Test
-    @DisplayName("sample rate is positive [GH-90000]")
+    @DisplayName("sample rate is positive")
     void sampleRateIsPositive() { // GH-90000
         SynthesisResult result = engine.synthesize("Sample rate check", VoiceConfig.defaults(), AudioEncoding.PCM_16BIT); // GH-90000
         assertThat(result.sampleRateHz()).isGreaterThan(0); // GH-90000
     }
 
     @Test
-    @DisplayName("processing time is non-negative [GH-90000]")
+    @DisplayName("processing time is non-negative")
     void processingTimeIsNonNegative() { // GH-90000
         SynthesisResult result = engine.synthesize("Processing time", VoiceConfig.defaults(), AudioEncoding.PCM_16BIT); // GH-90000
         assertThat(result.processingSeconds()).isGreaterThanOrEqualTo(0.0); // GH-90000
     }
 
     @Test
-    @DisplayName("longer text produces longer audio duration [GH-90000]")
+    @DisplayName("longer text produces longer audio duration")
     void longerTextHasLongerDuration() { // GH-90000
         String longText = "The quick brown fox jumps over the lazy dog. " .repeat(10); // GH-90000
         String shortText = "Hello world";
@@ -153,38 +153,38 @@ class TtsSynthesisEngineTest {
     // ── Error handling ────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("null text throws SynthesisException [GH-90000]")
+    @DisplayName("null text throws SynthesisException")
     void nullTextThrows() { // GH-90000
         assertThatThrownBy(() -> engine.synthesize(null, VoiceConfig.defaults(), AudioEncoding.PCM_16BIT)) // GH-90000
                 .isInstanceOf(TtsSynthesisEngine.SynthesisException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("blank text throws SynthesisException [GH-90000]")
+    @DisplayName("blank text throws SynthesisException")
     void blankTextThrows() { // GH-90000
         assertThatThrownBy(() -> engine.synthesize("   ", VoiceConfig.defaults(), AudioEncoding.PCM_16BIT)) // GH-90000
                 .isInstanceOf(TtsSynthesisEngine.SynthesisException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("unsupported voice ID throws SynthesisException [GH-90000]")
+    @DisplayName("unsupported voice ID throws SynthesisException")
     void unsupportedVoiceThrows() { // GH-90000
         VoiceConfig unknown = new VoiceConfig("xx-XX-unknown", "xx-XX", "NEUTRAL", 1.0f, 0.0f, 0.0f); // GH-90000
         assertThatThrownBy(() -> engine.synthesize("Hello", unknown, AudioEncoding.PCM_16BIT)) // GH-90000
                 .isInstanceOf(TtsSynthesisEngine.SynthesisException.class) // GH-90000
-                .hasMessageContaining("Unsupported voice [GH-90000]");
+                .hasMessageContaining("Unsupported voice");
     }
 
     // ── Engine metadata ───────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("engine reports correct model ID [GH-90000]")
+    @DisplayName("engine reports correct model ID")
     void engineModelId() { // GH-90000
-        assertThat(engine.getModelId()).isEqualTo("tts-v2 [GH-90000]");
+        assertThat(engine.getModelId()).isEqualTo("tts-v2");
     }
 
     @Test
-    @DisplayName("engine reports supported voice IDs [GH-90000]")
+    @DisplayName("engine reports supported voice IDs")
     void engineSupportedVoices() { // GH-90000
         assertThat(engine.getSupportedVoiceIds()).containsAll(VOICES); // GH-90000
     }

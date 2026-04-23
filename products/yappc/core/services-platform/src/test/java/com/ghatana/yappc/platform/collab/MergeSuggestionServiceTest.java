@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-@DisplayName("MergeSuggestionService Tests [GH-90000]")
+@DisplayName("MergeSuggestionService Tests")
 class MergeSuggestionServiceTest extends EventloopTestBase {
 
   @Mock private YAPPCAIService aiService;
@@ -26,10 +26,10 @@ class MergeSuggestionServiceTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("suggestMerge calls AI service with code conflict context [GH-90000]")
+  @DisplayName("suggestMerge calls AI service with code conflict context")
   void suggestMergeCallsAiServiceWithCodeConflictContext() { // GH-90000
     when(aiService.reason(anyString(), anyMap())) // GH-90000
-        .thenReturn(Promise.of("mergedCode();\nPrefer the right side but preserve the shared API. [GH-90000]"));
+        .thenReturn(Promise.of("mergedCode();\nPrefer the right side but preserve the shared API."));
 
     MergeSuggestionService service = new MergeSuggestionService(aiService); // GH-90000
     MergeSuggestionService.MergeSuggestion suggestion =
@@ -43,17 +43,17 @@ class MergeSuggestionServiceTest extends EventloopTestBase {
                         "mergedCode();", // GH-90000
                         Map.of("file", "Editor.tsx")))); // GH-90000
 
-    assertThat(suggestion.conflictId()).isEqualTo("conflict-1 [GH-90000]");
-    assertThat(suggestion.mergedVersion()).isEqualTo("mergedCode(); [GH-90000]");
-    assertThat(suggestion.rationale()).contains("Prefer the right side [GH-90000]");
+    assertThat(suggestion.conflictId()).isEqualTo("conflict-1");
+    assertThat(suggestion.mergedVersion()).isEqualTo("mergedCode();");
+    assertThat(suggestion.rationale()).contains("Prefer the right side");
     assertThat(suggestion.aiGenerated()).isTrue(); // GH-90000
     verify(aiService).reason(anyString(), anyMap()); // GH-90000
   }
 
   @Test
-  @DisplayName("suggestMerge falls back for blank document response [GH-90000]")
+  @DisplayName("suggestMerge falls back for blank document response")
   void suggestMergeFallsBackForBlankDocumentResponse() { // GH-90000
-    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("  [GH-90000]"));
+    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of(" "));
 
     MergeSuggestionService service = new MergeSuggestionService(aiService); // GH-90000
     MergeSuggestionService.MergeSuggestion suggestion =
@@ -67,13 +67,13 @@ class MergeSuggestionServiceTest extends EventloopTestBase {
                         "Heading B",
                         Map.of("section", "summary")))); // GH-90000
 
-    assertThat(suggestion.mergedVersion()).isEqualTo("Heading A\nHeading B [GH-90000]");
-    assertThat(suggestion.rationale()).contains("preserved both document edits [GH-90000]");
+    assertThat(suggestion.mergedVersion()).isEqualTo("Heading A\nHeading B");
+    assertThat(suggestion.rationale()).contains("preserved both document edits");
     assertThat(suggestion.aiGenerated()).isFalse(); // GH-90000
   }
 
   @Test
-  @DisplayName("suggestMerge falls back for null code response with normalized right version [GH-90000]")
+  @DisplayName("suggestMerge falls back for null code response with normalized right version")
   void suggestMergeFallsBackForNullCodeResponseWithNormalizedRightVersion() { // GH-90000
     when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of(null)); // GH-90000
 
@@ -89,14 +89,14 @@ class MergeSuggestionServiceTest extends EventloopTestBase {
                         null,
                         Map.of()))); // GH-90000
 
-    assertThat(suggestion.conflictId()).isEqualTo("code-2 [GH-90000]");
+    assertThat(suggestion.conflictId()).isEqualTo("code-2");
     assertThat(suggestion.mergedVersion()).isEmpty(); // GH-90000
-    assertThat(suggestion.rationale()).contains("right-hand code change [GH-90000]");
+    assertThat(suggestion.rationale()).contains("right-hand code change");
     assertThat(suggestion.aiGenerated()).isFalse(); // GH-90000
   }
 
   @Test
-  @DisplayName("suggestMerge falls back for null generic response and normalizes request defaults [GH-90000]")
+  @DisplayName("suggestMerge falls back for null generic response and normalizes request defaults")
   void suggestMergeFallsBackForNullGenericResponseAndNormalizesRequestDefaults() { // GH-90000
     when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of(null)); // GH-90000
 
@@ -112,16 +112,16 @@ class MergeSuggestionServiceTest extends EventloopTestBase {
                         "right payload",
                         null)));
 
-    assertThat(suggestion.conflictId()).isEqualTo("unknown-conflict [GH-90000]");
-    assertThat(suggestion.mergedVersion()).isEqualTo("right payload [GH-90000]");
-    assertThat(suggestion.rationale()).contains("latest provided version [GH-90000]");
+    assertThat(suggestion.conflictId()).isEqualTo("unknown-conflict");
+    assertThat(suggestion.mergedVersion()).isEqualTo("right payload");
+    assertThat(suggestion.rationale()).contains("latest provided version");
     assertThat(suggestion.aiGenerated()).isFalse(); // GH-90000
   }
 
   @Test
-  @DisplayName("suggestMerge uses single-line AI response as merged version [GH-90000]")
+  @DisplayName("suggestMerge uses single-line AI response as merged version")
   void suggestMergeUsesSingleLineAiResponseAsMergedVersion() { // GH-90000
-    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("Use client B version [GH-90000]"));
+    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("Use client B version"));
 
     MergeSuggestionService service = new MergeSuggestionService(aiService); // GH-90000
     MergeSuggestionService.MergeSuggestion suggestion =
@@ -135,16 +135,16 @@ class MergeSuggestionServiceTest extends EventloopTestBase {
                         "right",
                         Map.of("kind", "text")))); // GH-90000
 
-    assertThat(suggestion.mergedVersion()).isEqualTo("Use client B version [GH-90000]");
-    assertThat(suggestion.rationale()).isEqualTo("AI merge suggestion [GH-90000]");
+    assertThat(suggestion.mergedVersion()).isEqualTo("Use client B version");
+    assertThat(suggestion.rationale()).isEqualTo("AI merge suggestion");
     assertThat(suggestion.aiGenerated()).isTrue(); // GH-90000
   }
 
   @Test
-  @DisplayName("constructor rejects null ai service [GH-90000]")
+  @DisplayName("constructor rejects null ai service")
   void constructorRejectsNullAiService() { // GH-90000
     assertThatThrownBy(() -> new MergeSuggestionService(null)) // GH-90000
         .isInstanceOf(NullPointerException.class) // GH-90000
-        .hasMessageContaining("aiService [GH-90000]");
+        .hasMessageContaining("aiService");
   }
 }

@@ -12,7 +12,7 @@
  * - Keyboard shortcuts (Cmd+K / Ctrl+K)
  *
  * @doc.type component
- * @doc.purpose AI-powered command bar for natural language navigation and actions
+ * @doc.purpose Assisted command bar for natural language navigation and actions
  * @doc.layer frontend
  */
 

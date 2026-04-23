@@ -35,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern PropertyBasedTest
  */
-@DisplayName("PatternDetectionAgent – Property-Based Tests [GH-90000]")
+@DisplayName("PatternDetectionAgent – Property-Based Tests")
 class PatternDetectionPropertyTest extends EventloopTestBase {
 
     private PatternDetectionAgent agent;
@@ -46,7 +46,7 @@ class PatternDetectionPropertyTest extends EventloopTestBase {
         NFA nfa = createFraudDetectionNFA(); // GH-90000
         agent = PatternDetectionAgent.builder() // GH-90000
             .operatorId(OperatorId.of("test", "pattern", "property-test", "1.0")) // GH-90000
-            .name("Property Test Agent [GH-90000]")
+            .name("Property Test Agent")
             .nfa(nfa) // GH-90000
             .confidenceThreshold(0.7) // GH-90000
             .windowDuration(Duration.ofMinutes(5)) // GH-90000
@@ -64,7 +64,7 @@ class PatternDetectionPropertyTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Property: Confidence threshold is respected across many random event streams [GH-90000]")
+    @DisplayName("Property: Confidence threshold is respected across many random event streams")
     void confidenceThresholdRespectedAcrossRandomStreams() { // GH-90000
         // Generate 100 random event streams
         for (int i = 0; i < 100; i++) { // GH-90000
@@ -93,7 +93,7 @@ class PatternDetectionPropertyTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Property: Deterministic behavior - same events produce same results [GH-90000]")
+    @DisplayName("Property: Deterministic behavior - same events produce same results")
     void deterministicBehaviorForSameEvents() { // GH-90000
         List<GEvent> events = generateRandomEventStream(30); // GH-90000
         
@@ -112,7 +112,7 @@ class PatternDetectionPropertyTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Property: Window expiry resets state correctly [GH-90000]")
+    @DisplayName("Property: Window expiry resets state correctly")
     void windowExpiryResetsStateCorrectly() { // GH-90000
         List<GEvent> matchingEvents = createMatchingEventSequence(); // GH-90000
 
@@ -136,13 +136,13 @@ class PatternDetectionPropertyTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Property: Event type filtering works correctly [GH-90000]")
+    @DisplayName("Property: Event type filtering works correctly")
     void eventTypeFilteringWorksCorrectly() { // GH-90000
         // Create an agent with event type filtering
         NFA nfa = createFraudDetectionNFA(); // GH-90000
         PatternDetectionAgent filteredAgent = PatternDetectionAgent.builder() // GH-90000
             .operatorId(OperatorId.of("test", "pattern", "filtered", "1.0")) // GH-90000
-            .name("Filtered Agent [GH-90000]")
+            .name("Filtered Agent")
             .nfa(nfa) // GH-90000
             .confidenceThreshold(0.7) // GH-90000
             .windowDuration(Duration.ofMinutes(5)) // GH-90000
@@ -158,7 +158,7 @@ class PatternDetectionPropertyTest extends EventloopTestBase {
             for (GEvent event : matchingEvents) { // GH-90000
                 runPromise(() -> filteredAgent.process(event)); // GH-90000
             }
-            long filteredAfterAcceptedTypes = ((Number) filteredAgent.getMetrics().get("events_filtered [GH-90000]")).longValue();
+            long filteredAfterAcceptedTypes = ((Number) filteredAgent.getMetrics().get("events_filtered")).longValue();
             assertThat(filteredAfterAcceptedTypes).isZero(); // GH-90000
             
             filteredAgent.stop(); // GH-90000
@@ -168,7 +168,7 @@ class PatternDetectionPropertyTest extends EventloopTestBase {
             for (GEvent event : filteredEvents) { // GH-90000
                 runPromise(() -> filteredAgent.process(event)); // GH-90000
             }
-            long filteredCount = ((Number) filteredAgent.getMetrics().get("events_filtered [GH-90000]")).longValue();
+            long filteredCount = ((Number) filteredAgent.getMetrics().get("events_filtered")).longValue();
             
             assertThat(filteredCount).isEqualTo(filteredEvents.size()); // GH-90000
             assertThat(filteredAgent.getMatchesDetected()).isZero(); // GH-90000
@@ -179,19 +179,19 @@ class PatternDetectionPropertyTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Property: Null events are handled gracefully [GH-90000]")
+    @DisplayName("Property: Null events are handled gracefully")
     void nullEventsHandledGracefully() { // GH-90000
         OperatorResult result = runPromise(() -> agent.process(null)); // GH-90000
 
         assertThat(result.isSuccess()).isFalse(); // GH-90000
-        assertThat(result.getErrorMessage()).contains("must not be null [GH-90000]");
+        assertThat(result.getErrorMessage()).contains("must not be null");
         assertThat(agent.getState()).isNotNull(); // GH-90000
     }
 
     // ─── Helper Methods ───────────────────────────────────────────────────────
 
     private NFA createFraudDetectionNFA() { // GH-90000
-        NFA nfa = new NFA("fraud-detection [GH-90000]");
+        NFA nfa = new NFA("fraud-detection");
         NFAState start = nfa.getStartState(); // GH-90000
         NFAState login = new NFAState("login", NFAStateType.INTERMEDIATE); // GH-90000
         NFAState purchase = new NFAState("purchase", NFAStateType.INTERMEDIATE); // GH-90000

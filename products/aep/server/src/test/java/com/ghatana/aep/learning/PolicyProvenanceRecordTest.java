@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("PolicyProvenanceRecord [GH-90000]")
+@DisplayName("PolicyProvenanceRecord")
 class PolicyProvenanceRecordTest {
 
     private static final String POLICY_ID  = "policy-001";
@@ -38,11 +38,11 @@ class PolicyProvenanceRecordTest {
     // ─── pending() factory ──────────────────────────────────────────────────── // GH-90000
 
     @Nested
-    @DisplayName("pending() factory [GH-90000]")
+    @DisplayName("pending() factory")
     class PendingFactory {
 
         @Test
-        @DisplayName("creates record with SHADOW activation mode [GH-90000]")
+        @DisplayName("creates record with SHADOW activation mode")
         void pending_setsModeShadow() { // GH-90000
             PolicyProvenanceRecord record = PolicyProvenanceRecord.pending( // GH-90000
                     POLICY_ID, TENANT_ID, SKILL_ID, 1, EPISODE_IDS, METRICS, 0.80);
@@ -51,7 +51,7 @@ class PolicyProvenanceRecordTest {
         }
 
         @Test
-        @DisplayName("creates record with correct field values [GH-90000]")
+        @DisplayName("creates record with correct field values")
         void pending_setsAllFields() { // GH-90000
             PolicyProvenanceRecord record = PolicyProvenanceRecord.pending( // GH-90000
                     POLICY_ID, TENANT_ID, SKILL_ID, 1, EPISODE_IDS, METRICS, 0.80);
@@ -65,7 +65,7 @@ class PolicyProvenanceRecordTest {
         }
 
         @Test
-        @DisplayName("creates record with null approver and promotedAt for pending state [GH-90000]")
+        @DisplayName("creates record with null approver and promotedAt for pending state")
         void pending_nullsForPendingState() { // GH-90000
             PolicyProvenanceRecord record = PolicyProvenanceRecord.pending( // GH-90000
                     POLICY_ID, TENANT_ID, SKILL_ID, 1, EPISODE_IDS, METRICS, 0.80);
@@ -77,36 +77,36 @@ class PolicyProvenanceRecordTest {
         }
 
         @Test
-        @DisplayName("makes a defensive copy of episode IDs list [GH-90000]")
+        @DisplayName("makes a defensive copy of episode IDs list")
         void pending_defensiveCopyOfEpisodeIds() { // GH-90000
             java.util.List<String> mutableIds = new java.util.ArrayList<>(EPISODE_IDS); // GH-90000
             PolicyProvenanceRecord record = PolicyProvenanceRecord.pending( // GH-90000
                     POLICY_ID, TENANT_ID, SKILL_ID, 1, mutableIds, METRICS, 0.80);
 
-            mutableIds.add("ep-injected [GH-90000]");
+            mutableIds.add("ep-injected");
             assertThat(record.sourceEpisodeIds()).hasSize(EPISODE_IDS.size()); // GH-90000
         }
 
         @Test
-        @DisplayName("makes a defensive copy of metrics map [GH-90000]")
+        @DisplayName("makes a defensive copy of metrics map")
         void pending_defensiveCopyOfMetrics() { // GH-90000
             java.util.Map<String, Double> mutableMetrics = new java.util.HashMap<>(METRICS); // GH-90000
             PolicyProvenanceRecord record = PolicyProvenanceRecord.pending( // GH-90000
                     POLICY_ID, TENANT_ID, SKILL_ID, 1, EPISODE_IDS, mutableMetrics, 0.80);
 
             mutableMetrics.put("injected", 99.0); // GH-90000
-            assertThat(record.evaluationMetrics()).doesNotContainKey("injected [GH-90000]");
+            assertThat(record.evaluationMetrics()).doesNotContainKey("injected");
         }
     }
 
     // ─── compact constructor validation ───────────────────────────────────────
 
     @Nested
-    @DisplayName("compact constructor validation [GH-90000]")
+    @DisplayName("compact constructor validation")
     class Validation {
 
         @Test
-        @DisplayName("throws for canaryFraction below 0 [GH-90000]")
+        @DisplayName("throws for canaryFraction below 0")
         void constructor_negativeFraction_throws() { // GH-90000
             assertThatThrownBy(() -> new PolicyProvenanceRecord( // GH-90000
                     POLICY_ID, TENANT_ID, SKILL_ID, 1,
@@ -114,11 +114,11 @@ class PolicyProvenanceRecordTest {
                     null, null, null,
                     PolicyActivationMode.SHADOW, -0.1, null))
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("canaryFraction [GH-90000]");
+                    .hasMessageContaining("canaryFraction");
         }
 
         @Test
-        @DisplayName("throws for canaryFraction above 1 [GH-90000]")
+        @DisplayName("throws for canaryFraction above 1")
         void constructor_fractionAboveOne_throws() { // GH-90000
             assertThatThrownBy(() -> new PolicyProvenanceRecord( // GH-90000
                     POLICY_ID, TENANT_ID, SKILL_ID, 1,
@@ -126,11 +126,11 @@ class PolicyProvenanceRecordTest {
                     null, null, null,
                     PolicyActivationMode.SHADOW, 1.5, null))
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("canaryFraction [GH-90000]");
+                    .hasMessageContaining("canaryFraction");
         }
 
         @Test
-        @DisplayName("accepts canaryFraction of exactly 0 and 1 [GH-90000]")
+        @DisplayName("accepts canaryFraction of exactly 0 and 1")
         void constructor_boundaryFractions_valid() { // GH-90000
             PolicyProvenanceRecord zero = new PolicyProvenanceRecord( // GH-90000
                     POLICY_ID, TENANT_ID, SKILL_ID, 1,
@@ -151,11 +151,11 @@ class PolicyProvenanceRecordTest {
     // ─── withMode() transformation ──────────────────────────────────────────── // GH-90000
 
     @Nested
-    @DisplayName("withMode() transformation [GH-90000]")
+    @DisplayName("withMode() transformation")
     class WithMode {
 
         @Test
-        @DisplayName("returns new record with updated activation mode [GH-90000]")
+        @DisplayName("returns new record with updated activation mode")
         void withMode_returnsNewRecordWithNewMode() { // GH-90000
             PolicyProvenanceRecord pending = PolicyProvenanceRecord.pending( // GH-90000
                     POLICY_ID, TENANT_ID, SKILL_ID, 1, EPISODE_IDS, METRICS, 0.85);
@@ -167,7 +167,7 @@ class PolicyProvenanceRecordTest {
         }
 
         @Test
-        @DisplayName("preserves all other fields in withMode() [GH-90000]")
+        @DisplayName("preserves all other fields in withMode()")
         void withMode_preservesOtherFields() { // GH-90000
             PolicyProvenanceRecord pending = PolicyProvenanceRecord.pending( // GH-90000
                     POLICY_ID, TENANT_ID, SKILL_ID, 2, EPISODE_IDS, METRICS, 0.75);
@@ -185,11 +185,11 @@ class PolicyProvenanceRecordTest {
     // ─── withPromotion() transformation ────────────────────────────────────── // GH-90000
 
     @Nested
-    @DisplayName("withPromotion() transformation [GH-90000]")
+    @DisplayName("withPromotion() transformation")
     class WithPromotion {
 
         @Test
-        @DisplayName("sets approver identity, rationale, promotedAt and rollback pointer [GH-90000]")
+        @DisplayName("sets approver identity, rationale, promotedAt and rollback pointer")
         void withPromotion_setsAllPromotionFields() { // GH-90000
             PolicyProvenanceRecord pending = PolicyProvenanceRecord.pending( // GH-90000
                     POLICY_ID, TENANT_ID, SKILL_ID, 1, EPISODE_IDS, METRICS, 0.90);
@@ -199,15 +199,15 @@ class PolicyProvenanceRecordTest {
                     "user-bob", "approved for prod", PolicyActivationMode.ACTIVE, "policy-000");
             Instant after = Instant.now(); // GH-90000
 
-            assertThat(promoted.approverId()).isEqualTo("user-bob [GH-90000]");
-            assertThat(promoted.approverRationale()).isEqualTo("approved for prod [GH-90000]");
+            assertThat(promoted.approverId()).isEqualTo("user-bob");
+            assertThat(promoted.approverRationale()).isEqualTo("approved for prod");
             assertThat(promoted.activationMode()).isEqualTo(PolicyActivationMode.ACTIVE); // GH-90000
-            assertThat(promoted.rollbackPointerId()).isEqualTo("policy-000 [GH-90000]");
+            assertThat(promoted.rollbackPointerId()).isEqualTo("policy-000");
             assertThat(promoted.promotedAt()).isBetween(before, after); // GH-90000
         }
 
         @Test
-        @DisplayName("preserves original record after withPromotion() [GH-90000]")
+        @DisplayName("preserves original record after withPromotion()")
         void withPromotion_originalUnchanged() { // GH-90000
             PolicyProvenanceRecord pending = PolicyProvenanceRecord.pending( // GH-90000
                     POLICY_ID, TENANT_ID, SKILL_ID, 1, EPISODE_IDS, METRICS, 0.90);
@@ -220,7 +220,7 @@ class PolicyProvenanceRecordTest {
         }
 
         @Test
-        @DisplayName("accepts null rollback pointer for first version [GH-90000]")
+        @DisplayName("accepts null rollback pointer for first version")
         void withPromotion_firstVersion_nullRollback() { // GH-90000
             PolicyProvenanceRecord pending = PolicyProvenanceRecord.pending( // GH-90000
                     POLICY_ID, TENANT_ID, SKILL_ID, 1, EPISODE_IDS, METRICS, 0.90);
@@ -235,11 +235,11 @@ class PolicyProvenanceRecordTest {
     // ─── withCanaryFraction() transformation ────────────────────────────────── // GH-90000
 
     @Nested
-    @DisplayName("withCanaryFraction() transformation [GH-90000]")
+    @DisplayName("withCanaryFraction() transformation")
     class WithCanaryFraction {
 
         @Test
-        @DisplayName("returns a CANARY-mode record with updated fraction [GH-90000]")
+        @DisplayName("returns a CANARY-mode record with updated fraction")
         void withCanaryFraction_setsFraction() { // GH-90000
             PolicyProvenanceRecord pending = PolicyProvenanceRecord.pending( // GH-90000
                     POLICY_ID, TENANT_ID, SKILL_ID, 1, EPISODE_IDS, METRICS, 0.85);
@@ -251,7 +251,7 @@ class PolicyProvenanceRecordTest {
         }
 
         @Test
-        @DisplayName("preserves original record after withCanaryFraction() [GH-90000]")
+        @DisplayName("preserves original record after withCanaryFraction()")
         void withCanaryFraction_originalUnchanged() { // GH-90000
             PolicyProvenanceRecord pending = PolicyProvenanceRecord.pending( // GH-90000
                     POLICY_ID, TENANT_ID, SKILL_ID, 1, EPISODE_IDS, METRICS, 0.85);
@@ -266,11 +266,11 @@ class PolicyProvenanceRecordTest {
     // ─── PolicyActivationMode lifecycle ───────────────────────────────────────
 
     @Nested
-    @DisplayName("PolicyActivationMode lifecycle [GH-90000]")
+    @DisplayName("PolicyActivationMode lifecycle")
     class ActivationModeLifecycle {
 
         @Test
-        @DisplayName("enum contains all expected modes [GH-90000]")
+        @DisplayName("enum contains all expected modes")
         void allModesPresent() { // GH-90000
             assertThat(PolicyActivationMode.values()).containsExactly( // GH-90000
                     PolicyActivationMode.SHADOW,
@@ -280,7 +280,7 @@ class PolicyProvenanceRecordTest {
         }
 
         @Test
-        @DisplayName("full lifecycle chain via withMode() [GH-90000]")
+        @DisplayName("full lifecycle chain via withMode()")
         void fullLifecycle() { // GH-90000
             PolicyProvenanceRecord record = PolicyProvenanceRecord.pending( // GH-90000
                     POLICY_ID, TENANT_ID, SKILL_ID, 1, EPISODE_IDS, METRICS, 0.90);

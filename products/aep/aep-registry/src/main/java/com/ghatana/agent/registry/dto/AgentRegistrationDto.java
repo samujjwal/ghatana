@@ -8,7 +8,11 @@ import java.util.Objects;
 /**
  * Data Transfer Object for agent registration requests.
  * Used for validating and transferring agent registration data between layers.
- */
+  * @doc.type class
+ * @doc.purpose Provides agent registration dto functionality.
+ * @doc.layer product
+ * @doc.pattern DTO
+*/
 public class AgentRegistrationDto {
     private String name;
     private String description;

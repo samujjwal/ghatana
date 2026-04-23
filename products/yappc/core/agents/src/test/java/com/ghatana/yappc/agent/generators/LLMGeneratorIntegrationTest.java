@@ -50,7 +50,7 @@ import org.slf4j.LoggerFactory;
  * @doc.layer test
  * @doc.pattern Integration Test
  */
-@DisplayName("LLM Generator Integration Tests [GH-90000]")
+@DisplayName("LLM Generator Integration Tests")
 class LLMGeneratorIntegrationTest extends EventloopTestBase {
   private static final Logger log = LoggerFactory.getLogger(LLMGeneratorIntegrationTest.class); // GH-90000
 
@@ -67,14 +67,14 @@ class LLMGeneratorIntegrationTest extends EventloopTestBase {
     ollamaAvailable = isOllamaRunning(); // GH-90000
 
     if (ollamaAvailable) { // GH-90000
-      log.info("\u2713 Ollama detected at http://localhost:11434 [GH-90000]");
+      log.info("\u2713 Ollama detected at http://localhost:11434");
     } else {
-      log.info("\u26a0 Ollama not available - use 'ollama serve && ollama pull llama3' to enable [GH-90000]");
+      log.info("\u26a0 Ollama not available - use 'ollama serve && ollama pull llama3' to enable");
     }
   }
 
   @Test
-  @DisplayName("Should create IntakeGenerator with mock gateway [GH-90000]")
+  @DisplayName("Should create IntakeGenerator with mock gateway")
   void shouldCreateIntakeGenerator() { // GH-90000
     // GIVEN
     LLMGenerator.LLMGateway mockGateway = mock(LLMGenerator.LLMGateway.class); // GH-90000
@@ -84,7 +84,7 @@ class LLMGeneratorIntegrationTest extends EventloopTestBase {
     when(mockGateway.complete(anyString(), any(), any())).thenReturn(Promise.of(mockResponse)); // GH-90000
 
     LLMGenerator.LLMConfig llmConfig =
-        LLMGenerator.LLMConfig.builder().model("llama3 [GH-90000]").temperature(0.7).maxTokens(4000).build();
+        LLMGenerator.LLMConfig.builder().model("llama3").temperature(0.7).maxTokens(4000).build();
 
     // WHEN
     OutputGenerator<StepRequest<IntakeInput>, StepResult<IntakeOutput>> generator =
@@ -93,20 +93,20 @@ class LLMGeneratorIntegrationTest extends EventloopTestBase {
     // THEN
     assertThat(generator).isNotNull(); // GH-90000
     assertThat(generator).isInstanceOf(LLMPoweredGenerator.class); // GH-90000
-    log.info("\u2713 IntakeGenerator created successfully [GH-90000]");
+    log.info("\u2713 IntakeGenerator created successfully");
   }
 
   @Test
-  @DisplayName("Should create all 12 LLM generators [GH-90000]")
+  @DisplayName("Should create all 12 LLM generators")
   void shouldCreateAllGenerators() { // GH-90000
     // GIVEN
     LLMGenerator.LLMGateway mockGateway = mock(LLMGenerator.LLMGateway.class); // GH-90000
     LLMGenerator.LLMResponse mockResponse = mock(LLMGenerator.LLMResponse.class); // GH-90000
-    when(mockResponse.getContent()).thenReturn("{} [GH-90000]");
+    when(mockResponse.getContent()).thenReturn("{}");
     when(mockGateway.complete(anyString(), any(), any())).thenReturn(Promise.of(mockResponse)); // GH-90000
 
     LLMGenerator.LLMConfig llmConfig =
-        LLMGenerator.LLMConfig.builder().model("llama3 [GH-90000]").temperature(0.7).maxTokens(4000).build();
+        LLMGenerator.LLMConfig.builder().model("llama3").temperature(0.7).maxTokens(4000).build();
 
     // WHEN - Create all 12 generators
     var intake = LLMGeneratorFactory.createIntakeGenerator(mockGateway, llmConfig); // GH-90000
@@ -136,19 +136,19 @@ class LLMGeneratorIntegrationTest extends EventloopTestBase {
     assertThat(incident).isNotNull(); // GH-90000
     assertThat(canary).isNotNull(); // GH-90000
 
-    log.info("\u2713 All 12 LLM-powered generators created successfully [GH-90000]");
+    log.info("\u2713 All 12 LLM-powered generators created successfully");
   }
 
   @Test
-  @DisplayName("Ollama availability status [GH-90000]")
+  @DisplayName("Ollama availability status")
   void ollamaAvailabilityStatus() { // GH-90000
     log.info("Ollama running: {}", ollamaAvailable); // GH-90000
     if (ollamaAvailable) { // GH-90000
-      log.info("\u2713 Ready for manual end-to-end LLM tests [GH-90000]");
-      log.info("  Model: llama3 (local, cost-free) [GH-90000]");
-      log.info("  Endpoint: http://localhost:11434 [GH-90000]");
+      log.info("\u2713 Ready for manual end-to-end LLM tests");
+      log.info("  Model: llama3 (local, cost-free)");
+      log.info("  Endpoint: http://localhost:11434");
     } else {
-      log.info("\u26a0 To enable: ollama serve && ollama pull llama3 [GH-90000]");
+      log.info("\u26a0 To enable: ollama serve && ollama pull llama3");
     }
   }
 

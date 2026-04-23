@@ -13,7 +13,8 @@ import org.jetbrains.annotations.Nullable;
  * @doc.type value-object
  * @doc.purpose Consolidation conflict between memory items
  * @doc.layer agent-learning
- */
+  * @doc.pattern Component
+*/
 @Value
 @Builder
 public class MemoryConflict {

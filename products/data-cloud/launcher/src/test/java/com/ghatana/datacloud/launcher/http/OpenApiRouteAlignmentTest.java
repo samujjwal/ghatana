@@ -19,23 +19,23 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("OpenAPI Route Alignment [GH-90000]")
+@DisplayName("OpenAPI Route Alignment")
 class OpenApiRouteAlignmentTest {
 
     private static final Pattern CODE_ROUTE_PATTERN =
         Pattern.compile("\\.with\\(HttpMethod\\.[A-Z]+,\\s*\"([^\"]+)\""); // GH-90000
     private static final Pattern PATH_PARAMETER_PATTERN =
-        Pattern.compile(":([a-zA-Z_][a-zA-Z0-9_]*) [GH-90000]");
+        Pattern.compile(":([a-zA-Z_][a-zA-Z0-9_]*)");
     private static final Pattern SPEC_PATH_PATTERN =
-        Pattern.compile("^\\s{2}(/[^:]+):\\s*$ [GH-90000]");
+        Pattern.compile("^\\s{2}(/[^:]+):\\s*$");
 
     @Test
-    @DisplayName("canonical OpenAPI spec covers every registered HTTP route [GH-90000]")
+    @DisplayName("canonical OpenAPI spec covers every registered HTTP route")
     void shouldKeepSpecAndRegisteredRoutesInSync() throws IOException { // GH-90000
         Path repoRoot = resolveRepoRoot(); // GH-90000
         Path serverFile = repoRoot.resolve( // GH-90000
             "products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudRouterBuilder.java");
-        Path specFile = repoRoot.resolve("products/data-cloud/api/openapi.yaml [GH-90000]");
+        Path specFile = repoRoot.resolve("products/data-cloud/api/openapi.yaml");
 
         Set<String> codeRoutes = readCodeRoutes(serverFile); // GH-90000
         Set<String> specPaths = readSpecPaths(specFile); // GH-90000
@@ -47,10 +47,10 @@ class OpenApiRouteAlignmentTest {
         specOnly.removeAll(codeRoutes); // GH-90000
 
         assertThat(codeOnly) // GH-90000
-            .as("routes registered in DataCloudHttpServer but missing from api/openapi.yaml [GH-90000]")
+            .as("routes registered in DataCloudHttpServer but missing from api/openapi.yaml")
             .isEmpty(); // GH-90000
         assertThat(specOnly) // GH-90000
-            .as("paths documented in api/openapi.yaml but not registered in DataCloudHttpServer [GH-90000]")
+            .as("paths documented in api/openapi.yaml but not registered in DataCloudHttpServer")
             .isEmpty(); // GH-90000
     }
 
@@ -82,17 +82,17 @@ class OpenApiRouteAlignmentTest {
     }
 
     private static String normalizeRoutePath(String route) { // GH-90000
-        return PATH_PARAMETER_PATTERN.matcher(route).replaceAll("{$1} [GH-90000]");
+        return PATH_PARAMETER_PATTERN.matcher(route).replaceAll("{$1}");
     }
 
     private static Path resolveRepoRoot() { // GH-90000
-        Path current = Path.of(" [GH-90000]").toAbsolutePath();
+        Path current = Path.of("").toAbsolutePath();
         while (current != null) { // GH-90000
-            if (Files.exists(current.resolve("products/data-cloud/api/openapi.yaml [GH-90000]"))) {
+            if (Files.exists(current.resolve("products/data-cloud/api/openapi.yaml"))) {
                 return current;
             }
             current = current.getParent(); // GH-90000
         }
-        throw new IllegalStateException("Unable to locate repository root for OpenAPI route alignment test [GH-90000]");
+        throw new IllegalStateException("Unable to locate repository root for OpenAPI route alignment test");
     }
 }

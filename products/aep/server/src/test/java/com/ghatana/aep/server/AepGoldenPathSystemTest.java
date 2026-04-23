@@ -53,7 +53,7 @@ import com.ghatana.aep.server.http.AepHttpServer;
  * @doc.layer product
  * @doc.pattern SystemTest
  */
-@DisplayName("AEP Golden-Path System Test [GH-90000]")
+@DisplayName("AEP Golden-Path System Test")
 @TestMethodOrder(OrderAnnotation.class) // GH-90000
 class AepGoldenPathSystemTest {
 
@@ -83,28 +83,28 @@ class AepGoldenPathSystemTest {
 
     @Test
     @Order(10) // GH-90000
-    @DisplayName("POST /api/v1/events returns 200 with eventId and success=true [GH-90000]")
+    @DisplayName("POST /api/v1/events returns 200 with eventId and success=true")
     void ingestEvent_returns200WithEventId() throws Exception { // GH-90000
         HttpResponse<String> resp = postEvent("tenant-acme", "user.signup", // GH-90000
                 Map.of("userId", "u001", "email", "alice@example.com")); // GH-90000
 
         assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-        assertThat(body).containsKey("eventId [GH-90000]");
-        assertThat(body.get("success [GH-90000]")).isEqualTo(true);
+        assertThat(body).containsKey("eventId");
+        assertThat(body.get("success")).isEqualTo(true);
 
         // Functional assertion: verify event was actually processed and recorded
-        String eventId = String.valueOf(body.get("eventId [GH-90000]"));
+        String eventId = String.valueOf(body.get("eventId"));
         assertThat(eventId).isNotNull(); // GH-90000
         assertThat(eventId).isNotEmpty(); // GH-90000
 
         // Verify the event appears in the run list (proves processing completed) // GH-90000
-        HttpResponse<String> runsResp = get("/api/v1/runs?tenantId=tenant-acme [GH-90000]");
+        HttpResponse<String> runsResp = get("/api/v1/runs?tenantId=tenant-acme");
         assertThat(runsResp.statusCode()).isEqualTo(200); // GH-90000
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         Map<String, Object> runsBody = mapper.readValue(runsResp.body(), Map.class); // GH-90000
-        List<?> runs = (List<?>) runsBody.get("runs [GH-90000]");
+        List<?> runs = (List<?>) runsBody.get("runs");
         assertThat(runs).isNotEmpty(); // GH-90000
 
         // Verify SLO metrics were recorded
@@ -116,7 +116,7 @@ class AepGoldenPathSystemTest {
 
     @Test
     @Order(20) // GH-90000
-    @DisplayName("SLO totalRuns counter increments after event ingestion [GH-90000]")
+    @DisplayName("SLO totalRuns counter increments after event ingestion")
     void sloTotalRunsIncrementsAfterEvent() throws Exception { // GH-90000
         long before = sloTotalRuns(); // GH-90000
 
@@ -130,26 +130,26 @@ class AepGoldenPathSystemTest {
 
     @Test
     @Order(30) // GH-90000
-    @DisplayName("GET /api/v1/runs returns a non-empty list after event processing [GH-90000]")
+    @DisplayName("GET /api/v1/runs returns a non-empty list after event processing")
     void runListIsNonEmptyAfterProcessing() throws Exception { // GH-90000
         postEvent("tenant-acme", "payment.received", Map.of("amount", 99.99)); // GH-90000
 
         // Pass tenantId as query param to match the tenant used in postEvent() // GH-90000
-        HttpResponse<String> resp = get("/api/v1/runs?tenantId=tenant-acme [GH-90000]");
+        HttpResponse<String> resp = get("/api/v1/runs?tenantId=tenant-acme");
         assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
         Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-        assertThat(body.containsKey("runs [GH-90000]")).isTrue();
-        List<?> runs = (List<?>) body.get("runs [GH-90000]");
+        assertThat(body.containsKey("runs")).isTrue();
+        List<?> runs = (List<?>) body.get("runs");
         assertThat(runs).isNotEmpty(); // GH-90000
     }
 
     @Test
     @Order(35) // GH-90000
-    @DisplayName("GET /api/v1/runs/:runId returns evidence arrays for a recorded run [GH-90000]")
+    @DisplayName("GET /api/v1/runs/:runId returns evidence arrays for a recorded run")
     void runDetailIncludesEvidenceArrays() throws Exception { // GH-90000
         postEvent("tenant-acme", "invoice.created", Map.of("invoiceId", "inv-001")); // GH-90000
 
-        HttpResponse<String> listResp = get("/api/v1/runs?tenantId=tenant-acme [GH-90000]");
+        HttpResponse<String> listResp = get("/api/v1/runs?tenantId=tenant-acme");
         assertThat(listResp.statusCode()).isEqualTo(200); // GH-90000
 
         Map<String, Object> listBody = mapper.readValue( // GH-90000
@@ -157,18 +157,18 @@ class AepGoldenPathSystemTest {
             new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {} // GH-90000
         );
         List<Map<String, Object>> runs = mapper.convertValue( // GH-90000
-            listBody.get("runs [GH-90000]"),
+            listBody.get("runs"),
             new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {} // GH-90000
         );
         assertThat(runs).isNotEmpty(); // GH-90000
 
-        String runId = String.valueOf(runs.get(runs.size() - 1).get("runId [GH-90000]"));
+        String runId = String.valueOf(runs.get(runs.size() - 1).get("runId"));
         HttpResponse<String> detailResp = get("/api/v1/runs/" + runId + "?tenantId=tenant-acme"); // GH-90000
         assertThat(detailResp.statusCode()).isEqualTo(200); // GH-90000
 
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         Map<String, Object> detailBody = mapper.readValue(detailResp.body(), Map.class); // GH-90000
-        assertThat(detailBody.get("runId [GH-90000]")).isEqualTo(runId);
+        assertThat(detailBody.get("runId")).isEqualTo(runId);
         assertThat(detailBody).containsKeys("lineage", "decisions", "policies"); // GH-90000
     }
 
@@ -176,7 +176,7 @@ class AepGoldenPathSystemTest {
 
     @Test
     @Order(40) // GH-90000
-    @DisplayName("POST /api/v1/patterns registers pattern; GET retrieves it [GH-90000]")
+    @DisplayName("POST /api/v1/patterns registers pattern; GET retrieves it")
     void patternRegistrationAndRetrieval() throws Exception { // GH-90000
         // Response shape: { "pattern": { "id": ..., "name": ..., "type": ... }, "timestamp": ... }
         String payload = mapper.writeValueAsString(Map.of( // GH-90000
@@ -189,10 +189,10 @@ class AepGoldenPathSystemTest {
         HttpResponse<String> createResp = post("/api/v1/patterns", payload); // GH-90000
         assertThat(createResp.statusCode()).isIn(200, 201); // GH-90000
         Map<?, ?> created = mapper.readValue(createResp.body(), Map.class); // GH-90000
-        assertThat(created.containsKey("pattern [GH-90000]")).isTrue();
+        assertThat(created.containsKey("pattern")).isTrue();
 
-        Map<?, ?> patternObj = (Map<?, ?>) created.get("pattern [GH-90000]");
-        String pId = String.valueOf(patternObj.get("id [GH-90000]"));
+        Map<?, ?> patternObj = (Map<?, ?>) created.get("pattern");
+        String pId = String.valueOf(patternObj.get("id"));
         HttpResponse<String> getResp = get("/api/v1/patterns/" + pId + "?tenantId=tenant-acme"); // GH-90000
         assertThat(getResp.statusCode()).isEqualTo(200); // GH-90000
     }
@@ -201,7 +201,7 @@ class AepGoldenPathSystemTest {
 
     @Test
     @Order(50) // GH-90000
-    @DisplayName("POST /api/v1/pipelines is reachable; GET /api/v1/pipelines lists [GH-90000]")
+    @DisplayName("POST /api/v1/pipelines is reachable; GET /api/v1/pipelines lists")
     void pipelineCreateAndList() throws Exception { // GH-90000
         String payload = mapper.writeValueAsString(Map.of( // GH-90000
             "name", "fraud-detection",
@@ -212,34 +212,34 @@ class AepGoldenPathSystemTest {
         HttpResponse<String> createResp = post("/api/v1/pipelines", payload); // GH-90000
         assertThat(createResp.statusCode()).isBetween(200, 299); // GH-90000
 
-        HttpResponse<String> listResp = get("/api/v1/pipelines?tenantId=tenant-acme [GH-90000]");
+        HttpResponse<String> listResp = get("/api/v1/pipelines?tenantId=tenant-acme");
         assertThat(listResp.statusCode()).isEqualTo(200); // GH-90000
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         Map<String, Object> listBody = mapper.readValue(listResp.body(), Map.class); // GH-90000
-        assertThat(listBody).containsKey("pipelines [GH-90000]");
+        assertThat(listBody).containsKey("pipelines");
     }
 
     // ── 6. Agent list is available ────────────────────────────────────────────
 
     @Test
     @Order(60) // GH-90000
-    @DisplayName("GET /api/v1/agents returns 200 with agents array [GH-90000]")
+    @DisplayName("GET /api/v1/agents returns 200 with agents array")
     void agentListReturns200() throws Exception { // GH-90000
-        HttpResponse<String> resp = get("/api/v1/agents?tenantId=tenant-acme [GH-90000]");
+        HttpResponse<String> resp = get("/api/v1/agents?tenantId=tenant-acme");
 
         assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-        assertThat(body).containsKey("agents [GH-90000]");
+        assertThat(body).containsKey("agents");
     }
 
     // ── 7. HITL review queue is queryable ─────────────────────────────────────
 
     @Test
     @Order(70) // GH-90000
-    @DisplayName("GET /api/v1/hitl/pending returns 200 with a reachable review queue surface [GH-90000]")
+    @DisplayName("GET /api/v1/hitl/pending returns 200 with a reachable review queue surface")
     void hitlPendingIsReachable() throws Exception { // GH-90000
-        HttpResponse<String> resp = get("/api/v1/hitl/pending?tenantId=tenant-acme [GH-90000]");
+        HttpResponse<String> resp = get("/api/v1/hitl/pending?tenantId=tenant-acme");
 
         assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
     }
@@ -248,7 +248,7 @@ class AepGoldenPathSystemTest {
 
     @Test
     @Order(80) // GH-90000
-    @DisplayName("POST /api/v1/learning/reflect returns 200 or 202 [GH-90000]")
+    @DisplayName("POST /api/v1/learning/reflect returns 200 or 202")
     void reflectionTriggerIsReachable() throws Exception { // GH-90000
         HttpResponse<String> resp = post("/api/v1/learning/reflect", // GH-90000
                 mapper.writeValueAsString(Map.of("tenantId", "tenant-acme"))); // GH-90000
@@ -260,9 +260,9 @@ class AepGoldenPathSystemTest {
 
     @Test
     @Order(90) // GH-90000
-    @DisplayName("GET /api/v1/learning/policies returns 200 [GH-90000]")
+    @DisplayName("GET /api/v1/learning/policies returns 200")
     void learningPoliciesIsReachable() throws Exception { // GH-90000
-        HttpResponse<String> resp = get("/api/v1/learning/policies?tenantId=tenant-acme [GH-90000]");
+        HttpResponse<String> resp = get("/api/v1/learning/policies?tenantId=tenant-acme");
 
         assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
     }
@@ -271,12 +271,12 @@ class AepGoldenPathSystemTest {
 
     @Test
     @Order(100) // GH-90000
-    @DisplayName("GET /health returns status, version, and components map [GH-90000]")
+    @DisplayName("GET /health returns status, version, and components map")
     void healthProbeHasExpectedFields() throws Exception { // GH-90000
-        HttpResponse<String> resp = get("/health [GH-90000]");
+        HttpResponse<String> resp = get("/health");
 
         assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
         assertThat(body).containsKeys("status", "version", "timestamp"); // GH-90000
     }
@@ -285,7 +285,7 @@ class AepGoldenPathSystemTest {
 
     @Test
     @Order(110) // GH-90000
-    @DisplayName("POST /api/v1/events/batch returns 200 for multiple events [GH-90000]")
+    @DisplayName("POST /api/v1/events/batch returns 200 for multiple events")
     void batchEventIngestionReturns200() throws Exception { // GH-90000
         String batch = mapper.writeValueAsString(Map.of( // GH-90000
             "events", List.of( // GH-90000
@@ -296,26 +296,26 @@ class AepGoldenPathSystemTest {
 
         HttpResponse<String> resp = post("/api/v1/events/batch", batch); // GH-90000
         assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
         // Batch response: { "tenantId": ..., "total": ..., "successCount": ..., "events": [...] }
-        assertThat(body).containsKey("total [GH-90000]");
-        assertThat(body).containsKey("successCount [GH-90000]");
+        assertThat(body).containsKey("total");
+        assertThat(body).containsKey("successCount");
 
         // Functional assertion: verify all events were processed
-        int total = ((Number) body.get("total [GH-90000]")).intValue();
-        int successCount = ((Number) body.get("successCount [GH-90000]")).intValue();
+        int total = ((Number) body.get("total")).intValue();
+        int successCount = ((Number) body.get("successCount")).intValue();
         assertThat(total).isEqualTo(2); // GH-90000
         assertThat(successCount).isEqualTo(2); // GH-90000
 
         // Verify events array contains eventId for each event
-        @SuppressWarnings("unchecked [GH-90000]")
-        List<Map<String, Object>> events = (List<Map<String, Object>>) body.get("events [GH-90000]");
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> events = (List<Map<String, Object>>) body.get("events");
         assertThat(events).hasSize(2); // GH-90000
         for (Map<String, Object> event : events) { // GH-90000
-            assertThat(event).containsKey("eventId [GH-90000]");
-            assertThat(event.get("eventId [GH-90000]")).isNotNull();
-            assertThat(event.get("success [GH-90000]")).isEqualTo(true);
+            assertThat(event).containsKey("eventId");
+            assertThat(event.get("eventId")).isNotNull();
+            assertThat(event.get("success")).isEqualTo(true);
         }
     }
 
@@ -323,7 +323,7 @@ class AepGoldenPathSystemTest {
 
     @Test
     @Order(120) // GH-90000
-    @DisplayName("Multi-tenant: runs from different tenants are independently recorded [GH-90000]")
+    @DisplayName("Multi-tenant: runs from different tenants are independently recorded")
     void multiTenantRunsAreIndependentlyCounted() throws Exception { // GH-90000
         long beforeA = sloTotalRuns(); // GH-90000
 
@@ -352,13 +352,13 @@ class AepGoldenPathSystemTest {
     }
 
     private long sloTotalRuns() throws Exception { // GH-90000
-        HttpResponse<String> resp = get("/metrics/slo [GH-90000]");
+        HttpResponse<String> resp = get("/metrics/slo");
         assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-        @SuppressWarnings("unchecked [GH-90000]")
-        Map<String, Object> counts = (Map<String, Object>) body.get("runCounts [GH-90000]");
-        return ((Number) counts.get("totalRuns [GH-90000]")).longValue();
+        @SuppressWarnings("unchecked")
+        Map<String, Object> counts = (Map<String, Object>) body.get("runCounts");
+        return ((Number) counts.get("totalRuns")).longValue();
     }
 
     private HttpResponse<String> get(String path) throws Exception { // GH-90000

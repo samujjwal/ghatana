@@ -39,7 +39,7 @@ import static org.assertj.core.api.Assertions.*;
  * - Refactoring suggestions
  * - Component type validation
  */
-@DisplayName("YAPPC Code Generation API OpenAPI Specification Tests [GH-90000]")
+@DisplayName("YAPPC Code Generation API OpenAPI Specification Tests")
 class YappcCodeGenApiOpenApiIntegrationTest extends BaseIntegrationTest {
 
     private ObjectMapper objectMapper;
@@ -52,11 +52,11 @@ class YappcCodeGenApiOpenApiIntegrationTest extends BaseIntegrationTest {
     }
 
     @Nested
-    @DisplayName("POST /designs - Design Creation [GH-90000]")
+    @DisplayName("POST /designs - Design Creation")
     class DesignCreationTests {
 
         @Test
-        @DisplayName("should create design with valid components [GH-90000]")
+        @DisplayName("should create design with valid components")
         void shouldCreateDesign() { // GH-90000
             Map<String, Object> request = createValidDesignRequest(); // GH-90000
 
@@ -69,12 +69,12 @@ class YappcCodeGenApiOpenApiIntegrationTest extends BaseIntegrationTest {
 
             assertThat(response.statusCode).isEqualTo(201); // GH-90000
             assertThat(response.body.designId).isNotBlank(); // GH-90000
-            assertThat(response.body.name).isEqualTo("E-commerce Platform [GH-90000]");
+            assertThat(response.body.name).isEqualTo("E-commerce Platform");
             assertThat(response.body.version).isEqualTo(1); // GH-90000
         }
 
         @Test
-        @DisplayName("should reject design without components [GH-90000]")
+        @DisplayName("should reject design without components")
         void shouldRejectEmptyComponents() { // GH-90000
             Map<String, Object> request = Map.of( // GH-90000
                 "name", "Bad Design",
@@ -93,7 +93,7 @@ class YappcCodeGenApiOpenApiIntegrationTest extends BaseIntegrationTest {
         }
 
         @Test
-        @DisplayName("should validate component IDs follow naming convention [GH-90000]")
+        @DisplayName("should validate component IDs follow naming convention")
         void shouldValidateComponentNaming() { // GH-90000
             Map<String, Object> component = Map.of( // GH-90000
                 "id", "Invalid-ID!",  // Invalid: hyphen and special char
@@ -116,7 +116,7 @@ class YappcCodeGenApiOpenApiIntegrationTest extends BaseIntegrationTest {
         }
 
         @Test
-        @DisplayName("should validate all component types [GH-90000]")
+        @DisplayName("should validate all component types")
         void shouldValidateComponentTypes() { // GH-90000
             String[] validTypes = {
                 "SERVICE", "CONTROLLER", "REPOSITORY", "UTILITY",
@@ -146,7 +146,7 @@ class YappcCodeGenApiOpenApiIntegrationTest extends BaseIntegrationTest {
         }
 
         @Test
-        @DisplayName("should support component properties [GH-90000]")
+        @DisplayName("should support component properties")
         void shouldSupportComponentProperties() { // GH-90000
             Map<String, Object> component = Map.of( // GH-90000
                 "id", "service_user",
@@ -176,11 +176,11 @@ class YappcCodeGenApiOpenApiIntegrationTest extends BaseIntegrationTest {
     }
 
     @Nested
-    @DisplayName("GET/PATCH /designs/{designId} - Design Management [GH-90000]")
+    @DisplayName("GET/PATCH /designs/{designId} - Design Management")
     class DesignManagementTests {
 
         @Test
-        @DisplayName("should retrieve design by ID [GH-90000]")
+        @DisplayName("should retrieve design by ID")
         void shouldGetDesign() { // GH-90000
             String designId = UUID.randomUUID().toString(); // GH-90000
 
@@ -195,7 +195,7 @@ class YappcCodeGenApiOpenApiIntegrationTest extends BaseIntegrationTest {
         }
 
         @Test
-        @DisplayName("should update design with new components [GH-90000]")
+        @DisplayName("should update design with new components")
         void shouldUpdateDesign() { // GH-90000
             String designId = UUID.randomUUID().toString(); // GH-90000
             Map<String, Object> update = Map.of( // GH-90000
@@ -213,12 +213,12 @@ class YappcCodeGenApiOpenApiIntegrationTest extends BaseIntegrationTest {
             );
 
             assertThat(response.statusCode).isEqualTo(200); // GH-90000
-            assertThat(response.body.name).isEqualTo("Updated Design [GH-90000]");
+            assertThat(response.body.name).isEqualTo("Updated Design");
             assertThat(response.body.version).isGreaterThan(1); // GH-90000
         }
 
         @Test
-        @DisplayName("should return 404 for non-existent design [GH-90000]")
+        @DisplayName("should return 404 for non-existent design")
         void shouldReturn404ForMissing() { // GH-90000
             ApiResponse<Map> response = apiClient.get( // GH-90000
                 "/designs/nonexistent",
@@ -231,11 +231,11 @@ class YappcCodeGenApiOpenApiIntegrationTest extends BaseIntegrationTest {
     }
 
     @Nested
-    @DisplayName("POST /designs/{designId}/validate - Design Validation [GH-90000]")
+    @DisplayName("POST /designs/{designId}/validate - Design Validation")
     class DesignValidationTests {
 
         @Test
-        @DisplayName("should detect circular dependencies [GH-90000]")
+        @DisplayName("should detect circular dependencies")
         void shouldDetectCircularDependencies() { // GH-90000
             String designId = UUID.randomUUID().toString(); // GH-90000
 
@@ -255,7 +255,7 @@ class YappcCodeGenApiOpenApiIntegrationTest extends BaseIntegrationTest {
         }
 
         @Test
-        @DisplayName("should validate component references in relationships [GH-90000]")
+        @DisplayName("should validate component references in relationships")
         void shouldValidateComponentReferences() { // GH-90000
             String designId = UUID.randomUUID().toString(); // GH-90000
 
@@ -279,11 +279,11 @@ class YappcCodeGenApiOpenApiIntegrationTest extends BaseIntegrationTest {
     }
 
     @Nested
-    @DisplayName("POST /generated-code - Code Generation [GH-90000]")
+    @DisplayName("POST /generated-code - Code Generation")
     class CodeGenerationTests {
 
         @Test
-        @DisplayName("should generate Java code asynchronously [GH-90000]")
+        @DisplayName("should generate Java code asynchronously")
         void shouldGenerateJava() { // GH-90000
             Map<String, Object> request = Map.of( // GH-90000
                 "designId", UUID.randomUUID().toString(), // GH-90000
@@ -302,12 +302,12 @@ class YappcCodeGenApiOpenApiIntegrationTest extends BaseIntegrationTest {
 
             assertThat(response.statusCode).isEqualTo(202); // GH-90000
             assertThat(response.body.operationId).isNotBlank(); // GH-90000
-            assertThat(response.body.status).isEqualTo("QUEUED [GH-90000]");
-            assertThat(response.headers.get("Location [GH-90000]")).containsPattern("/generated-code/.* [GH-90000]");
+            assertThat(response.body.status).isEqualTo("QUEUED");
+            assertThat(response.headers.get("Location")).containsPattern("/generated-code/.*");
         }
 
         @Test
-        @DisplayName("should support all languages [GH-90000]")
+        @DisplayName("should support all languages")
         void shouldSupportAllLanguages() { // GH-90000
             String[] languages = { "java", "python", "go", "typescript" };
 
@@ -330,7 +330,7 @@ class YappcCodeGenApiOpenApiIntegrationTest extends BaseIntegrationTest {
         }
 
         @Test
-        @DisplayName("should validate package name format [GH-90000]")
+        @DisplayName("should validate package name format")
         void shouldValidatePackageName() { // GH-90000
             Map<String, Object> request = Map.of( // GH-90000
                 "designId", UUID.randomUUID().toString(), // GH-90000
@@ -349,7 +349,7 @@ class YappcCodeGenApiOpenApiIntegrationTest extends BaseIntegrationTest {
         }
 
         @Test
-        @DisplayName("should support optional targetVersion [GH-90000]")
+        @DisplayName("should support optional targetVersion")
         void shouldSupportTargetVersion() { // GH-90000
             Map<String, Object> request = Map.of( // GH-90000
                 "designId", UUID.randomUUID().toString(), // GH-90000
@@ -370,11 +370,11 @@ class YappcCodeGenApiOpenApiIntegrationTest extends BaseIntegrationTest {
     }
 
     @Nested
-    @DisplayName("GET /generated-code/{operationId} - Generation Status [GH-90000]")
+    @DisplayName("GET /generated-code/{operationId} - Generation Status")
     class GenerationStatusTests {
 
         @Test
-        @DisplayName("should retrieve generation status [GH-90000]")
+        @DisplayName("should retrieve generation status")
         void shouldGetStatus() { // GH-90000
             String operationId = UUID.randomUUID().toString(); // GH-90000
 
@@ -392,7 +392,7 @@ class YappcCodeGenApiOpenApiIntegrationTest extends BaseIntegrationTest {
         }
 
         @Test
-        @DisplayName("should include artifactId when completed [GH-90000]")
+        @DisplayName("should include artifactId when completed")
         void shouldIncludeArtifactOnCompletion() { // GH-90000
             String operationId = UUID.randomUUID().toString(); // GH-90000
 
@@ -409,11 +409,11 @@ class YappcCodeGenApiOpenApiIntegrationTest extends BaseIntegrationTest {
     }
 
     @Nested
-    @DisplayName("GET /artifacts/{artifactId} - Generated Artifacts [GH-90000]")
+    @DisplayName("GET /artifacts/{artifactId} - Generated Artifacts")
     class GeneratedArtifactsTests {
 
         @Test
-        @DisplayName("should retrieve generated artifact [GH-90000]")
+        @DisplayName("should retrieve generated artifact")
         void shouldGetArtifact() { // GH-90000
             String artifactId = UUID.randomUUID().toString(); // GH-90000
 
@@ -429,7 +429,7 @@ class YappcCodeGenApiOpenApiIntegrationTest extends BaseIntegrationTest {
         }
 
         @Test
-        @DisplayName("should support multiple export formats [GH-90000]")
+        @DisplayName("should support multiple export formats")
         void shouldSupportExportFormats() { // GH-90000
             String artifactId = UUID.randomUUID().toString(); // GH-90000
 
@@ -459,7 +459,7 @@ class YappcCodeGenApiOpenApiIntegrationTest extends BaseIntegrationTest {
         }
 
         @Test
-        @DisplayName("should list artifact versions [GH-90000]")
+        @DisplayName("should list artifact versions")
         void shouldListVersions() { // GH-90000
             String artifactId = UUID.randomUUID().toString(); // GH-90000
 
@@ -479,11 +479,11 @@ class YappcCodeGenApiOpenApiIntegrationTest extends BaseIntegrationTest {
     }
 
     @Nested
-    @DisplayName("GET /refactoring-suggestions/{designId} - Refactoring [GH-90000]")
+    @DisplayName("GET /refactoring-suggestions/{designId} - Refactoring")
     class RefactoringSuggestionsTests {
 
         @Test
-        @DisplayName("should retrieve refactoring suggestions [GH-90000]")
+        @DisplayName("should retrieve refactoring suggestions")
         void shouldGetSuggestions() { // GH-90000
             String designId = UUID.randomUUID().toString(); // GH-90000
 
@@ -508,7 +508,7 @@ class YappcCodeGenApiOpenApiIntegrationTest extends BaseIntegrationTest {
         }
 
         @Test
-        @DisplayName("should filter suggestions by category [GH-90000]")
+        @DisplayName("should filter suggestions by category")
         void shouldFilterByCategory() { // GH-90000
             String designId = UUID.randomUUID().toString(); // GH-90000
 
@@ -520,7 +520,7 @@ class YappcCodeGenApiOpenApiIntegrationTest extends BaseIntegrationTest {
 
             assertThat(response.statusCode).isEqualTo(200); // GH-90000
             response.body.suggestions.forEach(s -> // GH-90000
-                assertThat(s.category).isEqualTo("performance [GH-90000]")
+                assertThat(s.category).isEqualTo("performance")
             );
         }
     }

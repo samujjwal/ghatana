@@ -29,7 +29,7 @@ import static org.mockito.Mockito.*;
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
 @TestInstance(TestInstance.Lifecycle.PER_CLASS) // GH-90000
-@DisplayName("CacheConsistency – Schema Change Invalidation (D003) [GH-90000]")
+@DisplayName("CacheConsistency – Schema Change Invalidation (D003)")
 class CacheConsistencyIntegrationTest extends EventloopTestBase {
 
     @Mock
@@ -46,35 +46,35 @@ class CacheConsistencyIntegrationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("[D003]: schema_change_invalidates_affected_collection_reports [GH-90000]")
+    @DisplayName("[D003]: schema_change_invalidates_affected_collection_reports")
     void schemaChangeInvalidatesAffectedCollectionReports() { // GH-90000
-        when(cacheService.invalidateOnSchemaChange("sales [GH-90000]"))
+        when(cacheService.invalidateOnSchemaChange("sales"))
             .thenReturn(Promise.of((Void) null)); // GH-90000
 
         // When: Schema changes for "sales" collection
-        runPromise(() -> cacheService.invalidateOnSchemaChange("sales [GH-90000]"));
+        runPromise(() -> cacheService.invalidateOnSchemaChange("sales"));
 
         // Then: Reports for sales should be invalidated
-        verify(cacheService).invalidateOnSchemaChange("sales [GH-90000]");
+        verify(cacheService).invalidateOnSchemaChange("sales");
     }
 
     @Test
-    @DisplayName("[D003]: schema_change_for_one_collection_does_not_affect_others [GH-90000]")
+    @DisplayName("[D003]: schema_change_for_one_collection_does_not_affect_others")
     void schemaChangeForOneCollectionDoesNotAffectOthers() { // GH-90000
         // Given: Caches for multiple collections
-        when(cacheService.invalidateOnSchemaChange("sales [GH-90000]"))
+        when(cacheService.invalidateOnSchemaChange("sales"))
             .thenReturn(Promise.of((Void) null)); // GH-90000
 
         // When: Only sales schema changes
-        runPromise(() -> cacheService.invalidateOnSchemaChange("sales [GH-90000]"));
+        runPromise(() -> cacheService.invalidateOnSchemaChange("sales"));
 
         // Then: Only sales cache invalidated
-        verify(cacheService, never()).invalidateOnSchemaChange("inventory [GH-90000]");
-        verify(cacheService, never()).invalidateOnSchemaChange("customers [GH-90000]");
+        verify(cacheService, never()).invalidateOnSchemaChange("inventory");
+        verify(cacheService, never()).invalidateOnSchemaChange("customers");
     }
 
     @Test
-    @DisplayName("[D003]: tenant_schema_change_invalidates_tenant_specific_caches [GH-90000]")
+    @DisplayName("[D003]: tenant_schema_change_invalidates_tenant_specific_caches")
     void tenantSchemaChangeInvalidatesTenantSpecificCaches() { // GH-90000
         String tenantId = "tenant-alpha";
 
@@ -93,13 +93,13 @@ class CacheConsistencyIntegrationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("[D003]: cache_hit_returns_cached_value [GH-90000]")
+    @DisplayName("[D003]: cache_hit_returns_cached_value")
     void cacheHitReturnsCachedValue() { // GH-90000
         String reportId = "report-cached";
         Report cachedReport = new Report() // GH-90000
             .withId(reportId) // GH-90000
-            .withName("Cached Report [GH-90000]")
-            .withStatus("COMPLETED [GH-90000]");
+            .withName("Cached Report")
+            .withStatus("COMPLETED");
 
         when(cacheService.get(reportId)).thenReturn(Promise.of(cachedReport)); // GH-90000
         when(cacheService.isCached(reportId)).thenReturn(Promise.of(true)); // GH-90000
@@ -112,7 +112,7 @@ class CacheConsistencyIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[D003]: cache_miss_returns_null [GH-90000]")
+    @DisplayName("[D003]: cache_miss_returns_null")
     void cacheMissReturnsNull() { // GH-90000
         String reportId = "report-not-cached";
 
@@ -127,13 +127,13 @@ class CacheConsistencyIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[D003]: cache_populate_then_retrieve_consistent [GH-90000]")
+    @DisplayName("[D003]: cache_populate_then_retrieve_consistent")
     void cachePopulateThenRetrieveConsistent() { // GH-90000
         String reportId = "report-001";
         Report report = new Report() // GH-90000
             .withId(reportId) // GH-90000
-            .withName("Test Report [GH-90000]")
-            .withStatus("COMPLETED [GH-90000]");
+            .withName("Test Report")
+            .withStatus("COMPLETED");
 
         when(cacheService.cache(reportId, report)).thenReturn(Promise.of((Void) null)); // GH-90000
         when(cacheService.get(reportId)).thenReturn(Promise.of(report)); // GH-90000
@@ -152,10 +152,10 @@ class CacheConsistencyIntegrationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("[D003]: cached_item_expires_after_ttl [GH-90000]")
+    @DisplayName("[D003]: cached_item_expires_after_ttl")
     void cachedItemExpiresAfterTtl() { // GH-90000
         String reportId = "report-expiring";
-        Report report = new Report().withId(reportId).withName("Expiring Report [GH-90000]");
+        Report report = new Report().withId(reportId).withName("Expiring Report");
 
         // Simulate TTL expiration by invalidating
         when(cacheService.cache(reportId, report)).thenReturn(Promise.of((Void) null)); // GH-90000
@@ -173,7 +173,7 @@ class CacheConsistencyIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[D003]: manual_invalidation_removes_from_cache [GH-90000]")
+    @DisplayName("[D003]: manual_invalidation_removes_from_cache")
     void manualInvalidationRemovesFromCache() { // GH-90000
         String reportId = "report-to-invalidate";
 
@@ -196,7 +196,7 @@ class CacheConsistencyIntegrationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("[D003]: cache_stats_tracked_correctly [GH-90000]")
+    @DisplayName("[D003]: cache_stats_tracked_correctly")
     void cacheStatsTrackedCorrectly() { // GH-90000
         ReportCacheService.CacheStats stats = new ReportCacheService.CacheStats( // GH-90000
             100,  // hits
@@ -216,7 +216,7 @@ class CacheConsistencyIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[D003]: cache_hit_rate_calculated_correctly [GH-90000]")
+    @DisplayName("[D003]: cache_hit_rate_calculated_correctly")
     void cacheHitRateCalculatedCorrectly() { // GH-90000
         // 100 hits, 0 misses = 100% hit rate
         ReportCacheService.CacheStats perfectHitRate =
@@ -235,10 +235,10 @@ class CacheConsistencyIntegrationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("[D003]: concurrent_cache_reads_consistent [GH-90000]")
+    @DisplayName("[D003]: concurrent_cache_reads_consistent")
     void concurrentCacheReadsConsistent() { // GH-90000
         String reportId = "concurrent-report";
-        Report report = new Report().withId(reportId).withName("Concurrent Report [GH-90000]");
+        Report report = new Report().withId(reportId).withName("Concurrent Report");
 
         when(cacheService.get(reportId)).thenReturn(Promise.of(report)); // GH-90000
 
@@ -251,11 +251,11 @@ class CacheConsistencyIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[D003]: write_during_read_maintains_consistency [GH-90000]")
+    @DisplayName("[D003]: write_during_read_maintains_consistency")
     void writeDuringReadMaintainsConsistency() { // GH-90000
         String reportId = "report-001";
-        Report v1 = new Report().withId(reportId).withName("Version 1 [GH-90000]");
-        Report v2 = new Report().withId(reportId).withName("Version 2 [GH-90000]");
+        Report v1 = new Report().withId(reportId).withName("Version 1");
+        Report v2 = new Report().withId(reportId).withName("Version 2");
 
         when(cacheService.cache(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
         when(cacheService.get(reportId)).thenReturn(Promise.of(v1)); // GH-90000
@@ -270,8 +270,8 @@ class CacheConsistencyIntegrationTest extends EventloopTestBase {
         // Read after update
         Report read2 = runPromise(() -> cacheService.get(reportId)); // GH-90000
 
-        assertThat(read1.getName()).isEqualTo("Version 1 [GH-90000]");
-        assertThat(read2.getName()).isEqualTo("Version 2 [GH-90000]");
+        assertThat(read1.getName()).isEqualTo("Version 1");
+        assertThat(read2.getName()).isEqualTo("Version 2");
     }
 
 }

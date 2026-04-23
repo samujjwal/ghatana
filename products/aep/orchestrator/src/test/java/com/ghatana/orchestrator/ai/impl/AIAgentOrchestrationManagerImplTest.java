@@ -45,7 +45,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("AIAgentOrchestrationManagerImpl [GH-90000]")
+@DisplayName("AIAgentOrchestrationManagerImpl")
 class AIAgentOrchestrationManagerImplTest extends EventloopTestBase {
 
     @Mock
@@ -97,128 +97,128 @@ class AIAgentOrchestrationManagerImplTest extends EventloopTestBase {
     // ── registerAgent ─────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("registerAgent() [GH-90000]")
+    @DisplayName("registerAgent()")
     class RegisterAgent {
 
         @Test
-        @DisplayName("returns agent ID when registration succeeds [GH-90000]")
+        @DisplayName("returns agent ID when registration succeeds")
         void returnsAgentId() { // GH-90000
-            String result = runPromise(() -> manager.registerAgent(agentDef("agent-001 [GH-90000]")));
+            String result = runPromise(() -> manager.registerAgent(agentDef("agent-001")));
 
-            assertThat(result).isEqualTo("agent-001 [GH-90000]");
+            assertThat(result).isEqualTo("agent-001");
         }
 
         @Test
-        @DisplayName("fails when definition is null [GH-90000]")
+        @DisplayName("fails when definition is null")
         void failsOnNullDefinition() { // GH-90000
             assertThatThrownBy(() -> runPromise(() -> manager.registerAgent(null))) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("Agent definition and ID are required [GH-90000]");
+                    .hasMessageContaining("Agent definition and ID are required");
         }
 
         @Test
-        @DisplayName("fails when agent ID is blank [GH-90000]")
+        @DisplayName("fails when agent ID is blank")
         void failsOnBlankId() { // GH-90000
-            assertThatThrownBy(() -> runPromise(() -> manager.registerAgent(agentDef("   [GH-90000]"))))
+            assertThatThrownBy(() -> runPromise(() -> manager.registerAgent(agentDef("  "))))
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("Agent definition and ID are required [GH-90000]");
+                    .hasMessageContaining("Agent definition and ID are required");
         }
 
         @Test
-        @DisplayName("re-registering the same agent ID overwrites the existing registration [GH-90000]")
+        @DisplayName("re-registering the same agent ID overwrites the existing registration")
         void overwritesExistingRegistration() { // GH-90000
-            runPromise(() -> manager.registerAgent(agentDef("dup-agent [GH-90000]")));
-            String second = runPromise(() -> manager.registerAgent(agentDef("dup-agent [GH-90000]")));
+            runPromise(() -> manager.registerAgent(agentDef("dup-agent")));
+            String second = runPromise(() -> manager.registerAgent(agentDef("dup-agent")));
 
-            assertThat(second).isEqualTo("dup-agent [GH-90000]");
+            assertThat(second).isEqualTo("dup-agent");
         }
     }
 
     // ── chainAgents ───────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("chainAgents() [GH-90000]")
+    @DisplayName("chainAgents()")
     class ChainAgents {
 
         @Test
-        @DisplayName("fails when chain name is null [GH-90000]")
+        @DisplayName("fails when chain name is null")
         void failsOnNullChainName() { // GH-90000
-            assertThatThrownBy(() -> runPromise(() -> manager.chainAgents(null, List.of(agentDef("a1 [GH-90000]")))))
+            assertThatThrownBy(() -> runPromise(() -> manager.chainAgents(null, List.of(agentDef("a1")))))
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("Chain name is required [GH-90000]");
+                    .hasMessageContaining("Chain name is required");
         }
 
         @Test
-        @DisplayName("fails when pipeline is empty [GH-90000]")
+        @DisplayName("fails when pipeline is empty")
         void failsOnEmptyPipeline() { // GH-90000
             assertThatThrownBy(() -> runPromise(() -> manager.chainAgents("my-chain", List.of()))) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("Pipeline cannot be null or empty [GH-90000]");
+                    .hasMessageContaining("Pipeline cannot be null or empty");
         }
 
         @Test
-        @DisplayName("fails when pipeline contains an unregistered agent [GH-90000]")
+        @DisplayName("fails when pipeline contains an unregistered agent")
         void failsOnUnregisteredAgent() { // GH-90000
             assertThatThrownBy(() -> // GH-90000
-                            runPromise(() -> manager.chainAgents("my-chain", List.of(agentDef("not-registered [GH-90000]")))))
+                            runPromise(() -> manager.chainAgents("my-chain", List.of(agentDef("not-registered")))))
                     .isInstanceOf(RuntimeException.class) // GH-90000
-                    .hasMessageContaining("Failed to create agent chain [GH-90000]")
+                    .hasMessageContaining("Failed to create agent chain")
                     .cause() // GH-90000
-                    .hasMessageContaining("not-registered [GH-90000]");
+                    .hasMessageContaining("not-registered");
         }
 
         @Test
-        @DisplayName("returns a chain ID when all agents are registered [GH-90000]")
+        @DisplayName("returns a chain ID when all agents are registered")
         void returnsChainIdForRegisteredAgents() { // GH-90000
-            runPromise(() -> manager.registerAgent(agentDef("step-1 [GH-90000]")));
-            runPromise(() -> manager.registerAgent(agentDef("step-2 [GH-90000]")));
+            runPromise(() -> manager.registerAgent(agentDef("step-1")));
+            runPromise(() -> manager.registerAgent(agentDef("step-2")));
 
             String chainId = runPromise( // GH-90000
-                    () -> manager.chainAgents("test-chain", List.of(agentDef("step-1 [GH-90000]"), agentDef("step-2 [GH-90000]"))));
+                    () -> manager.chainAgents("test-chain", List.of(agentDef("step-1"), agentDef("step-2"))));
 
-            assertThat(chainId).startsWith("chain_ [GH-90000]");
+            assertThat(chainId).startsWith("chain_");
         }
     }
 
     // ── executeChain ─────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("executeChain() [GH-90000]")
+    @DisplayName("executeChain()")
     class ExecuteChain {
 
         @Test
-        @DisplayName("fails when chain ID is null [GH-90000]")
+        @DisplayName("fails when chain ID is null")
         void failsOnNullChainId() { // GH-90000
             assertThatThrownBy(() -> runPromise(() -> manager.executeChain(null, null, null))) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("Chain ID is required [GH-90000]");
+                    .hasMessageContaining("Chain ID is required");
         }
 
         @Test
-        @DisplayName("fails with 'Input event is required' when inputEvent is null for valid chain ID [GH-90000]")
+        @DisplayName("fails with 'Input event is required' when inputEvent is null for valid chain ID")
         void failsWhenInputEventIsNull() { // GH-90000
             assertThatThrownBy(() -> runPromise(() -> manager.executeChain("ghost-chain", null, null))) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("Input event is required [GH-90000]");
+                    .hasMessageContaining("Input event is required");
         }
 
         @Test
-        @DisplayName("fails with 'Chain ID is required' when chain ID is blank [GH-90000]")
+        @DisplayName("fails with 'Chain ID is required' when chain ID is blank")
         void failsOnBlankChainId() { // GH-90000
             assertThatThrownBy(() -> runPromise(() -> manager.executeChain(" ", null, null))) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("Chain ID is required [GH-90000]");
+                    .hasMessageContaining("Chain ID is required");
         }
     }
 
     // ── rebuildFromEventLog ─────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("rebuildFromEventLog() [GH-90000]")
+    @DisplayName("rebuildFromEventLog()")
     class RebuildFromEventLog {
 
         @Test
-        @DisplayName("completes successfully when no event store is configured (in-memory mode) [GH-90000]")
+        @DisplayName("completes successfully when no event store is configured (in-memory mode)")
         void completesWithoutErrorInInMemoryMode() { // GH-90000
             // manager was created without EventLogStore (null) — rebuild is a no-op // GH-90000
             Void result = runPromise(() -> manager.rebuildFromEventLog()); // GH-90000
@@ -230,13 +230,13 @@ class AIAgentOrchestrationManagerImplTest extends EventloopTestBase {
     // ── cancelExecution ──────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("cancelExecution() [GH-90000]")
+    @DisplayName("cancelExecution()")
     class CancelExecution {
 
         @Test
-        @DisplayName("returns false for an unknown execution ID [GH-90000]")
+        @DisplayName("returns false for an unknown execution ID")
         void returnsFalseForUnknownId() { // GH-90000
-            Boolean result = runPromise(() -> manager.cancelExecution("no-such-exec [GH-90000]"));
+            Boolean result = runPromise(() -> manager.cancelExecution("no-such-exec"));
 
             assertThat(result).isFalse(); // GH-90000
         }

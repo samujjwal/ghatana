@@ -18,11 +18,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test operator chain composition, execution, and error propagation.
  */
-@DisplayName("Operator Chain Tests [GH-90000]")
+@DisplayName("Operator Chain Tests")
 class OperatorChainTest {
 
     @Test
-    @DisplayName("Should compose operator chain [GH-90000]")
+    @DisplayName("Should compose operator chain")
     void shouldComposeOperatorChain() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 
@@ -30,7 +30,7 @@ class OperatorChainTest {
     }
 
     @Test
-    @DisplayName("Should execute operator chain sequentially [GH-90000]")
+    @DisplayName("Should execute operator chain sequentially")
     void shouldExecuteOperatorChainSequentially() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 
@@ -38,7 +38,7 @@ class OperatorChainTest {
     }
 
     @Test
-    @DisplayName("Should handle operator chain errors [GH-90000]")
+    @DisplayName("Should handle operator chain errors")
     void shouldHandleOperatorChainErrors() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 
@@ -46,7 +46,7 @@ class OperatorChainTest {
     }
 
     @Test
-    @DisplayName("Should handle operator chain rollback [GH-90000]")
+    @DisplayName("Should handle operator chain rollback")
     void shouldHandleOperatorChainRollback() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 
@@ -54,7 +54,7 @@ class OperatorChainTest {
     }
 
     @Test
-    @DisplayName("Should handle operator chain state [GH-90000]")
+    @DisplayName("Should handle operator chain state")
     void shouldHandleOperatorChainState() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 
@@ -62,7 +62,7 @@ class OperatorChainTest {
     }
 
     @Test
-    @DisplayName("Should handle operator chain optimization [GH-90000]")
+    @DisplayName("Should handle operator chain optimization")
     void shouldHandleOperatorChainOptimization() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 

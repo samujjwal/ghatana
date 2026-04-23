@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("InMemoryCache - Phase 3 Expansion [GH-90000]")
+@DisplayName("InMemoryCache - Phase 3 Expansion")
 class InMemoryCacheExpansionTest {
 
     private InMemoryCache<String, String> cache;
@@ -49,11 +49,11 @@ class InMemoryCacheExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Concurrent Modifications [GH-90000]")
+    @DisplayName("Concurrent Modifications")
     class ConcurrentTests {
 
         @Test
-        @DisplayName("Handles many concurrent puts without data loss [GH-90000]")
+        @DisplayName("Handles many concurrent puts without data loss")
         void concurrentPuts() throws InterruptedException { // GH-90000
             int numThreads = 5;
             int operationsPerThread = 20;
@@ -79,7 +79,7 @@ class InMemoryCacheExpansionTest {
         }
 
         @Test
-        @DisplayName("Handles concurrent reads and writes without corruption [GH-90000]")
+        @DisplayName("Handles concurrent reads and writes without corruption")
         void concurrentReadsWrites() throws InterruptedException { // GH-90000
             cache.put("stable-key", "stable-value"); // GH-90000
 
@@ -89,8 +89,8 @@ class InMemoryCacheExpansionTest {
             for (int t = 0; t < 10; t++) { // GH-90000
                 Thread thread = new Thread(() -> { // GH-90000
                     for (int i = 0; i < 10; i++) { // GH-90000
-                        Optional<String> value = cache.get("stable-key [GH-90000]");
-                        if (value.isPresent() && value.get().equals("stable-value [GH-90000]")) {
+                        Optional<String> value = cache.get("stable-key");
+                        if (value.isPresent() && value.get().equals("stable-value")) {
                             successfulReads.incrementAndGet(); // GH-90000
                         }
                     }
@@ -112,11 +112,11 @@ class InMemoryCacheExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Large Dataset Handling [GH-90000]")
+    @DisplayName("Large Dataset Handling")
     class LargeDatasetTests {
 
         @Test
-        @DisplayName("Stores and retrieves large number of entries [GH-90000]")
+        @DisplayName("Stores and retrieves large number of entries")
         void largeDatasetStorage() { // GH-90000
             int entryCount = 1000;
 
@@ -133,7 +133,7 @@ class InMemoryCacheExpansionTest {
         }
 
         @Test
-        @DisplayName("Maintains performance with large value strings [GH-90000]")
+        @DisplayName("Maintains performance with large value strings")
         void largeValueStorage() { // GH-90000
             String largeValue = "x".repeat(10000); // GH-90000
 
@@ -143,7 +143,7 @@ class InMemoryCacheExpansionTest {
 
             assertThat(cache.size()).isEqualTo(100); // GH-90000
 
-            Optional<String> retrieved = cache.get("large-value-key-50 [GH-90000]");
+            Optional<String> retrieved = cache.get("large-value-key-50");
             assertThat(retrieved).isPresent(); // GH-90000
             assertThat(retrieved.get()).hasSize(10000); // GH-90000
         }
@@ -154,11 +154,11 @@ class InMemoryCacheExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Cache Removal and Cleanup [GH-90000]")
+    @DisplayName("Cache Removal and Cleanup")
     class RemovalTests {
 
         @Test
-        @DisplayName("Bulk remove operations reduce cache size correctly [GH-90000]")
+        @DisplayName("Bulk remove operations reduce cache size correctly")
         void bulkRemoval() { // GH-90000
             for (int i = 0; i < 50; i++) { // GH-90000
                 cache.put("bulk-" + i, "value-" + i); // GH-90000
@@ -190,11 +190,11 @@ class InMemoryCacheExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Cache State Verification [GH-90000]")
+    @DisplayName("Cache State Verification")
     class StateTests {
 
         @Test
-        @DisplayName("Clear operation empties cache completely [GH-90000]")
+        @DisplayName("Clear operation empties cache completely")
         void completeClearance() { // GH-90000
             for (int i = 0; i < 100; i++) { // GH-90000
                 cache.put("clear-" + i, "value-" + i); // GH-90000
@@ -205,8 +205,8 @@ class InMemoryCacheExpansionTest {
             cache.clear(); // GH-90000
 
             assertThat(cache.size()).isZero(); // GH-90000
-            assertThat(cache.contains("clear-0 [GH-90000]")).isFalse();
-            assertThat(cache.contains("clear-99 [GH-90000]")).isFalse();
+            assertThat(cache.contains("clear-0")).isFalse();
+            assertThat(cache.contains("clear-99")).isFalse();
         }
     }
 }

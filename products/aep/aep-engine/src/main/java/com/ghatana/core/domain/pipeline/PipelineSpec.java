@@ -13,7 +13,8 @@ import java.util.Objects;
  * @doc.type class
  * @doc.purpose Pipeline specification for stream processing
  * @doc.layer core
- */
+  * @doc.pattern Component
+*/
 public class PipelineSpec {
     private final String id;
     private final String name;

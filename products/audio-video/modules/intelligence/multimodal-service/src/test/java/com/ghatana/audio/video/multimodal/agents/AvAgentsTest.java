@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Unit tests for {@link AudioTranscriptionAgent} and {@link MultimodalAnalysisAgent}.
  */
-@DisplayName("AV Domain Agents (P7-T5) [GH-90000]")
+@DisplayName("AV Domain Agents (P7-T5)")
 class AvAgentsTest {
 
     private AgentContext ctx;
@@ -36,7 +36,7 @@ class AvAgentsTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("AudioTranscriptionAgent [GH-90000]")
+    @DisplayName("AudioTranscriptionAgent")
     class AudioTranscriptionAgentTests {
 
         private AudioTranscriptionAgent agent;
@@ -52,14 +52,14 @@ class AvAgentsTest {
         }
 
         @Test
-        @DisplayName("descriptor returns REACTIVE type and correct agent ID [GH-90000]")
+        @DisplayName("descriptor returns REACTIVE type and correct agent ID")
         void descriptorIsCorrect() { // GH-90000
             assertThat(agent.descriptor().getAgentId()).isEqualTo(AudioTranscriptionAgent.AGENT_ID); // GH-90000
             assertThat(agent.descriptor().getType()).isEqualTo(AgentType.REACTIVE); // GH-90000
         }
 
         @Test
-        @DisplayName("transcribes from source artifact ID successfully [GH-90000]")
+        @DisplayName("transcribes from source artifact ID successfully")
         void transcribesFromAudioSource() { // GH-90000
             AudioTranscriptionRequest request = AudioTranscriptionRequest.fromSource("artifact-001", "en-US"); // GH-90000
 
@@ -68,11 +68,11 @@ class AvAgentsTest {
             assertThat(result.isSuccess()).isTrue(); // GH-90000
             AudioTranscriptionResult transcription = result.getOutput(); // GH-90000
             assertThat(transcription.transcript()).isNotNull(); // GH-90000
-            assertThat(transcription.audioSource()).isEqualTo("artifact:artifact-001 [GH-90000]");
+            assertThat(transcription.audioSource()).isEqualTo("artifact:artifact-001");
         }
 
         @Test
-        @DisplayName("transcribes from raw bytes successfully [GH-90000]")
+        @DisplayName("transcribes from raw bytes successfully")
         void transcribesFromBytes() { // GH-90000
             AudioTranscriptionRequest request = AudioTranscriptionRequest.fromBytes( // GH-90000
                     new byte[]{0x00, 0x01, 0x02}, "fr-FR");
@@ -83,24 +83,24 @@ class AvAgentsTest {
         }
 
         @Test
-        @DisplayName("request toToolInput includes mediaArtifactId in audioSource map [GH-90000]")
+        @DisplayName("request toToolInput includes mediaArtifactId in audioSource map")
         void toToolInputContainsMediaArtifactId() { // GH-90000
             AudioTranscriptionRequest request = AudioTranscriptionRequest.fromSource("art-42", null); // GH-90000
             Map<String, Object> input = request.toToolInput(); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
-            Map<String, Object> audioSource = (Map<String, Object>) input.get("audioSource [GH-90000]");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> audioSource = (Map<String, Object>) input.get("audioSource");
             assertThat(audioSource).containsEntry("mediaArtifactId", "art-42"); // GH-90000
         }
 
         @Test
-        @DisplayName("request toToolInput includes audioBytes when no source [GH-90000]")
+        @DisplayName("request toToolInput includes audioBytes when no source")
         void toToolInputContainsAudioBytes() { // GH-90000
             byte[] bytes = {0x10};
             AudioTranscriptionRequest request = AudioTranscriptionRequest.fromBytes(bytes, null); // GH-90000
             Map<String, Object> input = request.toToolInput(); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
-            Map<String, Object> audioSource = (Map<String, Object>) input.get("audioSource [GH-90000]");
-            assertThat(audioSource).containsKey("audioBytes [GH-90000]");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> audioSource = (Map<String, Object>) input.get("audioSource");
+            assertThat(audioSource).containsKey("audioBytes");
         }
     }
 
@@ -109,7 +109,7 @@ class AvAgentsTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("MultimodalAnalysisAgent [GH-90000]")
+    @DisplayName("MultimodalAnalysisAgent")
     class MultimodalAnalysisAgentTests {
 
         private MultimodalAnalysisAgent agent;
@@ -125,16 +125,16 @@ class AvAgentsTest {
         }
 
         @Test
-        @DisplayName("descriptor returns COMPOSITE type and correct agent ID [GH-90000]")
+        @DisplayName("descriptor returns COMPOSITE type and correct agent ID")
         void descriptorIsCorrect() { // GH-90000
             assertThat(agent.descriptor().getAgentId()).isEqualTo(MultimodalAnalysisAgent.AGENT_ID); // GH-90000
             assertThat(agent.descriptor().getType()).isEqualTo(AgentType.COMPOSITE); // GH-90000
         }
 
         @Test
-        @DisplayName("processes without vision when no analysis types [GH-90000]")
+        @DisplayName("processes without vision when no analysis types")
         void processesWithoutVision() { // GH-90000
-            MultimodalAnalysisRequest request = MultimodalAnalysisRequest.forArtifact("artifact-999 [GH-90000]");
+            MultimodalAnalysisRequest request = MultimodalAnalysisRequest.forArtifact("artifact-999");
 
             AgentResult<MultimodalAnalysisResult> result = agent.process(ctx, request).getResult(); // GH-90000
 
@@ -146,7 +146,7 @@ class AvAgentsTest {
         }
 
         @Test
-        @DisplayName("includes vision results when analysis types provided [GH-90000]")
+        @DisplayName("includes vision results when analysis types provided")
         void includesVisionResults() { // GH-90000
             MultimodalAnalysisRequest request = new MultimodalAnalysisRequest( // GH-90000
                     "artifact-v1", List.of("objects", "scenes"), // GH-90000
@@ -160,7 +160,7 @@ class AvAgentsTest {
         }
 
         @Test
-        @DisplayName("includes transcript when enableTranscription is true [GH-90000]")
+        @DisplayName("includes transcript when enableTranscription is true")
         void includesTranscript() { // GH-90000
             MultimodalAnalysisRequest request = new MultimodalAnalysisRequest( // GH-90000
                     "artifact-t1", List.of(), "SUMMARY", true, "en-US", null); // GH-90000
@@ -173,12 +173,12 @@ class AvAgentsTest {
         }
 
         @Test
-        @DisplayName("MultimodalAnalysisResult.fromToolOutputs handles null transcription [GH-90000]")
+        @DisplayName("MultimodalAnalysisResult.fromToolOutputs handles null transcription")
         void fromToolOutputsHandlesNullTranscription() { // GH-90000
             Map<String, Object> inferenceOutput = Map.of("summary", "test summary", "confidence", 0.9); // GH-90000
             MultimodalAnalysisResult result = MultimodalAnalysisResult.fromToolOutputs( // GH-90000
                     inferenceOutput, Map.of(), null); // GH-90000
-            assertThat(result.summary()).isEqualTo("test summary [GH-90000]");
+            assertThat(result.summary()).isEqualTo("test summary");
             assertThat(result.confidence()).isEqualTo(0.9); // GH-90000
             assertThat(result.transcript()).isNull(); // GH-90000
             assertThat(result.transcriptSegments()).isEmpty(); // GH-90000

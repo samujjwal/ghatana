@@ -24,8 +24,8 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("AudioFormatHandlingTest [GH-90000]")
-@Disabled("WhisperTranscriptionEngine not yet implemented - all tests throw UnsupportedOperationException [GH-90000]")
+@DisplayName("AudioFormatHandlingTest")
+@Disabled("WhisperTranscriptionEngine not yet implemented - all tests throw UnsupportedOperationException")
 class AudioFormatHandlingTest {
 
     private WhisperTranscriptionEngine engine;
@@ -39,7 +39,7 @@ class AudioFormatHandlingTest {
 
     @ParameterizedTest(name = "format={0} is accepted") // GH-90000
     @EnumSource(AudioFormat.class) // GH-90000
-    @DisplayName("all supported audio formats are accepted without error [GH-90000]")
+    @DisplayName("all supported audio formats are accepted without error")
     void allFormatsAreAccepted(AudioFormat format) { // GH-90000
         byte[] audio = makeAudio(format.name()); // GH-90000
         assertThatCode(() -> engine.transcribe(audio, format, "en")) // GH-90000
@@ -47,58 +47,58 @@ class AudioFormatHandlingTest {
     }
 
     @Test
-    @DisplayName("PCM decoding returns a result [GH-90000]")
+    @DisplayName("PCM decoding returns a result")
     void pcmDecoding() { // GH-90000
-        byte[] audio = makeAudio("PCM_RAW [GH-90000]");
+        byte[] audio = makeAudio("PCM_RAW");
         TranscriptionResult result = engine.transcribe(audio, AudioFormat.PCM, "en"); // GH-90000
-        assertThat(result.text()).contains("pcm [GH-90000]");
+        assertThat(result.text()).contains("pcm");
     }
 
     @Test
-    @DisplayName("WAV decoding returns a result [GH-90000]")
+    @DisplayName("WAV decoding returns a result")
     void wavDecoding() { // GH-90000
-        byte[] audio = makeAudio("WAV_RIFF [GH-90000]");
+        byte[] audio = makeAudio("WAV_RIFF");
         TranscriptionResult result = engine.transcribe(audio, AudioFormat.WAV, "en"); // GH-90000
-        assertThat(result.text()).contains("wav [GH-90000]");
+        assertThat(result.text()).contains("wav");
     }
 
     @Test
-    @DisplayName("MP3 decoding returns a result [GH-90000]")
+    @DisplayName("MP3 decoding returns a result")
     void mp3Decoding() { // GH-90000
-        byte[] audio = makeAudio("MP3_ID3 [GH-90000]");
+        byte[] audio = makeAudio("MP3_ID3");
         TranscriptionResult result = engine.transcribe(audio, AudioFormat.MP3, "en"); // GH-90000
-        assertThat(result.text()).contains("mp3 [GH-90000]");
+        assertThat(result.text()).contains("mp3");
     }
 
     @Test
-    @DisplayName("FLAC decoding returns a result [GH-90000]")
+    @DisplayName("FLAC decoding returns a result")
     void flacDecoding() { // GH-90000
-        byte[] audio = makeAudio("fLaC_STREAM [GH-90000]");
+        byte[] audio = makeAudio("fLaC_STREAM");
         TranscriptionResult result = engine.transcribe(audio, AudioFormat.FLAC, "en"); // GH-90000
-        assertThat(result.text()).contains("flac [GH-90000]");
+        assertThat(result.text()).contains("flac");
     }
 
     @Test
-    @DisplayName("OGG decoding returns a result [GH-90000]")
+    @DisplayName("OGG decoding returns a result")
     void oggDecoding() { // GH-90000
-        byte[] audio = makeAudio("OggS_PAGE [GH-90000]");
+        byte[] audio = makeAudio("OggS_PAGE");
         TranscriptionResult result = engine.transcribe(audio, AudioFormat.OGG, "en"); // GH-90000
-        assertThat(result.text()).contains("ogg [GH-90000]");
+        assertThat(result.text()).contains("ogg");
     }
 
     @Test
-    @DisplayName("AAC decoding returns a result [GH-90000]")
+    @DisplayName("AAC decoding returns a result")
     void aacDecoding() { // GH-90000
-        byte[] audio = makeAudio("AAC_ADTS [GH-90000]");
+        byte[] audio = makeAudio("AAC_ADTS");
         TranscriptionResult result = engine.transcribe(audio, AudioFormat.AAC, "en"); // GH-90000
-        assertThat(result.text()).contains("aac [GH-90000]");
+        assertThat(result.text()).contains("aac");
     }
 
     // ── Input format preserved in result ─────────────────────────────────────
 
     @ParameterizedTest(name = "result.inputFormat == {0}") // GH-90000
     @EnumSource(AudioFormat.class) // GH-90000
-    @DisplayName("transcription result preserves the input format [GH-90000]")
+    @DisplayName("transcription result preserves the input format")
     void inputFormatPreservedInResult(AudioFormat format) { // GH-90000
         byte[] audio = makeAudio("DATA_" + format.name()); // GH-90000
         TranscriptionResult result = engine.transcribe(audio, format, "en"); // GH-90000
@@ -108,31 +108,31 @@ class AudioFormatHandlingTest {
     // ── Invalid / corrupt audio handling ─────────────────────────────────────
 
     @Test
-    @DisplayName("null audio data throws TranscriptionException [GH-90000]")
+    @DisplayName("null audio data throws TranscriptionException")
     void nullAudioThrows() { // GH-90000
         assertThatThrownBy(() -> engine.transcribe(null, AudioFormat.WAV, "en")) // GH-90000
                 .isInstanceOf(WhisperTranscriptionEngine.TranscriptionException.class) // GH-90000
-                .hasMessageContaining("null [GH-90000]");
+                .hasMessageContaining("null");
     }
 
     @Test
-    @DisplayName("empty audio data throws TranscriptionException [GH-90000]")
+    @DisplayName("empty audio data throws TranscriptionException")
     void emptyAudioThrows() { // GH-90000
         assertThatThrownBy(() -> engine.transcribe(new byte[0], AudioFormat.WAV, "en")) // GH-90000
                 .isInstanceOf(WhisperTranscriptionEngine.TranscriptionException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("null format throws NullPointerException [GH-90000]")
+    @DisplayName("null format throws NullPointerException")
     void nullFormatThrows() { // GH-90000
-        byte[] audio = makeAudio("DATA [GH-90000]");
+        byte[] audio = makeAudio("DATA");
         assertThatThrownBy(() -> engine.transcribe(audio, null, "en")) // GH-90000
                 .isInstanceOf(NullPointerException.class); // GH-90000
     }
 
     @ParameterizedTest(name = "single byte audio for {0}") // GH-90000
     @EnumSource(AudioFormat.class) // GH-90000
-    @DisplayName("single-byte audio data produces a result (not empty-throw) [GH-90000]")
+    @DisplayName("single-byte audio data produces a result (not empty-throw)")
     void singleByteAudioSucceeds(AudioFormat format) { // GH-90000
         // Engine stubs should handle minimal data without throwing
         assertThatCode(() -> engine.transcribe(new byte[]{0x01}, format, "en")) // GH-90000
@@ -141,7 +141,7 @@ class AudioFormatHandlingTest {
 
     @ParameterizedTest(name = "large audio ({0} bytes)") // GH-90000
     @ValueSource(ints = {1_000, 10_000, 100_000}) // GH-90000
-    @DisplayName("large audio payloads complete without error [GH-90000]")
+    @DisplayName("large audio payloads complete without error")
     void largeAudioPayloads(int size) { // GH-90000
         byte[] audio = new byte[size];
         assertThatCode(() -> engine.transcribe(audio, AudioFormat.WAV, "en")) // GH-90000

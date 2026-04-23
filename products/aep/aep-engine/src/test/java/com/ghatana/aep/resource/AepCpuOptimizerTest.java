@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * Unit tests for {@link AepCpuOptimizer} (AEP-005.2). // GH-90000
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("AepCpuOptimizer — AEP-005.2 [GH-90000]")
+@DisplayName("AepCpuOptimizer — AEP-005.2")
 class AepCpuOptimizerTest {
 
     @Mock
@@ -39,14 +39,14 @@ class AepCpuOptimizerTest {
     }
 
     @Test
-    @DisplayName("Initial state: throttle inactive, sample count = 0 [GH-90000]")
+    @DisplayName("Initial state: throttle inactive, sample count = 0")
     void initialState() { // GH-90000
         assertThat(optimizer.isThrottleActive()).isFalse(); // GH-90000
         assertThat(optimizer.sampleCount()).isEqualTo(0); // GH-90000
     }
 
     @Test
-    @DisplayName("currentSnapshot returns EMPTY before any sample [GH-90000]")
+    @DisplayName("currentSnapshot returns EMPTY before any sample")
     void currentSnapshotEmptyBeforeSamples() { // GH-90000
         AepCpuOptimizer.CpuSnapshot snap = optimizer.currentSnapshot(); // GH-90000
         assertThat(snap.processCpuLoad()).isEqualTo(0.0); // GH-90000
@@ -55,7 +55,7 @@ class AepCpuOptimizerTest {
     }
 
     @Test
-    @DisplayName("CpuSnapshot.meetsTarget is true when load < 80% [GH-90000]")
+    @DisplayName("CpuSnapshot.meetsTarget is true when load < 80%")
     void snapshotMeetsTargetWhenLow() { // GH-90000
         AepCpuOptimizer.CpuSnapshot snap = new AepCpuOptimizer.CpuSnapshot( // GH-90000
                 java.time.Instant.now(), 0.5, 0.6, 8, false); // GH-90000
@@ -63,7 +63,7 @@ class AepCpuOptimizerTest {
     }
 
     @Test
-    @DisplayName("CpuSnapshot.meetsTarget is false when load >= 80% [GH-90000]")
+    @DisplayName("CpuSnapshot.meetsTarget is false when load >= 80%")
     void snapshotDoesNotMeetTargetWhenHigh() { // GH-90000
         AepCpuOptimizer.CpuSnapshot snap = new AepCpuOptimizer.CpuSnapshot( // GH-90000
                 java.time.Instant.now(), 0.85, 0.90, 8, true); // GH-90000
@@ -71,7 +71,7 @@ class AepCpuOptimizerTest {
     }
 
     @Test
-    @DisplayName("CpuSnapshot.processCpuPercent returns load * 100 [GH-90000]")
+    @DisplayName("CpuSnapshot.processCpuPercent returns load * 100")
     void snapshotProcessCpuPercent() { // GH-90000
         AepCpuOptimizer.CpuSnapshot snap = new AepCpuOptimizer.CpuSnapshot( // GH-90000
                 java.time.Instant.now(), 0.75, 0.8, 4, false); // GH-90000
@@ -79,28 +79,28 @@ class AepCpuOptimizerTest {
     }
 
     @Test
-    @DisplayName("Builder rejects non-positive samplingIntervalMs [GH-90000]")
+    @DisplayName("Builder rejects non-positive samplingIntervalMs")
     void builderRejectsZeroInterval() { // GH-90000
         assertThatThrownBy(() -> AepCpuOptimizer.builder().samplingIntervalMs(0)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("Builder rejects highCpuThreshold out of [0, 1] [GH-90000]")
+    @DisplayName("Builder rejects highCpuThreshold out of [0, 1]")
     void builderRejectsInvalidThreshold() { // GH-90000
         assertThatThrownBy(() -> AepCpuOptimizer.builder().highCpuThreshold(1.1)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("Builder rejects non-positive consecutiveHighSamplesBeforeThrottle [GH-90000]")
+    @DisplayName("Builder rejects non-positive consecutiveHighSamplesBeforeThrottle")
     void builderRejectsZeroConsecutive() { // GH-90000
         assertThatThrownBy(() -> AepCpuOptimizer.builder().consecutiveHighSamplesBeforeThrottle(0)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("Builder rejects null osBean [GH-90000]")
+    @DisplayName("Builder rejects null osBean")
     void builderRejectsNullOsBean() { // GH-90000
         assertThatThrownBy(() -> AepCpuOptimizer.builder().osBean(null)) // GH-90000
                 .isInstanceOf(NullPointerException.class); // GH-90000

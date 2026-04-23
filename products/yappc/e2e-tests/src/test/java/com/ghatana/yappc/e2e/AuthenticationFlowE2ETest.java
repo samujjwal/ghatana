@@ -51,13 +51,13 @@ class AuthenticationFlowE2ETest extends EventloopTestBase {
 
     @Test
     @Order(1) // GH-90000
-    @DisplayName("E2E: User registration with initial setup [GH-90000]")
+    @DisplayName("E2E: User registration with initial setup")
     void testUserRegistration() throws Exception { // GH-90000
         RegistrationRequest request = RegistrationRequest.builder() // GH-90000
                 .username(userId) // GH-90000
                 .email(userId + "@example.com") // GH-90000
-                .password("SecurePass123! [GH-90000]")
-                .tenantId("e2e-test-tenant [GH-90000]")
+                .password("SecurePass123!")
+                .tenantId("e2e-test-tenant")
                 .build(); // GH-90000
 
         Promise<RegistrationResponse> promise = authService.register(request); // GH-90000
@@ -70,14 +70,14 @@ class AuthenticationFlowE2ETest extends EventloopTestBase {
 
     @Test
     @Order(2) // GH-90000
-    @DisplayName("E2E: User login without MFA (first time) [GH-90000]")
+    @DisplayName("E2E: User login without MFA (first time)")
     void testLoginWithoutMfa() throws Exception { // GH-90000
         LoginRequest request = LoginRequest.builder() // GH-90000
                 .username(userId) // GH-90000
-                .password("SecurePass123! [GH-90000]")
-                .tenantId("e2e-test-tenant [GH-90000]")
-                .ipAddress("192.168.1.100 [GH-90000]")
-                .userAgent("E2E-Test-Agent/1.0 [GH-90000]")
+                .password("SecurePass123!")
+                .tenantId("e2e-test-tenant")
+                .ipAddress("192.168.1.100")
+                .userAgent("E2E-Test-Agent/1.0")
                 .build(); // GH-90000
 
         Promise<LoginResponse> promise = authService.login(request); // GH-90000
@@ -97,14 +97,14 @@ class AuthenticationFlowE2ETest extends EventloopTestBase {
 
     @Test
     @Order(3) // GH-90000
-    @DisplayName("E2E: MFA enrollment [GH-90000]")
+    @DisplayName("E2E: MFA enrollment")
     void testMfaEnrollment() throws Exception { // GH-90000
         Promise<MfaService.EnrollmentData> promise = mfaService.enrollUser(userId, "Yappc-E2E"); // GH-90000
         MfaService.EnrollmentData enrollment = runPromise(() -> promise); // GH-90000
 
         assertThat(enrollment).isNotNull(); // GH-90000
         assertThat(enrollment.secret()).isNotBlank(); // GH-90000
-        assertThat(enrollment.qrCodeUri()).startsWith("otpauth://totp/ [GH-90000]");
+        assertThat(enrollment.qrCodeUri()).startsWith("otpauth://totp/");
         assertThat(enrollment.backupCodes()).hasSize(10); // GH-90000
 
         // Log MFA enrollment
@@ -113,17 +113,17 @@ class AuthenticationFlowE2ETest extends EventloopTestBase {
 
     @Test
     @Order(4) // GH-90000
-    @DisplayName("E2E: Login with MFA required [GH-90000]")
+    @DisplayName("E2E: Login with MFA required")
     void testLoginWithMfaRequired() throws Exception { // GH-90000
         // Simulate MFA now being enabled
         simulateMfaEnabled(userId); // GH-90000
 
         LoginRequest request = LoginRequest.builder() // GH-90000
                 .username(userId) // GH-90000
-                .password("SecurePass123! [GH-90000]")
-                .tenantId("e2e-test-tenant [GH-90000]")
-                .ipAddress("192.168.1.100 [GH-90000]")
-                .userAgent("E2E-Test-Agent/1.0 [GH-90000]")
+                .password("SecurePass123!")
+                .tenantId("e2e-test-tenant")
+                .ipAddress("192.168.1.100")
+                .userAgent("E2E-Test-Agent/1.0")
                 .build(); // GH-90000
 
         Promise<LoginResponse> promise = authService.login(request); // GH-90000
@@ -138,14 +138,14 @@ class AuthenticationFlowE2ETest extends EventloopTestBase {
 
     @Test
     @Order(5) // GH-90000
-    @DisplayName("E2E: MFA verification with valid code [GH-90000]")
+    @DisplayName("E2E: MFA verification with valid code")
     void testMfaVerification() throws Exception { // GH-90000
         String mfaChallengeToken = "challenge-" + UUID.randomUUID(); // GH-90000
 
         MfaVerificationRequest request = MfaVerificationRequest.builder() // GH-90000
                 .challengeToken(mfaChallengeToken) // GH-90000
-                .mfaCode("123456 [GH-90000]") // In real scenario, would be valid TOTP
-                .tenantId("e2e-test-tenant [GH-90000]")
+                .mfaCode("123456") // In real scenario, would be valid TOTP
+                .tenantId("e2e-test-tenant")
                 .build(); // GH-90000
 
         Promise<MfaVerificationResponse> promise = authService.verifyMfa(request); // GH-90000
@@ -167,14 +167,14 @@ class AuthenticationFlowE2ETest extends EventloopTestBase {
 
     @Test
     @Order(6) // GH-90000
-    @DisplayName("E2E: Failed login attempt with audit trail [GH-90000]")
+    @DisplayName("E2E: Failed login attempt with audit trail")
     void testFailedLoginAudit() throws Exception { // GH-90000
         LoginRequest request = LoginRequest.builder() // GH-90000
                 .username(userId) // GH-90000
-                .password("WrongPassword! [GH-90000]")
-                .tenantId("e2e-test-tenant [GH-90000]")
-                .ipAddress("192.168.1.200 [GH-90000]")
-                .userAgent("E2E-Test-Agent/1.0 [GH-90000]")
+                .password("WrongPassword!")
+                .tenantId("e2e-test-tenant")
+                .ipAddress("192.168.1.200")
+                .userAgent("E2E-Test-Agent/1.0")
                 .build(); // GH-90000
 
         Promise<LoginResponse> promise = authService.login(request); // GH-90000
@@ -189,7 +189,7 @@ class AuthenticationFlowE2ETest extends EventloopTestBase {
 
     @Test
     @Order(7) // GH-90000
-    @DisplayName("E2E: Token validation [GH-90000]")
+    @DisplayName("E2E: Token validation")
     void testTokenValidation() throws Exception { // GH-90000
         assumeSessionTokenExists(); // GH-90000
 
@@ -199,19 +199,19 @@ class AuthenticationFlowE2ETest extends EventloopTestBase {
         assertThat(response).isNotNull(); // GH-90000
         assertThat(response.valid()).isTrue(); // GH-90000
         assertThat(response.userId()).isEqualTo(userId); // GH-90000
-        assertThat(response.tenantId()).isEqualTo("e2e-test-tenant [GH-90000]");
+        assertThat(response.tenantId()).isEqualTo("e2e-test-tenant");
     }
 
     @Test
     @Order(8) // GH-90000
-    @DisplayName("E2E: User logout with audit trail [GH-90000]")
+    @DisplayName("E2E: User logout with audit trail")
     void testUserLogout() throws Exception { // GH-90000
         assumeSessionTokenExists(); // GH-90000
 
         LogoutRequest request = LogoutRequest.builder() // GH-90000
                 .sessionToken(sessionToken) // GH-90000
                 .userId(userId) // GH-90000
-                .tenantId("e2e-test-tenant [GH-90000]")
+                .tenantId("e2e-test-tenant")
                 .build(); // GH-90000
 
         Promise<LogoutResponse> promise = authService.logout(request); // GH-90000
@@ -231,7 +231,7 @@ class AuthenticationFlowE2ETest extends EventloopTestBase {
 
     @Test
     @Order(9) // GH-90000
-    @DisplayName("E2E: Rate limiting after multiple failed attempts [GH-90000]")
+    @DisplayName("E2E: Rate limiting after multiple failed attempts")
     void testRateLimiting() throws Exception { // GH-90000
         String testUser = "rate-limit-test-" + UUID.randomUUID(); // GH-90000
 
@@ -240,8 +240,8 @@ class AuthenticationFlowE2ETest extends EventloopTestBase {
             LoginRequest request = LoginRequest.builder() // GH-90000
                     .username(testUser) // GH-90000
                     .password("WrongPassword" + i) // GH-90000
-                    .tenantId("e2e-test-tenant [GH-90000]")
-                    .ipAddress("192.168.1.300 [GH-90000]")
+                    .tenantId("e2e-test-tenant")
+                    .ipAddress("192.168.1.300")
                     .build(); // GH-90000
             authService.login(request).get(); // GH-90000
         }
@@ -432,7 +432,7 @@ class AuthenticationFlowE2ETest extends EventloopTestBase {
                     auditLogger.logLoginFailure(request.username(), request.tenantId(), request.ipAddress(), "Invalid credentials").get(); // GH-90000
                     return LoginResponse.builder() // GH-90000
                         .success(false) // GH-90000
-                        .error("Invalid credentials [GH-90000]")
+                        .error("Invalid credentials")
                         .build(); // GH-90000
                 }
             });
@@ -459,7 +459,7 @@ class AuthenticationFlowE2ETest extends EventloopTestBase {
                     return TokenValidationResponse.builder() // GH-90000
                         .valid(true) // GH-90000
                         .userId(userId) // GH-90000
-                        .tenantId("e2e-test-tenant [GH-90000]")
+                        .tenantId("e2e-test-tenant")
                         .build(); // GH-90000
                 }
                 return TokenValidationResponse.builder() // GH-90000

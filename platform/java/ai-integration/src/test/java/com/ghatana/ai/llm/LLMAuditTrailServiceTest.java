@@ -24,11 +24,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.purpose Unit tests for LLM audit trail logging
  * @doc.layer test
  */
-@DisplayName("LLM Audit Trail Service Tests [GH-90000]")
+@DisplayName("LLM Audit Trail Service Tests")
 class LLMAuditTrailServiceTest {
 
     @Test
-    @DisplayName("logs LLM call with full content [GH-90000]")
+    @DisplayName("logs LLM call with full content")
     void logsCallWithFullContent() { // GH-90000
         LLMAuditTrailService auditService = new LLMAuditTrailService(1000, true); // GH-90000
         
@@ -45,20 +45,20 @@ class LLMAuditTrailServiceTest {
             Map.of("finishReason", "stop") // GH-90000
         );
         
-        assertThat(auditService.getAuditEntryCount("tenant-1 [GH-90000]")).isEqualTo(1);
+        assertThat(auditService.getAuditEntryCount("tenant-1")).isEqualTo(1);
         
-        LLMAuditTrailService.AuditEntry entry = auditService.getAuditEntries("tenant-1 [GH-90000]").get(0);
-        assertThat(entry.prompt()).isEqualTo("Test prompt [GH-90000]");
-        assertThat(entry.response()).isEqualTo("Test response [GH-90000]");
-        assertThat(entry.provider()).isEqualTo("openai [GH-90000]");
-        assertThat(entry.model()).isEqualTo("gpt-4 [GH-90000]");
+        LLMAuditTrailService.AuditEntry entry = auditService.getAuditEntries("tenant-1").get(0);
+        assertThat(entry.prompt()).isEqualTo("Test prompt");
+        assertThat(entry.response()).isEqualTo("Test response");
+        assertThat(entry.provider()).isEqualTo("openai");
+        assertThat(entry.model()).isEqualTo("gpt-4");
         assertThat(entry.promptTokens()).isEqualTo(100); // GH-90000
         assertThat(entry.completionTokens()).isEqualTo(50); // GH-90000
         assertThat(entry.latencyMs()).isEqualTo(500L); // GH-90000
     }
 
     @Test
-    @DisplayName("logs LLM call with hashed content when full content logging disabled [GH-90000]")
+    @DisplayName("logs LLM call with hashed content when full content logging disabled")
     void logsCallWithHashedContent() { // GH-90000
         LLMAuditTrailService auditService = new LLMAuditTrailService(1000, false); // GH-90000
         
@@ -75,18 +75,18 @@ class LLMAuditTrailServiceTest {
             Map.of() // GH-90000
         );
         
-        LLMAuditTrailService.AuditEntry entry = auditService.getAuditEntries("tenant-1 [GH-90000]").get(0);
+        LLMAuditTrailService.AuditEntry entry = auditService.getAuditEntries("tenant-1").get(0);
         
         // Should be hashed, not the original text
-        assertThat(entry.prompt()).isNotEqualTo("Test prompt [GH-90000]");
-        assertThat(entry.response()).isNotEqualTo("Test response [GH-90000]");
+        assertThat(entry.prompt()).isNotEqualTo("Test prompt");
+        assertThat(entry.response()).isNotEqualTo("Test response");
         // But should contain the hash
         assertThat(entry.prompt()).isNotEmpty(); // GH-90000
         assertThat(entry.response()).isNotEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("aggregates audit entries by tenant [GH-90000]")
+    @DisplayName("aggregates audit entries by tenant")
     void aggregatesByTenant() { // GH-90000
         LLMAuditTrailService auditService = new LLMAuditTrailService(); // GH-90000
         
@@ -94,12 +94,12 @@ class LLMAuditTrailServiceTest {
         auditService.logCall("tenant-1", "req-2", "openai", "gpt-4", "p2", "r2", 200, 100, 600L, Map.of()); // GH-90000
         auditService.logCall("tenant-2", "req-3", "openai", "gpt-4", "p3", "r3", 150, 75, 550L, Map.of()); // GH-90000
         
-        assertThat(auditService.getAuditEntryCount("tenant-1 [GH-90000]")).isEqualTo(2);
-        assertThat(auditService.getAuditEntryCount("tenant-2 [GH-90000]")).isEqualTo(1);
+        assertThat(auditService.getAuditEntryCount("tenant-1")).isEqualTo(2);
+        assertThat(auditService.getAuditEntryCount("tenant-2")).isEqualTo(1);
     }
 
     @Test
-    @DisplayName("filters audit entries by time range [GH-90000]")
+    @DisplayName("filters audit entries by time range")
     void filtersByTimeRange() { // GH-90000
         LLMAuditTrailService auditService = new LLMAuditTrailService(); // GH-90000
         
@@ -116,7 +116,7 @@ class LLMAuditTrailServiceTest {
     }
 
     @Test
-    @DisplayName("retrieves audit entries by request ID [GH-90000]")
+    @DisplayName("retrieves audit entries by request ID")
     void retrievesByRequestId() { // GH-90000
         LLMAuditTrailService auditService = new LLMAuditTrailService(); // GH-90000
         
@@ -127,25 +127,25 @@ class LLMAuditTrailServiceTest {
             auditService.getAuditEntriesForRequest("tenant-1", "req-123"); // GH-90000
         
         assertThat(entries).hasSize(1); // GH-90000
-        assertThat(entries.get(0).requestId()).isEqualTo("req-123 [GH-90000]");
+        assertThat(entries.get(0).requestId()).isEqualTo("req-123");
     }
 
     @Test
-    @DisplayName("clears audit entries for tenant [GH-90000]")
+    @DisplayName("clears audit entries for tenant")
     void clearsAuditEntriesForTenant() { // GH-90000
         LLMAuditTrailService auditService = new LLMAuditTrailService(); // GH-90000
         
         auditService.logCall("tenant-1", "req-1", "openai", "gpt-4", "p1", "r1", 100, 50, 500L, Map.of()); // GH-90000
         
-        assertThat(auditService.getAuditEntryCount("tenant-1 [GH-90000]")).isEqualTo(1);
+        assertThat(auditService.getAuditEntryCount("tenant-1")).isEqualTo(1);
         
-        auditService.clearAuditEntries("tenant-1 [GH-90000]");
+        auditService.clearAuditEntries("tenant-1");
         
-        assertThat(auditService.getAuditEntryCount("tenant-1 [GH-90000]")).isEqualTo(0);
+        assertThat(auditService.getAuditEntryCount("tenant-1")).isEqualTo(0);
     }
 
     @Test
-    @DisplayName("decorator gateway logs audit trail [GH-90000]")
+    @DisplayName("decorator gateway logs audit trail")
     void decoratorGatewayLogsAuditTrail() { // GH-90000
         LLMAuditTrailService auditService = new LLMAuditTrailService(1000, true); // GH-90000
         LLMGateway mockGateway = createMockGateway(); // GH-90000
@@ -157,7 +157,7 @@ class LLMAuditTrailServiceTest {
     }
 
     @Test
-    @DisplayName("prunes old entries when over limit [GH-90000]")
+    @DisplayName("prunes old entries when over limit")
     void prunesOldEntriesWhenOverLimit() { // GH-90000
         LLMAuditTrailService auditService = new LLMAuditTrailService(5, true); // GH-90000
         
@@ -166,7 +166,7 @@ class LLMAuditTrailServiceTest {
         }
         
         // Should prune to max 5 entries
-        assertThat(auditService.getAuditEntryCount("tenant-1 [GH-90000]")).isEqualTo(5);
+        assertThat(auditService.getAuditEntryCount("tenant-1")).isEqualTo(5);
     }
 
     // Helper method
@@ -176,22 +176,22 @@ class LLMAuditTrailServiceTest {
             @Override
             public Promise<CompletionResult> complete(CompletionRequest request) { // GH-90000
                 return Promise.of(CompletionResult.builder() // GH-90000
-                    .text("Mock response [GH-90000]")
+                    .text("Mock response")
                     .promptTokens(100) // GH-90000
                     .completionTokens(50) // GH-90000
                     .tokensUsed(150) // GH-90000
-                    .modelUsed("gpt-4 [GH-90000]")
+                    .modelUsed("gpt-4")
                     .build()); // GH-90000
             }
 
             @Override
             public Promise<CompletionResult> completeWithTools(CompletionRequest request, List<ToolDefinition> tools) { // GH-90000
-                return Promise.of(CompletionResult.of("Mock response [GH-90000]"));
+                return Promise.of(CompletionResult.of("Mock response"));
             }
 
             @Override
             public Promise<CompletionResult> continueWithToolResults(CompletionRequest request, List<ToolCallResult> toolResults) { // GH-90000
-                return Promise.of(CompletionResult.of("Mock response [GH-90000]"));
+                return Promise.of(CompletionResult.of("Mock response"));
             }
 
             @Override
@@ -221,7 +221,7 @@ class LLMAuditTrailServiceTest {
 
             @Override
             public List<String> getAvailableProviders() { // GH-90000
-                return List.of("openai [GH-90000]");
+                return List.of("openai");
             }
 
             @Override

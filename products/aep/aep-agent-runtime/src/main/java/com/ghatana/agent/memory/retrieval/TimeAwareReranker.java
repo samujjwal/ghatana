@@ -21,7 +21,8 @@ import java.util.stream.Collectors;
  * @doc.type class
  * @doc.purpose Time-aware reranking of retrieval results
  * @doc.layer agent-memory
- */
+  * @doc.pattern Component
+*/
 public class TimeAwareReranker {
 
     /** Default half-life in days for recency decay. */

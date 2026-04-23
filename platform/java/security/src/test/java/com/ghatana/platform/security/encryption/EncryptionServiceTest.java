@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer core
  * @doc.pattern Unit Test
  */
-@DisplayName("EncryptionService [GH-90000]")
+@DisplayName("EncryptionService")
 class EncryptionServiceTest extends EventloopTestBase {
 
     private EncryptionService encryptionService;
@@ -33,11 +33,11 @@ class EncryptionServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("encryptAsync / decryptAsync [GH-90000]")
+    @DisplayName("encryptAsync / decryptAsync")
     class AsyncRoundTrip {
 
         @Test
-        @DisplayName("should encrypt and decrypt text data [GH-90000]")
+        @DisplayName("should encrypt and decrypt text data")
         void shouldRoundTripText() { // GH-90000
             byte[] plaintext = "Sensitive data for encryption".getBytes(StandardCharsets.UTF_8); // GH-90000
 
@@ -45,11 +45,11 @@ class EncryptionServiceTest extends EventloopTestBase {
             byte[] decrypted = runPromise(() -> encryptionService.decryptAsync(encrypted)); // GH-90000
 
             assertThat(new String(decrypted, StandardCharsets.UTF_8)) // GH-90000
-                    .isEqualTo("Sensitive data for encryption [GH-90000]");
+                    .isEqualTo("Sensitive data for encryption");
         }
 
         @Test
-        @DisplayName("should encrypt and decrypt empty data [GH-90000]")
+        @DisplayName("should encrypt and decrypt empty data")
         void shouldRoundTripEmptyData() { // GH-90000
             byte[] plaintext = new byte[0];
 
@@ -60,7 +60,7 @@ class EncryptionServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("encrypted output should differ from plaintext [GH-90000]")
+        @DisplayName("encrypted output should differ from plaintext")
         void shouldDifferFromPlaintext() { // GH-90000
             byte[] plaintext = "Hello World".getBytes(StandardCharsets.UTF_8); // GH-90000
 
@@ -72,11 +72,11 @@ class EncryptionServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("getEncryptionProvider [GH-90000]")
+    @DisplayName("getEncryptionProvider")
     class GetProvider {
 
         @Test
-        @DisplayName("should return the configured provider [GH-90000]")
+        @DisplayName("should return the configured provider")
         void shouldReturnProvider() { // GH-90000
             assertThat(encryptionService.getEncryptionProvider()).isSameAs(provider); // GH-90000
         }

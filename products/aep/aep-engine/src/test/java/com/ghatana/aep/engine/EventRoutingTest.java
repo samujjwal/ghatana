@@ -18,11 +18,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test event routing, filtering, and distribution to subscribers.
  */
-@DisplayName("Event Routing Tests [GH-90000]")
+@DisplayName("Event Routing Tests")
 class EventRoutingTest {
 
     @Test
-    @DisplayName("Should route events to subscribers [GH-90000]")
+    @DisplayName("Should route events to subscribers")
     void shouldRouteEventsToSubscribers() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 
@@ -30,7 +30,7 @@ class EventRoutingTest {
     }
 
     @Test
-    @DisplayName("Should filter events by type [GH-90000]")
+    @DisplayName("Should filter events by type")
     void shouldFilterEventsByType() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 
@@ -38,7 +38,7 @@ class EventRoutingTest {
     }
 
     @Test
-    @DisplayName("Should handle event transformation [GH-90000]")
+    @DisplayName("Should handle event transformation")
     void shouldHandleEventTransformation() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 
@@ -46,7 +46,7 @@ class EventRoutingTest {
     }
 
     @Test
-    @DisplayName("Should handle subscription management [GH-90000]")
+    @DisplayName("Should handle subscription management")
     void shouldHandleSubscriptionManagement() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 
@@ -54,7 +54,7 @@ class EventRoutingTest {
     }
 
     @Test
-    @DisplayName("Should handle routing failures [GH-90000]")
+    @DisplayName("Should handle routing failures")
     void shouldHandleRoutingFailures() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 
@@ -62,7 +62,7 @@ class EventRoutingTest {
     }
 
     @Test
-    @DisplayName("Should handle concurrent routing [GH-90000]")
+    @DisplayName("Should handle concurrent routing")
     void shouldHandleConcurrentRouting() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 

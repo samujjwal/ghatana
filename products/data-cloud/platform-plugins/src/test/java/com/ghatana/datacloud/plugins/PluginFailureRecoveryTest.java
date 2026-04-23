@@ -42,7 +42,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("Plugin Failure Recovery Tests [GH-90000]")
+@DisplayName("Plugin Failure Recovery Tests")
 class PluginFailureRecoveryTest extends EventloopTestBase {
 
 
@@ -51,38 +51,38 @@ class PluginFailureRecoveryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Storage plugin failure recovery [GH-90000]")
+    @DisplayName("Storage plugin failure recovery")
     class StoragePluginFailureRecovery {
 
         @Test
-        @DisplayName("should recover from transient connection failure [GH-90000]")
+        @DisplayName("should recover from transient connection failure")
         void shouldRecoverFromTransientConnectionFailure() { // GH-90000
             StoragePlugin plugin = mock(StoragePlugin.class); // GH-90000
             
             // First call fails
             when(plugin.healthCheck()) // GH-90000
-                .thenReturn(Promise.of(HealthStatus.error("Connection timeout [GH-90000]")));
+                .thenReturn(Promise.of(HealthStatus.error("Connection timeout")));
             
             HealthStatus firstResult = runPromise(() -> plugin.healthCheck()); // GH-90000
             assertThat(firstResult.isHealthy()).isFalse(); // GH-90000
             
             // Second call succeeds (recovery) // GH-90000
             when(plugin.healthCheck()) // GH-90000
-                .thenReturn(Promise.of(HealthStatus.ok("Connection restored [GH-90000]")));
+                .thenReturn(Promise.of(HealthStatus.ok("Connection restored")));
             
             HealthStatus secondResult = runPromise(() -> plugin.healthCheck()); // GH-90000
             assertThat(secondResult.isHealthy()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("should retry failed operations with backoff [GH-90000]")
+        @DisplayName("should retry failed operations with backoff")
         void shouldRetryFailedOperationsWithBackoff() { // GH-90000
             StoragePlugin plugin = mock(StoragePlugin.class); // GH-90000
             
             // Simulate retry behavior - first fails, then succeeds
             when(plugin.healthCheck()) // GH-90000
-                .thenReturn(Promise.of(HealthStatus.error("Temporary failure [GH-90000]")))
-                .thenReturn(Promise.of(HealthStatus.ok("Operation succeeded after retry [GH-90000]")));
+                .thenReturn(Promise.of(HealthStatus.error("Temporary failure")))
+                .thenReturn(Promise.of(HealthStatus.ok("Operation succeeded after retry")));
             
             // First attempt fails
             HealthStatus firstResult = runPromise(() -> plugin.healthCheck()); // GH-90000
@@ -94,18 +94,18 @@ class PluginFailureRecoveryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should degrade gracefully on persistent failure [GH-90000]")
+        @DisplayName("should degrade gracefully on persistent failure")
         void shouldDegradeGracefullyOnPersistentFailure() { // GH-90000
             StoragePlugin plugin = mock(StoragePlugin.class); // GH-90000
             
             // Persistent failure
             when(plugin.healthCheck()) // GH-90000
-                .thenReturn(Promise.of(HealthStatus.error("Persistent failure [GH-90000]")));
+                .thenReturn(Promise.of(HealthStatus.error("Persistent failure")));
             
             HealthStatus result = runPromise(() -> plugin.healthCheck()); // GH-90000
             
             assertThat(result.isHealthy()).isFalse(); // GH-90000
-            assertThat(result.getMessage()).contains("Persistent failure [GH-90000]");
+            assertThat(result.getMessage()).contains("Persistent failure");
         }
     }
 
@@ -114,44 +114,44 @@ class PluginFailureRecoveryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Streaming plugin failure recovery [GH-90000]")
+    @DisplayName("Streaming plugin failure recovery")
     class StreamingPluginFailureRecovery {
 
         @Test
-        @DisplayName("should recover from Kafka cluster unavailability [GH-90000]")
+        @DisplayName("should recover from Kafka cluster unavailability")
         void shouldRecoverFromKafkaClusterUnavailability() { // GH-90000
             StreamingPlugin plugin = mock(StreamingPlugin.class); // GH-90000
             
             // Kafka unavailable
             when(plugin.healthCheck()) // GH-90000
-                .thenReturn(Promise.of(HealthStatus.error("Kafka cluster unreachable [GH-90000]")));
+                .thenReturn(Promise.of(HealthStatus.error("Kafka cluster unreachable")));
             
             HealthStatus firstResult = runPromise(() -> plugin.healthCheck()); // GH-90000
             assertThat(firstResult.isHealthy()).isFalse(); // GH-90000
             
             // Kafka becomes available
             when(plugin.healthCheck()) // GH-90000
-                .thenReturn(Promise.of(HealthStatus.ok("Kafka cluster reachable [GH-90000]")));
+                .thenReturn(Promise.of(HealthStatus.ok("Kafka cluster reachable")));
             
             HealthStatus secondResult = runPromise(() -> plugin.healthCheck()); // GH-90000
             assertThat(secondResult.isHealthy()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("should recover from consumer group rebalancing [GH-90000]")
+        @DisplayName("should recover from consumer group rebalancing")
         void shouldRecoverFromConsumerGroupRebalancing() { // GH-90000
             StreamingPlugin plugin = mock(StreamingPlugin.class); // GH-90000
             
             // Rebalancing in progress
             when(plugin.healthCheck()) // GH-90000
-                .thenReturn(Promise.of(HealthStatus.unhealthy("Consumer group rebalancing [GH-90000]")));
+                .thenReturn(Promise.of(HealthStatus.unhealthy("Consumer group rebalancing")));
             
             HealthStatus firstResult = runPromise(() -> plugin.healthCheck()); // GH-90000
             assertThat(firstResult.isHealthy()).isFalse(); // GH-90000
             
             // Rebalancing complete
             when(plugin.healthCheck()) // GH-90000
-                .thenReturn(Promise.of(HealthStatus.ok("Consumer group stable [GH-90000]")));
+                .thenReturn(Promise.of(HealthStatus.ok("Consumer group stable")));
             
             HealthStatus secondResult = runPromise(() -> plugin.healthCheck()); // GH-90000
             assertThat(secondResult.isHealthy()).isTrue(); // GH-90000
@@ -163,17 +163,17 @@ class PluginFailureRecoveryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Circuit breaker recovery [GH-90000]")
+    @DisplayName("Circuit breaker recovery")
     class CircuitBreakerRecovery {
 
         @Test
-        @DisplayName("should open circuit on repeated failures [GH-90000]")
+        @DisplayName("should open circuit on repeated failures")
         void shouldOpenCircuitOnRepeatedFailures() { // GH-90000
             StoragePlugin plugin = mock(StoragePlugin.class); // GH-90000
             
             // Repeated failures
             when(plugin.healthCheck()) // GH-90000
-                .thenReturn(Promise.of(HealthStatus.error("Connection failed [GH-90000]")));
+                .thenReturn(Promise.of(HealthStatus.error("Connection failed")));
             
             // Multiple failed health checks
             for (int i = 0; i < 5; i++) { // GH-90000
@@ -183,55 +183,55 @@ class PluginFailureRecoveryTest extends EventloopTestBase {
             
             // Circuit would be open here (simulated by persistent error) // GH-90000
             when(plugin.healthCheck()) // GH-90000
-                .thenReturn(Promise.of(HealthStatus.error("Circuit breaker open [GH-90000]")));
+                .thenReturn(Promise.of(HealthStatus.error("Circuit breaker open")));
             
             HealthStatus result = runPromise(() -> plugin.healthCheck()); // GH-90000
-            assertThat(result.getMessage()).contains("Circuit breaker [GH-90000]");
+            assertThat(result.getMessage()).contains("Circuit breaker");
         }
 
         @Test
-        @DisplayName("should close circuit after successful health check [GH-90000]")
+        @DisplayName("should close circuit after successful health check")
         void shouldCloseCircuitAfterSuccessfulHealthCheck() { // GH-90000
             StoragePlugin plugin = mock(StoragePlugin.class); // GH-90000
             
             // Circuit open
             when(plugin.healthCheck()) // GH-90000
-                .thenReturn(Promise.of(HealthStatus.error("Circuit breaker open [GH-90000]")));
+                .thenReturn(Promise.of(HealthStatus.error("Circuit breaker open")));
             
             HealthStatus firstResult = runPromise(() -> plugin.healthCheck()); // GH-90000
             assertThat(firstResult.isHealthy()).isFalse(); // GH-90000
             
             // Circuit closes after successful check
             when(plugin.healthCheck()) // GH-90000
-                .thenReturn(Promise.of(HealthStatus.ok("Circuit closed, connection restored [GH-90000]")));
+                .thenReturn(Promise.of(HealthStatus.ok("Circuit closed, connection restored")));
             
             HealthStatus secondResult = runPromise(() -> plugin.healthCheck()); // GH-90000
             assertThat(secondResult.isHealthy()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("should attempt half-open state after timeout [GH-90000]")
+        @DisplayName("should attempt half-open state after timeout")
         void shouldAttemptHalfOpenStateAfterTimeout() { // GH-90000
             StoragePlugin plugin = mock(StoragePlugin.class); // GH-90000
             
             // Circuit open
             when(plugin.healthCheck()) // GH-90000
-                .thenReturn(Promise.of(HealthStatus.error("Circuit breaker open [GH-90000]")));
+                .thenReturn(Promise.of(HealthStatus.error("Circuit breaker open")));
             
             HealthStatus firstResult = runPromise(() -> plugin.healthCheck()); // GH-90000
             assertThat(firstResult.isHealthy()).isFalse(); // GH-90000
             
             // Half-open state - attempt recovery
             when(plugin.healthCheck()) // GH-90000
-                .thenReturn(Promise.of(HealthStatus.unhealthy("Half-open state, testing connection [GH-90000]")));
+                .thenReturn(Promise.of(HealthStatus.unhealthy("Half-open state, testing connection")));
             
             HealthStatus secondResult = runPromise(() -> plugin.healthCheck()); // GH-90000
             assertThat(secondResult.isHealthy()).isFalse(); // GH-90000
-            assertThat(secondResult.getMessage()).contains("Half-open [GH-90000]");
+            assertThat(secondResult.getMessage()).contains("Half-open");
             
             // Full recovery
             when(plugin.healthCheck()) // GH-90000
-                .thenReturn(Promise.of(HealthStatus.ok("Connection fully restored [GH-90000]")));
+                .thenReturn(Promise.of(HealthStatus.ok("Connection fully restored")));
             
             HealthStatus thirdResult = runPromise(() -> plugin.healthCheck()); // GH-90000
             assertThat(thirdResult.isHealthy()).isTrue(); // GH-90000
@@ -243,65 +243,65 @@ class PluginFailureRecoveryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Graceful degradation [GH-90000]")
+    @DisplayName("Graceful degradation")
     class GracefulDegradation {
 
         @Test
-        @DisplayName("should fall back to secondary storage on primary failure [GH-90000]")
+        @DisplayName("should fall back to secondary storage on primary failure")
         void shouldFallbackToSecondaryStorageOnPrimaryFailure() { // GH-90000
             StoragePlugin primary = mock(StoragePlugin.class); // GH-90000
             StoragePlugin secondary = mock(StoragePlugin.class); // GH-90000
             
             // Primary fails
             when(primary.healthCheck()) // GH-90000
-                .thenReturn(Promise.of(HealthStatus.error("Primary storage unavailable [GH-90000]")));
+                .thenReturn(Promise.of(HealthStatus.error("Primary storage unavailable")));
             
             HealthStatus primaryResult = runPromise(() -> primary.healthCheck()); // GH-90000
             assertThat(primaryResult.isHealthy()).isFalse(); // GH-90000
             
             // Secondary succeeds
             when(secondary.healthCheck()) // GH-90000
-                .thenReturn(Promise.of(HealthStatus.ok("Secondary storage available [GH-90000]")));
+                .thenReturn(Promise.of(HealthStatus.ok("Secondary storage available")));
             
             HealthStatus secondaryResult = runPromise(() -> secondary.healthCheck()); // GH-90000
             assertThat(secondaryResult.isHealthy()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("should operate in degraded mode with reduced functionality [GH-90000]")
+        @DisplayName("should operate in degraded mode with reduced functionality")
         void shouldOperateInDegradedModeWithReducedFunctionality() { // GH-90000
             StoragePlugin plugin = mock(StoragePlugin.class); // GH-90000
             
             // Degraded but operational
             when(plugin.healthCheck()) // GH-90000
-                .thenReturn(Promise.of(HealthStatus.unhealthy("Degraded mode: write operations disabled [GH-90000]")));
+                .thenReturn(Promise.of(HealthStatus.unhealthy("Degraded mode: write operations disabled")));
             
             HealthStatus result = runPromise(() -> plugin.healthCheck()); // GH-90000
             
             // In degraded mode, not healthy but not failed
             assertThat(result.isHealthy()).isFalse(); // GH-90000
-            assertThat(result.getMessage()).contains("Degraded mode [GH-90000]");
+            assertThat(result.getMessage()).contains("Degraded mode");
         }
 
         @Test
-        @DisplayName("should restore full functionality after recovery [GH-90000]")
+        @DisplayName("should restore full functionality after recovery")
         void shouldRestoreFullFunctionalityAfterRecovery() { // GH-90000
             StoragePlugin plugin = mock(StoragePlugin.class); // GH-90000
             
             // Degraded mode
             when(plugin.healthCheck()) // GH-90000
-                .thenReturn(Promise.of(HealthStatus.unhealthy("Degraded mode [GH-90000]")));
+                .thenReturn(Promise.of(HealthStatus.unhealthy("Degraded mode")));
             
             HealthStatus firstResult = runPromise(() -> plugin.healthCheck()); // GH-90000
             assertThat(firstResult.isHealthy()).isFalse(); // GH-90000
             
             // Full recovery
             when(plugin.healthCheck()) // GH-90000
-                .thenReturn(Promise.of(HealthStatus.ok("Full functionality restored [GH-90000]")));
+                .thenReturn(Promise.of(HealthStatus.ok("Full functionality restored")));
             
             HealthStatus secondResult = runPromise(() -> plugin.healthCheck()); // GH-90000
             assertThat(secondResult.isHealthy()).isTrue(); // GH-90000
-            assertThat(secondResult.getMessage()).contains("Full functionality [GH-90000]");
+            assertThat(secondResult.getMessage()).contains("Full functionality");
         }
     }
 
@@ -310,11 +310,11 @@ class PluginFailureRecoveryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("State restoration after recovery [GH-90000]")
+    @DisplayName("State restoration after recovery")
     class StateRestoration {
 
         @Test
-        @DisplayName("should restore plugin state after recovery [GH-90000]")
+        @DisplayName("should restore plugin state after recovery")
         void shouldRestorePluginStateAfterRecovery() { // GH-90000
             StoragePlugin plugin = mock(StoragePlugin.class); // GH-90000
             
@@ -334,7 +334,7 @@ class PluginFailureRecoveryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should preserve plugin state during recovery [GH-90000]")
+        @DisplayName("should preserve plugin state during recovery")
         void shouldPreservePluginStateDuringRecovery() { // GH-90000
             StoragePlugin plugin = mock(StoragePlugin.class); // GH-90000
             
@@ -359,35 +359,35 @@ class PluginFailureRecoveryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Manual recovery initiation [GH-90000]")
+    @DisplayName("Manual recovery initiation")
     class ManualRecoveryInitiation {
 
         @Test
-        @DisplayName("should allow manual recovery trigger [GH-90000]")
+        @DisplayName("should allow manual recovery trigger")
         void shouldAllowManualRecoveryTrigger() { // GH-90000
             StoragePlugin plugin = mock(StoragePlugin.class); // GH-90000
             
             // Simulate manual recovery call
             when(plugin.healthCheck()) // GH-90000
-                .thenReturn(Promise.of(HealthStatus.ok("Manual recovery successful [GH-90000]")));
+                .thenReturn(Promise.of(HealthStatus.ok("Manual recovery successful")));
             
             HealthStatus result = runPromise(() -> plugin.healthCheck()); // GH-90000
             assertThat(result.isHealthy()).isTrue(); // GH-90000
-            assertThat(result.getMessage()).contains("Manual recovery [GH-90000]");
+            assertThat(result.getMessage()).contains("Manual recovery");
         }
 
         @Test
-        @DisplayName("should validate recovery prerequisites before initiating [GH-90000]")
+        @DisplayName("should validate recovery prerequisites before initiating")
         void shouldValidateRecoveryPrerequisitesBeforeInitiating() { // GH-90000
             StoragePlugin plugin = mock(StoragePlugin.class); // GH-90000
             
             // Prerequisites not met
             when(plugin.healthCheck()) // GH-90000
-                .thenReturn(Promise.of(HealthStatus.error("Recovery prerequisites not met [GH-90000]")));
+                .thenReturn(Promise.of(HealthStatus.error("Recovery prerequisites not met")));
             
             HealthStatus result = runPromise(() -> plugin.healthCheck()); // GH-90000
             assertThat(result.isHealthy()).isFalse(); // GH-90000
-            assertThat(result.getMessage()).contains("prerequisites [GH-90000]");
+            assertThat(result.getMessage()).contains("prerequisites");
         }
     }
 }

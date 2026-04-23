@@ -26,7 +26,7 @@ import org.junit.jupiter.api.io.TempDir;
  * working Python environment with Jython installed.
  */
 @EnabledIfSystemProperty(named = "test.python.enabled", matches = "true") // GH-90000
-@Tag("integration [GH-90000]")
+@Tag("integration")
 /**
  * @doc.type class
  * @doc.purpose Handles python rename refactoring test operations
@@ -49,7 +49,7 @@ class PythonRenameRefactoringTest {
     @BeforeEach
     void setUp() throws IOException { // GH-90000
         refactoring = new PythonRenameRefactoring(); // GH-90000
-        testFile = tempDir.resolve("test_rename.py [GH-90000]");
+        testFile = tempDir.resolve("test_rename.py");
         executor = Executors.newSingleThreadExecutor(); // GH-90000
         logger = LogManager.getLogger(PythonRenameRefactoringTest.class); // GH-90000
         projectContext = new PolyfixProjectContext(tempDir, null, List.of(), executor, logger); // GH-90000
@@ -99,9 +99,9 @@ class PythonRenameRefactoringTest {
 
         // Verify the content was actually changed
         String content = readFileContent(testFile); // GH-90000
-        assertThat(content).contains("def new_method [GH-90000]");
-        assertThat(content).contains("return self.new_method() [GH-90000]");
-        assertThat(content).contains("print(obj.new_method()) [GH-90000]");
+        assertThat(content).contains("def new_method");
+        assertThat(content).contains("return self.new_method()");
+        assertThat(content).contains("print(obj.new_method())");
     }
 
     @Test
@@ -123,8 +123,8 @@ class PythonRenameRefactoringTest {
 
         // Verify the content was actually changed
         String content = readFileContent(testFile); // GH-90000
-        assertThat(content).contains("def renamed_function(): [GH-90000]");
-        assertThat(content).contains("print(renamed_function()) [GH-90000]");
+        assertThat(content).contains("def renamed_function():");
+        assertThat(content).contains("print(renamed_function())");
     }
 
     @Test
@@ -143,20 +143,20 @@ class PythonRenameRefactoringTest {
 
         // Then
         assertThat(result.isSuccess()).isTrue(); // GH-90000
-        assertThat(result.getChangeSummary()).contains("No changes were made [GH-90000]");
+        assertThat(result.getChangeSummary()).contains("No changes were made");
     }
 
     @Test
     void shouldValidateNewName() { // GH-90000
-        assertThat(refactoring.isNewNameValid("valid_name [GH-90000]")).isTrue();
-        assertThat(refactoring.isNewNameValid("validName123 [GH-90000]")).isTrue();
-        assertThat(refactoring.isNewNameValid("_private_name [GH-90000]")).isTrue();
+        assertThat(refactoring.isNewNameValid("valid_name")).isTrue();
+        assertThat(refactoring.isNewNameValid("validName123")).isTrue();
+        assertThat(refactoring.isNewNameValid("_private_name")).isTrue();
 
         assertThat(refactoring.isNewNameValid(null)).isFalse(); // GH-90000
-        assertThat(refactoring.isNewNameValid(" [GH-90000]")).isFalse();
-        assertThat(refactoring.isNewNameValid("123invalid [GH-90000]")).isFalse();
-        assertThat(refactoring.isNewNameValid("invalid-name [GH-90000]")).isFalse();
-        assertThat(refactoring.isNewNameValid("invalid.name [GH-90000]")).isFalse();
+        assertThat(refactoring.isNewNameValid("")).isFalse();
+        assertThat(refactoring.isNewNameValid("123invalid")).isFalse();
+        assertThat(refactoring.isNewNameValid("invalid-name")).isFalse();
+        assertThat(refactoring.isNewNameValid("invalid.name")).isFalse();
     }
 
     @Test
@@ -171,7 +171,7 @@ class PythonRenameRefactoringTest {
         // Non-existent file
         var invalidFileContext =
                 createContext( // GH-90000
-                        Path.of("non_existent.py [GH-90000]"),
+                        Path.of("non_existent.py"),
                         PythonElementType.FUNCTION.name(), // GH-90000
                         "some_name",
                         NEW_NAME,
@@ -180,7 +180,7 @@ class PythonRenameRefactoringTest {
         assertThat(refactoring.canApply(invalidFileContext)).isFalse(); // GH-90000
 
         // Non-Python file
-        var nonPythonFile = tempDir.resolve("not_python.txt [GH-90000]");
+        var nonPythonFile = tempDir.resolve("not_python.txt");
         try {
             Files.writeString(nonPythonFile, "Not a Python file"); // GH-90000
 

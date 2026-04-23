@@ -57,7 +57,10 @@ import java.util.stream.Collectors;
  *     <td>Combine multiple streams</td>
  *   </tr>
  * </table>
- */
+  * @doc.type class
+ * @doc.purpose Provides astnode functionality.
+ * @doc.layer product
+*/
 public class ASTNode {
 
     private final String type;

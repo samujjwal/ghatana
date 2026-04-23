@@ -20,7 +20,7 @@ import static org.mockito.Mockito.mock;
 /**
  * Comprehensive tests for ProbabilisticAgent, ModelInference, ConfidenceCalibrator.
  */
-@DisplayName("Probabilistic Agent [GH-90000]")
+@DisplayName("Probabilistic Agent")
 class ProbabilisticAgentTest {
 
     private AgentContext ctx;
@@ -28,9 +28,9 @@ class ProbabilisticAgentTest {
     @BeforeEach
     void setUp() { // GH-90000
         ctx = AgentContext.builder() // GH-90000
-                .turnId("turn-1 [GH-90000]")
-                .agentId("test-agent [GH-90000]")
-                .tenantId("test-tenant [GH-90000]")
+                .turnId("turn-1")
+                .agentId("test-agent")
+                .tenantId("test-tenant")
                 .memoryStore(mock(MemoryStore.class)) // GH-90000
                 .build(); // GH-90000
     }
@@ -76,7 +76,7 @@ class ProbabilisticAgentTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("ConfidenceCalibrator [GH-90000]")
+    @DisplayName("ConfidenceCalibrator")
     class CalibratorTests {
 
         @Test void identityReturnsRawValue() { // GH-90000
@@ -127,7 +127,7 @@ class ProbabilisticAgentTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Agent Processing [GH-90000]")
+    @DisplayName("Agent Processing")
     class ProcessingTests {
 
         @Test void basicInference() { // GH-90000
@@ -135,7 +135,7 @@ class ProbabilisticAgentTest {
             ProbabilisticAgent agent = new ProbabilisticAgent("ml-agent", model); // GH-90000
 
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
-                    .agentId("ml-agent [GH-90000]")
+                    .agentId("ml-agent")
                     .type(AgentType.PROBABILISTIC) // GH-90000
                     .confidenceThreshold(0.5) // GH-90000
                     .build(); // GH-90000
@@ -154,7 +154,7 @@ class ProbabilisticAgentTest {
             ProbabilisticAgent agent = new ProbabilisticAgent("low-conf", model); // GH-90000
 
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
-                    .agentId("low-conf [GH-90000]")
+                    .agentId("low-conf")
                     .type(AgentType.PROBABILISTIC) // GH-90000
                     .confidenceThreshold(0.85) // GH-90000
                     .build(); // GH-90000
@@ -170,7 +170,7 @@ class ProbabilisticAgentTest {
             ProbabilisticAgent agent = new ProbabilisticAgent("shadow-agent", model); // GH-90000
 
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
-                    .agentId("shadow-agent [GH-90000]")
+                    .agentId("shadow-agent")
                     .type(AgentType.PROBABILISTIC) // GH-90000
                     .shadowMode(true) // GH-90000
                     .build(); // GH-90000
@@ -182,14 +182,14 @@ class ProbabilisticAgentTest {
         }
 
         @Test void fallbackOnPrimaryFailure() { // GH-90000
-            ModelInference primary = failingModel("primary [GH-90000]");
+            ModelInference primary = failingModel("primary");
             ModelInference fallback = mockModel("fallback", Map.of("ok", true), 0.8); // GH-90000
 
             ProbabilisticAgent agent = new ProbabilisticAgent("fallback-test", primary); // GH-90000
             agent.setFallbackModels(List.of(fallback)); // GH-90000
 
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
-                    .agentId("fallback-test [GH-90000]")
+                    .agentId("fallback-test")
                     .type(AgentType.PROBABILISTIC) // GH-90000
                     .confidenceThreshold(0.5) // GH-90000
                     .build(); // GH-90000
@@ -202,14 +202,14 @@ class ProbabilisticAgentTest {
         }
 
         @Test void allModelsFail() { // GH-90000
-            ModelInference primary = failingModel("primary [GH-90000]");
-            ModelInference fb1 = failingModel("fallback-1 [GH-90000]");
+            ModelInference primary = failingModel("primary");
+            ModelInference fb1 = failingModel("fallback-1");
 
             ProbabilisticAgent agent = new ProbabilisticAgent("all-fail", primary); // GH-90000
             agent.setFallbackModels(List.of(fb1)); // GH-90000
 
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
-                    .agentId("all-fail [GH-90000]")
+                    .agentId("all-fail")
                     .type(AgentType.PROBABILISTIC) // GH-90000
                     .build(); // GH-90000
 
@@ -224,7 +224,7 @@ class ProbabilisticAgentTest {
             ProbabilisticAgent agent = new ProbabilisticAgent("cal-test", model); // GH-90000
 
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
-                    .agentId("cal-test [GH-90000]")
+                    .agentId("cal-test")
                     .type(AgentType.PROBABILISTIC) // GH-90000
                     .confidenceThreshold(0.3) // GH-90000
                     .calibrationMethod(ConfidenceCalibrator.Method.TEMPERATURE) // GH-90000
@@ -239,29 +239,29 @@ class ProbabilisticAgentTest {
     }
 
     @Nested
-    @DisplayName("Lifecycle [GH-90000]")
+    @DisplayName("Lifecycle")
     class LifecycleTests {
 
         @Test void initializeSetsDescriptor() { // GH-90000
-            ProbabilisticAgent agent = new ProbabilisticAgent("lifecycle-test [GH-90000]");
+            ProbabilisticAgent agent = new ProbabilisticAgent("lifecycle-test");
 
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
-                    .agentId("lifecycle-test [GH-90000]")
+                    .agentId("lifecycle-test")
                     .type(AgentType.PROBABILISTIC) // GH-90000
-                    .modelName("test-model [GH-90000]")
-                    .modelVersion("1.0 [GH-90000]")
+                    .modelName("test-model")
+                    .modelVersion("1.0")
                     .build(); // GH-90000
 
             runOnEventloop(() -> agent.initialize(config)); // GH-90000
-            assertThat(agent.descriptor().getAgentId()).isEqualTo("lifecycle-test [GH-90000]");
+            assertThat(agent.descriptor().getAgentId()).isEqualTo("lifecycle-test");
         }
 
         @Test void setPrimaryModelAfterInit() { // GH-90000
-            ProbabilisticAgent agent = new ProbabilisticAgent("late-model [GH-90000]");
+            ProbabilisticAgent agent = new ProbabilisticAgent("late-model");
             ModelInference model = mockModel("late", Map.of("result", "ok"), 0.9); // GH-90000
 
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
-                    .agentId("late-model [GH-90000]")
+                    .agentId("late-model")
                     .type(AgentType.PROBABILISTIC) // GH-90000
                     .confidenceThreshold(0.5) // GH-90000
                     .build(); // GH-90000

@@ -51,7 +51,11 @@ import java.util.function.Function;
  *       })
  *       .build();
  * }</pre>
- */
+  * @doc.type record
+ * @doc.purpose Provides stream operator functionality.
+ * @doc.layer product
+ * @doc.pattern Operator
+*/
 public class StreamOperator extends BaseOperator {
 
     private static final String CAPABILITY_WINDOWED = "windowed-processing";

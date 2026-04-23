@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test;
  * @doc.layer test
  * @doc.pattern IntegrationTest
  */
-@DisplayName("SDLC Integration Tests [GH-90000]")
+@DisplayName("SDLC Integration Tests")
 class SDLCIntegrationTest extends EventloopTestBase {
 
   private DatabaseClient dbClient;
@@ -46,7 +46,7 @@ class SDLCIntegrationTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should execute complete requirements phase workflow [GH-90000]")
+  @DisplayName("Should execute complete requirements phase workflow")
   void shouldExecuteRequirementsPhase() { // GH-90000
     // GIVEN
     IntakeStep intakeStep = new IntakeStep(dbClient, eventClient); // GH-90000
@@ -63,14 +63,14 @@ class SDLCIntegrationTest extends EventloopTestBase {
 
     // THEN
     assertThat(result).isNotNull(); // GH-90000
-    assertThat(result.getWorkflowId()).isEqualTo("sdlc-workflow-001 [GH-90000]");
-    assertThat(result.getTenantId()).isEqualTo("tenant-test [GH-90000]");
-    assertThat(result.getData()).containsKey("requirementId [GH-90000]");
-    assertThat(result.getData()).containsKey("source [GH-90000]");
+    assertThat(result.getWorkflowId()).isEqualTo("sdlc-workflow-001");
+    assertThat(result.getTenantId()).isEqualTo("tenant-test");
+    assertThat(result.getData()).containsKey("requirementId");
+    assertThat(result.getData()).containsKey("source");
   }
 
   @Test
-  @DisplayName("Should maintain trace links across phases [GH-90000]")
+  @DisplayName("Should maintain trace links across phases")
   void shouldMaintainTraceLinks() { // GH-90000
     // GIVEN
     IntakeStep step = new IntakeStep(dbClient, eventClient); // GH-90000
@@ -95,7 +95,7 @@ class SDLCIntegrationTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should handle workflow context propagation [GH-90000]")
+  @DisplayName("Should handle workflow context propagation")
   void shouldPropagateContext() { // GH-90000
     // GIVEN
     IntakeStep step = new IntakeStep(dbClient, eventClient); // GH-90000
@@ -110,13 +110,13 @@ class SDLCIntegrationTest extends EventloopTestBase {
 
     // THEN
     assertThat(result).isNotNull(); // GH-90000
-    assertThat(result.getWorkflowId()).isEqualTo("prop-test [GH-90000]");
-    assertThat(result.getTenantId()).isEqualTo("tenant-abc [GH-90000]");
-    assertThat(result.get("customProperty [GH-90000]")).isEqualTo("preserved-value [GH-90000]");
+    assertThat(result.getWorkflowId()).isEqualTo("prop-test");
+    assertThat(result.getTenantId()).isEqualTo("tenant-abc");
+    assertThat(result.get("customProperty")).isEqualTo("preserved-value");
   }
 
   @Test
-  @DisplayName("Should preserve baseline immutability [GH-90000]")
+  @DisplayName("Should preserve baseline immutability")
   void shouldPreserveBaselineImmutability() { // GH-90000
     // GIVEN
     IntakeStep step = new IntakeStep(dbClient, eventClient); // GH-90000
@@ -131,8 +131,8 @@ class SDLCIntegrationTest extends EventloopTestBase {
     WorkflowContext result = runPromise(() -> step.execute(context)); // GH-90000
 
     // THEN - Original context should remain unchanged
-    assertThat(context.get("content [GH-90000]")).isEqualTo(originalContent);
+    assertThat(context.get("content")).isEqualTo(originalContent);
     assertThat(result).isNotNull(); // GH-90000
-    assertThat(result.getData()).containsKey("requirementId [GH-90000]");
+    assertThat(result.getData()).containsKey("requirementId");
   }
 }

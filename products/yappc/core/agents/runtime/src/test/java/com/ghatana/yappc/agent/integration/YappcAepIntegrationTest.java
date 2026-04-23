@@ -33,7 +33,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("YAPPC → AEP Migration Acceptance Tests [GH-90000]")
+@DisplayName("YAPPC → AEP Migration Acceptance Tests")
 class YappcAepIntegrationTest extends EventloopTestBase {
 
     private YappcAepIntegration integration;
@@ -63,49 +63,49 @@ class YappcAepIntegrationTest extends EventloopTestBase {
         );
 
         when(registryService.listAgents()).thenReturn(Promise.of(allAgents)); // GH-90000
-        when(registryService.getAgent("agent.yappc.architecture.domain-modeler [GH-90000]"))
+        when(registryService.getAgent("agent.yappc.architecture.domain-modeler"))
                 .thenReturn(Promise.of(Optional.of(allAgents.get(0)))); // GH-90000
-        when(registryService.getAgent("agent.yappc.implementation.code-reviewer [GH-90000]"))
+        when(registryService.getAgent("agent.yappc.implementation.code-reviewer"))
                 .thenReturn(Promise.of(Optional.of(allAgents.get(2)))); // GH-90000
-        when(registryService.getAgent("agent.yappc.nonexistent [GH-90000]"))
+        when(registryService.getAgent("agent.yappc.nonexistent"))
                 .thenReturn(Promise.of(Optional.empty())); // GH-90000
-        when(registryService.findByCapability("architecture [GH-90000]"))
+        when(registryService.findByCapability("architecture"))
                 .thenReturn(Promise.of(List.of(allAgents.get(0), allAgents.get(1)))); // GH-90000
-        when(registryService.findByCapability("testing [GH-90000]"))
+        when(registryService.findByCapability("testing"))
                 .thenReturn(Promise.of(List.of(allAgents.get(3), allAgents.get(4)))); // GH-90000
-        when(registryService.findByCapability("validation [GH-90000]"))
+        when(registryService.findByCapability("validation"))
                 .thenReturn(Promise.of(List.of(allAgents.get(5)))); // GH-90000
 
         integration = new YappcAepIntegration(registryService); // GH-90000
     }
 
     @Test
-    @DisplayName("listYappcAgents filters to only YAPPC-owned agents [GH-90000]")
+    @DisplayName("listYappcAgents filters to only YAPPC-owned agents")
     void listYappcAgentsFiltersCorrectly() { // GH-90000
         List<CatalogAgentEntry> result = runPromise(() -> integration.listYappcAgents()); // GH-90000
 
         assertThat(result).hasSize(5); // GH-90000
         assertThat(result).allSatisfy(e -> // GH-90000
-                assertThat(e.getId()).startsWith("agent.yappc. [GH-90000]"));
+                assertThat(e.getId()).startsWith("agent.yappc."));
     }
 
     @Test
-    @DisplayName("getAgentsByPhase groups YAPPC agents by SDLC phase [GH-90000]")
+    @DisplayName("getAgentsByPhase groups YAPPC agents by SDLC phase")
     void getAgentsByPhaseGroupsCorrectly() { // GH-90000
         Map<String, List<CatalogAgentEntry>> byPhase =
                 runPromise(() -> integration.getAgentsByPhase()); // GH-90000
 
         assertThat(byPhase).containsOnlyKeys("architecture", "implementation", "testing"); // GH-90000
-        assertThat(byPhase.get("architecture [GH-90000]")).hasSize(2);
-        assertThat(byPhase.get("implementation [GH-90000]")).hasSize(1);
-        assertThat(byPhase.get("testing [GH-90000]")).hasSize(2);
+        assertThat(byPhase.get("architecture")).hasSize(2);
+        assertThat(byPhase.get("implementation")).hasSize(1);
+        assertThat(byPhase.get("testing")).hasSize(2);
     }
 
     @Test
-    @DisplayName("getAgentsForPhase returns agents for a specific SDLC phase [GH-90000]")
+    @DisplayName("getAgentsForPhase returns agents for a specific SDLC phase")
     void getAgentsForPhaseReturnsCorrectSubset() { // GH-90000
         List<CatalogAgentEntry> testing =
-                runPromise(() -> integration.getAgentsForPhase("testing [GH-90000]"));
+                runPromise(() -> integration.getAgentsForPhase("testing"));
 
         assertThat(testing).hasSize(2); // GH-90000
         assertThat(testing).extracting(CatalogAgentEntry::getId) // GH-90000
@@ -115,47 +115,47 @@ class YappcAepIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("resolveByStepName maps step names to catalog IDs [GH-90000]")
+    @DisplayName("resolveByStepName maps step names to catalog IDs")
     void resolveByStepNameMapsCorrectly() { // GH-90000
         Optional<CatalogAgentEntry> result =
-                runPromise(() -> integration.resolveByStepName("architecture.domain-modeler [GH-90000]"));
+                runPromise(() -> integration.resolveByStepName("architecture.domain-modeler"));
 
         assertThat(result).isPresent(); // GH-90000
         assertThat(result.get().getId()) // GH-90000
-                .isEqualTo("agent.yappc.architecture.domain-modeler [GH-90000]");
+                .isEqualTo("agent.yappc.architecture.domain-modeler");
     }
 
     @Test
-    @DisplayName("resolveByStepName returns empty for unknown steps [GH-90000]")
+    @DisplayName("resolveByStepName returns empty for unknown steps")
     void resolveByStepNameReturnsEmptyForUnknown() { // GH-90000
         Optional<CatalogAgentEntry> result =
-                runPromise(() -> integration.resolveByStepName("nonexistent [GH-90000]"));
+                runPromise(() -> integration.resolveByStepName("nonexistent"));
 
         assertThat(result).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("findByCapability returns only YAPPC agents for a given capability [GH-90000]")
+    @DisplayName("findByCapability returns only YAPPC agents for a given capability")
     void findByCapabilityFiltersToYappcOnly() { // GH-90000
         List<CatalogAgentEntry> result =
-                runPromise(() -> integration.findByCapability("architecture [GH-90000]"));
+                runPromise(() -> integration.findByCapability("architecture"));
 
         assertThat(result).hasSize(2); // GH-90000
         assertThat(result).allSatisfy(e -> // GH-90000
-                assertThat(e.getId()).startsWith("agent.yappc. [GH-90000]"));
+                assertThat(e.getId()).startsWith("agent.yappc."));
     }
 
     @Test
-    @DisplayName("findByCapability excludes non-YAPPC agents [GH-90000]")
+    @DisplayName("findByCapability excludes non-YAPPC agents")
     void findByCapabilityExcludesNonYappc() { // GH-90000
         List<CatalogAgentEntry> result =
-                runPromise(() -> integration.findByCapability("validation [GH-90000]"));
+                runPromise(() -> integration.findByCapability("validation"));
 
         assertThat(result).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("getAllPhases returns distinct SDLC phases from YAPPC agents [GH-90000]")
+    @DisplayName("getAllPhases returns distinct SDLC phases from YAPPC agents")
     void getAllPhasesReturnsDistinctPhases() { // GH-90000
         Set<String> phases = runPromise(() -> integration.getAllPhases()); // GH-90000
 
@@ -164,7 +164,7 @@ class YappcAepIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("yappcAgentCount returns correct count [GH-90000]")
+    @DisplayName("yappcAgentCount returns correct count")
     void yappcAgentCountIsCorrect() { // GH-90000
         Integer count = runPromise(() -> integration.yappcAgentCount()); // GH-90000
 

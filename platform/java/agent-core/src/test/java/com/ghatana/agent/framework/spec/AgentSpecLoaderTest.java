@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("AgentSpecLoader [GH-90000]")
+@DisplayName("AgentSpecLoader")
 class AgentSpecLoaderTest {
 
     private final AgentSpecLoader loader = new AgentSpecLoader(); // GH-90000
@@ -40,11 +40,11 @@ class AgentSpecLoaderTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("loadFromString() — minimal spec [GH-90000]")
+    @DisplayName("loadFromString() — minimal spec")
     class MinimalSpec {
 
         @Test
-        @DisplayName("loads a spec with only metadata and identity [GH-90000]")
+        @DisplayName("loads a spec with only metadata and identity")
         void minimalSpec() throws IOException { // GH-90000
             String yaml = """
                     metadata:
@@ -66,15 +66,15 @@ class AgentSpecLoaderTest {
 
             AgentSpec spec = loader.loadFromString(yaml); // GH-90000
 
-            assertThat(spec.getMetadata().id()).isEqualTo("agent.test.minimal [GH-90000]");
-            assertThat(spec.getMetadata().name()).isEqualTo("Minimal Agent [GH-90000]");
-            assertThat(spec.getMetadata().version()).isEqualTo("1.0.0 [GH-90000]");
-            assertThat(spec.getMetadata().status()).isEqualTo("active [GH-90000]");
-            assertThat(spec.getMetadata().summary()).isEqualTo("A minimal test agent [GH-90000]");
+            assertThat(spec.getMetadata().id()).isEqualTo("agent.test.minimal");
+            assertThat(spec.getMetadata().name()).isEqualTo("Minimal Agent");
+            assertThat(spec.getMetadata().version()).isEqualTo("1.0.0");
+            assertThat(spec.getMetadata().status()).isEqualTo("active");
+            assertThat(spec.getMetadata().summary()).isEqualTo("A minimal test agent");
 
             assertThat(spec.getIdentity().agentType()).isEqualTo(AgentType.DETERMINISTIC); // GH-90000
-            assertThat(spec.getIdentity().roles()).containsExactly("rule-evaluator [GH-90000]");
-            assertThat(spec.getIdentity().criticality()).isEqualTo("low [GH-90000]");
+            assertThat(spec.getIdentity().roles()).containsExactly("rule-evaluator");
+            assertThat(spec.getIdentity().criticality()).isEqualTo("low");
             assertThat(spec.getIdentity().determinismGuarantee()).isEqualTo(DeterminismGuarantee.FULL); // GH-90000
             assertThat(spec.getIdentity().stateMutability()).isEqualTo(StateMutability.STATELESS); // GH-90000
             assertThat(spec.getIdentity().failureMode()).isEqualTo(FailureMode.FAIL_FAST); // GH-90000
@@ -87,7 +87,7 @@ class AgentSpecLoaderTest {
         }
 
         @Test
-        @DisplayName("defaults agentSpecVersion to '1.0.0' when absent [GH-90000]")
+        @DisplayName("defaults agentSpecVersion to '1.0.0' when absent")
         void defaultsVersion() throws IOException { // GH-90000
             String yaml = """
                     metadata:
@@ -108,7 +108,7 @@ class AgentSpecLoaderTest {
                     """;
 
             AgentSpec spec = loader.loadFromString(yaml); // GH-90000
-            assertThat(spec.getAgentSpecVersion()).isEqualTo("1.0.0 [GH-90000]");
+            assertThat(spec.getAgentSpecVersion()).isEqualTo("1.0.0");
         }
     }
 
@@ -117,43 +117,43 @@ class AgentSpecLoaderTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Agent type alias resolution [GH-90000]")
+    @DisplayName("Agent type alias resolution")
     class TypeAliasResolution {
 
         @Test
-        @DisplayName("'llm' resolves to PROBABILISTIC [GH-90000]")
+        @DisplayName("'llm' resolves to PROBABILISTIC")
         void llmAlias() throws IOException { // GH-90000
-            assertThat(loadType("llm [GH-90000]")).isEqualTo(AgentType.PROBABILISTIC);
+            assertThat(loadType("llm")).isEqualTo(AgentType.PROBABILISTIC);
         }
 
         @Test
-        @DisplayName("'rule-based' resolves to DETERMINISTIC [GH-90000]")
+        @DisplayName("'rule-based' resolves to DETERMINISTIC")
         void ruleBasedAlias() throws IOException { // GH-90000
-            assertThat(loadType("rule-based [GH-90000]")).isEqualTo(AgentType.DETERMINISTIC);
+            assertThat(loadType("rule-based")).isEqualTo(AgentType.DETERMINISTIC);
         }
 
         @Test
-        @DisplayName("'policy' resolves to DETERMINISTIC [GH-90000]")
+        @DisplayName("'policy' resolves to DETERMINISTIC")
         void policyAlias() throws IOException { // GH-90000
-            assertThat(loadType("policy [GH-90000]")).isEqualTo(AgentType.DETERMINISTIC);
+            assertThat(loadType("policy")).isEqualTo(AgentType.DETERMINISTIC);
         }
 
         @Test
-        @DisplayName("'stream-processor' resolves to STREAM_PROCESSOR [GH-90000]")
+        @DisplayName("'stream-processor' resolves to STREAM_PROCESSOR")
         void streamProcessorAlias() throws IOException { // GH-90000
-            assertThat(loadType("stream-processor [GH-90000]")).isEqualTo(AgentType.STREAM_PROCESSOR);
+            assertThat(loadType("stream-processor")).isEqualTo(AgentType.STREAM_PROCESSOR);
         }
 
         @Test
-        @DisplayName("'planning' resolves to PLANNING [GH-90000]")
+        @DisplayName("'planning' resolves to PLANNING")
         void planningAlias() throws IOException { // GH-90000
-            assertThat(loadType("planning [GH-90000]")).isEqualTo(AgentType.PLANNING);
+            assertThat(loadType("planning")).isEqualTo(AgentType.PLANNING);
         }
 
         @Test
-        @DisplayName("'hybrid' resolves to HYBRID [GH-90000]")
+        @DisplayName("'hybrid' resolves to HYBRID")
         void hybridType() throws IOException { // GH-90000
-            assertThat(loadType("hybrid [GH-90000]")).isEqualTo(AgentType.HYBRID);
+            assertThat(loadType("hybrid")).isEqualTo(AgentType.HYBRID);
         }
 
         private AgentType loadType(String alias) throws IOException { // GH-90000
@@ -183,11 +183,11 @@ class AgentSpecLoaderTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Smart defaults per agent type [GH-90000]")
+    @DisplayName("Smart defaults per agent type")
     class SmartDefaults {
 
         @Test
-        @DisplayName("DETERMINISTIC defaults: full determinism, stateless, fail-fast [GH-90000]")
+        @DisplayName("DETERMINISTIC defaults: full determinism, stateless, fail-fast")
         void deterministicDefaults() throws IOException { // GH-90000
             String yaml = """
                     metadata:
@@ -211,7 +211,7 @@ class AgentSpecLoaderTest {
         }
 
         @Test
-        @DisplayName("REACTIVE defaults: stateless, fail-fast [GH-90000]")
+        @DisplayName("REACTIVE defaults: stateless, fail-fast")
         void reactiveDefaults() throws IOException { // GH-90000
             String yaml = """
                     metadata:
@@ -234,7 +234,7 @@ class AgentSpecLoaderTest {
         }
 
         @Test
-        @DisplayName("STREAM_PROCESSOR defaults: local-state, retry on error [GH-90000]")
+        @DisplayName("STREAM_PROCESSOR defaults: local-state, retry on error")
         void streamProcessorDefaults() throws IOException { // GH-90000
             String yaml = """
                     metadata:
@@ -262,7 +262,7 @@ class AgentSpecLoaderTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Full spec loading — all 18 sections [GH-90000]")
+    @DisplayName("Full spec loading — all 18 sections")
     class FullSpec {
 
         private static final String FULL_YAML = """
@@ -425,24 +425,24 @@ class AgentSpecLoaderTest {
                 """;
 
         @Test
-        @DisplayName("loads all 18 spec sections [GH-90000]")
+        @DisplayName("loads all 18 spec sections")
         void loadsAllSections() throws IOException { // GH-90000
             AgentSpec spec = loader.loadFromString(FULL_YAML); // GH-90000
 
             // Metadata
-            assertThat(spec.getMetadata().id()).isEqualTo("agent.full.test [GH-90000]");
+            assertThat(spec.getMetadata().id()).isEqualTo("agent.full.test");
             assertThat(spec.getMetadata().tags()).containsExactly("test", "platform"); // GH-90000
             assertThat(spec.getMetadata().owners()).hasSize(1); // GH-90000
 
             // Identity
             assertThat(spec.getIdentity().agentType()).isEqualTo(AgentType.PROBABILISTIC); // GH-90000
-            assertThat(spec.getIdentity().agentSubtype()).isEqualTo("llm-rag [GH-90000]");
+            assertThat(spec.getIdentity().agentSubtype()).isEqualTo("llm-rag");
             assertThat(spec.getIdentity().roles()).containsExactly("retriever", "responder"); // GH-90000
-            assertThat(spec.getIdentity().criticality()).isEqualTo("high [GH-90000]");
+            assertThat(spec.getIdentity().criticality()).isEqualTo("high");
 
             // PurposeModel
             assertThat(spec.getPurposeModel()).isNotNull(); // GH-90000
-            assertThat(spec.getPurposeModel().mission()).startsWith("Deliver accurate answers [GH-90000]");
+            assertThat(spec.getPurposeModel().mission()).startsWith("Deliver accurate answers");
             assertThat(spec.getPurposeModel().goals()).hasSize(2); // GH-90000
 
             // Scope
@@ -452,32 +452,32 @@ class AgentSpecLoaderTest {
             // Capabilities
             assertThat(spec.getCapabilities()).isNotNull(); // GH-90000
             assertThat(spec.getCapabilities().declaredCapabilities()).hasSize(2); // GH-90000
-            assertThat(spec.getCapabilities().declaredCapabilities().get(0).id()).isEqualTo("cap.retrieve [GH-90000]");
+            assertThat(spec.getCapabilities().declaredCapabilities().get(0).id()).isEqualTo("cap.retrieve");
 
             // ReasoningProfile
             assertThat(spec.getReasoningProfile()).isNotNull(); // GH-90000
-            assertThat(spec.getReasoningProfile().primaryReasoner()).isEqualTo("llm [GH-90000]");
+            assertThat(spec.getReasoningProfile().primaryReasoner()).isEqualTo("llm");
             assertThat(spec.getReasoningProfile().reasonerPortfolio()).hasSize(2); // GH-90000
-            assertThat(spec.getReasoningProfile().reasonerPortfolio().get(1).engine()).isEqualTo("gpt-4o [GH-90000]");
+            assertThat(spec.getReasoningProfile().reasonerPortfolio().get(1).engine()).isEqualTo("gpt-4o");
             assertThat(spec.getReasoningProfile().confidenceModel()).isNotNull(); // GH-90000
             assertThat(spec.getReasoningProfile().confidenceModel().autoApproveThreshold()).isEqualTo(0.85); // GH-90000
 
             // ExecutionModel
             assertThat(spec.getExecutionModel()).isNotNull(); // GH-90000
             assertThat(spec.getExecutionModel().invocationModes()).containsExactly("request", "event"); // GH-90000
-            assertThat(spec.getExecutionModel().retryPolicy()).containsKey("maxAttempts [GH-90000]");
+            assertThat(spec.getExecutionModel().retryPolicy()).containsKey("maxAttempts");
 
             // Interfaces
             assertThat(spec.getInterfaces()).isNotNull(); // GH-90000
             assertThat(spec.getInterfaces().inputs()).hasSize(1); // GH-90000
-            assertThat(spec.getInterfaces().inputs().get(0).name()).isEqualTo("userQuery [GH-90000]");
-            assertThat(spec.getInterfaces().eventsConsumed()).containsExactly("UserMessageEvent [GH-90000]");
+            assertThat(spec.getInterfaces().inputs().get(0).name()).isEqualTo("userQuery");
+            assertThat(spec.getInterfaces().eventsConsumed()).containsExactly("UserMessageEvent");
 
             // MemoryModel
             assertThat(spec.getMemoryModel()).isNotNull(); // GH-90000
             assertThat(spec.getMemoryModel().memoryBindings()).hasSize(2); // GH-90000
             assertThat(spec.getMemoryModel().memoryTypes()).containsExactlyInAnyOrder("episodic","semantic","working"); // GH-90000
-            assertThat(spec.getMemoryModel().writePolicies()).containsKey("allowCreate [GH-90000]");
+            assertThat(spec.getMemoryModel().writePolicies()).containsKey("allowCreate");
 
             // ToolsAndResources
             assertThat(spec.getToolsAndResources()).isNotNull(); // GH-90000
@@ -486,16 +486,16 @@ class AgentSpecLoaderTest {
             // Governance
             assertThat(spec.getGovernance()).isNotNull(); // GH-90000
             assertThat(spec.getGovernance().policyRefs()).hasSize(2); // GH-90000
-            assertThat(spec.getGovernance().policyRefs().get(0).id()).isEqualTo("gov.data-privacy-v2 [GH-90000]");
-            assertThat(spec.getGovernance().policyRefs().get(0).enforcementMode()).isEqualTo("hard [GH-90000]");
+            assertThat(spec.getGovernance().policyRefs().get(0).id()).isEqualTo("gov.data-privacy-v2");
+            assertThat(spec.getGovernance().policyRefs().get(0).enforcementMode()).isEqualTo("hard");
             // Second item is a plain string ref
-            assertThat(spec.getGovernance().policyRefs().get(1).id()).isEqualTo("gov.rate-limiting-v1 [GH-90000]");
+            assertThat(spec.getGovernance().policyRefs().get(1).id()).isEqualTo("gov.rate-limiting-v1");
             assertThat(spec.getGovernance().dataHandling()).isNotNull(); // GH-90000
-            assertThat(spec.getGovernance().riskProfile().get("impactLevel [GH-90000]")).isEqualTo("high [GH-90000]");
+            assertThat(spec.getGovernance().riskProfile().get("impactLevel")).isEqualTo("high");
 
             // LearningModel
             assertThat(spec.getLearningModel()).isNotNull(); // GH-90000
-            assertThat(spec.getLearningModel().learningLevel()).isEqualTo("L2 [GH-90000]");
+            assertThat(spec.getLearningModel().learningLevel()).isEqualTo("L2");
             assertThat(spec.getLearningModel().adaptationTargets()).hasSize(2); // GH-90000
 
             // Evaluation
@@ -505,7 +505,7 @@ class AgentSpecLoaderTest {
             // Observability
             assertThat(spec.getObservability()).isNotNull(); // GH-90000
             assertThat(spec.getObservability().traceEnabled()).isTrue(); // GH-90000
-            assertThat(spec.getObservability().auditMode()).isEqualTo("full [GH-90000]");
+            assertThat(spec.getObservability().auditMode()).isEqualTo("full");
             assertThat(spec.getObservability().loggedArtifacts()).hasSize(4); // GH-90000
 
             // Interoperability
@@ -521,9 +521,9 @@ class AgentSpecLoaderTest {
 
             // Deployment
             assertThat(spec.getDeployment()).isNotNull(); // GH-90000
-            assertThat(spec.getDeployment().runtimeClass()).isEqualTo("com.ghatana.agent.framework.GaaAgent [GH-90000]");
+            assertThat(spec.getDeployment().runtimeClass()).isEqualTo("com.ghatana.agent.framework.GaaAgent");
             assertThat(spec.getDeployment().scalingModel()).isNotNull(); // GH-90000
-            assertThat(spec.getDeployment().scalingModel().get("mode [GH-90000]")).isEqualTo("horizontal [GH-90000]");
+            assertThat(spec.getDeployment().scalingModel().get("mode")).isEqualTo("horizontal");
             assertThat(spec.getDeployment().dependencies()).containsExactly("vector-store-svc","llm-gateway"); // GH-90000
         }
     }
@@ -533,11 +533,11 @@ class AgentSpecLoaderTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("extractDefinition() [GH-90000]")
+    @DisplayName("extractDefinition()")
     class ExtractDefinition {
 
         @Test
-        @DisplayName("bridges full spec to runtime AgentDefinition [GH-90000]")
+        @DisplayName("bridges full spec to runtime AgentDefinition")
         void bridgesSpec() throws IOException { // GH-90000
             String yaml = """
                     metadata:
@@ -571,15 +571,15 @@ class AgentSpecLoaderTest {
             AgentSpec spec = loader.loadFromString(yaml); // GH-90000
             AgentDefinition def = loader.extractDefinition(spec); // GH-90000
 
-            assertThat(def.getId()).isEqualTo("agent.extract.test [GH-90000]");
-            assertThat(def.getName()).isEqualTo("Extract Test [GH-90000]");
-            assertThat(def.getVersion()).isEqualTo("1.1.0 [GH-90000]");
+            assertThat(def.getId()).isEqualTo("agent.extract.test");
+            assertThat(def.getName()).isEqualTo("Extract Test");
+            assertThat(def.getVersion()).isEqualTo("1.1.0");
             assertThat(def.getType()).isEqualTo(AgentType.DETERMINISTIC); // GH-90000
             assertThat(def.getDeterminism()).isEqualTo(DeterminismGuarantee.FULL); // GH-90000
             assertThat(def.getStateMutability()).isEqualTo(StateMutability.STATELESS); // GH-90000
             assertThat(def.getFailureMode()).isEqualTo(FailureMode.FAIL_FAST); // GH-90000
             // Governance refs should appear as labels
-            assertThat(def.getLabels()).containsKey("gov.policy.gov_policy-a [GH-90000]");
+            assertThat(def.getLabels()).containsKey("gov.policy.gov_policy-a");
             // Learning level as label
             assertThat(def.getLabels()).containsEntry("learningLevel", "L0"); // GH-90000
             // Namespace and status from metadata
@@ -588,7 +588,7 @@ class AgentSpecLoaderTest {
         }
 
         @Test
-        @DisplayName("IOContract uses JSON as default format, name as typeName [GH-90000]")
+        @DisplayName("IOContract uses JSON as default format, name as typeName")
         void ioContractDefaultFormat() throws IOException { // GH-90000
             String yaml = """
                     metadata:
@@ -608,15 +608,15 @@ class AgentSpecLoaderTest {
             AgentDefinition def = loader.extractDefinition(spec); // GH-90000
 
             assertThat(def.getInputContract()).isNotNull(); // GH-90000
-            assertThat(def.getInputContract().typeName()).isEqualTo("IncomingEvent [GH-90000]");
-            assertThat(def.getInputContract().format()).isEqualTo("JSON [GH-90000]");
+            assertThat(def.getInputContract().typeName()).isEqualTo("IncomingEvent");
+            assertThat(def.getInputContract().format()).isEqualTo("JSON");
             assertThat(def.getOutputContract()).isNotNull(); // GH-90000
-            assertThat(def.getOutputContract().typeName()).isEqualTo("ProcessedEvent [GH-90000]");
-            assertThat(def.getOutputContract().format()).isEqualTo("JSON [GH-90000]");
+            assertThat(def.getOutputContract().typeName()).isEqualTo("ProcessedEvent");
+            assertThat(def.getOutputContract().format()).isEqualTo("JSON");
         }
 
         @Test
-        @DisplayName("IOContract derives PROTOBUF format from schema ref [GH-90000]")
+        @DisplayName("IOContract derives PROTOBUF format from schema ref")
         void ioContractProtobufFormat() throws IOException { // GH-90000
             String yaml = """
                     metadata:
@@ -634,11 +634,11 @@ class AgentSpecLoaderTest {
             AgentDefinition def = loader.extractDefinition(spec); // GH-90000
 
             assertThat(def.getInputContract()).isNotNull(); // GH-90000
-            assertThat(def.getInputContract().format()).isEqualTo("PROTOBUF [GH-90000]");
+            assertThat(def.getInputContract().format()).isEqualTo("PROTOBUF");
         }
 
         @Test
-        @DisplayName("maps maxCostPerCall from governance.riskProfile [GH-90000]")
+        @DisplayName("maps maxCostPerCall from governance.riskProfile")
         void extractsMaxCostPerCallFromRiskProfile() throws IOException { // GH-90000
             String yaml = """
                     metadata:
@@ -661,7 +661,7 @@ class AgentSpecLoaderTest {
         }
 
         @Test
-        @DisplayName("maps autonomyLevel and criticality as labels [GH-90000]")
+        @DisplayName("maps autonomyLevel and criticality as labels")
         void extractsAutonomyLevelAndCriticalityAsLabels() throws IOException { // GH-90000
             String yaml = """
                     metadata:
@@ -685,11 +685,11 @@ class AgentSpecLoaderTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Validation — required fields [GH-90000]")
+    @DisplayName("Validation — required fields")
     class Validation {
 
         @Test
-        @DisplayName("throws when metadata is absent [GH-90000]")
+        @DisplayName("throws when metadata is absent")
         void throwsOnMissingMetadata() { // GH-90000
             String yaml = """
                     identity:
@@ -700,11 +700,11 @@ class AgentSpecLoaderTest {
                     """;
             assertThatThrownBy(() -> loader.loadFromString(yaml)) // GH-90000
                     .isInstanceOf(IllegalStateException.class) // GH-90000
-                    .hasMessageContaining("metadata [GH-90000]");
+                    .hasMessageContaining("metadata");
         }
 
         @Test
-        @DisplayName("throws when metadata.id is blank [GH-90000]")
+        @DisplayName("throws when metadata.id is blank")
         void throwsOnBlankId() { // GH-90000
             String yaml = """
                     metadata:
@@ -721,11 +721,11 @@ class AgentSpecLoaderTest {
                     """;
             assertThatThrownBy(() -> loader.loadFromString(yaml)) // GH-90000
                     .isInstanceOf(IllegalStateException.class) // GH-90000
-                    .hasMessageContaining("id [GH-90000]");
+                    .hasMessageContaining("id");
         }
 
         @Test
-        @DisplayName("throws when identity section is absent [GH-90000]")
+        @DisplayName("throws when identity section is absent")
         void throwsOnMissingIdentity() { // GH-90000
             String yaml = """
                     metadata:
@@ -738,7 +738,7 @@ class AgentSpecLoaderTest {
                     """;
             assertThatThrownBy(() -> loader.loadFromString(yaml)) // GH-90000
                     .isInstanceOf(IllegalStateException.class) // GH-90000
-                    .hasMessageContaining("identity [GH-90000]");
+                    .hasMessageContaining("identity");
         }
     }
 
@@ -747,13 +747,13 @@ class AgentSpecLoaderTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("load() and loadFromDirectory() [GH-90000]")
+    @DisplayName("load() and loadFromDirectory()")
     class DirectoryLoading {
 
         @Test
-        @DisplayName("loads spec from a YAML file [GH-90000]")
+        @DisplayName("loads spec from a YAML file")
         void loadsFromFile(@TempDir Path dir) throws IOException { // GH-90000
-            Path yamlFile = dir.resolve("test-agent.yaml [GH-90000]");
+            Path yamlFile = dir.resolve("test-agent.yaml");
             Files.writeString(yamlFile, """
                     metadata:
                       id: agent.file.test
@@ -773,11 +773,11 @@ class AgentSpecLoaderTest {
                     """);
 
             AgentSpec spec = loader.load(yamlFile); // GH-90000
-            assertThat(spec.getMetadata().id()).isEqualTo("agent.file.test [GH-90000]");
+            assertThat(spec.getMetadata().id()).isEqualTo("agent.file.test");
         }
 
         @Test
-        @DisplayName("scans directory and loads all YAML files [GH-90000]")
+        @DisplayName("scans directory and loads all YAML files")
         void loadsDirectory(@TempDir Path dir) throws IOException { // GH-90000
             for (int i = 1; i <= 3; i++) { // GH-90000
                 Files.writeString(dir.resolve("agent-" + i + ".yaml"), """
@@ -806,9 +806,9 @@ class AgentSpecLoaderTest {
         }
 
         @Test
-        @DisplayName("skips invalid YAML files and returns other valid specs [GH-90000]")
+        @DisplayName("skips invalid YAML files and returns other valid specs")
         void skipsInvalidFiles(@TempDir Path dir) throws IOException { // GH-90000
-            Files.writeString(dir.resolve("valid.yaml [GH-90000]"), """
+            Files.writeString(dir.resolve("valid.yaml"), """
                     metadata:
                       id: agent.valid
                       name: Valid
@@ -825,11 +825,11 @@ class AgentSpecLoaderTest {
                       stateMutability: stateless
                       failureMode: fail-fast
                     """);
-            Files.writeString(dir.resolve("broken.yaml [GH-90000]"), "this: is: not: valid: yaml: {{{");
+            Files.writeString(dir.resolve("broken.yaml"), "this: is: not: valid: yaml: {{{");
 
             List<AgentSpec> specs = loader.loadFromDirectory(dir); // GH-90000
             assertThat(specs).hasSize(1); // GH-90000
-            assertThat(specs.get(0).getMetadata().id()).isEqualTo("agent.valid [GH-90000]");
+            assertThat(specs.get(0).getMetadata().id()).isEqualTo("agent.valid");
         }
     }
 
@@ -838,11 +838,11 @@ class AgentSpecLoaderTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("GovernancePolicyRef — string and map format [GH-90000]")
+    @DisplayName("GovernancePolicyRef — string and map format")
     class PolicyRefParsing {
 
         @Test
-        @DisplayName("resolves policyRef given as a plain string [GH-90000]")
+        @DisplayName("resolves policyRef given as a plain string")
         void stringPolicyRef() throws IOException { // GH-90000
             String yaml = """
                     metadata:
@@ -874,13 +874,13 @@ class AgentSpecLoaderTest {
             AgentSpec spec = loader.loadFromString(yaml); // GH-90000
             assertThat(spec.getGovernance().policyRefs()).hasSize(1); // GH-90000
             GovernancePolicyRef ref = spec.getGovernance().policyRefs().get(0); // GH-90000
-            assertThat(ref.id()).isEqualTo("gov.policy-string-id [GH-90000]");
+            assertThat(ref.id()).isEqualTo("gov.policy-string-id");
             assertThat(ref.description()).isNull(); // GH-90000
             assertThat(ref.enforcementMode()).isNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("resolves policyRef given as a map with full fields [GH-90000]")
+        @DisplayName("resolves policyRef given as a map with full fields")
         void mapPolicyRef() throws IOException { // GH-90000
             String yaml = """
                     metadata:
@@ -913,9 +913,9 @@ class AgentSpecLoaderTest {
 
             AgentSpec spec = loader.loadFromString(yaml); // GH-90000
             GovernancePolicyRef ref = spec.getGovernance().policyRefs().get(0); // GH-90000
-            assertThat(ref.id()).isEqualTo("gov.policy-map-id [GH-90000]");
-            assertThat(ref.description()).isEqualTo("Data retention policy [GH-90000]");
-            assertThat(ref.enforcementMode()).isEqualTo("hard [GH-90000]");
+            assertThat(ref.id()).isEqualTo("gov.policy-map-id");
+            assertThat(ref.description()).isEqualTo("Data retention policy");
+            assertThat(ref.enforcementMode()).isEqualTo("hard");
         }
     }
 
@@ -924,7 +924,7 @@ class AgentSpecLoaderTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Spec-version guard [GH-90000]")
+    @DisplayName("Spec-version guard")
     class SpecVersionGuard {
 
         private static final String MINIMAL_1_0_0 = """
@@ -939,16 +939,16 @@ class AgentSpecLoaderTest {
                 """;
 
         @Test
-        @DisplayName("version 1.0.0 is accepted without exception [GH-90000]")
+        @DisplayName("version 1.0.0 is accepted without exception")
         void version100Accepted() throws Exception { // GH-90000
             assertThatCode(() -> loader.loadFromString(MINIMAL_1_0_0)) // GH-90000
                     .doesNotThrowAnyException(); // GH-90000
             AgentSpec spec = loader.loadFromString(MINIMAL_1_0_0); // GH-90000
-            assertThat(spec.getAgentSpecVersion()).isEqualTo("1.0.0 [GH-90000]");
+            assertThat(spec.getAgentSpecVersion()).isEqualTo("1.0.0");
         }
 
         @Test
-        @DisplayName("version 2.0.0 is accepted without exception [GH-90000]")
+        @DisplayName("version 2.0.0 is accepted without exception")
         void version200Accepted() throws Exception { // GH-90000
             String yaml = """
                     agentSpecVersion: "2.0.0"
@@ -961,11 +961,11 @@ class AgentSpecLoaderTest {
                       autonomyLevel: supervised
                     """;
             AgentSpec spec = loader.loadFromString(yaml); // GH-90000
-            assertThat(spec.getAgentSpecVersion()).isEqualTo("2.0.0 [GH-90000]");
+            assertThat(spec.getAgentSpecVersion()).isEqualTo("2.0.0");
         }
 
         @Test
-        @DisplayName("unknown version 3.0.0 throws UnsupportedSpecVersionException [GH-90000]")
+        @DisplayName("unknown version 3.0.0 throws UnsupportedSpecVersionException")
         void version300Rejected() { // GH-90000
             String yaml = """
                     agentSpecVersion: "3.0.0"
@@ -979,12 +979,12 @@ class AgentSpecLoaderTest {
                     """;
             assertThatThrownBy(() -> loader.loadFromString(yaml)) // GH-90000
                     .isInstanceOf(UnsupportedSpecVersionException.class) // GH-90000
-                    .hasMessageContaining("3.0.0 [GH-90000]")
-                    .hasMessageContaining("Supported versions [GH-90000]");
+                    .hasMessageContaining("3.0.0")
+                    .hasMessageContaining("Supported versions");
         }
 
         @Test
-        @DisplayName("UnsupportedSpecVersionException exposes the unsupported version string [GH-90000]")
+        @DisplayName("UnsupportedSpecVersionException exposes the unsupported version string")
         void exceptionExposesVersion() { // GH-90000
             String yaml = """
                     agentSpecVersion: "0.5.0"
@@ -996,10 +996,9 @@ class AgentSpecLoaderTest {
                       agentType: deterministic
                       autonomyLevel: supervised
                     """;
-            UnsupportedSpecVersionException ex = catchThrowableOfType( // GH-90000
-                    () -> loader.loadFromString(yaml), UnsupportedSpecVersionException.class); // GH-90000
-            assertThat(ex).isNotNull(); // GH-90000
-            assertThat(ex.getUnsupportedVersion()).isEqualTo("0.5.0 [GH-90000]");
+            assertThatExceptionOfType(UnsupportedSpecVersionException.class) // GH-90000
+                    .isThrownBy(() -> loader.loadFromString(yaml)) // GH-90000
+                    .satisfies(ex -> assertThat(ex.getUnsupportedVersion()).isEqualTo("0.5.0"));
         }
     }
 }

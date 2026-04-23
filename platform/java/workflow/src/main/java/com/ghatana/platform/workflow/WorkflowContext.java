@@ -11,7 +11,8 @@ import java.util.Map;
  * @doc.type interface
  * @doc.purpose Execution context for Workflows
  * @doc.layer core
- */
+  * @doc.pattern Workflow
+*/
 public interface WorkflowContext {
 
     /**

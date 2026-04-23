@@ -18,7 +18,11 @@ import static com.ghatana.aep.scaling.cluster.ClusterManagementModels.*;
 
 /**
  * Manages cluster node lifecycle, health monitoring, and rebalancing.
- */
+  * @doc.type class
+ * @doc.purpose Provides cluster management system functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 @Slf4j
 public class ClusterManagementSystem {
 

@@ -19,13 +19,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("SecurityPatternDetector Tests [GH-90000]")
+@DisplayName("SecurityPatternDetector Tests")
 class SecurityPatternDetectorTest extends EventloopTestBase {
 
   @Mock private YAPPCAIService aiService;
 
   @Test
-  @DisplayName("analyze returns deterministic hardcoded secret finding [GH-90000]")
+  @DisplayName("analyze returns deterministic hardcoded secret finding")
   void analyzeReturnsDeterministicHardcodedSecretFinding() { // GH-90000
     SecurityPatternDetector detector = new SecurityPatternDetector(aiService); // GH-90000
 
@@ -41,13 +41,13 @@ class SecurityPatternDetectorTest extends EventloopTestBase {
 
     assertThat(insights).singleElement().satisfies(insight -> { // GH-90000
       assertThat(insight.severity()).isEqualTo(AIInsight.InsightSeverity.CRITICAL); // GH-90000
-      assertThat(insight.title()).isEqualTo("Hardcoded secret detected [GH-90000]");
+      assertThat(insight.title()).isEqualTo("Hardcoded secret detected");
     });
     verifyNoInteractions(aiService); // GH-90000
   }
 
   @Test
-  @DisplayName("analyze returns SQL injection and deserialization findings deterministically [GH-90000]")
+  @DisplayName("analyze returns SQL injection and deserialization findings deterministically")
   void analyzeReturnsSqlInjectionAndDeserializationFindingsDeterministically() { // GH-90000
     SecurityPatternDetector detector = new SecurityPatternDetector(aiService); // GH-90000
 
@@ -70,12 +70,12 @@ class SecurityPatternDetectorTest extends EventloopTestBase {
                         "src/Deserializer.java",
                         "+ new ObjectInputStream(input).readObject();"))); // GH-90000
 
-    assertThat(sqlInsights).singleElement().extracting(AIInsight::title).isEqualTo("Potential SQL injection pattern [GH-90000]");
-    assertThat(deserializationInsights).singleElement().extracting(AIInsight::title).isEqualTo("Unsafe deserialization API [GH-90000]");
+    assertThat(sqlInsights).singleElement().extracting(AIInsight::title).isEqualTo("Potential SQL injection pattern");
+    assertThat(deserializationInsights).singleElement().extracting(AIInsight::title).isEqualTo("Unsafe deserialization API");
   }
 
   @Test
-  @DisplayName("analyze parses AI response when deterministic checks are clean [GH-90000]")
+  @DisplayName("analyze parses AI response when deterministic checks are clean")
   void analyzeParsesAiResponseWhenDeterministicChecksAreClean() { // GH-90000
     when(aiService.reason(anyString(), anyMap())) // GH-90000
         .thenReturn( // GH-90000
@@ -88,13 +88,13 @@ class SecurityPatternDetectorTest extends EventloopTestBase {
             () -> detector.analyze(new CodeChangedEvent("tenant-a", "project-a", "src/Clean.ts", "+const x = sanitize(input);"))); // GH-90000
 
     assertThat(insights).singleElement().satisfies(insight -> { // GH-90000
-      assertThat(insight.title()).isEqualTo("Missing validation [GH-90000]");
+      assertThat(insight.title()).isEqualTo("Missing validation");
       assertThat(insight.lineNumber()).isEqualTo(8); // GH-90000
     });
   }
 
   @Test
-  @DisplayName("analyze coerces string and missing numeric fields from AI security payload [GH-90000]")
+  @DisplayName("analyze coerces string and missing numeric fields from AI security payload")
   void analyzeCoercesStringAndMissingNumericFieldsFromAiSecurityPayload() { // GH-90000
     when(aiService.reason(anyString(), anyMap())) // GH-90000
         .thenReturn( // GH-90000
@@ -115,11 +115,11 @@ class SecurityPatternDetectorTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("analyze falls back to manual review for malformed AI response and returns empty for blank [GH-90000]")
+  @DisplayName("analyze falls back to manual review for malformed AI response and returns empty for blank")
   void analyzeFallsBackToManualReviewForMalformedAiResponseAndReturnsEmptyForBlank() { // GH-90000
     when(aiService.reason(anyString(), anyMap())) // GH-90000
-        .thenReturn(Promise.of("not-json [GH-90000]"))
-        .thenReturn(Promise.of("  [GH-90000]"));
+        .thenReturn(Promise.of("not-json"))
+        .thenReturn(Promise.of(" "));
 
     SecurityPatternDetector detector = new SecurityPatternDetector(aiService); // GH-90000
     List<AIInsight> malformed =
@@ -129,12 +129,12 @@ class SecurityPatternDetectorTest extends EventloopTestBase {
         runPromise( // GH-90000
             () -> detector.analyze(new CodeChangedEvent("tenant-a", "project-a", "src/Clean.ts", "+const y = 2;"))); // GH-90000
 
-    assertThat(malformed).singleElement().extracting(AIInsight::title).isEqualTo("Manual security review recommended [GH-90000]");
+    assertThat(malformed).singleElement().extracting(AIInsight::title).isEqualTo("Manual security review recommended");
     assertThat(blank).isEmpty(); // GH-90000
   }
 
   @Test
-  @DisplayName("analyze returns empty list for null AI response [GH-90000]")
+  @DisplayName("analyze returns empty list for null AI response")
   void analyzeReturnsEmptyListForNullAiResponse() { // GH-90000
     when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of(null)); // GH-90000
 

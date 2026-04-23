@@ -27,7 +27,7 @@ import static org.mockito.Mockito.*;
  * Focus: CPU, memory, connections, disk IO boundaries, resource contention
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("ResourceExhaustionTest - DC-F-023 [GH-90000]")
+@DisplayName("ResourceExhaustionTest - DC-F-023")
 class ResourceExhaustionTest {
 
     @Mock private ResourceLimitTester limitTester;
@@ -41,11 +41,11 @@ class ResourceExhaustionTest {
     }
 
     @Nested
-    @DisplayName("CPU Exhaustion Scenarios [GH-90000]")
+    @DisplayName("CPU Exhaustion Scenarios")
     class CPUExhaustionScenarios {
 
         @Test
-        @DisplayName("shouldDetectCPUBoundWorkload_whenCPUMaxedOut_thenLatencyIncreases [GH-90000]")
+        @DisplayName("shouldDetectCPUBoundWorkload_whenCPUMaxedOut_thenLatencyIncreases")
         void shouldDetectCPUBoundWorkload_whenCPUMaxedOut_thenLatencyIncreases() { // GH-90000
             when(limitTester.getCPUUtilization()).thenReturn(99.5); // GH-90000
             when(limitTester.measureLatency()).thenReturn(2500L); // GH-90000
@@ -58,7 +58,7 @@ class ResourceExhaustionTest {
         }
 
         @Test
-        @DisplayName("shouldMeasureCPUUtilizationAtCapacity_whenMaxThreadsRunning_thenUtilationReported [GH-90000]")
+        @DisplayName("shouldMeasureCPUUtilizationAtCapacity_whenMaxThreadsRunning_thenUtilationReported")
         void shouldMeasureCPUUtilizationAtCapacity_whenMaxThreadsRunning_thenUtilationReported() { // GH-90000
             when(limitTester.getCPUUtilization()).thenReturn(98.0); // GH-90000
 
@@ -69,7 +69,7 @@ class ResourceExhaustionTest {
         }
 
         @Test
-        @DisplayName("shouldHandleContextSwitchingOverhead_whenCPUOversubscribed_thenThroughputDecreases [GH-90000]")
+        @DisplayName("shouldHandleContextSwitchingOverhead_whenCPUOversubscribed_thenThroughputDecreases")
         void shouldHandleContextSwitchingOverhead_whenCPUOversubscribed_thenThroughputDecreases() { // GH-90000
             long baselineTPS = 10_000L;
             when(limitTester.measureThroughput()).thenReturn(7_000L); // GH-90000
@@ -80,7 +80,7 @@ class ResourceExhaustionTest {
         }
 
         @Test
-        @DisplayName("shouldPreserveFairnessUnderCPUPressure_whenCPUContended_thenAllTasksProgress [GH-90000]")
+        @DisplayName("shouldPreserveFairnessUnderCPUPressure_whenCPUContended_thenAllTasksProgress")
         void shouldPreserveFairnessUnderCPUPressure_whenCPUContended_thenAllTasksProgress() { // GH-90000
             when(limitTester.validateTaskFairness()).thenReturn(true); // GH-90000
 
@@ -90,7 +90,7 @@ class ResourceExhaustionTest {
         }
 
         @Test
-        @DisplayName("shouldDetectCPUAffinityCostBenefit_whenPinningThreads_thenLatencyImproves [GH-90000]")
+        @DisplayName("shouldDetectCPUAffinityCostBenefit_whenPinningThreads_thenLatencyImproves")
         void shouldDetectCPUAffinityCostBenefit_whenPinningThreads_thenLatencyImproves() { // GH-90000
             long withoutAffinity = 100L;
             when(limitTester.measureLatencyWithAffinity()).thenReturn(85L); // GH-90000
@@ -101,7 +101,7 @@ class ResourceExhaustionTest {
         }
 
         @Test
-        @DisplayName("shouldMeasureQueueDepthUnderCPUPressure_whenWorkQueueBuilds_thenDepthTracked [GH-90000]")
+        @DisplayName("shouldMeasureQueueDepthUnderCPUPressure_whenWorkQueueBuilds_thenDepthTracked")
         void shouldMeasureQueueDepthUnderCPUPressure_whenWorkQueueBuilds_thenDepthTracked() { // GH-90000
             when(limitTester.getQueueDepth()).thenReturn(5000L); // GH-90000
 
@@ -111,9 +111,9 @@ class ResourceExhaustionTest {
         }
 
         @Test
-        @DisplayName("shouldDetectCPUBottleneck_whenOtherResourcesIdle_thenCPUIdentified [GH-90000]")
+        @DisplayName("shouldDetectCPUBottleneck_whenOtherResourcesIdle_thenCPUIdentified")
         void shouldDetectCPUBottleneck_whenOtherResourcesIdle_thenCPUIdentified() { // GH-90000
-            when(boundaryDetector.identifyBottleneck()).thenReturn("CPU [GH-90000]");
+            when(boundaryDetector.identifyBottleneck()).thenReturn("CPU");
 
             String bottleneck = boundaryDetector.identifyBottleneck(); // GH-90000
 
@@ -122,11 +122,11 @@ class ResourceExhaustionTest {
     }
 
     @Nested
-    @DisplayName("Memory Exhaustion Scenarios [GH-90000]")
+    @DisplayName("Memory Exhaustion Scenarios")
     class MemoryExhaustionScenarios {
 
         @Test
-        @DisplayName("shouldMeasureHeapUtilizationGrowth_whenLoadIncreases_thenLinearGrowth [GH-90000]")
+        @DisplayName("shouldMeasureHeapUtilizationGrowth_whenLoadIncreases_thenLinearGrowth")
         void shouldMeasureHeapUtilizationGrowth_whenLoadIncreases_thenLinearGrowth() { // GH-90000
             long heap1 = 256_000_000L;
             long heap2 = 512_000_000L;
@@ -136,7 +136,7 @@ class ResourceExhaustionTest {
         }
 
         @Test
-        @DisplayName("shouldDetectMemoryThreshold_whenHeapNears90Percent_thenGCTriggered [GH-90000]")
+        @DisplayName("shouldDetectMemoryThreshold_whenHeapNears90Percent_thenGCTriggered")
         void shouldDetectMemoryThreshold_whenHeapNears90Percent_thenGCTriggered() { // GH-90000
             when(limitTester.getHeapUsagePercent()).thenReturn(90.5); // GH-90000
             when(limitTester.wasGCTriggered()).thenReturn(true); // GH-90000
@@ -149,7 +149,7 @@ class ResourceExhaustionTest {
         }
 
         @Test
-        @DisplayName("shouldMeasureGCPauseDuration_whenHeapAlmostFull_thenPauseDurations [GH-90000]")
+        @DisplayName("shouldMeasureGCPauseDuration_whenHeapAlmostFull_thenPauseDurations")
         void shouldMeasureGCPauseDuration_whenHeapAlmostFull_thenPauseDurations() { // GH-90000
             when(limitTester.getMaxGCPauseMs()).thenReturn(450L); // GH-90000
 
@@ -159,7 +159,7 @@ class ResourceExhaustionTest {
         }
 
         @Test
-        @DisplayName("shouldMeasureFullGCFrequency_whenHeapBecomesScarce_thenGCIntervals [GH-90000]")
+        @DisplayName("shouldMeasureFullGCFrequency_whenHeapBecomesScarce_thenGCIntervals")
         void shouldMeasureFullGCFrequency_whenHeapBecomesScarce_thenGCIntervals() { // GH-90000
             when(limitTester.getFullGCCount()).thenReturn(15L); // GH-90000
 
@@ -169,7 +169,7 @@ class ResourceExhaustionTest {
         }
 
         @Test
-        @DisplayName("shouldDetectMemoryLeak_whenGarbage NotCollected_thenGrowthDetected [GH-90000]")
+        @DisplayName("shouldDetectMemoryLeak_whenGarbage NotCollected_thenGrowthDetected")
         void shouldDetectMemoryLeak_whenGarbageNotCollected_thenGrowthDetected() { // GH-90000
             when(limitTester.detectMemoryLeak()).thenReturn(true); // GH-90000
 
@@ -179,7 +179,7 @@ class ResourceExhaustionTest {
         }
 
         @Test
-        @DisplayName("shouldMaintainApplicationResponsiveness_duringGCPauses_thenLatencyBumps [GH-90000]")
+        @DisplayName("shouldMaintainApplicationResponsiveness_duringGCPauses_thenLatencyBumps")
         void shouldMaintainApplicationResponsiveness_duringGCPauses_thenLatencyBumps() { // GH-90000
             when(limitTester.measureP99LatencyDuringGC()).thenReturn(5000L); // GH-90000
 
@@ -189,7 +189,7 @@ class ResourceExhaustionTest {
         }
 
         @Test
-        @DisplayName("shouldValidateHeapRecovery_afterGC_thenHeapAvailableSpace [GH-90000]")
+        @DisplayName("shouldValidateHeapRecovery_afterGC_thenHeapAvailableSpace")
         void shouldValidateHeapRecovery_afterGC_thenHeapAvailableSpace() { // GH-90000
             when(limitTester.getHeapAvailablePercent()).thenReturn(75.0); // GH-90000
 
@@ -200,11 +200,11 @@ class ResourceExhaustionTest {
     }
 
     @Nested
-    @DisplayName("Connection Pool Exhaustion Scenarios [GH-90000]")
+    @DisplayName("Connection Pool Exhaustion Scenarios")
     class ConnectionPoolExhaustionScenarios {
 
         @Test
-        @DisplayName("shouldMeasureConnectionPoolUtilization_whenConcurrentRequestsIncrease_thenUtilization [GH-90000]")
+        @DisplayName("shouldMeasureConnectionPoolUtilization_whenConcurrentRequestsIncrease_thenUtilization")
         void shouldMeasureConnectionPoolUtilization_whenConcurrentRequestsIncrease_thenUtilization() { // GH-90000
             when(limitTester.getConnectionPoolSize()).thenReturn(500); // GH-90000
             when(limitTester.getActiveConnections()).thenReturn(475); // GH-90000
@@ -217,7 +217,7 @@ class ResourceExhaustionTest {
         }
 
         @Test
-        @DisplayName("shouldDetectConnectionPoolDepletion_whenAllConnectionsInUse_thenWaitingQueued [GH-90000]")
+        @DisplayName("shouldDetectConnectionPoolDepletion_whenAllConnectionsInUse_thenWaitingQueued")
         void shouldDetectConnectionPoolDepletion_whenAllConnectionsInUse_thenWaitingQueued() { // GH-90000
             when(limitTester.getQueuedConnectionRequests()).thenReturn(1000L); // GH-90000
 
@@ -227,7 +227,7 @@ class ResourceExhaustionTest {
         }
 
         @Test
-        @DisplayName("shouldMeasureConnectionWaitTime_whenPoolDepleted_thenWaitTimeTracked [GH-90000]")
+        @DisplayName("shouldMeasureConnectionWaitTime_whenPoolDepleted_thenWaitTimeTracked")
         void shouldMeasureConnectionWaitTime_whenPoolDepleted_thenWaitTimeTracked() { // GH-90000
             when(limitTester.getMedianConnectionWaitMs()).thenReturn(500L); // GH-90000
 
@@ -237,7 +237,7 @@ class ResourceExhaustionTest {
         }
 
         @Test
-        @DisplayName("shouldRecoverConnectionPool_afterHighLoad_thenConnectionsReturned [GH-90000]")
+        @DisplayName("shouldRecoverConnectionPool_afterHighLoad_thenConnectionsReturned")
         void shouldRecoverConnectionPool_afterHighLoad_thenConnectionsReturned() { // GH-90000
             when(limitTester.getRecoveryTimeMs()).thenReturn(2000L); // GH-90000
 
@@ -247,7 +247,7 @@ class ResourceExhaustionTest {
         }
 
         @Test
-        @DisplayName("shouldDetectConnectionLeaks_whenConnectionsNotReturned_thenLeakDetected [GH-90000]")
+        @DisplayName("shouldDetectConnectionLeaks_whenConnectionsNotReturned_thenLeakDetected")
         void shouldDetectConnectionLeaks_whenConnectionsNotReturned_thenLeakDetected() { // GH-90000
             when(limitTester.detectConnectionLeaks()).thenReturn(true); // GH-90000
 
@@ -257,7 +257,7 @@ class ResourceExhaustionTest {
         }
 
         @Test
-        @DisplayName("shouldValidateConnectionReusability_whenConnectionReused_thenStateClean [GH-90000]")
+        @DisplayName("shouldValidateConnectionReusability_whenConnectionReused_thenStateClean")
         void shouldValidateConnectionReusability_whenConnectionReused_thenStateClean() { // GH-90000
             when(limitTester.validateConnectionStateReset()).thenReturn(true); // GH-90000
 
@@ -267,7 +267,7 @@ class ResourceExhaustionTest {
         }
 
         @Test
-        @DisplayName("shouldMeasureConnectionTimeouts_whenWaitingTooLong_thenTimeoutOccurs [GH-90000]")
+        @DisplayName("shouldMeasureConnectionTimeouts_whenWaitingTooLong_thenTimeoutOccurs")
         void shouldMeasureConnectionTimeouts_whenWaitingTooLong_thenTimeoutOccurs() { // GH-90000
             when(limitTester.getConnectionTimeoutCount()).thenReturn(150L); // GH-90000
 
@@ -278,11 +278,11 @@ class ResourceExhaustionTest {
     }
 
     @Nested
-    @DisplayName("Disk IO Exhaustion Scenarios [GH-90000]")
+    @DisplayName("Disk IO Exhaustion Scenarios")
     class DiskIOExhaustionScenarios {
 
         @Test
-        @DisplayName("shouldMeasureDiskReadBandwidth_whenMaxIOReached_thenBandwidthCapped [GH-90000]")
+        @DisplayName("shouldMeasureDiskReadBandwidth_whenMaxIOReached_thenBandwidthCapped")
         void shouldMeasureDiskReadBandwidth_whenMaxIOReached_thenBandwidthCapped() { // GH-90000
             when(limitTester.measureDiskReadBandwidth()).thenReturn(500_000_000L); // GH-90000
 
@@ -293,7 +293,7 @@ class ResourceExhaustionTest {
         }
 
         @Test
-        @DisplayName("shouldMeasureDiskWriteBandwidth_whenMaxIOReached_thenBandwidthCapped [GH-90000]")
+        @DisplayName("shouldMeasureDiskWriteBandwidth_whenMaxIOReached_thenBandwidthCapped")
         void shouldMeasureDiskWriteBandwidth_whenMaxIOReached_thenBandwidthCapped() { // GH-90000
             when(limitTester.measureDiskWriteBandwidth()).thenReturn(450_000_000L); // GH-90000
 
@@ -303,7 +303,7 @@ class ResourceExhaustionTest {
         }
 
         @Test
-        @DisplayName("shouldDetectIOWait_whenDiskBoundWorkload_thenIOWaitIncreases [GH-90000]")
+        @DisplayName("shouldDetectIOWait_whenDiskBoundWorkload_thenIOWaitIncreases")
         void shouldDetectIOWait_whenDiskBoundWorkload_thenIOWaitIncreases() { // GH-90000
             when(limitTester.getIOWaitPercent()).thenReturn(35.0); // GH-90000
 
@@ -313,7 +313,7 @@ class ResourceExhaustionTest {
         }
 
         @Test
-        @DisplayName("shouldMeasureRandomVsSequentialIO_whenAccessPatternsVary_thenLatencyDiffers [GH-90000]")
+        @DisplayName("shouldMeasureRandomVsSequentialIO_whenAccessPatternsVary_thenLatencyDiffers")
         void shouldMeasureRandomVsSequentialIO_whenAccessPatternsVary_thenLatencyDiffers() { // GH-90000
             long randomLatency = 5000L;
             long sequentialLatency = 1000L;
@@ -322,7 +322,7 @@ class ResourceExhaustionTest {
         }
 
         @Test
-        @DisplayName("shouldDetectDiskSpaceExhaustion_whenDiskNearFull_thenWritesFail [GH-90000]")
+        @DisplayName("shouldDetectDiskSpaceExhaustion_whenDiskNearFull_thenWritesFail")
         void shouldDetectDiskSpaceExhaustion_whenDiskNearFull_thenWritesFail() { // GH-90000
             when(limitTester.getDiskUsagePercent()).thenReturn(98.0); // GH-90000
 
@@ -332,7 +332,7 @@ class ResourceExhaustionTest {
         }
 
         @Test
-        @DisplayName("shouldMeasureIOQueueDepth_whenDiskSaturated_thenQueueDepth [GH-90000]")
+        @DisplayName("shouldMeasureIOQueueDepth_whenDiskSaturated_thenQueueDepth")
         void shouldMeasureIOQueueDepth_whenDiskSaturated_thenQueueDepth() { // GH-90000
             when(limitTester.getIOQueueDepth()).thenReturn(256L); // GH-90000
 
@@ -342,7 +342,7 @@ class ResourceExhaustionTest {
         }
 
         @Test
-        @DisplayName("shouldValidateIOErrorHandling_whenDiskFails_thenErrorsRecorded [GH-90000]")
+        @DisplayName("shouldValidateIOErrorHandling_whenDiskFails_thenErrorsRecorded")
         void shouldValidateIOErrorHandling_whenDiskFails_thenErrorsRecorded() { // GH-90000
             when(limitTester.getIOErrorCount()).thenReturn(5L); // GH-90000
 

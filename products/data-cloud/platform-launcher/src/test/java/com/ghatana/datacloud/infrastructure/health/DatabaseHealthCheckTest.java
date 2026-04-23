@@ -19,7 +19,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@DisplayName("DatabaseHealthCheck [GH-90000]")
+@DisplayName("DatabaseHealthCheck")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class DatabaseHealthCheckTest extends EventloopTestBase {
 
@@ -33,9 +33,9 @@ class DatabaseHealthCheckTest extends EventloopTestBase {
     MetricsCollector metricsCollector;
 
     @Test
-    @DisplayName("readiness returns true when query succeeds within threshold [GH-90000]")
+    @DisplayName("readiness returns true when query succeeds within threshold")
     void readinessReturnsTrueWhenHealthy() { // GH-90000
-        when(entityManager.createNativeQuery("SELECT 1 [GH-90000]")).thenReturn(query);
+        when(entityManager.createNativeQuery("SELECT 1")).thenReturn(query);
         when(query.getResultList()).thenReturn(List.of(1)); // GH-90000
 
         DatabaseHealthCheck healthCheck = new DatabaseHealthCheck(entityManager, metricsCollector); // GH-90000
@@ -49,9 +49,9 @@ class DatabaseHealthCheckTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("liveness stays true when database is degraded [GH-90000]")
+    @DisplayName("liveness stays true when database is degraded")
     void livenessReturnsTrueWhenDegraded() { // GH-90000
-        when(entityManager.createNativeQuery("SELECT 1 [GH-90000]")).thenReturn(query);
+        when(entityManager.createNativeQuery("SELECT 1")).thenReturn(query);
         when(query.getResultList()).thenAnswer(invocation -> { // GH-90000
             Thread.sleep(10L); // GH-90000
             return List.of(1); // GH-90000
@@ -72,9 +72,9 @@ class DatabaseHealthCheckTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("readiness returns false when query fails [GH-90000]")
+    @DisplayName("readiness returns false when query fails")
     void readinessReturnsFalseWhenDown() { // GH-90000
-        when(entityManager.createNativeQuery("SELECT 1 [GH-90000]")).thenThrow(new IllegalStateException("db unavailable [GH-90000]"));
+        when(entityManager.createNativeQuery("SELECT 1")).thenThrow(new IllegalStateException("db unavailable"));
 
         DatabaseHealthCheck healthCheck = new DatabaseHealthCheck(entityManager, metricsCollector); // GH-90000
 
@@ -85,18 +85,18 @@ class DatabaseHealthCheckTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("health response includes database details [GH-90000]")
+    @DisplayName("health response includes database details")
     void healthResponseIncludesDatabaseDetails() { // GH-90000
-        when(entityManager.createNativeQuery("SELECT 1 [GH-90000]")).thenReturn(query);
+        when(entityManager.createNativeQuery("SELECT 1")).thenReturn(query);
         when(query.getResultList()).thenReturn(List.of(1)); // GH-90000
 
         DatabaseHealthCheck healthCheck = new DatabaseHealthCheck(entityManager, metricsCollector); // GH-90000
 
         DatabaseHealthCheck.HealthResponse response = runPromise(healthCheck::health); // GH-90000
 
-        assertThat(response.getStatus()).isEqualTo("UP [GH-90000]");
-        assertThat(response.getDetails()).containsKey("database [GH-90000]");
-        Object database = response.getDetails().get("database [GH-90000]");
+        assertThat(response.getStatus()).isEqualTo("UP");
+        assertThat(response.getDetails()).containsKey("database");
+        Object database = response.getDetails().get("database");
         assertThat(database).isInstanceOf(DatabaseHealthCheck.DatabaseHealthDetails.class); // GH-90000
         DatabaseHealthCheck.DatabaseHealthDetails details =
             (DatabaseHealthCheck.DatabaseHealthDetails) database; // GH-90000
@@ -105,9 +105,9 @@ class DatabaseHealthCheckTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("health details expose status flags and pool state [GH-90000]")
+    @DisplayName("health details expose status flags and pool state")
     void healthDetailsExposeFlags() { // GH-90000
-        when(entityManager.createNativeQuery("SELECT 1 [GH-90000]")).thenReturn(query);
+        when(entityManager.createNativeQuery("SELECT 1")).thenReturn(query);
         when(query.getResultList()).thenReturn(List.of(1)); // GH-90000
 
         DatabaseHealthCheck healthCheck = new DatabaseHealthCheck(entityManager, metricsCollector); // GH-90000
@@ -116,9 +116,9 @@ class DatabaseHealthCheckTest extends EventloopTestBase {
 
         assertThat(details).containsEntry("status", "UP"); // GH-90000
         assertThat(details).containsKeys("timestamp", "latency_ms", "last_check", "database"); // GH-90000
-        assertThat(details.get("database [GH-90000]")).isInstanceOf(Map.class);
-        @SuppressWarnings("unchecked [GH-90000]")
-        Map<String, Object> database = (Map<String, Object>) details.get("database [GH-90000]");
+        assertThat(details.get("database")).isInstanceOf(Map.class);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> database = (Map<String, Object>) details.get("database");
         assertThat(database).containsEntry("connected", true); // GH-90000
         assertThat(database).containsEntry("healthy", true); // GH-90000
         assertThat(database).containsEntry("degraded", false); // GH-90000

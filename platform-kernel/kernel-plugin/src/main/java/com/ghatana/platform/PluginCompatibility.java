@@ -2,6 +2,9 @@ package com.ghatana.platform.plugin;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * Defines version compatibility for a plugin.
  *
@@ -17,6 +20,8 @@ public record PluginCompatibility(
     @NotNull String minDataCloudVersion,
     String maxDataCloudVersion
 ) {
+    private static final Pattern NUMERIC_VERSION_PATTERN = Pattern.compile("(\\d+(?:\\.\\d+)*)");
+
     public static PluginCompatibility dataCloudVersion(String min) {
         return new PluginCompatibility(min, null);
     }
@@ -46,7 +51,11 @@ public record PluginCompatibility(
     }
 
     private static String normalize(@NotNull String version) {
-        int suffixIndex = version.indexOf('-');
-        return suffixIndex >= 0 ? version.substring(0, suffixIndex) : version;
+        String trimmed = version.trim();
+        Matcher matcher = NUMERIC_VERSION_PATTERN.matcher(trimmed);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+        return "0";
     }
 }

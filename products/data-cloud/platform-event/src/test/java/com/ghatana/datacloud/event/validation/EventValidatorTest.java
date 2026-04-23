@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("EventValidator Enhanced Features [GH-90000]")
+@DisplayName("EventValidator Enhanced Features")
 class EventValidatorTest {
 
     private EventValidator validator;
@@ -47,11 +47,11 @@ class EventValidatorTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("JSON Schema validation [GH-90000]")
+    @DisplayName("JSON Schema validation")
     class JsonSchemaValidation {
 
         @Test
-        @DisplayName("should validate valid header schema [GH-90000]")
+        @DisplayName("should validate valid header schema")
         void shouldValidateValidHeaderSchema() { // GH-90000
             EventType eventType = createEventType( // GH-90000
                 Map.of("source", Map.of("type", "string", "required", true)), // GH-90000
@@ -69,7 +69,7 @@ class EventValidatorTest {
         }
 
         @Test
-        @DisplayName("should reject header missing required field [GH-90000]")
+        @DisplayName("should reject header missing required field")
         void shouldRejectHeaderMissingRequiredField() { // GH-90000
             EventType eventType = createEventType( // GH-90000
                 Map.of("source", Map.of("type", "string", "required", true)), // GH-90000
@@ -84,11 +84,11 @@ class EventValidatorTest {
             EventValidator.EventValidationResult result = validator.validate(eventType, header, payload); // GH-90000
 
             assertThat(result.valid()).isFalse(); // GH-90000
-            assertThat(result.violations()).anyMatch(v -> v.contains("Header validation error [GH-90000]"));
+            assertThat(result.violations()).anyMatch(v -> v.contains("Header validation error"));
         }
 
         @Test
-        @DisplayName("should validate valid payload schema [GH-90000]")
+        @DisplayName("should validate valid payload schema")
         void shouldValidateValidPayloadSchema() { // GH-90000
             EventType eventType = createEventType( // GH-90000
                 Map.of("source", Map.of("type", "string")), // GH-90000
@@ -106,7 +106,7 @@ class EventValidatorTest {
         }
 
         @Test
-        @DisplayName("should reject payload with wrong type [GH-90000]")
+        @DisplayName("should reject payload with wrong type")
         void shouldRejectPayloadWithWrongType() { // GH-90000
             EventType eventType = createEventType( // GH-90000
                 Map.of("source", Map.of("type", "string")), // GH-90000
@@ -121,11 +121,11 @@ class EventValidatorTest {
             EventValidator.EventValidationResult result = validator.validate(eventType, header, payload); // GH-90000
 
             assertThat(result.valid()).isFalse(); // GH-90000
-            assertThat(result.violations()).anyMatch(v -> v.contains("Payload validation error [GH-90000]"));
+            assertThat(result.violations()).anyMatch(v -> v.contains("Payload validation error"));
         }
 
         @Test
-        @DisplayName("should handle empty schemas gracefully [GH-90000]")
+        @DisplayName("should handle empty schemas gracefully")
         void shouldHandleEmptySchemasGracefully() { // GH-90000
             EventType eventType = createEventType(Map.of(), Map.of()); // GH-90000
 
@@ -146,11 +146,11 @@ class EventValidatorTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Lifecycle status enforcement [GH-90000]")
+    @DisplayName("Lifecycle status enforcement")
     class LifecycleStatusEnforcement {
 
         @Test
-        @DisplayName("should accept events from ACTIVE event type [GH-90000]")
+        @DisplayName("should accept events from ACTIVE event type")
         void shouldAcceptEventsFromActiveEventType() { // GH-90000
             EventType eventType = createEventTypeWithStatus(EventType.LifecycleStatus.ACTIVE); // GH-90000
 
@@ -165,7 +165,7 @@ class EventValidatorTest {
         }
 
         @Test
-        @DisplayName("should accept events from DEPRECATED event type [GH-90000]")
+        @DisplayName("should accept events from DEPRECATED event type")
         void shouldAcceptEventsFromDeprecatedEventType() { // GH-90000
             EventType eventType = createEventTypeWithStatus(EventType.LifecycleStatus.DEPRECATED); // GH-90000
 
@@ -180,7 +180,7 @@ class EventValidatorTest {
         }
 
         @Test
-        @DisplayName("should reject events from DRAFT event type [GH-90000]")
+        @DisplayName("should reject events from DRAFT event type")
         void shouldRejectEventsFromDraftEventType() { // GH-90000
             EventType eventType = createEventTypeWithStatus(EventType.LifecycleStatus.DRAFT); // GH-90000
 
@@ -192,11 +192,11 @@ class EventValidatorTest {
             EventValidator.EventValidationResult result = validator.validate(eventType, header, payload); // GH-90000
 
             assertThat(result.valid()).isFalse(); // GH-90000
-            assertThat(result.violations()).anyMatch(v -> v.contains("DRAFT [GH-90000]") && v.contains("cannot accept events [GH-90000]"));
+            assertThat(result.violations()).anyMatch(v -> v.contains("DRAFT") && v.contains("cannot accept events"));
         }
 
         @Test
-        @DisplayName("should reject events from RETIRED event type [GH-90000]")
+        @DisplayName("should reject events from RETIRED event type")
         void shouldRejectEventsFromRetiredEventType() { // GH-90000
             EventType eventType = createEventTypeWithStatus(EventType.LifecycleStatus.RETIRED); // GH-90000
 
@@ -208,7 +208,7 @@ class EventValidatorTest {
             EventValidator.EventValidationResult result = validator.validate(eventType, header, payload); // GH-90000
 
             assertThat(result.valid()).isFalse(); // GH-90000
-            assertThat(result.violations()).anyMatch(v -> v.contains("RETIRED [GH-90000]") && v.contains("cannot accept events [GH-90000]"));
+            assertThat(result.violations()).anyMatch(v -> v.contains("RETIRED") && v.contains("cannot accept events"));
         }
     }
 
@@ -217,11 +217,11 @@ class EventValidatorTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Compatibility checking [GH-90000]")
+    @DisplayName("Compatibility checking")
     class CompatibilityChecking {
 
         @Test
-        @DisplayName("should pass backward compatibility when no required fields removed [GH-90000]")
+        @DisplayName("should pass backward compatibility when no required fields removed")
         void shouldPassBackwardCompatibilityWhenNoRequiredFieldsRemoved() { // GH-90000
             EventType oldType = createEventType( // GH-90000
                 Map.of(), // GH-90000
@@ -229,11 +229,11 @@ class EventValidatorTest {
             );
 
             EventType newType = EventType.builder() // GH-90000
-                .tenantId("tenant-123 [GH-90000]")
-                .namespace("commerce [GH-90000]")
-                .name("order.created [GH-90000]")
-                .label("Order Created [GH-90000]")
-                .schemaVersion("1.0.0 [GH-90000]")
+                .tenantId("tenant-123")
+                .namespace("commerce")
+                .name("order.created")
+                .label("Order Created")
+                .schemaVersion("1.0.0")
                 .headerSchema(Map.of()) // GH-90000
                 .payloadSchema(Map.of("orderId", Map.of("type", "string", "required", true), "amount", Map.of("type", "number"))) // GH-90000
                 .lifecycleStatus(EventType.LifecycleStatus.ACTIVE) // GH-90000
@@ -247,7 +247,7 @@ class EventValidatorTest {
         }
 
         @Test
-        @DisplayName("should fail backward compatibility when required field removed [GH-90000]")
+        @DisplayName("should fail backward compatibility when required field removed")
         void shouldFailBackwardCompatibilityWhenRequiredFieldRemoved() { // GH-90000
             EventType oldType = createEventType( // GH-90000
                 Map.of(), // GH-90000
@@ -255,11 +255,11 @@ class EventValidatorTest {
             );
 
             EventType newType = EventType.builder() // GH-90000
-                .tenantId("tenant-123 [GH-90000]")
-                .namespace("commerce [GH-90000]")
-                .name("order.created [GH-90000]")
-                .label("Order Created [GH-90000]")
-                .schemaVersion("1.0.0 [GH-90000]")
+                .tenantId("tenant-123")
+                .namespace("commerce")
+                .name("order.created")
+                .label("Order Created")
+                .schemaVersion("1.0.0")
                 .headerSchema(Map.of()) // GH-90000
                 .payloadSchema(Map.of("orderId", Map.of("type", "string", "required", true))) // "amount" removed // GH-90000
                 .lifecycleStatus(EventType.LifecycleStatus.ACTIVE) // GH-90000
@@ -270,11 +270,11 @@ class EventValidatorTest {
             EventValidator.CompatibilityResult result = validator.checkCompatibility(oldType, newType); // GH-90000
 
             assertThat(result.compatible()).isFalse(); // GH-90000
-            assertThat(result.violations()).anyMatch(v -> v.contains("required field [GH-90000]") && v.contains("removed [GH-90000]"));
+            assertThat(result.violations()).anyMatch(v -> v.contains("required field") && v.contains("removed"));
         }
 
         @Test
-        @DisplayName("should pass forward compatibility when no required fields added [GH-90000]")
+        @DisplayName("should pass forward compatibility when no required fields added")
         void shouldPassForwardCompatibilityWhenNoRequiredFieldsAdded() { // GH-90000
             EventType oldType = createEventType( // GH-90000
                 Map.of(), // GH-90000
@@ -282,11 +282,11 @@ class EventValidatorTest {
             );
 
             EventType newType = EventType.builder() // GH-90000
-                .tenantId("tenant-123 [GH-90000]")
-                .namespace("commerce [GH-90000]")
-                .name("order.created [GH-90000]")
-                .label("Order Created [GH-90000]")
-                .schemaVersion("1.0.0 [GH-90000]")
+                .tenantId("tenant-123")
+                .namespace("commerce")
+                .name("order.created")
+                .label("Order Created")
+                .schemaVersion("1.0.0")
                 .headerSchema(Map.of()) // GH-90000
                 .payloadSchema(Map.of("orderId", Map.of("type", "string", "required", true), "amount", Map.of("type", "number", "required", false))) // GH-90000
                 .lifecycleStatus(EventType.LifecycleStatus.ACTIVE) // GH-90000
@@ -300,7 +300,7 @@ class EventValidatorTest {
         }
 
         @Test
-        @DisplayName("should fail forward compatibility when required field added [GH-90000]")
+        @DisplayName("should fail forward compatibility when required field added")
         void shouldFailForwardCompatibilityWhenRequiredFieldAdded() { // GH-90000
             EventType oldType = createEventType( // GH-90000
                 Map.of(), // GH-90000
@@ -308,11 +308,11 @@ class EventValidatorTest {
             );
 
             EventType newType = EventType.builder() // GH-90000
-                .tenantId("tenant-123 [GH-90000]")
-                .namespace("commerce [GH-90000]")
-                .name("order.created [GH-90000]")
-                .label("Order Created [GH-90000]")
-                .schemaVersion("1.0.0 [GH-90000]")
+                .tenantId("tenant-123")
+                .namespace("commerce")
+                .name("order.created")
+                .label("Order Created")
+                .schemaVersion("1.0.0")
                 .headerSchema(Map.of()) // GH-90000
                 .payloadSchema(Map.of("orderId", Map.of("type", "string", "required", true), "amount", Map.of("type", "number", "required", true))) // GH-90000
                 .lifecycleStatus(EventType.LifecycleStatus.ACTIVE) // GH-90000
@@ -323,19 +323,19 @@ class EventValidatorTest {
             EventValidator.CompatibilityResult result = validator.checkCompatibility(oldType, newType); // GH-90000
 
             assertThat(result.compatible()).isFalse(); // GH-90000
-            assertThat(result.violations()).anyMatch(v -> v.contains("New required field [GH-90000]") && v.contains("added [GH-90000]"));
+            assertThat(result.violations()).anyMatch(v -> v.contains("New required field") && v.contains("added"));
         }
 
         @Test
-        @DisplayName("should pass NONE compatibility policy [GH-90000]")
+        @DisplayName("should pass NONE compatibility policy")
         void shouldPassNoneCompatibilityPolicy() { // GH-90000
             EventType oldType = createEventType(Map.of(), Map.of("orderId", Map.of("type", "string"))); // GH-90000
             EventType newType = EventType.builder() // GH-90000
-                .tenantId("tenant-123 [GH-90000]")
-                .namespace("commerce [GH-90000]")
-                .name("order.created [GH-90000]")
-                .label("Order Created [GH-90000]")
-                .schemaVersion("1.0.0 [GH-90000]")
+                .tenantId("tenant-123")
+                .namespace("commerce")
+                .name("order.created")
+                .label("Order Created")
+                .schemaVersion("1.0.0")
                 .headerSchema(Map.of()) // GH-90000
                 .payloadSchema(Map.of()) // Completely different // GH-90000
                 .lifecycleStatus(EventType.LifecycleStatus.ACTIVE) // GH-90000
@@ -354,18 +354,18 @@ class EventValidatorTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Custom validators [GH-90000]")
+    @DisplayName("Custom validators")
     class CustomValidators {
 
         @Test
-        @DisplayName("should invoke custom validator after schema validation [GH-90000]")
+        @DisplayName("should invoke custom validator after schema validation")
         void shouldInvokeCustomValidatorAfterSchemaValidation() { // GH-90000
             EventType eventType = createEventType(Map.of(), Map.of("amount", Map.of("type", "number"))); // GH-90000
 
             validator.registerEventType(eventType); // GH-90000
             validator.registerCustomValidator(eventType, (et, header, payload) -> { // GH-90000
-                if (payload.get("amount [GH-90000]") instanceof Number amount && amount.doubleValue() < 0) {
-                    return Optional.of("Amount cannot be negative [GH-90000]");
+                if (payload.get("amount") instanceof Number amount && amount.doubleValue() < 0) {
+                    return Optional.of("Amount cannot be negative");
                 }
                 return Optional.empty(); // GH-90000
             });
@@ -376,11 +376,11 @@ class EventValidatorTest {
             EventValidator.EventValidationResult result = validator.validate(eventType, header, payload); // GH-90000
 
             assertThat(result.valid()).isFalse(); // GH-90000
-            assertThat(result.violations()).contains("Amount cannot be negative [GH-90000]");
+            assertThat(result.violations()).contains("Amount cannot be negative");
         }
 
         @Test
-        @DisplayName("should allow custom validator to pass [GH-90000]")
+        @DisplayName("should allow custom validator to pass")
         void shouldAllowCustomValidatorToPass() { // GH-90000
             EventType eventType = createEventType(Map.of(), Map.of("amount", Map.of("type", "number"))); // GH-90000
 
@@ -396,7 +396,7 @@ class EventValidatorTest {
         }
 
         @Test
-        @DisplayName("should not invoke custom validators if schema validation fails [GH-90000]")
+        @DisplayName("should not invoke custom validators if schema validation fails")
         void shouldNotInvokeCustomValidatorsIfSchemaValidationFails() { // GH-90000
             EventType eventType = createEventType( // GH-90000
                 Map.of("source", Map.of("type", "string", "required", true)), // GH-90000
@@ -404,7 +404,7 @@ class EventValidatorTest {
             );
 
             validator.registerEventType(eventType); // GH-90000
-            validator.registerCustomValidator(eventType, (et, header, payload) -> Optional.of("Custom violation [GH-90000]"));
+            validator.registerCustomValidator(eventType, (et, header, payload) -> Optional.of("Custom violation"));
 
             Map<String, Object> header = Map.of(); // Missing required "source" // GH-90000
             Map<String, Object> payload = Map.of("amount", 100.0); // GH-90000
@@ -414,7 +414,7 @@ class EventValidatorTest {
             assertThat(result.valid()).isFalse(); // GH-90000
             // Only schema validation violation, not custom validator
             assertThat(result.violations()).hasSize(1); // GH-90000
-            assertThat(result.violations().get(0)).contains("Header validation error [GH-90000]");
+            assertThat(result.violations().get(0)).contains("Header validation error");
         }
     }
 
@@ -424,11 +424,11 @@ class EventValidatorTest {
 
     private EventType createEventType(Map<String, Object> headerSchema, Map<String, Object> payloadSchema) { // GH-90000
         return EventType.builder() // GH-90000
-            .tenantId("tenant-123 [GH-90000]")
-            .namespace("commerce [GH-90000]")
-            .name("order.created [GH-90000]")
-            .label("Order Created [GH-90000]")
-            .schemaVersion("1.0.0 [GH-90000]")
+            .tenantId("tenant-123")
+            .namespace("commerce")
+            .name("order.created")
+            .label("Order Created")
+            .schemaVersion("1.0.0")
             .headerSchema(headerSchema) // GH-90000
             .payloadSchema(payloadSchema) // GH-90000
             .lifecycleStatus(EventType.LifecycleStatus.ACTIVE) // GH-90000
@@ -439,11 +439,11 @@ class EventValidatorTest {
 
     private EventType createEventTypeWithStatus(EventType.LifecycleStatus status) { // GH-90000
         return EventType.builder() // GH-90000
-            .tenantId("tenant-123 [GH-90000]")
-            .namespace("commerce [GH-90000]")
-            .name("order.created [GH-90000]")
-            .label("Order Created [GH-90000]")
-            .schemaVersion("1.0.0 [GH-90000]")
+            .tenantId("tenant-123")
+            .namespace("commerce")
+            .name("order.created")
+            .label("Order Created")
+            .schemaVersion("1.0.0")
             .headerSchema(Map.of()) // GH-90000
             .payloadSchema(Map.of()) // GH-90000
             .lifecycleStatus(status) // GH-90000

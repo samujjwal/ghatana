@@ -28,7 +28,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer test
  * @doc.pattern Test
  */
-@DisplayName("PluginInjector Tests [GH-90000]")
+@DisplayName("PluginInjector Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class PluginInjectorTest {
 
@@ -43,7 +43,7 @@ class PluginInjectorTest {
     }
 
     @Test
-    @DisplayName("Should inject required dependency into annotated field [GH-90000]")
+    @DisplayName("Should inject required dependency into annotated field")
     void shouldInjectRequiredDependency() { // GH-90000
         // GIVEN
         FakeService service = new FakeService(); // GH-90000
@@ -58,7 +58,7 @@ class PluginInjectorTest {
     }
 
     @Test
-    @DisplayName("Should inject optional dependency when present [GH-90000]")
+    @DisplayName("Should inject optional dependency when present")
     void shouldInjectOptionalDependencyWhenPresent() { // GH-90000
         // GIVEN
         FakeService service = new FakeService(); // GH-90000
@@ -73,7 +73,7 @@ class PluginInjectorTest {
     }
 
     @Test
-    @DisplayName("Should leave optional field null when dependency absent [GH-90000]")
+    @DisplayName("Should leave optional field null when dependency absent")
     void shouldLeaveOptionalFieldNullWhenAbsent() { // GH-90000
         // GIVEN
         when(context.getOptionalDependency(FakeService.class)).thenReturn(Optional.empty()); // GH-90000
@@ -87,21 +87,21 @@ class PluginInjectorTest {
     }
 
     @Test
-    @DisplayName("Should throw PluginInjectionException when required dependency missing [GH-90000]")
+    @DisplayName("Should throw PluginInjectionException when required dependency missing")
     void shouldThrowWhenRequiredDependencyMissing() { // GH-90000
         // GIVEN
         when(context.getDependency(FakeService.class)) // GH-90000
-            .thenThrow(new IllegalStateException("Dependency not found: FakeService [GH-90000]"));
+            .thenThrow(new IllegalStateException("Dependency not found: FakeService"));
         PluginWithRequiredDep plugin = new PluginWithRequiredDep(); // GH-90000
 
         // WHEN / THEN
         assertThatThrownBy(() -> injector.inject(plugin, context)) // GH-90000
             .isInstanceOf(PluginInjector.PluginInjectionException.class) // GH-90000
-            .hasMessageContaining("fakeService [GH-90000]");
+            .hasMessageContaining("fakeService");
     }
 
     @Test
-    @DisplayName("Should inject fields from superclass hierarchy [GH-90000]")
+    @DisplayName("Should inject fields from superclass hierarchy")
     void shouldInjectSuperclassFields() { // GH-90000
         // GIVEN
         FakeService service = new FakeService(); // GH-90000
@@ -119,21 +119,21 @@ class PluginInjectorTest {
     }
 
     @Test
-    @DisplayName("Should throw NullPointerException when target is null [GH-90000]")
+    @DisplayName("Should throw NullPointerException when target is null")
     void shouldRejectNullTarget() { // GH-90000
         assertThatThrownBy(() -> injector.inject(null, context)) // GH-90000
             .isInstanceOf(NullPointerException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("Should throw NullPointerException when context is null [GH-90000]")
+    @DisplayName("Should throw NullPointerException when context is null")
     void shouldRejectNullContext() { // GH-90000
         assertThatThrownBy(() -> injector.inject(new PluginWithRequiredDep(), null)) // GH-90000
             .isInstanceOf(NullPointerException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("Should do nothing on plugin with no annotated fields [GH-90000]")
+    @DisplayName("Should do nothing on plugin with no annotated fields")
     void shouldHandlePluginWithNoInjectFields() { // GH-90000
         // GIVEN
         PluginWithNoInject plugin = new PluginWithNoInject(); // GH-90000
@@ -182,7 +182,7 @@ class PluginInjectorTest {
     }
 
     static class PluginWithNoInject extends StubModule {
-        @SuppressWarnings("unused [GH-90000]")
+        @SuppressWarnings("unused")
         String notInjected;
     }
 }

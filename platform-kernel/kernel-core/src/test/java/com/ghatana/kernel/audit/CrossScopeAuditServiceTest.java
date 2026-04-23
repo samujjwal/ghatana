@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Ghatana Kernel Team
  * @since 1.1.0
  */
-@DisplayName("CrossScopeAuditService Tests [GH-90000]")
+@DisplayName("CrossScopeAuditService Tests")
 class CrossScopeAuditServiceTest {
 
     private InMemoryAuditStore auditStore;
@@ -53,18 +53,18 @@ class CrossScopeAuditServiceTest {
     // ==================== Retention Resolution ====================
 
     @Nested
-    @DisplayName("Retention Policy Resolution [GH-90000]")
+    @DisplayName("Retention Policy Resolution")
     class RetentionPolicyResolutionTests {
 
         @Test
-        @DisplayName("Healthcare classification resolves to 25 years per Nepal Directive 2081 [GH-90000]")
+        @DisplayName("Healthcare classification resolves to 25 years per Nepal Directive 2081")
         void healthcareRetention() { // GH-90000
             CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() // GH-90000
-                    .sourceScope(ScopeDescriptor.product("phr [GH-90000]"))
-                    .targetScope(ScopeDescriptor.product("finance [GH-90000]"))
-                    .action("billing.request [GH-90000]")
-                    .userId("user-1 [GH-90000]")
-                    .tenantId("tenant-1 [GH-90000]")
+                    .sourceScope(ScopeDescriptor.product("phr"))
+                    .targetScope(ScopeDescriptor.product("finance"))
+                    .action("billing.request")
+                    .userId("user-1")
+                    .tenantId("tenant-1")
                     .classification(ClassificationDescriptor.of( // GH-90000
                             "healthcare", SensitivityLevel.RESTRICTED, "nepal-2081"))
                     .build(); // GH-90000
@@ -77,14 +77,14 @@ class CrossScopeAuditServiceTest {
         }
 
         @Test
-        @DisplayName("Finance classification resolves to 10 years per SEBON regulation [GH-90000]")
+        @DisplayName("Finance classification resolves to 10 years per SEBON regulation")
         void financeRetention() { // GH-90000
             CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() // GH-90000
-                    .sourceScope(ScopeDescriptor.product("finance [GH-90000]"))
-                    .targetScope(ScopeDescriptor.product("phr [GH-90000]"))
-                    .action("payment.complete [GH-90000]")
-                    .userId("user-2 [GH-90000]")
-                    .tenantId("tenant-1 [GH-90000]")
+                    .sourceScope(ScopeDescriptor.product("finance"))
+                    .targetScope(ScopeDescriptor.product("phr"))
+                    .action("payment.complete")
+                    .userId("user-2")
+                    .tenantId("tenant-1")
                     .classification(ClassificationDescriptor.of( // GH-90000
                             "finance", SensitivityLevel.CONFIDENTIAL, "sebon"))
                     .build(); // GH-90000
@@ -97,14 +97,14 @@ class CrossScopeAuditServiceTest {
         }
 
         @Test
-        @DisplayName("Default classification resolves to 7 years [GH-90000]")
+        @DisplayName("Default classification resolves to 7 years")
         void defaultRetention() { // GH-90000
             CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() // GH-90000
-                    .sourceScope(ScopeDescriptor.product("flashit [GH-90000]"))
-                    .targetScope(ScopeDescriptor.product("aura [GH-90000]"))
-                    .action("recommendation.request [GH-90000]")
-                    .userId("user-3 [GH-90000]")
-                    .tenantId("tenant-2 [GH-90000]")
+                    .sourceScope(ScopeDescriptor.product("flashit"))
+                    .targetScope(ScopeDescriptor.product("aura"))
+                    .action("recommendation.request")
+                    .userId("user-3")
+                    .tenantId("tenant-2")
                     .classification(ClassificationDescriptor.of( // GH-90000
                             "general", SensitivityLevel.INTERNAL))
                     .build(); // GH-90000
@@ -117,14 +117,14 @@ class CrossScopeAuditServiceTest {
         }
 
         @Test
-        @DisplayName("Multiple compliance tags resolve to longest retention [GH-90000]")
+        @DisplayName("Multiple compliance tags resolve to longest retention")
         void multipleComplianceTags() { // GH-90000
             CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() // GH-90000
-                    .sourceScope(ScopeDescriptor.product("phr [GH-90000]"))
-                    .targetScope(ScopeDescriptor.product("finance [GH-90000]"))
-                    .action("cross-domain.operation [GH-90000]")
-                    .userId("user-4 [GH-90000]")
-                    .tenantId("tenant-1 [GH-90000]")
+                    .sourceScope(ScopeDescriptor.product("phr"))
+                    .targetScope(ScopeDescriptor.product("finance"))
+                    .action("cross-domain.operation")
+                    .userId("user-4")
+                    .tenantId("tenant-1")
                     .classification(ClassificationDescriptor.of( // GH-90000
                             "cross-domain", SensitivityLevel.RESTRICTED, "sebon", "nepal-2081"))
                     .build(); // GH-90000
@@ -140,23 +140,23 @@ class CrossScopeAuditServiceTest {
     // ==================== Scope-Awareness ====================
 
     @Nested
-    @DisplayName("Scope-Awareness [GH-90000]")
+    @DisplayName("Scope-Awareness")
     class ScopeAwarenessTests {
 
         @Test
-        @DisplayName("Audit records carry source and target scope descriptors [GH-90000]")
+        @DisplayName("Audit records carry source and target scope descriptors")
         void recordsCarryScopeDescriptors() { // GH-90000
             ScopeDescriptor source = new ScopeDescriptor( // GH-90000
                     ScopeType.DOMAIN_PACK, "healthcare-pack", Map.of("region", "nepal")); // GH-90000
-            ScopeDescriptor target = ScopeDescriptor.product("finance [GH-90000]");
+            ScopeDescriptor target = ScopeDescriptor.product("finance");
 
             CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() // GH-90000
                     .sourceScope(source) // GH-90000
                     .targetScope(target) // GH-90000
-                    .action("data.access [GH-90000]")
-                    .userId("user-1 [GH-90000]")
-                    .tenantId("tenant-1 [GH-90000]")
-                    .capabilityId("data.storage [GH-90000]")
+                    .action("data.access")
+                    .userId("user-1")
+                    .tenantId("tenant-1")
+                    .capabilityId("data.storage")
                     .classification(ClassificationDescriptor.of("healthcare", SensitivityLevel.RESTRICTED)) // GH-90000
                     .build(); // GH-90000
 
@@ -171,14 +171,14 @@ class CrossScopeAuditServiceTest {
         }
 
         @Test
-        @DisplayName("Works with non-product scope types (tenant, workflow, agent) [GH-90000]")
+        @DisplayName("Works with non-product scope types (tenant, workflow, agent)")
         void worksWithNonProductScopes() { // GH-90000
             CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() // GH-90000
-                    .sourceScope(ScopeDescriptor.tenant("tenant-42 [GH-90000]"))
-                    .targetScope(ScopeDescriptor.workflow("payment-flow-123 [GH-90000]"))
-                    .action("workflow.start [GH-90000]")
-                    .userId("user-1 [GH-90000]")
-                    .tenantId("tenant-42 [GH-90000]")
+                    .sourceScope(ScopeDescriptor.tenant("tenant-42"))
+                    .targetScope(ScopeDescriptor.workflow("payment-flow-123"))
+                    .action("workflow.start")
+                    .userId("user-1")
+                    .tenantId("tenant-42")
                     .classification(ClassificationDescriptor.of("general", SensitivityLevel.INTERNAL)) // GH-90000
                     .build(); // GH-90000
 
@@ -193,18 +193,18 @@ class CrossScopeAuditServiceTest {
     // ==================== Record Integrity ====================
 
     @Nested
-    @DisplayName("Record Integrity [GH-90000]")
+    @DisplayName("Record Integrity")
     class RecordIntegrityTests {
 
         @Test
-        @DisplayName("Confidential/restricted events get cryptographic signatures [GH-90000]")
+        @DisplayName("Confidential/restricted events get cryptographic signatures")
         void restrictedEventsAreSigned() { // GH-90000
             CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() // GH-90000
-                    .sourceScope(ScopeDescriptor.product("finance [GH-90000]"))
-                    .targetScope(ScopeDescriptor.product("finance [GH-90000]"))
-                    .action("trade.execute [GH-90000]")
-                    .userId("trader-1 [GH-90000]")
-                    .tenantId("tenant-1 [GH-90000]")
+                    .sourceScope(ScopeDescriptor.product("finance"))
+                    .targetScope(ScopeDescriptor.product("finance"))
+                    .action("trade.execute")
+                    .userId("trader-1")
+                    .tenantId("tenant-1")
                     .classification(ClassificationDescriptor.of( // GH-90000
                             "finance", SensitivityLevel.RESTRICTED, "sebon"))
                     .build(); // GH-90000
@@ -216,14 +216,14 @@ class CrossScopeAuditServiceTest {
         }
 
         @Test
-        @DisplayName("Low-sensitivity events skip signature [GH-90000]")
+        @DisplayName("Low-sensitivity events skip signature")
         void lowSensitivityEventsSkipSignature() { // GH-90000
             CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() // GH-90000
-                    .sourceScope(ScopeDescriptor.product("flashit [GH-90000]"))
-                    .targetScope(ScopeDescriptor.product("flashit [GH-90000]"))
-                    .action("content.view [GH-90000]")
-                    .userId("user-1 [GH-90000]")
-                    .tenantId("tenant-1 [GH-90000]")
+                    .sourceScope(ScopeDescriptor.product("flashit"))
+                    .targetScope(ScopeDescriptor.product("flashit"))
+                    .action("content.view")
+                    .userId("user-1")
+                    .tenantId("tenant-1")
                     .classification(ClassificationDescriptor.of( // GH-90000
                             "general", SensitivityLevel.PUBLIC))
                     .build(); // GH-90000
@@ -235,47 +235,47 @@ class CrossScopeAuditServiceTest {
         }
 
         @Test
-        @DisplayName("Audit ID is generated and non-null [GH-90000]")
+        @DisplayName("Audit ID is generated and non-null")
         void auditIdIsGenerated() { // GH-90000
             CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() // GH-90000
-                    .sourceScope(ScopeDescriptor.product("finance [GH-90000]"))
-                    .targetScope(ScopeDescriptor.product("phr [GH-90000]"))
-                    .action("data.share [GH-90000]")
+                    .sourceScope(ScopeDescriptor.product("finance"))
+                    .targetScope(ScopeDescriptor.product("phr"))
+                    .action("data.share")
                     .classification(ClassificationDescriptor.of("general", SensitivityLevel.INTERNAL)) // GH-90000
                     .build(); // GH-90000
 
             service.auditCrossScopeAction(event).getResult(); // GH-90000
 
             assertNotNull(auditStore.records.get(0).getAuditId()); // GH-90000
-            assertTrue(auditStore.records.get(0).getAuditId().startsWith("AUDIT- [GH-90000]"));
+            assertTrue(auditStore.records.get(0).getAuditId().startsWith("AUDIT-"));
         }
     }
 
     // ==================== Policy Resolver Unit Tests ====================
 
     @Nested
-    @DisplayName("DefaultRetentionPolicyResolver [GH-90000]")
+    @DisplayName("DefaultRetentionPolicyResolver")
     class RetentionResolverTests {
 
         @Test
-        @DisplayName("Returns default when no compliance tags match [GH-90000]")
+        @DisplayName("Returns default when no compliance tags match")
         void defaultsTo7Years() { // GH-90000
             RetentionPolicyResolver resolver = DefaultRetentionPolicyResolver.withStandardMappings(); // GH-90000
             int years = resolver.resolveRetentionYears( // GH-90000
-                    ScopeDescriptor.product("any [GH-90000]"),
-                    ScopeDescriptor.product("any [GH-90000]"),
+                    ScopeDescriptor.product("any"),
+                    ScopeDescriptor.product("any"),
                     ClassificationDescriptor.of("general", SensitivityLevel.INTERNAL)); // GH-90000
             assertEquals(7, years); // GH-90000
         }
 
         @Test
-        @DisplayName("Custom compliance tag mappings are honored [GH-90000]")
+        @DisplayName("Custom compliance tag mappings are honored")
         void customMappingsWork() { // GH-90000
             RetentionPolicyResolver resolver = new DefaultRetentionPolicyResolver( // GH-90000
                     Map.of("custom-regulation", 15)); // GH-90000
             int years = resolver.resolveRetentionYears( // GH-90000
-                    ScopeDescriptor.product("any [GH-90000]"),
-                    ScopeDescriptor.product("any [GH-90000]"),
+                    ScopeDescriptor.product("any"),
+                    ScopeDescriptor.product("any"),
                     ClassificationDescriptor.of("custom", SensitivityLevel.CONFIDENTIAL, "custom-regulation")); // GH-90000
             assertEquals(15, years); // GH-90000
         }
@@ -284,19 +284,19 @@ class CrossScopeAuditServiceTest {
     // ==================== Null/Edge Cases ====================
 
     @Test
-    @DisplayName("Null event throws NullPointerException [GH-90000]")
+    @DisplayName("Null event throws NullPointerException")
     void nullEventThrows() { // GH-90000
         assertThrows(NullPointerException.class, () -> service.auditCrossScopeAction(null)); // GH-90000
     }
 
     @Test
-    @DisplayName("Event without classification throws NullPointerException [GH-90000]")
+    @DisplayName("Event without classification throws NullPointerException")
     void eventWithoutClassificationThrows() { // GH-90000
         assertThrows(NullPointerException.class, () -> // GH-90000
                 CrossScopeAuditEvent.builder() // GH-90000
-                        .sourceScope(ScopeDescriptor.product("a [GH-90000]"))
-                        .targetScope(ScopeDescriptor.product("b [GH-90000]"))
-                        .action("test [GH-90000]")
+                        .sourceScope(ScopeDescriptor.product("a"))
+                        .targetScope(ScopeDescriptor.product("b"))
+                        .action("test")
                         .classification(null) // GH-90000
                         .build()); // GH-90000
     }

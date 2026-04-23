@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @author Ghatana Kernel Team
  * @since 1.0.0
  */
-@DisplayName("KernelRegistry Tests [GH-90000]")
+@DisplayName("KernelRegistry Tests")
 class KernelRegistryTest extends EventloopTestBase {
 
     private KernelRegistry registry;
@@ -37,7 +37,7 @@ class KernelRegistryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should register and retrieve module by ID [GH-90000]")
+    @DisplayName("should register and retrieve module by ID")
     void testModuleRegistration() { // GH-90000
         // Given
         KernelModule module = new TestKernelModule("test-module", "1.0.0"); // GH-90000
@@ -46,21 +46,21 @@ class KernelRegistryTest extends EventloopTestBase {
         registry.registerModule(module); // GH-90000
 
         // Then
-        var retrieved = registry.getModule("test-module [GH-90000]");
+        var retrieved = registry.getModule("test-module");
         assertThat(retrieved).isPresent(); // GH-90000
         assertThat(retrieved.get()).isEqualTo(module); // GH-90000
     }
 
     @Test
-    @DisplayName("should return empty optional for unknown module [GH-90000]")
+    @DisplayName("should return empty optional for unknown module")
     void testUnknownModule() { // GH-90000
         // When/Then
-        var result = registry.getModule("unknown-module [GH-90000]");
+        var result = registry.getModule("unknown-module");
         assertThat(result).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("should resolve dependencies in correct order [GH-90000]")
+    @DisplayName("should resolve dependencies in correct order")
     void testDependencyResolution() { // GH-90000
         // Given
         KernelModule moduleA = new TestKernelModule("module-a", "1.0.0"); // GH-90000
@@ -74,11 +74,11 @@ class KernelRegistryTest extends EventloopTestBase {
 
         // Then
         assertThat(dependencies).hasSize(1); // GH-90000
-        assertThat(dependencies.get(0).getModuleId()).isEqualTo("module-a [GH-90000]");
+        assertThat(dependencies.get(0).getModuleId()).isEqualTo("module-a");
     }
 
     @Test
-    @DisplayName("should detect missing dependencies [GH-90000]")
+    @DisplayName("should detect missing dependencies")
     void testMissingDependency() { // GH-90000
         // Given
         KernelModule module = new TestKernelModule("module-with-deps", "1.0.0", "missing-dependency"); // GH-90000
@@ -86,11 +86,11 @@ class KernelRegistryTest extends EventloopTestBase {
         // When/Then
         assertThatThrownBy(() -> registry.registerModule(module)) // GH-90000
             .isInstanceOf(IllegalStateException.class) // GH-90000
-            .hasMessageContaining("missing-dependency [GH-90000]");
+            .hasMessageContaining("missing-dependency");
     }
 
     @Test
-    @DisplayName("should start module lifecycle successfully [GH-90000]")
+    @DisplayName("should start module lifecycle successfully")
     void testModuleLifecycle() { // GH-90000
         // Given
         TestKernelModule module = new TestKernelModule("lifecycle-test", "1.0.0"); // GH-90000
@@ -108,7 +108,7 @@ class KernelRegistryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should find modules by capability [GH-90000]")
+    @DisplayName("should find modules by capability")
     void testModulesByCapability() { // GH-90000
         // Given
         KernelModule module = new TestKernelModule("capability-module", "1.0.0"); // GH-90000
@@ -187,8 +187,8 @@ class KernelRegistryTest extends EventloopTestBase {
         @Override
         public HealthStatus getHealthStatus() { // GH-90000
             return started
-            ? HealthStatus.healthy("Test module healthy [GH-90000]")
-            : HealthStatus.unhealthy("Test module not started [GH-90000]");
+            ? HealthStatus.healthy("Test module healthy")
+            : HealthStatus.unhealthy("Test module not started");
         }
 
         boolean isStarted() { return started; } // GH-90000

@@ -15,7 +15,8 @@ import java.util.List;
  * @doc.type interface
  * @doc.purpose Episode cluster → Procedure induction
  * @doc.layer agent-learning
- */
+  * @doc.pattern Interface
+*/
 public interface ProcedureInducer {
 
     /**

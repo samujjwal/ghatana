@@ -15,7 +15,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Processes patterns across distributed nodes.
- */
+  * @doc.type class
+ * @doc.purpose Provides distributed pattern processor functionality.
+ * @doc.layer product
+ * @doc.pattern Processor
+*/
 @Slf4j
 public class DistributedPatternProcessor {
 

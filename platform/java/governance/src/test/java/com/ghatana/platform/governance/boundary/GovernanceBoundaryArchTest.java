@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
  *
  * 16 tests per module × 3 modules = 48 governance tests
  */
-@DisplayName("Phase 4: Platform Governance Boundary Tests [GH-90000]")
+@DisplayName("Phase 4: Platform Governance Boundary Tests")
 class GovernanceBoundaryArchTest {
 
     private static final String GOVERNANCE_PACKAGE = "com.ghatana.platform.governance..";
@@ -31,7 +31,7 @@ class GovernanceBoundaryArchTest {
     // GOVERNANCE MODULE TESTS (16 tests) // GH-90000
 
     @Test
-    @DisplayName("Governance module should not depend on product logic [GH-90000]")
+    @DisplayName("Governance module should not depend on product logic")
     void governanceShouldNotDependOnProduct() { // GH-90000
         classes() // GH-90000
             .that().resideInAPackage(GOVERNANCE_PACKAGE) // GH-90000
@@ -43,7 +43,7 @@ class GovernanceBoundaryArchTest {
     }
 
     @Test
-    @DisplayName("Governance module should not have circular dependencies [GH-90000]")
+    @DisplayName("Governance module should not have circular dependencies")
     void governanceShouldNotHaveCircularDependencies() { // GH-90000
         // ArchUnit DSL doesn't support direct circular dependency check
         // Verify classes don't access each other in a cycle via package structure
@@ -69,13 +69,13 @@ class GovernanceBoundaryArchTest {
     }
 
     @Test
-    @DisplayName("Governance public APIs must include decision rationale [GH-90000]")
+    @DisplayName("Governance public APIs must include decision rationale")
     void governanceApisShouldDocumentDecisionRationale() { // GH-90000
         var classes = new ClassFileImporter() // GH-90000
-            .importPackages("com.ghatana.platform.governance.api [GH-90000]");
+            .importPackages("com.ghatana.platform.governance.api");
 
         classes.stream() // GH-90000
-            .filter(c -> c.getSimpleName().endsWith("Decision [GH-90000]"))
+            .filter(c -> c.getSimpleName().endsWith("Decision"))
             .forEach(c -> { // GH-90000
                 var javadoc = c.getDescription(); // GH-90000
                 assertThat(javadoc) // GH-90000
@@ -85,83 +85,83 @@ class GovernanceBoundaryArchTest {
     }
 
     @Test
-    @DisplayName("Governance rules should be immutable [GH-90000]")
+    @DisplayName("Governance rules should be immutable")
     void governanceRulesShouldBeImmutable() { // GH-90000
         var classes = new ClassFileImporter() // GH-90000
-            .importPackages("com.ghatana.platform.governance.rules [GH-90000]");
+            .importPackages("com.ghatana.platform.governance.rules");
 
         classes.stream() // GH-90000
-            .filter(c -> c.getSimpleName().endsWith("Rule [GH-90000]"))
+            .filter(c -> c.getSimpleName().endsWith("Rule"))
             .forEach(c -> { // GH-90000
-                assertThat(c.getModifiers().contains("final [GH-90000]") || c.isInterface())
+                assertThat(c.getModifiers().contains("final") || c.isInterface())
                     .as("Rule " + c.getName() + " should be immutable (final or interface)") // GH-90000
                     .isTrue(); // GH-90000
             });
     }
 
     @Test
-    @DisplayName("Governance context should never hold sensitive data [GH-90000]")
+    @DisplayName("Governance context should never hold sensitive data")
     void governanceContextShouldNotHoldSensitiveData() { // GH-90000
         noClasses() // GH-90000
-            .that().resideInAPackage("com.ghatana.platform.governance.context.. [GH-90000]")
-            .should().haveNameMatching(".*Password.* [GH-90000]")
-            .orShould().haveNameMatching(".*Secret.* [GH-90000]")
-            .orShould().haveNameMatching(".*Token.* [GH-90000]")
+            .that().resideInAPackage("com.ghatana.platform.governance.context..")
+            .should().haveNameMatching(".*Password.*")
+            .orShould().haveNameMatching(".*Secret.*")
+            .orShould().haveNameMatching(".*Token.*")
             .allowEmptyShould(true) // Informational until features are implemented // GH-90000
             .check(new ClassFileImporter().importPackages(GOVERNANCE_PACKAGE)); // GH-90000
     }
 
     @Test
-    @DisplayName("Governance enforcement should audit all decisions [GH-90000]")
+    @DisplayName("Governance enforcement should audit all decisions")
     void governanceEnforcementShouldAuditDecisions() { // GH-90000
         var classes = new ClassFileImporter() // GH-90000
-            .importPackages("com.ghatana.platform.governance.enforcement [GH-90000]");
+            .importPackages("com.ghatana.platform.governance.enforcement");
 
         long enforcers = classes.stream() // GH-90000
-            .filter(c -> c.getSimpleName().endsWith("Enforcer [GH-90000]"))
+            .filter(c -> c.getSimpleName().endsWith("Enforcer"))
             .count(); // GH-90000
 
         assertThat(enforcers) // GH-90000
-            .as("Should have at least one enforcer for logging/auditing [GH-90000]")
+            .as("Should have at least one enforcer for logging/auditing")
             .isGreaterThanOrEqualTo(0); // Informational until features are implemented // GH-90000
     }
 
     @Test
-    @DisplayName("Governance exceptions should be catchable separately [GH-90000]")
+    @DisplayName("Governance exceptions should be catchable separately")
     void governanceExceptionsShouldBeDistinct() { // GH-90000
         var classes = new ClassFileImporter() // GH-90000
-            .importPackages("com.ghatana.platform.governance.exception [GH-90000]");
+            .importPackages("com.ghatana.platform.governance.exception");
 
         long exceptions = classes.stream() // GH-90000
             .filter(c -> c.isAssignableTo(Exception.class) || c.isAssignableTo(Throwable.class)) // GH-90000
             .count(); // GH-90000
 
         assertThat(exceptions) // GH-90000
-            .as("Should have distinct exception types [GH-90000]")
+            .as("Should have distinct exception types")
             .isGreaterThanOrEqualTo(0); // Informational until features are implemented // GH-90000
     }
 
     @Test
-    @DisplayName("Governance should expose metric points for observability [GH-90000]")
+    @DisplayName("Governance should expose metric points for observability")
     void governanceShouldExposeMetics() { // GH-90000
         var classes = new ClassFileImporter() // GH-90000
-            .importPackages("com.ghatana.platform.governance [GH-90000]");
+            .importPackages("com.ghatana.platform.governance");
 
         // Check for classes that might reference metrics via imports
         long metricsUsers = classes.stream() // GH-90000
-            .filter(c -> c.getPackageName().contains("metrics [GH-90000]") ||
-                        c.getSimpleName().contains("Metric [GH-90000]"))
+            .filter(c -> c.getPackageName().contains("metrics") ||
+                        c.getSimpleName().contains("Metric"))
             .count(); // GH-90000
 
         assertThat(metricsUsers) // GH-90000
-            .as("Should have at least one class reporting metrics [GH-90000]")
+            .as("Should have at least one class reporting metrics")
             .isGreaterThanOrEqualTo(0); // Relaxed since we check via package name // GH-90000
     }
 
     // POLICY-AS-CODE MODULE TESTS (16 tests) // GH-90000
 
     @Test
-    @DisplayName("Policy module should only depend on governance SPI [GH-90000]")
+    @DisplayName("Policy module should only depend on governance SPI")
     void policyShouldOnlyUsePlatformGovernance() { // GH-90000
         classes() // GH-90000
             .that().resideInAPackage(POLICY_PACKAGE) // GH-90000
@@ -177,203 +177,203 @@ class GovernanceBoundaryArchTest {
     }
 
     @Test
-    @DisplayName("Policy definitions should be versionable [GH-90000]")
+    @DisplayName("Policy definitions should be versionable")
     void policyDefinitionsShouldBeVersionable() { // GH-90000
         var classes = new ClassFileImporter() // GH-90000
-            .importPackages("com.ghatana.platform.policy.definition [GH-90000]");
+            .importPackages("com.ghatana.platform.policy.definition");
 
         classes.stream() // GH-90000
-            .filter(c -> c.getSimpleName().endsWith("Policy [GH-90000]"))
+            .filter(c -> c.getSimpleName().endsWith("Policy"))
             .forEach(c -> { // GH-90000
                 String javadoc = c.getDescription(); // GH-90000
                 assertThat(javadoc != null ? javadoc.toLowerCase() : "") // GH-90000
                     .as("Policy " + c.getSimpleName() + " should document versioning") // GH-90000
                     .satisfiesAnyOf( // GH-90000
-                        desc -> assertThat(desc).contains("version [GH-90000]"),
-                        desc -> assertThat(desc).contains("schema [GH-90000]")
+                        desc -> assertThat(desc).contains("version"),
+                        desc -> assertThat(desc).contains("schema")
                     );
             });
     }
 
     @Test
-    @DisplayName("Policy evaluation should be deterministic [GH-90000]")
+    @DisplayName("Policy evaluation should be deterministic")
     void policyEvaluationShouldBeDeterministic() { // GH-90000
         var classes = new ClassFileImporter() // GH-90000
-            .importPackages("com.ghatana.platform.policy.evaluation [GH-90000]");
+            .importPackages("com.ghatana.platform.policy.evaluation");
 
         classes.stream() // GH-90000
-            .filter(c -> c.getSimpleName().contains("Evaluator [GH-90000]"))
+            .filter(c -> c.getSimpleName().contains("Evaluator"))
             .forEach(c -> { // GH-90000
                 // Ensure evaluator methods return same result for same input
                 var methods = c.getAllMethods(); // GH-90000
                 assertThat(methods.size()) // GH-90000
-                    .as("Evaluator should have evaluate() method [GH-90000]")
+                    .as("Evaluator should have evaluate() method")
                     .isGreaterThanOrEqualTo(1); // GH-90000
             });
     }
 
     @Test
-    @DisplayName("Policy should support rollback/versioning [GH-90000]")
+    @DisplayName("Policy should support rollback/versioning")
     void policyShouldSupportVersioning() { // GH-90000
         var classes = new ClassFileImporter() // GH-90000
-            .importPackages("com.ghatana.platform.policy [GH-90000]");
+            .importPackages("com.ghatana.platform.policy");
 
         // Informational check - versioning support is planned but not yet implemented
         boolean hasVersioning = classes.stream() // GH-90000
-            .anyMatch(c -> c.getSimpleName().contains("Version [GH-90000]") ||
-                          c.getSimpleName().contains("Rollback [GH-90000]"));
+            .anyMatch(c -> c.getSimpleName().contains("Version") ||
+                          c.getSimpleName().contains("Rollback"));
 
         // This test is informational until versioning features are implemented
-        // assertThat(hasVersioning).as("Should have versioning or rollback support [GH-90000]").isTrue();
+        // assertThat(hasVersioning).as("Should have versioning or rollback support").isTrue();
     }
 
     @Test
-    @DisplayName("Policy exceptions should indicate evaluation failure vs. config error [GH-90000]")
+    @DisplayName("Policy exceptions should indicate evaluation failure vs. config error")
     void policyExceptionsShouldBeClear() { // GH-90000
         var classes = new ClassFileImporter() // GH-90000
-            .importPackages("com.ghatana.platform.policy.exception [GH-90000]");
+            .importPackages("com.ghatana.platform.policy.exception");
 
         long types = classes.stream() // GH-90000
             .filter(c -> c.isAssignableTo(Exception.class)) // GH-90000
             .count(); // GH-90000
 
         assertThat(types) // GH-90000
-            .as("Should distinguish evaluation failure from config/data errors [GH-90000]")
+            .as("Should distinguish evaluation failure from config/data errors")
             .isGreaterThanOrEqualTo(0); // Informational until features are implemented // GH-90000
     }
 
     @Test
-    @DisplayName("Policy module should not perform domain business logic [GH-90000]")
+    @DisplayName("Policy module should not perform domain business logic")
     void policyModuleShouldBeDeclarativeOnly() { // GH-90000
         var classes = new ClassFileImporter() // GH-90000
             .importPackages(POLICY_PACKAGE); // GH-90000
 
         long serviceClasses = classes.stream() // GH-90000
-            .filter(c -> c.getSimpleName().matches(".*Service.* [GH-90000]") &&
-                        !c.getSimpleName().matches("Policy.*Service [GH-90000]"))
+            .filter(c -> c.getSimpleName().matches(".*Service.*") &&
+                        !c.getSimpleName().matches("Policy.*Service"))
             .count(); // GH-90000
 
         assertThat(serviceClasses) // GH-90000
-            .as("Policy module should not have business logic services [GH-90000]")
+            .as("Policy module should not have business logic services")
             .isEqualTo(0); // GH-90000
     }
 
     // DATA-GOVERNANCE MODULE TESTS (16 tests) // GH-90000
 
     @Test
-    @DisplayName("Data-governance should classify all data assets [GH-90000]")
+    @DisplayName("Data-governance should classify all data assets")
     void dataGovernanceShouldClassifyAssets() { // GH-90000
         var classes = new ClassFileImporter() // GH-90000
-            .importPackages("com.ghatana.platform.data.governance.classification [GH-90000]");
+            .importPackages("com.ghatana.platform.data.governance.classification");
 
         long classifiers = classes.stream() // GH-90000
-            .filter(c -> c.getSimpleName().contains("Classifier [GH-90000]"))
+            .filter(c -> c.getSimpleName().contains("Classifier"))
             .count(); // GH-90000
 
         assertThat(classifiers) // GH-90000
-            .as("Should have classification mechanism [GH-90000]")
+            .as("Should have classification mechanism")
             .isGreaterThanOrEqualTo(0); // Informational until features are implemented // GH-90000
     }
 
     @Test
-    @DisplayName("Data-governance should track lineage [GH-90000]")
+    @DisplayName("Data-governance should track lineage")
     void dataGovernanceShouldTrackLineage() { // GH-90000
         var classes = new ClassFileImporter() // GH-90000
-            .importPackages("com.ghatana.platform.data.governance.lineage [GH-90000]");
+            .importPackages("com.ghatana.platform.data.governance.lineage");
 
         long lineageTrackers = classes.stream() // GH-90000
-            .filter(c -> c.getSimpleName().contains("Lineage [GH-90000]"))
+            .filter(c -> c.getSimpleName().contains("Lineage"))
             .count(); // GH-90000
 
         assertThat(lineageTrackers) // GH-90000
-            .as("Should track data lineage [GH-90000]")
+            .as("Should track data lineage")
             .isGreaterThanOrEqualTo(0); // Informational until features are implemented // GH-90000
     }
 
     @Test
-    @DisplayName("Data-governance retention policies should be time-based [GH-90000]")
+    @DisplayName("Data-governance retention policies should be time-based")
     void dataGovernanceRetentionShouldBeTimeBased() { // GH-90000
         var classes = new ClassFileImporter() // GH-90000
-            .importPackages("com.ghatana.platform.data.governance.retention [GH-90000]");
+            .importPackages("com.ghatana.platform.data.governance.retention");
 
         classes.stream() // GH-90000
-            .filter(c -> c.getSimpleName().endsWith("Policy [GH-90000]"))
+            .filter(c -> c.getSimpleName().endsWith("Policy"))
             .forEach(c -> { // GH-90000
                 // Check if class name suggests time-based retention
                 assertThat(c.getSimpleName()) // GH-90000
-                    .as("Retention policy should be time-based [GH-90000]")
+                    .as("Retention policy should be time-based")
                     .satisfiesAnyOf( // GH-90000
-                        name -> assertThat(name).containsIgnoringCase("duration [GH-90000]"),
-                        name -> assertThat(name).containsIgnoringCase("time [GH-90000]"),
-                        name -> assertThat(name).containsIgnoringCase("retention [GH-90000]")
+                        name -> assertThat(name).containsIgnoringCase("duration"),
+                        name -> assertThat(name).containsIgnoringCase("time"),
+                        name -> assertThat(name).containsIgnoringCase("retention")
                     );
             });
     }
 
     @Test
-    @DisplayName("Data-governance should enforce schema validation [GH-90000]")
+    @DisplayName("Data-governance should enforce schema validation")
     void dataGovernanceShouldValidateSchema() { // GH-90000
         var classes = new ClassFileImporter() // GH-90000
-            .importPackages("com.ghatana.platform.data.governance.schema [GH-90000]");
+            .importPackages("com.ghatana.platform.data.governance.schema");
 
         long validators = classes.stream() // GH-90000
-            .filter(c -> c.getSimpleName().contains("Validator [GH-90000]") ||
-                        c.getSimpleName().contains("Validator [GH-90000]"))
+            .filter(c -> c.getSimpleName().contains("Validator") ||
+                        c.getSimpleName().contains("Validator"))
             .count(); // GH-90000
 
         assertThat(validators) // GH-90000
-            .as("Should have schema validators [GH-90000]")
+            .as("Should have schema validators")
             .isGreaterThanOrEqualTo(0); // Informational until features are implemented // GH-90000
     }
 
     @Test
-    @DisplayName("Data-governance should audit all access [GH-90000]")
+    @DisplayName("Data-governance should audit all access")
     void dataGovernanceShouldAuditAccess() { // GH-90000
         var classes = new ClassFileImporter() // GH-90000
-            .importPackages("com.ghatana.platform.data.governance [GH-90000]");
+            .importPackages("com.ghatana.platform.data.governance");
 
         long withAudit = classes.stream() // GH-90000
-            .filter(c -> c.getPackageName().contains("audit [GH-90000]") ||
-                        c.getSimpleName().contains("Audit [GH-90000]"))
+            .filter(c -> c.getPackageName().contains("audit") ||
+                        c.getSimpleName().contains("Audit"))
             .count(); // GH-90000
 
         assertThat(withAudit) // GH-90000
-            .as("Should have audit trail mechanism via package/class naming [GH-90000]")
+            .as("Should have audit trail mechanism via package/class naming")
             .isGreaterThanOrEqualTo(0); // Relaxed check // GH-90000
     }
 
     @Test
-    @DisplayName("Data-governance should support regulatory compliance [GH-90000]")
+    @DisplayName("Data-governance should support regulatory compliance")
     void dataGovernanceShouldSupportCompliance() { // GH-90000
         var classes = new ClassFileImporter() // GH-90000
-            .importPackages("com.ghatana.platform.data.governance.compliance [GH-90000]");
+            .importPackages("com.ghatana.platform.data.governance.compliance");
 
         assertThat(classes.size()) // GH-90000
-            .as("Should have compliance module [GH-90000]")
+            .as("Should have compliance module")
             .isGreaterThanOrEqualTo(0); // Informational until features are implemented // GH-90000
     }
 
     @Test
-    @DisplayName("Data-governance should expose governance metrics [GH-90000]")
+    @DisplayName("Data-governance should expose governance metrics")
     void dataGovernanceShouldExposMetrics() { // GH-90000
         var classes = new ClassFileImporter() // GH-90000
-            .importPackages("com.ghatana.platform.data.governance [GH-90000]");
+            .importPackages("com.ghatana.platform.data.governance");
 
         long withMetrics = classes.stream() // GH-90000
-            .filter(c -> c.getPackageName().contains("metrics [GH-90000]") ||
-                        c.getSimpleName().contains("Metric [GH-90000]"))
+            .filter(c -> c.getPackageName().contains("metrics") ||
+                        c.getSimpleName().contains("Metric"))
             .count(); // GH-90000
 
         assertThat(withMetrics) // GH-90000
-            .as("Should collect and expose governance metrics via package/class naming [GH-90000]")
+            .as("Should collect and expose governance metrics via package/class naming")
             .isGreaterThanOrEqualTo(0); // Relaxed check // GH-90000
     }
 
     @Test
-    @DisplayName("Data-governance should prevent unauthorized transformations [GH-90000]")
+    @DisplayName("Data-governance should prevent unauthorized transformations")
     void dataGovernanceShouldValidateTransformations() { // GH-90000
         classes() // GH-90000
-            .that().resideInAPackage("com.ghatana.platform.data.governance.transform.. [GH-90000]")
+            .that().resideInAPackage("com.ghatana.platform.data.governance.transform..")
             .should().onlyAccessClassesThat().resideOutsideOfPackages( // GH-90000
                 "com.ghatana.products.."
             )
@@ -386,7 +386,7 @@ class GovernanceBoundaryArchTest {
     // CROSS-MODULE GOVERNANCE TESTS (Additional 16 tests) // GH-90000
 
     @Test
-    @DisplayName("All governance modules should use same TenantContext [GH-90000]")
+    @DisplayName("All governance modules should use same TenantContext")
     void allGovernanceModulesShouldShareContext() { // GH-90000
         classes() // GH-90000
             .that().resideInAnyPackage(GOVERNANCE_PACKAGE, POLICY_PACKAGE, DATA_GOVERNANCE_PACKAGE) // GH-90000
@@ -413,7 +413,7 @@ class GovernanceBoundaryArchTest {
     }
 
     @Test
-    @DisplayName("Governance failures should never silently succeed [GH-90000]")
+    @DisplayName("Governance failures should never silently succeed")
     void governanceFailuresShouldBeExplicit() { // GH-90000
         var classes = new ClassFileImporter() // GH-90000
             .importPackages(GOVERNANCE_PACKAGE, POLICY_PACKAGE, DATA_GOVERNANCE_PACKAGE); // GH-90000
@@ -425,14 +425,14 @@ class GovernanceBoundaryArchTest {
             .count(); // GH-90000
 
         assertThat(exceptionTypes) // GH-90000
-            .as("Should have explicit exception types for governance failures [GH-90000]")
+            .as("Should have explicit exception types for governance failures")
             .isGreaterThanOrEqualTo(0); // Relaxed check // GH-90000
     }
 
     // SUMMARY METRIC TEST
 
     @Test
-    @DisplayName("48 Phase 4 governance tests should all execute [GH-90000]")
+    @DisplayName("48 Phase 4 governance tests should all execute")
     void phase4GovernanceTestsAreComplete() { // GH-90000
         // This test verifies that all 16+16+16 = 48 tests are discoverable
         // and compile without errors
@@ -447,7 +447,7 @@ class GovernanceBoundaryArchTest {
         long totalClasses = govClasses.size() + policyClasses.size() + dataGovClasses.size(); // GH-90000
 
         assertThat(totalClasses) // GH-90000
-            .as("All governance modules should compile successfully [GH-90000]")
+            .as("All governance modules should compile successfully")
             .isGreaterThan(0); // GH-90000
     }
 }

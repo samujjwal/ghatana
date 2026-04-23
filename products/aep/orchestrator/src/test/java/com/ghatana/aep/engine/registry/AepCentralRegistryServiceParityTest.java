@@ -35,7 +35,7 @@ import org.junit.jupiter.api.Test;
  *   <li>findByCapability (via backend) is consistent with direct adapter result</li> // GH-90000
  * </ol>
  */
-@DisplayName("AepCentralRegistryService — Catalog Backend Parity [GH-90000]")
+@DisplayName("AepCentralRegistryService — Catalog Backend Parity")
 class AepCentralRegistryServiceParityTest extends EventloopTestBase {
 
     private CatalogRegistry sharedCatalogRegistry;
@@ -49,7 +49,7 @@ class AepCentralRegistryServiceParityTest extends EventloopTestBase {
                 "catalog-aep",
                 List.of( // GH-90000
                         entry("aep-planner", "AEP Planner", "catalog-aep", Set.of("planning", "reasoning")), // GH-90000
-                        entry("aep-executor", "AEP Executor", "catalog-aep", Set.of("execution [GH-90000]")))));
+                        entry("aep-executor", "AEP Executor", "catalog-aep", Set.of("execution")))));
         sharedCatalogRegistry.register(new StubCatalog( // GH-90000
                 "catalog-yappc",
                 List.of(entry( // GH-90000
@@ -60,7 +60,7 @@ class AepCentralRegistryServiceParityTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("listAll on orchestrator returns same count as backend listAgents [GH-90000]")
+    @DisplayName("listAll on orchestrator returns same count as backend listAgents")
     void listAllParityWithBackend() { // GH-90000
         List<CatalogAgentEntry> backendEntries = runPromise(backendAdapter::listAgents); // GH-90000
         List<AgentInfo> orchestratorAll = runPromise(orchestratorService::listAll); // GH-90000
@@ -79,37 +79,37 @@ class AepCentralRegistryServiceParityTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("resolveAgent on orchestrator finds catalog-only agents (no local registration) [GH-90000]")
+    @DisplayName("resolveAgent on orchestrator finds catalog-only agents (no local registration)")
     void resolveAgentFindsBackendAgentsWithoutLocalRegistration() { // GH-90000
-        Optional<AgentInfo> planner = runPromise(() -> orchestratorService.resolveAgent("aep-planner [GH-90000]"));
-        Optional<AgentInfo> executor = runPromise(() -> orchestratorService.resolveAgent("aep-executor [GH-90000]"));
-        Optional<AgentInfo> codeGen = runPromise(() -> orchestratorService.resolveAgent("yappc-code-gen [GH-90000]"));
-        Optional<AgentInfo> missing = runPromise(() -> orchestratorService.resolveAgent("does-not-exist [GH-90000]"));
+        Optional<AgentInfo> planner = runPromise(() -> orchestratorService.resolveAgent("aep-planner"));
+        Optional<AgentInfo> executor = runPromise(() -> orchestratorService.resolveAgent("aep-executor"));
+        Optional<AgentInfo> codeGen = runPromise(() -> orchestratorService.resolveAgent("yappc-code-gen"));
+        Optional<AgentInfo> missing = runPromise(() -> orchestratorService.resolveAgent("does-not-exist"));
 
-        assertThat(planner).isPresent().satisfies(a -> assertThat(a.get().id()).isEqualTo("aep-planner [GH-90000]"));
-        assertThat(executor).isPresent().satisfies(a -> assertThat(a.get().id()).isEqualTo("aep-executor [GH-90000]"));
-        assertThat(codeGen).isPresent().satisfies(a -> assertThat(a.get().id()).isEqualTo("yappc-code-gen [GH-90000]"));
+        assertThat(planner).isPresent().satisfies(a -> assertThat(a.get().id()).isEqualTo("aep-planner"));
+        assertThat(executor).isPresent().satisfies(a -> assertThat(a.get().id()).isEqualTo("aep-executor"));
+        assertThat(codeGen).isPresent().satisfies(a -> assertThat(a.get().id()).isEqualTo("yappc-code-gen"));
         assertThat(missing).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("local registration takes priority over backend catalog entry [GH-90000]")
+    @DisplayName("local registration takes priority over backend catalog entry")
     void localRegistrationTakesPriorityOverBackend() { // GH-90000
         AgentInfo localOverride = new AgentInfo("aep-planner", "Local Override Planner", "HYBRID"); // GH-90000
         localOverride.product = "yappc";
         runPromise(() -> orchestratorService.registerAgent(localOverride)); // GH-90000
 
-        Optional<AgentInfo> resolved = runPromise(() -> orchestratorService.resolveAgent("aep-planner [GH-90000]"));
+        Optional<AgentInfo> resolved = runPromise(() -> orchestratorService.resolveAgent("aep-planner"));
 
         // Local registration wins
         assertThat(resolved).isPresent(); // GH-90000
-        assertThat(resolved.get().name()).isEqualTo("Local Override Planner [GH-90000]");
+        assertThat(resolved.get().name()).isEqualTo("Local Override Planner");
     }
 
     @Test
-    @DisplayName("backend capability filtering matches direct adapter result [GH-90000]")
+    @DisplayName("backend capability filtering matches direct adapter result")
     void capabilityFilteringConsistentWithBackend() { // GH-90000
-        List<CatalogAgentEntry> backendReasoning = runPromise(() -> backendAdapter.findByCapability("reasoning [GH-90000]"));
+        List<CatalogAgentEntry> backendReasoning = runPromise(() -> backendAdapter.findByCapability("reasoning"));
 
         // Agents with reasoning: aep-planner + yappc-code-gen
         assertThat(backendReasoning).hasSize(2); // GH-90000
@@ -120,21 +120,21 @@ class AepCentralRegistryServiceParityTest extends EventloopTestBase {
         // Orchestrator listAll should include all agents with reasoning
         List<AgentInfo> all = runPromise(orchestratorService::listAll); // GH-90000
         long plannerOrCodeGen = all.stream() // GH-90000
-                .filter(a -> a.id().equals("aep-planner [GH-90000]") || a.id().equals("yappc-code-gen [GH-90000]"))
+                .filter(a -> a.id().equals("aep-planner") || a.id().equals("yappc-code-gen"))
                 .count(); // GH-90000
         assertThat(plannerOrCodeGen).isEqualTo(2); // GH-90000
     }
 
     @Test
-    @DisplayName("catalog entries are exposed as AgentInfo with correct metadata [GH-90000]")
+    @DisplayName("catalog entries are exposed as AgentInfo with correct metadata")
     void catalogEntriesExposedWithCorrectMetadata() { // GH-90000
-        Optional<AgentInfo> planner = runPromise(() -> orchestratorService.resolveAgent("aep-planner [GH-90000]"));
+        Optional<AgentInfo> planner = runPromise(() -> orchestratorService.resolveAgent("aep-planner"));
 
         assertThat(planner).isPresent(); // GH-90000
         AgentInfo info = planner.get(); // GH-90000
-        assertThat(info.id()).isEqualTo("aep-planner [GH-90000]");
-        assertThat(info.name()).isEqualTo("AEP Planner [GH-90000]");
-        assertThat(info.product()).isEqualTo("catalog-aep [GH-90000]");
+        assertThat(info.id()).isEqualTo("aep-planner");
+        assertThat(info.name()).isEqualTo("AEP Planner");
+        assertThat(info.product()).isEqualTo("catalog-aep");
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────

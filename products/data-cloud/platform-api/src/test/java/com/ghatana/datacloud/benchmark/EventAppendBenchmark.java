@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern Benchmark Test
  */
 @Timeout(value = 60, unit = TimeUnit.SECONDS) // GH-90000
-@DisplayName("EventAppendBenchmark – Performance < 50ms p99 [GH-90000]")
+@DisplayName("EventAppendBenchmark – Performance < 50ms p99")
 class EventAppendBenchmark extends EventloopTestBase {
 
     private static final int WARMUP_ITERATIONS = 100;
@@ -30,7 +30,7 @@ class EventAppendBenchmark extends EventloopTestBase {
     private static final long P99_THRESHOLD_MS = 50;
 
     @Test
-    @DisplayName("[TEST-087]: event_append_p99_under_50ms [GH-90000]")
+    @DisplayName("[TEST-087]: event_append_p99_under_50ms")
     void eventAppendP99Under50ms() { // GH-90000
         // Warmup
         for (int i = 0; i < WARMUP_ITERATIONS; i++) { // GH-90000
@@ -58,7 +58,7 @@ class EventAppendBenchmark extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[TEST-087]: event_append_batch_performance [GH-90000]")
+    @DisplayName("[TEST-087]: event_append_batch_performance")
     void eventAppendBatchPerformance() { // GH-90000
         int batchSize = 100;
         long[] batchLatencies = new long[100];

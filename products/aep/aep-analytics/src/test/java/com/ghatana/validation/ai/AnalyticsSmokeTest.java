@@ -22,18 +22,18 @@ import static org.junit.jupiter.api.Assertions.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("Platform Analytics — Smoke Tests [GH-90000]")
+@DisplayName("Platform Analytics — Smoke Tests")
 class AnalyticsSmokeTest {
 
     @Test
-    @DisplayName("DefaultAnomalyDetector can be instantiated [GH-90000]")
+    @DisplayName("DefaultAnomalyDetector can be instantiated")
     void defaultAnomalyDetectorInstantiates() { // GH-90000
         var detector = new DefaultAnomalyDetector(); // GH-90000
         assertNotNull(detector); // GH-90000
     }
 
     @Test
-    @DisplayName("DetectedPattern can be constructed and fields accessed [GH-90000]")
+    @DisplayName("DetectedPattern can be constructed and fields accessed")
     void detectedPatternFields() { // GH-90000
         var pattern = new DetectedPattern( // GH-90000
                 "pattern-1", "Test Pattern", "sequence",
@@ -45,7 +45,7 @@ class AnalyticsSmokeTest {
     }
 
     @Test
-    @DisplayName("PatternSuggestion can be constructed and fields accessed [GH-90000]")
+    @DisplayName("PatternSuggestion can be constructed and fields accessed")
     void patternSuggestionFields() { // GH-90000
         var suggestion = new PatternSuggestion( // GH-90000
                 "suggest-1", "Correlation Suggestion", "Consider correlation pattern",
@@ -57,28 +57,28 @@ class AnalyticsSmokeTest {
     }
 
     @Test
-    @DisplayName("SequencePatternDetector can be instantiated [GH-90000]")
+    @DisplayName("SequencePatternDetector can be instantiated")
     void sequencePatternDetectorInstantiates() { // GH-90000
         var detector = new SequencePatternDetector(); // GH-90000
         assertNotNull(detector); // GH-90000
     }
 
     @Test
-    @DisplayName("FrequencyPatternDetector can be instantiated [GH-90000]")
+    @DisplayName("FrequencyPatternDetector can be instantiated")
     void frequencyPatternDetectorInstantiates() { // GH-90000
         var detector = new FrequencyPatternDetector(); // GH-90000
         assertNotNull(detector); // GH-90000
     }
 
     @Test
-    @DisplayName("CorrelationPatternDetector can be instantiated [GH-90000]")
+    @DisplayName("CorrelationPatternDetector can be instantiated")
     void correlationPatternDetectorInstantiates() { // GH-90000
         var detector = new CorrelationPatternDetector(); // GH-90000
         assertNotNull(detector); // GH-90000
     }
 
     @Test
-    @DisplayName("TemporalPatternDetector can be instantiated [GH-90000]")
+    @DisplayName("TemporalPatternDetector can be instantiated")
     void temporalPatternDetectorInstantiates() { // GH-90000
         var detector = new TemporalPatternDetector(); // GH-90000
         assertNotNull(detector); // GH-90000

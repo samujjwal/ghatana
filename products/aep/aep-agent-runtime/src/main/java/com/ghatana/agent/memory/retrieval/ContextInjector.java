@@ -11,7 +11,8 @@ import java.util.List;
  * @doc.type interface
  * @doc.purpose Context injection SPI
  * @doc.layer agent-memory
- */
+  * @doc.pattern Interface
+*/
 public interface ContextInjector {
 
     /**

@@ -42,7 +42,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("AepBackupRecoveryService [GH-90000]")
+@DisplayName("AepBackupRecoveryService")
 class AepBackupRecoveryServiceTest {
 
     private static final String TENANT = "tenant-backup";
@@ -83,22 +83,22 @@ class AepBackupRecoveryServiceTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("createFullBackup [GH-90000]")
+    @DisplayName("createFullBackup")
     class FullBackup {
 
         @Test
-        @DisplayName("backs up both collections and returns non-null backupId [GH-90000]")
+        @DisplayName("backs up both collections and returns non-null backupId")
         void fullBackup_successfulResult() throws Exception { // GH-90000
             // Entity in aep_patterns
-            Entity p1 = entity("pat-1", patternData("pat-1 [GH-90000]"));
+            Entity p1 = entity("pat-1", patternData("pat-1"));
             // Entity in aep_pipelines
             Entity pipe1 = entity("pipe-1", Map.of("id", "pipe-1", "name", "my-pipeline", // GH-90000
                     "tenantId", TENANT, "updatedAt", Instant.now().toString())); // GH-90000
 
             // Query stubs: pattern collection returns 1 entity, pipelines returns 1
-            when(client.query(eq(TENANT), eq("aep_patterns [GH-90000]"), any(Query.class)))
+            when(client.query(eq(TENANT), eq("aep_patterns"), any(Query.class)))
                     .thenReturn(Promise.of(List.of(p1))); // GH-90000
-            when(client.query(eq(TENANT), eq("aep_pipelines [GH-90000]"), any(Query.class)))
+            when(client.query(eq(TENANT), eq("aep_pipelines"), any(Query.class)))
                     .thenReturn(Promise.of(List.of(pipe1))); // GH-90000
 
             // Save stubs (backup data + metadata) // GH-90000
@@ -114,23 +114,23 @@ class AepBackupRecoveryServiceTest {
 
             assertThat(result.backupId()).isNotBlank(); // GH-90000
             assertThat(result.tenantId()).isEqualTo(TENANT); // GH-90000
-            assertThat(result.backupType()).isEqualTo("FULL [GH-90000]");
+            assertThat(result.backupType()).isEqualTo("FULL");
             assertThat(result.entityCount()).isEqualTo(2); // 1 pattern + 1 pipeline // GH-90000
             assertThat(result.success()).isTrue(); // GH-90000
             assertThat(result.failedCollections()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("returns partial success when one collection query fails [GH-90000]")
+        @DisplayName("returns partial success when one collection query fails")
         void fullBackup_oneCollectionFails_partialResult() throws Exception { // GH-90000
             // aep_patterns OK
-            Entity p1 = entity("pat-1", patternData("pat-1 [GH-90000]"));
-            when(client.query(eq(TENANT), eq("aep_patterns [GH-90000]"), any(Query.class)))
+            Entity p1 = entity("pat-1", patternData("pat-1"));
+            when(client.query(eq(TENANT), eq("aep_patterns"), any(Query.class)))
                     .thenReturn(Promise.of(List.of(p1))); // GH-90000
 
             // aep_pipelines throws
-            when(client.query(eq(TENANT), eq("aep_pipelines [GH-90000]"), any(Query.class)))
-                    .thenReturn(Promise.ofException(new RuntimeException("Pipeline query failed [GH-90000]")));
+            when(client.query(eq(TENANT), eq("aep_pipelines"), any(Query.class)))
+                    .thenReturn(Promise.ofException(new RuntimeException("Pipeline query failed")));
 
             // Save stub for pattern data + metadata
             when(client.save(eq(TENANT), anyString(), anyMap())) // GH-90000
@@ -144,11 +144,11 @@ class AepBackupRecoveryServiceTest {
                     service.createFullBackup(TENANT).getResult(); // GH-90000
 
             assertThat(result.success()).isFalse(); // GH-90000
-            assertThat(result.failedCollections()).contains("aep_pipelines [GH-90000]");
+            assertThat(result.failedCollections()).contains("aep_pipelines");
         }
 
         @Test
-        @DisplayName("backup metadata is saved to the BACKUP_COLLECTION [GH-90000]")
+        @DisplayName("backup metadata is saved to the BACKUP_COLLECTION")
         void fullBackup_metadataSavedToCorrectCollection() throws Exception { // GH-90000
             when(client.query(eq(TENANT), anyString(), any(Query.class))) // GH-90000
                     .thenReturn(Promise.of(List.of())); // GH-90000
@@ -174,11 +174,11 @@ class AepBackupRecoveryServiceTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("createIncrementalBackup [GH-90000]")
+    @DisplayName("createIncrementalBackup")
     class IncrementalBackup {
 
         @Test
-        @DisplayName("filters by updatedAt_gte and returns INCREMENTAL type [GH-90000]")
+        @DisplayName("filters by updatedAt_gte and returns INCREMENTAL type")
         void incrementalBackup_correctTypeAndFilterUsed() throws Exception { // GH-90000
             Instant since = Instant.now().minusSeconds(3600); // GH-90000
 
@@ -195,7 +195,7 @@ class AepBackupRecoveryServiceTest {
             AepBackupRecoveryService.BackupResult result =
                     service.createIncrementalBackup(TENANT, since).getResult(); // GH-90000
 
-            assertThat(result.backupType()).isEqualTo("INCREMENTAL [GH-90000]");
+            assertThat(result.backupType()).isEqualTo("INCREMENTAL");
             assertThat(result.success()).isTrue(); // GH-90000
         }
     }
@@ -205,11 +205,11 @@ class AepBackupRecoveryServiceTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("restoreFromBackup [GH-90000]")
+    @DisplayName("restoreFromBackup")
     class RestoreBackup {
 
         @Test
-        @DisplayName("restore fails gracefully when backup metadata not found [GH-90000]")
+        @DisplayName("restore fails gracefully when backup metadata not found")
         void restore_metadataNotFound_returnsFailed() throws Exception { // GH-90000
             when(client.findById(eq(TENANT), eq(AepBackupRecoveryService.BACKUP_COLLECTION), anyString())) // GH-90000
                     .thenReturn(Promise.of(Optional.empty())); // GH-90000
@@ -218,11 +218,11 @@ class AepBackupRecoveryServiceTest {
                     service.restoreFromBackup(TENANT, "non-existent-backup").getResult(); // GH-90000
 
             assertThat(result.success()).isFalse(); // GH-90000
-            assertThat(result.errors()).anyMatch(e -> e.contains("Backup not found [GH-90000]"));
+            assertThat(result.errors()).anyMatch(e -> e.contains("Backup not found"));
         }
 
         @Test
-        @DisplayName("restore reads from backup data collections and saves to source collections [GH-90000]")
+        @DisplayName("restore reads from backup data collections and saves to source collections")
         void restore_found_copiesEntitiesBack() throws Exception { // GH-90000
             String backupId = UUID.randomUUID().toString(); // GH-90000
 
@@ -238,7 +238,7 @@ class AepBackupRecoveryServiceTest {
                     .thenReturn(Promise.of(Optional.of(meta))); // GH-90000
 
             // Backup data entities
-            Map<String, Object> bkpPatternData = new HashMap<>(patternData("pat-1 [GH-90000]"));
+            Map<String, Object> bkpPatternData = new HashMap<>(patternData("pat-1"));
             bkpPatternData.put("backupId", backupId); // GH-90000
             bkpPatternData.put("backedUpAt", Instant.now().toString()); // GH-90000
             Entity bkpPattern = entity("pat-1", bkpPatternData); // GH-90000
@@ -267,8 +267,8 @@ class AepBackupRecoveryServiceTest {
             assertThat(result.errors()).isEmpty(); // GH-90000
 
             // Verify entity was written back to the source collection
-            verify(client).save(eq(TENANT), eq("aep_patterns [GH-90000]"), argThat(data ->
-                    "pat-1".equals(data.get("id [GH-90000]")) && !data.containsKey("backupId [GH-90000]")));
+            verify(client).save(eq(TENANT), eq("aep_patterns"), argThat(data ->
+                    "pat-1".equals(data.get("id")) && !data.containsKey("backupId")));
         }
     }
 
@@ -277,11 +277,11 @@ class AepBackupRecoveryServiceTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("listBackups [GH-90000]")
+    @DisplayName("listBackups")
     class ListBackups {
 
         @Test
-        @DisplayName("returns empty list when no backups exist [GH-90000]")
+        @DisplayName("returns empty list when no backups exist")
         void listBackups_empty_returnsEmptyList() throws Exception { // GH-90000
             when(client.query(eq(TENANT), eq(AepBackupRecoveryService.BACKUP_COLLECTION), any(Query.class))) // GH-90000
                     .thenReturn(Promise.of(List.of())); // GH-90000
@@ -293,7 +293,7 @@ class AepBackupRecoveryServiceTest {
         }
 
         @Test
-        @DisplayName("returns parsed backup metadata for existing backups [GH-90000]")
+        @DisplayName("returns parsed backup metadata for existing backups")
         void listBackups_existing_returnsMetadata() throws Exception { // GH-90000
             String backupId = UUID.randomUUID().toString(); // GH-90000
             Map<String, Object> metaData = new HashMap<>(); // GH-90000
@@ -316,9 +316,9 @@ class AepBackupRecoveryServiceTest {
             AepBackupRecoveryService.BackupMetadata bm = result.get(0); // GH-90000
             assertThat(bm.backupId()).isEqualTo(backupId); // GH-90000
             assertThat(bm.tenantId()).isEqualTo(TENANT); // GH-90000
-            assertThat(bm.backupType()).isEqualTo("FULL [GH-90000]");
+            assertThat(bm.backupType()).isEqualTo("FULL");
             assertThat(bm.entityCount()).isEqualTo(5); // GH-90000
-            assertThat(bm.status()).isEqualTo("COMPLETE [GH-90000]");
+            assertThat(bm.status()).isEqualTo("COMPLETE");
         }
     }
 
@@ -327,11 +327,11 @@ class AepBackupRecoveryServiceTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("verifyBackup [GH-90000]")
+    @DisplayName("verifyBackup")
     class VerifyBackup {
 
         @Test
-        @DisplayName("verification passes when actual count matches expected count [GH-90000]")
+        @DisplayName("verification passes when actual count matches expected count")
         void verify_countsMatch_passes() throws Exception { // GH-90000
             String backupId = UUID.randomUUID().toString(); // GH-90000
 
@@ -358,7 +358,7 @@ class AepBackupRecoveryServiceTest {
         }
 
         @Test
-        @DisplayName("verification fails when actual count does not match expected count [GH-90000]")
+        @DisplayName("verification fails when actual count does not match expected count")
         void verify_countsMismatch_fails() throws Exception { // GH-90000
             String backupId = UUID.randomUUID().toString(); // GH-90000
 
@@ -381,11 +381,11 @@ class AepBackupRecoveryServiceTest {
             assertThat(result.valid()).isFalse(); // GH-90000
             assertThat(result.expectedCount()).isEqualTo(5); // GH-90000
             assertThat(result.actualCount()).isEqualTo(1); // GH-90000
-            assertThat(result.errorMessage()).contains("mismatch [GH-90000]");
+            assertThat(result.errorMessage()).contains("mismatch");
         }
 
         @Test
-        @DisplayName("verification returns invalid when backup metadata not found [GH-90000]")
+        @DisplayName("verification returns invalid when backup metadata not found")
         void verify_metadataNotFound_returnsInvalid() throws Exception { // GH-90000
             when(client.findById(eq(TENANT), eq(AepBackupRecoveryService.BACKUP_COLLECTION), anyString())) // GH-90000
                     .thenReturn(Promise.of(Optional.empty())); // GH-90000
@@ -394,7 +394,7 @@ class AepBackupRecoveryServiceTest {
                     service.verifyBackup(TENANT, "ghost-backup").getResult(); // GH-90000
 
             assertThat(result.valid()).isFalse(); // GH-90000
-            assertThat(result.errorMessage()).contains("not found [GH-90000]");
+            assertThat(result.errorMessage()).contains("not found");
         }
     }
 
@@ -403,11 +403,11 @@ class AepBackupRecoveryServiceTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("deleteBackup [GH-90000]")
+    @DisplayName("deleteBackup")
     class DeleteBackup {
 
         @Test
-        @DisplayName("deletes backup metadata when backup not found [GH-90000]")
+        @DisplayName("deletes backup metadata when backup not found")
         void delete_backupNotFound_deletesMetadata() throws Exception { // GH-90000
             String backupId = "missing-backup";
 
@@ -428,14 +428,14 @@ class AepBackupRecoveryServiceTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("backupDataCollection helper [GH-90000]")
+    @DisplayName("backupDataCollection helper")
     class BackupDataCollectionHelper {
 
         @Test
-        @DisplayName("generates deterministic collection name from backupId and source collection [GH-90000]")
+        @DisplayName("generates deterministic collection name from backupId and source collection")
         void backupDataCollection_deterministicName() { // GH-90000
             String name = AepBackupRecoveryService.backupDataCollection("my-backup-id", "aep_patterns"); // GH-90000
-            assertThat(name).isEqualTo("aep_backup_my-backup-id_aep_patterns [GH-90000]");
+            assertThat(name).isEqualTo("aep_backup_my-backup-id_aep_patterns");
         }
     }
 }

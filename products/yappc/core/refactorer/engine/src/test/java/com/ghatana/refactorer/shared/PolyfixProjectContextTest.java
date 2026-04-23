@@ -47,7 +47,7 @@ class PolyfixProjectContextTest {
         config
                 = new PolyfixConfig( // GH-90000
                         List.of("java", "python"), // GH-90000
-                        List.of("schema1.json [GH-90000]"),
+                        List.of("schema1.json"),
                         new PolyfixConfig.Budgets(5, 1000), // GH-90000
                         new PolyfixConfig.Policies(true, true, false, true), // GH-90000
                         new PolyfixConfig.Tools( // GH-90000
@@ -99,8 +99,8 @@ class PolyfixProjectContextTest {
     @Test
     void testGetSourceFiles() throws IOException { // GH-90000
         // Setup filesystem
-        Path file1 = Files.createFile(tempDir.resolve("file1.java [GH-90000]"));
-        Path file2 = Files.createFile(tempDir.resolve("file2.py [GH-90000]"));
+        Path file1 = Files.createFile(tempDir.resolve("file1.java"));
+        Path file2 = Files.createFile(tempDir.resolve("file2.py"));
 
         when(mockLanguageService1.supports(any(Path.class))).thenReturn(false); // GH-90000
         when(mockLanguageService2.supports(any(Path.class))).thenReturn(false); // GH-90000

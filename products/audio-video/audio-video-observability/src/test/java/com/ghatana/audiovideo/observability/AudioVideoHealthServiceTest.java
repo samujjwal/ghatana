@@ -28,7 +28,7 @@ import static org.mockito.Mockito.verify;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("AudioVideoHealthService Tests (AV-P1-06) [GH-90000]")
+@DisplayName("AudioVideoHealthService Tests (AV-P1-06)")
 class AudioVideoHealthServiceTest {
 
     @Mock
@@ -43,7 +43,7 @@ class AudioVideoHealthServiceTest {
     }
 
     @Test
-    @DisplayName("Returns SERVING when no checks registered [GH-90000]")
+    @DisplayName("Returns SERVING when no checks registered")
     void shouldReturnServingWithNoChecks() { // GH-90000
         CapturingObserver observer = new CapturingObserver(); // GH-90000
 
@@ -55,7 +55,7 @@ class AudioVideoHealthServiceTest {
     }
 
     @Test
-    @DisplayName("Returns SERVING when all checks pass [GH-90000]")
+    @DisplayName("Returns SERVING when all checks pass")
     void shouldReturnServingWhenAllChecksPass() { // GH-90000
         healthService.registerCheck("channel", () -> true); // GH-90000
         healthService.registerCheck("model-loaded", () -> true); // GH-90000
@@ -68,7 +68,7 @@ class AudioVideoHealthServiceTest {
     }
 
     @Test
-    @DisplayName("Returns NOT_SERVING when any check fails [GH-90000]")
+    @DisplayName("Returns NOT_SERVING when any check fails")
     void shouldReturnNotServingWhenAnyCheckFails() { // GH-90000
         healthService.registerCheck("channel", () -> true); // GH-90000
         healthService.registerCheck("model-loaded", () -> false); // failing // GH-90000
@@ -81,10 +81,10 @@ class AudioVideoHealthServiceTest {
     }
 
     @Test
-    @DisplayName("Returns NOT_SERVING when check throws exception [GH-90000]")
+    @DisplayName("Returns NOT_SERVING when check throws exception")
     void shouldReturnNotServingWhenCheckThrows() { // GH-90000
         healthService.registerCheck("crashing-check", () -> { // GH-90000
-            throw new RuntimeException("dependency unavailable [GH-90000]");
+            throw new RuntimeException("dependency unavailable");
         });
 
         CapturingObserver observer = new CapturingObserver(); // GH-90000
@@ -95,7 +95,7 @@ class AudioVideoHealthServiceTest {
     }
 
     @Test
-    @DisplayName("Returns NOT_SERVING after setNotServing() is called [GH-90000]")
+    @DisplayName("Returns NOT_SERVING after setNotServing() is called")
     void shouldReturnNotServingAfterShutdown() { // GH-90000
         healthService.registerCheck("all-good", () -> true); // GH-90000
 
@@ -109,7 +109,7 @@ class AudioVideoHealthServiceTest {
     }
 
     @Test
-    @DisplayName("Emits metric counter on every Check call [GH-90000]")
+    @DisplayName("Emits metric counter on every Check call")
     void shouldEmitMetricOnEveryCheck() { // GH-90000
         CapturingObserver observer = new CapturingObserver(); // GH-90000
         healthService.check(HealthCheckRequest.newBuilder().build(), observer); // GH-90000
@@ -119,7 +119,7 @@ class AudioVideoHealthServiceTest {
     }
 
     @Test
-    @DisplayName("getCheckResults returns correct status map [GH-90000]")
+    @DisplayName("getCheckResults returns correct status map")
     void shouldReturnCorrectCheckResults() { // GH-90000
         healthService.registerCheck("ok-check", () -> true); // GH-90000
         healthService.registerCheck("fail-check", () -> false); // GH-90000

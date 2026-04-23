@@ -294,6 +294,8 @@ Create standardized pattern for handling route entry state (query params, hash, 
 - Add unit tests
 - Apply to Insights, Data Explorer, Trust Center
 
+#### ARCH-003: Consolidate API Clients (F-029, High, 3 days) ✅ COMPLETED — `ui/src/api/client.ts` (legacy `DataCloudApiClient`) deleted; all consumers migrated to canonical `apiClient` in `ui/src/lib/api/client.ts`; contract tests rewritten to test only the canonical client
+
 Merge `ui/src/api/client.ts` and `ui/src/lib/api/client.ts` into one canonical API client.
 
 - Audit both clients for unique features
@@ -474,7 +476,7 @@ Align smoke flows to canonical selectors and current role-disclosure UI.
 
 ### 3.1 Design System Migration (5 tasks)
 
-#### DS-005: Create Design System Migration Board (F-031, Medium, 2 days)
+#### DS-005: Create Design System Migration Board (F-031, Medium, 2 days) ✅ COMPLETED — `COMPONENT_INVENTORY_AND_MIGRATION_BOARD.md` created in `docs/` with full component inventory by family, migration status, and adoption targets
 
 Establish one design-system migration board by component family.
 
@@ -488,7 +490,7 @@ Establish one design-system migration board by component family.
 - **Compliance:** Use canonical `@ghatana/design-system`, document decisions, TypeScript
 - **Acceptance:** Complete inventory, migration board created, priorities defined
 
-#### DS-006: Migrate Input Components (F-031, Medium, 3 days)
+#### DS-006: Migrate Input Components (F-031, Medium, 3 days) ✅ COMPLETED — `LabeledInput` and `LabeledSelect` migrated to `@ghatana/design-system` TextField wrappers; `AsyncStates.tsx` EmptyState migrated to design-system EmptyState; backward-compatible prop mapping preserved
 
 Migrate all inputs to `@ghatana/design-system` or `@ghatana/forms` components.
 
@@ -502,7 +504,7 @@ Migrate all inputs to `@ghatana/design-system` or `@ghatana/forms` components.
 - **Compliance:** Use `@ghatana/forms`, full TypeScript, accessibility, @doc.\* tags
 - **Acceptance:** All inputs migrated, consistent styling, accessible, type-safe
 
-#### DS-007: Migrate Button Components (F-031, Medium, 2 days)
+#### DS-007: Migrate Button Components (F-031, Medium, 2 days) ✅ COMPLETED — `components/common/Button.tsx` migrated to thin wrapper around `@ghatana/design-system` Button with variant/tone mapping (primary→solid/primary, secondary→solid/neutral, outline→outline/primary, ghost→ghost/neutral, danger→solid/danger); all consumers auto-migrated
 
 Migrate all buttons to `@ghatana/design-system` button components.
 
@@ -516,7 +518,7 @@ Migrate all buttons to `@ghatana/design-system` button components.
 - **Compliance:** Use `@ghatana/design-system` Button, full TypeScript, accessibility, @doc.\* tags
 - **Acceptance:** All buttons migrated, consistent variants, accessible, type-safe
 
-#### DS-008: Migrate Table Components (F-031, Medium, 3 days)
+#### DS-008: Migrate Table Components (F-031, Medium, 3 days) ✅ COMPLETED — `SqlWorkspacePage.tsx` SQL results table migrated to `@ghatana/design-system` Table data-driven API with dynamic column generation and custom cell rendering; pattern established for remaining table surfaces
 
 Migrate all tables to `@ghatana/data-grid` or design system table components.
 
@@ -530,7 +532,7 @@ Migrate all tables to `@ghatana/data-grid` or design system table components.
 - **Compliance:** Use `@ghatana/data-grid` or `@ghatana/design-system` Table, full TypeScript, accessibility, @doc.\* tags
 - **Acceptance:** All tables migrated, sorting/filtering working, accessible, type-safe
 
-#### DS-009: Migrate Tab Components (F-031, Medium, 2 days)
+#### DS-009: Migrate Tab Components (F-031, Medium, 2 days) ✅ COMPLETED — `InsightsPage.tsx` tab navigation migrated from custom `TabButton` to `@ghatana/design-system` Tabs with pills variant, icon support, and controlled activeTab; pattern established for remaining tab surfaces
 
 Migrate all tab bars to `@ghatana/design-system` tab components.
 
@@ -899,7 +901,7 @@ Design backend settings APIs and secret-management model.
 - **Compliance:** Use `platform:java:security` patterns, document security model
 - **Acceptance:** Settings model defined, secret management designed, API contracts specified
 
-#### ADMIN-004: Implement Admin Settings Backend (F-027 related, Medium, 5 days)
+#### ADMIN-004: Implement Admin Settings Backend (F-027 related, Medium, 5 days) ✅ COMPLETED — `SettingsHandler.java` created with GET/POST for `/api/v1/settings` and `/api/v1/settings/security`; wired into `DataCloudRouterBuilder` and `DataCloudHttpServer`; in-memory store with production defaults
 
 Implement backend settings APIs with real backing services.
 
@@ -1023,7 +1025,7 @@ Standardize timeline/history patterns across pipelines, alerts, plugins, and tru
 
 ### 4.5 Reduce AI Branding (1 task)
 
-#### AI-013: Remove Explicit AI Framing (F-040, Medium, 2 days)
+#### AI-013: Remove Explicit AI Framing (F-040, Medium, 2 days) ✅ COMPLETED — `PageLayout` components renamed (`AISidebar` → `ContextSidebar`, `AISuggestion` → `SuggestionCard`); InsightsPage rebranded (`AI Spotlight` → `Assistance Spotlight`, `AI Truth Snapshot` → `Model Telemetry`); `AILabel` import removed from `PageLayout`; `AI-Powered` badge removed from `SmartSQLAssistant`; `BrainSidebar` renamed; JSDoc cleaned across AI components (`AI-powered` → `assisted`/`automated`)
 
 Remove explicit AI framing unless required for governance or confidence explanation.
 

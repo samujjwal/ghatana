@@ -30,22 +30,22 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("LLMProvider – Provider Abstraction (AI002) [GH-90000]")
+@DisplayName("LLMProvider – Provider Abstraction (AI002)")
 class LLMProviderTest extends EventloopTestBase {
 
     @Mock
     private LLMProvider llmProvider;
 
     @Nested
-    @DisplayName("Completion [GH-90000]")
+    @DisplayName("Completion")
     class CompletionTests {
 
         @Test
-        @DisplayName("[AI002]: complete_returns_response [GH-90000]")
+        @DisplayName("[AI002]: complete_returns_response")
         void completeReturnsResponse() { // GH-90000
             LLMProvider.CompletionRequest request = LLMProvider.CompletionRequest.builder() // GH-90000
-                .model("gpt-4 [GH-90000]")
-                .prompt("What is SQL? [GH-90000]")
+                .model("gpt-4")
+                .prompt("What is SQL?")
                 .temperature(0.7) // GH-90000
                 .maxTokens(500) // GH-90000
                 .build(); // GH-90000
@@ -63,25 +63,25 @@ class LLMProviderTest extends EventloopTestBase {
                 llmProvider.complete(request) // GH-90000
             );
 
-            assertThat(result.id()).isEqualTo("resp-001 [GH-90000]");
-            assertThat(result.text()).contains("SQL [GH-90000]");
+            assertThat(result.id()).isEqualTo("resp-001");
+            assertThat(result.text()).contains("SQL");
             assertThat(result.tokensUsed()).isEqualTo(50); // GH-90000
             assertThat(result.latencyMs()).isEqualTo(800); // GH-90000
-            assertThat(result.model()).isEqualTo("gpt-4 [GH-90000]");
+            assertThat(result.model()).isEqualTo("gpt-4");
         }
 
         @Test
-        @DisplayName("[AI002]: complete_with_different_temperatures [GH-90000]")
+        @DisplayName("[AI002]: complete_with_different_temperatures")
         void completeWithDifferentTemperatures() { // GH-90000
             LLMProvider.CompletionRequest lowTemp = LLMProvider.CompletionRequest.builder() // GH-90000
-                .model("gpt-4 [GH-90000]")
-                .prompt("Generate creative content [GH-90000]")
+                .model("gpt-4")
+                .prompt("Generate creative content")
                 .temperature(0.2) // GH-90000
                 .build(); // GH-90000
 
             LLMProvider.CompletionRequest highTemp = LLMProvider.CompletionRequest.builder() // GH-90000
-                .model("gpt-4 [GH-90000]")
-                .prompt("Generate creative content [GH-90000]")
+                .model("gpt-4")
+                .prompt("Generate creative content")
                 .temperature(0.9) // GH-90000
                 .build(); // GH-90000
 
@@ -91,11 +91,11 @@ class LLMProviderTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Chat Completion [GH-90000]")
+    @DisplayName("Chat Completion")
     class ChatCompletionTests {
 
         @Test
-        @DisplayName("[AI002]: chat_returns_conversation_response [GH-90000]")
+        @DisplayName("[AI002]: chat_returns_conversation_response")
         void chatReturnsConversationResponse() { // GH-90000
             LLMProvider.ChatRequest request = new LLMProvider.ChatRequest( // GH-90000
                 "gpt-4",
@@ -118,11 +118,11 @@ class LLMProviderTest extends EventloopTestBase {
             LLMProvider.ChatResponse result = runPromise(() -> llmProvider.chat(request)); // GH-90000
 
             assertThat(result.messages()).hasSize(1); // GH-90000
-            assertThat(result.messages().get(0).content()).contains("SELECT [GH-90000]");
+            assertThat(result.messages().get(0).content()).contains("SELECT");
         }
 
         @Test
-        @DisplayName("[AI002]: chat_handles_multi_turn [GH-90000]")
+        @DisplayName("[AI002]: chat_handles_multi_turn")
         void chatHandlesMultiTurn() { // GH-90000
             LLMProvider.ChatRequest request = new LLMProvider.ChatRequest( // GH-90000
                 "gpt-4",
@@ -139,11 +139,11 @@ class LLMProviderTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Model Management [GH-90000]")
+    @DisplayName("Model Management")
     class ModelManagementTests {
 
         @Test
-        @DisplayName("[AI002]: get_models_returns_available_models [GH-90000]")
+        @DisplayName("[AI002]: get_models_returns_available_models")
         void getModelsReturnsAvailableModels() { // GH-90000
             List<LLMProvider.ModelInfo> models = List.of( // GH-90000
                 new LLMProvider.ModelInfo( // GH-90000
@@ -166,28 +166,28 @@ class LLMProviderTest extends EventloopTestBase {
             List<LLMProvider.ModelInfo> result = runPromise(() -> llmProvider.getModels()); // GH-90000
 
             assertThat(result).hasSize(3); // GH-90000
-            assertThat(result.get(0).id()).isEqualTo("gpt-4 [GH-90000]");
-            assertThat(result.get(0).capabilities()).contains("chat [GH-90000]");
+            assertThat(result.get(0).id()).isEqualTo("gpt-4");
+            assertThat(result.get(0).capabilities()).contains("chat");
         }
 
         @Test
-        @DisplayName("[AI002]: get_name_returns_provider_name [GH-90000]")
+        @DisplayName("[AI002]: get_name_returns_provider_name")
         void getNameReturnsProviderName() { // GH-90000
             when(llmProvider.getName()) // GH-90000
-                .thenReturn("openai [GH-90000]");
+                .thenReturn("openai");
 
             String name = llmProvider.getName(); // GH-90000
 
-            assertThat(name).isEqualTo("openai [GH-90000]");
+            assertThat(name).isEqualTo("openai");
         }
     }
 
     @Nested
-    @DisplayName("Provider Status [GH-90000]")
+    @DisplayName("Provider Status")
     class ProviderStatusTests {
 
         @Test
-        @DisplayName("[AI002]: get_status_returns_health_info [GH-90000]")
+        @DisplayName("[AI002]: get_status_returns_health_info")
         void getStatusReturnsHealthInfo() { // GH-90000
             LLMProvider.ProviderStatus status = new LLMProvider.ProviderStatus( // GH-90000
                 "openai", true, "Healthy", 5, 450.0, Instant.now() // GH-90000
@@ -204,7 +204,7 @@ class LLMProviderTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[AI002]: get_status_shows_unhealthy_when_down [GH-90000]")
+        @DisplayName("[AI002]: get_status_shows_unhealthy_when_down")
         void getStatusShowsUnhealthyWhenDown() { // GH-90000
             LLMProvider.ProviderStatus status = new LLMProvider.ProviderStatus( // GH-90000
                 "openai", false, "Service unavailable", 0, 0.0, Instant.now() // GH-90000
@@ -216,38 +216,38 @@ class LLMProviderTest extends EventloopTestBase {
             LLMProvider.ProviderStatus result = runPromise(() -> llmProvider.getStatus()); // GH-90000
 
             assertThat(result.healthy()).isFalse(); // GH-90000
-            assertThat(result.message()).contains("unavailable [GH-90000]");
+            assertThat(result.message()).contains("unavailable");
         }
     }
 
     @Nested
-    @DisplayName("Request Builder [GH-90000]")
+    @DisplayName("Request Builder")
     class RequestBuilderTests {
 
         @Test
-        @DisplayName("[AI002]: completion_request_builder_creates_request [GH-90000]")
+        @DisplayName("[AI002]: completion_request_builder_creates_request")
         void completionRequestBuilderCreatesRequest() { // GH-90000
             LLMProvider.CompletionRequest request = LLMProvider.CompletionRequest.builder() // GH-90000
-                .model("gpt-4 [GH-90000]")
-                .prompt("Generate SQL [GH-90000]")
+                .model("gpt-4")
+                .prompt("Generate SQL")
                 .temperature(0.5) // GH-90000
                 .maxTokens(200) // GH-90000
                 .stopSequences(List.of(";", "END")) // GH-90000
                 .parameters(Map.of("top_p", 0.9)) // GH-90000
                 .build(); // GH-90000
 
-            assertThat(request.model()).isEqualTo("gpt-4 [GH-90000]");
+            assertThat(request.model()).isEqualTo("gpt-4");
             assertThat(request.temperature()).isEqualTo(0.5); // GH-90000
             assertThat(request.maxTokens()).isEqualTo(200); // GH-90000
-            assertThat(request.stopSequences()).contains("; [GH-90000]");
+            assertThat(request.stopSequences()).contains(";");
         }
 
         @Test
-        @DisplayName("[AI002]: builder_uses_defaults [GH-90000]")
+        @DisplayName("[AI002]: builder_uses_defaults")
         void builderUsesDefaults() { // GH-90000
             LLMProvider.CompletionRequest request = LLMProvider.CompletionRequest.builder() // GH-90000
-                .model("gpt-3.5 [GH-90000]")
-                .prompt("Test [GH-90000]")
+                .model("gpt-3.5")
+                .prompt("Test")
                 .build(); // GH-90000
 
             assertThat(request.temperature()).isEqualTo(0.7); // Default // GH-90000
@@ -256,11 +256,11 @@ class LLMProviderTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Token Tracking [GH-90000]")
+    @DisplayName("Token Tracking")
     class TokenTrackingTests {
 
         @Test
-        @DisplayName("[AI002]: response_includes_token_counts [GH-90000]")
+        @DisplayName("[AI002]: response_includes_token_counts")
         void responseIncludesTokenCounts() { // GH-90000
             LLMProvider.CompletionResponse response = new LLMProvider.CompletionResponse( // GH-90000
                 "resp-001", "Response text", 100, 50, 50, "stop", 500, "gpt-4"
@@ -272,7 +272,7 @@ class LLMProviderTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[AI002]: finish_reason_tracked [GH-90000]")
+        @DisplayName("[AI002]: finish_reason_tracked")
         void finishReasonTracked() { // GH-90000
             LLMProvider.CompletionResponse normal = new LLMProvider.CompletionResponse( // GH-90000
                 "r1", "Text", 10, 5, 5, "stop", 100, "gpt-4"
@@ -282,8 +282,8 @@ class LLMProviderTest extends EventloopTestBase {
                 "r2", "Long text...", 1000, 50, 950, "length", 2000, "gpt-4"
             );
 
-            assertThat(normal.finishReason()).isEqualTo("stop [GH-90000]");
-            assertThat(maxTokens.finishReason()).isEqualTo("length [GH-90000]");
+            assertThat(normal.finishReason()).isEqualTo("stop");
+            assertThat(maxTokens.finishReason()).isEqualTo("length");
         }
     }
 }

@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * Unit tests for {@link SttStreamingLatencyEnhancer} (AV-007.4). // GH-90000
  */
-@DisplayName("SttStreamingLatencyEnhancer — AV-007.4 [GH-90000]")
+@DisplayName("SttStreamingLatencyEnhancer — AV-007.4")
 class SttStreamingLatencyEnhancerTest {
 
     private List<SttStreamingLatencyEnhancer.AudioChunkBatch> emitted;
@@ -30,7 +30,7 @@ class SttStreamingLatencyEnhancerTest {
     }
 
     @Test
-    @DisplayName("Ingesting a chunk returns true and increments counters [GH-90000]")
+    @DisplayName("Ingesting a chunk returns true and increments counters")
     void ingestAcceptsChunk() { // GH-90000
         boolean accepted = enhancer.ingest(new byte[]{1, 2, 3}, 1, 1000L); // GH-90000
         assertThat(accepted).isTrue(); // GH-90000
@@ -38,21 +38,21 @@ class SttStreamingLatencyEnhancerTest {
     }
 
     @Test
-    @DisplayName("Empty audioBytes are rejected (returns false) [GH-90000]")
+    @DisplayName("Empty audioBytes are rejected (returns false)")
     void ingestRejectsEmptyBytes() { // GH-90000
         boolean accepted = enhancer.ingest(new byte[0], 1, 1000L); // GH-90000
         assertThat(accepted).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("Null audioBytes throws NullPointerException [GH-90000]")
+    @DisplayName("Null audioBytes throws NullPointerException")
     void ingestRejectsNullBytes() { // GH-90000
         assertThatThrownBy(() -> enhancer.ingest(null, 1, 1000L)) // GH-90000
                 .isInstanceOf(NullPointerException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("flush emits remaining buffered chunks [GH-90000]")
+    @DisplayName("flush emits remaining buffered chunks")
     void flushEmitsRemainingChunks() { // GH-90000
         enhancer.ingest(new byte[]{1, 2}, 1, 1000L); // GH-90000
         enhancer.flush(); // GH-90000
@@ -63,7 +63,7 @@ class SttStreamingLatencyEnhancerTest {
     }
 
     @Test
-    @DisplayName("Buffer is empty after flush [GH-90000]")
+    @DisplayName("Buffer is empty after flush")
     void bufferEmptyAfterFlush() { // GH-90000
         enhancer.ingest(new byte[]{1}, 1, 1000L); // GH-90000
         enhancer.flush(); // GH-90000
@@ -71,7 +71,7 @@ class SttStreamingLatencyEnhancerTest {
     }
 
     @Test
-    @DisplayName("Back-pressure activates when buffer fills to 80% [GH-90000]")
+    @DisplayName("Back-pressure activates when buffer fills to 80%")
     void backPressureAtHighWaterMark() { // GH-90000
         // Fill buffer to 16/20 = 80%
         for (int i = 0; i < 16; i++) { // GH-90000
@@ -83,7 +83,7 @@ class SttStreamingLatencyEnhancerTest {
     }
 
     @Test
-    @DisplayName("AudioChunkBatch.meetsLatencySla returns true when avg <= 500ms [GH-90000]")
+    @DisplayName("AudioChunkBatch.meetsLatencySla returns true when avg <= 500ms")
     void audioChunkBatchLatencySla() { // GH-90000
         SttStreamingLatencyEnhancer.AudioChunkBatch batch =
                 new SttStreamingLatencyEnhancer.AudioChunkBatch(List.of(), 0, 0L, 1, 300L); // GH-90000
@@ -95,7 +95,7 @@ class SttStreamingLatencyEnhancerTest {
     }
 
     @Test
-    @DisplayName("Builder rejects missing emitter [GH-90000]")
+    @DisplayName("Builder rejects missing emitter")
     void builderRejectsMissingEmitter() { // GH-90000
         assertThatThrownBy(() -> SttStreamingLatencyEnhancer.builder() // GH-90000
                 .maxBufferChunks(10) // GH-90000

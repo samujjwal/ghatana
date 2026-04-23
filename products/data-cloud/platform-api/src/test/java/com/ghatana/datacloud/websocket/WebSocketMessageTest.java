@@ -28,18 +28,18 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("WebSocketMessage – Message Routing (F003) [GH-90000]")
+@DisplayName("WebSocketMessage – Message Routing (F003)")
 class WebSocketMessageTest extends EventloopTestBase {
 
     @Mock
     private WebSocketConnectionManager connectionManager;
 
     @Nested
-    @DisplayName("Direct Messaging [GH-90000]")
+    @DisplayName("Direct Messaging")
     class DirectMessagingTests {
 
         @Test
-        @DisplayName("[F003]: send_to_connection_delivers_message [GH-90000]")
+        @DisplayName("[F003]: send_to_connection_delivers_message")
         void sendToConnectionDeliversMessage() { // GH-90000
             String connectionId = "conn-001";
             WebSocketConnectionManager.WebSocketMessage message =
@@ -54,7 +54,7 @@ class WebSocketMessageTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[F003]: send_to_user_delivers_to_all_user_connections [GH-90000]")
+        @DisplayName("[F003]: send_to_user_delivers_to_all_user_connections")
         void sendToUserDeliversToAllUserConnections() { // GH-90000
             String userId = "user-001";
             WebSocketConnectionManager.WebSocketMessage message =
@@ -69,7 +69,7 @@ class WebSocketMessageTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[F003]: send_to_closed_connection_returns_false [GH-90000]")
+        @DisplayName("[F003]: send_to_closed_connection_returns_false")
         void sendToClosedConnectionReturnsFalse() { // GH-90000
             String connectionId = "closed-conn";
             WebSocketConnectionManager.WebSocketMessage message =
@@ -85,11 +85,11 @@ class WebSocketMessageTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Broadcast Messaging [GH-90000]")
+    @DisplayName("Broadcast Messaging")
     class BroadcastMessagingTests {
 
         @Test
-        @DisplayName("[F003]: broadcast_to_tenant_sends_to_all_tenant_connections [GH-90000]")
+        @DisplayName("[F003]: broadcast_to_tenant_sends_to_all_tenant_connections")
         void broadcastToTenantSendsToAllTenantConnections() { // GH-90000
             String tenantId = "tenant-alpha";
             WebSocketConnectionManager.WebSocketMessage message =
@@ -105,11 +105,11 @@ class WebSocketMessageTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Topic Publishing [GH-90000]")
+    @DisplayName("Topic Publishing")
     class TopicPublishingTests {
 
         @Test
-        @DisplayName("[F003]: publish_to_topic_sends_to_subscribers [GH-90000]")
+        @DisplayName("[F003]: publish_to_topic_sends_to_subscribers")
         void publishToTopicSendsToSubscribers() { // GH-90000
             String topic = "data-updates";
             WebSocketConnectionManager.WebSocketMessage message =
@@ -124,7 +124,7 @@ class WebSocketMessageTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[F003]: publish_to_empty_topic_returns_zero [GH-90000]")
+        @DisplayName("[F003]: publish_to_empty_topic_returns_zero")
         void publishToEmptyTopicReturnsZero() { // GH-90000
             String topic = "unused-topic";
             WebSocketConnectionManager.WebSocketMessage message =
@@ -140,22 +140,22 @@ class WebSocketMessageTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Message Format [GH-90000]")
+    @DisplayName("Message Format")
     class MessageFormatTests {
 
         @Test
-        @DisplayName("[F003]: message_has_type_payload_timestamp [GH-90000]")
+        @DisplayName("[F003]: message_has_type_payload_timestamp")
         void messageHasTypePayloadTimestamp() { // GH-90000
             WebSocketConnectionManager.WebSocketMessage message =
                 WebSocketConnectionManager.WebSocketMessage.of("notification", "Hello"); // GH-90000
 
-            assertThat(message.type()).isEqualTo("notification [GH-90000]");
-            assertThat(message.payload()).isEqualTo("Hello [GH-90000]");
+            assertThat(message.type()).isEqualTo("notification");
+            assertThat(message.payload()).isEqualTo("Hello");
             assertThat(message.timestamp()).isGreaterThan(0); // GH-90000
         }
 
         @Test
-        @DisplayName("[F003]: message_metadata_optional [GH-90000]")
+        @DisplayName("[F003]: message_metadata_optional")
         void messageMetadataOptional() { // GH-90000
             WebSocketConnectionManager.WebSocketMessage message = new WebSocketConnectionManager.WebSocketMessage( // GH-90000
                 "event",
@@ -169,11 +169,11 @@ class WebSocketMessageTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Tenant Isolation [GH-90000]")
+    @DisplayName("Tenant Isolation")
     class TenantIsolationTests {
 
         @Test
-        @DisplayName("[F003]: tenant_broadcast_does_not_cross_tenants [GH-90000]")
+        @DisplayName("[F003]: tenant_broadcast_does_not_cross_tenants")
         void tenantBroadcastDoesNotCrossTenants() { // GH-90000
             String tenantAlpha = "tenant-alpha";
             String tenantBeta = "tenant-beta";

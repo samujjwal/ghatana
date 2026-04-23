@@ -52,7 +52,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Integration Test
  */
-@DisplayName("LifecycleApiController integration [GH-90000]")
+@DisplayName("LifecycleApiController integration")
 class LifecycleApiControllerIntegrationTest extends EventloopTestBase {
 
     private LifecycleApiController controller;
@@ -94,13 +94,13 @@ class LifecycleApiControllerIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("executes full lifecycle successfully with concrete services [GH-90000]")
+    @DisplayName("executes full lifecycle successfully with concrete services")
     void executesFullLifecycleSuccessfullyWithConcreteServices() throws Exception { // GH-90000
         String requestJson = JsonMapper.toJson(new LifecycleRequest( // GH-90000
-                IntentInput.of("Build a resilient order processing API with observability [GH-90000]"),
+                IntentInput.of("Build a resilient order processing API with observability"),
                 "staging"));
 
-        HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/lifecycle/execute [GH-90000]")
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/lifecycle/execute")
                 .withBody(ByteBuf.wrapForReading(requestJson.getBytes(StandardCharsets.UTF_8))) // GH-90000
                 .build(); // GH-90000
 
@@ -130,8 +130,8 @@ class LifecycleApiControllerIntegrationTest extends EventloopTestBase {
         private DeterministicCompletionService(MetricsCollector metricsCollector) { // GH-90000
             this.metricsCollector = metricsCollector;
             this.config = LLMConfiguration.builder() // GH-90000
-                    .apiKey("test-key [GH-90000]")
-                    .modelName("deterministic-test-model [GH-90000]")
+                    .apiKey("test-key")
+                    .modelName("deterministic-test-model")
                     .build(); // GH-90000
         }
 
@@ -167,7 +167,7 @@ class LifecycleApiControllerIntegrationTest extends EventloopTestBase {
             if (prompt == null) { // GH-90000
                 return "";
             }
-            if (prompt.contains("product planning expert [GH-90000]")) {
+            if (prompt.contains("product planning expert")) {
                 return """
                     {
                       "productName": "Order Processing API",
@@ -184,7 +184,7 @@ class LifecycleApiControllerIntegrationTest extends EventloopTestBase {
                     }
                     """;
             }
-            if (prompt.contains("software architect [GH-90000]")) {
+            if (prompt.contains("software architect")) {
                 return """
                     {
                       "architecture": {"name": "microservices", "description": "Service-per-domain architecture"},
@@ -210,14 +210,14 @@ class LifecycleApiControllerIntegrationTest extends EventloopTestBase {
                     }
                     """;
             }
-            if (prompt.contains("Analyze the following system observations [GH-90000]")) {
+            if (prompt.contains("Analyze the following system observations")) {
                 return """
                     Pattern: Stable throughput under normal load
                     Anomaly: Medium latency spike during deployment windows
                     Recommendation: Prioritize deployment canary checks
                     """;
             }
-            if (prompt.contains("Create an evolution plan [GH-90000]")) {
+            if (prompt.contains("Create an evolution plan")) {
                 return """
                     Task: Refactor deployment orchestration to add canary policy checks
                     Task: Add telemetry guardrails for runtime latency regression

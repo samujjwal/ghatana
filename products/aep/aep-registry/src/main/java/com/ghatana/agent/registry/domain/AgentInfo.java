@@ -9,7 +9,11 @@ import java.util.List;
 
 /**
  * Represents information about an agent in the registry.
- */
+  * @doc.type class
+ * @doc.purpose Provides agent info functionality.
+ * @doc.layer product
+ * @doc.pattern Agent
+*/
 public class AgentInfo {
     private String agentId;
     private String name;

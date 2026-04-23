@@ -37,6 +37,26 @@ function elapsed(iso: string) {
   return `${Math.floor(hours / 24)}d ago`;
 }
 
+function getUrgencyRationale(item: ReviewItem): { level: 'high' | 'medium'; label: string } | null {
+  if (item.status !== 'PENDING') return null;
+
+  const ageHours = (Date.now() - new Date(item.createdAt).getTime()) / 3_600_000;
+
+  if (item.confidenceScore != null && item.confidenceScore < 0.5) {
+    return { level: 'high', label: 'Low confidence — review soon' };
+  }
+  if (ageHours > 24) {
+    return { level: 'high', label: 'Overdue — pending >24h' };
+  }
+  if (item.itemType === 'AGENT_DECISION') {
+    return { level: 'medium', label: 'Agent decision — blocking' };
+  }
+  if (item.confidenceScore != null && item.confidenceScore < 0.75) {
+    return { level: 'medium', label: 'Borderline confidence' };
+  }
+  return null;
+}
+
 export function ReviewCard({ item, isSelected, onClick }: ReviewCardProps) {
   return (
     <Button
@@ -72,11 +92,27 @@ export function ReviewCard({ item, isSelected, onClick }: ReviewCardProps) {
           <span className="text-xs text-gray-400">{elapsed(item.createdAt)}</span>
         </div>
       </div>
-      {item.confidenceScore !== undefined && (
-        <div className="mt-2">
+      <div className="mt-2 flex items-center gap-2 flex-wrap">
+        {item.confidenceScore !== undefined && (
           <ConfidenceBadge confidence={item.confidenceScore} />
-        </div>
-      )}
+        )}
+        {(() => {
+          const urgency = getUrgencyRationale(item);
+          if (!urgency) return null;
+          return (
+            <span
+              className={[
+                'inline-flex items-center gap-1 text-[10px] font-medium rounded-full px-2 py-0.5',
+                urgency.level === 'high'
+                  ? 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300'
+                  : 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
+              ].join(' ')}
+            >
+              {urgency.label}
+            </span>
+          );
+        })()}
+      </div>
     </Button>
   );
 }

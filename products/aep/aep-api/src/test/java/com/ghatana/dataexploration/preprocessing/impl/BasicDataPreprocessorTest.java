@@ -23,13 +23,13 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("BasicDataPreprocessor Tests [GH-90000]")
+@DisplayName("BasicDataPreprocessor Tests")
 class BasicDataPreprocessorTest extends EventloopTestBase {
 
     private final BasicDataPreprocessor preprocessor = new BasicDataPreprocessor(); // GH-90000
 
     @Test
-    @DisplayName("normalizeEvents standardizes property keys and values [GH-90000]")
+    @DisplayName("normalizeEvents standardizes property keys and values")
     void normalizeEventsStandardizesPropertyKeysAndValues() { // GH-90000
         ExplorationEvent event = event( // GH-90000
                 "evt-1",
@@ -51,14 +51,14 @@ class BasicDataPreprocessorTest extends EventloopTestBase {
         assertEquals("evt-1", normalizedEvent.getEventId()); // GH-90000
         assertEquals("LOGIN", normalizedEvent.getEventType()); // GH-90000
         assertEquals(1.0, normalizedEvent.getConfidence()); // GH-90000
-        assertEquals("alice", normalizedEvent.getNormalizedProperties().get("user_name_ [GH-90000]"));
-        assertEquals(7.0, normalizedEvent.getNormalizedProperties().get("count [GH-90000]"));
-        assertEquals("true", normalizedEvent.getNormalizedProperties().get("active_ [GH-90000]"));
-        assertEquals(9.5, normalizedEvent.getNormalizedProperties().get("score [GH-90000]"));
+        assertEquals("alice", normalizedEvent.getNormalizedProperties().get("user_name_"));
+        assertEquals(7.0, normalizedEvent.getNormalizedProperties().get("count"));
+        assertEquals("true", normalizedEvent.getNormalizedProperties().get("active_"));
+        assertEquals(9.5, normalizedEvent.getNormalizedProperties().get("score"));
     }
 
     @Test
-    @DisplayName("extractTemporalFeatures computes intervals and skips singleton event types [GH-90000]")
+    @DisplayName("extractTemporalFeatures computes intervals and skips singleton event types")
     void extractTemporalFeaturesComputesIntervalsAndSkipsSingletonTypes() { // GH-90000
         List<ExplorationEvent> events = List.of( // GH-90000
                 event("c1", "click", instant(0), Map.of()), // GH-90000
@@ -71,10 +71,10 @@ class BasicDataPreprocessorTest extends EventloopTestBase {
                 preprocessor.extractTemporalFeatures(events, Duration.ofMinutes(10))); // GH-90000
 
         assertEquals(1, features.size()); // GH-90000
-        assertTrue(features.containsKey("click [GH-90000]"));
-        assertFalse(features.containsKey("view [GH-90000]"));
+        assertTrue(features.containsKey("click"));
+        assertFalse(features.containsKey("view"));
 
-        TemporalFeatures clickFeatures = features.get("click [GH-90000]");
+        TemporalFeatures clickFeatures = features.get("click");
         assertNotNull(clickFeatures); // GH-90000
         assertEquals(Duration.ofSeconds(90), clickFeatures.getAverageInterval()); // GH-90000
         assertEquals(Duration.ofSeconds(120), clickFeatures.getMedianInterval()); // GH-90000
@@ -88,7 +88,7 @@ class BasicDataPreprocessorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("findCorrelatedEventTypes returns groups above confidence threshold [GH-90000]")
+    @DisplayName("findCorrelatedEventTypes returns groups above confidence threshold")
     void findCorrelatedEventTypesReturnsGroupsAboveConfidenceThreshold() { // GH-90000
         List<ExplorationEvent> events = List.of( // GH-90000
                 event("a1", "login", instant(0), Map.of()), // GH-90000
@@ -108,12 +108,12 @@ class BasicDataPreprocessorTest extends EventloopTestBase {
         assertEquals(1.0, group.getConfidence(), 0.0001); // GH-90000
         assertEquals(0.1, group.getSupport(), 0.0001); // GH-90000
         assertEquals(1, group.getRules().size()); // GH-90000
-        assertTrue(group.contains("login [GH-90000]"));
-        assertTrue(group.contains("purchase [GH-90000]"));
+        assertTrue(group.contains("login"));
+        assertTrue(group.contains("purchase"));
     }
 
     @Test
-    @DisplayName("calculateStreamStatistics summarizes event distribution [GH-90000]")
+    @DisplayName("calculateStreamStatistics summarizes event distribution")
     void calculateStreamStatisticsSummarizesEventDistribution() { // GH-90000
         List<ExplorationEvent> events = List.of( // GH-90000
                 event("e1", "click", instant(0), Map.of()), // GH-90000
@@ -128,10 +128,10 @@ class BasicDataPreprocessorTest extends EventloopTestBase {
         assertEquals(2, statistics.getUniqueEventTypes()); // GH-90000
         assertEquals(Duration.ofMinutes(2), statistics.getTimeSpan()); // GH-90000
         assertEquals(1.5, statistics.getAverageFrequency(), 0.0001); // GH-90000
-        assertEquals(2L, statistics.getEventTypeCounts().get("click [GH-90000]"));
-        assertEquals(1L, statistics.getEventTypeCounts().get("view [GH-90000]"));
-        assertEquals(1.0, statistics.getEventTypeFrequencies().get("click [GH-90000]"), 0.0001);
-        assertEquals(0.5, statistics.getEventTypeFrequencies().get("view [GH-90000]"), 0.0001);
+        assertEquals(2L, statistics.getEventTypeCounts().get("click"));
+        assertEquals(1L, statistics.getEventTypeCounts().get("view"));
+        assertEquals(1.0, statistics.getEventTypeFrequencies().get("click"), 0.0001);
+        assertEquals(0.5, statistics.getEventTypeFrequencies().get("view"), 0.0001);
         assertEquals("click", statistics.getMostFrequentEventType()); // GH-90000
         assertEquals(2.0 / 3.0, statistics.getDiversity(), 0.0001); // GH-90000
         assertFalse(statistics.isEmpty()); // GH-90000
@@ -139,7 +139,7 @@ class BasicDataPreprocessorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("calculateStreamStatistics returns empty defaults for empty event lists [GH-90000]")
+    @DisplayName("calculateStreamStatistics returns empty defaults for empty event lists")
     void calculateStreamStatisticsReturnsEmptyDefaultsForEmptyEventLists() { // GH-90000
         EventStreamStatistics statistics = runPromise(() -> // GH-90000
                 preprocessor.calculateStreamStatistics(List.of(), Duration.ofMinutes(5))); // GH-90000
@@ -157,7 +157,7 @@ class BasicDataPreprocessorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("preprocessEvents assembles normalized events statistics and optional temporal features [GH-90000]")
+    @DisplayName("preprocessEvents assembles normalized events statistics and optional temporal features")
     void preprocessEventsAssemblesNormalizedEventsStatisticsAndOptionalTemporalFeatures() { // GH-90000
         List<ExplorationEvent> events = List.of( // GH-90000
                 event("evt-1", "click", instant(0), Map.of("Message", "  HELLO  ")), // GH-90000
@@ -175,7 +175,7 @@ class BasicDataPreprocessorTest extends EventloopTestBase {
         assertEquals(Map.of(), batch.getTemporalFeatures()); // GH-90000
         assertNotNull(batch.getProcessingTimestamp()); // GH-90000
         assertNotNull(batch.getBatchId()); // GH-90000
-        assertEquals("hello", batch.getEvents().get(0).getNormalizedProperties().get("message [GH-90000]"));
+        assertEquals("hello", batch.getEvents().get(0).getNormalizedProperties().get("message"));
     }
 
     private static ExplorationEvent event(String id, String type, Instant timestamp, Map<String, Object> properties) { // GH-90000
@@ -183,6 +183,6 @@ class BasicDataPreprocessorTest extends EventloopTestBase {
     }
 
     private static Instant instant(long seconds) { // GH-90000
-        return Instant.parse("2026-04-02T00:00:00Z [GH-90000]").plusSeconds(seconds);
+        return Instant.parse("2026-04-02T00:00:00Z").plusSeconds(seconds);
     }
 }

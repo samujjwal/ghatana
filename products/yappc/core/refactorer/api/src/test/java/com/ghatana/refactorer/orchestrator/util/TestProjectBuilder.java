@@ -43,7 +43,7 @@ public class TestProjectBuilder {
      * @return This builder for method chaining
      */
     public TestProjectBuilder withTypeScriptFile(String relativePath, String content) { // GH-90000
-        if (!relativePath.endsWith(".ts [GH-90000]")) {
+        if (!relativePath.endsWith(".ts")) {
             relativePath += ".ts";
         }
         files.put(relativePath, content); // GH-90000

@@ -16,7 +16,8 @@ import java.util.Map;
  * @doc.type class
  * @doc.purpose Trace grading result
  * @doc.layer agent-learning
- */
+  * @doc.pattern Component
+*/
 @Value
 @Builder
 public class TraceGrade {

@@ -41,7 +41,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.pattern Chaos Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("Chaos – Resource Exhaustion [GH-90000]")
+@DisplayName("Chaos – Resource Exhaustion")
 class ChaosResourceExhaustionTest extends EventloopTestBase {
 
     private static final String TENANT_ID  = "chaos-resource-tenant";
@@ -62,11 +62,11 @@ class ChaosResourceExhaustionTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Thread pool exhaustion [GH-90000]")
+    @DisplayName("Thread pool exhaustion")
     class ThreadPoolExhaustionTests {
 
         @Test
-        @DisplayName("requests beyond pool capacity are rejected with RejectedExecutionException [GH-90000]")
+        @DisplayName("requests beyond pool capacity are rejected with RejectedExecutionException")
         void atPoolCapacity_newRequests_rejected() { // GH-90000
             harness.saturateThreadPool(4); // pool at max capacity // GH-90000
 
@@ -75,31 +75,31 @@ class ChaosResourceExhaustionTest extends EventloopTestBase {
                 .satisfies(e -> // GH-90000
                     assertThat(e instanceof RejectedExecutionException // GH-90000
                         || e.getCause() instanceof RejectedExecutionException // GH-90000
-                        || e.getMessage().contains("rejected [GH-90000]") || e.getMessage().contains("capacity [GH-90000]"))
-                        .as("Expected RejectedExecutionException or capacity-related error [GH-90000]")
+                        || e.getMessage().contains("rejected") || e.getMessage().contains("capacity"))
+                        .as("Expected RejectedExecutionException or capacity-related error")
                         .isTrue() // GH-90000
                 );
         }
 
         @Test
-        @DisplayName("pool recovers after tasks complete and accepts new work [GH-90000]")
+        @DisplayName("pool recovers after tasks complete and accepts new work")
         void pool_recovers_afterTasksComplete() throws Exception { // GH-90000
             harness.saturateThreadPool(2); // GH-90000
             harness.drainPool(); // simulate tasks completing // GH-90000
 
             // Should now accept new tasks
             String result = runPromise(() -> harness.submitTask()); // GH-90000
-            assertThat(result).isEqualTo("task-complete [GH-90000]");
+            assertThat(result).isEqualTo("task-complete");
         }
 
         @Test
-        @DisplayName("priority tasks bypass saturated pool via dedicated channel [GH-90000]")
+        @DisplayName("priority tasks bypass saturated pool via dedicated channel")
         void priorityTasks_bypassSaturation() throws Exception { // GH-90000
             harness.saturateThreadPool(4); // GH-90000
 
             // Priority lane (health checks, circuit breaker ops) must always go through // GH-90000
             String result = runPromise(() -> harness.submitPriorityTask()); // GH-90000
-            assertThat(result).isEqualTo("priority-complete [GH-90000]");
+            assertThat(result).isEqualTo("priority-complete");
         }
     }
 
@@ -108,11 +108,11 @@ class ChaosResourceExhaustionTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Database connection pool exhaustion [GH-90000]")
+    @DisplayName("Database connection pool exhaustion")
     class ConnectionPoolExhaustionTests {
 
         @Test
-        @DisplayName("all connections held → new queries fail fast with timeout [GH-90000]")
+        @DisplayName("all connections held → new queries fail fast with timeout")
         void allConnectionsHeld_newQuery_failsFast() { // GH-90000
             harness.exhaustConnectionPool(10); // GH-90000
 
@@ -120,15 +120,15 @@ class ChaosResourceExhaustionTest extends EventloopTestBase {
                 .isInstanceOf(Exception.class) // GH-90000
                 .satisfies(e -> // GH-90000
                     assertThat(e.getMessage() != null // GH-90000
-                        && (e.getMessage().contains("pool [GH-90000]") || e.getMessage().contains("timeout [GH-90000]")
-                            || e.getMessage().contains("exhausted [GH-90000]")))
+                        && (e.getMessage().contains("pool") || e.getMessage().contains("timeout")
+                            || e.getMessage().contains("exhausted")))
                         .as("Expected pool exhaustion or timeout error in: " + e.getMessage()) // GH-90000
                         .isTrue() // GH-90000
                 );
         }
 
         @Test
-        @DisplayName("connection acquisition wait obeys configured timeout and fails fast [GH-90000]")
+        @DisplayName("connection acquisition wait obeys configured timeout and fails fast")
         void connectionAcquisition_obeys_timeout() { // GH-90000
             harness.exhaustConnectionPool(10); // GH-90000
             harness.setAcquisitionTimeoutMs(50); // GH-90000
@@ -145,13 +145,13 @@ class ChaosResourceExhaustionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("connections are released after queries complete and pool is available [GH-90000]")
+        @DisplayName("connections are released after queries complete and pool is available")
         void connections_released_afterQueriesComplete() throws Exception { // GH-90000
             harness.exhaustConnectionPool(5); // GH-90000
             harness.releaseConnections(5); // simulate query completion // GH-90000
 
             String result = runPromise(() -> harness.runQuery(TENANT_ID)); // GH-90000
-            assertThat(result).isEqualTo("query-result [GH-90000]");
+            assertThat(result).isEqualTo("query-result");
         }
     }
 
@@ -160,11 +160,11 @@ class ChaosResourceExhaustionTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Memory pressure [GH-90000]")
+    @DisplayName("Memory pressure")
     class MemoryPressureTests {
 
         @Test
-        @DisplayName("under memory pressure, read-path returns cached data where available [GH-90000]")
+        @DisplayName("under memory pressure, read-path returns cached data where available")
         void memoryPressure_readPath_returnsCached() throws Exception { // GH-90000
             harness.injectMemoryPressure(0.90); // 90% heap used // GH-90000
 
@@ -172,11 +172,11 @@ class ChaosResourceExhaustionTest extends EventloopTestBase {
             harness.setCached(TENANT_ID, "record-1", "cached-value"); // GH-90000
 
             String result = runPromise(() -> harness.readWithCache(TENANT_ID, "record-1")); // GH-90000
-            assertThat(result).isEqualTo("cached-value [GH-90000]");
+            assertThat(result).isEqualTo("cached-value");
         }
 
         @Test
-        @DisplayName("under memory pressure, new allocations fail with OOM guard and return error [GH-90000]")
+        @DisplayName("under memory pressure, new allocations fail with OOM guard and return error")
         void memoryPressure_largeAllocation_returnsError() { // GH-90000
             harness.injectMemoryPressure(0.99); // 99% heap — OOM guard active // GH-90000
             harness.enableOomGuard(); // GH-90000
@@ -185,18 +185,18 @@ class ChaosResourceExhaustionTest extends EventloopTestBase {
                 .isInstanceOf(Exception.class) // GH-90000
                 .satisfies(e -> // GH-90000
                     assertThat(e instanceof OutOfMemoryError // GH-90000
-                        || e.getMessage().contains("memory [GH-90000]") || e.getMessage().contains("OOM [GH-90000]"))
-                        .as("Expected OOM or memory-related error [GH-90000]").isTrue()
+                        || e.getMessage().contains("memory") || e.getMessage().contains("OOM"))
+                        .as("Expected OOM or memory-related error").isTrue()
                 );
         }
 
         @Test
-        @DisplayName("normal write-path works when memory pressure is moderate (<80%) [GH-90000]")
+        @DisplayName("normal write-path works when memory pressure is moderate (<80%)")
         void moderateMemoryPressure_normalWriteSucceeds() throws Exception { // GH-90000
             harness.injectMemoryPressure(0.75); // 75% — below OOM guard // GH-90000
 
             String result = runPromise(() -> harness.writeEntity(TENANT_ID, "id-ok")); // GH-90000
-            assertThat(result).isEqualTo("id-ok [GH-90000]");
+            assertThat(result).isEqualTo("id-ok");
         }
     }
 
@@ -205,11 +205,11 @@ class ChaosResourceExhaustionTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Graceful degradation [GH-90000]")
+    @DisplayName("Graceful degradation")
     class GracefulDegradationTests {
 
         @Test
-        @DisplayName("system availability > 0% even when some resources are exhausted [GH-90000]")
+        @DisplayName("system availability > 0% even when some resources are exhausted")
         void partialResourceExhaustion_systemRemainsAvailable() throws Exception { // GH-90000
             harness.exhaustConnectionPool(8); // 80% of pool consumed // GH-90000
             harness.releaseConnections(2);    // 2 connections free // GH-90000
@@ -230,7 +230,7 @@ class ChaosResourceExhaustionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("metrics endpoint responds even when primary resource is exhausted [GH-90000]")
+        @DisplayName("metrics endpoint responds even when primary resource is exhausted")
         void metricsEndpoint_available_duringResourceExhaustion() throws Exception { // GH-90000
             harness.exhaustConnectionPool(10); // GH-90000
 
@@ -240,7 +240,7 @@ class ChaosResourceExhaustionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("health check returns DEGRADED (not DOWN) under resource pressure [GH-90000]")
+        @DisplayName("health check returns DEGRADED (not DOWN) under resource pressure")
         void healthCheck_underPressure_reportsDegraded() throws Exception { // GH-90000
             harness.exhaustConnectionPool(9); // 90% exhausted // GH-90000
 
@@ -281,14 +281,14 @@ class ChaosResourceExhaustionTest extends EventloopTestBase {
 
         Promise<String> submitTask() { // GH-90000
             if (poolCapacity <= 0) { // GH-90000
-                return Promise.ofException(new RejectedExecutionException("Thread pool at capacity [GH-90000]"));
+                return Promise.ofException(new RejectedExecutionException("Thread pool at capacity"));
             }
-            return Promise.of("task-complete [GH-90000]");
+            return Promise.of("task-complete");
         }
 
         Promise<String> submitPriorityTask() { // GH-90000
             // Priority tasks use a dedicated, never-saturated channel
-            return Promise.of("priority-complete [GH-90000]");
+            return Promise.of("priority-complete");
         }
 
         Promise<String> runQuery(String tenantId) { // GH-90000
@@ -298,12 +298,12 @@ class ChaosResourceExhaustionTest extends EventloopTestBase {
                     "Connection pool exhausted (held=" + heldConnections // GH-90000
                     + ", timeout=" + acquisitionTimeoutMs + "ms)"));
             }
-            return Promise.of("query-result [GH-90000]");
+            return Promise.of("query-result");
         }
 
         Promise<String> writeEntity(String tenantId, String id) { // GH-90000
             if (oomGuardEnabled && heapPressure >= 0.90) { // GH-90000
-                return Promise.ofException(new RuntimeException("OOM guard: heap pressure > 90% [GH-90000]"));
+                return Promise.ofException(new RuntimeException("OOM guard: heap pressure > 90%"));
             }
             return Promise.of(id); // GH-90000
         }
@@ -314,9 +314,9 @@ class ChaosResourceExhaustionTest extends EventloopTestBase {
                 return Promise.of(cached); // cache hit — no allocation needed // GH-90000
             }
             if (oomGuardEnabled && heapPressure >= 0.90) { // GH-90000
-                return Promise.ofException(new RuntimeException("OOM guard: heap pressure > 90% [GH-90000]"));
+                return Promise.ofException(new RuntimeException("OOM guard: heap pressure > 90%"));
             }
-            return Promise.of("uncached [GH-90000]");
+            return Promise.of("uncached");
         }
 
         Promise<Void> allocateLargeBuffer(String tenantId, int bytes) { // GH-90000

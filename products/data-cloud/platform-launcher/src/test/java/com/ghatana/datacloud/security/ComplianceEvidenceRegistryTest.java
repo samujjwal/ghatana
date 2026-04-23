@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer security
  * @doc.pattern UnitTest
  */
-@DisplayName("ComplianceEvidenceRegistry [GH-90000]")
+@DisplayName("ComplianceEvidenceRegistry")
 class ComplianceEvidenceRegistryTest {
 
     private ComplianceEvidenceRegistry registry;
@@ -55,11 +55,11 @@ class ComplianceEvidenceRegistryTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Control Registration [GH-90000]")
+    @DisplayName("Control Registration")
     class ControlRegistration {
 
         @Test
-        @DisplayName("registering a control increases the registry size by 1 [GH-90000]")
+        @DisplayName("registering a control increases the registry size by 1")
         void registerIncreasesSize() { // GH-90000
             registry.register(control("CC6.1", ComplianceEvidenceRegistry.ComplianceFramework.SOC2, // GH-90000
                 ComplianceEvidenceRegistry.ControlStatus.IMPLEMENTED));
@@ -68,19 +68,19 @@ class ComplianceEvidenceRegistryTest {
         }
 
         @Test
-        @DisplayName("registered control is retrievable by its ID [GH-90000]")
+        @DisplayName("registered control is retrievable by its ID")
         void registeredControlRetrievableById() { // GH-90000
             registry.register(control("CC6.1", ComplianceEvidenceRegistry.ComplianceFramework.SOC2, // GH-90000
                 ComplianceEvidenceRegistry.ControlStatus.IMPLEMENTED));
 
-            Optional<ComplianceEvidenceRegistry.ComplianceControl> found = registry.getControl("CC6.1 [GH-90000]");
+            Optional<ComplianceEvidenceRegistry.ComplianceControl> found = registry.getControl("CC6.1");
 
             assertThat(found).isPresent(); // GH-90000
-            assertThat(found.get().getControlId()).isEqualTo("CC6.1 [GH-90000]");
+            assertThat(found.get().getControlId()).isEqualTo("CC6.1");
         }
 
         @Test
-        @DisplayName("re-registering the same ID replaces the previous entry [GH-90000]")
+        @DisplayName("re-registering the same ID replaces the previous entry")
         void reRegisterReplacesPrevious() { // GH-90000
             registry.register(control("CC6.1", ComplianceEvidenceRegistry.ComplianceFramework.SOC2, // GH-90000
                 ComplianceEvidenceRegistry.ControlStatus.IMPLEMENTED));
@@ -88,18 +88,18 @@ class ComplianceEvidenceRegistryTest {
                 ComplianceEvidenceRegistry.ControlStatus.CERTIFIED));
 
             assertThat(registry.size()).isEqualTo(1); // GH-90000
-            assertThat(registry.getControl("CC6.1 [GH-90000]").orElseThrow().getStatus())
+            assertThat(registry.getControl("CC6.1").orElseThrow().getStatus())
                 .isEqualTo(ComplianceEvidenceRegistry.ControlStatus.CERTIFIED); // GH-90000
         }
 
         @Test
-        @DisplayName("registering null control throws NullPointerException [GH-90000]")
+        @DisplayName("registering null control throws NullPointerException")
         void registerNullThrows() { // GH-90000
             assertThatNullPointerException().isThrownBy(() -> registry.register(null)); // GH-90000
         }
 
         @Test
-        @DisplayName("multiple distinct controls are stored independently [GH-90000]")
+        @DisplayName("multiple distinct controls are stored independently")
         void multipleControlsStoredIndependently() { // GH-90000
             registry.register(control("CC6.1", ComplianceEvidenceRegistry.ComplianceFramework.SOC2, // GH-90000
                 ComplianceEvidenceRegistry.ControlStatus.IMPLEMENTED));
@@ -117,17 +117,17 @@ class ComplianceEvidenceRegistryTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Control Retrieval [GH-90000]")
+    @DisplayName("Control Retrieval")
     class ControlRetrieval {
 
         @Test
-        @DisplayName("getControl returns empty for unknown ID [GH-90000]")
+        @DisplayName("getControl returns empty for unknown ID")
         void unknownIdReturnsEmpty() { // GH-90000
-            assertThat(registry.getControl("UNKNOWN [GH-90000]")).isEmpty();
+            assertThat(registry.getControl("UNKNOWN")).isEmpty();
         }
 
         @Test
-        @DisplayName("getControlsByFramework returns only controls for that framework [GH-90000]")
+        @DisplayName("getControlsByFramework returns only controls for that framework")
         void getControlsByFrameworkFiltersCorrectly() { // GH-90000
             registry.register(control("CC6.1", ComplianceEvidenceRegistry.ComplianceFramework.SOC2, // GH-90000
                 ComplianceEvidenceRegistry.ControlStatus.IMPLEMENTED));
@@ -144,13 +144,13 @@ class ComplianceEvidenceRegistryTest {
         }
 
         @Test
-        @DisplayName("getControlsByFramework returns empty list when none registered for that framework [GH-90000]")
+        @DisplayName("getControlsByFramework returns empty list when none registered for that framework")
         void emptyListForUnregisteredFramework() { // GH-90000
             assertThat(registry.getControlsByFramework(ComplianceEvidenceRegistry.ComplianceFramework.HIPAA)).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("getControlsByStatus returns only controls in that status [GH-90000]")
+        @DisplayName("getControlsByStatus returns only controls in that status")
         void getControlsByStatusFiltersCorrectly() { // GH-90000
             registry.register(control("CC6.1", ComplianceEvidenceRegistry.ComplianceFramework.SOC2, // GH-90000
                 ComplianceEvidenceRegistry.ControlStatus.CERTIFIED));
@@ -161,11 +161,11 @@ class ComplianceEvidenceRegistryTest {
                 registry.getControlsByStatus(ComplianceEvidenceRegistry.ControlStatus.CERTIFIED); // GH-90000
 
             assertThat(certified).hasSize(1); // GH-90000
-            assertThat(certified.get(0).getControlId()).isEqualTo("CC6.1 [GH-90000]");
+            assertThat(certified.get(0).getControlId()).isEqualTo("CC6.1");
         }
 
         @Test
-        @DisplayName("getControlsByFramework with null throws NullPointerException [GH-90000]")
+        @DisplayName("getControlsByFramework with null throws NullPointerException")
         void nullFrameworkThrows() { // GH-90000
             assertThatNullPointerException().isThrownBy(() -> registry.getControlsByFramework(null)); // GH-90000
         }
@@ -176,11 +176,11 @@ class ComplianceEvidenceRegistryTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Status Count Summary [GH-90000]")
+    @DisplayName("Status Count Summary")
     class StatusCountSummary {
 
         @Test
-        @DisplayName("getStatusCountsByFramework counts each status correctly [GH-90000]")
+        @DisplayName("getStatusCountsByFramework counts each status correctly")
         void statusCountsAreAccurate() { // GH-90000
             registry.register(control("CC6.1", ComplianceEvidenceRegistry.ComplianceFramework.SOC2, // GH-90000
                 ComplianceEvidenceRegistry.ControlStatus.CERTIFIED));
@@ -200,7 +200,7 @@ class ComplianceEvidenceRegistryTest {
         }
 
         @Test
-        @DisplayName("getStatusCountsByFramework returns empty map when framework has no controls [GH-90000]")
+        @DisplayName("getStatusCountsByFramework returns empty map when framework has no controls")
         void emptyMapForEmptyFramework() { // GH-90000
             assertThat( // GH-90000
                 registry.getStatusCountsByFramework(ComplianceEvidenceRegistry.ComplianceFramework.PCI_DSS) // GH-90000
@@ -213,17 +213,17 @@ class ComplianceEvidenceRegistryTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Framework Compliance Evaluation [GH-90000]")
+    @DisplayName("Framework Compliance Evaluation")
     class FrameworkComplianceEvaluation {
 
         @Test
-        @DisplayName("empty framework is not compliant [GH-90000]")
+        @DisplayName("empty framework is not compliant")
         void emptyFrameworkIsNotCompliant() { // GH-90000
             assertThat(registry.isFrameworkCompliant(ComplianceEvidenceRegistry.ComplianceFramework.SOC2)).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("framework with all CERTIFIED controls is compliant [GH-90000]")
+        @DisplayName("framework with all CERTIFIED controls is compliant")
         void allCertifiedIsCompliant() { // GH-90000
             registry.register(control("CC6.1", ComplianceEvidenceRegistry.ComplianceFramework.SOC2, // GH-90000
                 ComplianceEvidenceRegistry.ControlStatus.CERTIFIED));
@@ -234,7 +234,7 @@ class ComplianceEvidenceRegistryTest {
         }
 
         @Test
-        @DisplayName("framework with a mix of CERTIFIED and NOT_APPLICABLE controls is compliant [GH-90000]")
+        @DisplayName("framework with a mix of CERTIFIED and NOT_APPLICABLE controls is compliant")
         void certifiedAndNotApplicableIsCompliant() { // GH-90000
             registry.register(control("CC6.1", ComplianceEvidenceRegistry.ComplianceFramework.SOC2, // GH-90000
                 ComplianceEvidenceRegistry.ControlStatus.CERTIFIED));
@@ -245,7 +245,7 @@ class ComplianceEvidenceRegistryTest {
         }
 
         @Test
-        @DisplayName("framework with one IMPLEMENTED (not CERTIFIED) control is not compliant [GH-90000]")
+        @DisplayName("framework with one IMPLEMENTED (not CERTIFIED) control is not compliant")
         void oneImplementedMeansNotCompliant() { // GH-90000
             registry.register(control("CC6.1", ComplianceEvidenceRegistry.ComplianceFramework.SOC2, // GH-90000
                 ComplianceEvidenceRegistry.ControlStatus.CERTIFIED));
@@ -256,7 +256,7 @@ class ComplianceEvidenceRegistryTest {
         }
 
         @Test
-        @DisplayName("framework with DOCUMENTED control is not compliant [GH-90000]")
+        @DisplayName("framework with DOCUMENTED control is not compliant")
         void documentedControlMeansNotCompliant() { // GH-90000
             registry.register(control("CC6.1", ComplianceEvidenceRegistry.ComplianceFramework.SOC2, // GH-90000
                 ComplianceEvidenceRegistry.ControlStatus.DOCUMENTED));
@@ -265,7 +265,7 @@ class ComplianceEvidenceRegistryTest {
         }
 
         @Test
-        @DisplayName("framework with TESTED control is not compliant (must reach CERTIFIED) [GH-90000]")
+        @DisplayName("framework with TESTED control is not compliant (must reach CERTIFIED)")
         void testedControlMeansNotCompliant() { // GH-90000
             registry.register(control("CC6.1", ComplianceEvidenceRegistry.ComplianceFramework.SOC2, // GH-90000
                 ComplianceEvidenceRegistry.ControlStatus.TESTED));
@@ -274,7 +274,7 @@ class ComplianceEvidenceRegistryTest {
         }
 
         @Test
-        @DisplayName("compliant framework is unaffected by another framework's non-certified controls [GH-90000]")
+        @DisplayName("compliant framework is unaffected by another framework's non-certified controls")
         void frameworkComplianceIsIsolated() { // GH-90000
             registry.register(control("CC6.1", ComplianceEvidenceRegistry.ComplianceFramework.SOC2, // GH-90000
                 ComplianceEvidenceRegistry.ControlStatus.CERTIFIED));
@@ -292,11 +292,11 @@ class ComplianceEvidenceRegistryTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Report Generation [GH-90000]")
+    @DisplayName("Report Generation")
     class ReportGeneration {
 
         @Test
-        @DisplayName("generateReport returns a non-null report with a recent timestamp [GH-90000]")
+        @DisplayName("generateReport returns a non-null report with a recent timestamp")
         void reportHasRecentTimestamp() { // GH-90000
             Instant before = Instant.now(); // GH-90000
             ComplianceEvidenceRegistry.ComplianceReport report = registry.generateReport(); // GH-90000
@@ -308,7 +308,7 @@ class ComplianceEvidenceRegistryTest {
         }
 
         @Test
-        @DisplayName("report contains entries for all four frameworks [GH-90000]")
+        @DisplayName("report contains entries for all four frameworks")
         void reportContainsAllFrameworks() { // GH-90000
             ComplianceEvidenceRegistry.ComplianceReport report = registry.generateReport(); // GH-90000
 
@@ -321,13 +321,13 @@ class ComplianceEvidenceRegistryTest {
         }
 
         @Test
-        @DisplayName("isFullyCompliant returns false when registry is empty [GH-90000]")
+        @DisplayName("isFullyCompliant returns false when registry is empty")
         void emptyRegistryIsNotFullyCompliant() { // GH-90000
             assertThat(registry.generateReport().isFullyCompliant()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("isFullyCompliant returns true when all frameworks have only CERTIFIED controls [GH-90000]")
+        @DisplayName("isFullyCompliant returns true when all frameworks have only CERTIFIED controls")
         void fullyCompliantWhenAllCertified() { // GH-90000
             for (ComplianceEvidenceRegistry.ComplianceFramework fw : // GH-90000
                     ComplianceEvidenceRegistry.ComplianceFramework.values()) { // GH-90000
@@ -338,7 +338,7 @@ class ComplianceEvidenceRegistryTest {
         }
 
         @Test
-        @DisplayName("FrameworkSummary.getCertifiedCount is accurate [GH-90000]")
+        @DisplayName("FrameworkSummary.getCertifiedCount is accurate")
         void frameworkSummaryCertifiedCountAccurate() { // GH-90000
             registry.register(control("CC6.1", ComplianceEvidenceRegistry.ComplianceFramework.SOC2, // GH-90000
                 ComplianceEvidenceRegistry.ControlStatus.CERTIFIED));
@@ -356,7 +356,7 @@ class ComplianceEvidenceRegistryTest {
         }
 
         @Test
-        @DisplayName("FrameworkSummary.isCompliant aligns with isFrameworkCompliant [GH-90000]")
+        @DisplayName("FrameworkSummary.isCompliant aligns with isFrameworkCompliant")
         void frameworkSummaryCompliantAligns() { // GH-90000
             registry.register(control("CC6.1", ComplianceEvidenceRegistry.ComplianceFramework.SOC2, // GH-90000
                 ComplianceEvidenceRegistry.ControlStatus.CERTIFIED));
@@ -370,13 +370,13 @@ class ComplianceEvidenceRegistryTest {
         }
 
         @Test
-        @DisplayName("report toString contains useful information [GH-90000]")
+        @DisplayName("report toString contains useful information")
         void reportToStringIsInformative() { // GH-90000
             ComplianceEvidenceRegistry.ComplianceReport report = registry.generateReport(); // GH-90000
 
             assertThat(report.toString()) // GH-90000
-                .contains("ComplianceReport [GH-90000]")
-                .contains("fullyCompliant [GH-90000]");
+                .contains("ComplianceReport")
+                .contains("fullyCompliant");
         }
     }
 
@@ -385,11 +385,11 @@ class ComplianceEvidenceRegistryTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("ComplianceControl Object [GH-90000]")
+    @DisplayName("ComplianceControl Object")
     class ComplianceControlObject {
 
         @Test
-        @DisplayName("evidenceLinks is an unmodifiable list copy [GH-90000]")
+        @DisplayName("evidenceLinks is an unmodifiable list copy")
         void evidenceLinksIsDefensiveCopy() { // GH-90000
             List<String> links = new java.util.ArrayList<>(List.of("https://link1", "https://link2")); // GH-90000
             ComplianceEvidenceRegistry.ComplianceControl ctrl =
@@ -399,25 +399,25 @@ class ComplianceEvidenceRegistryTest {
                     "evidence", links, Instant.now(), "owner" // GH-90000
                 );
 
-            links.add("mutated-link [GH-90000]");
+            links.add("mutated-link");
 
             assertThat(ctrl.getEvidenceLinks()).hasSize(2); // GH-90000
         }
 
         @Test
-        @DisplayName("toString includes control ID, framework, and status [GH-90000]")
+        @DisplayName("toString includes control ID, framework, and status")
         void toStringIsInformative() { // GH-90000
             String str = control("CC6.1", ComplianceEvidenceRegistry.ComplianceFramework.SOC2, // GH-90000
                 ComplianceEvidenceRegistry.ControlStatus.CERTIFIED).toString(); // GH-90000
 
             assertThat(str) // GH-90000
-                .contains("CC6.1 [GH-90000]")
-                .contains("SOC2 [GH-90000]")
-                .contains("CERTIFIED [GH-90000]");
+                .contains("CC6.1")
+                .contains("SOC2")
+                .contains("CERTIFIED");
         }
 
         @Test
-        @DisplayName("two controls with same ID are equal regardless of other fields [GH-90000]")
+        @DisplayName("two controls with same ID are equal regardless of other fields")
         void equalsBasedOnControlId() { // GH-90000
             ComplianceEvidenceRegistry.ComplianceControl c1 =
                 control("CC6.1", ComplianceEvidenceRegistry.ComplianceFramework.SOC2, // GH-90000
@@ -431,7 +431,7 @@ class ComplianceEvidenceRegistryTest {
         }
 
         @Test
-        @DisplayName("constructor requires non-null controlId [GH-90000]")
+        @DisplayName("constructor requires non-null controlId")
         void nullControlIdThrows() { // GH-90000
             assertThatNullPointerException().isThrownBy(() -> // GH-90000
                 new ComplianceEvidenceRegistry.ComplianceControl( // GH-90000
@@ -443,7 +443,7 @@ class ComplianceEvidenceRegistryTest {
         }
 
         @Test
-        @DisplayName("null optional fields default to safe empty values [GH-90000]")
+        @DisplayName("null optional fields default to safe empty values")
         void nullOptionalFieldsDefaultSafely() { // GH-90000
             ComplianceEvidenceRegistry.ComplianceControl ctrl =
                 new ComplianceEvidenceRegistry.ComplianceControl( // GH-90000
@@ -464,17 +464,17 @@ class ComplianceEvidenceRegistryTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Edge Cases [GH-90000]")
+    @DisplayName("Edge Cases")
     class EdgeCases {
 
         @Test
-        @DisplayName("size returns 0 for a freshly created registry [GH-90000]")
+        @DisplayName("size returns 0 for a freshly created registry")
         void emptyRegistryHasSizeZero() { // GH-90000
             assertThat(registry.size()).isZero(); // GH-90000
         }
 
         @Test
-        @DisplayName("controls for different frameworks are independently maintained [GH-90000]")
+        @DisplayName("controls for different frameworks are independently maintained")
         void multiFrameworkRegistrationIsIndependent() { // GH-90000
             registry.register(control("SOC2-1", ComplianceEvidenceRegistry.ComplianceFramework.SOC2, // GH-90000
                 ComplianceEvidenceRegistry.ControlStatus.CERTIFIED));
@@ -492,7 +492,7 @@ class ComplianceEvidenceRegistryTest {
         }
 
         @Test
-        @DisplayName("NOT_APPLICABLE controls are included in status counts [GH-90000]")
+        @DisplayName("NOT_APPLICABLE controls are included in status counts")
         void notApplicableIncludedInCounts() { // GH-90000
             registry.register(control("CC6.1", ComplianceEvidenceRegistry.ComplianceFramework.SOC2, // GH-90000
                 ComplianceEvidenceRegistry.ControlStatus.NOT_APPLICABLE));

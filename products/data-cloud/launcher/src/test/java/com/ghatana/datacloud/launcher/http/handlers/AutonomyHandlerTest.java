@@ -22,7 +22,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AutonomyHandler [GH-90000]")
+@DisplayName("AutonomyHandler")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class AutonomyHandlerTest extends EventloopTestBase {
 
@@ -47,7 +47,7 @@ class AutonomyHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("set global level rejects missing tenant before loading body [GH-90000]")
+    @DisplayName("set global level rejects missing tenant before loading body")
     void setGlobalLevelRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
@@ -58,24 +58,24 @@ class AutonomyHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("get global level rejects missing tenant before controller access [GH-90000]")
+    @DisplayName("get global level rejects missing tenant before controller access")
     void getGlobalLevelRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
         HttpResponse response = runPromise(() -> handler.handleGetGlobalLevel(request)); // GH-90000
 
         assertThat(response).isSameAs(errorResponse); // GH-90000
-        verify(autonomyController, never()).listAllStates("default [GH-90000]");
+        verify(autonomyController, never()).listAllStates("default");
     }
 
     @Test
-    @DisplayName("list domains rejects missing tenant before controller access [GH-90000]")
+    @DisplayName("list domains rejects missing tenant before controller access")
     void listDomainsRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
         HttpResponse response = runPromise(() -> handler.handleListDomains(request)); // GH-90000
 
         assertThat(response).isSameAs(errorResponse); // GH-90000
-        verify(autonomyController, never()).listAllStates("default [GH-90000]");
+        verify(autonomyController, never()).listAllStates("default");
     }
 }

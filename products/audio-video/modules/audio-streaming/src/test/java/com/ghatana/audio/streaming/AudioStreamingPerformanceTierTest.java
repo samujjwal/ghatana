@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("Audio Streaming Performance Tier [GH-90000]")
+@DisplayName("Audio Streaming Performance Tier")
 class AudioStreamingPerformanceTierTest {
 
     private final AudioStreamSession session = new AudioStreamSession();

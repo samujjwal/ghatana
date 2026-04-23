@@ -104,6 +104,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({ onTemplateAppl
         <input
           type="text"
           placeholder="Search templates..."
+          aria-label="Search templates"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -114,11 +115,10 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({ onTemplateAppl
       <div className="px-4 py-2 border-b border-gray-200 flex flex-wrap gap-2 overflow-x-auto">
         <button
           onClick={() => setSelectedCategory(null)}
-          className={`px-3 py-1 text-xs rounded-full whitespace-nowrap transition-colors ${
-            selectedCategory === null
+          className={`px-3 py-1 text-xs rounded-full whitespace-nowrap transition-colors ${selectedCategory === null
               ? 'bg-blue-500 text-white'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
+            }`}
         >
           All
         </button>
@@ -126,11 +126,10 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({ onTemplateAppl
           <button
             key={cat}
             onClick={() => setSelectedCategory(cat)}
-            className={`px-3 py-1 text-xs rounded-full whitespace-nowrap transition-colors ${
-              selectedCategory === cat
+            className={`px-3 py-1 text-xs rounded-full whitespace-nowrap transition-colors ${selectedCategory === cat
                 ? 'bg-blue-500 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+              }`}
           >
             {cat}
           </button>
@@ -163,11 +162,10 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({ onTemplateAppl
             <div
               key={template.id}
               onClick={() => setSelectedId(selectedId === template.id ? null : template.id)}
-              className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                selectedId === template.id
+              className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${selectedId === template.id
                   ? 'border-blue-500 bg-blue-50'
                   : 'border-gray-200 hover:border-gray-300'
-              }`}
+                }`}
             >
               <div className="flex items-start gap-2">
                 {template.preview && (

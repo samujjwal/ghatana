@@ -25,9 +25,9 @@ class ErrorPatternManagerTest {
     void setUp() throws IOException { // GH-90000
         // Load the test patterns file from resources
         try (InputStream is = // GH-90000
-                getClass().getClassLoader().getResourceAsStream("stacktrace.patterns.json [GH-90000]")) {
+                getClass().getClassLoader().getResourceAsStream("stacktrace.patterns.json")) {
             if (is == null) { // GH-90000
-                throw new IllegalStateException("Test patterns file not found in resources [GH-90000]");
+                throw new IllegalStateException("Test patterns file not found in resources");
             }
             // Create a temporary file with the patterns
             Path tempFile = Files.createTempFile("test-patterns", ".json"); // GH-90000
@@ -54,7 +54,7 @@ class ErrorPatternManagerTest {
         assertEquals("npe", matches.get(0).getName()); // GH-90000
         assertEquals("java:npe", matches.get(0).getCategory()); // GH-90000
         assertEquals(ErrorPatternManager.Severity.HIGH, matches.get(0).getSeverity()); // GH-90000
-        assertTrue(matches.get(0).getSuggestion().contains("Check for null references [GH-90000]"));
+        assertTrue(matches.get(0).getSuggestion().contains("Check for null references"));
     }
 
     @Test
@@ -66,7 +66,7 @@ class ErrorPatternManagerTest {
         assertFalse(matches.isEmpty(), "Expected to find import error pattern match"); // GH-90000
         assertEquals("import_error", matches.get(0).getName()); // GH-90000
         assertEquals("python:import_error", matches.get(0).getCategory()); // GH-90000
-        assertTrue(matches.get(0).getSuggestion().contains("Install the missing package [GH-90000]"));
+        assertTrue(matches.get(0).getSuggestion().contains("Install the missing package"));
     }
 
     @Test
@@ -78,7 +78,7 @@ class ErrorPatternManagerTest {
         assertFalse(matches.isEmpty(), "Expected to find type error pattern match"); // GH-90000
         assertEquals("type_error", matches.get(0).getName()); // GH-90000
         assertEquals("node:type_error", matches.get(0).getCategory()); // GH-90000
-        assertTrue(matches.get(0).getSuggestion().contains("Check the types of variables [GH-90000]"));
+        assertTrue(matches.get(0).getSuggestion().contains("Check the types of variables"));
     }
 
     @Test
@@ -90,7 +90,7 @@ class ErrorPatternManagerTest {
         assertFalse(matches.isEmpty(), "Expected to find index out of range pattern match"); // GH-90000
         assertEquals("index_out_of_range", matches.get(0).getName()); // GH-90000
         assertEquals("go:index_out_of_range", matches.get(0).getCategory()); // GH-90000
-        assertTrue(matches.get(0).getSuggestion().contains("Check slice/array bounds [GH-90000]"));
+        assertTrue(matches.get(0).getSuggestion().contains("Check slice/array bounds"));
     }
 
     @Test
@@ -104,7 +104,7 @@ class ErrorPatternManagerTest {
         assertFalse(matches.isEmpty(), "Expected to find panic pattern match"); // GH-90000
         assertEquals("panic", matches.get(0).getName()); // GH-90000
         assertEquals("rust:panic", matches.get(0).getCategory()); // GH-90000
-        assertTrue(matches.get(0).getSuggestion().contains("Handle the error case [GH-90000]"));
+        assertTrue(matches.get(0).getSuggestion().contains("Handle the error case"));
     }
 
     @Test
@@ -117,19 +117,19 @@ class ErrorPatternManagerTest {
         assertEquals("out_of_memory", matches.get(0).getName()); // GH-90000
         assertEquals("system:out_of_memory", matches.get(0).getCategory()); // GH-90000
         assertEquals(ErrorPatternManager.Severity.CRITICAL, matches.get(0).getSeverity()); // GH-90000
-        assertTrue(matches.get(0).getSuggestion().contains("Increase JVM heap size [GH-90000]"));
+        assertTrue(matches.get(0).getSuggestion().contains("Increase JVM heap size"));
     }
 
     @Test
     void getFrameRegex_java() { // GH-90000
-        Optional<String> regex = manager.getFrameRegex("java [GH-90000]");
+        Optional<String> regex = manager.getFrameRegex("java");
         assertTrue(regex.isPresent(), "Expected to get Java frame regex"); // GH-90000
-        assertTrue(regex.get().contains("at [GH-90000]"), "Regex should contain 'at' for Java stack traces");
+        assertTrue(regex.get().contains("at"), "Regex should contain 'at' for Java stack traces");
     }
 
     @Test
     void getFrameRegex_unknownLanguage() { // GH-90000
-        Optional<String> regex = manager.getFrameRegex("nonexistent [GH-90000]");
+        Optional<String> regex = manager.getFrameRegex("nonexistent");
         assertTrue(regex.isEmpty(), "Expected empty optional for unknown language"); // GH-90000
     }
 
@@ -153,7 +153,7 @@ class ErrorPatternManagerTest {
         // Should only match common patterns
         assertTrue( // GH-90000
                 matches.isEmpty() // GH-90000
-                        || matches.stream().allMatch(m -> m.getCategory().startsWith("system: [GH-90000]")),
+                        || matches.stream().allMatch(m -> m.getCategory().startsWith("system:")),
                 "Should only match common patterns for unknown language");
     }
 }

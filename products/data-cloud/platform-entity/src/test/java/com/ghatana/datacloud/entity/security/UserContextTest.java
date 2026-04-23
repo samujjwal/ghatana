@@ -13,8 +13,8 @@ class UserContextTest {
     @Test
     void shouldGrantAdminBypassWithoutExplicitPermissions() { // GH-90000
         UserContext context = UserContext.builder() // GH-90000
-                .userId("admin-user [GH-90000]")
-                .tenantId("tenant-a [GH-90000]")
+                .userId("admin-user")
+                .tenantId("tenant-a")
                 .roles(Set.of(UserRole.ADMIN)) // GH-90000
                 .build(); // GH-90000
 
@@ -26,12 +26,12 @@ class UserContextTest {
     @Test
     void shouldUseExplicitPermissionsForNonAdminUsers() { // GH-90000
         UserContext context = UserContext.builder() // GH-90000
-                .userId("editor-user [GH-90000]")
-                .tenantId("tenant-a [GH-90000]")
+                .userId("editor-user")
+                .tenantId("tenant-a")
                 .roles(Set.of(UserRole.EDITOR)) // GH-90000
                 .permissions(Map.of( // GH-90000
                         "collection", Set.of("read", "write"), // GH-90000
-                        "entity", Set.of("read [GH-90000]")
+                        "entity", Set.of("read")
                 ))
                 .build(); // GH-90000
 
@@ -45,35 +45,35 @@ class UserContextTest {
     @Test
     void shouldExposeImmutableRoleAndPermissionCollections() { // GH-90000
         UserContext context = UserContext.builder() // GH-90000
-                .userId("viewer-user [GH-90000]")
-                .tenantId("tenant-a [GH-90000]")
+                .userId("viewer-user")
+                .tenantId("tenant-a")
                 .roles(Set.of(UserRole.VIEWER)) // GH-90000
-                .permissions(Map.of("collection", Set.of("read [GH-90000]")))
+                .permissions(Map.of("collection", Set.of("read")))
                 .build(); // GH-90000
 
         assertThatThrownBy(() -> context.getRoles().add(UserRole.ADMIN)) // GH-90000
                 .isInstanceOf(UnsupportedOperationException.class); // GH-90000
-        assertThatThrownBy(() -> context.getPermissions().put("schema", Set.of("write [GH-90000]")))
+        assertThatThrownBy(() -> context.getPermissions().put("schema", Set.of("write")))
                 .isInstanceOf(UnsupportedOperationException.class); // GH-90000
     }
 
     @Test
     void shouldTreatIssuedAtZeroAsNonExpiringAndEnforceTtlOtherwise() { // GH-90000
         UserContext nonExpiring = UserContext.builder() // GH-90000
-                .userId("service-user [GH-90000]")
-                .tenantId("tenant-a [GH-90000]")
+                .userId("service-user")
+                .tenantId("tenant-a")
                 .issuedAtMs(0) // GH-90000
                 .build(); // GH-90000
 
         UserContext fresh = UserContext.builder() // GH-90000
-                .userId("fresh-user [GH-90000]")
-                .tenantId("tenant-a [GH-90000]")
+                .userId("fresh-user")
+                .tenantId("tenant-a")
                 .issuedAtMs(System.currentTimeMillis() - 3_599_000) // GH-90000
                 .build(); // GH-90000
 
         UserContext expired = UserContext.builder() // GH-90000
-                .userId("expired-user [GH-90000]")
-                .tenantId("tenant-a [GH-90000]")
+                .userId("expired-user")
+                .tenantId("tenant-a")
                 .issuedAtMs(System.currentTimeMillis() - 3_601_000) // GH-90000
                 .build(); // GH-90000
 
@@ -85,21 +85,21 @@ class UserContextTest {
     @Test
     void shouldCompareEqualityByUserAndTenantIdentity() { // GH-90000
         UserContext first = UserContext.builder() // GH-90000
-                .userId("user-1 [GH-90000]")
-                .tenantId("tenant-a [GH-90000]")
+                .userId("user-1")
+                .tenantId("tenant-a")
                 .roles(Set.of(UserRole.VIEWER)) // GH-90000
                 .build(); // GH-90000
 
         UserContext second = UserContext.builder() // GH-90000
-                .userId("user-1 [GH-90000]")
-                .tenantId("tenant-a [GH-90000]")
+                .userId("user-1")
+                .tenantId("tenant-a")
                 .roles(Set.of(UserRole.ADMIN)) // GH-90000
-                .permissions(Map.of("collection", Set.of("delete [GH-90000]")))
+                .permissions(Map.of("collection", Set.of("delete")))
                 .build(); // GH-90000
 
         UserContext differentTenant = UserContext.builder() // GH-90000
-                .userId("user-1 [GH-90000]")
-                .tenantId("tenant-b [GH-90000]")
+                .userId("user-1")
+                .tenantId("tenant-b")
                 .build(); // GH-90000
 
         assertThat(first).isEqualTo(second); // GH-90000

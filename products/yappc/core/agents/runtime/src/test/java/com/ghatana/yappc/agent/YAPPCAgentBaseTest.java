@@ -36,7 +36,7 @@ import org.junit.jupiter.api.Test;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("YAPPCAgentBase Tests [GH-90000]")
+@DisplayName("YAPPCAgentBase Tests")
 class YAPPCAgentBaseTest extends EventloopTestBase {
 
   private EventLogMemoryStore memoryStore;
@@ -54,11 +54,11 @@ class YAPPCAgentBaseTest extends EventloopTestBase {
   // ===== Lifecycle Tests =====
 
   @Nested
-  @DisplayName("Execute Lifecycle [GH-90000]")
+  @DisplayName("Execute Lifecycle")
   class ExecuteLifecycle {
 
     @Test
-    @DisplayName("Should execute full lifecycle and return result [GH-90000]")
+    @DisplayName("Should execute full lifecycle and return result")
     void shouldExecuteFullLifecycle() { // GH-90000
       TestInput input = new TestInput("test-123", "run something"); // GH-90000
       StepContext ctx = createStepContext(); // GH-90000
@@ -72,14 +72,14 @@ class YAPPCAgentBaseTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should reject invalid input during perceive [GH-90000]")
+    @DisplayName("Should reject invalid input during perceive")
     void shouldRejectInvalidInput() { // GH-90000
       TestInput input = new TestInput("", "invalid"); // GH-90000
       StepContext ctx = createStepContext(); // GH-90000
 
       assertThatThrownBy(() -> runPromise(() -> agent.execute(input, ctx))) // GH-90000
           .isInstanceOf(IllegalArgumentException.class) // GH-90000
-          .hasMessageContaining("Input validation failed [GH-90000]");
+          .hasMessageContaining("Input validation failed");
       // Clear the fatal error recorded by the eventloop so @AfterEach teardown
       // does not re-throw the same exception and mark this test as failed.
       clearFatalError(); // GH-90000
@@ -89,11 +89,11 @@ class YAPPCAgentBaseTest extends EventloopTestBase {
   // ===== Memory Integration Tests =====
 
   @Nested
-  @DisplayName("Memory Integration [GH-90000]")
+  @DisplayName("Memory Integration")
   class MemoryIntegration {
 
     @Test
-    @DisplayName("Should capture episode after execution [GH-90000]")
+    @DisplayName("Should capture episode after execution")
     void shouldCaptureEpisode() { // GH-90000
       TestInput input = new TestInput("capture-test", "run something"); // GH-90000
       StepContext ctx = createStepContext(); // GH-90000
@@ -102,20 +102,20 @@ class YAPPCAgentBaseTest extends EventloopTestBase {
 
       // Query for captured episodes
       MemoryFilter filter = MemoryFilter.builder() // GH-90000
-          .agentId("TestAgent [GH-90000]")
+          .agentId("TestAgent")
           .build(); // GH-90000
       List<Episode> episodes = runPromise(() -> memoryStore.queryEpisodes(filter, 10)); // GH-90000
 
       assertThat(episodes).isNotEmpty(); // GH-90000
       Episode captured = episodes.get(0); // GH-90000
-      assertThat(captured.getAgentId()).isEqualTo("TestAgent [GH-90000]");
-      assertThat(captured.getAction()).isEqualTo("test.step [GH-90000]");
+      assertThat(captured.getAgentId()).isEqualTo("TestAgent");
+      assertThat(captured.getAction()).isEqualTo("test.step");
       assertThat(captured.getTags()).contains("test.step", "success"); // GH-90000
       assertThat(captured.getReward()).isEqualTo(1.0); // GH-90000
     }
 
     @Test
-    @DisplayName("Should capture failure episode with negative reward [GH-90000]")
+    @DisplayName("Should capture failure episode with negative reward")
     void shouldCaptureFailureEpisode() { // GH-90000
       TestAgent failAgent = new TestAgent(memoryStore, new FailingGenerator()); // GH-90000
       StepContext ctx = createStepContext(); // GH-90000
@@ -124,18 +124,18 @@ class YAPPCAgentBaseTest extends EventloopTestBase {
       StepResult<TestOutput> result = runPromise(() -> failAgent.execute(input, ctx)); // GH-90000
 
       MemoryFilter filter = MemoryFilter.builder() // GH-90000
-          .agentId("TestAgent [GH-90000]")
+          .agentId("TestAgent")
           .build(); // GH-90000
       List<Episode> episodes = runPromise(() -> memoryStore.queryEpisodes(filter, 10)); // GH-90000
 
       assertThat(episodes).isNotEmpty(); // GH-90000
       Episode captured = episodes.get(0); // GH-90000
-      assertThat(captured.getTags()).contains("failure [GH-90000]");
+      assertThat(captured.getTags()).contains("failure");
       assertThat(captured.getReward()).isEqualTo(-1.0); // GH-90000
     }
 
     @Test
-    @DisplayName("Should store facts during reflection when pattern learning enabled [GH-90000]")
+    @DisplayName("Should store facts during reflection when pattern learning enabled")
     void shouldStoreFactsDuringReflection() { // GH-90000
       FeatureFlags.override(FeatureFlag.PATTERN_LEARNING, true); // GH-90000
       try {
@@ -150,16 +150,16 @@ class YAPPCAgentBaseTest extends EventloopTestBase {
 
         assertThat(facts).isNotEmpty(); // GH-90000
         Fact fact = facts.get(0); // GH-90000
-        assertThat(fact.getAgentId()).isEqualTo("TestAgent [GH-90000]");
-        assertThat(fact.getSubject()).isEqualTo("test.step [GH-90000]");
-        assertThat(fact.getPredicate()).isEqualTo("succeeded_with [GH-90000]");
+        assertThat(fact.getAgentId()).isEqualTo("TestAgent");
+        assertThat(fact.getSubject()).isEqualTo("test.step");
+        assertThat(fact.getPredicate()).isEqualTo("succeeded_with");
       } finally {
         FeatureFlags.clearOverrides(); // GH-90000
       }
     }
 
     @Test
-    @DisplayName("Should store policies during reflection [GH-90000]")
+    @DisplayName("Should store policies during reflection")
     void shouldStorePoliciesDuringReflection() { // GH-90000
       FeatureFlags.override(FeatureFlag.PATTERN_LEARNING, true); // GH-90000
       try {
@@ -173,8 +173,8 @@ class YAPPCAgentBaseTest extends EventloopTestBase {
 
         assertThat(policies).isNotEmpty(); // GH-90000
         Policy policy = policies.get(0); // GH-90000
-        assertThat(policy.getAgentId()).isEqualTo("TestAgent [GH-90000]");
-        assertThat(policy.getSituation()).contains("test.step [GH-90000]");
+        assertThat(policy.getAgentId()).isEqualTo("TestAgent");
+        assertThat(policy.getSituation()).contains("test.step");
         assertThat(policy.getConfidence()).isGreaterThanOrEqualTo(0.5); // GH-90000
       } finally {
         FeatureFlags.clearOverrides(); // GH-90000
@@ -182,7 +182,7 @@ class YAPPCAgentBaseTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should gracefully handle memory failures [GH-90000]")
+    @DisplayName("Should gracefully handle memory failures")
     void shouldHandleMemoryFailures() { // GH-90000
       // Use NoOp memory store — operations succeed but store nothing
       TestAgent noMemAgent = new TestAgent(MemoryStore.noOp(), new TestGenerator()); // GH-90000
@@ -198,40 +198,40 @@ class YAPPCAgentBaseTest extends EventloopTestBase {
   // ===== Contract Tests =====
 
   @Nested
-  @DisplayName("WorkflowStep Contract [GH-90000]")
+  @DisplayName("WorkflowStep Contract")
   class WorkflowStepContract {
 
     @Test
-    @DisplayName("Should expose step name [GH-90000]")
+    @DisplayName("Should expose step name")
     void shouldExposeStepName() { // GH-90000
-      assertThat(agent.stepName()).isEqualTo("test.step [GH-90000]");
+      assertThat(agent.stepName()).isEqualTo("test.step");
     }
 
     @Test
-    @DisplayName("Should expose step contract [GH-90000]")
+    @DisplayName("Should expose step contract")
     void shouldExposeContract() { // GH-90000
       StepContract contract = agent.contract(); // GH-90000
-      assertThat(contract.name()).isEqualTo("test.step [GH-90000]");
-      assertThat(contract.requiredCapabilities()).containsExactly("testing [GH-90000]");
+      assertThat(contract.name()).isEqualTo("test.step");
+      assertThat(contract.requiredCapabilities()).containsExactly("testing");
     }
   }
 
   // ===== Context Conversion Tests =====
 
   @Nested
-  @DisplayName("Context Conversion [GH-90000]")
+  @DisplayName("Context Conversion")
   class ContextConversion {
 
     @Test
-    @DisplayName("Should convert StepContext to AgentContext [GH-90000]")
+    @DisplayName("Should convert StepContext to AgentContext")
     void shouldConvertContext() { // GH-90000
       StepContext ctx = createStepContext(); // GH-90000
       AgentContext agentCtx = agent.convertToAgentContext(ctx); // GH-90000
 
-      assertThat(agentCtx.getAgentId()).isEqualTo("TestAgent [GH-90000]");
-      assertThat(agentCtx.getTurnId()).isEqualTo("run-123 [GH-90000]");
-      assertThat(agentCtx.getTenantId()).isEqualTo("tenant-1 [GH-90000]");
-      assertThat(agentCtx.getSessionId()).isEqualTo("testing-phase [GH-90000]");
+      assertThat(agentCtx.getAgentId()).isEqualTo("TestAgent");
+      assertThat(agentCtx.getTurnId()).isEqualTo("run-123");
+      assertThat(agentCtx.getTenantId()).isEqualTo("tenant-1");
+      assertThat(agentCtx.getSessionId()).isEqualTo("testing-phase");
     }
   }
 
@@ -255,7 +255,7 @@ class YAPPCAgentBaseTest extends EventloopTestBase {
         OutputGenerator<StepRequest<TestInput>, StepResult<TestOutput>> generator) {
       super("TestAgent", "test.step", // GH-90000
           new StepContract("test.step", "#/definitions/TestInput", // GH-90000
-              "#/definitions/TestOutput", List.of("testing [GH-90000]"),
+              "#/definitions/TestOutput", List.of("testing"),
               Map.of("description", "Test agent", "version", "1.0.0")), // GH-90000
           generator,
         defaultEventPublisher()); // GH-90000
@@ -270,7 +270,7 @@ class YAPPCAgentBaseTest extends EventloopTestBase {
     @Override
     public ValidationResult validateInput(@NotNull TestInput input) { // GH-90000
       if (input.id() == null || input.id().isEmpty()) { // GH-90000
-        return ValidationResult.fail("id cannot be empty [GH-90000]");
+        return ValidationResult.fail("id cannot be empty");
       }
       return ValidationResult.success(); // GH-90000
     }
@@ -303,8 +303,8 @@ class YAPPCAgentBaseTest extends EventloopTestBase {
     @Override
     public @NotNull GeneratorMetadata getMetadata() { // GH-90000
       return GeneratorMetadata.builder() // GH-90000
-          .name("TestGenerator [GH-90000]").type("rule-based [GH-90000]")
-          .description("Test generator [GH-90000]").version("1.0.0 [GH-90000]").build();
+          .name("TestGenerator").type("rule-based")
+          .description("Test generator").version("1.0.0").build();
     }
   }
 
@@ -316,7 +316,7 @@ class YAPPCAgentBaseTest extends EventloopTestBase {
         @NotNull StepRequest<TestInput> input, @NotNull AgentContext context) {
       Instant start = Instant.now(); // GH-90000
       return Promise.of(StepResult.failed( // GH-90000
-          List.of("Simulated failure [GH-90000]"), Map.of(), start, Instant.now()));
+          List.of("Simulated failure"), Map.of(), start, Instant.now()));
     }
 
     @Override
@@ -328,8 +328,8 @@ class YAPPCAgentBaseTest extends EventloopTestBase {
     @Override
     public @NotNull GeneratorMetadata getMetadata() { // GH-90000
       return GeneratorMetadata.builder() // GH-90000
-          .name("FailingGenerator [GH-90000]").type("rule-based [GH-90000]")
-          .description("Always fails [GH-90000]").version("1.0.0 [GH-90000]").build();
+          .name("FailingGenerator").type("rule-based")
+          .description("Always fails").version("1.0.0").build();
     }
   }
 }

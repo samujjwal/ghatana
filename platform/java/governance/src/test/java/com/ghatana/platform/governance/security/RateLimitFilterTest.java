@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("RateLimitFilter [GH-90000]")
+@DisplayName("RateLimitFilter")
 class RateLimitFilterTest extends EventloopTestBase {
 
     // -----------------------------------------------------------------------
@@ -44,53 +44,53 @@ class RateLimitFilterTest extends EventloopTestBase {
     // -----------------------------------------------------------------------
 
     @Nested
-    @DisplayName("constructor validation [GH-90000]")
+    @DisplayName("constructor validation")
     class ConstructorValidation {
 
         @Test
-        @DisplayName("zero maxRequests throws IllegalArgumentException [GH-90000]")
+        @DisplayName("zero maxRequests throws IllegalArgumentException")
         void zeroMaxRequestsThrows() { // GH-90000
             assertThatThrownBy(() -> new RateLimitFilter(0, 60)) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("maxRequests must be > 0 [GH-90000]");
+                    .hasMessageContaining("maxRequests must be > 0");
         }
 
         @Test
-        @DisplayName("negative maxRequests throws IllegalArgumentException [GH-90000]")
+        @DisplayName("negative maxRequests throws IllegalArgumentException")
         void negativeMaxRequestsThrows() { // GH-90000
             assertThatThrownBy(() -> new RateLimitFilter(-1, 60)) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("maxRequests must be > 0 [GH-90000]");
+                    .hasMessageContaining("maxRequests must be > 0");
         }
 
         @Test
-        @DisplayName("zero windowSeconds throws IllegalArgumentException [GH-90000]")
+        @DisplayName("zero windowSeconds throws IllegalArgumentException")
         void zeroWindowSecondsThrows() { // GH-90000
             assertThatThrownBy(() -> new RateLimitFilter(10, 0)) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("windowSeconds must be > 0 [GH-90000]");
+                    .hasMessageContaining("windowSeconds must be > 0");
         }
 
         @Test
-        @DisplayName("negative windowSeconds throws IllegalArgumentException [GH-90000]")
+        @DisplayName("negative windowSeconds throws IllegalArgumentException")
         void negativeWindowSecondsThrows() { // GH-90000
             assertThatThrownBy(() -> new RateLimitFilter(10, -5)) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("windowSeconds must be > 0 [GH-90000]");
+                    .hasMessageContaining("windowSeconds must be > 0");
         }
 
         @Test
-        @DisplayName("valid parameters create instance without error [GH-90000]")
+        @DisplayName("valid parameters create instance without error")
         void validParametersCreateInstance() { // GH-90000
             assertThat(new RateLimitFilter(100, 60)).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("null client key resolver throws NullPointerException [GH-90000]")
+        @DisplayName("null client key resolver throws NullPointerException")
         void nullClientKeyResolverThrows() { // GH-90000
             assertThatThrownBy(() -> new RateLimitFilter(100, 60, null)) // GH-90000
                     .isInstanceOf(NullPointerException.class) // GH-90000
-                    .hasMessageContaining("clientKeyResolver [GH-90000]");
+                    .hasMessageContaining("clientKeyResolver");
         }
     }
 
@@ -99,15 +99,15 @@ class RateLimitFilterTest extends EventloopTestBase {
     // -----------------------------------------------------------------------
 
     @Nested
-    @DisplayName("sliding window enforcement [GH-90000]")
+    @DisplayName("sliding window enforcement")
     class SlidingWindowEnforcement {
 
         @Test
-        @DisplayName("requests below limit are passed through (HTTP 200) [GH-90000]")
+        @DisplayName("requests below limit are passed through (HTTP 200)")
         void requestsBelowLimitPassThrough() { // GH-90000
             RateLimitFilter filter = new RateLimitFilter(3, 60); // GH-90000
             AsyncServlet servlet = filter.wrap(OK_SERVLET); // GH-90000
-            HttpRequest request = buildRequestWithXff("192.168.1.1 [GH-90000]");
+            HttpRequest request = buildRequestWithXff("192.168.1.1");
 
             // First two requests should pass
             int status1 = runPromise(() -> servlet.serve(request).map(HttpResponse::getCode)); // GH-90000
@@ -118,11 +118,11 @@ class RateLimitFilterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("request at the limit is passed through [GH-90000]")
+        @DisplayName("request at the limit is passed through")
         void requestAtLimitPassesThrough() { // GH-90000
             RateLimitFilter filter = new RateLimitFilter(2, 60); // GH-90000
             AsyncServlet servlet = filter.wrap(OK_SERVLET); // GH-90000
-            HttpRequest request = buildRequestWithXff("10.0.0.1 [GH-90000]");
+            HttpRequest request = buildRequestWithXff("10.0.0.1");
 
             // First two should pass (limit = 2) // GH-90000
             runPromise(() -> servlet.serve(request).map(HttpResponse::getCode)); // GH-90000
@@ -132,11 +132,11 @@ class RateLimitFilterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("request over the limit returns HTTP 429 [GH-90000]")
+        @DisplayName("request over the limit returns HTTP 429")
         void requestOverLimitReturns429() { // GH-90000
             RateLimitFilter filter = new RateLimitFilter(2, 60); // GH-90000
             AsyncServlet servlet = filter.wrap(OK_SERVLET); // GH-90000
-            HttpRequest request = buildRequestWithXff("10.0.0.2 [GH-90000]");
+            HttpRequest request = buildRequestWithXff("10.0.0.2");
 
             // Exhaust the budget
             runPromise(() -> servlet.serve(request).map(HttpResponse::getCode)); // GH-90000
@@ -149,7 +149,7 @@ class RateLimitFilterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("delegate is not invoked when rate limit is exceeded [GH-90000]")
+        @DisplayName("delegate is not invoked when rate limit is exceeded")
         void delegateNotCalledWhenLimited() { // GH-90000
             int[] delegateCalls = {0};
             AsyncServlet countingServlet = request -> {
@@ -159,7 +159,7 @@ class RateLimitFilterTest extends EventloopTestBase {
 
             RateLimitFilter filter = new RateLimitFilter(1, 60); // GH-90000
             AsyncServlet servlet = filter.wrap(countingServlet); // GH-90000
-            HttpRequest request = buildRequestWithXff("10.0.1.1 [GH-90000]");
+            HttpRequest request = buildRequestWithXff("10.0.1.1");
 
             // Exhaust budget (1 allowed) // GH-90000
             runPromise(() -> servlet.serve(request).map(HttpResponse::getCode)); // GH-90000
@@ -176,17 +176,17 @@ class RateLimitFilterTest extends EventloopTestBase {
     // -----------------------------------------------------------------------
 
     @Nested
-    @DisplayName("client key extraction [GH-90000]")
+    @DisplayName("client key extraction")
     class ClientKeyExtraction {
 
         @Test
-        @DisplayName("X-Forwarded-For header is used as client key over remote address [GH-90000]")
+        @DisplayName("X-Forwarded-For header is used as client key over remote address")
         void xForwardedForTakesPrecedence() { // GH-90000
             RateLimitFilter filter = new RateLimitFilter(1, 60); // GH-90000
             AsyncServlet servlet = filter.wrap(OK_SERVLET); // GH-90000
 
             // First request keyed by X-Forwarded-For: 1.2.3.4
-            HttpRequest xffRequest = buildRequestWithXff("1.2.3.4 [GH-90000]");
+            HttpRequest xffRequest = buildRequestWithXff("1.2.3.4");
             runPromise(() -> servlet.serve(xffRequest).map(HttpResponse::getCode)); // GH-90000
 
             // Second request from same 1.2.3.4 — should be limited
@@ -195,13 +195,13 @@ class RateLimitFilterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("first IP in comma-separated X-Forwarded-For chain is used [GH-90000]")
+        @DisplayName("first IP in comma-separated X-Forwarded-For chain is used")
         void firstIpInXffChainIsUsed() { // GH-90000
             RateLimitFilter filter = new RateLimitFilter(1, 60); // GH-90000
             AsyncServlet servlet = filter.wrap(OK_SERVLET); // GH-90000
 
             // Proxy chain: "1.2.3.4, 5.6.7.8" — only 1.2.3.4 should count
-            HttpRequest chainRequest = buildRequestWithXff("1.2.3.4, 5.6.7.8 [GH-90000]");
+            HttpRequest chainRequest = buildRequestWithXff("1.2.3.4, 5.6.7.8");
             runPromise(() -> servlet.serve(chainRequest).map(HttpResponse::getCode)); // GH-90000
 
             // Another request with same chain (same first IP) should be rate-limited // GH-90000
@@ -215,17 +215,17 @@ class RateLimitFilterTest extends EventloopTestBase {
     // -----------------------------------------------------------------------
 
     @Nested
-    @DisplayName("multi-client isolation [GH-90000]")
+    @DisplayName("multi-client isolation")
     class MultiClientIsolation {
 
         @Test
-        @DisplayName("different clients have independent rate limit buckets [GH-90000]")
+        @DisplayName("different clients have independent rate limit buckets")
         void differentClientsAreIndependent() { // GH-90000
             RateLimitFilter filter = new RateLimitFilter(1, 60); // GH-90000
             AsyncServlet servlet = filter.wrap(OK_SERVLET); // GH-90000
 
-            HttpRequest requestA = buildRequestWithXff("192.168.0.1 [GH-90000]");
-            HttpRequest requestB = buildRequestWithXff("192.168.0.2 [GH-90000]");
+            HttpRequest requestA = buildRequestWithXff("192.168.0.1");
+            HttpRequest requestB = buildRequestWithXff("192.168.0.2");
 
             // Exhaust client A's budget
             runPromise(() -> servlet.serve(requestA).map(HttpResponse::getCode)); // GH-90000
@@ -239,7 +239,7 @@ class RateLimitFilterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("N distinct clients each get their own full quota [GH-90000]")
+        @DisplayName("N distinct clients each get their own full quota")
         void nClientsGetIndependentQuotas() { // GH-90000
             int quota = 2;
             RateLimitFilter filter = new RateLimitFilter(quota, 60); // GH-90000
@@ -263,15 +263,15 @@ class RateLimitFilterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("custom client key resolver can isolate tenants behind one forwarded IP [GH-90000]")
+        @DisplayName("custom client key resolver can isolate tenants behind one forwarded IP")
         void customClientKeyResolverCanIsolateTenants() { // GH-90000
             RateLimitFilter filter =
                     new RateLimitFilter( // GH-90000
                             1,
                             60,
                             request -> {
-                                String tenantId = request.getHeader(io.activej.http.HttpHeaders.of("X-Tenant-ID [GH-90000]"));
-                                String clientIp = request.getHeader(io.activej.http.HttpHeaders.of("X-Forwarded-For [GH-90000]"));
+                                String tenantId = request.getHeader(io.activej.http.HttpHeaders.of("X-Tenant-ID"));
+                                String clientIp = request.getHeader(io.activej.http.HttpHeaders.of("X-Forwarded-For"));
                                 return (tenantId == null ? "unknown" : tenantId) + "|" + clientIp; // GH-90000
                             });
             AsyncServlet servlet = filter.wrap(OK_SERVLET); // GH-90000
@@ -294,15 +294,15 @@ class RateLimitFilterTest extends EventloopTestBase {
     // -----------------------------------------------------------------------
 
     @Nested
-    @DisplayName("429 response headers [GH-90000]")
+    @DisplayName("429 response headers")
     class TooManyRequestsResponse {
 
         @Test
-        @DisplayName("rate-limited response includes Retry-After header [GH-90000]")
+        @DisplayName("rate-limited response includes Retry-After header")
         void rateLimitedResponseIncludesRetryAfterHeader() { // GH-90000
             RateLimitFilter filter = new RateLimitFilter(1, 60); // GH-90000
             AsyncServlet servlet = filter.wrap(OK_SERVLET); // GH-90000
-            HttpRequest request = buildRequestWithXff("203.0.113.1 [GH-90000]");
+            HttpRequest request = buildRequestWithXff("203.0.113.1");
 
             // Exhaust budget
             runPromise(() -> servlet.serve(request).map(HttpResponse::getCode)); // GH-90000
@@ -310,8 +310,8 @@ class RateLimitFilterTest extends EventloopTestBase {
             // Rate-limited response
             HttpResponse response = runPromise(() -> servlet.serve(request)); // GH-90000
             assertThat(response.getCode()).isEqualTo(429); // GH-90000
-            assertThat(response.getHeader(io.activej.http.HttpHeaders.of("Retry-After [GH-90000]")))
-                    .isEqualTo("60 [GH-90000]");
+            assertThat(response.getHeader(io.activej.http.HttpHeaders.of("Retry-After")))
+                    .isEqualTo("60");
         }
     }
 
@@ -326,7 +326,7 @@ class RateLimitFilterTest extends EventloopTestBase {
      * Use only when client identity is irrelevant to the test.
      */
     private static HttpRequest buildRequest() { // GH-90000
-        return HttpRequest.get("http://localhost/api/test [GH-90000]")
+        return HttpRequest.get("http://localhost/api/test")
                 .withHeader(io.activej.http.HttpHeaders.HOST, "localhost") // GH-90000
                 .build(); // GH-90000
     }
@@ -339,17 +339,17 @@ class RateLimitFilterTest extends EventloopTestBase {
      * @param xffValue single IP or comma-separated proxy chain (e.g. "1.2.3.4, 5.6.7.8") // GH-90000
      */
     private static HttpRequest buildRequestWithXff(String xffValue) { // GH-90000
-        return HttpRequest.get("http://localhost/api/test [GH-90000]")
+        return HttpRequest.get("http://localhost/api/test")
                 .withHeader(io.activej.http.HttpHeaders.HOST, "localhost") // GH-90000
-                .withHeader(io.activej.http.HttpHeaders.of("X-Forwarded-For [GH-90000]"), xffValue)
+                .withHeader(io.activej.http.HttpHeaders.of("X-Forwarded-For"), xffValue)
                 .build(); // GH-90000
     }
 
     private static HttpRequest buildRequestWithTenantAndXff(String tenantId, String xffValue) { // GH-90000
-        return HttpRequest.get("http://localhost/api/test [GH-90000]")
+        return HttpRequest.get("http://localhost/api/test")
                 .withHeader(io.activej.http.HttpHeaders.HOST, "localhost") // GH-90000
-                .withHeader(io.activej.http.HttpHeaders.of("X-Tenant-ID [GH-90000]"), tenantId)
-                .withHeader(io.activej.http.HttpHeaders.of("X-Forwarded-For [GH-90000]"), xffValue)
+                .withHeader(io.activej.http.HttpHeaders.of("X-Tenant-ID"), tenantId)
+                .withHeader(io.activej.http.HttpHeaders.of("X-Forwarded-For"), xffValue)
                 .build(); // GH-90000
     }
 }

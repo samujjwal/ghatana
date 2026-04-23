@@ -26,7 +26,7 @@ import static org.mockito.Mockito.*;
 /**
  * Tests for DashboardDataCloudAdapter.
  */
-@DisplayName("DashboardDataCloudAdapter Tests [GH-90000]")
+@DisplayName("DashboardDataCloudAdapter Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles dashboard data cloud adapter test operations
@@ -53,7 +53,7 @@ class DashboardDataCloudAdapterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should find dashboards by workspace ID [GH-90000]")
+    @DisplayName("Should find dashboards by workspace ID")
     void shouldFindByWorkspaceId() { // GH-90000
         UUID workspaceId = UUID.randomUUID(); // GH-90000
 
@@ -67,7 +67,7 @@ class DashboardDataCloudAdapterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should find dashboard by workspace ID and name [GH-90000]")
+    @DisplayName("Should find dashboard by workspace ID and name")
     void shouldFindByWorkspaceIdAndName() { // GH-90000
         UUID workspaceId = UUID.randomUUID(); // GH-90000
 

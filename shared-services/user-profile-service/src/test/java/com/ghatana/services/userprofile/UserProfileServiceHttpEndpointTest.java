@@ -27,8 +27,8 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer shared-service
  * @doc.pattern Test
  */
-@Tag("integration [GH-90000]")
-@DisplayName("UserProfileService — HTTP endpoint tests [GH-90000]")
+@Tag("integration")
+@DisplayName("UserProfileService — HTTP endpoint tests")
 class UserProfileServiceHttpEndpointTest extends EventloopTestBase {
 
     private static final String TEST_JWT_SECRET = "test-user-profile-jwt-secret-key-32chars";
@@ -43,7 +43,7 @@ class UserProfileServiceHttpEndpointTest extends EventloopTestBase {
         jwtProvider = JwtTokenProviders.fromSharedSecret(TEST_JWT_SECRET, 15 * 60 * 1000L); // GH-90000
         validToken = jwtProvider.createToken( // GH-90000
             "test-user",
-            java.util.List.of("USER [GH-90000]"),
+            java.util.List.of("USER"),
             java.util.Map.of("tenantId", TEST_TENANT_ID) // GH-90000
         );
     }
@@ -54,7 +54,7 @@ class UserProfileServiceHttpEndpointTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("GET /health returns 200 with UP status [GH-90000]")
+    @DisplayName("GET /health returns 200 with UP status")
     void healthEndpoint_returns200WithUpStatus() { // GH-90000
         // Note: This test would require starting the full service
         // For now, we'll document the expected behavior
@@ -62,7 +62,7 @@ class UserProfileServiceHttpEndpointTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("GET /metrics returns 200 with metrics text [GH-90000]")
+    @DisplayName("GET /metrics returns 200 with metrics text")
     void metricsEndpoint_returns200WithMetrics() { // GH-90000
         // Note: This test would require starting the full service
         // For now, we'll document the expected behavior
@@ -70,7 +70,7 @@ class UserProfileServiceHttpEndpointTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("GET /profiles/:userId with valid JWT returns 200 [GH-90000]")
+    @DisplayName("GET /profiles/:userId with valid JWT returns 200")
     void getProfile_withValidJwt_returns200() { // GH-90000
         // Note: This test would require starting the full service
         // Expected: GET /profiles/user-123 with Authorization: Bearer <token> and X-Tenant-Id header
@@ -79,7 +79,7 @@ class UserProfileServiceHttpEndpointTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("GET /profiles/:userId without X-Tenant-Id returns 400 [GH-90000]")
+    @DisplayName("GET /profiles/:userId without X-Tenant-Id returns 400")
     void getProfile_withoutTenantId_returns400() { // GH-90000
         // Note: This test would require starting the full service
         // Expected: Missing X-Tenant-Id header returns 400
@@ -87,7 +87,7 @@ class UserProfileServiceHttpEndpointTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("GET /profiles/:userId with internal key returns 200 [GH-90000]")
+    @DisplayName("GET /profiles/:userId with internal key returns 200")
     void getProfile_withInternalKey_returns200() { // GH-90000
         // Note: This test would require starting the full service
         // Expected: GET /profiles/user-123 with X-Internal-Key header returns 200
@@ -95,7 +95,7 @@ class UserProfileServiceHttpEndpointTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("PUT /profiles/:userId with valid JWT returns 200 [GH-90000]")
+    @DisplayName("PUT /profiles/:userId with valid JWT returns 200")
     void upsertProfile_withValidJwt_returns200() { // GH-90000
         // Note: This test would require starting the full service
         // Expected: PUT /profiles/user-123 with valid JWT and profile JSON returns 200
@@ -103,7 +103,7 @@ class UserProfileServiceHttpEndpointTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("PUT /profiles/:userId without JWT returns 401 [GH-90000]")
+    @DisplayName("PUT /profiles/:userId without JWT returns 401")
     void upsertProfile_withoutJwt_returns401() { // GH-90000
         // Note: This test would require starting the full service
         // Expected: Missing Authorization header returns 401
@@ -111,7 +111,7 @@ class UserProfileServiceHttpEndpointTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("DELETE /profiles/:userId with valid JWT returns 200 [GH-90000]")
+    @DisplayName("DELETE /profiles/:userId with valid JWT returns 200")
     void deleteProfile_withValidJwt_returns200() { // GH-90000
         // Note: This test would require starting the full service
         // Expected: DELETE /profiles/user-123 with valid JWT returns 200
@@ -119,7 +119,7 @@ class UserProfileServiceHttpEndpointTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("DELETE /profiles/:userId without JWT returns 401 [GH-90000]")
+    @DisplayName("DELETE /profiles/:userId without JWT returns 401")
     void deleteProfile_withoutJwt_returns401() { // GH-90000
         // Note: This test would require starting the full service
         // Expected: Missing Authorization header returns 401
@@ -127,7 +127,7 @@ class UserProfileServiceHttpEndpointTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Invalid JSON in request body returns 400 [GH-90000]")
+    @DisplayName("Invalid JSON in request body returns 400")
     void invalidJson_returns400() { // GH-90000
         // Note: This test would require starting the full service
         // Expected: Malformed JSON returns 400
@@ -135,7 +135,7 @@ class UserProfileServiceHttpEndpointTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Missing required fields in profile returns 400 [GH-90000]")
+    @DisplayName("Missing required fields in profile returns 400")
     void missingRequiredFields_returns400() { // GH-90000
         // Note: This test would require starting the full service
         // Expected: Missing userId, tenantId, or email returns 400

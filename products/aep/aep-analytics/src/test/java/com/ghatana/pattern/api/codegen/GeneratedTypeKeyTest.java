@@ -15,16 +15,16 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@DisplayName("GeneratedTypeKey Tests [GH-90000]")
+@DisplayName("GeneratedTypeKey Tests")
 class GeneratedTypeKeyTest {
 
     @Test
-    @DisplayName("from builds canonical cache and class name tokens [GH-90000]")
+    @DisplayName("from builds canonical cache and class name tokens")
     void fromBuildsCanonicalCacheAndClassNameTokens() { // GH-90000
         EventType eventType = testEventType("tenant-a", "Order.Created", "1.2.3"); // GH-90000
         PatternSpecification specification = PatternSpecification.builder() // GH-90000
-                .id(UUID.fromString("22222222-2222-2222-2222-222222222222 [GH-90000]"))
-                .name("High Value [GH-90000]")
+                .id(UUID.fromString("22222222-2222-2222-2222-222222222222"))
+                .name("High Value")
                 .build(); // GH-90000
 
         GeneratedTypeKey key = GeneratedTypeKey.from(eventType, specification, "abc123"); // GH-90000
@@ -36,11 +36,11 @@ class GeneratedTypeKeyTest {
     }
 
     @Test
-    @DisplayName("constructor sanitizes blank input and from falls back when ids are absent [GH-90000]")
+    @DisplayName("constructor sanitizes blank input and from falls back when ids are absent")
     void constructorSanitizesBlankInputAndFromFallsBackWhenIdsAreAbsent() { // GH-90000
         EventType eventType = testEventType(null, "9Lead.Event", "2.0"); // GH-90000
         PatternSpecification specification = PatternSpecification.builder() // GH-90000
-                .name(" Anonymous Pattern  [GH-90000]")
+                .name(" Anonymous Pattern ")
                 .build(); // GH-90000
 
         GeneratedTypeKey key = GeneratedTypeKey.from(eventType, specification, "hash-1"); // GH-90000

@@ -47,7 +47,7 @@ class FrameworkTemplateRegistryTest {
 
     @BeforeEach
     void setUp() throws Exception { // GH-90000
-        templatesDir = tempDir.resolve("templates/frameworks [GH-90000]");
+        templatesDir = tempDir.resolve("templates/frameworks");
         Files.createDirectories(templatesDir); // GH-90000
 
         // Create test template structure
@@ -57,7 +57,7 @@ class FrameworkTemplateRegistryTest {
     }
 
     @Test
-    @DisplayName("Should register template successfully [GH-90000]")
+    @DisplayName("Should register template successfully")
     void testRegisterTemplate() { // GH-90000
         FrameworkTemplate template = createTestTemplate( // GH-90000
             "test:component:button",
@@ -68,13 +68,13 @@ class FrameworkTemplateRegistryTest {
 
         registry.registerTemplate(template); // GH-90000
 
-        Optional<FrameworkTemplate> found = registry.getTemplate("test:component:button [GH-90000]");
+        Optional<FrameworkTemplate> found = registry.getTemplate("test:component:button");
         assertTrue(found.isPresent()); // GH-90000
         assertEquals("button", found.get().name()); // GH-90000
     }
 
     @Test
-    @DisplayName("Should find templates by framework [GH-90000]")
+    @DisplayName("Should find templates by framework")
     void testFindTemplatesByFramework() { // GH-90000
         // Clear registry and create fresh one without auto-discovery
         registry = new FrameworkTemplateRegistry(List.of()); // GH-90000
@@ -94,7 +94,7 @@ class FrameworkTemplateRegistryTest {
     }
 
     @Test
-    @DisplayName("Should find templates by framework and version [GH-90000]")
+    @DisplayName("Should find templates by framework and version")
     void testFindTemplatesByFrameworkAndVersion() { // GH-90000
         // Clear registry and create fresh one without auto-discovery
         registry = new FrameworkTemplateRegistry(List.of()); // GH-90000
@@ -112,7 +112,7 @@ class FrameworkTemplateRegistryTest {
     }
 
     @Test
-    @DisplayName("Should find templates by category [GH-90000]")
+    @DisplayName("Should find templates by category")
     void testFindTemplatesByCategory() { // GH-90000
         FrameworkTemplate template1 = createTestTemplate("react:component:button", "react", "component", "button"); // GH-90000
         FrameworkTemplate template2 = createTestTemplate("react:page:dashboard", "react", "page", "dashboard"); // GH-90000
@@ -129,14 +129,14 @@ class FrameworkTemplateRegistryTest {
     }
 
     @Test
-    @DisplayName("Should return empty list for unknown framework [GH-90000]")
+    @DisplayName("Should return empty list for unknown framework")
     void testFindTemplatesUnknownFramework() { // GH-90000
         List<FrameworkTemplate> templates = registry.findTemplates("unknown", "*"); // GH-90000
         assertTrue(templates.isEmpty()); // GH-90000
     }
 
     @Test
-    @DisplayName("Should get all registered frameworks [GH-90000]")
+    @DisplayName("Should get all registered frameworks")
     void testGetFrameworks() { // GH-90000
         // Clear registry and create fresh one without auto-discovery
         registry = new FrameworkTemplateRegistry(List.of()); // GH-90000
@@ -148,15 +148,15 @@ class FrameworkTemplateRegistryTest {
         var frameworks = registry.getFrameworks(); // GH-90000
 
         assertEquals(3, frameworks.size()); // GH-90000
-        assertTrue(frameworks.contains("react [GH-90000]"));
-        assertTrue(frameworks.contains("vue [GH-90000]"));
-        assertTrue(frameworks.contains("angular [GH-90000]"));
+        assertTrue(frameworks.contains("react"));
+        assertTrue(frameworks.contains("vue"));
+        assertTrue(frameworks.contains("angular"));
     }
 
     @Test
-    @DisplayName("Should validate template successfully [GH-90000]")
+    @DisplayName("Should validate template successfully")
     void testValidateTemplateSuccess() throws Exception { // GH-90000
-        Path templateFile = templatesDir.resolve("test.hbs [GH-90000]");
+        Path templateFile = templatesDir.resolve("test.hbs");
         Files.writeString(templateFile, "{{componentName}}"); // GH-90000
 
         FrameworkTemplate template = new FrameworkTemplate( // GH-90000
@@ -179,9 +179,9 @@ class FrameworkTemplateRegistryTest {
     }
 
     @Test
-    @DisplayName("Should fail validation for missing ID [GH-90000]")
+    @DisplayName("Should fail validation for missing ID")
     void testValidateTemplateMissingId() throws Exception { // GH-90000
-        Path templateFile = templatesDir.resolve("test.hbs [GH-90000]");
+        Path templateFile = templatesDir.resolve("test.hbs");
         Files.writeString(templateFile, "{{componentName}}"); // GH-90000
 
         FrameworkTemplate template = new FrameworkTemplate( // GH-90000
@@ -200,13 +200,13 @@ class FrameworkTemplateRegistryTest {
         var result = registry.validateTemplate(template); // GH-90000
 
         assertFalse(result.valid()); // GH-90000
-        assertTrue(result.errors().stream().anyMatch(e -> e.contains("ID is required [GH-90000]")));
+        assertTrue(result.errors().stream().anyMatch(e -> e.contains("ID is required")));
     }
 
     @Test
-    @DisplayName("Should fail validation for missing framework [GH-90000]")
+    @DisplayName("Should fail validation for missing framework")
     void testValidateTemplateMissingFramework() throws Exception { // GH-90000
-        Path templateFile = templatesDir.resolve("test.hbs [GH-90000]");
+        Path templateFile = templatesDir.resolve("test.hbs");
         Files.writeString(templateFile, "{{componentName}}"); // GH-90000
 
         FrameworkTemplate template = new FrameworkTemplate( // GH-90000
@@ -225,11 +225,11 @@ class FrameworkTemplateRegistryTest {
         var result = registry.validateTemplate(template); // GH-90000
 
         assertFalse(result.valid()); // GH-90000
-        assertTrue(result.errors().stream().anyMatch(e -> e.contains("Framework is required [GH-90000]")));
+        assertTrue(result.errors().stream().anyMatch(e -> e.contains("Framework is required")));
     }
 
     @Test
-    @DisplayName("Should fail validation for non-existent template file [GH-90000]")
+    @DisplayName("Should fail validation for non-existent template file")
     void testValidateTemplateNonExistentFile() { // GH-90000
         FrameworkTemplate template = new FrameworkTemplate( // GH-90000
             "test:component:button",
@@ -238,7 +238,7 @@ class FrameworkTemplateRegistryTest {
             "component",
             "button",
             "Test button",
-            Path.of("/non/existent/file.hbs [GH-90000]"),
+            Path.of("/non/existent/file.hbs"),
             Map.of(), // GH-90000
             List.of(), // GH-90000
             null
@@ -247,23 +247,23 @@ class FrameworkTemplateRegistryTest {
         var result = registry.validateTemplate(template); // GH-90000
 
         assertFalse(result.valid()); // GH-90000
-        assertTrue(result.errors().stream().anyMatch(e -> e.contains("does not exist [GH-90000]")));
+        assertTrue(result.errors().stream().anyMatch(e -> e.contains("does not exist")));
     }
 
     @Test
-    @DisplayName("Should discover templates from directory [GH-90000]")
+    @DisplayName("Should discover templates from directory")
     void testDiscoverTemplates() throws Exception { // GH-90000
         // Templates were created in setUp, registry should have discovered them
         var frameworks = registry.getFrameworks(); // GH-90000
 
         assertFalse(frameworks.isEmpty()); // GH-90000
-        assertTrue(frameworks.contains("react [GH-90000]"));
+        assertTrue(frameworks.contains("react"));
     }
 
     @Test
-    @DisplayName("Should handle template with metadata [GH-90000]")
+    @DisplayName("Should handle template with metadata")
     void testTemplateWithMetadata() throws Exception { // GH-90000
-        Path templateFile = templatesDir.resolve("react/components/test.hbs [GH-90000]");
+        Path templateFile = templatesDir.resolve("react/components/test.hbs");
         Files.createDirectories(templateFile.getParent()); // GH-90000
         Files.writeString(templateFile, "{{componentName}}"); // GH-90000
 
@@ -273,7 +273,7 @@ class FrameworkTemplateRegistryTest {
             "1.0.0",
             List.of("component", "react"), // GH-90000
             Map.of("componentName", new TemplateVariable("componentName", "string", "Component name", true, null)), // GH-90000
-            List.of("react [GH-90000]"),
+            List.of("react"),
             List.of() // GH-90000
         );
 
@@ -292,16 +292,16 @@ class FrameworkTemplateRegistryTest {
 
         registry.registerTemplate(template); // GH-90000
 
-        Optional<FrameworkTemplate> found = registry.getTemplate("react:components:test [GH-90000]");
+        Optional<FrameworkTemplate> found = registry.getTemplate("react:components:test");
         assertTrue(found.isPresent()); // GH-90000
         assertNotNull(found.get().metadata()); // GH-90000
         assertEquals("Test Author", found.get().metadata().author()); // GH-90000
     }
 
     @Test
-    @DisplayName("Should match template by framework and version [GH-90000]")
+    @DisplayName("Should match template by framework and version")
     void testTemplateMatches() throws Exception { // GH-90000
-        Path templateFile = templatesDir.resolve("test.hbs [GH-90000]");
+        Path templateFile = templatesDir.resolve("test.hbs");
         Files.writeString(templateFile, "{{componentName}}"); // GH-90000
 
         FrameworkTemplate template = new FrameworkTemplate( // GH-90000
@@ -324,10 +324,10 @@ class FrameworkTemplateRegistryTest {
     }
 
     @Test
-    @DisplayName("Should get template content [GH-90000]")
+    @DisplayName("Should get template content")
     void testGetTemplateContent() throws Exception { // GH-90000
         String content = "Hello {{name}}!";
-        Path templateFile = templatesDir.resolve("test.hbs [GH-90000]");
+        Path templateFile = templatesDir.resolve("test.hbs");
         Files.writeString(templateFile, content); // GH-90000
 
         FrameworkTemplate template = new FrameworkTemplate( // GH-90000
@@ -350,14 +350,14 @@ class FrameworkTemplateRegistryTest {
 
     private void createTestTemplates() throws Exception { // GH-90000
         // Create React component template
-        Path reactComponents = templatesDir.resolve("react/components [GH-90000]");
+        Path reactComponents = templatesDir.resolve("react/components");
         Files.createDirectories(reactComponents); // GH-90000
-        Files.writeString(reactComponents.resolve("button.hbs [GH-90000]"), "export function {{componentName}}() {}");
+        Files.writeString(reactComponents.resolve("button.hbs"), "export function {{componentName}}() {}");
 
         // Create Spring Boot controller template
-        Path springControllers = templatesDir.resolve("spring-boot/controllers [GH-90000]");
+        Path springControllers = templatesDir.resolve("spring-boot/controllers");
         Files.createDirectories(springControllers); // GH-90000
-        Files.writeString(springControllers.resolve("rest-controller.hbs [GH-90000]"), "@RestController public class {{controllerName}} {}");
+        Files.writeString(springControllers.resolve("rest-controller.hbs"), "@RestController public class {{controllerName}} {}");
     }
 
     private FrameworkTemplate createTestTemplate(String id, String framework, String category, String name) { // GH-90000

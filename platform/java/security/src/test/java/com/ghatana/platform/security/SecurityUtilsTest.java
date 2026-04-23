@@ -26,7 +26,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer core
  * @doc.pattern Unit Test
  */
-@DisplayName("SecurityUtils [GH-90000]")
+@DisplayName("SecurityUtils")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class SecurityUtilsTest {
 
@@ -37,28 +37,28 @@ class SecurityUtilsTest {
     private User user;
 
     @Nested
-    @DisplayName("hasPermission(String, User, PolicyService, String) [GH-90000]")
+    @DisplayName("hasPermission(String, User, PolicyService, String)")
     class HasPermissionWithPolicyService {
 
         @Test
-        @DisplayName("should return false when user is null [GH-90000]")
+        @DisplayName("should return false when user is null")
         void shouldReturnFalseWhenUserIsNull() { // GH-90000
             assertThat(SecurityUtils.hasPermission("event:read:all", null, policyService, "events")) // GH-90000
                     .isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("should return false when policyService is null [GH-90000]")
+        @DisplayName("should return false when policyService is null")
         void shouldReturnFalseWhenPolicyServiceIsNull() { // GH-90000
             assertThat(SecurityUtils.hasPermission("event:read:all", user, null, "events")) // GH-90000
                     .isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("should delegate to policyService when user and service are valid [GH-90000]")
+        @DisplayName("should delegate to policyService when user and service are valid")
         void shouldDelegateToPolicyService() { // GH-90000
-            when(user.getRoles()).thenReturn(Set.of("READER [GH-90000]"));
-            when(policyService.isAuthorized(any(), eq("event:read:all [GH-90000]"), eq("events [GH-90000]")))
+            when(user.getRoles()).thenReturn(Set.of("READER"));
+            when(policyService.isAuthorized(any(), eq("event:read:all"), eq("events")))
                     .thenReturn(true); // GH-90000
 
             assertThat(SecurityUtils.hasPermission("event:read:all", user, policyService, "events")) // GH-90000
@@ -66,10 +66,10 @@ class SecurityUtilsTest {
         }
 
         @Test
-        @DisplayName("should return false when policy denies access [GH-90000]")
+        @DisplayName("should return false when policy denies access")
         void shouldReturnFalseWhenDenied() { // GH-90000
-            when(user.getRoles()).thenReturn(Set.of("GUEST [GH-90000]"));
-            when(policyService.isAuthorized(any(), eq("event:write:all [GH-90000]"), eq("events [GH-90000]")))
+            when(user.getRoles()).thenReturn(Set.of("GUEST"));
+            when(policyService.isAuthorized(any(), eq("event:write:all"), eq("events")))
                     .thenReturn(false); // GH-90000
 
             assertThat(SecurityUtils.hasPermission("event:write:all", user, policyService, "events")) // GH-90000
@@ -80,42 +80,42 @@ class SecurityUtilsTest {
 
 
     @Nested
-    @DisplayName("extractBearerToken [GH-90000]")
+    @DisplayName("extractBearerToken")
     class ExtractBearerToken {
 
         @Test
-        @DisplayName("should extract token from valid Bearer header [GH-90000]")
+        @DisplayName("should extract token from valid Bearer header")
         void shouldExtractFromValidHeader() { // GH-90000
-            assertThat(SecurityUtils.extractBearerToken("Bearer abc123 [GH-90000]")).isEqualTo("abc123 [GH-90000]");
+            assertThat(SecurityUtils.extractBearerToken("Bearer abc123")).isEqualTo("abc123");
         }
 
         @Test
-        @DisplayName("should return null for null header [GH-90000]")
+        @DisplayName("should return null for null header")
         void shouldReturnNullForNullHeader() { // GH-90000
             assertThat(SecurityUtils.extractBearerToken(null)).isNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("should return null for non-Bearer header [GH-90000]")
+        @DisplayName("should return null for non-Bearer header")
         void shouldReturnNullForNonBearerHeader() { // GH-90000
-            assertThat(SecurityUtils.extractBearerToken("Basic abc123 [GH-90000]")).isNull();
+            assertThat(SecurityUtils.extractBearerToken("Basic abc123")).isNull();
         }
 
         @Test
-        @DisplayName("should handle empty token after Bearer prefix [GH-90000]")
+        @DisplayName("should handle empty token after Bearer prefix")
         void shouldHandleEmptyToken() { // GH-90000
-            assertThat(SecurityUtils.extractBearerToken("Bearer  [GH-90000]")).isEmpty();
+            assertThat(SecurityUtils.extractBearerToken("Bearer ")).isEmpty();
         }
     }
 
     @Nested
-    @DisplayName("validatePassword [GH-90000]")
+    @DisplayName("validatePassword")
     class ValidatePassword {
 
         @Test
-        @DisplayName("should validate a strong password [GH-90000]")
+        @DisplayName("should validate a strong password")
         void shouldValidateStrongPassword() { // GH-90000
-            Map<String, Boolean> result = SecurityUtils.validatePassword("Str0ng!Pass [GH-90000]");
+            Map<String, Boolean> result = SecurityUtils.validatePassword("Str0ng!Pass");
 
             assertThat(result).containsEntry("minLength", true) // GH-90000
                     .containsEntry("hasUppercase", true) // GH-90000
@@ -125,48 +125,48 @@ class SecurityUtilsTest {
         }
 
         @Test
-        @DisplayName("should detect short password [GH-90000]")
+        @DisplayName("should detect short password")
         void shouldDetectShortPassword() { // GH-90000
-            Map<String, Boolean> result = SecurityUtils.validatePassword("Ab1! [GH-90000]");
+            Map<String, Boolean> result = SecurityUtils.validatePassword("Ab1!");
 
             assertThat(result).containsEntry("minLength", false); // GH-90000
         }
 
         @Test
-        @DisplayName("should detect missing uppercase [GH-90000]")
+        @DisplayName("should detect missing uppercase")
         void shouldDetectMissingUppercase() { // GH-90000
-            Map<String, Boolean> result = SecurityUtils.validatePassword("lowercase1! [GH-90000]");
+            Map<String, Boolean> result = SecurityUtils.validatePassword("lowercase1!");
 
             assertThat(result).containsEntry("hasUppercase", false); // GH-90000
         }
 
         @Test
-        @DisplayName("should detect missing number [GH-90000]")
+        @DisplayName("should detect missing number")
         void shouldDetectMissingNumber() { // GH-90000
-            Map<String, Boolean> result = SecurityUtils.validatePassword("NoNumbers! [GH-90000]");
+            Map<String, Boolean> result = SecurityUtils.validatePassword("NoNumbers!");
 
             assertThat(result).containsEntry("hasNumber", false); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("getRequiredPermission [GH-90000]")
+    @DisplayName("getRequiredPermission")
     class GetRequiredPermission {
 
         @Test
-        @DisplayName("should return null for null annotations [GH-90000]")
+        @DisplayName("should return null for null annotations")
         void shouldReturnNullForNullAnnotations() { // GH-90000
             assertThat(SecurityUtils.getRequiredPermission(null)).isNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("should return null for empty annotations [GH-90000]")
+        @DisplayName("should return null for empty annotations")
         void shouldReturnNullForEmptyAnnotations() { // GH-90000
             assertThat(SecurityUtils.getRequiredPermission(new Annotation[]{})).isNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("should return null when RequiresPermission is absent [GH-90000]")
+        @DisplayName("should return null when RequiresPermission is absent")
         void shouldReturnNullWhenAbsent() { // GH-90000
             Annotation[] annotations = { new Override() { // GH-90000
                 @Override
@@ -181,22 +181,22 @@ class SecurityUtilsTest {
 
 
     @Nested
-    @DisplayName("permission constants [GH-90000]")
+    @DisplayName("permission constants")
     class PermissionConstants {
 
         @Test
-        @DisplayName("should have correct admin wildcard [GH-90000]")
+        @DisplayName("should have correct admin wildcard")
         void shouldHaveAdminWildcard() { // GH-90000
-            assertThat(SecurityUtils.PERMISSION_ADMIN).isEqualTo("*:*:* [GH-90000]");
+            assertThat(SecurityUtils.PERMISSION_ADMIN).isEqualTo("*:*:*");
         }
 
         @Test
-        @DisplayName("should have standard permission format [GH-90000]")
+        @DisplayName("should have standard permission format")
         void shouldHaveStandardFormat() { // GH-90000
-            assertThat(SecurityUtils.PERMISSION_EVENT_READ).isEqualTo("event:read:all [GH-90000]");
-            assertThat(SecurityUtils.PERMISSION_EVENT_WRITE).isEqualTo("event:write:all [GH-90000]");
-            assertThat(SecurityUtils.PERMISSION_USER_READ).isEqualTo("user:read:all [GH-90000]");
-            assertThat(SecurityUtils.PERMISSION_USER_WRITE).isEqualTo("user:write:all [GH-90000]");
+            assertThat(SecurityUtils.PERMISSION_EVENT_READ).isEqualTo("event:read:all");
+            assertThat(SecurityUtils.PERMISSION_EVENT_WRITE).isEqualTo("event:write:all");
+            assertThat(SecurityUtils.PERMISSION_USER_READ).isEqualTo("user:read:all");
+            assertThat(SecurityUtils.PERMISSION_USER_WRITE).isEqualTo("user:write:all");
         }
     }
 }

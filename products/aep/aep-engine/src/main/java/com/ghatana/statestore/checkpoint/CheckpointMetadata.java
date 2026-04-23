@@ -11,7 +11,11 @@ import java.util.Objects;
 /**
  * Metadata about a completed or in-progress checkpoint.
  * Contains checkpoint ID, status, operator acknowledgements, and timing information.
- */
+  * @doc.type class
+ * @doc.purpose Provides checkpoint metadata functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 public final class CheckpointMetadata {
 
     private final CheckpointId checkpointId;

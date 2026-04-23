@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class RetiredModuleGuardrailsTest {
 
     @Test
-    @DisplayName("Retired shadow module roots stay deleted [GH-90000]")
+    @DisplayName("Retired shadow module roots stay deleted")
     void retiredShadowModuleRootsStayDeleted() { // GH-90000
         Path repoRoot = findRepoRoot(); // GH-90000
 
@@ -55,7 +55,7 @@ class RetiredModuleGuardrailsTest {
     }
 
     @Test
-    @DisplayName("Root settings does not re-include retired modules [GH-90000]")
+    @DisplayName("Root settings does not re-include retired modules")
     void settingsDoesNotReincludeRetiredModules() throws IOException { // GH-90000
         Path repoRoot = findRepoRoot(); // GH-90000
 
@@ -77,13 +77,13 @@ class RetiredModuleGuardrailsTest {
     }
 
     private static Path findRepoRoot() { // GH-90000
-        Path cursor = Path.of(System.getProperty("user.dir [GH-90000]")).toAbsolutePath();
+        Path cursor = Path.of(System.getProperty("user.dir")).toAbsolutePath();
         while (cursor != null) { // GH-90000
-            if (Files.exists(cursor.resolve("settings.gradle.kts [GH-90000]"))) {
+            if (Files.exists(cursor.resolve("settings.gradle.kts"))) {
                 return cursor;
             }
             cursor = cursor.getParent(); // GH-90000
         }
-        throw new IllegalStateException("Could not locate repository root from user.dir [GH-90000]");
+        throw new IllegalStateException("Could not locate repository root from user.dir");
     }
 }

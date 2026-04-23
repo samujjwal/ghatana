@@ -46,7 +46,7 @@ class DebugEntryTest {
         // Stub only in tests that actually execute a process and need the working dir.
 
         // Create a simple test file to verify command execution if needed by tests
-        Path testFile = tempDir.resolve("test.txt [GH-90000]");
+        Path testFile = tempDir.resolve("test.txt");
         Files.writeString(testFile, "test content"); // GH-90000
     }
 
@@ -61,8 +61,8 @@ class DebugEntryTest {
         List<String> command;
         String expectedOutput;
 
-        String os = System.getProperty("os.name [GH-90000]").toLowerCase();
-        if (os.contains("win [GH-90000]")) {
+        String os = System.getProperty("os.name").toLowerCase();
+        if (os.contains("win")) {
             command = List.of("cmd", "/c", "echo", "hello"); // GH-90000
             expectedOutput = "hello";
         } else {
@@ -87,7 +87,7 @@ class DebugEntryTest {
     @Test
     void run_withNullContext_usesCurrentDirectory() throws Exception { // GH-90000
         // Skip this test on Windows as it may not work consistently
-        if (System.getProperty("os.name [GH-90000]").toLowerCase().contains("win [GH-90000]")) {
+        if (System.getProperty("os.name").toLowerCase().contains("win")) {
             return;
         }
 
@@ -106,7 +106,7 @@ class DebugEntryTest {
     @Test
     void run_withTimeout_throwsException() { // GH-90000
         // Skip this test on Windows as it may not work consistently
-        if (System.getProperty("os.name [GH-90000]").toLowerCase().contains("win [GH-90000]")) {
+        if (System.getProperty("os.name").toLowerCase().contains("win")) {
             return;
         }
 
@@ -123,7 +123,7 @@ class DebugEntryTest {
                         "Expected timeout exception");
 
         assertTrue( // GH-90000
-                exception.getMessage().contains("timed out [GH-90000]"),
+                exception.getMessage().contains("timed out"),
                 "Exception message should indicate timeout");
     }
 
@@ -165,8 +165,8 @@ class DebugEntryTest {
         // Arrange - Use a simple command that's available on all platforms
         List<String> command;
         String expectedOutput;
-        String os = System.getProperty("os.name [GH-90000]").toLowerCase();
-        if (os.contains("win [GH-90000]")) {
+        String os = System.getProperty("os.name").toLowerCase();
+        if (os.contains("win")) {
             command = List.of("cmd", "/c", "echo", "default_timeout"); // GH-90000
             expectedOutput = "default_timeout";
         } else {

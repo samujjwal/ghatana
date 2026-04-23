@@ -39,7 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@DisplayName("AepGrpcServer [GH-90000]")
+@DisplayName("AepGrpcServer")
 class AepGrpcServerTest extends EventloopTestBase {
 
     private AepGrpcServer server;
@@ -70,24 +70,24 @@ class AepGrpcServerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("getAgent returns the registered agent manifest fields [GH-90000]")
+    @DisplayName("getAgent returns the registered agent manifest fields")
     void getAgentReturnsRegisteredManifest() { // GH-90000
         AgentManifestProto created = stub.createAgent(CreateAgentRequestProto.newBuilder() // GH-90000
             .setAgent(agentManifest("agent-alpha", "Agent Alpha", "2.3.4", "tests gRPC getAgent")) // GH-90000
             .build()); // GH-90000
 
         AgentManifestProto fetched = stub.getAgent(GetAgentRequestProto.newBuilder() // GH-90000
-            .setId("agent-alpha [GH-90000]")
+            .setId("agent-alpha")
             .build()); // GH-90000
 
         assertThat(fetched.getMetadata().getId()).isEqualTo(created.getMetadata().getId()); // GH-90000
-        assertThat(fetched.getMetadata().getName()).isEqualTo("Agent Alpha [GH-90000]");
-        assertThat(fetched.getMetadata().getVersion()).isEqualTo("2.3.4 [GH-90000]");
-        assertThat(fetched.getMetadata().getDescription()).isEqualTo("tests gRPC getAgent [GH-90000]");
+        assertThat(fetched.getMetadata().getName()).isEqualTo("Agent Alpha");
+        assertThat(fetched.getMetadata().getVersion()).isEqualTo("2.3.4");
+        assertThat(fetched.getMetadata().getDescription()).isEqualTo("tests gRPC getAgent");
     }
 
     @Test
-    @DisplayName("listAgents returns actual manifest data for all registered agents [GH-90000]")
+    @DisplayName("listAgents returns actual manifest data for all registered agents")
     void listAgentsReturnsActualManifestData() { // GH-90000
         stub.createAgent(CreateAgentRequestProto.newBuilder() // GH-90000
             .setAgent(agentManifest("agent-zulu", "Agent Zulu", "1.0.1", "zulu description")) // GH-90000
@@ -110,13 +110,13 @@ class AepGrpcServerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("createAgent registers manifest-only placeholder agents as non-executable [GH-90000]")
+    @DisplayName("createAgent registers manifest-only placeholder agents as non-executable")
     void createAgentRegistersNonExecutablePlaceholderMetadata() { // GH-90000
         stub.createAgent(CreateAgentRequestProto.newBuilder() // GH-90000
             .setAgent(agentManifest("agent-shadow", "Agent Shadow", "1.0.0", "manifest only")) // GH-90000
             .build()); // GH-90000
 
-        Optional<TypedAgent<Object, Object>> resolved = awaitResolvedAgent("agent-shadow [GH-90000]");
+        Optional<TypedAgent<Object, Object>> resolved = awaitResolvedAgent("agent-shadow");
 
         assertThat(resolved).isPresent(); // GH-90000
         assertThat(resolved.get().descriptor().getMetadata()) // GH-90000
@@ -128,7 +128,7 @@ class AepGrpcServerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("createAgent returns correlation and trace metadata headers [GH-90000]")
+    @DisplayName("createAgent returns correlation and trace metadata headers")
     void createAgentReturnsCorrelationAndTraceHeaders() { // GH-90000
         AtomicReference<Metadata> responseHeaders = new AtomicReference<>(); // GH-90000
         AtomicReference<Metadata> responseTrailers = new AtomicReference<>(); // GH-90000
@@ -146,11 +146,11 @@ class AepGrpcServerTest extends EventloopTestBase {
         assertThat(responseHeaders.get().get(Metadata.Key.of("x-correlation-id", Metadata.ASCII_STRING_MARSHALLER))) // GH-90000
             .isNotBlank(); // GH-90000
         assertThat(responseHeaders.get().get(Metadata.Key.of("traceparent", Metadata.ASCII_STRING_MARSHALLER))) // GH-90000
-            .matches("00-[0-9a-f]{32}-[0-9a-f]{16}-0[01] [GH-90000]");
+            .matches("00-[0-9a-f]{32}-[0-9a-f]{16}-0[01]");
     }
 
     @Test
-    @DisplayName("createAgent preserves inbound correlation id and trace id [GH-90000]")
+    @DisplayName("createAgent preserves inbound correlation id and trace id")
     void createAgentPreservesInboundCorrelationAndTraceId() { // GH-90000
         Metadata requestHeaders = new Metadata(); // GH-90000
         AtomicReference<Metadata> responseHeaders = new AtomicReference<>(); // GH-90000
@@ -174,22 +174,22 @@ class AepGrpcServerTest extends EventloopTestBase {
             .build()); // GH-90000
 
         assertThat(responseHeaders.get().get(Metadata.Key.of("x-correlation-id", Metadata.ASCII_STRING_MARSHALLER))) // GH-90000
-            .isEqualTo("corr-grpc-456 [GH-90000]");
+            .isEqualTo("corr-grpc-456");
         assertThat(responseHeaders.get().get(Metadata.Key.of("traceparent", Metadata.ASCII_STRING_MARSHALLER))) // GH-90000
             .startsWith("00-" + traceId + "-"); // GH-90000
         assertThat(responseHeaders.get().get(Metadata.Key.of("tracestate", Metadata.ASCII_STRING_MARSHALLER))) // GH-90000
-            .isEqualTo("vendor=grpc [GH-90000]");
+            .isEqualTo("vendor=grpc");
     }
 
-    @SuppressWarnings("unchecked [GH-90000]")
+    @SuppressWarnings("unchecked")
     private Optional<TypedAgent<Object, Object>> awaitResolvedAgent(String agentId) { // GH-90000
         return (Optional<TypedAgent<Object, Object>>) (Optional<?>) runPromise(() -> agentRegistry.resolve(agentId)); // GH-90000
     }
 
     private static AgentManifestProto agentManifest(String id, String name, String version, String description) { // GH-90000
         return AgentManifestProto.newBuilder() // GH-90000
-            .setApiVersion("ghatana.contracts/agent/v1 [GH-90000]")
-            .setKind("AgentManifest [GH-90000]")
+            .setApiVersion("ghatana.contracts/agent/v1")
+            .setKind("AgentManifest")
             .setMetadata(MetadataProto.newBuilder() // GH-90000
                 .setId(id) // GH-90000
                 .setName(name) // GH-90000

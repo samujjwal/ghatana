@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("[Config]: validation_rules_and_behavior [GH-90000]")
+@DisplayName("[Config]: validation_rules_and_behavior")
 class ConfigValidationTest {
 
     private ConfigValidator validator;
@@ -48,7 +48,7 @@ class ConfigValidationTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("[Metadata]: missing_metadata_section_returns_error [GH-90000]")
+    @DisplayName("[Metadata]: missing_metadata_section_returns_error")
     void missingMetadataSectionReturnsError() { // GH-90000
         RawCollectionConfig config = createMinimalConfig() // GH-90000
             .withMetadata((RawCollectionConfig.RawMetadata) null) // GH-90000
@@ -57,50 +57,50 @@ class ConfigValidationTest {
         ConfigValidator.ValidationResult result = validator.validate(config); // GH-90000
 
         assertThat(result.isValid()).isFalse(); // GH-90000
-        assertThat(result.errors()).contains("Missing 'metadata' section [GH-90000]");
+        assertThat(result.errors()).contains("Missing 'metadata' section");
     }
 
     @Test
-    @DisplayName("[Metadata]: blank_collection_name_returns_error [GH-90000]")
+    @DisplayName("[Metadata]: blank_collection_name_returns_error")
     void blankCollectionNameReturnsError() { // GH-90000
         RawCollectionConfig config = createMinimalConfig() // GH-90000
-            .withMetadata(createMetadata().withName(" [GH-90000]"))
+            .withMetadata(createMetadata().withName(""))
             .build(); // GH-90000
 
         ConfigValidator.ValidationResult result = validator.validate(config); // GH-90000
 
         assertThat(result.isValid()).isFalse(); // GH-90000
-        assertThat(result.errors()).contains("metadata.name is required [GH-90000]");
+        assertThat(result.errors()).contains("metadata.name is required");
     }
 
     @Test
-    @DisplayName("[Metadata]: invalid_collection_name_format_returns_error [GH-90000]")
+    @DisplayName("[Metadata]: invalid_collection_name_format_returns_error")
     void invalidCollectionNameFormatReturnsError() { // GH-90000
         RawCollectionConfig config = createMinimalConfig() // GH-90000
-            .withMetadata(createMetadata().withName("Invalid_Name [GH-90000]"))
+            .withMetadata(createMetadata().withName("Invalid_Name"))
             .build(); // GH-90000
 
         ConfigValidator.ValidationResult result = validator.validate(config); // GH-90000
 
         assertThat(result.isValid()).isFalse(); // GH-90000
-        assertThat(result.errors()).anyMatch(e -> e.contains("lowercase alphanumeric [GH-90000]"));
+        assertThat(result.errors()).anyMatch(e -> e.contains("lowercase alphanumeric"));
     }
 
     @Test
-    @DisplayName("[Metadata]: missing_namespace_returns_error [GH-90000]")
+    @DisplayName("[Metadata]: missing_namespace_returns_error")
     void missingNamespaceReturnsError() { // GH-90000
         RawCollectionConfig config = createMinimalConfig() // GH-90000
-            .withMetadata(createMetadata().withNamespace(" [GH-90000]"))
+            .withMetadata(createMetadata().withNamespace(""))
             .build(); // GH-90000
 
         ConfigValidator.ValidationResult result = validator.validate(config); // GH-90000
 
         assertThat(result.isValid()).isFalse(); // GH-90000
-        assertThat(result.errors()).contains("metadata.namespace (tenant ID) is required [GH-90000]");
+        assertThat(result.errors()).contains("metadata.namespace (tenant ID) is required");
     }
 
     @Test
-    @DisplayName("[Metadata]: valid_metadata_passes_validation [GH-90000]")
+    @DisplayName("[Metadata]: valid_metadata_passes_validation")
     void validMetadataPassesValidation() { // GH-90000
         RawCollectionConfig config = createMinimalConfig().build(); // GH-90000
 
@@ -114,7 +114,7 @@ class ConfigValidationTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("[Spec]: missing_spec_section_returns_error [GH-90000]")
+    @DisplayName("[Spec]: missing_spec_section_returns_error")
     void missingSpecSectionReturnsError() { // GH-90000
         RawCollectionConfig config = createMinimalConfig() // GH-90000
             .withSpec((RawCollectionConfig.RawSpec) null) // GH-90000
@@ -123,37 +123,37 @@ class ConfigValidationTest {
         ConfigValidator.ValidationResult result = validator.validate(config); // GH-90000
 
         assertThat(result.isValid()).isFalse(); // GH-90000
-        assertThat(result.errors()).contains("Missing 'spec' section [GH-90000]");
+        assertThat(result.errors()).contains("Missing 'spec' section");
     }
 
     @Test
-    @DisplayName("[Spec]: missing_record_type_returns_error [GH-90000]")
+    @DisplayName("[Spec]: missing_record_type_returns_error")
     void missingRecordTypeReturnsError() { // GH-90000
         RawCollectionConfig config = createMinimalConfig() // GH-90000
-            .withSpec(createSpec().withRecordType(" [GH-90000]"))
+            .withSpec(createSpec().withRecordType(""))
             .build(); // GH-90000
 
         ConfigValidator.ValidationResult result = validator.validate(config); // GH-90000
 
         assertThat(result.isValid()).isFalse(); // GH-90000
-        assertThat(result.errors()).contains("spec.recordType is required [GH-90000]");
+        assertThat(result.errors()).contains("spec.recordType is required");
     }
 
     @Test
-    @DisplayName("[Spec]: invalid_record_type_returns_error [GH-90000]")
+    @DisplayName("[Spec]: invalid_record_type_returns_error")
     void invalidRecordTypeReturnsError() { // GH-90000
         RawCollectionConfig config = createMinimalConfig() // GH-90000
-            .withSpec(createSpec().withRecordType("INVALID [GH-90000]"))
+            .withSpec(createSpec().withRecordType("INVALID"))
             .build(); // GH-90000
 
         ConfigValidator.ValidationResult result = validator.validate(config); // GH-90000
 
         assertThat(result.isValid()).isFalse(); // GH-90000
-        assertThat(result.errors()).anyMatch(e -> e.contains("ENTITY, EVENT, TIMESERIES, GRAPH, DOCUMENT [GH-90000]"));
+        assertThat(result.errors()).anyMatch(e -> e.contains("ENTITY, EVENT, TIMESERIES, GRAPH, DOCUMENT"));
     }
 
     @Test
-    @DisplayName("[Spec]: missing_schema_returns_error [GH-90000]")
+    @DisplayName("[Spec]: missing_schema_returns_error")
     void missingSchemaReturnsError() { // GH-90000
         RawCollectionConfig config = createMinimalConfig() // GH-90000
             .withSpec(createSpec().withSchema((RawCollectionConfig.RawSchema) null)) // GH-90000
@@ -162,11 +162,11 @@ class ConfigValidationTest {
         ConfigValidator.ValidationResult result = validator.validate(config); // GH-90000
 
         assertThat(result.isValid()).isFalse(); // GH-90000
-        assertThat(result.errors()).contains("spec.schema is required [GH-90000]");
+        assertThat(result.errors()).contains("spec.schema is required");
     }
 
     @Test
-    @DisplayName("[Spec]: empty_schema_fields_returns_error [GH-90000]")
+    @DisplayName("[Spec]: empty_schema_fields_returns_error")
     void emptySchemaFieldsReturnsError() { // GH-90000
         RawCollectionConfig config = createMinimalConfig() // GH-90000
             .withSpec(createSpec().withSchema(createSchema().withFields(List.of()))) // GH-90000
@@ -175,7 +175,7 @@ class ConfigValidationTest {
         ConfigValidator.ValidationResult result = validator.validate(config); // GH-90000
 
         assertThat(result.isValid()).isFalse(); // GH-90000
-        assertThat(result.errors()).contains("spec.schema.fields must have at least one field [GH-90000]");
+        assertThat(result.errors()).contains("spec.schema.fields must have at least one field");
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -183,80 +183,80 @@ class ConfigValidationTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("[Field]: missing_field_name_returns_error [GH-90000]")
+    @DisplayName("[Field]: missing_field_name_returns_error")
     void missingFieldNameReturnsError() { // GH-90000
         RawCollectionConfig config = createMinimalConfig() // GH-90000
             .withSpec(createSpec() // GH-90000
                 .withSchema(createSchema() // GH-90000
-                    .withFields(List.of(createField().withName(" [GH-90000]").build()))))
+                    .withFields(List.of(createField().withName("").build()))))
             .build(); // GH-90000
 
         ConfigValidator.ValidationResult result = validator.validate(config); // GH-90000
 
         assertThat(result.isValid()).isFalse(); // GH-90000
-        assertThat(result.errors()).contains("Field name is required [GH-90000]");
+        assertThat(result.errors()).contains("Field name is required");
     }
 
     @Test
-    @DisplayName("[Field]: missing_field_type_returns_error [GH-90000]")
+    @DisplayName("[Field]: missing_field_type_returns_error")
     void missingFieldTypeReturnsError() { // GH-90000
         RawCollectionConfig config = createMinimalConfig() // GH-90000
             .withSpec(createSpec() // GH-90000
                 .withSchema(createSchema() // GH-90000
-                    .withFields(List.of(createField().withName("testField [GH-90000]").withType(" [GH-90000]").build()))))
+                    .withFields(List.of(createField().withName("testField").withType("").build()))))
             .build(); // GH-90000
 
         ConfigValidator.ValidationResult result = validator.validate(config); // GH-90000
 
         assertThat(result.isValid()).isFalse(); // GH-90000
-        assertThat(result.errors()).contains("Field 'testField' must have a type [GH-90000]");
+        assertThat(result.errors()).contains("Field 'testField' must have a type");
     }
 
     @Test
-    @DisplayName("[Field]: duplicate_field_names_return_error [GH-90000]")
+    @DisplayName("[Field]: duplicate_field_names_return_error")
     void duplicateFieldNamesReturnError() { // GH-90000
         RawCollectionConfig config = createMinimalConfig() // GH-90000
             .withSpec(createSpec() // GH-90000
                 .withSchema(createSchema() // GH-90000
                     .withFields(List.of( // GH-90000
-                        createField().withName("duplicateField [GH-90000]").withType("string [GH-90000]").build(),
-                        createField().withName("duplicateField [GH-90000]").withType("string [GH-90000]").build()
+                        createField().withName("duplicateField").withType("string").build(),
+                        createField().withName("duplicateField").withType("string").build()
                     ))))
             .build(); // GH-90000
 
         ConfigValidator.ValidationResult result = validator.validate(config); // GH-90000
 
         assertThat(result.isValid()).isFalse(); // GH-90000
-        assertThat(result.errors()).contains("Duplicate field name: duplicateField [GH-90000]");
+        assertThat(result.errors()).contains("Duplicate field name: duplicateField");
     }
 
     @Test
-    @DisplayName("[Field]: unknown_field_type_returns_error [GH-90000]")
+    @DisplayName("[Field]: unknown_field_type_returns_error")
     void unknownFieldTypeReturnsError() { // GH-90000
         RawCollectionConfig config = createMinimalConfig() // GH-90000
             .withSpec(createSpec() // GH-90000
                 .withSchema(createSchema() // GH-90000
                     .withFields(List.of(createField() // GH-90000
-                        .withName("unknownField [GH-90000]")
-                        .withType("UNKNOWN_TYPE [GH-90000]")
+                        .withName("unknownField")
+                        .withType("UNKNOWN_TYPE")
                         .build())))) // GH-90000
             .build(); // GH-90000
 
         ConfigValidator.ValidationResult result = validator.validate(config); // GH-90000
 
         assertThat(result.isValid()).isFalse(); // GH-90000
-        assertThat(result.errors()).anyMatch(e -> e.contains("unknown type [GH-90000]"));
+        assertThat(result.errors()).anyMatch(e -> e.contains("unknown type"));
     }
 
     @Test
-    @DisplayName("[Field]: valid_field_passes_validation [GH-90000]")
+    @DisplayName("[Field]: valid_field_passes_validation")
     void validFieldPassesValidation() { // GH-90000
         RawCollectionConfig config = createMinimalConfig() // GH-90000
             .withSpec(createSpec() // GH-90000
                 .withSchema(createSchema() // GH-90000
                     .withFields(List.of(createField() // GH-90000
-                        .withName("validField [GH-90000]")
-                        .withType("string [GH-90000]")
+                        .withName("validField")
+                        .withType("string")
                         .build())))) // GH-90000
             .build(); // GH-90000
 
@@ -270,43 +270,43 @@ class ConfigValidationTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("[Index]: missing_index_name_returns_error [GH-90000]")
+    @DisplayName("[Index]: missing_index_name_returns_error")
     void missingIndexNameReturnsError() { // GH-90000
         RawCollectionConfig config = createMinimalConfig() // GH-90000
             .withSpec(createSpec() // GH-90000
-                .withIndexes(List.of(createIndex().withName(" [GH-90000]").build())))
+                .withIndexes(List.of(createIndex().withName("").build())))
             .build(); // GH-90000
 
         ConfigValidator.ValidationResult result = validator.validate(config); // GH-90000
 
         assertThat(result.isValid()).isFalse(); // GH-90000
-        assertThat(result.errors()).contains("Index must have a name [GH-90000]");
+        assertThat(result.errors()).contains("Index must have a name");
     }
 
     @Test
-    @DisplayName("[Index]: duplicate_index_names_return_error [GH-90000]")
+    @DisplayName("[Index]: duplicate_index_names_return_error")
     void duplicateIndexNamesReturnError() { // GH-90000
         RawCollectionConfig config = createMinimalConfig() // GH-90000
             .withSpec(createSpec() // GH-90000
                 .withIndexes(List.of( // GH-90000
-                    createIndex().withName("idx_duplicate [GH-90000]").withFields(List.of("id [GH-90000]")).build(),
-                    createIndex().withName("idx_duplicate [GH-90000]").withFields(List.of("name [GH-90000]")).build()
+                    createIndex().withName("idx_duplicate").withFields(List.of("id")).build(),
+                    createIndex().withName("idx_duplicate").withFields(List.of("name")).build()
                 )))
             .build(); // GH-90000
 
         ConfigValidator.ValidationResult result = validator.validate(config); // GH-90000
 
         assertThat(result.isValid()).isFalse(); // GH-90000
-        assertThat(result.errors()).contains("Duplicate index name: idx_duplicate [GH-90000]");
+        assertThat(result.errors()).contains("Duplicate index name: idx_duplicate");
     }
 
     @Test
-    @DisplayName("[Index]: empty_index_fields_returns_error [GH-90000]")
+    @DisplayName("[Index]: empty_index_fields_returns_error")
     void emptyIndexFieldsReturnsError() { // GH-90000
         RawCollectionConfig config = createMinimalConfig() // GH-90000
             .withSpec(createSpec() // GH-90000
                 .withIndexes(List.of(createIndex() // GH-90000
-                    .withName("idx_empty [GH-90000]")
+                    .withName("idx_empty")
                     .withFields(List.of()) // GH-90000
                     .build()))) // GH-90000
             .build(); // GH-90000
@@ -314,41 +314,41 @@ class ConfigValidationTest {
         ConfigValidator.ValidationResult result = validator.validate(config); // GH-90000
 
         assertThat(result.isValid()).isFalse(); // GH-90000
-        assertThat(result.errors()).contains("Index 'idx_empty' must have at least one field [GH-90000]");
+        assertThat(result.errors()).contains("Index 'idx_empty' must have at least one field");
     }
 
     @Test
-    @DisplayName("[Index]: index_referencing_unknown_field_returns_error [GH-90000]")
+    @DisplayName("[Index]: index_referencing_unknown_field_returns_error")
     void indexReferencingUnknownFieldReturnsError() { // GH-90000
         RawCollectionConfig config = createMinimalConfig() // GH-90000
             .withSpec(createSpec() // GH-90000
                 .withSchema(createSchema() // GH-90000
-                    .withFields(List.of(createField().withName("id [GH-90000]").withType("uuid [GH-90000]").build())))
+                    .withFields(List.of(createField().withName("id").withType("uuid").build())))
                 .withIndexes(List.of(createIndex() // GH-90000
-                    .withName("idx_unknown [GH-90000]")
-                    .withFields(List.of("nonExistentField [GH-90000]"))
+                    .withName("idx_unknown")
+                    .withFields(List.of("nonExistentField"))
                     .build()))) // GH-90000
             .build(); // GH-90000
 
         ConfigValidator.ValidationResult result = validator.validate(config); // GH-90000
 
         assertThat(result.isValid()).isFalse(); // GH-90000
-        assertThat(result.errors()).anyMatch(e -> e.contains("references unknown field [GH-90000]"));
+        assertThat(result.errors()).anyMatch(e -> e.contains("references unknown field"));
     }
 
     @Test
-    @DisplayName("[Index]: valid_index_passes_validation [GH-90000]")
+    @DisplayName("[Index]: valid_index_passes_validation")
     void validIndexPassesValidation() { // GH-90000
         RawCollectionConfig config = createMinimalConfig() // GH-90000
             .withSpec(createSpec() // GH-90000
                 .withSchema(createSchema() // GH-90000
                     .withFields(List.of( // GH-90000
-                        createField().withName("id [GH-90000]").withType("uuid [GH-90000]").build(),
-                        createField().withName("name [GH-90000]").withType("string [GH-90000]").build()
+                        createField().withName("id").withType("uuid").build(),
+                        createField().withName("name").withType("string").build()
                     )))
                 .withIndexes(List.of(createIndex() // GH-90000
-                    .withName("idx_name [GH-90000]")
-                    .withFields(List.of("name [GH-90000]"))
+                    .withName("idx_name")
+                    .withFields(List.of("name"))
                     .build()))) // GH-90000
             .build(); // GH-90000
 
@@ -362,23 +362,23 @@ class ConfigValidationTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("[Event]: missing_required_event_fields_return_errors [GH-90000]")
+    @DisplayName("[Event]: missing_required_event_fields_return_errors")
     void missingRequiredEventFieldsReturnErrors() { // GH-90000
         RawCollectionConfig config = createMinimalConfig() // GH-90000
             .withSpec(createSpec() // GH-90000
-                .withRecordType("EVENT [GH-90000]")
+                .withRecordType("EVENT")
                 .withSchema(createSchema() // GH-90000
-                    .withFields(List.of(createField().withName("eventId [GH-90000]").withType("uuid [GH-90000]").build()))))
+                    .withFields(List.of(createField().withName("eventId").withType("uuid").build()))))
             .build(); // GH-90000
 
         ConfigValidator.ValidationResult result = validator.validate(config); // GH-90000
 
         assertThat(result.isValid()).isFalse(); // GH-90000
-        assertThat(result.errors()).anyMatch(e -> e.contains("Event collection MUST have field [GH-90000]"));
+        assertThat(result.errors()).anyMatch(e -> e.contains("Event collection MUST have field"));
     }
 
     @Test
-    @DisplayName("[Event]: valid_event_collection_passes_validation [GH-90000]")
+    @DisplayName("[Event]: valid_event_collection_passes_validation")
     void validEventCollectionPassesValidation() { // GH-90000
         RawCollectionConfig config = createMinimalConfig() // GH-90000
             .withSpec(createEventSpec()) // GH-90000
@@ -395,7 +395,7 @@ class ConfigValidationTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("[Tenancy]: valid_tenant_id_passes_validation [GH-90000]")
+    @DisplayName("[Tenancy]: valid_tenant_id_passes_validation")
     void validTenantIdPassesValidation() { // GH-90000
         RawCollectionConfig config = createMinimalConfig().build(); // GH-90000
 
@@ -405,27 +405,27 @@ class ConfigValidationTest {
     }
 
     @Test
-    @DisplayName("[Tenancy]: tenant_id_mismatch_returns_error [GH-90000]")
+    @DisplayName("[Tenancy]: tenant_id_mismatch_returns_error")
     void tenantIdMismatchReturnsError() { // GH-90000
         RawCollectionConfig config = createMinimalConfig().build(); // GH-90000
 
         ConfigValidator.ValidationResult result = validator.validateTenancy(config, "different-tenant"); // GH-90000
 
         assertThat(result.isValid()).isFalse(); // GH-90000
-        assertThat(result.errors()).anyMatch(e -> e.contains("Tenant ID mismatch [GH-90000]"));
+        assertThat(result.errors()).anyMatch(e -> e.contains("Tenant ID mismatch"));
     }
 
     @Test
-    @DisplayName("[Tenancy]: invalid_tenant_id_format_returns_error [GH-90000]")
+    @DisplayName("[Tenancy]: invalid_tenant_id_format_returns_error")
     void invalidTenantIdFormatReturnsError() { // GH-90000
         RawCollectionConfig config = createMinimalConfig() // GH-90000
-            .withMetadata(createMetadata().withNamespace("invalid tenant! [GH-90000]"))
+            .withMetadata(createMetadata().withNamespace("invalid tenant!"))
             .build(); // GH-90000
 
         ConfigValidator.ValidationResult result = validator.validateTenancy(config, null); // GH-90000
 
         assertThat(result.isValid()).isFalse(); // GH-90000
-        assertThat(result.errors()).anyMatch(e -> e.contains("Invalid tenant ID format [GH-90000]"));
+        assertThat(result.errors()).anyMatch(e -> e.contains("Invalid tenant ID format"));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -433,7 +433,7 @@ class ConfigValidationTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("[validateOrFail]: valid_config_does_not_throw [GH-90000]")
+    @DisplayName("[validateOrFail]: valid_config_does_not_throw")
     void validConfigDoesNotThrow() { // GH-90000
         RawCollectionConfig config = createMinimalConfig().build(); // GH-90000
 
@@ -441,7 +441,7 @@ class ConfigValidationTest {
     }
 
     @Test
-    @DisplayName("[validateOrFail]: invalid_config_throws_exception [GH-90000]")
+    @DisplayName("[validateOrFail]: invalid_config_throws_exception")
     void invalidConfigThrowsException() { // GH-90000
         RawCollectionConfig config = createMinimalConfig() // GH-90000
             .withMetadata((RawCollectionConfig.RawMetadata) null) // GH-90000
@@ -449,7 +449,7 @@ class ConfigValidationTest {
 
         assertThatThrownBy(() -> validator.validateOrFail(config)) // GH-90000
             .isInstanceOf(com.ghatana.platform.core.exception.ConfigurationException.class) // GH-90000
-            .hasMessageContaining("Configuration validation failed [GH-90000]");
+            .hasMessageContaining("Configuration validation failed");
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -464,38 +464,38 @@ class ConfigValidationTest {
 
     private RawMetadataBuilder createMetadata() { // GH-90000
         return new RawMetadataBuilder() // GH-90000
-            .withName("test-collection [GH-90000]")
-            .withNamespace("tenant-alpha [GH-90000]");
+            .withName("test-collection")
+            .withNamespace("tenant-alpha");
     }
 
     private RawSpecBuilder createSpec() { // GH-90000
         return new RawSpecBuilder() // GH-90000
-            .withRecordType("ENTITY [GH-90000]")
+            .withRecordType("ENTITY")
             .withSchema(createSchema() // GH-90000
                 .withFields(List.of(createField() // GH-90000
-                    .withName("id [GH-90000]")
-                    .withType("uuid [GH-90000]")
+                    .withName("id")
+                    .withType("uuid")
                     .build()))); // GH-90000
     }
 
     private RawEventSpecBuilder createEventSpec() { // GH-90000
         return new RawEventSpecBuilder() // GH-90000
-            .withRecordType("EVENT [GH-90000]")
+            .withRecordType("EVENT")
             .withSchema(createSchema() // GH-90000
                 .withFields(List.of( // GH-90000
-                    createField().withName("eventId [GH-90000]").withType("uuid [GH-90000]").build(),
-                    createField().withName("eventType [GH-90000]").withType("string [GH-90000]").build(),
-                    createField().withName("aggregateId [GH-90000]").withType("uuid [GH-90000]").build(),
-                    createField().withName("aggregateVersion [GH-90000]").withType("long [GH-90000]").build(),
-                    createField().withName("correlationId [GH-90000]").withType("uuid [GH-90000]").build(),
-                    createField().withName("timestamp [GH-90000]").withType("timestamp [GH-90000]").build(),
-                    createField().withName("tenantId [GH-90000]").withType("string [GH-90000]").build(),
-                    createField().withName("payload [GH-90000]").withType("object [GH-90000]").build()
+                    createField().withName("eventId").withType("uuid").build(),
+                    createField().withName("eventType").withType("string").build(),
+                    createField().withName("aggregateId").withType("uuid").build(),
+                    createField().withName("aggregateVersion").withType("long").build(),
+                    createField().withName("correlationId").withType("uuid").build(),
+                    createField().withName("timestamp").withType("timestamp").build(),
+                    createField().withName("tenantId").withType("string").build(),
+                    createField().withName("payload").withType("object").build()
                 )));
     }
 
     private RawSchemaBuilder createSchema() { // GH-90000
-        return new RawSchemaBuilder().withVersion("1.0 [GH-90000]");
+        return new RawSchemaBuilder().withVersion("1.0");
     }
 
     private RawFieldBuilder createField() { // GH-90000
@@ -694,7 +694,7 @@ class ConfigValidationTest {
 
     static class RawIndexBuilder {
         private String name = "idx_test";
-        private List<String> fields = List.of("id [GH-90000]");
+        private List<String> fields = List.of("id");
         private String type = "btree";
 
         RawIndexBuilder withName(String name) { // GH-90000

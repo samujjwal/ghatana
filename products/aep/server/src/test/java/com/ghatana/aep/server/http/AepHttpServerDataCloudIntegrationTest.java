@@ -39,7 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AepHttpServer – Data-Cloud Integration [GH-90000]")
+@DisplayName("AepHttpServer – Data-Cloud Integration")
 class AepHttpServerDataCloudIntegrationTest {
 
     @TempDir
@@ -66,7 +66,7 @@ class AepHttpServerDataCloudIntegrationTest {
     }
 
     @Test
-    @DisplayName("patterns persist across server restart when Data-Cloud is configured [GH-90000]")
+    @DisplayName("patterns persist across server restart when Data-Cloud is configured")
     void patternsPersistAcrossServerRestart() throws Exception { // GH-90000
         dataCloud = DataCloud.embedded(); // GH-90000
 
@@ -85,7 +85,7 @@ class AepHttpServerDataCloudIntegrationTest {
         )));
 
         assertThat(create.statusCode()).isEqualTo(200); // GH-90000
-        String createdId = String.valueOf(((Map<?, ?>) mapper.readValue(create.body(), Map.class).get("pattern [GH-90000]")).get("id [GH-90000]"));
+        String createdId = String.valueOf(((Map<?, ?>) mapper.readValue(create.body(), Map.class).get("pattern")).get("id"));
 
         server.stop(); // GH-90000
         engine.close(); // GH-90000
@@ -103,18 +103,18 @@ class AepHttpServerDataCloudIntegrationTest {
 
         assertThat(list.statusCode()).isEqualTo(200); // GH-90000
         Map<?, ?> listBody = mapper.readValue(list.body(), Map.class); // GH-90000
-        assertThat(((Number) listBody.get("count [GH-90000]")).intValue()).isGreaterThanOrEqualTo(1);
-        assertThat(((List<?>) listBody.get("patterns [GH-90000]")).toString()).contains("Persisted Pattern [GH-90000]");
+        assertThat(((Number) listBody.get("count")).intValue()).isGreaterThanOrEqualTo(1);
+        assertThat(((List<?>) listBody.get("patterns")).toString()).contains("Persisted Pattern");
 
         assertThat(get.statusCode()).isEqualTo(200); // GH-90000
         Map<?, ?> getBody = mapper.readValue(get.body(), Map.class); // GH-90000
-        assertThat(((Map<?, ?>) getBody.get("pattern [GH-90000]")).get("id [GH-90000]")).isEqualTo(createdId);
+        assertThat(((Map<?, ?>) getBody.get("pattern")).get("id")).isEqualTo(createdId);
     }
 
     @Test
-    @DisplayName("run history persists across restart with sovereign Data-Cloud and stays queryable through /api/v1/runs [GH-90000]")
+    @DisplayName("run history persists across restart with sovereign Data-Cloud and stays queryable through /api/v1/runs")
     void runHistoryPersistsAcrossRestartWithSovereignDataCloud() throws Exception { // GH-90000
-        DataCloudConfig config = sovereignConfig("runs-persist [GH-90000]");
+        DataCloudConfig config = sovereignConfig("runs-persist");
         dataCloud = DataCloud.create(config); // GH-90000
 
         int firstPort = findFreePort(); // GH-90000
@@ -131,7 +131,7 @@ class AepHttpServerDataCloudIntegrationTest {
 
         assertThat(processResponse.statusCode()).isEqualTo(200); // GH-90000
         Map<?, ?> processBody = mapper.readValue(processResponse.body(), Map.class); // GH-90000
-        String runId = String.valueOf(processBody.get("eventId [GH-90000]"));
+        String runId = String.valueOf(processBody.get("eventId"));
 
         assertThat(waitForRunCount(firstPort, "tenant-runs", 1).body()).contains(runId); // GH-90000
         assertDurableDeepHealth(firstPort, "sovereign"); // GH-90000
@@ -153,20 +153,20 @@ class AepHttpServerDataCloudIntegrationTest {
         HttpResponse<String> runsResponse = waitForRunCount(secondPort, "tenant-runs", 1); // GH-90000
         assertThat(runsResponse.statusCode()).isEqualTo(200); // GH-90000
         Map<?, ?> runsBody = mapper.readValue(runsResponse.body(), Map.class); // GH-90000
-        assertThat(((Number) runsBody.get("count [GH-90000]")).intValue()).isEqualTo(1);
-        assertThat(((List<?>) runsBody.get("runs [GH-90000]")).toString()).contains(runId, "SUCCEEDED");
+        assertThat(((Number) runsBody.get("count")).intValue()).isEqualTo(1);
+        assertThat(((List<?>) runsBody.get("runs")).toString()).contains(runId, "SUCCEEDED");
         assertDurableDeepHealth(secondPort, "sovereign"); // GH-90000
 
         HttpResponse<String> detailResponse = get(secondPort, "/api/v1/runs/" + runId, "tenant-runs"); // GH-90000
         assertThat(detailResponse.statusCode()).isEqualTo(200); // GH-90000
         Map<?, ?> detailBody = mapper.readValue(detailResponse.body(), Map.class); // GH-90000
-        assertThat(detailBody.get("runId [GH-90000]")).isEqualTo(runId);
-        assertThat(detailBody.get("tenantId [GH-90000]")).isEqualTo("tenant-runs [GH-90000]");
-        assertThat(detailBody.get("status [GH-90000]")).isEqualTo("SUCCEEDED [GH-90000]");
+        assertThat(detailBody.get("runId")).isEqualTo(runId);
+        assertThat(detailBody.get("tenantId")).isEqualTo("tenant-runs");
+        assertThat(detailBody.get("status")).isEqualTo("SUCCEEDED");
     }
 
     @Test
-    @DisplayName("analytics endpoints persist anomalies and KPIs and expose query/report data [GH-90000]")
+    @DisplayName("analytics endpoints persist anomalies and KPIs and expose query/report data")
     void analyticsPersistenceAndQueryEndpointsWork() throws Exception { // GH-90000
         dataCloud = DataCloud.embedded(); // GH-90000
         int port = findFreePort(); // GH-90000
@@ -200,13 +200,13 @@ class AepHttpServerDataCloudIntegrationTest {
         )));
         assertThat(queryResp.statusCode()).isEqualTo(200); // GH-90000
         Map<?, ?> queryBody = mapper.readValue(queryResp.body(), Map.class); // GH-90000
-        Map<?, ?> queryResult = (Map<?, ?>) queryBody.get("result [GH-90000]");
-        assertThat(((Number) queryResult.get("count [GH-90000]")).intValue()).isEqualTo(1);
+        Map<?, ?> queryResult = (Map<?, ?>) queryBody.get("result");
+        assertThat(((Number) queryResult.get("count")).intValue()).isEqualTo(1);
 
         HttpResponse<String> listAnomalies = get(port, "/api/v1/analytics/anomalies?tenantId=tenant-analytics"); // GH-90000
         assertThat(listAnomalies.statusCode()).isEqualTo(200); // GH-90000
         Map<?, ?> anomaliesBody = mapper.readValue(listAnomalies.body(), Map.class); // GH-90000
-        assertThat(((Number) anomaliesBody.get("count [GH-90000]")).intValue()).isEqualTo(1);
+        assertThat(((Number) anomaliesBody.get("count")).intValue()).isEqualTo(1);
 
         HttpResponse<String> reportResp = post(port, "/api/v1/reports", mapper.writeValueAsString(Map.of( // GH-90000
             "tenantId", "tenant-analytics",
@@ -214,7 +214,7 @@ class AepHttpServerDataCloudIntegrationTest {
         )));
         assertThat(reportResp.statusCode()).isEqualTo(200); // GH-90000
         Map<?, ?> reportBody = mapper.readValue(reportResp.body(), Map.class); // GH-90000
-        assertThat(reportBody.get("report [GH-90000]").toString()).contains("tenant-analytics [GH-90000]");
+        assertThat(reportBody.get("report").toString()).contains("tenant-analytics");
 
         List<DataCloudClient.Event> events = dataCloud.queryEvents( // GH-90000
             "tenant-analytics",
@@ -225,7 +225,7 @@ class AepHttpServerDataCloudIntegrationTest {
     }
 
     @Test
-    @DisplayName("pipeline version metadata and snapshots persist across server restart when Data-Cloud is configured [GH-90000]")
+    @DisplayName("pipeline version metadata and snapshots persist across server restart when Data-Cloud is configured")
     void pipelineVersioningPersistsAcrossServerRestart() throws Exception { // GH-90000
         dataCloud = DataCloud.embedded(); // GH-90000
 
@@ -233,14 +233,14 @@ class AepHttpServerDataCloudIntegrationTest {
         DataCloudPipelineStore pipelineStore = new DataCloudPipelineStore(dataCloud); // GH-90000
         Pipeline published = new Pipeline(); // GH-90000
         published.setId(pipelineId); // GH-90000
-        published.setTenantId(TenantId.of("tenant-pipeline [GH-90000]"));
-        published.setName("Durable Pipeline [GH-90000]");
+        published.setTenantId(TenantId.of("tenant-pipeline"));
+        published.setName("Durable Pipeline");
         published.setVersion(1); // GH-90000
         published.setActive(true); // GH-90000
         published.setConfig("{\"stages\":[{\"name\":\"step1\",\"type\":\"transform\"}]}"); // GH-90000
-        published.setCreatedBy("test [GH-90000]");
-        published.setUpdatedBy("test [GH-90000]");
-        published.setVersionLabel("release-1 [GH-90000]");
+        published.setCreatedBy("test");
+        published.setUpdatedBy("test");
+        published.setVersionLabel("release-1");
         published.setVersionStatus(PipelineVersionStatus.PUBLISHED); // GH-90000
         pipelineStore.save(published).getResult(); // GH-90000
         pipelineStore.saveVersionSnapshot(pipelineId, published).getResult(); // GH-90000
@@ -277,20 +277,20 @@ class AepHttpServerDataCloudIntegrationTest {
             "tenant-pipeline");
         assertThat(getPipeline.statusCode()).isEqualTo(200); // GH-90000
         Map<?, ?> pipelineBody = mapper.readValue(getPipeline.body(), Map.class); // GH-90000
-        assertThat(pipelineBody.get("versionLabel [GH-90000]")).isEqualTo("release-1 [GH-90000]");
-        assertThat(pipelineBody.get("versionStatus [GH-90000]")).isEqualTo("PUBLISHED [GH-90000]");
+        assertThat(pipelineBody.get("versionLabel")).isEqualTo("release-1");
+        assertThat(pipelineBody.get("versionStatus")).isEqualTo("PUBLISHED");
 
         HttpResponse<String> history = get(secondPort, // GH-90000
             "/api/v1/pipelines/" + pipelineId + "/versions",
             "tenant-pipeline");
         assertThat(history.statusCode()).isEqualTo(200); // GH-90000
         Map<?, ?> historyBody = mapper.readValue(history.body(), Map.class); // GH-90000
-        assertThat(((Number) historyBody.get("count [GH-90000]")).intValue()).isEqualTo(1);
-        assertThat(((List<?>) historyBody.get("versions [GH-90000]")).toString()).contains("release-1 [GH-90000]");
+        assertThat(((Number) historyBody.get("count")).intValue()).isEqualTo(1);
+        assertThat(((List<?>) historyBody.get("versions")).toString()).contains("release-1");
     }
 
     @Test
-    @DisplayName("pipeline updates reject stale versions with a structured 409 conflict [GH-90000]")
+    @DisplayName("pipeline updates reject stale versions with a structured 409 conflict")
     void pipelineUpdateRejectsStaleVersion() throws Exception { // GH-90000
         dataCloud = DataCloud.embedded(); // GH-90000
 
@@ -298,13 +298,13 @@ class AepHttpServerDataCloudIntegrationTest {
         DataCloudPipelineStore pipelineStore = new DataCloudPipelineStore(dataCloud); // GH-90000
         Pipeline existing = new Pipeline(); // GH-90000
         existing.setId(pipelineId); // GH-90000
-        existing.setTenantId(TenantId.of("tenant-pipeline [GH-90000]"));
-        existing.setName("conflict-pipeline [GH-90000]");
+        existing.setTenantId(TenantId.of("tenant-pipeline"));
+        existing.setName("conflict-pipeline");
         existing.setVersion(3); // GH-90000
         existing.setActive(true); // GH-90000
         existing.setConfig("{\"stages\":[{\"name\":\"step1\"}]}"); // GH-90000
-        existing.setCreatedBy("test [GH-90000]");
-        existing.setUpdatedBy("test [GH-90000]");
+        existing.setCreatedBy("test");
+        existing.setUpdatedBy("test");
         pipelineStore.save(existing).getResult(); // GH-90000
 
         int port = findFreePort(); // GH-90000
@@ -328,21 +328,21 @@ class AepHttpServerDataCloudIntegrationTest {
 
         assertThat(updateResp.statusCode()).isEqualTo(409); // GH-90000
         Map<?, ?> conflictBody = mapper.readValue(updateResp.body(), Map.class); // GH-90000
-        assertThat(conflictBody.get("errorCode [GH-90000]")).isEqualTo("PIPELINE_VERSION_CONFLICT [GH-90000]");
-        assertThat(((Number) conflictBody.get("expectedVersion [GH-90000]")).intValue()).isEqualTo(2);
-        assertThat(((Number) conflictBody.get("currentVersion [GH-90000]")).intValue()).isEqualTo(3);
+        assertThat(conflictBody.get("errorCode")).isEqualTo("PIPELINE_VERSION_CONFLICT");
+        assertThat(((Number) conflictBody.get("expectedVersion")).intValue()).isEqualTo(2);
+        assertThat(((Number) conflictBody.get("currentVersion")).intValue()).isEqualTo(3);
 
         HttpResponse<String> getPipeline = get(port, // GH-90000
             "/api/v1/pipelines/" + pipelineId,
             "tenant-pipeline");
         assertThat(getPipeline.statusCode()).isEqualTo(200); // GH-90000
         Map<?, ?> pipelineBody = mapper.readValue(getPipeline.body(), Map.class); // GH-90000
-        assertThat(((Number) pipelineBody.get("version [GH-90000]")).intValue()).isEqualTo(3);
-        assertThat(pipelineBody.get("name [GH-90000]")).isEqualTo("conflict-pipeline [GH-90000]");
+        assertThat(((Number) pipelineBody.get("version")).intValue()).isEqualTo(3);
+        assertThat(pipelineBody.get("name")).isEqualTo("conflict-pipeline");
     }
 
     @Test
-    @DisplayName("pipeline updates succeed when the caller supplies the current version [GH-90000]")
+    @DisplayName("pipeline updates succeed when the caller supplies the current version")
     void pipelineUpdateSucceedsWithCurrentVersion() throws Exception { // GH-90000
         dataCloud = DataCloud.embedded(); // GH-90000
 
@@ -350,13 +350,13 @@ class AepHttpServerDataCloudIntegrationTest {
         DataCloudPipelineStore pipelineStore = new DataCloudPipelineStore(dataCloud); // GH-90000
         Pipeline existing = new Pipeline(); // GH-90000
         existing.setId(pipelineId); // GH-90000
-        existing.setTenantId(TenantId.of("tenant-pipeline [GH-90000]"));
-        existing.setName("current-pipeline [GH-90000]");
+        existing.setTenantId(TenantId.of("tenant-pipeline"));
+        existing.setName("current-pipeline");
         existing.setVersion(3); // GH-90000
         existing.setActive(true); // GH-90000
         existing.setConfig("{\"stages\":[{\"name\":\"step1\"}]}"); // GH-90000
-        existing.setCreatedBy("test [GH-90000]");
-        existing.setUpdatedBy("test [GH-90000]");
+        existing.setCreatedBy("test");
+        existing.setUpdatedBy("test");
         pipelineStore.save(existing).getResult(); // GH-90000
 
         int port = findFreePort(); // GH-90000
@@ -369,7 +369,7 @@ class AepHttpServerDataCloudIntegrationTest {
             "/api/v1/pipelines/" + pipelineId,
             "tenant-pipeline");
         assertThat(existingResp.statusCode()).isEqualTo(200); // GH-90000
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         Map<String, Object> updatePayload = mapper.readValue(existingResp.body(), Map.class); // GH-90000
         updatePayload.put("description", "Current pipeline description updated"); // GH-90000
 
@@ -382,20 +382,20 @@ class AepHttpServerDataCloudIntegrationTest {
 
         assertThat(updateResp.statusCode()).isEqualTo(200); // GH-90000
         Map<?, ?> updatedBody = mapper.readValue(updateResp.body(), Map.class); // GH-90000
-        assertThat(((Number) updatedBody.get("version [GH-90000]")).intValue()).isEqualTo(4);
-        assertThat(updatedBody.get("description [GH-90000]")).isEqualTo("Current pipeline description updated [GH-90000]");
+        assertThat(((Number) updatedBody.get("version")).intValue()).isEqualTo(4);
+        assertThat(updatedBody.get("description")).isEqualTo("Current pipeline description updated");
     }
 
     @Test
-    @DisplayName("pending HITL reviews persist across server restart when Data-Cloud is configured [GH-90000]")
+    @DisplayName("pending HITL reviews persist across server restart when Data-Cloud is configured")
     void pendingHitlReviewsPersistAcrossServerRestart() throws Exception { // GH-90000
         dataCloud = DataCloud.embedded(); // GH-90000
         DataCloudHumanReviewQueue initialQueue = new DataCloudHumanReviewQueue(dataCloud); // GH-90000
         ReviewItem pending = ReviewItem.builder() // GH-90000
-            .reviewId("review-persist-1 [GH-90000]")
-            .tenantId("tenant-hitl [GH-90000]")
-            .skillId("skill-review [GH-90000]")
-            .proposedVersion("v1 [GH-90000]")
+            .reviewId("review-persist-1")
+            .tenantId("tenant-hitl")
+            .skillId("skill-review")
+            .proposedVersion("v1")
             .confidenceScore(0.52) // GH-90000
             .build(); // GH-90000
         initialQueue.enqueue(pending).getResult(); // GH-90000
@@ -409,7 +409,7 @@ class AepHttpServerDataCloudIntegrationTest {
         HttpResponse<String> firstPending = get(firstPort, "/api/v1/hitl/pending?tenantId=tenant-hitl"); // GH-90000
         assertThat(firstPending.statusCode()).isEqualTo(200); // GH-90000
         Map<?, ?> firstBody = mapper.readValue(firstPending.body(), Map.class); // GH-90000
-        assertThat(((Number) firstBody.get("count [GH-90000]")).intValue()).isEqualTo(1);
+        assertThat(((Number) firstBody.get("count")).intValue()).isEqualTo(1);
 
         server.stop(); // GH-90000
         engine.close(); // GH-90000
@@ -426,12 +426,12 @@ class AepHttpServerDataCloudIntegrationTest {
         HttpResponse<String> secondPending = get(secondPort, "/api/v1/hitl/pending?tenantId=tenant-hitl"); // GH-90000
         assertThat(secondPending.statusCode()).isEqualTo(200); // GH-90000
         Map<?, ?> secondBody = mapper.readValue(secondPending.body(), Map.class); // GH-90000
-        assertThat(((Number) secondBody.get("count [GH-90000]")).intValue()).isEqualTo(1);
-        assertThat(((List<?>) secondBody.get("pending [GH-90000]")).toString()).contains("review-persist-1 [GH-90000]");
+        assertThat(((Number) secondBody.get("count")).intValue()).isEqualTo(1);
+        assertThat(((List<?>) secondBody.get("pending")).toString()).contains("review-persist-1");
     }
 
     @Test
-    @DisplayName("GDPR erasure removes subject records from embedded Data-Cloud collections [GH-90000]")
+    @DisplayName("GDPR erasure removes subject records from embedded Data-Cloud collections")
     void gdprErasureRemovesSubjectRecordsFromEmbeddedDataCloud() throws Exception { // GH-90000
         dataCloud = DataCloud.embedded(); // GH-90000
 
@@ -467,12 +467,12 @@ class AepHttpServerDataCloudIntegrationTest {
 
         assertThat(eraseResponse.statusCode()).isEqualTo(200); // GH-90000
         Map<?, ?> report = mapper.readValue(eraseResponse.body(), Map.class); // GH-90000
-        assertThat(report.get("operationType [GH-90000]")).isEqualTo("GDPR_ERASURE [GH-90000]");
-        assertThat(report.get("success [GH-90000]")).isEqualTo(true);
-        assertThat(((Number) report.get("total [GH-90000]")).longValue()).isEqualTo(collections.size());
+        assertThat(report.get("operationType")).isEqualTo("GDPR_ERASURE");
+        assertThat(report.get("success")).isEqualTo(true);
+        assertThat(((Number) report.get("total")).longValue()).isEqualTo(collections.size());
 
-        @SuppressWarnings("unchecked [GH-90000]")
-        Map<String, Number> breakdown = (Map<String, Number>) report.get("breakdown [GH-90000]");
+        @SuppressWarnings("unchecked")
+        Map<String, Number> breakdown = (Map<String, Number>) report.get("breakdown");
         for (String collection : collections) { // GH-90000
             assertThat(breakdown).containsKey(collection); // GH-90000
             assertThat(breakdown.get(collection).longValue()).isEqualTo(1L); // GH-90000
@@ -546,8 +546,8 @@ class AepHttpServerDataCloudIntegrationTest {
         assertThat(response.statusCode()).isEqualTo(200); // GH-90000
 
         Map<?, ?> body = mapper.readValue(response.body(), Map.class); // GH-90000
-        @SuppressWarnings("unchecked [GH-90000]")
-        Map<String, Object> durability = (Map<String, Object>) body.get("durability [GH-90000]");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> durability = (Map<String, Object>) body.get("durability");
         assertThat(durability).containsEntry("mode", "durable"); // GH-90000
         assertThat(durability).containsEntry("dataCloudStorage", expectedStorage); // GH-90000
         assertThat(durability).containsEntry("executionHistory", "durable"); // GH-90000
@@ -562,7 +562,7 @@ class AepHttpServerDataCloudIntegrationTest {
             lastResponse = get(port, "/api/v1/runs", tenantId); // GH-90000
             if (lastResponse.statusCode() == 200) { // GH-90000
                 Map<?, ?> body = mapper.readValue(lastResponse.body(), Map.class); // GH-90000
-                if (((Number) body.get("count [GH-90000]")).intValue() >= expectedCount) {
+                if (((Number) body.get("count")).intValue() >= expectedCount) {
                     return lastResponse;
                 }
             }

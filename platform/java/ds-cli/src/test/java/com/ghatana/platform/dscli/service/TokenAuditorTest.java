@@ -37,24 +37,24 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Token Auditor Tests [GH-90000]")
+@DisplayName("Token Auditor Tests")
 class TokenAuditorTest {
 
     private final TokenAuditor auditor = new TokenAuditor(); // GH-90000
 
     @Test
-    @DisplayName("should detect no files warning [GH-90000]")
+    @DisplayName("should detect no files warning")
     void shouldDetectNoFilesWarning() { // GH-90000
         List<TokenFileLoader.LoadedTokenFile> files = new ArrayList<>(); // GH-90000
         
         List<ValidationIssue> issues = auditor.audit(files); // GH-90000
 
         assertThat(issues).hasSize(1); // GH-90000
-        assertThat(issues.get(0).code()).isEqualTo("NO_FILES [GH-90000]");
+        assertThat(issues.get(0).code()).isEqualTo("NO_FILES");
     }
 
     @Test
-    @DisplayName("should detect duplicate values [GH-90000]")
+    @DisplayName("should detect duplicate values")
     void shouldDetectDuplicateValues() { // GH-90000
         TokenFile tokenFile = new TokenFile(); // GH-90000
         Map<String, Object> color1 = new HashMap<>(); // GH-90000
@@ -65,15 +65,15 @@ class TokenAuditorTest {
         tokenFile.setToken("color-secondary", color2); // GH-90000
 
         List<TokenFileLoader.LoadedTokenFile> files = new ArrayList<>(); // GH-90000
-        files.add(new TokenFileLoader.LoadedTokenFile(Path.of("tokens.json [GH-90000]"), tokenFile));
+        files.add(new TokenFileLoader.LoadedTokenFile(Path.of("tokens.json"), tokenFile));
 
         List<ValidationIssue> issues = auditor.audit(files); // GH-90000
 
-        assertThat(issues).anyMatch(issue -> issue.code().equals("DUPLICATE_VALUE [GH-90000]"));
+        assertThat(issues).anyMatch(issue -> issue.code().equals("DUPLICATE_VALUE"));
     }
 
     @Test
-    @DisplayName("should detect missing a11y pairs [GH-90000]")
+    @DisplayName("should detect missing a11y pairs")
     void shouldDetectMissingA11yPairs() { // GH-90000
         TokenFile tokenFile = new TokenFile(); // GH-90000
         Map<String, Object> color = new HashMap<>(); // GH-90000
@@ -81,15 +81,15 @@ class TokenAuditorTest {
         tokenFile.setToken("color-primary", color); // GH-90000
 
         List<TokenFileLoader.LoadedTokenFile> files = new ArrayList<>(); // GH-90000
-        files.add(new TokenFileLoader.LoadedTokenFile(Path.of("tokens.json [GH-90000]"), tokenFile));
+        files.add(new TokenFileLoader.LoadedTokenFile(Path.of("tokens.json"), tokenFile));
 
         List<ValidationIssue> issues = auditor.audit(files); // GH-90000
 
-        assertThat(issues).anyMatch(issue -> issue.code().equals("MISSING_A11Y_PAIRS [GH-90000]"));
+        assertThat(issues).anyMatch(issue -> issue.code().equals("MISSING_A11Y_PAIRS"));
     }
 
     @Test
-    @DisplayName("should detect naming convention violations [GH-90000]")
+    @DisplayName("should detect naming convention violations")
     void shouldDetectNamingConventionViolations() { // GH-90000
         TokenFile tokenFile = new TokenFile(); // GH-90000
         Map<String, Object> color = new HashMap<>(); // GH-90000
@@ -97,15 +97,15 @@ class TokenAuditorTest {
         tokenFile.setToken("color_primary", color); // underscore instead of hyphen // GH-90000
 
         List<TokenFileLoader.LoadedTokenFile> files = new ArrayList<>(); // GH-90000
-        files.add(new TokenFileLoader.LoadedTokenFile(Path.of("tokens.json [GH-90000]"), tokenFile));
+        files.add(new TokenFileLoader.LoadedTokenFile(Path.of("tokens.json"), tokenFile));
 
         List<ValidationIssue> issues = auditor.audit(files); // GH-90000
 
-        assertThat(issues).anyMatch(issue -> issue.code().equals("NAMING_CONVENTION [GH-90000]"));
+        assertThat(issues).anyMatch(issue -> issue.code().equals("NAMING_CONVENTION"));
     }
 
     @Test
-    @DisplayName("should pass audit with no issues [GH-90000]")
+    @DisplayName("should pass audit with no issues")
     void shouldPassAuditWithNoIssues() { // GH-90000
         TokenFile tokenFile = new TokenFile(); // GH-90000
         Map<String, Object> color = new HashMap<>(); // GH-90000
@@ -116,13 +116,13 @@ class TokenAuditorTest {
         tokenFile.setToken("on-color-primary", onColor); // GH-90000
 
         List<TokenFileLoader.LoadedTokenFile> files = new ArrayList<>(); // GH-90000
-        files.add(new TokenFileLoader.LoadedTokenFile(Path.of("tokens.json [GH-90000]"), tokenFile));
+        files.add(new TokenFileLoader.LoadedTokenFile(Path.of("tokens.json"), tokenFile));
 
         List<ValidationIssue> issues = auditor.audit(files); // GH-90000
 
         // Should not have errors, only optional warnings
-        assertThat(issues).noneMatch(issue -> issue.code().equals("DUPLICATE_VALUE [GH-90000]") ||
-                                         issue.code().equals("MISSING_A11Y_PAIRS [GH-90000]") ||
-                                         issue.code().equals("NAMING_CONVENTION [GH-90000]"));
+        assertThat(issues).noneMatch(issue -> issue.code().equals("DUPLICATE_VALUE") ||
+                                         issue.code().equals("MISSING_A11Y_PAIRS") ||
+                                         issue.code().equals("NAMING_CONVENTION"));
     }
 }

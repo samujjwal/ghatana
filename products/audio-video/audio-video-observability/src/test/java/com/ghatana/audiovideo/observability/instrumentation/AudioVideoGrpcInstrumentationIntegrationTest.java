@@ -24,7 +24,7 @@ import java.io.IOException;
  * @doc.pattern IntegrationTest
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("Audio-Video gRPC Instrumentation Integration Tests [GH-90000]")
+@DisplayName("Audio-Video gRPC Instrumentation Integration Tests")
 class AudioVideoGrpcInstrumentationIntegrationTest {
 
     @Mock
@@ -42,7 +42,7 @@ class AudioVideoGrpcInstrumentationIntegrationTest {
     }
 
     @Nested
-    @DisplayName("gRPC Streaming Instrumentation [GH-90000]")
+    @DisplayName("gRPC Streaming Instrumentation")
     class GrpcStreamingInstrumentationTests {
 
         @Test
@@ -68,7 +68,7 @@ class AudioVideoGrpcInstrumentationIntegrationTest {
             // Given
             String methodName = "FailingStream";
             String tenantId = "failing-tenant";
-            RuntimeException exception = new RuntimeException("Stream failed [GH-90000]");
+            RuntimeException exception = new RuntimeException("Stream failed");
 
             // When + Then
             assertThatThrownBy(() -> instrumentation.instrumentGrpcStreaming( // GH-90000
@@ -78,7 +78,7 @@ class AudioVideoGrpcInstrumentationIntegrationTest {
                         throw exception;
                     }
             )).isInstanceOf(RuntimeException.class) // GH-90000
-                    .hasMessage("Stream failed [GH-90000]");
+                    .hasMessage("Stream failed");
         }
 
         @Test
@@ -127,7 +127,7 @@ class AudioVideoGrpcInstrumentationIntegrationTest {
     }
 
     @Nested
-    @DisplayName("Video Processing Instrumentation [GH-90000]")
+    @DisplayName("Video Processing Instrumentation")
     class VideoProcessingInstrumentationTests {
 
         @Test
@@ -169,7 +169,7 @@ class AudioVideoGrpcInstrumentationIntegrationTest {
             );
 
             // Then
-            assertThat(result).isEqualTo("sla-compliant [GH-90000]");
+            assertThat(result).isEqualTo("sla-compliant");
         }
 
         @Test
@@ -193,7 +193,7 @@ class AudioVideoGrpcInstrumentationIntegrationTest {
             );
 
             // Then
-            assertThat(result).isEqualTo("slow-result [GH-90000]");
+            assertThat(result).isEqualTo("slow-result");
             // SLA warning would be logged
         }
 
@@ -202,7 +202,7 @@ class AudioVideoGrpcInstrumentationIntegrationTest {
             // Given
             String processId = "failing-video";
             String tenantId = "failing-video-tenant";
-            IllegalStateException exception = new IllegalStateException("Invalid video format [GH-90000]");
+            IllegalStateException exception = new IllegalStateException("Invalid video format");
 
             // When + Then
             assertThatThrownBy(() -> instrumentation.instrumentVideoProcessing( // GH-90000
@@ -212,7 +212,7 @@ class AudioVideoGrpcInstrumentationIntegrationTest {
                         throw exception;
                     }
             )).isInstanceOf(IllegalStateException.class) // GH-90000
-                    .hasMessage("Invalid video format [GH-90000]");
+                    .hasMessage("Invalid video format");
         }
 
         @Test
@@ -244,7 +244,7 @@ class AudioVideoGrpcInstrumentationIntegrationTest {
                         processId,
                         tenantId,
                         () -> { // GH-90000
-                            throw new RuntimeException("Processing failed [GH-90000]");
+                            throw new RuntimeException("Processing failed");
                         }
                 );
             } catch (RuntimeException e) { // GH-90000
@@ -259,7 +259,7 @@ class AudioVideoGrpcInstrumentationIntegrationTest {
     }
 
     @Nested
-    @DisplayName("Audio Processing Instrumentation [GH-90000]")
+    @DisplayName("Audio Processing Instrumentation")
     class AudioProcessingInstrumentationTests {
 
         @Test
@@ -301,7 +301,7 @@ class AudioVideoGrpcInstrumentationIntegrationTest {
             );
 
             // Then
-            assertThat(result).isEqualTo("audio-sla-compliant [GH-90000]");
+            assertThat(result).isEqualTo("audio-sla-compliant");
         }
 
         @Test
@@ -309,7 +309,7 @@ class AudioVideoGrpcInstrumentationIntegrationTest {
             // Given
             String processId = "failing-audio";
             String tenantId = "failing-audio-tenant";
-            IOException exception = new java.io.IOException("Audio file corrupted [GH-90000]");
+            IOException exception = new java.io.IOException("Audio file corrupted");
 
             // When + Then
             assertThatThrownBy(() -> instrumentation.instrumentAudioProcessing( // GH-90000
@@ -319,7 +319,7 @@ class AudioVideoGrpcInstrumentationIntegrationTest {
                         throw exception;
                     }
             )).isInstanceOf(IOException.class) // GH-90000
-                    .hasMessage("Audio file corrupted [GH-90000]");
+                    .hasMessage("Audio file corrupted");
         }
 
         @Test
@@ -341,7 +341,7 @@ class AudioVideoGrpcInstrumentationIntegrationTest {
     }
 
     @Nested
-    @DisplayName("Synthesis Instrumentation [GH-90000]")
+    @DisplayName("Synthesis Instrumentation")
     class SynthesisInstrumentationTests {
 
         @Test
@@ -383,7 +383,7 @@ class AudioVideoGrpcInstrumentationIntegrationTest {
             );
 
             // Then
-            assertThat(result).isEqualTo("synthesis-sla-compliant [GH-90000]");
+            assertThat(result).isEqualTo("synthesis-sla-compliant");
         }
 
         @Test
@@ -391,7 +391,7 @@ class AudioVideoGrpcInstrumentationIntegrationTest {
             // Given
             String synthesisId = "failing-synthesis";
             String tenantId = "failing-synthesis-tenant";
-            IllegalArgumentException exception = new IllegalArgumentException("Invalid synthesis parameters [GH-90000]");
+            IllegalArgumentException exception = new IllegalArgumentException("Invalid synthesis parameters");
 
             // When + Then
             assertThatThrownBy(() -> instrumentation.instrumentSynthesis( // GH-90000
@@ -401,7 +401,7 @@ class AudioVideoGrpcInstrumentationIntegrationTest {
                         throw exception;
                     }
             )).isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessage("Invalid synthesis parameters [GH-90000]");
+                    .hasMessage("Invalid synthesis parameters");
         }
 
         @Test
@@ -423,7 +423,7 @@ class AudioVideoGrpcInstrumentationIntegrationTest {
     }
 
     @Nested
-    @DisplayName("Multi-Tenant Context Isolation [GH-90000]")
+    @DisplayName("Multi-Tenant Context Isolation")
     class MultiTenantContextIsolationTests {
 
         @Test
@@ -470,7 +470,7 @@ class AudioVideoGrpcInstrumentationIntegrationTest {
     }
 
     @Nested
-    @DisplayName("Exception Handling and Cleanup [GH-90000]")
+    @DisplayName("Exception Handling and Cleanup")
     class ExceptionHandlingAndCleanupTests {
 
         @Test
@@ -485,7 +485,7 @@ class AudioVideoGrpcInstrumentationIntegrationTest {
                         methodName,
                         tenantId,
                         () -> { // GH-90000
-                            throw new RuntimeException("Stream error [GH-90000]");
+                            throw new RuntimeException("Stream error");
                         }
                 );
             } catch (RuntimeException e) { // GH-90000
@@ -510,7 +510,7 @@ class AudioVideoGrpcInstrumentationIntegrationTest {
                         processId,
                         tenantId,
                         () -> { // GH-90000
-                            throw new RuntimeException("Video error [GH-90000]");
+                            throw new RuntimeException("Video error");
                         }
                 );
             } catch (RuntimeException e) { // GH-90000
@@ -548,14 +548,14 @@ class AudioVideoGrpcInstrumentationIntegrationTest {
                     processId,
                     tenantId,
                     () -> { // GH-90000
-                        throw new InterruptedException("Thread interrupted [GH-90000]");
+                        throw new InterruptedException("Thread interrupted");
                     }
             )).isInstanceOf(InterruptedException.class); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Concurrent Audio-Video Operations [GH-90000]")
+    @DisplayName("Concurrent Audio-Video Operations")
     class ConcurrentOperationsTests {
 
         @Test
@@ -579,8 +579,8 @@ class AudioVideoGrpcInstrumentationIntegrationTest {
             );
 
             // Then
-            assertThat(videoResult).isEqualTo("video-result [GH-90000]");
-            assertThat(audioResult).isEqualTo("audio-result [GH-90000]");
+            assertThat(videoResult).isEqualTo("video-result");
+            assertThat(audioResult).isEqualTo("audio-result");
         }
 
         @Test

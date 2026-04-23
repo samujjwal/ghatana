@@ -33,7 +33,7 @@ public class TestConfidenceAgent<T> implements TypedAgent<T, T> {
     public @NotNull AgentDescriptor descriptor() { // GH-90000
         return AgentDescriptor.builder() // GH-90000
                 .agentId(agentId) // GH-90000
-                .name("Test Confidence Agent [GH-90000]")
+                .name("Test Confidence Agent")
                 .type(AgentType.PROBABILISTIC) // GH-90000
                 .determinism(DeterminismGuarantee.NONE) // GH-90000
                 .build(); // GH-90000
@@ -51,7 +51,7 @@ public class TestConfidenceAgent<T> implements TypedAgent<T, T> {
 
     @Override
     public @NotNull Promise<HealthStatus> healthCheck() { // GH-90000
-        return Promise.of(HealthStatus.healthy("Agent is healthy [GH-90000]"));
+        return Promise.of(HealthStatus.healthy("Agent is healthy"));
     }
 
     @Override

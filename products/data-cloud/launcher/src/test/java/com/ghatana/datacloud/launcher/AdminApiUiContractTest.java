@@ -20,117 +20,117 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern UnitTest
  */
-@DisplayName("Admin & API Documentation UI Contract Tests [GH-90000]")
+@DisplayName("Admin & API Documentation UI Contract Tests")
 public class AdminApiUiContractTest {
 
     @Nested
-    @DisplayName("AdminPageTests [GH-90000]")
+    @DisplayName("AdminPageTests")
     class AdminPageTests {
 
         @Test
-        @DisplayName("GET /admin: admin dashboard [GH-90000]")
+        @DisplayName("GET /admin: admin dashboard")
         void shouldReturnAdminDashboard() { // GH-90000
             Map<String, Object> response = getAdminDashboard(); // GH-90000
             assertThat(response).containsKeys("systemHealth", "users", "resources", "logs"); // GH-90000
         }
 
         @Test
-        @DisplayName("system health: CPU, memory, disk, database [GH-90000]")
+        @DisplayName("system health: CPU, memory, disk, database")
         void shouldHaveSystemHealth() { // GH-90000
             Map<String, Object> response = getAdminDashboard(); // GH-90000
-            Map<String, ?> health = (Map<String, ?>) response.get("systemHealth [GH-90000]");
+            Map<String, ?> health = (Map<String, ?>) response.get("systemHealth");
 
             assertThat(health).containsKeys("cpu", "memory", "disk", "database"); // GH-90000
         }
 
         @Test
-        @DisplayName("users management: total, active, inactive [GH-90000]")
+        @DisplayName("users management: total, active, inactive")
         void shouldHaveUserStats() { // GH-90000
             Map<String, Object> response = getAdminDashboard(); // GH-90000
-            Map<String, ?> users = (Map<String, ?>) response.get("users [GH-90000]");
+            Map<String, ?> users = (Map<String, ?>) response.get("users");
 
             assertThat(users).containsKeys("total", "active", "inactive"); // GH-90000
         }
 
         @Test
-        @DisplayName("resource usage: storage, compute, bandwidth [GH-90000]")
+        @DisplayName("resource usage: storage, compute, bandwidth")
         void shouldHaveResourceUsage() { // GH-90000
             Map<String, Object> response = getAdminDashboard(); // GH-90000
-            Map<String, ?> resources = (Map<String, ?>) response.get("resources [GH-90000]");
+            Map<String, ?> resources = (Map<String, ?>) response.get("resources");
 
             assertThat(resources).containsKeys("storage", "compute", "bandwidth"); // GH-90000
         }
 
         @Test
-        @DisplayName("system logs: recent errors and warnings [GH-90000]")
+        @DisplayName("system logs: recent errors and warnings")
         void shouldHaveLogs() { // GH-90000
             Map<String, Object> response = getAdminDashboard(); // GH-90000
-            List<?> logs = (List<?>) response.get("logs [GH-90000]");
+            List<?> logs = (List<?>) response.get("logs");
 
             assertThat(logs).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("admin only: requires ADMIN role [GH-90000]")
+        @DisplayName("admin only: requires ADMIN role")
         void shouldAuthenticateAdmin() { // GH-90000
             Map<String, Object> response = getAdminDashboard(); // GH-90000
             assertThat(response).isNotEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("tenant administration: multi-tenant config [GH-90000]")
+        @DisplayName("tenant administration: multi-tenant config")
         void shouldManageTenants() { // GH-90000
             Map<String, Object> response = getAdminDashboard(); // GH-90000
-            assertThat(response).containsKey("tenants [GH-90000]");
+            assertThat(response).containsKey("tenants");
         }
 
         @Test
-        @DisplayName("audit logs: user actions tracked [GH-90000]")
+        @DisplayName("audit logs: user actions tracked")
         void shouldHaveAuditLogs() { // GH-90000
             Map<String, Object> response = getAdminDashboard(); // GH-90000
-            assertThat(response).containsKey("auditLogs [GH-90000]");
+            assertThat(response).containsKey("auditLogs");
         }
 
         @Test
-        @DisplayName("backup status: scheduled and on-demand [GH-90000]")
+        @DisplayName("backup status: scheduled and on-demand")
         void shouldHaveBackups() { // GH-90000
             Map<String, Object> response = getAdminDashboard(); // GH-90000
-            assertThat(response).containsKey("backupStatus [GH-90000]");
+            assertThat(response).containsKey("backupStatus");
         }
 
         @Test
-        @DisplayName("alerts configuration: thresholds and notifications [GH-90000]")
+        @DisplayName("alerts configuration: thresholds and notifications")
         void shouldHaveAlerts() { // GH-90000
             Map<String, Object> response = getAdminDashboard(); // GH-90000
-            assertThat(response).containsKey("alerts [GH-90000]");
+            assertThat(response).containsKey("alerts");
         }
     }
 
     @Nested
-    @DisplayName("ApiDocumentationPageTests [GH-90000]")
+    @DisplayName("ApiDocumentationPageTests")
     class ApiDocumentationPageTests {
 
         @Test
-        @DisplayName("GET /api-docs: API documentation index [GH-90000]")
+        @DisplayName("GET /api-docs: API documentation index")
         void shouldReturnApiDocs() { // GH-90000
             Map<String, Object> response = getApiDocumentation(); // GH-90000
             assertThat(response).containsKeys("endpoints", "schemas", "authentication", "rateLimit"); // GH-90000
         }
 
         @Test
-        @DisplayName("endpoints: list of all API operations [GH-90000]")
+        @DisplayName("endpoints: list of all API operations")
         void shouldListEndpoints() { // GH-90000
             Map<String, Object> response = getApiDocumentation(); // GH-90000
-            List<?> endpoints = (List<?>) response.get("endpoints [GH-90000]");
+            List<?> endpoints = (List<?>) response.get("endpoints");
 
             assertThat(endpoints).isNotEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("endpoint schema: method, path, parameters, response [GH-90000]")
+        @DisplayName("endpoint schema: method, path, parameters, response")
         void shouldHaveEndpointSchema() { // GH-90000
             Map<String, Object> response = getApiDocumentation(); // GH-90000
-            List<?> endpoints = (List<?>) response.get("endpoints [GH-90000]");
+            List<?> endpoints = (List<?>) response.get("endpoints");
 
             if (!endpoints.isEmpty()) { // GH-90000
                 Map<String, ?> endpoint = (Map<String, ?>) endpoints.get(0); // GH-90000
@@ -139,65 +139,65 @@ public class AdminApiUiContractTest {
         }
 
         @Test
-        @DisplayName("schemas: data model definitions [GH-90000]")
+        @DisplayName("schemas: data model definitions")
         void shouldDefineSchemas() { // GH-90000
             Map<String, Object> response = getApiDocumentation(); // GH-90000
-            Map<String, ?> schemas = (Map<String, ?>) response.get("schemas [GH-90000]");
+            Map<String, ?> schemas = (Map<String, ?>) response.get("schemas");
 
             assertThat(schemas).isNotEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("authentication: API key, JWT, OAuth [GH-90000]")
+        @DisplayName("authentication: API key, JWT, OAuth")
         void shouldDocumentAuth() { // GH-90000
             Map<String, Object> response = getApiDocumentation(); // GH-90000
-            Map<String, ?> auth = (Map<String, ?>) response.get("authentication [GH-90000]");
+            Map<String, ?> auth = (Map<String, ?>) response.get("authentication");
 
             assertThat(auth).containsKeys("apiKey", "jwt", "oauth"); // GH-90000
         }
 
         @Test
-        @DisplayName("rate limiting: requests per minute, daily limits [GH-90000]")
+        @DisplayName("rate limiting: requests per minute, daily limits")
         void shouldDocumentRateLimit() { // GH-90000
             Map<String, Object> response = getApiDocumentation(); // GH-90000
-            Map<String, ?> rateLimit = (Map<String, ?>) response.get("rateLimit [GH-90000]");
+            Map<String, ?> rateLimit = (Map<String, ?>) response.get("rateLimit");
 
             assertThat(rateLimit).containsKeys("requestsPerMinute", "dailyLimit"); // GH-90000
         }
 
         @Test
-        @DisplayName("error codes: documented with status and message [GH-90000]")
+        @DisplayName("error codes: documented with status and message")
         void shouldDocumentErrors() { // GH-90000
             Map<String, Object> response = getApiDocumentation(); // GH-90000
-            assertThat(response).containsKey("errors [GH-90000]");
+            assertThat(response).containsKey("errors");
         }
 
         @Test
-        @DisplayName("examples: request/response samples [GH-90000]")
+        @DisplayName("examples: request/response samples")
         void shouldIncludeExamples() { // GH-90000
             Map<String, Object> response = getApiDocumentation(); // GH-90000
-            assertThat(response).containsKey("examples [GH-90000]");
+            assertThat(response).containsKey("examples");
         }
 
         @Test
-        @DisplayName("changelog: API version history [GH-90000]")
+        @DisplayName("changelog: API version history")
         void shouldHaveChangelog() { // GH-90000
             Map<String, Object> response = getApiDocumentation(); // GH-90000
-            assertThat(response).containsKey("changelog [GH-90000]");
+            assertThat(response).containsKey("changelog");
         }
 
         @Test
-        @DisplayName("SDKs: client libraries available [GH-90000]")
+        @DisplayName("SDKs: client libraries available")
         void shouldListSdks() { // GH-90000
             Map<String, Object> response = getApiDocumentation(); // GH-90000
-            assertThat(response).containsKey("sdks [GH-90000]");
+            assertThat(response).containsKey("sdks");
         }
 
         @Test
-        @DisplayName("interactive playground: try API in docs [GH-90000]")
+        @DisplayName("interactive playground: try API in docs")
         void shouldHavePlayground() { // GH-90000
             Map<String, Object> response = getApiDocumentation(); // GH-90000
-            assertThat(response).containsKey("playgroundUrl [GH-90000]");
+            assertThat(response).containsKey("playgroundUrl");
         }
     }
 
@@ -264,7 +264,7 @@ public class AdminApiUiContractTest {
                         "method", "GET",
                         "path", "/api/v1/collections/{id}",
                         "description", "Get collection details",
-                        "parameters", List.of("id [GH-90000]")
+                        "parameters", List.of("id")
                 ),
                 Map.of( // GH-90000
                         "method", "PUT",
@@ -276,7 +276,7 @@ public class AdminApiUiContractTest {
                         "method", "DELETE",
                         "path", "/api/v1/collections/{id}",
                         "description", "Delete collection",
-                        "parameters", List.of("id [GH-90000]")
+                        "parameters", List.of("id")
                 ),
                 Map.of( // GH-90000
                         "method", "GET",

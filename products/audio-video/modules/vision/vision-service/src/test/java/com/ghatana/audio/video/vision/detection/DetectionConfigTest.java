@@ -19,11 +19,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @doc.purpose Verifies shared VisionDetector configuration is immutable and consistent
  * @doc.layer product
  */
-@DisplayName("DetectionConfig Tests [GH-90000]")
+@DisplayName("DetectionConfig Tests")
 class DetectionConfigTest extends EventloopTestBase {
 
     @Test
-    @DisplayName("Should preserve configured thresholds and target classes [GH-90000]")
+    @DisplayName("Should preserve configured thresholds and target classes")
     void shouldPreserveConfiguredThresholdsAndTargetClasses() { // GH-90000
         DetectionOptions config = runPromise(() -> Promise.of( // GH-90000
             DetectionOptions.builder() // GH-90000
@@ -38,6 +38,6 @@ class DetectionConfigTest extends EventloopTestBase {
         assertEquals(0.25f, config.getNmsThreshold()); // GH-90000
         assertEquals(12, config.getMaxDetections()); // GH-90000
         assertEquals(Set.of("person", "dog"), config.getTargetClasses()); // GH-90000
-        assertThrows(UnsupportedOperationException.class, () -> config.getTargetClasses().add("car [GH-90000]"));
+        assertThrows(UnsupportedOperationException.class, () -> config.getTargetClasses().add("car"));
     }
 }

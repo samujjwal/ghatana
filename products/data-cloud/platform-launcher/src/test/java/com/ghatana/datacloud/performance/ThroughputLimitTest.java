@@ -26,7 +26,7 @@ import static org.mockito.Mockito.*;
  * Focus: Maximum TPS, bottleneck identification, scaling validation, operation mix
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("ThroughputLimitTest - DC-F-025 [GH-90000]")
+@DisplayName("ThroughputLimitTest - DC-F-025")
 class ThroughputLimitTest {
 
     @Mock private ThroughputMeasurementService throughputService;
@@ -41,11 +41,11 @@ class ThroughputLimitTest {
     }
 
     @Nested
-    @DisplayName("Maximum Throughput Characterization [GH-90000]")
+    @DisplayName("Maximum Throughput Characterization")
     class MaximumThroughputCharacterization {
 
         @Test
-        @DisplayName("shouldMeasureMaxThroughput_whenResourcesUnlimited_thenTPSReported [GH-90000]")
+        @DisplayName("shouldMeasureMaxThroughput_whenResourcesUnlimited_thenTPSReported")
         void shouldMeasureMaxThroughput_whenResourcesUnlimited_thenTPSReported() { // GH-90000
             when(throughputService.measureMaxThroughput()).thenReturn(50_000L); // GH-90000
 
@@ -56,9 +56,9 @@ class ThroughputLimitTest {
         }
 
         @Test
-        @DisplayName("shouldIdentifyThroughputBottleneck_whenLimitReached_thenComponentIdentified [GH-90000]")
+        @DisplayName("shouldIdentifyThroughputBottleneck_whenLimitReached_thenComponentIdentified")
         void shouldIdentifyThroughputBottleneck_whenLimitReached_thenComponentIdentified() { // GH-90000
-            when(bottleneckService.identifyBottleneck()).thenReturn("DatabaseConnection [GH-90000]");
+            when(bottleneckService.identifyBottleneck()).thenReturn("DatabaseConnection");
 
             String bottleneck = bottleneckService.identifyBottleneck(); // GH-90000
 
@@ -67,19 +67,19 @@ class ThroughputLimitTest {
         }
 
         @Test
-        @DisplayName("shouldCompareThroughputAcrossOperations_whenMixedWorkload_thenTPSByOperation [GH-90000]")
+        @DisplayName("shouldCompareThroughputAcrossOperations_whenMixedWorkload_thenTPSByOperation")
         void shouldCompareThroughputAcrossOperations_whenMixedWorkload_thenTPSByOperation() { // GH-90000
-            when(throughputService.getThroughputForOperation("READ [GH-90000]")).thenReturn(30_000L);
-            when(throughputService.getThroughputForOperation("WRITE [GH-90000]")).thenReturn(10_000L);
+            when(throughputService.getThroughputForOperation("READ")).thenReturn(30_000L);
+            when(throughputService.getThroughputForOperation("WRITE")).thenReturn(10_000L);
 
-            long readTPS = throughputService.getThroughputForOperation("READ [GH-90000]");
-            long writeTPS = throughputService.getThroughputForOperation("WRITE [GH-90000]");
+            long readTPS = throughputService.getThroughputForOperation("READ");
+            long writeTPS = throughputService.getThroughputForOperation("WRITE");
 
             assertTrue(readTPS > writeTPS); // GH-90000
         }
 
         @Test
-        @DisplayName("shouldMeasureTPSWithConstantConcurrency_whenWorkRuns_thenThroughputVolume [GH-90000]")
+        @DisplayName("shouldMeasureTPSWithConstantConcurrency_whenWorkRuns_thenThroughputVolume")
         void shouldMeasureTPSWithConstantConcurrency_whenWorkRuns_thenThroughputVolume() { // GH-90000
             when(throughputService.measureTPSAtConcurrency(100)).thenReturn(10_000L); // GH-90000
 
@@ -89,7 +89,7 @@ class ThroughputLimitTest {
         }
 
         @Test
-        @DisplayName("shouldShowTPSLinearWithConcurrency_untilLimitReached_thenPlateaus [GH-90000]")
+        @DisplayName("shouldShowTPSLinearWithConcurrency_untilLimitReached_thenPlateaus")
         void shouldShowTPSLinearWithConcurrency_untilLimitReached_thenPlateaus() { // GH-90000
             long tps50 = 5000L;
             long tps100 = 10_000L;
@@ -103,7 +103,7 @@ class ThroughputLimitTest {
         }
 
         @Test
-        @DisplayName("shouldValidateTPSRecoveryAfterSpike_whenLoadNormalizes_thenTPSRestores [GH-90000]")
+        @DisplayName("shouldValidateTPSRecoveryAfterSpike_whenLoadNormalizes_thenTPSRestores")
         void shouldValidateTPSRecoveryAfterSpike_whenLoadNormalizes_thenTPSRestores() { // GH-90000
             when(throughputService.getTPSAfterSpike()).thenReturn(9500L); // GH-90000
 
@@ -114,13 +114,13 @@ class ThroughputLimitTest {
     }
 
     @Nested
-    @DisplayName("Throughput Bottlenecks [GH-90000]")
+    @DisplayName("Throughput Bottlenecks")
     class ThroughputBottlenecks {
 
         @Test
-        @DisplayName("shouldDetectDatabaseAsBottleneck_whenDBQueriesSlow_thenTPSLimited [GH-90000]")
+        @DisplayName("shouldDetectDatabaseAsBottleneck_whenDBQueriesSlow_thenTPSLimited")
         void shouldDetectDatabaseAsBottleneck_whenDBQueriesSlow_thenTPSLimited() { // GH-90000
-            when(bottleneckService.identifyBottleneck()).thenReturn("Database [GH-90000]");
+            when(bottleneckService.identifyBottleneck()).thenReturn("Database");
 
             String bottleneck = bottleneckService.identifyBottleneck(); // GH-90000
 
@@ -128,9 +128,9 @@ class ThroughputLimitTest {
         }
 
         @Test
-        @DisplayName("shouldDetectNetworkAsBottleneck_whenBandwidthLimited_thenTPSCapped [GH-90000]")
+        @DisplayName("shouldDetectNetworkAsBottleneck_whenBandwidthLimited_thenTPSCapped")
         void shouldDetectNetworkAsBottleneck_whenBandwidthLimited_thenTPSCapped() { // GH-90000
-            when(bottleneckService.identifyBottleneck()).thenReturn("Network [GH-90000]");
+            when(bottleneckService.identifyBottleneck()).thenReturn("Network");
 
             String bottleneck = bottleneckService.identifyBottleneck(); // GH-90000
 
@@ -138,9 +138,9 @@ class ThroughputLimitTest {
         }
 
         @Test
-        @DisplayName("shouldDetectCPUAsBottleneck_whenCPUMaxed_thenTPSLimited [GH-90000]")
+        @DisplayName("shouldDetectCPUAsBottleneck_whenCPUMaxed_thenTPSLimited")
         void shouldDetectCPUAsBottleneck_whenCPUMaxed_thenTPSLimited() { // GH-90000
-            when(bottleneckService.identifyBottleneck()).thenReturn("CPU [GH-90000]");
+            when(bottleneckService.identifyBottleneck()).thenReturn("CPU");
 
             String bottleneck = bottleneckService.identifyBottleneck(); // GH-90000
 
@@ -148,9 +148,9 @@ class ThroughputLimitTest {
         }
 
         @Test
-        @DisplayName("shouldDetectMemoryAsBottleneck_whenGCPausesFrequent_thenTPSDrops [GH-90000]")
+        @DisplayName("shouldDetectMemoryAsBottleneck_whenGCPausesFrequent_thenTPSDrops")
         void shouldDetectMemoryAsBottleneck_whenGCPausesFrequent_thenTPSDrops() { // GH-90000
-            when(bottleneckService.identifyBottleneck()).thenReturn("Memory [GH-90000]");
+            when(bottleneckService.identifyBottleneck()).thenReturn("Memory");
 
             String bottleneck = bottleneckService.identifyBottleneck(); // GH-90000
 
@@ -158,9 +158,9 @@ class ThroughputLimitTest {
         }
 
         @Test
-        @DisplayName("shouldDetectDiskIOAsBottleneck_whenIOLatencyHigh_thenTPSLimited [GH-90000]")
+        @DisplayName("shouldDetectDiskIOAsBottleneck_whenIOLatencyHigh_thenTPSLimited")
         void shouldDetectDiskIOAsBottleneck_whenIOLatencyHigh_thenTPSLimited() { // GH-90000
-            when(bottleneckService.identifyBottleneck()).thenReturn("DiskIO [GH-90000]");
+            when(bottleneckService.identifyBottleneck()).thenReturn("DiskIO");
 
             String bottleneck = bottleneckService.identifyBottleneck(); // GH-90000
 
@@ -168,9 +168,9 @@ class ThroughputLimitTest {
         }
 
         @Test
-        @DisplayName("shouldDetectConnectionPoolAsBottleneck_whenPoolDepleted_thenTPSLimited [GH-90000]")
+        @DisplayName("shouldDetectConnectionPoolAsBottleneck_whenPoolDepleted_thenTPSLimited")
         void shouldDetectConnectionPoolAsBottleneck_whenPoolDepleted_thenTPSLimited() { // GH-90000
-            when(bottleneckService.identifyBottleneck()).thenReturn("ConnectionPool [GH-90000]");
+            when(bottleneckService.identifyBottleneck()).thenReturn("ConnectionPool");
 
             String bottleneck = bottleneckService.identifyBottleneck(); // GH-90000
 
@@ -178,9 +178,9 @@ class ThroughputLimitTest {
         }
 
         @Test
-        @DisplayName("shouldDetectQueueAsBottleneck_whenQueueProcessingBecomesSlow_thenTPSDrops [GH-90000]")
+        @DisplayName("shouldDetectQueueAsBottleneck_whenQueueProcessingBecomesSlow_thenTPSDrops")
         void shouldDetectQueueAsBottleneck_whenQueueProcessingBecomesSlow_thenTPSDrops() { // GH-90000
-            when(bottleneckService.identifyBottleneck()).thenReturn("Queue [GH-90000]");
+            when(bottleneckService.identifyBottleneck()).thenReturn("Queue");
 
             String bottleneck = bottleneckService.identifyBottleneck(); // GH-90000
 
@@ -189,11 +189,11 @@ class ThroughputLimitTest {
     }
 
     @Nested
-    @DisplayName("Throughput Scaling [GH-90000]")
+    @DisplayName("Throughput Scaling")
     class ThroughputScaling {
 
         @Test
-        @DisplayName("shouldScaleLinearlyWithResources_whenCoresAdded_thenTPSIncreases [GH-90000]")
+        @DisplayName("shouldScaleLinearlyWithResources_whenCoresAdded_thenTPSIncreases")
         void shouldScaleLinearlyWithResources_whenCoresAdded_thenTPSIncreases() { // GH-90000
             when(scalingService.getThroughputWith(4)).thenReturn(20_000L); // GH-90000
             when(scalingService.getThroughputWith(8)).thenReturn(40_000L); // GH-90000
@@ -205,7 +205,7 @@ class ThroughputLimitTest {
         }
 
         @Test
-        @DisplayName("shouldScaleLinearlyWithMemory_whenHeapIncreased_thenTPSIncreases [GH-90000]")
+        @DisplayName("shouldScaleLinearlyWithMemory_whenHeapIncreased_thenTPSIncreases")
         void shouldScaleLinearlyWithMemory_whenHeapIncreased_thenTPSIncreases() { // GH-90000
             when(scalingService.getThroughputWithHeap(1024)).thenReturn(15_000L); // GH-90000
             when(scalingService.getThroughputWithHeap(2048)).thenReturn(20_000L); // GH-90000
@@ -217,7 +217,7 @@ class ThroughputLimitTest {
         }
 
         @Test
-        @DisplayName("shouldScaleLinearlyWithDisks_whenIOCapacityAdded_thenTPSIncreases [GH-90000]")
+        @DisplayName("shouldScaleLinearlyWithDisks_whenIOCapacityAdded_thenTPSIncreases")
         void shouldScaleLinearlyWithDisks_whenIOCapacityAdded_thenTPSIncreases() { // GH-90000
             when(scalingService.getThroughputWithDisks(1)).thenReturn(5000L); // GH-90000
             when(scalingService.getThroughputWithDisks(4)).thenReturn(18_000L); // GH-90000
@@ -229,7 +229,7 @@ class ThroughputLimitTest {
         }
 
         @Test
-        @DisplayName("shouldScaleEfficientlyWithReplicas_whenInstancesAdded_thenTPSScales [GH-90000]")
+        @DisplayName("shouldScaleEfficientlyWithReplicas_whenInstancesAdded_thenTPSScales")
         void shouldScaleEfficientlyWithReplicas_whenInstancesAdded_thenTPSScales() { // GH-90000
             when(scalingService.getThroughputWithInstances(1)).thenReturn(10_000L); // GH-90000
             when(scalingService.getThroughputWithInstances(3)).thenReturn(28_000L); // GH-90000
@@ -242,7 +242,7 @@ class ThroughputLimitTest {
         }
 
         @Test
-        @DisplayName("shouldMeasureScalingEfficiency_whenResourcesAdded_thenParallelismRealized [GH-90000]")
+        @DisplayName("shouldMeasureScalingEfficiency_whenResourcesAdded_thenParallelismRealized")
         void shouldMeasureScalingEfficiency_whenResourcesAdded_thenParallelismRealized() { // GH-90000
             when(scalingService.computeScalingEfficiency()).thenReturn(0.92); // GH-90000
 
@@ -252,7 +252,7 @@ class ThroughputLimitTest {
         }
 
         @Test
-        @DisplayName("shouldDetectNonLinearScaling_whenCostBecomesHigh_thenScalingDiminishes [GH-90000]")
+        @DisplayName("shouldDetectNonLinearScaling_whenCostBecomesHigh_thenScalingDiminishes")
         void shouldDetectNonLinearScaling_whenCostBecomesHigh_thenScalingDiminishes() { // GH-90000
             long tps1 = 10_000L;
             long tps2 = 18_000L;
@@ -265,7 +265,7 @@ class ThroughputLimitTest {
         }
 
         @Test
-        @DisplayName("shouldValidateSuperlinearScaling_whenConflictsDecrease_thenTPSExceedsExpected [GH-90000]")
+        @DisplayName("shouldValidateSuperlinearScaling_whenConflictsDecrease_thenTPSExceedsExpected")
         void shouldValidateSuperlinearScaling_whenConflictsDecrease_thenTPSExceedsExpected() { // GH-90000
             long tps1 = 5000L;
             long tps4 = 22_000L;
@@ -276,31 +276,31 @@ class ThroughputLimitTest {
     }
 
     @Nested
-    @DisplayName("Operation Mix Throughput [GH-90000]")
+    @DisplayName("Operation Mix Throughput")
     class OperationMixThroughput {
 
         @Test
-        @DisplayName("shouldMeasureThroughputForReadOnlyWorkload_thenTPSReads [GH-90000]")
+        @DisplayName("shouldMeasureThroughputForReadOnlyWorkload_thenTPSReads")
         void shouldMeasureThroughputForReadOnlyWorkload_thenTPSReads() { // GH-90000
-            when(throughputService.getThroughputForOperation("READ [GH-90000]")).thenReturn(30_000L);
+            when(throughputService.getThroughputForOperation("READ")).thenReturn(30_000L);
 
-            long readTPS = throughputService.getThroughputForOperation("READ [GH-90000]");
+            long readTPS = throughputService.getThroughputForOperation("READ");
 
             assertTrue(readTPS > 20_000L); // GH-90000
         }
 
         @Test
-        @DisplayName("shouldMeasureThroughputForWriteOnlyWorkload_thenTPSWrites [GH-90000]")
+        @DisplayName("shouldMeasureThroughputForWriteOnlyWorkload_thenTPSWrites")
         void shouldMeasureThroughputForWriteOnlyWorkload_thenTPSWrites() { // GH-90000
-            when(throughputService.getThroughputForOperation("WRITE [GH-90000]")).thenReturn(8000L);
+            when(throughputService.getThroughputForOperation("WRITE")).thenReturn(8000L);
 
-            long writeTPS = throughputService.getThroughputForOperation("WRITE [GH-90000]");
+            long writeTPS = throughputService.getThroughputForOperation("WRITE");
 
             assertTrue(writeTPS > 5000L); // GH-90000
         }
 
         @Test
-        @DisplayName("shouldMeasureThroughputForMixedWorkload_thenTPSMixed [GH-90000]")
+        @DisplayName("shouldMeasureThroughputForMixedWorkload_thenTPSMixed")
         void shouldMeasureThroughputForMixedWorkload_thenTPSMixed() { // GH-90000
             when(throughputService.getThroughputForMix(80, 20)).thenReturn(22_000L); // GH-90000
 
@@ -310,7 +310,7 @@ class ThroughputLimitTest {
         }
 
         @Test
-        @DisplayName("shouldMeasureTPSForCacheableOperations_thenHighThroughput [GH-90000]")
+        @DisplayName("shouldMeasureTPSForCacheableOperations_thenHighThroughput")
         void shouldMeasureTPSForCacheableOperations_thenHighThroughput() { // GH-90000
             when(throughputService.getThroughputForCacheable()).thenReturn(35_000L); // GH-90000
 
@@ -320,7 +320,7 @@ class ThroughputLimitTest {
         }
 
         @Test
-        @DisplayName("shouldMeasureTPSForUncacheableOperations_thenLowerThroughput [GH-90000]")
+        @DisplayName("shouldMeasureTPSForUncacheableOperations_thenLowerThroughput")
         void shouldMeasureTPSForUncacheableOperations_thenLowerThroughput() { // GH-90000
             when(throughputService.getThroughputForUncacheable()).thenReturn(5000L); // GH-90000
 
@@ -330,7 +330,7 @@ class ThroughputLimitTest {
         }
 
         @Test
-        @DisplayName("shouldMeasureDataSizeEffectOnThroughput_whenPayloadIncreases_thenTPSDecreases [GH-90000]")
+        @DisplayName("shouldMeasureDataSizeEffectOnThroughput_whenPayloadIncreases_thenTPSDecreases")
         void shouldMeasureDataSizeEffectOnThroughput_whenPayloadIncreases_thenTPSDecreases() { // GH-90000
             long tpsSmall = 20_000L;
             long tpsLarge = 8000L;
@@ -339,7 +339,7 @@ class ThroughputLimitTest {
         }
 
         @Test
-        @DisplayName("shouldValidateOperationFairnessUnderLoad_whenMixedOps_thenEachGetFairShare [GH-90000]")
+        @DisplayName("shouldValidateOperationFairnessUnderLoad_whenMixedOps_thenEachGetFairShare")
         void shouldValidateOperationFairnessUnderLoad_whenMixedOps_thenEachGetFairShare() { // GH-90000
             when(throughputService.validateOperationFairness()).thenReturn(true); // GH-90000
 
@@ -364,7 +364,7 @@ class ThroughputLimitTest {
 
     static class ThroughputMeasurementService {
         long measureMaxThroughput() { return 50_000L; } // GH-90000
-        long getThroughputForOperation(String operation) { return operation.equals("READ [GH-90000]") ? 30_000L : 10_000L; }
+        long getThroughputForOperation(String operation) { return operation.equals("READ") ? 30_000L : 10_000L; }
         long measureTPSAtConcurrency(int concurrency) { return 10_000L; } // GH-90000
         long getTPSAfterSpike() { return 9500L; } // GH-90000
         long getThroughputForMix(int readPercent, int writePercent) { return 22_000L; } // GH-90000

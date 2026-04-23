@@ -30,7 +30,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer test
  * @doc.pattern Unit Test
  */
-@DisplayName("AIAssistServiceImpl Tests [GH-90000]")
+@DisplayName("AIAssistServiceImpl Tests")
 class AIAssistServiceImplTest extends EventloopTestBase {
 
     @Mock
@@ -46,15 +46,15 @@ class AIAssistServiceImplTest extends EventloopTestBase {
         MockitoAnnotations.openMocks(this); // GH-90000
         service = new AIAssistServiceImpl(llmProvider, metrics); // GH-90000
 
-        when(llmProvider.getName()).thenReturn("OpenAI [GH-90000]");
+        when(llmProvider.getName()).thenReturn("OpenAI");
     }
 
     @Nested
-    @DisplayName("Process Query [GH-90000]")
+    @DisplayName("Process Query")
     class ProcessQueryTests {
 
         @Test
-        @DisplayName("[TEST-017]: processQuery_successfully_processes_query [GH-90000]")
+        @DisplayName("[TEST-017]: processQuery_successfully_processes_query")
         void processQuerySuccess() { // GH-90000
             // Given
             String query = "Show me sales data";
@@ -80,11 +80,11 @@ class AIAssistServiceImplTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Generate SQL [GH-90000]")
+    @DisplayName("Generate SQL")
     class GenerateSQLTests {
 
         @Test
-        @DisplayName("[TEST-018]: generateSQL_returns_generated_sql [GH-90000]")
+        @DisplayName("[TEST-018]: generateSQL_returns_generated_sql")
         void generateSQLSuccess() { // GH-90000
             // Given
             String description = "Get all customers from last month";
@@ -101,19 +101,19 @@ class AIAssistServiceImplTest extends EventloopTestBase {
 
             // Then
             assertThat(result).isNotNull(); // GH-90000
-            assertThat(result.sql()).contains("SELECT [GH-90000]");
+            assertThat(result.sql()).contains("SELECT");
             assertThat(result.isReadOnly()).isTrue(); // GH-90000
             assertThat(result.isSafe()).isTrue(); // GH-90000
-            verify(metrics).incrementCounter("ai.sql.generate.success [GH-90000]");
+            verify(metrics).incrementCounter("ai.sql.generate.success");
         }
     }
 
     @Nested
-    @DisplayName("Explain Results [GH-90000]")
+    @DisplayName("Explain Results")
     class ExplainResultsTests {
 
         @Test
-        @DisplayName("[TEST-019]: explainResults_provides_explanation [GH-90000]")
+        @DisplayName("[TEST-019]: explainResults_provides_explanation")
         void explainResults() { // GH-90000
             // Given
             String query = "SELECT * FROM orders";
@@ -130,13 +130,13 @@ class AIAssistServiceImplTest extends EventloopTestBase {
 
             // Then
             assertThat(result).isNotNull(); // GH-90000
-            assertThat(result.keyPoints()).contains("Query returned 2 rows [GH-90000]");
-            assertThat(result.keyPoints()).contains("Query type: SELECT [GH-90000]");
-            verify(metrics).incrementCounter("ai.explain.success [GH-90000]");
+            assertThat(result.keyPoints()).contains("Query returned 2 rows");
+            assertThat(result.keyPoints()).contains("Query type: SELECT");
+            verify(metrics).incrementCounter("ai.explain.success");
         }
 
         @Test
-        @DisplayName("[TEST-019]: explainResults_warns_about_large_result_sets [GH-90000]")
+        @DisplayName("[TEST-019]: explainResults_warns_about_large_result_sets")
         void explainResultsLargeSet() { // GH-90000
             // Given - create large result set
             List<Map<String, Object>> largeResults = new java.util.ArrayList<>(); // GH-90000
@@ -152,16 +152,16 @@ class AIAssistServiceImplTest extends EventloopTestBase {
                 service.explainResults("SELECT *", largeResults, context)); // GH-90000
 
             // Then
-            assertThat(result.recommendations()).anyMatch(r -> r.contains("LIMIT [GH-90000]"));
+            assertThat(result.recommendations()).anyMatch(r -> r.contains("LIMIT"));
         }
     }
 
     @Nested
-    @DisplayName("Query Suggestions [GH-90000]")
+    @DisplayName("Query Suggestions")
     class SuggestQueriesTests {
 
         @Test
-        @DisplayName("[TEST-020]: suggestQueries_returns_relevant_suggestions [GH-90000]")
+        @DisplayName("[TEST-020]: suggestQueries_returns_relevant_suggestions")
         void suggestQueries() { // GH-90000
             // Given
             AIAssistService.QueryContext context = new AIAssistService.QueryContext( // GH-90000
@@ -174,18 +174,18 @@ class AIAssistServiceImplTest extends EventloopTestBase {
 
             // Then
             assertThat(results).hasSize(4); // 2 suggestions per table // GH-90000
-            assertThat(results.get(0).category()).isEqualTo("preview [GH-90000]");
-            assertThat(results.get(1).category()).isEqualTo("aggregation [GH-90000]");
+            assertThat(results.get(0).category()).isEqualTo("preview");
+            assertThat(results.get(1).category()).isEqualTo("aggregation");
             verify(metrics).incrementCounter("ai.suggest.success", "count", "4"); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Conversation Management [GH-90000]")
+    @DisplayName("Conversation Management")
     class ConversationTests {
 
         @Test
-        @DisplayName("[TEST-021]: createConversation_creates_new_conversation [GH-90000]")
+        @DisplayName("[TEST-021]: createConversation_creates_new_conversation")
         void createConversation() { // GH-90000
             // When
             AIAssistService.Conversation result = runPromise(() -> // GH-90000
@@ -194,14 +194,14 @@ class AIAssistServiceImplTest extends EventloopTestBase {
             // Then
             assertThat(result).isNotNull(); // GH-90000
             assertThat(result.id()).isNotNull(); // GH-90000
-            assertThat(result.tenantId()).isEqualTo("tenant-alpha [GH-90000]");
-            assertThat(result.userId()).isEqualTo("user-1 [GH-90000]");
+            assertThat(result.tenantId()).isEqualTo("tenant-alpha");
+            assertThat(result.userId()).isEqualTo("user-1");
             assertThat(result.messageCount()).isEqualTo(0); // GH-90000
             verify(metrics).incrementCounter("ai.conversation.create", "tenant", "tenant-alpha"); // GH-90000
         }
 
         @Test
-        @DisplayName("[TEST-022]: addMessage_adds_message_to_conversation [GH-90000]")
+        @DisplayName("[TEST-022]: addMessage_adds_message_to_conversation")
         void addMessage() { // GH-90000
             // Given
             AIAssistService.Conversation conv = runPromise(() -> // GH-90000
@@ -221,7 +221,7 @@ class AIAssistServiceImplTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[TEST-023]: getConversation_retrieves_conversation [GH-90000]")
+        @DisplayName("[TEST-023]: getConversation_retrieves_conversation")
         void getConversation() { // GH-90000
             // Given
             AIAssistService.Conversation conv = runPromise(() -> // GH-90000
@@ -235,7 +235,7 @@ class AIAssistServiceImplTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[TEST-023]: clearConversation_removes_all_messages [GH-90000]")
+        @DisplayName("[TEST-023]: clearConversation_removes_all_messages")
         void clearConversation() { // GH-90000
             // Given
             AIAssistService.Conversation conv = runPromise(() -> // GH-90000
@@ -257,11 +257,11 @@ class AIAssistServiceImplTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Service Status [GH-90000]")
+    @DisplayName("Service Status")
     class StatusTests {
 
         @Test
-        @DisplayName("[TEST-024]: getStatus_returns_service_status [GH-90000]")
+        @DisplayName("[TEST-024]: getStatus_returns_service_status")
         void getStatus() { // GH-90000
             // Given - process some queries to generate stats
             AIAssistService.QueryContext context = new AIAssistService.QueryContext( // GH-90000
@@ -279,8 +279,8 @@ class AIAssistServiceImplTest extends EventloopTestBase {
 
             // Then
             assertThat(status.available()).isTrue(); // GH-90000
-            assertThat(status.provider()).isEqualTo("OpenAI [GH-90000]");
-            assertThat(status.model()).isEqualTo("unknown [GH-90000]");
+            assertThat(status.provider()).isEqualTo("OpenAI");
+            assertThat(status.model()).isEqualTo("unknown");
             assertThat(status.requestsProcessed()).isEqualTo(2); // GH-90000
             assertThat(status.averageLatencyMs()).isGreaterThanOrEqualTo(0); // GH-90000
             assertThat(status.lastHealthCheck()).isNotNull(); // GH-90000

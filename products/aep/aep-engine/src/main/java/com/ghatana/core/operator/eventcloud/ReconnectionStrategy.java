@@ -11,7 +11,11 @@ import java.util.Objects;
  * </p>
  *
  * @since 2.0
- */
+  * @doc.type class
+ * @doc.purpose Provides reconnection strategy functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 public final class ReconnectionStrategy {
 
     private final Duration initialDelay;

@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * </p>
  */
 @ExtendWith(EventloopExtension.class) // GH-90000
-@DisplayName("StatisticsHandler Tests [GH-90000]")
+@DisplayName("StatisticsHandler Tests")
 class StatisticsHandlerTest {
 
     private MockTraceStorage storage;
@@ -49,7 +49,7 @@ class StatisticsHandlerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces/stats - should return statistics without filters [GH-90000]")
+    @DisplayName("GET /api/v1/traces/stats - should return statistics without filters")
     void shouldReturnStatisticsWithoutFilters(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces/stats") // GH-90000
                 .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
@@ -65,7 +65,7 @@ class StatisticsHandlerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces/stats - should filter by serviceName [GH-90000]")
+    @DisplayName("GET /api/v1/traces/stats - should filter by serviceName")
     void shouldFilterStatisticsByServiceName(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces/stats?serviceName=test-service") // GH-90000
                 .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
@@ -76,11 +76,11 @@ class StatisticsHandlerTest {
 
         assertThat(response.getCode()).isEqualTo(200); // GH-90000
         String body = response.getBody().getString(StandardCharsets.UTF_8); // GH-90000
-        assertThat(body).contains("totalTraces [GH-90000]");
+        assertThat(body).contains("totalTraces");
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces/stats - should filter by status [GH-90000]")
+    @DisplayName("GET /api/v1/traces/stats - should filter by status")
     void shouldFilterStatisticsByStatus(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces/stats?status=OK") // GH-90000
                 .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
@@ -93,7 +93,7 @@ class StatisticsHandlerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces/stats - should include error count [GH-90000]")
+    @DisplayName("GET /api/v1/traces/stats - should include error count")
     void shouldIncludeErrorCount(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces/stats") // GH-90000
                 .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
@@ -108,7 +108,7 @@ class StatisticsHandlerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces/stats - should include duration statistics [GH-90000]")
+    @DisplayName("GET /api/v1/traces/stats - should include duration statistics")
     void shouldIncludeDurationStatistics(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces/stats") // GH-90000
                 .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
@@ -125,7 +125,7 @@ class StatisticsHandlerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces/stats - should include percentile statistics [GH-90000]")
+    @DisplayName("GET /api/v1/traces/stats - should include percentile statistics")
     void shouldIncludePercentileStatistics(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces/stats") // GH-90000
                 .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
@@ -142,7 +142,7 @@ class StatisticsHandlerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces/stats - should accept startTime filter [GH-90000]")
+    @DisplayName("GET /api/v1/traces/stats - should accept startTime filter")
     void shouldAcceptStartTimeFilter(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces/stats?startTime=2024-01-01T00:00:00Z") // GH-90000
                 .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
@@ -155,7 +155,7 @@ class StatisticsHandlerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces/stats - should accept endTime filter [GH-90000]")
+    @DisplayName("GET /api/v1/traces/stats - should accept endTime filter")
     void shouldAcceptEndTimeFilter(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces/stats?endTime=2024-12-31T23:59:59Z") // GH-90000
                 .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
@@ -168,7 +168,7 @@ class StatisticsHandlerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces/stats - should accept combined filters [GH-90000]")
+    @DisplayName("GET /api/v1/traces/stats - should accept combined filters")
     void shouldAcceptCombinedFilters(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, // GH-90000
                 "http://localhost/api/v1/traces/stats?serviceName=service&status=ERROR&startTime=2024-01-01T00:00:00Z")
@@ -182,7 +182,7 @@ class StatisticsHandlerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces/stats - should return zero values for empty storage [GH-90000]")
+    @DisplayName("GET /api/v1/traces/stats - should return zero values for empty storage")
     void shouldReturnZeroValuesForEmptyStorage(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces/stats") // GH-90000
                 .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
@@ -198,7 +198,7 @@ class StatisticsHandlerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces/stats - should include most common service and operation [GH-90000]")
+    @DisplayName("GET /api/v1/traces/stats - should include most common service and operation")
     void shouldIncludeMostCommonServiceAndOperation(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces/stats") // GH-90000
                 .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000

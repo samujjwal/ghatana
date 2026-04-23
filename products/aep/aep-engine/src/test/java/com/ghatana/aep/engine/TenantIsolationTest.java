@@ -18,11 +18,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test tenant isolation, cross-tenant access prevention, and data separation.
  */
-@DisplayName("Tenant Isolation Tests [GH-90000]")
+@DisplayName("Tenant Isolation Tests")
 class TenantIsolationTest {
 
     @Test
-    @DisplayName("Should isolate tenant data [GH-90000]")
+    @DisplayName("Should isolate tenant data")
     void shouldIsolateTenantData() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 
@@ -30,7 +30,7 @@ class TenantIsolationTest {
     }
 
     @Test
-    @DisplayName("Should prevent cross-tenant access [GH-90000]")
+    @DisplayName("Should prevent cross-tenant access")
     void shouldPreventCrossTenantAccess() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 
@@ -38,7 +38,7 @@ class TenantIsolationTest {
     }
 
     @Test
-    @DisplayName("Should handle tenant context propagation [GH-90000]")
+    @DisplayName("Should handle tenant context propagation")
     void shouldHandleTenantContextPropagation() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 
@@ -46,7 +46,7 @@ class TenantIsolationTest {
     }
 
     @Test
-    @DisplayName("Should handle tenant-specific patterns [GH-90000]")
+    @DisplayName("Should handle tenant-specific patterns")
     void shouldHandleTenantSpecificPatterns() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 
@@ -54,7 +54,7 @@ class TenantIsolationTest {
     }
 
     @Test
-    @DisplayName("Should handle tenant deletion [GH-90000]")
+    @DisplayName("Should handle tenant deletion")
     void shouldHandleTenantDeletion() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 
@@ -62,7 +62,7 @@ class TenantIsolationTest {
     }
 
     @Test
-    @DisplayName("Should handle tenant quota enforcement [GH-90000]")
+    @DisplayName("Should handle tenant quota enforcement")
     void shouldHandleTenantQuotaEnforcement() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 

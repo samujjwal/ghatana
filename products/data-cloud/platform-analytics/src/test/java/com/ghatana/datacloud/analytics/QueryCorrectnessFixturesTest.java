@@ -43,7 +43,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("Analytics Query Engine - Correctness Fixtures [GH-90000]")
+@DisplayName("Analytics Query Engine - Correctness Fixtures")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class QueryCorrectnessFixturesTest extends EventloopTestBase {
 
@@ -81,7 +81,7 @@ class QueryCorrectnessFixturesTest extends EventloopTestBase {
     @BeforeEach
     void setUp() { // GH-90000
         engine = new AnalyticsQueryEngine(storageConnector); // GH-90000
-        lenient().when(storageConnector.query(anyString(), eq("sales [GH-90000]"), any(QuerySpec.class)))
+        lenient().when(storageConnector.query(anyString(), eq("sales"), any(QuerySpec.class)))
                 .thenReturn(Promise.of(mkResult(SALES))); // GH-90000
     }
 
@@ -90,39 +90,39 @@ class QueryCorrectnessFixturesTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("COUNT aggregation - no GROUP BY [GH-90000]")
+    @DisplayName("COUNT aggregation - no GROUP BY")
     class CountAllTests {
 
         @Test
-        @DisplayName("COUNT(*) over 5 rows returns single row with count=5 [GH-90000]")
+        @DisplayName("COUNT(*) over 5 rows returns single row with count=5")
         void countAll_returnsSingleRowWithCount() { // GH-90000
-            QueryResult r = runSql("SELECT COUNT(*) FROM sales [GH-90000]");
+            QueryResult r = runSql("SELECT COUNT(*) FROM sales");
             assertThat(r.getRows()).hasSize(1); // GH-90000
-            assertThat(r.getQueryType()).isEqualTo("AGGREGATE [GH-90000]");
-            assertThat(((Number) r.getRows().get(0).get("count [GH-90000]")).longValue()).isEqualTo(5L);
+            assertThat(r.getQueryType()).isEqualTo("AGGREGATE");
+            assertThat(((Number) r.getRows().get(0).get("count")).longValue()).isEqualTo(5L);
         }
 
         @Test
-        @DisplayName("COUNT over empty collection returns count=0 [GH-90000]")
+        @DisplayName("COUNT over empty collection returns count=0")
         void countAll_emptyCollection_returnsZero() { // GH-90000
             stubCollection("empty", List.of()); // GH-90000
-            QueryResult r = runSql("SELECT COUNT(*) FROM empty [GH-90000]");
+            QueryResult r = runSql("SELECT COUNT(*) FROM empty");
             assertThat(r.getRows()).hasSize(1); // GH-90000
-            assertThat(((Number) r.getRows().get(0).get("count [GH-90000]")).longValue()).isEqualTo(0L);
+            assertThat(((Number) r.getRows().get(0).get("count")).longValue()).isEqualTo(0L);
         }
 
         @Test
-        @DisplayName("SUM() in SELECT recognised as AGGREGATE query type [GH-90000]")
+        @DisplayName("SUM() in SELECT recognised as AGGREGATE query type")
         void sumInSelect_recognisedAsAggregate() { // GH-90000
-            assertThat(runSql("SELECT SUM(quantity) FROM sales [GH-90000]").getQueryType())
-                    .isEqualTo("AGGREGATE [GH-90000]");
+            assertThat(runSql("SELECT SUM(quantity) FROM sales").getQueryType())
+                    .isEqualTo("AGGREGATE");
         }
 
         @Test
-        @DisplayName("AVG() in SELECT recognised as AGGREGATE query type [GH-90000]")
+        @DisplayName("AVG() in SELECT recognised as AGGREGATE query type")
         void avgInSelect_recognisedAsAggregate() { // GH-90000
-            assertThat(runSql("SELECT AVG(quantity) FROM sales [GH-90000]").getQueryType())
-                    .isEqualTo("AGGREGATE [GH-90000]");
+            assertThat(runSql("SELECT AVG(quantity) FROM sales").getQueryType())
+                    .isEqualTo("AGGREGATE");
         }
     }
 
@@ -131,23 +131,23 @@ class QueryCorrectnessFixturesTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("COUNT aggregation - with GROUP BY [GH-90000]")
+    @DisplayName("COUNT aggregation - with GROUP BY")
     class GroupByCountTests {
 
         @Test
-        @DisplayName("GROUP BY region: US=2, EU=2, APAC=1 [GH-90000]")
+        @DisplayName("GROUP BY region: US=2, EU=2, APAC=1")
         void groupByRegion_correctCounts() { // GH-90000
-            QueryResult r = runSql("SELECT region, COUNT(*) FROM sales GROUP BY region [GH-90000]");
-            assertThat(r.getQueryType()).isEqualTo("AGGREGATE [GH-90000]");
+            QueryResult r = runSql("SELECT region, COUNT(*) FROM sales GROUP BY region");
+            assertThat(r.getQueryType()).isEqualTo("AGGREGATE");
             assertThat(r.getRows()).hasSize(3); // GH-90000
             Map<String, Long> m = countMap(r, "region"); // GH-90000
             assertThat(m).containsEntry("US", 2L).containsEntry("EU", 2L).containsEntry("APAC", 1L); // GH-90000
         }
 
         @Test
-        @DisplayName("GROUP BY product: Widget A=2, Widget B=2, Widget C=1 [GH-90000]")
+        @DisplayName("GROUP BY product: Widget A=2, Widget B=2, Widget C=1")
         void groupByProduct_correctCounts() { // GH-90000
-            QueryResult r = runSql("SELECT product, COUNT(*) FROM sales GROUP BY product [GH-90000]");
+            QueryResult r = runSql("SELECT product, COUNT(*) FROM sales GROUP BY product");
             assertThat(r.getRows()).hasSize(3); // GH-90000
             Map<String, Long> m = countMap(r, "product"); // GH-90000
             assertThat(m).containsEntry("Widget A", 2L) // GH-90000
@@ -156,18 +156,18 @@ class QueryCorrectnessFixturesTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("GROUP BY on single-entity collection: 1 group, count=1 [GH-90000]")
+        @DisplayName("GROUP BY on single-entity collection: 1 group, count=1")
         void groupBySingleEntity_oneGroup() { // GH-90000
             stubCollection("items", List.of(mkEntity("x", "items", Map.of("cat", "alpha")))); // GH-90000
-            QueryResult r = runSql("SELECT cat, COUNT(*) FROM items GROUP BY cat [GH-90000]");
+            QueryResult r = runSql("SELECT cat, COUNT(*) FROM items GROUP BY cat");
             assertThat(r.getRows()).hasSize(1); // GH-90000
-            assertThat(((Number) r.getRows().get(0).get("count [GH-90000]")).longValue()).isEqualTo(1L);
+            assertThat(((Number) r.getRows().get(0).get("count")).longValue()).isEqualTo(1L);
         }
 
         @Test
-        @DisplayName("GROUP BY field absent from all entities returns 0 groups [GH-90000]")
+        @DisplayName("GROUP BY field absent from all entities returns 0 groups")
         void groupByMissingField_returnsEmpty() { // GH-90000
-            QueryResult r = runSql("SELECT missing, COUNT(*) FROM sales GROUP BY missing [GH-90000]");
+            QueryResult r = runSql("SELECT missing, COUNT(*) FROM sales GROUP BY missing");
             assertThat(r.getRows()).isEmpty(); // GH-90000
         }
     }
@@ -177,14 +177,14 @@ class QueryCorrectnessFixturesTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("SELECT - row projection [GH-90000]")
+    @DisplayName("SELECT - row projection")
     class SelectTests {
 
         @Test
-        @DisplayName("SELECT * returns all 5 rows with expected fields [GH-90000]")
+        @DisplayName("SELECT * returns all 5 rows with expected fields")
         void selectAll_returnsAllRows() { // GH-90000
-            QueryResult r = runSql("SELECT * FROM sales [GH-90000]");
-            assertThat(r.getQueryType()).isEqualTo("SELECT [GH-90000]");
+            QueryResult r = runSql("SELECT * FROM sales");
+            assertThat(r.getQueryType()).isEqualTo("SELECT");
             assertThat(r.getRows()).hasSize(5); // GH-90000
             for (Map<String, Object> row : r.getRows()) { // GH-90000
                 assertThat(row).containsKeys("product", "region", "quantity"); // GH-90000
@@ -192,23 +192,23 @@ class QueryCorrectnessFixturesTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("SELECT row includes 'id' field derived from entity UUID [GH-90000]")
+        @DisplayName("SELECT row includes 'id' field derived from entity UUID")
         void selectAll_includesId() { // GH-90000
-            QueryResult r = runSql("SELECT * FROM sales [GH-90000]");
-            assertThat(r.getRows().get(0)).containsKey("id [GH-90000]");
+            QueryResult r = runSql("SELECT * FROM sales");
+            assertThat(r.getRows().get(0)).containsKey("id");
         }
 
         @Test
-        @DisplayName("SELECT on empty collection returns 0 rows [GH-90000]")
+        @DisplayName("SELECT on empty collection returns 0 rows")
         void selectEmpty_returnsNoRows() { // GH-90000
             stubCollection("noop", List.of()); // GH-90000
-            assertThat(runSql("SELECT * FROM noop [GH-90000]").getRows()).isEmpty();
+            assertThat(runSql("SELECT * FROM noop").getRows()).isEmpty();
         }
 
         @Test
-        @DisplayName("SELECT result has non-blank queryId, isOptimized=true, executionTimeMs>=0 [GH-90000]")
+        @DisplayName("SELECT result has non-blank queryId, isOptimized=true, executionTimeMs>=0")
         void selectResult_hasCorrectMetadata() { // GH-90000
-            QueryResult r = runSql("SELECT * FROM sales [GH-90000]");
+            QueryResult r = runSql("SELECT * FROM sales");
             assertThat(r.getQueryId()).isNotBlank(); // GH-90000
             assertThat(r.isOptimized()).isTrue(); // GH-90000
             assertThat(r.getExecutionTimeMs()).isGreaterThanOrEqualTo(0); // GH-90000
@@ -220,9 +220,9 @@ class QueryCorrectnessFixturesTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("SELECT with LIMIT clause routes as SELECT (not AGGREGATE) [GH-90000]")
+    @DisplayName("SELECT with LIMIT clause routes as SELECT (not AGGREGATE)")
     void limitClause_routesToSelect() { // GH-90000
-        assertThat(runSql("SELECT * FROM sales LIMIT 2 [GH-90000]").getQueryType()).isEqualTo("SELECT [GH-90000]");
+        assertThat(runSql("SELECT * FROM sales LIMIT 2").getQueryType()).isEqualTo("SELECT");
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -230,7 +230,7 @@ class QueryCorrectnessFixturesTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("JOIN - hash join across two collections [GH-90000]")
+    @DisplayName("JOIN - hash join across two collections")
     class JoinTests {
 
         @BeforeEach
@@ -240,31 +240,31 @@ class QueryCorrectnessFixturesTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("JOIN on customerId: C001 appears in 2 orders, C002 in 1 → 3 total rows [GH-90000]")
+        @DisplayName("JOIN on customerId: C001 appears in 2 orders, C002 in 1 → 3 total rows")
         void join_onCustomerId_correctRowCount() { // GH-90000
-            QueryResult r = runSql("SELECT * FROM customers JOIN orders ON customerId [GH-90000]");
-            assertThat(r.getQueryType()).isEqualTo("JOIN [GH-90000]");
+            QueryResult r = runSql("SELECT * FROM customers JOIN orders ON customerId");
+            assertThat(r.getQueryType()).isEqualTo("JOIN");
             assertThat(r.getRows()).hasSize(3); // GH-90000
         }
 
         @Test
-        @DisplayName("JOIN row merges fields from both left and right collections [GH-90000]")
+        @DisplayName("JOIN row merges fields from both left and right collections")
         void join_mergedRow_hasFieldsFromBothSides() { // GH-90000
-            QueryResult r = runSql("SELECT * FROM customers JOIN orders ON customerId [GH-90000]");
+            QueryResult r = runSql("SELECT * FROM customers JOIN orders ON customerId");
             assertThat(r.getRows()).isNotEmpty(); // GH-90000
             Map<String, Object> row = r.getRows().get(0); // GH-90000
-            assertThat(row).containsKey("name [GH-90000]");    // from customers
-            assertThat(row).containsKey("amount [GH-90000]");  // from orders
+            assertThat(row).containsKey("name");    // from customers
+            assertThat(row).containsKey("amount");  // from orders
         }
 
     }
 
     @Test
-    @DisplayName("JOIN where right side has no matching key values returns empty result [GH-90000]")
+    @DisplayName("JOIN where right side has no matching key values returns empty result")
     void joinNoMatchingKeys_returnsEmpty() { // GH-90000
         stubCollection("customers", CUSTOMERS); // GH-90000
         stubCollection("orders", List.of(mkEntity("o9", "orders", Map.of("otherField", "X")))); // GH-90000
-        QueryResult r = runSql("SELECT * FROM customers JOIN orders ON customerId [GH-90000]");
+        QueryResult r = runSql("SELECT * FROM customers JOIN orders ON customerId");
         assertThat(r.getRows()).isEmpty(); // GH-90000
     }
 
@@ -273,14 +273,14 @@ class QueryCorrectnessFixturesTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("DATE_TRUNC in SELECT routes to TIMESERIES query type [GH-90000]")
+    @DisplayName("DATE_TRUNC in SELECT routes to TIMESERIES query type")
     void datetrunc_routesToTimeseries() { // GH-90000
         stubCollection("events", List.of()); // GH-90000
         QueryResult r = runPromise(() -> engine.submitQuery("t1", // GH-90000
                 "SELECT DATE_TRUNC(day, ts) FROM events", // GH-90000
                 Map.of("timeWindowStart", "2026-01-01T00:00:00Z", // GH-90000
                        "timeWindowEnd",   "2026-01-02T00:00:00Z")));
-        assertThat(r.getQueryType()).isEqualTo("TIMESERIES [GH-90000]");
+        assertThat(r.getQueryType()).isEqualTo("TIMESERIES");
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -288,11 +288,11 @@ class QueryCorrectnessFixturesTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Null StorageConnector - safe empty results [GH-90000]")
+    @DisplayName("Null StorageConnector - safe empty results")
     class NullConnectorTests {
 
         @Test
-        @DisplayName("SELECT with no connector returns empty rows without throwing [GH-90000]")
+        @DisplayName("SELECT with no connector returns empty rows without throwing")
         void nullConnector_selectReturnsEmpty() { // GH-90000
             QueryResult r = runPromise(() -> // GH-90000
                     new AnalyticsQueryEngine().submitQuery("t1", "SELECT * FROM sales", Map.of())); // GH-90000
@@ -300,7 +300,7 @@ class QueryCorrectnessFixturesTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("AGGREGATE with no connector returns empty rows without throwing [GH-90000]")
+        @DisplayName("AGGREGATE with no connector returns empty rows without throwing")
         void nullConnector_aggregateReturnsEmpty() { // GH-90000
             QueryResult r = runPromise(() -> // GH-90000
                     new AnalyticsQueryEngine().submitQuery("t1", "SELECT COUNT(*) FROM sales", Map.of())); // GH-90000
@@ -313,25 +313,25 @@ class QueryCorrectnessFixturesTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Input validation - null inputs rejected at engine boundary [GH-90000]")
+    @DisplayName("Input validation - null inputs rejected at engine boundary")
     class ValidationTests {
 
         @Test
-        @DisplayName("null tenantId throws NullPointerException with 'tenantId' in message [GH-90000]")
+        @DisplayName("null tenantId throws NullPointerException with 'tenantId' in message")
         void nullTenantId_throwsNPE() { // GH-90000
             assertThatThrownBy(() -> // GH-90000
                     runPromise(() -> engine.submitQuery(null, "SELECT * FROM sales", Map.of()))) // GH-90000
                     .isInstanceOf(NullPointerException.class) // GH-90000
-                    .hasMessageContaining("tenantId [GH-90000]");
+                    .hasMessageContaining("tenantId");
         }
 
         @Test
-        @DisplayName("null queryText throws NullPointerException with 'queryText' in message [GH-90000]")
+        @DisplayName("null queryText throws NullPointerException with 'queryText' in message")
         void nullQueryText_throwsNPE() { // GH-90000
             assertThatThrownBy(() -> // GH-90000
                     runPromise(() -> engine.submitQuery("t1", null, Map.of()))) // GH-90000
                     .isInstanceOf(NullPointerException.class) // GH-90000
-                    .hasMessageContaining("queryText [GH-90000]");
+                    .hasMessageContaining("queryText");
         }
     }
 
@@ -340,40 +340,40 @@ class QueryCorrectnessFixturesTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Cached result and plan retrieval via getResult / getPlan [GH-90000]")
+    @DisplayName("Cached result and plan retrieval via getResult / getPlan")
     class CachedRetrievalTests {
 
         @Test
-        @DisplayName("getResult for known queryId returns the same cached result [GH-90000]")
+        @DisplayName("getResult for known queryId returns the same cached result")
         void getResult_knownId_returnsCached() { // GH-90000
-            QueryResult submitted = runSql("SELECT * FROM sales [GH-90000]");
+            QueryResult submitted = runSql("SELECT * FROM sales");
             QueryResult fetched   = runPromise(() -> engine.getResult(submitted.getQueryId())); // GH-90000
             assertThat(fetched.getQueryId()).isEqualTo(submitted.getQueryId()); // GH-90000
         }
 
         @Test
-        @DisplayName("getResult for unknown id throws IllegalArgumentException with 'not found' [GH-90000]")
+        @DisplayName("getResult for unknown id throws IllegalArgumentException with 'not found'")
         void getResult_unknownId_throws() { // GH-90000
-            assertThatThrownBy(() -> runPromise(() -> engine.getResult("unknown [GH-90000]")))
+            assertThatThrownBy(() -> runPromise(() -> engine.getResult("unknown")))
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("not found [GH-90000]");
+                    .hasMessageContaining("not found");
         }
 
         @Test
-        @DisplayName("getPlan for known queryId lists collection name as data source [GH-90000]")
+        @DisplayName("getPlan for known queryId lists collection name as data source")
         void getPlan_knownId_returnsCorrectPlan() { // GH-90000
-            QueryResult result = runSql("SELECT * FROM sales [GH-90000]");
+            QueryResult result = runSql("SELECT * FROM sales");
             QueryPlan plan = runPromise(() -> engine.getPlan(result.getQueryId())); // GH-90000
             assertThat(plan).isNotNull(); // GH-90000
-            assertThat(plan.getDataSources()).contains("sales [GH-90000]");
+            assertThat(plan.getDataSources()).contains("sales");
         }
 
         @Test
-        @DisplayName("getPlan for unknown id throws IllegalArgumentException with 'not found' [GH-90000]")
+        @DisplayName("getPlan for unknown id throws IllegalArgumentException with 'not found'")
         void getPlan_unknownId_throws() { // GH-90000
-            assertThatThrownBy(() -> runPromise(() -> engine.getPlan("ghost [GH-90000]")))
+            assertThatThrownBy(() -> runPromise(() -> engine.getPlan("ghost")))
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("not found [GH-90000]");
+                    .hasMessageContaining("not found");
         }
     }
 
@@ -382,7 +382,7 @@ class QueryCorrectnessFixturesTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("close() shuts down the worker executor without throwing [GH-90000]")
+    @DisplayName("close() shuts down the worker executor without throwing")
     void close_doesNotThrow() throws Exception { // GH-90000
         new AnalyticsQueryEngine(storageConnector).close(); // GH-90000
     }
@@ -406,7 +406,7 @@ class QueryCorrectnessFixturesTest extends EventloopTestBase {
     private static Map<String, Long> countMap(QueryResult r, String groupField) { // GH-90000
         Map<String, Long> m = new HashMap<>(); // GH-90000
         for (Map<String, Object> row : r.getRows()) { // GH-90000
-            m.put((String) row.get(groupField), ((Number) row.get("count [GH-90000]")).longValue());
+            m.put((String) row.get(groupField), ((Number) row.get("count")).longValue());
         }
         return m;
     }
@@ -415,7 +415,7 @@ class QueryCorrectnessFixturesTest extends EventloopTestBase {
     private static Entity mkEntity(String idSeed, String collection, Map<String, Object> data) { // GH-90000
         Entity e = Entity.builder() // GH-90000
                 .id(UUID.nameUUIDFromBytes(idSeed.getBytes())) // GH-90000
-                .tenantId("tenant-fixture [GH-90000]")
+                .tenantId("tenant-fixture")
                 .collectionName(collection) // GH-90000
                 .build(); // GH-90000
         e.getData().putAll(data); // GH-90000

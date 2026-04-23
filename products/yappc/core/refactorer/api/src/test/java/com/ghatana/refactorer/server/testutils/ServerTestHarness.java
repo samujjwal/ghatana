@@ -152,7 +152,7 @@ public class ServerTestHarness implements AutoCloseable {
         }
     }
 
-    @SuppressWarnings("resource [GH-90000]")
+    @SuppressWarnings("resource")
     private void handleJobRoutes(HttpExchange exchange) throws IOException { // GH-90000
         String path = exchange.getRequestURI().getPath(); // GH-90000
         // path pattern: /api/v1/jobs/{jobId}[/status|/report|/events]
@@ -265,7 +265,7 @@ public class ServerTestHarness implements AutoCloseable {
          * using the given idempotency key as the job id.
          */
         public JobRecord submit(String jobId, Map<String, ?> attributes) { // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, String> attrs = (Map<String, String>) (Map<?, ?>) attributes; // GH-90000
             JobRecord record = JobRecord.newQueued(jobId, "test-tenant", attrs); // GH-90000
             store.put(jobId, record); // GH-90000
@@ -302,7 +302,7 @@ public class ServerTestHarness implements AutoCloseable {
 
             RunStatus status = RunStatus.newBuilder() // GH-90000
                     .setJobId(jobId) // GH-90000
-                    .setState("QUEUED [GH-90000]")
+                    .setState("QUEUED")
                     .setPass(0) // GH-90000
                     .setStartedAt(String.valueOf(System.currentTimeMillis())) // GH-90000
                     .setUpdatedAt(String.valueOf(System.currentTimeMillis())) // GH-90000
@@ -365,7 +365,7 @@ public class ServerTestHarness implements AutoCloseable {
                 responseObserver.onNext( // GH-90000
                         ProgressEvent.newBuilder() // GH-90000
                                 .setJobId(request.getId()) // GH-90000
-                                .setEventType("progress [GH-90000]")
+                                .setEventType("progress")
                                 .setMessage("Processing pass " + i) // GH-90000
                                 .setCurrentPass(i) // GH-90000
                                 .setTotalPasses(3) // GH-90000
@@ -379,7 +379,7 @@ public class ServerTestHarness implements AutoCloseable {
         public void health(HealthRequest request, StreamObserver<HealthResponse> responseObserver) { // GH-90000
             responseObserver.onNext( // GH-90000
                     HealthResponse.newBuilder() // GH-90000
-                            .setStatus("UP [GH-90000]")
+                            .setStatus("UP")
                             .setTimestamp(System.currentTimeMillis()) // GH-90000
                             .build()); // GH-90000
             responseObserver.onCompleted(); // GH-90000
@@ -394,13 +394,13 @@ public class ServerTestHarness implements AutoCloseable {
                             .setTimestamp(System.currentTimeMillis()) // GH-90000
                             .addDiagnostics( // GH-90000
                                     UnifiedDiagnostic.newBuilder() // GH-90000
-                                            .setTool("fake-tool [GH-90000]")
-                                            .setRule("fake-rule [GH-90000]")
-                                            .setMessage("Fake diagnostic [GH-90000]")
+                                            .setTool("fake-tool")
+                                            .setRule("fake-rule")
+                                            .setMessage("Fake diagnostic")
                                             .setFile(request.getRepoRoot() + "/Test.java") // GH-90000
                                             .setLine(1) // GH-90000
                                             .setColumn(1) // GH-90000
-                                            .setSeverity("WARNING [GH-90000]")
+                                            .setSeverity("WARNING")
                                             .build()) // GH-90000
                             .build()); // GH-90000
             responseObserver.onCompleted(); // GH-90000

@@ -31,7 +31,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Integration Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("LearningPipeline – End-to-End (D011) [GH-90000]")
+@DisplayName("LearningPipeline – End-to-End (D011)")
 class LearningPipelineIntegrationTest extends EventloopTestBase {
 
     @Mock
@@ -45,18 +45,18 @@ class LearningPipelineIntegrationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Training Pipeline [GH-90000]")
+    @DisplayName("Training Pipeline")
     class TrainingPipelineTests {
 
         @Test
-        @DisplayName("[D011]: start_training_creates_job [GH-90000]")
+        @DisplayName("[D011]: start_training_creates_job")
         void startTrainingCreatesJob() { // GH-90000
             String tenantId = "tenant-alpha";
 
             ModelTrainingService.TrainingConfig config = ModelTrainingService.TrainingConfig.builder() // GH-90000
                 .tenantId(tenantId) // GH-90000
-                .modelId("model-001 [GH-90000]")
-                .datasetId("dataset-001 [GH-90000]")
+                .modelId("model-001")
+                .datasetId("dataset-001")
                 .epochs(10) // GH-90000
                 .batchSize(32) // GH-90000
                 .learningRate(0.001) // GH-90000
@@ -75,12 +75,12 @@ class LearningPipelineIntegrationTest extends EventloopTestBase {
                 trainingService.startTraining(config) // GH-90000
             );
 
-            assertThat(result.id()).isEqualTo("job-001 [GH-90000]");
+            assertThat(result.id()).isEqualTo("job-001");
             assertThat(result.status()).isEqualTo(ModelTrainingService.TrainingStatus.Status.PENDING); // GH-90000
         }
 
         @Test
-        @DisplayName("[D011]: training_job_status_transitions_correctly [GH-90000]")
+        @DisplayName("[D011]: training_job_status_transitions_correctly")
         void trainingJobStatusTransitionsCorrectly() { // GH-90000
             String jobId = "job-001";
 
@@ -94,7 +94,7 @@ class LearningPipelineIntegrationTest extends EventloopTestBase {
             ModelTrainingService.TrainingStatus running = new ModelTrainingService.TrainingStatus( // GH-90000
                 jobId, ModelTrainingService.TrainingStatus.Status.RUNNING,
                 5, 10, 50.0, Duration.ofMinutes(15), Duration.ofMinutes(15), // GH-90000
-                "Training epoch 5", List.of("Epoch 4 completed [GH-90000]")
+                "Training epoch 5", List.of("Epoch 4 completed")
             );
 
             when(trainingService.getStatus(jobId)) // GH-90000
@@ -109,7 +109,7 @@ class LearningPipelineIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D011]: completed_training_job_has_metrics [GH-90000]")
+        @DisplayName("[D011]: completed_training_job_has_metrics")
         void completedTrainingJobHasMetrics() { // GH-90000
             String jobId = "job-001";
 
@@ -137,7 +137,7 @@ class LearningPipelineIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D011]: training_metrics_show_improvement [GH-90000]")
+        @DisplayName("[D011]: training_metrics_show_improvement")
         void trainingMetricsShowImprovement() { // GH-90000
             List<ModelTrainingService.EpochMetrics> improving = List.of( // GH-90000
                 new ModelTrainingService.EpochMetrics(1, 0.5, 0.45, 0.8, 0.82, Duration.ofMinutes(1)), // GH-90000
@@ -159,17 +159,17 @@ class LearningPipelineIntegrationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Progress Tracking [GH-90000]")
+    @DisplayName("Progress Tracking")
     class ProgressTrackingTests {
 
         @Test
-        @DisplayName("[D011]: progress_tracker_records_start [GH-90000]")
+        @DisplayName("[D011]: progress_tracker_records_start")
         void progressTrackerRecordsStart() { // GH-90000
             String jobId = "job-001";
             ModelTrainingService.TrainingConfig config = ModelTrainingService.TrainingConfig.builder() // GH-90000
-                .tenantId("tenant-alpha [GH-90000]")
-                .modelId("model-001 [GH-90000]")
-                .datasetId("dataset-001 [GH-90000]")
+                .tenantId("tenant-alpha")
+                .modelId("model-001")
+                .datasetId("dataset-001")
                 .build(); // GH-90000
 
             when(progressTracker.recordStart(jobId, config)) // GH-90000
@@ -181,7 +181,7 @@ class LearningPipelineIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D011]: progress_tracker_records_epoch_completion [GH-90000]")
+        @DisplayName("[D011]: progress_tracker_records_epoch_completion")
         void progressTrackerRecordsEpochCompletion() { // GH-90000
             String jobId = "job-001";
 
@@ -198,7 +198,7 @@ class LearningPipelineIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D011]: progress_summary_includes_completion_percent [GH-90000]")
+        @DisplayName("[D011]: progress_summary_includes_completion_percent")
         void progressSummaryIncludesCompletionPercent() { // GH-90000
             String jobId = "job-001";
 
@@ -224,11 +224,11 @@ class LearningPipelineIntegrationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Control Flow [GH-90000]")
+    @DisplayName("Control Flow")
     class ControlFlowTests {
 
         @Test
-        @DisplayName("[D011]: pause_training_stops_execution [GH-90000]")
+        @DisplayName("[D011]: pause_training_stops_execution")
         void pauseTrainingStopsExecution() { // GH-90000
             String jobId = "job-001";
 
@@ -249,7 +249,7 @@ class LearningPipelineIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D011]: resume_training_continues_execution [GH-90000]")
+        @DisplayName("[D011]: resume_training_continues_execution")
         void resumeTrainingContinuesExecution() { // GH-90000
             String jobId = "job-001";
 
@@ -270,7 +270,7 @@ class LearningPipelineIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D011]: cancel_training_stops_permanently [GH-90000]")
+        @DisplayName("[D011]: cancel_training_stops_permanently")
         void cancelTrainingStopsPermanently() { // GH-90000
             String jobId = "job-001";
 
@@ -297,17 +297,17 @@ class LearningPipelineIntegrationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Configuration [GH-90000]")
+    @DisplayName("Configuration")
     class ConfigurationTests {
 
         @Test
-        @DisplayName("[D011]: training_config_has_hyperparameters [GH-90000]")
+        @DisplayName("[D011]: training_config_has_hyperparameters")
         void trainingConfigHasHyperparameters() { // GH-90000
             ModelTrainingService.TrainingConfig config = ModelTrainingService.TrainingConfig.builder() // GH-90000
                 .epochs(10) // GH-90000
                 .batchSize(32) // GH-90000
                 .learningRate(0.001) // GH-90000
-                .optimizer("adam [GH-90000]")
+                .optimizer("adam")
                 .hyperparameters(java.util.Map.of("dropout", 0.5, "weight_decay", 0.01)) // GH-90000
                 .earlyStoppingPatience(5) // GH-90000
                 .build(); // GH-90000
@@ -315,24 +315,24 @@ class LearningPipelineIntegrationTest extends EventloopTestBase {
             assertThat(config.epochs()).isEqualTo(10); // GH-90000
             assertThat(config.batchSize()).isEqualTo(32); // GH-90000
             assertThat(config.learningRate()).isEqualTo(0.001); // GH-90000
-            assertThat(config.optimizer()).isEqualTo("adam [GH-90000]");
+            assertThat(config.optimizer()).isEqualTo("adam");
             assertThat(config.hyperparameters()).containsKeys("dropout", "weight_decay"); // GH-90000
             assertThat(config.earlyStoppingPatience()).isEqualTo(5); // GH-90000
         }
 
         @Test
-        @DisplayName("[D011]: training_config_validates_required_fields [GH-90000]")
+        @DisplayName("[D011]: training_config_validates_required_fields")
         void trainingConfigValidatesRequiredFields() { // GH-90000
             // Builder ensures required fields are set
             ModelTrainingService.TrainingConfig config = ModelTrainingService.TrainingConfig.builder() // GH-90000
-                .tenantId("tenant-alpha [GH-90000]")
-                .modelId("model-001 [GH-90000]")
-                .datasetId("dataset-001 [GH-90000]")
+                .tenantId("tenant-alpha")
+                .modelId("model-001")
+                .datasetId("dataset-001")
                 .build(); // GH-90000
 
-            assertThat(config.tenantId()).isEqualTo("tenant-alpha [GH-90000]");
-            assertThat(config.modelId()).isEqualTo("model-001 [GH-90000]");
-            assertThat(config.datasetId()).isEqualTo("dataset-001 [GH-90000]");
+            assertThat(config.tenantId()).isEqualTo("tenant-alpha");
+            assertThat(config.modelId()).isEqualTo("model-001");
+            assertThat(config.datasetId()).isEqualTo("dataset-001");
         }
     }
 
@@ -341,11 +341,11 @@ class LearningPipelineIntegrationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Job Listing [GH-90000]")
+    @DisplayName("Job Listing")
     class JobListingTests {
 
         @Test
-        @DisplayName("[D011]: list_jobs_returns_jobs_for_tenant [GH-90000]")
+        @DisplayName("[D011]: list_jobs_returns_jobs_for_tenant")
         void listJobsReturnsJobsForTenant() { // GH-90000
             String tenantId = "tenant-alpha";
 
@@ -368,7 +368,7 @@ class LearningPipelineIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D011]: list_jobs_with_status_filter [GH-90000]")
+        @DisplayName("[D011]: list_jobs_with_status_filter")
         void listJobsWithStatusFilter() { // GH-90000
             String tenantId = "tenant-alpha";
 

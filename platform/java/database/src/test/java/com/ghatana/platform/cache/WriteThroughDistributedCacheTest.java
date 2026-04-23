@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern TestClass
  */
-@DisplayName("WriteThroughDistributedCache Tests [GH-90000]")
+@DisplayName("WriteThroughDistributedCache Tests")
 class WriteThroughDistributedCacheTest extends EventloopTestBase {
 
     private InMemoryCacheAdapter<String, String> l1;
@@ -37,97 +37,97 @@ class WriteThroughDistributedCacheTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("get returns empty when both L1 and L2 miss [GH-90000]")
+    @DisplayName("get returns empty when both L1 and L2 miss")
     void getBothMiss() { // GH-90000
-        assertThat(runPromise(() -> cache.get("key [GH-90000]"))).isEmpty();
+        assertThat(runPromise(() -> cache.get("key"))).isEmpty();
     }
 
     @Test
-    @DisplayName("put writes to both L1 and L2 [GH-90000]")
+    @DisplayName("put writes to both L1 and L2")
     void putWritesToBothLayers() { // GH-90000
         runPromise(() -> cache.put("key", "value")); // GH-90000
-        assertThat(runPromise(() -> l1.get("key [GH-90000]"))).contains("value [GH-90000]");
-        assertThat(runPromise(() -> l2.get("key [GH-90000]"))).contains("value [GH-90000]");
+        assertThat(runPromise(() -> l1.get("key"))).contains("value");
+        assertThat(runPromise(() -> l2.get("key"))).contains("value");
     }
 
     @Test
-    @DisplayName("get hits L1 without touching L2 [GH-90000]")
+    @DisplayName("get hits L1 without touching L2")
     void getHitsL1First() { // GH-90000
         // Populate L1 directly but skip L2
         runPromise(() -> l1.put("key", "l1-value")); // GH-90000
         // L2 has different value to confirm we did NOT hit L2
         runPromise(() -> l2.put("key", "l2-value")); // GH-90000
 
-        assertThat(runPromise(() -> cache.get("key [GH-90000]"))).contains("l1-value [GH-90000]");
+        assertThat(runPromise(() -> cache.get("key"))).contains("l1-value");
     }
 
     @Test
-    @DisplayName("L1 miss populates L1 from L2 [GH-90000]")
+    @DisplayName("L1 miss populates L1 from L2")
     void l1MissPopulatesFromL2() { // GH-90000
         runPromise(() -> l2.put("key", "l2-value")); // GH-90000
         // L1 is empty
-        assertThat(runPromise(() -> cache.get("key [GH-90000]"))).contains("l2-value [GH-90000]");
+        assertThat(runPromise(() -> cache.get("key"))).contains("l2-value");
         // L1 is now populated
-        assertThat(runPromise(() -> l1.get("key [GH-90000]"))).contains("l2-value [GH-90000]");
+        assertThat(runPromise(() -> l1.get("key"))).contains("l2-value");
     }
 
     @Test
-    @DisplayName("invalidate removes from both layers [GH-90000]")
+    @DisplayName("invalidate removes from both layers")
     void invalidateRemovesFromBothLayers() { // GH-90000
         runPromise(() -> cache.put("key", "value")); // GH-90000
-        runPromise(() -> cache.invalidate("key [GH-90000]"));
-        assertThat(runPromise(() -> l1.get("key [GH-90000]"))).isEmpty();
-        assertThat(runPromise(() -> l2.get("key [GH-90000]"))).isEmpty();
+        runPromise(() -> cache.invalidate("key"));
+        assertThat(runPromise(() -> l1.get("key"))).isEmpty();
+        assertThat(runPromise(() -> l2.get("key"))).isEmpty();
     }
 
     @Test
-    @DisplayName("invalidateAll clears both layers [GH-90000]")
+    @DisplayName("invalidateAll clears both layers")
     void invalidateAllClearsBothLayers() { // GH-90000
         runPromise(() -> cache.put("key1", "v1")); // GH-90000
         runPromise(() -> cache.put("key2", "v2")); // GH-90000
         runPromise(() -> cache.invalidateAll()); // GH-90000
-        assertThat(runPromise(() -> cache.get("key1 [GH-90000]"))).isEmpty();
-        assertThat(runPromise(() -> cache.get("key2 [GH-90000]"))).isEmpty();
+        assertThat(runPromise(() -> cache.get("key1"))).isEmpty();
+        assertThat(runPromise(() -> cache.get("key2"))).isEmpty();
     }
 
     @Test
-    @DisplayName("getOrLoad invokes loader on full miss and writes to both layers [GH-90000]")
+    @DisplayName("getOrLoad invokes loader on full miss and writes to both layers")
     void getOrLoadInvokesLoaderOnFullMiss() { // GH-90000
         AtomicInteger loadCount = new AtomicInteger(0); // GH-90000
         String value = runPromise(() -> cache.getOrLoad("key", k -> { // GH-90000
             loadCount.incrementAndGet(); // GH-90000
-            return Promise.of("computed [GH-90000]");
+            return Promise.of("computed");
         }));
-        assertThat(value).isEqualTo("computed [GH-90000]");
+        assertThat(value).isEqualTo("computed");
         assertThat(loadCount.get()).isEqualTo(1); // GH-90000
-        assertThat(runPromise(() -> l1.get("key [GH-90000]"))).contains("computed [GH-90000]");
-        assertThat(runPromise(() -> l2.get("key [GH-90000]"))).contains("computed [GH-90000]");
+        assertThat(runPromise(() -> l1.get("key"))).contains("computed");
+        assertThat(runPromise(() -> l2.get("key"))).contains("computed");
     }
 
     @Test
-    @DisplayName("getOrLoad returns L1 hit without invoking loader [GH-90000]")
+    @DisplayName("getOrLoad returns L1 hit without invoking loader")
     void getOrLoadReturnsL1HitWithoutLoadCall() { // GH-90000
         runPromise(() -> l1.put("key", "cached")); // GH-90000
         AtomicInteger loadCount = new AtomicInteger(0); // GH-90000
         String value = runPromise(() -> cache.getOrLoad("key", k -> { // GH-90000
             loadCount.incrementAndGet(); // GH-90000
-            return Promise.of("computed [GH-90000]");
+            return Promise.of("computed");
         }));
-        assertThat(value).isEqualTo("cached [GH-90000]");
+        assertThat(value).isEqualTo("cached");
         assertThat(loadCount.get()).isEqualTo(0); // GH-90000
     }
 
     @Test
-    @DisplayName("isHealthy delegates to L2 [GH-90000]")
+    @DisplayName("isHealthy delegates to L2")
     void isHealthyDelegatesToL2() { // GH-90000
         assertThat(cache.isHealthy()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("put with explicit TTL stores in both layers [GH-90000]")
+    @DisplayName("put with explicit TTL stores in both layers")
     void putWithTtlStoredInBothLayers() { // GH-90000
         runPromise(() -> cache.put("key", "value", Duration.ofSeconds(30))); // GH-90000
-        assertThat(runPromise(() -> l1.get("key [GH-90000]"))).contains("value [GH-90000]");
-        assertThat(runPromise(() -> l2.get("key [GH-90000]"))).contains("value [GH-90000]");
+        assertThat(runPromise(() -> l1.get("key"))).contains("value");
+        assertThat(runPromise(() -> l2.get("key"))).contains("value");
     }
 }

@@ -8,7 +8,7 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("PatternRecommender [GH-90000]")
+@DisplayName("PatternRecommender")
 class PatternRecommenderTest {
 
     @Test
@@ -23,7 +23,7 @@ class PatternRecommenderTest {
             .join(); // GH-90000
 
         assertThat(recommendations).hasSize(2); // GH-90000
-        assertThat(recommendations.get(0).getPatternId()).isEqualTo("pattern-exact [GH-90000]");
+        assertThat(recommendations.get(0).getPatternId()).isEqualTo("pattern-exact");
         assertThat(recommendations.get(0).getScore()).isGreaterThan(recommendations.get(1).getScore()); // GH-90000
     }
 
@@ -44,7 +44,7 @@ class PatternRecommenderTest {
             .join(); // GH-90000
 
         assertThat(recommendations).hasSize(2); // GH-90000
-        assertThat(recommendations.get(0).getPatternId()).isEqualTo("pattern-b [GH-90000]");
+        assertThat(recommendations.get(0).getPatternId()).isEqualTo("pattern-b");
         assertThat(recommendations.get(0).getScore()).isGreaterThan(recommendations.get(1).getScore()); // GH-90000
     }
 

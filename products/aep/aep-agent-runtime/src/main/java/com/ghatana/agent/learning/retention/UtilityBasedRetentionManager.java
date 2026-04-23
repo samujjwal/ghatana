@@ -27,7 +27,8 @@ import java.util.Objects;
  * @doc.type class
  * @doc.purpose Utility-based memory retention
  * @doc.layer agent-learning
- */
+  * @doc.pattern Manager
+*/
 public class UtilityBasedRetentionManager implements RetentionManager {
 
     private static final Logger log = LoggerFactory.getLogger(UtilityBasedRetentionManager.class);

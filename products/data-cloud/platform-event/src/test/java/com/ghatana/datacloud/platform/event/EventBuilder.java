@@ -18,32 +18,32 @@ final class EventBuilder {
     }
 
     static Builder entityCreated(String collection, String entityId) { // GH-90000
-        return create("entity.created [GH-90000]")
+        return create("entity.created")
             .withCollection(collection) // GH-90000
             .withEntityId(entityId) // GH-90000
             .withPayload("action", "create"); // GH-90000
     }
 
     static Builder entityUpdated(String collection, String entityId) { // GH-90000
-        return create("entity.updated [GH-90000]")
+        return create("entity.updated")
             .withCollection(collection) // GH-90000
             .withEntityId(entityId) // GH-90000
             .withPayload("action", "update"); // GH-90000
     }
 
     static Builder entityDeleted(String collection, String entityId) { // GH-90000
-        return create("entity.deleted [GH-90000]")
+        return create("entity.deleted")
             .withCollection(collection) // GH-90000
             .withEntityId(entityId) // GH-90000
             .withPayload("action", "delete"); // GH-90000
     }
 
     static Builder pipelineCompleted(String entityId) { // GH-90000
-        return create("pipeline.completed [GH-90000]").withEntityId(entityId);
+        return create("pipeline.completed").withEntityId(entityId);
     }
 
     static Builder featureIngested(String entityId) { // GH-90000
-        return create("feature.ingested [GH-90000]").withEntityId(entityId);
+        return create("feature.ingested").withEntityId(entityId);
     }
 
     static final class Builder {

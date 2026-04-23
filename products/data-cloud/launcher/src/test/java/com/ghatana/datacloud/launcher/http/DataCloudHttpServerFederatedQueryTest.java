@@ -40,7 +40,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataCloudHttpServer – Federated Query Endpoint (B13) [GH-90000]")
+@DisplayName("DataCloudHttpServer – Federated Query Endpoint (B13)")
 class DataCloudHttpServerFederatedQueryTest {
 
     private DataCloudClient mockClient;
@@ -113,14 +113,14 @@ class DataCloudHttpServerFederatedQueryTest {
     // ─── tests ───────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Without Trino (local engine fallback) [GH-90000]")
+    @DisplayName("Without Trino (local engine fallback)")
     class WithoutTrinoTests {
 
         @Test
-        @DisplayName("returns 200 with FEDERATED_FALLBACK type and warning when Trino not configured [GH-90000]")
+        @DisplayName("returns 200 with FEDERATED_FALLBACK type and warning when Trino not configured")
         void federatedQuery_localFallback_returns200WithWarning() throws Exception { // GH-90000
             QueryResult fakeResult = QueryResult.builder() // GH-90000
-                    .queryId("q-001 [GH-90000]")
+                    .queryId("q-001")
                     .rows(List.of(Map.of("id", "1"))) // GH-90000
                     .rowCount(1) // GH-90000
                     .columnCount(1) // GH-90000
@@ -137,15 +137,15 @@ class DataCloudHttpServerFederatedQueryTest {
                     "{\"sql\":\"SELECT * FROM events\"}");
 
             assertThat(response.statusCode()).isEqualTo(200); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, Object> body = mapper.readValue(response.body(), Map.class); // GH-90000
-            assertThat(body.get("queryType [GH-90000]")).isEqualTo("FEDERATED_FALLBACK [GH-90000]");
-            assertThat(body).containsKey("warning [GH-90000]");
-            assertThat(body.get("rowCount [GH-90000]")).isEqualTo(1);
+            assertThat(body.get("queryType")).isEqualTo("FEDERATED_FALLBACK");
+            assertThat(body).containsKey("warning");
+            assertThat(body.get("rowCount")).isEqualTo(1);
         }
 
         @Test
-        @DisplayName("returns 400 when sql field is missing [GH-90000]")
+        @DisplayName("returns 400 when sql field is missing")
         void federatedQuery_missingSql_returns400() throws Exception { // GH-90000
             startServerWithEngine(); // GH-90000
 
@@ -154,13 +154,13 @@ class DataCloudHttpServerFederatedQueryTest {
                     "{\"tenantId\":\"t1\"}");
 
             assertThat(response.statusCode()).isEqualTo(400); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, Object> body = mapper.readValue(response.body(), Map.class); // GH-90000
-            assertThat(body).containsKey("message [GH-90000]");
+            assertThat(body).containsKey("message");
         }
 
         @Test
-        @DisplayName("returns 400 when body is invalid JSON [GH-90000]")
+        @DisplayName("returns 400 when body is invalid JSON")
         void federatedQuery_invalidJson_returns400() throws Exception { // GH-90000
             startServerWithEngine(); // GH-90000
 

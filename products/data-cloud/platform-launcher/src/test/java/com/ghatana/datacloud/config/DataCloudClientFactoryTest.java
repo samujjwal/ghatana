@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer product
  * @doc.pattern Unit Test
  */
-@DisplayName("DataCloudClientFactory.fromEnvironment() [GH-90000]")
+@DisplayName("DataCloudClientFactory.fromEnvironment()")
 class DataCloudClientFactoryTest {
 
     private static final String AUTH_TOKEN = "test-bearer-token-abc";
@@ -37,7 +37,7 @@ class DataCloudClientFactoryTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("EMBEDDED mode — startup validation [GH-90000]")
+    @DisplayName("EMBEDDED mode — startup validation")
     class EmbeddedMode {
 
         @Test
@@ -71,7 +71,7 @@ class DataCloudClientFactoryTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("STANDALONE mode [GH-90000]")
+    @DisplayName("STANDALONE mode")
     class StandaloneMode {
 
         @Test
@@ -82,7 +82,7 @@ class DataCloudClientFactoryTest {
             // DC_SERVER_URL not set → validator should fail fast
             assertThatThrownBy(() -> DataCloudClientFactory.fromEnvironment(env)) // GH-90000
                 .isInstanceOf(IllegalStateException.class) // GH-90000
-                .hasMessageContaining("DC_SERVER_URL [GH-90000]");
+                .hasMessageContaining("DC_SERVER_URL");
         }
 
         @Test
@@ -106,7 +106,7 @@ class DataCloudClientFactoryTest {
             // APP_ENV defaults to production; auth token missing
             assertThatThrownBy(() -> DataCloudClientFactory.fromEnvironment(env)) // GH-90000
                 .isInstanceOf(IllegalStateException.class) // GH-90000
-                .hasMessageContaining("DATACLOUD_HTTP_AUTH_TOKEN [GH-90000]");
+                .hasMessageContaining("DATACLOUD_HTTP_AUTH_TOKEN");
         }
 
         @Test
@@ -128,7 +128,7 @@ class DataCloudClientFactoryTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("DISTRIBUTED mode [GH-90000]")
+    @DisplayName("DISTRIBUTED mode")
     class DistributedMode {
 
         @Test
@@ -138,7 +138,7 @@ class DataCloudClientFactoryTest {
             env.put(DataCloudEnvConfig.APP_ENV, "development"); // GH-90000
             assertThatThrownBy(() -> DataCloudClientFactory.fromEnvironment(env)) // GH-90000
                 .isInstanceOf(IllegalStateException.class) // GH-90000
-                .hasMessageContaining("DC_CLUSTER_URLS [GH-90000]");
+                .hasMessageContaining("DC_CLUSTER_URLS");
         }
 
         @Test
@@ -149,7 +149,7 @@ class DataCloudClientFactoryTest {
             env.put(DataCloudEnvConfig.APP_ENV, "development"); // GH-90000
             assertThatThrownBy(() -> DataCloudClientFactory.fromEnvironment(env)) // GH-90000
                 .isInstanceOf(IllegalStateException.class) // GH-90000
-                .hasMessageContaining("at least 2 [GH-90000]");
+                .hasMessageContaining("at least 2");
         }
 
         @Test
@@ -175,7 +175,7 @@ class DataCloudClientFactoryTest {
             // APP_ENV = production (default) → https required // GH-90000
             assertThatThrownBy(() -> DataCloudClientFactory.fromEnvironment(env)) // GH-90000
                 .isInstanceOf(IllegalStateException.class) // GH-90000
-                .hasMessageContaining("https:// [GH-90000]");
+                .hasMessageContaining("https://");
         }
 
         @Test
@@ -198,7 +198,7 @@ class DataCloudClientFactoryTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("invalid mode [GH-90000]")
+    @DisplayName("invalid mode")
     class InvalidMode {
 
         @Test
@@ -207,7 +207,7 @@ class DataCloudClientFactoryTest {
             env.put(DataCloudEnvConfig.DC_DEPLOYMENT_MODE, "CLUSTER"); // GH-90000
             assertThatThrownBy(() -> DataCloudClientFactory.fromEnvironment(env)) // GH-90000
                 .isInstanceOf(IllegalStateException.class) // GH-90000
-                .hasMessageContaining("CLUSTER [GH-90000]");
+                .hasMessageContaining("CLUSTER");
         }
     }
 }

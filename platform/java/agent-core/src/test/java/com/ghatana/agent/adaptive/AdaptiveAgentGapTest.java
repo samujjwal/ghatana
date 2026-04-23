@@ -32,7 +32,7 @@ import static org.mockito.Mockito.mock;
  *   <li>All algorithms with many iterations — verifying statistical properties</li>
  * </ul>
  */
-@DisplayName("Adaptive Agent — Gap Tests [GH-90000]")
+@DisplayName("Adaptive Agent — Gap Tests")
 class AdaptiveAgentGapTest {
 
     private AgentContext ctx;
@@ -40,9 +40,9 @@ class AdaptiveAgentGapTest {
     @BeforeEach
     void setUp() { // GH-90000
         ctx = AgentContext.builder() // GH-90000
-                .turnId("turn-1 [GH-90000]")
-                .agentId("adaptive-gap [GH-90000]")
-                .tenantId("test-tenant [GH-90000]")
+                .turnId("turn-1")
+                .agentId("adaptive-gap")
+                .tenantId("test-tenant")
                 .memoryStore(mock(MemoryStore.class)) // GH-90000
                 .build(); // GH-90000
     }
@@ -66,7 +66,7 @@ class AdaptiveAgentGapTest {
                 .agentId(id) // GH-90000
                 .type(AgentType.ADAPTIVE) // GH-90000
                 .banditAlgorithm(algo) // GH-90000
-                .tunedParameter("threshold [GH-90000]")
+                .tunedParameter("threshold")
                 .parameterMin(min) // GH-90000
                 .parameterMax(max) // GH-90000
                 .armCount(arms) // GH-90000
@@ -85,7 +85,7 @@ class AdaptiveAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Negative Reward [GH-90000]")
+    @DisplayName("Negative Reward")
     class NegativeRewardTests {
 
         @Test
@@ -139,7 +139,7 @@ class AdaptiveAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Invalid Arm Index [GH-90000]")
+    @DisplayName("Invalid Arm Index")
     class InvalidArmTests {
 
         @Test
@@ -166,7 +166,7 @@ class AdaptiveAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Exploitation Ratio [GH-90000]")
+    @DisplayName("Exploitation Ratio")
     class ExploitationRatioTests {
 
         @Test
@@ -206,7 +206,7 @@ class AdaptiveAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Arm Statistics [GH-90000]")
+    @DisplayName("Arm Statistics")
     class ArmStatisticsTests {
 
         @Test
@@ -221,14 +221,14 @@ class AdaptiveAgentGapTest {
 
             Map<String, Object> stats = agent.getArmStatistics(); // GH-90000
 
-            assertThat(stats).containsKey("totalPulls [GH-90000]");
-            assertThat(stats).containsKey("bestArm [GH-90000]");
-            assertThat(stats).containsKey("arm_0 [GH-90000]");
-            assertThat(stats).containsKey("arm_3 [GH-90000]");
+            assertThat(stats).containsKey("totalPulls");
+            assertThat(stats).containsKey("bestArm");
+            assertThat(stats).containsKey("arm_0");
+            assertThat(stats).containsKey("arm_3");
 
-            @SuppressWarnings("unchecked [GH-90000]")
-            Map<String, Object> arm0 = (Map<String, Object>) stats.get("arm_0 [GH-90000]");
-            assertThat(arm0).containsKeys("value", "pulls", "totalReward", "avgReward"); // GH-90000
+            assertThat(stats.get("arm_0")).isInstanceOf(Map.class);
+            Map<?, ?> arm0 = (Map<?, ?>) stats.get("arm_0");
+            assertThat(arm0.keySet().containsAll(List.of("value", "pulls", "totalReward", "avgReward"))).isTrue(); // GH-90000
         }
     }
 
@@ -237,7 +237,7 @@ class AdaptiveAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Custom Parameter Range [GH-90000]")
+    @DisplayName("Custom Parameter Range")
     class CustomRangeTests {
 
         @Test
@@ -247,7 +247,7 @@ class AdaptiveAgentGapTest {
                     5, 100.0, 500.0, 0.1);
 
             var result = runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
-            double param = ((Number) result.getOutput().get("threshold [GH-90000]")).doubleValue();
+            double param = ((Number) result.getOutput().get("threshold")).doubleValue();
 
             assertThat(param).isBetween(100.0, 500.0); // GH-90000
         }
@@ -273,7 +273,7 @@ class AdaptiveAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Single Arm [GH-90000]")
+    @DisplayName("Single Arm")
     class SingleArmTests {
 
         @Test
@@ -283,7 +283,7 @@ class AdaptiveAgentGapTest {
 
             for (int i = 0; i < 10; i++) { // GH-90000
                 var result = runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
-                int arm = ((Number) result.getOutput().get("_adaptive.selectedArm [GH-90000]")).intValue();
+                int arm = ((Number) result.getOutput().get("_adaptive.selectedArm")).intValue();
                 assertThat(arm).isEqualTo(0); // GH-90000
             }
         }
@@ -294,7 +294,7 @@ class AdaptiveAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Output Metadata [GH-90000]")
+    @DisplayName("Output Metadata")
     class OutputMetadataTests {
 
         @Test
@@ -304,8 +304,8 @@ class AdaptiveAgentGapTest {
 
             var result = runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
 
-            assertThat(result.getOutput().get("_adaptive.algorithm [GH-90000]"))
-                    .isEqualTo("THOMPSON_SAMPLING [GH-90000]");
+            assertThat(result.getOutput().get("_adaptive.algorithm"))
+                    .isEqualTo("THOMPSON_SAMPLING");
         }
 
         @Test
@@ -316,7 +316,7 @@ class AdaptiveAgentGapTest {
             runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
             var result = runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
 
-            long totalPulls = ((Number) result.getOutput().get("_adaptive.totalPulls [GH-90000]")).longValue();
+            long totalPulls = ((Number) result.getOutput().get("_adaptive.totalPulls")).longValue();
             assertThat(totalPulls).isEqualTo(2); // GH-90000
         }
     }

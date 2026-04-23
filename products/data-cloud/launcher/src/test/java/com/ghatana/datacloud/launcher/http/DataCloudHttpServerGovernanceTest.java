@@ -53,7 +53,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataCloudHttpServer – Governance & Data Lifecycle Endpoints (DC-E5) [GH-90000]")
+@DisplayName("DataCloudHttpServer – Governance & Data Lifecycle Endpoints (DC-E5)")
 class DataCloudHttpServerGovernanceTest {
 
     private DataCloudClient mockClient;
@@ -152,12 +152,12 @@ class DataCloudHttpServerGovernanceTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("POST /api/v1/governance/retention/classify [GH-90000]")
+    @DisplayName("POST /api/v1/governance/retention/classify")
     class ClassifyRetentionTests {
 
         @Test
-        @DisplayName("returns 200 and classifies a collection with valid tier [GH-90000]")
-        @SuppressWarnings("unchecked [GH-90000]")
+        @DisplayName("returns 200 and classifies a collection with valid tier")
+        @SuppressWarnings("unchecked")
         void validTier_classifiesCollection() throws Exception { // GH-90000
             server = new DataCloudHttpServer(mockClient, port); // GH-90000
             server.start(); // GH-90000
@@ -172,17 +172,17 @@ class DataCloudHttpServerGovernanceTest {
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(respBody).containsKey("data [GH-90000]");
-            Map<String, Object> data = (Map<String, Object>) respBody.get("data [GH-90000]");
-            assertThat(data.get("collection [GH-90000]")).isEqualTo("user_profiles [GH-90000]");
-            assertThat(data.get("tier [GH-90000]")).isEqualTo("compliance [GH-90000]");
-            assertThat(data).containsKey("retentionDays [GH-90000]");
-            assertThat(data).containsKey("classifiedAt [GH-90000]");
+            assertThat(respBody).containsKey("data");
+            Map<String, Object> data = (Map<String, Object>) respBody.get("data");
+            assertThat(data.get("collection")).isEqualTo("user_profiles");
+            assertThat(data.get("tier")).isEqualTo("compliance");
+            assertThat(data).containsKey("retentionDays");
+            assertThat(data).containsKey("classifiedAt");
         }
 
         @Test
-        @DisplayName("returns error for missing collection [GH-90000]")
-        @SuppressWarnings("unchecked [GH-90000]")
+        @DisplayName("returns error for missing collection")
+        @SuppressWarnings("unchecked")
         void missingCollection_returnsErrorBlock() throws Exception { // GH-90000
             server = new DataCloudHttpServer(mockClient, port); // GH-90000
             server.start(); // GH-90000
@@ -193,14 +193,14 @@ class DataCloudHttpServerGovernanceTest {
 
             assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(respBody).containsKey("error [GH-90000]");
-            Map<String, Object> error = (Map<String, Object>) respBody.get("error [GH-90000]");
-            assertThat(error.get("code [GH-90000]")).isEqualTo("MISSING_COLLECTION [GH-90000]");
+            assertThat(respBody).containsKey("error");
+            Map<String, Object> error = (Map<String, Object>) respBody.get("error");
+            assertThat(error.get("code")).isEqualTo("MISSING_COLLECTION");
         }
 
         @Test
-        @DisplayName("returns error for invalid retention tier [GH-90000]")
-        @SuppressWarnings("unchecked [GH-90000]")
+        @DisplayName("returns error for invalid retention tier")
+        @SuppressWarnings("unchecked")
         void invalidTier_returnsErrorBlock() throws Exception { // GH-90000
             server = new DataCloudHttpServer(mockClient, port); // GH-90000
             server.start(); // GH-90000
@@ -214,14 +214,14 @@ class DataCloudHttpServerGovernanceTest {
 
             assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(respBody).containsKey("error [GH-90000]");
-            Map<String, Object> error = (Map<String, Object>) respBody.get("error [GH-90000]");
-            assertThat(error.get("code [GH-90000]")).isEqualTo("INVALID_TIER [GH-90000]");
+            assertThat(respBody).containsKey("error");
+            Map<String, Object> error = (Map<String, Object>) respBody.get("error");
+            assertThat(error.get("code")).isEqualTo("INVALID_TIER");
         }
 
         @Test
-        @DisplayName("permanent tier has null expiresAt in response [GH-90000]")
-        @SuppressWarnings("unchecked [GH-90000]")
+        @DisplayName("permanent tier has null expiresAt in response")
+        @SuppressWarnings("unchecked")
         void permanentTier_hasNullExpiry() throws Exception { // GH-90000
             server = new DataCloudHttpServer(mockClient, port); // GH-90000
             server.start(); // GH-90000
@@ -236,10 +236,10 @@ class DataCloudHttpServerGovernanceTest {
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class); // GH-90000
-            Map<String, Object> data = (Map<String, Object>) respBody.get("data [GH-90000]");
-            assertThat(data.get("tier [GH-90000]")).isEqualTo("permanent [GH-90000]");
+            Map<String, Object> data = (Map<String, Object>) respBody.get("data");
+            assertThat(data.get("tier")).isEqualTo("permanent");
             // expiresAt is null for permanent — Jackson serializes as absent or null
-            assertThat(data.containsKey("expiresAt [GH-90000]") && data.get("expiresAt [GH-90000]") != null).isFalse();
+            assertThat(data.containsKey("expiresAt") && data.get("expiresAt") != null).isFalse();
         }
     }
 
@@ -248,62 +248,62 @@ class DataCloudHttpServerGovernanceTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("GET /api/v1/governance/retention/policy [GH-90000]")
+    @DisplayName("GET /api/v1/governance/retention/policy")
     class GetRetentionPolicyTests {
 
         @Test
-        @DisplayName("returns default policy for a known collection [GH-90000]")
-        @SuppressWarnings("unchecked [GH-90000]")
+        @DisplayName("returns default policy for a known collection")
+        @SuppressWarnings("unchecked")
         void knownCollection_returnsDefaultPolicy() throws Exception { // GH-90000
             server = new DataCloudHttpServer(mockClient, port); // GH-90000
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/governance/retention/policy?collection=user_profiles [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/governance/retention/policy?collection=user_profiles");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(respBody).containsKey("data [GH-90000]");
-            Map<String, Object> data = (Map<String, Object>) respBody.get("data [GH-90000]");
-            assertThat(data.get("collection [GH-90000]")).isEqualTo("user_profiles [GH-90000]");
-            assertThat(data).containsKey("tier [GH-90000]");
-            assertThat(data).containsKey("retentionDays [GH-90000]");
-            assertThat(data).containsKey("legalHolds [GH-90000]");
-            assertThat(data).containsKey("piiFields [GH-90000]");
+            assertThat(respBody).containsKey("data");
+            Map<String, Object> data = (Map<String, Object>) respBody.get("data");
+            assertThat(data.get("collection")).isEqualTo("user_profiles");
+            assertThat(data).containsKey("tier");
+            assertThat(data).containsKey("retentionDays");
+            assertThat(data).containsKey("legalHolds");
+            assertThat(data).containsKey("piiFields");
             // user_profiles collection should have PII fields derived
-            List<?> piiFields = (List<?>) data.get("piiFields [GH-90000]");
+            List<?> piiFields = (List<?>) data.get("piiFields");
             assertThat(piiFields).isNotEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("returns error when collection query param is missing [GH-90000]")
-        @SuppressWarnings("unchecked [GH-90000]")
+        @DisplayName("returns error when collection query param is missing")
+        @SuppressWarnings("unchecked")
         void missingCollection_returnsError() throws Exception { // GH-90000
             server = new DataCloudHttpServer(mockClient, port); // GH-90000
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/governance/retention/policy [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/governance/retention/policy");
 
             assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(respBody).containsKey("error [GH-90000]");
+            assertThat(respBody).containsKey("error");
         }
 
         @Test
-        @DisplayName("non-user collection returns empty piiFields list [GH-90000]")
-        @SuppressWarnings("unchecked [GH-90000]")
+        @DisplayName("non-user collection returns empty piiFields list")
+        @SuppressWarnings("unchecked")
         void nonUserCollection_emptyPiiFields() throws Exception { // GH-90000
             server = new DataCloudHttpServer(mockClient, port); // GH-90000
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/governance/retention/policy?collection=pipeline_runs [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/governance/retention/policy?collection=pipeline_runs");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class); // GH-90000
-            Map<String, Object> data = (Map<String, Object>) respBody.get("data [GH-90000]");
-            List<?> piiFields = (List<?>) data.get("piiFields [GH-90000]");
+            Map<String, Object> data = (Map<String, Object>) respBody.get("data");
+            List<?> piiFields = (List<?>) data.get("piiFields");
             assertThat(piiFields).isEmpty(); // GH-90000
         }
     }
@@ -313,12 +313,12 @@ class DataCloudHttpServerGovernanceTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("POST /api/v1/governance/retention/purge [GH-90000]")
+    @DisplayName("POST /api/v1/governance/retention/purge")
     class PurgeTests {
 
         @Test
-        @DisplayName("dry run returns DRY_RUN_COMPLETE status [GH-90000]")
-        @SuppressWarnings("unchecked [GH-90000]")
+        @DisplayName("dry run returns DRY_RUN_COMPLETE status")
+        @SuppressWarnings("unchecked")
         void dryRun_returnsDryRunComplete() throws Exception { // GH-90000
             storeEntity(entity("exp-1", "expired_sessions", Map.of("expiresAt", Instant.now().minusSeconds(60).toString()))); // GH-90000
             storeEntity(entity("live-1", "expired_sessions", Map.of("expiresAt", Instant.now().plusSeconds(3600).toString()))); // GH-90000
@@ -335,17 +335,17 @@ class DataCloudHttpServerGovernanceTest {
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class); // GH-90000
-            Map<String, Object> data = (Map<String, Object>) respBody.get("data [GH-90000]");
-            assertThat(data.get("dryRun [GH-90000]")).isEqualTo(true);
-            assertThat(data.get("status [GH-90000]")).isEqualTo("DRY_RUN_COMPLETE [GH-90000]");
-            assertThat(data.get("estimatedRows [GH-90000]")).isEqualTo(1);
-            assertThat(data).containsKey("confirmationToken [GH-90000]");
-            assertThat(data).containsKey("tokenExpiresInSec [GH-90000]");
+            Map<String, Object> data = (Map<String, Object>) respBody.get("data");
+            assertThat(data.get("dryRun")).isEqualTo(true);
+            assertThat(data.get("status")).isEqualTo("DRY_RUN_COMPLETE");
+            assertThat(data.get("estimatedRows")).isEqualTo(1);
+            assertThat(data).containsKey("confirmationToken");
+            assertThat(data).containsKey("tokenExpiresInSec");
         }
 
         @Test
-        @DisplayName("real purge deletes expired entities and returns PURGE_COMPLETED status [GH-90000]")
-        @SuppressWarnings("unchecked [GH-90000]")
+        @DisplayName("real purge deletes expired entities and returns PURGE_COMPLETED status")
+        @SuppressWarnings("unchecked")
         void realPurge_returnsPurgeScheduled() throws Exception { // GH-90000
             storeEntity(entity("old-1", "old_events", Map.of("expiresAt", Instant.now().minusSeconds(300).toString()))); // GH-90000
             storeEntity(entity("old-2", "old_events", Map.of("expiresAt", Instant.now().minusSeconds(120).toString()))); // GH-90000
@@ -362,8 +362,8 @@ class DataCloudHttpServerGovernanceTest {
             HttpResponse<String> dryRunResp = post("/api/v1/governance/retention/purge", dryRunBody); // GH-90000
             assertThat(dryRunResp.statusCode()).isEqualTo(200); // GH-90000
             Map<String, Object> dryRunData = (Map<String, Object>) // GH-90000
-                    mapper.readValue(dryRunResp.body(), Map.class).get("data [GH-90000]");
-            String confirmationToken = (String) dryRunData.get("confirmationToken [GH-90000]");
+                    mapper.readValue(dryRunResp.body(), Map.class).get("data");
+            String confirmationToken = (String) dryRunData.get("confirmationToken");
             assertThat(confirmationToken).isNotBlank(); // GH-90000
 
             // Step 2: execute the real purge using the signed token
@@ -375,28 +375,28 @@ class DataCloudHttpServerGovernanceTest {
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class); // GH-90000
-            Map<String, Object> data = (Map<String, Object>) respBody.get("data [GH-90000]");
-            assertThat(data.get("status [GH-90000]")).isEqualTo("PURGE_COMPLETED [GH-90000]");
-            assertThat(data.get("deletedRows [GH-90000]")).isEqualTo(2);
+            Map<String, Object> data = (Map<String, Object>) respBody.get("data");
+            assertThat(data.get("status")).isEqualTo("PURGE_COMPLETED");
+            assertThat(data.get("deletedRows")).isEqualTo(2);
             verify(mockEntityStore).deleteBatch(any(), argThat(ids -> ids.size() == 2)); // GH-90000
             verify(mockAuditService).record(argThat(event -> // GH-90000
                 "RETENTION_PURGE".equals(event.eventType()) // GH-90000
                     && sha256Hex(confirmationToken) // GH-90000
-                        .equals(event.getDetail("confirmationTokenHash [GH-90000]"))
-                    && !confirmationToken.equals(event.getDetail("confirmationTokenHash [GH-90000]"))));
+                        .equals(event.getDetail("confirmationTokenHash"))
+                    && !confirmationToken.equals(event.getDetail("confirmationTokenHash"))));
 
-            HttpResponse<String> deletedEntityResponse = get("/api/v1/entities/old_events/old-1 [GH-90000]");
+            HttpResponse<String> deletedEntityResponse = get("/api/v1/entities/old_events/old-1");
 
             assertThat(deletedEntityResponse.statusCode()).isEqualTo(404); // GH-90000
             assertThat(entityState.getOrDefault("_governance_purge_tombstones", Map.of()).values()) // GH-90000
                 .anySatisfy(tombstone -> { // GH-90000
-                    assertThat(tombstone.data().get("collection [GH-90000]")).isEqualTo("old_events [GH-90000]");
-                    assertThat(tombstone.data().get("deletedCount [GH-90000]")).isEqualTo(2);
+                    assertThat(tombstone.data().get("collection")).isEqualTo("old_events");
+                    assertThat(tombstone.data().get("deletedCount")).isEqualTo(2);
                 });
         }
 
         @Test
-        @DisplayName("real purge submits 1000+ expired entities as a single batch delete [GH-90000]")
+        @DisplayName("real purge submits 1000+ expired entities as a single batch delete")
         void realPurge_largeBatch_usesDeleteBatchOnce() throws Exception { // GH-90000
             for (int index = 0; index < 1_200; index++) { // GH-90000
                 storeEntity(entity( // GH-90000
@@ -415,9 +415,9 @@ class DataCloudHttpServerGovernanceTest {
             ));
             HttpResponse<String> dryRunResp = post("/api/v1/governance/retention/purge", dryRunBody); // GH-90000
             assertThat(dryRunResp.statusCode()).isEqualTo(200); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
-            Map<String, Object> dryRunData = (Map<String, Object>) mapper.readValue(dryRunResp.body(), Map.class).get("data [GH-90000]");
-            String confirmationToken = (String) dryRunData.get("confirmationToken [GH-90000]");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> dryRunData = (Map<String, Object>) mapper.readValue(dryRunResp.body(), Map.class).get("data");
+            String confirmationToken = (String) dryRunData.get("confirmationToken");
 
             String purgeBody = mapper.writeValueAsString(Map.of( // GH-90000
                 "collection", "bulk_expired_events",
@@ -426,17 +426,17 @@ class DataCloudHttpServerGovernanceTest {
             HttpResponse<String> resp = post("/api/v1/governance/retention/purge", purgeBody); // GH-90000
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
-            Map<String, Object> data = (Map<String, Object>) mapper.readValue(resp.body(), Map.class).get("data [GH-90000]");
-            assertThat(data.get("status [GH-90000]")).isEqualTo("PURGE_COMPLETED [GH-90000]");
-            assertThat(data.get("deletedRows [GH-90000]")).isEqualTo(1_200);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> data = (Map<String, Object>) mapper.readValue(resp.body(), Map.class).get("data");
+            assertThat(data.get("status")).isEqualTo("PURGE_COMPLETED");
+            assertThat(data.get("deletedRows")).isEqualTo(1_200);
             verify(mockEntityStore).deleteBatch(any(), argThat(ids -> ids.size() == 1_200)); // GH-90000
             assertThat(entityState.getOrDefault("bulk_expired_events", Map.of())).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("missing confirmationToken returns error [GH-90000]")
-        @SuppressWarnings("unchecked [GH-90000]")
+        @DisplayName("missing confirmationToken returns error")
+        @SuppressWarnings("unchecked")
         void missingToken_returnsError() throws Exception { // GH-90000
             server = new DataCloudHttpServer(mockClient, port); // GH-90000
             server.start(); // GH-90000
@@ -447,14 +447,14 @@ class DataCloudHttpServerGovernanceTest {
 
             assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(respBody).containsKey("error [GH-90000]");
-            Map<String, Object> error = (Map<String, Object>) respBody.get("error [GH-90000]");
-            assertThat(error.get("code [GH-90000]")).isEqualTo("MISSING_CONFIRMATION [GH-90000]");
+            assertThat(respBody).containsKey("error");
+            Map<String, Object> error = (Map<String, Object>) respBody.get("error");
+            assertThat(error.get("code")).isEqualTo("MISSING_CONFIRMATION");
         }
 
         @Test
-        @DisplayName("invalid confirmationToken returns 403 with INVALID_CONFIRMATION_TOKEN [GH-90000]")
-        @SuppressWarnings("unchecked [GH-90000]")
+        @DisplayName("invalid confirmationToken returns 403 with INVALID_CONFIRMATION_TOKEN")
+        @SuppressWarnings("unchecked")
         void invalidToken_returnsForbidden() throws Exception { // GH-90000
             server = new DataCloudHttpServer(mockClient, port); // GH-90000
             server.start(); // GH-90000
@@ -468,20 +468,20 @@ class DataCloudHttpServerGovernanceTest {
 
             assertThat(resp.statusCode()).isEqualTo(403); // GH-90000
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(respBody).containsKey("error [GH-90000]");
-            Map<String, Object> error = (Map<String, Object>) respBody.get("error [GH-90000]");
-            assertThat(error.get("code [GH-90000]")).isEqualTo("INVALID_CONFIRMATION_TOKEN [GH-90000]");
+            assertThat(respBody).containsKey("error");
+            Map<String, Object> error = (Map<String, Object>) respBody.get("error");
+            assertThat(error.get("code")).isEqualTo("INVALID_CONFIRMATION_TOKEN");
         }
 
         @Test
-        @DisplayName("production profile without purge token secret returns 503 [GH-90000]")
-        @SuppressWarnings("unchecked [GH-90000]")
+        @DisplayName("production profile without purge token secret returns 503")
+        @SuppressWarnings("unchecked")
         void missingPurgeSecretInProduction_returnsServiceUnavailable() throws Exception { // GH-90000
-            String previousProfile = System.getProperty("DATACLOUD_PROFILE [GH-90000]");
-            String previousSecret = System.getProperty("DATACLOUD_PURGE_TOKEN_SECRET [GH-90000]");
+            String previousProfile = System.getProperty("DATACLOUD_PROFILE");
+            String previousSecret = System.getProperty("DATACLOUD_PURGE_TOKEN_SECRET");
             try {
                 System.setProperty("DATACLOUD_PROFILE", "production"); // GH-90000
-                System.clearProperty("DATACLOUD_PURGE_TOKEN_SECRET [GH-90000]");
+                System.clearProperty("DATACLOUD_PURGE_TOKEN_SECRET");
 
                 server = new DataCloudHttpServer(mockClient, port); // GH-90000
                 server.start(); // GH-90000
@@ -495,9 +495,9 @@ class DataCloudHttpServerGovernanceTest {
 
                 assertThat(resp.statusCode()).isEqualTo(503); // GH-90000
                 Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class); // GH-90000
-                assertThat(respBody).containsKey("error [GH-90000]");
-                Map<String, Object> error = (Map<String, Object>) respBody.get("error [GH-90000]");
-                assertThat(error.get("code [GH-90000]")).isEqualTo("PURGE_TOKEN_SECRET_REQUIRED [GH-90000]");
+                assertThat(respBody).containsKey("error");
+                Map<String, Object> error = (Map<String, Object>) respBody.get("error");
+                assertThat(error.get("code")).isEqualTo("PURGE_TOKEN_SECRET_REQUIRED");
             } finally {
                 restoreSystemProperty("DATACLOUD_PROFILE", previousProfile); // GH-90000
                 restoreSystemProperty("DATACLOUD_PURGE_TOKEN_SECRET", previousSecret); // GH-90000
@@ -510,12 +510,12 @@ class DataCloudHttpServerGovernanceTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("POST /api/v1/governance/privacy/redact [GH-90000]")
+    @DisplayName("POST /api/v1/governance/privacy/redact")
     class RedactTests {
 
         @Test
-        @DisplayName("redacts specified PII fields and returns REDACTED status [GH-90000]")
-        @SuppressWarnings("unchecked [GH-90000]")
+        @DisplayName("redacts specified PII fields and returns REDACTED status")
+        @SuppressWarnings("unchecked")
         void specififiedFields_redacted() throws Exception { // GH-90000
             EntityStore.Entity existingEntity = entity( // GH-90000
                 "ent-abc123",
@@ -538,45 +538,45 @@ class DataCloudHttpServerGovernanceTest {
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(respBody).containsKey("data [GH-90000]");
-            Map<String, Object> data = (Map<String, Object>) respBody.get("data [GH-90000]");
-            assertThat(data.get("collection [GH-90000]")).isEqualTo("user_profiles [GH-90000]");
-            assertThat(data.get("entityId [GH-90000]")).isEqualTo("ent-abc123 [GH-90000]");
-            assertThat(data.get("status [GH-90000]")).isEqualTo("REDACTED [GH-90000]");
-            assertThat(data).containsKey("redactedFields [GH-90000]");
-            List<String> redactedFields = (List<String>) data.get("redactedFields [GH-90000]");
+            assertThat(respBody).containsKey("data");
+            Map<String, Object> data = (Map<String, Object>) respBody.get("data");
+            assertThat(data.get("collection")).isEqualTo("user_profiles");
+            assertThat(data.get("entityId")).isEqualTo("ent-abc123");
+            assertThat(data.get("status")).isEqualTo("REDACTED");
+            assertThat(data).containsKey("redactedFields");
+            List<String> redactedFields = (List<String>) data.get("redactedFields");
             assertThat(redactedFields).containsExactlyInAnyOrder("email", "phone"); // GH-90000
             verify(mockEntityStore).save(any(), argThat(entity -> // GH-90000
-                "[REDACTED]".equals(entity.data().get("email [GH-90000]"))
-                    && "[REDACTED]".equals(entity.data().get("phone [GH-90000]"))
-                    && "admin".equals(entity.data().get("role [GH-90000]"))));
+                "[REDACTED]".equals(entity.data().get("email"))
+                    && "[REDACTED]".equals(entity.data().get("phone"))
+                    && "admin".equals(entity.data().get("role"))));
             verify(mockAuditService).record(argThat(event -> { // GH-90000
                 if (!"PII_REDACT".equals(event.eventType())) { // GH-90000
                     return false;
                 }
-                Object rawHashes = event.getDetail("previousValueHashes [GH-90000]");
+                Object rawHashes = event.getDetail("previousValueHashes");
                 if (!(rawHashes instanceof Map<?, ?> hashes)) { // GH-90000
                     return false;
                 }
-                return sha256Hex("user@example.com [GH-90000]").equals(hashes.get("email [GH-90000]"))
-                    && sha256Hex("+1-555-0101 [GH-90000]").equals(hashes.get("phone [GH-90000]"))
-                    && !hashes.containsValue("user@example.com [GH-90000]")
-                    && !hashes.containsValue("+1-555-0101 [GH-90000]");
+                return sha256Hex("user@example.com").equals(hashes.get("email"))
+                    && sha256Hex("+1-555-0101").equals(hashes.get("phone"))
+                    && !hashes.containsValue("user@example.com")
+                    && !hashes.containsValue("+1-555-0101");
             }));
 
-                    HttpResponse<String> getResponse = get("/api/v1/entities/user_profiles/ent-abc123 [GH-90000]");
+                    HttpResponse<String> getResponse = get("/api/v1/entities/user_profiles/ent-abc123");
 
                     assertThat(getResponse.statusCode()).isEqualTo(200); // GH-90000
                     Map<String, Object> getBody = mapper.readValue(getResponse.body(), Map.class); // GH-90000
-                    Map<String, Object> entityData = (Map<String, Object>) getBody.get("data [GH-90000]");
-                    assertThat(entityData.get("email [GH-90000]")).isEqualTo("[REDACTED] [GH-90000]");
-                    assertThat(entityData.get("phone [GH-90000]")).isEqualTo("[REDACTED] [GH-90000]");
-                    assertThat(entityData.get("role [GH-90000]")).isEqualTo("admin [GH-90000]");
+                    Map<String, Object> entityData = (Map<String, Object>) getBody.get("data");
+                    assertThat(entityData.get("email")).isEqualTo("[REDACTED]");
+                    assertThat(entityData.get("phone")).isEqualTo("[REDACTED]");
+                    assertThat(entityData.get("role")).isEqualTo("admin");
         }
 
         @Test
-        @DisplayName("omitting fields requests all global PII fields and redacts present values [GH-90000]")
-        @SuppressWarnings("unchecked [GH-90000]")
+        @DisplayName("omitting fields requests all global PII fields and redacts present values")
+        @SuppressWarnings("unchecked")
         void noFields_defaultsToAllPiiFields() throws Exception { // GH-90000
             EntityStore.Entity existingEntity = entity( // GH-90000
                 "ent-xyz789",
@@ -598,16 +598,16 @@ class DataCloudHttpServerGovernanceTest {
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class); // GH-90000
-            Map<String, Object> data = (Map<String, Object>) respBody.get("data [GH-90000]");
-            List<String> redactedFields = (List<String>) data.get("redactedFields [GH-90000]");
-            List<String> requestedFields = (List<String>) data.get("requestedFields [GH-90000]");
+            Map<String, Object> data = (Map<String, Object>) respBody.get("data");
+            List<String> redactedFields = (List<String>) data.get("redactedFields");
+            List<String> requestedFields = (List<String>) data.get("requestedFields");
             assertThat(requestedFields.size()).isGreaterThanOrEqualTo(9); // GH-90000
             assertThat(redactedFields).containsExactlyInAnyOrder("email", "phone", "ssn"); // GH-90000
         }
 
         @Test
-        @DisplayName("missing entityId returns MISSING_REQUIRED error [GH-90000]")
-        @SuppressWarnings("unchecked [GH-90000]")
+        @DisplayName("missing entityId returns MISSING_REQUIRED error")
+        @SuppressWarnings("unchecked")
         void missingEntityId_returnsError() throws Exception { // GH-90000
             server = new DataCloudHttpServer(mockClient, port); // GH-90000
             server.start(); // GH-90000
@@ -618,14 +618,14 @@ class DataCloudHttpServerGovernanceTest {
 
             assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(respBody).containsKey("error [GH-90000]");
-            Map<String, Object> error = (Map<String, Object>) respBody.get("error [GH-90000]");
-            assertThat(error.get("code [GH-90000]")).isEqualTo("MISSING_REQUIRED [GH-90000]");
+            assertThat(respBody).containsKey("error");
+            Map<String, Object> error = (Map<String, Object>) respBody.get("error");
+            assertThat(error.get("code")).isEqualTo("MISSING_REQUIRED");
         }
 
         @Test
-        @DisplayName("unknown entity returns 404 ENTITY_NOT_FOUND [GH-90000]")
-        @SuppressWarnings("unchecked [GH-90000]")
+        @DisplayName("unknown entity returns 404 ENTITY_NOT_FOUND")
+        @SuppressWarnings("unchecked")
         void unknownEntity_returnsNotFound() throws Exception { // GH-90000
             server = new DataCloudHttpServer(mockClient, port); // GH-90000
             server.start(); // GH-90000
@@ -634,21 +634,21 @@ class DataCloudHttpServerGovernanceTest {
             String body = mapper.writeValueAsString(Map.of( // GH-90000
                 "collection", "user_profiles",
                 "entityId", "ent-missing",
-                "fields", List.of("email [GH-90000]")
+                "fields", List.of("email")
             ));
             HttpResponse<String> resp = post("/api/v1/governance/privacy/redact", body); // GH-90000
 
             assertThat(resp.statusCode()).isEqualTo(404); // GH-90000
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(respBody).containsKey("error [GH-90000]");
-            Map<String, Object> error = (Map<String, Object>) respBody.get("error [GH-90000]");
-            assertThat(error.get("code [GH-90000]")).isEqualTo("ENTITY_NOT_FOUND [GH-90000]");
+            assertThat(respBody).containsKey("error");
+            Map<String, Object> error = (Map<String, Object>) respBody.get("error");
+            assertThat(error.get("code")).isEqualTo("ENTITY_NOT_FOUND");
         }
     }
 
     @Test
-    @DisplayName("executes classify, policy, redact, and purge as one governance lifecycle [GH-90000]")
-    @SuppressWarnings("unchecked [GH-90000]")
+    @DisplayName("executes classify, policy, redact, and purge as one governance lifecycle")
+    @SuppressWarnings("unchecked")
     void governanceLifecycleExecutesAcrossRetentionAndPrivacyEndpoints() throws Exception { // GH-90000
         EntityStore.Entity existingEntity = entity( // GH-90000
             "ent-lifecycle",
@@ -671,11 +671,11 @@ class DataCloudHttpServerGovernanceTest {
             )));
         assertThat(classifyResponse.statusCode()).isEqualTo(200); // GH-90000
 
-        HttpResponse<String> policyResponse = get("/api/v1/governance/retention/policy?collection=user_profiles [GH-90000]");
+        HttpResponse<String> policyResponse = get("/api/v1/governance/retention/policy?collection=user_profiles");
         assertThat(policyResponse.statusCode()).isEqualTo(200); // GH-90000
         Map<String, Object> policyBody = mapper.readValue(policyResponse.body(), Map.class); // GH-90000
-        Map<String, Object> policyData = (Map<String, Object>) policyBody.get("data [GH-90000]");
-        assertThat(policyData.get("tier [GH-90000]")).isEqualTo("compliance [GH-90000]");
+        Map<String, Object> policyData = (Map<String, Object>) policyBody.get("data");
+        assertThat(policyData.get("tier")).isEqualTo("compliance");
 
         HttpResponse<String> redactResponse = post( // GH-90000
             "/api/v1/governance/privacy/redact",
@@ -687,8 +687,8 @@ class DataCloudHttpServerGovernanceTest {
             )));
         assertThat(redactResponse.statusCode()).isEqualTo(200); // GH-90000
         Map<String, Object> redactBody = mapper.readValue(redactResponse.body(), Map.class); // GH-90000
-        Map<String, Object> redactData = (Map<String, Object>) redactBody.get("data [GH-90000]");
-        assertThat(redactData.get("status [GH-90000]")).isEqualTo("REDACTED [GH-90000]");
+        Map<String, Object> redactData = (Map<String, Object>) redactBody.get("data");
+        assertThat(redactData.get("status")).isEqualTo("REDACTED");
 
         HttpResponse<String> dryRunResponse = post( // GH-90000
             "/api/v1/governance/retention/purge",
@@ -698,7 +698,7 @@ class DataCloudHttpServerGovernanceTest {
             )));
         assertThat(dryRunResponse.statusCode()).isEqualTo(200); // GH-90000
         Map<String, Object> dryRunBody = mapper.readValue(dryRunResponse.body(), Map.class); // GH-90000
-        String confirmationToken = (String) ((Map<String, Object>) dryRunBody.get("data [GH-90000]")).get("confirmationToken [GH-90000]");
+        String confirmationToken = (String) ((Map<String, Object>) dryRunBody.get("data")).get("confirmationToken");
         assertThat(confirmationToken).isNotBlank(); // GH-90000
 
         HttpResponse<String> purgeResponse = post( // GH-90000
@@ -709,16 +709,16 @@ class DataCloudHttpServerGovernanceTest {
             )));
         assertThat(purgeResponse.statusCode()).isEqualTo(200); // GH-90000
         Map<String, Object> purgeBody = mapper.readValue(purgeResponse.body(), Map.class); // GH-90000
-        Map<String, Object> purgeData = (Map<String, Object>) purgeBody.get("data [GH-90000]");
-        assertThat(purgeData.get("status [GH-90000]")).isEqualTo("PURGE_COMPLETED [GH-90000]");
-        assertThat(purgeData.get("deletedRows [GH-90000]")).isEqualTo(1);
+        Map<String, Object> purgeData = (Map<String, Object>) purgeBody.get("data");
+        assertThat(purgeData.get("status")).isEqualTo("PURGE_COMPLETED");
+        assertThat(purgeData.get("deletedRows")).isEqualTo(1);
 
-        HttpResponse<String> deletedEntityResponse = get("/api/v1/entities/user_profiles/expired-1 [GH-90000]");
+        HttpResponse<String> deletedEntityResponse = get("/api/v1/entities/user_profiles/expired-1");
         assertThat(deletedEntityResponse.statusCode()).isEqualTo(404); // GH-90000
         assertThat(entityState.getOrDefault("_governance_purge_tombstones", Map.of()).values()) // GH-90000
             .anySatisfy(tombstone -> { // GH-90000
-                assertThat(tombstone.data().get("collection [GH-90000]")).isEqualTo("user_profiles [GH-90000]");
-                assertThat(tombstone.data().get("deletedCount [GH-90000]")).isEqualTo(1);
+                assertThat(tombstone.data().get("collection")).isEqualTo("user_profiles");
+                assertThat(tombstone.data().get("deletedCount")).isEqualTo(1);
             });
     }
 
@@ -727,57 +727,57 @@ class DataCloudHttpServerGovernanceTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("GET /api/v1/governance/privacy/pii-fields [GH-90000]")
+    @DisplayName("GET /api/v1/governance/privacy/pii-fields")
     class ListPiiFieldsTests {
 
         @Test
-        @DisplayName("returns global PII field registry [GH-90000]")
-        @SuppressWarnings("unchecked [GH-90000]")
+        @DisplayName("returns global PII field registry")
+        @SuppressWarnings("unchecked")
         void returns200WithGlobalFields() throws Exception { // GH-90000
             server = new DataCloudHttpServer(mockClient, port); // GH-90000
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/governance/privacy/pii-fields [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/governance/privacy/pii-fields");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(respBody).containsKey("data [GH-90000]");
-            Map<String, Object> data = (Map<String, Object>) respBody.get("data [GH-90000]");
-            assertThat(data).containsKey("globalFields [GH-90000]");
-            assertThat(data).containsKey("tenantFields [GH-90000]");
-            assertThat(data).containsKey("effectiveCount [GH-90000]");
-            List<String> globalFields = (List<String>) data.get("globalFields [GH-90000]");
+            assertThat(respBody).containsKey("data");
+            Map<String, Object> data = (Map<String, Object>) respBody.get("data");
+            assertThat(data).containsKey("globalFields");
+            assertThat(data).containsKey("tenantFields");
+            assertThat(data).containsKey("effectiveCount");
+            List<String> globalFields = (List<String>) data.get("globalFields");
             assertThat(globalFields).contains("email", "phone", "ssn"); // GH-90000
-            assertThat(((Number) data.get("effectiveCount [GH-90000]")).intValue()).isGreaterThanOrEqualTo(9);
+            assertThat(((Number) data.get("effectiveCount")).intValue()).isGreaterThanOrEqualTo(9);
         }
 
         @Test
-        @DisplayName("collection query reports auto-detected common PII fields [GH-90000]")
-        @SuppressWarnings("unchecked [GH-90000]")
+        @DisplayName("collection query reports auto-detected common PII fields")
+        @SuppressWarnings("unchecked")
         void collectionQuery_reportsAutoDetectedFields() throws Exception { // GH-90000
             server = new DataCloudHttpServer(mockClient, port); // GH-90000
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/governance/privacy/pii-fields?collection=user_profiles [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/governance/privacy/pii-fields?collection=user_profiles");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class); // GH-90000
-            Map<String, Object> data = (Map<String, Object>) respBody.get("data [GH-90000]");
-            assertThat(data.get("collection [GH-90000]")).isEqualTo("user_profiles [GH-90000]");
-            List<String> autoDetectedFields = (List<String>) data.get("autoDetectedFields [GH-90000]");
+            Map<String, Object> data = (Map<String, Object>) respBody.get("data");
+            assertThat(data.get("collection")).isEqualTo("user_profiles");
+            List<String> autoDetectedFields = (List<String>) data.get("autoDetectedFields");
             assertThat(autoDetectedFields).contains("email", "phone", "ssn"); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("GET /api/v1/governance/privacy/verify [GH-90000]")
+    @DisplayName("GET /api/v1/governance/privacy/verify")
     class VerifyRedactionTests {
 
         @Test
-        @DisplayName("returns VERIFIED when requested PII fields are already redacted [GH-90000]")
-        @SuppressWarnings("unchecked [GH-90000]")
+        @DisplayName("returns VERIFIED when requested PII fields are already redacted")
+        @SuppressWarnings("unchecked")
         void verifyReportsVerified() throws Exception { // GH-90000
             storeEntity(entity( // GH-90000
                 "ent-verified",
@@ -789,19 +789,19 @@ class DataCloudHttpServerGovernanceTest {
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/governance/privacy/verify?collection=user_profiles&entityId=ent-verified&fields=email,phone [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/governance/privacy/verify?collection=user_profiles&entityId=ent-verified&fields=email,phone");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class); // GH-90000
-            Map<String, Object> data = (Map<String, Object>) respBody.get("data [GH-90000]");
-            assertThat(data.get("status [GH-90000]")).isEqualTo("VERIFIED [GH-90000]");
-            assertThat((List<String>) data.get("verifiedFields [GH-90000]")).containsExactly("email", "phone");
-            assertThat((List<String>) data.get("pendingFields [GH-90000]")).isEmpty();
+            Map<String, Object> data = (Map<String, Object>) respBody.get("data");
+            assertThat(data.get("status")).isEqualTo("VERIFIED");
+            assertThat((List<String>) data.get("verifiedFields")).containsExactly("email", "phone");
+            assertThat((List<String>) data.get("pendingFields")).isEmpty();
         }
 
         @Test
-        @DisplayName("returns NOT_REDACTED when sensitive fields are still present [GH-90000]")
-        @SuppressWarnings("unchecked [GH-90000]")
+        @DisplayName("returns NOT_REDACTED when sensitive fields are still present")
+        @SuppressWarnings("unchecked")
         void verifyReportsPendingFields() throws Exception { // GH-90000
             storeEntity(entity( // GH-90000
                 "ent-pending",
@@ -813,31 +813,31 @@ class DataCloudHttpServerGovernanceTest {
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/governance/privacy/verify?collection=user_profiles&entityId=ent-pending&fields=email,phone [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/governance/privacy/verify?collection=user_profiles&entityId=ent-pending&fields=email,phone");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class); // GH-90000
-            Map<String, Object> data = (Map<String, Object>) respBody.get("data [GH-90000]");
-            assertThat(data.get("status [GH-90000]")).isEqualTo("NOT_REDACTED [GH-90000]");
-            assertThat((List<String>) data.get("verifiedFields [GH-90000]")).containsExactly("phone [GH-90000]");
-            assertThat((List<String>) data.get("pendingFields [GH-90000]")).containsExactly("email [GH-90000]");
+            Map<String, Object> data = (Map<String, Object>) respBody.get("data");
+            assertThat(data.get("status")).isEqualTo("NOT_REDACTED");
+            assertThat((List<String>) data.get("verifiedFields")).containsExactly("phone");
+            assertThat((List<String>) data.get("pendingFields")).containsExactly("email");
         }
 
         @Test
-        @DisplayName("returns 404 when entity does not exist [GH-90000]")
-        @SuppressWarnings("unchecked [GH-90000]")
+        @DisplayName("returns 404 when entity does not exist")
+        @SuppressWarnings("unchecked")
         void verifyMissingEntity_returnsNotFound() throws Exception { // GH-90000
             server = new DataCloudHttpServer(mockClient, port); // GH-90000
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/governance/privacy/verify?collection=user_profiles&entityId=ent-missing&fields=email,phone [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/governance/privacy/verify?collection=user_profiles&entityId=ent-missing&fields=email,phone");
 
             assertThat(resp.statusCode()).isEqualTo(404); // GH-90000
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(respBody).containsKey("error [GH-90000]");
-            Map<String, Object> error = (Map<String, Object>) respBody.get("error [GH-90000]");
-            assertThat(error.get("code [GH-90000]")).isEqualTo("ENTITY_NOT_FOUND [GH-90000]");
+            assertThat(respBody).containsKey("error");
+            Map<String, Object> error = (Map<String, Object>) respBody.get("error");
+            assertThat(error.get("code")).isEqualTo("ENTITY_NOT_FOUND");
         }
     }
 
@@ -846,34 +846,34 @@ class DataCloudHttpServerGovernanceTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("GET /api/v1/governance/compliance/summary [GH-90000]")
+    @DisplayName("GET /api/v1/governance/compliance/summary")
     class ComplianceSummaryTests {
 
         @Test
-        @DisplayName("returns tenant compliance summary with all required fields [GH-90000]")
-        @SuppressWarnings("unchecked [GH-90000]")
+        @DisplayName("returns tenant compliance summary with all required fields")
+        @SuppressWarnings("unchecked")
         void returns200WithComplianceSummary() throws Exception { // GH-90000
             server = new DataCloudHttpServer(mockClient, port); // GH-90000
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/governance/compliance/summary [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/governance/compliance/summary");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(respBody).containsKey("data [GH-90000]");
-            Map<String, Object> data = (Map<String, Object>) respBody.get("data [GH-90000]");
-            assertThat(data).containsKey("tenantId [GH-90000]");
-            assertThat(data).containsKey("collectionsTotal [GH-90000]");
-            assertThat(data).containsKey("piiFieldsRegistered [GH-90000]");
-            assertThat(data).containsKey("legalHoldsActive [GH-90000]");
-            assertThat(data).containsKey("complianceStatus [GH-90000]");
-            assertThat(data).containsKey("generatedAt [GH-90000]");
+            assertThat(respBody).containsKey("data");
+            Map<String, Object> data = (Map<String, Object>) respBody.get("data");
+            assertThat(data).containsKey("tenantId");
+            assertThat(data).containsKey("collectionsTotal");
+            assertThat(data).containsKey("piiFieldsRegistered");
+            assertThat(data).containsKey("legalHoldsActive");
+            assertThat(data).containsKey("complianceStatus");
+            assertThat(data).containsKey("generatedAt");
         }
 
         @Test
-        @DisplayName("honours X-Tenant-Id header in compliance summary [GH-90000]")
-        @SuppressWarnings("unchecked [GH-90000]")
+        @DisplayName("honours X-Tenant-Id header in compliance summary")
+        @SuppressWarnings("unchecked")
         void tenantIdHeader_presentInSummary() throws Exception { // GH-90000
             server = new DataCloudHttpServer(mockClient, port); // GH-90000
             server.start(); // GH-90000
@@ -888,9 +888,9 @@ class DataCloudHttpServerGovernanceTest {
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<String, Object> respBody = mapper.readValue(resp.body(), Map.class); // GH-90000
-            Map<String, Object> meta = (Map<String, Object>) respBody.get("meta [GH-90000]");
+            Map<String, Object> meta = (Map<String, Object>) respBody.get("meta");
             if (meta != null) { // GH-90000
-                assertThat(meta.get("tenantId [GH-90000]")).isEqualTo("acme-corp [GH-90000]");
+                assertThat(meta.get("tenantId")).isEqualTo("acme-corp");
             }
         }
     }
@@ -953,7 +953,7 @@ class DataCloudHttpServerGovernanceTest {
 
     private static String sha256Hex(String value) { // GH-90000
         try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256 [GH-90000]");
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
             return HexFormat.of().formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8))); // GH-90000
         } catch (NoSuchAlgorithmException e) { // GH-90000
             throw new IllegalStateException("SHA-256 unavailable", e); // GH-90000

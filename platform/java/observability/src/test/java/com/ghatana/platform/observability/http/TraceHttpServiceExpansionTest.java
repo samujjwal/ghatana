@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("TraceHttpService - Phase 3 Expansion [GH-90000]")
+@DisplayName("TraceHttpService - Phase 3 Expansion")
 class TraceHttpServiceExpansionTest {
 
     private MockTraceStorage storage;
@@ -39,11 +39,11 @@ class TraceHttpServiceExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Large Batch Handling [GH-90000]")
+    @DisplayName("Large Batch Handling")
     class BatchHandlingTests {
 
         @Test
-        @DisplayName("Process large batch of spans (1000+ spans) [GH-90000]")
+        @DisplayName("Process large batch of spans (1000+ spans)")
         void largeBatchProcessing() { // GH-90000
             List<Span> largeSpanBatch = new ArrayList<>(); // GH-90000
             for (int i = 0; i < 1000; i++) { // GH-90000
@@ -57,7 +57,7 @@ class TraceHttpServiceExpansionTest {
         }
 
         @Test
-        @DisplayName("Process batch with varying span durations [GH-90000]")
+        @DisplayName("Process batch with varying span durations")
         void batchWithVariousDurations() { // GH-90000
             List<Span> mixedDurationBatch = new ArrayList<>(); // GH-90000
             for (int i = 0; i < 100; i++) { // GH-90000
@@ -76,11 +76,11 @@ class TraceHttpServiceExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Concurrent Trace Submission [GH-90000]")
+    @DisplayName("Concurrent Trace Submission")
     class ConcurrencyTests {
 
         @Test
-        @DisplayName("Concurrent span submissions don't corrupt data [GH-90000]")
+        @DisplayName("Concurrent span submissions don't corrupt data")
         void concurrentSpanSubmission() throws InterruptedException { // GH-90000
             int threadCount = 5;
             int spansPerThread = 20;
@@ -112,7 +112,7 @@ class TraceHttpServiceExpansionTest {
         }
 
         @Test
-        @DisplayName("Service remains stable under high throughput [GH-90000]")
+        @DisplayName("Service remains stable under high throughput")
         void highThroughputStability() { // GH-90000
             // Create rapid sequence of calls
             for (int i = 0; i < 500; i++) { // GH-90000
@@ -127,11 +127,11 @@ class TraceHttpServiceExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Error Handling and Recovery [GH-90000]")
+    @DisplayName("Error Handling and Recovery")
     class ErrorHandlingTests {
 
         @Test
-        @DisplayName("Service handles malformed span data gracefully [GH-90000]")
+        @DisplayName("Service handles malformed span data gracefully")
         void malformedSpanHandling() { // GH-90000
             // Test with edge case span data
             Span invalidSpan = new Span(null, "trace-999", "invalid-op"); // GH-90000
@@ -149,11 +149,11 @@ class TraceHttpServiceExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Service Lifecycle [GH-90000]")
+    @DisplayName("Service Lifecycle")
     class LifecycleTests {
 
         @Test
-        @DisplayName("Service can be recreated with different storages [GH-90000]")
+        @DisplayName("Service can be recreated with different storages")
         void serviceRecreation() { // GH-90000
             MockTraceStorage storage1 = new MockTraceStorage(); // GH-90000
             MockTraceStorage storage2 = new MockTraceStorage(); // GH-90000

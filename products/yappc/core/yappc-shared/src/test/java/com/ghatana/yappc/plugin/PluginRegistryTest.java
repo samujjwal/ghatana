@@ -27,8 +27,8 @@ class PluginRegistryTest extends EventloopTestBase {
     @BeforeEach
     void setUp() { // GH-90000
         context = DefaultPluginContext.builder() // GH-90000
-            .yappcVersion("1.0.0 [GH-90000]")
-            .pluginDirectory("./test-plugins [GH-90000]")
+            .yappcVersion("1.0.0")
+            .pluginDirectory("./test-plugins")
             .build(); // GH-90000
 
         registry = PluginRegistry.create(context); // GH-90000
@@ -50,7 +50,7 @@ class PluginRegistryTest extends EventloopTestBase {
         TestValidatorPlugin plugin = new TestValidatorPlugin(); // GH-90000
         runPromise(() -> registry.registerPlugin(plugin)); // GH-90000
 
-        assertTrue(registry.isRegistered("test-validator [GH-90000]"));
+        assertTrue(registry.isRegistered("test-validator"));
         assertEquals(1, registry.getPluginCount()); // GH-90000
     }
 
@@ -61,7 +61,7 @@ class PluginRegistryTest extends EventloopTestBase {
         TestValidatorPlugin plugin = new TestValidatorPlugin(); // GH-90000
         runPromise(() -> registry.registerPlugin(plugin)); // GH-90000
 
-        var retrieved = registry.getPlugin("test-validator [GH-90000]");
+        var retrieved = registry.getPlugin("test-validator");
         assertTrue(retrieved.isPresent()); // GH-90000
         assertEquals("test-validator", retrieved.get().getMetadata().getId()); // GH-90000
     }
@@ -90,7 +90,7 @@ class PluginRegistryTest extends EventloopTestBase {
         TestValidatorPlugin plugin = new TestValidatorPlugin(); // GH-90000
         runPromise(() -> registry.registerPlugin(plugin)); // GH-90000
 
-        List<ValidatorPlugin> validators = registry.getValidatorsByCategory("test [GH-90000]");
+        List<ValidatorPlugin> validators = registry.getValidatorsByCategory("test");
         assertEquals(1, validators.size()); // GH-90000
     }
 
@@ -101,7 +101,7 @@ class PluginRegistryTest extends EventloopTestBase {
         TestGeneratorPlugin plugin = new TestGeneratorPlugin(); // GH-90000
         runPromise(() -> registry.registerPlugin(plugin)); // GH-90000
 
-        List<GeneratorPlugin> generators = registry.getGeneratorsByLanguage("java [GH-90000]");
+        List<GeneratorPlugin> generators = registry.getGeneratorsByLanguage("java");
         assertEquals(1, generators.size()); // GH-90000
     }
 
@@ -112,7 +112,7 @@ class PluginRegistryTest extends EventloopTestBase {
         TestAgentPlugin plugin = new TestAgentPlugin(); // GH-90000
         runPromise(() -> registry.registerPlugin(plugin)); // GH-90000
 
-        List<AgentPlugin> agents = registry.getAgentsByPhase("planning [GH-90000]");
+        List<AgentPlugin> agents = registry.getAgentsByPhase("planning");
         assertEquals(1, agents.size()); // GH-90000
     }
 
@@ -137,8 +137,8 @@ class PluginRegistryTest extends EventloopTestBase {
         Map<String, HealthStatus> healthMap = runPromise(() -> registry.checkHealth()); // GH-90000
 
         assertNotNull(healthMap); // GH-90000
-        assertTrue(healthMap.containsKey("test-validator [GH-90000]"));
-        assertTrue(healthMap.get("test-validator [GH-90000]").isHealthy());
+        assertTrue(healthMap.containsKey("test-validator"));
+        assertTrue(healthMap.get("test-validator").isHealthy());
     }
 
     // Test plugin implementations
@@ -168,9 +168,9 @@ class PluginRegistryTest extends EventloopTestBase {
         @Override
         public PluginMetadata getMetadata() { // GH-90000
             return PluginMetadata.builder() // GH-90000
-                .id("test-validator [GH-90000]")
-                .name("Test Validator [GH-90000]")
-                .version("1.0.0 [GH-90000]")
+                .id("test-validator")
+                .name("Test Validator")
+                .version("1.0.0")
                 .build(); // GH-90000
         }
 
@@ -187,7 +187,7 @@ class PluginRegistryTest extends EventloopTestBase {
         @Override
         public Promise<ValidationResult> validate(ValidationContext context) { // GH-90000
             return Promise.of(ValidationResult.builder() // GH-90000
-                .validatorId("test-validator [GH-90000]")
+                .validatorId("test-validator")
                 .valid(true) // GH-90000
                 .build()); // GH-90000
         }
@@ -223,9 +223,9 @@ class PluginRegistryTest extends EventloopTestBase {
         @Override
         public PluginMetadata getMetadata() { // GH-90000
             return PluginMetadata.builder() // GH-90000
-                .id("test-generator [GH-90000]")
-                .name("Test Generator [GH-90000]")
-                .version("1.0.0 [GH-90000]")
+                .id("test-generator")
+                .name("Test Generator")
+                .version("1.0.0")
                 .build(); // GH-90000
         }
 
@@ -242,7 +242,7 @@ class PluginRegistryTest extends EventloopTestBase {
         @Override
         public Promise<GenerationResult> generate(GenerationContext context) { // GH-90000
             return Promise.of(GenerationResult.builder() // GH-90000
-                .generatorId("test-generator [GH-90000]")
+                .generatorId("test-generator")
                 .success(true) // GH-90000
                 .build()); // GH-90000
         }
@@ -278,9 +278,9 @@ class PluginRegistryTest extends EventloopTestBase {
         @Override
         public PluginMetadata getMetadata() { // GH-90000
             return PluginMetadata.builder() // GH-90000
-                .id("test-agent [GH-90000]")
-                .name("Test Agent [GH-90000]")
-                .version("1.0.0 [GH-90000]")
+                .id("test-agent")
+                .name("Test Agent")
+                .version("1.0.0")
                 .build(); // GH-90000
         }
 
@@ -297,7 +297,7 @@ class PluginRegistryTest extends EventloopTestBase {
         @Override
         public <I, O> Promise<StepResult<O>> execute(I input, StepContext context) { // GH-90000
             return Promise.of(StepResult.<O>builder() // GH-90000
-                .stepName("create-architecture [GH-90000]")
+                .stepName("create-architecture")
                 .success(true) // GH-90000
                 .build()); // GH-90000
         }

@@ -42,7 +42,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test, Contract
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("Data Cloud Collection API Contract Tests [GH-90000]")
+@DisplayName("Data Cloud Collection API Contract Tests")
 class DataCloudCollectionApiContractTest extends EventloopTestBase {
 
     @Mock
@@ -84,25 +84,25 @@ class DataCloudCollectionApiContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Collection Creation Contracts [GH-90000]")
+    @DisplayName("Collection Creation Contracts")
     class CollectionCreationContract {
 
         @Test
-        @DisplayName("POST /api/v1/collections creates collection with generated ID [GH-90000]")
+        @DisplayName("POST /api/v1/collections creates collection with generated ID")
         void createMustGenerateId() { // GH-90000
             Collection newCollection = new Collection("", "tenant-1", "users"); // GH-90000
-            lenient().when(collectionService.create(eq("tenant-1 [GH-90000]"), any()))
+            lenient().when(collectionService.create(eq("tenant-1"), any()))
                     .thenReturn(Promise.of(new Collection("coll-abc-123", "tenant-1", "users"))); // GH-90000
 
             Collection created = runPromise(() -> collectionService.create("tenant-1", newCollection)); // GH-90000
 
             assertThat(created).isNotNull(); // GH-90000
-            assertThat(created.id).isNotBlank().isNotEqualTo(" [GH-90000]");
-            verify(collectionService, times(1)).create(eq("tenant-1 [GH-90000]"), any());
+            assertThat(created.id).isNotBlank().isNotEqualTo("");
+            verify(collectionService, times(1)).create(eq("tenant-1"), any());
         }
 
         @Test
-        @DisplayName("created collection must belong to requesting tenant [GH-90000]")
+        @DisplayName("created collection must belong to requesting tenant")
         void createdCollectionMustBelongToTenant() { // GH-90000
             String tenantId = "tenant-audit";
             Collection newCollection = new Collection("", tenantId, "audit-logs"); // GH-90000
@@ -116,11 +116,11 @@ class DataCloudCollectionApiContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("created collection must have timestamps [GH-90000]")
+        @DisplayName("created collection must have timestamps")
         void createdCollectionMustHaveTimestamps() { // GH-90000
             Collection newCollection = new Collection("", "tenant-1", "orders"); // GH-90000
             Collection expectedCreated = new Collection("coll-orders-1", "tenant-1", "orders"); // GH-90000
-            lenient().when(collectionService.create(eq("tenant-1 [GH-90000]"), any()))
+            lenient().when(collectionService.create(eq("tenant-1"), any()))
                     .thenReturn(Promise.of(expectedCreated)); // GH-90000
 
             Collection created = runPromise(() -> collectionService.create("tenant-1", newCollection)); // GH-90000
@@ -130,11 +130,11 @@ class DataCloudCollectionApiContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("cannot create collection without name [GH-90000]")
+        @DisplayName("cannot create collection without name")
         void createMustRejectEmptyName() { // GH-90000
             Collection invalidCollection = new Collection("", "tenant-1", ""); // GH-90000
-            lenient().when(collectionService.create(eq("tenant-1 [GH-90000]"), any()))
-                    .thenReturn(Promise.ofException(new IllegalArgumentException("Name required [GH-90000]")));
+            lenient().when(collectionService.create(eq("tenant-1"), any()))
+                    .thenReturn(Promise.ofException(new IllegalArgumentException("Name required")));
 
             Throwable thrown = catchThrowable( // GH-90000
                     () -> runPromise(() -> collectionService.create("tenant-1", invalidCollection))); // GH-90000
@@ -148,11 +148,11 @@ class DataCloudCollectionApiContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Collection Read Contracts [GH-90000]")
+    @DisplayName("Collection Read Contracts")
     class CollectionReadContract {
 
         @Test
-        @DisplayName("GET /api/v1/collections/:id returns collection if accessible by tenant [GH-90000]")
+        @DisplayName("GET /api/v1/collections/:id returns collection if accessible by tenant")
         void getByIdMustReturnCollectionForOwnTenant() { // GH-90000
             String tenantId = "tenant-1";
             String collectionId = "coll-123";
@@ -167,7 +167,7 @@ class DataCloudCollectionApiContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("GET /api/v1/collections/:id returns empty for other tenant's collection [GH-90000]")
+        @DisplayName("GET /api/v1/collections/:id returns empty for other tenant's collection")
         void getByIdMustRejectCrossTenantAccess() { // GH-90000
             String requestingTenant = "tenant-1";
             String owningTenant = "tenant-2";
@@ -183,7 +183,7 @@ class DataCloudCollectionApiContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("GET /api/v1/collections returns only collections for requesting tenant [GH-90000]")
+        @DisplayName("GET /api/v1/collections returns only collections for requesting tenant")
         void listMustOnlyReturnOwnCollections() { // GH-90000
             String tenantId = "tenant-1";
             Collection col1 = new Collection("coll-1", tenantId, "users"); // GH-90000
@@ -204,23 +204,23 @@ class DataCloudCollectionApiContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Collection Update Contracts [GH-90000]")
+    @DisplayName("Collection Update Contracts")
     class CollectionUpdateContract {
 
         @Test
-        @DisplayName("PATCH /api/v1/collections/:id updates collection metadata [GH-90000]")
+        @DisplayName("PATCH /api/v1/collections/:id updates collection metadata")
         void updateMustModifyCollection() { // GH-90000
             String tenantId = "tenant-1";
             String collectionId = "coll-users";
             Collection updated = new Collection(collectionId, tenantId, "users-updated"); // GH-90000
             updated.updatedAt = System.currentTimeMillis(); // GH-90000
 
-            assertThat(updated.name).isEqualTo("users-updated [GH-90000]");
+            assertThat(updated.name).isEqualTo("users-updated");
             assertThat(updated.tenantId).isEqualTo(tenantId); // GH-90000
         }
 
         @Test
-        @DisplayName("cannot modify collection belonging to other tenant [GH-90000]")
+        @DisplayName("cannot modify collection belonging to other tenant")
         void updateMustPreventCrossTenantMod() { // GH-90000
             String requestingTenant = "tenant-1";
             String owningTenant = "tenant-2";
@@ -231,7 +231,7 @@ class DataCloudCollectionApiContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("update must not change collection ID or creation timestamp [GH-90000]")
+        @DisplayName("update must not change collection ID or creation timestamp")
         void updateMustNotChangeImmutableFields() { // GH-90000
             String collectionId = "coll-immutable";
             long originalCreatedAt = System.currentTimeMillis(); // GH-90000
@@ -253,11 +253,11 @@ class DataCloudCollectionApiContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Collection Deletion Contracts [GH-90000]")
+    @DisplayName("Collection Deletion Contracts")
     class CollectionDeletionContract {
 
         @Test
-        @DisplayName("DELETE /api/v1/collections/:id deletes collection for authorized tenant [GH-90000]")
+        @DisplayName("DELETE /api/v1/collections/:id deletes collection for authorized tenant")
         void deleteMustRemoveCollection() { // GH-90000
             String tenantId = "tenant-1";
             String collectionId = "coll-temp";
@@ -270,14 +270,14 @@ class DataCloudCollectionApiContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("cannot delete collection belonging to other tenant [GH-90000]")
+        @DisplayName("cannot delete collection belonging to other tenant")
         void deleteMustPreventCrossTenantDelete() { // GH-90000
             String requestingTenant = "tenant-1";
             String owningTenant = "tenant-2";
             String collectionId = "coll-secret";
             lenient().when(collectionService.delete(requestingTenant, collectionId)) // GH-90000
                     .thenReturn(Promise.ofException( // GH-90000
-                            new SecurityException("Not authorized [GH-90000]")));
+                            new SecurityException("Not authorized")));
 
             Throwable thrown = catchThrowable(() -> // GH-90000
                     runPromise(() -> collectionService.delete(requestingTenant, collectionId))); // GH-90000
@@ -287,7 +287,7 @@ class DataCloudCollectionApiContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("delete of non-existent collection must return success (idempotent) [GH-90000]")
+        @DisplayName("delete of non-existent collection must return success (idempotent)")
         void deleteNonExistentMustBeIdempotent() { // GH-90000
             String tenantId = "tenant-1";
             String nonExistentId = "coll-does-not-exist";
@@ -305,11 +305,11 @@ class DataCloudCollectionApiContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Entity Search Contracts [GH-90000]")
+    @DisplayName("Entity Search Contracts")
     class EntitySearchContract {
 
         @Test
-        @DisplayName("search must be limited to collection's tenant [GH-90000]")
+        @DisplayName("search must be limited to collection's tenant")
         void searchMustIsolateTenant() { // GH-90000
             String tenantId = "tenant-1";
             String collectionId = "coll-1";
@@ -322,7 +322,7 @@ class DataCloudCollectionApiContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("search must support pagination [GH-90000]")
+        @DisplayName("search must support pagination")
         void searchMustSupportPagination() { // GH-90000
             // Request: /api/v1/collections/coll-1/search?q=test&limit=10&offset=0
             // Response: {results: [...], total: 1234, hasMore: true}
@@ -334,7 +334,7 @@ class DataCloudCollectionApiContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("search results must respect field-level access controls [GH-90000]")
+        @DisplayName("search results must respect field-level access controls")
         void searchMustRespectFieldAccess() { // GH-90000
             // If user cannot access SSN field, search results must not expose it
 
@@ -350,11 +350,11 @@ class DataCloudCollectionApiContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("API Backwards Compatibility [GH-90000]")
+    @DisplayName("API Backwards Compatibility")
     class BackwardsCompatibilityContract {
 
         @Test
-        @DisplayName("v1 APIs must continue to work with new schema [GH-90000]")
+        @DisplayName("v1 APIs must continue to work with new schema")
         void v1ApisMustRemainFunctional() { // GH-90000
             // Old API: POST /api/v1/collections
             // New API supports: POST /api/v2/collections (with enhancements) // GH-90000
@@ -367,7 +367,7 @@ class DataCloudCollectionApiContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("collection response may include new optional fields [GH-90000]")
+        @DisplayName("collection response may include new optional fields")
         void newFieldsMustBeOptional() { // GH-90000
             Collection collection = new Collection("coll-1", "tenant-1", "users"); // GH-90000
 
@@ -381,7 +381,7 @@ class DataCloudCollectionApiContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("required fields must not be removed or renamed [GH-90000]")
+        @DisplayName("required fields must not be removed or renamed")
         void requiredFieldsMustBeStable() { // GH-90000
             String collectionJson = "{\"id\": \"coll-1\", \"tenantId\": \"tenant-1\", \"name\": \"users\"}";
 
@@ -397,11 +397,11 @@ class DataCloudCollectionApiContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Concurrency Contracts [GH-90000]")
+    @DisplayName("Concurrency Contracts")
     class ConcurrencyContract {
 
         @Test
-        @DisplayName("concurrent updates must detect conflicts [GH-90000]")
+        @DisplayName("concurrent updates must detect conflicts")
         void concurrentUpdatesMustDetectConflicts() { // GH-90000
             // Agent A: GET /api/v1/collections/coll-1 (version=5) // GH-90000
             // Agent B: GET /api/v1/collections/coll-1 (version=5) // GH-90000

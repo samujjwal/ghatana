@@ -21,11 +21,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.purpose Unit tests for automated policy synthesis
  * @doc.layer test
  */
-@DisplayName("Policy Synthesis Service Tests [GH-90000]")
+@DisplayName("Policy Synthesis Service Tests")
 class PolicySynthesisServiceTest {
 
     @Test
-    @DisplayName("synthesizes policies from episode clusters [GH-90000]")
+    @DisplayName("synthesizes policies from episode clusters")
     void synthesizesPoliciesFromClusters() { // GH-90000
         EpisodeClusteringService clusteringService = new EpisodeClusteringService(); // GH-90000
         PolicySynthesisService synthesisService = new PolicySynthesisService(clusteringService); // GH-90000
@@ -45,7 +45,7 @@ class PolicySynthesisServiceTest {
     }
 
     @Test
-    @DisplayName("generates policies with rules [GH-90000]")
+    @DisplayName("generates policies with rules")
     void generatesPoliciesWithRules() { // GH-90000
         EpisodeClusteringService clusteringService = new EpisodeClusteringService(); // GH-90000
         PolicySynthesisService synthesisService = new PolicySynthesisService(clusteringService); // GH-90000
@@ -63,7 +63,7 @@ class PolicySynthesisServiceTest {
     }
 
     @Test
-    @DisplayName("calculates confidence based on cluster consistency [GH-90000]")
+    @DisplayName("calculates confidence based on cluster consistency")
     void calculatesConfidenceBasedOnConsistency() { // GH-90000
         EpisodeClusteringService clusteringService = new EpisodeClusteringService(); // GH-90000
         PolicySynthesisService synthesisService = new PolicySynthesisService(clusteringService, 0.5, 3); // GH-90000
@@ -82,7 +82,7 @@ class PolicySynthesisServiceTest {
     }
 
     @Test
-    @DisplayName("skips small clusters below minimum size [GH-90000]")
+    @DisplayName("skips small clusters below minimum size")
     void skipsSmallClusters() { // GH-90000
         EpisodeClusteringService clusteringService = new EpisodeClusteringService(); // GH-90000
         PolicySynthesisService synthesisService = new PolicySynthesisService(clusteringService, 0.5, 10); // GH-90000
@@ -99,7 +99,7 @@ class PolicySynthesisServiceTest {
     }
 
     @Test
-    @DisplayName("retrieves policies by ID [GH-90000]")
+    @DisplayName("retrieves policies by ID")
     void retrievesPoliciesById() { // GH-90000
         EpisodeClusteringService clusteringService = new EpisodeClusteringService(); // GH-90000
         PolicySynthesisService synthesisService = new PolicySynthesisService(clusteringService); // GH-90000
@@ -120,7 +120,7 @@ class PolicySynthesisServiceTest {
     }
 
     @Test
-    @DisplayName("clears synthesized policies [GH-90000]")
+    @DisplayName("clears synthesized policies")
     void clearsPolicies() { // GH-90000
         EpisodeClusteringService clusteringService = new EpisodeClusteringService(); // GH-90000
         PolicySynthesisService synthesisService = new PolicySynthesisService(clusteringService); // GH-90000
@@ -139,7 +139,7 @@ class PolicySynthesisServiceTest {
     }
 
     @Test
-    @DisplayName("generates policy rules with correct structure [GH-90000]")
+    @DisplayName("generates policy rules with correct structure")
     void generatesPolicyRulesWithCorrectStructure() { // GH-90000
         EpisodeClusteringService clusteringService = new EpisodeClusteringService(); // GH-90000
         PolicySynthesisService synthesisService = new PolicySynthesisService(clusteringService); // GH-90000
@@ -147,7 +147,7 @@ class PolicySynthesisServiceTest {
         List<EnhancedEpisode> episodes = List.of( // GH-90000
             createEpisode("ep1", "action1", 0.8, new float[]{1.0f, 0.0f}, List.of("tag1", "tag2")), // GH-90000
             createEpisode("ep2", "action1", 0.9, new float[]{0.9f, 0.1f}, List.of("tag1", "tag3")), // GH-90000
-            createEpisode("ep3", "action1", 0.7, new float[]{0.8f, 0.2f}, List.of("tag1 [GH-90000]"))
+            createEpisode("ep3", "action1", 0.7, new float[]{0.8f, 0.2f}, List.of("tag1"))
         );
 
         PolicySynthesisService.SynthesisResult result = synthesisService.synthesizePolicies(episodes); // GH-90000
@@ -171,10 +171,10 @@ class PolicySynthesisServiceTest {
     private EnhancedEpisode createEpisode(String id, String action, double reward, float[] embedding, List<String> tags) { // GH-90000
         return EnhancedEpisode.builder() // GH-90000
             .id(id) // GH-90000
-            .agentId("agent-1 [GH-90000]")
+            .agentId("agent-1")
             .turnId("turn-" + id) // GH-90000
-            .input("input [GH-90000]")
-            .output("output [GH-90000]")
+            .input("input")
+            .output("output")
             .action(action) // GH-90000
             .reward(reward) // GH-90000
             .tags(tags) // GH-90000

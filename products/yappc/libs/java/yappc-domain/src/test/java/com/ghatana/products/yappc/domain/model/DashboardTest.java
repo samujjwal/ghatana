@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern UnitTest
  */
-@DisplayName("Dashboard Domain Model Tests [GH-90000]")
+@DisplayName("Dashboard Domain Model Tests")
 class DashboardTest {
 
     private static final UUID WORKSPACE_ID = UUID.randomUUID(); // GH-90000
@@ -26,11 +26,11 @@ class DashboardTest {
     private static final String DESCRIPTION = "Main security metrics dashboard";
 
     @Nested
-    @DisplayName("Factory Method Tests [GH-90000]")
+    @DisplayName("Factory Method Tests")
     class FactoryMethodTests {
 
         @Test
-        @DisplayName("of() creates dashboard with required fields and defaults [GH-90000]")
+        @DisplayName("of() creates dashboard with required fields and defaults")
         void ofCreatesWithRequiredFieldsAndDefaults() { // GH-90000
             // WHEN
             Dashboard dashboard = Dashboard.of(WORKSPACE_ID, DASHBOARD_NAME); // GH-90000
@@ -45,28 +45,28 @@ class DashboardTest {
         }
 
         @Test
-        @DisplayName("of() throws NullPointerException when workspaceId is null [GH-90000]")
+        @DisplayName("of() throws NullPointerException when workspaceId is null")
         void ofThrowsWhenWorkspaceIdNull() { // GH-90000
             assertThatThrownBy(() -> Dashboard.of(null, DASHBOARD_NAME)) // GH-90000
                     .isInstanceOf(NullPointerException.class) // GH-90000
-                    .hasMessageContaining("workspaceId must not be null [GH-90000]");
+                    .hasMessageContaining("workspaceId must not be null");
         }
 
         @Test
-        @DisplayName("of() throws NullPointerException when name is null [GH-90000]")
+        @DisplayName("of() throws NullPointerException when name is null")
         void ofThrowsWhenNameNull() { // GH-90000
             assertThatThrownBy(() -> Dashboard.of(WORKSPACE_ID, null)) // GH-90000
                     .isInstanceOf(NullPointerException.class) // GH-90000
-                    .hasMessageContaining("name must not be null [GH-90000]");
+                    .hasMessageContaining("name must not be null");
         }
     }
 
     @Nested
-    @DisplayName("Builder Tests [GH-90000]")
+    @DisplayName("Builder Tests")
     class BuilderTests {
 
         @Test
-        @DisplayName("builder creates dashboard with all fields [GH-90000]")
+        @DisplayName("builder creates dashboard with all fields")
         void builderCreatesWithAllFields() { // GH-90000
             // GIVEN
             UUID id = UUID.randomUUID(); // GH-90000
@@ -99,7 +99,7 @@ class DashboardTest {
         }
 
         @Test
-        @DisplayName("builder defaults isDefault to false [GH-90000]")
+        @DisplayName("builder defaults isDefault to false")
         void builderDefaultsIsDefaultToFalse() { // GH-90000
             Dashboard dashboard = Dashboard.builder() // GH-90000
                     .workspaceId(WORKSPACE_ID) // GH-90000
@@ -110,7 +110,7 @@ class DashboardTest {
         }
 
         @Test
-        @DisplayName("builder defaults version to 0 [GH-90000]")
+        @DisplayName("builder defaults version to 0")
         void builderDefaultsVersionToZero() { // GH-90000
             Dashboard dashboard = Dashboard.builder() // GH-90000
                     .workspaceId(WORKSPACE_ID) // GH-90000
@@ -121,7 +121,7 @@ class DashboardTest {
         }
 
         @Test
-        @DisplayName("toBuilder creates modifiable copy [GH-90000]")
+        @DisplayName("toBuilder creates modifiable copy")
         void toBuilderCreatesModifiableCopy() { // GH-90000
             // GIVEN
             Dashboard original = Dashboard.of(WORKSPACE_ID, DASHBOARD_NAME); // GH-90000
@@ -141,23 +141,23 @@ class DashboardTest {
     }
 
     @Nested
-    @DisplayName("Equality Tests [GH-90000]")
+    @DisplayName("Equality Tests")
     class EqualityTests {
 
         @Test
-        @DisplayName("equals returns true for same id [GH-90000]")
+        @DisplayName("equals returns true for same id")
         void equalsReturnsTrueForSameId() { // GH-90000
             // GIVEN
             UUID id = UUID.randomUUID(); // GH-90000
             Dashboard dashboard1 = Dashboard.builder() // GH-90000
                     .id(id) // GH-90000
                     .workspaceId(WORKSPACE_ID) // GH-90000
-                    .name("Dashboard 1 [GH-90000]")
+                    .name("Dashboard 1")
                     .build(); // GH-90000
             Dashboard dashboard2 = Dashboard.builder() // GH-90000
                     .id(id) // GH-90000
                     .workspaceId(UUID.randomUUID())  // Different workspace // GH-90000
-                    .name("Dashboard 2 [GH-90000]")  // Different name
+                    .name("Dashboard 2")  // Different name
                     .build(); // GH-90000
 
             // THEN
@@ -166,7 +166,7 @@ class DashboardTest {
         }
 
         @Test
-        @DisplayName("equals returns false for different ids [GH-90000]")
+        @DisplayName("equals returns false for different ids")
         void equalsReturnsFalseForDifferentIds() { // GH-90000
             Dashboard dashboard1 = Dashboard.builder() // GH-90000
                     .id(UUID.randomUUID()) // GH-90000
@@ -183,21 +183,21 @@ class DashboardTest {
         }
 
         @Test
-        @DisplayName("equals returns false for null [GH-90000]")
+        @DisplayName("equals returns false for null")
         void equalsReturnsFalseForNull() { // GH-90000
             Dashboard dashboard = Dashboard.of(WORKSPACE_ID, DASHBOARD_NAME); // GH-90000
             assertThat(dashboard).isNotEqualTo(null); // GH-90000
         }
 
         @Test
-        @DisplayName("equals returns false for different type [GH-90000]")
+        @DisplayName("equals returns false for different type")
         void equalsReturnsFalseForDifferentType() { // GH-90000
             Dashboard dashboard = Dashboard.of(WORKSPACE_ID, DASHBOARD_NAME); // GH-90000
-            assertThat(dashboard).isNotEqualTo("not a dashboard [GH-90000]");
+            assertThat(dashboard).isNotEqualTo("not a dashboard");
         }
 
         @Test
-        @DisplayName("equals is reflexive [GH-90000]")
+        @DisplayName("equals is reflexive")
         void equalsIsReflexive() { // GH-90000
             Dashboard dashboard = Dashboard.builder() // GH-90000
                     .id(UUID.randomUUID()) // GH-90000
@@ -210,11 +210,11 @@ class DashboardTest {
     }
 
     @Nested
-    @DisplayName("Getter/Setter Tests [GH-90000]")
+    @DisplayName("Getter/Setter Tests")
     class GetterSetterTests {
 
         @Test
-        @DisplayName("setters update fields correctly [GH-90000]")
+        @DisplayName("setters update fields correctly")
         void settersUpdateFieldsCorrectly() { // GH-90000
             // GIVEN
             Dashboard dashboard = new Dashboard(); // GH-90000
@@ -244,23 +244,23 @@ class DashboardTest {
     }
 
     @Nested
-    @DisplayName("Edge Cases [GH-90000]")
+    @DisplayName("Edge Cases")
     class EdgeCases {
 
         @Test
-        @DisplayName("handles empty widget config [GH-90000]")
+        @DisplayName("handles empty widget config")
         void handlesEmptyWidgetConfig() { // GH-90000
             Dashboard dashboard = Dashboard.builder() // GH-90000
                     .workspaceId(WORKSPACE_ID) // GH-90000
                     .name(DASHBOARD_NAME) // GH-90000
-                    .widgetConfig(" [GH-90000]")
+                    .widgetConfig("")
                     .build(); // GH-90000
 
             assertThat(dashboard.getWidgetConfig()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("handles null widget config [GH-90000]")
+        @DisplayName("handles null widget config")
         void handlesNullWidgetConfig() { // GH-90000
             Dashboard dashboard = Dashboard.builder() // GH-90000
                     .workspaceId(WORKSPACE_ID) // GH-90000
@@ -272,7 +272,7 @@ class DashboardTest {
         }
 
         @Test
-        @DisplayName("handles complex JSON widget config [GH-90000]")
+        @DisplayName("handles complex JSON widget config")
         void handlesComplexJsonWidgetConfig() { // GH-90000
             String complexConfig = """
                     {

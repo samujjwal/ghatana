@@ -73,7 +73,7 @@ class RustToolsRunnerTest {
         assertNotNull(diagnostics, DIAGNOSTICS_MESSAGE); // GH-90000
         assertFalse(diagnostics.isEmpty(), "Expected diagnostics for invalid code"); // GH-90000
         assertTrue( // GH-90000
-                diagnostics.stream().anyMatch(d -> d.message().contains("mismatched types [GH-90000]")),
+                diagnostics.stream().anyMatch(d -> d.message().contains("mismatched types")),
                 "Expected type mismatch error");
     }
 
@@ -132,7 +132,7 @@ class RustToolsRunnerTest {
     @Test
     void testTaploFormat(@TempDir Path tempDir) throws Exception { // GH-90000
         FakeCommandRunner commandRunner = new FakeCommandRunner(); // GH-90000
-        Path cargoToml = tempDir.resolve("Cargo.toml [GH-90000]");
+        Path cargoToml = tempDir.resolve("Cargo.toml");
         Files.writeString(cargoToml, "[package]\nname=\"test\"\nversion=\"0.1.0\"\n"); // GH-90000
 
         List<String> taploCheckCommand =
@@ -160,9 +160,9 @@ class RustToolsRunnerTest {
         assertFalse(checkDiags.isEmpty(), "Expected formatting issues for poorly formatted TOML"); // GH-90000
         assertEquals(1, checkDiags.size(), "Expected exactly one diagnostic for formatting issue"); // GH-90000
         assertTrue( // GH-90000
-                checkDiags.get(0).message().contains("the file is not properly formatted [GH-90000]")
-                        || checkDiags.get(0).message().contains("needs formatting [GH-90000]")
-                        || checkDiags.get(0).message().contains("would be formatted [GH-90000]"),
+                checkDiags.get(0).message().contains("the file is not properly formatted")
+                        || checkDiags.get(0).message().contains("needs formatting")
+                        || checkDiags.get(0).message().contains("would be formatted"),
                 "Diagnostic should indicate formatting is needed. Actual message: "
                         + checkDiags.get(0).message()); // GH-90000
 
@@ -189,10 +189,10 @@ class RustToolsRunnerTest {
     private static void createMinimalCargoProject(Path tempDir, String mainRsContent) // GH-90000
             throws IOException {
         Files.writeString( // GH-90000
-                tempDir.resolve("Cargo.toml [GH-90000]"), "[package]\nname = \"test\"\nversion = \"0.1.0\"\n");
-        Path srcDir = tempDir.resolve("src [GH-90000]");
+                tempDir.resolve("Cargo.toml"), "[package]\nname = \"test\"\nversion = \"0.1.0\"\n");
+        Path srcDir = tempDir.resolve("src");
         Files.createDirectories(srcDir); // GH-90000
-        Files.writeString(srcDir.resolve("main.rs [GH-90000]"), mainRsContent);
+        Files.writeString(srcDir.resolve("main.rs"), mainRsContent);
     }
 
     private static ProcessExec.Result result(int exitCode, String out, String err) { // GH-90000
@@ -228,7 +228,7 @@ class RustToolsRunnerTest {
             return cmd.size() >= 2 // GH-90000
                     && "taplo".equals(cmd.get(0)) // GH-90000
                     && "format".equals(cmd.get(1)) // GH-90000
-                    && !cmd.contains("--check [GH-90000]");
+                    && !cmd.contains("--check");
         }
 
         private void applyTomlFormatting(List<String> cmd) { // GH-90000
@@ -237,7 +237,7 @@ class RustToolsRunnerTest {
             try {
                 String original = Files.readString(filePath, StandardCharsets.UTF_8); // GH-90000
                 StringBuilder formatted = new StringBuilder(); // GH-90000
-                for (String line : original.split("\\r?\\n [GH-90000]")) {
+                for (String line : original.split("\\r?\\n")) {
                     if (line.contains(EQUALS_SIGN)) { // GH-90000
                         String[] parts = line.split(EQUALS_SIGN, EXPECTED_PARTS_COUNT); // GH-90000
                         if (parts.length == EXPECTED_PARTS_COUNT) { // GH-90000

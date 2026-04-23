@@ -9,6 +9,12 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
+/**
+ * @doc.type class
+ * @doc.purpose Provides virtual org agent functionality.
+ * @doc.layer product
+ * @doc.pattern Agent
+ */
 public class VirtualOrgAgent {
     private static final Logger logger = LoggerFactory.getLogger(VirtualOrgAgent.class);
 

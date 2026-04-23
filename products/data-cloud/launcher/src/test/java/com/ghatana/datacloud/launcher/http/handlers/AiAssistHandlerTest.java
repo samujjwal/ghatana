@@ -25,7 +25,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AiAssistHandler [GH-90000]")
+@DisplayName("AiAssistHandler")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class AiAssistHandlerTest extends EventloopTestBase {
 
@@ -56,7 +56,7 @@ class AiAssistHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("entity suggest rejects missing tenant before loading body [GH-90000]")
+    @DisplayName("entity suggest rejects missing tenant before loading body")
     void entitySuggestRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
@@ -67,7 +67,7 @@ class AiAssistHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("analytics suggest rejects missing tenant before loading body [GH-90000]")
+    @DisplayName("analytics suggest rejects missing tenant before loading body")
     void analyticsSuggestRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
@@ -78,7 +78,7 @@ class AiAssistHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("pipeline hint rejects missing tenant before loading body [GH-90000]")
+    @DisplayName("pipeline hint rejects missing tenant before loading body")
     void pipelineHintRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
@@ -89,7 +89,7 @@ class AiAssistHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("pipeline draft rejects missing tenant before loading body [GH-90000]")
+    @DisplayName("pipeline draft rejects missing tenant before loading body")
     void pipelineDraftRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
@@ -100,7 +100,7 @@ class AiAssistHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("brain explain rejects missing tenant before loading body [GH-90000]")
+    @DisplayName("brain explain rejects missing tenant before loading body")
     void brainExplainRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 

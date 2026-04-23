@@ -15,13 +15,13 @@ import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("ForecastingModelComparator [GH-90000]")
+@DisplayName("ForecastingModelComparator")
 class ForecastingModelComparatorTest extends EventloopTestBase {
 
-    private static final Instant T0 = Instant.parse("2026-01-01T00:00:00Z [GH-90000]");
+    private static final Instant T0 = Instant.parse("2026-01-01T00:00:00Z");
 
     @Test
-    @DisplayName("adaptive forecasting beats naive baseline on a stable linear trend [GH-90000]")
+    @DisplayName("adaptive forecasting beats naive baseline on a stable linear trend")
     void adaptiveBeatsNaiveOnStableTrend() { // GH-90000
         ForecastingModelComparator comparator = new ForecastingModelComparator( // GH-90000
             new NaiveForecastingEngine(3, 3600L), // GH-90000
@@ -51,15 +51,15 @@ class ForecastingModelComparatorTest extends EventloopTestBase {
 
         ForecastingModelComparator.ComparisonResult result = runPromise(() -> comparator.compare("tenant-a", data)); // GH-90000
 
-        assertThat(result.baselineAlgorithm()).isEqualTo("naive [GH-90000]");
-        assertThat(result.candidateAlgorithm()).isEqualTo("adaptive [GH-90000]");
-        assertThat(result.winner()).isEqualTo("adaptive [GH-90000]");
+        assertThat(result.baselineAlgorithm()).isEqualTo("naive");
+        assertThat(result.candidateAlgorithm()).isEqualTo("adaptive");
+        assertThat(result.winner()).isEqualTo("adaptive");
         assertThat(result.candidateRmse()).isLessThan(result.baselineRmse()); // GH-90000
         assertThat(result.asMetadata()).containsEntry("winner", "adaptive"); // GH-90000
     }
 
     @Test
-    @DisplayName("returns insufficient-history when holdout split cannot be formed [GH-90000]")
+    @DisplayName("returns insufficient-history when holdout split cannot be formed")
     void returnsInsufficientHistoryForShortSeries() { // GH-90000
         ForecastingModelComparator comparator = new ForecastingModelComparator( // GH-90000
             new NaiveForecastingEngine(), // GH-90000
@@ -79,6 +79,6 @@ class ForecastingModelComparatorTest extends EventloopTestBase {
 
         ForecastingModelComparator.ComparisonResult result = runPromise(() -> comparator.compare("tenant-a", data)); // GH-90000
 
-        assertThat(result.winner()).isEqualTo("insufficient-history [GH-90000]");
+        assertThat(result.winner()).isEqualTo("insufficient-history");
     }
 }

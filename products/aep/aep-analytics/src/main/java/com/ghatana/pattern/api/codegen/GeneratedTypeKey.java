@@ -12,7 +12,11 @@ import java.util.UUID;
  * Stable identifier for a dynamically generated event class.
  *
  * <p>The key forms the basis for cache lookups, auditing, and telemetry.</p>
- */
+  * @doc.type record
+ * @doc.purpose Provides generated type key functionality.
+ * @doc.layer product
+ * @doc.pattern Enum
+*/
 public record GeneratedTypeKey(
         String tenantId,
         String eventTypeName,

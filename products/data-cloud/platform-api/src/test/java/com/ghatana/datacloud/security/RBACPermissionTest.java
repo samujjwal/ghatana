@@ -30,18 +30,18 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("RBACPermission – Role Permissions (S003) [GH-90000]")
+@DisplayName("RBACPermission – Role Permissions (S003)")
 class RBACPermissionTest extends EventloopTestBase {
 
     @Mock
     private RBACService rbacService;
 
     @Nested
-    @DisplayName("Permission Checking [GH-90000]")
+    @DisplayName("Permission Checking")
     class PermissionCheckingTests {
 
         @Test
-        @DisplayName("[S003]: has_permission_returns_true_when_granted [GH-90000]")
+        @DisplayName("[S003]: has_permission_returns_true_when_granted")
         void hasPermissionReturnsTrueWhenGranted() { // GH-90000
             String userId = "user-001";
             String tenantId = "tenant-alpha";
@@ -59,7 +59,7 @@ class RBACPermissionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[S003]: has_permission_returns_false_when_denied [GH-90000]")
+        @DisplayName("[S003]: has_permission_returns_false_when_denied")
         void hasPermissionReturnsFalseWhenDenied() { // GH-90000
             String userId = "user-002";
             String tenantId = "tenant-alpha";
@@ -77,7 +77,7 @@ class RBACPermissionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[S003]: get_user_permissions_returns_all_permissions [GH-90000]")
+        @DisplayName("[S003]: get_user_permissions_returns_all_permissions")
         void getUserPermissionsReturnsAllPermissions() { // GH-90000
             String userId = "user-001";
             String tenantId = "tenant-alpha";
@@ -103,11 +103,11 @@ class RBACPermissionTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Role Assignment [GH-90000]")
+    @DisplayName("Role Assignment")
     class RoleAssignmentTests {
 
         @Test
-        @DisplayName("[S003]: assign_role_grants_permissions [GH-90000]")
+        @DisplayName("[S003]: assign_role_grants_permissions")
         void assignRoleGrantsPermissions() { // GH-90000
             String userId = "user-001";
             String tenantId = "tenant-alpha";
@@ -122,7 +122,7 @@ class RBACPermissionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[S003]: revoke_role_removes_permissions [GH-90000]")
+        @DisplayName("[S003]: revoke_role_removes_permissions")
         void revokeRoleRemovesPermissions() { // GH-90000
             String userId = "user-001";
             String tenantId = "tenant-alpha";
@@ -137,7 +137,7 @@ class RBACPermissionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[S003]: get_user_roles_returns_assigned_roles [GH-90000]")
+        @DisplayName("[S003]: get_user_roles_returns_assigned_roles")
         void getUserRolesReturnsAssignedRoles() { // GH-90000
             String userId = "user-001";
             String tenantId = "tenant-alpha";
@@ -159,11 +159,11 @@ class RBACPermissionTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Role Management [GH-90000]")
+    @DisplayName("Role Management")
     class RoleManagementTests {
 
         @Test
-        @DisplayName("[S003]: save_role_creates_role [GH-90000]")
+        @DisplayName("[S003]: save_role_creates_role")
         void saveRoleCreatesRole() { // GH-90000
             RBACService.Role role = createRole("new-role", "Analyst", Set.of( // GH-90000
                 RBACService.Permission.REPORT_READ,
@@ -175,12 +175,12 @@ class RBACPermissionTest extends EventloopTestBase {
 
             RBACService.Role result = runPromise(() -> rbacService.saveRole(role)); // GH-90000
 
-            assertThat(result.id()).isEqualTo("new-role [GH-90000]");
+            assertThat(result.id()).isEqualTo("new-role");
             assertThat(result.permissions()).contains(RBACService.Permission.REPORT_READ); // GH-90000
         }
 
         @Test
-        @DisplayName("[S003]: get_role_returns_existing [GH-90000]")
+        @DisplayName("[S003]: get_role_returns_existing")
         void getRoleReturnsExisting() { // GH-90000
             String roleId = "existing-role";
             RBACService.Role role = createRole(roleId, "Manager", Set.of( // GH-90000
@@ -197,7 +197,7 @@ class RBACPermissionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[S003]: list_roles_returns_tenant_roles [GH-90000]")
+        @DisplayName("[S003]: list_roles_returns_tenant_roles")
         void listRolesReturnsTenantRoles() { // GH-90000
             String tenantId = "tenant-alpha";
 
@@ -216,7 +216,7 @@ class RBACPermissionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[S003]: delete_role_removes_role [GH-90000]")
+        @DisplayName("[S003]: delete_role_removes_role")
         void deleteRoleRemovesRole() { // GH-90000
             String roleId = "obsolete-role";
 
@@ -230,11 +230,11 @@ class RBACPermissionTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Permission Hierarchy [GH-90000]")
+    @DisplayName("Permission Hierarchy")
     class PermissionHierarchyTests {
 
         @Test
-        @DisplayName("[S003]: admin_role_has_all_permissions [GH-90000]")
+        @DisplayName("[S003]: admin_role_has_all_permissions")
         void adminRoleHasAllPermissions() { // GH-90000
             RBACService.Role admin = createRole("admin", "Administrator", Set.of( // GH-90000
                 RBACService.Permission.TENANT_ADMIN,
@@ -248,7 +248,7 @@ class RBACPermissionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[S003]: read_only_role_has_limited_permissions [GH-90000]")
+        @DisplayName("[S003]: read_only_role_has_limited_permissions")
         void readOnlyRoleHasLimitedPermissions() { // GH-90000
             RBACService.Role viewer = createRole("viewer", "Viewer", Set.of( // GH-90000
                 RBACService.Permission.ENTITY_READ,
@@ -261,7 +261,7 @@ class RBACPermissionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[S003]: permission_inheritance_works [GH-90000]")
+        @DisplayName("[S003]: permission_inheritance_works")
         void permissionInheritanceWorks() { // GH-90000
             // A user with multiple roles gets union of permissions
             Set<RBACService.Permission> role1Perms = Set.of(RBACService.Permission.ENTITY_READ); // GH-90000
@@ -279,11 +279,11 @@ class RBACPermissionTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Role Queries [GH-90000]")
+    @DisplayName("Role Queries")
     class RoleQueriesTests {
 
         @Test
-        @DisplayName("[S003]: get_users_with_role_returns_assignees [GH-90000]")
+        @DisplayName("[S003]: get_users_with_role_returns_assignees")
         void getUsersWithRoleReturnsAssignees() { // GH-90000
             String roleId = "editor-role";
 
@@ -298,7 +298,7 @@ class RBACPermissionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[S003]: role_has_permission_checks_correctly [GH-90000]")
+        @DisplayName("[S003]: role_has_permission_checks_correctly")
         void roleHasPermissionChecksCorrectly() { // GH-90000
             RBACService.Role role = createRole("custom", "Custom", Set.of( // GH-90000
                 RBACService.Permission.EVENT_PUBLISH,

@@ -22,11 +22,11 @@ import org.junit.jupiter.api.Test;
 class GlobTest {
     @Test
     void find_matches_recursive() throws Exception { // GH-90000
-        Path root = Files.createTempDirectory("glob [GH-90000]");
-        Files.createDirectories(root.resolve("a/b [GH-90000]"));
-        Files.writeString(root.resolve("a/one.json [GH-90000]"), "{}\n");
-        Files.writeString(root.resolve("a/b/two.json [GH-90000]"), "{}\n");
-        Files.writeString(root.resolve("a/b/three.yaml [GH-90000]"), "a: 1\n");
+        Path root = Files.createTempDirectory("glob");
+        Files.createDirectories(root.resolve("a/b"));
+        Files.writeString(root.resolve("a/one.json"), "{}\n");
+        Files.writeString(root.resolve("a/b/two.json"), "{}\n");
+        Files.writeString(root.resolve("a/b/three.yaml"), "a: 1\n");
 
         List<Path> jsons = Glob.find(root, "**/*.json"); // GH-90000
         assertThat(jsons.stream().map(p -> root.relativize(p).toString()).toList()) // GH-90000
@@ -35,9 +35,9 @@ class GlobTest {
 
     @Test
     void find_non_matching() throws Exception { // GH-90000
-        Path root = Files.createTempDirectory("glob2 [GH-90000]");
-        Files.createDirectories(root.resolve("a [GH-90000]"));
-        Files.writeString(root.resolve("a/one.txt [GH-90000]"), "x\n");
+        Path root = Files.createTempDirectory("glob2");
+        Files.createDirectories(root.resolve("a"));
+        Files.writeString(root.resolve("a/one.txt"), "x\n");
         List<Path> jsons = Glob.find(root, "**/*.json"); // GH-90000
         assertThat(jsons).isEmpty(); // GH-90000
     }

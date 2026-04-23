@@ -35,7 +35,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AepHttpServer – Compliance Endpoints [GH-90000]")
+@DisplayName("AepHttpServer – Compliance Endpoints")
 class AepHttpServerComplianceTest {
 
     private AepEngine engine;
@@ -62,11 +62,11 @@ class AepHttpServerComplianceTest {
     // ==================== POST /api/v1/compliance/gdpr/access ====================
 
     @Nested
-    @DisplayName("POST /api/v1/compliance/gdpr/access [GH-90000]")
+    @DisplayName("POST /api/v1/compliance/gdpr/access")
     class GdprAccessTests {
 
         @Test
-        @DisplayName("returns 503 when compliance service not configured (no DC) [GH-90000]")
+        @DisplayName("returns 503 when compliance service not configured (no DC)")
         void gdprAccess_whenNoDc_returns503() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -80,11 +80,11 @@ class AepHttpServerComplianceTest {
 
             assertThat(resp.statusCode()).isEqualTo(503); // GH-90000
             Map<?, ?> respBody = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(respBody.get("message [GH-90000]").toString()).contains("not available [GH-90000]");
+            assertThat(respBody.get("message").toString()).contains("not available");
         }
 
         @Test
-        @DisplayName("returns 200 with access report when DC configured [GH-90000]")
+        @DisplayName("returns 200 with access report when DC configured")
         void gdprAccess_withDc_returns200() throws Exception { // GH-90000
             when(mockDc.query(anyString(), anyString(), any(DataCloudClient.Query.class))) // GH-90000
                 .thenReturn(Promise.of(List.of())); // GH-90000
@@ -103,7 +103,7 @@ class AepHttpServerComplianceTest {
         }
 
         @Test
-        @DisplayName("returns 400 when subjectId is missing [GH-90000]")
+        @DisplayName("returns 400 when subjectId is missing")
         void gdprAccess_withoutSubjectId_returns400() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port, null, mockDc); // GH-90000
             server.start(); // GH-90000
@@ -116,7 +116,7 @@ class AepHttpServerComplianceTest {
         }
 
         @Test
-        @DisplayName("returns 400 on malformed JSON body [GH-90000]")
+        @DisplayName("returns 400 on malformed JSON body")
         void gdprAccess_withMalformedJson_returns400() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port, null, mockDc); // GH-90000
             server.start(); // GH-90000
@@ -130,11 +130,11 @@ class AepHttpServerComplianceTest {
     // ==================== POST /api/v1/compliance/gdpr/erasure ====================
 
     @Nested
-    @DisplayName("POST /api/v1/compliance/gdpr/erasure [GH-90000]")
+    @DisplayName("POST /api/v1/compliance/gdpr/erasure")
     class GdprErasureTests {
 
         @Test
-        @DisplayName("returns 503 when compliance service not configured [GH-90000]")
+        @DisplayName("returns 503 when compliance service not configured")
         void gdprErasure_whenNoDc_returns503() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -150,7 +150,7 @@ class AepHttpServerComplianceTest {
         }
 
         @Test
-        @DisplayName("returns 200 with erasure report when DC configured [GH-90000]")
+        @DisplayName("returns 200 with erasure report when DC configured")
         void gdprErasure_withDc_returns200() throws Exception { // GH-90000
             when(mockDc.query(anyString(), anyString(), any(DataCloudClient.Query.class))) // GH-90000
                 .thenReturn(Promise.of(List.of())); // GH-90000
@@ -174,11 +174,11 @@ class AepHttpServerComplianceTest {
     // ==================== POST /api/v1/compliance/gdpr/portability ====================
 
     @Nested
-    @DisplayName("POST /api/v1/compliance/gdpr/portability [GH-90000]")
+    @DisplayName("POST /api/v1/compliance/gdpr/portability")
     class GdprPortabilityTests {
 
         @Test
-        @DisplayName("returns 503 when compliance service not configured [GH-90000]")
+        @DisplayName("returns 503 when compliance service not configured")
         void gdprPortability_whenNoDc_returns503() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -194,7 +194,7 @@ class AepHttpServerComplianceTest {
         }
 
         @Test
-        @DisplayName("returns 200 with export data when DC configured [GH-90000]")
+        @DisplayName("returns 200 with export data when DC configured")
         void gdprPortability_withDc_returns200() throws Exception { // GH-90000
             when(mockDc.query(anyString(), anyString(), any(DataCloudClient.Query.class))) // GH-90000
                 .thenReturn(Promise.of(List.of())); // GH-90000
@@ -216,11 +216,11 @@ class AepHttpServerComplianceTest {
     // ==================== POST /api/v1/compliance/ccpa/opt-out ====================
 
     @Nested
-    @DisplayName("POST /api/v1/compliance/ccpa/opt-out [GH-90000]")
+    @DisplayName("POST /api/v1/compliance/ccpa/opt-out")
     class CcpaOptOutTests {
 
         @Test
-        @DisplayName("returns 503 when compliance service not configured [GH-90000]")
+        @DisplayName("returns 503 when compliance service not configured")
         void ccpaOptOut_whenNoDc_returns503() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -236,7 +236,7 @@ class AepHttpServerComplianceTest {
         }
 
         @Test
-        @DisplayName("returns 200 with opt-out confirmation when DC configured [GH-90000]")
+        @DisplayName("returns 200 with opt-out confirmation when DC configured")
         void ccpaOptOut_withDc_returns200() throws Exception { // GH-90000
             when(mockDc.query(anyString(), anyString(), any(DataCloudClient.Query.class))) // GH-90000
                 .thenReturn(Promise.of(List.of())); // GH-90000
@@ -259,7 +259,7 @@ class AepHttpServerComplianceTest {
         }
 
         @Test
-        @DisplayName("returns 400 when consumerId is missing [GH-90000]")
+        @DisplayName("returns 400 when consumerId is missing")
         void ccpaOptOut_withoutConsumerId_returns400() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port, null, mockDc); // GH-90000
             server.start(); // GH-90000
@@ -275,17 +275,17 @@ class AepHttpServerComplianceTest {
     // ==================== GET /api/v1/compliance/soc2 ====================
 
     @Nested
-    @DisplayName("GET /api/v1/compliance/soc2 [GH-90000]")
+    @DisplayName("GET /api/v1/compliance/soc2")
     class Soc2Tests {
 
         @Test
-        @DisplayName("returns 200 with SOC2 report (always available) [GH-90000]")
+        @DisplayName("returns 200 with SOC2 report (always available)")
         void soc2Report_returns200() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/compliance/soc2/report [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/compliance/soc2/report");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000

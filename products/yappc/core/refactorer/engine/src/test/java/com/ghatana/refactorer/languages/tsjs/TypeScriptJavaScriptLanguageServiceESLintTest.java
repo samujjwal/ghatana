@@ -47,7 +47,7 @@ class TypeScriptJavaScriptLanguageServiceESLintTest extends EventloopTestBase {
     @BeforeEach
     void setUp() throws IOException { // GH-90000
         // Create a simple test file
-        testFile = tempDir.resolve("sample.ts [GH-90000]");
+        testFile = tempDir.resolve("sample.ts");
         Files.createDirectories(testFile.getParent()); // GH-90000
 
         // Create test config
@@ -55,7 +55,7 @@ class TypeScriptJavaScriptLanguageServiceESLintTest extends EventloopTestBase {
 
         projectContext =
                 new PolyfixProjectContext( // GH-90000
-                        tempDir, testConfig, List.of(), null, LogManager.getLogger("test [GH-90000]"));
+                        tempDir, testConfig, List.of(), null, LogManager.getLogger("test"));
 
         // Create the service with our mock ESLintService and reactor
         tsJsService = new TypeScriptJavaScriptLanguageService(projectContext, mockESLintService, eventloop()); // GH-90000
@@ -90,7 +90,7 @@ class TypeScriptJavaScriptLanguageServiceESLintTest extends EventloopTestBase {
 
         // Create a mock diagnostic
         UnifiedDiagnostic mockDiagnostic = mock(UnifiedDiagnostic.class); // GH-90000
-        when(mockDiagnostic.rule()).thenReturn("test-rule [GH-90000]");
+        when(mockDiagnostic.rule()).thenReturn("test-rule");
 
         // Configure the mock ESLint service to return our mock diagnostic
         when(mockESLintService.analyze( // GH-90000
@@ -107,9 +107,9 @@ class TypeScriptJavaScriptLanguageServiceESLintTest extends EventloopTestBase {
 
         // Verify the results
         assertThat(diagnostics) // GH-90000
-                .as("Should contain the mock diagnostic from ESLint [GH-90000]")
+                .as("Should contain the mock diagnostic from ESLint")
                 .isNotEmpty() // GH-90000
-                .anySatisfy(diag -> assertThat(diag.rule()).isEqualTo("test-rule [GH-90000]"));
+                .anySatisfy(diag -> assertThat(diag.rule()).isEqualTo("test-rule"));
 
         // Verify the mock was called with the correct arguments
         verify(mockESLintService) // GH-90000
@@ -128,7 +128,7 @@ class TypeScriptJavaScriptLanguageServiceESLintTest extends EventloopTestBase {
 
         // Create a mock diagnostic for the ESLint rule
         UnifiedDiagnostic mockDiagnostic = mock(UnifiedDiagnostic.class); // GH-90000
-        when(mockDiagnostic.rule()).thenReturn("@typescript-eslint/no-unused-vars [GH-90000]");
+        when(mockDiagnostic.rule()).thenReturn("@typescript-eslint/no-unused-vars");
 
         // Configure the mock ESLint service to return our mock diagnostic
         when(mockESLintService.analyze(anyList())) // GH-90000
@@ -140,10 +140,10 @@ class TypeScriptJavaScriptLanguageServiceESLintTest extends EventloopTestBase {
 
         // Verify the results
         assertThat(diagnostics) // GH-90000
-                .as("Should detect ESLint issues [GH-90000]")
+                .as("Should detect ESLint issues")
                 .isNotEmpty() // GH-90000
                 .extracting(UnifiedDiagnostic::rule) // GH-90000
-                .contains("@typescript-eslint/no-unused-vars [GH-90000]");
+                .contains("@typescript-eslint/no-unused-vars");
 
         // Verify the mock was called with the correct arguments
         verify(mockESLintService) // GH-90000
@@ -158,7 +158,7 @@ class TypeScriptJavaScriptLanguageServiceESLintTest extends EventloopTestBase {
     @Test
     void testNoFalsePositivesOnValidCode() throws IOException { // GH-90000
         // Setup a valid test file
-        Path validFile = tempDir.resolve("valid.ts [GH-90000]");
+        Path validFile = tempDir.resolve("valid.ts");
         Files.writeString(validFile, "const x: number = 42;\nconsole.log(x);"); // GH-90000
 
         // Configure the mock ESLint service to return no issues
@@ -169,7 +169,7 @@ class TypeScriptJavaScriptLanguageServiceESLintTest extends EventloopTestBase {
                 () -> tsJsService.diagnose(projectContext, Collections.singletonList(validFile))); // GH-90000
 
         // Verify no issues were found
-        assertThat(diagnostics).as("Should not report issues on valid code [GH-90000]").isEmpty();
+        assertThat(diagnostics).as("Should not report issues on valid code").isEmpty();
 
         // Verify the mock was called with the correct arguments
         verify(mockESLintService) // GH-90000
@@ -196,6 +196,6 @@ class TypeScriptJavaScriptLanguageServiceESLintTest extends EventloopTestBase {
                 () -> serviceWithNoESLint.diagnose(projectContext, Collections.singletonList(testFile))); // GH-90000
 
         // Verify that no diagnostics were returned (graceful degradation) // GH-90000
-        assertThat(diagnostics).as("Should handle missing ESLint gracefully [GH-90000]").isEmpty();
+        assertThat(diagnostics).as("Should handle missing ESLint gracefully").isEmpty();
     }
 }

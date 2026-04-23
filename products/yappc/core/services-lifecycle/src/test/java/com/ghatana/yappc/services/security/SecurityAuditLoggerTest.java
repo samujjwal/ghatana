@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * <p>Uses an in-memory {@link AuditLogger} stub to inspect the structured events
  * forwarded by the logger. No async event loop needed — the stub resolves synchronously.
  */
-@DisplayName("SecurityAuditLogger [GH-90000]")
+@DisplayName("SecurityAuditLogger")
 class SecurityAuditLoggerTest {
 
     /**
@@ -52,7 +52,7 @@ class SecurityAuditLoggerTest {
     // ── Constructor ──────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("constructor throws on null delegate [GH-90000]")
+    @DisplayName("constructor throws on null delegate")
     void constructorThrowsOnNullDelegate() { // GH-90000
         assertThatThrownBy(() -> new SecurityAuditLogger(null)) // GH-90000
                 .isInstanceOf(NullPointerException.class); // GH-90000
@@ -61,7 +61,7 @@ class SecurityAuditLoggerTest {
     // ── loginSuccess ─────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("loginSuccess emits AUTH_LOGIN_SUCCESS with ALLOW outcome [GH-90000]")
+    @DisplayName("loginSuccess emits AUTH_LOGIN_SUCCESS with ALLOW outcome")
     void loginSuccessEmitsCorrectEvent() { // GH-90000
         logger.loginSuccess("alice", "tenant-1", "10.0.0.1"); // GH-90000
 
@@ -70,13 +70,13 @@ class SecurityAuditLoggerTest {
         assertThat(event).containsEntry("outcome", "ALLOW"); // GH-90000
         assertThat(event).containsEntry("principal", "alice"); // GH-90000
         assertThat(event).containsEntry("tenant_id", "tenant-1"); // GH-90000
-        assertThat(event).containsKey("timestamp [GH-90000]");
+        assertThat(event).containsKey("timestamp");
     }
 
     // ── loginFailure ─────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("loginFailure emits AUTH_LOGIN_FAILURE with DENY outcome [GH-90000]")
+    @DisplayName("loginFailure emits AUTH_LOGIN_FAILURE with DENY outcome")
     void loginFailureEmitsCorrectEvent() { // GH-90000
         logger.loginFailure("bob", "tenant-2", "bad-password"); // GH-90000
 
@@ -89,7 +89,7 @@ class SecurityAuditLoggerTest {
     // ── tokenValidation ──────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("tokenValidation with valid=true emits AUTH_TOKEN_VALID and ALLOW [GH-90000]")
+    @DisplayName("tokenValidation with valid=true emits AUTH_TOKEN_VALID and ALLOW")
     void tokenValidationValidEmitsAllow() { // GH-90000
         logger.tokenValidation(true, "alice", "tenant-1"); // GH-90000
 
@@ -99,7 +99,7 @@ class SecurityAuditLoggerTest {
     }
 
     @Test
-    @DisplayName("tokenValidation with valid=false emits AUTH_TOKEN_INVALID and DENY [GH-90000]")
+    @DisplayName("tokenValidation with valid=false emits AUTH_TOKEN_INVALID and DENY")
     void tokenValidationInvalidEmitsDeny() { // GH-90000
         logger.tokenValidation(false, "unknown", "tenant-x"); // GH-90000
 
@@ -111,7 +111,7 @@ class SecurityAuditLoggerTest {
     // ── logout ───────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("logout emits AUTH_LOGOUT with ALLOW outcome [GH-90000]")
+    @DisplayName("logout emits AUTH_LOGOUT with ALLOW outcome")
     void logoutEmitsCorrectEvent() { // GH-90000
         logger.logout("alice", "tenant-1"); // GH-90000
 
@@ -123,7 +123,7 @@ class SecurityAuditLoggerTest {
     // ── authorizationDecision ─────────────────────────────────────────────────
 
     @Test
-    @DisplayName("authorizationDecision allowed emits AUTHZ_ALLOW [GH-90000]")
+    @DisplayName("authorizationDecision allowed emits AUTHZ_ALLOW")
     void authorizationDecisionAllowedEmitsAllow() { // GH-90000
         logger.authorizationDecision(true, "alice", "tenant-1", "lifecycle-api", "write"); // GH-90000
 
@@ -134,7 +134,7 @@ class SecurityAuditLoggerTest {
     }
 
     @Test
-    @DisplayName("authorizationDecision denied emits AUTHZ_DENY [GH-90000]")
+    @DisplayName("authorizationDecision denied emits AUTHZ_DENY")
     void authorizationDecisionDeniedEmitsDeny() { // GH-90000
         logger.authorizationDecision(false, "viewer", "tenant-1", "admin-api", "delete"); // GH-90000
 
@@ -146,7 +146,7 @@ class SecurityAuditLoggerTest {
     // ── tenantIsolationViolation ──────────────────────────────────────────────
 
     @Test
-    @DisplayName("tenantIsolationViolation emits TENANT_ISOLATION_VIOLATION with DENY [GH-90000]")
+    @DisplayName("tenantIsolationViolation emits TENANT_ISOLATION_VIOLATION with DENY")
     void tenantIsolationViolationEmitsCorrectEvent() { // GH-90000
         logger.tenantIsolationViolation("alice", "tenant-A", "tenant-B", "/projects/123"); // GH-90000
 
@@ -160,7 +160,7 @@ class SecurityAuditLoggerTest {
     // ── rateLimitTriggered ───────────────────────────────────────────────────
 
     @Test
-    @DisplayName("rateLimitTriggered emits RATE_LIMIT_TRIGGERED with DENY [GH-90000]")
+    @DisplayName("rateLimitTriggered emits RATE_LIMIT_TRIGGERED with DENY")
     void rateLimitTriggeredEmitsCorrectEvent() { // GH-90000
         logger.rateLimitTriggered("alice", "tenant-1", "/api/scaffold", 100); // GH-90000
 
@@ -173,7 +173,7 @@ class SecurityAuditLoggerTest {
     // ── sensitiveDataAccess ──────────────────────────────────────────────────
 
     @Test
-    @DisplayName("sensitiveDataAccess READ emits SENSITIVE_DATA_ACCESSED with ALLOW [GH-90000]")
+    @DisplayName("sensitiveDataAccess READ emits SENSITIVE_DATA_ACCESSED with ALLOW")
     void sensitiveDataAccessReadEmitsCorrectEvent() { // GH-90000
         logger.sensitiveDataAccess("alice", "tenant-1", "api-key", "READ"); // GH-90000
 
@@ -184,7 +184,7 @@ class SecurityAuditLoggerTest {
     }
 
     @Test
-    @DisplayName("sensitiveDataAccess WRITE emits SENSITIVE_DATA_MODIFIED with ALLOW [GH-90000]")
+    @DisplayName("sensitiveDataAccess WRITE emits SENSITIVE_DATA_MODIFIED with ALLOW")
     void sensitiveDataAccessWriteEmitsCorrectEvent() { // GH-90000
         logger.sensitiveDataAccess("alice", "tenant-1", "encryption-key", "WRITE"); // GH-90000
 
@@ -196,7 +196,7 @@ class SecurityAuditLoggerTest {
     // ── null safety ──────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("null principal is replaced with 'anonymous' [GH-90000]")
+    @DisplayName("null principal is replaced with 'anonymous'")
     void nullPrincipalIsReplaced() { // GH-90000
         logger.loginSuccess(null, "tenant-1", "127.0.0.1"); // GH-90000
 
@@ -204,7 +204,7 @@ class SecurityAuditLoggerTest {
     }
 
     @Test
-    @DisplayName("null tenantId is replaced with 'unknown' [GH-90000]")
+    @DisplayName("null tenantId is replaced with 'unknown'")
     void nullTenantIdIsReplaced() { // GH-90000
         logger.loginSuccess("alice", null, "127.0.0.1"); // GH-90000
 
@@ -214,9 +214,9 @@ class SecurityAuditLoggerTest {
     // ── resilience: delegate failure does not propagate ───────────────────────
 
     @Test
-    @DisplayName("delegate exception does not propagate to caller [GH-90000]")
+    @DisplayName("delegate exception does not propagate to caller")
     void delegateExceptionDoesNotPropagate() { // GH-90000
-        AuditLogger failingDelegate = event -> { throw new RuntimeException("audit system down [GH-90000]"); };
+        AuditLogger failingDelegate = event -> { throw new RuntimeException("audit system down"); };
         SecurityAuditLogger resilientLogger = new SecurityAuditLogger(failingDelegate); // GH-90000
 
         // Should NOT throw
@@ -226,7 +226,7 @@ class SecurityAuditLoggerTest {
     // ── event count ──────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("each method call produces exactly one audit event [GH-90000]")
+    @DisplayName("each method call produces exactly one audit event")
     void eachCallProducesOneEvent() { // GH-90000
         logger.loginSuccess("alice", "t1", "127.0.0.1"); // GH-90000
         logger.loginFailure("bob", "t1", "wrong-key"); // GH-90000

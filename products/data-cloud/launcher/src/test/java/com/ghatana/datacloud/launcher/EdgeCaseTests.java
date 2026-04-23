@@ -21,51 +21,51 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern UnitTest
  */
-@DisplayName("Edge Case & Stress Tests [GH-90000]")
+@DisplayName("Edge Case & Stress Tests")
 public class EdgeCaseTests {
 
     @Nested
-    @DisplayName("BoundaryValueTests [GH-90000]")
+    @DisplayName("BoundaryValueTests")
     class BoundaryValueTests {
 
         @Test
-        @DisplayName("limit boundary: maximum value (1000000) [GH-90000]")
+        @DisplayName("limit boundary: maximum value (1000000)")
         void shouldHandleMaxLimit() { // GH-90000
             Map<String, Object> response = queryWithLimit(1000000); // GH-90000
-            assertThat(response.get("limit [GH-90000]")).isEqualTo(1000000L);
+            assertThat(response.get("limit")).isEqualTo(1000000L);
         }
 
         @Test
-        @DisplayName("limit boundary: minimum value (1) [GH-90000]")
+        @DisplayName("limit boundary: minimum value (1)")
         void shouldHandleMinLimit() { // GH-90000
             Map<String, Object> response = queryWithLimit(1); // GH-90000
-            assertThat(response.get("limit [GH-90000]")).isEqualTo(1L);
+            assertThat(response.get("limit")).isEqualTo(1L);
         }
 
         @Test
-        @DisplayName("offset boundary: zero offset [GH-90000]")
+        @DisplayName("offset boundary: zero offset")
         void shouldHandleZeroOffset() { // GH-90000
             Map<String, Object> response = queryWithOffset(0); // GH-90000
-            assertThat(response.get("offset [GH-90000]")).isEqualTo(0L);
+            assertThat(response.get("offset")).isEqualTo(0L);
         }
 
         @Test
-        @DisplayName("offset boundary: large offset beyond result set [GH-90000]")
+        @DisplayName("offset boundary: large offset beyond result set")
         void shouldHandleLargeOffset() { // GH-90000
             Map<String, Object> response = queryWithOffset(999999999); // GH-90000
-            List<?> items = (List<?>) response.get("items [GH-90000]");
+            List<?> items = (List<?>) response.get("items");
             assertThat(items).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("string length boundary: empty string [GH-90000]")
+        @DisplayName("string length boundary: empty string")
         void shouldHandleEmptyString() { // GH-90000
-            Map<String, Object> response = createEntityWithName(" [GH-90000]");
-            assertThat(response).containsKey("errors [GH-90000]");
+            Map<String, Object> response = createEntityWithName("");
+            assertThat(response).containsKey("errors");
         }
 
         @Test
-        @DisplayName("string length boundary: 10000 character name [GH-90000]")
+        @DisplayName("string length boundary: 10000 character name")
         void shouldHandleLongString() { // GH-90000
             String longName = "a".repeat(10000); // GH-90000
             Map<String, Object> response = createEntityWithName(longName); // GH-90000
@@ -73,70 +73,70 @@ public class EdgeCaseTests {
         }
 
         @Test
-        @DisplayName("numeric boundary: zero value [GH-90000]")
+        @DisplayName("numeric boundary: zero value")
         void shouldHandleZeroValue() { // GH-90000
             Map<String, Object> response = createDatasetWithRowCount(0); // GH-90000
-            assertThat(response.get("rowCount [GH-90000]")).isEqualTo(0L);
+            assertThat(response.get("rowCount")).isEqualTo(0L);
         }
 
         @Test
-        @DisplayName("numeric boundary: negative value rejection [GH-90000]")
+        @DisplayName("numeric boundary: negative value rejection")
         void shouldRejectNegativeValue() { // GH-90000
             Map<String, Object> response = createDatasetWithRowCount(-1); // GH-90000
-            assertThat(response).containsKey("errors [GH-90000]");
+            assertThat(response).containsKey("errors");
         }
 
         @Test
-        @DisplayName("numeric boundary: large number (2^63 - 1) [GH-90000]")
+        @DisplayName("numeric boundary: large number (2^63 - 1)")
         void shouldHandleLargeNumber() { // GH-90000
             Map<String, Object> response = createDatasetWithRowCount(Long.MAX_VALUE); // GH-90000
             assertThat(response).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("date boundary: epoch time (1970-01-01) [GH-90000]")
+        @DisplayName("date boundary: epoch time (1970-01-01)")
         void shouldHandleEpochDate() { // GH-90000
-            Map<String, Object> response = queryWithStartDate("1970-01-01 [GH-90000]");
-            assertThat(response).containsKey("results [GH-90000]");
+            Map<String, Object> response = queryWithStartDate("1970-01-01");
+            assertThat(response).containsKey("results");
         }
 
         @Test
-        @DisplayName("date boundary: future date (2099-12-31) [GH-90000]")
+        @DisplayName("date boundary: future date (2099-12-31)")
         void shouldHandleFutureDate() { // GH-90000
-            Map<String, Object> response = queryWithStartDate("2099-12-31 [GH-90000]");
-            assertThat(response).containsKey("results [GH-90000]");
+            Map<String, Object> response = queryWithStartDate("2099-12-31");
+            assertThat(response).containsKey("results");
         }
     }
 
     @Nested
-    @DisplayName("LargePayloadTests [GH-90000]")
+    @DisplayName("LargePayloadTests")
     class LargePayloadTests {
 
         @Test
-        @DisplayName("large dataset: 1 million rows [GH-90000]")
+        @DisplayName("large dataset: 1 million rows")
         void shouldHandleMillionRows() { // GH-90000
             Map<String, Object> response = createLargeDataset(1_000_000); // GH-90000
-            int rows = ((Number) response.get("rowCount [GH-90000]")).intValue();
+            int rows = ((Number) response.get("rowCount")).intValue();
             assertThat(rows).isGreaterThan(0); // GH-90000
         }
 
         @Test
-        @DisplayName("large response: 100MB JSON [GH-90000]")
+        @DisplayName("large response: 100MB JSON")
         void shouldHandle100MBResponse() { // GH-90000
             Map<String, Object> response = generateLargeResponse(100 * 1024 * 1024); // GH-90000
             assertThat(response).isNotNull(); // GH-90000
-            assertThat(response).containsKey("data [GH-90000]");
+            assertThat(response).containsKey("data");
         }
 
         @Test
-        @DisplayName("deeply nested structure: 100 levels deep [GH-90000]")
+        @DisplayName("deeply nested structure: 100 levels deep")
         void shouldHandleDeeplyNestedData() { // GH-90000
             Map<String, Object> nested = createDeeplyNestedMap(100); // GH-90000
             assertThat(nested).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("large collection: 10000 items in array [GH-90000]")
+        @DisplayName("large collection: 10000 items in array")
         void shouldHandleLargeArray() { // GH-90000
             List<Map<String, Object>> items = new ArrayList<>(); // GH-90000
             for (int i = 0; i < 10000; i++) { // GH-90000
@@ -146,7 +146,7 @@ public class EdgeCaseTests {
         }
 
         @Test
-        @DisplayName("wide object: 1000 properties [GH-90000]")
+        @DisplayName("wide object: 1000 properties")
         void shouldHandleWideObject() { // GH-90000
             Map<String, Object> wide = new HashMap<>(); // GH-90000
             for (int i = 0; i < 1000; i++) { // GH-90000
@@ -157,182 +157,182 @@ public class EdgeCaseTests {
     }
 
     @Nested
-    @DisplayName("ConcurrentOperationTests [GH-90000]")
+    @DisplayName("ConcurrentOperationTests")
     class ConcurrentOperationTests {
 
         @Test
-        @DisplayName("concurrent reads: same dataset from 10 threads [GH-90000]")
+        @DisplayName("concurrent reads: same dataset from 10 threads")
         void shouldHandleConcurrentReads() { // GH-90000
             Map<String, Object> response = simulateConcurrentReads(10); // GH-90000
-            assertThat(response.get("successCount [GH-90000]")).isEqualTo(10L);
+            assertThat(response.get("successCount")).isEqualTo(10L);
         }
 
         @Test
-        @DisplayName("concurrent writes: 5 clients creating collections [GH-90000]")
+        @DisplayName("concurrent writes: 5 clients creating collections")
         void shouldHandleConcurrentWrites() { // GH-90000
             Map<String, Object> response = simulateConcurrentWrites(5); // GH-90000
-            assertThat(response.get("created [GH-90000]")).isEqualTo(5L);
+            assertThat(response.get("created")).isEqualTo(5L);
         }
 
         @Test
-        @DisplayName("concurrent read-write: read while dataset is being updated [GH-90000]")
+        @DisplayName("concurrent read-write: read while dataset is being updated")
         void shouldHandleConcurrentReadWrite() { // GH-90000
             Map<String, Object> response = simulateReadWriteConflict(); // GH-90000
-            assertThat(response).containsKey("outcome [GH-90000]");
+            assertThat(response).containsKey("outcome");
         }
 
         @Test
-        @DisplayName("concurrent delete: prevents double-delete [GH-90000]")
+        @DisplayName("concurrent delete: prevents double-delete")
         void shouldPreventDoubleDelete() { // GH-90000
             Map<String, Object> response = simulateConcurrentDelete(3); // GH-90000
-            assertThat(response.get("deletedCount [GH-90000]")).isEqualTo(1L);
+            assertThat(response.get("deletedCount")).isEqualTo(1L);
         }
 
         @Test
-        @DisplayName("concurrent query: same query from 100 clients [GH-90000]")
+        @DisplayName("concurrent query: same query from 100 clients")
         void shouldHandleHighConcurrency() { // GH-90000
             Map<String, Object> response = simulateConcurrentQueries(100); // GH-90000
-            int successful = ((Number) response.get("successful [GH-90000]")).intValue();
+            int successful = ((Number) response.get("successful")).intValue();
             assertThat(successful).isGreaterThanOrEqualTo(99); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("InvalidInputTests [GH-90000]")
+    @DisplayName("InvalidInputTests")
     class InvalidInputTests {
 
         @Test
-        @DisplayName("null value rejection: required field missing [GH-90000]")
+        @DisplayName("null value rejection: required field missing")
         void shouldRejectNullRequiredField() { // GH-90000
-            Map<String, Object> response = createEntityWithoutField("name [GH-90000]");
-            assertThat(response).containsKey("errors [GH-90000]");
+            Map<String, Object> response = createEntityWithoutField("name");
+            assertThat(response).containsKey("errors");
         }
 
         @Test
-        @DisplayName("invalid UUID format [GH-90000]")
+        @DisplayName("invalid UUID format")
         void shouldRejectInvalidUUID() { // GH-90000
-            Map<String, Object> response = queryById("not-a-uuid [GH-90000]");
-            assertThat(response).containsKey("errors [GH-90000]");
+            Map<String, Object> response = queryById("not-a-uuid");
+            assertThat(response).containsKey("errors");
         }
 
         @Test
-        @DisplayName("invalid email format [GH-90000]")
+        @DisplayName("invalid email format")
         void shouldRejectInvalidEmail() { // GH-90000
-            Map<String, Object> response = createUserWithEmail("not-an-email [GH-90000]");
-            assertThat(response).containsKey("errors [GH-90000]");
+            Map<String, Object> response = createUserWithEmail("not-an-email");
+            assertThat(response).containsKey("errors");
         }
 
         @Test
-        @DisplayName("invalid JSON structure [GH-90000]")
+        @DisplayName("invalid JSON structure")
         void shouldRejectMalformedJSON() { // GH-90000
-            Map<String, Object> response = parseJSON("{invalid json [GH-90000]");
-            assertThat(response).containsKey("errors [GH-90000]");
+            Map<String, Object> response = parseJSON("{invalid json");
+            assertThat(response).containsKey("errors");
         }
 
         @Test
-        @DisplayName("SQL injection attempt in query parameter [GH-90000]")
+        @DisplayName("SQL injection attempt in query parameter")
         void shouldRejectSQLInjection() { // GH-90000
-            Map<String, Object> response = queryWithFilter("'; DROP TABLE users; -- [GH-90000]");
-            assertThat(response).containsKey("results [GH-90000]");
+            Map<String, Object> response = queryWithFilter("'; DROP TABLE users; --");
+            assertThat(response).containsKey("results");
             // Result should be treated as literal string, not executed SQL
         }
 
         @Test
-        @DisplayName("XSS payload in string field [GH-90000]")
+        @DisplayName("XSS payload in string field")
         void shouldSanitizeXSSPayload() { // GH-90000
             String xssPayload = "<script>alert('xss')</script>"; // GH-90000
             Map<String, Object> response = createEntityWithDescription(xssPayload); // GH-90000
-            String stored = response.get("description [GH-90000]").toString();
-            assertThat(stored).doesNotContain("<script> [GH-90000]");
+            String stored = response.get("description").toString();
+            assertThat(stored).doesNotContain("<script>");
         }
 
         @Test
-        @DisplayName("oversized payload rejection (>1GB) [GH-90000]")
+        @DisplayName("oversized payload rejection (>1GB)")
         void shouldRejectOversizedPayload() { // GH-90000
             Map<String, Object> response = uploadPayload(1024 * 1024 * 1024 + 1); // GH-90000
-            assertThat(response).containsKey("error [GH-90000]");
+            assertThat(response).containsKey("error");
         }
     }
 
     @Nested
-    @DisplayName("NullAndEmptyTests [GH-90000]")
+    @DisplayName("NullAndEmptyTests")
     class NullAndEmptyTests {
 
         @Test
-        @DisplayName("null list returns empty not null [GH-90000]")
+        @DisplayName("null list returns empty not null")
         void shouldHandleNullList() { // GH-90000
             Map<String, Object> response = getCollectionsOrNull(); // GH-90000
             assertThat(response).isNotNull(); // GH-90000
-            if (response.containsKey("items [GH-90000]")) {
-                List<?> items = (List<?>) response.get("items [GH-90000]");
+            if (response.containsKey("items")) {
+                List<?> items = (List<?>) response.get("items");
                 assertThat(items).isNotNull(); // GH-90000
             }
         }
 
         @Test
-        @DisplayName("empty string in required field [GH-90000]")
+        @DisplayName("empty string in required field")
         void shouldRejectEmptyRequired() { // GH-90000
-            Map<String, Object> response = createCollectionWithName(" [GH-90000]");
-            assertThat(response).containsKey("errors [GH-90000]");
+            Map<String, Object> response = createCollectionWithName("");
+            assertThat(response).containsKey("errors");
         }
 
         @Test
-        @DisplayName("empty array in items field [GH-90000]")
+        @DisplayName("empty array in items field")
         void shouldAcceptEmptyArray() { // GH-90000
             Map<String, Object> response = createQueryWithEmptyResults(); // GH-90000
-            List<?> items = (List<?>) response.get("items [GH-90000]");
+            List<?> items = (List<?>) response.get("items");
             assertThat(items).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("null object in nested structure [GH-90000]")
+        @DisplayName("null object in nested structure")
         void shouldHandleNullInNested() { // GH-90000
             Map<String, Object> response = createDatasetWithNullMetadata(); // GH-90000
-            assertThat(response).containsKey("metadata [GH-90000]");
+            assertThat(response).containsKey("metadata");
         }
 
         @Test
-        @DisplayName("optional field can be omitted [GH-90000]")
+        @DisplayName("optional field can be omitted")
         void shouldAllowOmittedOptionalField() { // GH-90000
             Map<String, Object> response = createCollectionWithoutDescription(); // GH-90000
-            assertThat(response.get("id [GH-90000]")).isNotNull();
+            assertThat(response.get("id")).isNotNull();
         }
     }
 
     @Nested
-    @DisplayName("ErrorHandlingTests [GH-90000]")
+    @DisplayName("ErrorHandlingTests")
     class ErrorHandlingTests {
 
         @Test
-        @DisplayName("404 not found: resource doesn't exist [GH-90000]")
+        @DisplayName("404 not found: resource doesn't exist")
         void shouldReturn404() { // GH-90000
-            Map<String, Object> response = getResourceOrNull("nonexistent-id [GH-90000]");
+            Map<String, Object> response = getResourceOrNull("nonexistent-id");
             assertThat(response).isNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("403 forbidden: access denied [GH-90000]")
+        @DisplayName("403 forbidden: access denied")
         void shouldReturn403() { // GH-90000
             Map<String, Object> response = accessResourceFromDifferentTenant("resource-1", "tenant-2"); // GH-90000
             assertThat(response).isNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("400 bad request: invalid query parameter [GH-90000]")
+        @DisplayName("400 bad request: invalid query parameter")
         void shouldReturn400() { // GH-90000
-            Map<String, Object> response = queryWithInvalidParam("invalid-value [GH-90000]");
-            assertThat(response).containsKey("errors [GH-90000]");
+            Map<String, Object> response = queryWithInvalidParam("invalid-value");
+            assertThat(response).containsKey("errors");
         }
 
         @Test
-        @DisplayName("409 conflict: duplicate resource creation [GH-90000]")
+        @DisplayName("409 conflict: duplicate resource creation")
         void shouldReturn409() { // GH-90000
             Map<String, Object> response = createDuplicateCollection(); // GH-90000
-            assertThat(response).containsKey("error [GH-90000]");
+            assertThat(response).containsKey("error");
         }
 
         @Test
-        @DisplayName("503 service unavailable: graceful degradation [GH-90000]")
+        @DisplayName("503 service unavailable: graceful degradation")
         void shouldHandleServiceUnavailable() { // GH-90000
             Map<String, Object> response = queryWithoutDependency(); // GH-90000
             assertThat(response).isNotNull(); // GH-90000
@@ -340,36 +340,36 @@ public class EdgeCaseTests {
     }
 
     @Nested
-    @DisplayName("TimeoutAndRetryTests [GH-90000]")
+    @DisplayName("TimeoutAndRetryTests")
     class TimeoutAndRetryTests {
 
         @Test
-        @DisplayName("query timeout: exceeds 30s limit [GH-90000]")
+        @DisplayName("query timeout: exceeds 30s limit")
         void shouldTimeoutLongRunningQuery() { // GH-90000
             Map<String, Object> response = executeSlowQuery(31000); // GH-90000
-            assertThat(response).containsKey("error [GH-90000]");
+            assertThat(response).containsKey("error");
         }
 
         @Test
-        @DisplayName("retry logic: automatic retry on transient failure [GH-90000]")
+        @DisplayName("retry logic: automatic retry on transient failure")
         void shouldRetryOnTransientFailure() { // GH-90000
             Map<String, Object> response = executeWithTransientFailure(); // GH-90000
-            assertThat(response.get("retries [GH-90000]")).isEqualTo(1L);
-            assertThat(response.get("success [GH-90000]")).isEqualTo(true);
+            assertThat(response.get("retries")).isEqualTo(1L);
+            assertThat(response.get("success")).isEqualTo(true);
         }
 
         @Test
-        @DisplayName("circuit breaker: fails fast after threshold [GH-90000]")
+        @DisplayName("circuit breaker: fails fast after threshold")
         void shouldOpenCircuitBreaker() { // GH-90000
             Map<String, Object> response = triggerMultipleFailures(10); // GH-90000
-            assertThat(response.get("circuitOpen [GH-90000]")).isEqualTo(true);
+            assertThat(response.get("circuitOpen")).isEqualTo(true);
         }
 
         @Test
-        @DisplayName("backoff strategy: exponential delay on retries [GH-90000]")
+        @DisplayName("backoff strategy: exponential delay on retries")
         void shouldUseExponentialBackoff() { // GH-90000
             Map<String, Object> response = checkRetryDelays(); // GH-90000
-            List<?> delays = (List<?>) response.get("delays [GH-90000]");
+            List<?> delays = (List<?>) response.get("delays");
             assertThat(delays).hasSizeGreaterThan(0); // GH-90000
         }
     }
@@ -454,14 +454,14 @@ public class EdgeCaseTests {
     }
 
     private Map<String, Object> queryById(String id) { // GH-90000
-        if (!id.matches("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}.* [GH-90000]")) {
+        if (!id.matches("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}.*")) {
             return Map.of("errors", "Invalid UUID format"); // GH-90000
         }
         return Map.of("id", id); // GH-90000
     }
 
     private Map<String, Object> createUserWithEmail(String email) { // GH-90000
-        if (!email.contains("@ [GH-90000]")) {
+        if (!email.contains("@")) {
             return Map.of("errors", "Invalid email format"); // GH-90000
         }
         return Map.of("email", email); // GH-90000
@@ -473,7 +473,7 @@ public class EdgeCaseTests {
             if (json == null || json.trim().isEmpty()) { // GH-90000
                 return Map.of("errors", "JSON is empty"); // GH-90000
             }
-            if (!json.trim().startsWith("{ [GH-90000]") && !json.trim().startsWith("[ [GH-90000]")) {
+            if (!json.trim().startsWith("{") && !json.trim().startsWith("[")) {
                 return Map.of("errors", "Invalid JSON structure"); // GH-90000
             }
             // Count braces to check for matching pairs
@@ -530,7 +530,7 @@ public class EdgeCaseTests {
     }
 
     private Map<String, Object> getResourceOrNull(String id) { // GH-90000
-        if (id.equals("nonexistent-id [GH-90000]")) {
+        if (id.equals("nonexistent-id")) {
             return null;
         }
         return Map.of("id", id); // GH-90000

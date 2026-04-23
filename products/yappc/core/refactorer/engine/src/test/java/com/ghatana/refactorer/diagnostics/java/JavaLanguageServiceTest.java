@@ -53,21 +53,21 @@ class JavaLanguageServiceTest extends EventloopTestBase {
     void testSupportsJavaFiles() { // GH-90000
         assertThat(service.supports(Path.of(TEST_JAVA))).isTrue(); // GH-90000
         assertThat(service.supports(Path.of("path/to/" + TEST_JAVA))).isTrue(); // GH-90000
-        assertThat(service.supports(Path.of("Test.JAVA [GH-90000]"))).isTrue();
-        assertThat(service.supports(Path.of("Test.txt [GH-90000]"))).isFalse();
+        assertThat(service.supports(Path.of("Test.JAVA"))).isTrue();
+        assertThat(service.supports(Path.of("Test.txt"))).isFalse();
         assertThat(service.supports(null)).isFalse(); // GH-90000
     }
 
     @Test
     void testGetSupportedFileExtensions() { // GH-90000
-        assertThat(service.getSupportedFileExtensions()).containsExactly(".java [GH-90000]");
+        assertThat(service.getSupportedFileExtensions()).containsExactly(".java");
     }
 
     @Test
     void testDiagnoseWithNullFiles() { // GH-90000
         List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, null)); // GH-90000
         assertThat(diagnostics).hasSize(1); // GH-90000
-        assertThat(diagnostics.get(0).message()).contains("files [GH-90000]");
+        assertThat(diagnostics.get(0).message()).contains("files");
     }
 
     @Test
@@ -78,7 +78,7 @@ class JavaLanguageServiceTest extends EventloopTestBase {
 
     @Test
     void testDiagnoseWithNonJavaFile() throws IOException { // GH-90000
-        Path nonJavaFile = tempDir.resolve("test.txt [GH-90000]");
+        Path nonJavaFile = tempDir.resolve("test.txt");
         Files.writeString(nonJavaFile, "This is not a Java file"); // GH-90000
 
         List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, List.of(nonJavaFile))); // GH-90000
@@ -93,7 +93,7 @@ class JavaLanguageServiceTest extends EventloopTestBase {
 
             public class Test {
                 public static void main(String[] args) { // GH-90000
-                    System.out.println("Hello, World! [GH-90000]");
+                    System.out.println("Hello, World!");
                 }
             }
             """;
@@ -114,7 +114,7 @@ class JavaLanguageServiceTest extends EventloopTestBase {
             public class Test {
                 public static void main(String[] args) { // GH-90000
                     // Missing semicolon
-                    System.out.println("Hello, World! [GH-90000]")
+                    System.out.println("Hello, World!")
                 }
             }
             """;
@@ -128,9 +128,9 @@ class JavaLanguageServiceTest extends EventloopTestBase {
                 .hasSize(1) // GH-90000
                 .allSatisfy( // GH-90000
                         d -> {
-                            assertThat(d.tool()).isEqualTo("java-compiler [GH-90000]");
-                            assertThat(d.ruleId()).isEqualTo("compilation-error [GH-90000]");
-                            assertThat(d.message()).contains("missing ';' [GH-90000]");
+                            assertThat(d.tool()).isEqualTo("java-compiler");
+                            assertThat(d.ruleId()).isEqualTo("compilation-error");
+                            assertThat(d.message()).contains("missing ';'");
                             assertThat(d.file()).endsWith(TEST_JAVA); // GH-90000
                             assertThat(d.line()).isGreaterThan(0); // GH-90000
                             assertThat(d.column()).isGreaterThan(0); // GH-90000
@@ -161,8 +161,8 @@ class JavaLanguageServiceTest extends EventloopTestBase {
             }
             """;
 
-        Path validFile = tempDir.resolve("Test1.java [GH-90000]");
-        Path invalidFile = tempDir.resolve("Test2.java [GH-90000]");
+        Path validFile = tempDir.resolve("Test1.java");
+        Path invalidFile = tempDir.resolve("Test2.java");
 
         Files.writeString(validFile, validJava); // GH-90000
         Files.writeString(invalidFile, invalidJava); // GH-90000
@@ -173,12 +173,12 @@ class JavaLanguageServiceTest extends EventloopTestBase {
         // Should only report errors from the invalid file
         assertThat(diagnostics) // GH-90000
                 .hasSize(1) // GH-90000
-                .allSatisfy(d -> assertThat(d.file()).endsWith("Test2.java [GH-90000]"));
+                .allSatisfy(d -> assertThat(d.file()).endsWith("Test2.java"));
     }
 
     @Test
     void testDiagnoseWithNonExistentFile() { // GH-90000
-        Path nonExistentFile = tempDir.resolve("NonExistent.java [GH-90000]");
+        Path nonExistentFile = tempDir.resolve("NonExistent.java");
         List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, List.of(nonExistentFile))); // GH-90000
 
         assertThat(diagnostics).isEmpty(); // GH-90000
@@ -191,7 +191,7 @@ class JavaLanguageServiceTest extends EventloopTestBase {
         List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(null, List.of(javaFile))); // GH-90000
 
         assertThat(diagnostics).hasSize(1); // GH-90000
-        assertThat(diagnostics.get(0).message()).contains("context [GH-90000]");
+        assertThat(diagnostics.get(0).message()).contains("context");
     }
 
     @Test
@@ -216,8 +216,8 @@ class JavaLanguageServiceTest extends EventloopTestBase {
                 .hasSize(1) // GH-90000
                 .anySatisfy( // GH-90000
                         d -> {
-                            assertThat(d.ruleId()).isEqualTo("type-error [GH-90000]");
-                            assertThat(d.message()).contains("Cannot resolve type for variable [GH-90000]");
+                            assertThat(d.ruleId()).isEqualTo("type-error");
+                            assertThat(d.message()).contains("Cannot resolve type for variable");
                         });
     }
 
@@ -243,9 +243,9 @@ class JavaLanguageServiceTest extends EventloopTestBase {
                 .hasSize(1) // GH-90000
                 .allSatisfy( // GH-90000
                         d -> {
-                            assertThat(d.ruleId()).isEqualTo("type-error [GH-90000]");
+                            assertThat(d.ruleId()).isEqualTo("type-error");
                             assertThat(d.message()) // GH-90000
-                                    .contains("Cannot resolve type for variable: UnknownType [GH-90000]");
+                                    .contains("Cannot resolve type for variable: UnknownType");
                         });
     }
 
@@ -300,8 +300,8 @@ class JavaLanguageServiceTest extends EventloopTestBase {
 
     @Test
     void testDiagnoseWithInheritance() throws IOException { // GH-90000
-        Path parentFile = tempDir.resolve("Parent.java [GH-90000]");
-        Path childFile = tempDir.resolve("Child.java [GH-90000]");
+        Path parentFile = tempDir.resolve("Parent.java");
+        Path childFile = tempDir.resolve("Child.java");
         Files.writeString(parentFile, "package com.example;\npublic class Parent {}"); // GH-90000
         Files.writeString( // GH-90000
                 childFile,
@@ -333,8 +333,8 @@ class JavaLanguageServiceTest extends EventloopTestBase {
             }
             """;
 
-        Path interfaceFile = tempDir.resolve("TestInterface.java [GH-90000]");
-        Path implFile = tempDir.resolve("TestImpl.java [GH-90000]");
+        Path interfaceFile = tempDir.resolve("TestInterface.java");
+        Path implFile = tempDir.resolve("TestImpl.java");
         Files.writeString( // GH-90000
                 interfaceFile,
                 "package com.example;\npublic interface TestInterface {\n    void method();\n}"); // GH-90000
@@ -397,6 +397,6 @@ class JavaLanguageServiceTest extends EventloopTestBase {
 
         assertThat(diagnostics) // GH-90000
                 .hasSize(2) // GH-90000
-                .allSatisfy(d -> assertThat(d.ruleId()).isEqualTo("type-error [GH-90000]"));
+                .allSatisfy(d -> assertThat(d.ruleId()).isEqualTo("type-error"));
     }
 }

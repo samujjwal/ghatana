@@ -17,7 +17,8 @@ import java.util.Map;
  * @doc.type value-object
  * @doc.purpose Error artifact for memory
  * @doc.layer agent-memory
- */
+  * @doc.pattern Exception
+*/
 @Value
 @Builder
 public class ErrorArtifact implements TypedArtifact {

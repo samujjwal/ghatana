@@ -36,7 +36,7 @@ import static org.mockito.Mockito.when;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("AuthenticationInterceptor Tests [GH-90000]")
+@DisplayName("AuthenticationInterceptor Tests")
 class AuthenticationInterceptorTest {
 
     @Mock
@@ -48,10 +48,10 @@ class AuthenticationInterceptorTest {
     }
 
     @Test
-    @DisplayName("GIVEN public method WHEN no auth header THEN request bypasses authentication [GH-90000]")
+    @DisplayName("GIVEN public method WHEN no auth header THEN request bypasses authentication")
     void shouldBypassAuthenticationForPublicMethod() { // GH-90000
         AuthenticationInterceptor interceptor = new AuthenticationInterceptor(authenticationProvider); // GH-90000
-        TestServerCall call = new TestServerCall("grpc.health.v1.Health/Check [GH-90000]");
+        TestServerCall call = new TestServerCall("grpc.health.v1.Health/Check");
         Metadata headers = new Metadata(); // GH-90000
         AtomicReference<Boolean> started = new AtomicReference<>(false); // GH-90000
 
@@ -68,10 +68,10 @@ class AuthenticationInterceptorTest {
     }
 
     @Test
-    @DisplayName("GIVEN missing auth header WHEN protected method THEN closes as UNAUTHENTICATED [GH-90000]")
+    @DisplayName("GIVEN missing auth header WHEN protected method THEN closes as UNAUTHENTICATED")
     void shouldRejectMissingAuthorizationHeader() { // GH-90000
         AuthenticationInterceptor interceptor = new AuthenticationInterceptor(authenticationProvider); // GH-90000
-        TestServerCall call = new TestServerCall("stt.STTService/Transcribe [GH-90000]");
+        TestServerCall call = new TestServerCall("stt.STTService/Transcribe");
         Metadata headers = new Metadata(); // GH-90000
 
         interceptor.interceptCall(call, headers, (c, h) -> new ServerCall.Listener<>() {}); // GH-90000
@@ -81,10 +81,10 @@ class AuthenticationInterceptorTest {
     }
 
     @Test
-    @DisplayName("GIVEN invalid token WHEN provider returns empty THEN closes as UNAUTHENTICATED [GH-90000]")
+    @DisplayName("GIVEN invalid token WHEN provider returns empty THEN closes as UNAUTHENTICATED")
     void shouldRejectInvalidToken() { // GH-90000
         AuthenticationInterceptor interceptor = new AuthenticationInterceptor(authenticationProvider); // GH-90000
-        TestServerCall call = new TestServerCall("stt.STTService/Transcribe [GH-90000]");
+        TestServerCall call = new TestServerCall("stt.STTService/Transcribe");
         Metadata headers = new Metadata(); // GH-90000
         headers.put(AuthenticationInterceptor.AUTHORIZATION_KEY, "Bearer invalid-token"); // GH-90000
 
@@ -98,15 +98,15 @@ class AuthenticationInterceptorTest {
     }
 
     @Test
-    @DisplayName("GIVEN expired token WHEN provider throws THEN closes as UNAUTHENTICATED [GH-90000]")
+    @DisplayName("GIVEN expired token WHEN provider throws THEN closes as UNAUTHENTICATED")
     void shouldRejectExpiredToken() { // GH-90000
         AuthenticationInterceptor interceptor = new AuthenticationInterceptor(authenticationProvider); // GH-90000
-        TestServerCall call = new TestServerCall("stt.STTService/Transcribe [GH-90000]");
+        TestServerCall call = new TestServerCall("stt.STTService/Transcribe");
         Metadata headers = new Metadata(); // GH-90000
         headers.put(AuthenticationInterceptor.AUTHORIZATION_KEY, "Bearer expired-token"); // GH-90000
 
         when(authenticationProvider.authenticate(any(Credentials.class))) // GH-90000
-            .thenReturn(Promise.ofException(new IllegalStateException("token expired [GH-90000]")));
+            .thenReturn(Promise.ofException(new IllegalStateException("token expired")));
 
         interceptor.interceptCall(call, headers, (c, h) -> new ServerCall.Listener<>() {}); // GH-90000
 
@@ -115,10 +115,10 @@ class AuthenticationInterceptorTest {
     }
 
     @Test
-    @DisplayName("GIVEN valid token and tenant header WHEN protected method THEN auth context and tenant context are set [GH-90000]")
+    @DisplayName("GIVEN valid token and tenant header WHEN protected method THEN auth context and tenant context are set")
     void shouldPopulateAuthAndTenantContextForValidToken() { // GH-90000
         AuthenticationInterceptor interceptor = new AuthenticationInterceptor(authenticationProvider); // GH-90000
-        TestServerCall call = new TestServerCall("stt.STTService/Transcribe [GH-90000]");
+        TestServerCall call = new TestServerCall("stt.STTService/Transcribe");
         Metadata headers = new Metadata(); // GH-90000
         headers.put(AuthenticationInterceptor.AUTHORIZATION_KEY, "Bearer valid-token"); // GH-90000
         headers.put(AuthenticationInterceptor.TENANT_ID_KEY, "tenant-123"); // GH-90000
@@ -137,10 +137,10 @@ class AuthenticationInterceptorTest {
 
         assertThat(call.closedStatus).isNull(); // GH-90000
         assertThat(observed.get()).isNotNull(); // GH-90000
-        assertThat(observed.get().userId()).isEqualTo("user-1 [GH-90000]");
-        assertThat(observed.get().tenantId()).isEqualTo("tenant-123 [GH-90000]");
+        assertThat(observed.get().userId()).isEqualTo("user-1");
+        assertThat(observed.get().tenantId()).isEqualTo("tenant-123");
         assertThat(observed.get().isAdmin()).isTrue(); // GH-90000
-        assertThat(TenantContext.getCurrentTenantId()).isEqualTo("tenant-123 [GH-90000]");
+        assertThat(TenantContext.getCurrentTenantId()).isEqualTo("tenant-123");
     }
 
     private static final class TestServerCall extends ServerCall<StringValue, StringValue> {

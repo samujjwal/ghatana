@@ -48,7 +48,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("GDPR Erasure Depth Test [GH-90000]")
+@DisplayName("GDPR Erasure Depth Test")
 class GdprErasureDepthTest {
 
     private static final String TENANT_ID = "tenant-test-123";
@@ -70,11 +70,11 @@ class GdprErasureDepthTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("dc_memory collection deletion [GH-90000]")
+    @DisplayName("dc_memory collection deletion")
     class DcMemoryDeletionTests {
 
         @Test
-        @DisplayName("deletes all matching records from dc_memory collection [GH-90000]")
+        @DisplayName("deletes all matching records from dc_memory collection")
         void deletesAllMatchingRecordsFromDcMemory() { // GH-90000
             // Setup: Create multiple records in dc_memory with the same subjectId
             List<Entity> dcMemoryRecords = List.of( // GH-90000
@@ -99,7 +99,7 @@ class GdprErasureDepthTest {
 
             // Verify
             assertThat(report.success()).isTrue(); // GH-90000
-            assertThat(report.operation()).isEqualTo("GDPR_ERASURE [GH-90000]");
+            assertThat(report.operation()).isEqualTo("GDPR_ERASURE");
             assertThat(report.breakdown()).containsEntry(DC_MEMORY_COLLECTION, 3L); // GH-90000
 
             // Verify all three records were deleted
@@ -109,7 +109,7 @@ class GdprErasureDepthTest {
         }
 
         @Test
-        @DisplayName("does not delete records with different subjectId in dc_memory [GH-90000]")
+        @DisplayName("does not delete records with different subjectId in dc_memory")
         void doesNotDeleteDifferentSubjectRecords() { // GH-90000
             // Setup: Return only records matching the subjectId (simulating filtered query result) // GH-90000
             // The service queries with filter by SUBJECT_ID_FIELD, so mock returns filtered results
@@ -137,7 +137,7 @@ class GdprErasureDepthTest {
         }
 
         @Test
-        @DisplayName("uses correct subjectId filter when querying dc_memory [GH-90000]")
+        @DisplayName("uses correct subjectId filter when querying dc_memory")
         void usesCorrectSubjectIdFilter() { // GH-90000
             when(dataCloudClient.query(eq(TENANT_ID), eq(DC_MEMORY_COLLECTION), any(Query.class))) // GH-90000
                     .thenReturn(Promise.of(List.of())); // GH-90000
@@ -162,22 +162,22 @@ class GdprErasureDepthTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("all collections deletion [GH-90000]")
+    @DisplayName("all collections deletion")
     class AllCollectionsDeletionTests {
 
         @Test
-        @DisplayName("deletes records from all default AEP collections [GH-90000]")
+        @DisplayName("deletes records from all default AEP collections")
         void deletesFromAllDefaultCollections() { // GH-90000
             // Setup records in all collections
-            when(dataCloudClient.query(eq(TENANT_ID), eq("aep_patterns [GH-90000]"), any(Query.class)))
+            when(dataCloudClient.query(eq(TENANT_ID), eq("aep_patterns"), any(Query.class)))
                     .thenReturn(Promise.of(List.of(createEntity("p-1", "aep_patterns", SUBJECT_ID)))); // GH-90000
-            when(dataCloudClient.query(eq(TENANT_ID), eq("aep_pipelines [GH-90000]"), any(Query.class)))
+            when(dataCloudClient.query(eq(TENANT_ID), eq("aep_pipelines"), any(Query.class)))
                     .thenReturn(Promise.of(List.of(createEntity("pl-1", "aep_pipelines", SUBJECT_ID)))); // GH-90000
-            when(dataCloudClient.query(eq(TENANT_ID), eq("agent-registry [GH-90000]"), any(Query.class)))
+            when(dataCloudClient.query(eq(TENANT_ID), eq("agent-registry"), any(Query.class)))
                     .thenReturn(Promise.of(List.of(createEntity("ag-1", "agent-registry", SUBJECT_ID)))); // GH-90000
             when(dataCloudClient.query(eq(TENANT_ID), eq(DC_MEMORY_COLLECTION), any(Query.class))) // GH-90000
                     .thenReturn(Promise.of(List.of(createEntity("dc-1", DC_MEMORY_COLLECTION, SUBJECT_ID)))); // GH-90000
-            when(dataCloudClient.query(eq(TENANT_ID), eq("aep_audit [GH-90000]"), any(Query.class)))
+            when(dataCloudClient.query(eq(TENANT_ID), eq("aep_audit"), any(Query.class)))
                     .thenReturn(Promise.of(List.of(createEntity("au-1", "aep_audit", SUBJECT_ID)))); // GH-90000
 
             when(dataCloudClient.delete(anyString(), anyString(), anyString())) // GH-90000
@@ -197,7 +197,7 @@ class GdprErasureDepthTest {
         }
 
         @Test
-        @DisplayName("handles empty dc_memory collection gracefully [GH-90000]")
+        @DisplayName("handles empty dc_memory collection gracefully")
         void handlesEmptyDcMemory() { // GH-90000
             when(dataCloudClient.query(eq(TENANT_ID), eq(DC_MEMORY_COLLECTION), any(Query.class))) // GH-90000
                     .thenReturn(Promise.of(List.of())); // GH-90000
@@ -211,23 +211,23 @@ class GdprErasureDepthTest {
         }
 
         @Test
-        @DisplayName("aggregates deletion counts across all collections [GH-90000]")
+        @DisplayName("aggregates deletion counts across all collections")
         void aggregatesDeletionCounts() { // GH-90000
             // Setup: Multiple records in different collections
-            when(dataCloudClient.query(eq(TENANT_ID), eq("aep_patterns [GH-90000]"), any(Query.class)))
+            when(dataCloudClient.query(eq(TENANT_ID), eq("aep_patterns"), any(Query.class)))
                     .thenReturn(Promise.of(List.of( // GH-90000
                             createEntity("p-1", "aep_patterns", SUBJECT_ID), // GH-90000
                             createEntity("p-2", "aep_patterns", SUBJECT_ID)))); // GH-90000
-            when(dataCloudClient.query(eq(TENANT_ID), eq("aep_pipelines [GH-90000]"), any(Query.class)))
+            when(dataCloudClient.query(eq(TENANT_ID), eq("aep_pipelines"), any(Query.class)))
                     .thenReturn(Promise.of(List.of(createEntity("pl-1", "aep_pipelines", SUBJECT_ID)))); // GH-90000
-            when(dataCloudClient.query(eq(TENANT_ID), eq("agent-registry [GH-90000]"), any(Query.class)))
+            when(dataCloudClient.query(eq(TENANT_ID), eq("agent-registry"), any(Query.class)))
                     .thenReturn(Promise.of(List.of())); // GH-90000
             when(dataCloudClient.query(eq(TENANT_ID), eq(DC_MEMORY_COLLECTION), any(Query.class))) // GH-90000
                     .thenReturn(Promise.of(List.of( // GH-90000
                             createEntity("dc-1", DC_MEMORY_COLLECTION, SUBJECT_ID), // GH-90000
                             createEntity("dc-2", DC_MEMORY_COLLECTION, SUBJECT_ID), // GH-90000
                             createEntity("dc-3", DC_MEMORY_COLLECTION, SUBJECT_ID)))); // GH-90000
-            when(dataCloudClient.query(eq(TENANT_ID), eq("aep_audit [GH-90000]"), any(Query.class)))
+            when(dataCloudClient.query(eq(TENANT_ID), eq("aep_audit"), any(Query.class)))
                     .thenReturn(Promise.of(List.of(createEntity("au-1", "aep_audit", SUBJECT_ID)))); // GH-90000
 
             when(dataCloudClient.delete(anyString(), anyString(), anyString())) // GH-90000
@@ -251,11 +251,11 @@ class GdprErasureDepthTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("EventLogStore and cache verification [GH-90000]")
+    @DisplayName("EventLogStore and cache verification")
     class EventLogStoreAndCacheTests {
 
         @Test
-        @DisplayName("verifies registered collections include all expected collections [GH-90000]")
+        @DisplayName("verifies registered collections include all expected collections")
         void verifiesRegisteredCollections() { // GH-90000
             List<String> collections = complianceService.registeredCollections(); // GH-90000
 
@@ -270,28 +270,28 @@ class GdprErasureDepthTest {
         }
 
         @Test
-        @DisplayName("allows registration of additional collections for deletion [GH-90000]")
+        @DisplayName("allows registration of additional collections for deletion")
         void allowsAdditionalCollectionRegistration() { // GH-90000
-            complianceService.registerCollection("custom_event_log [GH-90000]");
+            complianceService.registerCollection("custom_event_log");
 
             List<String> collections = complianceService.registeredCollections(); // GH-90000
 
-            assertThat(collections).contains("custom_event_log [GH-90000]");
+            assertThat(collections).contains("custom_event_log");
             assertThat(collections).hasSize(6); // 5 default + 1 custom // GH-90000
         }
 
         @Test
-        @DisplayName("deletes from custom registered collections [GH-90000]")
+        @DisplayName("deletes from custom registered collections")
         void deletesFromCustomCollections() { // GH-90000
-            complianceService.registerCollection("custom_logs [GH-90000]");
+            complianceService.registerCollection("custom_logs");
 
-            when(dataCloudClient.query(eq(TENANT_ID), eq("custom_logs [GH-90000]"), any(Query.class)))
+            when(dataCloudClient.query(eq(TENANT_ID), eq("custom_logs"), any(Query.class)))
                     .thenReturn(Promise.of(List.of(createEntity("c-1", "custom_logs", SUBJECT_ID)))); // GH-90000
 
             // Stub other collections including dc_memory
             when(dataCloudClient.query(eq(TENANT_ID), eq(DC_MEMORY_COLLECTION), any(Query.class))) // GH-90000
                     .thenReturn(Promise.of(List.of())); // GH-90000
-            stubOtherCollectionsEmpty("custom_logs [GH-90000]");
+            stubOtherCollectionsEmpty("custom_logs");
 
             when(dataCloudClient.delete(anyString(), anyString(), anyString())) // GH-90000
                     .thenReturn(Promise.of((Void) null)); // GH-90000
@@ -308,18 +308,18 @@ class GdprErasureDepthTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("error handling and edge cases [GH-90000]")
+    @DisplayName("error handling and edge cases")
     class ErrorHandlingTests {
 
         @Test
-        @DisplayName("continues deletion if one collection fails [GH-90000]")
+        @DisplayName("continues deletion if one collection fails")
         void continuesOnCollectionFailure() { // GH-90000
             // dc_memory fails
             when(dataCloudClient.query(eq(TENANT_ID), eq(DC_MEMORY_COLLECTION), any(Query.class))) // GH-90000
-                    .thenReturn(Promise.ofException(new RuntimeException("dc_memory unavailable [GH-90000]")));
+                    .thenReturn(Promise.ofException(new RuntimeException("dc_memory unavailable")));
 
             // Other collections succeed
-            when(dataCloudClient.query(eq(TENANT_ID), eq("aep_patterns [GH-90000]"), any(Query.class)))
+            when(dataCloudClient.query(eq(TENANT_ID), eq("aep_patterns"), any(Query.class)))
                     .thenReturn(Promise.of(List.of(createEntity("p-1", "aep_patterns", SUBJECT_ID)))); // GH-90000
 
             stubOtherCollectionsEmpty("aep_patterns", DC_MEMORY_COLLECTION); // GH-90000
@@ -337,7 +337,7 @@ class GdprErasureDepthTest {
         }
 
         @Test
-        @DisplayName("handles deletion failure for individual records [GH-90000]")
+        @DisplayName("handles deletion failure for individual records")
         void handlesIndividualRecordFailure() { // GH-90000
             List<Entity> dcMemoryRecords = List.of( // GH-90000
                     createEntity("dc-1", DC_MEMORY_COLLECTION, SUBJECT_ID), // GH-90000
@@ -348,10 +348,10 @@ class GdprErasureDepthTest {
                     .thenReturn(Promise.of(dcMemoryRecords)); // GH-90000
 
             // First delete succeeds, second fails
-            when(dataCloudClient.delete(eq(TENANT_ID), eq(DC_MEMORY_COLLECTION), eq("dc-1 [GH-90000]")))
+            when(dataCloudClient.delete(eq(TENANT_ID), eq(DC_MEMORY_COLLECTION), eq("dc-1")))
                     .thenReturn(Promise.of((Void) null)); // GH-90000
-            when(dataCloudClient.delete(eq(TENANT_ID), eq(DC_MEMORY_COLLECTION), eq("dc-2 [GH-90000]")))
-                    .thenReturn(Promise.ofException(new RuntimeException("delete failed [GH-90000]")));
+            when(dataCloudClient.delete(eq(TENANT_ID), eq(DC_MEMORY_COLLECTION), eq("dc-2")))
+                    .thenReturn(Promise.ofException(new RuntimeException("delete failed")));
 
             stubOtherCollectionsEmpty(); // GH-90000
 

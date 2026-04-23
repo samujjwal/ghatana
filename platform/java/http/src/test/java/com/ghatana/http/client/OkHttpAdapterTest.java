@@ -18,7 +18,7 @@ import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("OkHttpAdapter Tests [GH-90000]")
+@DisplayName("OkHttpAdapter Tests")
 class OkHttpAdapterTest extends EventloopTestBase {
 
     private MockWebServer server;
@@ -45,32 +45,32 @@ class OkHttpAdapterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should post JSON and return response body [GH-90000]")
+    @DisplayName("Should post JSON and return response body")
     void shouldPostJsonAndReturnResponseBody() { // GH-90000
         // Given
         server.enqueue(new MockResponse().setResponseCode(200).setBody("{\"ok\":true}")); // GH-90000
-        String url = server.url("/test [GH-90000]").toString();
+        String url = server.url("/test").toString();
         String json = "{\"hello\":\"world\"}";
 
         // When
         String resp = runPromise(() -> adapter.postJson(url, json)); // GH-90000
 
         // Then
-        assertThat(resp).contains("ok [GH-90000]");
+        assertThat(resp).contains("ok");
     }
 
     @Test
-    @DisplayName("Should send headers and receive response [GH-90000]")
+    @DisplayName("Should send headers and receive response")
     void shouldSendHeadersAndReceiveResponse() { // GH-90000
         // Given
-        server.enqueue(new MockResponse().setResponseCode(200).setBody("success [GH-90000]"));
-        String url = server.url("/hdr [GH-90000]").toString();
+        server.enqueue(new MockResponse().setResponseCode(200).setBody("success"));
+        String url = server.url("/hdr").toString();
         String json = "{}";
 
         // When
         String resp = runPromise(() -> adapter.postJson(url, json, Map.of("X-Test", "1"))); // GH-90000
 
         // Then
-        assertThat(resp).isEqualTo("success [GH-90000]");
+        assertThat(resp).isEqualTo("success");
     }
 }

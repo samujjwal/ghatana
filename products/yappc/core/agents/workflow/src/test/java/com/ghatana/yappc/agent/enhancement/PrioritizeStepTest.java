@@ -10,7 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Enhancement PrioritizeStep Tests [GH-90000]")
+@DisplayName("Enhancement PrioritizeStep Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles prioritize step test operations
@@ -31,8 +31,8 @@ class PrioritizeStepTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should return correct step ID [GH-90000]")
+  @DisplayName("Should return correct step ID")
   void shouldReturnCorrectStepId() { // GH-90000
-    assertThat(step.getStepId()).isEqualTo("enhancement.prioritize [GH-90000]");
+    assertThat(step.getStepId()).isEqualTo("enhancement.prioritize");
   }
 }

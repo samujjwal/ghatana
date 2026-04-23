@@ -8,7 +8,11 @@ import java.util.Map;
  * Preprocessed batch of events ready for pattern analysis.
  *
  * Day 28 Implementation: Container for preprocessed event data with metadata.
- */
+  * @doc.type class
+ * @doc.purpose Provides preprocessed event batch functionality.
+ * @doc.layer product
+ * @doc.pattern Event
+*/
 public class PreprocessedEventBatch {
 
     private final List<NormalizedEvent> events;

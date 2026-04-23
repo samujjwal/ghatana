@@ -56,21 +56,21 @@ class ArchitectureGuardrailsTest {
     static void importPlatformClasses() { // GH-90000
         platformClasses = new ClassFileImporter() // GH-90000
                 .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS) // GH-90000
-                .importPackages("com.ghatana [GH-90000]");
+                .importPackages("com.ghatana");
         testClasses = new ClassFileImporter() // GH-90000
                 .withImportOption(ImportOption.Predefined.ONLY_INCLUDE_TESTS) // GH-90000
-                .importPackages("com.ghatana [GH-90000]");
+                .importPackages("com.ghatana");
     }
 
     @Nested
-    @DisplayName("Layer isolation: platform → products [GH-90000]")
+    @DisplayName("Layer isolation: platform → products")
     class PlatformProductIsolation {
 
         @Test
-        @DisplayName("Platform core must not depend on any product packages [GH-90000]")
+        @DisplayName("Platform core must not depend on any product packages")
         void platformCoreMustNotDependOnProducts() { // GH-90000
             ArchRule rule = noClasses() // GH-90000
-                    .that().resideInAPackage("com.ghatana.platform.core.. [GH-90000]")
+                    .that().resideInAPackage("com.ghatana.platform.core..")
                     .should().dependOnClassesThat() // GH-90000
                     .resideInAnyPackage( // GH-90000
                             "com.ghatana.aep..",
@@ -82,16 +82,16 @@ class ArchitectureGuardrailsTest {
                             "com.ghatana.flashit..",
                             "com.ghatana.tutorputor.."
                     )
-                    .because("Platform core is the foundation layer and must not know about products [GH-90000]");
+                    .because("Platform core is the foundation layer and must not know about products");
 
             rule.check(platformClasses); // GH-90000
         }
 
         @Test
-        @DisplayName("Platform domain must not depend on product packages [GH-90000]")
+        @DisplayName("Platform domain must not depend on product packages")
         void platformDomainMustNotDependOnProducts() { // GH-90000
             ArchRule rule = noClasses() // GH-90000
-                    .that().resideInAPackage("com.ghatana.platform.domain.. [GH-90000]")
+                    .that().resideInAPackage("com.ghatana.platform.domain..")
                     .should().dependOnClassesThat() // GH-90000
                     .resideInAnyPackage( // GH-90000
                             "com.ghatana.aep..",
@@ -100,17 +100,17 @@ class ArchitectureGuardrailsTest {
                             "com.ghatana.yappc..",
                             "com.ghatana.softwareorg.."
                     )
-                    .because("Platform domain must not depend on product-specific code [GH-90000]")
+                    .because("Platform domain must not depend on product-specific code")
                     .allowEmptyShould(true); // GH-90000
 
             rule.check(platformClasses); // GH-90000
         }
 
         @Test
-        @DisplayName("Platform observability must not depend on product packages [GH-90000]")
+        @DisplayName("Platform observability must not depend on product packages")
         void observabilityMustNotDependOnProducts() { // GH-90000
             ArchRule rule = noClasses() // GH-90000
-                    .that().resideInAPackage("com.ghatana.platform.observability.. [GH-90000]")
+                    .that().resideInAPackage("com.ghatana.platform.observability..")
                     .should().dependOnClassesThat() // GH-90000
                     .resideInAnyPackage( // GH-90000
                             "com.ghatana.aep..",
@@ -118,7 +118,7 @@ class ArchitectureGuardrailsTest {
                             "com.ghatana.virtualorg..",
                             "com.ghatana.yappc.."
                     )
-                    .because("Observability is a platform concern and must not depend on products [GH-90000]")
+                    .because("Observability is a platform concern and must not depend on products")
                     .allowEmptyShould(true); // GH-90000
 
             rule.check(platformClasses); // GH-90000
@@ -126,14 +126,14 @@ class ArchitectureGuardrailsTest {
     }
 
     @Nested
-    @DisplayName("Cross-product isolation [GH-90000]")
+    @DisplayName("Cross-product isolation")
     class CrossProductIsolation {
 
         @Test
-        @DisplayName("AEP must not depend on other products [GH-90000]")
+        @DisplayName("AEP must not depend on other products")
         void aepMustNotDependOnOtherProducts() { // GH-90000
             ArchRule rule = noClasses() // GH-90000
-                    .that().resideInAPackage("com.ghatana.aep.. [GH-90000]")
+                    .that().resideInAPackage("com.ghatana.aep..")
                     .should().dependOnClassesThat() // GH-90000
                     .resideInAnyPackage( // GH-90000
                             "com.ghatana.yappc..",
@@ -141,24 +141,24 @@ class ArchitectureGuardrailsTest {
                             "com.ghatana.flashit..",
                             "com.ghatana.softwareorg.."
                     )
-                    .because("Products must not directly depend on other products [GH-90000]")
+                    .because("Products must not directly depend on other products")
                     .allowEmptyShould(true); // GH-90000
 
             rule.check(platformClasses); // GH-90000
         }
 
         @Test
-        @DisplayName("Data Cloud must not depend on other products [GH-90000]")
+        @DisplayName("Data Cloud must not depend on other products")
         void dataCloudMustNotDependOnOtherProducts() { // GH-90000
             ArchRule rule = noClasses() // GH-90000
-                    .that().resideInAPackage("com.ghatana.datacloud.. [GH-90000]")
+                    .that().resideInAPackage("com.ghatana.datacloud..")
                     .should().dependOnClassesThat() // GH-90000
                     .resideInAnyPackage( // GH-90000
                             "com.ghatana.yappc..",
                             "com.ghatana.dcmaar..",
                             "com.ghatana.flashit.."
                     )
-                    .because("Products must not directly depend on other products [GH-90000]")
+                    .because("Products must not directly depend on other products")
                     .allowEmptyShould(true); // GH-90000
 
             rule.check(platformClasses); // GH-90000
@@ -166,22 +166,22 @@ class ArchitectureGuardrailsTest {
     }
 
     @Nested
-    @DisplayName("Deprecated type enforcement [GH-90000]")
+    @DisplayName("Deprecated type enforcement")
     class DeprecatedTypeUsage {
 
         @Test
-        @DisplayName("No new code should use deprecated TenantId variants [GH-90000]")
+        @DisplayName("No new code should use deprecated TenantId variants")
         void noNewCodeShouldUseDeprecatedTenantId() { // GH-90000
             ArchRule rule = noClasses() // GH-90000
-                    .that().resideOutsideOfPackage("com.ghatana.platform.types.. [GH-90000]")
-                    .and().resideOutsideOfPackage("com.ghatana.platform.core.types.. [GH-90000]")
-                    .and().resideOutsideOfPackage("com.ghatana.domain.auth.. [GH-90000]")
-                    .and().resideOutsideOfPackage("com.ghatana.datacloud.record.. [GH-90000]")
+                    .that().resideOutsideOfPackage("com.ghatana.platform.types..")
+                    .and().resideOutsideOfPackage("com.ghatana.platform.core.types..")
+                    .and().resideOutsideOfPackage("com.ghatana.domain.auth..")
+                    .and().resideOutsideOfPackage("com.ghatana.datacloud.record..")
                     .should().dependOnClassesThat() // GH-90000
-                    .haveFullyQualifiedName("com.ghatana.platform.types.TenantId [GH-90000]")
+                    .haveFullyQualifiedName("com.ghatana.platform.types.TenantId")
                     .orShould().dependOnClassesThat() // GH-90000
-                    .haveFullyQualifiedName("com.ghatana.platform.core.types.TenantId [GH-90000]")
-                    .because("Use com.ghatana.platform.domain.auth.TenantId (canonical) instead of deprecated variants [GH-90000]");
+                    .haveFullyQualifiedName("com.ghatana.platform.core.types.TenantId")
+                    .because("Use com.ghatana.platform.domain.auth.TenantId (canonical) instead of deprecated variants");
 
             // NOTE: This test documents the target state. Enable once migration is complete.
             // rule.check(platformClasses); // GH-90000
@@ -193,15 +193,15 @@ class ArchitectureGuardrailsTest {
     // ──────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Governance package placement [GH-90000]")
+    @DisplayName("Governance package placement")
     class GovernancePackagePlacement {
 
         @Test
-        @DisplayName("Governance classes must not reside in core module packages [GH-90000]")
+        @DisplayName("Governance classes must not reside in core module packages")
         void governanceClassesMustNotResideInCore() { // GH-90000
             ArchRule rule = noClasses() // GH-90000
-                    .that().resideInAPackage("com.ghatana.platform.governance.. [GH-90000]")
-                    .should().resideInAPackage("com.ghatana.platform.core.. [GH-90000]")
+                    .that().resideInAPackage("com.ghatana.platform.governance..")
+                    .should().resideInAPackage("com.ghatana.platform.core..")
                     .because("Governance is a separate module — it must not be co-located in the core module. " // GH-90000
                             + "See ADR and copilot-instructions.md for module boundaries.")
                     .allowEmptyShould(true); // GH-90000
@@ -211,14 +211,14 @@ class ArchitectureGuardrailsTest {
     }
 
     @Nested
-    @DisplayName("Promise / CompletableFuture discipline [GH-90000]")
+    @DisplayName("Promise / CompletableFuture discipline")
     class PromiseCompletableFutureDiscipline {
 
         @Test
-        @DisplayName("No CompletableFuture in Promise-returning methods (except bridge/adapter) [GH-90000]")
+        @DisplayName("No CompletableFuture in Promise-returning methods (except bridge/adapter)")
         void noCompletableFutureInPromiseMethods() { // GH-90000
             ArchRule rule = noClasses() // GH-90000
-                    .that().resideInAPackage("com.ghatana.. [GH-90000]")
+                    .that().resideInAPackage("com.ghatana..")
                     .and().resideOutsideOfPackages( // GH-90000
                             "..bridge..", "..adapter..", "..async..",
                             "..infrastructure..", "..launcher..", "..testing..",
@@ -234,20 +234,20 @@ class ArchitectureGuardrailsTest {
         }
 
         @Test
-        @DisplayName("Methods returning Promise must not also reference CompletableFuture [GH-90000]")
+        @DisplayName("Methods returning Promise must not also reference CompletableFuture")
         void promiseMethodsMustNotUseCompletableFuture() { // GH-90000
             ArchCondition<JavaMethod> notReferenceCompletableFuture =
-                    new ArchCondition<>("not reference CompletableFuture [GH-90000]") {
+                    new ArchCondition<>("not reference CompletableFuture") {
                         @Override
                         public void check(JavaMethod method, ConditionEvents events) { // GH-90000
                             boolean returnsPromise = method.getRawReturnType().getName() // GH-90000
-                                    .equals("io.activej.promise.Promise [GH-90000]");
+                                    .equals("io.activej.promise.Promise");
                             if (!returnsPromise) return; // GH-90000
 
                             // Check if the owning class name contains bridge/adapter
                             String className = method.getOwner().getName(); // GH-90000
-                            if (className.contains("Bridge [GH-90000]") || className.contains("Adapter [GH-90000]")
-                                    || className.contains("PromiseUtils [GH-90000]")) return;
+                            if (className.contains("Bridge") || className.contains("Adapter")
+                                    || className.contains("PromiseUtils")) return;
 
                             method.getMethodCallsFromSelf().forEach(call -> { // GH-90000
                                 if (call.getTargetOwner().isAssignableTo(CompletableFuture.class)) { // GH-90000
@@ -259,7 +259,7 @@ class ArchitectureGuardrailsTest {
                     };
 
             ArchRule rule = methods() // GH-90000
-                    .that().areDeclaredInClassesThat().resideInAPackage("com.ghatana.. [GH-90000]")
+                    .that().areDeclaredInClassesThat().resideInAPackage("com.ghatana..")
                     .should(notReferenceCompletableFuture) // GH-90000
                     .allowEmptyShould(true); // GH-90000
 
@@ -268,27 +268,27 @@ class ArchitectureGuardrailsTest {
     }
 
     @Nested
-    @DisplayName("Test architecture rules [GH-90000]")
+    @DisplayName("Test architecture rules")
     class TestArchitectureRules {
 
         @Test
-        @DisplayName("Tests using Promise must extend EventloopTestBase or use EventloopRule [GH-90000]")
+        @DisplayName("Tests using Promise must extend EventloopTestBase or use EventloopRule")
         void asyncTestsMustUseEventloopInfrastructure() { // GH-90000
             // This rule checks test classes that depend on ActiveJ Promise
             // and ensures they either extend EventloopTestBase or are annotated
             // with @ExtendWith(EventloopRule.class) // GH-90000
             ArchCondition<JavaClass> useEventloopInfrastructureWhenDependingOnPromise =
-                    new ArchCondition<>("use EventloopTestBase or @ExtendWith when depending on ActiveJ Promise [GH-90000]") {
+                    new ArchCondition<>("use EventloopTestBase or @ExtendWith when depending on ActiveJ Promise") {
                         @Override
                         public void check(JavaClass javaClass, ConditionEvents events) { // GH-90000
                             boolean dependsOnPromise = javaClass.getDirectDependenciesFromSelf().stream() // GH-90000
                                     .anyMatch(dep -> dep.getTargetClass().getName() // GH-90000
-                                            .equals("io.activej.promise.Promise [GH-90000]"));
+                                            .equals("io.activej.promise.Promise"));
                             if (!dependsOnPromise) return; // GH-90000
 
                             boolean extendsTestBase = javaClass.isAssignableTo( // GH-90000
                                     "com.ghatana.platform.testing.activej.EventloopTestBase")
-                                    || javaClass.isAssignableTo("com.ghatana.test.EventloopTestBase [GH-90000]");
+                                    || javaClass.isAssignableTo("com.ghatana.test.EventloopTestBase");
                             boolean hasExtendWith = javaClass.isAnnotatedWith( // GH-90000
                                     "org.junit.jupiter.api.extension.ExtendWith");
 
@@ -301,7 +301,7 @@ class ArchitectureGuardrailsTest {
                     };
 
             ArchRule rule = classes() // GH-90000
-                    .that().haveNameMatching(".*Test [GH-90000]")
+                    .that().haveNameMatching(".*Test")
                     .should(useEventloopInfrastructureWhenDependingOnPromise) // GH-90000
                     .allowEmptyShould(true); // GH-90000
 
@@ -310,7 +310,7 @@ class ArchitectureGuardrailsTest {
     }
 
     @Nested
-    @DisplayName("@doc tag enforcement [GH-90000]")
+    @DisplayName("@doc tag enforcement")
     class DocTagEnforcement {
 
         /** Required @doc tags for all public classes. */
@@ -333,7 +333,7 @@ class ArchitectureGuardrailsTest {
          * allowEmptyShould once all public classes are tagged.
          */
         @Test
-        @DisplayName("Public classes in platform packages should have @doc tags (informational) [GH-90000]")
+        @DisplayName("Public classes in platform packages should have @doc tags (informational)")
         void publicPlatformClassesShouldHaveDocTags() { // GH-90000
             // Since ArchUnit cannot introspect JavaDoc comments from bytecode,
             // this test checks naming/annotation patterns as a proxy.
@@ -342,7 +342,7 @@ class ArchitectureGuardrailsTest {
             //   2. The checkstyle.xml documentation comment
             //   3. CI source-scan step (added by this task) // GH-90000
             ArchCondition<JavaClass> haveDocAnnotationOrJavadoc =
-                    new ArchCondition<>("have @doc tags (informational check) [GH-90000]") {
+                    new ArchCondition<>("have @doc tags (informational check)") {
                         @Override
                         public void check(JavaClass javaClass, ConditionEvents events) { // GH-90000
                             // Bytecode cannot tell us about JavaDoc, so we only
@@ -350,8 +350,8 @@ class ArchitectureGuardrailsTest {
                             // i.e., they have no annotations at all and are not
                             // generated/synthetic.
                             if (javaClass.isAnonymousClass() || javaClass.isInnerClass()) return; // GH-90000
-                            if (javaClass.getSimpleName().endsWith("Builder [GH-90000]")) return;
-                            if (javaClass.getSimpleName().startsWith("Abstract [GH-90000]")) return;
+                            if (javaClass.getSimpleName().endsWith("Builder")) return;
+                            if (javaClass.getSimpleName().startsWith("Abstract")) return;
 
                             // Allow: this is informational, so we log but don't fail.
                             // When we add a source-scan CI step, this becomes the
@@ -361,7 +361,7 @@ class ArchitectureGuardrailsTest {
 
             ArchRule rule = classes() // GH-90000
                     .that().arePublic() // GH-90000
-                    .and().resideInAPackage("com.ghatana.platform.. [GH-90000]")
+                    .and().resideInAPackage("com.ghatana.platform..")
                     .and().areNotAnnotatedWith(Deprecated.class) // GH-90000
                     .should(haveDocAnnotationOrJavadoc) // GH-90000
                     .allowEmptyShould(true); // GH-90000
@@ -375,25 +375,25 @@ class ArchitectureGuardrailsTest {
     // ──────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Centralized ErrorCode usage [GH-90000]")
+    @DisplayName("Centralized ErrorCode usage")
     class CentralizedErrorCodeUsage {
 
         @Test
-        @DisplayName("Platform classes must not define custom error-code String constants named 'ERROR_CODE' or similar [GH-90000]")
+        @DisplayName("Platform classes must not define custom error-code String constants named 'ERROR_CODE' or similar")
         void platformClassesShouldNotDefineReplacementErrorCodeConstants() { // GH-90000
             // Guard: ensure nobody re-defines a parallel error-code registry in a non-core location.
             // Allowed: com.ghatana.platform.core.exception.ErrorCode (canonical registry) // GH-90000
             // Allowed: generated protobuf contract classes (legacy compatibility) // GH-90000
             // Forbidden: any class named *ErrorCode or *ErrorCodes outside the core.exception package
             ArchRule rule = noClasses() // GH-90000
-                    .that().haveSimpleNameEndingWith("ErrorCode [GH-90000]")
-                    .or().haveSimpleNameEndingWith("ErrorCodes [GH-90000]")
+                    .that().haveSimpleNameEndingWith("ErrorCode")
+                    .or().haveSimpleNameEndingWith("ErrorCodes")
                     .and().resideOutsideOfPackages( // GH-90000
                             "com.ghatana.platform.core.exception..",
                             "com.ghatana.platform.core.common..",
                             "com.ghatana.contracts.."
                     )
-                    .should().resideInAPackage("com.ghatana.. [GH-90000]")
+                    .should().resideInAPackage("com.ghatana..")
                     .because("Use com.ghatana.platform.core.exception.ErrorCode enum for all error codes; " // GH-90000
                             + "custom error-code registries in other packages are forbidden.")
                     .allowEmptyShould(true); // GH-90000
@@ -402,21 +402,21 @@ class ArchitectureGuardrailsTest {
         }
 
         @Test
-        @DisplayName("Exceptions thrown in platform code should use PlatformException (which requires ErrorCode) [GH-90000]")
+        @DisplayName("Exceptions thrown in platform code should use PlatformException (which requires ErrorCode)")
         void platformExceptionsShouldCarryErrorCode() { // GH-90000
             // Classes providing RuntimeException subclasses with a bare String message only
             // (no ErrorCode parameter) in platform packages are disallowed. // GH-90000
             // This is an informational rule until all legacy exceptions are migrated.
             ArchRule rule = classes() // GH-90000
-                    .that().resideInAPackage("com.ghatana.platform.. [GH-90000]")
+                    .that().resideInAPackage("com.ghatana.platform..")
                     .and().areAssignableTo(RuntimeException.class) // GH-90000
-                                        .and(new DescribedPredicate<>("do not match test/spec naming [GH-90000]") {
+                                        .and(new DescribedPredicate<>("do not match test/spec naming") {
                                                 @Override
                                                 public boolean test(JavaClass input) { // GH-90000
-                                                        return !input.getSimpleName().matches(".*(Test|Spec).* [GH-90000]");
+                                                        return !input.getSimpleName().matches(".*(Test|Spec).*");
                                                 }
                                         })
-                    .should().haveSimpleNameEndingWith("Exception [GH-90000]")
+                    .should().haveSimpleNameEndingWith("Exception")
                     // informational until legacy exceptions are migrated
                     .allowEmptyShould(true); // GH-90000
 
@@ -429,11 +429,11 @@ class ArchitectureGuardrailsTest {
     // ──────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Security model.User deprecation (SHA-001) [GH-90000]")
+    @DisplayName("Security model.User deprecation (SHA-001)")
     class SecurityModelUserDeprecation {
 
         @Test
-        @DisplayName("Non-security infrastructure code must not import security.model.User [GH-90000]")
+        @DisplayName("Non-security infrastructure code must not import security.model.User")
         void nonSecurityCodeShouldNotUseSecurityModelUser() { // GH-90000
             ArchRule rule = noClasses() // GH-90000
                     .that().resideOutsideOfPackages( // GH-90000
@@ -441,7 +441,7 @@ class ArchitectureGuardrailsTest {
                             "..test..", "..testing.."
                     )
                     .should().dependOnClassesThat() // GH-90000
-                    .haveFullyQualifiedName("com.ghatana.platform.security.model.User [GH-90000]")
+                    .haveFullyQualifiedName("com.ghatana.platform.security.model.User")
                     .because("com.ghatana.platform.security.model.User is deprecated for domain use. " // GH-90000
                             + "Use com.ghatana.platform.domain.auth.User instead. "
                             + "See SHA-001 in SHARED_MODULES_AUDIT_REPORT_COMPLETE.md.")
@@ -451,13 +451,13 @@ class ArchitectureGuardrailsTest {
         }
 
         @Test
-        @DisplayName("No code may import removed security.rbac.Role (deleted — use domain.auth.Role) [GH-90000]")
+        @DisplayName("No code may import removed security.rbac.Role (deleted — use domain.auth.Role)")
         void noCodeShouldUseDeletedSecurityRbacRole() { // GH-90000
             // security.rbac.Role was deleted after full migration to domain.auth.Role.
             // This rule ensures it is never re-introduced.
             ArchRule rule = noClasses() // GH-90000
                     .should().dependOnClassesThat() // GH-90000
-                    .haveFullyQualifiedName("com.ghatana.platform.security.rbac.Role [GH-90000]")
+                    .haveFullyQualifiedName("com.ghatana.platform.security.rbac.Role")
                     .because("com.ghatana.platform.security.rbac.Role has been deleted. " // GH-90000
                             + "Use com.ghatana.platform.domain.auth.Role typed value object instead.")
                     .allowEmptyShould(true); // GH-90000
@@ -467,17 +467,17 @@ class ArchitectureGuardrailsTest {
     }
 
     @Nested
-    @DisplayName("V4.1 Deduplication — deleted duplicate symbols must not be re-introduced [GH-90000]")
+    @DisplayName("V4.1 Deduplication — deleted duplicate symbols must not be re-introduced")
     class V41DeduplicationGuardrails {
 
         @Test
-        @DisplayName("No code may import deleted domain.agent.registry.HealthStatus (use agent.HealthStatus) [GH-90000]")
+        @DisplayName("No code may import deleted domain.agent.registry.HealthStatus (use agent.HealthStatus)")
         void noCodeShouldUseDeletedDomainRegistryHealthStatus() { // GH-90000
             // domain.agent.registry.HealthStatus was a 4-value subset enum, deleted in V4.1.
             // All callers migrated to com.ghatana.platform.health.HealthStatus (canonical platform class). // GH-90000
             ArchRule rule = noClasses() // GH-90000
                     .should().dependOnClassesThat() // GH-90000
-                    .haveFullyQualifiedName("com.ghatana.platform.domain.agent.registry.HealthStatus [GH-90000]")
+                    .haveFullyQualifiedName("com.ghatana.platform.domain.agent.registry.HealthStatus")
                     .because("com.ghatana.platform.domain.agent.registry.HealthStatus was deleted in V4.1. " // GH-90000
                             + "Use com.ghatana.platform.health.HealthStatus (platform module) instead.") // GH-90000
                     .allowEmptyShould(true); // GH-90000
@@ -486,13 +486,13 @@ class ArchitectureGuardrailsTest {
         }
 
         @Test
-        @DisplayName("No code may import deleted domain.audit.AuditEvent (use platform.audit.AuditEvent) [GH-90000]")
+        @DisplayName("No code may import deleted domain.audit.AuditEvent (use platform.audit.AuditEvent)")
         void noCodeShouldUseDeletedDomainAuditEvent() { // GH-90000
             // domain.audit.AuditEvent had zero external callers and was deleted in V4.1.
             // Canonical is com.ghatana.platform.audit.AuditEvent (audit module). // GH-90000
             ArchRule rule = noClasses() // GH-90000
                     .should().dependOnClassesThat() // GH-90000
-                    .haveFullyQualifiedName("com.ghatana.platform.domain.audit.AuditEvent [GH-90000]")
+                    .haveFullyQualifiedName("com.ghatana.platform.domain.audit.AuditEvent")
                     .because("com.ghatana.platform.domain.audit.AuditEvent was deleted in V4.1. " // GH-90000
                             + "Use com.ghatana.platform.audit.AuditEvent (audit module) instead.") // GH-90000
                     .allowEmptyShould(true); // GH-90000
@@ -501,13 +501,13 @@ class ArchitectureGuardrailsTest {
         }
 
         @Test
-        @DisplayName("No code may import deleted governance.rbac.Role (use governance.rbac.RoleDefinition) [GH-90000]")
+        @DisplayName("No code may import deleted governance.rbac.Role (use governance.rbac.RoleDefinition)")
         void noCodeShouldUseDeletedGovernanceRbacRole() { // GH-90000
             // governance.rbac.Role was renamed to RoleDefinition in V4.1 to avoid name clash
             // with domain.auth.Role (typed value object). Single caller migrated. // GH-90000
             ArchRule rule = noClasses() // GH-90000
                     .should().dependOnClassesThat() // GH-90000
-                    .haveFullyQualifiedName("com.ghatana.platform.governance.rbac.Role [GH-90000]")
+                    .haveFullyQualifiedName("com.ghatana.platform.governance.rbac.Role")
                     .because("com.ghatana.platform.governance.rbac.Role was renamed to RoleDefinition in V4.1. " // GH-90000
                             + "Use com.ghatana.platform.governance.rbac.RoleDefinition instead.")
                     .allowEmptyShould(true); // GH-90000
@@ -516,14 +516,14 @@ class ArchitectureGuardrailsTest {
         }
 
         @Test
-        @DisplayName("Canonical AuditEvent must reside in audit module only [GH-90000]")
+        @DisplayName("Canonical AuditEvent must reside in audit module only")
         void auditEventMustOnlyResideInAuditModule() { // GH-90000
             // Prevent re-creation of AuditEvent in domain or other modules.
             // Allow generated protobuf contract classes for legacy compatibility
             ArchRule rule = classes() // GH-90000
-                    .that().haveSimpleName("AuditEvent [GH-90000]")
-                    .and().resideOutsideOfPackage("com.ghatana.contracts.. [GH-90000]")
-                    .should().resideInAPackage("com.ghatana.platform.audit.. [GH-90000]")
+                    .that().haveSimpleName("AuditEvent")
+                    .and().resideOutsideOfPackage("com.ghatana.contracts..")
+                    .should().resideInAPackage("com.ghatana.platform.audit..")
                     .because("AuditEvent must have a single canonical home in platform.audit. " // GH-90000
                             + "The domain copy was deleted in V4.1.")
                     .allowEmptyShould(true); // GH-90000
@@ -532,14 +532,14 @@ class ArchitectureGuardrailsTest {
         }
 
         @Test
-        @DisplayName("HealthStatus implementations must not duplicate agent lifecycle contract [GH-90000]")
+        @DisplayName("HealthStatus implementations must not duplicate agent lifecycle contract")
         void healthStatusDuplicatesMustNotExist() { // GH-90000
             // Prevent re-creation of HealthStatus enum in domain.agent.registry.
             // The canonical HealthStatus is in com.ghatana.platform.health (platform module). // GH-90000
             ArchRule rule = noClasses() // GH-90000
-                    .that().haveSimpleName("HealthStatus [GH-90000]")
-                    .and().resideInAPackage("com.ghatana.platform.domain.agent.registry.. [GH-90000]")
-                    .should().dependOnClassesThat().haveSimpleName("Object [GH-90000]")  // always-false guard
+                    .that().haveSimpleName("HealthStatus")
+                    .and().resideInAPackage("com.ghatana.platform.domain.agent.registry..")
+                    .should().dependOnClassesThat().haveSimpleName("Object")  // always-false guard
                     .because("HealthStatus must not be re-introduced in domain.agent.registry. " // GH-90000
                             + "Use com.ghatana.platform.health.HealthStatus from platform module instead.")
                     .allowEmptyShould(true); // GH-90000

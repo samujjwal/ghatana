@@ -133,7 +133,7 @@ class JwtAuthenticationProviderTest extends EventloopTestBase {
 
     @Test
     void authenticate_unsupportedType_returnsEmpty() { // GH-90000
-        Credentials unknownCreds = new Credentials("magic [GH-90000]") {};
+        Credentials unknownCreds = new Credentials("magic") {};
         Optional<User> result = runPromise(() -> provider.authenticate(unknownCreds)); // GH-90000
         assertThat(result).isEmpty(); // GH-90000
     }
@@ -145,8 +145,8 @@ class JwtAuthenticationProviderTest extends EventloopTestBase {
     @Test
     void authenticate_withDelegate_nonTokenCreds_generatesToken() { // GH-90000
         User delegateUser = User.builder() // GH-90000
-                .userId("delegate-user [GH-90000]")
-                .username("delegate-user [GH-90000]")
+                .userId("delegate-user")
+                .username("delegate-user")
                 .authenticated(true) // GH-90000
                 .build(); // GH-90000
         AuthenticationProvider delegate = new AuthenticationProvider() { // GH-90000
@@ -212,12 +212,12 @@ class JwtAuthenticationProviderTest extends EventloopTestBase {
 
     @Test
     void supports_tokenType_returnsTrue() { // GH-90000
-        assertThat(provider.supports("token [GH-90000]")).isTrue();
+        assertThat(provider.supports("token")).isTrue();
     }
 
     @Test
     void supports_otherType_returnsFalse() { // GH-90000
-        assertThat(provider.supports("basic [GH-90000]")).isFalse();
+        assertThat(provider.supports("basic")).isFalse();
     }
 
     // =========================================================================

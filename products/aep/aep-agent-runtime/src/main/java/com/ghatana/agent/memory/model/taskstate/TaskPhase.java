@@ -13,7 +13,8 @@ import java.time.Instant;
  * @doc.type value-object
  * @doc.purpose Task phase definition
  * @doc.layer agent-memory
- */
+  * @doc.pattern Enum
+*/
 @Value
 @Builder
 public class TaskPhase {

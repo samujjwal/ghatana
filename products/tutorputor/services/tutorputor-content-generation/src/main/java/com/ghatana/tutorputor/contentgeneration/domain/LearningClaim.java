@@ -6,7 +6,8 @@ import java.util.List;
  * @doc.type class
  * @doc.purpose Model for learning claim
  * @doc.layer product
- */
+  * @doc.pattern Component
+*/
 public class LearningClaim {
     private final String id;
     private final String text;

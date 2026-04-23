@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("AgentExecutionMetrics - Phase 3 Expansion [GH-90000]")
+@DisplayName("AgentExecutionMetrics - Phase 3 Expansion")
 class AgentExecutionMetricsExpansionTest {
 
     private MeterRegistry registry;
@@ -39,11 +39,11 @@ class AgentExecutionMetricsExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Concurrent Execution Tracking [GH-90000]")
+    @DisplayName("Concurrent Execution Tracking")
     class ConcurrencyTests {
 
         @Test
-        @DisplayName("Concurrent executions are counted correctly [GH-90000]")
+        @DisplayName("Concurrent executions are counted correctly")
         void concurrentExecutionCounting() throws InterruptedException { // GH-90000
             int threadCount = 5;
             CountDownLatch latch = new CountDownLatch(threadCount); // GH-90000
@@ -69,11 +69,11 @@ class AgentExecutionMetricsExpansionTest {
 
             latch.await(); // GH-90000
 
-            assertThat(registry.find("agent.execution.success [GH-90000]").counter().count())
+            assertThat(registry.find("agent.execution.success").counter().count())
                 .isEqualTo((double) successCount.get()); // GH-90000
-            assertThat(registry.find("agent.execution.failure [GH-90000]").counter().count())
+            assertThat(registry.find("agent.execution.failure").counter().count())
                 .isEqualTo((double) failureCount.get()); // GH-90000
-            assertThat(registry.find("agent.execution.duration [GH-90000]").timer().count())
+            assertThat(registry.find("agent.execution.duration").timer().count())
                 .isEqualTo(threadCount); // GH-90000
         }
     }
@@ -83,31 +83,31 @@ class AgentExecutionMetricsExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Duration Measurement Edge Cases [GH-90000]")
+    @DisplayName("Duration Measurement Edge Cases")
     class DurationTests {
 
         @Test
-        @DisplayName("Very fast execution (microsecond-level) is recorded [GH-90000]")
+        @DisplayName("Very fast execution (microsecond-level) is recorded")
         void veryFastExecution() { // GH-90000
             long startTime = System.nanoTime(); // GH-90000
             // Simulate very fast execution
             metrics.recordExecution(System.currentTimeMillis() - 1, true); // GH-90000
 
-            assertThat(registry.find("agent.execution.duration [GH-90000]").timer().count()).isEqualTo(1L);
+            assertThat(registry.find("agent.execution.duration").timer().count()).isEqualTo(1L);
             // Duration should be positive (even if very small) // GH-90000
-            assertThat(registry.find("agent.execution.duration [GH-90000]").timer().totalTime(java.util.concurrent.TimeUnit.NANOSECONDS))
+            assertThat(registry.find("agent.execution.duration").timer().totalTime(java.util.concurrent.TimeUnit.NANOSECONDS))
                 .isGreaterThanOrEqualTo(0); // GH-90000
         }
 
         @Test
-        @DisplayName("Long running execution (minutes) is recorded correctly [GH-90000]")
+        @DisplayName("Long running execution (minutes) is recorded correctly")
         void longRunningExecution() { // GH-90000
             // Simulate 5 minute execution
             long fiveMinutesAgo = System.currentTimeMillis() - (5 * 60 * 1000); // GH-90000
             metrics.recordExecution(fiveMinutesAgo, true); // GH-90000
 
-            assertThat(registry.find("agent.execution.success [GH-90000]").counter().count()).isEqualTo(1.0);
-            assertThat(registry.find("agent.execution.duration [GH-90000]").timer().count()).isEqualTo(1L);
+            assertThat(registry.find("agent.execution.success").counter().count()).isEqualTo(1.0);
+            assertThat(registry.find("agent.execution.duration").timer().count()).isEqualTo(1L);
         }
     }
 
@@ -116,11 +116,11 @@ class AgentExecutionMetricsExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Metric Consistency [GH-90000]")
+    @DisplayName("Metric Consistency")
     class ConsistencyTests {
 
         @Test
-        @DisplayName("Success + Failure count equals total execution count [GH-90000]")
+        @DisplayName("Success + Failure count equals total execution count")
         void successFailureConsistency() { // GH-90000
             // Record mixed outcomes
             metrics.recordExecution(System.currentTimeMillis() - 100, true); // GH-90000
@@ -129,9 +129,9 @@ class AgentExecutionMetricsExpansionTest {
             metrics.recordExecution(System.currentTimeMillis() - 40, false); // GH-90000
             metrics.recordExecution(System.currentTimeMillis() - 20, true); // GH-90000
 
-            double successCount = registry.find("agent.execution.success [GH-90000]").counter().count();
-            double failureCount = registry.find("agent.execution.failure [GH-90000]").counter().count();
-            long totalDuration = registry.find("agent.execution.duration [GH-90000]").timer().count();
+            double successCount = registry.find("agent.execution.success").counter().count();
+            double failureCount = registry.find("agent.execution.failure").counter().count();
+            long totalDuration = registry.find("agent.execution.duration").timer().count();
 
             // Success + Failure should equal total recorded
             assertThat(successCount + failureCount).isEqualTo((double) totalDuration); // GH-90000

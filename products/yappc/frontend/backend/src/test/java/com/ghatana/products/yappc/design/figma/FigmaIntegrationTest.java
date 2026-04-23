@@ -30,7 +30,7 @@ import static org.mockito.Mockito.*;
  * @see FigmaWebhookHandler
  * @see GitHubPRAutomation
  */
-@DisplayName("Figma Integration Tests [GH-90000]")
+@DisplayName("Figma Integration Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles figma integration test operations
@@ -60,7 +60,7 @@ class FigmaIntegrationTest extends EventloopTestBase {
      * THEN: W3C format JSON is returned with correct color value
      */
     @Test
-    @DisplayName("Should convert Figma color token to W3C format [GH-90000]")
+    @DisplayName("Should convert Figma color token to W3C format")
     void shouldConvertColorTokenToW3CFormat() { // GH-90000
         // GIVEN: Figma color variable
         String figmaJson = """
@@ -91,15 +91,15 @@ class FigmaIntegrationTest extends EventloopTestBase {
         
         // THEN: W3C format with hex color
         JsonNode w3cRoot = converter.parse(w3cJson); // GH-90000
-        assertThat(w3cRoot.path("color [GH-90000]").path("primary [GH-90000]").path("$type [GH-90000]").asText())
-                .as("Token type should be 'color' [GH-90000]")
-                .isEqualTo("color [GH-90000]");
-        assertThat(w3cRoot.path("color [GH-90000]").path("primary [GH-90000]").path("$value [GH-90000]").asText())
-                .as("Color value should be hex [GH-90000]")
-                .matches("#[0-9a-f]{6} [GH-90000]");
-        assertThat(w3cRoot.path("color [GH-90000]").path("primary [GH-90000]").path("$description [GH-90000]").asText())
-                .as("Description should be preserved [GH-90000]")
-                .isEqualTo("Primary brand color [GH-90000]");
+        assertThat(w3cRoot.path("color").path("primary").path("$type").asText())
+                .as("Token type should be 'color'")
+                .isEqualTo("color");
+        assertThat(w3cRoot.path("color").path("primary").path("$value").asText())
+                .as("Color value should be hex")
+                .matches("#[0-9a-f]{6}");
+        assertThat(w3cRoot.path("color").path("primary").path("$description").asText())
+                .as("Description should be preserved")
+                .isEqualTo("Primary brand color");
     }
     
     /**
@@ -110,7 +110,7 @@ class FigmaIntegrationTest extends EventloopTestBase {
      * THEN: W3C format uses rgba() notation // GH-90000
      */
     @Test
-    @DisplayName("Should convert transparent color to rgba format [GH-90000]")
+    @DisplayName("Should convert transparent color to rgba format")
     void shouldConvertTransparentColorToRgbaFormat() { // GH-90000
         // GIVEN: Figma color with alpha
         String figmaJson = """
@@ -139,9 +139,9 @@ class FigmaIntegrationTest extends EventloopTestBase {
         
         // THEN: RGBA format
         JsonNode w3cRoot = converter.parse(w3cJson); // GH-90000
-        assertThat(w3cRoot.path("color [GH-90000]").path("overlay [GH-90000]").path("$value [GH-90000]").asText())
-                .as("Should use rgba() for transparency [GH-90000]")
-                .startsWith("rgba( [GH-90000]");
+        assertThat(w3cRoot.path("color").path("overlay").path("$value").asText())
+                .as("Should use rgba() for transparency")
+                .startsWith("rgba(");
     }
     
     /**
@@ -152,7 +152,7 @@ class FigmaIntegrationTest extends EventloopTestBase {
      * THEN: W3C format with number type
      */
     @Test
-    @DisplayName("Should convert number token to W3C format [GH-90000]")
+    @DisplayName("Should convert number token to W3C format")
     void shouldConvertNumberTokenToW3CFormat() { // GH-90000
         // GIVEN: Figma number variable
         String figmaJson = """
@@ -176,12 +176,12 @@ class FigmaIntegrationTest extends EventloopTestBase {
         
         // THEN: Number type
         JsonNode w3cRoot = converter.parse(w3cJson); // GH-90000
-        assertThat(w3cRoot.path("spacing [GH-90000]").path("base [GH-90000]").path("$type [GH-90000]").asText())
-                .as("Type should be 'number' [GH-90000]")
-                .isEqualTo("number [GH-90000]");
-        assertThat(w3cRoot.path("spacing [GH-90000]").path("base [GH-90000]").path("$value [GH-90000]").asText())
-                .as("Value should be numeric string [GH-90000]")
-                .isEqualTo("8.0 [GH-90000]");
+        assertThat(w3cRoot.path("spacing").path("base").path("$type").asText())
+                .as("Type should be 'number'")
+                .isEqualTo("number");
+        assertThat(w3cRoot.path("spacing").path("base").path("$value").asText())
+                .as("Value should be numeric string")
+                .isEqualTo("8.0");
     }
     
     /**
@@ -192,7 +192,7 @@ class FigmaIntegrationTest extends EventloopTestBase {
      * THEN: W3C format preserves hierarchy
      */
     @Test
-    @DisplayName("Should preserve token hierarchy in W3C format [GH-90000]")
+    @DisplayName("Should preserve token hierarchy in W3C format")
     void shouldPreserveTokenHierarchy() { // GH-90000
         // GIVEN: Nested Figma variables
         String figmaJson = """
@@ -223,11 +223,11 @@ class FigmaIntegrationTest extends EventloopTestBase {
         
         // THEN: Nested structure
         JsonNode w3cRoot = converter.parse(w3cJson); // GH-90000
-        assertThat(w3cRoot.path("color [GH-90000]").path("primary [GH-90000]").path("500 [GH-90000]").isMissingNode())
-                .as("Should have nested color.primary.500 [GH-90000]")
+        assertThat(w3cRoot.path("color").path("primary").path("500").isMissingNode())
+                .as("Should have nested color.primary.500")
                 .isFalse(); // GH-90000
-        assertThat(w3cRoot.path("color [GH-90000]").path("primary [GH-90000]").path("700 [GH-90000]").isMissingNode())
-                .as("Should have nested color.primary.700 [GH-90000]")
+        assertThat(w3cRoot.path("color").path("primary").path("700").isMissingNode())
+                .as("Should have nested color.primary.700")
                 .isFalse(); // GH-90000
     }
     
@@ -239,7 +239,7 @@ class FigmaIntegrationTest extends EventloopTestBase {
      * THEN: TokenConversionException is thrown
      */
     @Test
-    @DisplayName("Should throw exception when Figma JSON is invalid [GH-90000]")
+    @DisplayName("Should throw exception when Figma JSON is invalid")
     void shouldThrowExceptionWhenFigmaJsonInvalid() { // GH-90000
         // GIVEN: Invalid JSON
         String invalidJson = "{ \"meta\": {} }";
@@ -248,9 +248,9 @@ class FigmaIntegrationTest extends EventloopTestBase {
         
         // WHEN/THEN: Exception thrown
         assertThatThrownBy(() -> converter.convert(invalidJson)) // GH-90000
-                .as("Should throw TokenConversionException [GH-90000]")
+                .as("Should throw TokenConversionException")
                 .isInstanceOf(W3CTokenConverter.TokenConversionException.class) // GH-90000
-                .hasMessageContaining("No 'variables' field [GH-90000]");
+                .hasMessageContaining("No 'variables' field");
     }
     
     // ========================================================================
@@ -265,7 +265,7 @@ class FigmaIntegrationTest extends EventloopTestBase {
      * THEN: Signature is validated successfully
      */
     @Test
-    @DisplayName("Should validate webhook signature [GH-90000]")
+    @DisplayName("Should validate webhook signature")
     void shouldValidateWebhookSignature() { // GH-90000
         // GIVEN: Mock dependencies
         FigmaClient figmaClient = mock(FigmaClient.class); // GH-90000
@@ -285,17 +285,17 @@ class FigmaIntegrationTest extends EventloopTestBase {
         when(figmaClient.getVariables(anyString())) // GH-90000
                 .thenReturn(Promise.of("{\"variables\":{}}")); // GH-90000
         when(converter.convert(anyString())) // GH-90000
-                .thenReturn("{} [GH-90000]");
+                .thenReturn("{}");
         when(github.createPullRequest(anyString(), anyString(), anyString(),  // GH-90000
                 anyString(), anyString(), anyString())) // GH-90000
-                .thenReturn(Promise.of("https://github.com/pr/1 [GH-90000]"));
+                .thenReturn(Promise.of("https://github.com/pr/1"));
         
         // WHEN: Handle webhook
         Promise<Void> result = handler.handleWebhook(payload, signature); // GH-90000
         
         // THEN: No exception (signature valid) // GH-90000
         assertThatCode(() -> result.toCompletableFuture().join()) // GH-90000
-                .as("Should process webhook successfully [GH-90000]")
+                .as("Should process webhook successfully")
                 .doesNotThrowAnyException(); // GH-90000
     }
     
@@ -307,7 +307,7 @@ class FigmaIntegrationTest extends EventloopTestBase {
      * THEN: WebhookException is thrown
      */
     @Test
-    @DisplayName("Should reject webhook with invalid signature [GH-90000]")
+    @DisplayName("Should reject webhook with invalid signature")
     void shouldRejectWebhookWithInvalidSignature() { // GH-90000
         // GIVEN: Handler with secret
         FigmaClient figmaClient = mock(FigmaClient.class); // GH-90000
@@ -326,9 +326,9 @@ class FigmaIntegrationTest extends EventloopTestBase {
         
         // THEN: Exception thrown
         assertThatThrownBy(() -> result.toCompletableFuture().join()) // GH-90000
-                .as("Should throw WebhookException [GH-90000]")
+                .as("Should throw WebhookException")
                 .hasCauseInstanceOf(FigmaWebhookHandler.WebhookException.class) // GH-90000
-                .hasMessageContaining("Invalid webhook signature [GH-90000]");
+                .hasMessageContaining("Invalid webhook signature");
     }
     
     /**
@@ -339,7 +339,7 @@ class FigmaIntegrationTest extends EventloopTestBase {
      * THEN: Tokens are fetched, converted, and PR created
      */
     @Test
-    @DisplayName("Should process FILE_UPDATE event [GH-90000]")
+    @DisplayName("Should process FILE_UPDATE event")
     void shouldProcessFileUpdateEvent() { // GH-90000
         // GIVEN: Mocked components
         FigmaClient figmaClient = mock(FigmaClient.class); // GH-90000
@@ -360,22 +360,22 @@ class FigmaIntegrationTest extends EventloopTestBase {
             """;
         String signature = computeHmacSha256(payload, webhookSecret); // GH-90000
         
-        when(figmaClient.getVariables("abc123xyz [GH-90000]"))
+        when(figmaClient.getVariables("abc123xyz"))
                 .thenReturn(Promise.of("{\"variables\":{}}")); // GH-90000
         when(converter.convert(anyString())) // GH-90000
                 .thenReturn("{\"color\":{}}"); // GH-90000
         when(github.createPullRequest(anyString(), anyString(), anyString(), // GH-90000
                 anyString(), anyString(), anyString())) // GH-90000
-                .thenReturn(Promise.of("https://github.com/pr/1 [GH-90000]"));
+                .thenReturn(Promise.of("https://github.com/pr/1"));
         
         // WHEN: Process event
         handler.handleWebhook(payload, signature).toCompletableFuture().join(); // GH-90000
         
         // THEN: Workflow executed
-        verify(figmaClient, times(1)).getVariables("abc123xyz [GH-90000]");
+        verify(figmaClient, times(1)).getVariables("abc123xyz");
         verify(converter, times(1)).convert(anyString()); // GH-90000
         verify(github, times(1)).createPullRequest( // GH-90000
-                eq("design-tokens.json [GH-90000]"),
+                eq("design-tokens.json"),
                 anyString(), // GH-90000
                 anyString(), // GH-90000
                 anyString(), // GH-90000
@@ -392,7 +392,7 @@ class FigmaIntegrationTest extends EventloopTestBase {
      * THEN: Event is ignored, no processing occurs
      */
     @Test
-    @DisplayName("Should ignore FILE_DELETE event [GH-90000]")
+    @DisplayName("Should ignore FILE_DELETE event")
     void shouldIgnoreFileDeleteEvent() { // GH-90000
         // GIVEN: Handler
         FigmaClient figmaClient = mock(FigmaClient.class); // GH-90000
@@ -427,14 +427,14 @@ class FigmaIntegrationTest extends EventloopTestBase {
      */
     private String computeHmacSha256(String data, String secret) { // GH-90000
         try {
-            javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA256 [GH-90000]");
+            javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA256");
             javax.crypto.spec.SecretKeySpec keySpec = 
                     new javax.crypto.spec.SecretKeySpec( // GH-90000
-                            secret.getBytes("UTF-8 [GH-90000]"), 
+                            secret.getBytes("UTF-8"), 
                             "HmacSHA256"
                     );
             mac.init(keySpec); // GH-90000
-            byte[] hash = mac.doFinal(data.getBytes("UTF-8 [GH-90000]"));
+            byte[] hash = mac.doFinal(data.getBytes("UTF-8"));
             
             StringBuilder result = new StringBuilder(); // GH-90000
             for (byte b : hash) { // GH-90000

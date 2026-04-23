@@ -9,7 +9,11 @@ import java.util.Optional;
  * Client interface for communicating with the Pipeline Registry service.
  *
  * Day 24 Implementation: Client for pipeline loading from registry
- */
+  * @doc.type interface
+ * @doc.purpose Provides pipeline registry client functionality.
+ * @doc.layer product
+ * @doc.pattern Registry
+*/
 public interface PipelineRegistryClient {
 
     /**

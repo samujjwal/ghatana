@@ -22,7 +22,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer core
  * @doc.pattern Unit Test
  */
-@DisplayName("RbacPermissionEvaluator [GH-90000]")
+@DisplayName("RbacPermissionEvaluator")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class RbacPermissionEvaluatorTest {
 
@@ -37,11 +37,11 @@ class RbacPermissionEvaluatorTest {
     }
 
     @Nested
-    @DisplayName("hasPermission(role, permission) [GH-90000]")
+    @DisplayName("hasPermission(role, permission)")
     class SingleRole {
 
         @Test
-        @DisplayName("should return true when policy grants permission [GH-90000]")
+        @DisplayName("should return true when policy grants permission")
         void shouldReturnTrueWhenGranted() { // GH-90000
             when(policyService.hasPermission("ADMIN", "*", "event:read:all")).thenReturn(true); // GH-90000
 
@@ -49,7 +49,7 @@ class RbacPermissionEvaluatorTest {
         }
 
         @Test
-        @DisplayName("should return false when policy denies permission [GH-90000]")
+        @DisplayName("should return false when policy denies permission")
         void shouldReturnFalseWhenDenied() { // GH-90000
             when(policyService.hasPermission("GUEST", "*", "event:write:all")).thenReturn(false); // GH-90000
 
@@ -58,11 +58,11 @@ class RbacPermissionEvaluatorTest {
     }
 
     @Nested
-    @DisplayName("hasPermission(role, roles, permission) [GH-90000]")
+    @DisplayName("hasPermission(role, roles, permission)")
     class MultipleRoles {
 
         @Test
-        @DisplayName("should return true when any role has permission [GH-90000]")
+        @DisplayName("should return true when any role has permission")
         void shouldReturnTrueWhenAnyRoleMatches() { // GH-90000
             lenient().when(policyService.hasPermission("READER", "*", "event:read:all")).thenReturn(false); // GH-90000
             when(policyService.hasPermission("ADMIN", "*", "event:read:all")).thenReturn(true); // GH-90000
@@ -72,7 +72,7 @@ class RbacPermissionEvaluatorTest {
         }
 
         @Test
-        @DisplayName("should return false when no role has permission [GH-90000]")
+        @DisplayName("should return false when no role has permission")
         void shouldReturnFalseWhenNoRoleMatches() { // GH-90000
             when(policyService.hasPermission("GUEST", "*", "event:write:all")).thenReturn(false); // GH-90000
             when(policyService.hasPermission("VIEWER", "*", "event:write:all")).thenReturn(false); // GH-90000
@@ -82,7 +82,7 @@ class RbacPermissionEvaluatorTest {
         }
 
         @Test
-        @DisplayName("should return false for empty roles set [GH-90000]")
+        @DisplayName("should return false for empty roles set")
         void shouldReturnFalseForEmptyRoles() { // GH-90000
             assertThat(evaluator.hasPermission("role", Set.of(), "event:read:all")) // GH-90000
                     .isFalse(); // GH-90000

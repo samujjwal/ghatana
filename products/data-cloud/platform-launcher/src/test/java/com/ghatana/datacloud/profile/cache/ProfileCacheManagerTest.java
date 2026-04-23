@@ -10,15 +10,15 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("ProfileCacheManager Tests [GH-90000]")
+@DisplayName("ProfileCacheManager Tests")
 class ProfileCacheManagerTest {
 
     @Nested
-    @DisplayName("Singleton Pattern [GH-90000]")
+    @DisplayName("Singleton Pattern")
     class SingletonTests {
 
         @Test
-        @DisplayName("returns same instance on multiple calls [GH-90000]")
+        @DisplayName("returns same instance on multiple calls")
         void returnsSameInstanceOnMultipleCalls() { // GH-90000
             ProfileCacheManager instance1 = ProfileCacheManager.getInstance(); // GH-90000
             ProfileCacheManager instance2 = ProfileCacheManager.getInstance(); // GH-90000
@@ -28,20 +28,20 @@ class ProfileCacheManagerTest {
     }
 
     @Nested
-    @DisplayName("Cache Operations [GH-90000]")
+    @DisplayName("Cache Operations")
     class CacheOperationsTests {
 
         @Test
-        @DisplayName("caches and retrieves profile [GH-90000]")
+        @DisplayName("caches and retrieves profile")
         void cachesAndRetrievesProfile() { // GH-90000
             ProfileCacheManager cache = ProfileCacheManager.getInstance(); // GH-90000
             cache.clearAll(); // GH-90000
 
             CollectionStorageProfile profile = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("products [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("products")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
                 .build(); // GH-90000
 
             cache.cacheProfile(profile); // GH-90000
@@ -49,11 +49,11 @@ class ProfileCacheManagerTest {
             var retrieved = cache.getProfile("tenant-1", "products"); // GH-90000
 
             assertThat(retrieved).isPresent(); // GH-90000
-            assertThat(retrieved.get().getCollectionName()).isEqualTo("products [GH-90000]");
+            assertThat(retrieved.get().getCollectionName()).isEqualTo("products");
         }
 
         @Test
-        @DisplayName("returns empty when profile not cached [GH-90000]")
+        @DisplayName("returns empty when profile not cached")
         void returnsEmptyWhenNotCached() { // GH-90000
             ProfileCacheManager cache = ProfileCacheManager.getInstance(); // GH-90000
             cache.clearAll(); // GH-90000
@@ -64,16 +64,16 @@ class ProfileCacheManagerTest {
         }
 
         @Test
-        @DisplayName("caches active profile in active cache [GH-90000]")
+        @DisplayName("caches active profile in active cache")
         void cachesActiveProfileInActiveCache() { // GH-90000
             ProfileCacheManager cache = ProfileCacheManager.getInstance(); // GH-90000
             cache.clearAll(); // GH-90000
 
             CollectionStorageProfile profile = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("products [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("products")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
                 .isActive(true) // GH-90000
                 .build(); // GH-90000
 
@@ -86,16 +86,16 @@ class ProfileCacheManagerTest {
         }
 
         @Test
-        @DisplayName("does not cache inactive profile in active cache [GH-90000]")
+        @DisplayName("does not cache inactive profile in active cache")
         void doesNotCacheInactiveProfileInActiveCache() { // GH-90000
             ProfileCacheManager cache = ProfileCacheManager.getInstance(); // GH-90000
             cache.clearAll(); // GH-90000
 
             CollectionStorageProfile profile = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("products [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("products")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
                 .isActive(false) // GH-90000
                 .build(); // GH-90000
 
@@ -107,16 +107,16 @@ class ProfileCacheManagerTest {
         }
 
         @Test
-        @DisplayName("invalidates cached profile [GH-90000]")
+        @DisplayName("invalidates cached profile")
         void invalidatesCachedProfile() { // GH-90000
             ProfileCacheManager cache = ProfileCacheManager.getInstance(); // GH-90000
             cache.clearAll(); // GH-90000
 
             CollectionStorageProfile profile = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("products [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("products")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
                 .build(); // GH-90000
 
             cache.cacheProfile(profile); // GH-90000
@@ -128,29 +128,29 @@ class ProfileCacheManagerTest {
         }
 
         @Test
-        @DisplayName("invalidates all profiles for tenant [GH-90000]")
+        @DisplayName("invalidates all profiles for tenant")
         void invalidatesAllProfilesForTenant() { // GH-90000
             ProfileCacheManager cache = ProfileCacheManager.getInstance(); // GH-90000
             cache.clearAll(); // GH-90000
 
             CollectionStorageProfile profile1 = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("products [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("products")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
                 .build(); // GH-90000
 
             CollectionStorageProfile profile2 = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("orders [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("orders")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
                 .build(); // GH-90000
 
             cache.cacheProfile(profile1); // GH-90000
             cache.cacheProfile(profile2); // GH-90000
 
-            int count = cache.invalidateTenantProfiles("tenant-1 [GH-90000]");
+            int count = cache.invalidateTenantProfiles("tenant-1");
 
             assertThat(count).isEqualTo(2); // GH-90000
             assertThat(cache.getProfile("tenant-1", "products")).isEmpty(); // GH-90000
@@ -158,15 +158,15 @@ class ProfileCacheManagerTest {
         }
 
         @Test
-        @DisplayName("clears all cached profiles [GH-90000]")
+        @DisplayName("clears all cached profiles")
         void clearsAllCachedProfiles() { // GH-90000
             ProfileCacheManager cache = ProfileCacheManager.getInstance(); // GH-90000
 
             CollectionStorageProfile profile = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("products [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("products")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
                 .build(); // GH-90000
 
             cache.cacheProfile(profile); // GH-90000
@@ -177,16 +177,16 @@ class ProfileCacheManagerTest {
         }
 
         @Test
-        @DisplayName("checks if profile is cached [GH-90000]")
+        @DisplayName("checks if profile is cached")
         void checksIfProfileIsCached() { // GH-90000
             ProfileCacheManager cache = ProfileCacheManager.getInstance(); // GH-90000
             cache.clearAll(); // GH-90000
 
             CollectionStorageProfile profile = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("products [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("products")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
                 .build(); // GH-90000
 
             assertThat(cache.isCached("tenant-1", "products")).isFalse(); // GH-90000
@@ -198,73 +198,73 @@ class ProfileCacheManagerTest {
     }
 
     @Nested
-    @DisplayName("Tenant Profile Queries [GH-90000]")
+    @DisplayName("Tenant Profile Queries")
     class TenantProfileTests {
 
         @Test
-        @DisplayName("gets all profiles for tenant [GH-90000]")
+        @DisplayName("gets all profiles for tenant")
         void getsAllProfilesForTenant() { // GH-90000
             ProfileCacheManager cache = ProfileCacheManager.getInstance(); // GH-90000
             cache.clearAll(); // GH-90000
 
             CollectionStorageProfile profile1 = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("products [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("products")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
                 .build(); // GH-90000
 
             CollectionStorageProfile profile2 = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("orders [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("orders")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
                 .build(); // GH-90000
 
             CollectionStorageProfile otherTenant = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-2 [GH-90000]")
-                .collectionName("products [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
+                .tenantId("tenant-2")
+                .collectionName("products")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
                 .build(); // GH-90000
 
             cache.cacheProfile(profile1); // GH-90000
             cache.cacheProfile(profile2); // GH-90000
             cache.cacheProfile(otherTenant); // GH-90000
 
-            List<CollectionStorageProfile> profiles = cache.getTenantProfiles("tenant-1 [GH-90000]");
+            List<CollectionStorageProfile> profiles = cache.getTenantProfiles("tenant-1");
 
             assertThat(profiles).hasSize(2); // GH-90000
-            assertThat(profiles).allMatch(p -> p.getTenantId().equals("tenant-1 [GH-90000]"));
+            assertThat(profiles).allMatch(p -> p.getTenantId().equals("tenant-1"));
         }
 
         @Test
-        @DisplayName("gets all active profiles for tenant [GH-90000]")
+        @DisplayName("gets all active profiles for tenant")
         void getsAllActiveProfilesForTenant() { // GH-90000
             ProfileCacheManager cache = ProfileCacheManager.getInstance(); // GH-90000
             cache.clearAll(); // GH-90000
 
             CollectionStorageProfile active1 = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("products [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("products")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
                 .isActive(true) // GH-90000
                 .build(); // GH-90000
 
             CollectionStorageProfile active2 = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("orders [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("orders")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
                 .isActive(true) // GH-90000
                 .build(); // GH-90000
 
             CollectionStorageProfile inactive = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("customers [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("customers")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
                 .isActive(false) // GH-90000
                 .build(); // GH-90000
 
@@ -272,7 +272,7 @@ class ProfileCacheManagerTest {
             cache.cacheProfile(active2); // GH-90000
             cache.cacheProfile(inactive); // GH-90000
 
-            List<CollectionStorageProfile> activeProfiles = cache.getActiveTenantProfiles("tenant-1 [GH-90000]");
+            List<CollectionStorageProfile> activeProfiles = cache.getActiveTenantProfiles("tenant-1");
 
             assertThat(activeProfiles).hasSize(2); // GH-90000
             assertThat(activeProfiles).allMatch(p -> p.getIsActive()); // GH-90000
@@ -280,21 +280,21 @@ class ProfileCacheManagerTest {
     }
 
     @Nested
-    @DisplayName("Cache Statistics [GH-90000]")
+    @DisplayName("Cache Statistics")
     class StatisticsTests {
 
         @Test
-        @DisplayName("tracks cache hits and misses [GH-90000]")
+        @DisplayName("tracks cache hits and misses")
         void tracksCacheHitsAndMisses() { // GH-90000
             ProfileCacheManager cache = ProfileCacheManager.getInstance(); // GH-90000
             cache.clearAll(); // GH-90000
             cache.resetStatistics(); // GH-90000
 
             CollectionStorageProfile profile = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("products [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("products")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
                 .build(); // GH-90000
 
             cache.cacheProfile(profile); // GH-90000
@@ -308,17 +308,17 @@ class ProfileCacheManagerTest {
         }
 
         @Test
-        @DisplayName("calculates hit rate correctly [GH-90000]")
+        @DisplayName("calculates hit rate correctly")
         void calculatesHitRateCorrectly() { // GH-90000
             ProfileCacheManager cache = ProfileCacheManager.getInstance(); // GH-90000
             cache.clearAll(); // GH-90000
             cache.resetStatistics(); // GH-90000
 
             CollectionStorageProfile profile = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("products [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("products")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
                 .build(); // GH-90000
 
             cache.cacheProfile(profile); // GH-90000
@@ -332,17 +332,17 @@ class ProfileCacheManagerTest {
         }
 
         @Test
-        @DisplayName("tracks invalidations [GH-90000]")
+        @DisplayName("tracks invalidations")
         void tracksInvalidations() { // GH-90000
             ProfileCacheManager cache = ProfileCacheManager.getInstance(); // GH-90000
             cache.clearAll(); // GH-90000
             cache.resetStatistics(); // GH-90000
 
             CollectionStorageProfile profile = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("products [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("products")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
                 .build(); // GH-90000
 
             cache.cacheProfile(profile); // GH-90000
@@ -354,17 +354,17 @@ class ProfileCacheManagerTest {
         }
 
         @Test
-        @DisplayName("resets statistics [GH-90000]")
+        @DisplayName("resets statistics")
         void resetsStatistics() { // GH-90000
             ProfileCacheManager cache = ProfileCacheManager.getInstance(); // GH-90000
             cache.clearAll(); // GH-90000
             cache.resetStatistics(); // GH-90000
 
             CollectionStorageProfile profile = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("products [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("products")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
                 .build(); // GH-90000
 
             cache.cacheProfile(profile); // GH-90000
@@ -378,16 +378,16 @@ class ProfileCacheManagerTest {
         }
 
         @Test
-        @DisplayName("returns cache size in statistics [GH-90000]")
+        @DisplayName("returns cache size in statistics")
         void returnsCacheSizeInStatistics() { // GH-90000
             ProfileCacheManager cache = ProfileCacheManager.getInstance(); // GH-90000
             cache.clearAll(); // GH-90000
 
             CollectionStorageProfile profile = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("products [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("products")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
                 .build(); // GH-90000
 
             cache.cacheProfile(profile); // GH-90000
@@ -399,20 +399,20 @@ class ProfileCacheManagerTest {
     }
 
     @Nested
-    @DisplayName("Profile Updates [GH-90000]")
+    @DisplayName("Profile Updates")
     class ProfileUpdateTests {
 
         @Test
-        @DisplayName("updates profile cache on profile change [GH-90000]")
+        @DisplayName("updates profile cache on profile change")
         void updatesProfileCacheOnProfileChange() { // GH-90000
             ProfileCacheManager cache = ProfileCacheManager.getInstance(); // GH-90000
             cache.clearAll(); // GH-90000
 
             CollectionStorageProfile original = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("products [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("products")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
                 .isActive(true) // GH-90000
                 .build(); // GH-90000
 
@@ -423,7 +423,7 @@ class ProfileCacheManagerTest {
                 .tenantId(original.getTenantId()) // GH-90000
                 .collectionName(original.getCollectionName()) // GH-90000
                 .storageProfileId(original.getStorageProfileId()) // GH-90000
-                .primaryBackendId("clickhouse-primary [GH-90000]")
+                .primaryBackendId("clickhouse-primary")
                 .fallbackBackendIds(original.getFallbackBackendIds()) // GH-90000
                 .backendConfig(original.getBackendConfig()) // GH-90000
                 .isActive(false) // GH-90000
@@ -437,21 +437,21 @@ class ProfileCacheManagerTest {
             var retrieved = cache.getProfile("tenant-1", "products"); // GH-90000
 
             assertThat(retrieved).isPresent(); // GH-90000
-            assertThat(retrieved.get().getPrimaryBackendId()).isEqualTo("clickhouse-primary [GH-90000]");
+            assertThat(retrieved.get().getPrimaryBackendId()).isEqualTo("clickhouse-primary");
             assertThat(retrieved.get().getIsActive()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("removes from active cache when profile deactivated [GH-90000]")
+        @DisplayName("removes from active cache when profile deactivated")
         void removesFromActiveCacheWhenDeactivated() { // GH-90000
             ProfileCacheManager cache = ProfileCacheManager.getInstance(); // GH-90000
             cache.clearAll(); // GH-90000
 
             CollectionStorageProfile active = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("products [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("products")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
                 .isActive(true) // GH-90000
                 .build(); // GH-90000
 

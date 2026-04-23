@@ -7,7 +7,8 @@ package com.ghatana.agent.learning.retention;
  * @doc.type interface
  * @doc.purpose Memory decay function SPI
  * @doc.layer agent-learning
- */
+  * @doc.pattern Interface
+*/
 public interface DecayFunction {
 
     /**

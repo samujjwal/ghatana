@@ -2,7 +2,11 @@ package com.ghatana.audio.video.multimodal.engine;
 
 /**
  * Port for the STT service — decouples the multimodal engine from the gRPC wire format.
- */
+  * @doc.type interface
+ * @doc.purpose Provides stt client adapter functionality.
+ * @doc.layer product
+ * @doc.pattern Adapter
+*/
 public interface SttClientAdapter {
 
     /**

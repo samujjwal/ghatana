@@ -24,7 +24,11 @@ import org.slf4j.LoggerFactory;
 /**
  * Day 39: Durable, distributed execution queue backed by PostgreSQL.
  * Uses SKIP LOCKED for efficient concurrent job claiming.
- */
+  * @doc.type class
+ * @doc.purpose Provides postgres execution queue functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 public class PostgresExecutionQueue implements ExecutionQueue {
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresExecutionQueue.class);

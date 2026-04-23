@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * Unit tests for {@link MediaArtifactRecord} and {@link DataCloudMediaArtifactRepository}.
  */
-@DisplayName("MediaArtifact (P7-T4) [GH-90000]")
+@DisplayName("MediaArtifact (P7-T4)")
 class MediaArtifactTest {
 
     // =========================================================================
@@ -27,11 +27,11 @@ class MediaArtifactTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("MediaArtifactRecord [GH-90000]")
+    @DisplayName("MediaArtifactRecord")
     class RecordTests {
 
         @Test
-        @DisplayName("create() generates non-null artifactId and current timestamp [GH-90000]")
+        @DisplayName("create() generates non-null artifactId and current timestamp")
         void createGeneratesIds() { // GH-90000
             MediaArtifactRecord record = MediaArtifactRecord.create( // GH-90000
                     "tenant-1", "agent-1", "audio/wav",
@@ -39,12 +39,12 @@ class MediaArtifactTest {
                     3000L, "av.speech-to-text", "corr-1", Map.of()); // GH-90000
             assertThat(record.artifactId()).isNotBlank(); // GH-90000
             assertThat(record.createdAt()).isNotNull(); // GH-90000
-            assertThat(record.tenantId()).isEqualTo("tenant-1 [GH-90000]");
-            assertThat(record.mediaType()).isEqualTo("audio/wav [GH-90000]");
+            assertThat(record.tenantId()).isEqualTo("tenant-1");
+            assertThat(record.mediaType()).isEqualTo("audio/wav");
         }
 
         @Test
-        @DisplayName("metadata is immutable after creation [GH-90000]")
+        @DisplayName("metadata is immutable after creation")
         void metadataIsImmutable() { // GH-90000
             MediaArtifactRecord record = MediaArtifactRecord.create( // GH-90000
                     "tenant-1", "agent-1", "image/jpeg",
@@ -55,7 +55,7 @@ class MediaArtifactTest {
         }
 
         @Test
-        @DisplayName("null metadata defaults to empty map [GH-90000]")
+        @DisplayName("null metadata defaults to empty map")
         void nullMetadataDefaultsToEmpty() { // GH-90000
             MediaArtifactRecord record = MediaArtifactRecord.create( // GH-90000
                     "t1", "a1", "video/mp4", "uri", 100L, null, 0, null, null, null);
@@ -63,21 +63,21 @@ class MediaArtifactTest {
         }
 
         @Test
-        @DisplayName("negative sizeBytes throws [GH-90000]")
+        @DisplayName("negative sizeBytes throws")
         void negativeSizeBytesThrows() { // GH-90000
             assertThatThrownBy(() -> MediaArtifactRecord.create( // GH-90000
                     "t1", "a1", "audio/wav", "uri", -1L, null, 0, null, null, null))
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("sizeBytes [GH-90000]");
+                    .hasMessageContaining("sizeBytes");
         }
 
         @Test
-        @DisplayName("blank mediaType throws [GH-90000]")
+        @DisplayName("blank mediaType throws")
         void blankMediaTypeThrows() { // GH-90000
             assertThatThrownBy(() -> MediaArtifactRecord.create( // GH-90000
                     "t1", "a1", "  ", "uri", 100L, null, 0, null, null, null))
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("mediaType [GH-90000]");
+                    .hasMessageContaining("mediaType");
         }
     }
 
@@ -86,7 +86,7 @@ class MediaArtifactTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("DataCloudMediaArtifactRepository [GH-90000]")
+    @DisplayName("DataCloudMediaArtifactRepository")
     class RepositoryTests {
 
         private DataCloudMediaArtifactRepository repo;
@@ -103,7 +103,7 @@ class MediaArtifactTest {
         }
 
         @Test
-        @DisplayName("save and findById returns saved record [GH-90000]")
+        @DisplayName("save and findById returns saved record")
         void saveAndFindById() { // GH-90000
             MediaArtifactRecord record = buildRecord("t1", "agent-1", "audio/wav"); // GH-90000
             MediaArtifactRecord saved = repo.save(record).getResult(); // GH-90000
@@ -113,14 +113,14 @@ class MediaArtifactTest {
         }
 
         @Test
-        @DisplayName("findById returns empty when not found [GH-90000]")
+        @DisplayName("findById returns empty when not found")
         void findByIdReturnsEmpty() { // GH-90000
             Optional<MediaArtifactRecord> result = repo.findById("nonexistent", "t1").getResult(); // GH-90000
             assertThat(result).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("tenant isolation: different tenants cannot see each other's artifacts [GH-90000]")
+        @DisplayName("tenant isolation: different tenants cannot see each other's artifacts")
         void tenantIsolation() { // GH-90000
             MediaArtifactRecord t1 = buildRecord("tenant-A", "agent-1", "audio/wav"); // GH-90000
             MediaArtifactRecord t2 = buildRecord("tenant-B", "agent-1", "audio/wav"); // GH-90000
@@ -133,7 +133,7 @@ class MediaArtifactTest {
         }
 
         @Test
-        @DisplayName("findByAgent returns matching records within limit [GH-90000]")
+        @DisplayName("findByAgent returns matching records within limit")
         void findByAgent() { // GH-90000
             repo.save(buildRecord("t1", "agent-x", "audio/wav")).getResult(); // GH-90000
             repo.save(buildRecord("t1", "agent-x", "video/mp4")).getResult(); // GH-90000
@@ -144,7 +144,7 @@ class MediaArtifactTest {
         }
 
         @Test
-        @DisplayName("findByMediaType filters by MIME type [GH-90000]")
+        @DisplayName("findByMediaType filters by MIME type")
         void findByMediaType() { // GH-90000
             repo.save(buildRecord("t1", "a1", "audio/wav")).getResult(); // GH-90000
             repo.save(buildRecord("t1", "a1", "audio/wav")).getResult(); // GH-90000
@@ -155,7 +155,7 @@ class MediaArtifactTest {
         }
 
         @Test
-        @DisplayName("delete returns true and removes record [GH-90000]")
+        @DisplayName("delete returns true and removes record")
         void deleteRemovesRecord() { // GH-90000
             MediaArtifactRecord record = buildRecord("t1", "a1", "audio/wav"); // GH-90000
             repo.save(record).getResult(); // GH-90000
@@ -165,7 +165,7 @@ class MediaArtifactTest {
         }
 
         @Test
-        @DisplayName("delete returns false when record not found [GH-90000]")
+        @DisplayName("delete returns false when record not found")
         void deleteReturnsFalseWhenMissing() { // GH-90000
             Boolean deleted = repo.delete("nonexistent", "t1").getResult(); // GH-90000
             assertThat(deleted).isFalse(); // GH-90000

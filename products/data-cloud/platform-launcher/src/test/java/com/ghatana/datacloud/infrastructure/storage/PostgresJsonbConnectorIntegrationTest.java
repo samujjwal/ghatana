@@ -37,15 +37,15 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern Testcontainers, EventloopTestBase
  */
 @Testcontainers(disabledWithoutDocker = true) // GH-90000
-@DisplayName("PostgresJsonbConnector — Integration Tests (Testcontainers) [GH-90000]")
+@DisplayName("PostgresJsonbConnector — Integration Tests (Testcontainers)")
 class PostgresJsonbConnectorIntegrationTest extends EventloopTestBase {
 
     @Container
     static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>("postgres:16-alpine [GH-90000]")
-                    .withDatabaseName("datacloud_it [GH-90000]")
-                    .withUsername("dc_test [GH-90000]")
-                    .withPassword("dc_test_secret [GH-90000]");
+            new PostgreSQLContainer<>("postgres:16-alpine")
+                    .withDatabaseName("datacloud_it")
+                    .withUsername("dc_test")
+                    .withPassword("dc_test_secret");
 
     private static final ObjectMapper MAPPER = new ObjectMapper(); // GH-90000
     private static final Executor     EXECUTOR = Executors.newVirtualThreadPerTaskExecutor(); // GH-90000
@@ -60,7 +60,7 @@ class PostgresJsonbConnectorIntegrationTest extends EventloopTestBase {
     static void migrateSchema() { // GH-90000
         Flyway.configure() // GH-90000
               .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword()) // GH-90000
-              .locations("classpath:db/migration [GH-90000]")
+              .locations("classpath:db/migration")
               .load() // GH-90000
               .migrate(); // GH-90000
     }
@@ -87,16 +87,16 @@ class PostgresJsonbConnectorIntegrationTest extends EventloopTestBase {
     // ──────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("create — persists entity and returns with generated ID [GH-90000]")
+    @DisplayName("create — persists entity and returns with generated ID")
     void create_persistsAndReturnsId() { // GH-90000
         Entity entity = entityWith(null, Map.of("name", "Widget", "price", 9.99)); // GH-90000
 
         Entity saved = runPromise(() -> connector.create(entity)); // GH-90000
 
-        assertThat(saved.getId()).as("persisted entity must have an ID [GH-90000]").isNotNull();
+        assertThat(saved.getId()).as("persisted entity must have an ID").isNotNull();
         assertThat(saved.getTenantId()).isEqualTo(TENANT); // GH-90000
         assertThat(saved.getCollectionName()).isEqualTo(COLLECTION); // GH-90000
-        assertThat(saved.getData()).containsKey("name [GH-90000]");
+        assertThat(saved.getData()).containsKey("name");
     }
 
     // ──────────────────────────────────────────────────────────────────────
@@ -104,7 +104,7 @@ class PostgresJsonbConnectorIntegrationTest extends EventloopTestBase {
     // ──────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("read — returns saved entity by ID [GH-90000]")
+    @DisplayName("read — returns saved entity by ID")
     void read_returnsSavedEntity() { // GH-90000
         Entity saved = runPromise(() -> connector.create( // GH-90000
                 entityWith(null, Map.of("name", "Gadget", "price", 19.99)))); // GH-90000
@@ -118,7 +118,7 @@ class PostgresJsonbConnectorIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("read — returns empty Optional for unknown ID [GH-90000]")
+    @DisplayName("read — returns empty Optional for unknown ID")
     void read_unknownId_returnsEmpty() { // GH-90000
         Optional<Entity> found = runPromise(() -> // GH-90000
                 connector.read(collectionId, TENANT, UUID.randomUUID())); // GH-90000
@@ -131,7 +131,7 @@ class PostgresJsonbConnectorIntegrationTest extends EventloopTestBase {
     // ──────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("update — modifies data and increments version [GH-90000]")
+    @DisplayName("update — modifies data and increments version")
     void update_modifiesData() { // GH-90000
         Entity saved = runPromise(() -> connector.create( // GH-90000
                 entityWith(null, Map.of("name", "SomeProduct", "price", 5.00)))); // GH-90000
@@ -155,7 +155,7 @@ class PostgresJsonbConnectorIntegrationTest extends EventloopTestBase {
     // ──────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("delete — removes entity; subsequent read returns empty [GH-90000]")
+    @DisplayName("delete — removes entity; subsequent read returns empty")
     void delete_removesEntity() { // GH-90000
         Entity saved = runPromise(() -> connector.create( // GH-90000
                 entityWith(null, Map.of("name", "ToDelete")))); // GH-90000
@@ -173,7 +173,7 @@ class PostgresJsonbConnectorIntegrationTest extends EventloopTestBase {
     // ──────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("count — returns correct row count for tenant+collection [GH-90000]")
+    @DisplayName("count — returns correct row count for tenant+collection")
     void count_returnsCorrectCount() { // GH-90000
         // Entities must be stored with collectionName = collectionId.toString() // GH-90000
         // because the connector uses collectionId.toString() to scope count/query. // GH-90000
@@ -194,7 +194,7 @@ class PostgresJsonbConnectorIntegrationTest extends EventloopTestBase {
     // ──────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("query — applies limit and returns results [GH-90000]")
+    @DisplayName("query — applies limit and returns results")
     void query_appliesLimit() { // GH-90000
         // Entities must use collectionId.toString() so query scope matches // GH-90000
         String col = collectionId.toString(); // GH-90000
@@ -216,7 +216,7 @@ class PostgresJsonbConnectorIntegrationTest extends EventloopTestBase {
     // ──────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("healthCheck — succeeds when database is reachable [GH-90000]")
+    @DisplayName("healthCheck — succeeds when database is reachable")
     void healthCheck_succeedsWhenDbReachable() { // GH-90000
         Void result = runPromise(() -> connector.healthCheck()); // GH-90000
         // If no exception is thrown the database is healthy
@@ -445,12 +445,12 @@ class JdbcEntityRepository implements EntityRepository {
 
         private Entity mapRow(ResultSet rs) throws Exception { // GH-90000
             Map<String, Object> data = MAPPER.readValue( // GH-90000
-                    rs.getString("data [GH-90000]"), new TypeReference<Map<String, Object>>() {});
+                    rs.getString("data"), new TypeReference<Map<String, Object>>() {});
             return Entity.builder() // GH-90000
-                    .id((UUID) rs.getObject("id [GH-90000]"))
-                    .tenantId(rs.getString("tenant_id [GH-90000]"))
-                    .collectionName(rs.getString("collection_name [GH-90000]"))
-                    .recordType(RecordType.valueOf(rs.getString("record_type [GH-90000]")))
+                    .id((UUID) rs.getObject("id"))
+                    .tenantId(rs.getString("tenant_id"))
+                    .collectionName(rs.getString("collection_name"))
+                    .recordType(RecordType.valueOf(rs.getString("record_type")))
                     .data(data) // GH-90000
                     .build(); // GH-90000
         }
@@ -461,7 +461,7 @@ class JdbcEntityRepository implements EntityRepository {
             return list;
         }
 
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         private <T> T runBlocking(java.util.concurrent.Callable<Promise<T>> fn) throws Exception { // GH-90000
             // In tests this is always called from the blocking executor already
             return fn.call().toCompletableFuture().get(); // GH-90000

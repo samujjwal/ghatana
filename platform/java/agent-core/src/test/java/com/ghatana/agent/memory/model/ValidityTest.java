@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.within;
  * @doc.layer agent-memory
  * @doc.pattern Test
  */
-@DisplayName("Validity - confidence tracking and exponential decay [GH-90000]")
+@DisplayName("Validity - confidence tracking and exponential decay")
 class ValidityTest {
 
     // ─────────────────────────────────────────────────────────────
@@ -30,32 +30,32 @@ class ValidityTest {
     // ─────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Builder defaults [GH-90000]")
+    @DisplayName("Builder defaults")
     class BuilderDefaultsTests {
 
         @Test
-        @DisplayName("Default confidence is 0.0 [GH-90000]")
+        @DisplayName("Default confidence is 0.0")
         void defaultConfidence_isZero() { // GH-90000
             Validity v = Validity.builder().build(); // GH-90000
             assertThat(v.getConfidence()).isEqualTo(0.0); // GH-90000
         }
 
         @Test
-        @DisplayName("Default decayRate is 0.0 (no decay) [GH-90000]")
+        @DisplayName("Default decayRate is 0.0 (no decay)")
         void defaultDecayRate_isZero() { // GH-90000
             Validity v = Validity.builder().build(); // GH-90000
             assertThat(v.getDecayRate()).isEqualTo(0.0); // GH-90000
         }
 
         @Test
-        @DisplayName("Default status is ACTIVE [GH-90000]")
+        @DisplayName("Default status is ACTIVE")
         void defaultStatus_isActive() { // GH-90000
             Validity v = Validity.builder().build(); // GH-90000
             assertThat(v.getStatus()).isEqualTo(ValidityStatus.ACTIVE); // GH-90000
         }
 
         @Test
-        @DisplayName("Default lastVerified is null [GH-90000]")
+        @DisplayName("Default lastVerified is null")
         void defaultLastVerified_isNull() { // GH-90000
             Validity v = Validity.builder().build(); // GH-90000
             assertThat(v.getLastVerified()).isNull(); // GH-90000
@@ -67,11 +67,11 @@ class ValidityTest {
     // ─────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("effectiveConfidence - no decay scenarios [GH-90000]")
+    @DisplayName("effectiveConfidence - no decay scenarios")
     class NoDecayTests {
 
         @Test
-        @DisplayName("Zero decayRate returns confidence unchanged [GH-90000]")
+        @DisplayName("Zero decayRate returns confidence unchanged")
         void zeroDecayRate_returnsConfidenceUnchanged() { // GH-90000
             Instant lastVerified = Instant.now().minus(7, ChronoUnit.DAYS); // GH-90000
             Validity v = Validity.builder().confidence(0.8).decayRate(0.0) // GH-90000
@@ -80,7 +80,7 @@ class ValidityTest {
         }
 
         @Test
-        @DisplayName("Null lastVerified returns confidence unchanged regardless of decayRate [GH-90000]")
+        @DisplayName("Null lastVerified returns confidence unchanged regardless of decayRate")
         void nullLastVerified_returnsConfidenceUnchanged() { // GH-90000
             Validity v = Validity.builder().confidence(0.9).decayRate(0.5) // GH-90000
                     .lastVerified(null).build(); // GH-90000
@@ -88,7 +88,7 @@ class ValidityTest {
         }
 
         @Test
-        @DisplayName("Just-verified item: 0 days aged → full confidence retained [GH-90000]")
+        @DisplayName("Just-verified item: 0 days aged → full confidence retained")
         void justVerified_retainsFullConfidence() { // GH-90000
             Instant now = Instant.now(); // GH-90000
             Validity v = Validity.builder().confidence(1.0).decayRate(0.5) // GH-90000
@@ -103,11 +103,11 @@ class ValidityTest {
     // ─────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("effectiveConfidence - exponential decay formula [GH-90000]")
+    @DisplayName("effectiveConfidence - exponential decay formula")
     class DecayTests {
 
         @Test
-        @DisplayName("After 1 day at decayRate=ln(2)≈0.693: confidence halves [GH-90000]")
+        @DisplayName("After 1 day at decayRate=ln(2)≈0.693: confidence halves")
         void oneDay_halveDecayRate_halvesConfidence() { // GH-90000
             Instant lastVerified = Instant.now().minus(1, ChronoUnit.DAYS); // GH-90000
             double decayRate = Math.log(2); // after 1 day confidence should halve // GH-90000
@@ -117,7 +117,7 @@ class ValidityTest {
         }
 
         @Test
-        @DisplayName("After 10 days at decayRate=0.1: confidence ≈ 0.3679 (initial=1.0) [GH-90000]")
+        @DisplayName("After 10 days at decayRate=0.1: confidence ≈ 0.3679 (initial=1.0)")
         void tenDays_decayOneTenth_correctFormula() { // GH-90000
             Instant lastVerified = Instant.now().minus(10, ChronoUnit.DAYS); // GH-90000
             Validity v = Validity.builder().confidence(1.0).decayRate(0.1) // GH-90000
@@ -127,7 +127,7 @@ class ValidityTest {
         }
 
         @Test
-        @DisplayName("After 100 days at decayRate=0.5: confidence approaches zero [GH-90000]")
+        @DisplayName("After 100 days at decayRate=0.5: confidence approaches zero")
         void veryOldItem_confidenceNearZero() { // GH-90000
             Instant lastVerified = Instant.now().minus(100, ChronoUnit.DAYS); // GH-90000
             Validity v = Validity.builder().confidence(1.0).decayRate(0.5) // GH-90000
@@ -137,7 +137,7 @@ class ValidityTest {
         }
 
         @Test
-        @DisplayName("Proportional scaling: confidence=0.5 decays at same rate as confidence=1.0 [GH-90000]")
+        @DisplayName("Proportional scaling: confidence=0.5 decays at same rate as confidence=1.0")
         void proportionalScaling_conformsToFormula() { // GH-90000
             Instant lastVerified = Instant.now().minus(5, ChronoUnit.DAYS); // GH-90000
             Validity full = Validity.builder().confidence(1.0).decayRate(0.1) // GH-90000
@@ -155,11 +155,11 @@ class ValidityTest {
     // ─────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("ValidityStatus enum values [GH-90000]")
+    @DisplayName("ValidityStatus enum values")
     class ValidityStatusTests {
 
         @Test
-        @DisplayName("All four ValidityStatus values are present [GH-90000]")
+        @DisplayName("All four ValidityStatus values are present")
         void allStatusValues_present() { // GH-90000
             ValidityStatus[] values = ValidityStatus.values(); // GH-90000
             assertThat(values).containsExactlyInAnyOrder( // GH-90000
@@ -170,7 +170,7 @@ class ValidityTest {
         }
 
         @Test
-        @DisplayName("STALE status can be set via builder [GH-90000]")
+        @DisplayName("STALE status can be set via builder")
         void staleStatus_settableViaBuilder() { // GH-90000
             Validity v = Validity.builder().status(ValidityStatus.STALE).build(); // GH-90000
             assertThat(v.getStatus()).isEqualTo(ValidityStatus.STALE); // GH-90000

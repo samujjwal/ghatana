@@ -52,7 +52,7 @@ class AgentConfigMaterializerTest {
 
     @Test
     @Order(1) // GH-90000
-    @DisplayName("Deterministic agent — YAML materialization [GH-90000]")
+    @DisplayName("Deterministic agent — YAML materialization")
     void deterministic() { // GH-90000
         String yaml = """
                 agentId: fraud-detector
@@ -84,7 +84,7 @@ class AgentConfigMaterializerTest {
         assertEquals(3, det.getMaxRetries()); // GH-90000
         assertEquals(FailureMode.CIRCUIT_BREAKER, det.getFailureMode()); // GH-90000
         assertTrue(det.isMetricsEnabled()); // GH-90000
-        assertEquals("security", det.getLabels().get("team [GH-90000]"));
+        assertEquals("security", det.getLabels().get("team"));
         assertEquals(DeterministicSubtype.RULE_BASED, det.getSubtype()); // GH-90000
         assertTrue(det.isEvaluateAllRules()); // GH-90000
         assertEquals("txnType", det.getExactMatchField()); // GH-90000
@@ -96,7 +96,7 @@ class AgentConfigMaterializerTest {
 
     @Test
     @Order(2) // GH-90000
-    @DisplayName("Probabilistic agent — YAML materialization [GH-90000]")
+    @DisplayName("Probabilistic agent — YAML materialization")
     void probabilistic() { // GH-90000
         String yaml = """
                 agentId: anomaly-scorer
@@ -136,7 +136,7 @@ class AgentConfigMaterializerTest {
 
     @Test
     @Order(3) // GH-90000
-    @DisplayName("Hybrid agent — YAML materialization [GH-90000]")
+    @DisplayName("Hybrid agent — YAML materialization")
     void hybrid() { // GH-90000
         String yaml = """
                 agentId: hybrid-detector
@@ -165,7 +165,7 @@ class AgentConfigMaterializerTest {
 
     @Test
     @Order(4) // GH-90000
-    @DisplayName("Adaptive agent — YAML materialization [GH-90000]")
+    @DisplayName("Adaptive agent — YAML materialization")
     void adaptive() { // GH-90000
         String yaml = """
                 agentId: ab-tester
@@ -205,7 +205,7 @@ class AgentConfigMaterializerTest {
 
     @Test
     @Order(5) // GH-90000
-    @DisplayName("Composite agent — YAML materialization [GH-90000]")
+    @DisplayName("Composite agent — YAML materialization")
     void composite() { // GH-90000
         String yaml = """
                 agentId: ensemble-detector
@@ -246,7 +246,7 @@ class AgentConfigMaterializerTest {
 
     @Test
     @Order(6) // GH-90000
-    @DisplayName("Reactive agent — YAML materialization with triggers [GH-90000]")
+    @DisplayName("Reactive agent — YAML materialization with triggers")
     void reactive() { // GH-90000
         String yaml = """
                 agentId: alert-trigger
@@ -288,7 +288,7 @@ class AgentConfigMaterializerTest {
         assertEquals(Duration.ofMinutes(5), trigger.getCountingWindow()); // GH-90000
         assertEquals(Duration.ofMinutes(1), trigger.getCooldown()); // GH-90000
         assertEquals(10, trigger.getPriority()); // GH-90000
-        assertEquals("security-team", trigger.getActions().get("notify [GH-90000]"));
+        assertEquals("security-team", trigger.getActions().get("notify"));
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -297,7 +297,7 @@ class AgentConfigMaterializerTest {
 
     @Test
     @Order(10) // GH-90000
-    @DisplayName("Minimal YAML — uses defaults for omitted base fields [GH-90000]")
+    @DisplayName("Minimal YAML — uses defaults for omitted base fields")
     void minimalYaml_defaults() { // GH-90000
         String yaml = """
                 agentId: minimal-agent
@@ -321,9 +321,9 @@ class AgentConfigMaterializerTest {
 
     @Test
     @Order(20) // GH-90000
-    @DisplayName("Materialize from YAML file path [GH-90000]")
+    @DisplayName("Materialize from YAML file path")
     void materializeFromFile() throws IOException { // GH-90000
-        Path yaml = tempDir.resolve("agent.yaml [GH-90000]");
+        Path yaml = tempDir.resolve("agent.yaml");
         Files.writeString(yaml, """
                 agentId: file-agent
                 type: COMPOSITE
@@ -342,23 +342,23 @@ class AgentConfigMaterializerTest {
 
     @Test
     @Order(21) // GH-90000
-    @DisplayName("Materialize directory of YAML files [GH-90000]")
+    @DisplayName("Materialize directory of YAML files")
     void materializeDirectory() throws IOException { // GH-90000
-        Files.writeString(tempDir.resolve("agent1.yaml [GH-90000]"), """
+        Files.writeString(tempDir.resolve("agent1.yaml"), """
                 agentId: agent-1
                 type: DETERMINISTIC
                 """);
-        Files.writeString(tempDir.resolve("agent2.yaml [GH-90000]"), """
+        Files.writeString(tempDir.resolve("agent2.yaml"), """
                 agentId: agent-2
                 type: PROBABILISTIC
                 """);
-        Files.writeString(tempDir.resolve("not-yaml.txt [GH-90000]"), "ignore me");
+        Files.writeString(tempDir.resolve("not-yaml.txt"), "ignore me");
 
         List<AgentConfig> configs = materializer.materializeDirectory(tempDir); // GH-90000
 
         assertEquals(2, configs.size()); // GH-90000
-        assertTrue(configs.stream().anyMatch(c -> c.getAgentId().equals("agent-1 [GH-90000]")));
-        assertTrue(configs.stream().anyMatch(c -> c.getAgentId().equals("agent-2 [GH-90000]")));
+        assertTrue(configs.stream().anyMatch(c -> c.getAgentId().equals("agent-1")));
+        assertTrue(configs.stream().anyMatch(c -> c.getAgentId().equals("agent-2")));
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -367,7 +367,7 @@ class AgentConfigMaterializerTest {
 
     @Test
     @Order(30) // GH-90000
-    @DisplayName("Missing agentId throws [GH-90000]")
+    @DisplayName("Missing agentId throws")
     void missingAgentId_throws() { // GH-90000
         String yaml = """
                 type: DETERMINISTIC
@@ -379,7 +379,7 @@ class AgentConfigMaterializerTest {
 
     @Test
     @Order(31) // GH-90000
-    @DisplayName("Missing type throws [GH-90000]")
+    @DisplayName("Missing type throws")
     void missingType_throws() { // GH-90000
         String yaml = """
                 agentId: no-type
@@ -391,7 +391,7 @@ class AgentConfigMaterializerTest {
 
     @Test
     @Order(32) // GH-90000
-    @DisplayName("Unknown type throws AgentMaterializationException [GH-90000]")
+    @DisplayName("Unknown type throws AgentMaterializationException")
     void unknownType_throws() { // GH-90000
         String yaml = """
                 agentId: bad-type
@@ -401,12 +401,12 @@ class AgentConfigMaterializerTest {
         AgentMaterializationException ex = assertThrows( // GH-90000
                 AgentMaterializationException.class,
                 () -> materializer.materialize(yaml)); // GH-90000
-        assertTrue(ex.getMessage().contains("Unknown agent type: 'QUANTUM' [GH-90000]"));
+        assertTrue(ex.getMessage().contains("Unknown agent type: 'QUANTUM'"));
     }
 
     @Test
     @Order(33) // GH-90000
-    @DisplayName("Invalid YAML throws AgentMaterializationException [GH-90000]")
+    @DisplayName("Invalid YAML throws AgentMaterializationException")
     void invalidYaml_throws() { // GH-90000
         String yaml = "!!invalid: [yaml: {{}}]\\n  broken";
 
@@ -416,9 +416,9 @@ class AgentConfigMaterializerTest {
 
     @Test
     @Order(34) // GH-90000
-    @DisplayName("Non-directory path throws [GH-90000]")
+    @DisplayName("Non-directory path throws")
     void nonDirectory_throws() throws IOException { // GH-90000
-        Path file = tempDir.resolve("single.yaml [GH-90000]");
+        Path file = tempDir.resolve("single.yaml");
         Files.writeString(file, "agentId: x\ntype: DETERMINISTIC\n"); // GH-90000
 
         assertThrows(AgentMaterializationException.class, // GH-90000
@@ -431,7 +431,7 @@ class AgentConfigMaterializerTest {
 
     @Test
     @Order(40) // GH-90000
-    @DisplayName("AgentConfigDto — extra property accessors [GH-90000]")
+    @DisplayName("AgentConfigDto — extra property accessors")
     void dtoExtraProperties() { // GH-90000
         AgentConfigDto dto = new AgentConfigDto(); // GH-90000
         dto.setExtraProperty("strVal", "hello"); // GH-90000
@@ -441,22 +441,22 @@ class AgentConfigMaterializerTest {
         dto.setExtraProperty("listVal", List.of("a", "b")); // GH-90000
         dto.setExtraProperty("mapVal", Map.of("k", "v")); // GH-90000
 
-        assertEquals("hello", dto.getExtraString("strVal [GH-90000]"));
-        assertTrue(dto.getExtraBoolean("boolVal [GH-90000]"));
-        assertEquals(42, dto.getExtraInt("intVal [GH-90000]"));
-        assertEquals(3.14, dto.getExtraDouble("doubleVal [GH-90000]"), 0.001);
-        assertEquals(List.of("a", "b"), dto.getExtraList("listVal [GH-90000]"));
-        assertEquals(Map.of("k", "v"), dto.getExtraMap("mapVal [GH-90000]"));
+        assertEquals("hello", dto.getExtraString("strVal"));
+        assertTrue(dto.getExtraBoolean("boolVal"));
+        assertEquals(42, dto.getExtraInt("intVal"));
+        assertEquals(3.14, dto.getExtraDouble("doubleVal"), 0.001);
+        assertEquals(List.of("a", "b"), dto.getExtraList("listVal"));
+        assertEquals(Map.of("k", "v"), dto.getExtraMap("mapVal"));
 
         // Missing keys return null
-        assertNull(dto.getExtraString("missing [GH-90000]"));
-        assertNull(dto.getExtraBoolean("missing [GH-90000]"));
-        assertNull(dto.getExtraInt("missing [GH-90000]"));
+        assertNull(dto.getExtraString("missing"));
+        assertNull(dto.getExtraBoolean("missing"));
+        assertNull(dto.getExtraInt("missing"));
     }
 
     @Test
     @Order(41) // GH-90000
-    @DisplayName("parseDuration — ISO-8601 and seconds [GH-90000]")
+    @DisplayName("parseDuration — ISO-8601 and seconds")
     void parseDuration() { // GH-90000
         assertEquals(Duration.ofSeconds(5), // GH-90000
                 AgentConfigDto.parseDuration("PT5S", Duration.ZERO)); // GH-90000
@@ -476,7 +476,7 @@ class AgentConfigMaterializerTest {
 
     @Test
     @Order(50) // GH-90000
-    @DisplayName("Properties and labels propagated from YAML [GH-90000]")
+    @DisplayName("Properties and labels propagated from YAML")
     void propertiesAndLabels() { // GH-90000
         String yaml = """
                 agentId: labeled-agent
@@ -494,11 +494,11 @@ class AgentConfigMaterializerTest {
 
         AgentConfig config = materializer.materialize(yaml); // GH-90000
 
-        assertEquals("value1", config.getProperties().get("key1 [GH-90000]"));
-        assertEquals(42, config.getProperties().get("key2 [GH-90000]"));
-        assertEquals("production", config.getLabels().get("env [GH-90000]"));
-        assertEquals("platform-team", config.getLabels().get("owner [GH-90000]"));
-        assertTrue(config.getRequiredCapabilities().contains("gpu [GH-90000]"));
-        assertTrue(config.getRequiredCapabilities().contains("high-memory [GH-90000]"));
+        assertEquals("value1", config.getProperties().get("key1"));
+        assertEquals(42, config.getProperties().get("key2"));
+        assertEquals("production", config.getLabels().get("env"));
+        assertEquals("platform-team", config.getLabels().get("owner"));
+        assertTrue(config.getRequiredCapabilities().contains("gpu"));
+        assertTrue(config.getRequiredCapabilities().contains("high-memory"));
     }
 }

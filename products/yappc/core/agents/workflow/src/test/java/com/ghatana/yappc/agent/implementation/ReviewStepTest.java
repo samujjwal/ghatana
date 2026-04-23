@@ -17,7 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Implementation ReviewStep Tests [GH-90000]")
+@DisplayName("Implementation ReviewStep Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles review step test operations
@@ -38,13 +38,13 @@ class ReviewStepTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should return correct step ID [GH-90000]")
+  @DisplayName("Should return correct step ID")
   void shouldReturnCorrectStepId() { // GH-90000
-    assertThat(step.getStepId()).isEqualTo("implementation.review [GH-90000]");
+    assertThat(step.getStepId()).isEqualTo("implementation.review");
   }
 
   @Test
-  @DisplayName("Should create code review records from quality gates [GH-90000]")
+  @DisplayName("Should create code review records from quality gates")
   void shouldCreateReviewRecords() { // GH-90000
     // GIVEN
     WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000

@@ -23,15 +23,15 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern UnitTest
  */
-@DisplayName("Event Stream Tests [GH-90000]")
+@DisplayName("Event Stream Tests")
 public class EventStreamTest {
 
     @Nested
-    @DisplayName("EventAppendTests [GH-90000]")
+    @DisplayName("EventAppendTests")
     class EventAppendTests {
 
         @Test
-        @DisplayName("append single event: succeeds [GH-90000]")
+        @DisplayName("append single event: succeeds")
         void shouldAppendSingleEvent() { // GH-90000
             List<Map<String, Object>> stream = new ArrayList<>(); // GH-90000
             String eventId = UUID.randomUUID().toString(); // GH-90000
@@ -47,7 +47,7 @@ public class EventStreamTest {
         }
 
         @Test
-        @DisplayName("append multiple events: maintains order [GH-90000]")
+        @DisplayName("append multiple events: maintains order")
         void shouldAppendMultipleEvents() { // GH-90000
             List<Map<String, Object>> stream = new ArrayList<>(); // GH-90000
 
@@ -56,12 +56,12 @@ public class EventStreamTest {
             }
 
             assertThat(stream).hasSize(5); // GH-90000
-            assertThat(stream.get(0).get("id [GH-90000]")).isEqualTo("event-1 [GH-90000]");
-            assertThat(stream.get(4).get("id [GH-90000]")).isEqualTo("event-5 [GH-90000]");
+            assertThat(stream.get(0).get("id")).isEqualTo("event-1");
+            assertThat(stream.get(4).get("id")).isEqualTo("event-5");
         }
 
         @Test
-        @DisplayName("duplicate event ID: detectable [GH-90000]")
+        @DisplayName("duplicate event ID: detectable")
         void shouldDetectDuplicateId() { // GH-90000
             List<Map<String, Object>> stream = new ArrayList<>(); // GH-90000
             String eventId = "evt-123";
@@ -72,13 +72,13 @@ public class EventStreamTest {
             assertThat(stream).hasSize(2); // GH-90000
             // Both have same ID (duplicate scenario) // GH-90000
             assertThat(stream.stream() // GH-90000
-                    .filter(e -> e.get("id [GH-90000]").equals(eventId))
+                    .filter(e -> e.get("id").equals(eventId))
                     .count()) // GH-90000
                     .isEqualTo(2); // GH-90000
         }
 
         @Test
-        @DisplayName("out-of-order append: reorderable [GH-90000]")
+        @DisplayName("out-of-order append: reorderable")
         void shouldHandleOutOfOrderAppends() { // GH-90000
             List<Map<String, Object>> stream = new ArrayList<>(); // GH-90000
 
@@ -89,34 +89,34 @@ public class EventStreamTest {
             // Sort by sequence
             stream.sort((a, b) -> // GH-90000
                     Integer.compare( // GH-90000
-                            (Integer) a.get("sequence [GH-90000]"),
-                            (Integer) b.get("sequence [GH-90000]")
+                            (Integer) a.get("sequence"),
+                            (Integer) b.get("sequence")
                     )
             );
 
-            assertThat(stream.get(0).get("sequence [GH-90000]")).isEqualTo(1);
-            assertThat(stream.get(1).get("sequence [GH-90000]")).isEqualTo(2);
-            assertThat(stream.get(2).get("sequence [GH-90000]")).isEqualTo(3);
+            assertThat(stream.get(0).get("sequence")).isEqualTo(1);
+            assertThat(stream.get(1).get("sequence")).isEqualTo(2);
+            assertThat(stream.get(2).get("sequence")).isEqualTo(3);
         }
 
         @Test
-        @DisplayName("large payload: handled [GH-90000]")
+        @DisplayName("large payload: handled")
         void shouldHoldLargePayload() { // GH-90000
             Map<String, Object> event = createEvent(UUID.randomUUID().toString(), "LargeEvent"); // GH-90000
 
             String largeData = "x".repeat(10_000); // GH-90000
             event.put("data", largeData); // GH-90000
 
-            assertThat(event.get("data [GH-90000]").toString()).hasSizeGreaterThan(9_999);
+            assertThat(event.get("data").toString()).hasSizeGreaterThan(9_999);
         }
     }
 
     @Nested
-    @DisplayName("EventOrderingInvariantTests [GH-90000]")
+    @DisplayName("EventOrderingInvariantTests")
     class EventOrderingInvariantTests {
 
         @Test
-        @DisplayName("events maintain sequence order: verified [GH-90000]")
+        @DisplayName("events maintain sequence order: verified")
         void shouldMaintainSequenceOrder() { // GH-90000
             List<Map<String, Object>> events = new ArrayList<>(); // GH-90000
 
@@ -126,13 +126,13 @@ public class EventStreamTest {
 
             // Verify order is maintained
             for (int i = 0; i < events.size(); i++) { // GH-90000
-                assertThat((Integer) events.get(i).get("sequence [GH-90000]"))
+                assertThat((Integer) events.get(i).get("sequence"))
                         .isEqualTo(i + 1); // GH-90000
             }
         }
 
         @Test
-        @DisplayName("no gaps in sequence: verified [GH-90000]")
+        @DisplayName("no gaps in sequence: verified")
         void shouldHaveNoSequenceGaps() { // GH-90000
             List<Map<String, Object>> events = new ArrayList<>(); // GH-90000
 
@@ -145,13 +145,13 @@ public class EventStreamTest {
             for (int i = 1; i <= 10; i++) { // GH-90000
                 int seqNum = i;
                 assertThat(events.stream() // GH-90000
-                        .anyMatch(e -> (Integer) e.get("sequence [GH-90000]") == seqNum))
+                        .anyMatch(e -> (Integer) e.get("sequence") == seqNum))
                         .isTrue(); // GH-90000
             }
         }
 
         @Test
-        @DisplayName("timestamps monotonic: verified [GH-90000]")
+        @DisplayName("timestamps monotonic: verified")
         void shouldHaveMonotonicTimestamps() throws InterruptedException { // GH-90000
             List<Map<String, Object>> events = new ArrayList<>(); // GH-90000
 
@@ -163,14 +163,14 @@ public class EventStreamTest {
             // Verify timestamps are non-decreasing
             Instant lastTime = Instant.EPOCH;
             for (Map<String, Object> event : events) { // GH-90000
-                Instant currentTime = (Instant) event.get("createdAt [GH-90000]");
+                Instant currentTime = (Instant) event.get("createdAt");
                 assertThat(currentTime.compareTo(lastTime) >= 0).isTrue(); // GH-90000
                 lastTime = currentTime;
             }
         }
 
         @Test
-        @DisplayName("concurrent appends preserve order: verified [GH-90000]")
+        @DisplayName("concurrent appends preserve order: verified")
         void shouldPreserveOrderUnderConcurrency() { // GH-90000
             List<Map<String, Object>> events = new ArrayList<>(); // GH-90000
 
@@ -181,17 +181,17 @@ public class EventStreamTest {
 
             // Order should be preserved
             assertThat(events).hasSize(5); // GH-90000
-            assertThat(events.get(0).get("id [GH-90000]")).isEqualTo("evt-1 [GH-90000]");
-            assertThat(events.get(4).get("id [GH-90000]")).isEqualTo("evt-5 [GH-90000]");
+            assertThat(events.get(0).get("id")).isEqualTo("evt-1");
+            assertThat(events.get(4).get("id")).isEqualTo("evt-5");
         }
     }
 
     @Nested
-    @DisplayName("EventQueryTests [GH-90000]")
+    @DisplayName("EventQueryTests")
     class EventQueryTests {
 
         @Test
-        @DisplayName("query by range: returns matching events [GH-90000]")
+        @DisplayName("query by range: returns matching events")
         void shouldQueryByRange() { // GH-90000
             List<Map<String, Object>> events = new ArrayList<>(); // GH-90000
 
@@ -202,7 +202,7 @@ public class EventStreamTest {
             // Query range 3-7
             List<Map<String, Object>> inRange = events.stream() // GH-90000
                     .filter(e -> { // GH-90000
-                        int seq = (Integer) e.get("sequence [GH-90000]");
+                        int seq = (Integer) e.get("sequence");
                         return seq >= 3 && seq <= 7;
                     })
                     .toList(); // GH-90000
@@ -211,7 +211,7 @@ public class EventStreamTest {
         }
 
         @Test
-        @DisplayName("filter by type: returns matching events [GH-90000]")
+        @DisplayName("filter by type: returns matching events")
         void shouldFilterByType() { // GH-90000
             List<Map<String, Object>> events = new ArrayList<>(); // GH-90000
 
@@ -220,14 +220,14 @@ public class EventStreamTest {
             events.add(createEvent("evt-3", "OrderCreated")); // GH-90000
 
             List<Map<String, Object>> created = events.stream() // GH-90000
-                    .filter(e -> e.get("type [GH-90000]").equals("OrderCreated [GH-90000]"))
+                    .filter(e -> e.get("type").equals("OrderCreated"))
                     .toList(); // GH-90000
 
             assertThat(created).hasSize(2); // GH-90000
         }
 
         @Test
-        @DisplayName("pagination: limit and offset applied [GH-90000]")
+        @DisplayName("pagination: limit and offset applied")
         void shouldPaginateResults() { // GH-90000
             List<Map<String, Object>> events = new ArrayList<>(); // GH-90000
 
@@ -247,7 +247,7 @@ public class EventStreamTest {
         }
 
         @Test
-        @DisplayName("non-existent stream: returns empty [GH-90000]")
+        @DisplayName("non-existent stream: returns empty")
         void shouldReturnEmptyForMissingStream() { // GH-90000
             List<Map<String, Object>> stream = new ArrayList<>(); // Empty // GH-90000
 
@@ -256,11 +256,11 @@ public class EventStreamTest {
     }
 
     @Nested
-    @DisplayName("EventDurabilityTests [GH-90000]")
+    @DisplayName("EventDurabilityTests")
     class EventDurabilityTests {
 
         @Test
-        @DisplayName("appended events persist: readable after store [GH-90000]")
+        @DisplayName("appended events persist: readable after store")
         void shouldPersistEvents() { // GH-90000
             List<Map<String, Object>> store = new ArrayList<>(); // GH-90000
 
@@ -270,11 +270,11 @@ public class EventStreamTest {
             // Simulate crash/recover by re-reading
             assertThat(store) // GH-90000
                     .isNotEmpty() // GH-90000
-                    .anyMatch(e -> e.get("id [GH-90000]").equals("evt-1 [GH-90000]"));
+                    .anyMatch(e -> e.get("id").equals("evt-1"));
         }
 
         @Test
-        @DisplayName("repeated reads: consistent results [GH-90000]")
+        @DisplayName("repeated reads: consistent results")
         void shouldReturnConsistentResults() { // GH-90000
             List<Map<String, Object>> stream = new ArrayList<>(); // GH-90000
 
@@ -292,7 +292,7 @@ public class EventStreamTest {
         }
 
         @Test
-        @DisplayName("concurrent readers: same view [GH-90000]")
+        @DisplayName("concurrent readers: same view")
         void shouldMaintainConsistentViewForConcurrentReaders() { // GH-90000
             List<Map<String, Object>> stream = new ArrayList<>(); // GH-90000
 

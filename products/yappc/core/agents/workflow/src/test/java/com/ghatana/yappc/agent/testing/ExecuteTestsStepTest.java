@@ -19,7 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Testing ExecuteTestsStep Tests [GH-90000]")
+@DisplayName("Testing ExecuteTestsStep Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles execute tests step test operations
@@ -40,13 +40,13 @@ class ExecuteTestsStepTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should return correct step ID [GH-90000]")
+  @DisplayName("Should return correct step ID")
   void shouldReturnCorrectStepId() { // GH-90000
-    assertThat(step.getStepId()).isEqualTo("testing.execute_tests [GH-90000]");
+    assertThat(step.getStepId()).isEqualTo("testing.execute_tests");
   }
 
   @Test
-  @DisplayName("Should execute tests [GH-90000]")
+  @DisplayName("Should execute tests")
   void shouldExecuteTests() { // GH-90000
     // GIVEN
     WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
@@ -55,7 +55,7 @@ class ExecuteTestsStepTest extends EventloopTestBase {
 
     List<Map<String, Object>> testCases =
         List.of(Map.of("_id", "test-001", "runId", "test-run-001", "status", "READY")); // GH-90000
-    when(dbClient.query(eq("test_cases [GH-90000]"), any(), anyInt())).thenReturn(Promise.of(testCases));
+    when(dbClient.query(eq("test_cases"), any(), anyInt())).thenReturn(Promise.of(testCases));
     when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
     when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
     when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
@@ -65,6 +65,6 @@ class ExecuteTestsStepTest extends EventloopTestBase {
 
     // THEN
     assertThat(result).isNotNull(); // GH-90000
-    assertThat(result.get("runId [GH-90000]")).isEqualTo("test-run-001 [GH-90000]");
+    assertThat(result.get("runId")).isEqualTo("test-run-001");
   }
 }

@@ -1,5 +1,11 @@
 package com.ghatana.tutorputor.contentgeneration.domain;
 
+/**
+ * @doc.type class
+ * @doc.purpose Provides learning evidence functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+ */
 public class LearningEvidence {
     private final String id;
     private final String claimId;

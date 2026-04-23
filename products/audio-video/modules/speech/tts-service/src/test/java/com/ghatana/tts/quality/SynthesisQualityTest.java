@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("SynthesisQualityTest [GH-90000]")
+@DisplayName("SynthesisQualityTest")
 class SynthesisQualityTest {
 
     private static final Set<String> VOICES = Set.of( // GH-90000
@@ -47,7 +47,7 @@ class SynthesisQualityTest {
         "How much wood would a woodchuck chuck?",
         "Peter Piper picked a peck of pickled peppers."
     })
-    @DisplayName("benchmark sentences produce non-empty audio [GH-90000]")
+    @DisplayName("benchmark sentences produce non-empty audio")
     void benchmarkSentencesProduceAudio(String text) { // GH-90000
         SynthesisResult result = engine.synthesize(text, defaultVoice, AudioEncoding.PCM_16BIT); // GH-90000
         assertThat(result.audioContent()).isNotEmpty(); // GH-90000
@@ -55,7 +55,7 @@ class SynthesisQualityTest {
     }
 
     @Test
-    @DisplayName("benchmark fixtures produce consistent audio size ratio [GH-90000]")
+    @DisplayName("benchmark fixtures produce consistent audio size ratio")
     void shortLongRatioIsReasonable() { // GH-90000
         String shortText = "Hi.";
         String longText = "This is a significantly longer piece of text that should produce a longer audio file.";
@@ -67,7 +67,7 @@ class SynthesisQualityTest {
     // ── Prosody quality ───────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("speaking rate 2x produces shorter duration than 0.5x [GH-90000]")
+    @DisplayName("speaking rate 2x produces shorter duration than 0.5x")
     void prosodySpeakingRateImpactsDuration() { // GH-90000
         VoiceConfig fast = new VoiceConfig("en-US-standard-a", "en-US", "NEUTRAL", 2.0f, 0.0f, 0.0f); // GH-90000
         VoiceConfig slow = new VoiceConfig("en-US-standard-a", "en-US", "NEUTRAL", 0.5f, 0.0f, 0.0f); // GH-90000
@@ -79,7 +79,7 @@ class SynthesisQualityTest {
 
     @ParameterizedTest(name = "rate={0}") // GH-90000
     @ValueSource(floats = {0.25f, 0.5f, 1.0f, 1.5f, 2.0f, 4.0f}) // GH-90000
-    @DisplayName("all speaking rates produce valid audio [GH-90000]")
+    @DisplayName("all speaking rates produce valid audio")
     void allSpeakingRatesProduceAudio(float rate) { // GH-90000
         VoiceConfig voice = new VoiceConfig("en-US-standard-a", "en-US", "NEUTRAL", rate, 0.0f, 0.0f); // GH-90000
         SynthesisResult result = engine.synthesize("Rate test", voice, AudioEncoding.PCM_16BIT); // GH-90000
@@ -87,7 +87,7 @@ class SynthesisQualityTest {
     }
 
     @Test
-    @DisplayName("pitch variation does not cause synthesis failure [GH-90000]")
+    @DisplayName("pitch variation does not cause synthesis failure")
     void pitchVariationIsSafe() { // GH-90000
         for (float pitch : new float[]{-20.0f, -5.0f, 0.0f, 5.0f, 20.0f}) { // GH-90000
             VoiceConfig voice = new VoiceConfig("en-US-standard-a", "en-US", "NEUTRAL", 1.0f, pitch, 0.0f); // GH-90000
@@ -99,7 +99,7 @@ class SynthesisQualityTest {
     // ── SSML tag handling ─────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("SSML break tag produces non-empty audio [GH-90000]")
+    @DisplayName("SSML break tag produces non-empty audio")
     void ssmlBreakProducesAudio() { // GH-90000
         String ssml = "<speak>Hello.<break time=\"300ms\"/>Goodbye.</speak>";
         SynthesisResult result = engine.synthesize(ssml, defaultVoice, AudioEncoding.PCM_16BIT); // GH-90000
@@ -107,7 +107,7 @@ class SynthesisQualityTest {
     }
 
     @Test
-    @DisplayName("SSML prosody tags are processed without error [GH-90000]")
+    @DisplayName("SSML prosody tags are processed without error")
     void ssmlProsodyTags() { // GH-90000
         String ssml = "<speak><prosody rate=\"slow\" pitch=\"+5st\">Slow and high pitch.</prosody></speak>";
         assertThatCode(() -> engine.synthesize(ssml, defaultVoice, AudioEncoding.PCM_16BIT)) // GH-90000
@@ -115,7 +115,7 @@ class SynthesisQualityTest {
     }
 
     @Test
-    @DisplayName("SSML sub (pronunciation substitution) is accepted [GH-90000]")
+    @DisplayName("SSML sub (pronunciation substitution) is accepted")
     void ssmlSubAccepted() { // GH-90000
         String ssml = "<speak><sub alias=\"World Wide Web Consortium\">W3C</sub></speak>";
         assertThatCode(() -> engine.synthesize(ssml, defaultVoice, AudioEncoding.PCM_16BIT)) // GH-90000
@@ -123,7 +123,7 @@ class SynthesisQualityTest {
     }
 
     @Test
-    @DisplayName("SSML phoneme tag is accepted [GH-90000]")
+    @DisplayName("SSML phoneme tag is accepted")
     void ssmlPhonemeAccepted() { // GH-90000
         String ssml = "<speak>Say <phoneme alphabet=\"ipa\" ph=\"pɪˈkɑːn\">pecan</phoneme>.</speak>";
         assertThatCode(() -> engine.synthesize(ssml, defaultVoice, AudioEncoding.PCM_16BIT)) // GH-90000
@@ -131,7 +131,7 @@ class SynthesisQualityTest {
     }
 
     @Test
-    @DisplayName("nested SSML tags are accepted [GH-90000]")
+    @DisplayName("nested SSML tags are accepted")
     void nestedSsmlTagsAccepted() { // GH-90000
         String ssml = "<speak><prosody rate=\"fast\"><emphasis level=\"moderate\">Fast and notable.</emphasis></prosody></speak>";
         assertThatCode(() -> engine.synthesize(ssml, defaultVoice, AudioEncoding.PCM_16BIT)) // GH-90000
@@ -142,7 +142,7 @@ class SynthesisQualityTest {
 
     @ParameterizedTest(name = "repetitions={0}") // GH-90000
     @ValueSource(ints = {1, 5, 20, 50}) // GH-90000
-    @DisplayName("long text of varying size completes without error [GH-90000]")
+    @DisplayName("long text of varying size completes without error")
     void longTextCompletesWithoutError(int repetitions) { // GH-90000
         String base = "The quick brown fox jumps over the lazy dog. ";
         String text = base.repeat(repetitions); // GH-90000
@@ -151,9 +151,9 @@ class SynthesisQualityTest {
     }
 
     @Test
-    @DisplayName("200-word text produces audio longer than 200ms [GH-90000]")
+    @DisplayName("200-word text produces audio longer than 200ms")
     void twoHundredWordsExceedsMinDuration() { // GH-90000
-        String text = ("word  [GH-90000]").repeat(200).strip();
+        String text = ("word ").repeat(200).strip();
         SynthesisResult result = engine.synthesize(text, defaultVoice, AudioEncoding.PCM_16BIT); // GH-90000
         assertThat(result.duration().toMillis()).isGreaterThan(200); // GH-90000
     }
@@ -162,7 +162,7 @@ class SynthesisQualityTest {
 
     @ParameterizedTest(name = "encoding={0}") // GH-90000
     @EnumSource(value = AudioEncoding.class, names = {"PCM_16BIT", "OPUS", "MP3"}) // GH-90000
-    @DisplayName("encoding type is preserved in synthesis result [GH-90000]")
+    @DisplayName("encoding type is preserved in synthesis result")
     void encodingPreservedInResult(AudioEncoding encoding) { // GH-90000
         SynthesisResult result = engine.synthesize("Encoding test", defaultVoice, encoding); // GH-90000
         assertThat(result.encoding()).isEqualTo(encoding); // GH-90000

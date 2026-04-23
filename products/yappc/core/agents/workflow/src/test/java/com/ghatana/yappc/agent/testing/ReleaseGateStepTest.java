@@ -10,7 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Testing ReleaseGateStep Tests [GH-90000]")
+@DisplayName("Testing ReleaseGateStep Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles release gate step test operations
@@ -31,8 +31,8 @@ class ReleaseGateStepTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should return correct step ID [GH-90000]")
+  @DisplayName("Should return correct step ID")
   void shouldReturnCorrectStepId() { // GH-90000
-    assertThat(step.getStepId()).isEqualTo("testing.releasegate [GH-90000]");
+    assertThat(step.getStepId()).isEqualTo("testing.releasegate");
   }
 }

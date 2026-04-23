@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Kernel - Phase 3 Expansion [GH-90000]")
+@DisplayName("Kernel - Phase 3 Expansion")
 class KernelExpansionTest {
 
     // ============================================
@@ -39,70 +39,70 @@ class KernelExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Descriptor Builder Validation [GH-90000]")
+    @DisplayName("Descriptor Builder Validation")
     class DescriptorValidationTests {
 
         @Test
-        @DisplayName("Build valid descriptor with all fields [GH-90000]")
+        @DisplayName("Build valid descriptor with all fields")
         void buildValidDescriptor() { // GH-90000
             KernelDescriptor descriptor = new KernelDescriptor.Builder() // GH-90000
-                .withDescriptorId("module-1 [GH-90000]")
-                .withName("Module One [GH-90000]")
-                .withVersion("1.0.0 [GH-90000]")
+                .withDescriptorId("module-1")
+                .withName("Module One")
+                .withVersion("1.0.0")
                 .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
-                .withDescription("Test module [GH-90000]")
-                .withOwner("Test Author [GH-90000]")
+                .withDescription("Test module")
+                .withOwner("Test Author")
                 .build(); // GH-90000
 
-            assertThat(descriptor.getDescriptorId()).isEqualTo("module-1 [GH-90000]");
-            assertThat(descriptor.getName()).isEqualTo("Module One [GH-90000]");
-            assertThat(descriptor.getVersion()).isEqualTo("1.0.0 [GH-90000]");
+            assertThat(descriptor.getDescriptorId()).isEqualTo("module-1");
+            assertThat(descriptor.getName()).isEqualTo("Module One");
+            assertThat(descriptor.getVersion()).isEqualTo("1.0.0");
             assertThat(descriptor.getType()).isEqualTo(KernelDescriptor.DescriptorType.MODULE); // GH-90000
         }
 
         @Test
-        @DisplayName("Rejects null descriptor ID [GH-90000]")
+        @DisplayName("Rejects null descriptor ID")
         void rejectsNullDescriptorId() { // GH-90000
             assertThatThrownBy(() -> new KernelDescriptor.Builder() // GH-90000
                 .withDescriptorId(null) // GH-90000
-                .withName("Module [GH-90000]")
-                .withVersion("1.0.0 [GH-90000]")
+                .withName("Module")
+                .withVersion("1.0.0")
                 .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
                 .build()) // GH-90000
                 .isInstanceOf(Exception.class); // GH-90000
         }
 
         @Test
-        @DisplayName("Rejects blank descriptor ID [GH-90000]")
+        @DisplayName("Rejects blank descriptor ID")
         void rejectsBlankDescriptorId() { // GH-90000
             assertThatThrownBy(() -> new KernelDescriptor.Builder() // GH-90000
-                .withDescriptorId("    [GH-90000]")
-                .withName("Module [GH-90000]")
-                .withVersion("1.0.0 [GH-90000]")
+                .withDescriptorId("   ")
+                .withName("Module")
+                .withVersion("1.0.0")
                 .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
                 .build()) // GH-90000
                 .isInstanceOf(Exception.class); // GH-90000
         }
 
         @Test
-        @DisplayName("Validates semantic versioning [GH-90000]")
+        @DisplayName("Validates semantic versioning")
         void semanticVersioning() { // GH-90000
             KernelDescriptor desc1 = new KernelDescriptor.Builder() // GH-90000
-                .withDescriptorId("m1 [GH-90000]")
-                .withName("M1 [GH-90000]")
-                .withVersion("1.0.0 [GH-90000]")
+                .withDescriptorId("m1")
+                .withName("M1")
+                .withVersion("1.0.0")
                 .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
                 .build(); // GH-90000
 
             KernelDescriptor desc2 = new KernelDescriptor.Builder() // GH-90000
-                .withDescriptorId("m1 [GH-90000]")
-                .withName("M1 [GH-90000]")
-                .withVersion("1.1.0 [GH-90000]")
+                .withDescriptorId("m1")
+                .withName("M1")
+                .withVersion("1.1.0")
                 .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
                 .build(); // GH-90000
 
-            assertThat(desc1.getVersion()).isEqualTo("1.0.0 [GH-90000]");
-            assertThat(desc2.getVersion()).isEqualTo("1.1.0 [GH-90000]");
+            assertThat(desc1.getVersion()).isEqualTo("1.0.0");
+            assertThat(desc2.getVersion()).isEqualTo("1.1.0");
         }
     }
 
@@ -111,16 +111,16 @@ class KernelExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Descriptor Types [GH-90000]")
+    @DisplayName("Descriptor Types")
     class DescriptorTypeTests {
 
         @Test
-        @DisplayName("Create MODULE descriptor [GH-90000]")
+        @DisplayName("Create MODULE descriptor")
         void moduleDescriptor() { // GH-90000
             KernelDescriptor descriptor = new KernelDescriptor.Builder() // GH-90000
-                .withDescriptorId("module-1 [GH-90000]")
-                .withName("My Module [GH-90000]")
-                .withVersion("1.0.0 [GH-90000]")
+                .withDescriptorId("module-1")
+                .withName("My Module")
+                .withVersion("1.0.0")
                 .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
                 .build(); // GH-90000
 
@@ -128,12 +128,12 @@ class KernelExpansionTest {
         }
 
         @Test
-        @DisplayName("Create SERVICE descriptor [GH-90000]")
+        @DisplayName("Create SERVICE descriptor")
         void serviceDescriptor() { // GH-90000
             KernelDescriptor descriptor = new KernelDescriptor.Builder() // GH-90000
-                .withDescriptorId("service-1 [GH-90000]")
-                .withName("My Service [GH-90000]")
-                .withVersion("2.0.0 [GH-90000]")
+                .withDescriptorId("service-1")
+                .withName("My Service")
+                .withVersion("2.0.0")
                 .withType(KernelDescriptor.DescriptorType.SERVICE) // GH-90000
                 .build(); // GH-90000
 
@@ -141,12 +141,12 @@ class KernelExpansionTest {
         }
 
         @Test
-        @DisplayName("Create PLUGIN descriptor [GH-90000]")
+        @DisplayName("Create PLUGIN descriptor")
         void pluginDescriptor() { // GH-90000
             KernelDescriptor descriptor = new KernelDescriptor.Builder() // GH-90000
-                .withDescriptorId("plugin-1 [GH-90000]")
-                .withName("My Plugin [GH-90000]")
-                .withVersion("1.5.0 [GH-90000]")
+                .withDescriptorId("plugin-1")
+                .withName("My Plugin")
+                .withVersion("1.5.0")
                 .withType(KernelDescriptor.DescriptorType.PLUGIN) // GH-90000
                 .build(); // GH-90000
 
@@ -154,7 +154,7 @@ class KernelExpansionTest {
         }
 
         @Test
-        @DisplayName("Many descriptors of various types [GH-90000]")
+        @DisplayName("Many descriptors of various types")
         void variousDescriptorTypes() { // GH-90000
             List<KernelDescriptor> descriptors = new ArrayList<>(); // GH-90000
 
@@ -167,7 +167,7 @@ class KernelExpansionTest {
                 KernelDescriptor descriptor = new KernelDescriptor.Builder() // GH-90000
                     .withDescriptorId("desc-" + idx) // GH-90000
                     .withName("Descriptor " + idx) // GH-90000
-                    .withVersion("1.0.0 [GH-90000]")
+                    .withVersion("1.0.0")
                     .withType(type) // GH-90000
                     .build(); // GH-90000
 
@@ -183,11 +183,11 @@ class KernelExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Dependencies and Metadata [GH-90000]")
+    @DisplayName("Dependencies and Metadata")
     class DependenciesTests {
 
         @Test
-        @DisplayName("Module with dependencies [GH-90000]")
+        @DisplayName("Module with dependencies")
         void withDependencies() { // GH-90000
             Set<KernelDependency> dependencies = new HashSet<>(); // GH-90000
             dependencies.add(new KernelDependency("core-module", "1.0.0", KernelDependency.DependencyType.MODULE, false)); // GH-90000
@@ -195,9 +195,9 @@ class KernelExpansionTest {
             dependencies.add(new KernelDependency("security-module", "1.0.0", KernelDependency.DependencyType.MODULE, false)); // GH-90000
 
             KernelDescriptor descriptor = new KernelDescriptor.Builder() // GH-90000
-                .withDescriptorId("app-module [GH-90000]")
-                .withName("Application [GH-90000]")
-                .withVersion("1.0.0 [GH-90000]")
+                .withDescriptorId("app-module")
+                .withName("Application")
+                .withVersion("1.0.0")
                 .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
                 .withDependencies(dependencies) // GH-90000
                 .build(); // GH-90000
@@ -209,7 +209,7 @@ class KernelExpansionTest {
         }
 
         @Test
-        @DisplayName("Module with custom metadata [GH-90000]")
+        @DisplayName("Module with custom metadata")
         void withCustomMetadata() { // GH-90000
             Map<String, String> metadata = new HashMap<>(); // GH-90000
             metadata.put("author", "John Doe"); // GH-90000
@@ -218,9 +218,9 @@ class KernelExpansionTest {
             metadata.put("build_number", "12345"); // GH-90000
 
             KernelDescriptor descriptor = new KernelDescriptor.Builder() // GH-90000
-                .withDescriptorId("meta-module [GH-90000]")
-                .withName("Metadata Module [GH-90000]")
-                .withVersion("1.0.0 [GH-90000]")
+                .withDescriptorId("meta-module")
+                .withName("Metadata Module")
+                .withVersion("1.0.0")
                 .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
                 .withMetadata(metadata) // GH-90000
                 .build(); // GH-90000
@@ -230,7 +230,7 @@ class KernelExpansionTest {
         }
 
         @Test
-        @DisplayName("Complex dependency graph [GH-90000]")
+        @DisplayName("Complex dependency graph")
         void complexDependencyGraph() { // GH-90000
             List<KernelDescriptor> modules = new ArrayList<>(); // GH-90000
 
@@ -245,7 +245,7 @@ class KernelExpansionTest {
                 KernelDescriptor desc = new KernelDescriptor.Builder() // GH-90000
                     .withDescriptorId("module-" + idx) // GH-90000
                     .withName("Module " + idx) // GH-90000
-                    .withVersion("1.0.0 [GH-90000]")
+                    .withVersion("1.0.0")
                     .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
                     .withDependencies(deps) // GH-90000
                     .build(); // GH-90000
@@ -257,11 +257,11 @@ class KernelExpansionTest {
             // Last module has dependency on previous
             assertThat(modules.get(9).getDependencies()) // GH-90000
                 .extracting(KernelDependency::getDependencyId) // GH-90000
-                .contains("module-8 [GH-90000]");
+                .contains("module-8");
         }
 
         @Test
-        @DisplayName("Many metadata fields [GH-90000]")
+        @DisplayName("Many metadata fields")
         void manyMetadataFields() { // GH-90000
             Map<String, String> metadata = new HashMap<>(); // GH-90000
             for (int i = 0; i < 50; i++) { // GH-90000
@@ -270,9 +270,9 @@ class KernelExpansionTest {
             }
 
             KernelDescriptor descriptor = new KernelDescriptor.Builder() // GH-90000
-                .withDescriptorId("large-meta [GH-90000]")
-                .withName("Large Metadata [GH-90000]")
-                .withVersion("1.0.0 [GH-90000]")
+                .withDescriptorId("large-meta")
+                .withName("Large Metadata")
+                .withVersion("1.0.0")
                 .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
                 .withMetadata(metadata) // GH-90000
                 .build(); // GH-90000
@@ -286,11 +286,11 @@ class KernelExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Versioning and Compatibility [GH-90000]")
+    @DisplayName("Versioning and Compatibility")
     class VersioningTests {
 
         @Test
-        @DisplayName("Various semantic versions [GH-90000]")
+        @DisplayName("Various semantic versions")
         void semanticVersions() { // GH-90000
             String[] versions = {
                 "1.0.0", "1.0.1", "1.1.0", "2.0.0",
@@ -310,12 +310,12 @@ class KernelExpansionTest {
             }
 
             assertThat(descriptors).hasSize(versions.length); // GH-90000
-            assertThat(descriptors.get(0).getVersion()).isEqualTo("1.0.0 [GH-90000]");
-            assertThat(descriptors.get(7).getVersion()).isEqualTo("1.0.0-beta.1 [GH-90000]");
+            assertThat(descriptors.get(0).getVersion()).isEqualTo("1.0.0");
+            assertThat(descriptors.get(7).getVersion()).isEqualTo("1.0.0-beta.1");
         }
 
         @Test
-        @DisplayName("Version evolution tracking [GH-90000]")
+        @DisplayName("Version evolution tracking")
         void versionEvolution() { // GH-90000
             List<KernelDescriptor> versions = new ArrayList<>(); // GH-90000
 
@@ -323,8 +323,8 @@ class KernelExpansionTest {
             for (int i = 0; i < versionSequence.length; i++) { // GH-90000
                 final int idx = i;
                 KernelDescriptor desc = new KernelDescriptor.Builder() // GH-90000
-                    .withDescriptorId("myapp [GH-90000]")
-                    .withName("My Application [GH-90000]")
+                    .withDescriptorId("myapp")
+                    .withName("My Application")
                     .withVersion(versionSequence[idx]) // GH-90000
                     .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
                     .build(); // GH-90000
@@ -332,12 +332,12 @@ class KernelExpansionTest {
             }
 
             assertThat(versions).hasSize(4); // GH-90000
-            assertThat(versions.get(0).getVersion()).isEqualTo("1.0.0 [GH-90000]");
-            assertThat(versions.get(3).getVersion()).isEqualTo("2.0.0 [GH-90000]");
+            assertThat(versions.get(0).getVersion()).isEqualTo("1.0.0");
+            assertThat(versions.get(3).getVersion()).isEqualTo("2.0.0");
         }
 
         @Test
-        @DisplayName("Compatibility metadata [GH-90000]")
+        @DisplayName("Compatibility metadata")
         void compatibilityMetadata() { // GH-90000
             Map<String, String> compat = new HashMap<>(); // GH-90000
             compat.put("min_kernel_version", "2.0.0"); // GH-90000
@@ -346,9 +346,9 @@ class KernelExpansionTest {
             compat.put("deprecated_apis", "api-1,api-2"); // GH-90000
 
             KernelDescriptor descriptor = new KernelDescriptor.Builder() // GH-90000
-                .withDescriptorId("compat-module [GH-90000]")
-                .withName("Compatible Module [GH-90000]")
-                .withVersion("1.0.0 [GH-90000]")
+                .withDescriptorId("compat-module")
+                .withName("Compatible Module")
+                .withVersion("1.0.0")
                 .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
                 .withMetadata(compat) // GH-90000
                 .build(); // GH-90000
@@ -357,12 +357,12 @@ class KernelExpansionTest {
         }
 
         @Test
-        @DisplayName("Breaking change tracking [GH-90000]")
+        @DisplayName("Breaking change tracking")
         void breakingChanges() { // GH-90000
             KernelDescriptor v1 = new KernelDescriptor.Builder() // GH-90000
-                .withDescriptorId("myapp [GH-90000]")
-                .withName("App [GH-90000]")
-                .withVersion("1.0.0 [GH-90000]")
+                .withDescriptorId("myapp")
+                .withName("App")
+                .withVersion("1.0.0")
                 .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
                 .build(); // GH-90000
 
@@ -373,15 +373,15 @@ class KernelExpansionTest {
             );
 
             KernelDescriptor v2 = new KernelDescriptor.Builder() // GH-90000
-                .withDescriptorId("myapp [GH-90000]")
-                .withName("App [GH-90000]")
-                .withVersion("2.0.0 [GH-90000]")
+                .withDescriptorId("myapp")
+                .withName("App")
+                .withVersion("2.0.0")
                 .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
                 .withMetadata(breakingMeta) // GH-90000
                 .build(); // GH-90000
 
-            assertThat(v1.getVersion()).isEqualTo("1.0.0 [GH-90000]");
-            assertThat(v2.getVersion()).isEqualTo("2.0.0 [GH-90000]");
+            assertThat(v1.getVersion()).isEqualTo("1.0.0");
+            assertThat(v2.getVersion()).isEqualTo("2.0.0");
         }
     }
 
@@ -390,11 +390,11 @@ class KernelExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Concurrent Operations [GH-90000]")
+    @DisplayName("Concurrent Operations")
     class ConcurrencyTests {
 
         @Test
-        @DisplayName("Many descriptors built concurrently [GH-90000]")
+        @DisplayName("Many descriptors built concurrently")
         void concurrentDescriptorBuilding() throws Exception { // GH-90000
             int threadCount = 30;
             CountDownLatch latch = new CountDownLatch(threadCount); // GH-90000
@@ -412,7 +412,7 @@ class KernelExpansionTest {
                             KernelDescriptor descriptor = new KernelDescriptor.Builder() // GH-90000
                                 .withDescriptorId("descriptor-" + threadIdx) // GH-90000
                                 .withName("Descriptor " + threadIdx) // GH-90000
-                                .withVersion("1.0.0 [GH-90000]")
+                                .withVersion("1.0.0")
                                 .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
                                 .withDependencies(deps) // GH-90000
                                 .build(); // GH-90000
@@ -432,7 +432,7 @@ class KernelExpansionTest {
         }
 
         @Test
-        @DisplayName("Large descriptor registry operations [GH-90000]")
+        @DisplayName("Large descriptor registry operations")
         void largeRegistryOperations() throws Exception { // GH-90000
             // Build large set of descriptors
             List<KernelDescriptor> registry = new ArrayList<>(); // GH-90000
@@ -441,7 +441,7 @@ class KernelExpansionTest {
                 KernelDescriptor desc = new KernelDescriptor.Builder() // GH-90000
                     .withDescriptorId("module-" + idx) // GH-90000
                     .withName("Module " + idx) // GH-90000
-                    .withVersion("1.0.0 [GH-90000]")
+                    .withVersion("1.0.0")
                     .withType(KernelDescriptor.DescriptorType.values()[idx % 3]) // GH-90000
                     .build(); // GH-90000
                 registry.add(desc); // GH-90000
@@ -483,11 +483,11 @@ class KernelExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Edge Cases [GH-90000]")
+    @DisplayName("Edge Cases")
     class EdgeCaseTests {
 
         @Test
-        @DisplayName("Descriptor with extremely long names and descriptions [GH-90000]")
+        @DisplayName("Descriptor with extremely long names and descriptions")
         void veryLongNames() { // GH-90000
             String longId = "descriptor-" + "a".repeat(200); // GH-90000
             String longName = "Module-" + "B".repeat(500); // GH-90000
@@ -497,7 +497,7 @@ class KernelExpansionTest {
                 .withDescriptorId(longId) // GH-90000
                 .withName(longName) // GH-90000
                 .withDescription(longDesc) // GH-90000
-                .withVersion("1.0.0 [GH-90000]")
+                .withVersion("1.0.0")
                 .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
                 .build(); // GH-90000
 

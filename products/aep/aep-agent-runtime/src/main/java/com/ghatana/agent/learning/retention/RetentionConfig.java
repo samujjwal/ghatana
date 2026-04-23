@@ -12,7 +12,8 @@ import java.time.Duration;
  * @doc.type class
  * @doc.purpose Retention policy configuration
  * @doc.layer agent-learning
- */
+  * @doc.pattern Configuration
+*/
 @Value
 @Builder
 public class RetentionConfig {

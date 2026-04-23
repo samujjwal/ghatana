@@ -36,7 +36,7 @@ import static org.mockito.Mockito.when;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("ApprovalNotificationService [GH-90000]")
+@DisplayName("ApprovalNotificationService")
 class ApprovalNotificationServiceTest extends EventloopTestBase {
 
     @Mock
@@ -60,93 +60,93 @@ class ApprovalNotificationServiceTest extends EventloopTestBase {
                         "INTENT",
                         "SHAPE",
                         "Unmet entry criteria",
-                        List.of("criterion-A [GH-90000]"),
-                        List.of("artifact-B [GH-90000]")),
+                        List.of("criterion-A"),
+                        List.of("artifact-B")),
                 ApprovalRequest.ApprovalStatus.PENDING,
                 "tenant-123",
-                Instant.parse("2026-01-01T10:00:00Z [GH-90000]"),
+                Instant.parse("2026-01-01T10:00:00Z"),
                 null,
                 null,
                 null);
     }
 
     @Test
-    @DisplayName("notifyRequested publishes to the requested topic with correct payload [GH-90000]")
+    @DisplayName("notifyRequested publishes to the requested topic with correct payload")
     void notifyRequestedPublishesToCorrectTopic() { // GH-90000
         ArgumentCaptor<Map<String, Object>> payloadCaptor = ArgumentCaptor.forClass(Map.class); // GH-90000
 
         runPromise(() -> notificationService.notifyRequested(pendingRequest)); // GH-90000
 
-        verify(publisher).publish(eq(TOPIC_REQUESTED), eq("tenant-123 [GH-90000]"), payloadCaptor.capture());
+        verify(publisher).publish(eq(TOPIC_REQUESTED), eq("tenant-123"), payloadCaptor.capture());
 
         Map<String, Object> payload = payloadCaptor.getValue(); // GH-90000
-        assertThat(payload.get("requestId [GH-90000]")).isEqualTo("req-001 [GH-90000]");
-        assertThat(payload.get("tenantId [GH-90000]")).isEqualTo("tenant-123 [GH-90000]");
-        assertThat(payload.get("projectId [GH-90000]")).isEqualTo("project-alpha [GH-90000]");
-        assertThat(payload.get("approvalType [GH-90000]")).isEqualTo("PHASE_ADVANCE [GH-90000]");
-        assertThat(payload.get("status [GH-90000]")).isEqualTo("PENDING [GH-90000]");
-        assertThat(payload.get("fromPhase [GH-90000]")).isEqualTo("INTENT [GH-90000]");
-        assertThat(payload.get("toPhase [GH-90000]")).isEqualTo("SHAPE [GH-90000]");
-        assertThat(payload).containsKey("notificationTimestamp [GH-90000]");
+        assertThat(payload.get("requestId")).isEqualTo("req-001");
+        assertThat(payload.get("tenantId")).isEqualTo("tenant-123");
+        assertThat(payload.get("projectId")).isEqualTo("project-alpha");
+        assertThat(payload.get("approvalType")).isEqualTo("PHASE_ADVANCE");
+        assertThat(payload.get("status")).isEqualTo("PENDING");
+        assertThat(payload.get("fromPhase")).isEqualTo("INTENT");
+        assertThat(payload.get("toPhase")).isEqualTo("SHAPE");
+        assertThat(payload).containsKey("notificationTimestamp");
     }
 
     @Test
-    @DisplayName("notifyApproved publishes to the approved topic with decidedBy [GH-90000]")
+    @DisplayName("notifyApproved publishes to the approved topic with decidedBy")
     void notifyApprovedPublishesToCorrectTopic() { // GH-90000
-        ApprovalRequest approvedRequest = pendingRequest.asApproved("reviewer-A [GH-90000]");
+        ApprovalRequest approvedRequest = pendingRequest.asApproved("reviewer-A");
         ArgumentCaptor<Map<String, Object>> payloadCaptor = ArgumentCaptor.forClass(Map.class); // GH-90000
 
         runPromise(() -> notificationService.notifyApproved(approvedRequest, "reviewer-A")); // GH-90000
 
-        verify(publisher).publish(eq(TOPIC_APPROVED), eq("tenant-123 [GH-90000]"), payloadCaptor.capture());
+        verify(publisher).publish(eq(TOPIC_APPROVED), eq("tenant-123"), payloadCaptor.capture());
 
         Map<String, Object> payload = payloadCaptor.getValue(); // GH-90000
-        assertThat(payload.get("requestId [GH-90000]")).isEqualTo("req-001 [GH-90000]");
-        assertThat(payload.get("status [GH-90000]")).isEqualTo("APPROVED [GH-90000]");
-        assertThat(payload.get("decidedBy [GH-90000]")).isEqualTo("reviewer-A [GH-90000]");
-        assertThat(payload).containsKey("decidedAt [GH-90000]");
+        assertThat(payload.get("requestId")).isEqualTo("req-001");
+        assertThat(payload.get("status")).isEqualTo("APPROVED");
+        assertThat(payload.get("decidedBy")).isEqualTo("reviewer-A");
+        assertThat(payload).containsKey("decidedAt");
     }
 
     @Test
-    @DisplayName("notifyRejected publishes to the rejected topic with decidedBy [GH-90000]")
+    @DisplayName("notifyRejected publishes to the rejected topic with decidedBy")
     void notifyRejectedPublishesToCorrectTopic() { // GH-90000
-        ApprovalRequest rejectedRequest = pendingRequest.asRejected("reviewer-B [GH-90000]");
+        ApprovalRequest rejectedRequest = pendingRequest.asRejected("reviewer-B");
         ArgumentCaptor<Map<String, Object>> payloadCaptor = ArgumentCaptor.forClass(Map.class); // GH-90000
 
         runPromise(() -> notificationService.notifyRejected(rejectedRequest, "reviewer-B")); // GH-90000
 
-        verify(publisher).publish(eq(TOPIC_REJECTED), eq("tenant-123 [GH-90000]"), payloadCaptor.capture());
+        verify(publisher).publish(eq(TOPIC_REJECTED), eq("tenant-123"), payloadCaptor.capture());
 
         Map<String, Object> payload = payloadCaptor.getValue(); // GH-90000
-        assertThat(payload.get("requestId [GH-90000]")).isEqualTo("req-001 [GH-90000]");
-        assertThat(payload.get("status [GH-90000]")).isEqualTo("REJECTED [GH-90000]");
-        assertThat(payload.get("decidedBy [GH-90000]")).isEqualTo("reviewer-B [GH-90000]");
+        assertThat(payload.get("requestId")).isEqualTo("req-001");
+        assertThat(payload.get("status")).isEqualTo("REJECTED");
+        assertThat(payload.get("decidedBy")).isEqualTo("reviewer-B");
     }
 
     @Test
-    @DisplayName("publish failure does not propagate — promise completes normally [GH-90000]")
+    @DisplayName("publish failure does not propagate — promise completes normally")
     void publishFailureIsSwallowed() { // GH-90000
         when(publisher.publish(anyString(), anyString(), any())) // GH-90000
-                .thenReturn(Promise.ofException(new RuntimeException("AEP unavailable [GH-90000]")));
+                .thenReturn(Promise.ofException(new RuntimeException("AEP unavailable")));
 
         // Should complete without throwing
         runPromise(() -> notificationService.notifyRequested(pendingRequest)); // GH-90000
     }
 
     @Test
-    @DisplayName("notifyRequested omits expiresAt when null [GH-90000]")
+    @DisplayName("notifyRequested omits expiresAt when null")
     void notifyRequestedOmitsNullExpiresAt() { // GH-90000
         ArgumentCaptor<Map<String, Object>> payloadCaptor = ArgumentCaptor.forClass(Map.class); // GH-90000
         runPromise(() -> notificationService.notifyRequested(pendingRequest)); // GH-90000
 
         verify(publisher).publish(eq(TOPIC_REQUESTED), anyString(), payloadCaptor.capture()); // GH-90000
-        assertThat(payloadCaptor.getValue()).doesNotContainKey("expiresAt [GH-90000]");
+        assertThat(payloadCaptor.getValue()).doesNotContainKey("expiresAt");
     }
 
     @Test
-    @DisplayName("notifyRequested includes expiresAt when present [GH-90000]")
+    @DisplayName("notifyRequested includes expiresAt when present")
     void notifyRequestedIncludesExpiresAtWhenSet() { // GH-90000
-        Instant expiresAt = Instant.parse("2026-01-02T10:00:00Z [GH-90000]");
+        Instant expiresAt = Instant.parse("2026-01-02T10:00:00Z");
         ApprovalRequest requestWithExpiry = new ApprovalRequest( // GH-90000
                 "req-expire",
                 "project-alpha",
@@ -164,7 +164,7 @@ class ApprovalNotificationServiceTest extends EventloopTestBase {
         runPromise(() -> notificationService.notifyRequested(requestWithExpiry)); // GH-90000
 
         verify(publisher).publish(eq(TOPIC_REQUESTED), anyString(), payloadCaptor.capture()); // GH-90000
-        assertThat(payloadCaptor.getValue()).containsKey("expiresAt [GH-90000]");
-        assertThat(payloadCaptor.getValue().get("expiresAt [GH-90000]")).isEqualTo(expiresAt.toString());
+        assertThat(payloadCaptor.getValue()).containsKey("expiresAt");
+        assertThat(payloadCaptor.getValue().get("expiresAt")).isEqualTo(expiresAt.toString());
     }
 }

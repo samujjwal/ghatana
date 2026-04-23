@@ -38,7 +38,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataCloudHttpServer – Observability [GH-90000]")
+@DisplayName("DataCloudHttpServer – Observability")
 class DataCloudHttpServerObservabilityTest extends DataCloudHttpServerTestBase {
 
     private DataCloudClient mockClient;
@@ -66,14 +66,14 @@ class DataCloudHttpServerObservabilityTest extends DataCloudHttpServerTestBase {
     }
 
     @Test
-    @DisplayName("propagates tenant and request id through async entity save chain [GH-90000]")
+    @DisplayName("propagates tenant and request id through async entity save chain")
     void propagatesTenantAndRequestIdThroughAsyncEntitySaveChain() throws Exception { // GH-90000
         DataCloudClient.Entity saved = DataCloudClient.Entity.of( // GH-90000
                 "ent-900",
                 "orders",
                 Map.of("status", "pending", "amount", 42)); // GH-90000
-        when(mockClient.save(eq("acme [GH-90000]"), eq("orders [GH-90000]"), any())).thenReturn(Promise.of(saved));
-        when(mockClient.appendEvent(eq("acme [GH-90000]"), any())).thenReturn(Promise.of(DataCloudClient.Offset.of(4)));
+        when(mockClient.save(eq("acme"), eq("orders"), any())).thenReturn(Promise.of(saved));
+        when(mockClient.appendEvent(eq("acme"), any())).thenReturn(Promise.of(DataCloudClient.Offset.of(4)));
 
         startServer(); // GH-90000
 
@@ -83,23 +83,23 @@ class DataCloudHttpServerObservabilityTest extends DataCloudHttpServerTestBase {
                 Map.of("X-Tenant-ID", "acme", "X-Request-ID", "req-tenant-42")); // GH-90000
 
         assertThat(response.statusCode()).isEqualTo(200); // GH-90000
-        assertThat(response.headers().firstValue("X-Request-ID [GH-90000]")).hasValue("req-tenant-42 [GH-90000]");
-        assertThat(response.headers().firstValue("X-Correlation-ID [GH-90000]")).hasValue("req-tenant-42 [GH-90000]");
-        assertThat(response.headers().firstValue("traceparent [GH-90000]")).hasValueSatisfying(value ->
-                assertThat(value).matches("00-[0-9a-f]{32}-[0-9a-f]{16}-0[01] [GH-90000]"));
-        verify(mockClient).save(eq("acme [GH-90000]"), eq("orders [GH-90000]"), any());
-        verify(mockClient).appendEvent(eq("acme [GH-90000]"), any());
+        assertThat(response.headers().firstValue("X-Request-ID")).hasValue("req-tenant-42");
+        assertThat(response.headers().firstValue("X-Correlation-ID")).hasValue("req-tenant-42");
+        assertThat(response.headers().firstValue("traceparent")).hasValueSatisfying(value ->
+                assertThat(value).matches("00-[0-9a-f]{32}-[0-9a-f]{16}-0[01]"));
+        verify(mockClient).save(eq("acme"), eq("orders"), any());
+        verify(mockClient).appendEvent(eq("acme"), any());
     }
 
     @Test
-    @DisplayName("preserves inbound trace id and request id on response headers [GH-90000]")
+    @DisplayName("preserves inbound trace id and request id on response headers")
     void preservesInboundTraceAndRequestIdOnResponses() throws Exception { // GH-90000
         DataCloudClient.Entity saved = DataCloudClient.Entity.of( // GH-90000
                 "ent-901",
                 "orders",
                 Map.of("status", "processing")); // GH-90000
-        when(mockClient.save(eq("acme [GH-90000]"), eq("orders [GH-90000]"), any())).thenReturn(Promise.of(saved));
-        when(mockClient.appendEvent(eq("acme [GH-90000]"), any())).thenReturn(Promise.of(DataCloudClient.Offset.of(5)));
+        when(mockClient.save(eq("acme"), eq("orders"), any())).thenReturn(Promise.of(saved));
+        when(mockClient.appendEvent(eq("acme"), any())).thenReturn(Promise.of(DataCloudClient.Offset.of(5)));
 
         startServer(); // GH-90000
 
@@ -113,20 +113,20 @@ class DataCloudHttpServerObservabilityTest extends DataCloudHttpServerTestBase {
                         "traceparent", "00-" + traceId + "-1111222233334444-01"));
 
         assertThat(response.statusCode()).isEqualTo(200); // GH-90000
-        assertThat(response.headers().firstValue("X-Request-ID [GH-90000]")).hasValue("req-trace-900 [GH-90000]");
-        assertThat(response.headers().firstValue("traceparent [GH-90000]")).hasValueSatisfying(value ->
+        assertThat(response.headers().firstValue("X-Request-ID")).hasValue("req-trace-900");
+        assertThat(response.headers().firstValue("traceparent")).hasValueSatisfying(value ->
                 assertThat(value).startsWith("00-" + traceId + "-")); // GH-90000
-        assertThat(response.headers().firstValue("X-Parent-Span-Id [GH-90000]")).hasValue("1111222233334444 [GH-90000]");
+        assertThat(response.headers().firstValue("X-Parent-Span-Id")).hasValue("1111222233334444");
     }
 
     @Test
-    @DisplayName("exports Prometheus metrics for entity, event, and governance operations [GH-90000]")
+    @DisplayName("exports Prometheus metrics for entity, event, and governance operations")
     void exportsPrometheusMetricsForBusinessOperations() throws Exception { // GH-90000
         DataCloudClient.Entity saved = DataCloudClient.Entity.of( // GH-90000
                 "ent-123",
                 "products",
                 Map.of("name", "Widget", "price", 9.99)); // GH-90000
-        when(mockClient.save(any(), eq("products [GH-90000]"), any())).thenReturn(Promise.of(saved));
+        when(mockClient.save(any(), eq("products"), any())).thenReturn(Promise.of(saved));
         when(mockClient.appendEvent(any(), any())).thenReturn(Promise.of(DataCloudClient.Offset.of(7))); // GH-90000
 
         startServer(); // GH-90000
@@ -149,26 +149,26 @@ class DataCloudHttpServerObservabilityTest extends DataCloudHttpServerTestBase {
                 Map.of("X-Tenant-ID", "tenant-observe")); // GH-90000
         assertThat(governanceResponse.statusCode()).isEqualTo(200); // GH-90000
 
-        HttpResponse<String> metricsResponse = get("/metrics [GH-90000]");
+        HttpResponse<String> metricsResponse = get("/metrics");
 
         assertThat(metricsResponse.statusCode()).isEqualTo(200); // GH-90000
-        assertThat(metricsResponse.headers().firstValue("content-type [GH-90000]"))
-                .hasValueSatisfying(value -> assertThat(value).startsWith("text/plain [GH-90000]"));
+        assertThat(metricsResponse.headers().firstValue("content-type"))
+                .hasValueSatisfying(value -> assertThat(value).startsWith("text/plain"));
         assertThat(metricsResponse.body()).contains(DataCloudBusinessMetrics.METRIC_ENTITY_TOTAL); // GH-90000
         assertThat(metricsResponse.body()).contains(DataCloudBusinessMetrics.METRIC_EVENT_APPEND_TOTAL); // GH-90000
         assertThat(metricsResponse.body()).contains(DataCloudBusinessMetrics.METRIC_GOVERNANCE_TOTAL); // GH-90000
-                assertThat(metricsResponse.body()).contains("tenant-observe [GH-90000]");
+                assertThat(metricsResponse.body()).contains("tenant-observe");
     }
 
         @Test
-        @DisplayName("exports request to handler to store parent-child spans for entity save [GH-90000]")
+        @DisplayName("exports request to handler to store parent-child spans for entity save")
         void exportsParentChildTraceSpansForEntitySave() throws Exception { // GH-90000
                 DataCloudClient.Entity saved = DataCloudClient.Entity.of( // GH-90000
                                 "ent-trace-1",
                                 "orders",
                                 Map.of("status", "pending", "amount", 42)); // GH-90000
-                when(mockClient.save(eq("acme [GH-90000]"), eq("orders [GH-90000]"), any())).thenReturn(Promise.of(saved));
-                when(mockClient.appendEvent(eq("acme [GH-90000]"), any())).thenReturn(Promise.of(DataCloudClient.Offset.of(8)));
+                when(mockClient.save(eq("acme"), eq("orders"), any())).thenReturn(Promise.of(saved));
+                when(mockClient.appendEvent(eq("acme"), any())).thenReturn(Promise.of(DataCloudClient.Offset.of(8)));
 
                 startServer(); // GH-90000
 

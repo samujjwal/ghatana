@@ -26,7 +26,11 @@ import java.util.Objects;
  *
  * <p><b>Migration Note:</b> Decoupled from platform {@code Agent} interface.
  * For platform integration, use {@code LegacyAgentAdapter} or {@code TypedAgent}.</p>
- */
+  * @doc.type enum
+ * @doc.purpose Provides virtual org agent functionality.
+ * @doc.layer product
+ * @doc.pattern Agent
+*/
 public class VirtualOrgAgent {
     private static final Logger logger = LoggerFactory.getLogger(VirtualOrgAgent.class);
 

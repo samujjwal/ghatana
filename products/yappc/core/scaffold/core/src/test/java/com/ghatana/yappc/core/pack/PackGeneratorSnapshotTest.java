@@ -27,7 +27,7 @@ class PackGeneratorSnapshotTest {
 
     @BeforeEach
     void setUp(@TempDir Path tempDir) { // GH-90000
-        snapshotDir = tempDir.resolve("snapshots [GH-90000]");
+        snapshotDir = tempDir.resolve("snapshots");
         PackEngine packEngine = new DefaultPackEngine(new SimpleTemplateEngine()); // GH-90000
         SnapshotTester snapshotTester = new DefaultSnapshotTester(snapshotDir); // GH-90000
         snapshotTest = new GeneratorSnapshotTest(packEngine, snapshotTester); // GH-90000
@@ -36,7 +36,7 @@ class PackGeneratorSnapshotTest {
     @Test
     void testBasePackSnapshot(@TempDir Path tempDir) throws Exception { // GH-90000
         // Test base pack generation against golden snapshot
-        var basePackResource = getClass().getClassLoader().getResource("packs/base [GH-90000]");
+        var basePackResource = getClass().getClassLoader().getResource("packs/base");
         assertNotNull(basePackResource, "Base pack resource should exist"); // GH-90000
 
         Path basePackPath = Path.of(basePackResource.getPath()); // GH-90000
@@ -54,7 +54,7 @@ class PackGeneratorSnapshotTest {
                         false, // No hooks for basic test
                         "Base pack generation test");
 
-        Path outputDir = tempDir.resolve("base_output [GH-90000]");
+        Path outputDir = tempDir.resolve("base_output");
         GeneratorSnapshotTest.SnapshotTestSuite result =
                 snapshotTest.runSnapshotTest(config, outputDir); // GH-90000
 
@@ -68,7 +68,7 @@ class PackGeneratorSnapshotTest {
     void testJavaServicePackSnapshot(@TempDir Path tempDir) throws Exception { // GH-90000
         // Test Java ActiveJ service pack generation
         var javaPackResource =
-                getClass().getClassLoader().getResource("packs/java-service-activej-gradle [GH-90000]");
+                getClass().getClassLoader().getResource("packs/java-service-activej-gradle");
         assertNotNull(javaPackResource, "Java service pack resource should exist"); // GH-90000
 
         Path javaPackPath = Path.of(javaPackResource.getPath()); // GH-90000
@@ -90,7 +90,7 @@ class PackGeneratorSnapshotTest {
                         false,
                         "Java ActiveJ service pack generation test");
 
-        Path outputDir = tempDir.resolve("java_output [GH-90000]");
+        Path outputDir = tempDir.resolve("java_output");
         GeneratorSnapshotTest.SnapshotTestSuite result =
                 snapshotTest.runSnapshotTest(config, outputDir); // GH-90000
 
@@ -98,7 +98,7 @@ class PackGeneratorSnapshotTest {
 
         // Log any failures for debugging
         if (!result.allPassed()) { // GH-90000
-            System.out.println("Java Service Pack Snapshot Failures: [GH-90000]");
+            System.out.println("Java Service Pack Snapshot Failures:");
             for (GeneratorSnapshotTest.SnapshotTestFailure failure : result.failures()) { // GH-90000
                 System.out.println("- " + failure.testName() + ": " + failure.reason()); // GH-90000
             }
@@ -108,7 +108,7 @@ class PackGeneratorSnapshotTest {
     @Test
     void testReactPackSnapshot(@TempDir Path tempDir) throws Exception { // GH-90000
         // Test TypeScript React pack generation
-        var reactPackResource = getClass().getClassLoader().getResource("packs/ts-react-vite [GH-90000]");
+        var reactPackResource = getClass().getClassLoader().getResource("packs/ts-react-vite");
         assertNotNull(reactPackResource, "React pack resource should exist"); // GH-90000
 
         Path reactPackPath = Path.of(reactPackResource.getPath()); // GH-90000
@@ -133,7 +133,7 @@ class PackGeneratorSnapshotTest {
                         false,
                         "TypeScript React pack generation test");
 
-        Path outputDir = tempDir.resolve("react_output [GH-90000]");
+        Path outputDir = tempDir.resolve("react_output");
         GeneratorSnapshotTest.SnapshotTestSuite result =
                 snapshotTest.runSnapshotTest(config, outputDir); // GH-90000
 
@@ -141,7 +141,7 @@ class PackGeneratorSnapshotTest {
 
         // Log any failures for debugging
         if (!result.allPassed()) { // GH-90000
-            System.out.println("React Pack Snapshot Failures: [GH-90000]");
+            System.out.println("React Pack Snapshot Failures:");
             for (GeneratorSnapshotTest.SnapshotTestFailure failure : result.failures()) { // GH-90000
                 System.out.println("- " + failure.testName() + ": " + failure.reason()); // GH-90000
             }
@@ -151,7 +151,7 @@ class PackGeneratorSnapshotTest {
     @Test
     void testNextJsPackSnapshot(@TempDir Path tempDir) throws Exception { // GH-90000
         // Test TypeScript Next.js pack generation
-        var nextjsPackResource = getClass().getClassLoader().getResource("packs/ts-react-nextjs [GH-90000]");
+        var nextjsPackResource = getClass().getClassLoader().getResource("packs/ts-react-nextjs");
         assertNotNull(nextjsPackResource, "Next.js pack resource should exist"); // GH-90000
 
         Path nextjsPackPath = Path.of(nextjsPackResource.getPath()); // GH-90000
@@ -176,7 +176,7 @@ class PackGeneratorSnapshotTest {
                         false,
                         "TypeScript Next.js pack generation test");
 
-        Path outputDir = tempDir.resolve("nextjs_output [GH-90000]");
+        Path outputDir = tempDir.resolve("nextjs_output");
         GeneratorSnapshotTest.SnapshotTestSuite result =
                 snapshotTest.runSnapshotTest(config, outputDir); // GH-90000
 
@@ -184,7 +184,7 @@ class PackGeneratorSnapshotTest {
 
         // Log any failures for debugging
         if (!result.allPassed()) { // GH-90000
-            System.out.println("Next.js Pack Snapshot Failures: [GH-90000]");
+            System.out.println("Next.js Pack Snapshot Failures:");
             for (GeneratorSnapshotTest.SnapshotTestFailure failure : result.failures()) { // GH-90000
                 System.out.println("- " + failure.testName() + ": " + failure.reason()); // GH-90000
             }
@@ -194,7 +194,7 @@ class PackGeneratorSnapshotTest {
     @Test
     void testPackWithHooksSnapshot(@TempDir Path tempDir) throws Exception { // GH-90000
         // Test pack generation with post-generation hook execution
-        var reactPackResource = getClass().getClassLoader().getResource("packs/ts-react-vite [GH-90000]");
+        var reactPackResource = getClass().getClassLoader().getResource("packs/ts-react-vite");
         assertNotNull(reactPackResource, "React pack resource should exist"); // GH-90000
 
         Path reactPackPath = Path.of(reactPackResource.getPath()); // GH-90000
@@ -214,7 +214,7 @@ class PackGeneratorSnapshotTest {
                         true, // Enable hooks execution
                         "React pack with hooks generation test");
 
-        Path outputDir = tempDir.resolve("react_hooks_output [GH-90000]");
+        Path outputDir = tempDir.resolve("react_hooks_output");
         GeneratorSnapshotTest.SnapshotTestSuite result =
                 snapshotTest.runSnapshotTest(config, outputDir); // GH-90000
 
@@ -223,7 +223,7 @@ class PackGeneratorSnapshotTest {
         // The hooks may fail (yappc commands not available in test), but generation should work // GH-90000
         // We're primarily testing that the snapshot system captures hook execution metadata
         if (!result.allPassed()) { // GH-90000
-            System.out.println("React with Hooks Snapshot Info: [GH-90000]");
+            System.out.println("React with Hooks Snapshot Info:");
             for (GeneratorSnapshotTest.SnapshotTestFailure failure : result.failures()) { // GH-90000
                 System.out.println("- " + failure.testName() + ": " + failure.reason()); // GH-90000
             }
@@ -233,9 +233,9 @@ class PackGeneratorSnapshotTest {
     @Test
     void testMultiplePacksSnapshot(@TempDir Path tempDir) throws Exception { // GH-90000
         // Test multiple pack configurations in one test suite
-        var basePackResource = getClass().getClassLoader().getResource("packs/base [GH-90000]");
+        var basePackResource = getClass().getClassLoader().getResource("packs/base");
         var javaPackResource =
-                getClass().getClassLoader().getResource("packs/java-service-activej-gradle [GH-90000]");
+                getClass().getClassLoader().getResource("packs/java-service-activej-gradle");
 
         assertNotNull(basePackResource, "Base pack resource should exist"); // GH-90000
         assertNotNull(javaPackResource, "Java pack resource should exist"); // GH-90000
@@ -259,7 +259,7 @@ class PackGeneratorSnapshotTest {
                                 false,
                                 "Multi-pack test: Java Service"));
 
-        Path outputDir = tempDir.resolve("multi_output [GH-90000]");
+        Path outputDir = tempDir.resolve("multi_output");
         GeneratorSnapshotTest.SnapshotTestSuite result =
                 snapshotTest.runSnapshotTests(configs, outputDir); // GH-90000
 
@@ -276,7 +276,7 @@ class PackGeneratorSnapshotTest {
     @Test
     void testSnapshotUpdate(@TempDir Path tempDir) throws Exception { // GH-90000
         // Test updating snapshots when pack output changes intentionally
-        var basePackResource = getClass().getClassLoader().getResource("packs/base [GH-90000]");
+        var basePackResource = getClass().getClassLoader().getResource("packs/base");
         assertNotNull(basePackResource, "Base pack resource should exist"); // GH-90000
 
         Path basePackPath = Path.of(basePackResource.getPath()); // GH-90000
@@ -289,7 +289,7 @@ class PackGeneratorSnapshotTest {
                 new GeneratorSnapshotTest.SnapshotTestConfig( // GH-90000
                         "update_test", basePackPath, variables, false, "Snapshot update test");
 
-        Path outputDir = tempDir.resolve("update_output [GH-90000]");
+        Path outputDir = tempDir.resolve("update_output");
 
         // First run creates snapshots
         snapshotTest.runSnapshotTest(config, outputDir); // GH-90000

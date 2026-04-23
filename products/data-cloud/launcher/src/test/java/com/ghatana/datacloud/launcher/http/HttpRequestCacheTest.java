@@ -19,8 +19,8 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("HttpRequestCacheTest [GH-90000]")
-@Tag("launcher [GH-90000]")
+@DisplayName("HttpRequestCacheTest")
+@Tag("launcher")
 class HttpRequestCacheTest {
 
     private HttpRequestCache cache;
@@ -38,7 +38,7 @@ class HttpRequestCacheTest {
     // ─── Cache operations ─────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("caches and retrieves response [GH-90000]")
+    @DisplayName("caches and retrieves response")
     void cachesAndRetrievesResponse() { // GH-90000
         String key = "/api/data";
         HttpResponse response = HttpResponse.ok200().build(); // GH-90000
@@ -51,7 +51,7 @@ class HttpRequestCacheTest {
     }
 
     @Test
-    @DisplayName("expired entry is not returned [GH-90000]")
+    @DisplayName("expired entry is not returned")
     void expiredEntryIsNotReturned() { // GH-90000
         HttpRequestCache shortCache = new HttpRequestCache(Duration.ofMillis(100), 100); // GH-90000
         String key = "/api/data";
@@ -71,7 +71,7 @@ class HttpRequestCacheTest {
     }
 
     @Test
-    @DisplayName("invalidates specific key [GH-90000]")
+    @DisplayName("invalidates specific key")
     void invalidatesSpecificKey() { // GH-90000
         String key = "/api/data";
         HttpResponse response = HttpResponse.ok200().build(); // GH-90000
@@ -84,7 +84,7 @@ class HttpRequestCacheTest {
     }
 
     @Test
-    @DisplayName("clear removes all entries [GH-90000]")
+    @DisplayName("clear removes all entries")
     void clearRemovesAllEntries() { // GH-90000
         cache.put("/api/data1", HttpResponse.ok200().build()); // GH-90000
         cache.put("/api/data2", HttpResponse.ok200().build()); // GH-90000
@@ -97,7 +97,7 @@ class HttpRequestCacheTest {
     // ─── Cache statistics ─────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("tracks hit count [GH-90000]")
+    @DisplayName("tracks hit count")
     void tracksHitCount() { // GH-90000
         String key = "/api/data";
         HttpResponse response = HttpResponse.ok200().build(); // GH-90000
@@ -110,30 +110,30 @@ class HttpRequestCacheTest {
     }
 
     @Test
-    @DisplayName("tracks miss count [GH-90000]")
+    @DisplayName("tracks miss count")
     void tracksMissCount() { // GH-90000
-        cache.get("/nonexistent [GH-90000]");
-        cache.get("/another [GH-90000]");
+        cache.get("/nonexistent");
+        cache.get("/another");
 
         assertThat(cache.getStats().missCount()).isEqualTo(2); // GH-90000
     }
 
     @Test
-    @DisplayName("calculates hit rate correctly [GH-90000]")
+    @DisplayName("calculates hit rate correctly")
     void calculatesHitRateCorrectly() { // GH-90000
         String key = "/api/data";
         HttpResponse response = HttpResponse.ok200().build(); // GH-90000
 
         cache.put(key, response); // GH-90000
         cache.get(key); // hit // GH-90000
-        cache.get("/nonexistent [GH-90000]"); // miss
+        cache.get("/nonexistent"); // miss
 
         double hitRate = cache.getStats().hitRate(); // GH-90000
         assertThat(hitRate).isEqualTo(0.5); // GH-90000
     }
 
     @Test
-    @DisplayName("tracks eviction count [GH-90000]")
+    @DisplayName("tracks eviction count")
     void tracksEvictionCount() { // GH-90000
         HttpRequestCache shortCache = new HttpRequestCache(Duration.ofMillis(100), 2); // GH-90000
         String key = "/api/data";
@@ -153,7 +153,7 @@ class HttpRequestCacheTest {
     }
 
     @Test
-    @DisplayName("reports current size correctly [GH-90000]")
+    @DisplayName("reports current size correctly")
     void reportsCurrentSizeCorrectly() { // GH-90000
         cache.put("/api/data1", HttpResponse.ok200().build()); // GH-90000
         cache.put("/api/data2", HttpResponse.ok200().build()); // GH-90000
@@ -162,7 +162,7 @@ class HttpRequestCacheTest {
     }
 
     @Test
-    @DisplayName("calculates utilization correctly [GH-90000]")
+    @DisplayName("calculates utilization correctly")
     void calculatesUtilizationCorrectly() { // GH-90000
         HttpRequestCache smallCache = new HttpRequestCache(Duration.ofSeconds(60), 10); // GH-90000
         smallCache.put("/api/data1", HttpResponse.ok200().build()); // GH-90000
@@ -175,7 +175,7 @@ class HttpRequestCacheTest {
     // ─── Cache eviction ───────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("evicts oldest entry when at capacity [GH-90000]")
+    @DisplayName("evicts oldest entry when at capacity")
     void evictsOldestEntryWhenAtCapacity() { // GH-90000
         HttpRequestCache smallCache = new HttpRequestCache(Duration.ofSeconds(60), 2); // GH-90000
         
@@ -190,21 +190,21 @@ class HttpRequestCacheTest {
     // ─── Edge cases ───────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("handles null key gracefully in get [GH-90000]")
+    @DisplayName("handles null key gracefully in get")
     void handlesNullKeyInGet() { // GH-90000
         HttpResponse cached = cache.get(null); // GH-90000
         assertThat(cached).isNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("handles null key gracefully in put [GH-90000]")
+    @DisplayName("handles null key gracefully in put")
     void handlesNullKeyInPut() { // GH-90000
         cache.put(null, HttpResponse.ok200().build()); // GH-90000
         assertThat(cache.getStats().currentSize()).isEqualTo(0); // GH-90000
     }
 
     @Test
-    @DisplayName("handles null response gracefully in put [GH-90000]")
+    @DisplayName("handles null response gracefully in put")
     void handlesNullResponseInPut() { // GH-90000
         cache.put("/api/data", null); // GH-90000
         assertThat(cache.getStats().currentSize()).isEqualTo(0); // GH-90000

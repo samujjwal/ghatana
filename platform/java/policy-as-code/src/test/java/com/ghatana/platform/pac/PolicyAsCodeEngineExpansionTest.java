@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("PolicyAsCodeEngine - Phase 3 Expansion [GH-90000]")
+@DisplayName("PolicyAsCodeEngine - Phase 3 Expansion")
 class PolicyAsCodeEngineExpansionTest extends EventloopTestBase {
 
     private InMemoryPolicyEngine engine;
@@ -41,18 +41,18 @@ class PolicyAsCodeEngineExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Policy Composition [GH-90000]")
+    @DisplayName("Policy Composition")
     class CompositionTests {
 
         @Test
-        @DisplayName("Evaluates multiple independent policies sequentially [GH-90000]")
+        @DisplayName("Evaluates multiple independent policies sequentially")
         void multipleIndependentPolicies() { // GH-90000
             engine.register("auth_check", input -> // GH-90000
-                PolicyEvalResult.allow("auth_check [GH-90000]"));
+                PolicyEvalResult.allow("auth_check"));
             engine.register("rbac_check", input -> // GH-90000
-                PolicyEvalResult.allow("rbac_check [GH-90000]"));
+                PolicyEvalResult.allow("rbac_check"));
             engine.register("data_policy", input -> // GH-90000
-                PolicyEvalResult.allow("data_policy [GH-90000]"));
+                PolicyEvalResult.allow("data_policy"));
 
             // Evaluate each independently
             PolicyEvalResult auth = runPromise(() -> // GH-90000
@@ -68,10 +68,10 @@ class PolicyAsCodeEngineExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Handles policy override (later registration replaces earlier) [GH-90000]")
+        @DisplayName("Handles policy override (later registration replaces earlier)")
         void policyOverride() { // GH-90000
             engine.register("api_policy", input -> // GH-90000
-                PolicyEvalResult.deny("api_policy", List.of("v1 denied [GH-90000]"), 50));
+                PolicyEvalResult.deny("api_policy", List.of("v1 denied"), 50));
 
             PolicyEvalResult firstEval = runPromise(() -> // GH-90000
                 engine.evaluate("tenant-1", "api_policy", Map.of())); // GH-90000
@@ -79,7 +79,7 @@ class PolicyAsCodeEngineExpansionTest extends EventloopTestBase {
 
             // Override with new version
             engine.register("api_policy", input -> // GH-90000
-                PolicyEvalResult.allow("api_policy [GH-90000]"));
+                PolicyEvalResult.allow("api_policy"));
 
             PolicyEvalResult secondEval = runPromise(() -> // GH-90000
                 engine.evaluate("tenant-1", "api_policy", Map.of())); // GH-90000
@@ -87,22 +87,22 @@ class PolicyAsCodeEngineExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Chained policies with conditional logic [GH-90000]")
+        @DisplayName("Chained policies with conditional logic")
         void chainedConditionalPolicies() { // GH-90000
             // Stage 1: authentication required
             engine.register("auth", input -> { // GH-90000
                 String token = (String) input.getOrDefault("token", ""); // GH-90000
                 return token.isEmpty() // GH-90000
-                    ? PolicyEvalResult.deny("auth", List.of("missing token [GH-90000]"), 100)
-                    : PolicyEvalResult.allow("auth [GH-90000]");
+                    ? PolicyEvalResult.deny("auth", List.of("missing token"), 100)
+                    : PolicyEvalResult.allow("auth");
             });
 
             // Stage 2: authorization based on role
             engine.register("authz", input -> { // GH-90000
                 String role = (String) input.getOrDefault("role", "user"); // GH-90000
                 return "admin".equals(role) // GH-90000
-                    ? PolicyEvalResult.allow("authz [GH-90000]")
-                    : PolicyEvalResult.deny("authz", List.of("requires admin [GH-90000]"), 80);
+                    ? PolicyEvalResult.allow("authz")
+                    : PolicyEvalResult.deny("authz", List.of("requires admin"), 80);
             });
 
             // Auth fails without token
@@ -125,7 +125,7 @@ class PolicyAsCodeEngineExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Policy with complex input inspection [GH-90000]")
+        @DisplayName("Policy with complex input inspection")
         void complexInputInspection() { // GH-90000
             engine.register("resource_policy", input -> { // GH-90000
                 String resource = (String) input.getOrDefault("resource", ""); // GH-90000
@@ -133,9 +133,9 @@ class PolicyAsCodeEngineExpansionTest extends EventloopTestBase {
 
                 if ("admin".equals(resource) && !"GET".equals(method)) { // GH-90000
                     return PolicyEvalResult.deny("resource_policy", // GH-90000
-                        List.of("admin resource write-protected [GH-90000]"), 90);
+                        List.of("admin resource write-protected"), 90);
                 }
-                return PolicyEvalResult.allow("resource_policy [GH-90000]");
+                return PolicyEvalResult.allow("resource_policy");
             });
 
             // GET to admin allowed
@@ -152,7 +152,7 @@ class PolicyAsCodeEngineExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Many policies coexist without interference [GH-90000]")
+        @DisplayName("Many policies coexist without interference")
         void manyPolicies() { // GH-90000
             int policyCount = 20;
             for (int i = 0; i < policyCount; i++) { // GH-90000
@@ -182,18 +182,18 @@ class PolicyAsCodeEngineExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Multi-Tenant Isolation [GH-90000]")
+    @DisplayName("Multi-Tenant Isolation")
     class MultiTenantTests {
 
         @Test
-        @DisplayName("Same policy evaluated independently per tenant [GH-90000]")
+        @DisplayName("Same policy evaluated independently per tenant")
         void tenantIsolation() { // GH-90000
             engine.register("shared_policy", input -> { // GH-90000
                 String tenantPolicy = (String) input.getOrDefault("tenantPolicy", ""); // GH-90000
                 return "allow".equals(tenantPolicy) // GH-90000
-                    ? PolicyEvalResult.allow("shared_policy [GH-90000]")
+                    ? PolicyEvalResult.allow("shared_policy")
                     : PolicyEvalResult.deny("shared_policy", // GH-90000
-                        List.of("tenant denies [GH-90000]"), 70);
+                        List.of("tenant denies"), 70);
             });
 
             // Tenant-1 allows
@@ -210,10 +210,10 @@ class PolicyAsCodeEngineExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Tenant-specific policies don't leak to other tenants [GH-90000]")
+        @DisplayName("Tenant-specific policies don't leak to other tenants")
         void tenantPolicyIsolation() { // GH-90000
             engine.register("tenant-1-only", input -> // GH-90000
-                PolicyEvalResult.allow("tenant-1-only [GH-90000]"));
+                PolicyEvalResult.allow("tenant-1-only"));
 
             PolicyEvalResult allowed = runPromise(() -> // GH-90000
                 engine.evaluate("tenant-1", "tenant-1-only", Map.of())); // GH-90000
@@ -227,14 +227,14 @@ class PolicyAsCodeEngineExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Each tenant can have conflicting policies with same name [GH-90000]")
+        @DisplayName("Each tenant can have conflicting policies with same name")
         void tenantConflictingNames() { // GH-90000
             engine.register("access_level", input -> { // GH-90000
                 // T1: admin-only
-                return "admin".equals(input.get("role [GH-90000]"))
-                    ? PolicyEvalResult.allow("access_level [GH-90000]")
+                return "admin".equals(input.get("role"))
+                    ? PolicyEvalResult.allow("access_level")
                     : PolicyEvalResult.deny("access_level", // GH-90000
-                        List.of("admin required [GH-90000]"), 80);
+                        List.of("admin required"), 80);
             });
 
             // Both tenants use same policy, same name
@@ -250,10 +250,10 @@ class PolicyAsCodeEngineExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Policies registered in one evaluation don't affect subsequent tenants [GH-90000]")
+        @DisplayName("Policies registered in one evaluation don't affect subsequent tenants")
         void registrationNotGlobal() { // GH-90000
             engine.register("policy-a", input -> // GH-90000
-                PolicyEvalResult.allow("policy-a [GH-90000]"));
+                PolicyEvalResult.allow("policy-a"));
 
             PolicyEvalResult t1 = runPromise(() -> // GH-90000
                 engine.evaluate("tenant-1", "policy-a", Map.of())); // GH-90000
@@ -270,11 +270,11 @@ class PolicyAsCodeEngineExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Concurrent Evaluation [GH-90000]")
+    @DisplayName("Concurrent Evaluation")
     class ConcurrentTests {
 
         @Test
-        @DisplayName("Multiple threads evaluating different policies concurrently [GH-90000]")
+        @DisplayName("Multiple threads evaluating different policies concurrently")
         void concurrentDifferentPolicies() { // GH-90000
             for (int i = 0; i < 10; i++) { // GH-90000
                 final int idx = i;
@@ -312,14 +312,14 @@ class PolicyAsCodeEngineExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Concurrent evaluations of same policy with different inputs [GH-90000]")
+        @DisplayName("Concurrent evaluations of same policy with different inputs")
         void concurrentSamePolicyDifferentInputs() { // GH-90000
             engine.register("threshold_policy", input -> { // GH-90000
                 int value = (Integer) input.getOrDefault("value", 0); // GH-90000
                 return value > 50
-                    ? PolicyEvalResult.allow("threshold_policy [GH-90000]")
+                    ? PolicyEvalResult.allow("threshold_policy")
                     : PolicyEvalResult.deny("threshold_policy", // GH-90000
-                        List.of("value <= 50 [GH-90000]"), 60);
+                        List.of("value <= 50"), 60);
             });
 
             AtomicInteger allowCount = new AtomicInteger(0); // GH-90000
@@ -354,7 +354,7 @@ class PolicyAsCodeEngineExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Concurrent policy registration and evaluation [GH-90000]")
+        @DisplayName("Concurrent policy registration and evaluation")
         void concurrentRegisterAndEvaluate() { // GH-90000
             AtomicInteger evalCount = new AtomicInteger(0); // GH-90000
 
@@ -400,18 +400,18 @@ class PolicyAsCodeEngineExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Risk Scoring [GH-90000]")
+    @DisplayName("Risk Scoring")
     class RiskScoringTests {
 
         @Test
-        @DisplayName("Denied policies report appropriate risk scores [GH-90000]")
+        @DisplayName("Denied policies report appropriate risk scores")
         void denyRiskScores() { // GH-90000
             engine.register("high_risk", input -> // GH-90000
-                PolicyEvalResult.deny("high_risk", List.of("denied [GH-90000]"), 95));
+                PolicyEvalResult.deny("high_risk", List.of("denied"), 95));
             engine.register("medium_risk", input -> // GH-90000
-                PolicyEvalResult.deny("medium_risk", List.of("denied [GH-90000]"), 50));
+                PolicyEvalResult.deny("medium_risk", List.of("denied"), 50));
             engine.register("low_risk", input -> // GH-90000
-                PolicyEvalResult.deny("low_risk", List.of("denied [GH-90000]"), 20));
+                PolicyEvalResult.deny("low_risk", List.of("denied"), 20));
 
             PolicyEvalResult high = runPromise(() -> // GH-90000
                 engine.evaluate("tenant-1", "high_risk", Map.of())); // GH-90000
@@ -427,10 +427,10 @@ class PolicyAsCodeEngineExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Allow policies report zero risk [GH-90000]")
+        @DisplayName("Allow policies report zero risk")
         void allowRiskZero() { // GH-90000
             engine.register("safe_policy", input -> // GH-90000
-                PolicyEvalResult.allow("safe_policy [GH-90000]"));
+                PolicyEvalResult.allow("safe_policy"));
 
             PolicyEvalResult result = runPromise(() -> // GH-90000
                 engine.evaluate("tenant-1", "safe_policy", Map.of())); // GH-90000
@@ -440,7 +440,7 @@ class PolicyAsCodeEngineExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Unregistered policies report max risk (100) [GH-90000]")
+        @DisplayName("Unregistered policies report max risk (100)")
         void unknownRiskMax() { // GH-90000
             PolicyEvalResult result = runPromise(() -> // GH-90000
                 engine.evaluate("tenant-1", "no_such_policy", Map.of())); // GH-90000
@@ -455,14 +455,14 @@ class PolicyAsCodeEngineExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Edge Cases [GH-90000]")
+    @DisplayName("Edge Cases")
     class EdgeCaseTests {
 
         @Test
-        @DisplayName("Empty input map handled gracefully [GH-90000]")
+        @DisplayName("Empty input map handled gracefully")
         void emptyInputMap() { // GH-90000
             engine.register("empty_safe", input -> // GH-90000
-                PolicyEvalResult.allow("empty_safe [GH-90000]"));
+                PolicyEvalResult.allow("empty_safe"));
 
             PolicyEvalResult result = runPromise(() -> // GH-90000
                 engine.evaluate("tenant-1", "empty_safe", new HashMap<>())); // GH-90000
@@ -471,13 +471,13 @@ class PolicyAsCodeEngineExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Null values in input handled without NPE [GH-90000]")
+        @DisplayName("Null values in input handled without NPE")
         void nullValuesInInput() { // GH-90000
             engine.register("null_safe", input -> { // GH-90000
-                Object val = input.get("nullable [GH-90000]");
+                Object val = input.get("nullable");
                 return val == null
-                    ? PolicyEvalResult.allow("null_safe [GH-90000]")
-                    : PolicyEvalResult.deny("null_safe", List.of("has value [GH-90000]"), 50);
+                    ? PolicyEvalResult.allow("null_safe")
+                    : PolicyEvalResult.deny("null_safe", List.of("has value"), 50);
             });
 
             Map<String, Object> withNull = new HashMap<>(); // GH-90000
@@ -489,10 +489,10 @@ class PolicyAsCodeEngineExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Very large input maps processed successfully [GH-90000]")
+        @DisplayName("Very large input maps processed successfully")
         void largeInputMap() { // GH-90000
             engine.register("large_input", input -> // GH-90000
-                PolicyEvalResult.allow("large_input [GH-90000]"));
+                PolicyEvalResult.allow("large_input"));
 
             Map<String, Object> large = new HashMap<>(); // GH-90000
             for (int i = 0; i < 1000; i++) { // GH-90000

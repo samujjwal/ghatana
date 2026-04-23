@@ -24,8 +24,8 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("RetentionClassificationTest [GH-90000]")
-@Tag("governance [GH-90000]")
+@DisplayName("RetentionClassificationTest")
+@Tag("governance")
 class RetentionClassificationTest {
 
     private RetentionClassifier classifier;
@@ -43,14 +43,14 @@ class RetentionClassificationTest {
     // ── Tier classification ───────────────────────────────────────────────────
 
     @Test
-    @DisplayName("data created today is classified as HOT [GH-90000]")
+    @DisplayName("data created today is classified as HOT")
     void todayDataIsHot() { // GH-90000
         DataRecord record = new DataRecord("r1", Instant.now(), DataSensitivity.INTERNAL); // GH-90000
         assertThat(classifier.classify(record)).isEqualTo(RetentionTier.HOT); // GH-90000
     }
 
     @Test
-    @DisplayName("data 31 days old is classified as WARM [GH-90000]")
+    @DisplayName("data 31 days old is classified as WARM")
     void thirtyOneDayOldDataIsWarm() { // GH-90000
         Instant created = Instant.now().minus(Duration.ofDays(31)); // GH-90000
         DataRecord record = new DataRecord("r2", created, DataSensitivity.INTERNAL); // GH-90000
@@ -58,7 +58,7 @@ class RetentionClassificationTest {
     }
 
     @Test
-    @DisplayName("data 91 days old is classified as COLD [GH-90000]")
+    @DisplayName("data 91 days old is classified as COLD")
     void ninetyOneDayOldDataIsCold() { // GH-90000
         Instant created = Instant.now().minus(Duration.ofDays(91)); // GH-90000
         DataRecord record = new DataRecord("r3", created, DataSensitivity.INTERNAL); // GH-90000
@@ -66,7 +66,7 @@ class RetentionClassificationTest {
     }
 
     @Test
-    @DisplayName("data 366 days old is classified as EXPIRED [GH-90000]")
+    @DisplayName("data 366 days old is classified as EXPIRED")
     void expiredData() { // GH-90000
         Instant created = Instant.now().minus(Duration.ofDays(366)); // GH-90000
         DataRecord record = new DataRecord("r4", created, DataSensitivity.INTERNAL); // GH-90000
@@ -76,7 +76,7 @@ class RetentionClassificationTest {
     // ── Sensitivity-based overrides ───────────────────────────────────────────
 
     @Test
-    @DisplayName("PII data has shorter HOT window — 1 day old is still HOT [GH-90000]")
+    @DisplayName("PII data has shorter HOT window — 1 day old is still HOT")
     void piiDataHotWindow() { // GH-90000
         Instant yesterday = Instant.now().minus(Duration.ofDays(1)); // GH-90000
         DataRecord record = new DataRecord("r5", yesterday, DataSensitivity.PII); // GH-90000
@@ -85,7 +85,7 @@ class RetentionClassificationTest {
     }
 
     @Test
-    @DisplayName("CONFIDENTIAL data follows standard policy when not overridden [GH-90000]")
+    @DisplayName("CONFIDENTIAL data follows standard policy when not overridden")
     void confidentialDataFollowsStandardPolicy() { // GH-90000
         Instant created = Instant.now().minus(Duration.ofDays(5)); // GH-90000
         DataRecord record = new DataRecord("r6", created, DataSensitivity.CONFIDENTIAL); // GH-90000
@@ -93,7 +93,7 @@ class RetentionClassificationTest {
     }
 
     @Test
-    @DisplayName("PUBLIC data follows standard policy [GH-90000]")
+    @DisplayName("PUBLIC data follows standard policy")
     void publicDataFollowsStandardPolicy() { // GH-90000
         Instant created = Instant.now().minus(Duration.ofDays(200)); // GH-90000
         DataRecord record = new DataRecord("r7", created, DataSensitivity.PUBLIC); // GH-90000
@@ -103,7 +103,7 @@ class RetentionClassificationTest {
     // ── Batch classification ─────────────────────────────────────────────────
 
     @Test
-    @DisplayName("batch classification preserves record count [GH-90000]")
+    @DisplayName("batch classification preserves record count")
     void batchClassificationPreservesCount() { // GH-90000
         List<DataRecord> records = List.of( // GH-90000
                 new DataRecord("b1", Instant.now(), DataSensitivity.INTERNAL), // GH-90000
@@ -116,7 +116,7 @@ class RetentionClassificationTest {
     }
 
     @Test
-    @DisplayName("batch classification groups correctly by tier [GH-90000]")
+    @DisplayName("batch classification groups correctly by tier")
     void batchClassificationGroupsByTier() { // GH-90000
         List<DataRecord> records = List.of( // GH-90000
                 new DataRecord("c1", Instant.now(), DataSensitivity.INTERNAL),                              // HOT // GH-90000
@@ -130,7 +130,7 @@ class RetentionClassificationTest {
     }
 
     @Test
-    @DisplayName("empty batch returns empty map [GH-90000]")
+    @DisplayName("empty batch returns empty map")
     void emptyBatchReturnsEmptyMap() { // GH-90000
         Map<RetentionTier, List<DataRecord>> grouped = classifier.classifyBatch(List.of()); // GH-90000
         assertThat(grouped).isEmpty(); // GH-90000
@@ -139,7 +139,7 @@ class RetentionClassificationTest {
     // ── Policy customization ──────────────────────────────────────────────────
 
     @Test
-    @DisplayName("custom short policy marks 2-day-old data as WARM [GH-90000]")
+    @DisplayName("custom short policy marks 2-day-old data as WARM")
     void customShortPolicy() { // GH-90000
         RetentionPolicy shortPolicy = new RetentionPolicy( // GH-90000
                 Duration.ofDays(1), // GH-90000

@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("Plugin Versioning Tests (10.4.5) [GH-90000]")
+@DisplayName("Plugin Versioning Tests (10.4.5)")
 class PluginVersioningTest {
 
     // Minimal plugin contract for version-gate tests (no real class loading needed) // GH-90000
@@ -37,47 +37,47 @@ class PluginVersioningTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("isCompatible() SemVer semantics [GH-90000]")
+    @DisplayName("isCompatible() SemVer semantics")
     class IsCompatibleSemantics {
 
         @Test
-        @DisplayName("platform version equal to min requirement → compatible [GH-90000]")
+        @DisplayName("platform version equal to min requirement → compatible")
         void equalVersionIsCompatible() { // GH-90000
             assertThat(IsolatingPluginSandbox.isCompatible("2.0.0", "2.0.0")).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("platform major version higher → compatible [GH-90000]")
+        @DisplayName("platform major version higher → compatible")
         void higherMajorIsCompatible() { // GH-90000
             assertThat(IsolatingPluginSandbox.isCompatible("3.0.0", "2.0.0")).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("platform minor version higher → compatible [GH-90000]")
+        @DisplayName("platform minor version higher → compatible")
         void higherMinorIsCompatible() { // GH-90000
             assertThat(IsolatingPluginSandbox.isCompatible("2.5.0", "2.1.0")).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("platform patch version higher → compatible [GH-90000]")
+        @DisplayName("platform patch version higher → compatible")
         void higherPatchIsCompatible() { // GH-90000
             assertThat(IsolatingPluginSandbox.isCompatible("2.0.7", "2.0.3")).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("platform major version lower → incompatible [GH-90000]")
+        @DisplayName("platform major version lower → incompatible")
         void lowerMajorIsIncompatible() { // GH-90000
             assertThat(IsolatingPluginSandbox.isCompatible("1.9.9", "2.0.0")).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("blank min requirement → always compatible [GH-90000]")
+        @DisplayName("blank min requirement → always compatible")
         void blankMinRequirementIsCompatible() { // GH-90000
             assertThat(IsolatingPluginSandbox.isCompatible("1.0.0", "")).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("null min requirement → always compatible [GH-90000]")
+        @DisplayName("null min requirement → always compatible")
         void nullMinRequirementIsCompatible() { // GH-90000
             assertThat(IsolatingPluginSandbox.isCompatible("1.0.0", null)).isTrue(); // GH-90000
         }
@@ -88,13 +88,13 @@ class PluginVersioningTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Minimum platform version constraint [GH-90000]")
+    @DisplayName("Minimum platform version constraint")
     class MinVersionConstraint {
 
         @Test
-        @DisplayName("plugin with minPlatformVersion == current platform → loads (version gate passes) [GH-90000]")
+        @DisplayName("plugin with minPlatformVersion == current platform → loads (version gate passes)")
         void pluginRequiringCurrentVersionPassesGate() { // GH-90000
-            IsolatingPluginSandbox sandbox = new IsolatingPluginSandbox("2.0.0 [GH-90000]");
+            IsolatingPluginSandbox sandbox = new IsolatingPluginSandbox("2.0.0");
             PluginDescriptor descriptor = new PluginDescriptor( // GH-90000
                     "exactly-current-plugin", "1.0.0", "2.0.0", null,
                     "com.example.NonExistent",
@@ -108,9 +108,9 @@ class PluginVersioningTest {
         }
 
         @Test
-        @DisplayName("plugin with minPlatformVersion > current platform → PluginIncompatibleException [GH-90000]")
+        @DisplayName("plugin with minPlatformVersion > current platform → PluginIncompatibleException")
         void pluginRequiringNewerVersionThrows() { // GH-90000
-            IsolatingPluginSandbox sandbox = new IsolatingPluginSandbox("1.5.0 [GH-90000]");
+            IsolatingPluginSandbox sandbox = new IsolatingPluginSandbox("1.5.0");
             PluginDescriptor descriptor = new PluginDescriptor( // GH-90000
                     "future-plugin", "1.0.0", "2.0.0", null,
                     "com.example.FuturePlugin",
@@ -119,14 +119,14 @@ class PluginVersioningTest {
 
             assertThatThrownBy(() -> sandbox.loadPlugin(descriptor, MinimalPlugin.class)) // GH-90000
                     .isInstanceOf(PluginIncompatibleException.class) // GH-90000
-                    .hasMessageContaining("future-plugin [GH-90000]")
-                    .hasMessageContaining("2.0.0 [GH-90000]");
+                    .hasMessageContaining("future-plugin")
+                    .hasMessageContaining("2.0.0");
         }
 
         @Test
-        @DisplayName("plugin with no minPlatformVersion set → loads (version gate passes) [GH-90000]")
+        @DisplayName("plugin with no minPlatformVersion set → loads (version gate passes)")
         void pluginWithNoMinVersionPassesGate() { // GH-90000
-            IsolatingPluginSandbox sandbox = new IsolatingPluginSandbox("1.0.0 [GH-90000]");
+            IsolatingPluginSandbox sandbox = new IsolatingPluginSandbox("1.0.0");
             PluginDescriptor descriptor = PluginDescriptor.restrictedOf( // GH-90000
                     "no-min-plugin", "1.0.0", "",
                     "com.example.NoMin", List.of()); // GH-90000
@@ -142,13 +142,13 @@ class PluginVersioningTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Maximum platform version constraint [GH-90000]")
+    @DisplayName("Maximum platform version constraint")
     class MaxVersionConstraint {
 
         @Test
-        @DisplayName("plugin with maxPlatformVersion == current platform → gate passes [GH-90000]")
+        @DisplayName("plugin with maxPlatformVersion == current platform → gate passes")
         void pluginMaxEqualToCurrentPassesGate() { // GH-90000
-            IsolatingPluginSandbox sandbox = new IsolatingPluginSandbox("2.0.0 [GH-90000]");
+            IsolatingPluginSandbox sandbox = new IsolatingPluginSandbox("2.0.0");
             PluginDescriptor descriptor = new PluginDescriptor( // GH-90000
                     "max-equal-plugin", "1.0.0", "1.0.0", "2.0.0",
                     "com.example.MaxEqual",
@@ -161,9 +161,9 @@ class PluginVersioningTest {
         }
 
         @Test
-        @DisplayName("plugin with maxPlatformVersion < current platform → PluginIncompatibleException [GH-90000]")
+        @DisplayName("plugin with maxPlatformVersion < current platform → PluginIncompatibleException")
         void pluginExceedingMaxVersionThrows() { // GH-90000
-            IsolatingPluginSandbox sandbox = new IsolatingPluginSandbox("3.0.0 [GH-90000]");
+            IsolatingPluginSandbox sandbox = new IsolatingPluginSandbox("3.0.0");
             PluginDescriptor descriptor = new PluginDescriptor( // GH-90000
                     "legacy-plugin", "1.0.0", "1.0.0", "2.9.9",
                     "com.example.LegacyPlugin",
@@ -172,13 +172,13 @@ class PluginVersioningTest {
 
             assertThatThrownBy(() -> sandbox.loadPlugin(descriptor, MinimalPlugin.class)) // GH-90000
                     .isInstanceOf(PluginIncompatibleException.class) // GH-90000
-                    .hasMessageContaining("legacy-plugin [GH-90000]");
+                    .hasMessageContaining("legacy-plugin");
         }
 
         @Test
-        @DisplayName("plugin with maxPlatformVersion=null → no upper bound applied [GH-90000]")
+        @DisplayName("plugin with maxPlatformVersion=null → no upper bound applied")
         void nullMaxPlatformVersionIsUnbounded() { // GH-90000
-            IsolatingPluginSandbox sandbox = new IsolatingPluginSandbox("99.0.0 [GH-90000]");
+            IsolatingPluginSandbox sandbox = new IsolatingPluginSandbox("99.0.0");
             PluginDescriptor descriptor = new PluginDescriptor( // GH-90000
                     "unbounded-plugin", "1.0.0", "1.0.0", null,
                     "com.example.Unbounded",
@@ -191,9 +191,9 @@ class PluginVersioningTest {
         }
 
         @Test
-        @DisplayName("plugin with maxPlatformVersion=* → treated as no upper bound [GH-90000]")
+        @DisplayName("plugin with maxPlatformVersion=* → treated as no upper bound")
         void wildcardMaxPlatformVersionIsUnbounded() { // GH-90000
-            IsolatingPluginSandbox sandbox = new IsolatingPluginSandbox("99.0.0 [GH-90000]");
+            IsolatingPluginSandbox sandbox = new IsolatingPluginSandbox("99.0.0");
             PluginDescriptor descriptor = new PluginDescriptor( // GH-90000
                     "wildcard-max-plugin", "1.0.0", "1.0.0", "*",
                     "com.example.WildcardMax",
@@ -211,11 +211,11 @@ class PluginVersioningTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("PluginDescriptor model [GH-90000]")
+    @DisplayName("PluginDescriptor model")
     class PluginDescriptorModel {
 
         @Test
-        @DisplayName("restrictedOf() factory sets maxPlatformVersion to null [GH-90000]")
+        @DisplayName("restrictedOf() factory sets maxPlatformVersion to null")
         void restrictedOfHasNullMaxVersion() { // GH-90000
             PluginDescriptor desc = PluginDescriptor.restrictedOf( // GH-90000
                     "factory-plugin", "1.0.0", "1.0.0", "com.example.Main", List.of()); // GH-90000
@@ -224,22 +224,22 @@ class PluginVersioningTest {
         }
 
         @Test
-        @DisplayName("positional constructor preserves maxPlatformVersion [GH-90000]")
+        @DisplayName("positional constructor preserves maxPlatformVersion")
         void positionalConstructorPreservesMax() { // GH-90000
             PluginDescriptor desc = new PluginDescriptor( // GH-90000
                     "my-plugin", "2.0.0", "1.5.0", "2.9.9",
                     "com.example.Main", List.of(), PermissionSet.empty()); // GH-90000
 
-            assertThat(desc.maxPlatformVersion()).isEqualTo("2.9.9 [GH-90000]");
+            assertThat(desc.maxPlatformVersion()).isEqualTo("2.9.9");
         }
 
         @Test
-        @DisplayName("logId() returns id@version format [GH-90000]")
+        @DisplayName("logId() returns id@version format")
         void logIdFormat() { // GH-90000
             PluginDescriptor desc = PluginDescriptor.restrictedOf( // GH-90000
                     "log-test", "3.1.4", "1.0.0", "com.example.LogTest", List.of()); // GH-90000
 
-            assertThat(desc.logId()).isEqualTo("log-test@3.1.4 [GH-90000]");
+            assertThat(desc.logId()).isEqualTo("log-test@3.1.4");
         }
     }
 }

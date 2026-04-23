@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("RedisKernelConfigResolver [GH-90000]")
+@DisplayName("RedisKernelConfigResolver")
 class RedisKernelConfigResolverTest {
 
     private static final class InMemoryDistributedCachePort implements DistributedCachePort<String, Object> {
@@ -66,7 +66,7 @@ class RedisKernelConfigResolverTest {
     }
 
     @Test
-    @DisplayName("resolves tenant override first [GH-90000]")
+    @DisplayName("resolves tenant override first")
     void resolvesTenantOverride() { // GH-90000
         resolver.putTenantOverride("tenant-1", "feature.flag", true).toCompletableFuture().join(); // GH-90000
         Boolean value = resolver.resolve("feature.flag", Boolean.class, tenant); // GH-90000
@@ -74,7 +74,7 @@ class RedisKernelConfigResolverTest {
     }
 
     @Test
-    @DisplayName("falls back to kernel default [GH-90000]")
+    @DisplayName("falls back to kernel default")
     void fallsBackToDefault() { // GH-90000
         resolver.setKernelDefault("risk.threshold", 0.9d); // GH-90000
         Double threshold = resolver.resolve("risk.threshold", Double.class, tenant); // GH-90000
@@ -82,7 +82,7 @@ class RedisKernelConfigResolverTest {
     }
 
     @Test
-    @DisplayName("returns optional empty when key missing [GH-90000]")
+    @DisplayName("returns optional empty when key missing")
     void optionalEmpty() { // GH-90000
         Optional<String> missing = resolver.resolveOptional("missing.key", String.class, tenant); // GH-90000
         assertTrue(missing.isEmpty()); // GH-90000

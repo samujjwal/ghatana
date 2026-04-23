@@ -14,52 +14,52 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-@DisplayName("AiQualityTelemetry [GH-90000]")
+@DisplayName("AiQualityTelemetry")
 class AiQualityTelemetryTest {
 
     @Test
-    @DisplayName("recordCompletion records token, request, and estimated cost metrics [GH-90000]")
+    @DisplayName("recordCompletion records token, request, and estimated cost metrics")
     void shouldRecordCompletionTelemetry() { // GH-90000
         MetricsCollector metrics = mock(MetricsCollector.class); // GH-90000
         CompletionResult result = CompletionResult.builder() // GH-90000
-                .text("Generated response with enough detail for confidence scoring. [GH-90000]")
+                .text("Generated response with enough detail for confidence scoring.")
                 .promptTokens(300) // GH-90000
                 .completionTokens(120) // GH-90000
                 .tokensUsed(420) // GH-90000
-                .finishReason("stop [GH-90000]")
-                .modelUsed("gpt-4o [GH-90000]")
+                .finishReason("stop")
+                .modelUsed("gpt-4o")
                 .build(); // GH-90000
 
         AiQualityTelemetry.recordCompletion(metrics, "yappc.ai.test", result, Map.of("tenant", "t-1")); // GH-90000
 
-        verify(metrics).incrementCounter(eq("yappc.ai.test.request [GH-90000]"), anyMap());
-        verify(metrics).increment(eq("yappc.ai.test.tokens.total [GH-90000]"), eq(420.0), anyMap());
-        verify(metrics).increment(eq("yappc.ai.test.tokens.prompt [GH-90000]"), eq(300.0), anyMap());
-        verify(metrics).increment(eq("yappc.ai.test.tokens.completion [GH-90000]"), eq(120.0), anyMap());
-        verify(metrics).increment(eq("yappc.ai.test.cost.estimated_usd [GH-90000]"), eq(0.0033), anyMap());
+        verify(metrics).incrementCounter(eq("yappc.ai.test.request"), anyMap());
+        verify(metrics).increment(eq("yappc.ai.test.tokens.total"), eq(420.0), anyMap());
+        verify(metrics).increment(eq("yappc.ai.test.tokens.prompt"), eq(300.0), anyMap());
+        verify(metrics).increment(eq("yappc.ai.test.tokens.completion"), eq(120.0), anyMap());
+        verify(metrics).increment(eq("yappc.ai.test.cost.estimated_usd"), eq(0.0033), anyMap());
     }
 
     @Test
-    @DisplayName("recordFallback tags error type and fallback flag [GH-90000]")
+    @DisplayName("recordFallback tags error type and fallback flag")
     void shouldRecordFallbackTelemetry() { // GH-90000
         MetricsCollector metrics = mock(MetricsCollector.class); // GH-90000
 
         AiQualityTelemetry.recordFallback( // GH-90000
                 metrics,
                 "yappc.ai.intent.capture",
-                new IllegalStateException("failed [GH-90000]"),
+                new IllegalStateException("failed"),
                 Map.of("tenant", "t-1")); // GH-90000
 
-        verify(metrics).incrementCounter(eq("yappc.ai.intent.capture.fallback [GH-90000]"), anyMap());
+        verify(metrics).incrementCounter(eq("yappc.ai.intent.capture.fallback"), anyMap());
     }
 
     @Test
-    @DisplayName("estimateConfidence returns bounded score [GH-90000]")
+    @DisplayName("estimateConfidence returns bounded score")
     void shouldEstimateBoundedConfidence() { // GH-90000
         CompletionResult result = CompletionResult.builder() // GH-90000
-                .text("This is a sufficiently detailed response to produce non-trivial confidence score. [GH-90000]")
+                .text("This is a sufficiently detailed response to produce non-trivial confidence score.")
                 .tokensUsed(100) // GH-90000
-                .finishReason("stop [GH-90000]")
+                .finishReason("stop")
                 .build(); // GH-90000
 
         double score = AiQualityTelemetry.estimateConfidence(result); // GH-90000
@@ -68,10 +68,10 @@ class AiQualityTelemetryTest {
     }
 
     @Test
-    @DisplayName("estimateCostUsd returns zero for local/unknown models [GH-90000]")
+    @DisplayName("estimateCostUsd returns zero for local/unknown models")
     void shouldEstimateZeroCostForLocalModel() { // GH-90000
         CompletionResult result = CompletionResult.builder() // GH-90000
-                .modelUsed("llama3.2 [GH-90000]")
+                .modelUsed("llama3.2")
                 .promptTokens(1000) // GH-90000
                 .completionTokens(1000) // GH-90000
                 .build(); // GH-90000

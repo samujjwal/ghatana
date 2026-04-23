@@ -16,13 +16,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("EntityExtractor Tests [GH-90000]")
+@DisplayName("EntityExtractor Tests")
 class EntityExtractorTest extends EventloopTestBase {
 
   @Mock private YAPPCAIService aiService;
 
   @Test
-  @DisplayName("extract parses structured AI entities and relations [GH-90000]")
+  @DisplayName("extract parses structured AI entities and relations")
   void extractParsesStructuredAiEntitiesAndRelations() { // GH-90000
     when(aiService.reason(anyString(), anyMap())) // GH-90000
         .thenReturn( // GH-90000
@@ -35,19 +35,19 @@ class EntityExtractorTest extends EventloopTestBase {
         runPromise(() -> extractor.extract("billing content", "code")); // GH-90000
 
     assertThat(entities).singleElement().satisfies(entity -> { // GH-90000
-      assertThat(entity.name()).isEqualTo("BillingService [GH-90000]");
+      assertThat(entity.name()).isEqualTo("BillingService");
       assertThat(entity.type()).isEqualTo(EntityExtractor.EntityType.CODE_MODULE); // GH-90000
       assertThat(entity.relations()).containsExactly(new EntityExtractor.ExtractedRelation("InvoiceRequirement", "IMPLEMENTS")); // GH-90000
     });
   }
 
   @Test
-  @DisplayName("extract returns empty list for blank null malformed and non array payloads [GH-90000]")
+  @DisplayName("extract returns empty list for blank null malformed and non array payloads")
   void extractReturnsEmptyListForInvalidPayloads() { // GH-90000
     when(aiService.reason(anyString(), anyMap())) // GH-90000
-        .thenReturn(Promise.of("  [GH-90000]"))
+        .thenReturn(Promise.of(" "))
         .thenReturn(Promise.of(null)) // GH-90000
-        .thenReturn(Promise.of("not-json [GH-90000]"))
+        .thenReturn(Promise.of("not-json"))
         .thenReturn(Promise.of("{\"name\":\"not-array\"}")); // GH-90000
 
     EntityExtractor extractor = new EntityExtractor(aiService); // GH-90000
@@ -59,7 +59,7 @@ class EntityExtractorTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("extract defaults invalid types missing fields and non array relations [GH-90000]")
+  @DisplayName("extract defaults invalid types missing fields and non array relations")
   void extractDefaultsInvalidTypesMissingFieldsAndNonArrayRelations() { // GH-90000
     when(aiService.reason(anyString(), anyMap())) // GH-90000
         .thenReturn(Promise.of("[{\"name\":null,\"type\":\"mystery\",\"description\":null,\"relations\":[{\"target\":null,\"type\":null}]}]")); // GH-90000
@@ -70,15 +70,15 @@ class EntityExtractorTest extends EventloopTestBase {
         runPromise(() -> extractor.extract("text", "decision")); // GH-90000
 
     assertThat(entities).singleElement().satisfies(entity -> { // GH-90000
-      assertThat(entity.name()).isEqualTo("Unnamed entity [GH-90000]");
+      assertThat(entity.name()).isEqualTo("Unnamed entity");
       assertThat(entity.type()).isEqualTo(EntityExtractor.EntityType.CONCEPT); // GH-90000
-      assertThat(entity.description()).isEqualTo("Unnamed entity [GH-90000]");
+      assertThat(entity.description()).isEqualTo("Unnamed entity");
       assertThat(entity.relations()).containsExactly(new EntityExtractor.ExtractedRelation("unknown-target", "USES")); // GH-90000
     });
   }
 
   @Test
-  @DisplayName("extract falls back for blank string fields [GH-90000]")
+  @DisplayName("extract falls back for blank string fields")
   void extractFallsBackForBlankStringFields() { // GH-90000
     when(aiService.reason(anyString(), anyMap())) // GH-90000
         .thenReturn(Promise.of("[{\"name\":\"   \",\"type\":\"concept\",\"description\":\"\",\"relations\":[{\"target\":\"\",\"type\":\"\"}]}]")); // GH-90000
@@ -89,14 +89,14 @@ class EntityExtractorTest extends EventloopTestBase {
         runPromise(() -> extractor.extract("text", "decision")); // GH-90000
 
     assertThat(entities).singleElement().satisfies(entity -> { // GH-90000
-      assertThat(entity.name()).isEqualTo("Unnamed entity [GH-90000]");
-      assertThat(entity.description()).isEqualTo("Unnamed entity [GH-90000]");
+      assertThat(entity.name()).isEqualTo("Unnamed entity");
+      assertThat(entity.description()).isEqualTo("Unnamed entity");
       assertThat(entity.relations()).containsExactly(new EntityExtractor.ExtractedRelation("unknown-target", "USES")); // GH-90000
     });
   }
 
   @Test
-  @DisplayName("extract falls back for missing fields and non array relations [GH-90000]")
+  @DisplayName("extract falls back for missing fields and non array relations")
   void extractFallsBackForMissingFieldsAndNonArrayRelations() { // GH-90000
     when(aiService.reason(anyString(), anyMap())) // GH-90000
         .thenReturn(Promise.of("[{\"type\":\"CONCEPT\",\"relations\":{}}]")); // GH-90000
@@ -107,23 +107,23 @@ class EntityExtractorTest extends EventloopTestBase {
         runPromise(() -> extractor.extract("text", "decision")); // GH-90000
 
     assertThat(entities).singleElement().satisfies(entity -> { // GH-90000
-      assertThat(entity.name()).isEqualTo("Unnamed entity [GH-90000]");
-      assertThat(entity.description()).isEqualTo("Unnamed entity [GH-90000]");
+      assertThat(entity.name()).isEqualTo("Unnamed entity");
+      assertThat(entity.description()).isEqualTo("Unnamed entity");
       assertThat(entity.relations()).isEmpty(); // GH-90000
     });
   }
 
   @Test
-  @DisplayName("records normalize null values [GH-90000]")
+  @DisplayName("records normalize null values")
   void recordsNormalizeNullValues() { // GH-90000
     EntityExtractor.ExtractedRelation relation = new EntityExtractor.ExtractedRelation(null, null); // GH-90000
     EntityExtractor.ExtractedEntity entity = new EntityExtractor.ExtractedEntity(null, null, null, null); // GH-90000
 
-    assertThat(relation.target()).isEqualTo("unknown-target [GH-90000]");
-    assertThat(relation.type()).isEqualTo("USES [GH-90000]");
-    assertThat(entity.name()).isEqualTo("Unnamed entity [GH-90000]");
+    assertThat(relation.target()).isEqualTo("unknown-target");
+    assertThat(relation.type()).isEqualTo("USES");
+    assertThat(entity.name()).isEqualTo("Unnamed entity");
     assertThat(entity.type()).isEqualTo(EntityExtractor.EntityType.CONCEPT); // GH-90000
-    assertThat(entity.description()).isEqualTo("Unnamed entity [GH-90000]");
+    assertThat(entity.description()).isEqualTo("Unnamed entity");
     assertThat(entity.relations()).isEmpty(); // GH-90000
   }
 }

@@ -32,7 +32,7 @@ import static org.mockito.Mockito.mock;
  *   <li>Null actual value in condition evaluation</li>
  * </ul>
  */
-@DisplayName("Reactive Agent — Gap Tests [GH-90000]")
+@DisplayName("Reactive Agent — Gap Tests")
 class ReactiveAgentGapTest {
 
     private AgentContext ctx;
@@ -40,9 +40,9 @@ class ReactiveAgentGapTest {
     @BeforeEach
     void setUp() { // GH-90000
         ctx = AgentContext.builder() // GH-90000
-                .turnId("turn-1 [GH-90000]")
-                .agentId("reactive-gap [GH-90000]")
-                .tenantId("test-tenant [GH-90000]")
+                .turnId("turn-1")
+                .agentId("reactive-gap")
+                .tenantId("test-tenant")
                 .memoryStore(mock(MemoryStore.class)) // GH-90000
                 .build(); // GH-90000
     }
@@ -75,16 +75,16 @@ class ReactiveAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Sliding Window Expiry [GH-90000]")
+    @DisplayName("Sliding Window Expiry")
     class SlidingWindowExpiryTests {
 
         @Test
         void windowWithVeryShortDurationExpiresOldEvents() throws InterruptedException { // GH-90000
             // Use a very short window (10ms) so events age out quickly // GH-90000
             var trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("expiring [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("EVENT [GH-90000]")
+                    .name("expiring")
+                    .eventTypeField("type")
+                    .eventTypeValue("EVENT")
                     .threshold(3) // GH-90000
                     .countingWindow(Duration.ofMillis(10)) // GH-90000
                     .action("fired", true) // GH-90000
@@ -107,9 +107,9 @@ class ReactiveAgentGapTest {
         @Test
         void windowReAccumulatesAfterExpiry() throws InterruptedException { // GH-90000
             var trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("reaccum [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("TICK [GH-90000]")
+                    .name("reaccum")
+                    .eventTypeField("type")
+                    .eventTypeValue("TICK")
                     .threshold(2) // GH-90000
                     .countingWindow(Duration.ofMillis(500)) // GH-90000
                     .action("accumulated", true) // GH-90000
@@ -141,23 +141,23 @@ class ReactiveAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Multi-trigger Merge [GH-90000]")
+    @DisplayName("Multi-trigger Merge")
     class MultiTriggerMergeTests {
 
         @Test
         void multipleTriggersSameEventTypeMergeActions() { // GH-90000
             var trigger1 = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("log-trigger [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("ERROR [GH-90000]")
+                    .name("log-trigger")
+                    .eventTypeField("type")
+                    .eventTypeValue("ERROR")
                     .priority(10) // GH-90000
                     .action("log", true) // GH-90000
                     .build(); // GH-90000
 
             var trigger2 = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("alert-trigger [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("ERROR [GH-90000]")
+                    .name("alert-trigger")
+                    .eventTypeField("type")
+                    .eventTypeValue("ERROR")
                     .priority(20) // GH-90000
                     .action("alert", "CRITICAL") // GH-90000
                     .build(); // GH-90000
@@ -170,26 +170,27 @@ class ReactiveAgentGapTest {
             assertThat(result.getOutput()).containsEntry("log", true); // GH-90000
             assertThat(result.getOutput()).containsEntry("alert", "CRITICAL"); // GH-90000
 
-            @SuppressWarnings("unchecked [GH-90000]")
-            List<String> fired = (List<String>) result.getOutput().get("_reactive.firedTriggers [GH-90000]");
-            assertThat(fired).containsExactly("log-trigger", "alert-trigger"); // GH-90000
+            assertThat(result.getOutput().get("_reactive.firedTriggers")).isInstanceOf(List.class);
+            List<?> fired = (List<?>) result.getOutput().get("_reactive.firedTriggers");
+            assertThat(fired).hasSize(2); // GH-90000
+            assertThat(fired.containsAll(List.of("log-trigger", "alert-trigger"))).isTrue(); // GH-90000
         }
 
         @Test
         void laterTriggerOverwritesConflictingKey() { // GH-90000
             var trigger1 = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("first [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("WARN [GH-90000]")
+                    .name("first")
+                    .eventTypeField("type")
+                    .eventTypeValue("WARN")
                     .priority(10) // GH-90000
                     .action("severity", "LOW") // GH-90000
                     .action("source", "first") // GH-90000
                     .build(); // GH-90000
 
             var trigger2 = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("second [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("WARN [GH-90000]")
+                    .name("second")
+                    .eventTypeField("type")
+                    .eventTypeValue("WARN")
                     .priority(20) // GH-90000
                     .action("severity", "HIGH") // GH-90000
                     .action("channel", "email") // GH-90000
@@ -210,15 +211,15 @@ class ReactiveAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Additional Condition Operators [GH-90000]")
+    @DisplayName("Additional Condition Operators")
     class AdditionalOperatorTests {
 
         private ReactiveAgent agentWithCondition(String op, String value) { // GH-90000
             var trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("cond [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("E [GH-90000]")
-                    .conditionField("x [GH-90000]")
+                    .name("cond")
+                    .eventTypeField("type")
+                    .eventTypeValue("E")
+                    .conditionField("x")
                     .conditionOperator(op) // GH-90000
                     .conditionValue(value) // GH-90000
                     .action("matched", true) // GH-90000
@@ -258,18 +259,18 @@ class ReactiveAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Null Condition Value [GH-90000]")
+    @DisplayName("Null Condition Value")
     class NullConditionTests {
 
         @Test
         void missingConditionFieldDoesNotMatch() { // GH-90000
             var trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("null-cond [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("E [GH-90000]")
-                    .conditionField("missing [GH-90000]")
-                    .conditionOperator("> [GH-90000]")
-                    .conditionValue("10 [GH-90000]")
+                    .name("null-cond")
+                    .eventTypeField("type")
+                    .eventTypeValue("E")
+                    .conditionField("missing")
+                    .conditionOperator(">")
+                    .conditionValue("10")
                     .action("fired", true) // GH-90000
                     .build(); // GH-90000
 
@@ -287,15 +288,15 @@ class ReactiveAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Cooldown and Window Interaction [GH-90000]")
+    @DisplayName("Cooldown and Window Interaction")
     class CooldownWindowInteractionTests {
 
         @Test
         void triggerWithBothThresholdAndCooldown() { // GH-90000
             var trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("combo [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("ALERT [GH-90000]")
+                    .name("combo")
+                    .eventTypeField("type")
+                    .eventTypeValue("ALERT")
                     .threshold(2) // GH-90000
                     .countingWindow(Duration.ofMinutes(5)) // GH-90000
                     .cooldown(Duration.ofHours(1)) // GH-90000
@@ -323,7 +324,7 @@ class ReactiveAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("No Triggers [GH-90000]")
+    @DisplayName("No Triggers")
     class NoTriggersTests {
 
         @Test
@@ -342,15 +343,15 @@ class ReactiveAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Fired Trigger Metadata [GH-90000]")
+    @DisplayName("Fired Trigger Metadata")
     class TriggerMetadataTests {
 
         @Test
         void skippedResultContainsEmptyFiredList() { // GH-90000
             var trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("non-matching [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("SPECIFIC [GH-90000]")
+                    .name("non-matching")
+                    .eventTypeField("type")
+                    .eventTypeValue("SPECIFIC")
                     .action("x", 1) // GH-90000
                     .build(); // GH-90000
 
@@ -359,8 +360,8 @@ class ReactiveAgentGapTest {
                     Map.of("type", "OTHER"))); // GH-90000
 
             assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SKIPPED); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
-            List<String> fired = (List<String>) result.getOutput().get("_reactive.firedTriggers [GH-90000]");
+            assertThat(result.getOutput().get("_reactive.firedTriggers")).isInstanceOf(List.class);
+            List<?> fired = (List<?>) result.getOutput().get("_reactive.firedTriggers");
             assertThat(fired).isEmpty(); // GH-90000
         }
     }

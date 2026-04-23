@@ -38,7 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer   product
  * @doc.pattern Test, EventSourcing
  */
-@DisplayName("PipelineAuditabilityTest [GH-90000]")
+@DisplayName("PipelineAuditabilityTest")
 class PipelineAuditabilityTest {
 
     private static final String TENANT = "audit-tenant";
@@ -57,11 +57,11 @@ class PipelineAuditabilityTest {
     // ── Audit trail completeness ──────────────────────────────────────────────
 
     @Nested
-    @DisplayName("audit trail [GH-90000]")
+    @DisplayName("audit trail")
     class AuditTrailTests {
 
         @Test
-        @DisplayName("run-started event is persisted with workflowId and executionId [GH-90000]")
+        @DisplayName("run-started event is persisted with workflowId and executionId")
         void runStartedEventIsPersisted() { // GH-90000
             String runId = repository.startRun( // GH-90000
                     TENANT, WORKFLOW_ID, EXECUTION_ID, Map.of("source", "audit-test") // GH-90000
@@ -78,7 +78,7 @@ class PipelineAuditabilityTest {
         }
 
         @Test
-        @DisplayName("step-completed event is persisted for each successful step [GH-90000]")
+        @DisplayName("step-completed event is persisted for each successful step")
         void stepCompletedEventIsPersisted() { // GH-90000
             String runId = repository.startRun(TENANT, WORKFLOW_ID, EXECUTION_ID, null).getResult(); // GH-90000
 
@@ -89,12 +89,12 @@ class PipelineAuditabilityTest {
             assertThat(events).hasSize(2); // GH-90000
 
             List<String> payloads = events.stream().map(PipelineAuditabilityTest::payloadString).toList(); // GH-90000
-            assertThat(payloads).anyMatch(p -> p.contains("validate-schema [GH-90000]"));
-            assertThat(payloads).anyMatch(p -> p.contains("transform-data [GH-90000]"));
+            assertThat(payloads).anyMatch(p -> p.contains("validate-schema"));
+            assertThat(payloads).anyMatch(p -> p.contains("transform-data"));
         }
 
         @Test
-        @DisplayName("step-failed event is persisted with error message [GH-90000]")
+        @DisplayName("step-failed event is persisted with error message")
         void stepFailedEventIsPersisted() { // GH-90000
             String runId = repository.startRun(TENANT, WORKFLOW_ID, EXECUTION_ID, null).getResult(); // GH-90000
 
@@ -105,12 +105,12 @@ class PipelineAuditabilityTest {
 
             String payload = payloadString(events.getFirst()); // GH-90000
             assertThat(payload).contains("\"stepName\":\"load-data\""); // GH-90000
-            assertThat(payload).contains("Connection refused [GH-90000]");
+            assertThat(payload).contains("Connection refused");
             assertThat(payload).contains("\"failedAt\":"); // GH-90000
         }
 
         @Test
-        @DisplayName("run-finished event is persisted with terminal status [GH-90000]")
+        @DisplayName("run-finished event is persisted with terminal status")
         void runFinishedEventIsPersisted() { // GH-90000
             String runId = repository.startRun(TENANT, WORKFLOW_ID, EXECUTION_ID, null).getResult(); // GH-90000
             repository.completeStep(TENANT, runId, "step-1", null).getResult(); // GH-90000
@@ -125,7 +125,7 @@ class PipelineAuditabilityTest {
         }
 
         @Test
-        @DisplayName("full lifecycle produces all four event types in order [GH-90000]")
+        @DisplayName("full lifecycle produces all four event types in order")
         void fullLifecycleProducesAllEventTypes() { // GH-90000
             String runId = repository.startRun(TENANT, WORKFLOW_ID, EXECUTION_ID, null).getResult(); // GH-90000
             repository.completeStep(TENANT, runId, "ingest", Map.of("rows", 500)).getResult(); // GH-90000
@@ -142,11 +142,11 @@ class PipelineAuditabilityTest {
     // ── Execution logging ─────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("execution logging [GH-90000]")
+    @DisplayName("execution logging")
     class ExecutionLoggingTests {
 
         @Test
-        @DisplayName("run status reflects completed step count from the audit log [GH-90000]")
+        @DisplayName("run status reflects completed step count from the audit log")
         void runStatusReflectsCompletedStepCount() { // GH-90000
             String runId = repository.startRun(TENANT, WORKFLOW_ID, EXECUTION_ID, null).getResult(); // GH-90000
             repository.completeStep(TENANT, runId, "phase-1", null).getResult(); // GH-90000
@@ -162,19 +162,19 @@ class PipelineAuditabilityTest {
         }
 
         @Test
-        @DisplayName("step completion events carry optional output metadata [GH-90000]")
+        @DisplayName("step completion events carry optional output metadata")
         void stepCompletionCarriesOutputMetadata() { // GH-90000
             String runId = repository.startRun(TENANT, WORKFLOW_ID, EXECUTION_ID, null).getResult(); // GH-90000
             repository.completeStep(TENANT, runId, "aggregate", // GH-90000
                     Map.of("outputRows", 12_000, "partitions", 4)).getResult(); // GH-90000
 
             String payload = payloadString(store.entriesOfType(WorkflowRunRepository.EVENT_STEP_COMPLETED).getFirst()); // GH-90000
-            assertThat(payload).contains("outputRows [GH-90000]");
-            assertThat(payload).contains("partitions [GH-90000]");
+            assertThat(payload).contains("outputRows");
+            assertThat(payload).contains("partitions");
         }
 
         @Test
-        @DisplayName("events from different runs are isolated in the audit log [GH-90000]")
+        @DisplayName("events from different runs are isolated in the audit log")
         void eventsFromDifferentRunsAreIsolated() { // GH-90000
             String runA = repository.startRun(TENANT, "wf-A", "exec-A", null).getResult(); // GH-90000
             String runB = repository.startRun(TENANT, "wf-B", "exec-B", null).getResult(); // GH-90000
@@ -196,11 +196,11 @@ class PipelineAuditabilityTest {
     // ── Error logging ─────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("error logging [GH-90000]")
+    @DisplayName("error logging")
     class ErrorLoggingTests {
 
         @Test
-        @DisplayName("run status reflects failed step count from the audit log [GH-90000]")
+        @DisplayName("run status reflects failed step count from the audit log")
         void runStatusReflectsFailedStepCount() { // GH-90000
             String runId = repository.startRun(TENANT, WORKFLOW_ID, EXECUTION_ID, null).getResult(); // GH-90000
             repository.failStep(TENANT, runId, "validate", "Schema mismatch").getResult(); // GH-90000
@@ -215,7 +215,7 @@ class PipelineAuditabilityTest {
         }
 
         @Test
-        @DisplayName("failed run reaches FAILED terminal state [GH-90000]")
+        @DisplayName("failed run reaches FAILED terminal state")
         void failedRunReachesFailedTerminalState() { // GH-90000
             String runId = repository.startRun(TENANT, WORKFLOW_ID, EXECUTION_ID, null).getResult(); // GH-90000
             repository.failStep(TENANT, runId, "critical-step", "Fatal error").getResult(); // GH-90000
@@ -225,11 +225,11 @@ class PipelineAuditabilityTest {
                     repository.getRunStatus(TENANT, runId).getResult(); // GH-90000
 
             assertThat(status).isPresent(); // GH-90000
-            assertThat(status.get().terminalStatus()).isEqualTo("FAILED [GH-90000]");
+            assertThat(status.get().terminalStatus()).isEqualTo("FAILED");
         }
 
         @Test
-        @DisplayName("error message is preserved verbatim in the step-failed event [GH-90000]")
+        @DisplayName("error message is preserved verbatim in the step-failed event")
         void errorMessagePreservedVerbatim() { // GH-90000
             String errorMessage = "java.lang.RuntimeException: unexpected null at row 42";
             String runId = repository.startRun(TENANT, WORKFLOW_ID, EXECUTION_ID, null).getResult(); // GH-90000
@@ -243,11 +243,11 @@ class PipelineAuditabilityTest {
     // ── Performance logging ───────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("performance logging [GH-90000]")
+    @DisplayName("performance logging")
     class PerformanceLoggingTests {
 
         @Test
-        @DisplayName("run-finished summary carries performance metadata [GH-90000]")
+        @DisplayName("run-finished summary carries performance metadata")
         void runFinishedSummaryCarriesPerformanceMetadata() { // GH-90000
             String runId = repository.startRun(TENANT, WORKFLOW_ID, EXECUTION_ID, null).getResult(); // GH-90000
             repository.completeStep(TENANT, runId, "fast-step", null).getResult(); // GH-90000
@@ -255,12 +255,12 @@ class PipelineAuditabilityTest {
                     Map.of("totalDurationMs", 1_850L, "stepCount", 1, "throughput", "12k rows/s")).getResult(); // GH-90000
 
             String payload = payloadString(store.entriesOfType(WorkflowRunRepository.EVENT_RUN_FINISHED).getFirst()); // GH-90000
-            assertThat(payload).contains("totalDurationMs [GH-90000]");
-            assertThat(payload).contains("throughput [GH-90000]");
+            assertThat(payload).contains("totalDurationMs");
+            assertThat(payload).contains("throughput");
         }
 
         @Test
-        @DisplayName("all events carry an ISO timestamp for latency measurement [GH-90000]")
+        @DisplayName("all events carry an ISO timestamp for latency measurement")
         void allEventsCarryIsoTimestamp() { // GH-90000
             String runId = repository.startRun(TENANT, WORKFLOW_ID, EXECUTION_ID, null).getResult(); // GH-90000
             repository.completeStep(TENANT, runId, "timed-step", null).getResult(); // GH-90000
@@ -281,15 +281,15 @@ class PipelineAuditabilityTest {
         }
 
         @Test
-        @DisplayName("step output can carry row-count and duration for throughput analysis [GH-90000]")
+        @DisplayName("step output can carry row-count and duration for throughput analysis")
         void stepOutputCanCarryPerformanceCounters() { // GH-90000
             String runId = repository.startRun(TENANT, WORKFLOW_ID, EXECUTION_ID, null).getResult(); // GH-90000
             repository.completeStep(TENANT, runId, "batch-step", // GH-90000
                     Map.of("rowsProcessed", 50_000, "durationMs", 430)).getResult(); // GH-90000
 
             String payload = payloadString(store.entriesOfType(WorkflowRunRepository.EVENT_STEP_COMPLETED).getFirst()); // GH-90000
-            assertThat(payload).contains("rowsProcessed [GH-90000]");
-            assertThat(payload).contains("durationMs [GH-90000]");
+            assertThat(payload).contains("rowsProcessed");
+            assertThat(payload).contains("durationMs");
         }
     }
 

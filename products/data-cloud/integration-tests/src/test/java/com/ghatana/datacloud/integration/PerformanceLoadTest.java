@@ -43,12 +43,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@DisplayName("Performance and Load Tests [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("Performance and Load Tests")
+@Tag("integration")
 class PerformanceLoadTest {
 
     @Test
-    @DisplayName("Should handle sustained workload with high concurrency [GH-90000]")
+    @DisplayName("Should handle sustained workload with high concurrency")
     void shouldHandleSustainedWorkloadWithHighConcurrency() throws Exception { // GH-90000
         WorkloadSimulator simulator = new WorkloadSimulator(); // GH-90000
         PerformanceMetrics metrics = new PerformanceMetrics(); // GH-90000
@@ -93,7 +93,7 @@ class PerformanceLoadTest {
     }
 
     @Test
-    @DisplayName("Should maintain tenant isolation under high load [GH-90000]")
+    @DisplayName("Should maintain tenant isolation under high load")
     void shouldMaintainTenantIsolationUnderHighLoad() throws Exception { // GH-90000
         TenantIsolationTester tester = new TenantIsolationTester(); // GH-90000
         
@@ -110,7 +110,7 @@ class PerformanceLoadTest {
                     for (int i = 0; i < requestsPerTenant; i++) { // GH-90000
                         tester.writeData(tenant, "data-" + i); // GH-90000
                         String data = tester.readData(tenant); // GH-90000
-                        assertThat(data).startsWith("data- [GH-90000]");
+                        assertThat(data).startsWith("data-");
                     }
                 } finally {
                     latch.countDown(); // GH-90000
@@ -129,13 +129,13 @@ class PerformanceLoadTest {
             
             // Verify no data from other tenants
             for (String data : tenantData) { // GH-90000
-                assertThat(data).startsWith("data- [GH-90000]");
+                assertThat(data).startsWith("data-");
             }
         }
     }
 
     @Test
-    @DisplayName("Should maintain response time SLAs under load [GH-90000]")
+    @DisplayName("Should maintain response time SLAs under load")
     void shouldMaintainResponseTimeSLAsUnderLoad() throws Exception { // GH-90000
         WorkloadSimulator simulator = new WorkloadSimulator(); // GH-90000
         PerformanceMetrics metrics = new PerformanceMetrics(); // GH-90000
@@ -150,7 +150,7 @@ class PerformanceLoadTest {
             executor.submit(() -> { // GH-90000
                 while (shouldContinue.get()) { // GH-90000
                     Instant requestStart = Instant.now(); // GH-90000
-                    simulator.processRequest("tenant-test [GH-90000]");
+                    simulator.processRequest("tenant-test");
                     Instant requestEnd = Instant.now(); // GH-90000
                     
                     metrics.recordRequest(Duration.between(requestStart, requestEnd).toMillis()); // GH-90000
@@ -179,7 +179,7 @@ class PerformanceLoadTest {
     }
 
     @Test
-    @DisplayName("Should handle memory pressure without degradation [GH-90000]")
+    @DisplayName("Should handle memory pressure without degradation")
     void shouldHandleMemoryPressureWithoutDegradation() throws Exception { // GH-90000
         MemoryPressureTester tester = new MemoryPressureTester(); // GH-90000
         PerformanceMetrics metrics = new PerformanceMetrics(); // GH-90000
@@ -211,7 +211,7 @@ class PerformanceLoadTest {
     }
 
     @Test
-    @DisplayName("Should handle connection pool exhaustion gracefully [GH-90000]")
+    @DisplayName("Should handle connection pool exhaustion gracefully")
     void shouldHandleConnectionPoolExhaustionGracefully() throws Exception { // GH-90000
         ConnectionPoolSimulator pool = new ConnectionPoolSimulator(10); // Pool size 10 // GH-90000
         PerformanceMetrics metrics = new PerformanceMetrics(); // GH-90000
@@ -252,7 +252,7 @@ class PerformanceLoadTest {
     }
 
     @Test
-    @DisplayName("Should enforce rate limits under load [GH-90000]")
+    @DisplayName("Should enforce rate limits under load")
     void shouldEnforceRateLimitsUnderLoad() throws Exception { // GH-90000
         RateLimitEnforcer enforcer = new RateLimitEnforcer(100, Duration.ofSeconds(1)); // 100 requests per second // GH-90000
         
@@ -291,7 +291,7 @@ class PerformanceLoadTest {
     }
 
     @Test
-    @DisplayName("Should measure throughput under sustained load [GH-90000]")
+    @DisplayName("Should measure throughput under sustained load")
     void shouldMeasureThroughputUnderSustainedLoad() throws Exception { // GH-90000
         WorkloadSimulator simulator = new WorkloadSimulator(); // GH-90000
         
@@ -305,7 +305,7 @@ class PerformanceLoadTest {
         for (int i = 0; i < concurrency; i++) { // GH-90000
             executor.submit(() -> { // GH-90000
                 while (shouldContinue.get()) { // GH-90000
-                    simulator.processRequest("tenant-test [GH-90000]");
+                    simulator.processRequest("tenant-test");
                     requestCount.incrementAndGet(); // GH-90000
                     
                     try {
@@ -330,7 +330,7 @@ class PerformanceLoadTest {
     }
 
     @Test
-    @DisplayName("Should maintain data consistency under concurrent writes [GH-90000]")
+    @DisplayName("Should maintain data consistency under concurrent writes")
     void shouldMaintainDataConsistencyUnderConcurrentWrites() throws Exception { // GH-90000
         ConcurrentDataStore store = new ConcurrentDataStore(); // GH-90000
         
@@ -357,7 +357,7 @@ class PerformanceLoadTest {
         
         int totalWrites = concurrency * writesPerThread;
         assertThat(store.getWriteCount()).isEqualTo(totalWrites); // GH-90000
-        assertThat(store.getReadCount("key-0 [GH-90000]")).isEqualTo(1); // Each key written once
+        assertThat(store.getReadCount("key-0")).isEqualTo(1); // Each key written once
     }
 
     // Helper classes for performance and load testing

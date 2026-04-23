@@ -25,13 +25,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("KGUpdatePipeline Tests [GH-90000]")
+@DisplayName("KGUpdatePipeline Tests")
 class KGUpdatePipelineTest extends EventloopTestBase {
 
   @Mock private EmbeddingService embeddingService;
 
   @Test
-  @DisplayName("process converts an event into persisted nodes and edges [GH-90000]")
+  @DisplayName("process converts an event into persisted nodes and edges")
   void processConvertsAnEventIntoPersistedNodesAndEdges() { // GH-90000
     when(embeddingService.createEmbedding(any())) // GH-90000
         .thenReturn(Promise.of(new com.ghatana.ai.embedding.EmbeddingResult("text", new float[] {0.1f, 0.2f}, "model"))) // GH-90000
@@ -41,7 +41,7 @@ class KGUpdatePipelineTest extends EventloopTestBase {
     RecordingEdgeWriter edgeWriter = new RecordingEdgeWriter(); // GH-90000
     KGUpdatePipeline pipeline =
         new KGUpdatePipeline( // GH-90000
-            event -> Promise.of("Billing service implements invoice requirement [GH-90000]"),
+            event -> Promise.of("Billing service implements invoice requirement"),
             extractor(List.of( // GH-90000
                 new ExtractedEntity( // GH-90000
                     "Billing Service",
@@ -70,7 +70,7 @@ class KGUpdatePipelineTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("process falls back unknown relation types and skips missing targets [GH-90000]")
+  @DisplayName("process falls back unknown relation types and skips missing targets")
   void processFallsBackUnknownRelationTypesAndSkipsMissingTargets() { // GH-90000
     when(embeddingService.createEmbedding(any())) // GH-90000
         .thenReturn(Promise.of(new com.ghatana.ai.embedding.EmbeddingResult("text", new float[] {1.0f}, "model"))); // GH-90000
@@ -79,7 +79,7 @@ class KGUpdatePipelineTest extends EventloopTestBase {
     RecordingEdgeWriter edgeWriter = new RecordingEdgeWriter(); // GH-90000
     KGUpdatePipeline pipeline =
         new KGUpdatePipeline( // GH-90000
-            event -> Promise.of("single concept [GH-90000]"),
+            event -> Promise.of("single concept"),
             extractor(List.of( // GH-90000
                 new ExtractedEntity( // GH-90000
                     "Decision Note",
@@ -102,7 +102,7 @@ class KGUpdatePipelineTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("process handles concept entities and blank metadata values [GH-90000]")
+  @DisplayName("process handles concept entities and blank metadata values")
   void processHandlesConceptEntitiesAndBlankMetadataValues() { // GH-90000
     when(embeddingService.createEmbedding(any())) // GH-90000
         .thenReturn(Promise.of(new com.ghatana.ai.embedding.EmbeddingResult("text", new float[] {0.5f}, "model"))); // GH-90000
@@ -111,7 +111,7 @@ class KGUpdatePipelineTest extends EventloopTestBase {
     RecordingEdgeWriter edgeWriter = new RecordingEdgeWriter(); // GH-90000
     KGUpdatePipeline pipeline =
         new KGUpdatePipeline( // GH-90000
-            event -> Promise.of("concept [GH-90000]"),
+            event -> Promise.of("concept"),
             extractor(List.of(new ExtractedEntity("!!!", EntityType.CONCEPT, "Shared concept", List.of()))), // GH-90000
             new KGConflictResolver(), // GH-90000
             new EmbeddingGenerator(embeddingService, 1), // GH-90000
@@ -120,7 +120,7 @@ class KGUpdatePipelineTest extends EventloopTestBase {
 
     KGUpdatePipeline.KGUpdateResult result = runPromise(() -> pipeline.process(new BlankPayloadDomainEvent())); // GH-90000
 
-    assertThat(result.nodeIds()).containsExactly("tenant-a:concept:entity [GH-90000]");
+    assertThat(result.nodeIds()).containsExactly("tenant-a:concept:entity");
     assertThat(nodeWriter.savedNodes.getFirst().type()).isEqualTo(YAPPCGraphNode.YAPPCNodeType.DOCUMENT); // GH-90000
     assertThat(nodeWriter.savedNodes.getFirst().metadata().projectId()).isNull(); // GH-90000
     assertThat(nodeWriter.savedNodes.getFirst().metadata().workspaceId()).isNull(); // GH-90000
@@ -128,26 +128,26 @@ class KGUpdatePipelineTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("update result normalizes null values [GH-90000]")
+  @DisplayName("update result normalizes null values")
   void updateResultNormalizesNullValues() { // GH-90000
     KGUpdatePipeline.KGUpdateResult result = new KGUpdatePipeline.KGUpdateResult(null, -1, -2, null); // GH-90000
 
-    assertThat(result.eventId()).isEqualTo("unknown-event [GH-90000]");
+    assertThat(result.eventId()).isEqualTo("unknown-event");
     assertThat(result.nodesPersisted()).isZero(); // GH-90000
     assertThat(result.edgesPersisted()).isZero(); // GH-90000
     assertThat(result.nodeIds()).isEmpty(); // GH-90000
   }
 
   @Test
-  @DisplayName("embedded entity normalizes null values [GH-90000]")
+  @DisplayName("embedded entity normalizes null values")
   void embeddedEntityNormalizesNullValues() { // GH-90000
     KGUpdatePipeline.EmbeddedEntity entity = new KGUpdatePipeline.EmbeddedEntity(null, null, null, null, null, null); // GH-90000
 
-    assertThat(entity.name()).isEqualTo("Unnamed entity [GH-90000]");
+    assertThat(entity.name()).isEqualTo("Unnamed entity");
     assertThat(entity.type()).isEqualTo(EntityType.CONCEPT); // GH-90000
-    assertThat(entity.description()).isEqualTo("Unnamed entity [GH-90000]");
+    assertThat(entity.description()).isEqualTo("Unnamed entity");
     assertThat(entity.relations()).isEmpty(); // GH-90000
-    assertThat(entity.tenantId()).isEqualTo("unknown-tenant [GH-90000]");
+    assertThat(entity.tenantId()).isEqualTo("unknown-tenant");
     assertThat(entity.embedding()).isEmpty(); // GH-90000
   }
 

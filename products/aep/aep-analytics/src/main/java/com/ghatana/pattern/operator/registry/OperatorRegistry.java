@@ -52,7 +52,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p><b>Design Reference:</b>
  * This registry implements the Operator Catalog from WORLD_CLASS_DESIGN_MASTER.md.
  * See .github/copilot-instructions.md "Unified Operator Model" for operator integration.
- */
+  * @doc.type class
+ * @doc.purpose Provides operator registry functionality.
+ * @doc.layer product
+*/
 public class OperatorRegistry {
 
     private final Map<String, Operator> operators = new ConcurrentHashMap<>();

@@ -20,25 +20,25 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern UnitTest
  */
-@DisplayName("Reports UI Contract Tests [GH-90000]")
+@DisplayName("Reports UI Contract Tests")
 public class ReportsUiContractTest {
 
     @Nested
-    @DisplayName("ReportsListPageTests [GH-90000]")
+    @DisplayName("ReportsListPageTests")
     class ReportsListPageTests {
 
         @Test
-        @DisplayName("GET /reports: list with metadata [GH-90000]")
+        @DisplayName("GET /reports: list with metadata")
         void shouldReturnList() { // GH-90000
             Map<String, Object> response = getReportsList(); // GH-90000
             assertThat(response).containsKeys("items", "total", "limit", "offset"); // GH-90000
         }
 
         @Test
-        @DisplayName("report items: schema with title, type, schedule [GH-90000]")
+        @DisplayName("report items: schema with title, type, schedule")
         void shouldHaveSchema() { // GH-90000
             Map<String, Object> response = getReportsList(); // GH-90000
-            List<?> items = (List<?>) response.get("items [GH-90000]");
+            List<?> items = (List<?>) response.get("items");
 
             if (!items.isEmpty()) { // GH-90000
                 Map<String, ?> report = (Map<String, ?>) items.get(0); // GH-90000
@@ -47,116 +47,116 @@ public class ReportsUiContractTest {
         }
 
         @Test
-        @DisplayName("report pagination [GH-90000]")
+        @DisplayName("report pagination")
         void shouldPaginate() { // GH-90000
             Map<String, Object> response = getReportsList(); // GH-90000
-            assertThat(response.get("limit [GH-90000]")).isEqualTo(20);
+            assertThat(response.get("limit")).isEqualTo(20);
         }
 
         @Test
-        @DisplayName("report filtering: by type, owner, status [GH-90000]")
+        @DisplayName("report filtering: by type, owner, status")
         void shouldFilter() { // GH-90000
-            Map<String, Object> response = getFilteredReports("DAILY [GH-90000]");
-            assertThat(response).containsKey("filter [GH-90000]");
+            Map<String, Object> response = getFilteredReports("DAILY");
+            assertThat(response).containsKey("filter");
         }
 
         @Test
-        @DisplayName("report sorting: by date, frequency [GH-90000]")
+        @DisplayName("report sorting: by date, frequency")
         void shouldSort() { // GH-90000
             Map<String, Object> response = getSortedReports("lastGenerated", "desc"); // GH-90000
-            assertThat(response).containsKey("sortBy [GH-90000]");
+            assertThat(response).containsKey("sortBy");
         }
 
         @Test
-        @DisplayName("report tenant isolation [GH-90000]")
+        @DisplayName("report tenant isolation")
         void shouldIsolateTenant() { // GH-90000
-            Map<String, Object> t1 = getReportsForTenant("tenant-1 [GH-90000]");
-            assertThat(t1.get("tenantId [GH-90000]")).isEqualTo("tenant-1 [GH-90000]");
+            Map<String, Object> t1 = getReportsForTenant("tenant-1");
+            assertThat(t1.get("tenantId")).isEqualTo("tenant-1");
         }
 
         @Test
-        @DisplayName("report schedule types: DAILY, WEEKLY, MONTHLY, MANUAL [GH-90000]")
+        @DisplayName("report schedule types: DAILY, WEEKLY, MONTHLY, MANUAL")
         void shouldHaveValidSchedules() { // GH-90000
             Map<String, Object> response = getReportsList(); // GH-90000
-            List<?> items = (List<?>) response.get("items [GH-90000]");
+            List<?> items = (List<?>) response.get("items");
 
             if (!items.isEmpty()) { // GH-90000
                 Map<String, ?> report = (Map<String, ?>) items.get(0); // GH-90000
-                String schedule = report.get("schedule [GH-90000]").toString();
+                String schedule = report.get("schedule").toString();
                 assertThat(schedule).isIn("DAILY", "WEEKLY", "MONTHLY", "MANUAL"); // GH-90000
             }
         }
 
         @Test
-        @DisplayName("report recipients: email distribution list [GH-90000]")
+        @DisplayName("report recipients: email distribution list")
         void shouldIncludeRecipients() { // GH-90000
             Map<String, Object> response = getReportsList(); // GH-90000
-            List<?> items = (List<?>) response.get("items [GH-90000]");
+            List<?> items = (List<?>) response.get("items");
 
             if (!items.isEmpty()) { // GH-90000
                 Map<String, ?> report = (Map<String, ?>) items.get(0); // GH-90000
-                assertThat(report).containsKey("recipients [GH-90000]");
+                assertThat(report).containsKey("recipients");
             }
         }
     }
 
     @Nested
-    @DisplayName("ReportDetailPageTests [GH-90000]")
+    @DisplayName("ReportDetailPageTests")
     class ReportDetailPageTests {
 
         @Test
-        @DisplayName("GET /reports/{id}: detail with content [GH-90000]")
+        @DisplayName("GET /reports/{id}: detail with content")
         void shouldReturnDetail() { // GH-90000
-            Map<String, Object> response = getReportDetail("report-1 [GH-90000]");
+            Map<String, Object> response = getReportDetail("report-1");
             assertThat(response).containsKeys("id", "title", "sections", "generatedAt", "format"); // GH-90000
         }
 
         @Test
-        @DisplayName("report sections: charts, tables, metrics [GH-90000]")
+        @DisplayName("report sections: charts, tables, metrics")
         void shouldHaveSections() { // GH-90000
-            Map<String, Object> response = getReportDetail("report-1 [GH-90000]");
-            List<?> sections = (List<?>) response.get("sections [GH-90000]");
+            Map<String, Object> response = getReportDetail("report-1");
+            List<?> sections = (List<?>) response.get("sections");
 
             assertThat(sections).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("report formats: PDF, HTML, Excel, CSV [GH-90000]")
+        @DisplayName("report formats: PDF, HTML, Excel, CSV")
         void shouldHaveFormats() { // GH-90000
-            Map<String, Object> response = getReportDetail("report-1 [GH-90000]");
-            String format = response.get("format [GH-90000]").toString();
+            Map<String, Object> response = getReportDetail("report-1");
+            String format = response.get("format").toString();
 
             assertThat(format).isIn("PDF", "HTML", "EXCEL", "CSV"); // GH-90000
         }
 
         @Test
-        @DisplayName("report charts: data with labels and values [GH-90000]")
+        @DisplayName("report charts: data with labels and values")
         void shouldHaveCharts() { // GH-90000
-            Map<String, Object> response = getReportDetail("report-1 [GH-90000]");
+            Map<String, Object> response = getReportDetail("report-1");
 
-            assertThat(response).containsKey("sections [GH-90000]");
+            assertThat(response).containsKey("sections");
         }
 
         @Test
-        @DisplayName("report generation metadata: time, size, pages [GH-90000]")
+        @DisplayName("report generation metadata: time, size, pages")
         void shouldIncludeMeta() { // GH-90000
-            Map<String, Object> response = getReportDetail("report-1 [GH-90000]");
+            Map<String, Object> response = getReportDetail("report-1");
 
             assertThat(response).containsKeys("generatedAt", "fileSize", "pageCount"); // GH-90000
         }
 
         @Test
-        @DisplayName("report download URL: accessible [GH-90000]")
+        @DisplayName("report download URL: accessible")
         void shouldHaveDownloadLink() { // GH-90000
-            Map<String, Object> response = getReportDetail("report-1 [GH-90000]");
+            Map<String, Object> response = getReportDetail("report-1");
 
-            assertThat(response).containsKey("downloadUrl [GH-90000]");
+            assertThat(response).containsKey("downloadUrl");
         }
 
         @Test
-        @DisplayName("missing report: returns null [GH-90000]")
+        @DisplayName("missing report: returns null")
         void shouldHandle404() { // GH-90000
-            Map<String, Object> response = getReportDetailOrNull("missing [GH-90000]");
+            Map<String, Object> response = getReportDetailOrNull("missing");
 
             assertThat(response).isNull(); // GH-90000
         }
@@ -167,7 +167,7 @@ public class ReportsUiContractTest {
     // ─────────────────────────────────────────────────────────────────────
 
     private Map<String, Object> getReportsList() { // GH-90000
-        return getReportsForTenant("tenant-default [GH-90000]");
+        return getReportsForTenant("tenant-default");
     }
 
     private Map<String, Object> getReportsForTenant(String tenantId) { // GH-90000
@@ -228,7 +228,7 @@ public class ReportsUiContractTest {
     }
 
     private Map<String, Object> getReportDetailOrNull(String reportId) { // GH-90000
-        if (reportId.equals("missing [GH-90000]")) {
+        if (reportId.equals("missing")) {
             return null;
         }
         return getReportDetail(reportId); // GH-90000
@@ -242,7 +242,7 @@ public class ReportsUiContractTest {
         report.put("schedule", schedule); // GH-90000
         report.put("lastGenerated", lastGenerated); // GH-90000
         report.put("nextRun", "2026-04-04T08:00:00Z"); // GH-90000
-        report.put("recipients", List.of("user@example.com [GH-90000]"));
+        report.put("recipients", List.of("user@example.com"));
         return report;
     }
 }

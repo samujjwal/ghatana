@@ -47,12 +47,12 @@ class PluginRegistryTest {
         mockPlugin = mock(YappcPlugin.class); // GH-90000
 
         metadata = PluginMetadata.builder() // GH-90000
-                .id("test-plugin [GH-90000]")
-                .name("Test Plugin [GH-90000]")
-                .version("1.0.0 [GH-90000]")
+                .id("test-plugin")
+                .name("Test Plugin")
+                .version("1.0.0")
                 .capabilities(List.of(PluginCapability.BUILD_SYSTEM)) // GH-90000
                 .supportedLanguages(List.of("java", "kotlin")) // GH-90000
-                .supportedBuildSystems(List.of("gradle [GH-90000]"))
+                .supportedBuildSystems(List.of("gradle"))
                 .build(); // GH-90000
 
         when(mockPlugin.getMetadata()).thenReturn(metadata); // GH-90000
@@ -62,7 +62,7 @@ class PluginRegistryTest {
     void testRegisterPlugin() throws PluginException { // GH-90000
         registry.register(mockPlugin); // GH-90000
 
-        assertTrue(registry.isRegistered("test-plugin [GH-90000]"));
+        assertTrue(registry.isRegistered("test-plugin"));
         assertEquals(1, registry.getPluginCount()); // GH-90000
     }
 
@@ -78,27 +78,27 @@ class PluginRegistryTest {
     @Test
     void testUnregisterPlugin() throws PluginException { // GH-90000
         registry.register(mockPlugin); // GH-90000
-        assertTrue(registry.unregister("test-plugin [GH-90000]"));
-        assertFalse(registry.isRegistered("test-plugin [GH-90000]"));
+        assertTrue(registry.unregister("test-plugin"));
+        assertFalse(registry.isRegistered("test-plugin"));
         assertEquals(0, registry.getPluginCount()); // GH-90000
     }
 
     @Test
     void testUnregisterNonExistentPlugin() { // GH-90000
-        assertFalse(registry.unregister("non-existent [GH-90000]"));
+        assertFalse(registry.unregister("non-existent"));
     }
 
     @Test
     void testGetPlugin() throws PluginException { // GH-90000
         registry.register(mockPlugin); // GH-90000
 
-        assertTrue(registry.getPlugin("test-plugin [GH-90000]").isPresent());
-        assertEquals(mockPlugin, registry.getPlugin("test-plugin [GH-90000]").get());
+        assertTrue(registry.getPlugin("test-plugin").isPresent());
+        assertEquals(mockPlugin, registry.getPlugin("test-plugin").get());
     }
 
     @Test
     void testGetNonExistentPlugin() { // GH-90000
-        assertTrue(registry.getPlugin("non-existent [GH-90000]").isEmpty());
+        assertTrue(registry.getPlugin("non-existent").isEmpty());
     }
 
     @Test
@@ -126,13 +126,13 @@ class PluginRegistryTest {
     void testGetPluginsByLanguage() throws PluginException { // GH-90000
         registry.register(mockPlugin); // GH-90000
 
-        List<YappcPlugin> javaPlugins = registry.getPluginsByLanguage("java [GH-90000]");
+        List<YappcPlugin> javaPlugins = registry.getPluginsByLanguage("java");
         assertEquals(1, javaPlugins.size()); // GH-90000
 
-        List<YappcPlugin> kotlinPlugins = registry.getPluginsByLanguage("kotlin [GH-90000]");
+        List<YappcPlugin> kotlinPlugins = registry.getPluginsByLanguage("kotlin");
         assertEquals(1, kotlinPlugins.size()); // GH-90000
 
-        List<YappcPlugin> pythonPlugins = registry.getPluginsByLanguage("python [GH-90000]");
+        List<YappcPlugin> pythonPlugins = registry.getPluginsByLanguage("python");
         assertTrue(pythonPlugins.isEmpty()); // GH-90000
     }
 
@@ -140,10 +140,10 @@ class PluginRegistryTest {
     void testGetPluginsByBuildSystem() throws PluginException { // GH-90000
         registry.register(mockPlugin); // GH-90000
 
-        List<YappcPlugin> gradlePlugins = registry.getPluginsByBuildSystem("gradle [GH-90000]");
+        List<YappcPlugin> gradlePlugins = registry.getPluginsByBuildSystem("gradle");
         assertEquals(1, gradlePlugins.size()); // GH-90000
 
-        List<YappcPlugin> mavenPlugins = registry.getPluginsByBuildSystem("maven [GH-90000]");
+        List<YappcPlugin> mavenPlugins = registry.getPluginsByBuildSystem("maven");
         assertTrue(mavenPlugins.isEmpty()); // GH-90000
     }
 
@@ -154,7 +154,7 @@ class PluginRegistryTest {
 
         registry.clear(); // GH-90000
         assertEquals(0, registry.getPluginCount()); // GH-90000
-        assertFalse(registry.isRegistered("test-plugin [GH-90000]"));
+        assertFalse(registry.isRegistered("test-plugin"));
     }
 
     @Test

@@ -28,13 +28,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * Tests for inner enums, exceptions, and small value types across the
  * platform-event module.
  */
-@DisplayName("Platform-event inner types [GH-90000]")
+@DisplayName("Platform-event inner types")
 class PlatformEventInnerTypesTest {
 
     // ─── ConsumerGroup.GroupState ─────────────────────────────────────────────
 
     @Nested
-    @DisplayName("ConsumerGroup.GroupState [GH-90000]")
+    @DisplayName("ConsumerGroup.GroupState")
     class GroupState {
 
         @Test
@@ -50,7 +50,7 @@ class PlatformEventInnerTypesTest {
 
         @Test
         void valueOfByName() { // GH-90000
-            assertThat(ConsumerGroup.GroupState.valueOf("STABLE [GH-90000]"))
+            assertThat(ConsumerGroup.GroupState.valueOf("STABLE"))
                     .isSameAs(ConsumerGroup.GroupState.STABLE); // GH-90000
         }
     }
@@ -58,7 +58,7 @@ class PlatformEventInnerTypesTest {
     // ─── EventType inner enums ────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("EventType.LifecycleStatus [GH-90000]")
+    @DisplayName("EventType.LifecycleStatus")
     class LifecycleStatus {
 
         @Test
@@ -73,13 +73,13 @@ class PlatformEventInnerTypesTest {
 
         @Test
         void valueOfByName() { // GH-90000
-            assertThat(EventType.LifecycleStatus.valueOf("ACTIVE [GH-90000]"))
+            assertThat(EventType.LifecycleStatus.valueOf("ACTIVE"))
                     .isSameAs(EventType.LifecycleStatus.ACTIVE); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("EventType.CompatibilityPolicy [GH-90000]")
+    @DisplayName("EventType.CompatibilityPolicy")
     class CompatibilityPolicy {
 
         @Test
@@ -94,7 +94,7 @@ class PlatformEventInnerTypesTest {
 
         @Test
         void valueOfByName() { // GH-90000
-            assertThat(EventType.CompatibilityPolicy.valueOf("BACKWARD [GH-90000]"))
+            assertThat(EventType.CompatibilityPolicy.valueOf("BACKWARD"))
                     .isSameAs(EventType.CompatibilityPolicy.BACKWARD); // GH-90000
         }
     }
@@ -102,23 +102,23 @@ class PlatformEventInnerTypesTest {
     // ─── StoragePlugin.DuplicateEventException ────────────────────────────────
 
     @Nested
-    @DisplayName("StoragePlugin.DuplicateEventException [GH-90000]")
+    @DisplayName("StoragePlugin.DuplicateEventException")
     class DuplicateEventException {
 
         @Test
         void constructorSetsFieldsAndMessage() { // GH-90000
             StoragePlugin.DuplicateEventException ex =
                     new StoragePlugin.DuplicateEventException("idem-key-1", "event-id-99"); // GH-90000
-            assertThat(ex.getIdempotencyKey()).isEqualTo("idem-key-1 [GH-90000]");
-            assertThat(ex.getExistingEventId()).isEqualTo("event-id-99 [GH-90000]");
-            assertThat(ex.getMessage()).contains("idem-key-1 [GH-90000]");
+            assertThat(ex.getIdempotencyKey()).isEqualTo("idem-key-1");
+            assertThat(ex.getExistingEventId()).isEqualTo("event-id-99");
+            assertThat(ex.getMessage()).contains("idem-key-1");
         }
     }
 
     // ─── EventDurabilityService inner records ─────────────────────────────────
 
     @Nested
-    @DisplayName("EventDurabilityService.DurabilityResult [GH-90000]")
+    @DisplayName("EventDurabilityService.DurabilityResult")
     class DurabilityResultTest {
 
         @Test
@@ -145,7 +145,7 @@ class PlatformEventInnerTypesTest {
     }
 
     @Nested
-    @DisplayName("EventDurabilityService.DurabilityStatus [GH-90000]")
+    @DisplayName("EventDurabilityService.DurabilityStatus")
     class DurabilityStatusTest {
 
         @Test
@@ -166,7 +166,7 @@ class PlatformEventInnerTypesTest {
     // ─── EventReplayService inner records ─────────────────────────────────────
 
     @Nested
-    @DisplayName("EventReplayService.ReplayedEvent [GH-90000]")
+    @DisplayName("EventReplayService.ReplayedEvent")
     class ReplayedEventTest {
 
         @Test
@@ -185,7 +185,7 @@ class PlatformEventInnerTypesTest {
     }
 
     @Nested
-    @DisplayName("EventReplayService.ReplayResult [GH-90000]")
+    @DisplayName("EventReplayService.ReplayResult")
     class ReplayResultTest {
 
         @Test
@@ -218,7 +218,7 @@ class PlatformEventInnerTypesTest {
     }
 
     @Nested
-    @DisplayName("EventReplayService.ReplayError [GH-90000]")
+    @DisplayName("EventReplayService.ReplayError")
     class ReplayErrorTest {
 
         @Test
@@ -231,7 +231,7 @@ class PlatformEventInnerTypesTest {
     }
 
     @Nested
-    @DisplayName("EventReplayService.ReplayStatus [GH-90000]")
+    @DisplayName("EventReplayService.ReplayStatus")
     class ReplayStatusTest {
 
         @Test
@@ -250,7 +250,7 @@ class PlatformEventInnerTypesTest {
     }
 
     @Nested
-    @DisplayName("EventReplayService.ReplayState [GH-90000]")
+    @DisplayName("EventReplayService.ReplayState")
     class ReplayStateTest {
 
         @Test
@@ -269,21 +269,21 @@ class PlatformEventInnerTypesTest {
     // ─── FileSecretProvider ───────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("FileSecretProvider [GH-90000]")
+    @DisplayName("FileSecretProvider")
     class FileSecretProviderTest {
 
         private final FileSecretProvider provider = new FileSecretProvider(); // GH-90000
 
         @Test
         void nameIsFile() { // GH-90000
-            assertThat(provider.name()).isEqualTo("file [GH-90000]");
+            assertThat(provider.name()).isEqualTo("file");
         }
 
         @Test
         void blankLocatorThrows() { // GH-90000
-            assertThatThrownBy(() -> provider.resolve("   [GH-90000]"))
+            assertThatThrownBy(() -> provider.resolve("  "))
                     .isInstanceOf(SecretResolutionException.class) // GH-90000
-                    .hasMessageContaining("blank [GH-90000]");
+                    .hasMessageContaining("blank");
         }
 
         @Test
@@ -294,33 +294,33 @@ class PlatformEventInnerTypesTest {
 
         @Test
         void missingFileThrows() { // GH-90000
-            assertThatThrownBy(() -> provider.resolve("/tmp/does-not-exist-secret-xyzabcdef.txt [GH-90000]"))
+            assertThatThrownBy(() -> provider.resolve("/tmp/does-not-exist-secret-xyzabcdef.txt"))
                     .isInstanceOf(SecretResolutionException.class) // GH-90000
-                    .hasMessageContaining("does not exist [GH-90000]");
+                    .hasMessageContaining("does not exist");
         }
 
         @Test
         void readsSecretFromFile(@TempDir Path tmpDir) throws IOException { // GH-90000
-            Path secretFile = tmpDir.resolve("secret.txt [GH-90000]");
+            Path secretFile = tmpDir.resolve("secret.txt");
             Files.writeString(secretFile, "my-secret-value\n"); // GH-90000
             SecretValue val = provider.resolve(secretFile.toString()); // GH-90000
-            assertThat(new String(val.asCharArrayCopy())).isEqualTo("my-secret-value [GH-90000]");
+            assertThat(new String(val.asCharArrayCopy())).isEqualTo("my-secret-value");
         }
 
         @Test
         void blankFileContentThrows(@TempDir Path tmpDir) throws IOException { // GH-90000
-            Path secretFile = tmpDir.resolve("blank.txt [GH-90000]");
+            Path secretFile = tmpDir.resolve("blank.txt");
             Files.writeString(secretFile, "   \n"); // GH-90000
             assertThatThrownBy(() -> provider.resolve(secretFile.toString())) // GH-90000
                     .isInstanceOf(SecretResolutionException.class) // GH-90000
-                    .hasMessageContaining("blank [GH-90000]");
+                    .hasMessageContaining("blank");
         }
 
         @Test
         void directoryInsteadOfFileThrows(@TempDir Path tmpDir) { // GH-90000
             assertThatThrownBy(() -> provider.resolve(tmpDir.toString())) // GH-90000
                     .isInstanceOf(SecretResolutionException.class) // GH-90000
-                    .hasMessageContaining("not a regular file [GH-90000]");
+                    .hasMessageContaining("not a regular file");
         }
     }
 }

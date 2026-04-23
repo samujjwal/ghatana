@@ -25,16 +25,16 @@ class CorrelationAnalyzerTest extends EventloopTestBase {
 
   @Test
   void testRecordSingleEvent() { // GH-90000
-    analyzer.recordEvent("login [GH-90000]");
+    analyzer.recordEvent("login");
     assertThat(analyzer.getEventWindowSize()).isEqualTo(1); // GH-90000
     assertThat(analyzer.getEventCounts()).containsEntry("login", 1); // GH-90000
   }
 
   @Test
   void testRecordMultipleEvents() { // GH-90000
-    analyzer.recordEvent("login [GH-90000]");
-    analyzer.recordEvent("access [GH-90000]");
-    analyzer.recordEvent("logout [GH-90000]");
+    analyzer.recordEvent("login");
+    analyzer.recordEvent("access");
+    analyzer.recordEvent("logout");
     assertThat(analyzer.getEventWindowSize()).isEqualTo(3); // GH-90000
     assertThat(analyzer.getEventCounts()).hasSize(3); // GH-90000
   }
@@ -46,8 +46,8 @@ class CorrelationAnalyzerTest extends EventloopTestBase {
     List<CorrelationAnalyzer.Correlation> correlations = analyzer.getCorrelations(); // GH-90000
     assertThat(correlations).hasSize(1); // GH-90000
     CorrelationAnalyzer.Correlation corr = correlations.get(0); // GH-90000
-    assertThat(corr.firstEvent()).isEqualTo("login [GH-90000]");
-    assertThat(corr.secondEvent()).isEqualTo("access [GH-90000]");
+    assertThat(corr.firstEvent()).isEqualTo("login");
+    assertThat(corr.secondEvent()).isEqualTo("access");
     assertThat(corr.coOccurrences()).isEqualTo(1); // GH-90000
   }
 
@@ -96,8 +96,8 @@ class CorrelationAnalyzerTest extends EventloopTestBase {
 
   @Test
   void testReset() { // GH-90000
-    analyzer.recordEvent("event1 [GH-90000]");
-    analyzer.recordEvent("event2 [GH-90000]");
+    analyzer.recordEvent("event1");
+    analyzer.recordEvent("event2");
     assertThat(analyzer.getEventWindowSize()).isGreaterThan(0); // GH-90000
 
     analyzer.reset(); // GH-90000
@@ -114,7 +114,7 @@ class CorrelationAnalyzerTest extends EventloopTestBase {
 
   @Test
   void testRejectsBlankEvent() { // GH-90000
-    assertThatThrownBy(() -> analyzer.recordEvent("    [GH-90000]"))
+    assertThatThrownBy(() -> analyzer.recordEvent("   "))
         .isInstanceOf(IllegalArgumentException.class); // GH-90000
   }
 
@@ -137,10 +137,10 @@ class CorrelationAnalyzerTest extends EventloopTestBase {
     analyzer.recordEvent("access", 1500); // GH-90000
     List<CorrelationAnalyzer.Correlation> correlations = analyzer.getCorrelations(); // GH-90000
     assertThat(correlations.get(0).toString()) // GH-90000
-        .contains("login [GH-90000]")
-        .contains("access [GH-90000]")
-        .contains("conf: [GH-90000]")
-        .contains("sup: [GH-90000]");
+        .contains("login")
+        .contains("access")
+        .contains("conf:")
+        .contains("sup:");
   }
 
   @Test

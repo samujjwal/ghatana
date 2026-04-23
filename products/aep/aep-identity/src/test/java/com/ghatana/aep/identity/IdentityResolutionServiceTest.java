@@ -28,19 +28,19 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("IdentityResolutionServiceTest [GH-90000]")
+@DisplayName("IdentityResolutionServiceTest")
 class IdentityResolutionServiceTest extends EventloopTestBase {
 
     @Test
-    @DisplayName("withResolvers rejects an empty resolver list [GH-90000]")
+    @DisplayName("withResolvers rejects an empty resolver list")
     void withResolversRejectsEmptyResolverList() { // GH-90000
         assertThatThrownBy(() -> IdentityResolutionService.withResolvers(List.of())) // GH-90000
             .isInstanceOf(IllegalArgumentException.class) // GH-90000
-            .hasMessageContaining("At least one IdentityResolver is required [GH-90000]");
+            .hasMessageContaining("At least one IdentityResolver is required");
     }
 
     @Test
-    @DisplayName("resolveIdentity returns the first resolver hit in the chain [GH-90000]")
+    @DisplayName("resolveIdentity returns the first resolver hit in the chain")
     void resolveIdentityReturnsFirstResolverHitInChain() { // GH-90000
         IdentityResolver miss = (tenantId, agentId) -> Promise.of(Optional.empty()); // GH-90000
         AepLocalIdentityResolver hit = new AepLocalIdentityResolver(); // GH-90000
@@ -54,7 +54,7 @@ class IdentityResolutionServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("issued credentials can be validated and revoked [GH-90000]")
+    @DisplayName("issued credentials can be validated and revoked")
     void issuedCredentialsCanBeValidatedAndRevoked() { // GH-90000
         AepLocalIdentityResolver resolver = new AepLocalIdentityResolver(); // GH-90000
         resolver.register(identity("tenant-a", "agent-2")); // GH-90000
@@ -72,7 +72,7 @@ class IdentityResolutionServiceTest extends EventloopTestBase {
             tenantId,
             agentId,
             "spiffe://ghatana/" + tenantId + "/" + agentId,
-            Set.of("aep:execute [GH-90000]"),
+            Set.of("aep:execute"),
             Instant.now()); // GH-90000
     }
 }

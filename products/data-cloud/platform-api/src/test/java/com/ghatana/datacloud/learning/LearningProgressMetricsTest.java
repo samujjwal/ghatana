@@ -31,7 +31,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("LearningProgressMetrics – Progress Tracking (D011) [GH-90000]")
+@DisplayName("LearningProgressMetrics – Progress Tracking (D011)")
 class LearningProgressMetricsTest extends EventloopTestBase {
 
     @Mock
@@ -42,11 +42,11 @@ class LearningProgressMetricsTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Progress Summary [GH-90000]")
+    @DisplayName("Progress Summary")
     class ProgressSummaryTests {
 
         @Test
-        @DisplayName("[D011]: get_progress_returns_summary [GH-90000]")
+        @DisplayName("[D011]: get_progress_returns_summary")
         void getProgressReturnsSummary() { // GH-90000
             String jobId = "job-001";
 
@@ -70,7 +70,7 @@ class LearningProgressMetricsTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D011]: progress_percent_calculated_correctly [GH-90000]")
+        @DisplayName("[D011]: progress_percent_calculated_correctly")
         void progressPercentCalculatedCorrectly() { // GH-90000
             int current = 5;
             int total = 10;
@@ -81,7 +81,7 @@ class LearningProgressMetricsTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D011]: estimated_remaining_time_based_on_elapsed [GH-90000]")
+        @DisplayName("[D011]: estimated_remaining_time_based_on_elapsed")
         void estimatedRemainingTimeBasedOnElapsed() { // GH-90000
             Duration elapsed = Duration.ofMinutes(15); // GH-90000
             double progressPercent = 50.0;
@@ -93,7 +93,7 @@ class LearningProgressMetricsTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D011]: is_improving_detects_decreasing_loss [GH-90000]")
+        @DisplayName("[D011]: is_improving_detects_decreasing_loss")
         void isImprovingDetectsDecreasingLoss() { // GH-90000
             LearningProgressTracker.ProgressSummary improving =
                 new LearningProgressTracker.ProgressSummary( // GH-90000
@@ -111,11 +111,11 @@ class LearningProgressMetricsTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Metrics History [GH-90000]")
+    @DisplayName("Metrics History")
     class MetricsHistoryTests {
 
         @Test
-        @DisplayName("[D011]: get_metrics_history_returns_time_series [GH-90000]")
+        @DisplayName("[D011]: get_metrics_history_returns_time_series")
         void getMetricsHistoryReturnsTimeSeries() { // GH-90000
             String jobId = "job-001";
 
@@ -139,7 +139,7 @@ class LearningProgressMetricsTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D011]: metric_point_contains_timestamp_epoch_value [GH-90000]")
+        @DisplayName("[D011]: metric_point_contains_timestamp_epoch_value")
         void metricPointContainsTimestampEpochValue() { // GH-90000
             long timestamp = 1704067200000L;
             int epoch = 5;
@@ -156,7 +156,7 @@ class LearningProgressMetricsTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D011]: loss_trend_detected_from_history [GH-90000]")
+        @DisplayName("[D011]: loss_trend_detected_from_history")
         void lossTrendDetectedFromHistory() { // GH-90000
             List<LearningProgressTracker.MetricPoint> lossHistory = List.of( // GH-90000
                 new LearningProgressTracker.MetricPoint(0L, 1, "loss", 0.8), // GH-90000
@@ -179,7 +179,7 @@ class LearningProgressMetricsTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D011]: plateau_detected_when_loss_stops_decreasing [GH-90000]")
+        @DisplayName("[D011]: plateau_detected_when_loss_stops_decreasing")
         void plateauDetectedWhenLossStopsDecreasing() { // GH-90000
             List<LearningProgressTracker.MetricPoint> plateauHistory = List.of( // GH-90000
                 new LearningProgressTracker.MetricPoint(0L, 1, "loss", 0.5), // GH-90000
@@ -209,11 +209,11 @@ class LearningProgressMetricsTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Historical Comparison [GH-90000]")
+    @DisplayName("Historical Comparison")
     class HistoricalComparisonTests {
 
         @Test
-        @DisplayName("[D011]: get_historical_comparison_returns_stats [GH-90000]")
+        @DisplayName("[D011]: get_historical_comparison_returns_stats")
         void getHistoricalComparisonReturnsStats() { // GH-90000
             String modelId = "model-001";
 
@@ -252,7 +252,7 @@ class LearningProgressMetricsTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D011]: current_is_best_detects_improvement [GH-90000]")
+        @DisplayName("[D011]: current_is_best_detects_improvement")
         void currentIsBestDetectsImprovement() { // GH-90000
             double bestLoss = 0.20;
 
@@ -268,19 +268,19 @@ class LearningProgressMetricsTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D011]: run_summary_contains_duration_and_status [GH-90000]")
+        @DisplayName("[D011]: run_summary_contains_duration_and_status")
         void runSummaryContainsDurationAndStatus() { // GH-90000
             LearningProgressTracker.RunSummary summary = new LearningProgressTracker.RunSummary( // GH-90000
                 "job-001", 1704067200000L, Duration.ofHours(2), // GH-90000
                 0.25, 0.22, 10, "COMPLETED"
             );
 
-            assertThat(summary.jobId()).isEqualTo("job-001 [GH-90000]");
+            assertThat(summary.jobId()).isEqualTo("job-001");
             assertThat(summary.duration()).isEqualTo(Duration.ofHours(2)); // GH-90000
             assertThat(summary.finalLoss()).isEqualTo(0.25); // GH-90000
             assertThat(summary.bestLoss()).isEqualTo(0.22); // GH-90000
             assertThat(summary.epochsCompleted()).isEqualTo(10); // GH-90000
-            assertThat(summary.status()).isEqualTo("COMPLETED [GH-90000]");
+            assertThat(summary.status()).isEqualTo("COMPLETED");
         }
     }
 
@@ -289,11 +289,11 @@ class LearningProgressMetricsTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Epoch Recording [GH-90000]")
+    @DisplayName("Epoch Recording")
     class EpochRecordingTests {
 
         @Test
-        @DisplayName("[D011]: record_epoch_stores_metrics [GH-90000]")
+        @DisplayName("[D011]: record_epoch_stores_metrics")
         void recordEpochStoresMetrics() { // GH-90000
             String jobId = "job-001";
             int epoch = 5;
@@ -311,7 +311,7 @@ class LearningProgressMetricsTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D011]: record_completion_stores_final_metrics [GH-90000]")
+        @DisplayName("[D011]: record_completion_stores_final_metrics")
         void recordCompletionStoresFinalMetrics() { // GH-90000
             String jobId = "job-001";
 
@@ -334,7 +334,7 @@ class LearningProgressMetricsTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D011]: record_failure_stores_error [GH-90000]")
+        @DisplayName("[D011]: record_failure_stores_error")
         void recordFailureStoresError() { // GH-90000
             String jobId = "job-001";
             String error = "Out of memory";
@@ -353,11 +353,11 @@ class LearningProgressMetricsTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Best Loss Tracking [GH-90000]")
+    @DisplayName("Best Loss Tracking")
     class BestLossTrackingTests {
 
         @Test
-        @DisplayName("[D011]: best_loss_tracked_across_epochs [GH-90000]")
+        @DisplayName("[D011]: best_loss_tracked_across_epochs")
         void bestLossTrackedAcrossEpochs() { // GH-90000
             List<Double> losses = List.of(0.5, 0.45, 0.48, 0.42, 0.43, 0.40); // GH-90000
 
@@ -369,7 +369,7 @@ class LearningProgressMetricsTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D011]: epochs_since_improvement_tracked [GH-90000]")
+        @DisplayName("[D011]: epochs_since_improvement_tracked")
         void epochsSinceImprovementTracked() { // GH-90000
             List<Double> losses = List.of(0.5, 0.45, 0.44, 0.44, 0.44, 0.43); // GH-90000
 
@@ -400,11 +400,11 @@ class LearningProgressMetricsTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Performance Metrics [GH-90000]")
+    @DisplayName("Performance Metrics")
     class PerformanceMetricsTests {
 
         @Test
-        @DisplayName("[D011]: samples_per_second_calculated [GH-90000]")
+        @DisplayName("[D011]: samples_per_second_calculated")
         void samplesPerSecondCalculated() { // GH-90000
             long samplesProcessed = 10000;
             Duration elapsedTime = Duration.ofMinutes(5); // GH-90000
@@ -415,7 +415,7 @@ class LearningProgressMetricsTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D011]: epoch_duration_tracked [GH-90000]")
+        @DisplayName("[D011]: epoch_duration_tracked")
         void epochDurationTracked() { // GH-90000
             ModelTrainingService.EpochMetrics epoch = new ModelTrainingService.EpochMetrics( // GH-90000
                 5, 0.3, 0.28, 0.90, 0.91, Duration.ofMinutes(3) // GH-90000

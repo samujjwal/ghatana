@@ -19,13 +19,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("CodeQualityAnalyzer Tests [GH-90000]")
+@DisplayName("CodeQualityAnalyzer Tests")
 class CodeQualityAnalyzerTest extends EventloopTestBase {
 
   @Mock private YAPPCAIService aiService;
 
   @Test
-  @DisplayName("analyze returns deterministic findings for TODO and complexity [GH-90000]")
+  @DisplayName("analyze returns deterministic findings for TODO and complexity")
   void analyzeReturnsDeterministicFindingsForTodoAndComplexity() { // GH-90000
     CodeQualityAnalyzer analyzer = new CodeQualityAnalyzer(aiService); // GH-90000
 
@@ -45,7 +45,7 @@ class CodeQualityAnalyzerTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("analyze covers wildcard imports and mixed conditional styles [GH-90000]")
+  @DisplayName("analyze covers wildcard imports and mixed conditional styles")
   void analyzeCoversWildcardImportsAndMixedConditionalStyles() { // GH-90000
     CodeQualityAnalyzer analyzer = new CodeQualityAnalyzer(aiService); // GH-90000
 
@@ -63,14 +63,14 @@ class CodeQualityAnalyzerTest extends EventloopTestBase {
     assertThat(insights).extracting(AIInsight::title) // GH-90000
         .containsExactlyInAnyOrder("High conditional complexity", "Wildcard import introduced"); // GH-90000
     assertThat(insights) // GH-90000
-        .filteredOn(insight -> insight.title().equals("Wildcard import introduced [GH-90000]"))
+        .filteredOn(insight -> insight.title().equals("Wildcard import introduced"))
         .singleElement() // GH-90000
         .satisfies(insight -> assertThat(insight.lineNumber()).isZero()); // GH-90000
     verifyNoInteractions(aiService); // GH-90000
   }
 
   @Test
-  @DisplayName("analyze covers FIXME markers and import star syntax [GH-90000]")
+  @DisplayName("analyze covers FIXME markers and import star syntax")
   void analyzeCoversFixmeMarkersAndImportStarSyntax() { // GH-90000
     CodeQualityAnalyzer analyzer = new CodeQualityAnalyzer(aiService); // GH-90000
 
@@ -91,7 +91,7 @@ class CodeQualityAnalyzerTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("analyze parses AI JSON response when deterministic checks are clean [GH-90000]")
+  @DisplayName("analyze parses AI JSON response when deterministic checks are clean")
   void analyzeParsesAiJsonResponseWhenDeterministicChecksAreClean() { // GH-90000
     when(aiService.reason(anyString(), anyMap())) // GH-90000
         .thenReturn( // GH-90000
@@ -104,14 +104,14 @@ class CodeQualityAnalyzerTest extends EventloopTestBase {
             () -> analyzer.analyze(new CodeChangedEvent("tenant-a", "project-a", "src/Clean.ts", "+const x = 1;"))); // GH-90000
 
     assertThat(insights).singleElement().satisfies(insight -> { // GH-90000
-      assertThat(insight.title()).isEqualTo("Long method [GH-90000]");
+      assertThat(insight.title()).isEqualTo("Long method");
       assertThat(insight.lineNumber()).isEqualTo(12); // GH-90000
       assertThat(insight.confidence()).isEqualTo(0.91); // GH-90000
     });
   }
 
   @Test
-  @DisplayName("analyze coerces string and missing numeric fields from AI payload [GH-90000]")
+  @DisplayName("analyze coerces string and missing numeric fields from AI payload")
   void analyzeCoercesStringAndMissingNumericFieldsFromAiPayload() { // GH-90000
     when(aiService.reason(anyString(), anyMap())) // GH-90000
         .thenReturn( // GH-90000
@@ -132,9 +132,9 @@ class CodeQualityAnalyzerTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("analyze falls back to manual review insight for malformed AI response [GH-90000]")
+  @DisplayName("analyze falls back to manual review insight for malformed AI response")
   void analyzeFallsBackToManualReviewInsightForMalformedAiResponse() { // GH-90000
-    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("not-json [GH-90000]"));
+    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("not-json"));
 
     CodeQualityAnalyzer analyzer = new CodeQualityAnalyzer(aiService); // GH-90000
     List<AIInsight> insights =
@@ -142,15 +142,15 @@ class CodeQualityAnalyzerTest extends EventloopTestBase {
             () -> analyzer.analyze(new CodeChangedEvent("tenant-a", "project-a", "src/Clean.ts", "+const x = 1;"))); // GH-90000
 
     assertThat(insights).singleElement().satisfies(insight -> { // GH-90000
-      assertThat(insight.title()).isEqualTo("Manual review recommended [GH-90000]");
-      assertThat(insight.description()).isEqualTo("not-json [GH-90000]");
+      assertThat(insight.title()).isEqualTo("Manual review recommended");
+      assertThat(insight.description()).isEqualTo("not-json");
     });
   }
 
   @Test
-  @DisplayName("analyze returns empty list for blank AI response [GH-90000]")
+  @DisplayName("analyze returns empty list for blank AI response")
   void analyzeReturnsEmptyListForBlankAiResponse() { // GH-90000
-    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("  [GH-90000]"));
+    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of(" "));
 
     CodeQualityAnalyzer analyzer = new CodeQualityAnalyzer(aiService); // GH-90000
     List<AIInsight> insights =
@@ -161,7 +161,7 @@ class CodeQualityAnalyzerTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("analyze returns empty list for null AI response [GH-90000]")
+  @DisplayName("analyze returns empty list for null AI response")
   void analyzeReturnsEmptyListForNullAiResponse() { // GH-90000
     when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of(null)); // GH-90000
 

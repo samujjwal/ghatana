@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
  * @doc.layer product
  * @doc.pattern TestCase
  */
-@DisplayName("AudioVideoGrpcServerBase [GH-90000]")
+@DisplayName("AudioVideoGrpcServerBase")
 class AudioVideoGrpcServerBaseTest {
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -27,7 +27,7 @@ class AudioVideoGrpcServerBaseTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("getPort: returns the configured port [GH-90000]")
+    @DisplayName("getPort: returns the configured port")
     void getPort_returnsConfiguredPort() { // GH-90000
         TestServer server = new TestServer(0); // 0 = ephemeral port // GH-90000
         assertThat(server.getPort()).isEqualTo(0); // GH-90000
@@ -35,10 +35,10 @@ class AudioVideoGrpcServerBaseTest {
     }
 
     @Test
-    @DisplayName("getServiceName: returns the configured service name [GH-90000]")
+    @DisplayName("getServiceName: returns the configured service name")
     void getServiceName_returnsConfiguredName() { // GH-90000
         TestServer server = new TestServer(0); // GH-90000
-        assertThat(server.getServiceName()).isEqualTo("test-service [GH-90000]");
+        assertThat(server.getServiceName()).isEqualTo("test-service");
         server.close(); // GH-90000
     }
 
@@ -47,7 +47,7 @@ class AudioVideoGrpcServerBaseTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("start + close: server starts and shuts down cleanly [GH-90000]")
+    @DisplayName("start + close: server starts and shuts down cleanly")
     void start_thenClose_shutsDownCleanly() throws IOException { // GH-90000
         TestServer server = new TestServer(0); // GH-90000
         server.start(); // GH-90000
@@ -59,7 +59,7 @@ class AudioVideoGrpcServerBaseTest {
     }
 
     @Test
-    @DisplayName("close: idempotent — calling twice does not throw [GH-90000]")
+    @DisplayName("close: idempotent — calling twice does not throw")
     void close_calledTwice_doesNotThrow() throws IOException { // GH-90000
         TestServer server = new TestServer(0); // GH-90000
         server.start(); // GH-90000
@@ -69,7 +69,7 @@ class AudioVideoGrpcServerBaseTest {
     }
 
     @Test
-    @DisplayName("isShutdown: returns true before start (server not yet running) [GH-90000]")
+    @DisplayName("isShutdown: returns true before start (server not yet running)")
     void isShutdown_beforeStart_returnsFalse() { // GH-90000
         TestServer server = new TestServer(0); // GH-90000
         // Not started yet — server is built but not running; gRPC still reports "not shut down"
@@ -104,7 +104,7 @@ class AudioVideoGrpcServerBaseTest {
         @Override
         public ServerServiceDefinition bindService() { // GH-90000
             return ServerServiceDefinition.builder( // GH-90000
-                    ServiceDescriptor.newBuilder("test.NoOpService [GH-90000]")
+                    ServiceDescriptor.newBuilder("test.NoOpService")
                             .build()) // GH-90000
                     .build(); // GH-90000
         }

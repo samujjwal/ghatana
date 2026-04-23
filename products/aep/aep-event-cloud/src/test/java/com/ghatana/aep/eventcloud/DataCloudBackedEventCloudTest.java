@@ -30,7 +30,7 @@ import static org.mockito.Mockito.when;
 /**
  * Tests for {@link DataCloudBackedEventCloud}.
  */
-@DisplayName("DataCloudBackedEventCloud [GH-90000]")
+@DisplayName("DataCloudBackedEventCloud")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class DataCloudBackedEventCloudTest extends EventloopTestBase {
 
@@ -54,7 +54,7 @@ class DataCloudBackedEventCloudTest extends EventloopTestBase {
     void shouldAppendEventToEventLogStore() { // GH-90000
         // GIVEN
         when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) // GH-90000
-            .thenReturn(Promise.of(Offset.of("1 [GH-90000]")));
+            .thenReturn(Promise.of(Offset.of("1")));
 
         byte[] payload = "{\"key\":\"value\"}".getBytes(StandardCharsets.UTF_8); // GH-90000
 
@@ -66,10 +66,10 @@ class DataCloudBackedEventCloudTest extends EventloopTestBase {
         verify(eventLogStore).append(tenantCaptor.capture(), entryCaptor.capture()); // GH-90000
 
         TenantContext capturedTenant = tenantCaptor.getValue(); // GH-90000
-        assertThat(capturedTenant.tenantId()).isEqualTo("tenant-1 [GH-90000]");
+        assertThat(capturedTenant.tenantId()).isEqualTo("tenant-1");
 
         EventEntry capturedEntry = entryCaptor.getValue(); // GH-90000
-        assertThat(capturedEntry.eventType()).isEqualTo("order.created [GH-90000]");
+        assertThat(capturedEntry.eventType()).isEqualTo("order.created");
         assertThat(capturedEntry.eventId()).isNotNull(); // GH-90000
     }
 
@@ -77,7 +77,7 @@ class DataCloudBackedEventCloudTest extends EventloopTestBase {
     void shouldReturnEventIdOnAppend() { // GH-90000
         // GIVEN
         when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) // GH-90000
-            .thenReturn(Promise.of(Offset.of("42 [GH-90000]")));
+            .thenReturn(Promise.of(Offset.of("42")));
 
         // WHEN
         String eventId = eventCloud.append("t1", "test.event", new byte[]{1, 2, 3}); // GH-90000
@@ -111,7 +111,7 @@ class DataCloudBackedEventCloudTest extends EventloopTestBase {
 
         // Verify tenant isolation
         verify(eventLogStore).getLatestOffset(tenantCaptor.capture()); // GH-90000
-        assertThat(tenantCaptor.getValue().tenantId()).isEqualTo("tenant-1 [GH-90000]");
+        assertThat(tenantCaptor.getValue().tenantId()).isEqualTo("tenant-1");
     }
 
     @Test

@@ -34,7 +34,7 @@ import static org.mockito.Mockito.when;
  * 
  * <p>Note: Database health checks are already covered in DatabaseHealthCheckTest.java
  */
-@DisplayName("Embedded Service Health Check Tests [GH-90000]")
+@DisplayName("Embedded Service Health Check Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class EmbeddedServiceHealthCheckTest extends EventloopTestBase {
 
@@ -42,7 +42,7 @@ class EmbeddedServiceHealthCheckTest extends EventloopTestBase {
     MetricsCollector metricsCollector;
 
     @Nested
-    @DisplayName("Redis Health Checks [GH-90000]")
+    @DisplayName("Redis Health Checks")
     class RedisHealthChecks {
 
         @Mock
@@ -55,11 +55,11 @@ class EmbeddedServiceHealthCheckTest extends EventloopTestBase {
         RedisCommands<String, String> commands;
 
         @Test
-        @DisplayName("readiness returns true when PING succeeds [GH-90000]")
+        @DisplayName("readiness returns true when PING succeeds")
         void redisReadinessReturnsTrueWhenHealthy() { // GH-90000
             when(redisClient.connect()).thenReturn(connection); // GH-90000
             when(connection.sync()).thenReturn(commands); // GH-90000
-            when(commands.ping()).thenReturn("PONG [GH-90000]");
+            when(commands.ping()).thenReturn("PONG");
 
             RedisHealthCheck healthCheck = new RedisHealthCheck(redisClient, metricsCollector); // GH-90000
 
@@ -72,9 +72,9 @@ class EmbeddedServiceHealthCheckTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("readiness returns false when PING fails [GH-90000]")
+        @DisplayName("readiness returns false when PING fails")
         void redisReadinessReturnsFalseWhenDown() { // GH-90000
-            when(redisClient.connect()).thenThrow(new IllegalStateException("Redis unavailable [GH-90000]"));
+            when(redisClient.connect()).thenThrow(new IllegalStateException("Redis unavailable"));
 
             RedisHealthCheck healthCheck = new RedisHealthCheck(redisClient, metricsCollector); // GH-90000
 
@@ -85,7 +85,7 @@ class EmbeddedServiceHealthCheckTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("liveness returns true when Redis is degraded [GH-90000]")
+        @DisplayName("liveness returns true when Redis is degraded")
         void redisLivenessReturnsTrueWhenDegraded() { // GH-90000
             when(redisClient.connect()).thenReturn(connection); // GH-90000
             when(connection.sync()).thenReturn(commands); // GH-90000
@@ -110,11 +110,11 @@ class EmbeddedServiceHealthCheckTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("health response includes Redis details [GH-90000]")
+        @DisplayName("health response includes Redis details")
         void redisHealthResponseIncludesDetails() { // GH-90000
             when(redisClient.connect()).thenReturn(connection); // GH-90000
             when(connection.sync()).thenReturn(commands); // GH-90000
-            when(commands.ping()).thenReturn("PONG [GH-90000]");
+            when(commands.ping()).thenReturn("PONG");
 
             RedisHealthCheck healthCheck = new RedisHealthCheck(redisClient, metricsCollector); // GH-90000
 
@@ -123,19 +123,19 @@ class EmbeddedServiceHealthCheckTest extends EventloopTestBase {
 
             assertThat(details).containsEntry("status", "UP"); // GH-90000
             assertThat(details).containsKeys("timestamp", "latency_ms", "last_check", "redis"); // GH-90000
-            assertThat(details.get("redis [GH-90000]")).isInstanceOf(Map.class);
+            assertThat(details.get("redis")).isInstanceOf(Map.class);
         }
     }
 
     @Nested
-    @DisplayName("OpenSearch Health Checks [GH-90000]")
+    @DisplayName("OpenSearch Health Checks")
     class OpenSearchHealthChecks {
 
         @Mock
         OpenSearchHealthCheck.OpenSearchClient openSearchClient;
 
         @Test
-        @DisplayName("readiness returns true when cluster is green [GH-90000]")
+        @DisplayName("readiness returns true when cluster is green")
         void openSearchReadinessReturnsTrueWhenHealthy() { // GH-90000
             when(openSearchClient.clusterHealth()).thenReturn(Map.of( // GH-90000
                 "status", "green",
@@ -151,9 +151,9 @@ class EmbeddedServiceHealthCheckTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("readiness returns false when cluster is red [GH-90000]")
+        @DisplayName("readiness returns false when cluster is red")
         void openSearchReadinessReturnsFalseWhenDown() { // GH-90000
-            when(openSearchClient.clusterHealth()).thenThrow(new IllegalStateException("OpenSearch unavailable [GH-90000]"));
+            when(openSearchClient.clusterHealth()).thenThrow(new IllegalStateException("OpenSearch unavailable"));
 
             OpenSearchHealthCheck healthCheck = new OpenSearchHealthCheck(openSearchClient, metricsCollector); // GH-90000
 
@@ -164,7 +164,7 @@ class EmbeddedServiceHealthCheckTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("readiness returns true when cluster is yellow (degraded) [GH-90000]")
+        @DisplayName("readiness returns true when cluster is yellow (degraded)")
         void openSearchReadinessReturnsTrueWhenDegraded() { // GH-90000
             when(openSearchClient.clusterHealth()).thenReturn(Map.of( // GH-90000
                 "status", "yellow",
@@ -180,7 +180,7 @@ class EmbeddedServiceHealthCheckTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("health response includes OpenSearch cluster details [GH-90000]")
+        @DisplayName("health response includes OpenSearch cluster details")
         void openSearchHealthResponseIncludesDetails() { // GH-90000
             when(openSearchClient.clusterHealth()).thenReturn(Map.of( // GH-90000
                 "status", "green",
@@ -199,16 +199,16 @@ class EmbeddedServiceHealthCheckTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("ClickHouse Health Checks [GH-90000]")
+    @DisplayName("ClickHouse Health Checks")
     class ClickHouseHealthChecks {
 
         @Mock
         ClickHouseHealthCheck.ClickHouseClient clickHouseClient;
 
         @Test
-        @DisplayName("readiness returns true when query succeeds [GH-90000]")
+        @DisplayName("readiness returns true when query succeeds")
         void clickHouseReadinessReturnsTrueWhenHealthy() { // GH-90000
-            when(clickHouseClient.execute("SELECT 1 [GH-90000]")).thenReturn(1L);
+            when(clickHouseClient.execute("SELECT 1")).thenReturn(1L);
 
             ClickHouseHealthCheck healthCheck = new ClickHouseHealthCheck(clickHouseClient, metricsCollector); // GH-90000
 
@@ -219,9 +219,9 @@ class EmbeddedServiceHealthCheckTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("readiness returns false when query fails [GH-90000]")
+        @DisplayName("readiness returns false when query fails")
         void clickHouseReadinessReturnsFalseWhenDown() { // GH-90000
-            when(clickHouseClient.execute("SELECT 1 [GH-90000]")).thenThrow(new IllegalStateException("ClickHouse unavailable [GH-90000]"));
+            when(clickHouseClient.execute("SELECT 1")).thenThrow(new IllegalStateException("ClickHouse unavailable"));
 
             ClickHouseHealthCheck healthCheck = new ClickHouseHealthCheck(clickHouseClient, metricsCollector); // GH-90000
 
@@ -232,9 +232,9 @@ class EmbeddedServiceHealthCheckTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("health response includes ClickHouse details [GH-90000]")
+        @DisplayName("health response includes ClickHouse details")
         void clickHouseHealthResponseIncludesDetails() { // GH-90000
-            when(clickHouseClient.execute("SELECT 1 [GH-90000]")).thenReturn(1L);
+            when(clickHouseClient.execute("SELECT 1")).thenReturn(1L);
 
             ClickHouseHealthCheck healthCheck = new ClickHouseHealthCheck(clickHouseClient, metricsCollector); // GH-90000
 
@@ -360,7 +360,7 @@ class EmbeddedServiceHealthCheckTest extends EventloopTestBase {
             long start = System.currentTimeMillis(); // GH-90000
             try {
                 Map<String, Object> health = openSearchClient.clusterHealth(); // GH-90000
-                String status = (String) health.get("status [GH-90000]");
+                String status = (String) health.get("status");
                 long latency = System.currentTimeMillis() - start; // GH-90000
                 metricsCollector.recordTimer("opensearch.health.check.latency", latency); // GH-90000
                 
@@ -414,7 +414,7 @@ class EmbeddedServiceHealthCheckTest extends EventloopTestBase {
         public Promise<Boolean> checkReadiness() { // GH-90000
             long start = System.currentTimeMillis(); // GH-90000
             try {
-                Object result = clickHouseClient.execute("SELECT 1 [GH-90000]");
+                Object result = clickHouseClient.execute("SELECT 1");
                 long latency = System.currentTimeMillis() - start; // GH-90000
                 metricsCollector.recordTimer("clickhouse.health.check.latency", latency); // GH-90000
                 this.lastStatus = HealthStatus.UP;

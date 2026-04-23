@@ -33,7 +33,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
  * @doc.pattern TestCase
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("AepAgentRegistryController — deregisterAgent authorization [GH-90000]")
+@DisplayName("AepAgentRegistryController — deregisterAgent authorization")
 class AepAgentRegistryControllerDeregisterTest extends EventloopTestBase {
 
     @Mock
@@ -53,10 +53,10 @@ class AepAgentRegistryControllerDeregisterTest extends EventloopTestBase {
 
         // Default error and success responses
         lenient() // GH-90000
-                .when(httpUtils.errorResponse(eq(403), eq("Forbidden: admin role required to deregister agents [GH-90000]")))
+                .when(httpUtils.errorResponse(eq(403), eq("Forbidden: admin role required to deregister agents")))
                 .thenReturn(HttpResponse.ofCode(403).build()); // GH-90000
         lenient() // GH-90000
-                .when(httpUtils.errorResponse(eq(400), eq("agentId path parameter required [GH-90000]")))
+                .when(httpUtils.errorResponse(eq(400), eq("agentId path parameter required")))
                 .thenReturn(HttpResponse.ofCode(400).build()); // GH-90000
         lenient() // GH-90000
                 .when(httpUtils.errorResponse(eq(404), any())) // GH-90000
@@ -64,7 +64,7 @@ class AepAgentRegistryControllerDeregisterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("deregisterAgent: missing role header → 403 Forbidden [GH-90000]")
+    @DisplayName("deregisterAgent: missing role header → 403 Forbidden")
     void deregister_missingRoleHeader_returns403() { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.DELETE, "http://localhost/api/v1/agents/agent-1") // GH-90000
                 .build(); // GH-90000
@@ -75,10 +75,10 @@ class AepAgentRegistryControllerDeregisterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("deregisterAgent: USER role → 403 Forbidden [GH-90000]")
+    @DisplayName("deregisterAgent: USER role → 403 Forbidden")
     void deregister_userRole_returns403() { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.DELETE, "http://localhost/api/v1/agents/agent-1") // GH-90000
-                .withHeader(HttpHeaders.of("X-Agent-Role [GH-90000]"), "USER")
+                .withHeader(HttpHeaders.of("X-Agent-Role"), "USER")
                 .build(); // GH-90000
 
         HttpResponse response = runPromise(() -> controller.deregisterAgent(request)); // GH-90000
@@ -87,21 +87,21 @@ class AepAgentRegistryControllerDeregisterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("deregisterAgent: ADMIN role + agent exists → 204 No Content [GH-90000]")
+    @DisplayName("deregisterAgent: ADMIN role + agent exists → 204 No Content")
     void deregister_adminRole_agentExists_returns204() { // GH-90000
         AgentInfo agent = AgentInfo.builder() // GH-90000
-                .id("agent-1 [GH-90000]")
-                .name("Test Agent [GH-90000]")
-                .type("DETERMINISTIC [GH-90000]")
-                .product("test [GH-90000]")
+                .id("agent-1")
+                .name("Test Agent")
+                .type("DETERMINISTIC")
+                .product("test")
                 .capabilities(Set.of()) // GH-90000
-                .status("ACTIVE [GH-90000]")
+                .status("ACTIVE")
                 .build(); // GH-90000
-        when(registryService.resolve("agent-1 [GH-90000]")).thenReturn(Promise.of(Optional.of(agent)));
-        when(registryService.deregister("agent-1 [GH-90000]")).thenReturn(Promise.of(null));
+        when(registryService.resolve("agent-1")).thenReturn(Promise.of(Optional.of(agent)));
+        when(registryService.deregister("agent-1")).thenReturn(Promise.of(null));
 
         HttpRequest request = HttpRequest.builder(HttpMethod.DELETE, "http://localhost/api/v1/agents/agent-1") // GH-90000
-                .withHeader(HttpHeaders.of("X-Agent-Role [GH-90000]"), "ADMIN")
+                .withHeader(HttpHeaders.of("X-Agent-Role"), "ADMIN")
                 .build(); // GH-90000
 
         HttpResponse response = runPromise(() -> controller.deregisterAgent(request)); // GH-90000
@@ -110,12 +110,12 @@ class AepAgentRegistryControllerDeregisterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("deregisterAgent: ADMIN role but agent not found → 404 [GH-90000]")
+    @DisplayName("deregisterAgent: ADMIN role but agent not found → 404")
     void deregister_adminRole_agentNotFound_returns404() { // GH-90000
-        when(registryService.resolve("ghost [GH-90000]")).thenReturn(Promise.of(Optional.empty()));
+        when(registryService.resolve("ghost")).thenReturn(Promise.of(Optional.empty()));
 
         HttpRequest request = HttpRequest.builder(HttpMethod.DELETE, "http://localhost/api/v1/agents/ghost") // GH-90000
-                .withHeader(HttpHeaders.of("X-Agent-Role [GH-90000]"), "ADMIN")
+                .withHeader(HttpHeaders.of("X-Agent-Role"), "ADMIN")
                 .build(); // GH-90000
 
         HttpResponse response = runPromise(() -> controller.deregisterAgent(request)); // GH-90000
@@ -124,21 +124,21 @@ class AepAgentRegistryControllerDeregisterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("deregisterAgent: case-insensitive ADMIN check (admin → allowed) [GH-90000]")
+    @DisplayName("deregisterAgent: case-insensitive ADMIN check (admin → allowed)")
     void deregister_lowercaseAdmin_allowed() { // GH-90000
         AgentInfo agent = AgentInfo.builder() // GH-90000
-                .id("agent-2 [GH-90000]")
-                .name("Test [GH-90000]")
-                .type("DETERMINISTIC [GH-90000]")
-                .product("test [GH-90000]")
+                .id("agent-2")
+                .name("Test")
+                .type("DETERMINISTIC")
+                .product("test")
                 .capabilities(Set.of()) // GH-90000
-                .status("ACTIVE [GH-90000]")
+                .status("ACTIVE")
                 .build(); // GH-90000
-        when(registryService.resolve("agent-2 [GH-90000]")).thenReturn(Promise.of(Optional.of(agent)));
-        when(registryService.deregister("agent-2 [GH-90000]")).thenReturn(Promise.of(null));
+        when(registryService.resolve("agent-2")).thenReturn(Promise.of(Optional.of(agent)));
+        when(registryService.deregister("agent-2")).thenReturn(Promise.of(null));
 
         HttpRequest request = HttpRequest.builder(HttpMethod.DELETE, "http://localhost/api/v1/agents/agent-2") // GH-90000
-                .withHeader(HttpHeaders.of("X-Agent-Role [GH-90000]"), "admin")
+                .withHeader(HttpHeaders.of("X-Agent-Role"), "admin")
                 .build(); // GH-90000
 
         HttpResponse response = runPromise(() -> controller.deregisterAgent(request)); // GH-90000

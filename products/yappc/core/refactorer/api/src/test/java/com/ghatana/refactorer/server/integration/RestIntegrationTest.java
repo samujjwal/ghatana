@@ -65,7 +65,7 @@ class RestIntegrationTest extends IntegrationTestSupport {
         RestModels.RunStatus status =
                 objectMapper.readValue(statusResponse.body(), RestModels.RunStatus.class); // GH-90000
         assertThat(status.jobId()).isEqualTo(jobId); // GH-90000
-        assertThat(status.state()).isEqualTo("QUEUED [GH-90000]");
+        assertThat(status.state()).isEqualTo("QUEUED");
         assertThat(status.toolVersions()).containsEntry("idempotencyKey", "rest-run-123"); // GH-90000
 
         HttpRequest cancelRequest =
@@ -79,7 +79,7 @@ class RestIntegrationTest extends IntegrationTestSupport {
 
         RestModels.RunStatus cancelled =
                 objectMapper.readValue(cancelResponse.body(), RestModels.RunStatus.class); // GH-90000
-        assertThat(cancelled.state()).isEqualTo("CANCELLED [GH-90000]");
+        assertThat(cancelled.state()).isEqualTo("CANCELLED");
 
         HttpRequest reportRequest =
                 HttpRequest.newBuilder() // GH-90000
@@ -99,7 +99,7 @@ class RestIntegrationTest extends IntegrationTestSupport {
         RestModels.Report report =
                 objectMapper.readValue(reportResponse.body(), RestModels.Report.class); // GH-90000
         assertThat(report.jobId()).isEqualTo(jobId); // GH-90000
-        assertThat(report.summaryJson()).contains("CANCELLED [GH-90000]");
+        assertThat(report.summaryJson()).contains("CANCELLED");
 
         HttpRequest metricsRequest =
                 HttpRequest.newBuilder() // GH-90000
@@ -109,7 +109,7 @@ class RestIntegrationTest extends IntegrationTestSupport {
         HttpResponse<String> metricsResponse =
                 httpClient.send(metricsRequest, HttpResponse.BodyHandlers.ofString()); // GH-90000
         assertThat(metricsResponse.statusCode()).isEqualTo(200); // GH-90000
-        assertThat(metricsResponse.body()).contains("polyfix_jobs_submitted_total [GH-90000]");
-        assertThat(metricsResponse.body()).contains("polyfix_jobs_cancelled_total [GH-90000]");
+        assertThat(metricsResponse.body()).contains("polyfix_jobs_submitted_total");
+        assertThat(metricsResponse.body()).contains("polyfix_jobs_cancelled_total");
     }
 }

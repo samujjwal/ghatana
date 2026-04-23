@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * Unit tests for {@link VoiceCloningService} (AV-008.1). // GH-90000
  */
-@DisplayName("VoiceCloningService — AV-008.1 [GH-90000]")
+@DisplayName("VoiceCloningService — AV-008.1")
 class VoiceCloningServiceTest {
 
     private VoiceCloningService service;
@@ -28,19 +28,19 @@ class VoiceCloningServiceTest {
     }
 
     @Test
-    @DisplayName("createClone succeeds with sufficient audio [GH-90000]")
+    @DisplayName("createClone succeeds with sufficient audio")
     void createCloneSuccess() { // GH-90000
         VoiceCloningService.VoiceClone clone = service.createClone(List.of(AUDIO_3S), 16_000, "my-voice"); // GH-90000
 
         assertThat(clone.cloneId()).isNotBlank(); // GH-90000
-        assertThat(clone.displayLabel()).isEqualTo("my-voice [GH-90000]");
+        assertThat(clone.displayLabel()).isEqualTo("my-voice");
         assertThat(clone.embedding()).hasSize(64); // GH-90000
         assertThat(clone.totalDurationMs()).isGreaterThanOrEqualTo(3_000); // GH-90000
         assertThat(service.cloneCount()).isEqualTo(1); // GH-90000
     }
 
     @Test
-    @DisplayName("getClone returns stored clone [GH-90000]")
+    @DisplayName("getClone returns stored clone")
     void getCloneReturnsStored() { // GH-90000
         VoiceCloningService.VoiceClone created = service.createClone(List.of(AUDIO_3S), 16_000, "v"); // GH-90000
         VoiceCloningService.VoiceClone retrieved = service.getClone(created.cloneId()); // GH-90000
@@ -49,13 +49,13 @@ class VoiceCloningServiceTest {
     }
 
     @Test
-    @DisplayName("getClone returns null for unknown ID [GH-90000]")
+    @DisplayName("getClone returns null for unknown ID")
     void getCloneNullForUnknown() { // GH-90000
-        assertThat(service.getClone("no-such-id [GH-90000]")).isNull();
+        assertThat(service.getClone("no-such-id")).isNull();
     }
 
     @Test
-    @DisplayName("deleteClone removes the clone [GH-90000]")
+    @DisplayName("deleteClone removes the clone")
     void deleteClone() { // GH-90000
         VoiceCloningService.VoiceClone clone = service.createClone(List.of(AUDIO_3S), 16_000, "v"); // GH-90000
         boolean removed = service.deleteClone(clone.cloneId()); // GH-90000
@@ -66,43 +66,43 @@ class VoiceCloningServiceTest {
     }
 
     @Test
-    @DisplayName("deleteClone returns false for unknown ID [GH-90000]")
+    @DisplayName("deleteClone returns false for unknown ID")
     void deleteCloneReturnsFalseForUnknown() { // GH-90000
-        assertThat(service.deleteClone("no-such [GH-90000]")).isFalse();
+        assertThat(service.deleteClone("no-such")).isFalse();
     }
 
     @Test
-    @DisplayName("createClone throws when audio is too short [GH-90000]")
+    @DisplayName("createClone throws when audio is too short")
     void createCloneThrowsForShortAudio() { // GH-90000
         byte[] shortAudio = new byte[1_000]; // ~31ms
         assertThatThrownBy(() -> service.createClone(List.of(shortAudio), 16_000, "v")) // GH-90000
                 .isInstanceOf(VoiceCloningService.VoiceCloningException.class) // GH-90000
-                .hasMessageContaining("Insufficient audio [GH-90000]");
+                .hasMessageContaining("Insufficient audio");
     }
 
     @Test
-    @DisplayName("createClone throws when sample list is empty [GH-90000]")
+    @DisplayName("createClone throws when sample list is empty")
     void createCloneThrowsForEmptySamples() { // GH-90000
         assertThatThrownBy(() -> service.createClone(List.of(), 16_000, "v")) // GH-90000
                 .isInstanceOf(VoiceCloningService.VoiceCloningException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("createClone throws for null samples [GH-90000]")
+    @DisplayName("createClone throws for null samples")
     void createCloneThrowsForNullSamples() { // GH-90000
         assertThatThrownBy(() -> service.createClone(null, 16_000, "v")) // GH-90000
                 .isInstanceOf(NullPointerException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("fundamentalFrequency is in typical speech range 85–255 Hz [GH-90000]")
+    @DisplayName("fundamentalFrequency is in typical speech range 85–255 Hz")
     void fundamentalFrequencyInRange() { // GH-90000
         VoiceCloningService.VoiceClone clone = service.createClone(List.of(AUDIO_3S), 16_000, "v"); // GH-90000
         assertThat(clone.fundamentalFrequency()).isBetween(85.0, 300.0); // GH-90000
     }
 
     @Test
-    @DisplayName("Builder rejects non-positive embeddingDimensions [GH-90000]")
+    @DisplayName("Builder rejects non-positive embeddingDimensions")
     void builderRejectsZeroDimensions() { // GH-90000
         assertThatThrownBy(() -> VoiceCloningService.builder().embeddingDimensions(0).build()) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class); // GH-90000

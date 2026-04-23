@@ -10,7 +10,7 @@ import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("YAPPC Services Performance Tier [GH-90000]")
+@DisplayName("YAPPC Services Performance Tier")
 class YappcServicesPerformanceTierTest {
 
     @Test

@@ -48,8 +48,8 @@ public class NoopDeploymentEventPublisher implements DeploymentEventPublisher {
                     pipelineId,
                     tenantId);
         } finally {
-            MDC.remove("eventType [GH-90000]");
-            MDC.remove("deploymentId [GH-90000]");
+            MDC.remove("eventType");
+            MDC.remove("deploymentId");
         }
 
         return Promise.of(null); // GH-90000

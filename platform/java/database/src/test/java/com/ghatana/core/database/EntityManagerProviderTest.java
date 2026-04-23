@@ -52,7 +52,7 @@ class EntityManagerProviderTest {
     void testConstructorValidation() { // GH-90000
         assertThatThrownBy(() -> new EntityManagerProvider(null)) // GH-90000
             .isInstanceOf(IllegalArgumentException.class) // GH-90000
-            .hasMessageContaining("EntityManagerFactory cannot be null [GH-90000]");
+            .hasMessageContaining("EntityManagerFactory cannot be null");
     }
 
     @Test
@@ -69,7 +69,7 @@ class EntityManagerProviderTest {
 
         assertThatThrownBy(() -> provider.createEntityManager()) // GH-90000
             .isInstanceOf(IllegalStateException.class) // GH-90000
-            .hasMessageContaining("EntityManagerProvider is closed [GH-90000]");
+            .hasMessageContaining("EntityManagerProvider is closed");
     }
 
     @Test
@@ -185,13 +185,13 @@ class EntityManagerProviderTest {
             return "test-result";
         });
 
-        assertThat(result).isEqualTo("test-result [GH-90000]");
+        assertThat(result).isEqualTo("test-result");
         verify(entityManager).close(); // GH-90000
     }
 
     @Test
     void testWithEntityManagerException() { // GH-90000
-        RuntimeException testException = new RuntimeException("Test exception [GH-90000]");
+        RuntimeException testException = new RuntimeException("Test exception");
 
         assertThatThrownBy(() -> // GH-90000
             provider.withEntityManager((java.util.function.Function<jakarta.persistence.EntityManager, Object>) em -> { // GH-90000
@@ -221,7 +221,7 @@ class EntityManagerProviderTest {
             return "test-result";
         });
 
-        assertThat(result).isEqualTo("test-result [GH-90000]");
+        assertThat(result).isEqualTo("test-result");
         verify(entityManager, never()).close(); // Should not close thread-local EM // GH-90000
     }
 
@@ -241,19 +241,19 @@ class EntityManagerProviderTest {
     void testFunctionValidation() { // GH-90000
         assertThatThrownBy(() -> provider.withEntityManager((java.util.function.Function<EntityManager, String>) null)) // GH-90000
             .isInstanceOf(IllegalArgumentException.class) // GH-90000
-            .hasMessageContaining("Function cannot be null [GH-90000]");
+            .hasMessageContaining("Function cannot be null");
 
         assertThatThrownBy(() -> provider.withEntityManager((java.util.function.Consumer<EntityManager>) null)) // GH-90000
             .isInstanceOf(IllegalArgumentException.class) // GH-90000
-            .hasMessageContaining("Consumer cannot be null [GH-90000]");
+            .hasMessageContaining("Consumer cannot be null");
 
         assertThatThrownBy(() -> provider.withThreadLocalEntityManager((java.util.function.Function<EntityManager, String>) null)) // GH-90000
             .isInstanceOf(IllegalArgumentException.class) // GH-90000
-            .hasMessageContaining("Function cannot be null [GH-90000]");
+            .hasMessageContaining("Function cannot be null");
 
         assertThatThrownBy(() -> provider.withThreadLocalEntityManager((java.util.function.Consumer<EntityManager>) null)) // GH-90000
             .isInstanceOf(IllegalArgumentException.class) // GH-90000
-            .hasMessageContaining("Consumer cannot be null [GH-90000]");
+            .hasMessageContaining("Consumer cannot be null");
     }
 
     @Test

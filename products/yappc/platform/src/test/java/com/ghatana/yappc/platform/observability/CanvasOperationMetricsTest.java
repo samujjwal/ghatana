@@ -21,7 +21,7 @@ import static org.mockito.Mockito.verify;
  * <p>Verifies that the correct counters, timers, and error details are emitted
  * for each canvas lifecycle event and that constructor guards reject nulls.
  */
-@DisplayName("CanvasOperationMetrics [GH-90000]")
+@DisplayName("CanvasOperationMetrics")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class CanvasOperationMetricsTest {
 
@@ -40,14 +40,14 @@ class CanvasOperationMetricsTest {
     // ─── Constructor guards ────────────────────────────────────────────────
 
     @Test
-    @DisplayName("constructor rejects null MetricsCollector [GH-90000]")
+    @DisplayName("constructor rejects null MetricsCollector")
     void constructor_rejectsNullMetricsCollector() { // GH-90000
         assertThatThrownBy(() -> new CanvasOperationMetrics(null, meterRegistry)) // GH-90000
                 .isInstanceOf(NullPointerException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("constructor rejects null MeterRegistry [GH-90000]")
+    @DisplayName("constructor rejects null MeterRegistry")
     void constructor_rejectsNullMeterRegistry() { // GH-90000
         assertThatThrownBy(() -> new CanvasOperationMetrics(metricsCollector, null)) // GH-90000
                 .isInstanceOf(NullPointerException.class); // GH-90000
@@ -56,7 +56,7 @@ class CanvasOperationMetricsTest {
     // ─── startOperation ────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("startOperation increments started counter and returns a Timer.Sample [GH-90000]")
+    @DisplayName("startOperation increments started counter and returns a Timer.Sample")
     void startOperation_incrementsCounterAndReturnsSample() { // GH-90000
         Timer.Sample sample = metrics.startOperation("element.create", "tenant-1", "architecture"); // GH-90000
 
@@ -71,7 +71,7 @@ class CanvasOperationMetricsTest {
     // ─── recordOperationSuccess ─────────────────────────────────────────────
 
     @Test
-    @DisplayName("recordOperationSuccess increments succeeded counter and stops timer [GH-90000]")
+    @DisplayName("recordOperationSuccess increments succeeded counter and stops timer")
     void recordOperationSuccess_incrementsCounterAndStopsTimer() { // GH-90000
         Timer.Sample sample = metrics.startOperation("layout.update", "tenant-a", "wireframe"); // GH-90000
 
@@ -90,7 +90,7 @@ class CanvasOperationMetricsTest {
     }
 
     @Test
-    @DisplayName("recordOperationSuccess with null sample still increments counter [GH-90000]")
+    @DisplayName("recordOperationSuccess with null sample still increments counter")
     void recordOperationSuccess_nullSample_stillIncrementsCounter() { // GH-90000
         metrics.recordOperationSuccess(null, "connection.delete", "tenant-b", "kanban"); // GH-90000
 
@@ -104,10 +104,10 @@ class CanvasOperationMetricsTest {
     // ─── recordOperationFailure ─────────────────────────────────────────────
 
     @Test
-    @DisplayName("recordOperationFailure with cause tags error_type and stops timer [GH-90000]")
+    @DisplayName("recordOperationFailure with cause tags error_type and stops timer")
     void recordOperationFailure_withCause_tagsErrorType() { // GH-90000
         Timer.Sample sample = metrics.startOperation("element.resize", "tenant-x", "architecture"); // GH-90000
-        RuntimeException cause = new RuntimeException("constraint violation [GH-90000]");
+        RuntimeException cause = new RuntimeException("constraint violation");
 
         metrics.recordOperationFailure(sample, "element.resize", "tenant-x", "architecture", cause); // GH-90000
 
@@ -124,7 +124,7 @@ class CanvasOperationMetricsTest {
     }
 
     @Test
-    @DisplayName("recordOperationFailure with null cause uses 'unknown' error type [GH-90000]")
+    @DisplayName("recordOperationFailure with null cause uses 'unknown' error type")
     void recordOperationFailure_nullCause_usesUnknownErrorType() { // GH-90000
         metrics.recordOperationFailure(null, "element.move", "tenant-y", "wireframe", null); // GH-90000
 
@@ -139,7 +139,7 @@ class CanvasOperationMetricsTest {
     // ─── collaboration metrics ──────────────────────────────────────────────
 
     @Test
-    @DisplayName("recordCollaborationConflict increments conflict counter [GH-90000]")
+    @DisplayName("recordCollaborationConflict increments conflict counter")
     void recordCollaborationConflict_incrementsCounter() { // GH-90000
         metrics.recordCollaborationConflict("tenant-z", "kanban"); // GH-90000
 
@@ -150,7 +150,7 @@ class CanvasOperationMetricsTest {
     }
 
     @Test
-    @DisplayName("recordCollaborationResolved increments resolved counter [GH-90000]")
+    @DisplayName("recordCollaborationResolved increments resolved counter")
     void recordCollaborationResolved_incrementsCounter() { // GH-90000
         metrics.recordCollaborationResolved("tenant-z", "kanban"); // GH-90000
 
@@ -163,7 +163,7 @@ class CanvasOperationMetricsTest {
     // ─── Round-trip timer verification ─────────────────────────────────────
 
     @Test
-    @DisplayName("full operation start-to-success cycle uses real SimpleMeterRegistry timer [GH-90000]")
+    @DisplayName("full operation start-to-success cycle uses real SimpleMeterRegistry timer")
     void fullCycle_realTimerRecordsSuccessfully() { // GH-90000
         Timer.Sample sample = metrics.startOperation("component.add", "tenant-rt", "architecture"); // GH-90000
         metrics.recordOperationSuccess(sample, "component.add", "tenant-rt", "architecture"); // GH-90000

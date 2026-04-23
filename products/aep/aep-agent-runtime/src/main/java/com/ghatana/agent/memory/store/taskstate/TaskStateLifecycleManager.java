@@ -18,7 +18,8 @@ import java.util.Objects;
  * @doc.type class
  * @doc.purpose Task state lifecycle orchestration
  * @doc.layer agent-memory
- */
+  * @doc.pattern Manager
+*/
 public class TaskStateLifecycleManager {
 
     private static final Logger log = LoggerFactory.getLogger(TaskStateLifecycleManager.class);

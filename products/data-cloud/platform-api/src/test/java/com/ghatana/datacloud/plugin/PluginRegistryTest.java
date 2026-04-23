@@ -31,18 +31,18 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("PluginRegistry – Plugin Lifecycle (PF001) [GH-90000]")
+@DisplayName("PluginRegistry – Plugin Lifecycle (PF001)")
 class PluginRegistryTest extends EventloopTestBase {
 
     @Mock
     private PluginRegistry pluginRegistry;
 
     @Nested
-    @DisplayName("Registration [GH-90000]")
+    @DisplayName("Registration")
     class RegistrationTests {
 
         @Test
-        @DisplayName("[PF001]: register_creates_new_plugin [GH-90000]")
+        @DisplayName("[PF001]: register_creates_new_plugin")
         void registerCreatesNewPlugin() { // GH-90000
             PluginRegistry.PluginMetadata plugin = new PluginRegistry.PluginMetadata( // GH-90000
                 "new-plugin", "New Plugin", "A new plugin", "1.0.0",
@@ -57,12 +57,12 @@ class PluginRegistryTest extends EventloopTestBase {
 
             PluginRegistry.PluginMetadata result = runPromise(() -> pluginRegistry.register(plugin)); // GH-90000
 
-            assertThat(result.id()).isEqualTo("new-plugin [GH-90000]");
+            assertThat(result.id()).isEqualTo("new-plugin");
             assertThat(result.status()).isEqualTo(PluginRegistry.PluginStatus.REGISTERED); // GH-90000
         }
 
         @Test
-        @DisplayName("[PF001]: unregister_removes_plugin [GH-90000]")
+        @DisplayName("[PF001]: unregister_removes_plugin")
         void unregisterRemovesPlugin() { // GH-90000
             String pluginId = "plugin-to-remove";
 
@@ -75,7 +75,7 @@ class PluginRegistryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[PF001]: get_plugin_returns_existing [GH-90000]")
+        @DisplayName("[PF001]: get_plugin_returns_existing")
         void getPluginReturnsExisting() { // GH-90000
             String pluginId = "existing-plugin";
             PluginRegistry.PluginMetadata plugin = createPlugin(pluginId, PluginRegistry.PluginStatus.ACTIVE); // GH-90000
@@ -91,11 +91,11 @@ class PluginRegistryTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Activation [GH-90000]")
+    @DisplayName("Activation")
     class ActivationTests {
 
         @Test
-        @DisplayName("[PF001]: activate_enables_plugin [GH-90000]")
+        @DisplayName("[PF001]: activate_enables_plugin")
         void activateEnablesPlugin() { // GH-90000
             String pluginId = "inactive-plugin";
             PluginRegistry.PluginMetadata activated = createPlugin(pluginId, PluginRegistry.PluginStatus.ACTIVE); // GH-90000
@@ -110,7 +110,7 @@ class PluginRegistryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[PF001]: deactivate_disables_plugin [GH-90000]")
+        @DisplayName("[PF001]: deactivate_disables_plugin")
         void deactivateDisablesPlugin() { // GH-90000
             String pluginId = "active-plugin";
             PluginRegistry.PluginMetadata deactivated = createPlugin(pluginId, PluginRegistry.PluginStatus.INACTIVE); // GH-90000
@@ -126,11 +126,11 @@ class PluginRegistryTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Listing [GH-90000]")
+    @DisplayName("Listing")
     class ListingTests {
 
         @Test
-        @DisplayName("[PF001]: list_plugins_returns_all_for_tenant [GH-90000]")
+        @DisplayName("[PF001]: list_plugins_returns_all_for_tenant")
         void listPluginsReturnsAllForTenant() { // GH-90000
             String tenantId = "tenant-alpha";
 
@@ -151,7 +151,7 @@ class PluginRegistryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[PF001]: list_plugins_filters_by_status [GH-90000]")
+        @DisplayName("[PF001]: list_plugins_filters_by_status")
         void listPluginsFiltersByStatus() { // GH-90000
             String tenantId = "tenant-alpha";
 
@@ -173,11 +173,11 @@ class PluginRegistryTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Hooks [GH-90000]")
+    @DisplayName("Hooks")
     class HooksTests {
 
         @Test
-        @DisplayName("[PF001]: execute_hook_runs_plugin_hook [GH-90000]")
+        @DisplayName("[PF001]: execute_hook_runs_plugin_hook")
         void executeHookRunsPluginHook() { // GH-90000
             String pluginId = "plugin-with-hooks";
             String hookName = "onData";
@@ -200,7 +200,7 @@ class PluginRegistryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[PF001]: plugin_has_hook_checks_correctly [GH-90000]")
+        @DisplayName("[PF001]: plugin_has_hook_checks_correctly")
         void pluginHasHookChecksCorrectly() { // GH-90000
             PluginRegistry.PluginMetadata plugin = new PluginRegistry.PluginMetadata( // GH-90000
                 "hooked-plugin", "Hooked", "", "1.0", "tenant-alpha",
@@ -209,17 +209,17 @@ class PluginRegistryTest extends EventloopTestBase {
                 Instant.now(), Instant.now(), "user" // GH-90000
             );
 
-            assertThat(plugin.hasHook("onData [GH-90000]")).isTrue();
-            assertThat(plugin.hasHook("onMissing [GH-90000]")).isFalse();
+            assertThat(plugin.hasHook("onData")).isTrue();
+            assertThat(plugin.hasHook("onMissing")).isFalse();
         }
     }
 
     @Nested
-    @DisplayName("Health [GH-90000]")
+    @DisplayName("Health")
     class HealthTests {
 
         @Test
-        @DisplayName("[PF001]: get_health_returns_plugin_status [GH-90000]")
+        @DisplayName("[PF001]: get_health_returns_plugin_status")
         void getHealthReturnsPluginStatus() { // GH-90000
             String pluginId = "healthy-plugin";
 
@@ -238,7 +238,7 @@ class PluginRegistryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[PF001]: get_health_reports_issues [GH-90000]")
+        @DisplayName("[PF001]: get_health_reports_issues")
         void getHealthReportsIssues() { // GH-90000
             String pluginId = "unhealthy-plugin";
 
@@ -258,11 +258,11 @@ class PluginRegistryTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Configuration [GH-90000]")
+    @DisplayName("Configuration")
     class ConfigurationTests {
 
         @Test
-        @DisplayName("[PF001]: get_configuration_returns_config [GH-90000]")
+        @DisplayName("[PF001]: get_configuration_returns_config")
         void getConfigurationReturnsConfig() { // GH-90000
             String pluginId = "configured-plugin";
             Map<String, Object> config = Map.of( // GH-90000
@@ -280,7 +280,7 @@ class PluginRegistryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[PF001]: update_configuration_changes_config [GH-90000]")
+        @DisplayName("[PF001]: update_configuration_changes_config")
         void updateConfigurationChangesConfig() { // GH-90000
             String pluginId = "configurable-plugin";
             Map<String, Object> newConfig = Map.of("timeout", 60); // GH-90000
@@ -292,7 +292,7 @@ class PluginRegistryTest extends EventloopTestBase {
                 pluginRegistry.updateConfiguration(pluginId, newConfig) // GH-90000
             );
 
-            assertThat(result.get("timeout [GH-90000]")).isEqualTo(60);
+            assertThat(result.get("timeout")).isEqualTo(60);
         }
     }
 

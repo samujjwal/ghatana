@@ -23,14 +23,14 @@ class CiSnapshotRunnerTest {
 
     @BeforeEach
     void setUp(@TempDir Path tempDir) { // GH-90000
-        snapshotDir = tempDir.resolve("ci_snapshots [GH-90000]");
+        snapshotDir = tempDir.resolve("ci_snapshots");
         PackEngine packEngine = new DefaultPackEngine(new SimpleTemplateEngine()); // GH-90000
         ciRunner = new CiSnapshotRunner(packEngine); // GH-90000
     }
 
     @Test
     void testCiRunnerWithBasePack(@TempDir Path tempDir) throws Exception { // GH-90000
-        var basePackResource = getClass().getClassLoader().getResource("packs/base [GH-90000]");
+        var basePackResource = getClass().getClassLoader().getResource("packs/base");
         assertNotNull(basePackResource, "Base pack resource should exist"); // GH-90000
 
         CiSnapshotRunner.PackTestCase testCase =
@@ -50,7 +50,7 @@ class CiSnapshotRunnerTest {
                         false // Don't fail on mismatch for this test
                         );
 
-        Path outputDir = tempDir.resolve("ci_output [GH-90000]");
+        Path outputDir = tempDir.resolve("ci_output");
         CiSnapshotRunner.CiTestResult result = ciRunner.runCiTests(matrix, outputDir); // GH-90000
 
         assertNotNull(result); // GH-90000
@@ -80,17 +80,17 @@ class CiSnapshotRunnerTest {
         List<String> packNames =
                 matrix.testCases().stream().map(CiSnapshotRunner.PackTestCase::packName).toList(); // GH-90000
 
-        assertTrue(packNames.contains("base [GH-90000]"), "Should include base pack");
-        assertTrue(packNames.contains("java-service [GH-90000]"), "Should include Java service pack");
-        assertTrue(packNames.contains("react-vite [GH-90000]"), "Should include React Vite pack");
-        assertTrue(packNames.contains("react-nextjs [GH-90000]"), "Should include Next.js pack");
+        assertTrue(packNames.contains("base"), "Should include base pack");
+        assertTrue(packNames.contains("java-service"), "Should include Java service pack");
+        assertTrue(packNames.contains("react-vite"), "Should include React Vite pack");
+        assertTrue(packNames.contains("react-nextjs"), "Should include Next.js pack");
     }
 
     @Test
     void testCiRunnerWithMultiplePacks(@TempDir Path tempDir) throws Exception { // GH-90000
-        var basePackResource = getClass().getClassLoader().getResource("packs/base [GH-90000]");
+        var basePackResource = getClass().getClassLoader().getResource("packs/base");
         var javaPackResource =
-                getClass().getClassLoader().getResource("packs/java-service-activej-gradle [GH-90000]");
+                getClass().getClassLoader().getResource("packs/java-service-activej-gradle");
 
         assertNotNull(basePackResource, "Base pack resource should exist"); // GH-90000
         assertNotNull(javaPackResource, "Java pack resource should exist"); // GH-90000
@@ -102,7 +102,7 @@ class CiSnapshotRunnerTest {
                                 basePackResource.getPath(), // GH-90000
                                 Map.of("projectName", "multi-base", "author", "Multi Test"), // GH-90000
                                 false,
-                                List.of(".gitignore [GH-90000]")),
+                                List.of(".gitignore")),
                         new CiSnapshotRunner.PackTestCase( // GH-90000
                                 "java-service",
                                 javaPackResource.getPath(), // GH-90000
@@ -117,7 +117,7 @@ class CiSnapshotRunnerTest {
         CiSnapshotRunner.CiTestMatrix matrix =
                 new CiSnapshotRunner.CiTestMatrix(testCases, false, snapshotDir.toString(), false); // GH-90000
 
-        Path outputDir = tempDir.resolve("multi_output [GH-90000]");
+        Path outputDir = tempDir.resolve("multi_output");
         CiSnapshotRunner.CiTestResult result = ciRunner.runCiTests(matrix, outputDir); // GH-90000
 
         assertNotNull(result); // GH-90000
@@ -125,7 +125,7 @@ class CiSnapshotRunnerTest {
         assertEquals(2, testCases.size(), "Should test both packs"); // GH-90000
 
         // Print detailed results
-        System.out.println("Multi-pack CI test completed: [GH-90000]");
+        System.out.println("Multi-pack CI test completed:");
         System.out.printf("- Total tests: %d\\n", result.totalTests()); // GH-90000
         System.out.printf( // GH-90000
                 "- Success rate: %.1f%%\\n",

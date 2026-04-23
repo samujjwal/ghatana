@@ -26,13 +26,13 @@ import static org.mockito.Mockito.mock;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AepRegistryModule [GH-90000]")
+@DisplayName("AepRegistryModule")
 class AepRegistryModuleTest {
 
     private final AepRegistryModule module = new AepRegistryModule(); // GH-90000
 
     @Test
-    @DisplayName("uses no-op stores when no database is configured [GH-90000]")
+    @DisplayName("uses no-op stores when no database is configured")
     void usesNoopStoresWithoutDataSource() { // GH-90000
         AgentExecutionHistoryStore historyStore = module.agentExecutionHistoryStore(null, Runnable::run); // GH-90000
         AgentMemoryPlaneClient memoryClient = module.agentMemoryPlaneClient(null); // GH-90000
@@ -42,7 +42,7 @@ class AepRegistryModuleTest {
     }
 
     @Test
-    @DisplayName("creates durable stores when a database is configured [GH-90000]")
+    @DisplayName("creates durable stores when a database is configured")
     void createsDurableStoresWithDataSource() throws Exception { // GH-90000
         DataSource dataSource = mock(DataSource.class); // GH-90000
         Executor executor = Runnable::run;
@@ -53,28 +53,28 @@ class AepRegistryModuleTest {
         assertThat(historyStore).isNotInstanceOf(NoopAgentExecutionHistoryStore.class); // GH-90000
         assertThat(memoryClient).isNotInstanceOf(AgentMemoryPlaneClient.Noop.class); // GH-90000
         assertThat(readMemoryPlaneField(memoryClient, "memoryPlane").getSimpleName()) // GH-90000
-            .isEqualTo("PersistentMemoryPlane [GH-90000]");
+            .isEqualTo("PersistentMemoryPlane");
     }
 
     @Test
-    @DisplayName("fails fast when an unsupported pipeline registry mode is selected [GH-90000]")
+    @DisplayName("fails fast when an unsupported pipeline registry mode is selected")
     void failsFastWhenUnsupportedPipelineRegistryModeSelected() { // GH-90000
         assertThatIllegalStateException() // GH-90000
             .isThrownBy(() -> AepRegistryModule.createPipelineRegistryClient(EnvConfig.fromMap(Map.of()), "noop")) // GH-90000
-            .withMessageContaining("Unsupported AEP_PIPELINE_REGISTRY_MODE='noop' [GH-90000]")
-            .withMessageContaining("AEP requires AEP_PIPELINE_REGISTRY_MODE=datacloud [GH-90000]");
+            .withMessageContaining("Unsupported AEP_PIPELINE_REGISTRY_MODE='noop'")
+            .withMessageContaining("AEP requires AEP_PIPELINE_REGISTRY_MODE=datacloud");
     }
 
     @Test
-    @DisplayName("fails fast when datacloud mode is selected without a base URL [GH-90000]")
+    @DisplayName("fails fast when datacloud mode is selected without a base URL")
     void failsFastWhenDatacloudModeMissingBaseUrl() { // GH-90000
         assertThatIllegalStateException() // GH-90000
             .isThrownBy(() -> AepRegistryModule.createPipelineRegistryClient(EnvConfig.fromMap(Map.of()), "datacloud")) // GH-90000
-            .withMessageContaining("AEP_DC_BASE_URL [GH-90000]");
+            .withMessageContaining("AEP_DC_BASE_URL");
     }
 
     @Test
-    @DisplayName("creates Data Cloud pipeline registry client when base URL is configured [GH-90000]")
+    @DisplayName("creates Data Cloud pipeline registry client when base URL is configured")
     void createsDataCloudPipelineRegistryClientWhenConfigured() { // GH-90000
         PipelineRegistryClient client = AepRegistryModule.createPipelineRegistryClient( // GH-90000
             EnvConfig.fromMap(Map.of("dc.base.url", "https://datacloud.internal")), // GH-90000

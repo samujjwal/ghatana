@@ -43,7 +43,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer framework
  * @doc.pattern Test
  */
-@DisplayName("AgentTurnPipeline Resilience Tests (2.4.4 · 2.4.5) [GH-90000]")
+@DisplayName("AgentTurnPipeline Resilience Tests (2.4.4 · 2.4.5)")
 class AgentTurnPipelineResilienceTest extends EventloopTestBase {
 
     // -------------------------------------------------------------------------
@@ -64,15 +64,15 @@ class AgentTurnPipelineResilienceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("2.4.5 — Agent execution timeout [GH-90000]")
+    @DisplayName("2.4.5 — Agent execution timeout")
     class AgentTimeoutTests {
 
         @Test
-        @DisplayName("timeout fires when reason phase never resolves (slow mock generator) [GH-90000]")
+        @DisplayName("timeout fires when reason phase never resolves (slow mock generator)")
         void shouldTimeoutWhenGeneratorIsStuck() { // GH-90000
             // GIVEN: a pipeline whose reason phase hangs indefinitely
             AgentTurnPipeline<String, String> pipeline = AgentTurnPipeline
-                    .<String, String>builder("timeout-test-agent [GH-90000]")
+                    .<String, String>builder("timeout-test-agent")
                     .reason((input, ctx) -> hangingPromise()) // GH-90000
                     .build(); // GH-90000
 
@@ -96,16 +96,16 @@ class AgentTurnPipelineResilienceTest extends EventloopTestBase {
             // The timeout must fire well before the test infrastructure times out.
             // We allow a 3 s window (50 ms policy + test overhead + GC jitter). // GH-90000
             assertThat(elapsed) // GH-90000
-                    .as("Timeout must fire in < 3 000 ms, not wait for the 5 s+ generator [GH-90000]")
+                    .as("Timeout must fire in < 3 000 ms, not wait for the 5 s+ generator")
                     .isLessThan(3_000L); // GH-90000
         }
 
         @Test
-        @DisplayName("no timeout when reason phase resolves quickly [GH-90000]")
+        @DisplayName("no timeout when reason phase resolves quickly")
         void shouldSucceedWhenGeneratorIsWithinTimeout() { // GH-90000
             // GIVEN: a fast pipeline
             AgentTurnPipeline<String, String> pipeline = AgentTurnPipeline
-                    .<String, String>builder("fast-test-agent [GH-90000]")
+                    .<String, String>builder("fast-test-agent")
                     .reason((input, ctx) -> Promise.of("# " + input)) // GH-90000
                     .build(); // GH-90000
 
@@ -117,21 +117,21 @@ class AgentTurnPipelineResilienceTest extends EventloopTestBase {
             String result = runPromise(() -> pipeline.executeWithPolicy("hello", ctx, policy)); // GH-90000
 
             // THEN
-            assertThat(result).isEqualTo("# hello [GH-90000]");
+            assertThat(result).isEqualTo("# hello");
         }
 
         @Test
-        @DisplayName("retry succeeds on second attempt after first times out [GH-90000]")
+        @DisplayName("retry succeeds on second attempt after first times out")
         void shouldSucceedOnRetryAfterFirstAttemptTimesOut() { // GH-90000
             // GIVEN: a generator that hangs on first call then succeeds on second
             AtomicBoolean firstCall = new AtomicBoolean(true); // GH-90000
             AgentTurnPipeline<String, String> pipeline = AgentTurnPipeline
-                    .<String, String>builder("retry-test-agent [GH-90000]")
+                    .<String, String>builder("retry-test-agent")
                     .reason((input, ctx) -> { // GH-90000
                         if (firstCall.compareAndSet(true, false)) { // GH-90000
                             return hangingPromise(); // first attempt → hangs // GH-90000
                         }
-                        return Promise.of("retry-success [GH-90000]"); // second attempt → fast
+                        return Promise.of("retry-success"); // second attempt → fast
                     })
                     .build(); // GH-90000
 
@@ -143,15 +143,15 @@ class AgentTurnPipelineResilienceTest extends EventloopTestBase {
             String result = runPromise(() -> pipeline.executeWithPolicy("input", ctx, policy)); // GH-90000
 
             // THEN
-            assertThat(result).isEqualTo("retry-success [GH-90000]");
+            assertThat(result).isEqualTo("retry-success");
         }
 
         @Test
-        @DisplayName("all retries exhausted propagates last timeout exception [GH-90000]")
+        @DisplayName("all retries exhausted propagates last timeout exception")
         void shouldFailAfterAllRetriesExhausted() { // GH-90000
             // GIVEN: generator always hangs
             AgentTurnPipeline<String, String> pipeline = AgentTurnPipeline
-                    .<String, String>builder("exhaust-test-agent [GH-90000]")
+                    .<String, String>builder("exhaust-test-agent")
                     .reason((input, ctx) -> hangingPromise()) // GH-90000
                     .build(); // GH-90000
 
@@ -173,18 +173,18 @@ class AgentTurnPipelineResilienceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("2.4.4 — CancellationToken [GH-90000]")
+    @DisplayName("2.4.4 — CancellationToken")
     class CancellationTokenTests {
 
         @Test
-        @DisplayName("fresh token is not cancelled [GH-90000]")
+        @DisplayName("fresh token is not cancelled")
         void freshTokenIsNotCancelled() { // GH-90000
             CancellationToken token = CancellationToken.create(); // GH-90000
             assertThat(token.isCancelled()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("cancel() sets isCancelled to true [GH-90000]")
+        @DisplayName("cancel() sets isCancelled to true")
         void cancelSetsFlag() { // GH-90000
             CancellationToken token = CancellationToken.create(); // GH-90000
             token.cancel(); // GH-90000
@@ -192,7 +192,7 @@ class AgentTurnPipelineResilienceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("cancel() returns a resolved promise [GH-90000]")
+        @DisplayName("cancel() returns a resolved promise")
         void cancelReturnsResolvedPromise() { // GH-90000
             CancellationToken token = CancellationToken.create(); // GH-90000
             Promise<Void> result = token.cancel(); // GH-90000
@@ -201,7 +201,7 @@ class AgentTurnPipelineResilienceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("asCancelSignal resolves when cancel() is called [GH-90000]")
+        @DisplayName("asCancelSignal resolves when cancel() is called")
         void cancelSignalResolvesOnCancel() { // GH-90000
             CancellationToken token = CancellationToken.create(); // GH-90000
             Promise<Void> signal = token.asCancelSignal(); // GH-90000
@@ -215,7 +215,7 @@ class AgentTurnPipelineResilienceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("cancel() is idempotent — multiple calls change nothing after first [GH-90000]")
+        @DisplayName("cancel() is idempotent — multiple calls change nothing after first")
         void cancelIsIdempotent() { // GH-90000
             CancellationToken token = CancellationToken.create(); // GH-90000
             token.cancel(); // GH-90000
@@ -225,7 +225,7 @@ class AgentTurnPipelineResilienceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("alreadyCancelled() factory creates a pre-cancelled token [GH-90000]")
+        @DisplayName("alreadyCancelled() factory creates a pre-cancelled token")
         void alreadyCancelledFactory() { // GH-90000
             CancellationToken token = CancellationToken.alreadyCancelled(); // GH-90000
             assertThat(token.isCancelled()).isTrue(); // GH-90000
@@ -233,18 +233,18 @@ class AgentTurnPipelineResilienceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("pipeline phase can check cancellation and short-circuit [GH-90000]")
+        @DisplayName("pipeline phase can check cancellation and short-circuit")
         void phaseCanShortCircuitOnCancellation() { // GH-90000
             CancellationToken token = CancellationToken.alreadyCancelled(); // GH-90000
 
             AgentTurnPipeline<String, String> pipeline = AgentTurnPipeline
-                    .<String, String>builder("cancel-aware-agent [GH-90000]")
+                    .<String, String>builder("cancel-aware-agent")
                     .reason((input, ctx) -> { // GH-90000
                         if (token.isCancelled()) { // GH-90000
                             return Promise.ofException( // GH-90000
-                                    new RuntimeException("Cancelled before processing [GH-90000]"));
+                                    new RuntimeException("Cancelled before processing"));
                         }
-                        return Promise.of("should-not-reach [GH-90000]");
+                        return Promise.of("should-not-reach");
                     })
                     .build(); // GH-90000
 
@@ -253,7 +253,7 @@ class AgentTurnPipelineResilienceTest extends EventloopTestBase {
 
             assertThatThrownBy(() -> runPromise(() -> pipeline.executeWithPolicy("x", ctx, policy))) // GH-90000
                     .isInstanceOf(RuntimeException.class) // GH-90000
-                    .hasMessageContaining("Cancelled [GH-90000]");
+                    .hasMessageContaining("Cancelled");
         }
 
         @Test

@@ -46,7 +46,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.pattern Chaos Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("Chaos – Network Partition &amp; Cascading Failure [GH-90000]")
+@DisplayName("Chaos – Network Partition &amp; Cascading Failure")
 class ChaosNetworkPartitionTest extends EventloopTestBase {
 
     private static final String TENANT_ID   = "chaos-partition-tenant";
@@ -69,11 +69,11 @@ class ChaosNetworkPartitionTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Kafka partition scenarios [GH-90000]")
+    @DisplayName("Kafka partition scenarios")
     class KafkaPartitionTests {
 
         @Test
-        @DisplayName("should buffer events when Kafka is unreachable [GH-90000]")
+        @DisplayName("should buffer events when Kafka is unreachable")
         void shouldBufferEventsWhenKafkaUnreachable() throws Exception { // GH-90000
             harness.partitionKafka(); // GH-90000
 
@@ -86,7 +86,7 @@ class ChaosNetworkPartitionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should drain buffer and persist events after Kafka reconnects [GH-90000]")
+        @DisplayName("should drain buffer and persist events after Kafka reconnects")
         void shouldDrainBufferAfterKafkaReconnects() throws Exception { // GH-90000
             harness.partitionKafka(); // GH-90000
             harness.publishEvents(TENANT_ID, 3); // GH-90000
@@ -100,7 +100,7 @@ class ChaosNetworkPartitionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should preserve event ordering after buffer drain [GH-90000]")
+        @DisplayName("should preserve event ordering after buffer drain")
         void shouldPreserveEventOrderingAfterDrain() throws Exception { // GH-90000
             harness.partitionKafka(); // GH-90000
             List<String> published = harness.publishEvents(TENANT_ID, 4); // GH-90000
@@ -113,7 +113,7 @@ class ChaosNetworkPartitionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("partial Kafka write — acks only for some events — remainder buffered [GH-90000]")
+        @DisplayName("partial Kafka write — acks only for some events — remainder buffered")
         void partialKafkaWrite_remainderBuffered() throws Exception { // GH-90000
             harness.setPartialKafkaWriteFailureRate(0.5); // 50% failure rate // GH-90000
 
@@ -131,11 +131,11 @@ class ChaosNetworkPartitionTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Database TCP disconnect [GH-90000]")
+    @DisplayName("Database TCP disconnect")
     class DatabaseTcpDisconnectTests {
 
         @Test
-        @DisplayName("entity write during DB disconnect → fails with IOException [GH-90000]")
+        @DisplayName("entity write during DB disconnect → fails with IOException")
         void entityWrite_dbDisconnected_throwsIOException() { // GH-90000
             harness.partitionDatabase(); // GH-90000
 
@@ -143,13 +143,13 @@ class ChaosNetworkPartitionTest extends EventloopTestBase {
                 .isInstanceOf(Exception.class) // GH-90000
                 .satisfies(e -> // GH-90000
                     assertThat(e instanceof IOException || e.getCause() instanceof IOException // GH-90000
-                        || e.getMessage().contains("connection [GH-90000]") || e.getMessage().contains("partition [GH-90000]"))
-                        .as("Expected IOException or connection-related error [GH-90000]").isTrue()
+                        || e.getMessage().contains("connection") || e.getMessage().contains("partition"))
+                        .as("Expected IOException or connection-related error").isTrue()
                 );
         }
 
         @Test
-        @DisplayName("entity writes resume automatically after DB reconnects [GH-90000]")
+        @DisplayName("entity writes resume automatically after DB reconnects")
         void entityWrites_resumeAfterDbReconnects() throws Exception { // GH-90000
             harness.partitionDatabase(); // GH-90000
 
@@ -165,11 +165,11 @@ class ChaosNetworkPartitionTest extends EventloopTestBase {
 
             // Write should now succeed
             String result = runPromise(() -> harness.writeEntity(TENANT_ID, "id-2")); // GH-90000
-            assertThat(result).isEqualTo("id-2 [GH-90000]");
+            assertThat(result).isEqualTo("id-2");
         }
 
         @Test
-        @DisplayName("read operations fail fast during DB outage and report error clearly [GH-90000]")
+        @DisplayName("read operations fail fast during DB outage and report error clearly")
         void readOperations_dbDown_failFast() { // GH-90000
             harness.partitionDatabase(); // GH-90000
 
@@ -183,17 +183,17 @@ class ChaosNetworkPartitionTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Multi-region partition [GH-90000]")
+    @DisplayName("Multi-region partition")
     class MultiRegionPartitionTests {
 
         @Test
-        @DisplayName("writes to partitioned region fail; other region unaffected [GH-90000]")
+        @DisplayName("writes to partitioned region fail; other region unaffected")
         void partitionedRegion_fails_healthyRegionUnaffected() throws Exception { // GH-90000
             harness.partitionRegion(REGION_B); // GH-90000
 
             // Region A still works
             String resultA = runPromise(() -> harness.writeToRegion(REGION_A, "id-a")); // GH-90000
-            assertThat(resultA).isEqualTo("id-a [GH-90000]");
+            assertThat(resultA).isEqualTo("id-a");
 
             // Region B is partitioned
             assertThatThrownBy(() -> runPromise(() -> harness.writeToRegion(REGION_B, "id-b"))) // GH-90000
@@ -201,7 +201,7 @@ class ChaosNetworkPartitionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("both regions recover after partition healed [GH-90000]")
+        @DisplayName("both regions recover after partition healed")
         void bothRegions_recover_afterPartitionHealed() throws Exception { // GH-90000
             harness.partitionRegion(REGION_B); // GH-90000
 
@@ -210,12 +210,12 @@ class ChaosNetworkPartitionTest extends EventloopTestBase {
 
             String resultA = runPromise(() -> harness.writeToRegion(REGION_A, "id-a")); // GH-90000
             String resultB = runPromise(() -> harness.writeToRegion(REGION_B, "id-b")); // GH-90000
-            assertThat(resultA).isEqualTo("id-a [GH-90000]");
-            assertThat(resultB).isEqualTo("id-b [GH-90000]");
+            assertThat(resultA).isEqualTo("id-a");
+            assertThat(resultB).isEqualTo("id-b");
         }
 
         @Test
-        @DisplayName("no data cross-contamination between regions during partition [GH-90000]")
+        @DisplayName("no data cross-contamination between regions during partition")
         void noDataCrossContamination_duringPartition() throws Exception { // GH-90000
             harness.partitionRegion(REGION_B); // GH-90000
 
@@ -232,21 +232,21 @@ class ChaosNetworkPartitionTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Cascading dependency failure [GH-90000]")
+    @DisplayName("Cascading dependency failure")
     class CascadingFailureTests {
 
         @Test
-        @DisplayName("Kafka failure alone does not cascade to entity CRUD [GH-90000]")
+        @DisplayName("Kafka failure alone does not cascade to entity CRUD")
         void kafkaFailure_doesNotCascadeToEntityCrud() throws Exception { // GH-90000
             harness.partitionKafka(); // GH-90000
 
             // Entity writes should still work (events buffered, not blocking) // GH-90000
             String entityId = runPromise(() -> harness.writeEntity(TENANT_ID, "id-1")); // GH-90000
-            assertThat(entityId).isEqualTo("id-1 [GH-90000]");
+            assertThat(entityId).isEqualTo("id-1");
         }
 
         @Test
-        @DisplayName("analytics query timeout does not block entity writes [GH-90000]")
+        @DisplayName("analytics query timeout does not block entity writes")
         void analyticsTimeout_doesNotBlockEntityWrites() throws Exception { // GH-90000
             harness.injectAnalyticsTimeout(100); // 100 ms timeout // GH-90000
 
@@ -256,7 +256,7 @@ class ChaosNetworkPartitionTest extends EventloopTestBase {
 
             // Entity writes must still work
             String entityId = runPromise(() -> harness.writeEntity(TENANT_ID, "id-safe")); // GH-90000
-            assertThat(entityId).isEqualTo("id-safe [GH-90000]");
+            assertThat(entityId).isEqualTo("id-safe");
         }
     }
 
@@ -331,14 +331,14 @@ class ChaosNetworkPartitionTest extends EventloopTestBase {
 
         Promise<String> writeEntityOrFail(String tenantId, String id) { // GH-90000
             if (dbPartitioned) { // GH-90000
-                return Promise.ofException(new IOException("DB partition: connection refused [GH-90000]"));
+                return Promise.ofException(new IOException("DB partition: connection refused"));
             }
             return Promise.of(id); // GH-90000
         }
 
         Promise<String> writeEntity(String tenantId, String id) { // GH-90000
             if (dbPartitioned) { // GH-90000
-                return Promise.ofException(new IOException("DB partition: connection refused [GH-90000]"));
+                return Promise.ofException(new IOException("DB partition: connection refused"));
             }
             entityCounter++;
             return Promise.of(id); // GH-90000
@@ -346,7 +346,7 @@ class ChaosNetworkPartitionTest extends EventloopTestBase {
 
         Promise<String> readEntityOrFail(String tenantId, String id) { // GH-90000
             if (dbPartitioned) { // GH-90000
-                return Promise.ofException(new IOException("DB partition: connection refused [GH-90000]"));
+                return Promise.ofException(new IOException("DB partition: connection refused"));
             }
             return Promise.of(id); // GH-90000
         }

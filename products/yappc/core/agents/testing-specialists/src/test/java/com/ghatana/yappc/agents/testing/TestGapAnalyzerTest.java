@@ -11,29 +11,29 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-@DisplayName("TestGapAnalyzer Tests [GH-90000]")
+@DisplayName("TestGapAnalyzer Tests")
 class TestGapAnalyzerTest {
 
   @TempDir Path tempDir;
 
   @Test
-  @DisplayName("analyze parses jacoco xml and prioritizes risky uncovered methods [GH-90000]")
+  @DisplayName("analyze parses jacoco xml and prioritizes risky uncovered methods")
   void analyzeParsesJacocoXmlAndPrioritizesRiskyMethods() throws IOException { // GH-90000
-    Path report = tempDir.resolve("jacoco.xml [GH-90000]");
+    Path report = tempDir.resolve("jacoco.xml");
     Files.writeString(report, sampleJacocoXml()); // GH-90000
 
     TestGapAnalyzer analyzer = new TestGapAnalyzer(); // GH-90000
     List<TestGapAnalyzer.TestGap> gaps = analyzer.analyze(report); // GH-90000
 
     assertThat(gaps).hasSize(2); // GH-90000
-    assertThat(gaps.getFirst().methodId()).isEqualTo("com.example.Calculator#branchyMethod [GH-90000]");
-    assertThat(gaps.getFirst().severity()).isEqualTo("high [GH-90000]");
-    assertThat(gaps.getFirst().recommendation()).contains("Generate test for Calculator#branchyMethod [GH-90000]");
-    assertThat(gaps.getFirst().summary()).contains("missed branches [GH-90000]");
+    assertThat(gaps.getFirst().methodId()).isEqualTo("com.example.Calculator#branchyMethod");
+    assertThat(gaps.getFirst().severity()).isEqualTo("high");
+    assertThat(gaps.getFirst().recommendation()).contains("Generate test for Calculator#branchyMethod");
+    assertThat(gaps.getFirst().summary()).contains("missed branches");
   }
 
   @Test
-  @DisplayName("analyzeXml returns empty when report has no missed coverage [GH-90000]")
+  @DisplayName("analyzeXml returns empty when report has no missed coverage")
   void analyzeXmlReturnsEmptyWhenNoCoverageGapsRemain() { // GH-90000
     TestGapAnalyzer analyzer = new TestGapAnalyzer(); // GH-90000
 
@@ -49,43 +49,43 @@ class TestGapAnalyzerTest {
   }
 
   @Test
-  @DisplayName("analyze rejects missing report paths [GH-90000]")
+  @DisplayName("analyze rejects missing report paths")
   void analyzeRejectsMissingReportPaths() { // GH-90000
     TestGapAnalyzer analyzer = new TestGapAnalyzer(); // GH-90000
 
-    assertThatThrownBy(() -> analyzer.analyze(tempDir.resolve("missing.xml [GH-90000]")))
+    assertThatThrownBy(() -> analyzer.analyze(tempDir.resolve("missing.xml")))
         .isInstanceOf(IllegalArgumentException.class) // GH-90000
-        .hasMessageContaining("must exist [GH-90000]");
+        .hasMessageContaining("must exist");
   }
 
   @Test
-  @DisplayName("analyzeXml rejects malformed xml [GH-90000]")
+  @DisplayName("analyzeXml rejects malformed xml")
   void analyzeXmlRejectsMalformedXml() { // GH-90000
     TestGapAnalyzer analyzer = new TestGapAnalyzer(); // GH-90000
 
-    assertThatThrownBy(() -> analyzer.analyzeXml("<report> [GH-90000]"))
+    assertThatThrownBy(() -> analyzer.analyzeXml("<report>"))
         .isInstanceOf(IllegalArgumentException.class) // GH-90000
-        .hasMessageContaining("Invalid Jacoco XML report [GH-90000]");
+        .hasMessageContaining("Invalid Jacoco XML report");
   }
 
   @Test
-  @DisplayName("analyze handles blank reports and directory read failures [GH-90000]")
+  @DisplayName("analyze handles blank reports and directory read failures")
   void analyzeHandlesBlankReportsAndDirectoryReadFailures() throws IOException { // GH-90000
     TestGapAnalyzer analyzer = new TestGapAnalyzer(); // GH-90000
-    Files.createDirectory(tempDir.resolve("report-dir [GH-90000]"));
+    Files.createDirectory(tempDir.resolve("report-dir"));
 
     assertThatThrownBy(() -> analyzer.analyze(null)) // GH-90000
       .isInstanceOf(IllegalArgumentException.class) // GH-90000
-      .hasMessageContaining("Jacoco report path must exist [GH-90000]");
+      .hasMessageContaining("Jacoco report path must exist");
     assertThat(analyzer.analyzeXml(null)).isEmpty(); // GH-90000
-    assertThat(analyzer.analyzeXml("  [GH-90000]")).isEmpty();
-    assertThatThrownBy(() -> analyzer.analyze(tempDir.resolve("report-dir [GH-90000]")))
+    assertThat(analyzer.analyzeXml(" ")).isEmpty();
+    assertThatThrownBy(() -> analyzer.analyze(tempDir.resolve("report-dir")))
         .isInstanceOf(IllegalStateException.class) // GH-90000
-        .hasMessageContaining("Failed to read Jacoco report [GH-90000]");
+        .hasMessageContaining("Failed to read Jacoco report");
   }
 
   @Test
-  @DisplayName("analyzeXml handles zero-line methods missing counters and lower severities [GH-90000]")
+  @DisplayName("analyzeXml handles zero-line methods missing counters and lower severities")
   void analyzeXmlHandlesZeroLineMethodsMissingCountersAndLowerSeverities() { // GH-90000
     TestGapAnalyzer analyzer = new TestGapAnalyzer(); // GH-90000
 
@@ -114,15 +114,15 @@ class TestGapAnalyzerTest {
             """);
 
     assertThat(gaps).hasSize(2); // GH-90000
-    assertThat(gaps.get(0).severity()).isEqualTo("medium [GH-90000]");
-    assertThat(gaps.get(0).recommendation()).contains("remaining missed line [GH-90000]");
-    assertThat(gaps.get(1).severity()).isEqualTo("low [GH-90000]");
-    assertThat(gaps.get(1).recommendation()).contains("remaining missed line [GH-90000]");
-    assertThat(gaps.get(0).methodId()).startsWith("PlainName# [GH-90000]");
+    assertThat(gaps.get(0).severity()).isEqualTo("medium");
+    assertThat(gaps.get(0).recommendation()).contains("remaining missed line");
+    assertThat(gaps.get(1).severity()).isEqualTo("low");
+    assertThat(gaps.get(1).recommendation()).contains("remaining missed line");
+    assertThat(gaps.get(0).methodId()).startsWith("PlainName#");
   }
 
   @Test
-  @DisplayName("analyzeXml covers missed branch only and long uncovered path recommendations [GH-90000]")
+  @DisplayName("analyzeXml covers missed branch only and long uncovered path recommendations")
   void analyzeXmlCoversMissedBranchOnlyAndLongUncoveredPaths() { // GH-90000
     TestGapAnalyzer analyzer = new TestGapAnalyzer(); // GH-90000
 
@@ -150,8 +150,8 @@ class TestGapAnalyzerTest {
     assertThat(gaps).hasSize(2); // GH-90000
   assertThat(gaps) // GH-90000
     .extracting(TestGapAnalyzer.TestGap::recommendation) // GH-90000
-    .anySatisfy(recommendation -> assertThat(recommendation).contains("missed conditional branches [GH-90000]"))
-    .anySatisfy(recommendation -> assertThat(recommendation).contains("currently untested execution path [GH-90000]"));
+    .anySatisfy(recommendation -> assertThat(recommendation).contains("missed conditional branches"))
+    .anySatisfy(recommendation -> assertThat(recommendation).contains("currently untested execution path"));
   }
 
   private String sampleJacocoXml() { // GH-90000

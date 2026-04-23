@@ -15,7 +15,11 @@ import java.util.Map;
 
 /**
  * Models for cluster management operations.
- */
+  * @doc.type enum
+ * @doc.purpose Provides cluster management models functionality.
+ * @doc.layer product
+ * @doc.pattern Enum
+*/
 public final class ClusterManagementModels {
 
     private ClusterManagementModels() {

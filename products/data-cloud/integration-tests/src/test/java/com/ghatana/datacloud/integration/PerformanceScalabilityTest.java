@@ -23,11 +23,11 @@ import static org.mockito.Mockito.mock;
  *
  * Test performance under load and scalability.
  */
-@DisplayName("Performance Scalability Tests [GH-90000]")
+@DisplayName("Performance Scalability Tests")
 class PerformanceScalabilityTest {
 
     @Test
-    @DisplayName("Should handle high load [GH-90000]")
+    @DisplayName("Should handle high load")
     void shouldHandleHighLoad() { // GH-90000
         int concurrentRequests = 1000;
         int maxCapacity = 10000;
@@ -36,7 +36,7 @@ class PerformanceScalabilityTest {
     }
 
     @Test
-    @DisplayName("Should scale horizontally [GH-90000]")
+    @DisplayName("Should scale horizontally")
     void shouldScaleHorizontally() { // GH-90000
         int nodes = 5;
         int minNodes = 3;
@@ -45,7 +45,7 @@ class PerformanceScalabilityTest {
     }
 
     @Test
-    @DisplayName("Should handle resource constraints [GH-90000]")
+    @DisplayName("Should handle resource constraints")
     void shouldHandleResourceConstraints() { // GH-90000
         double cpuLimit = 0.8;
         double memoryLimit = 0.8;
@@ -57,7 +57,7 @@ class PerformanceScalabilityTest {
     }
 
     @Test
-    @DisplayName("Should measure throughput [GH-90000]")
+    @DisplayName("Should measure throughput")
     void shouldMeasureThroughput() { // GH-90000
         int requestsPerSecond = 500;
         int targetThroughput = 1000;
@@ -66,7 +66,7 @@ class PerformanceScalabilityTest {
     }
 
     @Test
-    @DisplayName("Should handle latency spikes [GH-90000]")
+    @DisplayName("Should handle latency spikes")
     void shouldHandleLatencySpikes() { // GH-90000
         long normalLatency = 50L;
         long spikeLatency = 500L;
@@ -77,7 +77,7 @@ class PerformanceScalabilityTest {
     }
 
     @Test
-    @DisplayName("Should handle backpressure [GH-90000]")
+    @DisplayName("Should handle backpressure")
     void shouldHandleBackpressure() { // GH-90000
         int queueSize = 100;
         int maxQueueSize = 1000;

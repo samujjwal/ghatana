@@ -27,13 +27,13 @@ class RedisCacheConfigTest {
     @Test
     void testCustomConfiguration() { // GH-90000
         RedisCacheConfig config = RedisCacheConfig.builder() // GH-90000
-                .host("redis.example.com [GH-90000]")
+                .host("redis.example.com")
                 .port(6380) // GH-90000
-                .password("secret [GH-90000]")
+                .password("secret")
                 .database(5) // GH-90000
                 .timeout(Duration.ofSeconds(10)) // GH-90000
                 .ttlSeconds(3600) // GH-90000
-                .keyPrefix("myapp: [GH-90000]")
+                .keyPrefix("myapp:")
                 .build(); // GH-90000
 
         assertEquals("redis.example.com", config.getHost()); // GH-90000
@@ -48,14 +48,14 @@ class RedisCacheConfigTest {
     @Test
     void testToBuilder() { // GH-90000
         RedisCacheConfig original = RedisCacheConfig.builder() // GH-90000
-                .host("redis.example.com [GH-90000]")
+                .host("redis.example.com")
                 .port(6380) // GH-90000
-                .keyPrefix("original: [GH-90000]")
+                .keyPrefix("original:")
                 .build(); // GH-90000
 
         RedisCacheConfig modified = original.toBuilder() // GH-90000
                 .database(3) // GH-90000
-                .keyPrefix("modified: [GH-90000]")
+                .keyPrefix("modified:")
                 .build(); // GH-90000
 
         // Original unchanged
@@ -138,17 +138,17 @@ class RedisCacheConfigTest {
     @Test
     void testEquals() { // GH-90000
         RedisCacheConfig config1 = RedisCacheConfig.builder() // GH-90000
-                .host("redis.example.com [GH-90000]")
+                .host("redis.example.com")
                 .port(6380) // GH-90000
                 .build(); // GH-90000
 
         RedisCacheConfig config2 = RedisCacheConfig.builder() // GH-90000
-                .host("redis.example.com [GH-90000]")
+                .host("redis.example.com")
                 .port(6380) // GH-90000
                 .build(); // GH-90000
 
         RedisCacheConfig config3 = RedisCacheConfig.builder() // GH-90000
-                .host("redis.other.com [GH-90000]")
+                .host("redis.other.com")
                 .port(6380) // GH-90000
                 .build(); // GH-90000
 
@@ -161,12 +161,12 @@ class RedisCacheConfigTest {
     @Test
     void testHashCode() { // GH-90000
         RedisCacheConfig config1 = RedisCacheConfig.builder() // GH-90000
-                .host("redis.example.com [GH-90000]")
+                .host("redis.example.com")
                 .port(6380) // GH-90000
                 .build(); // GH-90000
 
         RedisCacheConfig config2 = RedisCacheConfig.builder() // GH-90000
-                .host("redis.example.com [GH-90000]")
+                .host("redis.example.com")
                 .port(6380) // GH-90000
                 .build(); // GH-90000
 
@@ -176,21 +176,21 @@ class RedisCacheConfigTest {
     @Test
     void testToString() { // GH-90000
         RedisCacheConfig config = RedisCacheConfig.builder() // GH-90000
-                .host("redis.example.com [GH-90000]")
+                .host("redis.example.com")
                 .port(6380) // GH-90000
                 .database(5) // GH-90000
-                .keyPrefix("test: [GH-90000]")
+                .keyPrefix("test:")
                 .build(); // GH-90000
 
         String str = config.toString(); // GH-90000
 
         assertNotNull(str); // GH-90000
-        assertTrue(str.contains("redis.example.com [GH-90000]"));
-        assertTrue(str.contains("6380 [GH-90000]"));
-        assertTrue(str.contains("5 [GH-90000]"));
-        assertTrue(str.contains("test: [GH-90000]"));
+        assertTrue(str.contains("redis.example.com"));
+        assertTrue(str.contains("6380"));
+        assertTrue(str.contains("5"));
+        assertTrue(str.contains("test:"));
         // Password should not be in toString for security
-        assertFalse(str.contains("password [GH-90000]"));
+        assertFalse(str.contains("password"));
     }
 
     @Test

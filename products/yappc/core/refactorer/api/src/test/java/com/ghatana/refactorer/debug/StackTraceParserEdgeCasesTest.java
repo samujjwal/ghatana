@@ -30,7 +30,7 @@ class StackTraceParserEdgeCasesTest {
     @Test
     void parse_windowsPaths_parsesCorrectly() throws IOException { // GH-90000
         // Given: A stack trace with Windows paths
-        String stackTrace = readGoldenFile("windows_stacktrace.txt [GH-90000]");
+        String stackTrace = readGoldenFile("windows_stacktrace.txt");
 
         // When: Parsing the stack trace
         List<StackTraceParser.TraceFrame> frames = javaParser.parse(stackTrace); // GH-90000
@@ -39,7 +39,7 @@ class StackTraceParserEdgeCasesTest {
         assertFalse(frames.isEmpty(), "Should parse frames from Windows paths"); // GH-90000
 
         // Debug: Print all parsed frames
-        System.out.println("Parsed frames: [GH-90000]");
+        System.out.println("Parsed frames:");
         frames.forEach(frame -> System.out.printf("- %s%n", frame)); // GH-90000
 
         // Verify we can parse standard Java stack frames
@@ -68,7 +68,7 @@ class StackTraceParserEdgeCasesTest {
                         .anyMatch( // GH-90000
                                 frame ->
                                         frame.function() != null // GH-90000
-                                                && frame.function().startsWith("access$ [GH-90000]"));
+                                                && frame.function().startsWith("access$"));
         assertTrue(foundAccessorFrame, "Should handle accessor methods"); // GH-90000
 
         // Verify we can parse anonymous class frames
@@ -76,14 +76,14 @@ class StackTraceParserEdgeCasesTest {
                 frames.stream() // GH-90000
                         .anyMatch( // GH-90000
                                 frame ->
-                                        frame.function() != null && frame.function().contains("$ [GH-90000]"));
+                                        frame.function() != null && frame.function().contains("$"));
         assertTrue(foundAnonymousFrame, "Should handle anonymous class frames"); // GH-90000
     }
 
     @Test
     void parse_asyncNodeStackTraces_parsesCorrectly() throws IOException { // GH-90000
         // Given: A Node.js async stack trace
-        String stackTrace = readGoldenFile("node_async_stacktrace.txt [GH-90000]");
+        String stackTrace = readGoldenFile("node_async_stacktrace.txt");
 
         // When: Parsing the stack trace
         List<StackTraceParser.TraceFrame> frames = nodeParser.parse(stackTrace); // GH-90000
@@ -97,7 +97,7 @@ class StackTraceParserEdgeCasesTest {
                         .anyMatch( // GH-90000
                                 frame ->
                                         frame.function() != null // GH-90000
-                                                && frame.function().startsWith("async  [GH-90000]"));
+                                                && frame.function().startsWith("async "));
         assertTrue(foundAsyncFrame, "Should handle async/await frames"); // GH-90000
 
         // Verify Promise.all frames
@@ -106,7 +106,7 @@ class StackTraceParserEdgeCasesTest {
                         .anyMatch( // GH-90000
                                 frame ->
                                         frame.function() != null // GH-90000
-                                                && frame.function().contains("Promise.all [GH-90000]"));
+                                                && frame.function().contains("Promise.all"));
         assertTrue(foundPromiseAll, "Should handle Promise.all frames"); // GH-90000
     }
 

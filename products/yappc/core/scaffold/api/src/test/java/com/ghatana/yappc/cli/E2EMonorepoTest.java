@@ -64,15 +64,15 @@ class E2EMonorepoTest {
         nxAdapter = new NxAdapter(templateEngine); // GH-90000
 
         // Initialize OpenTelemetry tracer for observability
-        tracer = OpenTelemetry.noop().getTracer("yappc-e2e [GH-90000]");
+        tracer = OpenTelemetry.noop().getTracer("yappc-e2e");
     }
 
     @Test
     void shouldGenerateCompleteMonorepoWithJavaAndTypeScript() throws Exception { // GH-90000
-        Span span = tracer.spanBuilder("e2e-monorepo-generation [GH-90000]").startSpan();
+        Span span = tracer.spanBuilder("e2e-monorepo-generation").startSpan();
         try (Scope scope = span.makeCurrent()) { // GH-90000
             // Day 15 Deliverable: End-to-end integration test
-            WorkspaceSpec spec = WorkspaceSpec.defaultMonorepo("test-monorepo [GH-90000]");
+            WorkspaceSpec spec = WorkspaceSpec.defaultMonorepo("test-monorepo");
 
             // Generate combined Gradle + Nx workspace
             generateWorkspaceFiles(spec); // GH-90000
@@ -89,7 +89,7 @@ class E2EMonorepoTest {
             // Store artifacts for observability
             storeArtifacts(); // GH-90000
 
-            span.addEvent("e2e-monorepo-generation-complete [GH-90000]");
+            span.addEvent("e2e-monorepo-generation-complete");
         } finally {
             span.end(); // GH-90000
         }
@@ -97,10 +97,10 @@ class E2EMonorepoTest {
 
     @Test
     void shouldRunDoctorCommandSuccessfully() throws Exception { // GH-90000
-        Span span = tracer.spanBuilder("e2e-doctor-command [GH-90000]").startSpan();
+        Span span = tracer.spanBuilder("e2e-doctor-command").startSpan();
         try (Scope scope = span.makeCurrent()) { // GH-90000
             // Initialize workspace
-            WorkspaceSpec spec = WorkspaceSpec.defaultMonorepo("test-workspace [GH-90000]");
+            WorkspaceSpec spec = WorkspaceSpec.defaultMonorepo("test-workspace");
             generateWorkspaceFiles(spec); // GH-90000
 
             // Run doctor command (inject fake runner to avoid external tool dependency in CI) // GH-90000
@@ -144,9 +144,9 @@ class E2EMonorepoTest {
             // Verify doctor output
             String output = outputStream.toString(); // GH-90000
             assertEquals(0, exitCode, "Doctor command should succeed"); // GH-90000
-            assertTrue(output.contains("System Requirements Check [GH-90000]"), "Should show doctor output");
+            assertTrue(output.contains("System Requirements Check"), "Should show doctor output");
 
-            span.addEvent("doctor-command-complete [GH-90000]");
+            span.addEvent("doctor-command-complete");
         } finally {
             span.end(); // GH-90000
         }
@@ -154,10 +154,10 @@ class E2EMonorepoTest {
 
     @Test
     void shouldRunGraphCommandSuccessfully() throws Exception { // GH-90000
-        Span span = tracer.spanBuilder("e2e-graph-command [GH-90000]").startSpan();
+        Span span = tracer.spanBuilder("e2e-graph-command").startSpan();
         try (Scope scope = span.makeCurrent()) { // GH-90000
             // Initialize workspace
-            WorkspaceSpec spec = WorkspaceSpec.defaultMonorepo("test-workspace [GH-90000]");
+            WorkspaceSpec spec = WorkspaceSpec.defaultMonorepo("test-workspace");
             generateWorkspaceFiles(spec); // GH-90000
 
             // Run graph command
@@ -172,10 +172,10 @@ class E2EMonorepoTest {
             String output = outputStream.toString(); // GH-90000
             assertEquals(0, exitCode, "Graph command should succeed"); // GH-90000
             assertTrue( // GH-90000
-                    output.contains("adapters [GH-90000]") || output.contains("tasks [GH-90000]"),
+                    output.contains("adapters") || output.contains("tasks"),
                     "Should show graph data");
 
-            span.addEvent("graph-command-complete [GH-90000]");
+            span.addEvent("graph-command-complete");
         } finally {
             span.end(); // GH-90000
         }
@@ -183,10 +183,10 @@ class E2EMonorepoTest {
 
     @Test
     void shouldRunCIDryRunSuccessfully() throws Exception { // GH-90000
-        Span span = tracer.spanBuilder("e2e-ci-dry-run [GH-90000]").startSpan();
+        Span span = tracer.spanBuilder("e2e-ci-dry-run").startSpan();
         try (Scope scope = span.makeCurrent()) { // GH-90000
             // Initialize workspace with CI configuration
-            WorkspaceSpec spec = WorkspaceSpec.defaultMonorepo("test-workspace [GH-90000]");
+            WorkspaceSpec spec = WorkspaceSpec.defaultMonorepo("test-workspace");
             generateWorkspaceFiles(spec); // GH-90000
 
             // Create basic CI configuration for dry-run
@@ -196,7 +196,7 @@ class E2EMonorepoTest {
             boolean ciValid = validateCIConfiguration(); // GH-90000
             assertTrue(ciValid, "CI configuration should be valid"); // GH-90000
 
-            span.addEvent("ci-dry-run-complete [GH-90000]");
+            span.addEvent("ci-dry-run-complete");
         } finally {
             span.end(); // GH-90000
         }
@@ -213,40 +213,40 @@ class E2EMonorepoTest {
     private void verifyGradleInfrastructure() { // GH-90000
         // Verify Gradle files exist
         assertTrue( // GH-90000
-                Files.exists(tempDir.resolve("settings.gradle [GH-90000]")), "settings.gradle should exist");
+                Files.exists(tempDir.resolve("settings.gradle")), "settings.gradle should exist");
         assertTrue( // GH-90000
-                Files.exists(tempDir.resolve("gradle/libs.versions.toml [GH-90000]")),
+                Files.exists(tempDir.resolve("gradle/libs.versions.toml")),
                 "Version catalog should exist");
-        assertTrue(Files.exists(tempDir.resolve("build.gradle [GH-90000]")), "Root build.gradle should exist");
+        assertTrue(Files.exists(tempDir.resolve("build.gradle")), "Root build.gradle should exist");
         assertTrue( // GH-90000
-                Files.exists(tempDir.resolve("gradle.properties [GH-90000]")),
+                Files.exists(tempDir.resolve("gradle.properties")),
                 "gradle.properties should exist");
     }
 
     private void verifyNxInfrastructure() { // GH-90000
         // Verify Nx files exist
-        assertTrue(Files.exists(tempDir.resolve("nx.json [GH-90000]")), "nx.json should exist");
-        assertTrue(Files.exists(tempDir.resolve("package.json [GH-90000]")), "package.json should exist");
+        assertTrue(Files.exists(tempDir.resolve("nx.json")), "nx.json should exist");
+        assertTrue(Files.exists(tempDir.resolve("package.json")), "package.json should exist");
         assertTrue( // GH-90000
-                Files.exists(tempDir.resolve("tsconfig.base.json [GH-90000]")),
+                Files.exists(tempDir.resolve("tsconfig.base.json")),
                 "tsconfig.base.json should exist");
         assertTrue( // GH-90000
-                Files.exists(tempDir.resolve("eslint.config.mjs [GH-90000]")),
+                Files.exists(tempDir.resolve("eslint.config.mjs")),
                 "eslint.config.mjs should exist");
     }
 
     private void verifyPnpmPolicies() { // GH-90000
         // Verify pnpm workspace policies (Day 14) // GH-90000
         assertTrue( // GH-90000
-                Files.exists(tempDir.resolve("pnpm-workspace.yaml [GH-90000]")),
+                Files.exists(tempDir.resolve("pnpm-workspace.yaml")),
                 "pnpm-workspace.yaml should exist");
-        assertTrue(Files.exists(tempDir.resolve(".npmrc [GH-90000]")), ".npmrc should exist");
-        assertTrue(Files.exists(tempDir.resolve("pnpm-lock.yaml [GH-90000]")), "pnpm-lock.yaml should exist");
+        assertTrue(Files.exists(tempDir.resolve(".npmrc")), ".npmrc should exist");
+        assertTrue(Files.exists(tempDir.resolve("pnpm-lock.yaml")), "pnpm-lock.yaml should exist");
     }
 
     private void createBasicCIConfig() throws Exception { // GH-90000
         // Create minimal CI configuration for testing
-        Path ciDir = tempDir.resolve(".github/workflows [GH-90000]");
+        Path ciDir = tempDir.resolve(".github/workflows");
         Files.createDirectories(ciDir); // GH-90000
 
         String ciConfig =
@@ -270,21 +270,21 @@ class E2EMonorepoTest {
                   - run: pnpm test
             """;
 
-        Files.writeString(ciDir.resolve("ci.yml [GH-90000]"), ciConfig);
+        Files.writeString(ciDir.resolve("ci.yml"), ciConfig);
     }
 
     private boolean validateCIConfiguration() { // GH-90000
         // Validate CI configuration exists and is well-formed
-        Path ciFile = tempDir.resolve(".github/workflows/ci.yml [GH-90000]");
+        Path ciFile = tempDir.resolve(".github/workflows/ci.yml");
         if (!Files.exists(ciFile)) { // GH-90000
             return false;
         }
 
         try {
             String content = Files.readString(ciFile); // GH-90000
-            return content.contains("gradle [GH-90000]")
-                    && content.contains("pnpm [GH-90000]")
-                    && content.contains("test [GH-90000]");
+            return content.contains("gradle")
+                    && content.contains("pnpm")
+                    && content.contains("test");
         } catch (Exception e) { // GH-90000
             return false;
         }
@@ -292,31 +292,31 @@ class E2EMonorepoTest {
 
     private void storeArtifacts() throws Exception { // GH-90000
         // Day 15 Requirement: Store artifacts under reports/e2e/week3/
-        Path week3Reports = reportsDir.resolve("e2e/week3 [GH-90000]");
+        Path week3Reports = reportsDir.resolve("e2e/week3");
         Files.createDirectories(week3Reports); // GH-90000
 
         // Create manifest of generated files
         StringBuilder manifest = new StringBuilder(); // GH-90000
-        manifest.append("# E2E Monorepo Generation Report\n [GH-90000]");
-        manifest.append("Generated:  [GH-90000]").append(java.time.Instant.now()).append("\n\n [GH-90000]");
-        manifest.append("## Generated Files:\n [GH-90000]");
+        manifest.append("# E2E Monorepo Generation Report\n");
+        manifest.append("Generated: ").append(java.time.Instant.now()).append("\n\n");
+        manifest.append("## Generated Files:\n");
 
         Files.walk(tempDir) // GH-90000
                 .filter(Files::isRegularFile) // GH-90000
                 .forEach( // GH-90000
                         file -> {
                             String relativePath = tempDir.relativize(file).toString(); // GH-90000
-                            manifest.append("-  [GH-90000]").append(relativePath).append("\n [GH-90000]");
+                            manifest.append("- ").append(relativePath).append("\n");
                         });
 
-        Files.writeString(week3Reports.resolve("generation-manifest.md [GH-90000]"), manifest.toString());
+        Files.writeString(week3Reports.resolve("generation-manifest.md"), manifest.toString());
 
         // Copy key configuration files for verification
-        if (Files.exists(tempDir.resolve("nx.json [GH-90000]"))) {
-            Files.copy(tempDir.resolve("nx.json [GH-90000]"), week3Reports.resolve("nx.json [GH-90000]"));
+        if (Files.exists(tempDir.resolve("nx.json"))) {
+            Files.copy(tempDir.resolve("nx.json"), week3Reports.resolve("nx.json"));
         }
-        if (Files.exists(tempDir.resolve("settings.gradle [GH-90000]"))) {
-            Files.copy(tempDir.resolve("settings.gradle [GH-90000]"), week3Reports.resolve("settings.gradle [GH-90000]"));
+        if (Files.exists(tempDir.resolve("settings.gradle"))) {
+            Files.copy(tempDir.resolve("settings.gradle"), week3Reports.resolve("settings.gradle"));
         }
     }
 }

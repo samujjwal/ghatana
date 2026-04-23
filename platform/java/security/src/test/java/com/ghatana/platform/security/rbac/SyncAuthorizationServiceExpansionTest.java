@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("SyncAuthorizationService - Phase 3 Expansion [GH-90000]")
+@DisplayName("SyncAuthorizationService - Phase 3 Expansion")
 class SyncAuthorizationServiceExpansionTest {
 
     private InMemoryRolePermissionRegistry registry;
@@ -32,7 +32,7 @@ class SyncAuthorizationServiceExpansionTest {
         registry.registerRole("ADMIN", Set.of("read", "write", "delete", "manage")); // GH-90000
         registry.registerRole("EDITOR", Set.of("read", "write", "publish")); // GH-90000
         registry.registerRole("USER", Set.of("read", "write")); // GH-90000
-        registry.registerRole("VIEWER", Set.of("read [GH-90000]"));
+        registry.registerRole("VIEWER", Set.of("read"));
 
         authService = new SyncAuthorizationService(registry); // GH-90000
     }
@@ -42,11 +42,11 @@ class SyncAuthorizationServiceExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Multi-Role Permission Union [GH-90000]")
+    @DisplayName("Multi-Role Permission Union")
     class MultiRoleTests {
 
         @Test
-        @DisplayName("User with multiple roles gets union of all role permissions [GH-90000]")
+        @DisplayName("User with multiple roles gets union of all role permissions")
         void multiRoleUnion() { // GH-90000
             // User has both VIEWER and EDITOR roles
             User user = new User("u1", "multi-role", Set.of("VIEWER", "EDITOR")); // GH-90000
@@ -59,7 +59,7 @@ class SyncAuthorizationServiceExpansionTest {
         }
 
         @Test
-        @DisplayName("Order of roles doesn't matter for permission evaluation [GH-90000]")
+        @DisplayName("Order of roles doesn't matter for permission evaluation")
         void roleOrderIndependent() { // GH-90000
             User user1 = new User("u2", "role-order-1", Set.of("ADMIN", "VIEWER")); // GH-90000
             User user2 = new User("u3", "role-order-2", Set.of("VIEWER", "ADMIN")); // GH-90000
@@ -78,11 +78,11 @@ class SyncAuthorizationServiceExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Empty/Null Role Handling [GH-90000]")
+    @DisplayName("Empty/Null Role Handling")
     class EmptyRoleTests {
 
         @Test
-        @DisplayName("User with empty role set has no permissions [GH-90000]")
+        @DisplayName("User with empty role set has no permissions")
         void emptyRoleSetNoPermissions() { // GH-90000
             User user = new User("u4", "no-roles", Set.of()); // GH-90000
 
@@ -98,11 +98,11 @@ class SyncAuthorizationServiceExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Permission Varargs Combinations [GH-90000]")
+    @DisplayName("Permission Varargs Combinations")
     class VarargTests {
 
         @Test
-        @DisplayName("User with mixed permissions satisfies complex queries [GH-90000]")
+        @DisplayName("User with mixed permissions satisfies complex queries")
         void mixedPermissionQueries() { // GH-90000
             // ADMIN has: read, write, delete, manage
             // VIEWER has: read
@@ -129,16 +129,16 @@ class SyncAuthorizationServiceExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Dynamic Role Management [GH-90000]")
+    @DisplayName("Dynamic Role Management")
     class DynamicRoleTests {
 
         @Test
-        @DisplayName("Adding new roles updates permission evaluation [GH-90000]")
+        @DisplayName("Adding new roles updates permission evaluation")
         void dynamicRoleAddition() { // GH-90000
             // Create a new role after service initialization
             registry.registerRole("MODERATOR", Set.of("read", "write", "delete")); // GH-90000
 
-            User user = new User("u6", "moderator", Set.of("MODERATOR [GH-90000]"));
+            User user = new User("u6", "moderator", Set.of("MODERATOR"));
 
             // Should immediately have permissions from new role
             assertThat(authService.hasPermission(user, "read")).isTrue(); // GH-90000
@@ -152,15 +152,15 @@ class SyncAuthorizationServiceExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Permission Precedence [GH-90000]")
+    @DisplayName("Permission Precedence")
     class PrecedenceTests {
 
         @Test
-        @DisplayName("Permissions are correctly accumulated across multiple roles [GH-90000]")
+        @DisplayName("Permissions are correctly accumulated across multiple roles")
         void permissionAccumulation() { // GH-90000
             // Create overlapping roles
             registry.registerRole("DATA_READER", Set.of("read:data", "read:logs")); // GH-90000
-            registry.registerRole("DATA_WRITER", Set.of("write:data [GH-90000]"));
+            registry.registerRole("DATA_WRITER", Set.of("write:data"));
             registry.registerRole("AUDITOR", Set.of("read:logs", "read:audit")); // GH-90000
 
             User auditor = new User("u7", "auditor", Set.of("AUDITOR", "DATA_READER")); // GH-90000

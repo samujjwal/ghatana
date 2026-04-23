@@ -24,76 +24,76 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test report generation, formatting, and export.
  */
-@DisplayName("Reporting Tests [GH-90000]")
+@DisplayName("Reporting Tests")
 class ReportingTest {
 
     @Test
-    @DisplayName("Should generate reports [GH-90000]")
+    @DisplayName("Should generate reports")
     void shouldGenerateReports() { // GH-90000
         ReportDefinition definition = ReportDefinition.builder() // GH-90000
-            .name("weekly-sales [GH-90000]")
+            .name("weekly-sales")
             .type(ReportType.QUERY) // GH-90000
             .format(ReportFormat.JSON) // GH-90000
-            .query("SELECT * FROM sales [GH-90000]")
+            .query("SELECT * FROM sales")
             .build(); // GH-90000
 
         assertThat(definition).isNotNull(); // GH-90000
-        assertThat(definition.getName()).isEqualTo("weekly-sales [GH-90000]");
+        assertThat(definition.getName()).isEqualTo("weekly-sales");
         assertThat(definition.getType()).isEqualTo(ReportType.QUERY); // GH-90000
     }
 
     @Test
-    @DisplayName("Should format report output [GH-90000]")
+    @DisplayName("Should format report output")
     void shouldFormatReportOutput() { // GH-90000
         ReportResult result = ReportResult.builder() // GH-90000
-            .reportId("report-123 [GH-90000]")
-            .reportName("weekly-sales [GH-90000]")
+            .reportId("report-123")
+            .reportName("weekly-sales")
             .format(ReportFormat.CSV) // GH-90000
-            .formattedBody("name,price\nProduct A,100\n [GH-90000]")
+            .formattedBody("name,price\nProduct A,100\n")
             .rowCount(1) // GH-90000
-            .contentType("text/csv [GH-90000]")
+            .contentType("text/csv")
             .executionTime(Duration.ofMillis(100)) // GH-90000
             .build(); // GH-90000
 
         assertThat(result).isNotNull(); // GH-90000
         assertThat(result.getFormat()).isEqualTo(ReportFormat.CSV); // GH-90000
-        assertThat(result.getFormattedBody()).contains("name,price [GH-90000]");
+        assertThat(result.getFormattedBody()).contains("name,price");
     }
 
     @Test
-    @DisplayName("Should handle report exports [GH-90000]")
+    @DisplayName("Should handle report exports")
     void shouldHandleReportExports() { // GH-90000
         ReportDefinition definition = ReportDefinition.builder() // GH-90000
-            .name("entity-export [GH-90000]")
+            .name("entity-export")
             .type(ReportType.ENTITY_EXPORT) // GH-90000
             .format(ReportFormat.CSV) // GH-90000
-            .collection("products [GH-90000]")
+            .collection("products")
             .build(); // GH-90000
 
         assertThat(definition).isNotNull(); // GH-90000
         assertThat(definition.getType()).isEqualTo(ReportType.ENTITY_EXPORT); // GH-90000
-        assertThat(definition.getCollection()).isEqualTo("products [GH-90000]");
+        assertThat(definition.getCollection()).isEqualTo("products");
     }
 
     @Test
-    @DisplayName("Should handle report scheduling [GH-90000]")
+    @DisplayName("Should handle report scheduling")
     void shouldHandleReportScheduling() { // GH-90000
         String schedule = "0 0 * * *"; // Daily at midnight
 
         assertThat(schedule).isNotNull(); // GH-90000
-        assertThat(schedule).contains("* [GH-90000]");
+        assertThat(schedule).contains("*");
     }
 
     @Test
-    @DisplayName("Should handle report failures [GH-90000]")
+    @DisplayName("Should handle report failures")
     void shouldHandleReportFailures() { // GH-90000
         ReportResult result = ReportResult.builder() // GH-90000
-            .reportId("report-123 [GH-90000]")
-            .reportName("failed-report [GH-90000]")
+            .reportId("report-123")
+            .reportName("failed-report")
             .format(ReportFormat.JSON) // GH-90000
             .rowCount(0) // GH-90000
             .executionTime(Duration.ZERO) // GH-90000
-            .contentType("application/json [GH-90000]")
+            .contentType("application/json")
             .build(); // GH-90000
 
         assertThat(result).isNotNull(); // GH-90000
@@ -101,16 +101,16 @@ class ReportingTest {
     }
 
     @Test
-    @DisplayName("Should handle report caching [GH-90000]")
+    @DisplayName("Should handle report caching")
     void shouldHandleReportCaching() { // GH-90000
         String reportId = "report-123";
         ReportResult result = ReportResult.builder() // GH-90000
             .reportId(reportId) // GH-90000
-            .reportName("cached-report [GH-90000]")
+            .reportName("cached-report")
             .format(ReportFormat.JSON) // GH-90000
             .rows(List.of(Map.of("key", "value"))) // GH-90000
             .rowCount(1) // GH-90000
-            .contentType("application/json [GH-90000]")
+            .contentType("application/json")
             .executionTime(Duration.ofMillis(50)) // GH-90000
             .build(); // GH-90000
 

@@ -32,7 +32,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("StorageCostHandler [GH-90000]")
+@DisplayName("StorageCostHandler")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class StorageCostHandlerTest extends EventloopTestBase {
 
@@ -65,14 +65,14 @@ class StorageCostHandlerTest extends EventloopTestBase {
     @BeforeEach
     void setUp() { // GH-90000
         handler = new StorageCostHandler(http, analyticsEngine, metrics); // GH-90000
-        lenient().when(http.requireTenantIdOrFail(request)).thenReturn("tenant-1 [GH-90000]");
+        lenient().when(http.requireTenantIdOrFail(request)).thenReturn("tenant-1");
         lenient().when(http.errorResponse(eq(400), anyString())).thenReturn(errorResponse); // GH-90000
     }
 
     @Test
-    @DisplayName("rejects invalid collection IDs before query submission [GH-90000]")
+    @DisplayName("rejects invalid collection IDs before query submission")
     void rejectsInvalidCollectionIdsBeforeQuerySubmission() { // GH-90000
-        when(request.getPathParameter("id [GH-90000]")).thenReturn("\"; DROP TABLE events; --");
+        when(request.getPathParameter("id")).thenReturn("\"; DROP TABLE events; --");
 
         HttpResponse response = runPromise(() -> handler.handleCollectionCostReport(request)); // GH-90000
 
@@ -82,27 +82,27 @@ class StorageCostHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("submits query for valid collection IDs [GH-90000]")
+    @DisplayName("submits query for valid collection IDs")
     void submitsQueryForValidCollectionIds() { // GH-90000
-        when(request.getPathParameter("id [GH-90000]")).thenReturn("orders_2026 [GH-90000]");
-        when(queryResult.getQueryId()).thenReturn("query-1 [GH-90000]");
+        when(request.getPathParameter("id")).thenReturn("orders_2026");
+        when(queryResult.getQueryId()).thenReturn("query-1");
         when(queryPlan.getEstimatedCost()).thenReturn(4.0); // GH-90000
         when(http.jsonResponse(eq(200), org.mockito.ArgumentMatchers.<Map<String, Object>>any())) // GH-90000
             .thenReturn(successResponse); // GH-90000
-        when(analyticsEngine.submitQuery(eq("tenant-1 [GH-90000]"), eq("SELECT COUNT(*) FROM \"orders_2026\""), eq(Map.of())))
+        when(analyticsEngine.submitQuery(eq("tenant-1"), eq("SELECT COUNT(*) FROM \"orders_2026\""), eq(Map.of())))
                 .thenReturn(Promise.of(queryResult)); // GH-90000
-        when(analyticsEngine.getPlan("query-1 [GH-90000]")).thenReturn(Promise.of(queryPlan));
+        when(analyticsEngine.getPlan("query-1")).thenReturn(Promise.of(queryPlan));
 
         HttpResponse response = runPromise(() -> handler.handleCollectionCostReport(request)); // GH-90000
 
         assertThat(response).isSameAs(successResponse); // GH-90000
-        verify(analyticsEngine).submitQuery(eq("tenant-1 [GH-90000]"), eq("SELECT COUNT(*) FROM \"orders_2026\""), eq(Map.of()));
+        verify(analyticsEngine).submitQuery(eq("tenant-1"), eq("SELECT COUNT(*) FROM \"orders_2026\""), eq(Map.of()));
     }
 
     @Test
-    @DisplayName("rejects collection cost report when tenant header is missing [GH-90000]")
+    @DisplayName("rejects collection cost report when tenant header is missing")
     void rejectsCollectionCostReportWhenTenantHeaderMissing() { // GH-90000
-        when(request.getPathParameter("id [GH-90000]")).thenReturn("orders_2026 [GH-90000]");
+        when(request.getPathParameter("id")).thenReturn("orders_2026");
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
         HttpResponse response = runPromise(() -> handler.handleCollectionCostReport(request)); // GH-90000

@@ -16,15 +16,15 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer core
  * @doc.pattern Unit Test
  */
-@DisplayName("OperatorConfig [GH-90000]")
+@DisplayName("OperatorConfig")
 class OperatorConfigTest {
 
     @Nested
-    @DisplayName("builder [GH-90000]")
+    @DisplayName("builder")
     class Builder {
 
         @Test
-        @DisplayName("should build config with properties [GH-90000]")
+        @DisplayName("should build config with properties")
         void shouldBuildWithProperties() { // GH-90000
             OperatorConfig config = OperatorConfig.builder() // GH-90000
                     .withProperty("key1", "value1") // GH-90000
@@ -35,7 +35,7 @@ class OperatorConfigTest {
         }
 
         @Test
-        @DisplayName("should support timeout configuration [GH-90000]")
+        @DisplayName("should support timeout configuration")
         void shouldSupportTimeout() { // GH-90000
             OperatorConfig config = OperatorConfig.builder() // GH-90000
                     .withTimeout(Duration.ofSeconds(30)) // GH-90000
@@ -45,7 +45,7 @@ class OperatorConfigTest {
         }
 
         @Test
-        @DisplayName("should support max batch size [GH-90000]")
+        @DisplayName("should support max batch size")
         void shouldSupportMaxBatchSize() { // GH-90000
             OperatorConfig config = OperatorConfig.builder() // GH-90000
                     .withMaxBatchSize(100) // GH-90000
@@ -56,25 +56,25 @@ class OperatorConfigTest {
     }
 
     @Nested
-    @DisplayName("type-safe accessors [GH-90000]")
+    @DisplayName("type-safe accessors")
     class TypeSafeAccessors {
 
         @Test
-        @DisplayName("should retrieve string property [GH-90000]")
+        @DisplayName("should retrieve string property")
         void shouldRetrieveStringProperty() { // GH-90000
             OperatorConfig config = OperatorConfig.builder() // GH-90000
                     .withProperty("name", "test-operator") // GH-90000
                     .build(); // GH-90000
 
-            assertThat(config.getString("name [GH-90000]")).contains("test-operator [GH-90000]");
+            assertThat(config.getString("name")).contains("test-operator");
         }
 
         @Test
-        @DisplayName("should return empty for missing property [GH-90000]")
+        @DisplayName("should return empty for missing property")
         void shouldReturnEmptyForMissing() { // GH-90000
             OperatorConfig config = OperatorConfig.builder().build(); // GH-90000
 
-            assertThat(config.getString("nonexistent [GH-90000]")).isEmpty();
+            assertThat(config.getString("nonexistent")).isEmpty();
         }
     }
 }

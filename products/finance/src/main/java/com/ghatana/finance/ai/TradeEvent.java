@@ -5,7 +5,11 @@ import java.util.Map;
 
 /**
  * Trade event data for fraud detection.
- */
+  * @doc.type class
+ * @doc.purpose Provides trade event functionality.
+ * @doc.layer product
+ * @doc.pattern Event
+*/
 public class TradeEvent {
     private final String tradeId;
     private final String accountId;

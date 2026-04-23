@@ -21,8 +21,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Model Routing Tests [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("Model Routing Tests")
+@Tag("integration")
 class ModelRoutingTest extends EventloopTestBase {
 
     // ── Route resolution ───────────────────────────────────────────────────────
@@ -58,44 +58,44 @@ class ModelRoutingTest extends EventloopTestBase {
     // ── Routing logic ─────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("routing logic [GH-90000]")
+    @DisplayName("routing logic")
     class RoutingLogic {
 
         @Test
-        @DisplayName("capability-based routing selects first endpoint supporting capability [GH-90000]")
+        @DisplayName("capability-based routing selects first endpoint supporting capability")
         void capabilityBasedRouting_selectsMatchingEndpoint() { // GH-90000
             ModelRouter router = new ModelRouter(List.of( // GH-90000
                     new ModelEndpoint("gpt-4",        "openai",    List.of("text", "vision"), 100), // GH-90000
                     new ModelEndpoint("claude-3",     "anthropic", List.of("text", "code"),   90), // GH-90000
-                    new ModelEndpoint("gemini-pro",   "google",    List.of("text [GH-90000]"),           80)
+                    new ModelEndpoint("gemini-pro",   "google",    List.of("text"),           80)
             ));
 
-            ModelEndpoint selected = router.resolveFor("code [GH-90000]");
+            ModelEndpoint selected = router.resolveFor("code");
 
-            assertThat(selected.name()).isEqualTo("claude-3 [GH-90000]");
+            assertThat(selected.name()).isEqualTo("claude-3");
         }
 
         @Test
-        @DisplayName("priority-based routing selects highest weight endpoint [GH-90000]")
+        @DisplayName("priority-based routing selects highest weight endpoint")
         void priorityBasedRouting_selectsHighestWeightEndpoint() { // GH-90000
             ModelRouter router = new ModelRouter(List.of( // GH-90000
-                    new ModelEndpoint("budget-llm",  "vendor-a", List.of("text [GH-90000]"), 10),
-                    new ModelEndpoint("primary-llm", "vendor-b", List.of("text [GH-90000]"), 100),
-                    new ModelEndpoint("backup-llm",  "vendor-c", List.of("text [GH-90000]"), 50)
+                    new ModelEndpoint("budget-llm",  "vendor-a", List.of("text"), 10),
+                    new ModelEndpoint("primary-llm", "vendor-b", List.of("text"), 100),
+                    new ModelEndpoint("backup-llm",  "vendor-c", List.of("text"), 50)
             ));
 
             ModelEndpoint selected = router.highestPriority(); // GH-90000
 
-            assertThat(selected.name()).isEqualTo("primary-llm [GH-90000]");
+            assertThat(selected.name()).isEqualTo("primary-llm");
         }
 
         @Test
-        @DisplayName("round-robin routing distributes calls across all endpoints [GH-90000]")
+        @DisplayName("round-robin routing distributes calls across all endpoints")
         void roundRobinRouting_distributesCallsAcrossEndpoints() { // GH-90000
             ModelRouter router = new ModelRouter(List.of( // GH-90000
-                    new ModelEndpoint("model-a", "vendor-a", List.of("text [GH-90000]"), 100),
-                    new ModelEndpoint("model-b", "vendor-b", List.of("text [GH-90000]"), 100),
-                    new ModelEndpoint("model-c", "vendor-c", List.of("text [GH-90000]"), 100)
+                    new ModelEndpoint("model-a", "vendor-a", List.of("text"), 100),
+                    new ModelEndpoint("model-b", "vendor-b", List.of("text"), 100),
+                    new ModelEndpoint("model-c", "vendor-c", List.of("text"), 100)
             ));
             AtomicInteger counter = new AtomicInteger(0); // GH-90000
 
@@ -110,64 +110,64 @@ class ModelRoutingTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("unknown capability raises exception with clear message [GH-90000]")
+        @DisplayName("unknown capability raises exception with clear message")
         void unknownCapability_raisesExceptionWithClearMessage() { // GH-90000
             ModelRouter router = new ModelRouter(List.of( // GH-90000
-                    new ModelEndpoint("gpt-4", "openai", List.of("text [GH-90000]"), 100)
+                    new ModelEndpoint("gpt-4", "openai", List.of("text"), 100)
             ));
 
             IllegalArgumentException thrown = null;
             try {
-                router.resolveFor("3d-rendering [GH-90000]");
+                router.resolveFor("3d-rendering");
             } catch (IllegalArgumentException e) { // GH-90000
                 thrown = e;
             }
 
             assertThat(thrown).isNotNull(); // GH-90000
-            assertThat(thrown.getMessage()).contains("3d-rendering [GH-90000]");
+            assertThat(thrown.getMessage()).contains("3d-rendering");
         }
     }
 
     // ── Fallback chain ────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("fallback chain [GH-90000]")
+    @DisplayName("fallback chain")
     class FallbackChain {
 
         record FallbackRouter(List<ModelEndpoint> chain) { // GH-90000
             ModelEndpoint callWithFallback() { // GH-90000
                 for (ModelEndpoint ep : chain) { // GH-90000
                     try {
-                        if (ep.name().equals("primary-fail [GH-90000]")) {
-                            throw new RuntimeException("primary unavailable [GH-90000]");
+                        if (ep.name().equals("primary-fail")) {
+                            throw new RuntimeException("primary unavailable");
                         }
                         return ep;
                     } catch (RuntimeException e) { // GH-90000
                         // try next
                     }
                 }
-                throw new RuntimeException("all endpoints failed [GH-90000]");
+                throw new RuntimeException("all endpoints failed");
             }
         }
 
         @Test
-        @DisplayName("primary failure falls back to secondary endpoint [GH-90000]")
+        @DisplayName("primary failure falls back to secondary endpoint")
         void primaryFailure_fallsBackToSecondaryEndpoint() { // GH-90000
             FallbackRouter router = new FallbackRouter(List.of( // GH-90000
-                    new ModelEndpoint("primary-fail", "vendor-a", List.of("text [GH-90000]"), 100),
-                    new ModelEndpoint("secondary",    "vendor-b", List.of("text [GH-90000]"), 90)
+                    new ModelEndpoint("primary-fail", "vendor-a", List.of("text"), 100),
+                    new ModelEndpoint("secondary",    "vendor-b", List.of("text"), 90)
             ));
 
             ModelEndpoint resolved = router.callWithFallback(); // GH-90000
 
-            assertThat(resolved.name()).isEqualTo("secondary [GH-90000]");
+            assertThat(resolved.name()).isEqualTo("secondary");
         }
 
         @Test
-        @DisplayName("all endpoints failure surfaces final exception [GH-90000]")
+        @DisplayName("all endpoints failure surfaces final exception")
         void allEndpoints_failure_surfacesFinalException() { // GH-90000
             FallbackRouter router = new FallbackRouter(List.of( // GH-90000
-                    new ModelEndpoint("primary-fail", "vendor-a", List.of("text [GH-90000]"), 100)
+                    new ModelEndpoint("primary-fail", "vendor-a", List.of("text"), 100)
             ));
 
             RuntimeException thrown = null;
@@ -178,18 +178,18 @@ class ModelRoutingTest extends EventloopTestBase {
             }
 
             assertThat(thrown).isNotNull(); // GH-90000
-            assertThat(thrown.getMessage()).contains("all endpoints failed [GH-90000]");
+            assertThat(thrown.getMessage()).contains("all endpoints failed");
         }
     }
 
     // ── Load balancing ────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("load balancing [GH-90000]")
+    @DisplayName("load balancing")
     class LoadBalancing {
 
         @Test
-        @DisplayName("weighted load balancer favors higher-weight endpoints [GH-90000]")
+        @DisplayName("weighted load balancer favors higher-weight endpoints")
         void weightedLoadBalancer_favorsHigherWeightEndpoints() { // GH-90000
             // Simulate weighted selection: 80% chance endpoint A, 20% chance endpoint B
             int totalTrials = 1000;
@@ -205,16 +205,16 @@ class ModelRoutingTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("single endpoint receives all traffic when others are unavailable [GH-90000]")
+        @DisplayName("single endpoint receives all traffic when others are unavailable")
         void singleAvailableEndpoint_receivesAllTraffic() { // GH-90000
             List<ModelEndpoint> endpoints = List.of( // GH-90000
-                    new ModelEndpoint("only-available", "vendor-a", List.of("text [GH-90000]"), 100)
+                    new ModelEndpoint("only-available", "vendor-a", List.of("text"), 100)
             );
             ModelRouter router = new ModelRouter(endpoints); // GH-90000
 
             for (int i = 0; i < 10; i++) { // GH-90000
-                ModelEndpoint selected = router.resolveFor("text [GH-90000]");
-                assertThat(selected.name()).isEqualTo("only-available [GH-90000]");
+                ModelEndpoint selected = router.resolveFor("text");
+                assertThat(selected.name()).isEqualTo("only-available");
             }
         }
     }
@@ -222,11 +222,11 @@ class ModelRoutingTest extends EventloopTestBase {
     // ── Provider metadata routing ─────────────────────────────────────────────
 
     @Nested
-    @DisplayName("provider metadata routing [GH-90000]")
+    @DisplayName("provider metadata routing")
     class ProviderMetadataRouting {
 
         @Test
-        @DisplayName("tenant-specific model override takes precedence over default [GH-90000]")
+        @DisplayName("tenant-specific model override takes precedence over default")
         void tenantSpecificModelOverride_takesPrecedenceOverDefault() { // GH-90000
             Map<String, String> tenantModelOverrides = Map.of( // GH-90000
                     "tenant-premium", "gpt-4",
@@ -237,8 +237,8 @@ class ModelRoutingTest extends EventloopTestBase {
             String resolvedForPremium  = tenantModelOverrides.getOrDefault("tenant-premium",  defaultModel); // GH-90000
             String resolvedForUnknown  = tenantModelOverrides.getOrDefault("tenant-unknown",  defaultModel); // GH-90000
 
-            assertThat(resolvedForPremium).isEqualTo("gpt-4 [GH-90000]");
-            assertThat(resolvedForUnknown).isEqualTo("gpt-3.5-turbo [GH-90000]");
+            assertThat(resolvedForPremium).isEqualTo("gpt-4");
+            assertThat(resolvedForUnknown).isEqualTo("gpt-3.5-turbo");
         }
     }
 }

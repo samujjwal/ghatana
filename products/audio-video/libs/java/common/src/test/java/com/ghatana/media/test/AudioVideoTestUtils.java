@@ -191,7 +191,7 @@ public final class AudioVideoTestUtils {
         }
 
         private void ensureOpen() { // GH-90000
-            if (closed.get()) throw new IllegalStateException("Engine closed [GH-90000]");
+            if (closed.get()) throw new IllegalStateException("Engine closed");
         }
 
         private boolean shouldFail(int callNumber) { // GH-90000
@@ -200,9 +200,9 @@ public final class AudioVideoTestUtils {
 
         private Exception createException() { // GH-90000
             try {
-                return exceptionType.getDeclaredConstructor(String.class).newInstance("Simulated [GH-90000]");
+                return exceptionType.getDeclaredConstructor(String.class).newInstance("Simulated");
             } catch (Exception e) { // GH-90000
-                return new RuntimeException("Simulated [GH-90000]");
+                return new RuntimeException("Simulated");
             }
         }
     }
@@ -297,7 +297,7 @@ public final class AudioVideoTestUtils {
         @Override
         public TranscriptionResult transcribe(AudioData audio, TranscriptionOptions options) { // GH-90000
             if (!semaphore.tryAcquire()) { // GH-90000
-                throw new RuntimeException("Resource exhausted: max concurrent operations reached [GH-90000]");
+                throw new RuntimeException("Resource exhausted: max concurrent operations reached");
             }
             try {
                 return new TranscriptionResult( // GH-90000
@@ -386,7 +386,7 @@ public final class AudioVideoTestUtils {
         public void feedAudio(AudioChunk chunk) { // GH-90000
             int count = chunkCount.incrementAndGet(); // GH-90000
             if ((count % (int)(1.0 / failureRate)) == 0) { // GH-90000
-                throw new RuntimeException("Simulated streaming failure [GH-90000]");
+                throw new RuntimeException("Simulated streaming failure");
             }
         }
 

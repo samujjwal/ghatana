@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern UnitTest
  */
-@DisplayName("CloudResource Domain Model Tests [GH-90000]")
+@DisplayName("CloudResource Domain Model Tests")
 class CloudResourceTest {
 
     private static final UUID WORKSPACE_ID = UUID.randomUUID(); // GH-90000
@@ -29,11 +29,11 @@ class CloudResourceTest {
     private static final String IDENTIFIER = "arn:aws:ec2:us-east-1:123456789012:instance/i-1234567890abcdef0";
 
     @Nested
-    @DisplayName("Factory Method Tests [GH-90000]")
+    @DisplayName("Factory Method Tests")
     class FactoryMethodTests {
 
         @Test
-        @DisplayName("of() creates resource with required fields and defaults [GH-90000]")
+        @DisplayName("of() creates resource with required fields and defaults")
         void ofCreatesWithRequiredFieldsAndDefaults() { // GH-90000
             // WHEN
             CloudResource resource = CloudResource.of(WORKSPACE_ID, CLOUD_ACCOUNT_ID, PROVIDER, RESOURCE_TYPE, IDENTIFIER); // GH-90000
@@ -51,36 +51,36 @@ class CloudResourceTest {
         }
 
         @Test
-        @DisplayName("of() throws NullPointerException for null required fields [GH-90000]")
+        @DisplayName("of() throws NullPointerException for null required fields")
         void ofThrowsForNullRequiredFields() { // GH-90000
             assertThatThrownBy(() -> CloudResource.of(null, CLOUD_ACCOUNT_ID, PROVIDER, RESOURCE_TYPE, IDENTIFIER)) // GH-90000
                     .isInstanceOf(NullPointerException.class) // GH-90000
-                    .hasMessageContaining("workspaceId must not be null [GH-90000]");
+                    .hasMessageContaining("workspaceId must not be null");
 
             assertThatThrownBy(() -> CloudResource.of(WORKSPACE_ID, null, PROVIDER, RESOURCE_TYPE, IDENTIFIER)) // GH-90000
                     .isInstanceOf(NullPointerException.class) // GH-90000
-                    .hasMessageContaining("cloudAccountId must not be null [GH-90000]");
+                    .hasMessageContaining("cloudAccountId must not be null");
 
             assertThatThrownBy(() -> CloudResource.of(WORKSPACE_ID, CLOUD_ACCOUNT_ID, null, RESOURCE_TYPE, IDENTIFIER)) // GH-90000
                     .isInstanceOf(NullPointerException.class) // GH-90000
-                    .hasMessageContaining("provider must not be null [GH-90000]");
+                    .hasMessageContaining("provider must not be null");
 
             assertThatThrownBy(() -> CloudResource.of(WORKSPACE_ID, CLOUD_ACCOUNT_ID, PROVIDER, null, IDENTIFIER)) // GH-90000
                     .isInstanceOf(NullPointerException.class) // GH-90000
-                    .hasMessageContaining("resourceType must not be null [GH-90000]");
+                    .hasMessageContaining("resourceType must not be null");
 
             assertThatThrownBy(() -> CloudResource.of(WORKSPACE_ID, CLOUD_ACCOUNT_ID, PROVIDER, RESOURCE_TYPE, null)) // GH-90000
                     .isInstanceOf(NullPointerException.class) // GH-90000
-                    .hasMessageContaining("identifier must not be null [GH-90000]");
+                    .hasMessageContaining("identifier must not be null");
         }
     }
 
     @Nested
-    @DisplayName("Sync Tracking Tests [GH-90000]")
+    @DisplayName("Sync Tracking Tests")
     class SyncTrackingTests {
 
         @Test
-        @DisplayName("recordSync() sets lastSyncedAt and updates timestamp [GH-90000]")
+        @DisplayName("recordSync() sets lastSyncedAt and updates timestamp")
         void recordSyncSetsLastSyncedAtAndUpdates() { // GH-90000
             // GIVEN
             CloudResource resource = CloudResource.of(WORKSPACE_ID, CLOUD_ACCOUNT_ID, PROVIDER, RESOURCE_TYPE, IDENTIFIER); // GH-90000
@@ -97,7 +97,7 @@ class CloudResourceTest {
         }
 
         @Test
-        @DisplayName("multiple syncs update lastSyncedAt each time [GH-90000]")
+        @DisplayName("multiple syncs update lastSyncedAt each time")
         void multipleSyncsUpdateLastSyncedAt() throws InterruptedException { // GH-90000
             // GIVEN
             CloudResource resource = CloudResource.of(WORKSPACE_ID, CLOUD_ACCOUNT_ID, PROVIDER, RESOURCE_TYPE, IDENTIFIER); // GH-90000
@@ -115,11 +115,11 @@ class CloudResourceTest {
     }
 
     @Nested
-    @DisplayName("Builder Tests [GH-90000]")
+    @DisplayName("Builder Tests")
     class BuilderTests {
 
         @Test
-        @DisplayName("builder creates resource with all fields [GH-90000]")
+        @DisplayName("builder creates resource with all fields")
         void builderCreatesWithAllFields() { // GH-90000
             // GIVEN
             UUID id = UUID.randomUUID(); // GH-90000
@@ -139,8 +139,8 @@ class CloudResourceTest {
                     .provider(PROVIDER) // GH-90000
                     .resourceType(RESOURCE_TYPE) // GH-90000
                     .identifier(IDENTIFIER) // GH-90000
-                    .name("web-server-01 [GH-90000]")
-                    .region("us-east-1 [GH-90000]")
+                    .name("web-server-01")
+                    .region("us-east-1")
                     .tags(tags) // GH-90000
                     .configuration(config) // GH-90000
                     .riskScore(75) // GH-90000
@@ -153,8 +153,8 @@ class CloudResourceTest {
 
             // THEN
             assertThat(resource.getId()).isEqualTo(id); // GH-90000
-            assertThat(resource.getName()).isEqualTo("web-server-01 [GH-90000]");
-            assertThat(resource.getRegion()).isEqualTo("us-east-1 [GH-90000]");
+            assertThat(resource.getName()).isEqualTo("web-server-01");
+            assertThat(resource.getRegion()).isEqualTo("us-east-1");
             assertThat(resource.getTags()).isEqualTo(tags); // GH-90000
             assertThat(resource.getConfiguration()).isEqualTo(config); // GH-90000
             assertThat(resource.getRiskScore()).isEqualTo(75); // GH-90000
@@ -163,7 +163,7 @@ class CloudResourceTest {
         }
 
         @Test
-        @DisplayName("builder defaults riskScore to 0 [GH-90000]")
+        @DisplayName("builder defaults riskScore to 0")
         void builderDefaultsRiskScoreToZero() { // GH-90000
             CloudResource resource = CloudResource.builder() // GH-90000
                     .workspaceId(WORKSPACE_ID) // GH-90000
@@ -177,7 +177,7 @@ class CloudResourceTest {
         }
 
         @Test
-        @DisplayName("builder defaults isPublic to false [GH-90000]")
+        @DisplayName("builder defaults isPublic to false")
         void builderDefaultsIsPublicToFalse() { // GH-90000
             CloudResource resource = CloudResource.builder() // GH-90000
                     .workspaceId(WORKSPACE_ID) // GH-90000
@@ -192,22 +192,22 @@ class CloudResourceTest {
     }
 
     @Nested
-    @DisplayName("Equality Tests [GH-90000]")
+    @DisplayName("Equality Tests")
     class EqualityTests {
 
         @Test
-        @DisplayName("equals returns true for same id [GH-90000]")
+        @DisplayName("equals returns true for same id")
         void equalsReturnsTrueForSameId() { // GH-90000
             UUID id = UUID.randomUUID(); // GH-90000
-            CloudResource resource1 = CloudResource.builder().id(id).resourceType("ec2:instance [GH-90000]").build();
-            CloudResource resource2 = CloudResource.builder().id(id).resourceType("s3:bucket [GH-90000]").build();
+            CloudResource resource1 = CloudResource.builder().id(id).resourceType("ec2:instance").build();
+            CloudResource resource2 = CloudResource.builder().id(id).resourceType("s3:bucket").build();
 
             assertThat(resource1).isEqualTo(resource2); // GH-90000
             assertThat(resource1.hashCode()).isEqualTo(resource2.hashCode()); // GH-90000
         }
 
         @Test
-        @DisplayName("equals returns false for different ids [GH-90000]")
+        @DisplayName("equals returns false for different ids")
         void equalsReturnsFalseForDifferentIds() { // GH-90000
             CloudResource resource1 = CloudResource.builder().id(UUID.randomUUID()).build(); // GH-90000
             CloudResource resource2 = CloudResource.builder().id(UUID.randomUUID()).build(); // GH-90000
@@ -217,11 +217,11 @@ class CloudResourceTest {
     }
 
     @Nested
-    @DisplayName("Resource Type Tests [GH-90000]")
+    @DisplayName("Resource Type Tests")
     class ResourceTypeTests {
 
         @Test
-        @DisplayName("can set various AWS resource types [GH-90000]")
+        @DisplayName("can set various AWS resource types")
         void canSetVariousAwsResourceTypes() { // GH-90000
             String[] awsTypes = {"ec2:instance", "s3:bucket", "lambda:function", "rds:instance", "iam:role"};
 
@@ -232,7 +232,7 @@ class CloudResourceTest {
         }
 
         @Test
-        @DisplayName("can set various Azure resource types [GH-90000]")
+        @DisplayName("can set various Azure resource types")
         void canSetVariousAzureResourceTypes() { // GH-90000
             String[] azureTypes = {"vm:instance", "storage:account", "function:app", "sql:database"};
 
@@ -244,11 +244,11 @@ class CloudResourceTest {
     }
 
     @Nested
-    @DisplayName("Risk Score Tests [GH-90000]")
+    @DisplayName("Risk Score Tests")
     class RiskScoreTests {
 
         @Test
-        @DisplayName("can set risk score via setter [GH-90000]")
+        @DisplayName("can set risk score via setter")
         void canSetRiskScoreViaSetter() { // GH-90000
             CloudResource resource = CloudResource.of(WORKSPACE_ID, CLOUD_ACCOUNT_ID, PROVIDER, RESOURCE_TYPE, IDENTIFIER); // GH-90000
 
@@ -258,7 +258,7 @@ class CloudResourceTest {
         }
 
         @Test
-        @DisplayName("risk score range from 0 to 100 [GH-90000]")
+        @DisplayName("risk score range from 0 to 100")
         void riskScoreRangeFromZeroToHundred() { // GH-90000
             CloudResource low = CloudResource.builder() // GH-90000
                     .workspaceId(WORKSPACE_ID) // GH-90000

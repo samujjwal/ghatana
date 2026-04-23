@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("Model Registry Tests [GH-90000]")
+@DisplayName("Model Registry Tests")
 class ModelRegistryTest extends EventloopTestBase {
 
     // ── Model lifecycle model ─────────────────────────────────────────────────
@@ -49,42 +49,42 @@ class ModelRegistryTest extends EventloopTestBase {
     // ── Registration ──────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("register creates a new model in DRAFT status [GH-90000]")
+    @DisplayName("register creates a new model in DRAFT status")
     void registerCreatesModelInDraftStatus() { // GH-90000
         ModelVersion model = registry.register("model-llm", "1.0.0", "tenant-A", // GH-90000
                 Map.of("framework", "transformers")); // GH-90000
 
-        assertThat(model.modelId()).isEqualTo("model-llm [GH-90000]");
-        assertThat(model.version()).isEqualTo("1.0.0 [GH-90000]");
+        assertThat(model.modelId()).isEqualTo("model-llm");
+        assertThat(model.version()).isEqualTo("1.0.0");
         assertThat(model.status()).isEqualTo(ModelStatus.DRAFT); // GH-90000
-        assertThat(model.tenantId()).isEqualTo("tenant-A [GH-90000]");
+        assertThat(model.tenantId()).isEqualTo("tenant-A");
         assertThat(model.createdAt()).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("registered model can be retrieved by ID and version [GH-90000]")
+    @DisplayName("registered model can be retrieved by ID and version")
     void registeredModelCanBeRetrievedByIdAndVersion() { // GH-90000
         registry.register("model-clas", "2.1.0", "tenant-B", Map.of()); // GH-90000
 
         Optional<ModelVersion> found = registry.find("model-clas", "2.1.0", "tenant-B"); // GH-90000
         assertThat(found).isPresent(); // GH-90000
-        assertThat(found.get().version()).isEqualTo("2.1.0 [GH-90000]");
+        assertThat(found.get().version()).isEqualTo("2.1.0");
     }
 
     @Test
-    @DisplayName("registering a duplicate model+version+tenant throws an exception [GH-90000]")
+    @DisplayName("registering a duplicate model+version+tenant throws an exception")
     void registerDuplicateThrowsException() { // GH-90000
         registry.register("model-dup", "1.0.0", "tenant-dup", Map.of()); // GH-90000
 
         assertThatThrownBy(() -> registry.register("model-dup", "1.0.0", "tenant-dup", Map.of())) // GH-90000
                 .isInstanceOf(IllegalStateException.class) // GH-90000
-                .hasMessageContaining("already registered [GH-90000]");
+                .hasMessageContaining("already registered");
     }
 
     // ── Versioning ────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("multiple versions of the same model can be registered independently [GH-90000]")
+    @DisplayName("multiple versions of the same model can be registered independently")
     void multipleVersionsRegisteredIndependently() { // GH-90000
         registry.register("model-ver", "1.0.0", "tenant-V", Map.of()); // GH-90000
         registry.register("model-ver", "1.1.0", "tenant-V", Map.of()); // GH-90000
@@ -97,7 +97,7 @@ class ModelRegistryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("list returns an empty list for a model with no versions [GH-90000]")
+    @DisplayName("list returns an empty list for a model with no versions")
     void listVersionsEmptyForNonExistentModel() { // GH-90000
         List<ModelVersion> versions = registry.listVersions("model-ghost", "tenant-G"); // GH-90000
         assertThat(versions).isEmpty(); // GH-90000
@@ -106,7 +106,7 @@ class ModelRegistryTest extends EventloopTestBase {
     // ── Promotion ─────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("promote to STAGING transitions model from DRAFT [GH-90000]")
+    @DisplayName("promote to STAGING transitions model from DRAFT")
     void promoteToStaging() { // GH-90000
         registry.register("model-promo", "1.0.0", "tenant-P", Map.of()); // GH-90000
         ModelVersion promoted = registry.promote("model-promo", "1.0.0", "tenant-P", ModelStatus.STAGING); // GH-90000
@@ -115,7 +115,7 @@ class ModelRegistryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("promote to PRODUCTION transitions model from STAGING [GH-90000]")
+    @DisplayName("promote to PRODUCTION transitions model from STAGING")
     void promoteToProduction() { // GH-90000
         registry.register("model-prod", "1.0.0", "tenant-P", Map.of()); // GH-90000
         registry.promote("model-prod", "1.0.0", "tenant-P", ModelStatus.STAGING); // GH-90000
@@ -125,7 +125,7 @@ class ModelRegistryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("only one PRODUCTION version exists for a given model+tenant [GH-90000]")
+    @DisplayName("only one PRODUCTION version exists for a given model+tenant")
     void onlyOneProductionVersionExists() { // GH-90000
         registry.register("model-mp", "1.0.0", "tenant-MP", Map.of()); // GH-90000
         registry.register("model-mp", "2.0.0", "tenant-MP", Map.of()); // GH-90000
@@ -138,13 +138,13 @@ class ModelRegistryTest extends EventloopTestBase {
                 .filter(m -> m.status() == ModelStatus.PRODUCTION) // GH-90000
                 .toList(); // GH-90000
         assertThat(inProd).hasSize(1); // GH-90000
-        assertThat(inProd.get(0).version()).isEqualTo("2.0.0 [GH-90000]");
+        assertThat(inProd.get(0).version()).isEqualTo("2.0.0");
     }
 
     // ── Deprecation ───────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("deprecating a model marks it as DEPRECATED and removes from production [GH-90000]")
+    @DisplayName("deprecating a model marks it as DEPRECATED and removes from production")
     void deprecateMarksModelDeprecated() { // GH-90000
         registry.register("model-dep", "1.0.0", "tenant-D", Map.of()); // GH-90000
         registry.promote("model-dep", "1.0.0", "tenant-D", ModelStatus.STAGING); // GH-90000
@@ -155,7 +155,7 @@ class ModelRegistryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("deprecated model can not be promoted to PRODUCTION [GH-90000]")
+    @DisplayName("deprecated model can not be promoted to PRODUCTION")
     void deprecatedModelCannotBePromotedToProduction() { // GH-90000
         registry.register("model-nd", "1.0.0", "tenant-ND", Map.of()); // GH-90000
         registry.deprecate("model-nd", "1.0.0", "tenant-ND"); // GH-90000
@@ -168,7 +168,7 @@ class ModelRegistryTest extends EventloopTestBase {
     // ── Deletion ──────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("deleting a model removes it from the registry entirely [GH-90000]")
+    @DisplayName("deleting a model removes it from the registry entirely")
     void deletingModelRemovesItFromRegistry() { // GH-90000
         registry.register("model-del", "1.0.0", "tenant-Del", Map.of()); // GH-90000
         registry.delete("model-del", "1.0.0", "tenant-Del"); // GH-90000
@@ -178,7 +178,7 @@ class ModelRegistryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("production model cannot be deleted without deprecation first [GH-90000]")
+    @DisplayName("production model cannot be deleted without deprecation first")
     void productionModelCannotBeDeletedDirectly() { // GH-90000
         registry.register("model-pd", "1.0.0", "tenant-PD", Map.of()); // GH-90000
         registry.promote("model-pd", "1.0.0", "tenant-PD", ModelStatus.STAGING); // GH-90000
@@ -186,7 +186,7 @@ class ModelRegistryTest extends EventloopTestBase {
 
         assertThatThrownBy(() -> registry.delete("model-pd", "1.0.0", "tenant-PD")) // GH-90000
                 .isInstanceOf(IllegalStateException.class) // GH-90000
-                .hasMessageContaining("production [GH-90000]");
+                .hasMessageContaining("production");
     }
 
     // ── Model registry implementation (for tests) ───────────────────────────── // GH-90000
@@ -250,7 +250,7 @@ class ModelRegistryTest extends EventloopTestBase {
             ModelVersion model = store.get(k); // GH-90000
             if (model == null) return; // GH-90000
             if (model.status() == ModelStatus.PRODUCTION) { // GH-90000
-                throw new IllegalStateException("Cannot delete a model in production status [GH-90000]");
+                throw new IllegalStateException("Cannot delete a model in production status");
             }
             store.remove(k); // GH-90000
         }

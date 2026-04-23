@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AEP idempotency, isolation, pipeline, sequence and subscriber tests [GH-90000]")
+@DisplayName("AEP idempotency, isolation, pipeline, sequence and subscriber tests")
 class AepIdempotencyAndIsolationTest extends EventloopTestBase {
 
     private static final String TENANT_A = "tenant-a";
@@ -53,18 +53,18 @@ class AepIdempotencyAndIsolationTest extends EventloopTestBase {
     // ──────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("AEP-011: Idempotency key deduplication [GH-90000]")
+    @DisplayName("AEP-011: Idempotency key deduplication")
     class IdempotencyTests {
 
         @Test
-        @DisplayName("second event with same idempotency key is suppressed [GH-90000]")
+        @DisplayName("second event with same idempotency key is suppressed")
         void shouldSuppressDuplicateIdempotencyKey() { // GH-90000
             engine = Aep.forTesting(); // GH-90000
 
             AepEngine.Event first = AepEngine.Event.of("order.placed", Map.of("amount", 100)) // GH-90000
-                .withIdempotencyKey("order-42 [GH-90000]");
+                .withIdempotencyKey("order-42");
             AepEngine.Event duplicate = AepEngine.Event.of("order.placed", Map.of("amount", 100)) // GH-90000
-                .withIdempotencyKey("order-42 [GH-90000]");
+                .withIdempotencyKey("order-42");
 
             AepEngine.ProcessingResult r1 = runPromise(() -> engine.process(TENANT_A, first)); // GH-90000
             AepEngine.ProcessingResult r2 = runPromise(() -> engine.process(TENANT_A, duplicate)); // GH-90000
@@ -72,18 +72,18 @@ class AepIdempotencyAndIsolationTest extends EventloopTestBase {
             assertThat(r1.success()).isTrue(); // GH-90000
             assertThat(r2.success()).isFalse(); // GH-90000
             assertThat(r2.metadata()).containsEntry("skipped", true); // GH-90000
-            assertThat((String) r2.metadata().get("reason [GH-90000]")).contains("Duplicate event suppressed [GH-90000]");
+            assertThat((String) r2.metadata().get("reason")).contains("Duplicate event suppressed");
         }
 
         @Test
-        @DisplayName("same idempotency key for different tenants is NOT suppressed [GH-90000]")
+        @DisplayName("same idempotency key for different tenants is NOT suppressed")
         void shouldNotSuppressAcrossTenantsWithSameKey() { // GH-90000
             engine = Aep.forTesting(); // GH-90000
 
             AepEngine.Event eventA = AepEngine.Event.of("order.placed", Map.of()) // GH-90000
-                .withIdempotencyKey("key-1 [GH-90000]");
+                .withIdempotencyKey("key-1");
             AepEngine.Event eventB = AepEngine.Event.of("order.placed", Map.of()) // GH-90000
-                .withIdempotencyKey("key-1 [GH-90000]");
+                .withIdempotencyKey("key-1");
 
             AepEngine.ProcessingResult rA = runPromise(() -> engine.process(TENANT_A, eventA)); // GH-90000
             AepEngine.ProcessingResult rB = runPromise(() -> engine.process(TENANT_B, eventB)); // GH-90000
@@ -93,14 +93,14 @@ class AepIdempotencyAndIsolationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("different idempotency keys are each processed once [GH-90000]")
+        @DisplayName("different idempotency keys are each processed once")
         void shouldProcessDistinctKeysIndependently() { // GH-90000
             engine = Aep.forTesting(); // GH-90000
 
             AepEngine.Event e1 = AepEngine.Event.of("order.placed", Map.of()) // GH-90000
-                .withIdempotencyKey("key-A [GH-90000]");
+                .withIdempotencyKey("key-A");
             AepEngine.Event e2 = AepEngine.Event.of("order.placed", Map.of()) // GH-90000
-                .withIdempotencyKey("key-B [GH-90000]");
+                .withIdempotencyKey("key-B");
 
             AepEngine.ProcessingResult r1 = runPromise(() -> engine.process(TENANT_A, e1)); // GH-90000
             AepEngine.ProcessingResult r2 = runPromise(() -> engine.process(TENANT_A, e2)); // GH-90000
@@ -110,7 +110,7 @@ class AepIdempotencyAndIsolationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("event without idempotency key is never suppressed [GH-90000]")
+        @DisplayName("event without idempotency key is never suppressed")
         void shouldNeverSuppressEventsWithNoIdempotencyKey() { // GH-90000
             engine = Aep.forTesting(); // GH-90000
 
@@ -125,16 +125,16 @@ class AepIdempotencyAndIsolationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("expired idempotency keys are processed again after TTL [GH-90000]")
+        @DisplayName("expired idempotency keys are processed again after TTL")
         void shouldAllowProcessingAgainAfterConfiguredTtl() throws Exception { // GH-90000
             engine = Aep.create(Aep.AepConfig.builder() // GH-90000
                 .idempotencyTtlSeconds(1) // GH-90000
                 .build()); // GH-90000
 
             AepEngine.Event first = AepEngine.Event.of("order.placed", Map.of("amount", 100)) // GH-90000
-                .withIdempotencyKey("ttl-key [GH-90000]");
+                .withIdempotencyKey("ttl-key");
             AepEngine.Event second = AepEngine.Event.of("order.placed", Map.of("amount", 100)) // GH-90000
-                .withIdempotencyKey("ttl-key [GH-90000]");
+                .withIdempotencyKey("ttl-key");
 
             AepEngine.ProcessingResult r1 = runPromise(() -> engine.process(TENANT_A, first)); // GH-90000
             Thread.sleep(1_100L); // GH-90000
@@ -145,21 +145,21 @@ class AepIdempotencyAndIsolationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("oldest idempotency keys are evicted when tenant budget is exceeded [GH-90000]")
+        @DisplayName("oldest idempotency keys are evicted when tenant budget is exceeded")
         void shouldEvictOldestKeysWhenBudgetExceeded() { // GH-90000
             engine = Aep.create(Aep.AepConfig.builder() // GH-90000
                 .maxIdempotencyKeysPerTenant(2) // GH-90000
                 .build()); // GH-90000
 
             runPromise(() -> engine.process(TENANT_A, // GH-90000
-                AepEngine.Event.of("order.placed", Map.of()).withIdempotencyKey("key-1 [GH-90000]")));
+                AepEngine.Event.of("order.placed", Map.of()).withIdempotencyKey("key-1")));
             runPromise(() -> engine.process(TENANT_A, // GH-90000
-                AepEngine.Event.of("order.placed", Map.of()).withIdempotencyKey("key-2 [GH-90000]")));
+                AepEngine.Event.of("order.placed", Map.of()).withIdempotencyKey("key-2")));
             runPromise(() -> engine.process(TENANT_A, // GH-90000
-                AepEngine.Event.of("order.placed", Map.of()).withIdempotencyKey("key-3 [GH-90000]")));
+                AepEngine.Event.of("order.placed", Map.of()).withIdempotencyKey("key-3")));
 
             AepEngine.ProcessingResult result = runPromise(() -> engine.process(TENANT_A, // GH-90000
-                AepEngine.Event.of("order.placed", Map.of()).withIdempotencyKey("key-1 [GH-90000]")));
+                AepEngine.Event.of("order.placed", Map.of()).withIdempotencyKey("key-1")));
 
             assertThat(result.success()).isTrue(); // GH-90000
         }
@@ -170,11 +170,11 @@ class AepIdempotencyAndIsolationTest extends EventloopTestBase {
     // ──────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("AEP-013: Tenant isolation [GH-90000]")
+    @DisplayName("AEP-013: Tenant isolation")
     class TenantIsolationTests {
 
         @Test
-        @DisplayName("pattern registered for tenant-A is not visible to tenant-B [GH-90000]")
+        @DisplayName("pattern registered for tenant-A is not visible to tenant-B")
         void patternsShouldBeIsolatedByTenant() { // GH-90000
             engine = Aep.forTesting(); // GH-90000
 
@@ -190,7 +190,7 @@ class AepIdempotencyAndIsolationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("getPattern() for wrong tenant rejects cross-tenant access [GH-90000]")
+        @DisplayName("getPattern() for wrong tenant rejects cross-tenant access")
         void getPatternShouldRespectTenant() { // GH-90000
             engine = Aep.forTesting(); // GH-90000
 
@@ -200,11 +200,11 @@ class AepIdempotencyAndIsolationTest extends EventloopTestBase {
 
             assertThatThrownBy(() -> runPromise(() -> engine.getPattern(TENANT_B, p.id()))) // GH-90000
                 .isInstanceOf(AepTenantException.class) // GH-90000
-                .hasMessageContaining("different tenant [GH-90000]");
+                .hasMessageContaining("different tenant");
         }
 
         @Test
-        @DisplayName("deletePattern() for tenant-A does not affect tenant-B [GH-90000]")
+        @DisplayName("deletePattern() for tenant-A does not affect tenant-B")
         void deletePatternShouldOnelyAffectOwnerTenant() { // GH-90000
             engine = Aep.forTesting(); // GH-90000
 
@@ -225,7 +225,7 @@ class AepIdempotencyAndIsolationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("pattern detection does not fire across tenants [GH-90000]")
+        @DisplayName("pattern detection does not fire across tenants")
         void detectionShouldBeIsolatedByTenant() { // GH-90000
             engine = Aep.forTesting(); // GH-90000
 
@@ -248,11 +248,11 @@ class AepIdempotencyAndIsolationTest extends EventloopTestBase {
     // ──────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("AEP-014: Pipeline execution [GH-90000]")
+    @DisplayName("AEP-014: Pipeline execution")
     class PipelineTests {
 
         @Test
-        @DisplayName("submitPipeline() completes without exception for empty pipeline [GH-90000]")
+        @DisplayName("submitPipeline() completes without exception for empty pipeline")
         void shouldHandleEmptyPipeline() { // GH-90000
             engine = Aep.forTesting(); // GH-90000
 
@@ -263,7 +263,7 @@ class AepIdempotencyAndIsolationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("submitPipeline() registers a pattern from register_pattern step [GH-90000]")
+        @DisplayName("submitPipeline() registers a pattern from register_pattern step")
         void shouldRegisterPatternViaStep() { // GH-90000
             engine = Aep.forTesting(); // GH-90000
 
@@ -279,11 +279,11 @@ class AepIdempotencyAndIsolationTest extends EventloopTestBase {
 
             List<AepEngine.Pattern> patterns = runPromise(() -> engine.listPatterns(TENANT_A)); // GH-90000
             assertThat(patterns).hasSize(1); // GH-90000
-            assertThat(patterns.get(0).name()).isEqualTo("pipeline-threshold [GH-90000]");
+            assertThat(patterns.get(0).name()).isEqualTo("pipeline-threshold");
         }
 
         @Test
-        @DisplayName("submitPipeline() continues after an unknown step type [GH-90000]")
+        @DisplayName("submitPipeline() continues after an unknown step type")
         void shouldContinueAfterUnknownStepType() { // GH-90000
             engine = Aep.forTesting(); // GH-90000
 
@@ -299,7 +299,7 @@ class AepIdempotencyAndIsolationTest extends EventloopTestBase {
 
             List<AepEngine.Pattern> patterns = runPromise(() -> engine.listPatterns(TENANT_A)); // GH-90000
             assertThat(patterns).hasSize(1); // GH-90000
-            assertThat(patterns.get(0).name()).isEqualTo("after-unknown [GH-90000]");
+            assertThat(patterns.get(0).name()).isEqualTo("after-unknown");
         }
     }
 
@@ -308,11 +308,11 @@ class AepIdempotencyAndIsolationTest extends EventloopTestBase {
     // ──────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("AEP-016: Sequence pattern timestamp ordering [GH-90000]")
+    @DisplayName("AEP-016: Sequence pattern timestamp ordering")
     class SequenceOrderingTests {
 
         @Test
-        @DisplayName("sequence detection fires when events arrive in correct temporal order [GH-90000]")
+        @DisplayName("sequence detection fires when events arrive in correct temporal order")
         void shouldDetectSequenceInOrder() { // GH-90000
             engine = Aep.forTesting(); // GH-90000
 
@@ -321,7 +321,7 @@ class AepIdempotencyAndIsolationTest extends EventloopTestBase {
                     Map.of("expectedTypes", List.of("cart.add", "checkout.start", "payment.complete"), // GH-90000
                            "correlationField", "orderId"))));
 
-            Instant t0 = Instant.parse("2026-01-01T00:00:00Z [GH-90000]");
+            Instant t0 = Instant.parse("2026-01-01T00:00:00Z");
 
             runPromise(() -> engine.process(TENANT_A, // GH-90000
                 new AepEngine.Event("cart.add", Map.of("orderId", "ord-1"), Map.of(), t0))); // GH-90000
@@ -333,11 +333,11 @@ class AepIdempotencyAndIsolationTest extends EventloopTestBase {
                     t0.plusSeconds(10)))); // GH-90000
 
             assertThat(result.detections()).hasSize(1); // GH-90000
-            assertThat(result.detections().get(0).patternName()).isEqualTo("checkout-flow [GH-90000]");
+            assertThat(result.detections().get(0).patternName()).isEqualTo("checkout-flow");
         }
 
         @Test
-        @DisplayName("out-of-order event is ignored, sequence does not fire [GH-90000]")
+        @DisplayName("out-of-order event is ignored, sequence does not fire")
         void shouldIgnoreOutOfOrderEvent() { // GH-90000
             engine = Aep.forTesting(); // GH-90000
 
@@ -346,8 +346,8 @@ class AepIdempotencyAndIsolationTest extends EventloopTestBase {
                     Map.of("expectedTypes", List.of("step.one", "step.two"), // GH-90000
                            "correlationField", "userId"))));
 
-            Instant t10 = Instant.parse("2026-01-01T00:00:10Z [GH-90000]");
-            Instant t5  = Instant.parse("2026-01-01T00:00:05Z [GH-90000]");
+            Instant t10 = Instant.parse("2026-01-01T00:00:10Z");
+            Instant t5  = Instant.parse("2026-01-01T00:00:05Z");
 
             // step.one arrives at t10
             runPromise(() -> engine.process(TENANT_A, // GH-90000
@@ -360,7 +360,7 @@ class AepIdempotencyAndIsolationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("events without a real correlation key do not share sequence state [GH-90000]")
+        @DisplayName("events without a real correlation key do not share sequence state")
         void shouldNotUseGlobalFallbackForMissingCorrelationKey() { // GH-90000
             engine = Aep.forTesting(); // GH-90000
 
@@ -383,11 +383,11 @@ class AepIdempotencyAndIsolationTest extends EventloopTestBase {
     // ──────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("AEP-017: Subscriber exception isolation [GH-90000]")
+    @DisplayName("AEP-017: Subscriber exception isolation")
     class SubscriberFaultToleranceTests {
 
         @Test
-        @DisplayName("exception in one subscriber does not prevent other subscribers from receiving detection [GH-90000]")
+        @DisplayName("exception in one subscriber does not prevent other subscribers from receiving detection")
         void exceptingSubscriberShouldNotBlockOthers() { // GH-90000
             engine = Aep.forTesting(); // GH-90000
 
@@ -399,7 +399,7 @@ class AepIdempotencyAndIsolationTest extends EventloopTestBase {
 
             // First subscriber throws
             engine.subscribe(TENANT_A, pattern.id(), // GH-90000
-                detection -> { throw new RuntimeException("subscriber failure [GH-90000]"); });
+                detection -> { throw new RuntimeException("subscriber failure"); });
             // Second subscriber should still get called
             engine.subscribe(TENANT_A, pattern.id(), // GH-90000
                 detection -> received.add(detection.patternId())); // GH-90000
@@ -412,7 +412,7 @@ class AepIdempotencyAndIsolationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("process() itself succeeds even if all subscribers throw [GH-90000]")
+        @DisplayName("process() itself succeeds even if all subscribers throw")
         void shouldSucceedEvenIfAllSubscribersThrow() { // GH-90000
             engine = Aep.forTesting(); // GH-90000
 
@@ -421,7 +421,7 @@ class AepIdempotencyAndIsolationTest extends EventloopTestBase {
                     Map.of("field", "val", "threshold", 0.0)))); // GH-90000
 
             engine.subscribe(TENANT_A, p.id(), // GH-90000
-                detection -> { throw new IllegalStateException("crash! [GH-90000]"); });
+                detection -> { throw new IllegalStateException("crash!"); });
 
             AepEngine.ProcessingResult result = runPromise(() -> engine.process(TENANT_A, // GH-90000
                 new AepEngine.Event("metric", Map.of("val", 1.0), Map.of(), Instant.now()))); // GH-90000
@@ -430,7 +430,7 @@ class AepIdempotencyAndIsolationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("cancelled subscription no longer receives detections [GH-90000]")
+        @DisplayName("cancelled subscription no longer receives detections")
         void cancelledSubscriptionShouldNotReceive() { // GH-90000
             engine = Aep.forTesting(); // GH-90000
 

@@ -19,7 +19,7 @@ import static org.mockito.Mockito.*;
 /**
  * Tests for VectorSearchService.
  */
-@DisplayName("VectorSearchService Tests [GH-90000]")
+@DisplayName("VectorSearchService Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles vector search service test operations
@@ -43,7 +43,7 @@ class VectorSearchServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should search for similar documents [GH-90000]")
+    @DisplayName("Should search for similar documents")
     void shouldSearchDocuments() { // GH-90000
         // Given
         String query = "security vulnerabilities";
@@ -67,7 +67,7 @@ class VectorSearchServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should add document to vector store [GH-90000]")
+    @DisplayName("Should add document to vector store")
     void shouldAddDocument() { // GH-90000
         // Given
         String id = "doc-123";
@@ -90,7 +90,7 @@ class VectorSearchServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should delete document from vector store [GH-90000]")
+    @DisplayName("Should delete document from vector store")
     void shouldDeleteDocument() { // GH-90000
         // Given
         String id = "doc-123";
@@ -106,7 +106,7 @@ class VectorSearchServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should update document in vector store [GH-90000]")
+    @DisplayName("Should update document in vector store")
     void shouldUpdateDocument() { // GH-90000
         // Given
         String id = "doc-123";

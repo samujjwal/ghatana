@@ -19,7 +19,7 @@ import static org.mockito.Mockito.verify;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("StructuredFacialRecognitionAuditSink Tests (AV-P2-05) [GH-90000]")
+@DisplayName("StructuredFacialRecognitionAuditSink Tests (AV-P2-05)")
 class StructuredFacialRecognitionAuditSinkTest {
 
     @Mock
@@ -36,7 +36,7 @@ class StructuredFacialRecognitionAuditSinkTest {
     }
 
     @Test
-    @DisplayName("Emits counter with outcome=success and reason=none on successful recognition [GH-90000]")
+    @DisplayName("Emits counter with outcome=success and reason=none on successful recognition")
     void shouldEmitSuccessCounterForSuccessfulRecognition() { // GH-90000
         var event = FacialRecognitionService.FacialRecognitionAuditEvent.success("actor-1", "identity-1", 0.97); // GH-90000
 
@@ -50,7 +50,7 @@ class StructuredFacialRecognitionAuditSinkTest {
     }
 
     @Test
-    @DisplayName("Emits counter with outcome=no_match and reason=below_threshold [GH-90000]")
+    @DisplayName("Emits counter with outcome=no_match and reason=below_threshold")
     void shouldEmitNoMatchCounterWhenBelowThreshold() { // GH-90000
         var event = FacialRecognitionService.FacialRecognitionAuditEvent.noMatch("actor-2", 0.40); // GH-90000
 
@@ -64,7 +64,7 @@ class StructuredFacialRecognitionAuditSinkTest {
     }
 
     @Test
-    @DisplayName("Emits counter with outcome=denied and reason=consent_missing [GH-90000]")
+    @DisplayName("Emits counter with outcome=denied and reason=consent_missing")
     void shouldEmitDeniedCounterForConsentMissing() { // GH-90000
         var event = FacialRecognitionService.FacialRecognitionAuditEvent.denied("consent_missing", "actor-3"); // GH-90000
 
@@ -78,7 +78,7 @@ class StructuredFacialRecognitionAuditSinkTest {
     }
 
     @Test
-    @DisplayName("Emits counter with outcome=denied and reason=feature_disabled [GH-90000]")
+    @DisplayName("Emits counter with outcome=denied and reason=feature_disabled")
     void shouldEmitDeniedCounterForFeatureDisabled() { // GH-90000
         var event = FacialRecognitionService.FacialRecognitionAuditEvent.denied("feature_disabled", "actor-4"); // GH-90000
 

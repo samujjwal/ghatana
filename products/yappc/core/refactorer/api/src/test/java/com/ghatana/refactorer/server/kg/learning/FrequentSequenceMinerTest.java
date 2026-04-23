@@ -48,7 +48,7 @@ class FrequentSequenceMinerTest extends EventloopTestBase {
     assertThat(patterns).isNotEmpty(); // GH-90000
     // Should find a, b, and a->b patterns
     boolean foundAB = patterns.stream() // GH-90000
-        .anyMatch(p -> p.sequence().contains("a [GH-90000]") && p.sequence().contains("b [GH-90000]"));
+        .anyMatch(p -> p.sequence().contains("a") && p.sequence().contains("b"));
     assertThat(foundAB).isTrue(); // GH-90000
   }
 
@@ -118,7 +118,7 @@ class FrequentSequenceMinerTest extends EventloopTestBase {
             0.85,
             150);
 
-    assertThat(pattern.sequence()).isEqualTo("login -> access [GH-90000]");
+    assertThat(pattern.sequence()).isEqualTo("login -> access");
     assertThat(pattern.support()).isEqualTo(0.75); // GH-90000
     assertThat(pattern.confidence()).isEqualTo(0.85); // GH-90000
     assertThat(pattern.occurrences()).isEqualTo(150); // GH-90000
@@ -136,17 +136,17 @@ class FrequentSequenceMinerTest extends EventloopTestBase {
 
     String str = pattern.toString(); // GH-90000
     assertThat(str) // GH-90000
-        .contains("login [GH-90000]")
-        .contains("access [GH-90000]")
-        .contains("sup: [GH-90000]")
-        .contains("conf: [GH-90000]");
+        .contains("login")
+        .contains("access")
+        .contains("sup:")
+        .contains("conf:");
   }
 
   @Test
   void testRejectsInvalidMinSupport() { // GH-90000
     assertThatThrownBy(() -> new FrequentSequenceMiner(-0.1)) // GH-90000
         .isInstanceOf(IllegalArgumentException.class) // GH-90000
-        .hasMessage("Minimum support must be between 0 and 1 [GH-90000]");
+        .hasMessage("Minimum support must be between 0 and 1");
   }
 
   @Test

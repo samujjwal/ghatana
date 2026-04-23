@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("ComputerVisionServiceTest [GH-90000]")
+@DisplayName("ComputerVisionServiceTest")
 class ComputerVisionServiceTest {
 
     private static final byte[] SAMPLE_IMAGE = "SAMPLE_IMAGE_DATA_JPG".getBytes(); // GH-90000
@@ -45,18 +45,18 @@ class ComputerVisionServiceTest {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("input validation [GH-90000]")
+    @DisplayName("input validation")
     class InputValidation {
 
         @Test
-        @DisplayName("null image data throws VisionException [GH-90000]")
+        @DisplayName("null image data throws VisionException")
         void nullImageData_throwsVisionException() { // GH-90000
             assertThatThrownBy(() -> engine.detectObjects(null)) // GH-90000
                     .isInstanceOf(VisionException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("empty image data throws VisionException [GH-90000]")
+        @DisplayName("empty image data throws VisionException")
         void emptyImageData_throwsVisionException() { // GH-90000
             byte[] empty = new byte[0];
             assertThatThrownBy(() -> engine.detectObjects(empty)) // GH-90000
@@ -64,28 +64,28 @@ class ComputerVisionServiceTest {
         }
 
         @Test
-        @DisplayName("null image data in classification throws VisionException [GH-90000]")
+        @DisplayName("null image data in classification throws VisionException")
         void nullImageDataInClassification_throwsVisionException() { // GH-90000
             assertThatThrownBy(() -> engine.classify(null)) // GH-90000
                     .isInstanceOf(VisionException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("null image data in OCR throws VisionException [GH-90000]")
+        @DisplayName("null image data in OCR throws VisionException")
         void nullImageDataInOcr_throwsVisionException() { // GH-90000
             assertThatThrownBy(() -> engine.extractText(null)) // GH-90000
                     .isInstanceOf(VisionException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("null image data in face detection throws VisionException [GH-90000]")
+        @DisplayName("null image data in face detection throws VisionException")
         void nullImageDataInFaceDetection_throwsVisionException() { // GH-90000
             assertThatThrownBy(() -> engine.detectFaces(null)) // GH-90000
                     .isInstanceOf(VisionException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("single byte image is accepted [GH-90000]")
+        @DisplayName("single byte image is accepted")
         void singleByteImage_isAccepted() { // GH-90000
             List<VisionModelEngine.DetectedObject> detections = engine.detectObjects(TINY_IMAGE); // GH-90000
             assertThat(detections).isNotNull(); // GH-90000
@@ -97,18 +97,18 @@ class ComputerVisionServiceTest {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("object detection [GH-90000]")
+    @DisplayName("object detection")
     class ObjectDetection {
 
         @Test
-        @DisplayName("detection returns non-null list [GH-90000]")
+        @DisplayName("detection returns non-null list")
         void detectionReturnsNonNullList() { // GH-90000
             List<VisionModelEngine.DetectedObject> detections = engine.detectObjects(SAMPLE_IMAGE); // GH-90000
             assertThat(detections).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("detected objects contain expected labels [GH-90000]")
+        @DisplayName("detected objects contain expected labels")
         void detectedObjectsContainExpectedLabels() { // GH-90000
             List<VisionModelEngine.DetectedObject> detections = engine.detectObjects(SAMPLE_IMAGE); // GH-90000
             assertThat(detections).isNotEmpty(); // GH-90000
@@ -121,7 +121,7 @@ class ComputerVisionServiceTest {
         }
 
         @Test
-        @DisplayName("detected objects have valid confidence scores [GH-90000]")
+        @DisplayName("detected objects have valid confidence scores")
         void detectedObjectsHaveValidConfidence() { // GH-90000
             List<VisionModelEngine.DetectedObject> detections = engine.detectObjects(SAMPLE_IMAGE); // GH-90000
 
@@ -131,7 +131,7 @@ class ComputerVisionServiceTest {
         }
 
         @Test
-        @DisplayName("detected objects have valid bounding boxes [GH-90000]")
+        @DisplayName("detected objects have valid bounding boxes")
         void detectedObjectsHaveValidBoundingBoxes() { // GH-90000
             List<VisionModelEngine.DetectedObject> detections = engine.detectObjects(SAMPLE_IMAGE); // GH-90000
 
@@ -144,7 +144,7 @@ class ComputerVisionServiceTest {
         }
 
         @Test
-        @DisplayName("confidence threshold filters low-confidence detections [GH-90000]")
+        @DisplayName("confidence threshold filters low-confidence detections")
         void confidenceThresholdFiltersDetections() { // GH-90000
             List<VisionModelEngine.DetectedObject> low = lowConfidenceEngine.detectObjects(SAMPLE_IMAGE); // GH-90000
             List<VisionModelEngine.DetectedObject> medium = engine.detectObjects(SAMPLE_IMAGE); // GH-90000
@@ -156,7 +156,7 @@ class ComputerVisionServiceTest {
         }
 
         @Test
-        @DisplayName("all detections meet or exceed the confidence threshold [GH-90000]")
+        @DisplayName("all detections meet or exceed the confidence threshold")
         void allDetectionsMeetThreshold() { // GH-90000
             double threshold = 0.7;
             VisionModelEngine strictEngine = new VisionModelEngine("yolo-v8", threshold); // GH-90000
@@ -169,7 +169,7 @@ class ComputerVisionServiceTest {
         }
 
         @Test
-        @DisplayName("different images may produce different detections [GH-90000]")
+        @DisplayName("different images may produce different detections")
         void differentImagesMayProduceDifferentDetections() { // GH-90000
             List<VisionModelEngine.DetectedObject> detections1 = engine.detectObjects(SAMPLE_IMAGE); // GH-90000
             List<VisionModelEngine.DetectedObject> detections2 = engine.detectObjects(SAMPLE_IMAGE_2); // GH-90000
@@ -180,7 +180,7 @@ class ComputerVisionServiceTest {
         }
 
         @Test
-        @DisplayName("detection is deterministic for same image [GH-90000]")
+        @DisplayName("detection is deterministic for same image")
         void detectionIsDeterministic() { // GH-90000
             List<VisionModelEngine.DetectedObject> d1 = engine.detectObjects(SAMPLE_IMAGE); // GH-90000
             List<VisionModelEngine.DetectedObject> d2 = engine.detectObjects(SAMPLE_IMAGE); // GH-90000
@@ -198,11 +198,11 @@ class ComputerVisionServiceTest {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("classification [GH-90000]")
+    @DisplayName("classification")
     class Classification {
 
         @Test
-        @DisplayName("classification returns valid result [GH-90000]")
+        @DisplayName("classification returns valid result")
         void classificationReturnsValidResult() { // GH-90000
             VisionModelEngine.ClassificationResult result = engine.classify(SAMPLE_IMAGE); // GH-90000
 
@@ -211,7 +211,7 @@ class ComputerVisionServiceTest {
         }
 
         @Test
-        @DisplayName("classification confidence is in valid range [GH-90000]")
+        @DisplayName("classification confidence is in valid range")
         void classificationConfidenceIsValid() { // GH-90000
             VisionModelEngine.ClassificationResult result = engine.classify(SAMPLE_IMAGE); // GH-90000
 
@@ -219,7 +219,7 @@ class ComputerVisionServiceTest {
         }
 
         @Test
-        @DisplayName("top labels list is non-empty [GH-90000]")
+        @DisplayName("top labels list is non-empty")
         void topLabelsListIsNonEmpty() { // GH-90000
             VisionModelEngine.ClassificationResult result = engine.classify(SAMPLE_IMAGE); // GH-90000
 
@@ -227,7 +227,7 @@ class ComputerVisionServiceTest {
         }
 
         @Test
-        @DisplayName("classified label is in top labels list [GH-90000]")
+        @DisplayName("classified label is in top labels list")
         void classifiedLabelIsInTopLabels() { // GH-90000
             VisionModelEngine.ClassificationResult result = engine.classify(SAMPLE_IMAGE); // GH-90000
 
@@ -235,7 +235,7 @@ class ComputerVisionServiceTest {
         }
 
         @Test
-        @DisplayName("classification is deterministic for same image [GH-90000]")
+        @DisplayName("classification is deterministic for same image")
         void classificationIsDeterministic() { // GH-90000
             VisionModelEngine.ClassificationResult c1 = engine.classify(SAMPLE_IMAGE); // GH-90000
             VisionModelEngine.ClassificationResult c2 = engine.classify(SAMPLE_IMAGE); // GH-90000
@@ -250,11 +250,11 @@ class ComputerVisionServiceTest {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("OCR text extraction [GH-90000]")
+    @DisplayName("OCR text extraction")
     class OcrTextExtraction {
 
         @Test
-        @DisplayName("OCR returns valid result [GH-90000]")
+        @DisplayName("OCR returns valid result")
         void ocrReturnsValidResult() { // GH-90000
             VisionModelEngine.OcrResult result = engine.extractText(SAMPLE_IMAGE); // GH-90000
 
@@ -262,7 +262,7 @@ class ComputerVisionServiceTest {
         }
 
         @Test
-        @DisplayName("extracted text is non-null [GH-90000]")
+        @DisplayName("extracted text is non-null")
         void extractedTextIsNonNull() { // GH-90000
             VisionModelEngine.OcrResult result = engine.extractText(SAMPLE_IMAGE); // GH-90000
 
@@ -270,7 +270,7 @@ class ComputerVisionServiceTest {
         }
 
         @Test
-        @DisplayName("OCR confidence is in valid range [GH-90000]")
+        @DisplayName("OCR confidence is in valid range")
         void ocrConfidenceIsValid() { // GH-90000
             VisionModelEngine.OcrResult result = engine.extractText(SAMPLE_IMAGE); // GH-90000
 
@@ -278,7 +278,7 @@ class ComputerVisionServiceTest {
         }
 
         @Test
-        @DisplayName("text regions contain valid bounding boxes [GH-90000]")
+        @DisplayName("text regions contain valid bounding boxes")
         void textRegionsContainValidBoundingBoxes() { // GH-90000
             VisionModelEngine.OcrResult result = engine.extractText(SAMPLE_IMAGE); // GH-90000
 
@@ -291,7 +291,7 @@ class ComputerVisionServiceTest {
         }
 
         @Test
-        @DisplayName("OCR is deterministic for same image [GH-90000]")
+        @DisplayName("OCR is deterministic for same image")
         void ocrIsDeterministic() { // GH-90000
             VisionModelEngine.OcrResult r1 = engine.extractText(SAMPLE_IMAGE); // GH-90000
             VisionModelEngine.OcrResult r2 = engine.extractText(SAMPLE_IMAGE); // GH-90000
@@ -306,11 +306,11 @@ class ComputerVisionServiceTest {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("face detection [GH-90000]")
+    @DisplayName("face detection")
     class FaceDetection {
 
         @Test
-        @DisplayName("face detection returns non-null list [GH-90000]")
+        @DisplayName("face detection returns non-null list")
         void faceDetectionReturnsNonNullList() { // GH-90000
             List<VisionModelEngine.FaceDetection> faces = engine.detectFaces(SAMPLE_IMAGE); // GH-90000
 
@@ -318,7 +318,7 @@ class ComputerVisionServiceTest {
         }
 
         @Test
-        @DisplayName("face detection results have valid bounding boxes [GH-90000]")
+        @DisplayName("face detection results have valid bounding boxes")
         void faceDetectionResultsHaveValidBoundingBoxes() { // GH-90000
             List<VisionModelEngine.FaceDetection> faces = engine.detectFaces(SAMPLE_IMAGE); // GH-90000
 
@@ -331,7 +331,7 @@ class ComputerVisionServiceTest {
         }
 
         @Test
-        @DisplayName("face detection confidence is in valid range [GH-90000]")
+        @DisplayName("face detection confidence is in valid range")
         void faceDetectionConfidenceIsValid() { // GH-90000
             List<VisionModelEngine.FaceDetection> faces = engine.detectFaces(SAMPLE_IMAGE); // GH-90000
 
@@ -341,7 +341,7 @@ class ComputerVisionServiceTest {
         }
 
         @Test
-        @DisplayName("face landmarks are included in results [GH-90000]")
+        @DisplayName("face landmarks are included in results")
         void faceLandmarksAreIncluded() { // GH-90000
             List<VisionModelEngine.FaceDetection> faces = engine.detectFaces(SAMPLE_IMAGE); // GH-90000
 
@@ -353,7 +353,7 @@ class ComputerVisionServiceTest {
         }
 
         @Test
-        @DisplayName("face detection is deterministic for same image [GH-90000]")
+        @DisplayName("face detection is deterministic for same image")
         void faceDetectionIsDeterministic() { // GH-90000
             List<VisionModelEngine.FaceDetection> f1 = engine.detectFaces(SAMPLE_IMAGE); // GH-90000
             List<VisionModelEngine.FaceDetection> f2 = engine.detectFaces(SAMPLE_IMAGE); // GH-90000
@@ -370,11 +370,11 @@ class ComputerVisionServiceTest {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("image format handling [GH-90000]")
+    @DisplayName("image format handling")
     class ImageFormatHandling {
 
         @Test
-        @DisplayName("JPEG-like image is processed without error [GH-90000]")
+        @DisplayName("JPEG-like image is processed without error")
         void jpegImageIsProcessed() { // GH-90000
             byte[] jpegData = "JPEG_MAGIC_BYTES".getBytes(); // GH-90000
             assertThatCode(() -> engine.detectObjects(jpegData)) // GH-90000
@@ -382,7 +382,7 @@ class ComputerVisionServiceTest {
         }
 
         @Test
-        @DisplayName("PNG-like image is processed without error [GH-90000]")
+        @DisplayName("PNG-like image is processed without error")
         void pngImageIsProcessed() { // GH-90000
             byte[] pngData = "PNG_MAGIC_BYTES".getBytes(); // GH-90000
             assertThatCode(() -> engine.detectObjects(pngData)) // GH-90000
@@ -390,7 +390,7 @@ class ComputerVisionServiceTest {
         }
 
         @Test
-        @DisplayName("BMP-like image is processed without error [GH-90000]")
+        @DisplayName("BMP-like image is processed without error")
         void bmpImageIsProcessed() { // GH-90000
             byte[] bmpData = "BM_MAGIC_BYTES".getBytes(); // GH-90000
             assertThatCode(() -> engine.detectObjects(bmpData)) // GH-90000
@@ -403,11 +403,11 @@ class ComputerVisionServiceTest {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("batch processing [GH-90000]")
+    @DisplayName("batch processing")
     class BatchProcessing {
 
         @Test
-        @DisplayName("batch detection processes multiple images [GH-90000]")
+        @DisplayName("batch detection processes multiple images")
         void batchDetectionProcessesMultipleImages() { // GH-90000
             int batchSize = 10;
             for (int i = 0; i < batchSize; i++) { // GH-90000
@@ -417,7 +417,7 @@ class ComputerVisionServiceTest {
         }
 
         @Test
-        @DisplayName("concurrent detection produces consistent results [GH-90000]")
+        @DisplayName("concurrent detection produces consistent results")
         void concurrentDetectionProducesConsistentResults() throws InterruptedException { // GH-90000
             int threadCount = 5;
             List<VisionModelEngine.DetectedObject>[] results = new List[threadCount];
@@ -443,7 +443,7 @@ class ComputerVisionServiceTest {
         }
 
         @Test
-        @DisplayName("large image batch is processed without failure [GH-90000]")
+        @DisplayName("large image batch is processed without failure")
         void largeImageBatchIsProcessed() { // GH-90000
             assertThatCode(() -> { // GH-90000
                 for (int i = 0; i < 100; i++) { // GH-90000
@@ -458,11 +458,11 @@ class ComputerVisionServiceTest {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("size boundaries [GH-90000]")
+    @DisplayName("size boundaries")
     class SizeBoundaries {
 
         @Test
-        @DisplayName("large image (5MB) is processed without failure [GH-90000]")
+        @DisplayName("large image (5MB) is processed without failure")
         void largeImageIsProcessed() { // GH-90000
             for (int i = 0; i < LARGE_IMAGE.length; i++) { // GH-90000
                 LARGE_IMAGE[i] = (byte) (i % 256); // GH-90000
@@ -473,7 +473,7 @@ class ComputerVisionServiceTest {
         }
 
         @Test
-        @DisplayName("tiny single-byte image is processed [GH-90000]")
+        @DisplayName("tiny single-byte image is processed")
         void tinyImageIsProcessed() { // GH-90000
             assertThatCode(() -> engine.detectObjects(TINY_IMAGE)) // GH-90000
                     .doesNotThrowAnyException(); // GH-90000
@@ -485,11 +485,11 @@ class ComputerVisionServiceTest {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("confidence threshold [GH-90000]")
+    @DisplayName("confidence threshold")
     class ConfidenceThreshold {
 
         @Test
-        @DisplayName("threshold of 0.0 accepts all detections [GH-90000]")
+        @DisplayName("threshold of 0.0 accepts all detections")
         void zeroThresholdAcceptsAll() { // GH-90000
             VisionModelEngine zeroEngine = new VisionModelEngine("yolo-v8", 0.0); // GH-90000
             List<VisionModelEngine.DetectedObject> detections = zeroEngine.detectObjects(SAMPLE_IMAGE); // GH-90000
@@ -498,7 +498,7 @@ class ComputerVisionServiceTest {
         }
 
         @Test
-        @DisplayName("threshold of 1.0 rejects all detections [GH-90000]")
+        @DisplayName("threshold of 1.0 rejects all detections")
         void maxThresholdRejectsAll() { // GH-90000
             VisionModelEngine maxEngine = new VisionModelEngine("yolo-v8", 1.0); // GH-90000
             List<VisionModelEngine.DetectedObject> detections = maxEngine.detectObjects(SAMPLE_IMAGE); // GH-90000
@@ -508,7 +508,7 @@ class ComputerVisionServiceTest {
         }
 
         @Test
-        @DisplayName("mid-range thresholds filter appropriately [GH-90000]")
+        @DisplayName("mid-range thresholds filter appropriately")
         void midRangeThresholdsFilter() { // GH-90000
             VisionModelEngine mid1 = new VisionModelEngine("yolo-v8", 0.3); // GH-90000
             VisionModelEngine mid2 = new VisionModelEngine("yolo-v8", 0.7); // GH-90000
@@ -525,17 +525,17 @@ class ComputerVisionServiceTest {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("engine properties [GH-90000]")
+    @DisplayName("engine properties")
     class EngineProperties {
 
         @Test
-        @DisplayName("engine returns configured model ID [GH-90000]")
+        @DisplayName("engine returns configured model ID")
         void engineReturnsConfiguredModelId() { // GH-90000
-            assertThat(engine.getModelId()).isEqualTo("yolo-v8 [GH-90000]");
+            assertThat(engine.getModelId()).isEqualTo("yolo-v8");
         }
 
         @Test
-        @DisplayName("engine returns configured confidence threshold [GH-90000]")
+        @DisplayName("engine returns configured confidence threshold")
         void engineReturnsConfiguredThreshold() { // GH-90000
             assertThat(engine.getConfidenceThreshold()).isEqualTo(0.5); // GH-90000
             assertThat(lowConfidenceEngine.getConfidenceThreshold()).isEqualTo(0.1); // GH-90000
@@ -543,7 +543,7 @@ class ComputerVisionServiceTest {
         }
 
         @Test
-        @DisplayName("invalid threshold raises exception on construction [GH-90000]")
+        @DisplayName("invalid threshold raises exception on construction")
         void invalidThresholdRaisesException() { // GH-90000
             assertThatThrownBy(() -> new VisionModelEngine("yolo-v8", -0.1)) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class); // GH-90000
@@ -553,7 +553,7 @@ class ComputerVisionServiceTest {
         }
 
         @Test
-        @DisplayName("null model ID raises exception on construction [GH-90000]")
+        @DisplayName("null model ID raises exception on construction")
         void nullModelIdRaisesException() { // GH-90000
             assertThatThrownBy(() -> new VisionModelEngine(null, 0.5)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000

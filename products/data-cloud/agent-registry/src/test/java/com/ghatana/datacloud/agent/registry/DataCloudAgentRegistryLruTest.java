@@ -46,7 +46,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test, Mockito
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("DataCloudAgentRegistry — LRU cache eviction (DC-006) [GH-90000]")
+@DisplayName("DataCloudAgentRegistry — LRU cache eviction (DC-006)")
 class DataCloudAgentRegistryLruTest extends EventloopTestBase {
 
     private static final String TENANT_ID = "lru-test-tenant";
@@ -74,18 +74,18 @@ class DataCloudAgentRegistryLruTest extends EventloopTestBase {
             .thenReturn(Promise.of(0L)); // GH-90000
     }
 
-    @SuppressWarnings("unchecked [GH-90000]")
+    @SuppressWarnings("unchecked")
     private static TypedAgent<String, String> agent(String id) { // GH-90000
         TypedAgent<String, String> agent = mock(TypedAgent.class); // GH-90000
         AgentDescriptor desc = AgentDescriptor.builder() // GH-90000
             .agentId(id) // GH-90000
             .name("Agent-" + id) // GH-90000
-            .version("1.0.0 [GH-90000]")
+            .version("1.0.0")
             .type(AgentType.DETERMINISTIC) // GH-90000
             .determinism(DeterminismGuarantee.FULL) // GH-90000
             .failureMode(FailureMode.FAIL_FAST) // GH-90000
             .stateMutability(StateMutability.STATELESS) // GH-90000
-            .capabilities(Set.of("test [GH-90000]"))
+            .capabilities(Set.of("test"))
             .build(); // GH-90000
         lenient().when(agent.descriptor()).thenReturn(desc); // GH-90000
         return agent;
@@ -95,7 +95,7 @@ class DataCloudAgentRegistryLruTest extends EventloopTestBase {
         return AgentConfig.builder() // GH-90000
             .agentId(id) // GH-90000
             .type(AgentType.DETERMINISTIC) // GH-90000
-            .version("1.0.0 [GH-90000]")
+            .version("1.0.0")
             .timeout(Duration.ofMillis(50)) // GH-90000
             .build(); // GH-90000
     }
@@ -103,7 +103,7 @@ class DataCloudAgentRegistryLruTest extends EventloopTestBase {
     // ── Tests ─────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("LRU pass — cache size limit enforcement [GH-90000]")
+    @DisplayName("LRU pass — cache size limit enforcement")
     class LruPassTests {
 
         @BeforeEach
@@ -113,7 +113,7 @@ class DataCloudAgentRegistryLruTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("cache remains within maxCacheSize after eviction is triggered [GH-90000]")
+        @DisplayName("cache remains within maxCacheSize after eviction is triggered")
         void cacheRemainsWithinMaxSizeAfterEviction() { // GH-90000
             stubRegister(); // GH-90000
 
@@ -125,7 +125,7 @@ class DataCloudAgentRegistryLruTest extends EventloopTestBase {
 
             // Before eviction: cache holds all 5 (eviction hasn't run yet) // GH-90000
             assertThat(registry.getCacheSize()) // GH-90000
-                .as("all 5 agents should be in-cache before eviction [GH-90000]")
+                .as("all 5 agents should be in-cache before eviction")
                 .isEqualTo(5); // GH-90000
 
             // Trigger eviction synchronously
@@ -133,12 +133,12 @@ class DataCloudAgentRegistryLruTest extends EventloopTestBase {
 
             // After eviction: cache must be trimmed to maxCacheSize=3
             assertThat(registry.getCacheSize()) // GH-90000
-                .as("cache must be trimmed to maxCacheSize after LRU eviction [GH-90000]")
+                .as("cache must be trimmed to maxCacheSize after LRU eviction")
                 .isLessThanOrEqualTo(3); // GH-90000
         }
 
         @Test
-        @DisplayName("least-recently-used entries are evicted first [GH-90000]")
+        @DisplayName("least-recently-used entries are evicted first")
         void lruEntriesAreEvictedFirst() throws InterruptedException { // GH-90000
             stubRegister(); // GH-90000
 
@@ -152,37 +152,37 @@ class DataCloudAgentRegistryLruTest extends EventloopTestBase {
             // Access agents 3 and 4 again to make them "recently used"
             // (agents 1 and 2 are the least recently used) // GH-90000
             // resolve() updates lastAccessMs, making agents 3 and 4 recently used // GH-90000
-            runPromise(() -> registry.resolve("agent-3 [GH-90000]"));
-            runPromise(() -> registry.resolve("agent-4 [GH-90000]"));
+            runPromise(() -> registry.resolve("agent-3"));
+            runPromise(() -> registry.resolve("agent-4"));
 
             // maxCacheSize=3: eviction should remove the single LRU entry (agent-1) // GH-90000
             registry.triggerEvictionForTesting(); // GH-90000
 
             assertThat(registry.getCacheSize()) // GH-90000
-                .as("cache should be trimmed to 3 after LRU eviction [GH-90000]")
+                .as("cache should be trimmed to 3 after LRU eviction")
                 .isLessThanOrEqualTo(3); // GH-90000
         }
 
         @Test
-        @DisplayName("no eviction occurs when cache size is within limit [GH-90000]")
+        @DisplayName("no eviction occurs when cache size is within limit")
         void noEvictionWhenWithinLimit() { // GH-90000
             stubRegister(); // GH-90000
 
             // Register only 2 agents (below limit of 3) // GH-90000
-            runPromise(() -> registry.register(agent("a1 [GH-90000]"), config("a1 [GH-90000]")));
-            runPromise(() -> registry.register(agent("a2 [GH-90000]"), config("a2 [GH-90000]")));
+            runPromise(() -> registry.register(agent("a1"), config("a1")));
+            runPromise(() -> registry.register(agent("a2"), config("a2")));
 
             int sizeBefore = registry.getCacheSize(); // GH-90000
             registry.triggerEvictionForTesting(); // GH-90000
 
             assertThat(registry.getCacheSize()) // GH-90000
-                .as("no entries should be evicted when within limit [GH-90000]")
+                .as("no entries should be evicted when within limit")
                 .isEqualTo(sizeBefore); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("TTL pass — time-based eviction [GH-90000]")
+    @DisplayName("TTL pass — time-based eviction")
     class TtlPassTests {
 
         @BeforeEach
@@ -193,11 +193,11 @@ class DataCloudAgentRegistryLruTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("TTL-expired entries are removed from cache [GH-90000]")
+        @DisplayName("TTL-expired entries are removed from cache")
         void ttlExpiredEntriesAreRemoved() throws InterruptedException { // GH-90000
             stubRegister(); // GH-90000
 
-            runPromise(() -> registry.register(agent("ttl-agent [GH-90000]"), config("ttl-agent [GH-90000]")));
+            runPromise(() -> registry.register(agent("ttl-agent"), config("ttl-agent")));
             assertThat(registry.getCacheSize()).isEqualTo(1); // GH-90000
 
             // Wait for the TTL to expire (1 ms is enough) // GH-90000
@@ -206,7 +206,7 @@ class DataCloudAgentRegistryLruTest extends EventloopTestBase {
             registry.triggerEvictionForTesting(); // GH-90000
 
             assertThat(registry.getCacheSize()) // GH-90000
-                .as("TTL-expired entry should be evicted from cache [GH-90000]")
+                .as("TTL-expired entry should be evicted from cache")
                 .isZero(); // GH-90000
         }
     }

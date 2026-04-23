@@ -32,7 +32,7 @@ import static org.assertj.core.data.Offset.offset;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("AIIntegration - Phase 3 Expansion [GH-90000]")
+@DisplayName("AIIntegration - Phase 3 Expansion")
 class AIIntegrationExpansionTest {
 
     // ============================================
@@ -40,11 +40,11 @@ class AIIntegrationExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Completion Request Validation [GH-90000]")
+    @DisplayName("Completion Request Validation")
     class CompletionRequestTests {
 
         @Test
-        @DisplayName("Builder validates prompt XOR messages [GH-90000]")
+        @DisplayName("Builder validates prompt XOR messages")
         void validatePromptOrMessages() { // GH-90000
             assertThatThrownBy(() -> CompletionRequest.builder().build()) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class); // GH-90000
@@ -56,10 +56,10 @@ class AIIntegrationExpansionTest {
         }
 
         @Test
-        @DisplayName("MaxTokens defaults and bounds checking [GH-90000]")
+        @DisplayName("MaxTokens defaults and bounds checking")
         void maxTokensBounds() { // GH-90000
             CompletionRequest req = CompletionRequest.builder() // GH-90000
-                .prompt("test [GH-90000]")
+                .prompt("test")
                 .maxTokens(2048) // GH-90000
                 .build(); // GH-90000
 
@@ -67,10 +67,10 @@ class AIIntegrationExpansionTest {
         }
 
         @Test
-        @DisplayName("Temperature and sampling parameters [GH-90000]")
+        @DisplayName("Temperature and sampling parameters")
         void temperatureAndSampling() { // GH-90000
             CompletionRequest req = CompletionRequest.builder() // GH-90000
-                .prompt("test [GH-90000]")
+                .prompt("test")
                 .temperature(0.5) // GH-90000
                 .topP(0.95) // GH-90000
                 .frequencyPenalty(0.1) // GH-90000
@@ -84,14 +84,14 @@ class AIIntegrationExpansionTest {
         }
 
         @Test
-        @DisplayName("Custom parameters in request [GH-90000]")
+        @DisplayName("Custom parameters in request")
         void customParameters() { // GH-90000
             Map<String, Object> customParams = new HashMap<>(); // GH-90000
             customParams.put("presence_penalty", 0.2); // GH-90000
             customParams.put("custom_field", "value"); // GH-90000
 
             CompletionRequest req = CompletionRequest.builder() // GH-90000
-                .prompt("test [GH-90000]")
+                .prompt("test")
                 .metadata(customParams) // GH-90000
                 .build(); // GH-90000
 
@@ -99,7 +99,7 @@ class AIIntegrationExpansionTest {
         }
 
         @Test
-        @DisplayName("Many messages in single request [GH-90000]")
+        @DisplayName("Many messages in single request")
         void manyMessagesInRequest() { // GH-90000
             List<ChatMessage> messages = new ArrayList<>(); // GH-90000
             for (int i = 0; i < 100; i++) { // GH-90000
@@ -124,23 +124,23 @@ class AIIntegrationExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Chat Message Patterns [GH-90000]")
+    @DisplayName("Chat Message Patterns")
     class ChatMessageTests {
 
         @Test
-        @DisplayName("Create messages in various roles [GH-90000]")
+        @DisplayName("Create messages in various roles")
         void variousRoles() { // GH-90000
-            ChatMessage user = ChatMessage.user("user text [GH-90000]");
-            ChatMessage assistant = ChatMessage.assistant("assistant text [GH-90000]");
-            ChatMessage system = ChatMessage.system("system text [GH-90000]");
+            ChatMessage user = ChatMessage.user("user text");
+            ChatMessage assistant = ChatMessage.assistant("assistant text");
+            ChatMessage system = ChatMessage.system("system text");
 
-            assertThat(user.getContent()).isEqualTo("user text [GH-90000]");
-            assertThat(assistant.getContent()).isEqualTo("assistant text [GH-90000]");
-            assertThat(system.getContent()).isEqualTo("system text [GH-90000]");
+            assertThat(user.getContent()).isEqualTo("user text");
+            assertThat(assistant.getContent()).isEqualTo("assistant text");
+            assertThat(system.getContent()).isEqualTo("system text");
         }
 
         @Test
-        @DisplayName("Message with tool calls [GH-90000]")
+        @DisplayName("Message with tool calls")
         void messagesWithToolCalls() { // GH-90000
             List<ToolCall> toolCalls = new ArrayList<>(); // GH-90000
             for (int i = 0; i < 10; i++) { // GH-90000
@@ -149,13 +149,13 @@ class AIIntegrationExpansionTest {
                 toolCalls.add(call); // GH-90000
             }
 
-            ChatMessage msg = ChatMessage.assistant("calling tools [GH-90000]");
-            assertThat(msg.getContent()).isEqualTo("calling tools [GH-90000]");
+            ChatMessage msg = ChatMessage.assistant("calling tools");
+            assertThat(msg.getContent()).isEqualTo("calling tools");
             assertThat(toolCalls).hasSize(10); // GH-90000
         }
 
         @Test
-        @DisplayName("Long conversation thread [GH-90000]")
+        @DisplayName("Long conversation thread")
         void longConversationThread() { // GH-90000
             List<ChatMessage> messages = new ArrayList<>(); // GH-90000
             for (int turn = 0; turn < 50; turn++) { // GH-90000
@@ -165,15 +165,15 @@ class AIIntegrationExpansionTest {
             }
 
             assertThat(messages).hasSize(100); // GH-90000
-            assertThat(messages.get(0).getContent()).contains("User turn 0 [GH-90000]");
-            assertThat(messages.get(99).getContent()).contains("Assistant turn 49 [GH-90000]");
+            assertThat(messages.get(0).getContent()).contains("User turn 0");
+            assertThat(messages.get(99).getContent()).contains("Assistant turn 49");
         }
 
         @Test
-        @DisplayName("Unicode and special characters in messages [GH-90000]")
+        @DisplayName("Unicode and special characters in messages")
         void unicodeContent() { // GH-90000
-            ChatMessage msg = ChatMessage.user("Hello 🌍 with émojis and ñ characters [GH-90000]");
-            assertThat(msg.getContent()).contains("🌍 [GH-90000]");
+            ChatMessage msg = ChatMessage.user("Hello 🌍 with émojis and ñ characters");
+            assertThat(msg.getContent()).contains("🌍");
         }
     }
 
@@ -182,27 +182,27 @@ class AIIntegrationExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Completion Result Handling [GH-90000]")
+    @DisplayName("Completion Result Handling")
     class CompletionResultTests {
 
         @Test
-        @DisplayName("Parse completion result with text content [GH-90000]")
+        @DisplayName("Parse completion result with text content")
         void parseTextCompletion() { // GH-90000
             CompletionResult result = CompletionResult.builder() // GH-90000
-                .modelUsed("model-v1 [GH-90000]")
-                .text("The completion text [GH-90000]")
-                .finishReason("stop [GH-90000]")
+                .modelUsed("model-v1")
+                .text("The completion text")
+                .finishReason("stop")
                 .tokensUsed(100) // GH-90000
                 .build(); // GH-90000
 
-            assertThat(result.getModelUsed()).isEqualTo("model-v1 [GH-90000]");
-            assertThat(result.getText()).isEqualTo("The completion text [GH-90000]");
-            assertThat(result.getFinishReason()).isEqualTo("stop [GH-90000]");
+            assertThat(result.getModelUsed()).isEqualTo("model-v1");
+            assertThat(result.getText()).isEqualTo("The completion text");
+            assertThat(result.getFinishReason()).isEqualTo("stop");
             assertThat(result.getTokensUsed()).isEqualTo(100); // GH-90000
         }
 
         @Test
-        @DisplayName("Completion with tool calls [GH-90000]")
+        @DisplayName("Completion with tool calls")
         void completionWithToolCalls() { // GH-90000
             List<ToolCall> toolCalls = new ArrayList<>(); // GH-90000
             for (int i = 0; i < 5; i++) { // GH-90000
@@ -212,43 +212,43 @@ class AIIntegrationExpansionTest {
             }
 
             CompletionResult result = CompletionResult.builder() // GH-90000
-                .modelUsed("model-v1 [GH-90000]")
-                .finishReason("tool_calls [GH-90000]")
+                .modelUsed("model-v1")
+                .finishReason("tool_calls")
                 .tokensUsed(150) // GH-90000
                 .toolCalls(toolCalls) // GH-90000
                 .build(); // GH-90000
 
             assertThat(result.getToolCalls()).hasSize(5); // GH-90000
-            assertThat(result.getFinishReason()).isEqualTo("tool_calls [GH-90000]");
+            assertThat(result.getFinishReason()).isEqualTo("tool_calls");
         }
 
         @Test
-        @DisplayName("Many completions processed in sequence [GH-90000]")
+        @DisplayName("Many completions processed in sequence")
         void manyCompletions() { // GH-90000
             List<CompletionResult> results = new ArrayList<>(); // GH-90000
             for (int i = 0; i < 50; i++) { // GH-90000
                 final int idx = i;
                 CompletionResult result = CompletionResult.builder() // GH-90000
-                    .modelUsed("model [GH-90000]")
+                    .modelUsed("model")
                     .text("Response " + idx) // GH-90000
-                    .finishReason("stop [GH-90000]")
+                    .finishReason("stop")
                     .tokensUsed(50 + idx) // GH-90000
                     .build(); // GH-90000
                 results.add(result); // GH-90000
             }
 
             assertThat(results).hasSize(50); // GH-90000
-            assertThat(results.get(25).getText()).isEqualTo("Response 25 [GH-90000]");
+            assertThat(results.get(25).getText()).isEqualTo("Response 25");
         }
 
         @Test
-        @DisplayName("Very long completion text [GH-90000]")
+        @DisplayName("Very long completion text")
         void veryLongCompletion() { // GH-90000
             String longText = "Generated text ".repeat(1000); // GH-90000
             CompletionResult result = CompletionResult.builder() // GH-90000
-                .modelUsed("model [GH-90000]")
+                .modelUsed("model")
                 .text(longText) // GH-90000
-                .finishReason("stop [GH-90000]")
+                .finishReason("stop")
                 .tokensUsed(10000) // GH-90000
                 .build(); // GH-90000
 
@@ -261,22 +261,22 @@ class AIIntegrationExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Embedding Operations [GH-90000]")
+    @DisplayName("Embedding Operations")
     class EmbeddingTests {
 
         @Test
-        @DisplayName("Create embedding with vector values [GH-90000]")
+        @DisplayName("Create embedding with vector values")
         void createEmbedding() { // GH-90000
             float[] vector = {0.1f, 0.2f, 0.3f, 0.4f, 0.5f};
             EmbeddingResult result = new EmbeddingResult("text-content", vector, "model-v1"); // GH-90000
 
-            assertThat(result.getText()).isEqualTo("text-content [GH-90000]");
+            assertThat(result.getText()).isEqualTo("text-content");
             assertThat(result.getVector()).hasSize(5); // GH-90000
-            assertThat(result.getModel()).isEqualTo("model-v1 [GH-90000]");
+            assertThat(result.getModel()).isEqualTo("model-v1");
         }
 
         @Test
-        @DisplayName("Large embedding dimensions [GH-90000]")
+        @DisplayName("Large embedding dimensions")
         void largeEmbeddingDimensions() { // GH-90000
             float[] vector = new float[1536]; // OpenAI embedding dimension
             for (int i = 0; i < vector.length; i++) { // GH-90000
@@ -288,7 +288,7 @@ class AIIntegrationExpansionTest {
         }
 
         @Test
-        @DisplayName("Many texts embedded in batch [GH-90000]")
+        @DisplayName("Many texts embedded in batch")
         void batchEmbeddings() { // GH-90000
             List<EmbeddingResult> results = new ArrayList<>(); // GH-90000
             for (int i = 0; i < 100; i++) { // GH-90000
@@ -305,7 +305,7 @@ class AIIntegrationExpansionTest {
         }
 
         @Test
-        @DisplayName("Normalized embedding vectors [GH-90000]")
+        @DisplayName("Normalized embedding vectors")
         void normalizedEmbeddings() { // GH-90000
             float[] vector = {1.0f, 0.0f, 0.0f};
             EmbeddingResult result = new EmbeddingResult("text", vector, "model"); // GH-90000
@@ -320,11 +320,11 @@ class AIIntegrationExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Vector Search Results [GH-90000]")
+    @DisplayName("Vector Search Results")
     class VectorSearchTests {
 
         @Test
-        @DisplayName("Create vector search result with metadata [GH-90000]")
+        @DisplayName("Create vector search result with metadata")
         void vectorSearchWithMetadata() { // GH-90000
             float[] vector = {0.1f, 0.2f, 0.3f};
             Map<String, String> metadata = new HashMap<>(); // GH-90000
@@ -334,14 +334,14 @@ class AIIntegrationExpansionTest {
             VectorSearchResult result = new VectorSearchResult( // GH-90000
                 "id-1", "content", vector, 0.95f, 1, metadata);
 
-            assertThat(result.getId()).isEqualTo("id-1 [GH-90000]");
+            assertThat(result.getId()).isEqualTo("id-1");
             assertThat(result.getSimilarity()).isEqualTo(0.95f); // GH-90000
             assertThat(result.getRank()).isEqualTo(1); // GH-90000
             assertThat(result.getMetadata()).containsEntry("source", "document-1"); // GH-90000
         }
 
         @Test
-        @DisplayName("Rank ordering of search results [GH-90000]")
+        @DisplayName("Rank ordering of search results")
         void rankOrdering() { // GH-90000
             List<VectorSearchResult> results = new ArrayList<>(); // GH-90000
             float[] baseVector = {0.1f, 0.2f, 0.3f};
@@ -361,7 +361,7 @@ class AIIntegrationExpansionTest {
         }
 
         @Test
-        @DisplayName("Many vector search results from single query [GH-90000]")
+        @DisplayName("Many vector search results from single query")
         void manySearchResults() { // GH-90000
             List<VectorSearchResult> results = new ArrayList<>(); // GH-90000
             for (int i = 0; i < 1000; i++) { // GH-90000
@@ -381,7 +381,7 @@ class AIIntegrationExpansionTest {
         }
 
         @Test
-        @DisplayName("Similarity score distribution [GH-90000]")
+        @DisplayName("Similarity score distribution")
         void similarityDistribution() { // GH-90000
             List<VectorSearchResult> results = new ArrayList<>(); // GH-90000
             float[] vector = {0.1f, 0.2f, 0.3f};
@@ -406,11 +406,11 @@ class AIIntegrationExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Concurrent LLM Operations [GH-90000]")
+    @DisplayName("Concurrent LLM Operations")
     class ConcurrencyTests {
 
         @Test
-        @DisplayName("Many concurrent completion requests [GH-90000]")
+        @DisplayName("Many concurrent completion requests")
         void concurrentRequests() throws Exception { // GH-90000
             int threadCount = 20;
             CountDownLatch latch = new CountDownLatch(threadCount); // GH-90000
@@ -442,7 +442,7 @@ class AIIntegrationExpansionTest {
         }
 
         @Test
-        @DisplayName("Concurrent embedding generation [GH-90000]")
+        @DisplayName("Concurrent embedding generation")
         void concurrentEmbeddings() throws Exception { // GH-90000
             int threadCount = 30;
             CountDownLatch latch = new CountDownLatch(threadCount); // GH-90000
@@ -475,7 +475,7 @@ class AIIntegrationExpansionTest {
         }
 
         @Test
-        @DisplayName("Concurrent vector search result processing [GH-90000]")
+        @DisplayName("Concurrent vector search result processing")
         void concurrentVectorSearch() throws Exception { // GH-90000
             int threadCount = 25;
             CountDownLatch latch = new CountDownLatch(threadCount); // GH-90000
@@ -520,27 +520,27 @@ class AIIntegrationExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Edge Cases [GH-90000]")
+    @DisplayName("Edge Cases")
     class EdgeCaseTests {
 
         @Test
-        @DisplayName("Empty and null boundaries [GH-90000]")
+        @DisplayName("Empty and null boundaries")
         void emptyAndNullBoundaries() { // GH-90000
-            ChatMessage emptyUser = ChatMessage.user(" [GH-90000]");
+            ChatMessage emptyUser = ChatMessage.user("");
             assertThat(emptyUser.getContent()).isEmpty(); // GH-90000
 
             // Builder should allow empty prompt for now (server-side validation) // GH-90000
             CompletionRequest req = CompletionRequest.builder() // GH-90000
-                .prompt(" [GH-90000]")
+                .prompt("")
                 .build(); // GH-90000
             assertThat(req.getPrompt()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("Extreme parameter values [GH-90000]")
+        @DisplayName("Extreme parameter values")
         void extremeParameters() { // GH-90000
             CompletionRequest req = CompletionRequest.builder() // GH-90000
-                .prompt("test [GH-90000]")
+                .prompt("test")
                 .temperature(0.0) // GH-90000
                 .topP(0.0) // GH-90000
                 .maxTokens(1) // GH-90000

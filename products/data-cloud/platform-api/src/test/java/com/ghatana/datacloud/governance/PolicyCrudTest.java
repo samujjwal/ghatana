@@ -34,7 +34,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("Policy CRUD Tests [GH-90000]")
+@DisplayName("Policy CRUD Tests")
 class PolicyCrudTest extends EventloopTestBase {
 
     @Mock
@@ -45,11 +45,11 @@ class PolicyCrudTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("CREATE operations [GH-90000]")
+    @DisplayName("CREATE operations")
     class CreateOperations {
 
         @Test
-        @DisplayName("should create policy with all fields [GH-90000]")
+        @DisplayName("should create policy with all fields")
         void shouldCreatePolicyWithAllFields() { // GH-90000
             PolicyService.Policy policy = new PolicyService.Policy( // GH-90000
                 UUID.randomUUID().toString(), // GH-90000
@@ -77,14 +77,14 @@ class PolicyCrudTest extends EventloopTestBase {
             PolicyService.Policy result = runPromise(() -> policyService.savePolicy(policy)); // GH-90000
 
             assertThat(result.id()).isNotNull(); // GH-90000
-            assertThat(result.name()).isEqualTo("Data Retention Policy [GH-90000]");
+            assertThat(result.name()).isEqualTo("Data Retention Policy");
             assertThat(result.type()).isEqualTo(PolicyService.PolicyType.DATA_RETENTION); // GH-90000
             assertThat(result.enabled()).isTrue(); // GH-90000
             assertThat(result.rules()).hasSize(1); // GH-90000
         }
 
         @Test
-        @DisplayName("should create policy with minimal fields [GH-90000]")
+        @DisplayName("should create policy with minimal fields")
         void shouldCreatePolicyWithMinimalFields() { // GH-90000
             PolicyService.Policy policy = new PolicyService.Policy( // GH-90000
                 UUID.randomUUID().toString(), // GH-90000
@@ -110,7 +110,7 @@ class PolicyCrudTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should create disabled policy [GH-90000]")
+        @DisplayName("should create disabled policy")
         void shouldCreateDisabledPolicy() { // GH-90000
             PolicyService.Policy policy = new PolicyService.Policy( // GH-90000
                 UUID.randomUUID().toString(), // GH-90000
@@ -134,7 +134,7 @@ class PolicyCrudTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should assign priority when creating policy [GH-90000]")
+        @DisplayName("should assign priority when creating policy")
         void shouldAssignPriorityWhenCreatingPolicy() { // GH-90000
             PolicyService.Policy policy = new PolicyService.Policy( // GH-90000
                 UUID.randomUUID().toString(), // GH-90000
@@ -163,11 +163,11 @@ class PolicyCrudTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("READ operations [GH-90000]")
+    @DisplayName("READ operations")
     class ReadOperations {
 
         @Test
-        @DisplayName("should read policy by ID [GH-90000]")
+        @DisplayName("should read policy by ID")
         void shouldReadPolicyById() { // GH-90000
             String policyId = UUID.randomUUID().toString(); // GH-90000
             PolicyService.Policy policy = new PolicyService.Policy( // GH-90000
@@ -193,7 +193,7 @@ class PolicyCrudTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should return empty when policy not found [GH-90000]")
+        @DisplayName("should return empty when policy not found")
         void shouldReturnEmptyWhenPolicyNotFound() { // GH-90000
             String policyId = UUID.randomUUID().toString(); // GH-90000
 
@@ -206,7 +206,7 @@ class PolicyCrudTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should list all policies for tenant [GH-90000]")
+        @DisplayName("should list all policies for tenant")
         void shouldListAllPoliciesForTenant() { // GH-90000
             String tenantId = "tenant-123";
             List<PolicyService.Policy> policies = List.of( // GH-90000
@@ -223,7 +223,7 @@ class PolicyCrudTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should list policies filtered by type [GH-90000]")
+        @DisplayName("should list policies filtered by type")
         void shouldListPoliciesFilteredByType() { // GH-90000
             String tenantId = "tenant-123";
             PolicyService.PolicyType type = PolicyService.PolicyType.DATA_RETENTION;
@@ -242,7 +242,7 @@ class PolicyCrudTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should return empty list when no policies exist [GH-90000]")
+        @DisplayName("should return empty list when no policies exist")
         void shouldReturnEmptyListWhenNoPoliciesExist() { // GH-90000
             String tenantId = "tenant-123";
 
@@ -260,11 +260,11 @@ class PolicyCrudTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("UPDATE operations [GH-90000]")
+    @DisplayName("UPDATE operations")
     class UpdateOperations {
 
         @Test
-        @DisplayName("should update policy name and description [GH-90000]")
+        @DisplayName("should update policy name and description")
         void shouldUpdatePolicyNameAndDescription() { // GH-90000
             String policyId = UUID.randomUUID().toString(); // GH-90000
             Instant createdAt = Instant.now().minusSeconds(3600); // GH-90000
@@ -289,14 +289,14 @@ class PolicyCrudTest extends EventloopTestBase {
             PolicyService.Policy result = runPromise(() -> policyService.savePolicy(updated)); // GH-90000
 
             assertThat(result.id()).isEqualTo(policyId); // GH-90000
-            assertThat(result.name()).isEqualTo("New Name [GH-90000]");
-            assertThat(result.description()).isEqualTo("New Description [GH-90000]");
+            assertThat(result.name()).isEqualTo("New Name");
+            assertThat(result.description()).isEqualTo("New Description");
             assertThat(result.createdAt()).isEqualTo(createdAt); // GH-90000
             assertThat(result.updatedAt()).isEqualTo(updatedAt); // GH-90000
         }
 
         @Test
-        @DisplayName("should update policy rules [GH-90000]")
+        @DisplayName("should update policy rules")
         void shouldUpdatePolicyRules() { // GH-90000
             String policyId = UUID.randomUUID().toString(); // GH-90000
             List<PolicyService.Rule> newRules = List.of( // GH-90000
@@ -327,11 +327,11 @@ class PolicyCrudTest extends EventloopTestBase {
             PolicyService.Policy result = runPromise(() -> policyService.savePolicy(updated)); // GH-90000
 
             assertThat(result.rules()).hasSize(1); // GH-90000
-            assertThat(result.rules().get(0).name()).isEqualTo("new-rule [GH-90000]");
+            assertThat(result.rules().get(0).name()).isEqualTo("new-rule");
         }
 
         @Test
-        @DisplayName("should enable disabled policy [GH-90000]")
+        @DisplayName("should enable disabled policy")
         void shouldEnableDisabledPolicy() { // GH-90000
             String policyId = UUID.randomUUID().toString(); // GH-90000
             PolicyService.Policy disabled = new PolicyService.Policy( // GH-90000
@@ -369,7 +369,7 @@ class PolicyCrudTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should disable enabled policy [GH-90000]")
+        @DisplayName("should disable enabled policy")
         void shouldDisableEnabledPolicy() { // GH-90000
             String policyId = UUID.randomUUID().toString(); // GH-90000
             Instant createdAt = Instant.now(); // GH-90000
@@ -396,7 +396,7 @@ class PolicyCrudTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should update policy priority [GH-90000]")
+        @DisplayName("should update policy priority")
         void shouldUpdatePolicyPriority() { // GH-90000
             String policyId = UUID.randomUUID().toString(); // GH-90000
             PolicyService.Policy updated = new PolicyService.Policy( // GH-90000
@@ -426,11 +426,11 @@ class PolicyCrudTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("DELETE operations [GH-90000]")
+    @DisplayName("DELETE operations")
     class DeleteOperations {
 
         @Test
-        @DisplayName("should delete policy by ID [GH-90000]")
+        @DisplayName("should delete policy by ID")
         void shouldDeletePolicyById() { // GH-90000
             String policyId = UUID.randomUUID().toString(); // GH-90000
 
@@ -443,7 +443,7 @@ class PolicyCrudTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should complete when deleting non-existent policy [GH-90000]")
+        @DisplayName("should complete when deleting non-existent policy")
         void shouldCompleteWhenDeletingNonExistentPolicy() { // GH-90000
             String policyId = UUID.randomUUID().toString(); // GH-90000
 
@@ -461,11 +461,11 @@ class PolicyCrudTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Validation [GH-90000]")
+    @DisplayName("Validation")
     class Validation {
 
         @Test
-        @DisplayName("should validate policy with required fields [GH-90000]")
+        @DisplayName("should validate policy with required fields")
         void shouldValidatePolicyWithRequiredFields() { // GH-90000
             PolicyService.Policy policy = new PolicyService.Policy( // GH-90000
                 UUID.randomUUID().toString(), // GH-90000
@@ -487,7 +487,7 @@ class PolicyCrudTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should validate rule with condition and effect [GH-90000]")
+        @DisplayName("should validate rule with condition and effect")
         void shouldValidateRuleWithConditionAndEffect() { // GH-90000
             PolicyService.Rule rule = new PolicyService.Rule( // GH-90000
                 "test-rule",
@@ -502,7 +502,7 @@ class PolicyCrudTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should validate condition with operator [GH-90000]")
+        @DisplayName("should validate condition with operator")
         void shouldValidateConditionWithOperator() { // GH-90000
             PolicyService.Condition condition = new PolicyService.Condition( // GH-90000
                 "dataAge",
@@ -521,11 +521,11 @@ class PolicyCrudTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Policy types [GH-90000]")
+    @DisplayName("Policy types")
     class PolicyTypes {
 
         @Test
-        @DisplayName("should support all policy types [GH-90000]")
+        @DisplayName("should support all policy types")
         void shouldSupportAllPolicyTypes() { // GH-90000
             PolicyService.PolicyType[] types = PolicyService.PolicyType.values(); // GH-90000
 
@@ -539,7 +539,7 @@ class PolicyCrudTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should create policies for each type [GH-90000]")
+        @DisplayName("should create policies for each type")
         void shouldCreatePoliciesForEachType() { // GH-90000
             String tenantId = "tenant-123";
 
@@ -567,11 +567,11 @@ class PolicyCrudTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Effects [GH-90000]")
+    @DisplayName("Effects")
     class Effects {
 
         @Test
-        @DisplayName("should support all effect types [GH-90000]")
+        @DisplayName("should support all effect types")
         void shouldSupportAllEffectTypes() { // GH-90000
             PolicyService.Effect[] effects = PolicyService.Effect.values(); // GH-90000
 
@@ -584,7 +584,7 @@ class PolicyCrudTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should create rules with each effect type [GH-90000]")
+        @DisplayName("should create rules with each effect type")
         void shouldCreateRulesWithEachEffectType() { // GH-90000
             for (PolicyService.Effect effect : PolicyService.Effect.values()) { // GH-90000
                 PolicyService.Rule rule = new PolicyService.Rule( // GH-90000
@@ -604,11 +604,11 @@ class PolicyCrudTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Operators [GH-90000]")
+    @DisplayName("Operators")
     class Operators {
 
         @Test
-        @DisplayName("should support all condition operators [GH-90000]")
+        @DisplayName("should support all condition operators")
         void shouldSupportAllConditionOperators() { // GH-90000
             PolicyService.Condition.Operator[] operators = PolicyService.Condition.Operator.values(); // GH-90000
 
@@ -627,7 +627,7 @@ class PolicyCrudTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should create conditions with each operator [GH-90000]")
+        @DisplayName("should create conditions with each operator")
         void shouldCreateConditionsWithEachOperator() { // GH-90000
             for (PolicyService.Condition.Operator operator : PolicyService.Condition.Operator.values()) { // GH-90000
                 PolicyService.Condition condition = new PolicyService.Condition( // GH-90000

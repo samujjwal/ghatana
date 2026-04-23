@@ -48,7 +48,10 @@ import java.util.UUID;
  *   <li><b>Binary Nodes</b>: Joins, correlations (2 children)</li>
  *   <li><b>N-ary Nodes</b>: Aggregations, sequences (n children)</li>
  * </ul>
- */
+  * @doc.type class
+ * @doc.purpose Provides astbuilder functionality.
+ * @doc.layer product
+*/
 public class ASTBuilder {
 
     private final OperatorRegistry operatorRegistry;

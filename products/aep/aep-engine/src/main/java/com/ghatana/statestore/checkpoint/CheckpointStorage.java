@@ -5,7 +5,11 @@ import io.activej.promise.Promise;
 /**
  * Storage interface for persisting checkpoint metadata.
  * Implementations handle durable storage of checkpoint/savepoint metadata for recovery.
- */
+  * @doc.type interface
+ * @doc.purpose Provides checkpoint storage functionality.
+ * @doc.layer product
+ * @doc.pattern Interface
+*/
 public interface CheckpointStorage {
 
     /**

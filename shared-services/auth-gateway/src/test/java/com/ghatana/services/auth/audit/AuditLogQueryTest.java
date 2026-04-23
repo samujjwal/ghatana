@@ -26,7 +26,7 @@ class AuditLogQueryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should query audit events by type [GH-90000]")
+    @DisplayName("Should query audit events by type")
     void testQueryByEventType() throws Exception { // GH-90000
         // Log various event types
         runPromise(() -> auditLogger.logLoginSuccess("user1", "tenant1", "192.168.1.1", "Mozilla")); // GH-90000
@@ -50,7 +50,7 @@ class AuditLogQueryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should query audit events by user [GH-90000]")
+    @DisplayName("Should query audit events by user")
     void testQueryByUser() throws Exception { // GH-90000
         // Log events for different users
         runPromise(() -> auditLogger.logLoginSuccess("alice", "tenant1", "192.168.1.1", "Mozilla")); // GH-90000
@@ -72,7 +72,7 @@ class AuditLogQueryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should query audit events by tenant [GH-90000]")
+    @DisplayName("Should query audit events by tenant")
     void testQueryByTenant() throws Exception { // GH-90000
         // Log events for different tenants
         runPromise(() -> auditLogger.logLoginSuccess("user1", "tenant-a", "192.168.1.1", "Mozilla")); // GH-90000
@@ -94,7 +94,7 @@ class AuditLogQueryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should query audit events by severity [GH-90000]")
+    @DisplayName("Should query audit events by severity")
     void testQueryBySeverity() throws Exception { // GH-90000
         // Log events with different severities
         runPromise(() -> auditLogger.logLoginSuccess("user1", "tenant1", "192.168.1.1", "Mozilla")); // INFO // GH-90000
@@ -121,7 +121,7 @@ class AuditLogQueryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should query audit events by time range [GH-90000]")
+    @DisplayName("Should query audit events by time range")
     void testQueryByTimeRange() throws Exception { // GH-90000
         Instant startTime = Instant.now(); // GH-90000
 
@@ -142,7 +142,7 @@ class AuditLogQueryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should query audit events by IP address [GH-90000]")
+    @DisplayName("Should query audit events by IP address")
     void testQueryByIpAddress() throws Exception { // GH-90000
         // Log events from different IPs
         runPromise(() -> auditLogger.logLoginSuccess("user1", "tenant1", "192.168.1.100", "Mozilla")); // GH-90000
@@ -160,7 +160,7 @@ class AuditLogQueryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should support complex query with multiple filters [GH-90000]")
+    @DisplayName("Should support complex query with multiple filters")
     void testComplexQuery() throws Exception { // GH-90000
         // Log diverse events
         runPromise(() -> auditLogger.logLoginSuccess("alice", "tenant-a", "192.168.1.1", "Mozilla")); // GH-90000
@@ -182,7 +182,7 @@ class AuditLogQueryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should return events in chronological order [GH-90000]")
+    @DisplayName("Should return events in chronological order")
     void testChronologicalOrder() throws Exception { // GH-90000
         // Log events with slight delays
         runPromise(() -> auditLogger.logLoginSuccess("user1", "tenant1", "192.168.1.1", "Mozilla")); // GH-90000
@@ -200,7 +200,7 @@ class AuditLogQueryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should limit query results [GH-90000]")
+    @DisplayName("Should limit query results")
     void testQueryLimit() throws Exception { // GH-90000
         // Log many events
         for (int i = 0; i < 20; i++) { // GH-90000
@@ -215,7 +215,7 @@ class AuditLogQueryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle empty query results [GH-90000]")
+    @DisplayName("Should handle empty query results")
     void testEmptyQueryResults() throws Exception { // GH-90000
         AuditLogger.AuditEvent[] events = auditLogger.getRecentEvents(10); // GH-90000
 
@@ -224,7 +224,7 @@ class AuditLogQueryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should include metadata in query results [GH-90000]")
+    @DisplayName("Should include metadata in query results")
     void testMetadataInQueryResults() throws Exception { // GH-90000
         runPromise(() -> auditLogger.logAuthorizationDecision("user1", "tenant1", "/api/projects", "CREATE", true)); // GH-90000
         runPromise(() -> auditLogger.logRateLimited("user2", "tenant1", "192.168.1.1", "/api/login")); // GH-90000
@@ -240,7 +240,7 @@ class AuditLogQueryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should query security-related events [GH-90000]")
+    @DisplayName("Should query security-related events")
     void testSecurityEventQuery() throws Exception { // GH-90000
         // Log security events
         runPromise(() -> auditLogger.logAccountLocked("user1", "tenant1", "Too many attempts")); // GH-90000
@@ -260,7 +260,7 @@ class AuditLogQueryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should support pagination concept [GH-90000]")
+    @DisplayName("Should support pagination concept")
     void testPaginationConcept() throws Exception { // GH-90000
         // Log 25 events
         for (int i = 0; i < 25; i++) { // GH-90000
@@ -277,7 +277,7 @@ class AuditLogQueryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should preserve event correlation across queries [GH-90000]")
+    @DisplayName("Should preserve event correlation across queries")
     void testEventCorrelation() throws Exception { // GH-90000
         String correlationId = "corr-" + java.util.UUID.randomUUID(); // GH-90000
 
@@ -292,13 +292,13 @@ class AuditLogQueryTest extends EventloopTestBase {
         // All events should be for same user
         for (AuditLogger.AuditEvent event : events) { // GH-90000
             if (event.userId() != null) { // GH-90000
-                assertThat(event.userId()).isEqualTo("user1 [GH-90000]");
+                assertThat(event.userId()).isEqualTo("user1");
             }
         }
     }
 
     @Test
-    @DisplayName("Should handle high volume of events [GH-90000]")
+    @DisplayName("Should handle high volume of events")
     void testHighVolumeEvents() throws Exception { // GH-90000
         // Log 100 events rapidly
         for (int i = 0; i < 100; i++) { // GH-90000
@@ -312,7 +312,7 @@ class AuditLogQueryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should support event type aggregation [GH-90000]")
+    @DisplayName("Should support event type aggregation")
     void testEventTypeAggregation() throws Exception { // GH-90000
         // Log different types of events
         runPromise(() -> auditLogger.logLoginSuccess("user1", "tenant1", "192.168.1.1", "Mozilla")); // GH-90000

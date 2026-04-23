@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.purpose Validate storage profile compilation, tier/backend mapping, and default resolution
  * @doc.layer product
  */
-@DisplayName("StorageProfileCompiler Tests [GH-90000]")
+@DisplayName("StorageProfileCompiler Tests")
 class StorageProfileCompilerTest {
 
     private StorageProfileCompiler compiler;
@@ -51,18 +51,18 @@ class StorageProfileCompilerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("compileAll [GH-90000]")
+    @DisplayName("compileAll")
     class CompileAll {
 
         @Test
-        @DisplayName("should return empty list when rawConfig is null [GH-90000]")
+        @DisplayName("should return empty list when rawConfig is null")
         void shouldReturnEmptyForNullConfig() { // GH-90000
             List<CompiledStorageProfileConfig> result = compiler.compileAll(null); // GH-90000
             assertThat(result).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("should return empty list when profiles list is null [GH-90000]")
+        @DisplayName("should return empty list when profiles list is null")
         void shouldReturnEmptyForNullProfiles() { // GH-90000
             RawStorageProfileConfig config = new RawStorageProfileConfig("v1", "StorageProfile", null, null); // GH-90000
             List<CompiledStorageProfileConfig> result = compiler.compileAll(config); // GH-90000
@@ -70,7 +70,7 @@ class StorageProfileCompilerTest {
         }
 
         @Test
-        @DisplayName("should compile all profiles in list [GH-90000]")
+        @DisplayName("should compile all profiles in list")
         void shouldCompileAllProfiles() { // GH-90000
             RawStorageProfileConfig config = new RawStorageProfileConfig("v1", "StorageProfile", // GH-90000
                     null,
@@ -84,7 +84,7 @@ class StorageProfileCompilerTest {
         }
 
         @Test
-        @DisplayName("compiled list should be unmodifiable [GH-90000]")
+        @DisplayName("compiled list should be unmodifiable")
         void compiledListShouldBeUnmodifiable() { // GH-90000
             RawStorageProfileConfig config = new RawStorageProfileConfig("v1", "StorageProfile", // GH-90000
                     null,
@@ -100,27 +100,27 @@ class StorageProfileCompilerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("compile [GH-90000]")
+    @DisplayName("compile")
     class CompileSingle {
 
         @Test
-        @DisplayName("should compile a basic profile with name and tier [GH-90000]")
+        @DisplayName("should compile a basic profile with name and tier")
         void shouldCompileBasicProfile() { // GH-90000
             CompiledStorageProfileConfig result = compiler.compile(rawProfile("my-profile", "HOT", "redis")); // GH-90000
 
-            assertThat(result.name()).isEqualTo("my-profile [GH-90000]");
+            assertThat(result.name()).isEqualTo("my-profile");
             assertThat(result.tier()).isEqualTo(StorageTier.HOT); // GH-90000
         }
 
         @Test
-        @DisplayName("should throw NullPointerException for null raw profile [GH-90000]")
+        @DisplayName("should throw NullPointerException for null raw profile")
         void shouldThrowForNullRawProfile() { // GH-90000
             assertThatThrownBy(() -> compiler.compile(null)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("should throw NullPointerException for profile without name [GH-90000]")
+        @DisplayName("should throw NullPointerException for profile without name")
         void shouldThrowForNullProfileName() { // GH-90000
             RawStorageProfile noName = new RawStorageProfile(null, null, "HOT", // GH-90000
                     new RawProfileBackend("redis", Map.of()), null, Map.of(), null); // GH-90000
@@ -129,23 +129,23 @@ class StorageProfileCompilerTest {
         }
 
         @Test
-        @DisplayName("should use name as displayName when displayName is not set [GH-90000]")
+        @DisplayName("should use name as displayName when displayName is not set")
         void shouldDefaultDisplayNameToName() { // GH-90000
             RawStorageProfile profile = new RawStorageProfile("my-profile", null, "WARM", // GH-90000
                     new RawProfileBackend("postgres", Map.of()), null, Map.of(), null); // GH-90000
 
             CompiledStorageProfileConfig result = compiler.compile(profile); // GH-90000
-            assertThat(result.displayName()).isEqualTo("my-profile [GH-90000]");
+            assertThat(result.displayName()).isEqualTo("my-profile");
         }
 
         @Test
-        @DisplayName("should use given displayName when set [GH-90000]")
+        @DisplayName("should use given displayName when set")
         void shouldUseGivenDisplayName() { // GH-90000
             RawStorageProfile profile = new RawStorageProfile("my-profile", "My Profile", "WARM", // GH-90000
                     new RawProfileBackend("postgres", Map.of()), null, Map.of(), null); // GH-90000
 
             CompiledStorageProfileConfig result = compiler.compile(profile); // GH-90000
-            assertThat(result.displayName()).isEqualTo("My Profile [GH-90000]");
+            assertThat(result.displayName()).isEqualTo("My Profile");
         }
     }
 
@@ -154,11 +154,11 @@ class StorageProfileCompilerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("compileTier [GH-90000]")
+    @DisplayName("compileTier")
     class CompileTier {
 
         @ParameterizedTest
-        @DisplayName("should compile valid tier strings [GH-90000]")
+        @DisplayName("should compile valid tier strings")
         @CsvSource({ // GH-90000
             "HOT, HOT",
             "hot, HOT",
@@ -173,26 +173,26 @@ class StorageProfileCompilerTest {
         }
 
         @Test
-        @DisplayName("should default to WARM when tier is null [GH-90000]")
+        @DisplayName("should default to WARM when tier is null")
         void shouldDefaultToWarmForNull() { // GH-90000
             StorageTier tier = compiler.compileTier(null); // GH-90000
             assertThat(tier).isEqualTo(StorageTier.WARM); // GH-90000
         }
 
         @Test
-        @DisplayName("should default to WARM when tier is blank [GH-90000]")
+        @DisplayName("should default to WARM when tier is blank")
         void shouldDefaultToWarmForBlank() { // GH-90000
-            StorageTier tier = compiler.compileTier("   [GH-90000]");
+            StorageTier tier = compiler.compileTier("  ");
             assertThat(tier).isEqualTo(StorageTier.WARM); // GH-90000
         }
 
         @ParameterizedTest
-        @DisplayName("should throw ConfigurationException for invalid tier values [GH-90000]")
+        @DisplayName("should throw ConfigurationException for invalid tier values")
         @ValueSource(strings = {"SUPERFAST", "NONE", "invalid"}) // GH-90000
         void shouldThrowForInvalidTier(String invalidTier) { // GH-90000
             assertThatThrownBy(() -> compiler.compileTier(invalidTier)) // GH-90000
                     .isInstanceOf(ConfigurationException.class) // GH-90000
-                    .hasMessageContaining("Invalid storage tier [GH-90000]");
+                    .hasMessageContaining("Invalid storage tier");
         }
     }
 
@@ -201,20 +201,20 @@ class StorageProfileCompilerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("compileBackend [GH-90000]")
+    @DisplayName("compileBackend")
     class CompileBackend {
 
         @Test
-        @DisplayName("should throw ConfigurationException when backend is null [GH-90000]")
+        @DisplayName("should throw ConfigurationException when backend is null")
         void shouldThrowForNullBackend() { // GH-90000
             RawStorageProfile profile = new RawStorageProfile("p", "p", "HOT", null, null, Map.of(), null); // GH-90000
             assertThatThrownBy(() -> compiler.compile(profile)) // GH-90000
                     .isInstanceOf(ConfigurationException.class) // GH-90000
-                    .hasMessageContaining("backend plugin [GH-90000]");
+                    .hasMessageContaining("backend plugin");
         }
 
         @Test
-        @DisplayName("should compile backend with plugin name [GH-90000]")
+        @DisplayName("should compile backend with plugin name")
         void shouldCompileBackendWithPlugin() { // GH-90000
             RawStorageProfile profile = new RawStorageProfile("p", "p", "HOT", // GH-90000
                     new RawProfileBackend("redis-plugin", Map.of("host", "localhost")), // GH-90000
@@ -222,7 +222,7 @@ class StorageProfileCompilerTest {
 
             CompiledStorageProfileConfig result = compiler.compile(profile); // GH-90000
             assertThat(result.backend()).isNotNull(); // GH-90000
-            assertThat(result.backend().pluginName()).isEqualTo("redis-plugin [GH-90000]");
+            assertThat(result.backend().pluginName()).isEqualTo("redis-plugin");
         }
     }
 }

@@ -14,11 +14,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("YAPPCAIService Call Path Tests [GH-90000]")
+@DisplayName("YAPPCAIService Call Path Tests")
 class YAPPCAIServiceCallPathTest extends EventloopTestBase {
 
   @Test
-  @DisplayName("Should execute service to router to adapter path for code generation [GH-90000]")
+  @DisplayName("Should execute service to router to adapter path for code generation")
   void shouldExecuteServiceToRouterToAdapterPathForCodeGeneration() { // GH-90000
     AtomicReference<AIRequest> capturedRequest = new AtomicReference<>(); // GH-90000
     AIModelRouter router = new AIModelRouter( // GH-90000
@@ -32,10 +32,10 @@ class YAPPCAIServiceCallPathTest extends EventloopTestBase {
         "Create a Java service for invoice generation",
         java.util.Map.of("language", "Java", "framework", "ActiveJ"))); // GH-90000
 
-    assertThat(result).contains("InvoiceService [GH-90000]");
+    assertThat(result).contains("InvoiceService");
     assertThat(capturedRequest.get()).isNotNull(); // GH-90000
     assertThat(capturedRequest.get().getTaskType()).isEqualTo(AIRequest.TaskType.CODE_GENERATION); // GH-90000
-    assertThat(capturedRequest.get().getPrompt()).contains("invoice generation [GH-90000]");
+    assertThat(capturedRequest.get().getPrompt()).contains("invoice generation");
     assertThat(capturedRequest.get().getContext()).containsEntry("language", "Java"); // GH-90000
     assertThat(service.getTotalRequests()).isEqualTo(1); // GH-90000
   }
@@ -60,7 +60,7 @@ class YAPPCAIServiceCallPathTest extends EventloopTestBase {
       return Promise.of(AIResponse.builder() // GH-90000
           .requestId(request.getRequestId()) // GH-90000
           .modelId(config.getModelId()) // GH-90000
-          .content("```java\npublic final class InvoiceService {}\n``` [GH-90000]")
+          .content("```java\npublic final class InvoiceService {}\n```")
           .metrics(AIResponse.ResponseMetrics.builder() // GH-90000
               .latencyMs(12) // GH-90000
               .tokenCount(32) // GH-90000

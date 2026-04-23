@@ -18,7 +18,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.*;
 
-@DisplayName("HandoffCoordinator [GH-90000]")
+@DisplayName("HandoffCoordinator")
 class HandoffCoordinatorTest extends EventloopTestBase {
 
     private HandoffCoordinator coordinator;
@@ -34,24 +34,24 @@ class HandoffCoordinatorTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("successful handoff [GH-90000]")
+    @DisplayName("successful handoff")
     class SuccessPath {
 
         @Test
-        @DisplayName("delivers handoff to registered handler [GH-90000]")
+        @DisplayName("delivers handoff to registered handler")
         void deliversToHandler() { // GH-90000
-            coordinator.registerHandler("agent-b", h -> Promise.of("ACK from agent-b [GH-90000]"));
+            coordinator.registerHandler("agent-b", h -> Promise.of("ACK from agent-b"));
             AgentHandoff handoff = buildHandoff("agent-a", "agent-b"); // GH-90000
             HandoffCoordinator.HandoffResult result = runPromise(() -> coordinator.handoff(handoff)); // GH-90000
             assertThat(result.isAccepted()).isTrue(); // GH-90000
             assertThat(((HandoffCoordinator.HandoffResult.Accepted) result).acknowledgement()) // GH-90000
-                    .isEqualTo("ACK from agent-b [GH-90000]");
+                    .isEqualTo("ACK from agent-b");
         }
 
         @Test
-        @DisplayName("records handoff in ledger [GH-90000]")
+        @DisplayName("records handoff in ledger")
         void recordsInLedger() { // GH-90000
-            coordinator.registerHandler("agent-c", h -> Promise.of("ok [GH-90000]"));
+            coordinator.registerHandler("agent-c", h -> Promise.of("ok"));
             AgentHandoff handoff = buildHandoff("agent-a", "agent-c"); // GH-90000
             runPromise(() -> coordinator.handoff(handoff)); // GH-90000
             assertThat(coordinator.findHandoff(handoff.handoffId())).isSameAs(handoff); // GH-90000
@@ -59,11 +59,11 @@ class HandoffCoordinatorTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("rejected handoff [GH-90000]")
+    @DisplayName("rejected handoff")
     class RejectPath {
 
         @Test
-        @DisplayName("returns Rejected when no handler is registered for target [GH-90000]")
+        @DisplayName("returns Rejected when no handler is registered for target")
         void noHandlerRejects() { // GH-90000
             AgentHandoff handoff = buildHandoff("agent-a", "unregistered-agent"); // GH-90000
             HandoffCoordinator.HandoffResult result = runPromise(() -> coordinator.handoff(handoff)); // GH-90000
@@ -73,24 +73,24 @@ class HandoffCoordinatorTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("handler registration [GH-90000]")
+    @DisplayName("handler registration")
     class Registration {
 
         @Test
-        @DisplayName("later registration replaces earlier for same agentId [GH-90000]")
+        @DisplayName("later registration replaces earlier for same agentId")
         void replacesHandler() { // GH-90000
-            coordinator.registerHandler("agent-d", h -> Promise.of("first [GH-90000]"));
-            coordinator.registerHandler("agent-d", h -> Promise.of("second [GH-90000]"));
+            coordinator.registerHandler("agent-d", h -> Promise.of("first"));
+            coordinator.registerHandler("agent-d", h -> Promise.of("second"));
             AgentHandoff handoff = buildHandoff("agent-a", "agent-d"); // GH-90000
             HandoffCoordinator.HandoffResult result = runPromise(() -> coordinator.handoff(handoff)); // GH-90000
             assertThat(((HandoffCoordinator.HandoffResult.Accepted) result).acknowledgement()) // GH-90000
-                    .isEqualTo("second [GH-90000]");
+                    .isEqualTo("second");
         }
 
         @Test
-        @DisplayName("null agentId throws NullPointerException [GH-90000]")
+        @DisplayName("null agentId throws NullPointerException")
         void nullAgentIdThrows() { // GH-90000
-            assertThatThrownBy(() -> coordinator.registerHandler(null, h -> Promise.of("ack [GH-90000]")))
+            assertThatThrownBy(() -> coordinator.registerHandler(null, h -> Promise.of("ack")))
                     .isInstanceOf(NullPointerException.class); // GH-90000
         }
     }

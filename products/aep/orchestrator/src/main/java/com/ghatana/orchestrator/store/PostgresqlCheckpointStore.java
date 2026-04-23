@@ -19,7 +19,11 @@ import org.slf4j.LoggerFactory;
  * Day 39: PostgreSQL-backed implementation of CheckpointStore.
  * Provides exactly-once semantics and checkpoint-based resume functionality
  * for pipeline executions using JPA and PostgreSQL.
- */
+  * @doc.type class
+ * @doc.purpose Provides postgresql checkpoint store functionality.
+ * @doc.layer product
+ * @doc.pattern Repository
+*/
 public class PostgresqlCheckpointStore implements CheckpointStore {
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresqlCheckpointStore.class);

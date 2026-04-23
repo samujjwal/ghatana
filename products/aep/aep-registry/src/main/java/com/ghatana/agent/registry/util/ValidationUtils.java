@@ -4,7 +4,11 @@ import com.ghatana.contracts.agent.v1.AgentSpecProto;
 
 /**
  * Utility class for common validation tasks in the Agent Registry module.
- */
+  * @doc.type class
+ * @doc.purpose Provides validation utils functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 public final class ValidationUtils {
 
     private ValidationUtils() {

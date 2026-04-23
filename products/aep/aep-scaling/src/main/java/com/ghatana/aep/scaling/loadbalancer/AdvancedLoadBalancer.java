@@ -17,7 +17,11 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Advanced load balancer with multiple algorithms and health checking.
- */
+  * @doc.type class
+ * @doc.purpose Provides advanced load balancer functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 @Slf4j
 public class AdvancedLoadBalancer {
 

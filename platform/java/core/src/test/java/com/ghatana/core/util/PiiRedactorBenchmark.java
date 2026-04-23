@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer test
  * @doc.pattern Performance testing
  */
-@DisplayName("PiiRedactor Performance Benchmarks [GH-90000]")
+@DisplayName("PiiRedactor Performance Benchmarks")
 class PiiRedactorBenchmark {
 
     private static final int WARMUP_ITERATIONS = 5;
@@ -30,18 +30,18 @@ class PiiRedactorBenchmark {
      * Benchmark email redaction performance.
      */
     @Test
-    @DisplayName("Benchmark: Email redaction performance [GH-90000]")
+    @DisplayName("Benchmark: Email redaction performance")
     void benchmarkEmailRedaction() { // GH-90000
         // Warmup
         for (int i = 0; i < WARMUP_ITERATIONS; i++) { // GH-90000
-            PiiRedactor.redact("Contact user@example.com for support [GH-90000]");
+            PiiRedactor.redact("Contact user@example.com for support");
         }
 
         // Benchmark
         long startTime = System.nanoTime(); // GH-90000
         for (int i = 0; i < BENCHMARK_ITERATIONS; i++) { // GH-90000
-            String result = PiiRedactor.redact("Contact user@example.com for support [GH-90000]");
-            assertThat(result).contains("***@***.*** [GH-90000]");
+            String result = PiiRedactor.redact("Contact user@example.com for support");
+            assertThat(result).contains("***@***.***");
         }
         long endTime = System.nanoTime(); // GH-90000
 
@@ -59,18 +59,18 @@ class PiiRedactorBenchmark {
      * Benchmark phone number redaction performance.
      */
     @Test
-    @DisplayName("Benchmark: Phone number redaction performance [GH-90000]")
+    @DisplayName("Benchmark: Phone number redaction performance")
     void benchmarkPhoneRedaction() { // GH-90000
         // Warmup
         for (int i = 0; i < WARMUP_ITERATIONS; i++) { // GH-90000
-            PiiRedactor.redact("Call me at (555) 123-4567 [GH-90000]");
+            PiiRedactor.redact("Call me at (555) 123-4567");
         }
 
         // Benchmark
         long startTime = System.nanoTime(); // GH-90000
         for (int i = 0; i < BENCHMARK_ITERATIONS; i++) { // GH-90000
-            String result = PiiRedactor.redact("Call me at (555) 123-4567 [GH-90000]");
-            assertThat(result).contains("*** [GH-90000]");
+            String result = PiiRedactor.redact("Call me at (555) 123-4567");
+            assertThat(result).contains("***");
         }
         long endTime = System.nanoTime(); // GH-90000
 
@@ -87,18 +87,18 @@ class PiiRedactorBenchmark {
      * Benchmark credit card redaction performance.
      */
     @Test
-    @DisplayName("Benchmark: Credit card redaction performance [GH-90000]")
+    @DisplayName("Benchmark: Credit card redaction performance")
     void benchmarkCreditCardRedaction() { // GH-90000
         // Warmup
         for (int i = 0; i < WARMUP_ITERATIONS; i++) { // GH-90000
-            PiiRedactor.redact("Card: 4111-1111-1111-1111 [GH-90000]");
+            PiiRedactor.redact("Card: 4111-1111-1111-1111");
         }
 
         // Benchmark
         long startTime = System.nanoTime(); // GH-90000
         for (int i = 0; i < BENCHMARK_ITERATIONS; i++) { // GH-90000
-            String result = PiiRedactor.redact("Card: 4111-1111-1111-1111 [GH-90000]");
-            assertThat(result).contains("****-1111 [GH-90000]");
+            String result = PiiRedactor.redact("Card: 4111-1111-1111-1111");
+            assertThat(result).contains("****-1111");
         }
         long endTime = System.nanoTime(); // GH-90000
 
@@ -115,18 +115,18 @@ class PiiRedactorBenchmark {
      * Benchmark SSN redaction performance.
      */
     @Test
-    @DisplayName("Benchmark: SSN redaction performance [GH-90000]")
+    @DisplayName("Benchmark: SSN redaction performance")
     void benchmarkSsnRedaction() { // GH-90000
         // Warmup
         for (int i = 0; i < WARMUP_ITERATIONS; i++) { // GH-90000
-            PiiRedactor.redact("SSN: 123-45-6789 [GH-90000]");
+            PiiRedactor.redact("SSN: 123-45-6789");
         }
 
         // Benchmark
         long startTime = System.nanoTime(); // GH-90000
         for (int i = 0; i < BENCHMARK_ITERATIONS; i++) { // GH-90000
-            String result = PiiRedactor.redact("SSN: 123-45-6789 [GH-90000]");
-            assertThat(result).contains("**** [GH-90000]");
+            String result = PiiRedactor.redact("SSN: 123-45-6789");
+            assertThat(result).contains("****");
         }
         long endTime = System.nanoTime(); // GH-90000
 
@@ -143,17 +143,17 @@ class PiiRedactorBenchmark {
      * Benchmark redaction with large input text.
      */
     @Test
-    @DisplayName("Benchmark: Redaction performance with large input [GH-90000]")
+    @DisplayName("Benchmark: Redaction performance with large input")
     void benchmarkLargeInputRedaction() { // GH-90000
         // Create large input with multiple PII types
         StringBuilder sb = new StringBuilder(); // GH-90000
         for (int i = 0; i < 100; i++) { // GH-90000
-            sb.append("Contact user [GH-90000]")
+            sb.append("Contact user")
               .append(i) // GH-90000
-              .append("@example.com for support.  [GH-90000]")
-              .append("Call (555) 123-4567.  [GH-90000]")
-              .append("Card: 4111-1111-1111-1111.  [GH-90000]")
-              .append("SSN: 123-45-6789.  [GH-90000]");
+              .append("@example.com for support. ")
+              .append("Call (555) 123-4567. ")
+              .append("Card: 4111-1111-1111-1111. ")
+              .append("SSN: 123-45-6789. ");
         }
         String largeInput = sb.toString(); // GH-90000
 
@@ -166,7 +166,7 @@ class PiiRedactorBenchmark {
         long startTime = System.nanoTime(); // GH-90000
         for (int i = 0; i < BENCHMARK_ITERATIONS; i++) { // GH-90000
             String result = PiiRedactor.redact(largeInput); // GH-90000
-            assertThat(result).contains("*** [GH-90000]");
+            assertThat(result).contains("***");
         }
         long endTime = System.nanoTime(); // GH-90000
 
@@ -184,7 +184,7 @@ class PiiRedactorBenchmark {
      * Benchmark containsPii detection performance.
      */
     @Test
-    @DisplayName("Benchmark: PII detection performance [GH-90000]")
+    @DisplayName("Benchmark: PII detection performance")
     void benchmarkContainsPii() { // GH-90000
         String input = "Contact user@example.com for support";
 

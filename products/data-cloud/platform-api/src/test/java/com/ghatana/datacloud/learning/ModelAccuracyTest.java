@@ -30,7 +30,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("ModelAccuracy – Deterministic Fixtures (D012) [GH-90000]")
+@DisplayName("ModelAccuracy – Deterministic Fixtures (D012)")
 class ModelAccuracyTest extends EventloopTestBase {
 
     @Mock
@@ -41,11 +41,11 @@ class ModelAccuracyTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Accuracy Metrics [GH-90000]")
+    @DisplayName("Accuracy Metrics")
     class AccuracyMetricsTests {
 
         @Test
-        @DisplayName("[D012]: evaluate_returns_accuracy_metrics [GH-90000]")
+        @DisplayName("[D012]: evaluate_returns_accuracy_metrics")
         void evaluateReturnsAccuracyMetrics() { // GH-90000
             String modelId = "model-001";
             String testDatasetId = "test-001";
@@ -70,7 +70,7 @@ class ModelAccuracyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D012]: accuracy_meets_threshold [GH-90000]")
+        @DisplayName("[D012]: accuracy_meets_threshold")
         void accuracyMeetsThreshold() { // GH-90000
             ModelEvaluationService.EvaluationResult good = new ModelEvaluationService.EvaluationResult( // GH-90000
                 "model-001", "test-001",
@@ -90,7 +90,7 @@ class ModelAccuracyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D012]: deterministic_results_for_same_input [GH-90000]")
+        @DisplayName("[D012]: deterministic_results_for_same_input")
         void deterministicResultsForSameInput() { // GH-90000
             String modelId = "model-001";
             String testDatasetId = "test-001";
@@ -116,11 +116,11 @@ class ModelAccuracyTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Per-Class Metrics [GH-90000]")
+    @DisplayName("Per-Class Metrics")
     class PerClassMetricsTests {
 
         @Test
-        @DisplayName("[D012]: per_class_metrics_calculated_correctly [GH-90000]")
+        @DisplayName("[D012]: per_class_metrics_calculated_correctly")
         void perClassMetricsCalculatedCorrectly() { // GH-90000
             ModelEvaluationService.ClassMetrics positive = new ModelEvaluationService.ClassMetrics( // GH-90000
                 "positive", 80, 10, 85, 5, 0.89, 0.94, 0.91
@@ -138,7 +138,7 @@ class ModelAccuracyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D012]: f1_score_harmonic_mean [GH-90000]")
+        @DisplayName("[D012]: f1_score_harmonic_mean")
         void f1ScoreHarmonicMean() { // GH-90000
             // F1 = 2 * (precision * recall) / (precision + recall) // GH-90000
             double precision = 0.90;
@@ -154,11 +154,11 @@ class ModelAccuracyTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Model Comparison [GH-90000]")
+    @DisplayName("Model Comparison")
     class ModelComparisonTests {
 
         @Test
-        @DisplayName("[D012]: compare_models_shows_improvement [GH-90000]")
+        @DisplayName("[D012]: compare_models_shows_improvement")
         void compareModelsShowsImprovement() { // GH-90000
             String baselineModelId = "model-v1";
             String candidateModelId = "model-v2";
@@ -195,7 +195,7 @@ class ModelAccuracyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D012]: significant_improvement_detected [GH-90000]")
+        @DisplayName("[D012]: significant_improvement_detected")
         void significantImprovementDetected() { // GH-90000
             ModelEvaluationService.ModelComparison significant = new ModelEvaluationService.ModelComparison( // GH-90000
                 "v1", "v2", null, null,
@@ -218,11 +218,11 @@ class ModelAccuracyTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("A/B Test [GH-90000]")
+    @DisplayName("A/B Test")
     class ABTestTests {
 
         @Test
-        @DisplayName("[D012]: ab_test_identifies_winner [GH-90000]")
+        @DisplayName("[D012]: ab_test_identifies_winner")
         void abTestIdentifiesWinner() { // GH-90000
             String modelAId = "model-A";
             String modelBId = "model-B";
@@ -245,12 +245,12 @@ class ModelAccuracyTest extends EventloopTestBase {
                 evaluationService.runABTest(modelAId, modelBId, testDatasetId) // GH-90000
             );
 
-            assertThat(test.winner()).isEqualTo("model-B [GH-90000]");
+            assertThat(test.winner()).isEqualTo("model-B");
             assertThat(test.isSignificant(0.05)).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("[D012]: statistical_significance_threshold [GH-90000]")
+        @DisplayName("[D012]: statistical_significance_threshold")
         void statisticalSignificanceThreshold() { // GH-90000
             ModelEvaluationService.ABTestResult significant = new ModelEvaluationService.ABTestResult( // GH-90000
                 "A", "B", 0.88, 0.92, 0.01, true, "B", 0.95, 2000
@@ -266,11 +266,11 @@ class ModelAccuracyTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Prediction Errors [GH-90000]")
+    @DisplayName("Prediction Errors")
     class PredictionErrorTests {
 
         @Test
-        @DisplayName("[D012]: prediction_errors_tracked [GH-90000]")
+        @DisplayName("[D012]: prediction_errors_tracked")
         void predictionErrorsTracked() { // GH-90000
             List<ModelEvaluationService.PredictionError> errors = List.of( // GH-90000
                 new ModelEvaluationService.PredictionError(0, "positive", "negative", 0.45, "misclassification"), // GH-90000
@@ -278,12 +278,12 @@ class ModelAccuracyTest extends EventloopTestBase {
             );
 
             assertThat(errors).hasSize(2); // GH-90000
-            assertThat(errors.get(0).expected()).isEqualTo("positive [GH-90000]");
-            assertThat(errors.get(0).predicted()).isEqualTo("negative [GH-90000]");
+            assertThat(errors.get(0).expected()).isEqualTo("positive");
+            assertThat(errors.get(0).predicted()).isEqualTo("negative");
         }
 
         @Test
-        @DisplayName("[D012]: low_confidence_predictions_identified [GH-90000]")
+        @DisplayName("[D012]: low_confidence_predictions_identified")
         void lowConfidencePredictionsIdentified() { // GH-90000
             ModelEvaluationService.PredictionError lowConfidence =
                 new ModelEvaluationService.PredictionError(0, "A", "B", 0.51, "uncertain"); // GH-90000
@@ -297,11 +297,11 @@ class ModelAccuracyTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Confusion Matrix [GH-90000]")
+    @DisplayName("Confusion Matrix")
     class ConfusionMatrixTests {
 
         @Test
-        @DisplayName("[D012]: confusion_matrix_diagonal_is_correct [GH-90000]")
+        @DisplayName("[D012]: confusion_matrix_diagonal_is_correct")
         void confusionMatrixDiagonalIsCorrect() { // GH-90000
             // 2x2 confusion matrix
             // TP | FP
@@ -324,11 +324,11 @@ class ModelAccuracyTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Deterministic Fixtures [GH-90000]")
+    @DisplayName("Deterministic Fixtures")
     class DeterministicFixtureTests {
 
         @Test
-        @DisplayName("[D012]: same_test_dataset_produces_same_accuracy [GH-90000]")
+        @DisplayName("[D012]: same_test_dataset_produces_same_accuracy")
         void sameTestDatasetProducesSameAccuracy() { // GH-90000
             // With deterministic fixtures, same inputs produce same outputs
             double accuracy1 = evaluateWithFixture("model-001", "test-001"); // GH-90000
@@ -338,7 +338,7 @@ class ModelAccuracyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D012]: different_test_datasets_produce_different_results [GH-90000]")
+        @DisplayName("[D012]: different_test_datasets_produce_different_results")
         void differentTestDatasetsProduceDifferentResults() { // GH-90000
             double accuracy1 = evaluateWithFixture("model-001", "test-001"); // GH-90000
             double accuracy2 = evaluateWithFixture("model-001", "test-002"); // GH-90000

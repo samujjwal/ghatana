@@ -33,7 +33,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("BrainState – State Machine Transitions (D009) [GH-90000]")
+@DisplayName("BrainState – State Machine Transitions (D009)")
 class BrainStateTransitionTest extends EventloopTestBase {
 
     @Mock
@@ -44,11 +44,11 @@ class BrainStateTransitionTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Valid State Transitions [GH-90000]")
+    @DisplayName("Valid State Transitions")
     class ValidStateTransitionsTests {
 
         @Test
-        @DisplayName("[D009]: uninitialized_to_initializing_valid [GH-90000]")
+        @DisplayName("[D009]: uninitialized_to_initializing_valid")
         void uninitializedToInitializingValid() { // GH-90000
             String agentId = "agent-001";
 
@@ -76,7 +76,7 @@ class BrainStateTransitionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D009]: initializing_to_active_valid [GH-90000]")
+        @DisplayName("[D009]: initializing_to_active_valid")
         void initializingToActiveValid() { // GH-90000
             String agentId = "agent-001";
 
@@ -97,7 +97,7 @@ class BrainStateTransitionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D009]: active_to_paused_valid [GH-90000]")
+        @DisplayName("[D009]: active_to_paused_valid")
         void activeToPausedValid() { // GH-90000
             String agentId = "agent-001";
 
@@ -117,7 +117,7 @@ class BrainStateTransitionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D009]: paused_to_active_valid [GH-90000]")
+        @DisplayName("[D009]: paused_to_active_valid")
         void pausedToActiveValid() { // GH-90000
             String agentId = "agent-001";
 
@@ -138,7 +138,7 @@ class BrainStateTransitionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D009]: active_to_learning_valid [GH-90000]")
+        @DisplayName("[D009]: active_to_learning_valid")
         void activeToLearningValid() { // GH-90000
             String agentId = "agent-001";
 
@@ -158,7 +158,7 @@ class BrainStateTransitionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D009]: active_to_resting_valid [GH-90000]")
+        @DisplayName("[D009]: active_to_resting_valid")
         void activeToRestingValid() { // GH-90000
             String agentId = "agent-001";
 
@@ -178,7 +178,7 @@ class BrainStateTransitionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D009]: active_to_shutting_down_valid [GH-90000]")
+        @DisplayName("[D009]: active_to_shutting_down_valid")
         void activeToShuttingDownValid() { // GH-90000
             String agentId = "agent-001";
 
@@ -198,7 +198,7 @@ class BrainStateTransitionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D009]: shutting_down_to_terminated_valid [GH-90000]")
+        @DisplayName("[D009]: shutting_down_to_terminated_valid")
         void shuttingDownToTerminatedValid() { // GH-90000
             String agentId = "agent-001";
 
@@ -223,11 +223,11 @@ class BrainStateTransitionTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Invalid State Transitions [GH-90000]")
+    @DisplayName("Invalid State Transitions")
     class InvalidStateTransitionsTests {
 
         @Test
-        @DisplayName("[D009]: terminated_to_any_invalid [GH-90000]")
+        @DisplayName("[D009]: terminated_to_any_invalid")
         void terminatedToAnyInvalid() { // GH-90000
             String agentId = "agent-001";
 
@@ -242,7 +242,7 @@ class BrainStateTransitionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D009]: active_to_uninitialized_invalid [GH-90000]")
+        @DisplayName("[D009]: active_to_uninitialized_invalid")
         void activeToUninitializedInvalid() { // GH-90000
             String agentId = "agent-001";
 
@@ -257,7 +257,7 @@ class BrainStateTransitionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D009]: uninitialized_to_active_invalid [GH-90000]")
+        @DisplayName("[D009]: uninitialized_to_active_invalid")
         void uninitializedToActiveInvalid() { // GH-90000
             String agentId = "agent-001";
 
@@ -277,11 +277,11 @@ class BrainStateTransitionTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("State History [GH-90000]")
+    @DisplayName("State History")
     class StateHistoryTests {
 
         @Test
-        @DisplayName("[D009]: get_state_history_returns_records [GH-90000]")
+        @DisplayName("[D009]: get_state_history_returns_records")
         void getStateHistoryReturnsRecords() { // GH-90000
             String agentId = "agent-001";
             List<BrainStateManager.StateRecord> history = List.of( // GH-90000
@@ -315,7 +315,7 @@ class BrainStateTransitionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D009]: state_records_include_duration [GH-90000]")
+        @DisplayName("[D009]: state_records_include_duration")
         void stateRecordsIncludeDuration() { // GH-90000
             BrainStateManager.StateRecord record = new BrainStateManager.StateRecord( // GH-90000
                 BrainStateManager.BrainState.ACTIVE,
@@ -332,11 +332,11 @@ class BrainStateTransitionTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Wait for State [GH-90000]")
+    @DisplayName("Wait for State")
     class WaitForStateTests {
 
         @Test
-        @DisplayName("[D009]: wait_for_state_returns_true_when_reached [GH-90000]")
+        @DisplayName("[D009]: wait_for_state_returns_true_when_reached")
         void waitForStateReturnsTrueWhenReached() { // GH-90000
             String agentId = "agent-001";
 
@@ -354,7 +354,7 @@ class BrainStateTransitionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D009]: wait_for_state_returns_false_on_timeout [GH-90000]")
+        @DisplayName("[D009]: wait_for_state_returns_false_on_timeout")
         void waitForStateReturnsFalseOnTimeout() { // GH-90000
             String agentId = "agent-001";
 
@@ -377,11 +377,11 @@ class BrainStateTransitionTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("State Change Listener [GH-90000]")
+    @DisplayName("State Change Listener")
     class StateChangeListenerTests {
 
         @Test
-        @DisplayName("[D009]: on_state_change_registers_listener [GH-90000]")
+        @DisplayName("[D009]: on_state_change_registers_listener")
         void onStateChangeRegistersListener() { // GH-90000
             String agentId = "agent-001";
 
@@ -401,11 +401,11 @@ class BrainStateTransitionTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Transition Context [GH-90000]")
+    @DisplayName("Transition Context")
     class TransitionContextTests {
 
         @Test
-        @DisplayName("[D009]: transition_context_includes_metadata [GH-90000]")
+        @DisplayName("[D009]: transition_context_includes_metadata")
         void transitionContextIncludesMetadata() { // GH-90000
             BrainStateManager.TransitionContext context = new BrainStateManager.TransitionContext( // GH-90000
                 "agent-001",
@@ -414,9 +414,9 @@ class BrainStateTransitionTest extends EventloopTestBase {
                 System.currentTimeMillis() // GH-90000
             );
 
-            assertThat(context.agentId()).isEqualTo("agent-001 [GH-90000]");
-            assertThat(context.triggeredBy()).isEqualTo("user_request [GH-90000]");
-            assertThat(context.metadata()).containsKey("reason [GH-90000]");
+            assertThat(context.agentId()).isEqualTo("agent-001");
+            assertThat(context.triggeredBy()).isEqualTo("user_request");
+            assertThat(context.metadata()).containsKey("reason");
         }
     }
 
@@ -425,11 +425,11 @@ class BrainStateTransitionTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("State Enum [GH-90000]")
+    @DisplayName("State Enum")
     class StateEnumTests {
 
         @Test
-        @DisplayName("[D009]: all_states_defined [GH-90000]")
+        @DisplayName("[D009]: all_states_defined")
         void allStatesDefined() { // GH-90000
             BrainStateManager.BrainState[] states = BrainStateManager.BrainState.values(); // GH-90000
 

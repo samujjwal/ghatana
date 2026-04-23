@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("InMemoryRecertificationPipeline [GH-90000]")
+@DisplayName("InMemoryRecertificationPipeline")
 class RecertificationPipelineTest extends EventloopTestBase {
 
     private InMemoryRecertificationPipeline pipeline;
@@ -34,17 +34,17 @@ class RecertificationPipelineTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("createCampaign [GH-90000]")
+    @DisplayName("createCampaign")
     class CreateCampaign {
 
         @Test
-        @DisplayName("creates campaign with IN_PROGRESS status and populated items [GH-90000]")
+        @DisplayName("creates campaign with IN_PROGRESS status and populated items")
         void createsWithItemsInProgress() { // GH-90000
             RecertificationCampaign campaign = runPromise(() -> // GH-90000
                 pipeline.createCampaign("tenant-1", "Q1 2026 Review", RecertificationScope.AGENT_PERMISSIONS)); // GH-90000
 
-            assertThat(campaign.tenantId()).isEqualTo("tenant-1 [GH-90000]");
-            assertThat(campaign.campaignName()).isEqualTo("Q1 2026 Review [GH-90000]");
+            assertThat(campaign.tenantId()).isEqualTo("tenant-1");
+            assertThat(campaign.campaignName()).isEqualTo("Q1 2026 Review");
             assertThat(campaign.scope()).isEqualTo(RecertificationScope.AGENT_PERMISSIONS); // GH-90000
             assertThat(campaign.status()).isEqualTo(CampaignStatus.IN_PROGRESS); // GH-90000
             assertThat(campaign.totalItems()).isGreaterThan(0); // GH-90000
@@ -55,7 +55,7 @@ class RecertificationPipelineTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("FULL scope generates more items than a targeted scope [GH-90000]")
+        @DisplayName("FULL scope generates more items than a targeted scope")
         void fullScopeHasMoreItems() { // GH-90000
             RecertificationCampaign agentOnly = runPromise(() -> // GH-90000
                 pipeline.createCampaign("tenant-1", "Agent only", RecertificationScope.AGENT_PERMISSIONS)); // GH-90000
@@ -67,11 +67,11 @@ class RecertificationPipelineTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("getItems [GH-90000]")
+    @DisplayName("getItems")
     class GetItems {
 
         @Test
-        @DisplayName("all items start as PENDING [GH-90000]")
+        @DisplayName("all items start as PENDING")
         void allItemsPending() { // GH-90000
             RecertificationCampaign campaign = runPromise(() -> // GH-90000
                 pipeline.createCampaign("tenant-1", "c1", RecertificationScope.TOOL_REGISTRATIONS)); // GH-90000
@@ -84,19 +84,19 @@ class RecertificationPipelineTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("returns not-found error for unknown campaign [GH-90000]")
+        @DisplayName("returns not-found error for unknown campaign")
         void notFoundForUnknownCampaign() { // GH-90000
-            assertThatThrownBy(() -> runPromise(() -> pipeline.getItems("no-such-campaign [GH-90000]")))
+            assertThatThrownBy(() -> runPromise(() -> pipeline.getItems("no-such-campaign")))
                 .isInstanceOf(IllegalArgumentException.class); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("certify [GH-90000]")
+    @DisplayName("certify")
     class Certify {
 
         @Test
-        @DisplayName("transitions item from PENDING to CERTIFIED [GH-90000]")
+        @DisplayName("transitions item from PENDING to CERTIFIED")
         void certifiesItem() { // GH-90000
             RecertificationCampaign campaign = runPromise(() -> // GH-90000
                 pipeline.createCampaign("tenant-1", "c1", RecertificationScope.AGENT_PERMISSIONS)); // GH-90000
@@ -108,12 +108,12 @@ class RecertificationPipelineTest extends EventloopTestBase {
                 pipeline.certify(campaign.campaignId(), itemId, "reviewer@example.com")); // GH-90000
 
             assertThat(certified.decision()).isEqualTo(ItemDecision.CERTIFIED); // GH-90000
-            assertThat(certified.certifierId()).isEqualTo("reviewer@example.com [GH-90000]");
+            assertThat(certified.certifierId()).isEqualTo("reviewer@example.com");
             assertThat(certified.reviewedAt()).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("cannot certify an already-reviewed item [GH-90000]")
+        @DisplayName("cannot certify an already-reviewed item")
         void cannotCertifyTwice() { // GH-90000
             RecertificationCampaign campaign = runPromise(() -> // GH-90000
                 pipeline.createCampaign("tenant-1", "c1", RecertificationScope.AGENT_PERMISSIONS)); // GH-90000
@@ -129,11 +129,11 @@ class RecertificationPipelineTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("revoke [GH-90000]")
+    @DisplayName("revoke")
     class Revoke {
 
         @Test
-        @DisplayName("transitions item from PENDING to REVOKED with reason [GH-90000]")
+        @DisplayName("transitions item from PENDING to REVOKED with reason")
         void revokesItem() { // GH-90000
             RecertificationCampaign campaign = runPromise(() -> // GH-90000
                 pipeline.createCampaign("tenant-1", "c1", RecertificationScope.TOOL_REGISTRATIONS)); // GH-90000
@@ -146,12 +146,12 @@ class RecertificationPipelineTest extends EventloopTestBase {
                     "auditor@example.com", "Unused for 6 months"));
 
             assertThat(revoked.decision()).isEqualTo(ItemDecision.REVOKED); // GH-90000
-            assertThat(revoked.decisionNotes()).isEqualTo("Unused for 6 months [GH-90000]");
-            assertThat(revoked.certifierId()).isEqualTo("auditor@example.com [GH-90000]");
+            assertThat(revoked.decisionNotes()).isEqualTo("Unused for 6 months");
+            assertThat(revoked.certifierId()).isEqualTo("auditor@example.com");
         }
 
         @Test
-        @DisplayName("returns error if revocation reason is blank [GH-90000]")
+        @DisplayName("returns error if revocation reason is blank")
         void requiresNonBlankReason() { // GH-90000
             RecertificationCampaign campaign = runPromise(() -> // GH-90000
                 pipeline.createCampaign("tenant-1", "c1", RecertificationScope.POLICIES)); // GH-90000
@@ -166,11 +166,11 @@ class RecertificationPipelineTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("generateReport [GH-90000]")
+    @DisplayName("generateReport")
     class GenerateReport {
 
         @Test
-        @DisplayName("report reflects certified + revoked + pending counts correctly [GH-90000]")
+        @DisplayName("report reflects certified + revoked + pending counts correctly")
         void reportCountsCorrect() { // GH-90000
             RecertificationCampaign campaign = runPromise(() -> // GH-90000
                 pipeline.createCampaign("tenant-1", "c1", RecertificationScope.AGENT_PERMISSIONS)); // GH-90000
@@ -191,7 +191,7 @@ class RecertificationPipelineTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("campaign marked COMPLETED when all items reviewed [GH-90000]")
+        @DisplayName("campaign marked COMPLETED when all items reviewed")
         void campaignCompletedWhenAllReviewed() { // GH-90000
             RecertificationCampaign campaign = runPromise(() -> // GH-90000
                 pipeline.createCampaign("tenant-1", "c1", RecertificationScope.AGENT_PERMISSIONS)); // GH-90000
@@ -214,7 +214,7 @@ class RecertificationPipelineTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("report includes revoked items list for audit trail [GH-90000]")
+        @DisplayName("report includes revoked items list for audit trail")
         void reportIncludesRevokedItems() { // GH-90000
             RecertificationCampaign campaign = runPromise(() -> // GH-90000
                 pipeline.createCampaign("tenant-1", "c1", RecertificationScope.TOOL_REGISTRATIONS)); // GH-90000
@@ -231,7 +231,7 @@ class RecertificationPipelineTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("certificationRate is 1.0 when all items certified [GH-90000]")
+        @DisplayName("certificationRate is 1.0 when all items certified")
         void certificationRateOneWhenAllCertified() { // GH-90000
             RecertificationCampaign campaign = runPromise(() -> // GH-90000
                 pipeline.createCampaign("tenant-1", "c1", RecertificationScope.POLICIES)); // GH-90000
@@ -249,19 +249,19 @@ class RecertificationPipelineTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("listCampaigns [GH-90000]")
+    @DisplayName("listCampaigns")
     class ListCampaigns {
 
         @Test
-        @DisplayName("returns only campaigns for the queried tenant [GH-90000]")
+        @DisplayName("returns only campaigns for the queried tenant")
         void filtersByTenant() { // GH-90000
             runPromise(() -> pipeline.createCampaign("tenant-1", "c1", RecertificationScope.POLICIES)); // GH-90000
             runPromise(() -> pipeline.createCampaign("tenant-1", "c2", RecertificationScope.AGENT_PERMISSIONS)); // GH-90000
             runPromise(() -> pipeline.createCampaign("tenant-2", "c3", RecertificationScope.FULL)); // GH-90000
 
-            List<RecertificationCampaign> t1 = runPromise(() -> pipeline.listCampaigns("tenant-1 [GH-90000]"));
+            List<RecertificationCampaign> t1 = runPromise(() -> pipeline.listCampaigns("tenant-1"));
             assertThat(t1).hasSize(2); // GH-90000
-            assertThat(t1).allMatch(c -> c.tenantId().equals("tenant-1 [GH-90000]"));
+            assertThat(t1).allMatch(c -> c.tenantId().equals("tenant-1"));
         }
     }
 }

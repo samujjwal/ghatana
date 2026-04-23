@@ -15,7 +15,7 @@ import static org.mockito.Mockito.*;
 /**
  * Tests for BaseAgent.
  */
-@DisplayName("BaseAgent Tests [GH-90000]")
+@DisplayName("BaseAgent Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles base agent test operations
@@ -36,7 +36,7 @@ class BaseAgentTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should execute agent with input [GH-90000]")
+    @DisplayName("Should execute agent with input")
     void shouldExecuteAgent() { // GH-90000
         // Given
         String input = "Analyze this code";
@@ -53,13 +53,13 @@ class BaseAgentTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should return agent name [GH-90000]")
+    @DisplayName("Should return agent name")
     void shouldReturnAgentName() { // GH-90000
         // Given/When
         String name = testAgent.getName(); // GH-90000
 
         // Then
-        assert name.equals("TestAgent [GH-90000]");
+        assert name.equals("TestAgent");
     }
 
     /**

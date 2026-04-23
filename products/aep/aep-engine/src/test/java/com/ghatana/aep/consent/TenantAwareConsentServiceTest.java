@@ -29,7 +29,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("TenantAwareConsentService [GH-90000]")
+@DisplayName("TenantAwareConsentService")
 class TenantAwareConsentServiceTest extends EventloopTestBase {
 
     private static final String TENANT_EU = "tenant-eu";
@@ -41,11 +41,11 @@ class TenantAwareConsentServiceTest extends EventloopTestBase {
     @BeforeEach
     void setUp() { // GH-90000
         fallback = mock(ConsentService.class); // GH-90000
-        event = eventWith(AepEngine.ConsentStatus.GRANTED, List.of("event_processing [GH-90000]"));
+        event = eventWith(AepEngine.ConsentStatus.GRANTED, List.of("event_processing"));
         when(fallback.evaluateConsent(any(), any())) // GH-90000
                 .thenReturn(Promise.of(ConsentService.ConsentDecision.allow())); // GH-90000
         when(fallback.getAllowedPurposes(any(), any(), any())) // GH-90000
-                .thenReturn(Promise.of(List.of("event_processing [GH-90000]")));
+                .thenReturn(Promise.of(List.of("event_processing")));
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -53,19 +53,19 @@ class TenantAwareConsentServiceTest extends EventloopTestBase {
     // ──────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Builder validation [GH-90000]")
+    @DisplayName("Builder validation")
     class BuilderValidation {
 
         @Test
-        @DisplayName("null fallback throws NullPointerException [GH-90000]")
+        @DisplayName("null fallback throws NullPointerException")
         void shouldRejectNullFallback() { // GH-90000
             assertThatThrownBy(() -> TenantAwareConsentService.builder().build(null)) // GH-90000
                     .isInstanceOf(NullPointerException.class) // GH-90000
-                    .hasMessageContaining("fallback [GH-90000]");
+                    .hasMessageContaining("fallback");
         }
 
         @Test
-        @DisplayName("null tenantId in withStrategy() throws NullPointerException [GH-90000]")
+        @DisplayName("null tenantId in withStrategy() throws NullPointerException")
         void shouldRejectNullTenantId() { // GH-90000
             assertThatThrownBy(() -> TenantAwareConsentService.builder() // GH-90000
                     .withStrategy(null, (tid, e) -> Promise.of(ConsentService.ConsentDecision.allow()))) // GH-90000
@@ -73,7 +73,7 @@ class TenantAwareConsentServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("blank tenantId in withStrategy() throws IllegalArgumentException [GH-90000]")
+        @DisplayName("blank tenantId in withStrategy() throws IllegalArgumentException")
         void shouldRejectBlankTenantId() { // GH-90000
             assertThatThrownBy(() -> TenantAwareConsentService.builder() // GH-90000
                     .withStrategy("   ", (tid, e) -> Promise.of(ConsentService.ConsentDecision.allow()))) // GH-90000
@@ -81,7 +81,7 @@ class TenantAwareConsentServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("null strategy in withStrategy() throws NullPointerException [GH-90000]")
+        @DisplayName("null strategy in withStrategy() throws NullPointerException")
         void shouldRejectNullStrategy() { // GH-90000
             assertThatThrownBy(() -> TenantAwareConsentService.builder() // GH-90000
                     .withStrategy(TENANT_EU, null)) // GH-90000
@@ -94,15 +94,15 @@ class TenantAwareConsentServiceTest extends EventloopTestBase {
     // ──────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("evaluateConsent() — strategy dispatch [GH-90000]")
+    @DisplayName("evaluateConsent() — strategy dispatch")
     class EvaluateConsentDispatch {
 
         @Test
-        @DisplayName("registered tenant uses its strategy instead of the fallback [GH-90000]")
+        @DisplayName("registered tenant uses its strategy instead of the fallback")
         void shouldUseRegisteredStrategyForKnownTenant() { // GH-90000
             ConsentEvaluationStrategy strategy = mock(ConsentEvaluationStrategy.class); // GH-90000
             when(strategy.evaluate(eq(TENANT_EU), any())) // GH-90000
-                    .thenReturn(Promise.of(ConsentService.ConsentDecision.deny("GDPR opt-out [GH-90000]")));
+                    .thenReturn(Promise.of(ConsentService.ConsentDecision.deny("GDPR opt-out")));
 
             ConsentService service = TenantAwareConsentService.builder() // GH-90000
                     .withStrategy(TENANT_EU, strategy) // GH-90000
@@ -112,16 +112,16 @@ class TenantAwareConsentServiceTest extends EventloopTestBase {
                     () -> service.evaluateConsent(TENANT_EU, event)); // GH-90000
 
             assertThat(decision.allowed()).isFalse(); // GH-90000
-            assertThat(decision.reason()).contains("GDPR [GH-90000]");
+            assertThat(decision.reason()).contains("GDPR");
             verify(strategy, times(1)).evaluate(eq(TENANT_EU), any()); // GH-90000
             verify(fallback, never()).evaluateConsent(any(), any()); // GH-90000
         }
 
         @Test
-        @DisplayName("unregistered tenant delegates to fallback [GH-90000]")
+        @DisplayName("unregistered tenant delegates to fallback")
         void shouldUseFallbackForUnknownTenant() { // GH-90000
             ConsentService service = TenantAwareConsentService.builder() // GH-90000
-                    .withStrategy(TENANT_EU, (tid, e) -> Promise.of(ConsentService.ConsentDecision.deny("EU rule [GH-90000]")))
+                    .withStrategy(TENANT_EU, (tid, e) -> Promise.of(ConsentService.ConsentDecision.deny("EU rule")))
                     .build(fallback); // GH-90000
 
             ConsentService.ConsentDecision decision = runPromise( // GH-90000
@@ -132,7 +132,7 @@ class TenantAwareConsentServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("service with no strategies always uses fallback [GH-90000]")
+        @DisplayName("service with no strategies always uses fallback")
         void shouldAlwaysUseFallbackWhenNoStrategiesRegistered() { // GH-90000
             ConsentService service = TenantAwareConsentService.builder().build(fallback); // GH-90000
 
@@ -142,10 +142,10 @@ class TenantAwareConsentServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("strategy for tenant-A does not affect tenant-B evaluation [GH-90000]")
+        @DisplayName("strategy for tenant-A does not affect tenant-B evaluation")
         void shouldIsolateTenantStrategies() { // GH-90000
             ConsentEvaluationStrategy denyStrategy =
-                    (tid, e) -> Promise.of(ConsentService.ConsentDecision.deny("policy [GH-90000]"));
+                    (tid, e) -> Promise.of(ConsentService.ConsentDecision.deny("policy"));
 
             ConsentService service = TenantAwareConsentService.builder() // GH-90000
                     .withStrategy(TENANT_EU, denyStrategy) // GH-90000
@@ -163,7 +163,7 @@ class TenantAwareConsentServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("null tenantId in evaluateConsent() throws NullPointerException [GH-90000]")
+        @DisplayName("null tenantId in evaluateConsent() throws NullPointerException")
         void shouldRejectNullTenantIdOnEvaluate() { // GH-90000
             ConsentService service = TenantAwareConsentService.builder().build(fallback); // GH-90000
 
@@ -172,7 +172,7 @@ class TenantAwareConsentServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("null event in evaluateConsent() throws NullPointerException [GH-90000]")
+        @DisplayName("null event in evaluateConsent() throws NullPointerException")
         void shouldRejectNullEventOnEvaluate() { // GH-90000
             ConsentService service = TenantAwareConsentService.builder().build(fallback); // GH-90000
 
@@ -186,20 +186,20 @@ class TenantAwareConsentServiceTest extends EventloopTestBase {
     // ──────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("getAllowedPurposes() — always delegates to fallback [GH-90000]")
+    @DisplayName("getAllowedPurposes() — always delegates to fallback")
     class GetAllowedPurposes {
 
         @Test
-        @DisplayName("delegates getAllowedPurposes to fallback regardless of registered strategies [GH-90000]")
+        @DisplayName("delegates getAllowedPurposes to fallback regardless of registered strategies")
         void shouldDelegateToFallbackForAllowedPurposes() { // GH-90000
             ConsentService service = TenantAwareConsentService.builder() // GH-90000
-                    .withStrategy(TENANT_EU, (tid, e) -> Promise.of(ConsentService.ConsentDecision.deny("EU [GH-90000]")))
+                    .withStrategy(TENANT_EU, (tid, e) -> Promise.of(ConsentService.ConsentDecision.deny("EU")))
                     .build(fallback); // GH-90000
 
             List<String> purposes = runPromise( // GH-90000
                     () -> service.getAllowedPurposes(TENANT_EU, "user-1", "event_processing")); // GH-90000
 
-            assertThat(purposes).containsExactly("event_processing [GH-90000]");
+            assertThat(purposes).containsExactly("event_processing");
             verify(fallback).getAllowedPurposes(TENANT_EU, "user-1", "event_processing"); // GH-90000
         }
     }

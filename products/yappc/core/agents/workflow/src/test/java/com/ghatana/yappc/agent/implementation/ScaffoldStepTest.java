@@ -17,7 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Implementation ScaffoldStep Tests [GH-90000]")
+@DisplayName("Implementation ScaffoldStep Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles scaffold step test operations
@@ -38,13 +38,13 @@ class ScaffoldStepTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should return correct step ID [GH-90000]")
+  @DisplayName("Should return correct step ID")
   void shouldReturnCorrectStepId() { // GH-90000
-    assertThat(step.getStepId()).isEqualTo("implementation.scaffold [GH-90000]");
+    assertThat(step.getStepId()).isEqualTo("implementation.scaffold");
   }
 
   @Test
-  @DisplayName("Should scaffold codebase from implementation plan [GH-90000]")
+  @DisplayName("Should scaffold codebase from implementation plan")
   void shouldScaffoldCodebase() { // GH-90000
     // GIVEN
     WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
@@ -86,6 +86,6 @@ class ScaffoldStepTest extends EventloopTestBase {
 
     // THEN
     assertThat(result).isNotNull(); // GH-90000
-    assertThat(result.get("implementationPlanId [GH-90000]")).isEqualTo("plan-001 [GH-90000]");
+    assertThat(result.get("implementationPlanId")).isEqualTo("plan-001");
   }
 }

@@ -11,7 +11,7 @@ import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.*;
 
-@DisplayName("WorkflowOptions Tests [GH-90000]")
+@DisplayName("WorkflowOptions Tests")
 class WorkflowOptionsTest {
 
     @Test

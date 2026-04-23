@@ -18,34 +18,34 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Semantic proto compatibility checks between Java service protos and
  * desktop Rust protos for shared contracts.
  */
-@DisplayName("Proto compatibility [GH-90000]")
+@DisplayName("Proto compatibility")
 class ProtoCompatibilityTest {
 
     @Test
-    @DisplayName("shared core RPC methods stay aligned across Java and Rust protos [GH-90000]")
+    @DisplayName("shared core RPC methods stay aligned across Java and Rust protos")
     void shouldKeepSharedRpcMethodsAligned() throws IOException { // GH-90000
-        ProtoSchema ttsJava = loadSchema("products/audio-video/modules/speech/tts-service/src/main/proto/tts_service.proto [GH-90000]");
-        ProtoSchema ttsRust = loadSchema("products/audio-video/apps/desktop/src-tauri/proto/tts.proto [GH-90000]");
+        ProtoSchema ttsJava = loadSchema("products/audio-video/modules/speech/tts-service/src/main/proto/tts_service.proto");
+        ProtoSchema ttsRust = loadSchema("products/audio-video/apps/desktop/src-tauri/proto/tts.proto");
         assertSharedRpcMethods(ttsJava, ttsRust, "TTSService", Set.of("Synthesize", "StreamSynthesize", "GetStatus")); // GH-90000
 
-        ProtoSchema sttJava = loadSchema("products/audio-video/modules/speech/stt-service/src/main/proto/stt_service.proto [GH-90000]");
-        ProtoSchema sttRust = loadSchema("products/audio-video/apps/desktop/src-tauri/proto/stt.proto [GH-90000]");
+        ProtoSchema sttJava = loadSchema("products/audio-video/modules/speech/stt-service/src/main/proto/stt_service.proto");
+        ProtoSchema sttRust = loadSchema("products/audio-video/apps/desktop/src-tauri/proto/stt.proto");
         assertSharedRpcMethods(sttJava, sttRust, "STTService", Set.of("Transcribe", "StreamTranscribe", "GetStatus", "HealthCheck")); // GH-90000
 
-        ProtoSchema visionJava = loadSchema("products/audio-video/modules/vision/vision-service/src/main/proto/vision_service.proto [GH-90000]");
-        ProtoSchema visionRust = loadSchema("products/audio-video/apps/desktop/src-tauri/proto/vision.proto [GH-90000]");
+        ProtoSchema visionJava = loadSchema("products/audio-video/modules/vision/vision-service/src/main/proto/vision_service.proto");
+        ProtoSchema visionRust = loadSchema("products/audio-video/apps/desktop/src-tauri/proto/vision.proto");
         assertSharedRpcMethods(visionJava, visionRust, "VisionService", Set.of("DetectObjects", "AnalyzeImage", "HealthCheck")); // GH-90000
 
-        ProtoSchema multimodalJava = loadSchema("products/audio-video/modules/intelligence/multimodal-service/src/main/proto/multimodal_service.proto [GH-90000]");
-        ProtoSchema multimodalRust = loadSchema("products/audio-video/apps/desktop/src-tauri/proto/multimodal.proto [GH-90000]");
+        ProtoSchema multimodalJava = loadSchema("products/audio-video/modules/intelligence/multimodal-service/src/main/proto/multimodal_service.proto");
+        ProtoSchema multimodalRust = loadSchema("products/audio-video/apps/desktop/src-tauri/proto/multimodal.proto");
         assertSharedRpcMethods(multimodalJava, multimodalRust, "MultimodalService", Set.of("ProcessMultimodal", "GenerateDescription", "HealthCheck")); // GH-90000
     }
 
     @Test
-    @DisplayName("shared TTS message shapes stay compatible [GH-90000]")
+    @DisplayName("shared TTS message shapes stay compatible")
     void shouldKeepTtsSharedMessagesCompatible() throws IOException { // GH-90000
-        ProtoSchema javaSchema = loadSchema("products/audio-video/modules/speech/tts-service/src/main/proto/tts_service.proto [GH-90000]");
-        ProtoSchema rustSchema = loadSchema("products/audio-video/apps/desktop/src-tauri/proto/tts.proto [GH-90000]");
+        ProtoSchema javaSchema = loadSchema("products/audio-video/modules/speech/tts-service/src/main/proto/tts_service.proto");
+        ProtoSchema rustSchema = loadSchema("products/audio-video/apps/desktop/src-tauri/proto/tts.proto");
 
         assertMessageEqual(javaSchema, rustSchema, "SynthesizeRequest"); // GH-90000
         assertRustMessageSubset(javaSchema, rustSchema, "SynthesisOptions"); // GH-90000
@@ -54,18 +54,18 @@ class ProtoCompatibilityTest {
     }
 
     @Test
-    @DisplayName("shared Vision and Multimodal message shapes stay compatible [GH-90000]")
+    @DisplayName("shared Vision and Multimodal message shapes stay compatible")
     void shouldKeepVisionAndMultimodalMessagesCompatible() throws IOException { // GH-90000
-        ProtoSchema visionJava = loadSchema("products/audio-video/modules/vision/vision-service/src/main/proto/vision_service.proto [GH-90000]");
-        ProtoSchema visionRust = loadSchema("products/audio-video/apps/desktop/src-tauri/proto/vision.proto [GH-90000]");
+        ProtoSchema visionJava = loadSchema("products/audio-video/modules/vision/vision-service/src/main/proto/vision_service.proto");
+        ProtoSchema visionRust = loadSchema("products/audio-video/apps/desktop/src-tauri/proto/vision.proto");
 
         assertMessageEqual(visionJava, visionRust, "DetectRequest"); // GH-90000
         assertMessageEqual(visionJava, visionRust, "DetectResponse"); // GH-90000
         assertMessageEqual(visionJava, visionRust, "Detection"); // GH-90000
         assertMessageEqual(visionJava, visionRust, "BoundingBox"); // GH-90000
 
-        ProtoSchema multimodalJava = loadSchema("products/audio-video/modules/intelligence/multimodal-service/src/main/proto/multimodal_service.proto [GH-90000]");
-        ProtoSchema multimodalRust = loadSchema("products/audio-video/apps/desktop/src-tauri/proto/multimodal.proto [GH-90000]");
+        ProtoSchema multimodalJava = loadSchema("products/audio-video/modules/intelligence/multimodal-service/src/main/proto/multimodal_service.proto");
+        ProtoSchema multimodalRust = loadSchema("products/audio-video/apps/desktop/src-tauri/proto/multimodal.proto");
 
         assertMessageEqual(multimodalJava, multimodalRust, "MultimodalRequest"); // GH-90000
         assertMessageEqual(multimodalJava, multimodalRust, "MultimodalResponse"); // GH-90000
@@ -143,7 +143,7 @@ class ProtoCompatibilityTest {
         }
 
     private static ProtoSchema loadSchema(String repoRelativePath) throws IOException { // GH-90000
-        Path repoRoot = findRepoRoot(Path.of(" [GH-90000]").toAbsolutePath());
+        Path repoRoot = findRepoRoot(Path.of("").toAbsolutePath());
         Path directCandidate = repoRoot.resolve(repoRelativePath); // GH-90000
         Path fallbackCandidate = repoRoot.resolve(repoRelativePath.replaceFirst("^products/audio-video/", "")); // GH-90000
 
@@ -163,12 +163,12 @@ class ProtoCompatibilityTest {
     private static Path findRepoRoot(Path start) { // GH-90000
         Path current = start;
         while (current != null) { // GH-90000
-            if (Files.exists(current.resolve("settings.gradle.kts [GH-90000]"))) {
+            if (Files.exists(current.resolve("settings.gradle.kts"))) {
                 return current;
             }
             current = current.getParent(); // GH-90000
         }
-        throw new IllegalStateException("Unable to locate repository root [GH-90000]");
+        throw new IllegalStateException("Unable to locate repository root");
     }
 
     private static ProtoSchema parseProto(String content) { // GH-90000

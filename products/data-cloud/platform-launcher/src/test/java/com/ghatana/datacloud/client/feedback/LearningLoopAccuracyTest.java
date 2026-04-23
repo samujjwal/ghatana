@@ -29,15 +29,15 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("Learning Loop Accuracy Tests [GH-90000]")
+@DisplayName("Learning Loop Accuracy Tests")
 class LearningLoopAccuracyTest extends EventloopTestBase {
 
     @Nested
-    @DisplayName("Signal Transformation Accuracy [GH-90000]")
+    @DisplayName("Signal Transformation Accuracy")
     class TransformationAccuracyTests {
 
         @Test
-        @DisplayName("accurately maps feedback type to signal type [GH-90000]")
+        @DisplayName("accurately maps feedback type to signal type")
         void accuratelyMapsFeedbackTypeToSignalType() { // GH-90000
             // Test OPERATIONAL feedback maps to OPERATIONAL signal
             FeedbackEvent operationalEvent = FeedbackEvent.builder() // GH-90000
@@ -61,7 +61,7 @@ class LearningLoopAccuracyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("accurately calculates signal strength [GH-90000]")
+        @DisplayName("accurately calculates signal strength")
         void accuratelyCalculatesSignalStrength() { // GH-90000
             FeedbackEvent event = FeedbackEvent.builder() // GH-90000
                 .score(0.8) // GH-90000
@@ -85,7 +85,7 @@ class LearningLoopAccuracyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("accurately calculates signal strength without boosts [GH-90000]")
+        @DisplayName("accurately calculates signal strength without boosts")
         void accuratelyCalculatesSignalStrengthWithoutBoosts() { // GH-90000
             FeedbackEvent event = FeedbackEvent.builder() // GH-90000
                 .score(0.5) // GH-90000
@@ -109,32 +109,32 @@ class LearningLoopAccuracyTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Signal Aggregation Accuracy [GH-90000]")
+    @DisplayName("Signal Aggregation Accuracy")
     class AggregationAccuracyTests {
 
         @Test
-        @DisplayName("accurately aggregates signals by reference [GH-90000]")
+        @DisplayName("accurately aggregates signals by reference")
         void accuratelyAggregatesSignalsByReference() { // GH-90000
             FeedbackCollector mockCollector = mock(FeedbackCollector.class); // GH-90000
             
             List<FeedbackEvent> events = List.of( // GH-90000
                 FeedbackEvent.builder() // GH-90000
-                    .id("evt-1 [GH-90000]")
-                    .referenceId("ref-1 [GH-90000]")
+                    .id("evt-1")
+                    .referenceId("ref-1")
                     .score(0.8) // GH-90000
                     .confidence(0.9) // GH-90000
                     .sentiment(FeedbackEvent.Sentiment.POSITIVE) // GH-90000
                     .build(), // GH-90000
                 FeedbackEvent.builder() // GH-90000
-                    .id("evt-2 [GH-90000]")
-                    .referenceId("ref-1 [GH-90000]")
+                    .id("evt-2")
+                    .referenceId("ref-1")
                     .score(0.6) // GH-90000
                     .confidence(0.7) // GH-90000
                     .sentiment(FeedbackEvent.Sentiment.POSITIVE) // GH-90000
                     .build(), // GH-90000
                 FeedbackEvent.builder() // GH-90000
-                    .id("evt-3 [GH-90000]")
-                    .referenceId("ref-2 [GH-90000]")
+                    .id("evt-3")
+                    .referenceId("ref-2")
                     .score(-0.5) // GH-90000
                     .confidence(0.8) // GH-90000
                     .sentiment(FeedbackEvent.Sentiment.NEGATIVE) // GH-90000
@@ -158,21 +158,21 @@ class LearningLoopAccuracyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("accurately calculates average strength [GH-90000]")
+        @DisplayName("accurately calculates average strength")
         void accuratelyCalculatesAverageStrength() { // GH-90000
             List<FeedbackEvent> events = List.of( // GH-90000
                 FeedbackEvent.builder() // GH-90000
-                    .referenceId("ref-1 [GH-90000]")
+                    .referenceId("ref-1")
                     .score(0.8) // GH-90000
                     .confidence(1.0) // GH-90000
                     .build(), // GH-90000
                 FeedbackEvent.builder() // GH-90000
-                    .referenceId("ref-1 [GH-90000]")
+                    .referenceId("ref-1")
                     .score(0.6) // GH-90000
                     .confidence(1.0) // GH-90000
                     .build(), // GH-90000
                 FeedbackEvent.builder() // GH-90000
-                    .referenceId("ref-1 [GH-90000]")
+                    .referenceId("ref-1")
                     .score(0.4) // GH-90000
                     .confidence(1.0) // GH-90000
                     .build() // GH-90000
@@ -188,27 +188,27 @@ class LearningLoopAccuracyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("accurately counts reinforcements and corrections [GH-90000]")
+        @DisplayName("accurately counts reinforcements and corrections")
         void accuratelyCountsReinforcementsAndCorrections() { // GH-90000
             List<FeedbackEvent> events = List.of( // GH-90000
                 FeedbackEvent.builder() // GH-90000
-                    .referenceId("ref-1 [GH-90000]")
+                    .referenceId("ref-1")
                     .sentiment(FeedbackEvent.Sentiment.POSITIVE) // GH-90000
                     .build(), // GH-90000
                 FeedbackEvent.builder() // GH-90000
-                    .referenceId("ref-1 [GH-90000]")
+                    .referenceId("ref-1")
                     .sentiment(FeedbackEvent.Sentiment.POSITIVE) // GH-90000
                     .build(), // GH-90000
                 FeedbackEvent.builder() // GH-90000
-                    .referenceId("ref-1 [GH-90000]")
+                    .referenceId("ref-1")
                     .sentiment(FeedbackEvent.Sentiment.NEGATIVE) // GH-90000
                     .build(), // GH-90000
                 FeedbackEvent.builder() // GH-90000
-                    .referenceId("ref-1 [GH-90000]")
+                    .referenceId("ref-1")
                     .sentiment(FeedbackEvent.Sentiment.NEGATIVE) // GH-90000
                     .build(), // GH-90000
                 FeedbackEvent.builder() // GH-90000
-                    .referenceId("ref-1 [GH-90000]")
+                    .referenceId("ref-1")
                     .sentiment(FeedbackEvent.Sentiment.NEUTRAL) // GH-90000
                     .build() // GH-90000
             );
@@ -227,19 +227,19 @@ class LearningLoopAccuracyTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Learning Strategy Accuracy [GH-90000]")
+    @DisplayName("Learning Strategy Accuracy")
     class StrategyAccuracyTests {
 
         @Test
-        @DisplayName("IMMEDIATE strategy applies when strength threshold met [GH-90000]")
+        @DisplayName("IMMEDIATE strategy applies when strength threshold met")
         void immediateStrategyAppliesWhenStrengthThresholdMet() { // GH-90000
             FeedbackCollector mockCollector = mock(FeedbackCollector.class); // GH-90000
             
             // Events with average strength >= 0.3 should trigger IMMEDIATE learning
             List<FeedbackEvent> events = List.of( // GH-90000
                 FeedbackEvent.builder() // GH-90000
-                    .id("evt-1 [GH-90000]")
-                    .referenceId("ref-1 [GH-90000]")
+                    .id("evt-1")
+                    .referenceId("ref-1")
                     .score(0.5) // GH-90000
                     .confidence(1.0) // GH-90000
                     .build() // GH-90000
@@ -261,21 +261,21 @@ class LearningLoopAccuracyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("BATCHED strategy requires minimum signal count [GH-90000]")
+        @DisplayName("BATCHED strategy requires minimum signal count")
         void batchedStrategyRequiresMinimumSignalCount() { // GH-90000
             FeedbackCollector mockCollector = mock(FeedbackCollector.class); // GH-90000
             
             // BATCHED requires at least 3 signals
             List<FeedbackEvent> events = List.of( // GH-90000
                 FeedbackEvent.builder() // GH-90000
-                    .id("evt-1 [GH-90000]")
-                    .referenceId("ref-1 [GH-90000]")
+                    .id("evt-1")
+                    .referenceId("ref-1")
                     .score(0.9) // GH-90000
                     .confidence(1.0) // GH-90000
                     .build(), // GH-90000
                 FeedbackEvent.builder() // GH-90000
-                    .id("evt-2 [GH-90000]")
-                    .referenceId("ref-1 [GH-90000]")
+                    .id("evt-2")
+                    .referenceId("ref-1")
                     .score(0.9) // GH-90000
                     .confidence(1.0) // GH-90000
                     .build() // GH-90000
@@ -298,15 +298,15 @@ class LearningLoopAccuracyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("GRADUAL strategy respects confidence threshold [GH-90000]")
+        @DisplayName("GRADUAL strategy respects confidence threshold")
         void gradualStrategyRespectsConfidenceThreshold() { // GH-90000
             FeedbackCollector mockCollector = mock(FeedbackCollector.class); // GH-90000
             
             // Events with confidence < 0.7 should not trigger GRADUAL learning
             List<FeedbackEvent> events = List.of( // GH-90000
                 FeedbackEvent.builder() // GH-90000
-                    .id("evt-1 [GH-90000]")
-                    .referenceId("ref-1 [GH-90000]")
+                    .id("evt-1")
+                    .referenceId("ref-1")
                     .score(0.9) // GH-90000
                     .confidence(0.5) // Below threshold // GH-90000
                     .build() // GH-90000
@@ -328,14 +328,14 @@ class LearningLoopAccuracyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("SUPERVISED strategy defers application [GH-90000]")
+        @DisplayName("SUPERVISED strategy defers application")
         void supervisedStrategyDefersApplication() { // GH-90000
             FeedbackCollector mockCollector = mock(FeedbackCollector.class); // GH-90000
             
             List<FeedbackEvent> events = List.of( // GH-90000
                 FeedbackEvent.builder() // GH-90000
-                    .id("evt-1 [GH-90000]")
-                    .referenceId("ref-1 [GH-90000]")
+                    .id("evt-1")
+                    .referenceId("ref-1")
                     .score(0.9) // GH-90000
                     .confidence(1.0) // GH-90000
                     .build() // GH-90000
@@ -359,18 +359,18 @@ class LearningLoopAccuracyTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Cycle Accuracy Metrics [GH-90000]")
+    @DisplayName("Cycle Accuracy Metrics")
     class CycleAccuracyTests {
 
         @Test
-        @DisplayName("accurately reports cycle duration [GH-90000]")
+        @DisplayName("accurately reports cycle duration")
         void accuratelyReportsCycleDuration() { // GH-90000
             FeedbackCollector mockCollector = mock(FeedbackCollector.class); // GH-90000
             
             List<FeedbackEvent> events = List.of( // GH-90000
                 FeedbackEvent.builder() // GH-90000
-                    .id("evt-1 [GH-90000]")
-                    .referenceId("ref-1 [GH-90000]")
+                    .id("evt-1")
+                    .referenceId("ref-1")
                     .score(0.5) // GH-90000
                     .build() // GH-90000
             );
@@ -390,14 +390,14 @@ class LearningLoopAccuracyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("accurately counts events processed [GH-90000]")
+        @DisplayName("accurately counts events processed")
         void accuratelyCountsEventsProcessed() { // GH-90000
             FeedbackCollector mockCollector = mock(FeedbackCollector.class); // GH-90000
             
             List<FeedbackEvent> events = List.of( // GH-90000
-                FeedbackEvent.builder().id("evt-1 [GH-90000]").referenceId("ref-1 [GH-90000]").build(),
-                FeedbackEvent.builder().id("evt-2 [GH-90000]").referenceId("ref-1 [GH-90000]").build(),
-                FeedbackEvent.builder().id("evt-3 [GH-90000]").referenceId("ref-1 [GH-90000]").build()
+                FeedbackEvent.builder().id("evt-1").referenceId("ref-1").build(),
+                FeedbackEvent.builder().id("evt-2").referenceId("ref-1").build(),
+                FeedbackEvent.builder().id("evt-3").referenceId("ref-1").build()
             );
 
             when(mockCollector.getPending(anyInt())).thenReturn(Promise.of(events)); // GH-90000
@@ -415,12 +415,12 @@ class LearningLoopAccuracyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("accurately reports cycle number [GH-90000]")
+        @DisplayName("accurately reports cycle number")
         void accuratelyReportsCycleNumber() { // GH-90000
             FeedbackCollector mockCollector = mock(FeedbackCollector.class); // GH-90000
             
             List<FeedbackEvent> events = List.of( // GH-90000
-                FeedbackEvent.builder().id("evt-1 [GH-90000]").referenceId("ref-1 [GH-90000]").build()
+                FeedbackEvent.builder().id("evt-1").referenceId("ref-1").build()
             );
 
             when(mockCollector.getPending(anyInt())).thenReturn(Promise.of(events)); // GH-90000
@@ -443,11 +443,11 @@ class LearningLoopAccuracyTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Edge Case Accuracy [GH-90000]")
+    @DisplayName("Edge Case Accuracy")
     class EdgeCaseAccuracyTests {
 
         @Test
-        @DisplayName("handles empty feedback gracefully [GH-90000]")
+        @DisplayName("handles empty feedback gracefully")
         void handlesEmptyFeedbackGracefully() { // GH-90000
             FeedbackCollector mockCollector = mock(FeedbackCollector.class); // GH-90000
             
@@ -461,16 +461,16 @@ class LearningLoopAccuracyTest extends EventloopTestBase {
             LearningLoop.CycleReport report = runPromise(() -> loop.learnNow()); // GH-90000
 
             assertThat(report.isSkipped()).isTrue(); // GH-90000
-            assertThat(report.getSkipReason()).contains("Insufficient events [GH-90000]");
+            assertThat(report.getSkipReason()).contains("Insufficient events");
         }
 
         @Test
-        @DisplayName("handles insufficient events gracefully [GH-90000]")
+        @DisplayName("handles insufficient events gracefully")
         void handlesInsufficientEventsGracefully() { // GH-90000
             FeedbackCollector mockCollector = mock(FeedbackCollector.class); // GH-90000
             
             List<FeedbackEvent> events = List.of( // GH-90000
-                FeedbackEvent.builder().id("evt-1 [GH-90000]").referenceId("ref-1 [GH-90000]").build()
+                FeedbackEvent.builder().id("evt-1").referenceId("ref-1").build()
             );
 
             when(mockCollector.getPending(anyInt())).thenReturn(Promise.of(events)); // GH-90000
@@ -483,18 +483,18 @@ class LearningLoopAccuracyTest extends EventloopTestBase {
             LearningLoop.CycleReport report = runPromise(() -> loop.learnNow()); // GH-90000
 
             assertThat(report.isSkipped()).isTrue(); // GH-90000
-            assertThat(report.getSkipReason()).contains("Insufficient events [GH-90000]");
+            assertThat(report.getSkipReason()).contains("Insufficient events");
         }
 
         @Test
-        @DisplayName("handles null fields in feedback events [GH-90000]")
+        @DisplayName("handles null fields in feedback events")
         void handlesNullFieldsInFeedbackEvents() { // GH-90000
             FeedbackCollector mockCollector = mock(FeedbackCollector.class); // GH-90000
             
             List<FeedbackEvent> events = List.of( // GH-90000
                 FeedbackEvent.builder() // GH-90000
-                    .id("evt-1 [GH-90000]")
-                    .referenceId("ref-1 [GH-90000]")
+                    .id("evt-1")
+                    .referenceId("ref-1")
                     .feedbackType(null) // GH-90000
                     .sentiment(null) // GH-90000
                     .source(null) // GH-90000
@@ -518,19 +518,19 @@ class LearningLoopAccuracyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("handles learner failures with rollback [GH-90000]")
+        @DisplayName("handles learner failures with rollback")
         void handlesLearnerFailuresWithRollback() { // GH-90000
             FeedbackCollector mockCollector = mock(FeedbackCollector.class); // GH-90000
             
             List<FeedbackEvent> events = List.of( // GH-90000
-                FeedbackEvent.builder().id("evt-1 [GH-90000]").referenceId("ref-1 [GH-90000]").score(0.5).build()
+                FeedbackEvent.builder().id("evt-1").referenceId("ref-1").score(0.5).build()
             );
 
             when(mockCollector.getPending(anyInt())).thenReturn(Promise.of(events)); // GH-90000
             when(mockCollector.markProcessed(any())).thenReturn(Promise.of(1)); // GH-90000
 
             LearningLoop.Learner mockLearner = mock(LearningLoop.Learner.class); // GH-90000
-            when(mockLearner.getName()).thenReturn("test-learner [GH-90000]");
+            when(mockLearner.getName()).thenReturn("test-learner");
             when(mockLearner.learn(any())).thenReturn(Promise.of(false)); // Learning fails // GH-90000
             when(mockLearner.rollback(any())).thenReturn(Promise.of(true)); // Rollback succeeds // GH-90000
 

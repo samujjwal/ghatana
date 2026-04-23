@@ -17,7 +17,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * @doc.type class
  * @doc.purpose Memory plane metrics
  * @doc.layer agent-memory
- */
+  * @doc.pattern Component
+*/
 public class MemoryMetrics {
 
     private static final Logger log = LoggerFactory.getLogger(MemoryMetrics.class);

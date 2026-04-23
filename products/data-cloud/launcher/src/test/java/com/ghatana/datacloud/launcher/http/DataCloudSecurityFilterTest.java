@@ -53,7 +53,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataCloudSecurityFilter – security middleware unit tests [GH-90000]")
+@DisplayName("DataCloudSecurityFilter – security middleware unit tests")
 class DataCloudSecurityFilterTest extends EventloopTestBase {
 
     // ── Constants ─────────────────────────────────────────────────────────────
@@ -86,7 +86,7 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         auditService   = mock(AuditService.class); // GH-90000
 
         // Default: valid key → authenticated principal
-        Principal principal = new Principal("test-service", List.of("admin [GH-90000]"), TEST_TENANT);
+        Principal principal = new Principal("test-service", List.of("admin"), TEST_TENANT);
         when(apiKeyResolver.resolve(VALID_API_KEY)).thenReturn(Optional.of(principal)); // GH-90000
         when(apiKeyResolver.resolve(INVALID_API_KEY)).thenReturn(Optional.empty()); // GH-90000
 
@@ -121,31 +121,31 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
 
     private static HttpRequest get(String path) { // GH-90000
         return HttpRequest.get("http://localhost" + path) // GH-90000
-                .withHeader(HttpHeaders.of("X-API-Key [GH-90000]"), VALID_API_KEY)
-                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), TEST_TENANT)
+                .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
                 .withHeader(HttpHeaders.HOST, "localhost") // GH-90000
                 .build(); // GH-90000
     }
 
     private static HttpRequest getWithKey(String path, String apiKey) { // GH-90000
         return HttpRequest.get("http://localhost" + path) // GH-90000
-                .withHeader(HttpHeaders.of("X-API-Key [GH-90000]"), apiKey)
-                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), TEST_TENANT)
+                .withHeader(HttpHeaders.of("X-API-Key"), apiKey)
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
                 .withHeader(HttpHeaders.HOST, "localhost") // GH-90000
                 .build(); // GH-90000
     }
 
     private static HttpRequest getNoKey(String path) { // GH-90000
         return HttpRequest.get("http://localhost" + path) // GH-90000
-                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), TEST_TENANT)
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
                 .withHeader(HttpHeaders.HOST, "localhost") // GH-90000
                 .build(); // GH-90000
     }
 
     private static HttpRequest getWithRequestId(String path, String requestId) { // GH-90000
         return HttpRequest.get("http://localhost" + path) // GH-90000
-                .withHeader(HttpHeaders.of("X-API-Key [GH-90000]"), VALID_API_KEY)
-                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), TEST_TENANT)
+                .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
                 .withHeader(HttpHeaders.of(DataCloudSecurityFilter.HEADER_REQUEST_ID), requestId) // GH-90000
                 .withHeader(HttpHeaders.HOST, "localhost") // GH-90000
                 .build(); // GH-90000
@@ -156,14 +156,14 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("PUBLIC paths – bypass auth and audit [GH-90000]")
+    @DisplayName("PUBLIC paths – bypass auth and audit")
     class PublicPathTests {
 
         @Test
-        @DisplayName("GET /health returns 200 without API key [GH-90000]")
+        @DisplayName("GET /health returns 200 without API key")
         void health_returnsOkWithoutApiKey() { // GH-90000
             AsyncServlet secured = enforcing().apply(OK_DELEGATE); // GH-90000
-            HttpRequest req = HttpRequest.get("http://localhost/health [GH-90000]")
+            HttpRequest req = HttpRequest.get("http://localhost/health")
                     .withHeader(HttpHeaders.HOST, "localhost") // GH-90000
                     .build();  // NO X-API-Key // GH-90000
 
@@ -173,10 +173,10 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("GET /health does not invoke ApiKeyResolver [GH-90000]")
+        @DisplayName("GET /health does not invoke ApiKeyResolver")
         void health_doesNotInvokeApiKeyResolver() { // GH-90000
             AsyncServlet secured = enforcing().apply(OK_DELEGATE); // GH-90000
-            HttpRequest req = HttpRequest.get("http://localhost/health [GH-90000]")
+            HttpRequest req = HttpRequest.get("http://localhost/health")
                     .withHeader(HttpHeaders.HOST, "localhost") // GH-90000
                     .build(); // GH-90000
 
@@ -186,10 +186,10 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("GET /health does not emit audit [GH-90000]")
+        @DisplayName("GET /health does not emit audit")
         void health_doesNotEmitAudit() { // GH-90000
             AsyncServlet secured = enforcing().apply(OK_DELEGATE); // GH-90000
-            HttpRequest req = HttpRequest.get("http://localhost/health [GH-90000]")
+            HttpRequest req = HttpRequest.get("http://localhost/health")
                     .withHeader(HttpHeaders.HOST, "localhost") // GH-90000
                     .build(); // GH-90000
 
@@ -199,7 +199,7 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("/ready, /live, /metrics, /info are PUBLIC [GH-90000]")
+        @DisplayName("/ready, /live, /metrics, /info are PUBLIC")
         void otherPublicProbes_returnOkWithoutKey() { // GH-90000
             AsyncServlet secured = enforcing().apply(OK_DELEGATE); // GH-90000
             for (String probePath : new String[]{"/ready", "/live", "/metrics", "/info"}) { // GH-90000
@@ -217,11 +217,11 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Authentication failures – 401 [GH-90000]")
+    @DisplayName("Authentication failures – 401")
     class AuthFailureTests {
 
         @Test
-        @DisplayName("missing API key header returns 401 [GH-90000]")
+        @DisplayName("missing API key header returns 401")
         void missingApiKey_returns401() { // GH-90000
             AsyncServlet secured = enforcing().apply(OK_DELEGATE); // GH-90000
             HttpRequest req = getNoKey(INTERNAL_PATH); // GH-90000
@@ -232,7 +232,7 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("invalid API key returns 401 [GH-90000]")
+        @DisplayName("invalid API key returns 401")
         void invalidApiKey_returns401() { // GH-90000
             AsyncServlet secured = enforcing().apply(OK_DELEGATE); // GH-90000
             HttpRequest req = getWithKey(INTERNAL_PATH, INVALID_API_KEY); // GH-90000
@@ -243,7 +243,7 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("auth failure emits audit (fail-record) [GH-90000]")
+        @DisplayName("auth failure emits audit (fail-record)")
         void invalidApiKey_emitsAudit() { // GH-90000
             AsyncServlet secured = enforcing().apply(OK_DELEGATE); // GH-90000
             HttpRequest req = getWithKey(INTERNAL_PATH, INVALID_API_KEY); // GH-90000
@@ -252,11 +252,11 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
 
             ArgumentCaptor<AuditEvent> eventCaptor = ArgumentCaptor.forClass(AuditEvent.class); // GH-90000
             verify(auditService).record(eventCaptor.capture()); // GH-90000
-            assertThat(eventCaptor.getValue().getEventType()).isEqualTo("AUTH_FAILURE [GH-90000]");
+            assertThat(eventCaptor.getValue().getEventType()).isEqualTo("AUTH_FAILURE");
         }
 
         @Test
-        @DisplayName("delegate is never invoked on auth failure [GH-90000]")
+        @DisplayName("delegate is never invoked on auth failure")
         void invalidApiKey_doesNotInvokeDelegate() { // GH-90000
             int[] calls = {0};
             AsyncServlet countingDelegate = request -> {
@@ -277,11 +277,11 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Authenticated INTERNAL paths – pass-through, no audit [GH-90000]")
+    @DisplayName("Authenticated INTERNAL paths – pass-through, no audit")
     class InternalPathTests {
 
         @Test
-        @DisplayName("valid key on INTERNAL path returns delegate status [GH-90000]")
+        @DisplayName("valid key on INTERNAL path returns delegate status")
         void internalPath_validKey_passes() { // GH-90000
             AsyncServlet secured = enforcing().apply(OK_DELEGATE); // GH-90000
             HttpRequest req = get(INTERNAL_PATH); // GH-90000
@@ -292,7 +292,7 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("INTERNAL path does not invoke PolicyEngine [GH-90000]")
+        @DisplayName("INTERNAL path does not invoke PolicyEngine")
         void internalPath_doesNotInvokePolicy() { // GH-90000
             AsyncServlet secured = enforcing().apply(OK_DELEGATE); // GH-90000
             HttpRequest req = get(INTERNAL_PATH); // GH-90000
@@ -303,7 +303,7 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("INTERNAL path does not emit audit [GH-90000]")
+        @DisplayName("INTERNAL path does not emit audit")
         void internalPath_doesNotEmitAudit() { // GH-90000
             AsyncServlet secured = enforcing().apply(OK_DELEGATE); // GH-90000
             HttpRequest req = get(INTERNAL_PATH); // GH-90000
@@ -315,14 +315,14 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("RBAC route authorization [GH-90000]")
+    @DisplayName("RBAC route authorization")
     class RbacTests {
 
         @Test
-        @DisplayName("viewer can read INTERNAL route [GH-90000]")
+        @DisplayName("viewer can read INTERNAL route")
         void viewerCanReadInternalRoute() { // GH-90000
             when(apiKeyResolver.resolve(VALID_API_KEY)) // GH-90000
-                .thenReturn(Optional.of(new Principal("viewer-user", List.of("viewer [GH-90000]"), TEST_TENANT)));
+                .thenReturn(Optional.of(new Principal("viewer-user", List.of("viewer"), TEST_TENANT)));
             AsyncServlet secured = enforcing().apply(OK_DELEGATE); // GH-90000
 
             int status = runPromise(() -> secured.serve(get(INTERNAL_PATH)).map(HttpResponse::getCode)); // GH-90000
@@ -331,14 +331,14 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("viewer cannot mutate SENSITIVE route [GH-90000]")
+        @DisplayName("viewer cannot mutate SENSITIVE route")
         void viewerCannotMutateSensitiveRoute() { // GH-90000
             when(apiKeyResolver.resolve(VALID_API_KEY)) // GH-90000
-                .thenReturn(Optional.of(new Principal("viewer-user", List.of("viewer [GH-90000]"), TEST_TENANT)));
+                .thenReturn(Optional.of(new Principal("viewer-user", List.of("viewer"), TEST_TENANT)));
             AsyncServlet secured = enforcing().apply(OK_DELEGATE); // GH-90000
             HttpRequest req = HttpRequest.post("http://localhost" + SENSITIVE_PATH) // GH-90000
-                .withHeader(HttpHeaders.of("X-API-Key [GH-90000]"), VALID_API_KEY)
-                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), TEST_TENANT)
+                .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
                 .withHeader(HttpHeaders.HOST, "localhost") // GH-90000
                 .build(); // GH-90000
 
@@ -349,26 +349,26 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("auditor can read governance summary [GH-90000]")
+        @DisplayName("auditor can read governance summary")
         void auditorCanReadGovernanceSummary() { // GH-90000
             when(apiKeyResolver.resolve(VALID_API_KEY)) // GH-90000
-                .thenReturn(Optional.of(new Principal("auditor-user", List.of("auditor [GH-90000]"), TEST_TENANT)));
+                .thenReturn(Optional.of(new Principal("auditor-user", List.of("auditor"), TEST_TENANT)));
             AsyncServlet secured = enforcing().apply(OK_DELEGATE); // GH-90000
 
-            int status = runPromise(() -> secured.serve(get("/api/v1/governance/compliance/summary [GH-90000]")).map(HttpResponse::getCode));
+            int status = runPromise(() -> secured.serve(get("/api/v1/governance/compliance/summary")).map(HttpResponse::getCode));
 
             assertThat(status).isEqualTo(200); // GH-90000
         }
 
         @Test
-        @DisplayName("operator cannot execute governance mutation [GH-90000]")
+        @DisplayName("operator cannot execute governance mutation")
         void operatorCannotExecuteGovernanceMutation() { // GH-90000
             when(apiKeyResolver.resolve(VALID_API_KEY)) // GH-90000
-                .thenReturn(Optional.of(new Principal("operator-user", List.of("operator [GH-90000]"), TEST_TENANT)));
+                .thenReturn(Optional.of(new Principal("operator-user", List.of("operator"), TEST_TENANT)));
             AsyncServlet secured = enforcing().apply(OK_DELEGATE); // GH-90000
-            HttpRequest req = HttpRequest.post("http://localhost/api/v1/governance/retention/purge [GH-90000]")
-                .withHeader(HttpHeaders.of("X-API-Key [GH-90000]"), VALID_API_KEY)
-                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), TEST_TENANT)
+            HttpRequest req = HttpRequest.post("http://localhost/api/v1/governance/retention/purge")
+                .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
                 .withHeader(HttpHeaders.HOST, "localhost") // GH-90000
                 .build(); // GH-90000
 
@@ -384,16 +384,16 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Authenticated SENSITIVE paths – pass-through, audit emitted [GH-90000]")
+    @DisplayName("Authenticated SENSITIVE paths – pass-through, audit emitted")
     class SensitivePathTests {
 
         @Test
-        @DisplayName("valid key on SENSITIVE path returns 200 [GH-90000]")
+        @DisplayName("valid key on SENSITIVE path returns 200")
         void sensitivePath_validKey_passes() { // GH-90000
             AsyncServlet secured = enforcing().apply(OK_DELEGATE); // GH-90000
             HttpRequest req = HttpRequest.post("http://localhost" + SENSITIVE_PATH) // GH-90000
-                    .withHeader(HttpHeaders.of("X-API-Key [GH-90000]"), VALID_API_KEY)
-                    .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), TEST_TENANT)
+                    .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                    .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
                     .withHeader(HttpHeaders.HOST, "localhost") // GH-90000
                     .build(); // GH-90000
 
@@ -403,12 +403,12 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("SENSITIVE path emits audit on success [GH-90000]")
+        @DisplayName("SENSITIVE path emits audit on success")
         void sensitivePath_emitsAudit() { // GH-90000
             AsyncServlet secured = enforcing().apply(OK_DELEGATE); // GH-90000
             HttpRequest req = HttpRequest.post("http://localhost" + SENSITIVE_PATH) // GH-90000
-                    .withHeader(HttpHeaders.of("X-API-Key [GH-90000]"), VALID_API_KEY)
-                    .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), TEST_TENANT)
+                    .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                    .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
                     .withHeader(HttpHeaders.HOST, "localhost") // GH-90000
                     .build(); // GH-90000
 
@@ -418,12 +418,12 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("SENSITIVE path does not invoke PolicyEngine [GH-90000]")
+        @DisplayName("SENSITIVE path does not invoke PolicyEngine")
         void sensitivePath_doesNotInvokePolicy() { // GH-90000
             AsyncServlet secured = enforcing().apply(OK_DELEGATE); // GH-90000
             HttpRequest req = HttpRequest.post("http://localhost" + SENSITIVE_PATH) // GH-90000
-                    .withHeader(HttpHeaders.of("X-API-Key [GH-90000]"), VALID_API_KEY)
-                    .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), TEST_TENANT)
+                    .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                    .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
                     .withHeader(HttpHeaders.HOST, "localhost") // GH-90000
                     .build(); // GH-90000
 
@@ -438,14 +438,14 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("CRITICAL paths – policy engine consulted [GH-90000]")
+    @DisplayName("CRITICAL paths – policy engine consulted")
     class CriticalPathTests {
 
         @Test
-        @DisplayName("policy ALLOWS → returns 200 and emits audit [GH-90000]")
+        @DisplayName("policy ALLOWS → returns 200 and emits audit")
         void criticalPath_policyAllows_passes() { // GH-90000
             when(apiKeyResolver.resolve(VALID_API_KEY)) // GH-90000
-                .thenReturn(Optional.of(new Principal("admin-user", List.of("admin [GH-90000]"), TEST_TENANT)));
+                .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
             when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.TRUE)); // GH-90000
             AsyncServlet secured = enforcing().apply(OK_DELEGATE); // GH-90000
             HttpRequest req = get(CRITICAL_PATH); // GH-90000
@@ -457,10 +457,10 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("policy DENIES with enforcing=true → returns 403 with POLICY_DENY body [GH-90000]")
+        @DisplayName("policy DENIES with enforcing=true → returns 403 with POLICY_DENY body")
         void criticalPath_policyDenies_enforcing_returns403() { // GH-90000
             when(apiKeyResolver.resolve(VALID_API_KEY)) // GH-90000
-                .thenReturn(Optional.of(new Principal("admin-user", List.of("admin [GH-90000]"), TEST_TENANT)));
+                .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
             when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.FALSE)); // GH-90000
             AsyncServlet secured = enforcing().apply(OK_DELEGATE); // GH-90000
             HttpRequest req = get(CRITICAL_PATH); // GH-90000
@@ -471,10 +471,10 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("policy DENIES enforcing=true → 403 response body contains POLICY_DENY code [GH-90000]")
+        @DisplayName("policy DENIES enforcing=true → 403 response body contains POLICY_DENY code")
         void criticalPath_policyDenies_enforcing_responseBodyContainsPolicyDenyCode() { // GH-90000
             when(apiKeyResolver.resolve(VALID_API_KEY)) // GH-90000
-                .thenReturn(Optional.of(new Principal("admin-user", List.of("admin [GH-90000]"), TEST_TENANT)));
+                .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
             when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.FALSE)); // GH-90000
             AsyncServlet secured = enforcing().apply(OK_DELEGATE); // GH-90000
             HttpRequest req = get(CRITICAL_PATH); // GH-90000
@@ -483,14 +483,14 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
                     .then(r -> r.loadBody()) // GH-90000
                     .map(bodyBuf -> bodyBuf.asString(java.nio.charset.StandardCharsets.UTF_8))); // GH-90000
 
-            assertThat(body).contains("POLICY_DENY [GH-90000]");
+            assertThat(body).contains("POLICY_DENY");
         }
 
         @Test
-        @DisplayName("policy DENIES enforcing=true → audit emitted with success=false [GH-90000]")
+        @DisplayName("policy DENIES enforcing=true → audit emitted with success=false")
         void criticalPath_policyDenies_emitsFailureAudit() { // GH-90000
             when(apiKeyResolver.resolve(VALID_API_KEY)) // GH-90000
-                .thenReturn(Optional.of(new Principal("admin-user", List.of("admin [GH-90000]"), TEST_TENANT)));
+                .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
             when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.FALSE)); // GH-90000
             AsyncServlet secured = enforcing().apply(OK_DELEGATE); // GH-90000
             HttpRequest req = get(CRITICAL_PATH); // GH-90000
@@ -501,10 +501,10 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("policy DENIES with enforcing=false (audit-only) → passes through with 200 [GH-90000]")
+        @DisplayName("policy DENIES with enforcing=false (audit-only) → passes through with 200")
         void criticalPath_policyDenies_auditOnly_passes() { // GH-90000
             when(apiKeyResolver.resolve(VALID_API_KEY)) // GH-90000
-                .thenReturn(Optional.of(new Principal("admin-user", List.of("admin [GH-90000]"), TEST_TENANT)));
+                .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
             when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.FALSE)); // GH-90000
             AsyncServlet secured = auditOnly().apply(OK_DELEGATE); // GH-90000
             HttpRequest req = get(CRITICAL_PATH); // GH-90000
@@ -515,12 +515,12 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("policy engine exception → fail-closed, returns 403 in enforcing mode [GH-90000]")
+        @DisplayName("policy engine exception → fail-closed, returns 403 in enforcing mode")
         void criticalPath_policyThrows_failsClosed_returns403() { // GH-90000
             when(apiKeyResolver.resolve(VALID_API_KEY)) // GH-90000
-            .thenReturn(Optional.of(new Principal("admin-user", List.of("admin [GH-90000]"), TEST_TENANT)));
+            .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
             when(policyEngine.evaluate(anyString(), any())) // GH-90000
-                    .thenReturn(Promise.ofException(new RuntimeException("Policy service unavailable [GH-90000]")));
+                    .thenReturn(Promise.ofException(new RuntimeException("Policy service unavailable")));
             AsyncServlet secured = enforcing().apply(OK_DELEGATE); // GH-90000
             HttpRequest req = get(CRITICAL_PATH); // GH-90000
 
@@ -530,12 +530,12 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("policy engine exception in audit-only mode → passes through [GH-90000]")
+        @DisplayName("policy engine exception in audit-only mode → passes through")
         void criticalPath_policyThrows_auditOnly_passes() { // GH-90000
             when(apiKeyResolver.resolve(VALID_API_KEY)) // GH-90000
-            .thenReturn(Optional.of(new Principal("admin-user", List.of("admin [GH-90000]"), TEST_TENANT)));
+            .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
             when(policyEngine.evaluate(anyString(), any())) // GH-90000
-                    .thenReturn(Promise.ofException(new RuntimeException("Policy service unavailable [GH-90000]")));
+                    .thenReturn(Promise.ofException(new RuntimeException("Policy service unavailable")));
             AsyncServlet secured = auditOnly().apply(OK_DELEGATE); // GH-90000
             HttpRequest req = get(CRITICAL_PATH); // GH-90000
 
@@ -545,10 +545,10 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("CRITICAL path policy evaluation uses datacloud.sensitive-route-access policy name [GH-90000]")
+        @DisplayName("CRITICAL path policy evaluation uses datacloud.sensitive-route-access policy name")
         void criticalPath_evaluatesCorrectPolicyName() { // GH-90000
             when(apiKeyResolver.resolve(VALID_API_KEY)) // GH-90000
-                .thenReturn(Optional.of(new Principal("admin-user", List.of("admin [GH-90000]"), TEST_TENANT)));
+                .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
             when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.TRUE)); // GH-90000
             AsyncServlet secured = enforcing().apply(OK_DELEGATE); // GH-90000
             HttpRequest req = get(CRITICAL_PATH); // GH-90000
@@ -556,32 +556,32 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
             runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); // GH-90000
 
             verify(policyEngine).evaluate( // GH-90000
-                    Mockito.eq("datacloud.sensitive-route-access [GH-90000]"), any());
+                    Mockito.eq("datacloud.sensitive-route-access"), any());
         }
 
             @Test
-            @DisplayName("CRITICAL path policy evaluation uses authenticated tenant context [GH-90000]")
+            @DisplayName("CRITICAL path policy evaluation uses authenticated tenant context")
             void criticalPath_policyContextUsesAuthenticatedTenant() { // GH-90000
                 when(apiKeyResolver.resolve(VALID_API_KEY)) // GH-90000
-                    .thenReturn(Optional.of(new Principal("admin-user", List.of("admin [GH-90000]"), TEST_TENANT)));
+                    .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
                 when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.TRUE)); // GH-90000
                 AsyncServlet secured = enforcing().apply(OK_DELEGATE); // GH-90000
                 HttpRequest req = get(CRITICAL_PATH); // GH-90000
 
                 runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); // GH-90000
 
-                @SuppressWarnings("unchecked [GH-90000]")
+                @SuppressWarnings("unchecked")
                 ArgumentCaptor<Map<String, Object>> contextCaptor = ArgumentCaptor.forClass(Map.class); // GH-90000
                 verify(policyEngine).evaluate( // GH-90000
-                    Mockito.eq("datacloud.sensitive-route-access [GH-90000]"), contextCaptor.capture());
+                    Mockito.eq("datacloud.sensitive-route-access"), contextCaptor.capture());
                 assertThat(contextCaptor.getValue()).containsEntry("tenantId", TEST_TENANT); // GH-90000
             }
 
         @Test
-        @DisplayName("policyExcludedTenants bypasses policy engine for matching tenant [GH-90000]")
+        @DisplayName("policyExcludedTenants bypasses policy engine for matching tenant")
         void criticalPath_excludedTenant_bypassesPolicy() { // GH-90000
             when(apiKeyResolver.resolve(VALID_API_KEY)) // GH-90000
-                .thenReturn(Optional.of(new Principal("admin-user", List.of("admin [GH-90000]"), TEST_TENANT)));
+                .thenReturn(Optional.of(new Principal("admin-user", List.of("admin"), TEST_TENANT)));
             DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder() // GH-90000
                     .apiKeyResolver(apiKeyResolver) // GH-90000
                     .policyEngine(policyEngine) // GH-90000
@@ -607,11 +607,11 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Request-ID propagation [GH-90000]")
+    @DisplayName("Request-ID propagation")
     class RequestIdTests {
 
         @Test
-        @DisplayName("missing X-Request-ID header does not block request [GH-90000]")
+        @DisplayName("missing X-Request-ID header does not block request")
         void missingRequestId_doesNotBlockRequest() { // GH-90000
             AsyncServlet secured = enforcing().apply(OK_DELEGATE); // GH-90000
             // req has no X-Request-ID header
@@ -624,7 +624,7 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("present X-Request-ID is respected (no NPE, no override) [GH-90000]")
+        @DisplayName("present X-Request-ID is respected (no NPE, no override)")
         void presentRequestId_doesNotFailRequest() { // GH-90000
             AsyncServlet secured = enforcing().apply(OK_DELEGATE); // GH-90000
             HttpRequest req = getWithRequestId(INTERNAL_PATH, "trace-abc-123"); // GH-90000
@@ -640,11 +640,11 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Null collaborators – graceful operation [GH-90000]")
+    @DisplayName("Null collaborators – graceful operation")
     class NullCollaboratorTests {
 
         @Test
-        @DisplayName("null PolicyEngine skips policy check on CRITICAL path [GH-90000]")
+        @DisplayName("null PolicyEngine skips policy check on CRITICAL path")
         void nullPolicyEngine_criticalPath_passesThrough() { // GH-90000
             DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder() // GH-90000
                     .apiKeyResolver(apiKeyResolver) // GH-90000
@@ -661,7 +661,7 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("null AuditService means no audit emission (no NPE) [GH-90000]")
+        @DisplayName("null AuditService means no audit emission (no NPE)")
         void nullAuditService_sensitivePath_noNPE() { // GH-90000
             DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder() // GH-90000
                     .apiKeyResolver(apiKeyResolver) // GH-90000
@@ -671,8 +671,8 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
                     .build(); // GH-90000
             AsyncServlet secured = filter.apply(OK_DELEGATE); // GH-90000
             HttpRequest req = HttpRequest.post("http://localhost" + SENSITIVE_PATH) // GH-90000
-                    .withHeader(HttpHeaders.of("X-API-Key [GH-90000]"), VALID_API_KEY)
-                    .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), TEST_TENANT)
+                    .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                    .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
                     .withHeader(HttpHeaders.HOST, "localhost") // GH-90000
                     .build(); // GH-90000
 
@@ -683,14 +683,14 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("audit service throwing does not propagate to caller [GH-90000]")
+        @DisplayName("audit service throwing does not propagate to caller")
         void auditServiceThrows_doesNotPropagateToResponse() { // GH-90000
             when(auditService.record(any(AuditEvent.class))) // GH-90000
-                    .thenReturn(Promise.ofException(new RuntimeException("Audit store down [GH-90000]")));
+                    .thenReturn(Promise.ofException(new RuntimeException("Audit store down")));
             AsyncServlet secured = enforcing().apply(OK_DELEGATE); // GH-90000
             HttpRequest req = HttpRequest.post("http://localhost" + SENSITIVE_PATH) // GH-90000
-                    .withHeader(HttpHeaders.of("X-API-Key [GH-90000]"), VALID_API_KEY)
-                    .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), TEST_TENANT)
+                    .withHeader(HttpHeaders.of("X-API-Key"), VALID_API_KEY)
+                    .withHeader(HttpHeaders.of("X-Tenant-ID"), TEST_TENANT)
                     .withHeader(HttpHeaders.HOST, "localhost") // GH-90000
                     .build(); // GH-90000
 
@@ -706,11 +706,11 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Builder validation [GH-90000]")
+    @DisplayName("Builder validation")
     class BuilderTests {
 
         @Test
-        @DisplayName("null apiKeyResolver throws NullPointerException at build time [GH-90000]")
+        @DisplayName("null apiKeyResolver throws NullPointerException at build time")
         void nullApiKeyResolver_throwsNPE() { // GH-90000
             org.assertj.core.api.Assertions.assertThatThrownBy(() -> // GH-90000
                 DataCloudSecurityFilter.builder() // GH-90000
@@ -720,7 +720,7 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("default enforcing=true when not set [GH-90000]")
+        @DisplayName("default enforcing=true when not set")
         void defaultEnforcing_isTrue() { // GH-90000
             // Verify that policy denial blocks when enforcing not explicitly set
             when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.FALSE)); // GH-90000
@@ -737,7 +737,7 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("policyExcludedTenants defaults to empty set [GH-90000]")
+        @DisplayName("policyExcludedTenants defaults to empty set")
         void defaultExcludedTenants_isEmpty() { // GH-90000
             // With no excluded tenants override and policy denying, should get 403
             when(policyEngine.evaluate(anyString(), any())).thenReturn(Promise.of(Boolean.FALSE)); // GH-90000

@@ -46,7 +46,7 @@ class PythonLanguageServiceTest extends AbstractLanguageTest {
                 = new PolyfixProjectContext( // GH-90000
                         tempDir, // root
                         new PolyfixConfig( // GH-90000
-                                List.of("python [GH-90000]"),
+                                List.of("python"),
                                 projectContext.config().schemaPaths(), // GH-90000
                                 projectContext.config().budgets(), // GH-90000
                                 projectContext.config().policies(), // GH-90000
@@ -64,20 +64,20 @@ class PythonLanguageServiceTest extends AbstractLanguageTest {
 
     @Test
     void testSupportsPythonFile() { // GH-90000
-        assertTrue(pythonService.supports(Path.of("test.py [GH-90000]")));
-        assertTrue(pythonService.supports(Path.of("src/main/python/module.py [GH-90000]")));
-        assertTrue(pythonService.supports(Path.of("script.pyi [GH-90000]")));
-        assertTrue(pythonService.supports(Path.of("gui.pyw [GH-90000]")));
+        assertTrue(pythonService.supports(Path.of("test.py")));
+        assertTrue(pythonService.supports(Path.of("src/main/python/module.py")));
+        assertTrue(pythonService.supports(Path.of("script.pyi")));
+        assertTrue(pythonService.supports(Path.of("gui.pyw")));
     }
 
     @Test
     void testDoesNotSupportNonPythonFiles() { // GH-90000
-        assertFalse(pythonService.supports(Path.of("test.java [GH-90000]")), "Should not support Java files");
+        assertFalse(pythonService.supports(Path.of("test.java")), "Should not support Java files");
         assertFalse( // GH-90000
-                pythonService.supports(Path.of("requirements.txt [GH-90000]")),
+                pythonService.supports(Path.of("requirements.txt")),
                 "Should not support requirements.txt");
         assertTrue( // GH-90000
-                pythonService.supports(Path.of("setup.py [GH-90000]")),
+                pythonService.supports(Path.of("setup.py")),
                 "Should support setup.py as it's a Python file");
     }
 
@@ -92,7 +92,7 @@ class PythonLanguageServiceTest extends AbstractLanguageTest {
     @Test
     void testDiagnoseValidPythonFile(@TempDir Path tempDir) throws Exception { // GH-90000
         // Create a simple valid Python file
-        Path pythonFile = tempDir.resolve("test.py [GH-90000]");
+        Path pythonFile = tempDir.resolve("test.py");
         Files.writeString( // GH-90000
                 pythonFile,
                 """

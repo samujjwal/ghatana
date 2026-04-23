@@ -7,7 +7,11 @@ import java.util.Objects;
  * Represents a cursor for paginated event queries.
  * The cursor contains the position in the result set and can be serialized
  * to a string for use in API responses and subsequent requests.
- */
+  * @doc.type class
+ * @doc.purpose Provides cursor functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 public class Cursor implements Serializable {
     private static final long serialVersionUID = 1L;
 

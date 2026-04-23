@@ -20,7 +20,8 @@ import org.slf4j.LoggerFactory;
  * @doc.type class
  * @doc.purpose Safety validation gate
  * @doc.layer agent-learning
- */
+  * @doc.pattern Component
+*/
 public class SafetyEvaluationGate implements EvaluationGate {
 
     private static final Logger log = LoggerFactory.getLogger(SafetyEvaluationGate.class);

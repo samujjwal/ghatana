@@ -18,11 +18,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test analytics performance, throughput, and resource usage.
  */
-@DisplayName("Analytics Performance Tests [GH-90000]")
+@DisplayName("Analytics Performance Tests")
 class AnalyticsPerformanceTest {
 
     @Test
-    @DisplayName("Should handle high throughput [GH-90000]")
+    @DisplayName("Should handle high throughput")
     void shouldHandleHighThroughput() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 
@@ -30,7 +30,7 @@ class AnalyticsPerformanceTest {
     }
 
     @Test
-    @DisplayName("Should measure processing latency [GH-90000]")
+    @DisplayName("Should measure processing latency")
     void shouldMeasureProcessingLatency() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 
@@ -38,7 +38,7 @@ class AnalyticsPerformanceTest {
     }
 
     @Test
-    @DisplayName("Should monitor resource usage [GH-90000]")
+    @DisplayName("Should monitor resource usage")
     void shouldMonitorResourceUsage() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 
@@ -46,7 +46,7 @@ class AnalyticsPerformanceTest {
     }
 
     @Test
-    @DisplayName("Should handle concurrent queries [GH-90000]")
+    @DisplayName("Should handle concurrent queries")
     void shouldHandleConcurrentQueries() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 
@@ -54,7 +54,7 @@ class AnalyticsPerformanceTest {
     }
 
     @Test
-    @DisplayName("Should optimize query performance [GH-90000]")
+    @DisplayName("Should optimize query performance")
     void shouldOptimizeQueryPerformance() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 
@@ -62,7 +62,7 @@ class AnalyticsPerformanceTest {
     }
 
     @Test
-    @DisplayName("Should handle performance degradation [GH-90000]")
+    @DisplayName("Should handle performance degradation")
     void shouldHandlePerformanceDegradation() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 

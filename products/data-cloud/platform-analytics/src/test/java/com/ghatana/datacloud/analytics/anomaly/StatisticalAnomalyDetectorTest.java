@@ -45,7 +45,7 @@ import static org.mockito.Mockito.*;
  * mocked with Mockito so no database is required.
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("StatisticalAnomalyDetector Tests [GH-90000]")
+@DisplayName("StatisticalAnomalyDetector Tests")
 class StatisticalAnomalyDetectorTest extends EventloopTestBase {
 
     private static final String TENANT     = "tenant-1";
@@ -72,20 +72,20 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Constructor validation [GH-90000]")
+    @DisplayName("Constructor validation")
     class ConstructorTests {
 
         @Test
-        @DisplayName("null repository throws NullPointerException [GH-90000]")
+        @DisplayName("null repository throws NullPointerException")
         void nullRepositoryFails() { // GH-90000
             assertThatThrownBy(() -> // GH-90000
                     new StatisticalAnomalyDetector(null, meterRegistry)) // GH-90000
                     .isInstanceOf(NullPointerException.class) // GH-90000
-                    .hasMessageContaining("entityRepository [GH-90000]");
+                    .hasMessageContaining("entityRepository");
         }
 
         @Test
-        @DisplayName("null meterRegistry does not throw (metrics disabled) [GH-90000]")
+        @DisplayName("null meterRegistry does not throw (metrics disabled)")
         void publicConstructorWithNullMeterRegistryFails() { // GH-90000
             // null registry should throw because Counter.builder requires a non-null registry
             assertThatThrownBy(() -> // GH-90000
@@ -94,16 +94,16 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("null executor throws NullPointerException [GH-90000]")
+        @DisplayName("null executor throws NullPointerException")
         void nullExecutorFails() { // GH-90000
             assertThatThrownBy(() -> // GH-90000
                     new StatisticalAnomalyDetector(repository, meterRegistry, 3.0, null)) // GH-90000
                     .isInstanceOf(NullPointerException.class) // GH-90000
-                    .hasMessageContaining("executor [GH-90000]");
+                    .hasMessageContaining("executor");
         }
 
         @Test
-        @DisplayName("getSupportedDetectionTypes returns DATA_QUALITY and BEHAVIORAL [GH-90000]")
+        @DisplayName("getSupportedDetectionTypes returns DATA_QUALITY and BEHAVIORAL")
         void supportedTypesAreReturned() { // GH-90000
             List<DetectionType> types = runPromise(() -> detector.getSupportedDetectionTypes()); // GH-90000
             assertThat(types).containsExactlyInAnyOrder(DetectionType.DATA_QUALITY, DetectionType.BEHAVIORAL); // GH-90000
@@ -115,11 +115,11 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("detect() — without baseline [GH-90000]")
+    @DisplayName("detect() — without baseline")
     class DetectWithoutBaselineTests {
 
         @Test
-        @DisplayName("returns empty list when collection is empty [GH-90000]")
+        @DisplayName("returns empty list when collection is empty")
         void emptyCollectionReturnsNoAnomalies() { // GH-90000
                     when(repository.findAll(eq(TENANT), eq(COLLECTION), org.mockito.ArgumentMatchers.<Map<String, Object>>any(), anyString(), anyInt(), anyInt())) // GH-90000
                     .thenReturn(Promise.of(Collections.emptyList())); // GH-90000
@@ -130,7 +130,7 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("returns empty list when no baseline has been computed [GH-90000]")
+        @DisplayName("returns empty list when no baseline has been computed")
         void noBaselineYieldsNoAnomalies() { // GH-90000
             List<Entity> entities = List.of( // GH-90000
                     entityWithData(Map.of("value", 999.0)), // extreme outlier // GH-90000
@@ -146,7 +146,7 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("null data map in entity is silently skipped [GH-90000]")
+        @DisplayName("null data map in entity is silently skipped")
         void nullDataFieldSkipped() { // GH-90000
             Entity entityWithNoData = new Entity(); // GH-90000
             entityWithNoData.setId(UUID.randomUUID()); // GH-90000
@@ -160,12 +160,12 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("detect() null context throws NullPointerException [GH-90000]")
+        @DisplayName("detect() null context throws NullPointerException")
         void nullContextThrows() { // GH-90000
             assertThatThrownBy(() -> // GH-90000
                     runPromise(() -> detector.detect(null))) // GH-90000
                     .isInstanceOf(NullPointerException.class) // GH-90000
-                    .hasMessageContaining("context [GH-90000]");
+                    .hasMessageContaining("context");
         }
     }
 
@@ -174,11 +174,11 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Z-score detection [GH-90000]")
+    @DisplayName("Z-score detection")
     class ZScoreDetectionTests {
 
         @Test
-        @DisplayName("values within 3σ are not flagged [GH-90000]")
+        @DisplayName("values within 3σ are not flagged")
         void normalValuesProduceNoAnomalies() { // GH-90000
             // 10 entities with value={1..10}: mean=5.5, stdDev≈2.87
             List<Entity> trainingEntities = numericalEntities("value", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10); // GH-90000
@@ -192,7 +192,7 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("value 6σ above mean is detected as CRITICAL Z-score anomaly [GH-90000]")
+        @DisplayName("value 6σ above mean is detected as CRITICAL Z-score anomaly")
         void extremeOutlierIsDetected() { // GH-90000
             // Tight cluster at 100 ± small noise, then a massive outlier at 700
             List<Entity> trainingData = numericalEntities("temperature", // GH-90000
@@ -207,14 +207,14 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
             assertThat(anomalies).hasSize(1); // GH-90000
             Anomaly a = anomalies.get(0); // GH-90000
             assertThat(a.getSeverity()).isEqualTo(Severity.CRITICAL); // GH-90000
-            assertThat(a.getDetectionMethod()).isEqualTo("Z-Score [GH-90000]");
+            assertThat(a.getDetectionMethod()).isEqualTo("Z-Score");
             assertThat(a.getAffectedEntity()).isNotBlank(); // GH-90000
             assertThat(a.getAnomalyId()).isNotBlank(); // GH-90000
             assertThat(a.getType()).isEqualTo(DetectionType.DATA_QUALITY); // GH-90000
         }
 
         @Test
-        @DisplayName("custom threshold from context is respected [GH-90000]")
+        @DisplayName("custom threshold from context is respected")
         void customThresholdIsRespected() { // GH-90000
             // Cluster at mean=50, stdDev≈0.6 — a value at 52 is ~3.3σ away
             List<Entity> training = numericalEntities("metric", 50, 50, 51, 49, 50, 50, 51, 49, 50, 50); // GH-90000
@@ -238,7 +238,7 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("anomaly confidence increases with Z-score magnitude [GH-90000]")
+        @DisplayName("anomaly confidence increases with Z-score magnitude")
         void confidenceIncreasesWithZScore() { // GH-90000
             // Large enough outlier to produce a high confidence
             List<Entity> training = numericalEntities("v", 10, 10, 10, 10, 10, 10, 10, 10, 10, 10); // GH-90000
@@ -253,7 +253,7 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("non-numeric fields are silently skipped [GH-90000]")
+        @DisplayName("non-numeric fields are silently skipped")
         void nonNumericFieldsSkipped() { // GH-90000
             List<Entity> training = numericalEntities("amount", 10, 20, 30, 40, 50, 60, 70, 80, 90, 100); // GH-90000
             List<Entity> detection = List.of(entityWithData(Map.of("status", "ERROR"))); // GH-90000
@@ -271,11 +271,11 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("IQR-Fence detection [GH-90000]")
+    @DisplayName("IQR-Fence detection")
     class IqrDetectionTests {
 
         @Test
-        @DisplayName("IQR outlier below lower fence is detected [GH-90000]")
+        @DisplayName("IQR outlier below lower fence is detected")
         void belowLowerFenceIsDetected() { // GH-90000
             // skewed distribution: most values around 100, IQR will produce a tight fence
             List<Entity> training = numericalEntities("score", 100, 100, 100, 101, 100, 100, 100, 99, 100, 101); // GH-90000
@@ -291,7 +291,7 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("IQR anomaly has detectionMethod IQR-Fence or Z-Score [GH-90000]")
+        @DisplayName("IQR anomaly has detectionMethod IQR-Fence or Z-Score")
         void iqrAnomalyHasCorrectMethod() { // GH-90000
             List<Entity> training = numericalEntities("x", 1, 2, 2, 3, 3, 3, 4, 4, 5, 5); // GH-90000
             Entity outlier = entityWithData(Map.of("x", 50.0)); // GH-90000
@@ -305,7 +305,7 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("value inside Tukey fence produces no IQR anomaly [GH-90000]")
+        @DisplayName("value inside Tukey fence produces no IQR anomaly")
         void valueInsideFenceIsNotAnomaly() { // GH-90000
             List<Entity> training = numericalEntities("y", 10, 12, 11, 10, 13, 12, 11, 10, 12, 11); // GH-90000
             Entity normal = entityWithData(Map.of("y", 11.0)); // GH-90000
@@ -323,20 +323,20 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Baseline management [GH-90000]")
+    @DisplayName("Baseline management")
     class BaselineTests {
 
         @Test
-        @DisplayName("getBaseline before update returns failed Promise [GH-90000]")
+        @DisplayName("getBaseline before update returns failed Promise")
         void getBaselineBeforeUpdateFails() { // GH-90000
             assertThatThrownBy(() -> // GH-90000
                     runPromise(() -> detector.getBaseline(TENANT, COLLECTION, "someField"))) // GH-90000
                     .isInstanceOf(IllegalStateException.class) // GH-90000
-                    .hasMessageContaining("No baseline found [GH-90000]");
+                    .hasMessageContaining("No baseline found");
         }
 
         @Test
-        @DisplayName("updateBaseline stores descriptive stats for numeric fields [GH-90000]")
+        @DisplayName("updateBaseline stores descriptive stats for numeric fields")
         void updateBaselineStoresStats() { // GH-90000
             List<Entity> training = numericalEntities("price", 10, 20, 30, 40, 50, 60, 70, 80, 90, 100); // GH-90000
                     when(repository.findAll(eq(TENANT), eq(COLLECTION), org.mockito.ArgumentMatchers.<Map<String, Object>>any(), anyString(), anyInt(), anyInt())) // GH-90000
@@ -354,7 +354,7 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("updateBaseline skips fields with fewer than MIN_SAMPLE_COUNT values [GH-90000]")
+        @DisplayName("updateBaseline skips fields with fewer than MIN_SAMPLE_COUNT values")
         void insufficientSamplesAreSkipped() { // GH-90000
             // Only 3 entities — less than MIN_SAMPLE_COUNT (5) // GH-90000
             List<Entity> sparse = numericalEntities("rare", 1, 2, 3); // GH-90000
@@ -369,7 +369,7 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("second updateBaseline replaces the previous baseline [GH-90000]")
+        @DisplayName("second updateBaseline replaces the previous baseline")
         void updateBaselineReplaces() { // GH-90000
             List<Entity> round1 = numericalEntities("metric", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10); // GH-90000
             List<Entity> round2 = numericalEntities("metric", 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000); // GH-90000
@@ -388,7 +388,7 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("p25 < median < p75 for normally distributed data [GH-90000]")
+        @DisplayName("p25 < median < p75 for normally distributed data")
         void percentileOrderIsCorrect() { // GH-90000
             List<Entity> training = numericalEntities("v", 10, 20, 30, 40, 50, 60, 70, 80, 90, 100); // GH-90000
                     when(repository.findAll(eq(TENANT), eq(COLLECTION), org.mockito.ArgumentMatchers.<Map<String, Object>>any(), anyString(), anyInt(), anyInt())) // GH-90000
@@ -407,7 +407,7 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Severity classification [GH-90000]")
+    @DisplayName("Severity classification")
     class SeverityClassificationTests {
 
         @ParameterizedTest(name = "|z|={0} → expected severity={1}") // GH-90000
@@ -417,7 +417,7 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
                 "3.1, MEDIUM",
                 "2.0, LOW"
         })
-        @DisplayName("zToSeverity maps Z-score magnitude to correct severity [GH-90000]")
+        @DisplayName("zToSeverity maps Z-score magnitude to correct severity")
         void zScoreSeverityMapping(double absZ, String expectedSeverity) { // GH-90000
             Severity mapped = StatisticalAnomalyDetector.zToSeverity(absZ); // GH-90000
             assertThat(mapped).isEqualTo(Severity.valueOf(expectedSeverity)); // GH-90000
@@ -430,14 +430,14 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
                 "0.6, MEDIUM",
                 "0.3, LOW"
         })
-        @DisplayName("deviationToSeverity maps IQR deviation to correct severity [GH-90000]")
+        @DisplayName("deviationToSeverity maps IQR deviation to correct severity")
         void iqrDeviationSeverityMapping(double deviation, String expectedSeverity) { // GH-90000
             Severity mapped = StatisticalAnomalyDetector.deviationToSeverity(deviation); // GH-90000
             assertThat(mapped).isEqualTo(Severity.valueOf(expectedSeverity)); // GH-90000
         }
 
         @Test
-        @DisplayName("CRITICAL anomaly is counted in both the total and critical metric [GH-90000]")
+        @DisplayName("CRITICAL anomaly is counted in both the total and critical metric")
         void criticalAnomalyIsCountedByMetrics() { // GH-90000
             // Use varied training data so stdDev > 0 and Z-score detection fires
             List<Entity> training = numericalEntities("val", 10, 12, 11, 13, 10, 12, 11, 13, 12, 11); // GH-90000
@@ -457,11 +457,11 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Anomaly record completeness [GH-90000]")
+    @DisplayName("Anomaly record completeness")
     class AnomalyRecordTests {
 
         @Test
-        @DisplayName("Z-score anomaly has all required fields populated [GH-90000]")
+        @DisplayName("Z-score anomaly has all required fields populated")
         void zScoreAnomalyFields() { // GH-90000
             // Use varied training data so stdDev > 0 and Z-score detection fires
             List<Entity> training = numericalEntities("temp", 10, 12, 11, 13, 10, 12, 11, 13, 12, 11); // GH-90000
@@ -475,20 +475,20 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
 
             Anomaly a = anomalies.get(0); // GH-90000
             assertThat(a.getAnomalyId()).isNotBlank(); // GH-90000
-            assertThat(a.getTitle()).contains("temp [GH-90000]");
+            assertThat(a.getTitle()).contains("temp");
             assertThat(a.getDescription()).isNotBlank(); // GH-90000
-            assertThat(a.getDetectionMethod()).isEqualTo("Z-Score [GH-90000]");
+            assertThat(a.getDetectionMethod()).isEqualTo("Z-Score");
             assertThat(a.getObservedValue()).isEqualTo(5_000.0); // GH-90000
             assertThat((Double) a.getExpectedValue()).isBetween(10.0, 14.0); // mean of training cluster // GH-90000
             assertThat(a.getDeviation()).isGreaterThan(0.0); // GH-90000
             assertThat(a.getOccurrenceTime()).isNotNull(); // GH-90000
             assertThat(a.getDetectedAt()).isNotNull(); // GH-90000
             assertThat(a.getSuggestedActions()).isNotEmpty(); // GH-90000
-            assertThat(a.getEvidence()).containsKey("field [GH-90000]");
+            assertThat(a.getEvidence()).containsKey("field");
         }
 
         @Test
-        @DisplayName("anomaly uses entity id as affectedEntity when id is present [GH-90000]")
+        @DisplayName("anomaly uses entity id as affectedEntity when id is present")
         void anomalyAffectedEntityIsEntityId() { // GH-90000
             List<Entity> training = numericalEntities("n", 10, 12, 11, 13, 10, 12, 11, 13, 12, 11); // GH-90000
             UUID entityId = UUID.randomUUID(); // GH-90000
@@ -503,7 +503,7 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("detectionType from context is stamped on anomaly [GH-90000]")
+        @DisplayName("detectionType from context is stamped on anomaly")
         void detectionTypeFromContextIsUsed() { // GH-90000
             List<Entity> training = numericalEntities("x", 10, 12, 11, 13, 10, 12, 11, 13, 12, 11); // GH-90000
             Entity outlier = entityWithData(Map.of("x", 10_000.0)); // GH-90000
@@ -528,17 +528,17 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("percentile() helper [GH-90000]")
+    @DisplayName("percentile() helper")
     class PercentileHelperTests {
 
         @Test
-        @DisplayName("empty list returns 0.0 [GH-90000]")
+        @DisplayName("empty list returns 0.0")
         void emptyListReturnsZero() { // GH-90000
             assertThat(percentile(List.of(), 50)).isEqualTo(0.0); // GH-90000
         }
 
         @Test
-        @DisplayName("single element returns that element for any percentile [GH-90000]")
+        @DisplayName("single element returns that element for any percentile")
         void singleElementReturnedForAnyP() { // GH-90000
             assertThat(percentile(List.of(42.0), 0)).isEqualTo(42.0); // GH-90000
             assertThat(percentile(List.of(42.0), 50)).isEqualTo(42.0); // GH-90000
@@ -546,7 +546,7 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("p0 = minimum, p100 = maximum for sorted list [GH-90000]")
+        @DisplayName("p0 = minimum, p100 = maximum for sorted list")
         void p0isMinimuumP100isMaximum() { // GH-90000
             List<Double> sorted = List.of(1.0, 2.0, 3.0, 4.0, 5.0); // GH-90000
             assertThat(percentile(sorted, 0)).isEqualTo(1.0); // GH-90000
@@ -554,7 +554,7 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("p50 of [1,2,3,4,5] is 3.0 [GH-90000]")
+        @DisplayName("p50 of [1,2,3,4,5] is 3.0")
         void medianOfFiveElements() { // GH-90000
             List<Double> sorted = List.of(1.0, 2.0, 3.0, 4.0, 5.0); // GH-90000
             assertThat(percentile(sorted, 50)).isEqualTo(3.0); // GH-90000
@@ -566,11 +566,11 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Metrics counters [GH-90000]")
+    @DisplayName("Metrics counters")
     class MetricsTests {
 
         @Test
-        @DisplayName("baseline_updates counter increments on each updateBaseline call [GH-90000]")
+        @DisplayName("baseline_updates counter increments on each updateBaseline call")
         void baselineUpdateCounterIncrements() { // GH-90000
                     when(repository.findAll(eq(TENANT), eq(COLLECTION), org.mockito.ArgumentMatchers.<Map<String, Object>>any(), anyString(), anyInt(), anyInt())) // GH-90000
                     .thenReturn(Promise.of(Collections.emptyList())); // GH-90000
@@ -578,12 +578,12 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
             runPromise(() -> detector.updateBaseline(TENANT, COLLECTION)); // GH-90000
             runPromise(() -> detector.updateBaseline(TENANT, COLLECTION)); // GH-90000
 
-            double count = meterRegistry.counter("data_cloud.anomaly.baseline_updates [GH-90000]").count();
+            double count = meterRegistry.counter("data_cloud.anomaly.baseline_updates").count();
             assertThat(count).isEqualTo(2.0); // GH-90000
         }
 
         @Test
-        @DisplayName("detected counter is zero when no anomalies found [GH-90000]")
+        @DisplayName("detected counter is zero when no anomalies found")
         void noAnomaliesNoCounterIncrement() { // GH-90000
                     when(repository.findAll(eq(TENANT), eq(COLLECTION), org.mockito.ArgumentMatchers.<Map<String, Object>>any(), anyString(), anyInt(), anyInt())) // GH-90000
                     .thenReturn(Promise.of(Collections.emptyList())); // GH-90000
@@ -600,11 +600,11 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("baselineKey() uniqueness [GH-90000]")
+    @DisplayName("baselineKey() uniqueness")
     class BaselineKeyTests {
 
         @Test
-        @DisplayName("different tenants produce different keys for same field [GH-90000]")
+        @DisplayName("different tenants produce different keys for same field")
         void differentTenantsHaveDifferentKeys() { // GH-90000
             String k1 = StatisticalAnomalyDetector.baselineKey("tenant-A", "col", "field"); // GH-90000
             String k2 = StatisticalAnomalyDetector.baselineKey("tenant-B", "col", "field"); // GH-90000
@@ -612,7 +612,7 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("different collections produce different keys [GH-90000]")
+        @DisplayName("different collections produce different keys")
         void differentCollectionsHaveDifferentKeys() { // GH-90000
             String k1 = StatisticalAnomalyDetector.baselineKey("t", "col-1", "field"); // GH-90000
             String k2 = StatisticalAnomalyDetector.baselineKey("t", "col-2", "field"); // GH-90000
@@ -620,7 +620,7 @@ class StatisticalAnomalyDetectorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("different fields produce different keys [GH-90000]")
+        @DisplayName("different fields produce different keys")
         void differentFieldsHaveDifferentKeys() { // GH-90000
             String k1 = StatisticalAnomalyDetector.baselineKey("t", "col", "field-1"); // GH-90000
             String k2 = StatisticalAnomalyDetector.baselineKey("t", "col", "field-2"); // GH-90000

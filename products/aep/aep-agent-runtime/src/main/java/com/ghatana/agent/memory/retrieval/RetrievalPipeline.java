@@ -11,7 +11,8 @@ import org.jetbrains.annotations.NotNull;
  * @doc.type interface
  * @doc.purpose Memory retrieval pipeline SPI
  * @doc.layer agent-memory
- */
+  * @doc.pattern Interface
+*/
 public interface RetrievalPipeline {
 
     /**

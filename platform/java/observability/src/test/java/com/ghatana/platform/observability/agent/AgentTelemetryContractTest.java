@@ -24,27 +24,27 @@ import static org.assertj.core.api.Assertions.*;
  * <p>Validates that all constants are non-null, non-empty, unique, and that
  * no raw sensitive content (prompts, payloads) is defined as an attribute key. // GH-90000
  */
-@DisplayName("AgentTelemetryContract [GH-90000]")
+@DisplayName("AgentTelemetryContract")
 class AgentTelemetryContractTest {
 
     @Test
-    @DisplayName("VERSION is non-null and non-empty [GH-90000]")
+    @DisplayName("VERSION is non-null and non-empty")
     void versionIsNonEmpty() { // GH-90000
         assertThat(AgentTelemetryContract.VERSION).isNotBlank(); // GH-90000
     }
 
     @Test
-    @DisplayName("SPAN_PREFIX is non-null and non-empty [GH-90000]")
+    @DisplayName("SPAN_PREFIX is non-null and non-empty")
     void spanPrefixIsNonEmpty() { // GH-90000
         assertThat(AgentTelemetryContract.SPAN_PREFIX).isNotBlank(); // GH-90000
     }
 
     @Test
-    @DisplayName("all span name constants start with SPAN_PREFIX [GH-90000]")
+    @DisplayName("all span name constants start with SPAN_PREFIX")
     void allSpanNamesStartWithPrefix() throws Exception { // GH-90000
         String prefix = AgentTelemetryContract.SPAN_PREFIX;
         for (Field field : AgentTelemetryContract.class.getDeclaredFields()) { // GH-90000
-            if (field.getName().startsWith("SPAN_ [GH-90000]") && !field.getName().equals("SPAN_PREFIX [GH-90000]")) {
+            if (field.getName().startsWith("SPAN_") && !field.getName().equals("SPAN_PREFIX")) {
                 String value = (String) field.get(null); // GH-90000
                 assertThat(value) // GH-90000
                         .as("Span name constant %s", field.getName()) // GH-90000
@@ -54,11 +54,11 @@ class AgentTelemetryContractTest {
     }
 
     @Test
-    @DisplayName("all attribute key constants start with SPAN_PREFIX [GH-90000]")
+    @DisplayName("all attribute key constants start with SPAN_PREFIX")
     void allAttributeKeysStartWithPrefix() throws Exception { // GH-90000
         String prefix = AgentTelemetryContract.SPAN_PREFIX;
         for (Field field : AgentTelemetryContract.class.getDeclaredFields()) { // GH-90000
-            if (field.getName().startsWith("ATTR_ [GH-90000]")) {
+            if (field.getName().startsWith("ATTR_")) {
                 String value = (String) field.get(null); // GH-90000
                 assertThat(value) // GH-90000
                         .as("Attribute key constant %s", field.getName()) // GH-90000
@@ -68,7 +68,7 @@ class AgentTelemetryContractTest {
     }
 
     @Test
-    @DisplayName("all PUBLIC_STATIC_FINAL String constants are non-blank [GH-90000]")
+    @DisplayName("all PUBLIC_STATIC_FINAL String constants are non-blank")
     void allConstantsAreNonBlank() throws Exception { // GH-90000
         for (Field field : AgentTelemetryContract.class.getDeclaredFields()) { // GH-90000
             if (field.getType() == String.class) { // GH-90000
@@ -81,11 +81,11 @@ class AgentTelemetryContractTest {
     }
 
     @Test
-    @DisplayName("no duplicate constant values exist [GH-90000]")
+    @DisplayName("no duplicate constant values exist")
     void noDuplicateValues() throws Exception { // GH-90000
         Map<String, String> values = new HashMap<>(); // GH-90000
         for (Field field : AgentTelemetryContract.class.getDeclaredFields()) { // GH-90000
-            if (field.getType() == String.class && !field.getName().equals("VERSION [GH-90000]")) {
+            if (field.getType() == String.class && !field.getName().equals("VERSION")) {
                 String value = (String) field.get(null); // GH-90000
                 assertThat(values) // GH-90000
                         .as("Value '%s' from field %s is duplicated by field %s", // GH-90000
@@ -97,28 +97,28 @@ class AgentTelemetryContractTest {
     }
 
     @Test
-    @DisplayName("sensitive raw content fields are NOT defined in the contract [GH-90000]")
+    @DisplayName("sensitive raw content fields are NOT defined in the contract")
     void noRawPayloadAttributesAreDefined() throws Exception { // GH-90000
         for (Field field : AgentTelemetryContract.class.getDeclaredFields()) { // GH-90000
             if (field.getType() == String.class) { // GH-90000
                 String value = ((String) field.get(null)).toLowerCase(); // GH-90000
                 assertThat(value) // GH-90000
                         .as("Field %s must not define a raw payload key", field.getName()) // GH-90000
-                        .doesNotContain("prompt [GH-90000]")
-                        .doesNotContain("payload [GH-90000]")
-                        .doesNotContain("embedding [GH-90000]")
-                        .doesNotContain("completion [GH-90000]")
-                        .doesNotContain("fragment [GH-90000]");
+                        .doesNotContain("prompt")
+                        .doesNotContain("payload")
+                        .doesNotContain("embedding")
+                        .doesNotContain("completion")
+                        .doesNotContain("fragment");
             }
         }
     }
 
     @Test
-    @DisplayName("11 span name constants are defined [GH-90000]")
+    @DisplayName("11 span name constants are defined")
     void elevenSpanPhasesAreDefined() { // GH-90000
         long count = 0;
         for (Field field : AgentTelemetryContract.class.getDeclaredFields()) { // GH-90000
-            if (field.getName().startsWith("SPAN_ [GH-90000]") && !field.getName().equals("SPAN_PREFIX [GH-90000]")) {
+            if (field.getName().startsWith("SPAN_") && !field.getName().equals("SPAN_PREFIX")) {
                 count++;
             }
         }

@@ -13,7 +13,8 @@ import java.util.Objects;
  * @doc.type class
  * @doc.purpose Connector specification for pipeline stages
  * @doc.layer core
- */
+  * @doc.pattern Component
+*/
 public class ConnectorSpec {
     private final String id;
     private final String type;

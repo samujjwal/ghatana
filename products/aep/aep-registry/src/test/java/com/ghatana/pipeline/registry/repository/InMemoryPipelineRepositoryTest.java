@@ -26,13 +26,13 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("InMemoryPipelineRepository [GH-90000]")
+@DisplayName("InMemoryPipelineRepository")
 class InMemoryPipelineRepositoryTest extends EventloopTestBase {
 
     private InMemoryPipelineRepository repository;
 
-    private static final TenantId TENANT_A = TenantId.of("tenant-alpha [GH-90000]");
-    private static final TenantId TENANT_B = TenantId.of("tenant-beta [GH-90000]");
+    private static final TenantId TENANT_A = TenantId.of("tenant-alpha");
+    private static final TenantId TENANT_B = TenantId.of("tenant-beta");
 
     @BeforeEach
     void setUp() { // GH-90000
@@ -44,11 +44,11 @@ class InMemoryPipelineRepositoryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("save and findById [GH-90000]")
+    @DisplayName("save and findById")
     class SaveAndFind {
 
         @Test
-        @DisplayName("saved pipeline can be retrieved by id and tenant [GH-90000]")
+        @DisplayName("saved pipeline can be retrieved by id and tenant")
         void savedPipelineCanBeFound() { // GH-90000
             PipelineRegistration pipeline = buildPipeline("pipe-001", TENANT_A, "My Pipeline"); // GH-90000
             runPromise(() -> repository.save(pipeline)); // GH-90000
@@ -57,11 +57,11 @@ class InMemoryPipelineRepositoryTest extends EventloopTestBase {
                     repository.findById("pipe-001", TENANT_A.value())); // GH-90000
 
             assertThat(result).isPresent(); // GH-90000
-            assertThat(result.get().getName()).isEqualTo("My Pipeline [GH-90000]");
+            assertThat(result.get().getName()).isEqualTo("My Pipeline");
         }
 
         @Test
-        @DisplayName("findById returns empty for wrong tenant [GH-90000]")
+        @DisplayName("findById returns empty for wrong tenant")
         void findByIdWrongTenantReturnsEmpty() { // GH-90000
             PipelineRegistration pipeline = buildPipeline("pipe-001", TENANT_A, "Tenant A Pipeline"); // GH-90000
             runPromise(() -> repository.save(pipeline)); // GH-90000
@@ -73,7 +73,7 @@ class InMemoryPipelineRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("findById returns empty for unknown id [GH-90000]")
+        @DisplayName("findById returns empty for unknown id")
         void findByIdUnknownReturnsEmpty() { // GH-90000
             Optional<PipelineRegistration> result = runPromise(() -> // GH-90000
                     repository.findById("does-not-exist", TENANT_A.value())); // GH-90000
@@ -82,7 +82,7 @@ class InMemoryPipelineRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("save overwrites existing pipeline with same id [GH-90000]")
+        @DisplayName("save overwrites existing pipeline with same id")
         void saveOverwritesExisting() { // GH-90000
             PipelineRegistration v1 = buildPipeline("pipe-001", TENANT_A, "Version 1"); // GH-90000
             runPromise(() -> repository.save(v1)); // GH-90000
@@ -94,17 +94,17 @@ class InMemoryPipelineRepositoryTest extends EventloopTestBase {
                     repository.findById("pipe-001", TENANT_A.value())); // GH-90000
 
             assertThat(result).isPresent(); // GH-90000
-            assertThat(result.get().getName()).isEqualTo("Version 2 [GH-90000]");
+            assertThat(result.get().getName()).isEqualTo("Version 2");
         }
 
         @Test
-        @DisplayName("save returns the saved pipeline [GH-90000]")
+        @DisplayName("save returns the saved pipeline")
         void saveReturnsSavedPipeline() { // GH-90000
             PipelineRegistration pipeline = buildPipeline("pipe-010", TENANT_A, "Returns Me"); // GH-90000
 
             PipelineRegistration returned = runPromise(() -> repository.save(pipeline)); // GH-90000
 
-            assertThat(returned.getId()).isEqualTo("pipe-010 [GH-90000]");
+            assertThat(returned.getId()).isEqualTo("pipe-010");
         }
     }
 
@@ -113,11 +113,11 @@ class InMemoryPipelineRepositoryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("findByTenantId [GH-90000]")
+    @DisplayName("findByTenantId")
     class FindByTenant {
 
         @Test
-        @DisplayName("returns only pipelines owned by the given tenant [GH-90000]")
+        @DisplayName("returns only pipelines owned by the given tenant")
         void findsOnlyTenantPipelines() { // GH-90000
             runPromise(() -> repository.save(buildPipeline("a1", TENANT_A, "A one"))); // GH-90000
             runPromise(() -> repository.save(buildPipeline("a2", TENANT_A, "A two"))); // GH-90000
@@ -132,10 +132,10 @@ class InMemoryPipelineRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("returns empty list for tenant with no pipelines [GH-90000]")
+        @DisplayName("returns empty list for tenant with no pipelines")
         void emptyListForUnknownTenant() { // GH-90000
             List<PipelineRegistration> result = runPromise(() -> // GH-90000
-                    repository.findByTenantId("ghost-tenant [GH-90000]"));
+                    repository.findByTenantId("ghost-tenant"));
 
             assertThat(result).isEmpty(); // GH-90000
         }
@@ -146,11 +146,11 @@ class InMemoryPipelineRepositoryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("countByTenantId [GH-90000]")
+    @DisplayName("countByTenantId")
     class Count {
 
         @Test
-        @DisplayName("returns correct count per tenant [GH-90000]")
+        @DisplayName("returns correct count per tenant")
         void correctCount() { // GH-90000
             runPromise(() -> repository.save(buildPipeline("p1", TENANT_A, "P1"))); // GH-90000
             runPromise(() -> repository.save(buildPipeline("p2", TENANT_A, "P2"))); // GH-90000
@@ -164,9 +164,9 @@ class InMemoryPipelineRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("returns 0 for unknown tenant [GH-90000]")
+        @DisplayName("returns 0 for unknown tenant")
         void zeroForUnknownTenant() { // GH-90000
-            long count = runPromise(() -> repository.countByTenantId("nosuch [GH-90000]"));
+            long count = runPromise(() -> repository.countByTenantId("nosuch"));
 
             assertThat(count).isZero(); // GH-90000
         }
@@ -177,11 +177,11 @@ class InMemoryPipelineRepositoryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("delete [GH-90000]")
+    @DisplayName("delete")
     class Delete {
 
         @Test
-        @DisplayName("deleted pipeline is no longer findable [GH-90000]")
+        @DisplayName("deleted pipeline is no longer findable")
         void deletedPipelineIsGone() { // GH-90000
             runPromise(() -> repository.save(buildPipeline("pipe-del", TENANT_A, "To Delete"))); // GH-90000
 
@@ -194,7 +194,7 @@ class InMemoryPipelineRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("delete is no-op for wrong tenant [GH-90000]")
+        @DisplayName("delete is no-op for wrong tenant")
         void deleteWrongTenantLeavesIntact() { // GH-90000
             runPromise(() -> repository.save(buildPipeline("pipe-keep", TENANT_A, "Survivor"))); // GH-90000
 
@@ -207,7 +207,7 @@ class InMemoryPipelineRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("delete unknown id is no-op [GH-90000]")
+        @DisplayName("delete unknown id is no-op")
         void deleteUnknownIdIsNoOp() { // GH-90000
             // Should not throw
             runPromise(() -> repository.delete("nope", TENANT_A.value())); // GH-90000
@@ -219,11 +219,11 @@ class InMemoryPipelineRepositoryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("versioning [GH-90000]")
+    @DisplayName("versioning")
     class Versioning {
 
         @Test
-        @DisplayName("saveVersionSnapshot allows retrieving version history [GH-90000]")
+        @DisplayName("saveVersionSnapshot allows retrieving version history")
         void versionHistoryIsPreserved() { // GH-90000
             PipelineRegistration v1 = buildPipeline("versioned", TENANT_A, "Pipeline V1"); // GH-90000
             v1.setVersion(1); // GH-90000
@@ -242,7 +242,7 @@ class InMemoryPipelineRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("findVersionHistory filters by tenant [GH-90000]")
+        @DisplayName("findVersionHistory filters by tenant")
         void historyFilteredByTenant() { // GH-90000
             PipelineRegistration snap = buildPipeline("pipe-shared", TENANT_A, "A Snap"); // GH-90000
             snap.setVersion(1); // GH-90000
@@ -260,7 +260,7 @@ class InMemoryPipelineRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("findVersionSnapshot retrieves specific version [GH-90000]")
+        @DisplayName("findVersionSnapshot retrieves specific version")
         void findSpecificVersion() { // GH-90000
             PipelineRegistration v3 = buildPipeline("ver-pipe", TENANT_A, "V3"); // GH-90000
             v3.setVersion(3); // GH-90000
@@ -275,7 +275,7 @@ class InMemoryPipelineRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("findVersionSnapshot returns empty for missing version number [GH-90000]")
+        @DisplayName("findVersionSnapshot returns empty for missing version number")
         void findMissingVersionReturnsEmpty() { // GH-90000
             Optional<PipelineRegistration> result = runPromise(() -> // GH-90000
                     repository.findVersionSnapshot("any", 99, TENANT_A.value())); // GH-90000
@@ -284,7 +284,7 @@ class InMemoryPipelineRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("history is empty for unknown pipeline id [GH-90000]")
+        @DisplayName("history is empty for unknown pipeline id")
         void emptyHistoryForUnknownId() { // GH-90000
             List<PipelineRegistration> history = runPromise(() -> // GH-90000
                     repository.findVersionHistory("ghost", TENANT_A.value())); // GH-90000
@@ -302,7 +302,7 @@ class InMemoryPipelineRepositoryTest extends EventloopTestBase {
                 .id(id) // GH-90000
                 .tenantId(tenantId) // GH-90000
                 .name(name) // GH-90000
-                .updatedBy("test-user [GH-90000]")
+                .updatedBy("test-user")
                 .active(true) // GH-90000
                 .versionStatus(PipelineVersionStatus.DRAFT) // GH-90000
                 .build(); // GH-90000

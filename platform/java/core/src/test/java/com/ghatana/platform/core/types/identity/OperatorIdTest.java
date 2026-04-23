@@ -12,7 +12,7 @@ class OperatorIdTest {
 
     @Test
     void testOf() { // GH-90000
-        OperatorId id = OperatorId.of("test-operator-id [GH-90000]");
+        OperatorId id = OperatorId.of("test-operator-id");
 
         assertEquals("test-operator-id", id.value()); // GH-90000
         assertEquals("test-operator-id", id.raw()); // GH-90000
@@ -38,15 +38,15 @@ class OperatorIdTest {
     @Test
     void testBlankValueThrowsException() { // GH-90000
         assertThrows(IllegalArgumentException.class, () -> // GH-90000
-            new OperatorId("   [GH-90000]")
+            new OperatorId("  ")
         );
     }
 
     @Test
     void testEquals() { // GH-90000
-        OperatorId id1 = OperatorId.of("same-id [GH-90000]");
-        OperatorId id2 = OperatorId.of("same-id [GH-90000]");
-        OperatorId id3 = OperatorId.of("different-id [GH-90000]");
+        OperatorId id1 = OperatorId.of("same-id");
+        OperatorId id2 = OperatorId.of("same-id");
+        OperatorId id3 = OperatorId.of("different-id");
 
         assertEquals(id1, id2); // GH-90000
         assertNotEquals(id1, id3); // GH-90000

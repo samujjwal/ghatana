@@ -32,7 +32,8 @@ import java.time.Instant;
  * @doc.type class
  * @doc.purpose Memory-enhanced agent base class
  * @doc.layer agent-memory
- */
+  * @doc.pattern Agent
+*/
 public abstract class MemoryAwareBaseAgent<TInput, TOutput> extends BaseAgent<TInput, TOutput> {
 
     private static final int DEFAULT_RETRIEVAL_K = 10;

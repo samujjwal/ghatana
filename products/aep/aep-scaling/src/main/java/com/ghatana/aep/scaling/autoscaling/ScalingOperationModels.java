@@ -17,7 +17,11 @@ import java.util.Map;
 
 /**
  * Models for scaling operations and auto-scaling engine.
- */
+  * @doc.type enum
+ * @doc.purpose Provides scaling operation models functionality.
+ * @doc.layer product
+ * @doc.pattern Enum
+*/
 public final class ScalingOperationModels {
 
     private ScalingOperationModels() {

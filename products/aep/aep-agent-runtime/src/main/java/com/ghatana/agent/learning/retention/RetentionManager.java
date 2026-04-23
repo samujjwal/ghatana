@@ -9,7 +9,8 @@ import org.jetbrains.annotations.NotNull;
  * @doc.type interface
  * @doc.purpose Retention management SPI
  * @doc.layer agent-learning
- */
+  * @doc.pattern Manager
+*/
 public interface RetentionManager {
 
     /**

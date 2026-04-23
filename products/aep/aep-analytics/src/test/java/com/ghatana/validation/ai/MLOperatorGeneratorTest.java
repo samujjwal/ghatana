@@ -38,7 +38,7 @@ import static org.mockito.Mockito.when;
  * @doc.purpose Unit tests for MLOperatorGenerator
  * @doc.layer test
  */
-@DisplayName("ML Operator Generator Tests [GH-90000]")
+@DisplayName("ML Operator Generator Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class MLOperatorGeneratorTest extends EventloopTestBase {
 
@@ -46,7 +46,7 @@ class MLOperatorGeneratorTest extends EventloopTestBase {
     private LLMGateway llmGateway;
 
     @Test
-    @DisplayName("generates operators from event data [GH-90000]")
+    @DisplayName("generates operators from event data")
     void generatesOperatorsFromEventData() { // GH-90000
         Metrics metrics = new Metrics(new SimpleMeterRegistry()); // GH-90000
         MLOperatorGenerator generator = new MLOperatorGenerator(llmGateway, metrics); // GH-90000
@@ -63,8 +63,8 @@ class MLOperatorGeneratorTest extends EventloopTestBase {
             .tokensUsed(100) // GH-90000
             .promptTokens(50) // GH-90000
             .completionTokens(50) // GH-90000
-            .finishReason("stop [GH-90000]")
-            .modelUsed("gpt-4 [GH-90000]")
+            .finishReason("stop")
+            .modelUsed("gpt-4")
             .build(); // GH-90000
 
         when(llmGateway.complete(any(CompletionRequest.class))) // GH-90000
@@ -76,7 +76,7 @@ class MLOperatorGeneratorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("uses default system prompt [GH-90000]")
+    @DisplayName("uses default system prompt")
     void usesDefaultSystemPrompt() { // GH-90000
         Metrics metrics = new Metrics(new SimpleMeterRegistry()); // GH-90000
         MLOperatorGenerator generator = new MLOperatorGenerator(llmGateway, metrics); // GH-90000
@@ -85,7 +85,7 @@ class MLOperatorGeneratorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("uses custom system prompt [GH-90000]")
+    @DisplayName("uses custom system prompt")
     void usesCustomSystemPrompt() { // GH-90000
         String customPrompt = "You are a pattern detection expert.";
         Metrics metrics = new Metrics(new SimpleMeterRegistry()); // GH-90000
@@ -95,7 +95,7 @@ class MLOperatorGeneratorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("summarizes events correctly [GH-90000]")
+    @DisplayName("summarizes events correctly")
     void summarizesEventsCorrectly() { // GH-90000
         Metrics metrics = new Metrics(new SimpleMeterRegistry()); // GH-90000
         MLOperatorGenerator generator = new MLOperatorGenerator(llmGateway, metrics); // GH-90000
@@ -104,12 +104,12 @@ class MLOperatorGeneratorTest extends EventloopTestBase {
         MLOperatorGenerator.GenerationConfig config = MLOperatorGenerator.GenerationConfig.builder().build(); // GH-90000
 
         CompletionResult mockResult = CompletionResult.builder() // GH-90000
-            .text("[] [GH-90000]")
+            .text("[]")
             .tokensUsed(10) // GH-90000
             .promptTokens(5) // GH-90000
             .completionTokens(5) // GH-90000
-            .finishReason("stop [GH-90000]")
-            .modelUsed("gpt-4 [GH-90000]")
+            .finishReason("stop")
+            .modelUsed("gpt-4")
             .build(); // GH-90000
 
         when(llmGateway.complete(any(CompletionRequest.class))) // GH-90000
@@ -121,7 +121,7 @@ class MLOperatorGeneratorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("handles empty event list [GH-90000]")
+    @DisplayName("handles empty event list")
     void handlesEmptyEventList() { // GH-90000
         Metrics metrics = new Metrics(new SimpleMeterRegistry()); // GH-90000
         MLOperatorGenerator generator = new MLOperatorGenerator(llmGateway, metrics); // GH-90000
@@ -130,12 +130,12 @@ class MLOperatorGeneratorTest extends EventloopTestBase {
         MLOperatorGenerator.GenerationConfig config = MLOperatorGenerator.GenerationConfig.builder().build(); // GH-90000
 
         CompletionResult mockResult = CompletionResult.builder() // GH-90000
-            .text("[] [GH-90000]")
+            .text("[]")
             .tokensUsed(10) // GH-90000
             .promptTokens(5) // GH-90000
             .completionTokens(5) // GH-90000
-            .finishReason("stop [GH-90000]")
-            .modelUsed("gpt-4 [GH-90000]")
+            .finishReason("stop")
+            .modelUsed("gpt-4")
             .build(); // GH-90000
 
         when(llmGateway.complete(any(CompletionRequest.class))) // GH-90000
@@ -147,23 +147,23 @@ class MLOperatorGeneratorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("config builder creates valid config [GH-90000]")
+    @DisplayName("config builder creates valid config")
     void configBuilderCreatesValidConfig() { // GH-90000
         MLOperatorGenerator.GenerationConfig config = MLOperatorGenerator.GenerationConfig.builder() // GH-90000
-            .model("gpt-4 [GH-90000]")
+            .model("gpt-4")
             .temperature(0.5) // GH-90000
             .maxTokens(1000) // GH-90000
             .confidenceThreshold(0.8) // GH-90000
             .build(); // GH-90000
 
-        assertThat(config.model()).isEqualTo("gpt-4 [GH-90000]");
+        assertThat(config.model()).isEqualTo("gpt-4");
         assertThat(config.temperature()).isEqualTo(0.5); // GH-90000
         assertThat(config.maxTokens()).isEqualTo(1000); // GH-90000
         assertThat(config.confidenceThreshold()).isEqualTo(0.8); // GH-90000
     }
 
     @Test
-    @DisplayName("config clamps temperature to valid range [GH-90000]")
+    @DisplayName("config clamps temperature to valid range")
     void configClampsTemperatureToValidRange() { // GH-90000
         MLOperatorGenerator.GenerationConfig config = MLOperatorGenerator.GenerationConfig.builder() // GH-90000
             .temperature(3.0) // GH-90000
@@ -173,7 +173,7 @@ class MLOperatorGeneratorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("config clamps confidence to valid range [GH-90000]")
+    @DisplayName("config clamps confidence to valid range")
     void configClampsConfidenceToValidRange() { // GH-90000
         MLOperatorGenerator.GenerationConfig config = MLOperatorGenerator.GenerationConfig.builder() // GH-90000
             .confidenceThreshold(1.5) // GH-90000

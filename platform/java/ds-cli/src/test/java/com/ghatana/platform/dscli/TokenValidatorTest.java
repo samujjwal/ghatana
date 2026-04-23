@@ -29,17 +29,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Unit tests for {@link TokenValidator}.
  */
-@DisplayName("TokenValidator [GH-90000]")
+@DisplayName("TokenValidator")
 class TokenValidatorTest {
 
     private final TokenValidator validator = new TokenValidator(); // GH-90000
 
     @Nested
-    @DisplayName("valid token files [GH-90000]")
+    @DisplayName("valid token files")
     class Valid {
 
         @Test
-        @DisplayName("clean color token passes [GH-90000]")
+        @DisplayName("clean color token passes")
         void cleanColorToken() { // GH-90000
             final TokenFile file = tokenFileWith(Map.of( // GH-90000
                     "primary", Map.of("$value", "#1A73E8", "$type", "color"))); // GH-90000
@@ -50,7 +50,7 @@ class TokenValidatorTest {
         }
 
         @Test
-        @DisplayName("dimension token passes [GH-90000]")
+        @DisplayName("dimension token passes")
         void dimensionToken() { // GH-90000
             final TokenFile file = tokenFileWith(Map.of( // GH-90000
                     "spacing-md", Map.of("$value", "16px", "$type", "dimension"))); // GH-90000
@@ -61,7 +61,7 @@ class TokenValidatorTest {
         }
 
         @Test
-        @DisplayName("alias reference to existing token passes [GH-90000]")
+        @DisplayName("alias reference to existing token passes")
         void aliasReferenceResolved() { // GH-90000
             final TokenFile file = tokenFileWith(Map.of( // GH-90000
                     "brand", Map.of("$value", "#FF0000", "$type", "color"), // GH-90000
@@ -69,16 +69,16 @@ class TokenValidatorTest {
 
             final List<ValidationIssue> issues = validator.validate(file); // GH-90000
 
-            assertThat(issues.stream().filter(i -> i.code().equals("BROKEN_ALIAS [GH-90000]"))).isEmpty();
+            assertThat(issues.stream().filter(i -> i.code().equals("BROKEN_ALIAS"))).isEmpty();
         }
     }
 
     @Nested
-    @DisplayName("invalid token files [GH-90000]")
+    @DisplayName("invalid token files")
     class Invalid {
 
         @Test
-        @DisplayName("invalid color format produces error [GH-90000]")
+        @DisplayName("invalid color format produces error")
         void invalidColorFormat() { // GH-90000
             final TokenFile file = tokenFileWith(Map.of( // GH-90000
                     "bad-color", Map.of("$value", "notacolor", "$type", "color"))); // GH-90000
@@ -86,13 +86,13 @@ class TokenValidatorTest {
             final List<ValidationIssue> issues = validator.validate(file); // GH-90000
 
             assertThat(issues).anySatisfy(i -> { // GH-90000
-                assertThat(i.code()).isEqualTo("INVALID_COLOR [GH-90000]");
+                assertThat(i.code()).isEqualTo("INVALID_COLOR");
                 assertThat(i.isError()).isTrue(); // GH-90000
             });
         }
 
         @Test
-        @DisplayName("invalid dimension format produces error [GH-90000]")
+        @DisplayName("invalid dimension format produces error")
         void invalidDimensionFormat() { // GH-90000
             final TokenFile file = tokenFileWith(Map.of( // GH-90000
                     "bad-dim", Map.of("$value", "16", "$type", "dimension"))); // GH-90000
@@ -100,13 +100,13 @@ class TokenValidatorTest {
             final List<ValidationIssue> issues = validator.validate(file); // GH-90000
 
             assertThat(issues).anySatisfy(i -> { // GH-90000
-                assertThat(i.code()).isEqualTo("INVALID_DIMENSION [GH-90000]");
+                assertThat(i.code()).isEqualTo("INVALID_DIMENSION");
                 assertThat(i.isError()).isTrue(); // GH-90000
             });
         }
 
         @Test
-        @DisplayName("broken alias reference produces error [GH-90000]")
+        @DisplayName("broken alias reference produces error")
         void brokenAlias() { // GH-90000
             final TokenFile file = tokenFileWith(Map.of( // GH-90000
                     "primary", Map.of("$value", "{nonexistent.token}", "$type", "color"))); // GH-90000
@@ -114,11 +114,11 @@ class TokenValidatorTest {
             final List<ValidationIssue> issues = validator.validate(file); // GH-90000
 
             assertThat(issues).anySatisfy(i -> // GH-90000
-                    assertThat(i.code()).isEqualTo("BROKEN_ALIAS [GH-90000]"));
+                    assertThat(i.code()).isEqualTo("BROKEN_ALIAS"));
         }
 
         @Test
-        @DisplayName("unknown type produces warning [GH-90000]")
+        @DisplayName("unknown type produces warning")
         void unknownType() { // GH-90000
             final TokenFile file = tokenFileWith(Map.of( // GH-90000
                     "blob", Map.of("$value", "whatever", "$type", "custom-type"))); // GH-90000
@@ -126,11 +126,11 @@ class TokenValidatorTest {
             final List<ValidationIssue> issues = validator.validate(file); // GH-90000
 
             assertThat(issues).anySatisfy(i -> // GH-90000
-                    assertThat(i.code()).isEqualTo("UNKNOWN_TYPE [GH-90000]"));
+                    assertThat(i.code()).isEqualTo("UNKNOWN_TYPE"));
         }
 
         @Test
-        @DisplayName("missing $version produces warning [GH-90000]")
+        @DisplayName("missing $version produces warning")
         void missingVersion() { // GH-90000
             final TokenFile file = new TokenFile(); // GH-90000
 
@@ -142,16 +142,16 @@ class TokenValidatorTest {
             final List<ValidationIssue> noVersionIssues = validator.validate(noVersion); // GH-90000
 
             assertThat(noVersionIssues).anySatisfy(i -> // GH-90000
-                    assertThat(i.code()).isEqualTo("MISSING_VERSION [GH-90000]"));
+                    assertThat(i.code()).isEqualTo("MISSING_VERSION"));
         }
     }
 
     @Nested
-    @DisplayName("TokenAuditor - duplicate detection [GH-90000]")
+    @DisplayName("TokenAuditor - duplicate detection")
     class AuditDuplicates {
 
         @Test
-        @DisplayName("duplicate values across tokens are flagged [GH-90000]")
+        @DisplayName("duplicate values across tokens are flagged")
         void duplicateValues() { // GH-90000
             final TokenFile file = tokenFileWith(Map.of( // GH-90000
                     "color-a", Map.of("$value", "#FF0000"), // GH-90000
@@ -159,11 +159,11 @@ class TokenValidatorTest {
 
             final var auditor = new com.ghatana.platform.dscli.service.TokenAuditor(); // GH-90000
             final var loaded = new com.ghatana.platform.dscli.service.TokenFileLoader.LoadedTokenFile( // GH-90000
-                    java.nio.file.Path.of("test.json [GH-90000]"), file);
+                    java.nio.file.Path.of("test.json"), file);
             final List<ValidationIssue> issues = auditor.audit(List.of(loaded)); // GH-90000
 
             assertThat(issues).anySatisfy(i -> // GH-90000
-                    assertThat(i.code()).isEqualTo("DUPLICATE_VALUE [GH-90000]"));
+                    assertThat(i.code()).isEqualTo("DUPLICATE_VALUE"));
         }
     }
 

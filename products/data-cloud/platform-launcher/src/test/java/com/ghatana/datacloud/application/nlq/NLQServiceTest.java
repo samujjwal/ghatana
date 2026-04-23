@@ -42,7 +42,7 @@ import static org.mockito.Mockito.*;
  * @doc.purpose Comprehensive NLQService testing with 100% coverage
  * @doc.layer application
  */
-@DisplayName("NLQ Service Tests [GH-90000]")
+@DisplayName("NLQ Service Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class NLQServiceTest extends EventloopTestBase {
 
@@ -62,14 +62,14 @@ class NLQServiceTest extends EventloopTestBase {
         // Create test collection with fields
         testCollection = MetaCollection.builder() // GH-90000
             .id(UUID.randomUUID()) // GH-90000
-            .tenantId("tenant-1 [GH-90000]")
-            .name("users [GH-90000]")
+            .tenantId("tenant-1")
+            .name("users")
             .fields(List.of( // GH-90000
-                MetaField.builder().name("name [GH-90000]").type(DataType.STRING).build(),
-                MetaField.builder().name("age [GH-90000]").type(DataType.NUMBER).build(),
-                MetaField.builder().name("email [GH-90000]").type(DataType.STRING).build(),
-                MetaField.builder().name("status [GH-90000]").type(DataType.STRING).build(),
-                MetaField.builder().name("salary [GH-90000]").type(DataType.NUMBER).build()
+                MetaField.builder().name("name").type(DataType.STRING).build(),
+                MetaField.builder().name("age").type(DataType.NUMBER).build(),
+                MetaField.builder().name("email").type(DataType.STRING).build(),
+                MetaField.builder().name("status").type(DataType.STRING).build(),
+                MetaField.builder().name("salary").type(DataType.NUMBER).build()
             ))
             .build(); // GH-90000
     }
@@ -79,7 +79,7 @@ class NLQServiceTest extends EventloopTestBase {
     // ========================================================================
 
     @Test
-    @DisplayName("Should parse simple numeric filter query [GH-90000]")
+    @DisplayName("Should parse simple numeric filter query")
     void shouldParseNumericFilter() { // GH-90000
         // GIVEN: Natural language query with numeric comparison
         String query = "age > 25";
@@ -92,16 +92,16 @@ class NLQServiceTest extends EventloopTestBase {
         assertThat(plan.originalQuery()).isEqualTo(query); // GH-90000
         assertThat(plan.confidence()).isGreaterThan(0.25); // GH-90000
         assertThat(plan.filterCount()).isEqualTo(1); // GH-90000
-        assertThat(plan.tenantId()).isEqualTo("tenant-1 [GH-90000]");
-        assertThat(plan.collectionName()).isEqualTo("users [GH-90000]");
+        assertThat(plan.tenantId()).isEqualTo("tenant-1");
+        assertThat(plan.collectionName()).isEqualTo("users");
 
         // AND: Metrics recorded
-        verify(metricsCollector).recordTimer(eq("nlq.parse_query [GH-90000]"), anyLong());
+        verify(metricsCollector).recordTimer(eq("nlq.parse_query"), anyLong());
         verify(metricsCollector).incrementCounter("nlq.queries_parsed", "status", "success"); // GH-90000
     }
 
     @Test
-    @DisplayName("Should parse equals filter query [GH-90000]")
+    @DisplayName("Should parse equals filter query")
     void shouldParseEqualsFilter() { // GH-90000
         // GIVEN: Natural language query with equality
         String query = "status is active";
@@ -115,7 +115,7 @@ class NLQServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should parse contains filter query [GH-90000]")
+    @DisplayName("Should parse contains filter query")
     void shouldParseContainsFilter() { // GH-90000
         // GIVEN: Natural language query with LIKE pattern
         String query = "name contains John";
@@ -135,7 +135,7 @@ class NLQServiceTest extends EventloopTestBase {
         "age < 65, 0.25",
         "salary <= 100000, 0.25"
     })
-    @DisplayName("Should parse various numeric operators [GH-90000]")
+    @DisplayName("Should parse various numeric operators")
     void shouldParseNumericOperators(String query, double minConfidence) { // GH-90000
         // WHEN: Parsing query with different operators
         QueryPlan plan = runPromise(() -> nlqService.parseQuery(query, testCollection)); // GH-90000
@@ -146,7 +146,7 @@ class NLQServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should parse query with sorting [GH-90000]")
+    @DisplayName("Should parse query with sorting")
     void shouldParseSorting() { // GH-90000
         // GIVEN: Query with sort directive
         String query = "age > 25 sorted by name ascending";
@@ -159,7 +159,7 @@ class NLQServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should parse complex query with multiple filters [GH-90000]")
+    @DisplayName("Should parse complex query with multiple filters")
     void shouldParseComplexQuery() { // GH-90000
         // GIVEN: Complex query with multiple conditions
         String query = "age > 25 and status is active and salary >= 50000";
@@ -173,37 +173,37 @@ class NLQServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should reject null query [GH-90000]")
+    @DisplayName("Should reject null query")
     void shouldRejectNullQuery() { // GH-90000
         // WHEN/THEN: Throws exception for null query
         assertThatThrownBy(() -> // GH-90000
             runPromise(() -> nlqService.parseQuery(null, testCollection)) // GH-90000
         ).isInstanceOf(IllegalArgumentException.class) // GH-90000
-         .hasMessageContaining("Query cannot be null [GH-90000]");
+         .hasMessageContaining("Query cannot be null");
     }
 
     @Test
-    @DisplayName("Should reject empty query [GH-90000]")
+    @DisplayName("Should reject empty query")
     void shouldRejectEmptyQuery() { // GH-90000
         // WHEN/THEN: Throws exception for empty query
         assertThatThrownBy(() -> // GH-90000
             runPromise(() -> nlqService.parseQuery("   ", testCollection)) // GH-90000
         ).isInstanceOf(IllegalArgumentException.class) // GH-90000
-         .hasMessageContaining("Query cannot be null or empty [GH-90000]");
+         .hasMessageContaining("Query cannot be null or empty");
     }
 
     @Test
-    @DisplayName("Should reject null collection [GH-90000]")
+    @DisplayName("Should reject null collection")
     void shouldRejectNullCollection() { // GH-90000
         // WHEN/THEN: Throws exception for null collection
         assertThatThrownBy(() -> // GH-90000
             runPromise(() -> nlqService.parseQuery("age > 25", null)) // GH-90000
         ).isInstanceOf(IllegalArgumentException.class) // GH-90000
-         .hasMessageContaining("Collection cannot be null [GH-90000]");
+         .hasMessageContaining("Collection cannot be null");
     }
 
     @Test
-    @DisplayName("Should handle query with unknown field gracefully [GH-90000]")
+    @DisplayName("Should handle query with unknown field gracefully")
     void shouldHandleUnknownField() { // GH-90000
         // GIVEN: Query with field not in collection
         String query = "unknownField > 100";
@@ -221,7 +221,7 @@ class NLQServiceTest extends EventloopTestBase {
     // ========================================================================
 
     @Test
-    @DisplayName("Should execute query successfully [GH-90000]")
+    @DisplayName("Should execute query successfully")
     void shouldExecuteQuery() { // GH-90000
         // GIVEN: Valid query plan
         QuerySpec querySpec = QuerySpec.of( // GH-90000
@@ -248,7 +248,7 @@ class NLQServiceTest extends EventloopTestBase {
             createEntity("user-2", Map.of("name", "Jane", "age", 28)) // GH-90000
         );
 
-        when(entityRepository.findByQuery(eq("tenant-1 [GH-90000]"), eq("users [GH-90000]"), any(QuerySpec.class)))
+        when(entityRepository.findByQuery(eq("tenant-1"), eq("users"), any(QuerySpec.class)))
             .thenReturn(Promise.of(entities)); // GH-90000
 
         // WHEN: Executing query
@@ -256,19 +256,19 @@ class NLQServiceTest extends EventloopTestBase {
 
         // THEN: Returns successful result
         assertThat(result).isNotNull(); // GH-90000
-        assertThat(result.planId()).isEqualTo("plan-1 [GH-90000]");
+        assertThat(result.planId()).isEqualTo("plan-1");
         assertThat(result.rows()).hasSize(2); // GH-90000
-        assertThat(result.status()).isEqualTo("SUCCESS [GH-90000]");
+        assertThat(result.status()).isEqualTo("SUCCESS");
         assertThat(result.confidence()).isEqualTo(0.9); // GH-90000
         assertThat(result.executionTimeMs()).isGreaterThanOrEqualTo(0); // GH-90000
 
         // AND: Metrics recorded
-        verify(metricsCollector).recordTimer(eq("nlq.execute_query [GH-90000]"), anyLong());
+        verify(metricsCollector).recordTimer(eq("nlq.execute_query"), anyLong());
         verify(metricsCollector).incrementCounter("nlq.queries_executed", "status", "success"); // GH-90000
     }
 
     @Test
-    @DisplayName("Should return empty result for low confidence query [GH-90000]")
+    @DisplayName("Should return empty result for low confidence query")
     void shouldHandleLowConfidence() { // GH-90000
         // GIVEN: Query plan with low confidence
         QueryPlan plan = new QueryPlan( // GH-90000
@@ -287,14 +287,14 @@ class NLQServiceTest extends EventloopTestBase {
 
         // THEN: Returns empty result with LOW_CONFIDENCE status
         assertThat(result.rows()).isEmpty(); // GH-90000
-        assertThat(result.status()).isEqualTo("LOW_CONFIDENCE [GH-90000]");
+        assertThat(result.status()).isEqualTo("LOW_CONFIDENCE");
 
         // AND: Metric recorded
-        verify(metricsCollector).incrementCounter("nlq.low_confidence_fallback [GH-90000]");
+        verify(metricsCollector).incrementCounter("nlq.low_confidence_fallback");
     }
 
     @Test
-    @DisplayName("Should handle null repository gracefully [GH-90000]")
+    @DisplayName("Should handle null repository gracefully")
     void shouldHandleNullRepository() { // GH-90000
         // GIVEN: Service without repository
         NLQService serviceWithoutRepo = new NLQService(null, metricsCollector); // GH-90000
@@ -315,14 +315,14 @@ class NLQServiceTest extends EventloopTestBase {
 
         // THEN: Returns empty result with NO_REPO status
         assertThat(result.rows()).isEmpty(); // GH-90000
-        assertThat(result.status()).isEqualTo("NO_REPO [GH-90000]");
+        assertThat(result.status()).isEqualTo("NO_REPO");
 
         // AND: Metric recorded
-        verify(metricsCollector).incrementCounter("nlq.no_repository [GH-90000]");
+        verify(metricsCollector).incrementCounter("nlq.no_repository");
     }
 
     @Test
-    @DisplayName("Should handle unsupported query spec type [GH-90000]")
+    @DisplayName("Should handle unsupported query spec type")
     void shouldHandleUnsupportedQuerySpec() { // GH-90000
         // GIVEN: Plan with unsupported spec type
         QueryPlan plan = new QueryPlan( // GH-90000
@@ -341,14 +341,14 @@ class NLQServiceTest extends EventloopTestBase {
 
         // THEN: Returns empty result with UNSUPPORTED_SPEC status
         assertThat(result.rows()).isEmpty(); // GH-90000
-        assertThat(result.status()).isEqualTo("UNSUPPORTED_SPEC [GH-90000]");
+        assertThat(result.status()).isEqualTo("UNSUPPORTED_SPEC");
 
         // AND: Metric recorded
-        verify(metricsCollector).incrementCounter("nlq.unsupported_query_spec [GH-90000]");
+        verify(metricsCollector).incrementCounter("nlq.unsupported_query_spec");
     }
 
     @Test
-    @DisplayName("Should handle repository errors gracefully [GH-90000]")
+    @DisplayName("Should handle repository errors gracefully")
     void shouldHandleRepositoryError() { // GH-90000
         // GIVEN: Query plan
         QueryPlan plan = new QueryPlan( // GH-90000
@@ -364,7 +364,7 @@ class NLQServiceTest extends EventloopTestBase {
 
         // AND: Repository throws exception
         when(entityRepository.findByQuery(anyString(), anyString(), any())) // GH-90000
-            .thenReturn(Promise.ofException(new RuntimeException("Database error [GH-90000]")));
+            .thenReturn(Promise.ofException(new RuntimeException("Database error")));
 
         // WHEN/THEN: Executing query throws exception but metrics are recorded
         assertThatThrownBy(() -> // GH-90000
@@ -376,13 +376,13 @@ class NLQServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should reject null plan in execute [GH-90000]")
+    @DisplayName("Should reject null plan in execute")
     void shouldRejectNullPlanInExecute() { // GH-90000
         // WHEN/THEN: Throws exception for null plan
         assertThatThrownBy(() -> // GH-90000
             nlqService.executeQuery(null) // GH-90000
         ).isInstanceOf(IllegalArgumentException.class) // GH-90000
-         .hasMessageContaining("Plan cannot be null [GH-90000]");
+         .hasMessageContaining("Plan cannot be null");
     }
 
     // ========================================================================
@@ -390,7 +390,7 @@ class NLQServiceTest extends EventloopTestBase {
     // ========================================================================
 
     @Test
-    @DisplayName("Should validate valid plan [GH-90000]")
+    @DisplayName("Should validate valid plan")
     void shouldValidateValidPlan() { // GH-90000
         // GIVEN: Valid query plan
         QueryPlan plan = new QueryPlan( // GH-90000
@@ -416,7 +416,7 @@ class NLQServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should reject plan with too many filters [GH-90000]")
+    @DisplayName("Should reject plan with too many filters")
     void shouldRejectTooManyFilters() { // GH-90000
         // GIVEN: Plan with excessive filters
         QueryPlan plan = new QueryPlan( // GH-90000
@@ -435,14 +435,14 @@ class NLQServiceTest extends EventloopTestBase {
 
         // THEN: Validation fails
         assertThat(result.isValid()).isFalse(); // GH-90000
-        assertThat(result.errors()).anyMatch(e -> e.contains("Too many filters [GH-90000]"));
+        assertThat(result.errors()).anyMatch(e -> e.contains("Too many filters"));
 
         // AND: Metric recorded
         verify(metricsCollector).incrementCounter("nlq.validation", "status", "invalid"); // GH-90000
     }
 
     @Test
-    @DisplayName("Should reject plan with very low confidence [GH-90000]")
+    @DisplayName("Should reject plan with very low confidence")
     void shouldRejectVeryLowConfidence() { // GH-90000
         // GIVEN: Plan with very low confidence
         QueryPlan plan = new QueryPlan( // GH-90000
@@ -461,11 +461,11 @@ class NLQServiceTest extends EventloopTestBase {
 
         // THEN: Validation fails
         assertThat(result.isValid()).isFalse(); // GH-90000
-        assertThat(result.errors()).anyMatch(e -> e.contains("Confidence too low [GH-90000]"));
+        assertThat(result.errors()).anyMatch(e -> e.contains("Confidence too low"));
     }
 
     @Test
-    @DisplayName("Should warn about moderate confidence [GH-90000]")
+    @DisplayName("Should warn about moderate confidence")
     void shouldWarnAboutModerateConfidence() { // GH-90000
         // GIVEN: Plan with moderate confidence
         QueryPlan plan = new QueryPlan( // GH-90000
@@ -484,11 +484,11 @@ class NLQServiceTest extends EventloopTestBase {
 
         // THEN: Validation passes with warning
         assertThat(result.isValid()).isTrue(); // GH-90000
-        assertThat(result.warnings()).anyMatch(w -> w.contains("Confidence below execution threshold [GH-90000]"));
+        assertThat(result.warnings()).anyMatch(w -> w.contains("Confidence below execution threshold"));
     }
 
     @Test
-    @DisplayName("Should warn about many sort fields [GH-90000]")
+    @DisplayName("Should warn about many sort fields")
     void shouldWarnAboutManySorts() { // GH-90000
         // GIVEN: Plan with many sort fields
         QueryPlan plan = new QueryPlan( // GH-90000
@@ -507,17 +507,17 @@ class NLQServiceTest extends EventloopTestBase {
 
         // THEN: Validation passes with warning
         assertThat(result.isValid()).isTrue(); // GH-90000
-        assertThat(result.warnings()).anyMatch(w -> w.contains("Many sort fields [GH-90000]"));
+        assertThat(result.warnings()).anyMatch(w -> w.contains("Many sort fields"));
     }
 
     @Test
-    @DisplayName("Should reject null plan in validate [GH-90000]")
+    @DisplayName("Should reject null plan in validate")
     void shouldRejectNullPlanInValidate() { // GH-90000
         // WHEN/THEN: Throws exception for null plan
         assertThatThrownBy(() -> // GH-90000
             runPromise(() -> nlqService.validatePlan(null)) // GH-90000
         ).isInstanceOf(IllegalArgumentException.class) // GH-90000
-         .hasMessageContaining("Plan cannot be null [GH-90000]");
+         .hasMessageContaining("Plan cannot be null");
     }
 
     // ========================================================================
@@ -525,7 +525,7 @@ class NLQServiceTest extends EventloopTestBase {
     // ========================================================================
 
     @Test
-    @DisplayName("Should calculate confidence score [GH-90000]")
+    @DisplayName("Should calculate confidence score")
     void shouldCalculateConfidence() { // GH-90000
         // GIVEN: Natural language query
         String query = "age > 30 and status is active";
@@ -539,7 +539,7 @@ class NLQServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should return lower confidence for vague query [GH-90000]")
+    @DisplayName("Should return lower confidence for vague query")
     void shouldReturnLowConfidenceForVagueQuery() { // GH-90000
         // GIVEN: Vague query with no recognized patterns
         String query = "show me some stuff";
@@ -558,7 +558,7 @@ class NLQServiceTest extends EventloopTestBase {
         "name contains John",
         "salary >= 50000"
     })
-    @DisplayName("Should return reasonable confidence for clear patterns [GH-90000]")
+    @DisplayName("Should return reasonable confidence for clear patterns")
     void shouldReturnHighConfidenceForClearPatterns(String query) { // GH-90000
         // WHEN: Getting confidence for clear query
         Double confidence = runPromise(() -> nlqService.getConfidenceScore(query, testCollection)); // GH-90000
@@ -568,13 +568,13 @@ class NLQServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should reject null query in confidence scoring [GH-90000]")
+    @DisplayName("Should reject null query in confidence scoring")
     void shouldRejectNullQueryInConfidence() { // GH-90000
         // WHEN/THEN: Throws exception for null query
         assertThatThrownBy(() -> // GH-90000
             runPromise(() -> nlqService.getConfidenceScore(null, testCollection)) // GH-90000
         ).isInstanceOf(IllegalArgumentException.class) // GH-90000
-         .hasMessageContaining("Query cannot be null [GH-90000]");
+         .hasMessageContaining("Query cannot be null");
     }
 
     // ========================================================================
@@ -582,13 +582,13 @@ class NLQServiceTest extends EventloopTestBase {
     // ========================================================================
 
     @Test
-    @DisplayName("Should handle parsing error gracefully [GH-90000]")
+    @DisplayName("Should handle parsing error gracefully")
     void shouldHandleParsingError() { // GH-90000
         // GIVEN: Collection with null fields (causes error) // GH-90000
         MetaCollection badCollection = MetaCollection.builder() // GH-90000
             .id(UUID.randomUUID()) // GH-90000
-            .tenantId("tenant-1 [GH-90000]")
-            .name("bad [GH-90000]")
+            .tenantId("tenant-1")
+            .name("bad")
             .fields(null) // GH-90000
             .build(); // GH-90000
 
@@ -596,20 +596,20 @@ class NLQServiceTest extends EventloopTestBase {
         assertThatThrownBy(() -> // GH-90000
             runPromise(() -> nlqService.parseQuery("age > 25", badCollection)) // GH-90000
         ).isInstanceOf(BaseException.class) // GH-90000
-         .hasMessageContaining("Failed to parse query [GH-90000]");
+         .hasMessageContaining("Failed to parse query");
 
         // Clear the fatal error from eventloop since we expected this exception
         clearFatalError(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle collection with no fields [GH-90000]")
+    @DisplayName("Should handle collection with no fields")
     void shouldHandleEmptyFieldList() { // GH-90000
         // GIVEN: Collection with empty field list
         MetaCollection emptyCollection = MetaCollection.builder() // GH-90000
             .id(UUID.randomUUID()) // GH-90000
-            .tenantId("tenant-1 [GH-90000]")
-            .name("empty [GH-90000]")
+            .tenantId("tenant-1")
+            .name("empty")
             .fields(List.of()) // GH-90000
             .build(); // GH-90000
 
@@ -628,8 +628,8 @@ class NLQServiceTest extends EventloopTestBase {
     private Entity createEntity(String id, Map<String, Object> data) { // GH-90000
         return Entity.builder() // GH-90000
             .id(UUID.randomUUID()) // GH-90000
-            .tenantId("tenant-1 [GH-90000]")
-            .collectionName("users [GH-90000]")
+            .tenantId("tenant-1")
+            .collectionName("users")
             .data(new HashMap<>(data)) // GH-90000
             .createdAt(java.time.Instant.now()) // GH-90000
             .updatedAt(java.time.Instant.now()) // GH-90000

@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("CrossModalAccuracyTest [GH-90000]")
+@DisplayName("CrossModalAccuracyTest")
 class CrossModalAccuracyTest {
 
     private static final int DIM = 128;
@@ -33,7 +33,7 @@ class CrossModalAccuracyTest {
     // ── Benchmark dataset fixtures ────────────────────────────────────────────
 
     @Test
-    @DisplayName("high-quality benchmark fusion returns high confidence [GH-90000]")
+    @DisplayName("high-quality benchmark fusion returns high confidence")
     void highQualityBenchmarkHighConfidence() { // GH-90000
         AudioFeatures audio = makeAudio(DIM, 0.95); // GH-90000
         VisualFeatures visual = makeVisual(DIM, 0.92); // GH-90000
@@ -43,7 +43,7 @@ class CrossModalAccuracyTest {
     }
 
     @Test
-    @DisplayName("low-quality audio reduces fusion confidence compared to high-quality [GH-90000]")
+    @DisplayName("low-quality audio reduces fusion confidence compared to high-quality")
     void lowQualityAudioReducesConfidence() { // GH-90000
         VisualFeatures visual = makeVisual(DIM, 0.9); // GH-90000
         FusionResult highAudio = engine.fuseAudioVisual(makeAudio(DIM, 0.95), visual); // GH-90000
@@ -52,21 +52,21 @@ class CrossModalAccuracyTest {
     }
 
     @Test
-    @DisplayName("balanced modality weights when both have equal confidence [GH-90000]")
+    @DisplayName("balanced modality weights when both have equal confidence")
     void balancedWeightsForEqualConfidence() { // GH-90000
         double conf = 0.8;
         AudioFeatures audio = makeAudio(DIM, conf); // GH-90000
         VisualFeatures visual = makeVisual(DIM, conf); // GH-90000
         FusionResult result = engine.fuseAudioVisual(audio, visual); // GH-90000
-        double audioW = result.modalityWeights().get("audio [GH-90000]");
-        double visualW = result.modalityWeights().get("visual [GH-90000]");
+        double audioW = result.modalityWeights().get("audio");
+        double visualW = result.modalityWeights().get("visual");
         assertThat(audioW).isCloseTo(visualW, within(0.01)); // GH-90000
     }
 
     // ── Missing modality degradation ──────────────────────────────────────────
 
     @Test
-    @DisplayName("missing audio produces lower confidence than full audio-visual fusion [GH-90000]")
+    @DisplayName("missing audio produces lower confidence than full audio-visual fusion")
     void missingAudioReducesConfidenceVsFullFusion() { // GH-90000
         VisualFeatures visual = makeVisual(DIM, 0.8); // GH-90000
         AudioFeatures fullAudio = makeAudio(DIM, 0.8); // GH-90000
@@ -78,7 +78,7 @@ class CrossModalAccuracyTest {
     }
 
     @Test
-    @DisplayName("missing visual modality still produces valid fused embeddings [GH-90000]")
+    @DisplayName("missing visual modality still produces valid fused embeddings")
     void missingVisualProducesValidEmbeddings() { // GH-90000
         AudioFeatures audio = makeAudio(DIM, 0.85); // GH-90000
         VisualFeatures emptyVisual = new VisualFeatures(new double[0], new double[0], 0.0); // GH-90000
@@ -88,7 +88,7 @@ class CrossModalAccuracyTest {
     }
 
     @Test
-    @DisplayName("missing text modality in text-image fusion still produces valid result [GH-90000]")
+    @DisplayName("missing text modality in text-image fusion still produces valid result")
     void missingTextProducesValidTextImageFusion() { // GH-90000
         TextFeatures emptyText = new TextFeatures(new double[0], "", 0.0); // GH-90000
         VisualFeatures visual = makeVisual(DIM, 0.8); // GH-90000
@@ -100,7 +100,7 @@ class CrossModalAccuracyTest {
     // ── Noise robustness ──────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("noisy audio embeddings produce a valid fusion result [GH-90000]")
+    @DisplayName("noisy audio embeddings produce a valid fusion result")
     void noisyAudioEmbeddingsHandled() { // GH-90000
         AudioFeatures noisy = makeNoisyAudio(DIM); // GH-90000
         VisualFeatures visual = makeVisual(DIM, 0.8); // GH-90000
@@ -110,7 +110,7 @@ class CrossModalAccuracyTest {
     }
 
     @Test
-    @DisplayName("noisy visual embeddings produce a valid fusion result [GH-90000]")
+    @DisplayName("noisy visual embeddings produce a valid fusion result")
     void noisyVisualEmbeddingsHandled() { // GH-90000
         AudioFeatures audio = makeAudio(DIM, 0.8); // GH-90000
         VisualFeatures noisy = makeNoisyVisual(DIM); // GH-90000
@@ -119,7 +119,7 @@ class CrossModalAccuracyTest {
     }
 
     @Test
-    @DisplayName("both modalities noisy still produces valid fusion [GH-90000]")
+    @DisplayName("both modalities noisy still produces valid fusion")
     void bothNoisyProducesValidFusion() { // GH-90000
         AudioFeatures noisyAudio = makeNoisyAudio(DIM); // GH-90000
         VisualFeatures noisyVisual = makeNoisyVisual(DIM); // GH-90000
@@ -130,7 +130,7 @@ class CrossModalAccuracyTest {
     // ── Temporal alignment accuracy ───────────────────────────────────────────
 
     @Test
-    @DisplayName("audio-visual fusion is deterministic for identical inputs [GH-90000]")
+    @DisplayName("audio-visual fusion is deterministic for identical inputs")
     void fusionIsDeterministic() { // GH-90000
         AudioFeatures audio = makeAudio(DIM, 0.85); // GH-90000
         VisualFeatures visual = makeVisual(DIM, 0.75); // GH-90000
@@ -140,7 +140,7 @@ class CrossModalAccuracyTest {
     }
 
     @Test
-    @DisplayName("audio-visual fusion is commutative in terms of output dimension [GH-90000]")
+    @DisplayName("audio-visual fusion is commutative in terms of output dimension")
     void fusionOutputDimensionStable() { // GH-90000
         for (int trial = 0; trial < 5; trial++) { // GH-90000
             AudioFeatures audio = makeAudio(DIM, 0.7 + trial * 0.05); // GH-90000
@@ -154,7 +154,7 @@ class CrossModalAccuracyTest {
 
     @ParameterizedTest(name = "dim={0}") // GH-90000
     @ValueSource(ints = {16, 64, 128, 256}) // GH-90000
-    @DisplayName("accuracy tests scale correctly across embedding dimensions [GH-90000]")
+    @DisplayName("accuracy tests scale correctly across embedding dimensions")
     void dimensionScaling(int dim) { // GH-90000
         CrossModalFusionEngine e = new CrossModalFusionEngine("crossmodal-accuracy-v1", dim); // GH-90000
         FusionResult result = e.fuseAudioVisual(makeAudio(dim, 0.85), makeVisual(dim, 0.75)); // GH-90000
@@ -165,7 +165,7 @@ class CrossModalAccuracyTest {
     // ── Text-image accuracy ───────────────────────────────────────────────────
 
     @Test
-    @DisplayName("high-confidence text-image fusion has confidence > 0.5 [GH-90000]")
+    @DisplayName("high-confidence text-image fusion has confidence > 0.5")
     void highConfidenceTextImageFusion() { // GH-90000
         TextFeatures text = makeText(DIM, "caption text", 0.92); // GH-90000
         VisualFeatures visual = makeVisual(DIM, 0.88); // GH-90000
@@ -174,7 +174,7 @@ class CrossModalAccuracyTest {
     }
 
     @Test
-    @DisplayName("text-image fusion produces distinct output from audio-visual fusion [GH-90000]")
+    @DisplayName("text-image fusion produces distinct output from audio-visual fusion")
     void textImageDistinctFromAudioVisual() { // GH-90000
         TextFeatures text = makeText(DIM, "image caption", 0.9); // GH-90000
         VisualFeatures visual = makeVisual(DIM, 0.8); // GH-90000

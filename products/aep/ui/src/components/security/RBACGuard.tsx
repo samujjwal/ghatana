@@ -12,6 +12,7 @@
 
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '@/lib/http-client';
 
 /**
  * Permission check request
@@ -74,19 +75,7 @@ export const RBACGuard: React.FC<RBACGuardProps> = ({
         action,
       };
 
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(request),
-      });
-
-      if (!response.ok) {
-        // If permission check fails, deny access for safety
-        console.error('Permission check failed:', response.statusText);
-        return false;
-      }
-
-      const data: PermissionCheckResponse = await response.json();
+      const { data } = await apiClient.post<PermissionCheckResponse>(endpoint, request);
       return data.granted;
     },
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
@@ -122,18 +111,7 @@ export function usePermission(
         action,
       };
 
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(request),
-      });
-
-      if (!response.ok) {
-        console.error('Permission check failed:', response.statusText);
-        return false;
-      }
-
-      const data: PermissionCheckResponse = await response.json();
+      const { data } = await apiClient.post<PermissionCheckResponse>(endpoint, request);
       return data.granted;
     },
     staleTime: 5 * 60 * 1000,
@@ -158,17 +136,7 @@ export function usePermissions(
   const { data: results, isLoading, error } = useQuery({
     queryKey: ['rbac', 'permissions', checks],
     queryFn: async (): Promise<Record<string, boolean>> => {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ checks }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Permission check failed: ${response.statusText}`);
-      }
-
-      const data: Record<string, boolean> = await response.json();
+      const { data } = await apiClient.post<Record<string, boolean>>(endpoint, { checks });
       return data;
     },
     staleTime: 5 * 60 * 1000,

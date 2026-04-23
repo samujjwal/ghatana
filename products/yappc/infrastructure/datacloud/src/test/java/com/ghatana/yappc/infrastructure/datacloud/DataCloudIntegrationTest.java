@@ -22,7 +22,7 @@ import java.util.UUID;
  * @doc.layer product
  * @doc.pattern Integration Test
  */
-@DisplayName("Data-Cloud Integration Tests [GH-90000]")
+@DisplayName("Data-Cloud Integration Tests")
 class DataCloudIntegrationTest {
 
     @Mock
@@ -48,7 +48,7 @@ class DataCloudIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should initialize data-cloud repository successfully [GH-90000]")
+    @DisplayName("Should initialize data-cloud repository successfully")
     void shouldInitializeRepository() { // GH-90000
         // Given - repository is initialized in setUp
 

@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@DisplayName("Pipeline Execution Integration [GH-90000]")
+@DisplayName("Pipeline Execution Integration")
 class PipelineExecutionIntegrationTest extends EventloopTestBase {
 
     private AepEngine engine;
@@ -49,11 +49,11 @@ class PipelineExecutionIntegrationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Full Execution Lifecycle [GH-90000]")
+    @DisplayName("Full Execution Lifecycle")
     class LifecycleTests {
 
         @Test
-        @DisplayName("executes pipeline and registers patterns [GH-90000]")
+        @DisplayName("executes pipeline and registers patterns")
         void executesPipelineAndRegistersPatterns() { // GH-90000
             // GIVEN
             String tenantId = "tenant-test";
@@ -71,7 +71,7 @@ class PipelineExecutionIntegrationTest extends EventloopTestBase {
                         "name", "suspicious-location",
                         "patternType", "CUSTOM",
                         "config", Map.of("location", "high-risk") // GH-90000
-                    ), List.of("step-1 [GH-90000]"))
+                    ), List.of("step-1"))
                 )
             );
 
@@ -87,7 +87,7 @@ class PipelineExecutionIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("executes stages in dependency order [GH-90000]")
+        @DisplayName("executes stages in dependency order")
         void executesStagesInDependencyOrder() { // GH-90000
             // GIVEN
             String tenantId = "tenant-test";
@@ -106,13 +106,13 @@ class PipelineExecutionIntegrationTest extends EventloopTestBase {
                         "patternType", "THRESHOLD",
                         "field", "value",
                         "threshold", 75.0
-                    ), List.of("init [GH-90000]")),
+                    ), List.of("init")),
                     new AepEngine.PipelineStep("finalize", "register_pattern", Map.of( // GH-90000
                         "name", "final-pattern",
                         "patternType", "THRESHOLD",
                         "field", "result",
                         "threshold", 90.0
-                    ), List.of("process [GH-90000]"))
+                    ), List.of("process"))
                 )
             );
 
@@ -122,13 +122,13 @@ class PipelineExecutionIntegrationTest extends EventloopTestBase {
             // THEN - All patterns should be registered
             List<AepEngine.Pattern> patterns = runPromise(() -> engine.listPatterns(tenantId)); // GH-90000
             assertThat(patterns).hasSize(3); // GH-90000
-            assertThat(patterns).anyMatch(p -> p.name().equals("init-pattern [GH-90000]"));
-            assertThat(patterns).anyMatch(p -> p.name().equals("process-pattern [GH-90000]"));
-            assertThat(patterns).anyMatch(p -> p.name().equals("final-pattern [GH-90000]"));
+            assertThat(patterns).anyMatch(p -> p.name().equals("init-pattern"));
+            assertThat(patterns).anyMatch(p -> p.name().equals("process-pattern"));
+            assertThat(patterns).anyMatch(p -> p.name().equals("final-pattern"));
         }
 
         @Test
-        @DisplayName("handles pipeline with no steps [GH-90000]")
+        @DisplayName("handles pipeline with no steps")
         void handlesPipelineWithNoSteps() { // GH-90000
             // GIVEN
             String tenantId = "tenant-test";
@@ -147,7 +147,7 @@ class PipelineExecutionIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("rejects pipeline with cycles [GH-90000]")
+        @DisplayName("rejects pipeline with cycles")
         void rejectsPipelineWithCycles() { // GH-90000
             // GIVEN
             String tenantId = "tenant-test";
@@ -155,19 +155,19 @@ class PipelineExecutionIntegrationTest extends EventloopTestBase {
                 "cyclic-pipeline",
                 "Cyclic Pipeline",
                 List.of( // GH-90000
-                    new AepEngine.PipelineStep("step-1", "register_pattern", Map.of(), List.of("step-2 [GH-90000]")),
-                    new AepEngine.PipelineStep("step-2", "register_pattern", Map.of(), List.of("step-1 [GH-90000]"))
+                    new AepEngine.PipelineStep("step-1", "register_pattern", Map.of(), List.of("step-2")),
+                    new AepEngine.PipelineStep("step-2", "register_pattern", Map.of(), List.of("step-1"))
                 )
             );
 
             // WHEN/THEN
             assertThatThrownBy(() -> engine.submitPipeline(tenantId, pipeline)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("cycles [GH-90000]");
+                .hasMessageContaining("cycles");
         }
 
         @Test
-        @DisplayName("executes independent steps without blocking [GH-90000]")
+        @DisplayName("executes independent steps without blocking")
         void executesIndependentStepsWithoutBlocking() { // GH-90000
             // GIVEN
             String tenantId = "tenant-test";
@@ -199,7 +199,7 @@ class PipelineExecutionIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("continues after step failure [GH-90000]")
+        @DisplayName("continues after step failure")
         void continuesAfterStepFailure() { // GH-90000
             // GIVEN
             String tenantId = "tenant-test";
@@ -223,16 +223,16 @@ class PipelineExecutionIntegrationTest extends EventloopTestBase {
             // THEN - Valid step should still execute
             List<AepEngine.Pattern> patterns = runPromise(() -> engine.listPatterns(tenantId)); // GH-90000
             assertThat(patterns).hasSize(1); // GH-90000
-            assertThat(patterns.get(0).name()).isEqualTo("valid-pattern [GH-90000]");
+            assertThat(patterns.get(0).name()).isEqualTo("valid-pattern");
         }
     }
 
     @Nested
-    @DisplayName("State Updates [GH-90000]")
+    @DisplayName("State Updates")
     class StateUpdateTests {
 
         @Test
-        @DisplayName("pattern state is updated after registration [GH-90000]")
+        @DisplayName("pattern state is updated after registration")
         void patternStateIsUpdatedAfterRegistration() { // GH-90000
             // GIVEN
             String tenantId = "tenant-test";
@@ -255,12 +255,12 @@ class PipelineExecutionIntegrationTest extends EventloopTestBase {
             // THEN
             List<AepEngine.Pattern> patterns = runPromise(() -> engine.listPatterns(tenantId)); // GH-90000
             assertThat(patterns).hasSize(1); // GH-90000
-            assertThat(patterns.get(0).name()).isEqualTo("state-test-pattern [GH-90000]");
+            assertThat(patterns.get(0).name()).isEqualTo("state-test-pattern");
             assertThat(patterns.get(0).type()).isEqualTo(AepEngine.PatternType.THRESHOLD); // GH-90000
         }
 
         @Test
-        @DisplayName("multiple pipelines can register patterns for same tenant [GH-90000]")
+        @DisplayName("multiple pipelines can register patterns for same tenant")
         void multiplePipelinesCanRegisterPatternsForSameTenant() { // GH-90000
             // GIVEN
             String tenantId = "tenant-test";
@@ -292,17 +292,17 @@ class PipelineExecutionIntegrationTest extends EventloopTestBase {
             // THEN
             List<AepEngine.Pattern> patterns = runPromise(() -> engine.listPatterns(tenantId)); // GH-90000
             assertThat(patterns).hasSize(2); // GH-90000
-            assertThat(patterns).anyMatch(p -> p.name().equals("pattern-1 [GH-90000]"));
-            assertThat(patterns).anyMatch(p -> p.name().equals("pattern-2 [GH-90000]"));
+            assertThat(patterns).anyMatch(p -> p.name().equals("pattern-1"));
+            assertThat(patterns).anyMatch(p -> p.name().equals("pattern-2"));
         }
     }
 
     @Nested
-    @DisplayName("Complex DAG Patterns [GH-90000]")
+    @DisplayName("Complex DAG Patterns")
     class ComplexDAGTests {
 
         @Test
-        @DisplayName("fan-out pattern executes correctly [GH-90000]")
+        @DisplayName("fan-out pattern executes correctly")
         void fanOutPatternExecutesCorrectly() { // GH-90000
             // GIVEN
             String tenantId = "tenant-test";
@@ -321,13 +321,13 @@ class PipelineExecutionIntegrationTest extends EventloopTestBase {
                         "patternType", "THRESHOLD",
                         "field", "field-a",
                         "threshold", 60.0
-                    ), List.of("init [GH-90000]")),
+                    ), List.of("init")),
                     new AepEngine.PipelineStep("process-b", "register_pattern", Map.of( // GH-90000
                         "name", "pattern-b",
                         "patternType", "THRESHOLD",
                         "field", "field-b",
                         "threshold", 70.0
-                    ), List.of("init [GH-90000]"))
+                    ), List.of("init"))
                 )
             );
 
@@ -340,7 +340,7 @@ class PipelineExecutionIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("fan-in pattern executes correctly [GH-90000]")
+        @DisplayName("fan-in pattern executes correctly")
         void fanInPatternExecutesCorrectly() { // GH-90000
             // GIVEN
             String tenantId = "tenant-test";
@@ -378,7 +378,7 @@ class PipelineExecutionIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("diamond pattern executes correctly [GH-90000]")
+        @DisplayName("diamond pattern executes correctly")
         void diamondPatternExecutesCorrectly() { // GH-90000
             // GIVEN
             String tenantId = "tenant-test";
@@ -397,13 +397,13 @@ class PipelineExecutionIntegrationTest extends EventloopTestBase {
                         "patternType", "THRESHOLD",
                         "field", "field-a",
                         "threshold", 60.0
-                    ), List.of("start [GH-90000]")),
+                    ), List.of("start")),
                     new AepEngine.PipelineStep("branch-b", "register_pattern", Map.of( // GH-90000
                         "name", "pattern-b",
                         "patternType", "THRESHOLD",
                         "field", "field-b",
                         "threshold", 70.0
-                    ), List.of("start [GH-90000]")),
+                    ), List.of("start")),
                     new AepEngine.PipelineStep("merge", "register_pattern", Map.of( // GH-90000
                         "name", "merge-pattern",
                         "patternType", "THRESHOLD",

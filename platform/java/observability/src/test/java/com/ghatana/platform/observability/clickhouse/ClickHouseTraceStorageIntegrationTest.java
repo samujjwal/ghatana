@@ -23,8 +23,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("ClickHouse Trace Storage Integration Tests [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("ClickHouse Trace Storage Integration Tests")
+@Tag("integration")
 class ClickHouseTraceStorageIntegrationTest extends EventloopTestBase {
 
     // ── Simulated trace model ─────────────────────────────────────────────────
@@ -73,11 +73,11 @@ class ClickHouseTraceStorageIntegrationTest extends EventloopTestBase {
     // ── Trace storage ─────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("trace storage [GH-90000]")
+    @DisplayName("trace storage")
     class TraceStorage {
 
         @Test
-        @DisplayName("inserted trace is retrievable by trace ID [GH-90000]")
+        @DisplayName("inserted trace is retrievable by trace ID")
         void insertedTrace_isRetrievableByTraceId() { // GH-90000
             InMemoryTraceStorage store = new InMemoryTraceStorage(); // GH-90000
             String traceId = UUID.randomUUID().toString(); // GH-90000
@@ -89,11 +89,11 @@ class ClickHouseTraceStorageIntegrationTest extends EventloopTestBase {
 
             assertThat(found).hasSize(1); // GH-90000
             assertThat(found.getFirst().traceId()).isEqualTo(traceId); // GH-90000
-            assertThat(found.getFirst().operation()).isEqualTo("getUser [GH-90000]");
+            assertThat(found.getFirst().operation()).isEqualTo("getUser");
         }
 
         @Test
-        @DisplayName("multiple spans under same trace ID are all retrieved [GH-90000]")
+        @DisplayName("multiple spans under same trace ID are all retrieved")
         void multipleSpans_underSameTraceId_areAllRetrieved() { // GH-90000
             InMemoryTraceStorage store = new InMemoryTraceStorage(); // GH-90000
             String traceId = UUID.randomUUID().toString(); // GH-90000
@@ -111,11 +111,11 @@ class ClickHouseTraceStorageIntegrationTest extends EventloopTestBase {
     // ── Trace retrieval ───────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("trace retrieval [GH-90000]")
+    @DisplayName("trace retrieval")
     class TraceRetrieval {
 
         @Test
-        @DisplayName("retrieval by span ID returns the single matching entry [GH-90000]")
+        @DisplayName("retrieval by span ID returns the single matching entry")
         void retrievalBySpanId_returnsSingleMatchingEntry() { // GH-90000
             InMemoryTraceStorage store = new InMemoryTraceStorage(); // GH-90000
             String spanId = UUID.randomUUID().toString(); // GH-90000
@@ -131,7 +131,7 @@ class ClickHouseTraceStorageIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("time-range filter returns only entries within window [GH-90000]")
+        @DisplayName("time-range filter returns only entries within window")
         void timeRangeFilter_returnsOnlyEntriesWithinWindow() { // GH-90000
             InMemoryTraceStorage store = new InMemoryTraceStorage(); // GH-90000
             Instant base = Instant.now(); // GH-90000
@@ -150,7 +150,7 @@ class ClickHouseTraceStorageIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("tag filter returns only entries with matching tag value [GH-90000]")
+        @DisplayName("tag filter returns only entries with matching tag value")
         void tagFilter_returnsOnlyEntriesWithMatchingTagValue() { // GH-90000
             InMemoryTraceStorage store = new InMemoryTraceStorage(); // GH-90000
             store.insert(new TraceEntry("t1", "s1", "op1", Instant.now(), 5L, Map.of("env", "prod"))); // GH-90000
@@ -168,11 +168,11 @@ class ClickHouseTraceStorageIntegrationTest extends EventloopTestBase {
     // ── Trace deletion ────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("trace deletion [GH-90000]")
+    @DisplayName("trace deletion")
     class TraceDeletion {
 
         @Test
-        @DisplayName("deletion by trace ID removes all spans of that trace [GH-90000]")
+        @DisplayName("deletion by trace ID removes all spans of that trace")
         void deletionByTraceId_removesAllSpansOfThatTrace() { // GH-90000
             InMemoryTraceStorage store = new InMemoryTraceStorage(); // GH-90000
             String traceToDelete = "trace-to-delete";
@@ -190,12 +190,12 @@ class ClickHouseTraceStorageIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("deletion of non-existent trace is a no-op [GH-90000]")
+        @DisplayName("deletion of non-existent trace is a no-op")
         void deletionOfNonExistentTrace_isNoOp() { // GH-90000
             InMemoryTraceStorage store = new InMemoryTraceStorage(); // GH-90000
             store.insert(new TraceEntry("existing-trace", "s1", "op1", Instant.now(), 5L, Map.of())); // GH-90000
 
-            store.deleteByTraceId("non-existent-trace [GH-90000]");
+            store.deleteByTraceId("non-existent-trace");
 
             assertThat(store.count()).isEqualTo(1); // GH-90000
         }

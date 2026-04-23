@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @doc.layer core
  * @doc.pattern Test
  */
-@DisplayName("OpenAIService Schema Validation Integration Tests [GH-90000]")
+@DisplayName("OpenAIService Schema Validation Integration Tests")
 class OpenAIServiceIntegrationTest {
 
     /**
@@ -39,9 +39,9 @@ class OpenAIServiceIntegrationTest {
     }
 
     @Test
-    @DisplayName("Integration test: Should parse valid structured output from LLM [GH-90000]")
+    @DisplayName("Integration test: Should parse valid structured output from LLM")
     void shouldParseValidStructuredOutput() { // GH-90000
-        String apiKey = System.getenv("OPENAI_API_KEY [GH-90000]");
+        String apiKey = System.getenv("OPENAI_API_KEY");
         Assumptions.assumeTrue(apiKey != null && !apiKey.isBlank(), "OPENAI_API_KEY not set"); // GH-90000
 
         LLMService service = new OpenAIService(apiKey); // GH-90000
@@ -55,9 +55,9 @@ class OpenAIServiceIntegrationTest {
     }
 
     @Test
-    @DisplayName("Integration test: Should throw exception for invalid structured output [GH-90000]")
+    @DisplayName("Integration test: Should throw exception for invalid structured output")
     void shouldThrowExceptionForInvalidStructuredOutput() { // GH-90000
-        String apiKey = System.getenv("OPENAI_API_KEY [GH-90000]");
+        String apiKey = System.getenv("OPENAI_API_KEY");
         Assumptions.assumeTrue(apiKey != null && !apiKey.isBlank(), "OPENAI_API_KEY not set"); // GH-90000
 
         LLMService service = new OpenAIService(apiKey); // GH-90000
@@ -65,9 +65,9 @@ class OpenAIServiceIntegrationTest {
 
         try {
             service.generateStructured(prompt, TestSchema.class).getResult(); // GH-90000
-            throw new AssertionError("Should throw exception for invalid structured output [GH-90000]");
+            throw new AssertionError("Should throw exception for invalid structured output");
         } catch (Exception e) { // GH-90000
-            assertTrue(e.getMessage().contains("Failed to parse [GH-90000]") || e.getCause() != null);
+            assertTrue(e.getMessage().contains("Failed to parse") || e.getCause() != null);
         }
     }
 }

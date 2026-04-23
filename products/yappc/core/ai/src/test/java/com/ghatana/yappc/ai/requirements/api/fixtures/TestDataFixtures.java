@@ -142,7 +142,7 @@ public class TestDataFixtures {
     public static ObjectNode createExportRequest(String format, String... requirementIds) { // GH-90000
         ObjectNode request = objectMapper.createObjectNode(); // GH-90000
         request.put("format", format); // GH-90000
-        com.fasterxml.jackson.databind.node.ArrayNode idsArray = request.putArray("requirementIds [GH-90000]");
+        com.fasterxml.jackson.databind.node.ArrayNode idsArray = request.putArray("requirementIds");
         for (String id : requirementIds) { // GH-90000
             idsArray.add(id); // GH-90000
         }

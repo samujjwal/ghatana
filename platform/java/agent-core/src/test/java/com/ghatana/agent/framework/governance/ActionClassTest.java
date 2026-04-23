@@ -13,22 +13,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Unit tests for {@link ActionClass}.
  */
-@DisplayName("ActionClass [GH-90000]")
+@DisplayName("ActionClass")
 class ActionClassTest {
 
     @Nested
-    @DisplayName("isPrivileged [GH-90000]")
+    @DisplayName("isPrivileged")
     class IsPrivileged {
 
         @Test
-        @DisplayName("READ and DRAFT are not privileged [GH-90000]")
+        @DisplayName("READ and DRAFT are not privileged")
         void readAndDraftNotPrivileged() { // GH-90000
             assertThat(ActionClass.READ.isPrivileged()).isFalse(); // GH-90000
             assertThat(ActionClass.DRAFT.isPrivileged()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("all other classes are privileged [GH-90000]")
+        @DisplayName("all other classes are privileged")
         void otherClassesArePrivileged() { // GH-90000
             assertThat(ActionClass.WRITE_REVERSIBLE.isPrivileged()).isTrue(); // GH-90000
             assertThat(ActionClass.WRITE_IRREVERSIBLE.isPrivileged()).isTrue(); // GH-90000
@@ -40,11 +40,11 @@ class ActionClassTest {
     }
 
     @Nested
-    @DisplayName("isIrreversible [GH-90000]")
+    @DisplayName("isIrreversible")
     class IsIrreversible {
 
         @Test
-        @DisplayName("WRITE_IRREVERSIBLE, CALL_EXTERNAL, POLICY_CHANGE are irreversible [GH-90000]")
+        @DisplayName("WRITE_IRREVERSIBLE, CALL_EXTERNAL, POLICY_CHANGE are irreversible")
         void irreversibleClasses() { // GH-90000
             assertThat(ActionClass.WRITE_IRREVERSIBLE.isIrreversible()).isTrue(); // GH-90000
             assertThat(ActionClass.CALL_EXTERNAL.isIrreversible()).isTrue(); // GH-90000
@@ -52,7 +52,7 @@ class ActionClassTest {
         }
 
         @Test
-        @DisplayName("READ, DRAFT, WRITE_REVERSIBLE, DELEGATE, MEMORY_MUTATION are reversible [GH-90000]")
+        @DisplayName("READ, DRAFT, WRITE_REVERSIBLE, DELEGATE, MEMORY_MUTATION are reversible")
         void reversibleClasses() { // GH-90000
             assertThat(ActionClass.READ.isIrreversible()).isFalse(); // GH-90000
             assertThat(ActionClass.DRAFT.isIrreversible()).isFalse(); // GH-90000
@@ -63,18 +63,18 @@ class ActionClassTest {
     }
 
     @Nested
-    @DisplayName("isLowRisk [GH-90000]")
+    @DisplayName("isLowRisk")
     class IsLowRisk {
 
         @Test
-        @DisplayName("READ and DRAFT are low risk [GH-90000]")
+        @DisplayName("READ and DRAFT are low risk")
         void readAndDraftAreLowRisk() { // GH-90000
             assertThat(ActionClass.READ.isLowRisk()).isTrue(); // GH-90000
             assertThat(ActionClass.DRAFT.isLowRisk()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("all other classes are not low risk [GH-90000]")
+        @DisplayName("all other classes are not low risk")
         void otherClassesNotLowRisk() { // GH-90000
             assertThat(ActionClass.WRITE_REVERSIBLE.isLowRisk()).isFalse(); // GH-90000
             assertThat(ActionClass.WRITE_IRREVERSIBLE.isLowRisk()).isFalse(); // GH-90000
@@ -85,7 +85,7 @@ class ActionClassTest {
         }
 
         @Test
-        @DisplayName("isLowRisk is logically the inverse of isPrivileged [GH-90000]")
+        @DisplayName("isLowRisk is logically the inverse of isPrivileged")
         void lowRiskIsInverseOfPrivileged() { // GH-90000
             for (ActionClass ac : ActionClass.values()) { // GH-90000
                 assertThat(ac.isLowRisk()).isEqualTo(!ac.isPrivileged()); // GH-90000
@@ -94,7 +94,7 @@ class ActionClassTest {
     }
 
     @Test
-    @DisplayName("8 canonical action classes defined [GH-90000]")
+    @DisplayName("8 canonical action classes defined")
     void eightCanonicalClasses() { // GH-90000
         assertThat(ActionClass.values()).hasSize(8); // GH-90000
     }

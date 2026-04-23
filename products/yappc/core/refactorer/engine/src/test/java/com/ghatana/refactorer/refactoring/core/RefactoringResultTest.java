@@ -43,7 +43,7 @@ class RefactoringResultTest {
 
     @Test
     void testFailureResult() { // GH-90000
-        RefactoringResult result = RefactoringResult.failure("File not found [GH-90000]");
+        RefactoringResult result = RefactoringResult.failure("File not found");
 
         assertFalse(result.isSuccess()); // GH-90000
         assertTrue(result.getModifiedFiles().isEmpty()); // GH-90000
@@ -77,9 +77,9 @@ class RefactoringResultTest {
                 RefactoringResult.builder() // GH-90000
                         .success(true) // GH-90000
                         .addModifiedFile(FILE1_JAVA) // GH-90000
-                        .addModifiedFile("file2.java [GH-90000]")
+                        .addModifiedFile("file2.java")
                         .changeCount(3) // GH-90000
-                        .summary("Refactoring completed [GH-90000]")
+                        .summary("Refactoring completed")
                         .errorMessage(null) // GH-90000
                         .metadata(metadata) // GH-90000
                         .metadata("additionalInfo", "test") // GH-90000
@@ -90,9 +90,9 @@ class RefactoringResultTest {
         assertEquals(3, result.getChangeCount()); // GH-90000
         assertEquals("Refactoring completed", result.getSummary()); // GH-90000
         assertNull(result.getErrorMessage()); // GH-90000
-        assertEquals(2, ((Number) result.getMetadata("warnings [GH-90000]")).intValue());
-        assertEquals(150L, ((Number) result.getMetadata("durationMs [GH-90000]")).longValue());
-        assertEquals("test", result.getMetadata("additionalInfo [GH-90000]"));
+        assertEquals(2, ((Number) result.getMetadata("warnings")).intValue());
+        assertEquals(150L, ((Number) result.getMetadata("durationMs")).longValue());
+        assertEquals("test", result.getMetadata("additionalInfo"));
     }
 
     @Test
@@ -103,7 +103,7 @@ class RefactoringResultTest {
         RefactoringResult result2 =
                 RefactoringResult.success(Collections.singletonList(FILE1_JAVA), 1, "Test"); // GH-90000
 
-        RefactoringResult result3 = RefactoringResult.failure("Error [GH-90000]");
+        RefactoringResult result3 = RefactoringResult.failure("Error");
 
         assertEquals(result1, result2); // GH-90000
         assertEquals(result1.hashCode(), result2.hashCode()); // GH-90000

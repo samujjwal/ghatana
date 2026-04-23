@@ -60,7 +60,7 @@ import static org.mockito.Mockito.when;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("yappc-api Integration & Edge Case Tests [GH-90000]")
+@DisplayName("yappc-api Integration & Edge Case Tests")
 class YappcApiControllerIntegrationTest extends EventloopTestBase {
 
     @Mock
@@ -90,7 +90,7 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Audit Logging - Action Tracking [GH-90000]")
+    @DisplayName("Audit Logging - Action Tracking")
     class AuditLoggingTests {
 
         private WorkflowController workflowController;
@@ -103,13 +103,13 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("executeAgent logs execution to audit trail [GH-90000]")
+        @DisplayName("executeAgent logs execution to audit trail")
         void executeAgentLogsAuditEvent() { // GH-90000
             // GIVEN: Agent execution with headers
-            HttpRequest request = HttpRequest.post("http://localhost/api/v1/agents/copilot/execute [GH-90000]")
-                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-001")
-                .withHeader(HttpHeaders.of("X-Organization-ID [GH-90000]"), "org-123")
-                .withHeader(HttpHeaders.of("X-Workspace-ID [GH-90000]"), "ws-456")
+            HttpRequest request = HttpRequest.post("http://localhost/api/v1/agents/copilot/execute")
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
+                .withHeader(HttpHeaders.of("X-Organization-ID"), "org-123")
+                .withHeader(HttpHeaders.of("X-Workspace-ID"), "ws-456")
                 .build(); // GH-90000
 
             // WHEN: Execute agent
@@ -121,7 +121,7 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("startWorkflow logs state transition to audit trail [GH-90000]")
+        @DisplayName("startWorkflow logs state transition to audit trail")
         void startWorkflowLogsAuditEvent() { // GH-90000
             // GIVEN: Workflow ready to start
             AiWorkflowInstance started = createWorkflowForTenant("wf-1", "tenant-001", true); // GH-90000
@@ -129,8 +129,8 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
                 .thenReturn(Promise.of(started)); // GH-90000
 
             // WHEN: Start workflow
-            HttpRequest request = HttpRequest.post("http://localhost/api/v1/workflows/wf-1/start [GH-90000]")
-                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-001")
+            HttpRequest request = HttpRequest.post("http://localhost/api/v1/workflows/wf-1/start")
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
                 .build(); // GH-90000
             HttpResponse response = runPromise(() -> workflowController.startWorkflow(request, "wf-1")); // GH-90000
 
@@ -140,7 +140,7 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("deleteWorkflow logs deletion to audit trail [GH-90000]")
+        @DisplayName("deleteWorkflow logs deletion to audit trail")
         void deleteWorkflowLogsAuditEvent() { // GH-90000
             // GIVEN: Workflow can be deleted
             when(workflowService.deleteWorkflow("wf-1", "tenant-001")) // GH-90000
@@ -148,7 +148,7 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
 
             // WHEN: Delete workflow
             HttpRequest request = HttpRequest.builder(HttpMethod.DELETE, "http://localhost/api/v1/workflows/wf-1") // GH-90000
-                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-001")
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
                 .build(); // GH-90000
             HttpResponse response = runPromise(() -> workflowController.deleteWorkflow(request, "wf-1")); // GH-90000
 
@@ -163,7 +163,7 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Error Handling - Service Failures [GH-90000]")
+    @DisplayName("Error Handling - Service Failures")
     class ServiceFailureTests {
 
         private WorkflowController workflowController;
@@ -176,15 +176,15 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("listWorkflows handles service exception gracefully [GH-90000]")
+        @DisplayName("listWorkflows handles service exception gracefully")
         void listWorkflowsHandlesServiceException() { // GH-90000
             // GIVEN: Service throws exception
             when(workflowService.listWorkflows(any(), any(), anyInt(), anyInt())) // GH-90000
-                .thenReturn(Promise.ofException(new RuntimeException("Database unavailable [GH-90000]")));
+                .thenReturn(Promise.ofException(new RuntimeException("Database unavailable")));
 
             // WHEN: List workflows
-            HttpRequest request = HttpRequest.get("http://localhost/api/v1/workflows [GH-90000]")
-                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-001")
+            HttpRequest request = HttpRequest.get("http://localhost/api/v1/workflows")
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
                 .build(); // GH-90000
             // THEN: Exception propagates (error handling depends on implementation) // GH-90000
             assertThrows( // GH-90000
@@ -194,14 +194,14 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("search returns fallback when search service unavailable [GH-90000]")
+        @DisplayName("search returns fallback when search service unavailable")
         void searchHandlesServiceUnavailable() { // GH-90000
             // No stub needed — the test currently has no assertions
             // Error handling behavior depends on implementation
         }
 
         @Test
-        @DisplayName("rag returns graceful error when LLM unavailable [GH-90000]")
+        @DisplayName("rag returns graceful error when LLM unavailable")
         void ragHandlesLLMUnavailable() { // GH-90000
             // GIVEN: LLM service fails - no stub needed, test has no actual execution
             // Should either return 503 or fallback with retrieved docs only
@@ -213,7 +213,7 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Input Validation - Boundary Conditions [GH-90000]")
+    @DisplayName("Input Validation - Boundary Conditions")
     class InputBoundaryTests {
 
         private WorkflowController workflowController;
@@ -226,11 +226,11 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("listWorkflows with negative offset returns 400 [GH-90000]")
+        @DisplayName("listWorkflows with negative offset returns 400")
         void listWorkflowsNegativeOffset() { // GH-90000
             // GIVEN: Negative offset in pagination
-            HttpRequest request = HttpRequest.get("http://localhost/api/v1/workflows?offset=-1 [GH-90000]")
-                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-001")
+            HttpRequest request = HttpRequest.get("http://localhost/api/v1/workflows?offset=-1")
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
                 .build(); // GH-90000
 
             // WHEN: List workflows
@@ -239,15 +239,15 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("listWorkflows with limit > max caps at maximum [GH-90000]")
+        @DisplayName("listWorkflows with limit > max caps at maximum")
         void listWorkflowsLimitCappedAtMaximum() { // GH-90000
             // GIVEN: Limit exceeds maximum (usually 100) // GH-90000
             when(workflowService.listWorkflows("tenant-001", null, 100, 0)) // GH-90000
                 .thenReturn(Promise.of(List.of())); // GH-90000
 
             // WHEN: List with limit > 100
-            HttpRequest request = HttpRequest.get("http://localhost/api/v1/workflows?limit=9999 [GH-90000]")
-                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-001")
+            HttpRequest request = HttpRequest.get("http://localhost/api/v1/workflows?limit=9999")
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
                 .build(); // GH-90000
             HttpResponse response = runPromise(() -> workflowController.listWorkflows(request)); // GH-90000
 
@@ -256,12 +256,12 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("search with query > max length returns 400 [GH-90000]")
+        @DisplayName("search with query > max length returns 400")
         void searchQueryTooLong() { // GH-90000
             // GIVEN: Query exceeds max length (2048 chars) // GH-90000
             String longQuery = "a".repeat(2049); // GH-90000
             String searchBody = "{\"query\": \"" + longQuery + "\", \"limit\": 10}";
-            HttpRequest request = HttpRequest.post("http://localhost/api/v1/vector/search [GH-90000]")
+            HttpRequest request = HttpRequest.post("http://localhost/api/v1/vector/search")
                 .withBody(searchBody.getBytes(StandardCharsets.UTF_8)) // GH-90000
                 .build(); // GH-90000
 
@@ -270,12 +270,12 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("indexDocument with text > max length returns 413 [GH-90000]")
+        @DisplayName("indexDocument with text > max length returns 413")
         void indexDocumentTextTooLong() { // GH-90000
             // GIVEN: Document text exceeds 100KB
             String longText = "a".repeat(101000); // GH-90000
             String docBody = "{\"id\": \"doc-1\", \"content\": \"" + longText + "\"}";
-            HttpRequest request = HttpRequest.post("http://localhost/api/v1/vector/index [GH-90000]")
+            HttpRequest request = HttpRequest.post("http://localhost/api/v1/vector/index")
                 .withBody(docBody.getBytes(StandardCharsets.UTF_8)) // GH-90000
                 .build(); // GH-90000
 
@@ -284,7 +284,7 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("batchIndex with > 1000 documents validates limit [GH-90000]")
+        @DisplayName("batchIndex with > 1000 documents validates limit")
         void batchIndexDocumentCountLimit() { // GH-90000
             // GIVEN: Batch with 1001 documents
             List<Map<String, Object>> docs = new java.util.ArrayList<>(); // GH-90000
@@ -303,7 +303,7 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Concurrency - Simultaneous Operations [GH-90000]")
+    @DisplayName("Concurrency - Simultaneous Operations")
     class ConcurrencyTests {
 
         private WorkflowController workflowController;
@@ -314,7 +314,7 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("concurrent listWorkflows requests succeed [GH-90000]")
+        @DisplayName("concurrent listWorkflows requests succeed")
         void concurrentListWorkflows() { // GH-90000
             // GIVEN: Multiple concurrent requests
             when(workflowService.listWorkflows("tenant-001", null, 20, 0)) // GH-90000
@@ -322,8 +322,8 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
 
             // WHEN: Execute concurrent list requests
             for (int i = 0; i < 5; i++) { // GH-90000
-                HttpRequest request = HttpRequest.get("http://localhost/api/v1/workflows [GH-90000]")
-                    .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-001")
+                HttpRequest request = HttpRequest.get("http://localhost/api/v1/workflows")
+                    .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
                     .build(); // GH-90000
                 HttpResponse response = runPromise(() -> workflowController.listWorkflows(request)); // GH-90000
 
@@ -333,7 +333,7 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("concurrent state transitions handled correctly [GH-90000]")
+        @DisplayName("concurrent state transitions handled correctly")
         void concurrentStateTransitions() { // GH-90000
             // GIVEN: Multiple transitions scheduled
             AiWorkflowInstance active = createWorkflowForTenant("wf-1", "tenant-001", true); // GH-90000
@@ -343,11 +343,11 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
                 .thenReturn(Promise.of(active)); // GH-90000
 
             // WHEN: Concurrent start and pause requests
-            HttpRequest pauseRequest = HttpRequest.post("http://localhost/api/v1/workflows/wf-1/pause [GH-90000]")
-                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-001")
+            HttpRequest pauseRequest = HttpRequest.post("http://localhost/api/v1/workflows/wf-1/pause")
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
                 .build(); // GH-90000
-            HttpRequest startRequest = HttpRequest.post("http://localhost/api/v1/workflows/wf-1/start [GH-90000]")
-                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-001")
+            HttpRequest startRequest = HttpRequest.post("http://localhost/api/v1/workflows/wf-1/start")
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
                 .build(); // GH-90000
 
             HttpResponse pauseResponse = runPromise(() -> workflowController.pauseWorkflow(pauseRequest, "wf-1")); // GH-90000
@@ -364,7 +364,7 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("State Consistency - Invariant Validation [GH-90000]")
+    @DisplayName("State Consistency - Invariant Validation")
     class StateConsistencyTests {
 
         private WorkflowController workflowController;
@@ -375,14 +375,14 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("cannot start already-active workflow [GH-90000]")
+        @DisplayName("cannot start already-active workflow")
         void cannotStartActiveWorkflow() { // GH-90000
             // GIVEN: Workflow already ACTIVE — no stub needed, test has no actual execution
             // Error scenario depending on implementation
         }
 
         @Test
-        @DisplayName("cannot delete active workflow [GH-90000]")
+        @DisplayName("cannot delete active workflow")
         void cannotDeleteActiveWorkflow() { // GH-90000
             // GIVEN: Workflow is ACTIVE
             when(workflowService.deleteWorkflow("wf-1", "tenant-001")) // GH-90000
@@ -390,7 +390,7 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
 
             // WHEN: Try to delete ACTIVE workflow
             HttpRequest request = HttpRequest.builder(HttpMethod.DELETE, "http://localhost/api/v1/workflows/wf-1") // GH-90000
-                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-001")
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
                 .build(); // GH-90000
             HttpResponse response = runPromise(() -> workflowController.deleteWorkflow(request, "wf-1")); // GH-90000
 
@@ -399,7 +399,7 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("step advance only works in ACTIVE workflow [GH-90000]")
+        @DisplayName("step advance only works in ACTIVE workflow")
         void advanceStepOnlyInActive() { // GH-90000
             // GIVEN: Workflow in DRAFT state — no stub needed, test has no actual execution
             // Error handling depends on implementation
@@ -411,7 +411,7 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Data Isolation - Cross-Tenant Prevention [GH-90000]")
+    @DisplayName("Data Isolation - Cross-Tenant Prevention")
     class DataIsolationTests {
 
         private WorkflowController workflowController;
@@ -422,7 +422,7 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("workflow from tenant-001 invisible to tenant-002 [GH-90000]")
+        @DisplayName("workflow from tenant-001 invisible to tenant-002")
         void workflowIsolatedBetweenTenants() { // GH-90000
             // GIVEN: Workflow belongs to tenant-001
             AiWorkflowInstance workflow = createWorkflowForTenant("wf-1", "tenant-001", false); // GH-90000
@@ -432,8 +432,8 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
                 .thenReturn(Promise.of(Optional.empty())); // Not visible to other tenant // GH-90000
 
             // WHEN: Tenant-001 gets their workflow
-            HttpRequest req1 = HttpRequest.get("http://localhost/api/v1/workflows/wf-1 [GH-90000]")
-                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-001")
+            HttpRequest req1 = HttpRequest.get("http://localhost/api/v1/workflows/wf-1")
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
                 .build(); // GH-90000
             HttpResponse resp1 = runPromise(() -> workflowController.getWorkflow(req1, "wf-1")); // GH-90000
 
@@ -441,8 +441,8 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
             assertThat(resp1.getCode()).isEqualTo(200); // GH-90000
 
             // WHEN: Tenant-002 tries to get tenant-001's workflow
-            HttpRequest req2 = HttpRequest.get("http://localhost/api/v1/workflows/wf-1 [GH-90000]")
-                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-002")
+            HttpRequest req2 = HttpRequest.get("http://localhost/api/v1/workflows/wf-1")
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-002")
                 .build(); // GH-90000
             HttpResponse resp2 = runPromise(() -> workflowController.getWorkflow(req2, "wf-1")); // GH-90000
 
@@ -451,7 +451,7 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("modification operations respect tenant boundaries [GH-90000]")
+        @DisplayName("modification operations respect tenant boundaries")
         void modificationRespectsTenantBoundaries() { // GH-90000
             // GIVEN: Workflow belongs to tenant-001
             when(workflowService.deleteWorkflow("wf-1", "tenant-001")) // GH-90000
@@ -461,14 +461,14 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
 
             // WHEN: Tenant-001 deletes their workflow
             HttpRequest req1 = HttpRequest.builder(HttpMethod.DELETE, "http://localhost/api/v1/workflows/wf-1") // GH-90000
-                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-001")
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
                 .build(); // GH-90000
             HttpResponse resp1 = runPromise(() -> workflowController.deleteWorkflow(req1, "wf-1")); // GH-90000
             assertThat(resp1.getCode()).isEqualTo(204); // GH-90000
 
             // WHEN: Tenant-002 tries to delete tenant-001's workflow
             HttpRequest req2 = HttpRequest.builder(HttpMethod.DELETE, "http://localhost/api/v1/workflows/wf-1") // GH-90000
-                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-002")
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-002")
                 .build(); // GH-90000
             HttpResponse resp2 = runPromise(() -> workflowController.deleteWorkflow(req2, "wf-1")); // GH-90000
             assertThat(resp2.getCode()).isIn(403, 404); // GH-90000
@@ -480,7 +480,7 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Rate Limiting - Request Throttling [GH-90000]")
+    @DisplayName("Rate Limiting - Request Throttling")
     class RateLimitingTests {
 
         private WorkflowController workflowController;
@@ -491,7 +491,7 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("high volume requests handled correctly [GH-90000]")
+        @DisplayName("high volume requests handled correctly")
         void highVolumeRequests() { // GH-90000
             // GIVEN: Service ready for multiple requests
             when(workflowService.listWorkflows("tenant-001", null, 20, 0)) // GH-90000
@@ -499,8 +499,8 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
 
             // WHEN: Send 100 concurrent requests
             for (int i = 0; i < 100; i++) { // GH-90000
-                HttpRequest request = HttpRequest.get("http://localhost/api/v1/workflows [GH-90000]")
-                    .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-001")
+                HttpRequest request = HttpRequest.get("http://localhost/api/v1/workflows")
+                    .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
                     .build(); // GH-90000
                 HttpResponse response = runPromise(() -> workflowController.listWorkflows(request)); // GH-90000
 
@@ -515,7 +515,7 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Header Validation - Required Headers [GH-90000]")
+    @DisplayName("Header Validation - Required Headers")
     class HeaderValidationTests {
 
         private WorkflowController workflowController;
@@ -528,12 +528,12 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("workflow operations require X-Tenant-ID header [GH-90000]")
+        @DisplayName("workflow operations require X-Tenant-ID header")
         void workflowRequiresTenantHeader() { // GH-90000
             // GIVEN: Request without X-Tenant-ID (no stub needed - service is never reached) // GH-90000
 
             // WHEN: List workflows without tenant header
-            HttpRequest request = HttpRequest.get("http://localhost/api/v1/workflows [GH-90000]").build();
+            HttpRequest request = HttpRequest.get("http://localhost/api/v1/workflows").build();
 
             // THEN: Controller throws before calling service (header validation) // GH-90000
             assertThrows( // GH-90000
@@ -543,12 +543,12 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("agent execution requires all security headers [GH-90000]")
+        @DisplayName("agent execution requires all security headers")
         void agentExecutionRequiresAllHeaders() { // GH-90000
             // GIVEN: Missing organization header
-            HttpRequest request = HttpRequest.post("http://localhost/api/v1/agents/copilot/execute [GH-90000]")
-                .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-001")
-                .withHeader(HttpHeaders.of("X-Workspace-ID [GH-90000]"), "ws-123")
+            HttpRequest request = HttpRequest.post("http://localhost/api/v1/agents/copilot/execute")
+                .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
+                .withHeader(HttpHeaders.of("X-Workspace-ID"), "ws-123")
                 .build(); // Missing X-Organization-ID // GH-90000
 
             // WHEN: Execute agent
@@ -556,7 +556,7 @@ class YappcApiControllerIntegrationTest extends EventloopTestBase {
 
             // THEN: Returns 400
             assertThat(response.getCode()).isEqualTo(400); // GH-90000
-            assertThat(response.getBody().asString(StandardCharsets.UTF_8)).contains("X-Organization-ID [GH-90000]");
+            assertThat(response.getBody().asString(StandardCharsets.UTF_8)).contains("X-Organization-ID");
         }
     }
 

@@ -2,7 +2,11 @@ package com.ghatana.audio.video.multimodal.engine;
 
 /**
  * A single object detection result.
- */
+  * @doc.type class
+ * @doc.purpose Provides detection result functionality.
+ * @doc.layer product
+ * @doc.pattern ValueObject
+*/
 public class DetectionResult {
 
     private final String className;

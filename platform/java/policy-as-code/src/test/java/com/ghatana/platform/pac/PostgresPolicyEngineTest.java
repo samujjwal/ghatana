@@ -31,17 +31,17 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@Tag("integration [GH-90000]")
+@Tag("integration")
 @Testcontainers
-@DisplayName("PostgresPolicyEngine — integration tests [GH-90000]")
+@DisplayName("PostgresPolicyEngine — integration tests")
 class PostgresPolicyEngineTest extends EventloopTestBase {
 
     @Container
     private static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>("postgres:15-alpine [GH-90000]")
-                    .withDatabaseName("aep_pac_test [GH-90000]")
-                    .withUsername("aep_test [GH-90000]")
-                    .withPassword("aep_test [GH-90000]");
+            new PostgreSQLContainer<>("postgres:15-alpine")
+                    .withDatabaseName("aep_pac_test")
+                    .withUsername("aep_test")
+                    .withPassword("aep_test");
 
     private HikariDataSource dataSource;
     private PostgresPolicyEngine engine;
@@ -79,7 +79,7 @@ class PostgresPolicyEngineTest extends EventloopTestBase {
     void tearDown() throws Exception { // GH-90000
         try (Connection conn = dataSource.getConnection(); // GH-90000
              Statement stmt = conn.createStatement()) { // GH-90000
-            stmt.execute("DROP TABLE IF EXISTS policy_rules [GH-90000]");
+            stmt.execute("DROP TABLE IF EXISTS policy_rules");
         }
         dataSource.close(); // GH-90000
     }
@@ -99,7 +99,7 @@ class PostgresPolicyEngineTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("evaluate with no rules defaults to ALLOW (open-world semantics) [GH-90000]")
+    @DisplayName("evaluate with no rules defaults to ALLOW (open-world semantics)")
     void evaluate_noRules_defaultsToAllow() { // GH-90000
         PolicyEvalResult result = runPromise(() -> // GH-90000
                 engine.evaluate("tenant-1", "tool_execution_policy", Map.of())); // GH-90000
@@ -108,7 +108,7 @@ class PostgresPolicyEngineTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("evaluate with a DENY rule returns denied with the reason [GH-90000]")
+    @DisplayName("evaluate with a DENY rule returns denied with the reason")
     void evaluate_denyRule_returnsDenied() throws Exception { // GH-90000
         insertRule("tenant-2", "tool_execution_policy", "DENY", "blocked by policy"); // GH-90000
 
@@ -116,11 +116,11 @@ class PostgresPolicyEngineTest extends EventloopTestBase {
                 engine.evaluate("tenant-2", "tool_execution_policy", Map.of())); // GH-90000
 
         assertThat(result.allowed()).isFalse(); // GH-90000
-        assertThat(result.reasons()).contains("blocked by policy [GH-90000]");
+        assertThat(result.reasons()).contains("blocked by policy");
     }
 
     @Test
-    @DisplayName("evaluate with an ALLOW rule returns allowed [GH-90000]")
+    @DisplayName("evaluate with an ALLOW rule returns allowed")
     void evaluate_allowRule_returnsAllowed() throws Exception { // GH-90000
         insertRule("tenant-3", "tool_execution_policy", "ALLOW", "explicitly allowed"); // GH-90000
 
@@ -131,7 +131,7 @@ class PostgresPolicyEngineTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("global rule applies to any tenant [GH-90000]")
+    @DisplayName("global rule applies to any tenant")
     void evaluate_globalRule_appliesAcrossTenants() throws Exception { // GH-90000
         insertRule("global", "data_access_policy", "DENY", "global data protection rule"); // GH-90000
 
@@ -139,11 +139,11 @@ class PostgresPolicyEngineTest extends EventloopTestBase {
                 engine.evaluate("any-tenant", "data_access_policy", Map.of())); // GH-90000
 
         assertThat(result.allowed()).isFalse(); // GH-90000
-        assertThat(result.reasons()).contains("global data protection rule [GH-90000]");
+        assertThat(result.reasons()).contains("global data protection rule");
     }
 
     @Test
-    @DisplayName("disabled rules are ignored during evaluation [GH-90000]")
+    @DisplayName("disabled rules are ignored during evaluation")
     void evaluate_disabledRule_isIgnored() throws Exception { // GH-90000
         try (Connection conn = dataSource.getConnection(); // GH-90000
              PreparedStatement ps = conn.prepareStatement("""

@@ -36,7 +36,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AepConfigValidator [GH-90000]")
+@DisplayName("AepConfigValidator")
 class AepConfigValidatorTest {
 
     // ── Helpers ──────────────────────────────────────────────────────────────
@@ -52,43 +52,43 @@ class AepConfigValidatorTest {
     // ── anomalyThreshold ─────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("anomalyThreshold validation [GH-90000]")
+    @DisplayName("anomalyThreshold validation")
     class AnomalyThresholdValidation {
 
         @Test
-        @DisplayName("valid threshold (0.5) passes [GH-90000]")
+        @DisplayName("valid threshold (0.5) passes")
         void validThreshold_passes() { // GH-90000
             Aep.AepConfig cfg = new Aep.AepConfig("t", 2, 10, false, false, 0.5, Map.of()); // GH-90000
             assertThatNoException().isThrownBy(() -> AepConfigValidator.validate(cfg)); // GH-90000
         }
 
         @Test
-        @DisplayName("threshold of 0.0 is rejected (exclusive lower boundary) [GH-90000]")
+        @DisplayName("threshold of 0.0 is rejected (exclusive lower boundary)")
         void zeroBoundary_rejected() { // GH-90000
             Aep.AepConfig cfg = new Aep.AepConfig("t", 2, 10, false, false, 0.0, Map.of()); // GH-90000
             assertThatThrownBy(() -> AepConfigValidator.validate(cfg)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("anomalyThreshold [GH-90000]");
+                .hasMessageContaining("anomalyThreshold");
         }
 
         @Test
-        @DisplayName("threshold of 1.0 is rejected (exclusive upper boundary) [GH-90000]")
+        @DisplayName("threshold of 1.0 is rejected (exclusive upper boundary)")
         void oneBoundary_rejected() { // GH-90000
             Aep.AepConfig cfg = new Aep.AepConfig("t", 2, 10, false, false, 1.0, Map.of()); // GH-90000
             assertThatThrownBy(() -> AepConfigValidator.validate(cfg)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("anomalyThreshold [GH-90000]");
+                .hasMessageContaining("anomalyThreshold");
         }
 
         @Test
-        @DisplayName("threshold just above lower boundary (0.001) passes [GH-90000]")
+        @DisplayName("threshold just above lower boundary (0.001) passes")
         void justAboveLower_passes() { // GH-90000
             Aep.AepConfig cfg = new Aep.AepConfig("t", 2, 10, false, false, 0.001, Map.of()); // GH-90000
             assertThatNoException().isThrownBy(() -> AepConfigValidator.validate(cfg)); // GH-90000
         }
 
         @Test
-        @DisplayName("threshold just below upper boundary (0.999) passes [GH-90000]")
+        @DisplayName("threshold just below upper boundary (0.999) passes")
         void justBelowUpper_passes() { // GH-90000
             Aep.AepConfig cfg = new Aep.AepConfig("t", 2, 10, false, false, 0.999, Map.of()); // GH-90000
             assertThatNoException().isThrownBy(() -> AepConfigValidator.validate(cfg)); // GH-90000
@@ -98,58 +98,58 @@ class AepConfigValidatorTest {
     // ── maxPipelinesPerTenant ────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("maxPipelinesPerTenant validation [GH-90000]")
+    @DisplayName("maxPipelinesPerTenant validation")
     class MaxPipelinesValidation {
 
         @Test
-        @DisplayName("value of 1 (lower inclusive boundary) passes [GH-90000]")
+        @DisplayName("value of 1 (lower inclusive boundary) passes")
         void lowerBoundary_passes() { // GH-90000
             Aep.AepConfig cfg = new Aep.AepConfig("t", 2, 1, false, false, 0.9, Map.of()); // GH-90000
             assertThatNoException().isThrownBy(() -> AepConfigValidator.validate(cfg)); // GH-90000
         }
 
         @Test
-        @DisplayName("value of 10 000 (upper inclusive boundary) passes [GH-90000]")
+        @DisplayName("value of 10 000 (upper inclusive boundary) passes")
         void upperBoundary_passes() { // GH-90000
             Aep.AepConfig cfg = new Aep.AepConfig("t", 2, 10_000, false, false, 0.9, Map.of()); // GH-90000
             assertThatNoException().isThrownBy(() -> AepConfigValidator.validate(cfg)); // GH-90000
         }
 
         @Test
-        @DisplayName("value of 10 001 (above upper bound) is rejected [GH-90000]")
+        @DisplayName("value of 10 001 (above upper bound) is rejected")
         void aboveUpperBound_rejected() { // GH-90000
             // compact constructor does NOT normalise values > 0, so 10_001 survives
             Aep.AepConfig cfg = new Aep.AepConfig("t", 2, 10_001, false, false, 0.9, Map.of()); // GH-90000
             assertThatThrownBy(() -> AepConfigValidator.validate(cfg)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("maxPipelinesPerTenant [GH-90000]");
+                .hasMessageContaining("maxPipelinesPerTenant");
         }
 
         @Test
-        @DisplayName("large pathological value (1_000_000) is rejected [GH-90000]")
+        @DisplayName("large pathological value (1_000_000) is rejected")
         void extremeValue_rejected() { // GH-90000
             Aep.AepConfig cfg = new Aep.AepConfig("t", 2, 1_000_000, false, false, 0.9, Map.of()); // GH-90000
             assertThatThrownBy(() -> AepConfigValidator.validate(cfg)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("maxPipelinesPerTenant [GH-90000]");
+                .hasMessageContaining("maxPipelinesPerTenant");
         }
     }
 
     // ── workerThreads ────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("workerThreads validation [GH-90000]")
+    @DisplayName("workerThreads validation")
     class WorkerThreadsValidation {
 
         @Test
-        @DisplayName("value of 1 (minimum allowed) passes [GH-90000]")
+        @DisplayName("value of 1 (minimum allowed) passes")
         void minimumValue_passes() { // GH-90000
             Aep.AepConfig cfg = new Aep.AepConfig("t", 1, 10, false, false, 0.9, Map.of()); // GH-90000
             assertThatNoException().isThrownBy(() -> AepConfigValidator.validate(cfg)); // GH-90000
         }
 
         @Test
-        @DisplayName("large value (64) passes [GH-90000]")
+        @DisplayName("large value (64) passes")
         void largeValue_passes() { // GH-90000
             Aep.AepConfig cfg = new Aep.AepConfig("t", 64, 10, false, false, 0.9, Map.of()); // GH-90000
             assertThatNoException().isThrownBy(() -> AepConfigValidator.validate(cfg)); // GH-90000
@@ -165,7 +165,7 @@ class AepConfigValidatorTest {
          * <p>This test documents the contract rather than asserting a rejection.
          */
         @Test
-        @DisplayName("value of 0 is normalised by compact constructor to availableProcessors() [GH-90000]")
+        @DisplayName("value of 0 is normalised by compact constructor to availableProcessors()")
         void zeroIsNormalisedToAvailableProcessors() { // GH-90000
             Aep.AepConfig cfg = Aep.AepConfig.builder() // GH-90000
                 .anomalyThreshold(0.9).maxPipelinesPerTenant(10).workerThreads(0).build(); // GH-90000
@@ -177,11 +177,11 @@ class AepConfigValidatorTest {
     // ── instanceId ───────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("instanceId validation [GH-90000]")
+    @DisplayName("instanceId validation")
     class InstanceIdValidation {
 
         @Test
-        @DisplayName("null instanceId is allowed (compact constructor generates a UUID) [GH-90000]")
+        @DisplayName("null instanceId is allowed (compact constructor generates a UUID)")
         void nullInstanceId_allowed() { // GH-90000
             // compact constructor replaces null with a UUID, so validator sees a UUID string
             Aep.AepConfig cfg = Aep.AepConfig.builder() // GH-90000
@@ -191,26 +191,26 @@ class AepConfigValidatorTest {
         }
 
         @Test
-        @DisplayName("blank instanceId (whitespace) is rejected [GH-90000]")
+        @DisplayName("blank instanceId (whitespace) is rejected")
         void blankInstanceId_rejected() { // GH-90000
             // compact constructor does NOT normalise blank strings — only null
             Aep.AepConfig cfg = new Aep.AepConfig("   ", 2, 10, false, false, 0.9, Map.of()); // GH-90000
             assertThatThrownBy(() -> AepConfigValidator.validate(cfg)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("instanceId [GH-90000]");
+                .hasMessageContaining("instanceId");
         }
 
         @Test
-        @DisplayName("empty string instanceId is rejected [GH-90000]")
+        @DisplayName("empty string instanceId is rejected")
         void emptyInstanceId_rejected() { // GH-90000
             Aep.AepConfig cfg = new Aep.AepConfig("", 2, 10, false, false, 0.9, Map.of()); // GH-90000
             assertThatThrownBy(() -> AepConfigValidator.validate(cfg)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("instanceId [GH-90000]");
+                .hasMessageContaining("instanceId");
         }
 
         @Test
-        @DisplayName("valid non-blank instanceId passes [GH-90000]")
+        @DisplayName("valid non-blank instanceId passes")
         void validInstanceId_passes() { // GH-90000
             Aep.AepConfig cfg = new Aep.AepConfig("prod-node-01", 2, 10, false, false, 0.9, Map.of()); // GH-90000
             assertThatNoException().isThrownBy(() -> AepConfigValidator.validate(cfg)); // GH-90000
@@ -220,17 +220,17 @@ class AepConfigValidatorTest {
     // ── customConfig ─────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("customConfig validation [GH-90000]")
+    @DisplayName("customConfig validation")
     class CustomConfigValidation {
 
         @Test
-        @DisplayName("empty customConfig passes [GH-90000]")
+        @DisplayName("empty customConfig passes")
         void emptyMap_passes() { // GH-90000
             assertThatNoException().isThrownBy(() -> AepConfigValidator.validate(valid())); // GH-90000
         }
 
         @Test
-        @DisplayName("customConfig with valid non-null, non-blank entries passes [GH-90000]")
+        @DisplayName("customConfig with valid non-null, non-blank entries passes")
         void validEntries_passes() { // GH-90000
             java.util.Map<String, Object> map = Map.of("feature.x", "enabled", "timeout.ms", 5000); // GH-90000
             Aep.AepConfig cfg = new Aep.AepConfig("t", 2, 10, false, false, 0.9, map); // GH-90000
@@ -238,7 +238,7 @@ class AepConfigValidatorTest {
         }
 
         @Test
-        @DisplayName("customConfig with a null value is rejected, message names the key [GH-90000]")
+        @DisplayName("customConfig with a null value is rejected, message names the key")
         void nullValue_rejected() { // GH-90000
             java.util.Map<String, Object> map = new java.util.HashMap<>(); // GH-90000
             map.put("some.key", null); // GH-90000
@@ -249,70 +249,70 @@ class AepConfigValidatorTest {
             // that constructs AepConfig without going through the compact constructor.
             // We verify the validator static method handles malformed input gracefully.
             Aep.AepConfig cfg = org.mockito.Mockito.mock(Aep.AepConfig.class); // GH-90000
-            org.mockito.Mockito.when(cfg.instanceId()).thenReturn("t [GH-90000]");
+            org.mockito.Mockito.when(cfg.instanceId()).thenReturn("t");
             org.mockito.Mockito.when(cfg.workerThreads()).thenReturn(2); // GH-90000
             org.mockito.Mockito.when(cfg.maxPipelinesPerTenant()).thenReturn(10); // GH-90000
             org.mockito.Mockito.when(cfg.anomalyThreshold()).thenReturn(0.9); // GH-90000
             org.mockito.Mockito.when(cfg.customConfig()).thenReturn(map); // GH-90000
             assertThatThrownBy(() -> AepConfigValidator.validate(cfg)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("customConfig [GH-90000]")
-                .hasMessageContaining("some.key [GH-90000]");
+                .hasMessageContaining("customConfig")
+                .hasMessageContaining("some.key");
         }
 
         @Test
-        @DisplayName("customConfig with a blank key is rejected [GH-90000]")
+        @DisplayName("customConfig with a blank key is rejected")
         void blankKey_rejected() { // GH-90000
             java.util.Map<String, Object> map = new java.util.HashMap<>(); // GH-90000
             map.put("  ", "value"); // GH-90000
             Aep.AepConfig cfg = org.mockito.Mockito.mock(Aep.AepConfig.class); // GH-90000
-            org.mockito.Mockito.when(cfg.instanceId()).thenReturn("t [GH-90000]");
+            org.mockito.Mockito.when(cfg.instanceId()).thenReturn("t");
             org.mockito.Mockito.when(cfg.workerThreads()).thenReturn(2); // GH-90000
             org.mockito.Mockito.when(cfg.maxPipelinesPerTenant()).thenReturn(10); // GH-90000
             org.mockito.Mockito.when(cfg.anomalyThreshold()).thenReturn(0.9); // GH-90000
             org.mockito.Mockito.when(cfg.customConfig()).thenReturn(map); // GH-90000
             assertThatThrownBy(() -> AepConfigValidator.validate(cfg)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("customConfig [GH-90000]");
+                .hasMessageContaining("customConfig");
         }
     }
 
     // ── Multiple violations ───────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Multiple violation reporting [GH-90000]")
+    @DisplayName("Multiple violation reporting")
     class MultipleViolations {
 
         @Test
-        @DisplayName("anomalyThreshold + maxPipelinesPerTenant violations both reported [GH-90000]")
+        @DisplayName("anomalyThreshold + maxPipelinesPerTenant violations both reported")
         void twoViolations_allReported() { // GH-90000
             // anomalyThreshold=0 rejected; maxPipelinesPerTenant=10_001 rejected
             Aep.AepConfig cfg = new Aep.AepConfig("t", 2, 10_001, false, false, 0.0, Map.of()); // GH-90000
             assertThatThrownBy(() -> AepConfigValidator.validate(cfg)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("anomalyThreshold [GH-90000]")
-                .hasMessageContaining("maxPipelinesPerTenant [GH-90000]");
+                .hasMessageContaining("anomalyThreshold")
+                .hasMessageContaining("maxPipelinesPerTenant");
         }
 
         @Test
-        @DisplayName("anomalyThreshold + blank instanceId violations both reported [GH-90000]")
+        @DisplayName("anomalyThreshold + blank instanceId violations both reported")
         void thresholdAndInstanceId_allReported() { // GH-90000
             Aep.AepConfig cfg = new Aep.AepConfig("  ", 2, 10, false, false, 0.0, Map.of()); // GH-90000
             assertThatThrownBy(() -> AepConfigValidator.validate(cfg)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("anomalyThreshold [GH-90000]")
-                .hasMessageContaining("instanceId [GH-90000]");
+                .hasMessageContaining("anomalyThreshold")
+                .hasMessageContaining("instanceId");
         }
     }
 
     // ── Null guard ────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Null config guard [GH-90000]")
+    @DisplayName("Null config guard")
     class NullGuard {
 
         @Test
-        @DisplayName("null config throws NullPointerException immediately [GH-90000]")
+        @DisplayName("null config throws NullPointerException immediately")
         void nullConfig_throwsNpe() { // GH-90000
             assertThatThrownBy(() -> AepConfigValidator.validate(null)) // GH-90000
                 .isInstanceOf(NullPointerException.class); // GH-90000

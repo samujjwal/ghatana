@@ -12,11 +12,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("BackgroundAnalysisPipeline Tests [GH-90000]")
+@DisplayName("BackgroundAnalysisPipeline Tests")
 class BackgroundAnalysisPipelineTest extends EventloopTestBase {
 
   @Test
-  @DisplayName("onEvent schedules debounced analysis and publishes results [GH-90000]")
+  @DisplayName("onEvent schedules debounced analysis and publishes results")
   void onEventSchedulesDebouncedAnalysisAndPublishesResults() { // GH-90000
     AtomicReference<Runnable> scheduledAction = new AtomicReference<>(); // GH-90000
     ChangeDebouncer debouncer =
@@ -45,11 +45,11 @@ class BackgroundAnalysisPipelineTest extends EventloopTestBase {
     pipeline.onEvent(new CodeChangedEvent("tenant-a", "project-a", "src/App.ts", "+const x = 1;")); // GH-90000
     scheduledAction.get().run(); // GH-90000
 
-    assertThat(publishedTenant.get()).isEqualTo("tenant-a [GH-90000]");
+    assertThat(publishedTenant.get()).isEqualTo("tenant-a");
   }
 
   @Test
-  @DisplayName("analyzeNow reports failures without swallowing them [GH-90000]")
+  @DisplayName("analyzeNow reports failures without swallowing them")
   void analyzeNowReportsFailuresWithoutSwallowingThem() { // GH-90000
     AtomicReference<Throwable> failure = new AtomicReference<>(); // GH-90000
     AtomicReference<Runnable> scheduledAction = new AtomicReference<>(); // GH-90000
@@ -61,18 +61,18 @@ class BackgroundAnalysisPipelineTest extends EventloopTestBase {
                   scheduledAction.set(action); // GH-90000
                   return () -> {}; // GH-90000
                 }),
-            event -> Promise.ofException(new IllegalStateException("boom [GH-90000]")),
+            event -> Promise.ofException(new IllegalStateException("boom")),
             new InsightPublisher(insights -> Promise.of(insights), (tenantId, insights) -> Promise.complete(), count -> {}), // GH-90000
             (event, error) -> failure.set(error)); // GH-90000
 
     pipeline.onEvent(new CodeChangedEvent("tenant-b", "project-b", "src/Svc.ts", "+return 1;")); // GH-90000
     scheduledAction.get().run(); // GH-90000
 
-    assertThat(failure.get()).isInstanceOf(IllegalStateException.class).hasMessage("boom [GH-90000]");
+    assertThat(failure.get()).isInstanceOf(IllegalStateException.class).hasMessage("boom");
   }
 
   @Test
-  @DisplayName("analyzeNow publishes empty list when dispatcher returns null [GH-90000]")
+  @DisplayName("analyzeNow publishes empty list when dispatcher returns null")
   void analyzeNowPublishesEmptyListWhenDispatcherReturnsNull() { // GH-90000
     AtomicReference<Integer> publishedCount = new AtomicReference<>(); // GH-90000
 
@@ -107,7 +107,7 @@ class BackgroundAnalysisPipelineTest extends EventloopTestBase {
         0.8,
         sourceRef,
         1,
-        List.of("tag [GH-90000]"),
+        List.of("tag"),
         Instant.now(), // GH-90000
         false);
   }

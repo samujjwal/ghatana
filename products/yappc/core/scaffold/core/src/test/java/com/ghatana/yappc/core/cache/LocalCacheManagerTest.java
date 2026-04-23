@@ -53,21 +53,21 @@ class LocalCacheManagerTest extends EventloopTestBase {
         // Put and get
         runPromise(() -> cache.put("test-key", artifact)); // GH-90000
 
-        Optional<CachedArtifact> result = cache.get("test-key [GH-90000]");
+        Optional<CachedArtifact> result = cache.get("test-key");
         assertTrue(result.isPresent()); // GH-90000
         assertEquals("test content", result.get().getContent()); // GH-90000
         assertEquals("text/plain", result.get().getContentType()); // GH-90000
 
         // Test invalidation
-        assertTrue(cache.invalidate("test-key [GH-90000]"));
-        assertFalse(cache.get("test-key [GH-90000]").isPresent());
+        assertTrue(cache.invalidate("test-key"));
+        assertFalse(cache.get("test-key").isPresent());
     }
 
     @Test
     void testDefaultConfiguration() { // GH-90000
         // Test default configuration with disk persistence and statistics
         CacheConfiguration config =
-                CacheConfiguration.builder().cacheDirectory(tempDir.resolve("test-cache [GH-90000]")).build();
+                CacheConfiguration.builder().cacheDirectory(tempDir.resolve("test-cache")).build();
 
         YappcCacheManager cache = new LocalCacheManager(config); // GH-90000
 
@@ -78,7 +78,7 @@ class LocalCacheManagerTest extends EventloopTestBase {
         // Put and get
         runPromise(() -> cache.put("persistent-key", artifact)); // GH-90000
 
-        Optional<CachedArtifact> result = cache.get("persistent-key [GH-90000]");
+        Optional<CachedArtifact> result = cache.get("persistent-key");
         assertTrue(result.isPresent()); // GH-90000
         assertEquals("persistent content", result.get().getContent()); // GH-90000
 
@@ -108,7 +108,7 @@ class LocalCacheManagerTest extends EventloopTestBase {
 
         runPromise(() -> cache.put("custom-key", artifact)); // GH-90000
 
-        Optional<CachedArtifact> result = cache.get("custom-key [GH-90000]");
+        Optional<CachedArtifact> result = cache.get("custom-key");
         assertTrue(result.isPresent()); // GH-90000
         assertEquals("custom config content", result.get().getContent()); // GH-90000
 
@@ -124,7 +124,7 @@ class LocalCacheManagerTest extends EventloopTestBase {
         YappcCacheManager defaultCache = new LocalCacheManager(); // GH-90000
         assertNotNull(defaultCache); // GH-90000
 
-        YappcCacheManager pathCache = new LocalCacheManager(tempDir.resolve("path-cache [GH-90000]"));
+        YappcCacheManager pathCache = new LocalCacheManager(tempDir.resolve("path-cache"));
         assertNotNull(pathCache); // GH-90000
 
         // Both should work the same way
@@ -134,8 +134,8 @@ class LocalCacheManagerTest extends EventloopTestBase {
         runPromise(() -> defaultCache.put("test1", artifact)); // GH-90000
         runPromise(() -> pathCache.put("test2", artifact)); // GH-90000
 
-        assertTrue(defaultCache.get("test1 [GH-90000]").isPresent());
-        assertTrue(pathCache.get("test2 [GH-90000]").isPresent());
+        assertTrue(defaultCache.get("test1").isPresent());
+        assertTrue(pathCache.get("test2").isPresent());
     }
 
     @Test
@@ -149,14 +149,14 @@ class LocalCacheManagerTest extends EventloopTestBase {
         runPromise(() -> cache.put("key2", artifact2)); // GH-90000
 
         // Both should be present
-        assertTrue(cache.get("key1 [GH-90000]").isPresent());
-        assertTrue(cache.get("key2 [GH-90000]").isPresent());
+        assertTrue(cache.get("key1").isPresent());
+        assertTrue(cache.get("key2").isPresent());
 
         // Invalidate all
         cache.invalidateAll(); // GH-90000
 
         // Both should be gone
-        assertFalse(cache.get("key1 [GH-90000]").isPresent());
-        assertFalse(cache.get("key2 [GH-90000]").isPresent());
+        assertFalse(cache.get("key1").isPresent());
+        assertFalse(cache.get("key2").isPresent());
     }
 }

@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AEP integration [GH-90000]")
+@DisplayName("AEP integration")
 class AepIntegrationTest extends EventloopTestBase {
 
     private static final String TENANT_A = "tenant-a";
@@ -45,7 +45,7 @@ class AepIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("processes an event from event-cloud append through delivery and subscriber notification [GH-90000]")
+    @DisplayName("processes an event from event-cloud append through delivery and subscriber notification")
     void shouldProcessCompleteEventFlow() { // GH-90000
         AtomicInteger deliveries = new AtomicInteger(); // GH-90000
         AtomicReference<String> deliveredPayload = new AtomicReference<>(); // GH-90000
@@ -90,11 +90,11 @@ class AepIntegrationTest extends EventloopTestBase {
                 Map.of( // GH-90000
                     "reading", 72.5,
                     "consentStatus", "GRANTED",
-                    "allowedPurposes", List.of("event_processing [GH-90000]"),
+                    "allowedPurposes", List.of("event_processing"),
                     "userId", "user-17"
                 ))
-            .withCorrelationId("corr-123 [GH-90000]")
-            .withIdempotencyKey("idem-123 [GH-90000]");
+            .withCorrelationId("corr-123")
+            .withIdempotencyKey("idem-123");
 
         AepEngine.ProcessingResult result = runPromise(() -> engine.process(TENANT_A, event)); // GH-90000
 
@@ -106,15 +106,15 @@ class AepIntegrationTest extends EventloopTestBase {
         assertThat(result.metadata()).containsEntry("eventVersion", "1.0"); // GH-90000
         assertThat(subscriberDetections).hasSize(1); // GH-90000
         assertThat(deliveries.get()).isEqualTo(1); // GH-90000
-        assertThat(deliveredPayload.get()).contains("sensor.reading [GH-90000]");
-        assertThat(deliveredPayload.get()).contains("tenant-a [GH-90000]");
+        assertThat(deliveredPayload.get()).contains("sensor.reading");
+        assertThat(deliveredPayload.get()).contains("tenant-a");
         assertThat(appendedEventId.get()).isNotBlank(); // GH-90000
-        assertThat(appendedPayload.get()).contains("sensor.reading [GH-90000]");
-        assertThat(appendedPayload.get()).contains("corr-123 [GH-90000]");
+        assertThat(appendedPayload.get()).contains("sensor.reading");
+        assertThat(appendedPayload.get()).contains("corr-123");
     }
 
     @Test
-    @DisplayName("rejects cross-tenant pattern subscription and event tenant spoofing [GH-90000]")
+    @DisplayName("rejects cross-tenant pattern subscription and event tenant spoofing")
     void shouldEnforceTenantIsolationAcrossIntegratedOperations() { // GH-90000
         engine = Aep.forTesting(); // GH-90000
 
@@ -130,7 +130,7 @@ class AepIntegrationTest extends EventloopTestBase {
 
         assertThatThrownBy(() -> engine.subscribe(TENANT_B, pattern.id(), detection -> {})) // GH-90000
             .isInstanceOf(AepTenantException.class) // GH-90000
-            .hasMessageContaining("different tenant [GH-90000]");
+            .hasMessageContaining("different tenant");
 
         AepEngine.Event spoofed = new AepEngine.Event( // GH-90000
             "profile.update",
@@ -141,11 +141,11 @@ class AepIntegrationTest extends EventloopTestBase {
 
         assertThatThrownBy(() -> runPromise(() -> engine.process(TENANT_B, spoofed))) // GH-90000
             .isInstanceOf(AepTenantException.class) // GH-90000
-            .hasMessageContaining("Cross-tenant event access rejected [GH-90000]");
+            .hasMessageContaining("Cross-tenant event access rejected");
     }
 
     @Test
-    @DisplayName("applies configured rate limiting during event ingestion [GH-90000]")
+    @DisplayName("applies configured rate limiting during event ingestion")
     void shouldApplyRateLimiting() { // GH-90000
         engine = Aep.create(Aep.AepConfig.builder() // GH-90000
             .rateLimiting(1, 1) // GH-90000
@@ -153,11 +153,11 @@ class AepIntegrationTest extends EventloopTestBase {
 
         AepEngine.Event first = AepEngine.Event.of( // GH-90000
             "click",
-            Map.of("consentStatus", "GRANTED", "allowedPurposes", List.of("event_processing [GH-90000]"))
+            Map.of("consentStatus", "GRANTED", "allowedPurposes", List.of("event_processing"))
         );
         AepEngine.Event second = AepEngine.Event.of( // GH-90000
             "click",
-            Map.of("consentStatus", "GRANTED", "allowedPurposes", List.of("event_processing [GH-90000]"))
+            Map.of("consentStatus", "GRANTED", "allowedPurposes", List.of("event_processing"))
         );
 
         AepEngine.ProcessingResult firstResult = runPromise(() -> engine.process(TENANT_A, first)); // GH-90000
@@ -166,6 +166,6 @@ class AepIntegrationTest extends EventloopTestBase {
         assertThat(firstResult.success()).isTrue(); // GH-90000
         assertThat(secondResult.success()).isFalse(); // GH-90000
         assertThat(secondResult.metadata()).containsEntry("skipped", true); // GH-90000
-        assertThat((String) secondResult.metadata().get("reason [GH-90000]")).contains("Rate limited [GH-90000]");
+        assertThat((String) secondResult.metadata().get("reason")).contains("Rate limited");
     }
 }

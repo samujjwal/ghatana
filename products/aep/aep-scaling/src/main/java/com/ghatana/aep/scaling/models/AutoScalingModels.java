@@ -10,7 +10,11 @@ import com.ghatana.aep.scaling.cluster.ClusterManagementModels;
 /**
  * Container class for all auto-scaling related models.
  * Provides a unified access point for scaling model classes.
- */
+  * @doc.type class
+ * @doc.purpose Provides auto scaling models functionality.
+ * @doc.layer product
+ * @doc.pattern Enum
+*/
 public final class AutoScalingModels {
 
     private AutoScalingModels() {

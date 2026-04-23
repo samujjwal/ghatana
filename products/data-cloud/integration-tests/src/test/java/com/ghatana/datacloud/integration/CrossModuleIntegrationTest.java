@@ -39,7 +39,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@DisplayName("Cross-Module Integration – Collection, Entity, and Event Lifecycle [GH-90000]")
+@DisplayName("Cross-Module Integration – Collection, Entity, and Event Lifecycle")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class) // GH-90000
 class CrossModuleIntegrationTest extends EventloopTestBase {
 
@@ -77,7 +77,7 @@ class CrossModuleIntegrationTest extends EventloopTestBase {
 
     @Test
     @Order(1) // GH-90000
-    @DisplayName("Create collection — collection is stored and audit event is emitted [GH-90000]")
+    @DisplayName("Create collection — collection is stored and audit event is emitted")
     void step1_createCollection_storedAndAudited() throws Exception { // GH-90000
         CollectionRecord created = runPromise(() -> // GH-90000
             collectionService.createCollection(TENANT_A, COLLECTION_NAME, "Products", "Catalog data", USER_ID)); // GH-90000
@@ -92,12 +92,12 @@ class CrossModuleIntegrationTest extends EventloopTestBase {
         // Audit event must have been emitted
         List<AuditEvent> audits = auditStore.getEvents(TENANT_A); // GH-90000
         assertThat(audits).hasSizeGreaterThanOrEqualTo(1); // GH-90000
-        assertThat(audits.stream().anyMatch(e -> e.action().equals("COLLECTION_CREATED [GH-90000]"))).isTrue();
+        assertThat(audits.stream().anyMatch(e -> e.action().equals("COLLECTION_CREATED"))).isTrue();
     }
 
     @Test
     @Order(2) // GH-90000
-    @DisplayName("List collections — new collection appears in tenant's list [GH-90000]")
+    @DisplayName("List collections — new collection appears in tenant's list")
     void step2_listCollections_newCollectionVisible() throws Exception { // GH-90000
         List<CollectionRecord> collections = runPromise(() -> // GH-90000
             collectionService.listCollections(TENANT_A)); // GH-90000
@@ -108,7 +108,7 @@ class CrossModuleIntegrationTest extends EventloopTestBase {
 
     @Test
     @Order(3) // GH-90000
-    @DisplayName("Create entity within collection — entity is stored with correct collection binding [GH-90000]")
+    @DisplayName("Create entity within collection — entity is stored with correct collection binding")
     void step3_createEntity_storedInCollection() throws Exception { // GH-90000
         Map<String, Object> data = Map.of("name", "Widget", "price", 9.99, "sku", "WGT-001"); // GH-90000
 
@@ -125,12 +125,12 @@ class CrossModuleIntegrationTest extends EventloopTestBase {
 
         // Entity audit event emitted
         List<AuditEvent> audits = auditStore.getEvents(TENANT_A); // GH-90000
-        assertThat(audits.stream().anyMatch(e -> e.action().equals("ENTITY_CREATED [GH-90000]"))).isTrue();
+        assertThat(audits.stream().anyMatch(e -> e.action().equals("ENTITY_CREATED"))).isTrue();
     }
 
     @Test
     @Order(4) // GH-90000
-    @DisplayName("Get entity by ID — returns entity matching the created one [GH-90000]")
+    @DisplayName("Get entity by ID — returns entity matching the created one")
     void step4_getEntity_returnsCorrectEntity() throws Exception { // GH-90000
         EntityRecord fetched = runPromise(() -> // GH-90000
             entityService.getEntity(TENANT_A, COLLECTION_NAME, createdEntityId)); // GH-90000
@@ -142,7 +142,7 @@ class CrossModuleIntegrationTest extends EventloopTestBase {
 
     @Test
     @Order(5) // GH-90000
-    @DisplayName("Update entity — version increments, data reflects update [GH-90000]")
+    @DisplayName("Update entity — version increments, data reflects update")
     void step5_updateEntity_versionIncrements() throws Exception { // GH-90000
         Map<String, Object> updatedData = Map.of("name", "Widget Pro", "price", 19.99, "sku", "WGT-001"); // GH-90000
 
@@ -160,7 +160,7 @@ class CrossModuleIntegrationTest extends EventloopTestBase {
 
     @Test
     @Order(6) // GH-90000
-    @DisplayName("Delete entity — entity not retrievable after deletion [GH-90000]")
+    @DisplayName("Delete entity — entity not retrievable after deletion")
     void step6_deleteEntity_notRetrievableAfterDelete() throws Exception { // GH-90000
         runPromise(() -> entityService.deleteEntity(TENANT_A, COLLECTION_NAME, createdEntityId, USER_ID)); // GH-90000
 
@@ -170,12 +170,12 @@ class CrossModuleIntegrationTest extends EventloopTestBase {
 
         // Delete audit event emitted
         List<AuditEvent> audits = auditStore.getEvents(TENANT_A); // GH-90000
-        assertThat(audits.stream().anyMatch(e -> e.action().equals("ENTITY_DELETED [GH-90000]"))).isTrue();
+        assertThat(audits.stream().anyMatch(e -> e.action().equals("ENTITY_DELETED"))).isTrue();
     }
 
     @Test
     @Order(7) // GH-90000
-    @DisplayName("Delete collection — collection removed from list [GH-90000]")
+    @DisplayName("Delete collection — collection removed from list")
     void step7_deleteCollection_removedFromList() throws Exception { // GH-90000
         runPromise(() -> // GH-90000
             collectionService.deleteCollection(TENANT_A, createdCollectionId, USER_ID)); // GH-90000
@@ -191,19 +191,19 @@ class CrossModuleIntegrationTest extends EventloopTestBase {
 
     @Test
     @Order(8) // GH-90000
-    @DisplayName("Create entity in non-existent collection — rejected with exception [GH-90000]")
+    @DisplayName("Create entity in non-existent collection — rejected with exception")
     void createEntityInNonExistentCollection_rejected() throws Exception { // GH-90000
         Map<String, Object> data = Map.of("orphan", true); // GH-90000
 
         assertThatThrownBy(() -> // GH-90000
             runPromise(() -> entityService.createEntity(TENANT_A, "no-such-collection", data, USER_ID))) // GH-90000
             .isInstanceOf(IllegalArgumentException.class) // GH-90000
-            .hasMessageContaining("no-such-collection [GH-90000]");
+            .hasMessageContaining("no-such-collection");
     }
 
     @Test
     @Order(9) // GH-90000
-    @DisplayName("Multiple entities within same collection share collection metadata [GH-90000]")
+    @DisplayName("Multiple entities within same collection share collection metadata")
     void multipleEntities_sameCollectionName_allBoundToCollection() throws Exception { // GH-90000
         String colName = "shared-collection";
         runPromise(() -> collectionService.createCollection(TENANT_A, colName, "Shared", "", USER_ID)); // GH-90000
@@ -224,7 +224,7 @@ class CrossModuleIntegrationTest extends EventloopTestBase {
 
     @Test
     @Order(10) // GH-90000
-    @DisplayName("Tenant B collections do not appear in Tenant A's list [GH-90000]")
+    @DisplayName("Tenant B collections do not appear in Tenant A's list")
     void tenantIsolation_collectionsNotCrossVisible() throws Exception { // GH-90000
         runPromise(() -> collectionService.createCollection(TENANT_B, "tenant-b-col", "TenantB", "", USER_ID)); // GH-90000
 
@@ -236,7 +236,7 @@ class CrossModuleIntegrationTest extends EventloopTestBase {
 
     @Test
     @Order(11) // GH-90000
-    @DisplayName("Audit trail is tenant-scoped — Tenant A cannot see Tenant B's audit events [GH-90000]")
+    @DisplayName("Audit trail is tenant-scoped — Tenant A cannot see Tenant B's audit events")
     void auditTrailIsolation_tenantScoped() throws Exception { // GH-90000
         // Trigger some tenant-B activity
         runPromise(() -> collectionService.createCollection(TENANT_B, "tenant-b-audit-col", "TB Audit", "", USER_ID)); // GH-90000
@@ -251,7 +251,7 @@ class CrossModuleIntegrationTest extends EventloopTestBase {
 
     @Test
     @Order(12) // GH-90000
-    @DisplayName("Audit trail covers all lifecycle actions for Tenant A [GH-90000]")
+    @DisplayName("Audit trail covers all lifecycle actions for Tenant A")
     void auditTrail_coversAllLifecycleActions() throws Exception { // GH-90000
         List<AuditEvent> audits = auditStore.getEvents(TENANT_A); // GH-90000
         Set<String> observedActions = new HashSet<>(); // GH-90000

@@ -36,7 +36,7 @@ import static org.mockito.Mockito.verify;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("AepKernelExtension [GH-90000]")
+@DisplayName("AepKernelExtension")
 class AepKernelExtensionTest extends EventloopTestBase {
 
     @Mock
@@ -57,34 +57,34 @@ class AepKernelExtensionTest extends EventloopTestBase {
     // ==================== Identity ====================
 
     @Test
-    @DisplayName("extension ID is 'aep-kernel-bridge' [GH-90000]")
+    @DisplayName("extension ID is 'aep-kernel-bridge'")
     void extensionIdIsCorrect() { // GH-90000
-        assertThat(extension.getExtensionId()).isEqualTo("aep-kernel-bridge [GH-90000]");
+        assertThat(extension.getExtensionId()).isEqualTo("aep-kernel-bridge");
     }
 
     @Test
-    @DisplayName("extension name is human-readable [GH-90000]")
+    @DisplayName("extension name is human-readable")
     void extensionNameIsHumanReadable() { // GH-90000
-        assertThat(extension.getName()).isEqualTo("AEP Kernel Bridge [GH-90000]");
+        assertThat(extension.getName()).isEqualTo("AEP Kernel Bridge");
     }
 
     @Test
-    @DisplayName("extension version follows semver [GH-90000]")
+    @DisplayName("extension version follows semver")
     void extensionVersionIsSemver() { // GH-90000
-        assertThat(extension.getVersion()).matches("\\d+\\.\\d+\\.\\d+.* [GH-90000]");
+        assertThat(extension.getVersion()).matches("\\d+\\.\\d+\\.\\d+.*");
     }
 
     // ==================== Descriptor ====================
 
     @Test
-    @DisplayName("descriptor type is EXTENSION [GH-90000]")
+    @DisplayName("descriptor type is EXTENSION")
     void descriptorTypeIsExtension() { // GH-90000
         KernelDescriptor descriptor = extension.getDescriptor(); // GH-90000
         assertThat(descriptor.getType()).isEqualTo(KernelDescriptor.DescriptorType.EXTENSION); // GH-90000
     }
 
     @Test
-    @DisplayName("descriptor ID matches extension ID [GH-90000]")
+    @DisplayName("descriptor ID matches extension ID")
     void descriptorIdMatchesExtensionId() { // GH-90000
         assertThat(extension.getDescriptor().getDescriptorId()).isEqualTo(extension.getExtensionId()); // GH-90000
     }
@@ -92,43 +92,43 @@ class AepKernelExtensionTest extends EventloopTestBase {
     // ==================== Capabilities ====================
 
     @Test
-    @DisplayName("contributes three AEP capabilities [GH-90000]")
+    @DisplayName("contributes three AEP capabilities")
     void contributesThreeCapabilities() { // GH-90000
         Set<KernelCapability> caps = extension.getContributedCapabilities(); // GH-90000
         assertThat(caps).hasSize(3); // GH-90000
     }
 
     @Test
-    @DisplayName("contributes aep.event-streaming capability [GH-90000]")
+    @DisplayName("contributes aep.event-streaming capability")
     void contributesEventStreamingCapability() { // GH-90000
         Set<KernelCapability> caps = extension.getContributedCapabilities(); // GH-90000
-        assertThat(caps).anyMatch(c -> c.getCapabilityId().equals("aep.event-streaming [GH-90000]"));
+        assertThat(caps).anyMatch(c -> c.getCapabilityId().equals("aep.event-streaming"));
     }
 
     @Test
-    @DisplayName("contributes aep.agent-runtime capability [GH-90000]")
+    @DisplayName("contributes aep.agent-runtime capability")
     void contributesAgentRuntimeCapability() { // GH-90000
         Set<KernelCapability> caps = extension.getContributedCapabilities(); // GH-90000
-        assertThat(caps).anyMatch(c -> c.getCapabilityId().equals("aep.agent-runtime [GH-90000]"));
+        assertThat(caps).anyMatch(c -> c.getCapabilityId().equals("aep.agent-runtime"));
     }
 
     @Test
-    @DisplayName("contributes aep.pipeline-orchestration capability [GH-90000]")
+    @DisplayName("contributes aep.pipeline-orchestration capability")
     void contributesPipelineCapability() { // GH-90000
         Set<KernelCapability> caps = extension.getContributedCapabilities(); // GH-90000
-        assertThat(caps).anyMatch(c -> c.getCapabilityId().equals("aep.pipeline-orchestration [GH-90000]"));
+        assertThat(caps).anyMatch(c -> c.getCapabilityId().equals("aep.pipeline-orchestration"));
     }
 
     // ==================== Compatibility ====================
 
     @Test
-    @DisplayName("is compatible with any non-null module [GH-90000]")
+    @DisplayName("is compatible with any non-null module")
     void isCompatibleWithAnyModule() { // GH-90000
         assertThat(extension.isCompatible(hostModule)).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("returns false for null host module [GH-90000]")
+    @DisplayName("returns false for null host module")
     void returnsFalseForNullModule() { // GH-90000
         assertThat(extension.isCompatible(null)).isFalse(); // GH-90000
     }
@@ -136,7 +136,7 @@ class AepKernelExtensionTest extends EventloopTestBase {
     // ==================== Lifecycle ====================
 
     @Test
-    @DisplayName("onModuleInitialized registers AepKernelAdapter into context [GH-90000]")
+    @DisplayName("onModuleInitialized registers AepKernelAdapter into context")
     void onModuleInitializedRegistersAdapter() { // GH-90000
         extension.onModuleInitialized(context); // GH-90000
 
@@ -144,7 +144,7 @@ class AepKernelExtensionTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("onModuleInitialized is idempotent — second call is no-op [GH-90000]")
+    @DisplayName("onModuleInitialized is idempotent — second call is no-op")
     void onModuleInitializedIsIdempotent() { // GH-90000
         extension.onModuleInitialized(context); // GH-90000
         extension.onModuleInitialized(context); // GH-90000
@@ -153,7 +153,7 @@ class AepKernelExtensionTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("full lifecycle runs without error [GH-90000]")
+    @DisplayName("full lifecycle runs without error")
     void fullLifecycleRunsWithoutError() { // GH-90000
         extension.onModuleInitialized(context); // GH-90000
         extension.onModuleStarted(context); // GH-90000
@@ -163,7 +163,7 @@ class AepKernelExtensionTest extends EventloopTestBase {
     // ==================== Construction guard ====================
 
     @Test
-    @DisplayName("null client is rejected at construction [GH-90000]")
+    @DisplayName("null client is rejected at construction")
     void nullClientIsRejected() { // GH-90000
         assertThatThrownBy(() -> new AepKernelExtension(null)) // GH-90000
             .isInstanceOf(NullPointerException.class); // GH-90000
@@ -209,7 +209,7 @@ class AepKernelExtensionTest extends EventloopTestBase {
         public CompletableFuture<AepKernelAdapterImpl.DeployResult> deployAgent( // GH-90000
                 String agentId, String agentType, String version,
                 Map<String, Object> config, int instanceCount) {
-            return CompletableFuture.completedFuture(new AepKernelAdapterImpl.DeployResult("stub-endpoint [GH-90000]"));
+            return CompletableFuture.completedFuture(new AepKernelAdapterImpl.DeployResult("stub-endpoint"));
         }
 
         @Override
@@ -239,7 +239,7 @@ class AepKernelExtensionTest extends EventloopTestBase {
         public CompletableFuture<Object> createPipeline(String pipelineId, String pipelineType, // GH-90000
                                                          List<AepKernelAdapter.PipelineStage> stages,
                                                          Map<String, String> config) {
-            return CompletableFuture.completedFuture("stub-pipeline [GH-90000]");
+            return CompletableFuture.completedFuture("stub-pipeline");
         }
 
         @Override

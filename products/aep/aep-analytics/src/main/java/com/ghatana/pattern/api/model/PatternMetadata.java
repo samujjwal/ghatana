@@ -91,7 +91,10 @@ import java.util.UUID;
  *     <td>Activation timestamp (null if never activated)</td>
  *   </tr>
  * </table>
- */
+  * @doc.type class
+ * @doc.purpose Provides pattern metadata functionality.
+ * @doc.layer product
+*/
 public class PatternMetadata {
 
     @JsonProperty("id")

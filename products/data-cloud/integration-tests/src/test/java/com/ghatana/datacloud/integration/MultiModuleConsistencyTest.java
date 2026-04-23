@@ -21,21 +21,21 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test consistency across multiple modules.
  */
-@DisplayName("Multi-Module Consistency Tests [GH-90000]")
+@DisplayName("Multi-Module Consistency Tests")
 class MultiModuleConsistencyTest {
 
     @Test
-    @DisplayName("Should maintain data consistency [GH-90000]")
+    @DisplayName("Should maintain data consistency")
     void shouldMaintainDataConsistency() { // GH-90000
         Entity entity = Entity.builder() // GH-90000
-            .tenantId("tenant-123 [GH-90000]")
-            .collectionName("products [GH-90000]")
+            .tenantId("tenant-123")
+            .collectionName("products")
             .data(Map.of("id", "prod-123", "name", "Product A")) // GH-90000
             .build(); // GH-90000
         
         MetaCollection collection = MetaCollection.builder() // GH-90000
-            .tenantId("tenant-123 [GH-90000]")
-            .name("products [GH-90000]")
+            .tenantId("tenant-123")
+            .name("products")
             .build(); // GH-90000
         
         assertThat(entity.getTenantId()).isEqualTo(collection.getTenantId()); // GH-90000
@@ -43,7 +43,7 @@ class MultiModuleConsistencyTest {
     }
 
     @Test
-    @DisplayName("Should handle cross-module transactions [GH-90000]")
+    @DisplayName("Should handle cross-module transactions")
     void shouldHandleCrossModuleTransactions() { // GH-90000
         String transactionId = UUID.randomUUID().toString(); // GH-90000
         boolean committed = true;
@@ -53,7 +53,7 @@ class MultiModuleConsistencyTest {
     }
 
     @Test
-    @DisplayName("Should handle consistency checks [GH-90000]")
+    @DisplayName("Should handle consistency checks")
     void shouldHandleConsistencyChecks() { // GH-90000
         boolean consistent = true;
         int inconsistencies = 0;
@@ -63,7 +63,7 @@ class MultiModuleConsistencyTest {
     }
 
     @Test
-    @DisplayName("Should handle concurrent modifications [GH-90000]")
+    @DisplayName("Should handle concurrent modifications")
     void shouldHandleConcurrentModifications() { // GH-90000
         int version1 = 1;
         int version2 = 2;
@@ -72,7 +72,7 @@ class MultiModuleConsistencyTest {
     }
 
     @Test
-    @DisplayName("Should handle consistency failures [GH-90000]")
+    @DisplayName("Should handle consistency failures")
     void shouldHandleConsistencyFailures() { // GH-90000
         boolean consistent = false;
         String error = "Constraint violation";
@@ -82,12 +82,12 @@ class MultiModuleConsistencyTest {
     }
 
     @Test
-    @DisplayName("Should handle consistency recovery [GH-90000]")
+    @DisplayName("Should handle consistency recovery")
     void shouldHandleConsistencyRecovery() { // GH-90000
         boolean recovered = true;
         String recoveryMode = "rollback";
         
         assertThat(recovered).isTrue(); // GH-90000
-        assertThat(recoveryMode).isEqualTo("rollback [GH-90000]");
+        assertThat(recoveryMode).isEqualTo("rollback");
     }
 }

@@ -14,11 +14,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AEP metrics collector [GH-90000]")
+@DisplayName("AEP metrics collector")
 class AepMetricsCollectorTest {
 
     @Test
-    @DisplayName("create uses the shared platform collector instead of a no-op collector [GH-90000]")
+    @DisplayName("create uses the shared platform collector instead of a no-op collector")
     void createShouldRecordIntoSharedRegistry() { // GH-90000
         MeterRegistry registry = MetricsProvider.getRegistry(); // GH-90000
         String tenantId = "aep-metrics-test-tenant";
@@ -31,7 +31,7 @@ class AepMetricsCollectorTest {
     }
 
     @Test
-    @DisplayName("noop does not emit metrics into the shared registry [GH-90000]")
+    @DisplayName("noop does not emit metrics into the shared registry")
     void noopShouldNotRecordIntoSharedRegistry() { // GH-90000
         MeterRegistry registry = MetricsProvider.getRegistry(); // GH-90000
         String tenantId = "aep-noop-metrics-test-tenant";

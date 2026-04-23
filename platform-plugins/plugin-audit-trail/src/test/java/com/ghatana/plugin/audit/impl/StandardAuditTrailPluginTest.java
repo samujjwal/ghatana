@@ -29,7 +29,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("StandardAuditTrailPlugin Tests [GH-90000]")
+@DisplayName("StandardAuditTrailPlugin Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class StandardAuditTrailPluginTest extends EventloopTestBase {
 
@@ -44,11 +44,11 @@ class StandardAuditTrailPluginTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Plugin Lifecycle Tests [GH-90000]")
+    @DisplayName("Plugin Lifecycle Tests")
     class LifecycleTests {
 
         @Test
-        @DisplayName("Should initialize plugin with correct state [GH-90000]")
+        @DisplayName("Should initialize plugin with correct state")
         void testInitialize() { // GH-90000
             // Given: Fresh plugin instance
             assertThat(auditPlugin.getState()).isEqualTo(PluginState.UNLOADED); // GH-90000
@@ -62,7 +62,7 @@ class StandardAuditTrailPluginTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should start plugin and transition state [GH-90000]")
+        @DisplayName("Should start plugin and transition state")
         void testStart() { // GH-90000
             // Given: Initialized plugin
             runPromise(() -> auditPlugin.initialize(mockContext)); // GH-90000
@@ -76,7 +76,7 @@ class StandardAuditTrailPluginTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should stop plugin and transition state [GH-90000]")
+        @DisplayName("Should stop plugin and transition state")
         void testStop() { // GH-90000
             // Given: Started plugin
             runPromise(() -> auditPlugin.initialize(mockContext) // GH-90000
@@ -91,7 +91,7 @@ class StandardAuditTrailPluginTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should shutdown plugin and clean resources [GH-90000]")
+        @DisplayName("Should shutdown plugin and clean resources")
         void testShutdown() { // GH-90000
             // Given: Started plugin with audit entries
             runPromise(() -> auditPlugin.initialize(mockContext) // GH-90000
@@ -107,27 +107,27 @@ class StandardAuditTrailPluginTest extends EventloopTestBase {
 
             // And: Trails should be cleared
             Promise<List<AuditTrailPlugin.AuditEntry>> emptyTrail =
-                    auditPlugin.getTrail("entity1 [GH-90000]");
+                    auditPlugin.getTrail("entity1");
             List<AuditTrailPlugin.AuditEntry> result2 = runPromise(() -> emptyTrail); // GH-90000
             assertThat(result2).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("Should return correct metadata [GH-90000]")
+        @DisplayName("Should return correct metadata")
         void testMetadata() { // GH-90000
             // When: Get metadata
             var metadata = auditPlugin.metadata(); // GH-90000
 
             // Then: Metadata should be complete
-            assertThat(metadata.id()).isEqualTo("audit-trail-plugin [GH-90000]");
-            assertThat(metadata.name()).isEqualTo("Audit Trail Plugin [GH-90000]");
-            assertThat(metadata.version()).isEqualTo("1.0.0 [GH-90000]");
-            assertThat(metadata.description()).contains("audit trail [GH-90000]");
+            assertThat(metadata.id()).isEqualTo("audit-trail-plugin");
+            assertThat(metadata.name()).isEqualTo("Audit Trail Plugin");
+            assertThat(metadata.version()).isEqualTo("1.0.0");
+            assertThat(metadata.description()).contains("audit trail");
         }
     }
 
     @Nested
-    @DisplayName("Audit Event Logging Tests [GH-90000]")
+    @DisplayName("Audit Event Logging Tests")
     class EventLoggingTests {
 
         @BeforeEach
@@ -137,7 +137,7 @@ class StandardAuditTrailPluginTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should log single audit event [GH-90000]")
+        @DisplayName("Should log single audit event")
         void testLogEvent_Single() { // GH-90000
             // Given: Plugin ready
             Map<String, Object> details = Map.of( // GH-90000
@@ -152,18 +152,18 @@ class StandardAuditTrailPluginTest extends EventloopTestBase {
             AuditTrailPlugin.AuditEntry entry = runPromise(() -> result); // GH-90000
 
             // Then: Entry should be created with correct data
-            assertThat(entry.entityId()).isEqualTo("entity1 [GH-90000]");
-            assertThat(entry.action()).isEqualTo("CREATE [GH-90000]");
+            assertThat(entry.entityId()).isEqualTo("entity1");
+            assertThat(entry.action()).isEqualTo("CREATE");
             assertThat(entry.details()).containsAllEntriesOf(details); // GH-90000
             assertThat(entry.entryId()).isNotNull(); // GH-90000
             assertThat(entry.hash()).isNotNull(); // GH-90000
-            assertThat(entry.previousHash()).isEqualTo("0 [GH-90000]"); // First entry
+            assertThat(entry.previousHash()).isEqualTo("0"); // First entry
             assertThat(entry.timestamp()).isNotNull(); // GH-90000
-            assertThat(entry.actorId()).isEqualTo("system [GH-90000]"); // Default actor
+            assertThat(entry.actorId()).isEqualTo("system"); // Default actor
         }
 
         @Test
-        @DisplayName("Should log event with custom actor [GH-90000]")
+        @DisplayName("Should log event with custom actor")
         void testLogEvent_WithCustomActor() { // GH-90000
             // Given: Event details with custom actor
             Map<String, Object> details = Map.of( // GH-90000
@@ -177,11 +177,11 @@ class StandardAuditTrailPluginTest extends EventloopTestBase {
             AuditTrailPlugin.AuditEntry entry = runPromise(() -> result); // GH-90000
 
             // Then: Should use provided actor ID
-            assertThat(entry.actorId()).isEqualTo("user123 [GH-90000]");
+            assertThat(entry.actorId()).isEqualTo("user123");
         }
 
         @Test
-        @DisplayName("Should maintain hash chain across multiple events [GH-90000]")
+        @DisplayName("Should maintain hash chain across multiple events")
         void testLogEvent_HashChain() { // GH-90000
             // Given: Entity ID
             String entityId = "entity3";
@@ -197,7 +197,7 @@ class StandardAuditTrailPluginTest extends EventloopTestBase {
                     auditPlugin.logEvent(entityId, "DELETE", new HashMap<>())); // GH-90000
 
             // Then: Hash chain should be maintained
-            assertThat(entry1.previousHash()).isEqualTo("0 [GH-90000]");
+            assertThat(entry1.previousHash()).isEqualTo("0");
             assertThat(entry2.previousHash()).isEqualTo(entry1.hash()); // GH-90000
             assertThat(entry3.previousHash()).isEqualTo(entry2.hash()); // GH-90000
 
@@ -208,7 +208,7 @@ class StandardAuditTrailPluginTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should maintain separate trails for different entities [GH-90000]")
+        @DisplayName("Should maintain separate trails for different entities")
         void testLogEvent_SeparateEntities() { // GH-90000
             // Given: Multiple entities
             String entity1 = "user123";
@@ -236,12 +236,12 @@ class StandardAuditTrailPluginTest extends EventloopTestBase {
             assertThat(result1).hasSize(2); // GH-90000
             assertThat(result2).hasSize(1); // GH-90000
             assertThat(result1.get(1).previousHash()).isEqualTo(result1.get(0).hash()); // GH-90000
-            assertThat(result2.get(0).previousHash()).isEqualTo("0 [GH-90000]");
+            assertThat(result2.get(0).previousHash()).isEqualTo("0");
         }
     }
 
     @Nested
-    @DisplayName("Audit Trail Retrieval Tests [GH-90000]")
+    @DisplayName("Audit Trail Retrieval Tests")
     class TrailRetrievalTests {
 
         @BeforeEach
@@ -251,11 +251,11 @@ class StandardAuditTrailPluginTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should retrieve empty trail for non-existent entity [GH-90000]")
+        @DisplayName("Should retrieve empty trail for non-existent entity")
         void testGetTrail_Empty() { // GH-90000
             // When: Get trail for non-existent entity
             Promise<List<AuditTrailPlugin.AuditEntry>> result =
-                    auditPlugin.getTrail("nonexistent [GH-90000]");
+                    auditPlugin.getTrail("nonexistent");
             List<AuditTrailPlugin.AuditEntry> trail = runPromise(() -> result); // GH-90000
 
             // Then: Should return empty list
@@ -263,7 +263,7 @@ class StandardAuditTrailPluginTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should retrieve full audit trail [GH-90000]")
+        @DisplayName("Should retrieve full audit trail")
         void testGetTrail_FullTrail() { // GH-90000
             // Given: Multiple events logged
             String entityId = "user789";
@@ -278,13 +278,13 @@ class StandardAuditTrailPluginTest extends EventloopTestBase {
 
             // Then: Should return all events in order
             assertThat(trail).hasSize(3); // GH-90000
-            assertThat(trail.get(0).action()).isEqualTo("CREATE [GH-90000]");
-            assertThat(trail.get(1).action()).isEqualTo("UPDATE [GH-90000]");
-            assertThat(trail.get(2).action()).isEqualTo("DELETE [GH-90000]");
+            assertThat(trail.get(0).action()).isEqualTo("CREATE");
+            assertThat(trail.get(1).action()).isEqualTo("UPDATE");
+            assertThat(trail.get(2).action()).isEqualTo("DELETE");
         }
 
         @Test
-        @DisplayName("Should not modify original trail when retrieving [GH-90000]")
+        @DisplayName("Should not modify original trail when retrieving")
         void testGetTrail_ImmutableResult() { // GH-90000
             // Given: Logged event
             String entityId = "doc123";
@@ -309,7 +309,7 @@ class StandardAuditTrailPluginTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Integrity Verification Tests [GH-90000]")
+    @DisplayName("Integrity Verification Tests")
     class IntegrityVerificationTests {
 
         @BeforeEach
@@ -319,11 +319,11 @@ class StandardAuditTrailPluginTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should verify empty trail as valid [GH-90000]")
+        @DisplayName("Should verify empty trail as valid")
         void testVerifyIntegrity_Empty() { // GH-90000
             // When: Verify empty trail
             Promise<AuditTrailPlugin.VerificationResult> result =
-                    auditPlugin.verifyIntegrity("empty_entity [GH-90000]");
+                    auditPlugin.verifyIntegrity("empty_entity");
             AuditTrailPlugin.VerificationResult verification = runPromise(() -> result); // GH-90000
 
             // Then: Should be valid
@@ -333,7 +333,7 @@ class StandardAuditTrailPluginTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should verify valid trail [GH-90000]")
+        @DisplayName("Should verify valid trail")
         void testVerifyIntegrity_Valid() { // GH-90000
             // Given: Multiple logged events
             String entityId = "entity_verify";
@@ -356,7 +356,7 @@ class StandardAuditTrailPluginTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Export Tests [GH-90000]")
+    @DisplayName("Export Tests")
     class ExportTests {
 
         @BeforeEach
@@ -370,7 +370,7 @@ class StandardAuditTrailPluginTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should export trail to JSON format [GH-90000]")
+        @DisplayName("Should export trail to JSON format")
         void testExportTrail_JSON() throws IOException { // GH-90000
             // Given: Audit trail
             ByteArrayOutputStream output = new ByteArrayOutputStream(); // GH-90000
@@ -383,8 +383,8 @@ class StandardAuditTrailPluginTest extends EventloopTestBase {
             // Then: Should produce valid JSON
             String json = output.toString(StandardCharsets.UTF_8); // GH-90000
             assertThat(json) // GH-90000
-                    .contains("[ [GH-90000]")
-                    .contains("] [GH-90000]")
+                    .contains("[")
+                    .contains("]")
                     .contains("\"entryId\"") // GH-90000
                     .contains("\"entityId\"") // GH-90000
                     .contains("\"action\"") // GH-90000
@@ -393,7 +393,7 @@ class StandardAuditTrailPluginTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should export trail to CSV format [GH-90000]")
+        @DisplayName("Should export trail to CSV format")
         void testExportTrail_CSV() throws IOException { // GH-90000
             // Given: Audit trail
             ByteArrayOutputStream output = new ByteArrayOutputStream(); // GH-90000
@@ -406,13 +406,13 @@ class StandardAuditTrailPluginTest extends EventloopTestBase {
             // Then: Should produce valid CSV
             String csv = output.toString(StandardCharsets.UTF_8); // GH-90000
             assertThat(csv) // GH-90000
-                    .containsPattern("entryId,entityId,action,.* [GH-90000]")
-                    .contains("CREATE [GH-90000]")
-                    .contains("UPDATE [GH-90000]");
+                    .containsPattern("entryId,entityId,action,.*")
+                    .contains("CREATE")
+                    .contains("UPDATE");
         }
 
         @Test
-        @DisplayName("Should export trail to XML format [GH-90000]")
+        @DisplayName("Should export trail to XML format")
         void testExportTrail_XML() throws IOException { // GH-90000
             // Given: Audit trail
             ByteArrayOutputStream output = new ByteArrayOutputStream(); // GH-90000
@@ -426,15 +426,15 @@ class StandardAuditTrailPluginTest extends EventloopTestBase {
             String xml = output.toString(StandardCharsets.UTF_8); // GH-90000
             assertThat(xml) // GH-90000
                     .contains("<?xml version=\"1.0\"") // GH-90000
-                    .contains("<auditTrail> [GH-90000]")
-                    .contains("</auditTrail> [GH-90000]")
-                    .contains("<entityId>entity_export</entityId> [GH-90000]")
-                    .contains("<action>CREATE</action> [GH-90000]")
-                    .contains("<action>UPDATE</action> [GH-90000]");
+                    .contains("<auditTrail>")
+                    .contains("</auditTrail>")
+                    .contains("<entityId>entity_export</entityId>")
+                    .contains("<action>CREATE</action>")
+                    .contains("<action>UPDATE</action>");
         }
 
         @Test
-        @DisplayName("Should fail gracefully on unsupported format [GH-90000]")
+        @DisplayName("Should fail gracefully on unsupported format")
         void testExportTrail_UnsupportedFormat() { // GH-90000
             // Given: Audit trail
             ByteArrayOutputStream output = new ByteArrayOutputStream(); // GH-90000
@@ -446,11 +446,11 @@ class StandardAuditTrailPluginTest extends EventloopTestBase {
             // Then: Should handle gracefully
             assertThatThrownBy(() -> runPromise(() -> result)) // GH-90000
                     .isInstanceOf(UnsupportedOperationException.class) // GH-90000
-                    .hasMessageContaining("PDF export [GH-90000]");
+                    .hasMessageContaining("PDF export");
         }
 
         @Test
-        @DisplayName("Should export empty trail [GH-90000]")
+        @DisplayName("Should export empty trail")
         void testExportTrail_Empty() throws IOException { // GH-90000
             // Given: No events for entity
             ByteArrayOutputStream output = new ByteArrayOutputStream(); // GH-90000
@@ -463,13 +463,13 @@ class StandardAuditTrailPluginTest extends EventloopTestBase {
             // Then: Should produce valid but empty output
             String json = output.toString(StandardCharsets.UTF_8); // GH-90000
             assertThat(json) // GH-90000
-                    .contains("[ [GH-90000]")
-                    .contains("] [GH-90000]");
+                    .contains("[")
+                    .contains("]");
         }
     }
 
     @Nested
-    @DisplayName("Edge Cases and Error Handling [GH-90000]")
+    @DisplayName("Edge Cases and Error Handling")
     class EdgeCasesTests {
 
         @BeforeEach
@@ -479,7 +479,7 @@ class StandardAuditTrailPluginTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should handle null details map [GH-90000]")
+        @DisplayName("Should handle null details map")
         void testLogEvent_NullDetails() { // GH-90000
             // When: Log event with null details
             // Then: Should handle gracefully (implementation uses getOrDefault) // GH-90000
@@ -492,7 +492,7 @@ class StandardAuditTrailPluginTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should handle special characters in action [GH-90000]")
+        @DisplayName("Should handle special characters in action")
         void testLogEvent_SpecialCharacters() { // GH-90000
             // When: Log event with special characters
             String specialAction = "DELETE_WITH_CASCADE!@#$%";
@@ -505,7 +505,7 @@ class StandardAuditTrailPluginTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should handle large number of events [GH-90000]")
+        @DisplayName("Should handle large number of events")
         void testLogEvent_ManyEvents() { // GH-90000
             // Given: Log many events
             String entityId = "heavy_entity";
@@ -534,7 +534,7 @@ class StandardAuditTrailPluginTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should handle concurrent events for same entity [GH-90000]")
+        @DisplayName("Should handle concurrent events for same entity")
         void testLogEvent_ConcurrentSameEntity() { // GH-90000
             // Given: Concurrent event logging
             String entityId = "concurrent_entity";
@@ -550,7 +550,7 @@ class StandardAuditTrailPluginTest extends EventloopTestBase {
                     auditPlugin.logEvent(entityId, "EVENT3", new HashMap<>())); // GH-90000
 
             // Then: All should be recorded with proper hash chain
-            assertThat(entry1.previousHash()).isEqualTo("0 [GH-90000]");
+            assertThat(entry1.previousHash()).isEqualTo("0");
             assertThat(entry2.previousHash()).isEqualTo(entry1.hash()); // GH-90000
             assertThat(entry3.previousHash()).isEqualTo(entry2.hash()); // GH-90000
         }

@@ -73,8 +73,8 @@ class RustCodemodsTest {
 
         PolyfixConfig config =
                 new PolyfixConfig( // GH-90000
-                        List.of("rust [GH-90000]"), // languages
-                        List.of("schema [GH-90000]"), // schemaPaths
+                        List.of("rust"), // languages
+                        List.of("schema"), // schemaPaths
                         budgets,
                         policies,
                         tools);
@@ -89,10 +89,10 @@ class RustCodemodsTest {
                         LogManager.getLogger(RustCodemodsTest.class)); // GH-90000
 
         rustCodemods = new RustCodemods(context); // GH-90000
-        testFile = tempDir.resolve("test.rs [GH-90000]");
+        testFile = tempDir.resolve("test.rs");
 
         Logger logger = LogManager.getLogger(RustCodemodsTest.class); // GH-90000
-        logger.info("Test logging initialized with Log4j2 [GH-90000]");
+        logger.info("Test logging initialized with Log4j2");
     }
 
     @AfterEach
@@ -135,15 +135,15 @@ class RustCodemodsTest {
         String content = "match x {\n    Some(val) => { println!(\"{}\", val); }\n}"; // GH-90000
         String expected = "if let Some(val) = x { println!(\"{}\", val); }"; // GH-90000
 
-        logger.info("=== Test Input === [GH-90000]");
+        logger.info("=== Test Input ===");
         logger.info("\n{}", content); // GH-90000
-        logger.info("=== Expected Output === [GH-90000]");
+        logger.info("=== Expected Output ===");
         logger.info("\n{}", expected); // GH-90000
 
         UnifiedDiagnostic diagnostic = createMockDiagnostic("clippy::single_match", 1, 1, 3, 2); // GH-90000
         String result = rustCodemods.getFix("clippy::single_match", content, diagnostic); // GH-90000
 
-        logger.info("=== Actual Output === [GH-90000]");
+        logger.info("=== Actual Output ===");
         logger.info("\n{}", result); // GH-90000
 
         assertEquals(expected, result); // GH-90000
@@ -190,7 +190,7 @@ class RustCodemodsTest {
         return UnifiedDiagnostic.builder() // GH-90000
                 .file(testFile) // GH-90000
                 .code(ruleId) // GH-90000
-                .message("Test diagnostic [GH-90000]")
+                .message("Test diagnostic")
                 .startLine(startLine) // GH-90000
                 .startColumn(startCol) // GH-90000
                 .endLine(endLine) // GH-90000

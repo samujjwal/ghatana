@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.*;
 
-@DisplayName("DurableWorkflowRuntime Tests [GH-90000]")
+@DisplayName("DurableWorkflowRuntime Tests")
 class DurableWorkflowRuntimeTest extends EventloopTestBase {
 
     private InMemoryWorkflowDefinitionRegistry definitionRegistry;
@@ -68,7 +68,7 @@ class DurableWorkflowRuntimeTest extends EventloopTestBase {
 
         // Register definition
         WorkflowDefinition def = WorkflowDefinition.builder("linear-wf", "Linear WF") // GH-90000
-            .addStep(WorkflowStepDefinition.action("s1", "Step 1", "step1-op").withNextStep("s2 [GH-90000]"))
+            .addStep(WorkflowStepDefinition.action("s1", "Step 1", "step1-op").withNextStep("s2"))
             .addStep(WorkflowStepDefinition.action("s2", "Step 2", "step2-op") // GH-90000
                 .withNextStep(null)) // terminal // GH-90000
             .build(); // GH-90000
@@ -112,7 +112,7 @@ class DurableWorkflowRuntimeTest extends EventloopTestBase {
         try {
             runPromise(() -> runtime.start( // GH-90000
                 "nonexistent", "tenant-1", "corr-1", new java.util.HashMap<>())); // GH-90000
-            fail("Should have thrown [GH-90000]");
+            fail("Should have thrown");
         } catch (Exception e) { // GH-90000
             assertThat(e).isInstanceOf(WorkflowDefinitionException.class); // GH-90000
         }
@@ -131,7 +131,7 @@ class DurableWorkflowRuntimeTest extends EventloopTestBase {
         try {
             runPromise(() -> runtime.start( // GH-90000
                 "disabled-wf", "tenant-1", "corr-1", new java.util.HashMap<>())); // GH-90000
-            fail("Should have thrown [GH-90000]");
+            fail("Should have thrown");
         } catch (Exception e) { // GH-90000
             assertThat(e).isInstanceOf(WorkflowDefinitionException.class); // GH-90000
         }
@@ -141,7 +141,7 @@ class DurableWorkflowRuntimeTest extends EventloopTestBase {
     @Test
     void shouldHandleStepFailure() { // GH-90000
         operatorRegistry.register("fail-op", (ctx, cfg) -> { // GH-90000
-            throw new RuntimeException("step error [GH-90000]");
+            throw new RuntimeException("step error");
         });
 
         WorkflowDefinition def = WorkflowDefinition.builder("fail-wf", "Fail WF") // GH-90000
@@ -154,7 +154,7 @@ class DurableWorkflowRuntimeTest extends EventloopTestBase {
             "fail-wf", "tenant-1", "corr-1", new java.util.HashMap<>())); // GH-90000
 
         assertThat(result.status()).isEqualTo(WorkflowRunStatus.FAILED); // GH-90000
-        assertThat(result.errorMessage()).contains("step error [GH-90000]");
+        assertThat(result.errorMessage()).contains("step error");
     }
 
     @Test
@@ -172,8 +172,8 @@ class DurableWorkflowRuntimeTest extends EventloopTestBase {
             @Override
             public Object evaluate(String expression, WorkflowContext context) { // GH-90000
                 // Simplistic evaluator for testing
-                if (expression.equals("ctx.amount > 1000 [GH-90000]")) {
-                    Object amount = context.getVariables().get("amount [GH-90000]");
+                if (expression.equals("ctx.amount > 1000")) {
+                    Object amount = context.getVariables().get("amount");
                     if (amount instanceof Number n) { // GH-90000
                         return n.doubleValue() > 1000; // GH-90000
                     }
@@ -204,7 +204,7 @@ class DurableWorkflowRuntimeTest extends EventloopTestBase {
                 "check", "Check Amount", "ctx.amount > 1000", "high", "low"))
             .addStep(WorkflowStepDefinition.action("high", "High Path", "high-op")) // GH-90000
             .addStep(WorkflowStepDefinition.action("low", "Low Path", "low-op")) // GH-90000
-            .entryStepId("check [GH-90000]")
+            .entryStepId("check")
             .build(); // GH-90000
 
         runPromise(() -> definitionRegistry.register(def)); // GH-90000
@@ -228,7 +228,7 @@ class DurableWorkflowRuntimeTest extends EventloopTestBase {
 
         WorkflowDefinition def = WorkflowDefinition.builder("wait-wf", "Wait WF") // GH-90000
             .addStep(WorkflowStepDefinition.wait("wait-step", "Wait", Duration.ofHours(1)) // GH-90000
-                .withNextStep("post-wait [GH-90000]"))
+                .withNextStep("post-wait"))
             .addStep(WorkflowStepDefinition.action("post-wait", "Post Wait", "post-wait-op")) // GH-90000
             .build(); // GH-90000
 
@@ -253,7 +253,7 @@ class DurableWorkflowRuntimeTest extends EventloopTestBase {
         AtomicInteger attempts = new AtomicInteger(0); // GH-90000
         operatorRegistry.register("flaky-op", (ctx, cfg) -> { // GH-90000
             if (attempts.incrementAndGet() < 3) { // GH-90000
-                throw new RuntimeException("transient error [GH-90000]");
+                throw new RuntimeException("transient error");
             }
             ctx.put("success", true); // GH-90000
             return Promise.of(ctx); // GH-90000

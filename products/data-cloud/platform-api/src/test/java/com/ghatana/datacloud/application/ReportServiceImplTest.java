@@ -32,7 +32,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer test
  * @doc.pattern Unit Test
  */
-@DisplayName("ReportServiceImpl Tests [GH-90000]")
+@DisplayName("ReportServiceImpl Tests")
 class ReportServiceImplTest extends EventloopTestBase {
 
     @Mock
@@ -50,18 +50,18 @@ class ReportServiceImplTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Generate Report [GH-90000]")
+    @DisplayName("Generate Report")
     class GenerateReportTests {
 
         @Test
-        @DisplayName("[TEST-005]: generateReport_successfully_creates_report [GH-90000]")
+        @DisplayName("[TEST-005]: generateReport_successfully_creates_report")
         void generateReportSuccessfully() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
             ReportTemplate template = new ReportTemplate() // GH-90000
-                .withName("Monthly Sales [GH-90000]")
-                .withFormat("CSV [GH-90000]")
-                .withQuery("SELECT * FROM sales WHERE month = '2024-01' [GH-90000]");
+                .withName("Monthly Sales")
+                .withFormat("CSV")
+                .withQuery("SELECT * FROM sales WHERE month = '2024-01'");
 
             when(repository.save(any(Report.class))).thenAnswer(invocation -> // GH-90000
                 Promise.of(invocation.getArgument(0))); // GH-90000
@@ -72,24 +72,24 @@ class ReportServiceImplTest extends EventloopTestBase {
             // Then
             assertThat(result).isNotNull(); // GH-90000
             assertThat(result.getTenantId()).isEqualTo(tenantId); // GH-90000
-            assertThat(result.getName()).isEqualTo("Monthly Sales [GH-90000]");
-            assertThat(result.getFormat()).isEqualTo("CSV [GH-90000]");
-            assertThat(result.getStatus()).isEqualTo("COMPLETED [GH-90000]");
+            assertThat(result.getName()).isEqualTo("Monthly Sales");
+            assertThat(result.getFormat()).isEqualTo("CSV");
+            assertThat(result.getStatus()).isEqualTo("COMPLETED");
             verify(metrics).incrementCounter("report.generate.success", "tenant", tenantId, "format", "CSV"); // GH-90000
         }
 
         @Test
-        @DisplayName("[TEST-005]: generateReport_increments_error_metric_on_failure [GH-90000]")
+        @DisplayName("[TEST-005]: generateReport_increments_error_metric_on_failure")
         void generateReportError() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
             ReportTemplate template = new ReportTemplate() // GH-90000
-                .withName("Monthly Sales [GH-90000]")
-                .withFormat("CSV [GH-90000]")
-                .withQuery("SELECT 1 [GH-90000]");
+                .withName("Monthly Sales")
+                .withFormat("CSV")
+                .withQuery("SELECT 1");
 
             when(repository.save(any(Report.class))) // GH-90000
-                .thenReturn(Promise.ofException(new RuntimeException("DB error [GH-90000]")));
+                .thenReturn(Promise.ofException(new RuntimeException("DB error")));
 
             // When
             clearFatalError(); // GH-90000
@@ -105,11 +105,11 @@ class ReportServiceImplTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Get Report [GH-90000]")
+    @DisplayName("Get Report")
     class GetReportTests {
 
         @Test
-        @DisplayName("[TEST-006]: getReport_returns_report_when_found [GH-90000]")
+        @DisplayName("[TEST-006]: getReport_returns_report_when_found")
         void getReportFound() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
@@ -118,9 +118,9 @@ class ReportServiceImplTest extends EventloopTestBase {
             Report report = new Report() // GH-90000
                 .withId(reportId) // GH-90000
                 .withTenantId(tenantId) // GH-90000
-                .withName("Monthly Sales [GH-90000]")
-                .withFormat("CSV [GH-90000]")
-                .withStatus("COMPLETED [GH-90000]");
+                .withName("Monthly Sales")
+                .withFormat("CSV")
+                .withStatus("COMPLETED");
 
             when(repository.findById(tenantId, reportId)).thenReturn(Promise.of(report)); // GH-90000
 
@@ -134,7 +134,7 @@ class ReportServiceImplTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[TEST-006]: getReport_increments_not_found_when_missing [GH-90000]")
+        @DisplayName("[TEST-006]: getReport_increments_not_found_when_missing")
         void getReportNotFound() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
@@ -152,18 +152,18 @@ class ReportServiceImplTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("List Reports [GH-90000]")
+    @DisplayName("List Reports")
     class ListReportsTests {
 
         @Test
-        @DisplayName("[TEST-007]: listReports_returns_all_tenant_reports [GH-90000]")
+        @DisplayName("[TEST-007]: listReports_returns_all_tenant_reports")
         void listReports() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
 
             List<Report> reports = List.of( // GH-90000
-                new Report().withId("r1 [GH-90000]").withTenantId(tenantId).withName("Report 1 [GH-90000]").withFormat("CSV [GH-90000]"),
-                new Report().withId("r2 [GH-90000]").withTenantId(tenantId).withName("Report 2 [GH-90000]").withFormat("PDF [GH-90000]")
+                new Report().withId("r1").withTenantId(tenantId).withName("Report 1").withFormat("CSV"),
+                new Report().withId("r2").withTenantId(tenantId).withName("Report 2").withFormat("PDF")
             );
 
             when(repository.findAllByTenant(tenantId)).thenReturn(Promise.of(reports)); // GH-90000
@@ -178,11 +178,11 @@ class ReportServiceImplTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Update Report [GH-90000]")
+    @DisplayName("Update Report")
     class UpdateReportTests {
 
         @Test
-        @DisplayName("[TEST-008]: updateReport_successfully_updates [GH-90000]")
+        @DisplayName("[TEST-008]: updateReport_successfully_updates")
         void updateReportSuccessfully() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
@@ -192,11 +192,11 @@ class ReportServiceImplTest extends EventloopTestBase {
             Report existing = new Report() // GH-90000
                 .withId(reportId) // GH-90000
                 .withTenantId(tenantId) // GH-90000
-                .withName("Original Name [GH-90000]")
-                .withFormat("CSV [GH-90000]")
-                .withStatus("COMPLETED [GH-90000]")
+                .withName("Original Name")
+                .withFormat("CSV")
+                .withStatus("COMPLETED")
                 .withCreatedAt(System.currentTimeMillis()) // GH-90000
-                .withCreatedBy("system [GH-90000]");
+                .withCreatedBy("system");
 
             when(repository.findById(tenantId, reportId)).thenReturn(Promise.of(existing)); // GH-90000
             when(repository.save(any(Report.class))).thenAnswer(invocation -> // GH-90000
@@ -206,13 +206,13 @@ class ReportServiceImplTest extends EventloopTestBase {
             Report result = runPromise(() -> service.updateReport(tenantId, reportId, updates)); // GH-90000
 
             // Then
-            assertThat(result.getName()).isEqualTo("Updated Name [GH-90000]");
-            assertThat(result.getFormat()).isEqualTo("CSV [GH-90000]");
+            assertThat(result.getName()).isEqualTo("Updated Name");
+            assertThat(result.getFormat()).isEqualTo("CSV");
             verify(metrics).incrementCounter("report.update.success", "tenant", tenantId); // GH-90000
         }
 
         @Test
-        @DisplayName("[TEST-008]: updateReport_throws_when_not_found [GH-90000]")
+        @DisplayName("[TEST-008]: updateReport_throws_when_not_found")
         void updateReportNotFound() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
@@ -235,11 +235,11 @@ class ReportServiceImplTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Delete Report [GH-90000]")
+    @DisplayName("Delete Report")
     class DeleteReportTests {
 
         @Test
-        @DisplayName("[TEST-009]: deleteReport_successfully_deletes [GH-90000]")
+        @DisplayName("[TEST-009]: deleteReport_successfully_deletes")
         void deleteReportSuccessfully() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
@@ -257,11 +257,11 @@ class ReportServiceImplTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Download Report [GH-90000]")
+    @DisplayName("Download Report")
     class DownloadReportTests {
 
         @Test
-        @DisplayName("[TEST-010]: downloadReport_returns_binary_data [GH-90000]")
+        @DisplayName("[TEST-010]: downloadReport_returns_binary_data")
         void downloadReportSuccessfully() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
@@ -271,7 +271,7 @@ class ReportServiceImplTest extends EventloopTestBase {
             Report report = new Report() // GH-90000
                 .withId(reportId) // GH-90000
                 .withTenantId(tenantId) // GH-90000
-                .withName("Sales Report [GH-90000]")
+                .withName("Sales Report")
                 .withFormat(format); // GH-90000
 
             when(repository.findById(tenantId, reportId)).thenReturn(Promise.of(report)); // GH-90000
@@ -285,7 +285,7 @@ class ReportServiceImplTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[TEST-010]: downloadReport_throws_when_not_found [GH-90000]")
+        @DisplayName("[TEST-010]: downloadReport_throws_when_not_found")
         void downloadReportNotFound() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";

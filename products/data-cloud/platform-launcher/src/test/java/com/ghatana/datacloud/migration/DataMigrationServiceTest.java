@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * detects the database product name and falls back to plain {@code CREATE INDEX IF NOT EXISTS}
  * on H2, so the tests validate the build path without requiring a real Postgres connection.
  */
-@DisplayName("Zero-downtime DB migration framework [GH-90000]")
+@DisplayName("Zero-downtime DB migration framework")
 class DataMigrationServiceTest {
 
     private DataSource dataSource;
@@ -40,8 +40,8 @@ class DataMigrationServiceTest {
         // Unique DB name per test prevents state leakage between tests in the same JVM run.
         JdbcDataSource ds = new JdbcDataSource(); // GH-90000
         ds.setURL("jdbc:h2:mem:migration_test_" + System.nanoTime() + ";DB_CLOSE_DELAY=-1"); // GH-90000
-        ds.setUser("sa [GH-90000]");
-        ds.setPassword(" [GH-90000]");
+        ds.setUser("sa");
+        ds.setPassword("");
         dataSource = ds;
     }
 
@@ -52,9 +52,9 @@ class DataMigrationServiceTest {
     private void createTestTable(String table, String... extraColumns) throws SQLException { // GH-90000
         StringBuilder ddl = new StringBuilder("CREATE TABLE " + table + " (id UUID NOT NULL PRIMARY KEY"); // GH-90000
         for (String col : extraColumns) { // GH-90000
-            ddl.append(",  [GH-90000]").append(col);
+            ddl.append(", ").append(col);
         }
-        ddl.append(") [GH-90000]");
+        ddl.append(")");
         try (Connection conn = dataSource.getConnection(); Statement stmt = conn.createStatement()) { // GH-90000
             stmt.execute(ddl.toString()); // GH-90000
         }
@@ -94,31 +94,31 @@ class DataMigrationServiceTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("MigrationReport [GH-90000]")
+    @DisplayName("MigrationReport")
     class MigrationReportTests {
 
         @Test
-        @DisplayName("success factory sets correct fields [GH-90000]")
+        @DisplayName("success factory sets correct fields")
         void successFactory() { // GH-90000
             MigrationReport r = MigrationReport.success("MyStrategy", "my_table", "BACKFILL", 42L, 100L); // GH-90000
             assertThat(r.success()).isTrue(); // GH-90000
             assertThat(r.rowsAffected()).isEqualTo(42L); // GH-90000
             assertThat(r.durationMs()).isEqualTo(100L); // GH-90000
             assertThat(r.errorMessage()).isNull(); // GH-90000
-            assertThat(r.strategyName()).isEqualTo("MyStrategy [GH-90000]");
-            assertThat(r.tableName()).isEqualTo("my_table [GH-90000]");
-            assertThat(r.operation()).isEqualTo("BACKFILL [GH-90000]");
-            assertThat(r.toString()).contains("OK [GH-90000]").contains("rows=42 [GH-90000]");
+            assertThat(r.strategyName()).isEqualTo("MyStrategy");
+            assertThat(r.tableName()).isEqualTo("my_table");
+            assertThat(r.operation()).isEqualTo("BACKFILL");
+            assertThat(r.toString()).contains("OK").contains("rows=42");
         }
 
         @Test
-        @DisplayName("failure factory sets correct fields [GH-90000]")
+        @DisplayName("failure factory sets correct fields")
         void failureFactory() { // GH-90000
             MigrationReport r = MigrationReport.failure("MyStrategy", "my_table", "BACKFILL", 50L, "timeout"); // GH-90000
             assertThat(r.success()).isFalse(); // GH-90000
             assertThat(r.rowsAffected()).isEqualTo(0L); // GH-90000
-            assertThat(r.errorMessage()).isEqualTo("timeout [GH-90000]");
-            assertThat(r.toString()).contains("FAILED [GH-90000]").contains("timeout [GH-90000]");
+            assertThat(r.errorMessage()).isEqualTo("timeout");
+            assertThat(r.toString()).contains("FAILED").contains("timeout");
         }
     }
 
@@ -127,11 +127,11 @@ class DataMigrationServiceTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("DataMigrationService [GH-90000]")
+    @DisplayName("DataMigrationService")
     class DataMigrationServiceTests {
 
         @Test
-        @DisplayName("runAll on empty service returns empty list [GH-90000]")
+        @DisplayName("runAll on empty service returns empty list")
         void emptyService() { // GH-90000
             DataMigrationService svc = new DataMigrationService(dataSource); // GH-90000
             assertThat(svc.strategyCount()).isEqualTo(0); // GH-90000
@@ -139,7 +139,7 @@ class DataMigrationServiceTest {
         }
 
         @Test
-        @DisplayName("register returns this for fluent chaining [GH-90000]")
+        @DisplayName("register returns this for fluent chaining")
         void fluentChaining() { // GH-90000
             DataMigrationService svc = new DataMigrationService(dataSource); // GH-90000
             ZeroDowntimeMigrationStrategy noOp = ds -> MigrationReport.success("noop", "t", "OP", 0L, 1L); // GH-90000
@@ -149,7 +149,7 @@ class DataMigrationServiceTest {
         }
 
         @Test
-        @DisplayName("runAll executes all strategies and accumulates reports [GH-90000]")
+        @DisplayName("runAll executes all strategies and accumulates reports")
         void runsAllStrategies() { // GH-90000
             DataMigrationService svc = new DataMigrationService(dataSource); // GH-90000
             svc.register(ds -> MigrationReport.success("s1", "t", "OP", 10L, 5L)) // GH-90000
@@ -158,17 +158,17 @@ class DataMigrationServiceTest {
 
             List<MigrationReport> reports = svc.runAll(); // GH-90000
             assertThat(reports).hasSize(3); // GH-90000
-            assertThat(reports.get(0).strategyName()).isEqualTo("s1 [GH-90000]");
+            assertThat(reports.get(0).strategyName()).isEqualTo("s1");
             assertThat(reports.get(1).rowsAffected()).isEqualTo(20L); // GH-90000
             assertThat(reports.get(2).success()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("failure in one strategy does not abort subsequent strategies [GH-90000]")
+        @DisplayName("failure in one strategy does not abort subsequent strategies")
         void failureDoesNotAbortChain() { // GH-90000
             AtomicBoolean thirdRan = new AtomicBoolean(false); // GH-90000
             DataMigrationService svc = new DataMigrationService(dataSource); // GH-90000
-            svc.register(ds -> { throw new SQLException("simulated [GH-90000]"); })
+            svc.register(ds -> { throw new SQLException("simulated"); })
                .register(ds -> { thirdRan.set(true); return MigrationReport.success("s2", "t", "OP", 0L, 1L); }); // GH-90000
 
             List<MigrationReport> reports = svc.runAll(); // GH-90000
@@ -179,7 +179,7 @@ class DataMigrationServiceTest {
         }
 
         @Test
-        @DisplayName("runAll list is unmodifiable [GH-90000]")
+        @DisplayName("runAll list is unmodifiable")
         void returnsUnmodifiableList() { // GH-90000
             DataMigrationService svc = new DataMigrationService(dataSource); // GH-90000
             svc.register(ds -> MigrationReport.success("s", "t", "OP", 0L, 1L)); // GH-90000
@@ -189,14 +189,14 @@ class DataMigrationServiceTest {
         }
 
         @Test
-        @DisplayName("null DataSource throws NullPointerException [GH-90000]")
+        @DisplayName("null DataSource throws NullPointerException")
         void nullDataSourceThrows() { // GH-90000
             assertThatThrownBy(() -> new DataMigrationService(null)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("null strategy throws NullPointerException [GH-90000]")
+        @DisplayName("null strategy throws NullPointerException")
         void nullStrategyThrows() { // GH-90000
             DataMigrationService svc = new DataMigrationService(dataSource); // GH-90000
             assertThatThrownBy(() -> svc.register(null)) // GH-90000
@@ -209,7 +209,7 @@ class DataMigrationServiceTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("ColumnRenameMigration [GH-90000]")
+    @DisplayName("ColumnRenameMigration")
     class ColumnRenameMigrationTests {
 
         private static final String TABLE = "rename_test";
@@ -235,7 +235,7 @@ class DataMigrationServiceTest {
         }
 
         @Test
-        @DisplayName("backfills all rows with batchSize > rowCount in a single pass [GH-90000]")
+        @DisplayName("backfills all rows with batchSize > rowCount in a single pass")
         void backfillsAllRowsSinglePass() throws SQLException { // GH-90000
             insertRenameRows(10); // GH-90000
             MigrationReport report = new ColumnRenameMigration(TABLE, "old_name", "new_name", 100) // GH-90000
@@ -243,12 +243,12 @@ class DataMigrationServiceTest {
 
             assertThat(report.success()).isTrue(); // GH-90000
             assertThat(report.rowsAffected()).isEqualTo(10L); // GH-90000
-            assertThat(report.operation()).isEqualTo("COLUMN_RENAME_BACKFILL [GH-90000]");
+            assertThat(report.operation()).isEqualTo("COLUMN_RENAME_BACKFILL");
             assertThat(countNulls(TABLE, "new_name")).isEqualTo(0L); // GH-90000
         }
 
         @Test
-        @DisplayName("backfills all rows across multiple batches when batchSize < rowCount [GH-90000]")
+        @DisplayName("backfills all rows across multiple batches when batchSize < rowCount")
         void backfillsAllRowsMultipleBatches() throws SQLException { // GH-90000
             insertRenameRows(25); // GH-90000
             MigrationReport report = new ColumnRenameMigration(TABLE, "old_name", "new_name", 7) // GH-90000
@@ -260,7 +260,7 @@ class DataMigrationServiceTest {
         }
 
         @Test
-        @DisplayName("idempotent: re-running on already-backfilled table updates 0 rows [GH-90000]")
+        @DisplayName("idempotent: re-running on already-backfilled table updates 0 rows")
         void idempotent() throws SQLException { // GH-90000
             insertRenameRows(5); // GH-90000
             // Run once
@@ -274,7 +274,7 @@ class DataMigrationServiceTest {
         }
 
         @Test
-        @DisplayName("rows where old_name IS NULL are not backfilled [GH-90000]")
+        @DisplayName("rows where old_name IS NULL are not backfilled")
         void skipsNullSourceRows() throws SQLException { // GH-90000
             // Insert rows with null source
             try (Connection conn = dataSource.getConnection(); Statement s = conn.createStatement()) { // GH-90000
@@ -289,14 +289,14 @@ class DataMigrationServiceTest {
         }
 
         @Test
-        @DisplayName("name() includes table and column names [GH-90000]")
+        @DisplayName("name() includes table and column names")
         void nameIncludesContext() { // GH-90000
             ColumnRenameMigration m = new ColumnRenameMigration("my_table", "src_col", "dst_col"); // GH-90000
-            assertThat(m.name()).contains("my_table [GH-90000]").contains("src_col [GH-90000]").contains("dst_col [GH-90000]");
+            assertThat(m.name()).contains("my_table").contains("src_col").contains("dst_col");
         }
 
         @Test
-        @DisplayName("invalid batchSize throws IllegalArgumentException [GH-90000]")
+        @DisplayName("invalid batchSize throws IllegalArgumentException")
         void invalidBatchSizeThrows() { // GH-90000
             assertThatThrownBy(() -> new ColumnRenameMigration("t", "a", "b", 0)) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class); // GH-90000
@@ -310,7 +310,7 @@ class DataMigrationServiceTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("BackfillMigration [GH-90000]")
+    @DisplayName("BackfillMigration")
     class BackfillMigrationTests {
 
         private static final String TABLE = "backfill_test";
@@ -355,19 +355,19 @@ class DataMigrationServiceTest {
         }
 
         @Test
-        @DisplayName("backfills all rows and returns success report [GH-90000]")
+        @DisplayName("backfills all rows and returns success report")
         void backfillsAllRows() throws SQLException { // GH-90000
             insertBackfillRows(15); // GH-90000
             MigrationReport report = concreteBackfill(1_000).execute(dataSource); // GH-90000
 
             assertThat(report.success()).isTrue(); // GH-90000
             assertThat(report.rowsAffected()).isEqualTo(15L); // GH-90000
-            assertThat(report.operation()).isEqualTo("BACKFILL [GH-90000]");
+            assertThat(report.operation()).isEqualTo("BACKFILL");
             assertThat(countNulls(TABLE, "target_val")).isEqualTo(0L); // GH-90000
         }
 
         @Test
-        @DisplayName("batches work correctly across multiple iterations [GH-90000]")
+        @DisplayName("batches work correctly across multiple iterations")
         void batchedExecution() throws SQLException { // GH-90000
             insertBackfillRows(30); // GH-90000
             MigrationReport report = concreteBackfill(4).execute(dataSource); // GH-90000
@@ -378,7 +378,7 @@ class DataMigrationServiceTest {
         }
 
         @Test
-        @DisplayName("idempotent: 0 rows updated on second run [GH-90000]")
+        @DisplayName("idempotent: 0 rows updated on second run")
         void idempotent() throws SQLException { // GH-90000
             insertBackfillRows(5); // GH-90000
             concreteBackfill(1_000).execute(dataSource); // GH-90000
@@ -389,7 +389,7 @@ class DataMigrationServiceTest {
         }
 
         @Test
-        @DisplayName("empty table returns 0 rows success [GH-90000]")
+        @DisplayName("empty table returns 0 rows success")
         void emptyTable() throws SQLException { // GH-90000
             MigrationReport report = concreteBackfill(1_000).execute(dataSource); // GH-90000
             assertThat(report.success()).isTrue(); // GH-90000
@@ -397,7 +397,7 @@ class DataMigrationServiceTest {
         }
 
         @Test
-        @DisplayName("invalid batchSize throws IllegalArgumentException [GH-90000]")
+        @DisplayName("invalid batchSize throws IllegalArgumentException")
         void invalidBatchSize() { // GH-90000
             assertThatThrownBy(() -> concreteBackfill(-1)) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class); // GH-90000
@@ -411,7 +411,7 @@ class DataMigrationServiceTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("ConcurrentIndexMigration [GH-90000]")
+    @DisplayName("ConcurrentIndexMigration")
     class ConcurrentIndexMigrationTests {
 
         private static final String TABLE = "entities_idx_test";
@@ -433,15 +433,15 @@ class DataMigrationServiceTest {
         }
 
         @Test
-        @DisplayName("creates index successfully on H2 (falls back to standard CREATE INDEX) [GH-90000]")
+        @DisplayName("creates index successfully on H2 (falls back to standard CREATE INDEX)")
         void createsIndex() throws SQLException { // GH-90000
             MigrationReport report = concreteIndex().execute(dataSource); // GH-90000
             assertThat(report.success()).isTrue(); // GH-90000
-            assertThat(report.operation()).isEqualTo("CREATE_INDEX [GH-90000]");
+            assertThat(report.operation()).isEqualTo("CREATE_INDEX");
         }
 
         @Test
-        @DisplayName("idempotent: second run via IF NOT EXISTS does not fail [GH-90000]")
+        @DisplayName("idempotent: second run via IF NOT EXISTS does not fail")
         void idempotent() throws SQLException { // GH-90000
             concreteIndex().execute(dataSource); // GH-90000
             MigrationReport report = concreteIndex().execute(dataSource); // GH-90000
@@ -449,15 +449,15 @@ class DataMigrationServiceTest {
         }
 
         @Test
-        @DisplayName("canExecuteInTransaction returns false [GH-90000]")
+        @DisplayName("canExecuteInTransaction returns false")
         void notTransactional() { // GH-90000
             assertThat(concreteIndex().canExecuteInTransaction()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("name includes index and table names [GH-90000]")
+        @DisplayName("name includes index and table names")
         void nameIncludesContext() { // GH-90000
-            assertThat(concreteIndex().name()).isEqualTo("TestConcurrentIndex [GH-90000]");
+            assertThat(concreteIndex().name()).isEqualTo("TestConcurrentIndex");
         }
     }
 
@@ -466,7 +466,7 @@ class DataMigrationServiceTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Expand/contract end-to-end [GH-90000]")
+    @DisplayName("Expand/contract end-to-end")
     class EndToEndTests {
 
         private static final String TABLE = "e2e_entities";
@@ -490,7 +490,7 @@ class DataMigrationServiceTest {
         }
 
         @Test
-        @DisplayName("full pipeline: backfill + concurrent index both succeed [GH-90000]")
+        @DisplayName("full pipeline: backfill + concurrent index both succeed")
         void fullPipeline() throws SQLException { // GH-90000
             ConcurrentIndexMigration indexMigration = new ConcurrentIndexMigration() { // GH-90000
                 @Override protected String tableName()    { return TABLE; } // GH-90000

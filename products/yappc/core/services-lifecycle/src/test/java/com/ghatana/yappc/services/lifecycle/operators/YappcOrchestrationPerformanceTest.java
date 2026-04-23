@@ -38,7 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("YAPPC Orchestration Operators — Performance [GH-90000]")
+@DisplayName("YAPPC Orchestration Operators — Performance")
 class YappcOrchestrationPerformanceTest extends EventloopTestBase {
 
     private static final String TENANT_ID = "perf-tenant";
@@ -86,7 +86,7 @@ class YappcOrchestrationPerformanceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("BackpressureOperator — Performance [GH-90000]")
+    @DisplayName("BackpressureOperator — Performance")
     class BackpressurePerformanceTests {
 
         private static final int EVENT_COUNT = 500;
@@ -118,19 +118,19 @@ class YappcOrchestrationPerformanceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("single process() call completes in < 50 ms (latency budget) [GH-90000]")
+        @DisplayName("single process() call completes in < 50 ms (latency budget)")
         void singleOperationLatency() { // GH-90000
             Event event = dispatchRequestedEvent("latency-agent", 1); // GH-90000
             Instant start = Instant.now(); // GH-90000
             runPromise(() -> operator.process(event)); // GH-90000
             long elapsedMs = Duration.between(start, Instant.now()).toMillis(); // GH-90000
             assertThat(elapsedMs) // GH-90000
-                    .as("Single process() must complete in < 50 ms [GH-90000]")
+                    .as("Single process() must complete in < 50 ms")
                     .isLessThan(50); // GH-90000
         }
 
         @Test
-        @DisplayName("drops oldest event and accepts new when buffer full (DROP_OLDEST) [GH-90000]")
+        @DisplayName("drops oldest event and accepts new when buffer full (DROP_OLDEST)")
         void dropOldestWhenFull() { // GH-90000
             // Fill the buffer exactly (size=5) // GH-90000
             BackpressureOperator smallBuf = new BackpressureOperator(5); // GH-90000
@@ -150,7 +150,7 @@ class YappcOrchestrationPerformanceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("all events forwarded continuously when buffer never saturates [GH-90000]")
+        @DisplayName("all events forwarded continuously when buffer never saturates")
         void allEventsForwardedFromUnboundedBuffer() { // GH-90000
             BackpressureOperator largeBuf = new BackpressureOperator(1000); // GH-90000
             int forwarded = 0;
@@ -172,7 +172,7 @@ class YappcOrchestrationPerformanceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("AgentDispatchValidatorOperator — Performance [GH-90000]")
+    @DisplayName("AgentDispatchValidatorOperator — Performance")
     class ValidatorPerformanceTests {
 
         private static final int EVENT_COUNT = 300;
@@ -211,7 +211,7 @@ class YappcOrchestrationPerformanceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("MetricsCollectorOperator — Performance [GH-90000]")
+    @DisplayName("MetricsCollectorOperator — Performance")
     class MetricsPerformanceTests {
 
         private static final int EVENT_COUNT = 500;
@@ -248,7 +248,7 @@ class YappcOrchestrationPerformanceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("ResultAggregatorOperator — Performance [GH-90000]")
+    @DisplayName("ResultAggregatorOperator — Performance")
     class AggregatorPerformanceTests {
 
         private static final int EVENT_COUNT = 300;
@@ -285,7 +285,7 @@ class YappcOrchestrationPerformanceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Validator → Backpressure — Chained Pipeline Performance [GH-90000]")
+    @DisplayName("Validator → Backpressure — Chained Pipeline Performance")
     class PipelineChainPerformanceTests {
 
         private static final int EVENT_COUNT = 200;
@@ -340,7 +340,7 @@ class YappcOrchestrationPerformanceTest extends EventloopTestBase {
                 if (result.isSuccess()) successCount++; // GH-90000
             }
             assertThat(successCount) // GH-90000
-                    .as("All valid events must pass validation [GH-90000]")
+                    .as("All valid events must pass validation")
                     .isEqualTo(EVENT_COUNT); // GH-90000
         }
     }

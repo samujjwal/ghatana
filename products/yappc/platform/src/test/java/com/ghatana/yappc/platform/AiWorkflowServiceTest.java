@@ -23,7 +23,7 @@ import static org.mockito.Mockito.mock;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AiWorkflowService Tests [GH-90000]")
+@DisplayName("AiWorkflowService Tests")
 class AiWorkflowServiceTest extends EventloopTestBase {
 
     private InMemoryAiWorkflowRepository workflowRepository;
@@ -42,11 +42,11 @@ class AiWorkflowServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Workflow CRUD Operations [GH-90000]")
+    @DisplayName("Workflow CRUD Operations")
     class WorkflowCrudTests {
 
         @Test
-        @DisplayName("should create workflow with DRAFT status [GH-90000]")
+        @DisplayName("should create workflow with DRAFT status")
         void shouldCreateWorkflowWithDraftStatus() { // GH-90000
             // GIVEN
             AiWorkflowService.CreateWorkflowRequest request =
@@ -64,15 +64,15 @@ class AiWorkflowServiceTest extends EventloopTestBase {
             // THEN
             assertThat(result).isNotNull(); // GH-90000
             assertThat(result.id()).isNotEmpty(); // GH-90000
-            assertThat(result.name()).isEqualTo("Test Workflow [GH-90000]");
-            assertThat(result.description()).isEqualTo("A test workflow description [GH-90000]");
+            assertThat(result.name()).isEqualTo("Test Workflow");
+            assertThat(result.description()).isEqualTo("A test workflow description");
             assertThat(result.type()).isEqualTo(AiWorkflowInstance.WorkflowType.APP_CREATION); // GH-90000
             assertThat(result.status()).isEqualTo(AiWorkflowInstance.WorkflowStatus.DRAFT); // GH-90000
             assertThat(result.tenantId()).isEqualTo(TENANT_ID); // GH-90000
         }
 
         @Test
-        @DisplayName("should retrieve workflow by ID [GH-90000]")
+        @DisplayName("should retrieve workflow by ID")
         void shouldRetrieveWorkflowById() { // GH-90000
             // GIVEN
             AiWorkflowService.CreateWorkflowRequest request =
@@ -93,11 +93,11 @@ class AiWorkflowServiceTest extends EventloopTestBase {
             // THEN
             assertThat(result).isPresent(); // GH-90000
             assertThat(result.get().id()).isEqualTo(created.id()); // GH-90000
-            assertThat(result.get().name()).isEqualTo("Get Test Workflow [GH-90000]");
+            assertThat(result.get().name()).isEqualTo("Get Test Workflow");
         }
 
         @Test
-        @DisplayName("should return empty for non-existent workflow [GH-90000]")
+        @DisplayName("should return empty for non-existent workflow")
         void shouldReturnEmptyForNonExistentWorkflow() { // GH-90000
             // WHEN
             Optional<AiWorkflowInstance> result = runPromise(() -> // GH-90000
@@ -109,7 +109,7 @@ class AiWorkflowServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should list workflows by tenant [GH-90000]")
+        @DisplayName("should list workflows by tenant")
         void shouldListWorkflowsByTenant() { // GH-90000
             // GIVEN
             for (int i = 0; i < 5; i++) { // GH-90000
@@ -134,7 +134,7 @@ class AiWorkflowServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should filter workflows by status [GH-90000]")
+        @DisplayName("should filter workflows by status")
         void shouldFilterWorkflowsByStatus() { // GH-90000
             // GIVEN
             AiWorkflowInstance created = runPromise(() -> service.createWorkflow( // GH-90000
@@ -162,7 +162,7 @@ class AiWorkflowServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should delete workflow [GH-90000]")
+        @DisplayName("should delete workflow")
         void shouldDeleteWorkflow() { // GH-90000
             // GIVEN
             AiWorkflowInstance created = runPromise(() -> service.createWorkflow( // GH-90000
@@ -187,11 +187,11 @@ class AiWorkflowServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Workflow State Transitions [GH-90000]")
+    @DisplayName("Workflow State Transitions")
     class StateTransitionTests {
 
         @Test
-        @DisplayName("should start draft workflow [GH-90000]")
+        @DisplayName("should start draft workflow")
         void shouldStartDraftWorkflow() { // GH-90000
             // GIVEN
             AiWorkflowInstance created = runPromise(() -> service.createWorkflow( // GH-90000
@@ -214,7 +214,7 @@ class AiWorkflowServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should pause running workflow [GH-90000]")
+        @DisplayName("should pause running workflow")
         void shouldPauseRunningWorkflow() { // GH-90000
             // GIVEN
             AiWorkflowInstance created = runPromise(() -> service.createWorkflow( // GH-90000
@@ -238,7 +238,7 @@ class AiWorkflowServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should resume paused workflow [GH-90000]")
+        @DisplayName("should resume paused workflow")
         void shouldResumePausedWorkflow() { // GH-90000
             // GIVEN
             AiWorkflowInstance created = runPromise(() -> service.createWorkflow( // GH-90000
@@ -263,7 +263,7 @@ class AiWorkflowServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should cancel workflow [GH-90000]")
+        @DisplayName("should cancel workflow")
         void shouldCancelWorkflow() { // GH-90000
             // GIVEN
             AiWorkflowInstance created = runPromise(() -> service.createWorkflow( // GH-90000
@@ -288,7 +288,7 @@ class AiWorkflowServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should throw when starting already running workflow [GH-90000]")
+        @DisplayName("should throw when starting already running workflow")
         void shouldThrowWhenStartingRunningWorkflow() { // GH-90000
             // GIVEN
             AiWorkflowInstance created = runPromise(() -> service.createWorkflow( // GH-90000
@@ -309,7 +309,7 @@ class AiWorkflowServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should throw for non-existent workflow [GH-90000]")
+        @DisplayName("should throw for non-existent workflow")
         void shouldThrowForNonExistentWorkflow() { // GH-90000
             // WHEN/THEN
             assertThatThrownBy(() -> // GH-90000
@@ -319,11 +319,11 @@ class AiWorkflowServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Workflow Progress [GH-90000]")
+    @DisplayName("Workflow Progress")
     class WorkflowProgressTests {
 
         @Test
-        @DisplayName("should calculate progress correctly [GH-90000]")
+        @DisplayName("should calculate progress correctly")
         void shouldCalculateProgressCorrectly() { // GH-90000
             // GIVEN
             AiWorkflowInstance workflow = new AiWorkflowInstance( // GH-90000
@@ -354,7 +354,7 @@ class AiWorkflowServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should return zero progress for empty workflow [GH-90000]")
+        @DisplayName("should return zero progress for empty workflow")
         void shouldReturnZeroProgressForEmptyWorkflow() { // GH-90000
             // GIVEN
             AiWorkflowInstance workflow = AiWorkflowInstance.create( // GH-90000
@@ -374,11 +374,11 @@ class AiWorkflowServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Repository Status Counts [GH-90000]")
+    @DisplayName("Repository Status Counts")
     class RepositoryStatusCountsTests {
 
         @Test
-        @DisplayName("should count workflows by status [GH-90000]")
+        @DisplayName("should count workflows by status")
         void shouldCountWorkflowsByStatus() { // GH-90000
             // GIVEN - create workflows in various states
             AiWorkflowInstance w1 = runPromise(() -> service.createWorkflow( // GH-90000

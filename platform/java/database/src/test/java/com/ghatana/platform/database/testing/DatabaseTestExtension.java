@@ -77,7 +77,7 @@ import org.testcontainers.DockerClientFactory;
  *                         EntityManagerProvider emProvider) {
  *         // Transaction automatically rolls back after test
  *         txManager.inTransaction(em -> { // GH-90000
- *             User user = new User("john@example.com [GH-90000]");
+ *             User user = new User("john@example.com");
  *             em.persist(user); // GH-90000
  *             return user;
  *         });
@@ -86,7 +86,7 @@ import org.testcontainers.DockerClientFactory;
  *         User saved = txManager.inReadOnlyTransaction(em -> // GH-90000
  *             em.find(User.class, user.getId())); // GH-90000
  *
- *         assertThat(saved.getEmail()).isEqualTo("john@example.com [GH-90000]");
+ *         assertThat(saved.getEmail()).isEqualTo("john@example.com");
  *     }
  * }
  *
@@ -148,7 +148,7 @@ import org.testcontainers.DockerClientFactory;
  *         // Run Flyway migrations
  *         FlywayMigration migration = FlywayMigration.builder() // GH-90000
  *             .dataSource(ds) // GH-90000
- *             .locations("classpath:db/migration [GH-90000]")
+ *             .locations("classpath:db/migration")
  *             .build(); // GH-90000
  *
  *         MigrationResult result = migration.migrate(); // GH-90000
@@ -241,7 +241,7 @@ import org.testcontainers.DockerClientFactory;
  *     @Test
  *     void test1(TransactionManager txManager) { // GH-90000
  *         txManager.inTransaction(em -> { // GH-90000
- *             em.persist(new User("test1@example.com [GH-90000]"));
+ *             em.persist(new User("test1@example.com"));
  *             return null;
  *         });
  *     }
@@ -350,14 +350,14 @@ public class DatabaseTestExtension implements
         // Close EntityManagerFactory if it exists
         EntityManagerFactory emf = getStore(context).remove(ENTITY_MANAGER_FACTORY_KEY, EntityManagerFactory.class); // GH-90000
         if (emf != null && emf.isOpen()) { // GH-90000
-            LOG.debug("Closing EntityManagerFactory [GH-90000]");
+            LOG.debug("Closing EntityManagerFactory");
             emf.close(); // GH-90000
         }
 
         // Stop the database container
         DatabaseTestContainer database = getStore(context).remove(DATABASE_KEY, DatabaseTestContainer.class); // GH-90000
         if (database != null) { // GH-90000
-            LOG.debug("Stopping database container [GH-90000]");
+            LOG.debug("Stopping database container");
             database.stop(); // GH-90000
         }
 

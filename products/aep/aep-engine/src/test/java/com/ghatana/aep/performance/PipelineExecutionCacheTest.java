@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * Unit tests for {@link PipelineExecutionCache} (AEP-006.1). // GH-90000
  */
-@DisplayName("PipelineExecutionCache — AEP-006.1 [GH-90000]")
+@DisplayName("PipelineExecutionCache — AEP-006.1")
 class PipelineExecutionCacheTest {
 
     private MutableClock clock;
@@ -28,7 +28,7 @@ class PipelineExecutionCacheTest {
 
     @BeforeEach
     void setUp() { // GH-90000
-        clock = new MutableClock(Instant.parse("2026-01-01T00:00:00Z [GH-90000]"));
+        clock = new MutableClock(Instant.parse("2026-01-01T00:00:00Z"));
         cache = PipelineExecutionCache.builder() // GH-90000
                 .ttl(Duration.ofMinutes(10)) // GH-90000
                 .maxSize(100) // GH-90000
@@ -37,7 +37,7 @@ class PipelineExecutionCacheTest {
     }
 
     @Test
-    @DisplayName("get returns empty on cache miss [GH-90000]")
+    @DisplayName("get returns empty on cache miss")
     void getMissReturnsEmpty() { // GH-90000
         Optional<byte[]> result = cache.get("tenant1", "pipe1", "hash1"); // GH-90000
         assertThat(result).isEmpty(); // GH-90000
@@ -45,7 +45,7 @@ class PipelineExecutionCacheTest {
     }
 
     @Test
-    @DisplayName("get returns cached value on hit [GH-90000]")
+    @DisplayName("get returns cached value on hit")
     void getCachedValue() { // GH-90000
         byte[] data = "result".getBytes(); // GH-90000
         cache.put("tenant1", "pipe1", "hash1", data); // GH-90000
@@ -57,7 +57,7 @@ class PipelineExecutionCacheTest {
     }
 
     @Test
-    @DisplayName("get returns empty after TTL expires [GH-90000]")
+    @DisplayName("get returns empty after TTL expires")
     void getEmptyAfterTtl() { // GH-90000
         cache.put("tenant1", "pipe1", "hash1", "data".getBytes()); // GH-90000
         clock.advance(Duration.ofMinutes(11)); // GH-90000
@@ -66,7 +66,7 @@ class PipelineExecutionCacheTest {
     }
 
     @Test
-    @DisplayName("Different input hashes are cached independently [GH-90000]")
+    @DisplayName("Different input hashes are cached independently")
     void differentHashesAreIndependent() { // GH-90000
         cache.put("t", "p", "hash-a", "result-a".getBytes()); // GH-90000
         cache.put("t", "p", "hash-b", "result-b".getBytes()); // GH-90000
@@ -77,7 +77,7 @@ class PipelineExecutionCacheTest {
     }
 
     @Test
-    @DisplayName("invalidatePipeline removes all entries for that pipeline [GH-90000]")
+    @DisplayName("invalidatePipeline removes all entries for that pipeline")
     void invalidatePipelineRemovesEntries() { // GH-90000
         cache.put("t", "pipe-x", "h1", "r1".getBytes()); // GH-90000
         cache.put("t", "pipe-x", "h2", "r2".getBytes()); // GH-90000
@@ -91,7 +91,7 @@ class PipelineExecutionCacheTest {
     }
 
     @Test
-    @DisplayName("clear removes all entries [GH-90000]")
+    @DisplayName("clear removes all entries")
     void clearRemovesAll() { // GH-90000
         cache.put("t1", "p1", "h1", "d".getBytes()); // GH-90000
         cache.put("t2", "p2", "h2", "d".getBytes()); // GH-90000
@@ -101,7 +101,7 @@ class PipelineExecutionCacheTest {
     }
 
     @Test
-    @DisplayName("Builder rejects null result in put [GH-90000]")
+    @DisplayName("Builder rejects null result in put")
     void putRejectsNullResult() { // GH-90000
         assertThatThrownBy(() -> cache.put("t", "p", "h", null)) // GH-90000
                 .isInstanceOf(NullPointerException.class); // GH-90000

@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer domain
  * @doc.pattern Test
  */
-@DisplayName("EventType Validation Tests [GH-90000]")
+@DisplayName("EventType Validation Tests")
 class EventTypeValidationTest {
 
     // =========================================================================
@@ -30,27 +30,27 @@ class EventTypeValidationTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Builder validation [GH-90000]")
+    @DisplayName("Builder validation")
     class BuilderValidation {
 
         @Test
-        @DisplayName("should build valid EventType with required fields [GH-90000]")
+        @DisplayName("should build valid EventType with required fields")
         void shouldBuildValidEventTypeWithRequiredFields() { // GH-90000
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("order.created [GH-90000]")
-                .schemaVersion("1.0.0 [GH-90000]")
+                .tenantId("tenant-1")
+                .name("order.created")
+                .schemaVersion("1.0.0")
                 .build(); // GH-90000
 
-            assertThat(eventType.getTenantId()).isEqualTo("tenant-1 [GH-90000]");
-            assertThat(eventType.getName()).isEqualTo("order.created [GH-90000]");
-            assertThat(eventType.getSchemaVersion()).isEqualTo("1.0.0 [GH-90000]");
+            assertThat(eventType.getTenantId()).isEqualTo("tenant-1");
+            assertThat(eventType.getName()).isEqualTo("order.created");
+            assertThat(eventType.getSchemaVersion()).isEqualTo("1.0.0");
             assertThat(eventType.getLifecycleStatus()).isEqualTo(EventType.LifecycleStatus.DRAFT); // GH-90000
             assertThat(eventType.getCompatibilityPolicy()).isEqualTo(EventType.CompatibilityPolicy.BACKWARD); // GH-90000
         }
 
         @Test
-        @DisplayName("should build EventType with all fields [GH-90000]")
+        @DisplayName("should build EventType with all fields")
         void shouldBuildEventTypeWithAllFields() { // GH-90000
             Map<String, Object> headerSchema = Map.of( // GH-90000
                 "source", Map.of("type", "string", "required", true), // GH-90000
@@ -73,12 +73,12 @@ class EventTypeValidationTest {
             );
 
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .namespace("commerce [GH-90000]")
-                .name("order.created [GH-90000]")
-                .label("Order Created [GH-90000]")
-                .description("Emitted when a new order is created [GH-90000]")
-                .schemaVersion("1.0.0 [GH-90000]")
+                .tenantId("tenant-1")
+                .namespace("commerce")
+                .name("order.created")
+                .label("Order Created")
+                .description("Emitted when a new order is created")
+                .schemaVersion("1.0.0")
                 .headerSchema(headerSchema) // GH-90000
                 .payloadSchema(payloadSchema) // GH-90000
                 .lifecycleStatus(EventType.LifecycleStatus.ACTIVE) // GH-90000
@@ -88,11 +88,11 @@ class EventTypeValidationTest {
                 .storageHints(storageHints) // GH-90000
                 .tags(Set.of("production", "critical", "pii")) // GH-90000
                 .examples(List.of("{\"orderId\":\"123\",\"amount\":99.99}")) // GH-90000
-                .aliases(Set.of("order_created_v1 [GH-90000]"))
+                .aliases(Set.of("order_created_v1"))
                 .build(); // GH-90000
 
-            assertThat(eventType.getNamespace()).isEqualTo("commerce [GH-90000]");
-            assertThat(eventType.getLabel()).isEqualTo("Order Created [GH-90000]");
+            assertThat(eventType.getNamespace()).isEqualTo("commerce");
+            assertThat(eventType.getLabel()).isEqualTo("Order Created");
             assertThat(eventType.getHeaderSchema()).isEqualTo(headerSchema); // GH-90000
             assertThat(eventType.getPayloadSchema()).isEqualTo(payloadSchema); // GH-90000
             assertThat(eventType.getLifecycleStatus()).isEqualTo(EventType.LifecycleStatus.ACTIVE); // GH-90000
@@ -101,12 +101,12 @@ class EventTypeValidationTest {
         }
 
         @Test
-        @DisplayName("should use default values for optional fields [GH-90000]")
+        @DisplayName("should use default values for optional fields")
         void shouldUseDefaultsForOptionalFields() { // GH-90000
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
-                .schemaVersion("1.0.0 [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
+                .schemaVersion("1.0.0")
                 .build(); // GH-90000
 
             assertThat(eventType.getHeaderSchema()).isNotNull().isEmpty(); // GH-90000
@@ -124,11 +124,11 @@ class EventTypeValidationTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Schema validation [GH-90000]")
+    @DisplayName("Schema validation")
     class SchemaValidation {
 
         @Test
-        @DisplayName("should validate header schema structure [GH-90000]")
+        @DisplayName("should validate header schema structure")
         void shouldValidateHeaderSchemaStructure() { // GH-90000
             Map<String, Object> headerSchema = Map.of( // GH-90000
                 "source", Map.of("type", "string", "required", true), // GH-90000
@@ -136,18 +136,18 @@ class EventTypeValidationTest {
             );
 
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .headerSchema(headerSchema) // GH-90000
                 .build(); // GH-90000
 
             assertThat(eventType.getHeaderSchema()).isNotNull(); // GH-90000
-            assertThat(eventType.getHeaderSchema()).containsKey("source [GH-90000]");
-            assertThat(eventType.getHeaderSchema()).containsKey("priority [GH-90000]");
+            assertThat(eventType.getHeaderSchema()).containsKey("source");
+            assertThat(eventType.getHeaderSchema()).containsKey("priority");
         }
 
         @Test
-        @DisplayName("should validate payload schema structure [GH-90000]")
+        @DisplayName("should validate payload schema structure")
         void shouldValidatePayloadSchemaStructure() { // GH-90000
             Map<String, Object> payloadSchema = Map.of( // GH-90000
                 "id", Map.of("type", "string", "required", true), // GH-90000
@@ -156,23 +156,23 @@ class EventTypeValidationTest {
             );
 
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .payloadSchema(payloadSchema) // GH-90000
                 .build(); // GH-90000
 
             assertThat(eventType.getPayloadSchema()).isNotNull(); // GH-90000
-            assertThat(eventType.getPayloadSchema()).containsKey("id [GH-90000]");
-            assertThat(eventType.getPayloadSchema()).containsKey("value [GH-90000]");
-            assertThat(eventType.getPayloadSchema()).containsKey("metadata [GH-90000]");
+            assertThat(eventType.getPayloadSchema()).containsKey("id");
+            assertThat(eventType.getPayloadSchema()).containsKey("value");
+            assertThat(eventType.getPayloadSchema()).containsKey("metadata");
         }
 
         @Test
-        @DisplayName("should handle empty schemas [GH-90000]")
+        @DisplayName("should handle empty schemas")
         void shouldHandleEmptySchemas() { // GH-90000
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .headerSchema(Map.of()) // GH-90000
                 .payloadSchema(Map.of()) // GH-90000
                 .build(); // GH-90000
@@ -182,11 +182,11 @@ class EventTypeValidationTest {
         }
 
         @Test
-        @DisplayName("should handle null schemas with defaults [GH-90000]")
+        @DisplayName("should handle null schemas with defaults")
         void shouldHandleNullSchemasWithDefaults() { // GH-90000
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .headerSchema(null) // GH-90000
                 .payloadSchema(null) // GH-90000
                 .build(); // GH-90000
@@ -201,15 +201,15 @@ class EventTypeValidationTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Lifecycle validation [GH-90000]")
+    @DisplayName("Lifecycle validation")
     class LifecycleValidation {
 
         @Test
-        @DisplayName("should activate DRAFT event type [GH-90000]")
+        @DisplayName("should activate DRAFT event type")
         void shouldActivateDraftEventType() { // GH-90000
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .lifecycleStatus(EventType.LifecycleStatus.DRAFT) // GH-90000
                 .build(); // GH-90000
 
@@ -220,11 +220,11 @@ class EventTypeValidationTest {
         }
 
         @Test
-        @DisplayName("should activate DEPRECATED event type [GH-90000]")
+        @DisplayName("should activate DEPRECATED event type")
         void shouldActivateDeprecatedEventType() { // GH-90000
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .lifecycleStatus(EventType.LifecycleStatus.DEPRECATED) // GH-90000
                 .build(); // GH-90000
 
@@ -234,25 +234,25 @@ class EventTypeValidationTest {
         }
 
         @Test
-        @DisplayName("should throw when activating RETIRED event type [GH-90000]")
+        @DisplayName("should throw when activating RETIRED event type")
         void shouldThrowWhenActivatingRetiredEventType() { // GH-90000
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .lifecycleStatus(EventType.LifecycleStatus.RETIRED) // GH-90000
                 .build(); // GH-90000
 
             assertThatThrownBy(() -> eventType.activate()) // GH-90000
                 .isInstanceOf(IllegalStateException.class) // GH-90000
-                .hasMessageContaining("Cannot activate a retired event type [GH-90000]");
+                .hasMessageContaining("Cannot activate a retired event type");
         }
 
         @Test
-        @DisplayName("should deprecate event type with metadata [GH-90000]")
+        @DisplayName("should deprecate event type with metadata")
         void shouldDeprecateEventTypeWithMetadata() { // GH-90000
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .lifecycleStatus(EventType.LifecycleStatus.ACTIVE) // GH-90000
                 .build(); // GH-90000
 
@@ -262,33 +262,33 @@ class EventTypeValidationTest {
             eventType.deprecate(deprecationDate, migrationGuide); // GH-90000
 
             assertThat(eventType.getLifecycleStatus()).isEqualTo(EventType.LifecycleStatus.DEPRECATED); // GH-90000
-            assertThat(eventType.getGovernance()).containsKey("deprecationDate [GH-90000]");
-            assertThat(eventType.getGovernance()).containsKey("migrationGuide [GH-90000]");
+            assertThat(eventType.getGovernance()).containsKey("deprecationDate");
+            assertThat(eventType.getGovernance()).containsKey("migrationGuide");
             assertThat(eventType.acceptsEvents()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("should deprecate event type without migration guide [GH-90000]")
+        @DisplayName("should deprecate event type without migration guide")
         void shouldDeprecateEventTypeWithoutMigrationGuide() { // GH-90000
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .lifecycleStatus(EventType.LifecycleStatus.ACTIVE) // GH-90000
                 .build(); // GH-90000
 
             eventType.deprecate(Instant.now().plusSeconds(86400), null); // GH-90000
 
             assertThat(eventType.getLifecycleStatus()).isEqualTo(EventType.LifecycleStatus.DEPRECATED); // GH-90000
-            assertThat(eventType.getGovernance()).containsKey("deprecationDate [GH-90000]");
-            assertThat(eventType.getGovernance()).doesNotContainKey("migrationGuide [GH-90000]");
+            assertThat(eventType.getGovernance()).containsKey("deprecationDate");
+            assertThat(eventType.getGovernance()).doesNotContainKey("migrationGuide");
         }
 
         @Test
-        @DisplayName("should retire event type [GH-90000]")
+        @DisplayName("should retire event type")
         void shouldRetireEventType() { // GH-90000
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .lifecycleStatus(EventType.LifecycleStatus.DEPRECATED) // GH-90000
                 .build(); // GH-90000
 
@@ -299,11 +299,11 @@ class EventTypeValidationTest {
         }
 
         @Test
-        @DisplayName("should accept events when ACTIVE [GH-90000]")
+        @DisplayName("should accept events when ACTIVE")
         void shouldAcceptEventsWhenActive() { // GH-90000
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .lifecycleStatus(EventType.LifecycleStatus.ACTIVE) // GH-90000
                 .build(); // GH-90000
 
@@ -311,11 +311,11 @@ class EventTypeValidationTest {
         }
 
         @Test
-        @DisplayName("should accept events when DEPRECATED [GH-90000]")
+        @DisplayName("should accept events when DEPRECATED")
         void shouldAcceptEventsWhenDeprecated() { // GH-90000
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .lifecycleStatus(EventType.LifecycleStatus.DEPRECATED) // GH-90000
                 .build(); // GH-90000
 
@@ -323,11 +323,11 @@ class EventTypeValidationTest {
         }
 
         @Test
-        @DisplayName("should not accept events when DRAFT [GH-90000]")
+        @DisplayName("should not accept events when DRAFT")
         void shouldNotAcceptEventsWhenDraft() { // GH-90000
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .lifecycleStatus(EventType.LifecycleStatus.DRAFT) // GH-90000
                 .build(); // GH-90000
 
@@ -335,11 +335,11 @@ class EventTypeValidationTest {
         }
 
         @Test
-        @DisplayName("should not accept events when RETIRED [GH-90000]")
+        @DisplayName("should not accept events when RETIRED")
         void shouldNotAcceptEventsWhenRetired() { // GH-90000
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .lifecycleStatus(EventType.LifecycleStatus.RETIRED) // GH-90000
                 .build(); // GH-90000
 
@@ -352,15 +352,15 @@ class EventTypeValidationTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Compatibility policy validation [GH-90000]")
+    @DisplayName("Compatibility policy validation")
     class CompatibilityPolicyValidation {
 
         @Test
-        @DisplayName("should set BACKWARD compatibility policy [GH-90000]")
+        @DisplayName("should set BACKWARD compatibility policy")
         void shouldSetBackwardCompatibilityPolicy() { // GH-90000
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .compatibilityPolicy(EventType.CompatibilityPolicy.BACKWARD) // GH-90000
                 .build(); // GH-90000
 
@@ -368,11 +368,11 @@ class EventTypeValidationTest {
         }
 
         @Test
-        @DisplayName("should set FORWARD compatibility policy [GH-90000]")
+        @DisplayName("should set FORWARD compatibility policy")
         void shouldSetForwardCompatibilityPolicy() { // GH-90000
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .compatibilityPolicy(EventType.CompatibilityPolicy.FORWARD) // GH-90000
                 .build(); // GH-90000
 
@@ -380,11 +380,11 @@ class EventTypeValidationTest {
         }
 
         @Test
-        @DisplayName("should set FULL compatibility policy [GH-90000]")
+        @DisplayName("should set FULL compatibility policy")
         void shouldSetFullCompatibilityPolicy() { // GH-90000
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .compatibilityPolicy(EventType.CompatibilityPolicy.FULL) // GH-90000
                 .build(); // GH-90000
 
@@ -392,11 +392,11 @@ class EventTypeValidationTest {
         }
 
         @Test
-        @DisplayName("should set NONE compatibility policy [GH-90000]")
+        @DisplayName("should set NONE compatibility policy")
         void shouldSetNoneCompatibilityPolicy() { // GH-90000
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .compatibilityPolicy(EventType.CompatibilityPolicy.NONE) // GH-90000
                 .build(); // GH-90000
 
@@ -409,15 +409,15 @@ class EventTypeValidationTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Storage hints validation [GH-90000]")
+    @DisplayName("Storage hints validation")
     class StorageHintsValidation {
 
         @Test
-        @DisplayName("should set storage tier [GH-90000]")
+        @DisplayName("should set storage tier")
         void shouldSetStorageTier() { // GH-90000
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .defaultStorageTier(StorageTier.COLD) // GH-90000
                 .build(); // GH-90000
 
@@ -425,7 +425,7 @@ class EventTypeValidationTest {
         }
 
         @Test
-        @DisplayName("should set storage hints [GH-90000]")
+        @DisplayName("should set storage hints")
         void shouldSetStorageHints() { // GH-90000
             Map<String, Object> hints = Map.of( // GH-90000
                 "partitionKey", "orderId",
@@ -435,21 +435,21 @@ class EventTypeValidationTest {
             );
 
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .storageHints(hints) // GH-90000
                 .build(); // GH-90000
 
             assertThat(eventType.getStorageHints()).isEqualTo(hints); // GH-90000
-            assertThat(eventType.getStorageHints()).containsKey("partitionKey [GH-90000]");
+            assertThat(eventType.getStorageHints()).containsKey("partitionKey");
         }
 
         @Test
-        @DisplayName("should handle empty storage hints [GH-90000]")
+        @DisplayName("should handle empty storage hints")
         void shouldHandleEmptyStorageHints() { // GH-90000
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .storageHints(Map.of()) // GH-90000
                 .build(); // GH-90000
 
@@ -462,11 +462,11 @@ class EventTypeValidationTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Governance metadata validation [GH-90000]")
+    @DisplayName("Governance metadata validation")
     class GovernanceMetadataValidation {
 
         @Test
-        @DisplayName("should set governance metadata [GH-90000]")
+        @DisplayName("should set governance metadata")
         void shouldSetGovernanceMetadata() { // GH-90000
             Map<String, Object> governance = Map.of( // GH-90000
                 "owner", "platform-team",
@@ -475,33 +475,33 @@ class EventTypeValidationTest {
             );
 
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .governance(governance) // GH-90000
                 .build(); // GH-90000
 
             assertThat(eventType.getGovernance()).isEqualTo(governance); // GH-90000
-            assertThat(eventType.getOwner()).isEqualTo("platform-team [GH-90000]");
+            assertThat(eventType.getOwner()).isEqualTo("platform-team");
         }
 
         @Test
-        @DisplayName("should get owner from governance [GH-90000]")
+        @DisplayName("should get owner from governance")
         void shouldGetOwnerFromGovernance() { // GH-90000
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .governance(Map.of("owner", "data-team")) // GH-90000
                 .build(); // GH-90000
 
-            assertThat(eventType.getOwner()).isEqualTo("data-team [GH-90000]");
+            assertThat(eventType.getOwner()).isEqualTo("data-team");
         }
 
         @Test
-        @DisplayName("should return null when owner not set [GH-90000]")
+        @DisplayName("should return null when owner not set")
         void shouldReturnNullWhenOwnerNotSet() { // GH-90000
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .governance(Map.of()) // GH-90000
                 .build(); // GH-90000
 
@@ -514,17 +514,17 @@ class EventTypeValidationTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Discovery metadata validation [GH-90000]")
+    @DisplayName("Discovery metadata validation")
     class DiscoveryMetadataValidation {
 
         @Test
-        @DisplayName("should set tags [GH-90000]")
+        @DisplayName("should set tags")
         void shouldSetTags() { // GH-90000
             Set<String> tags = Set.of("production", "critical", "pii"); // GH-90000
 
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .tags(tags) // GH-90000
                 .build(); // GH-90000
 
@@ -532,7 +532,7 @@ class EventTypeValidationTest {
         }
 
         @Test
-        @DisplayName("should set examples [GH-90000]")
+        @DisplayName("should set examples")
         void shouldSetExamples() { // GH-90000
             List<String> examples = List.of( // GH-90000
                 "{\"id\":\"123\",\"value\":100}",
@@ -540,8 +540,8 @@ class EventTypeValidationTest {
             );
 
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .examples(examples) // GH-90000
                 .build(); // GH-90000
 
@@ -550,13 +550,13 @@ class EventTypeValidationTest {
         }
 
         @Test
-        @DisplayName("should set aliases [GH-90000]")
+        @DisplayName("should set aliases")
         void shouldSetAliases() { // GH-90000
             Set<String> aliases = Set.of("event_v1", "legacy_event"); // GH-90000
 
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .aliases(aliases) // GH-90000
                 .build(); // GH-90000
 
@@ -564,39 +564,39 @@ class EventTypeValidationTest {
         }
 
         @Test
-        @DisplayName("should get fully qualified name with namespace [GH-90000]")
+        @DisplayName("should get fully qualified name with namespace")
         void shouldGetFullyQualifiedNameWithNamespace() { // GH-90000
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .namespace("commerce [GH-90000]")
-                .name("order.created [GH-90000]")
+                .tenantId("tenant-1")
+                .namespace("commerce")
+                .name("order.created")
                 .build(); // GH-90000
 
-            assertThat(eventType.getFullyQualifiedName()).isEqualTo("commerce.order.created [GH-90000]");
+            assertThat(eventType.getFullyQualifiedName()).isEqualTo("commerce.order.created");
         }
 
         @Test
-        @DisplayName("should get name only when namespace is empty [GH-90000]")
+        @DisplayName("should get name only when namespace is empty")
         void shouldGetNameOnlyWhenNamespaceEmpty() { // GH-90000
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
-                .namespace(" [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
+                .namespace("")
                 .build(); // GH-90000
 
-            assertThat(eventType.getFullyQualifiedName()).isEqualTo("test.event [GH-90000]");
+            assertThat(eventType.getFullyQualifiedName()).isEqualTo("test.event");
         }
 
         @Test
-        @DisplayName("should get name only when namespace is null [GH-90000]")
+        @DisplayName("should get name only when namespace is null")
         void shouldGetNameOnlyWhenNamespaceNull() { // GH-90000
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .namespace(null) // GH-90000
                 .build(); // GH-90000
 
-            assertThat(eventType.getFullyQualifiedName()).isEqualTo("test.event [GH-90000]");
+            assertThat(eventType.getFullyQualifiedName()).isEqualTo("test.event");
         }
     }
 
@@ -605,15 +605,15 @@ class EventTypeValidationTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Null safety validation [GH-90000]")
+    @DisplayName("Null safety validation")
     class NullSafetyValidation {
 
         @Test
-        @DisplayName("should handle null header schema [GH-90000]")
+        @DisplayName("should handle null header schema")
         void shouldHandleNullHeaderSchema() { // GH-90000
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .headerSchema(null) // GH-90000
                 .build(); // GH-90000
 
@@ -621,11 +621,11 @@ class EventTypeValidationTest {
         }
 
         @Test
-        @DisplayName("should handle null payload schema [GH-90000]")
+        @DisplayName("should handle null payload schema")
         void shouldHandleNullPayloadSchema() { // GH-90000
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .payloadSchema(null) // GH-90000
                 .build(); // GH-90000
 
@@ -633,11 +633,11 @@ class EventTypeValidationTest {
         }
 
         @Test
-        @DisplayName("should handle null governance [GH-90000]")
+        @DisplayName("should handle null governance")
         void shouldHandleNullGovernance() { // GH-90000
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .governance(null) // GH-90000
                 .build(); // GH-90000
 
@@ -645,11 +645,11 @@ class EventTypeValidationTest {
         }
 
         @Test
-        @DisplayName("should handle null storage hints [GH-90000]")
+        @DisplayName("should handle null storage hints")
         void shouldHandleNullStorageHints() { // GH-90000
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .storageHints(null) // GH-90000
                 .build(); // GH-90000
 
@@ -657,11 +657,11 @@ class EventTypeValidationTest {
         }
 
         @Test
-        @DisplayName("should handle null tags [GH-90000]")
+        @DisplayName("should handle null tags")
         void shouldHandleNullTags() { // GH-90000
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .tags(null) // GH-90000
                 .build(); // GH-90000
 
@@ -669,11 +669,11 @@ class EventTypeValidationTest {
         }
 
         @Test
-        @DisplayName("should handle null examples [GH-90000]")
+        @DisplayName("should handle null examples")
         void shouldHandleNullExamples() { // GH-90000
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .examples(null) // GH-90000
                 .build(); // GH-90000
 
@@ -681,11 +681,11 @@ class EventTypeValidationTest {
         }
 
         @Test
-        @DisplayName("should handle null aliases [GH-90000]")
+        @DisplayName("should handle null aliases")
         void shouldHandleNullAliases() { // GH-90000
             EventType eventType = EventType.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("test.event [GH-90000]")
+                .tenantId("tenant-1")
+                .name("test.event")
                 .aliases(null) // GH-90000
                 .build(); // GH-90000
 

@@ -7,7 +7,11 @@ import java.util.Objects;
 /**
  * Domain representation of a pipeline execution checkpoint.
  * Used by repository implementations and JPA entities for conversion.
- */
+  * @doc.type class
+ * @doc.purpose Provides pipeline checkpoint functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 public class PipelineCheckpoint {
     private final String instanceId;
     private final String tenantId;

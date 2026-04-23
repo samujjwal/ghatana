@@ -25,8 +25,8 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer   platform
  * @doc.pattern IntegrationTest
  */
-@DisplayName("Platform Security Integration Tests [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("Platform Security Integration Tests")
+@Tag("integration")
 class SecurityIntegrationTest extends EventloopTestBase {
 
     private SecurityGateway gateway;
@@ -35,29 +35,29 @@ class SecurityIntegrationTest extends EventloopTestBase {
     void setUp() { // GH-90000
         gateway = new SecurityGateway(); // GH-90000
         // Seed an admin and a regular user
-        gateway.createUser("admin-user", "Admin", Set.of("ADMIN [GH-90000]"));
-        gateway.createUser("regular-user", "Regular", Set.of("VIEWER [GH-90000]"));
+        gateway.createUser("admin-user", "Admin", Set.of("ADMIN"));
+        gateway.createUser("regular-user", "Regular", Set.of("VIEWER"));
     }
 
     // ── Authentication ────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("valid credentials produce a non-null, non-blank token [GH-90000]")
+    @DisplayName("valid credentials produce a non-null, non-blank token")
     void validCredentialsProduceToken() { // GH-90000
         String token = gateway.authenticate("admin-user", "correct-password"); // GH-90000
         assertThat(token).isNotNull().isNotBlank(); // GH-90000
     }
 
     @Test
-    @DisplayName("invalid credentials throw AuthenticationException [GH-90000]")
+    @DisplayName("invalid credentials throw AuthenticationException")
     void invalidCredentialsThrowException() { // GH-90000
         assertThatThrownBy(() -> gateway.authenticate("admin-user", "wrong-password")) // GH-90000
                 .isInstanceOf(SecurityException.class) // GH-90000
-                .hasMessageContaining("authentication [GH-90000]");
+                .hasMessageContaining("authentication");
     }
 
     @Test
-    @DisplayName("unknown user throws AuthenticationException [GH-90000]")
+    @DisplayName("unknown user throws AuthenticationException")
     void unknownUserThrowsException() { // GH-90000
         assertThatThrownBy(() -> gateway.authenticate("ghost-user", "any")) // GH-90000
                 .isInstanceOf(SecurityException.class); // GH-90000
@@ -66,14 +66,14 @@ class SecurityIntegrationTest extends EventloopTestBase {
     // ── Token lifecycle ───────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("issued token passes validation [GH-90000]")
+    @DisplayName("issued token passes validation")
     void issuedTokenPassesValidation() { // GH-90000
         String token = gateway.authenticate("regular-user", "correct-password"); // GH-90000
         assertThat(gateway.validateToken(token)).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("revoked token fails validation [GH-90000]")
+    @DisplayName("revoked token fails validation")
     void revokedTokenFailsValidation() { // GH-90000
         String token = gateway.authenticate("admin-user", "correct-password"); // GH-90000
         gateway.revokeToken(token); // GH-90000
@@ -81,7 +81,7 @@ class SecurityIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("tampered token fails validation [GH-90000]")
+    @DisplayName("tampered token fails validation")
     void tamperedTokenFailsValidation() { // GH-90000
         String token = gateway.authenticate("regular-user", "correct-password"); // GH-90000
         String tampered = token + "TAMPERED";
@@ -89,37 +89,37 @@ class SecurityIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("expired token fails validation [GH-90000]")
+    @DisplayName("expired token fails validation")
     void expiredTokenFailsValidation() { // GH-90000
-        String expiredToken = gateway.issueExpiredToken("regular-user [GH-90000]");
+        String expiredToken = gateway.issueExpiredToken("regular-user");
         assertThat(gateway.validateToken(expiredToken)).isFalse(); // GH-90000
     }
 
     // ── Authorization (RBAC) ────────────────────────────────────────────────── // GH-90000
 
     @Test
-    @DisplayName("ADMIN role has access to admin-only resources [GH-90000]")
+    @DisplayName("ADMIN role has access to admin-only resources")
     void adminRoleHasAccessToAdminOnlyResources() { // GH-90000
         String token = gateway.authenticate("admin-user", "correct-password"); // GH-90000
         assertThat(gateway.isAuthorized(token, "admin:delete")).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("VIEWER role does not have access to admin-only resources [GH-90000]")
+    @DisplayName("VIEWER role does not have access to admin-only resources")
     void viewerRoleDoesNotHaveAccessToAdminResources() { // GH-90000
         String token = gateway.authenticate("regular-user", "correct-password"); // GH-90000
         assertThat(gateway.isAuthorized(token, "admin:delete")).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("VIEWER role can read resources [GH-90000]")
+    @DisplayName("VIEWER role can read resources")
     void viewerRoleCanReadResources() { // GH-90000
         String token = gateway.authenticate("regular-user", "correct-password"); // GH-90000
         assertThat(gateway.isAuthorized(token, "resource:read")).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("invalid token is never authorized for any action [GH-90000]")
+    @DisplayName("invalid token is never authorized for any action")
     void invalidTokenIsNeverAuthorized() { // GH-90000
         assertThat(gateway.isAuthorized("invalid-token-xyz", "resource:read")).isFalse(); // GH-90000
     }
@@ -127,7 +127,7 @@ class SecurityIntegrationTest extends EventloopTestBase {
     // ── Audit trail ───────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("successful authentication emits an audit event [GH-90000]")
+    @DisplayName("successful authentication emits an audit event")
     void successfulAuthenticationEmitsAuditEvent() { // GH-90000
         gateway.authenticate("admin-user", "correct-password"); // GH-90000
 
@@ -137,7 +137,7 @@ class SecurityIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("failed authentication emits an audit event [GH-90000]")
+    @DisplayName("failed authentication emits an audit event")
     void failedAuthenticationEmitsAuditEvent() { // GH-90000
         try { gateway.authenticate("admin-user", "bad"); } catch (Exception ignored) {} // GH-90000
 
@@ -147,7 +147,7 @@ class SecurityIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("token revocation emits an audit event [GH-90000]")
+    @DisplayName("token revocation emits an audit event")
     void tokenRevocationEmitsAuditEvent() { // GH-90000
         String token = gateway.authenticate("admin-user", "correct-password"); // GH-90000
         gateway.revokeToken(token); // GH-90000
@@ -159,19 +159,19 @@ class SecurityIntegrationTest extends EventloopTestBase {
     // ── Input sanitization ────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("null userId during authentication is rejected with a meaningful exception [GH-90000]")
+    @DisplayName("null userId during authentication is rejected with a meaningful exception")
     void nullUserIdRejected() { // GH-90000
         assertThatThrownBy(() -> gateway.authenticate(null, "somepass")) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("userId [GH-90000]");
+                .hasMessageContaining("userId");
     }
 
     @Test
-    @DisplayName("blank password is rejected [GH-90000]")
+    @DisplayName("blank password is rejected")
     void blankPasswordRejected() { // GH-90000
         assertThatThrownBy(() -> gateway.authenticate("admin-user", "")) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("password [GH-90000]");
+                .hasMessageContaining("password");
     }
 
     // ── Security gateway implementation (for tests) ─────────────────────────── // GH-90000
@@ -183,7 +183,7 @@ class SecurityIntegrationTest extends EventloopTestBase {
 
         private static final Map<String, Set<String>> ROLE_PERMISSIONS = Map.of( // GH-90000
                 "ADMIN", Set.of("admin:delete", "admin:create", "resource:read", "resource:write"), // GH-90000
-                "VIEWER", Set.of("resource:read [GH-90000]")
+                "VIEWER", Set.of("resource:read")
         );
 
         private final ConcurrentHashMap<String, UserPrincipal> users = new ConcurrentHashMap<>(); // GH-90000
@@ -195,8 +195,8 @@ class SecurityIntegrationTest extends EventloopTestBase {
         }
 
         String authenticate(String userId, String password) { // GH-90000
-            if (userId == null) throw new IllegalArgumentException("userId must not be null [GH-90000]");
-            if (password == null || password.isBlank()) throw new IllegalArgumentException("password must not be blank [GH-90000]");
+            if (userId == null) throw new IllegalArgumentException("userId must not be null");
+            if (password == null || password.isBlank()) throw new IllegalArgumentException("password must not be blank");
 
             UserPrincipal user = users.get(userId); // GH-90000
             if (user == null || !"correct-password".equals(password)) { // GH-90000

@@ -40,7 +40,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test, Contract
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("Data Cloud Entity Service API Contract Tests [GH-90000]")
+@DisplayName("Data Cloud Entity Service API Contract Tests")
 class DataCloudEntityServiceContractTest extends EventloopTestBase {
 
     @Mock
@@ -82,11 +82,11 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Entity Creation Contracts [GH-90000]")
+    @DisplayName("Entity Creation Contracts")
     class EntityCreationContract {
 
         @Test
-        @DisplayName("POST /api/v1/collections/:collectionId/entities creates entity with generated ID [GH-90000]")
+        @DisplayName("POST /api/v1/collections/:collectionId/entities creates entity with generated ID")
         void createMustGenerateEntityId() { // GH-90000
             String tenantId = "tenant-1";
             String collectionId = "coll-users";
@@ -97,11 +97,11 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
 
             Entity created = runPromise(() -> entityService.create(tenantId, collectionId, newEntity)); // GH-90000
 
-            assertThat(created.id).isNotBlank().isNotEqualTo(" [GH-90000]");
+            assertThat(created.id).isNotBlank().isNotEqualTo("");
         }
 
         @Test
-        @DisplayName("created entity must inherit tenant from collection [GH-90000]")
+        @DisplayName("created entity must inherit tenant from collection")
         void createdEntityMustHaveTenantIsolation() { // GH-90000
             String tenantId = "tenant-org";
             String collectionId = "coll-employees";
@@ -116,7 +116,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("created entity must be validated against collection schema [GH-90000]")
+        @DisplayName("created entity must be validated against collection schema")
         void createMustValidateSchema() { // GH-90000
             String tenantId = "tenant-1";
             String collectionId = "coll-strict-schema";
@@ -125,7 +125,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
                     Map.of("missing_required_field", "value")); // GH-90000
             lenient().when(entityService.create(eq(tenantId), eq(collectionId), eq(invalidEntity))) // GH-90000
                     .thenReturn(Promise.ofException( // GH-90000
-                            new IllegalArgumentException("Missing required field: name [GH-90000]")));
+                            new IllegalArgumentException("Missing required field: name")));
 
             Throwable thrown = catchThrowable(() -> // GH-90000
                     runPromise(() -> entityService.create(tenantId, collectionId, invalidEntity))); // GH-90000
@@ -134,7 +134,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("created entity must have audit fields (createdAt, createdBy) [GH-90000]")
+        @DisplayName("created entity must have audit fields (createdAt, createdBy)")
         void createdEntityMustHaveAuditFields() { // GH-90000
             String tenantId = "tenant-1";
             String collectionId = "coll-users";
@@ -153,7 +153,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("cannot create entity in another tenant's collection [GH-90000]")
+        @DisplayName("cannot create entity in another tenant's collection")
         void createMustPreventCrossTenantEntity() { // GH-90000
             String requestingTenant = "tenant-1";
             String owningTenant = "tenant-2";
@@ -161,7 +161,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
             Entity newEntity = new Entity("", collectionId, owningTenant, Map.of()); // GH-90000
             lenient().when(entityService.create(eq(requestingTenant), eq(collectionId), any())) // GH-90000
                     .thenReturn(Promise.ofException( // GH-90000
-                            new SecurityException("Not authorized for this collection [GH-90000]")));
+                            new SecurityException("Not authorized for this collection")));
 
             Throwable thrown = catchThrowable(() -> // GH-90000
                     runPromise(() -> entityService.create(requestingTenant, collectionId, newEntity))); // GH-90000
@@ -175,11 +175,11 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Entity Read Contracts [GH-90000]")
+    @DisplayName("Entity Read Contracts")
     class EntityReadContract {
 
         @Test
-        @DisplayName("GET /api/v1/collections/:collectionId/entities/:id returns entity if accessible [GH-90000]")
+        @DisplayName("GET /api/v1/collections/:collectionId/entities/:id returns entity if accessible")
         void getByIdMustReturnEntity() { // GH-90000
             String tenantId = "tenant-1";
             String collectionId = "coll-users";
@@ -196,7 +196,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("get entity from other tenant's collection must return empty [GH-90000]")
+        @DisplayName("get entity from other tenant's collection must return empty")
         void getByIdMustIsolateTenant() { // GH-90000
             String requestingTenant = "tenant-1";
             String owningTenant = "tenant-2";
@@ -212,13 +212,13 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("entity response must include all required attributes [GH-90000]")
+        @DisplayName("entity response must include all required attributes")
         void entityResponseMustBeComplete() { // GH-90000
             String tenantId = "tenant-1";
             String collectionId = "coll-users";
             Entity entity = new Entity("ent-1", collectionId, tenantId, // GH-90000
                     Map.of("name", "Eve", "email", "eve@example.com")); // GH-90000
-            lenient().when(entityService.getById(eq(tenantId), eq(collectionId), eq("ent-1 [GH-90000]")))
+            lenient().when(entityService.getById(eq(tenantId), eq(collectionId), eq("ent-1")))
                     .thenReturn(Promise.of(Optional.of(entity))); // GH-90000
 
             Optional<Entity> result = runPromise(() -> // GH-90000
@@ -233,11 +233,11 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Entity Update Contracts [GH-90000]")
+    @DisplayName("Entity Update Contracts")
     class EntityUpdateContract {
 
         @Test
-        @DisplayName("PATCH /api/v1/collections/:collectionId/entities/:id updates attributes [GH-90000]")
+        @DisplayName("PATCH /api/v1/collections/:collectionId/entities/:id updates attributes")
         void updateMustModifyAttributes() { // GH-90000
             String tenantId = "tenant-1";
             String collectionId = "coll-users";
@@ -254,7 +254,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("update must validate attributes against schema [GH-90000]")
+        @DisplayName("update must validate attributes against schema")
         void updateMustValidateSchema() { // GH-90000
             String tenantId = "tenant-1";
             String collectionId = "coll-users";
@@ -264,7 +264,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
                     Map.of("email", "not-an-email")); // GH-90000
             lenient().when(entityService.update(eq(tenantId), eq(collectionId), eq(entityId), eq(invalidUpdate))) // GH-90000
                     .thenReturn(Promise.ofException( // GH-90000
-                            new IllegalArgumentException("Invalid email format [GH-90000]")));
+                            new IllegalArgumentException("Invalid email format")));
 
             Throwable thrown = catchThrowable(() -> // GH-90000
                     runPromise(() -> entityService.update(tenantId, collectionId, entityId, invalidUpdate))); // GH-90000
@@ -273,7 +273,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("update must not change entity ID or createdAt [GH-90000]")
+        @DisplayName("update must not change entity ID or createdAt")
         void updateMustNotChangeImmutableFields() { // GH-90000
             String tenantId = "tenant-1";
             String collectionId = "coll-users";
@@ -295,7 +295,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("cannot update entity in another tenant's collection [GH-90000]")
+        @DisplayName("cannot update entity in another tenant's collection")
         void updateMustPreventCrossTenantMod() { // GH-90000
             String requestingTenant = "tenant-1";
             String owningTenant = "tenant-2";
@@ -304,7 +304,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
             Entity update = new Entity(entityId, collectionId, owningTenant, Map.of()); // GH-90000
             lenient().when(entityService.update(eq(requestingTenant), eq(collectionId), eq(entityId), eq(update))) // GH-90000
                     .thenReturn(Promise.ofException( // GH-90000
-                            new SecurityException("Not authorized [GH-90000]")));
+                            new SecurityException("Not authorized")));
 
             Throwable thrown = catchThrowable(() -> // GH-90000
                     runPromise(() -> entityService.update(requestingTenant, collectionId, entityId, update))); // GH-90000
@@ -318,11 +318,11 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Entity Deletion Contracts [GH-90000]")
+    @DisplayName("Entity Deletion Contracts")
     class EntityDeletionContract {
 
         @Test
-        @DisplayName("DELETE /api/v1/collections/:collectionId/entities/:id deletes entity [GH-90000]")
+        @DisplayName("DELETE /api/v1/collections/:collectionId/entities/:id deletes entity")
         void deleteMustRemoveEntity() { // GH-90000
             String tenantId = "tenant-1";
             String collectionId = "coll-users";
@@ -336,7 +336,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("delete of non-existent entity must be idempotent [GH-90000]")
+        @DisplayName("delete of non-existent entity must be idempotent")
         void deleteNonExistentMustBeSafe() { // GH-90000
             String tenantId = "tenant-1";
             String collectionId = "coll-users";
@@ -350,7 +350,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("cannot delete entities from another tenant's collection [GH-90000]")
+        @DisplayName("cannot delete entities from another tenant's collection")
         void deleteMustPreventCrossTenantDelete() { // GH-90000
             String requestingTenant = "tenant-1";
             String owningTenant = "tenant-2";
@@ -358,7 +358,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
             String entityId = "ent-secret";
             lenient().when(entityService.delete(eq(requestingTenant), eq(collectionId), eq(entityId))) // GH-90000
                     .thenReturn(Promise.ofException( // GH-90000
-                            new SecurityException("Not authorized [GH-90000]")));
+                            new SecurityException("Not authorized")));
 
             Throwable thrown = catchThrowable(() -> // GH-90000
                     runPromise(() -> entityService.delete(requestingTenant, collectionId, entityId))); // GH-90000
@@ -372,11 +372,11 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Entity Counting Contracts [GH-90000]")
+    @DisplayName("Entity Counting Contracts")
     class EntityCountingContract {
 
         @Test
-        @DisplayName("count API returns entity count for given collection [GH-90000]")
+        @DisplayName("count API returns entity count for given collection")
         void countMustReturnAccurateCount() { // GH-90000
             String tenantId = "tenant-1";
             String collectionId = "coll-users";
@@ -389,7 +389,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("count must only include entities from requesting tenant [GH-90000]")
+        @DisplayName("count must only include entities from requesting tenant")
         void countMustIsolateTenant() { // GH-90000
             String tenant1 = "tenant-1";
             String tenant2 = "tenant-2";
@@ -408,7 +408,7 @@ class DataCloudEntityServiceContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("count for non-existent collection must return 0 [GH-90000]")
+        @DisplayName("count for non-existent collection must return 0")
         void countNonExistentMustReturn0() { // GH-90000
             String tenantId = "tenant-1";
             String nonExistentCollection = "coll-does-not-exist";

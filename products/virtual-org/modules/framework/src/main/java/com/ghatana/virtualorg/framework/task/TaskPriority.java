@@ -2,7 +2,11 @@ package com.ghatana.virtualorg.framework.task;
 
 /**
  * Task priority levels for prioritization.
- */
+  * @doc.type enum
+ * @doc.purpose Provides task priority functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 public enum TaskPriority {
     CRITICAL(4, "Critical - immediate attention required"),
     HIGH(3, "High - complete within 24h"),

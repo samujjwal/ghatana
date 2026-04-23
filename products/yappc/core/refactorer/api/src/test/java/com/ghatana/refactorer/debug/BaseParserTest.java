@@ -69,7 +69,7 @@ public abstract class BaseParserTest<T extends StackTraceParser> {
     void parse_handlesEmptyInput() { // GH-90000
         T parser = createParser(); // GH-90000
 
-        List<StackTraceParser.TraceFrame> frames = parser.parse(" [GH-90000]");
+        List<StackTraceParser.TraceFrame> frames = parser.parse("");
 
         assertNotNull(frames, "Parser returned null for empty input"); // GH-90000
         assertTrue(frames.isEmpty(), "Parser should return empty list for empty input"); // GH-90000

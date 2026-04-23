@@ -43,7 +43,7 @@ import static org.mockito.Mockito.when;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("yappc-api HTTP Controllers [GH-90000]")
+@DisplayName("yappc-api HTTP Controllers")
 class YappcApiControllerTest extends EventloopTestBase {
 
     @Mock
@@ -70,11 +70,11 @@ class YappcApiControllerTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("AgentController [GH-90000]")
+    @DisplayName("AgentController")
     class AgentControllerTests {
 
         @Test
-        @DisplayName("two-arg constructor creates controller successfully [GH-90000]")
+        @DisplayName("two-arg constructor creates controller successfully")
         void twoArgConstructorCreatesController() { // GH-90000
             AgentController controller = new AgentController(agentRegistry, objectMapper); // GH-90000
 
@@ -82,7 +82,7 @@ class YappcApiControllerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("three-arg constructor creates controller with audit logger [GH-90000]")
+        @DisplayName("three-arg constructor creates controller with audit logger")
         void threeArgConstructorCreatesController() { // GH-90000
             AgentController controller = new AgentController( // GH-90000
                     agentRegistry, objectMapper, AuditLogger.noop()); // GH-90000
@@ -91,32 +91,32 @@ class YappcApiControllerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("constructor rejects null registry [GH-90000]")
+        @DisplayName("constructor rejects null registry")
         void constructorRejectsNullRegistry() { // GH-90000
             assertThatNullPointerException() // GH-90000
                     .isThrownBy(() -> new AgentController(null, objectMapper)); // GH-90000
         }
 
         @Test
-        @DisplayName("constructor rejects null objectMapper [GH-90000]")
+        @DisplayName("constructor rejects null objectMapper")
         void constructorRejectsNullObjectMapper() { // GH-90000
             assertThatNullPointerException() // GH-90000
                     .isThrownBy(() -> new AgentController(agentRegistry, null)); // GH-90000
         }
 
         @Test
-        @DisplayName("constructor rejects null auditLogger [GH-90000]")
+        @DisplayName("constructor rejects null auditLogger")
         void constructorRejectsNullAuditLogger() { // GH-90000
             assertThatNullPointerException() // GH-90000
                     .isThrownBy(() -> new AgentController(agentRegistry, objectMapper, null)); // GH-90000
         }
 
         @Test
-        @DisplayName("listAgents returns 200 with agents list from registry [GH-90000]")
+        @DisplayName("listAgents returns 200 with agents list from registry")
         void listAgentsReturnsOkWithAgents() { // GH-90000
             when(agentRegistry.getAllMetadata()).thenReturn(List.of()); // GH-90000
             AgentController controller = new AgentController(agentRegistry, objectMapper); // GH-90000
-            HttpRequest request = HttpRequest.get("http://localhost/api/v1/agents [GH-90000]").build();
+            HttpRequest request = HttpRequest.get("http://localhost/api/v1/agents").build();
 
             HttpResponse response = runPromise(() -> controller.listAgents(request)); // GH-90000
 
@@ -125,11 +125,11 @@ class YappcApiControllerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("listAgents returns 200 for empty registry [GH-90000]")
+        @DisplayName("listAgents returns 200 for empty registry")
         void listAgentsReturnsOkForEmptyRegistry() { // GH-90000
             when(agentRegistry.getAllMetadata()).thenReturn(List.of()); // GH-90000
             AgentController controller = new AgentController(agentRegistry, objectMapper); // GH-90000
-            HttpRequest request = HttpRequest.get("http://localhost/api/v1/agents [GH-90000]").build();
+            HttpRequest request = HttpRequest.get("http://localhost/api/v1/agents").build();
 
             HttpResponse response = runPromise(() -> controller.listAgents(request)); // GH-90000
 
@@ -142,11 +142,11 @@ class YappcApiControllerTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("WorkflowController [GH-90000]")
+    @DisplayName("WorkflowController")
     class WorkflowControllerTests {
 
         @Test
-        @DisplayName("constructor creates controller successfully [GH-90000]")
+        @DisplayName("constructor creates controller successfully")
         void constructorCreatesController() { // GH-90000
             WorkflowController controller = new WorkflowController(workflowService, objectMapper); // GH-90000
 
@@ -154,21 +154,21 @@ class YappcApiControllerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("constructor rejects null workflowService [GH-90000]")
+        @DisplayName("constructor rejects null workflowService")
         void constructorRejectsNullWorkflowService() { // GH-90000
             assertThatNullPointerException() // GH-90000
                     .isThrownBy(() -> new WorkflowController(null, objectMapper)); // GH-90000
         }
 
         @Test
-        @DisplayName("constructor rejects null objectMapper [GH-90000]")
+        @DisplayName("constructor rejects null objectMapper")
         void constructorRejectsNullObjectMapper() { // GH-90000
             assertThatNullPointerException() // GH-90000
                     .isThrownBy(() -> new WorkflowController(workflowService, null)); // GH-90000
         }
 
         @Test
-        @DisplayName("listWorkflows returns 200 and delegates with default paging [GH-90000]")
+        @DisplayName("listWorkflows returns 200 and delegates with default paging")
         void listWorkflowsReturnsOkAndDelegates() { // GH-90000
             when(workflowService.listWorkflows( // GH-90000
                     org.mockito.ArgumentMatchers.anyString(), // GH-90000
@@ -177,8 +177,8 @@ class YappcApiControllerTest extends EventloopTestBase {
                     org.mockito.ArgumentMatchers.anyInt())) // GH-90000
                     .thenReturn(Promise.of(List.of())); // GH-90000
             WorkflowController controller = new WorkflowController(workflowService, objectMapper); // GH-90000
-            HttpRequest request = HttpRequest.get("http://localhost/api/v1/workflows [GH-90000]")
-                    .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-001")
+            HttpRequest request = HttpRequest.get("http://localhost/api/v1/workflows")
+                    .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-001")
                     .build(); // GH-90000
 
             HttpResponse response = runPromise(() -> controller.listWorkflows(request)); // GH-90000
@@ -193,11 +193,11 @@ class YappcApiControllerTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("VectorController [GH-90000]")
+    @DisplayName("VectorController")
     class VectorControllerTests {
 
         @Test
-        @DisplayName("constructor creates controller successfully [GH-90000]")
+        @DisplayName("constructor creates controller successfully")
         void constructorCreatesController() { // GH-90000
             VectorController controller = new VectorController(searchService, ragService, objectMapper); // GH-90000
 
@@ -205,21 +205,21 @@ class YappcApiControllerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("constructor rejects null searchService [GH-90000]")
+        @DisplayName("constructor rejects null searchService")
         void constructorRejectsNullSearchService() { // GH-90000
             assertThatNullPointerException() // GH-90000
                     .isThrownBy(() -> new VectorController(null, ragService, objectMapper)); // GH-90000
         }
 
         @Test
-        @DisplayName("constructor rejects null ragService [GH-90000]")
+        @DisplayName("constructor rejects null ragService")
         void constructorRejectsNullRagService() { // GH-90000
             assertThatNullPointerException() // GH-90000
                     .isThrownBy(() -> new VectorController(searchService, null, objectMapper)); // GH-90000
         }
 
         @Test
-        @DisplayName("constructor rejects null objectMapper [GH-90000]")
+        @DisplayName("constructor rejects null objectMapper")
         void constructorRejectsNullObjectMapper() { // GH-90000
             assertThatNullPointerException() // GH-90000
                     .isThrownBy(() -> new VectorController(searchService, ragService, null)); // GH-90000

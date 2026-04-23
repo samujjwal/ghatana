@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.*;
  * Comprehensive tests for {@link SecretProvider} tenant-scoped secret management.
  * Tests cover CRUD isolation, rotation, concurrent access, and boundary enforcements.
  */
-@DisplayName("SecretProvider [GH-90000]")
+@DisplayName("SecretProvider")
 class SecretProviderTest {
 
     private static final String TENANT_A = "tenant-alpha";
@@ -40,36 +40,36 @@ class SecretProviderTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Basic CRUD [GH-90000]")
+    @DisplayName("Basic CRUD")
     class BasicCrud {
 
         @Test
-        @DisplayName("putSecret and getSecret round-trip works [GH-90000]")
+        @DisplayName("putSecret and getSecret round-trip works")
         void putAndGet() { // GH-90000
             secretProvider.putSecret(TENANT_A, "api-key", "sk-12345"); // GH-90000
             Optional<String> result = secretProvider.getSecret(TENANT_A, "api-key"); // GH-90000
 
-            assertThat(result).isPresent().contains("sk-12345 [GH-90000]");
+            assertThat(result).isPresent().contains("sk-12345");
         }
 
         @Test
-        @DisplayName("getSecret for non-existent key returns empty [GH-90000]")
+        @DisplayName("getSecret for non-existent key returns empty")
         void getNonExistent() { // GH-90000
             assertThat(secretProvider.getSecret(TENANT_A, "no-such-key")).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("putSecret overwrites existing value [GH-90000]")
+        @DisplayName("putSecret overwrites existing value")
         void putOverwrites() { // GH-90000
             secretProvider.putSecret(TENANT_A, "api-key", "old-value"); // GH-90000
             secretProvider.putSecret(TENANT_A, "api-key", "new-value"); // GH-90000
 
             assertThat(secretProvider.getSecret(TENANT_A, "api-key")) // GH-90000
-                    .isPresent().contains("new-value [GH-90000]");
+                    .isPresent().contains("new-value");
         }
 
         @Test
-        @DisplayName("deleteSecret removes and returns true [GH-90000]")
+        @DisplayName("deleteSecret removes and returns true")
         void deleteRemovesAndReturnsTrue() { // GH-90000
             secretProvider.putSecret(TENANT_A, "api-key", "value"); // GH-90000
             boolean deleted = secretProvider.deleteSecret(TENANT_A, "api-key"); // GH-90000
@@ -79,13 +79,13 @@ class SecretProviderTest {
         }
 
         @Test
-        @DisplayName("deleteSecret for non-existent returns false [GH-90000]")
+        @DisplayName("deleteSecret for non-existent returns false")
         void deleteNonExistentReturnsFalse() { // GH-90000
             assertThat(secretProvider.deleteSecret(TENANT_A, "no-such-key")).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("hasSecret detects existing and missing keys [GH-90000]")
+        @DisplayName("hasSecret detects existing and missing keys")
         void hasSecretDetection() { // GH-90000
             secretProvider.putSecret(TENANT_A, "exists", "value"); // GH-90000
 
@@ -99,11 +99,11 @@ class SecretProviderTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Tenant Isolation [GH-90000]")
+    @DisplayName("Tenant Isolation")
     class TenantIsolation {
 
         @Test
-        @DisplayName("Secrets from tenant A are invisible to tenant B [GH-90000]")
+        @DisplayName("Secrets from tenant A are invisible to tenant B")
         void secretsInvisibleAcrossTenants() { // GH-90000
             secretProvider.putSecret(TENANT_A, "model-key", "sk-alpha-secret"); // GH-90000
 
@@ -111,19 +111,19 @@ class SecretProviderTest {
         }
 
         @Test
-        @DisplayName("Same secret name in different tenants holds different values [GH-90000]")
+        @DisplayName("Same secret name in different tenants holds different values")
         void sameNameDifferentValues() { // GH-90000
             secretProvider.putSecret(TENANT_A, "api-key", "alpha-key-123"); // GH-90000
             secretProvider.putSecret(TENANT_B, "api-key", "beta-key-456"); // GH-90000
 
             assertThat(secretProvider.getSecret(TENANT_A, "api-key")) // GH-90000
-                    .isPresent().contains("alpha-key-123 [GH-90000]");
+                    .isPresent().contains("alpha-key-123");
             assertThat(secretProvider.getSecret(TENANT_B, "api-key")) // GH-90000
-                    .isPresent().contains("beta-key-456 [GH-90000]");
+                    .isPresent().contains("beta-key-456");
         }
 
         @Test
-        @DisplayName("Deleting tenant A's secret does not affect tenant B [GH-90000]")
+        @DisplayName("Deleting tenant A's secret does not affect tenant B")
         void deleteTenantADoesNotAffectB() { // GH-90000
             secretProvider.putSecret(TENANT_A, "shared-key", "value-a"); // GH-90000
             secretProvider.putSecret(TENANT_B, "shared-key", "value-b"); // GH-90000
@@ -132,11 +132,11 @@ class SecretProviderTest {
 
             assertThat(secretProvider.getSecret(TENANT_A, "shared-key")).isEmpty(); // GH-90000
             assertThat(secretProvider.getSecret(TENANT_B, "shared-key")) // GH-90000
-                    .isPresent().contains("value-b [GH-90000]");
+                    .isPresent().contains("value-b");
         }
 
         @Test
-        @DisplayName("listSecretNames only returns names for the specified tenant [GH-90000]")
+        @DisplayName("listSecretNames only returns names for the specified tenant")
         void listSecretNamesTenantScoped() { // GH-90000
             secretProvider.putSecret(TENANT_A, "key-1", "v1"); // GH-90000
             secretProvider.putSecret(TENANT_A, "key-2", "v2"); // GH-90000
@@ -147,12 +147,12 @@ class SecretProviderTest {
             Set<String> tenantCNames = secretProvider.listSecretNames(TENANT_C); // GH-90000
 
             assertThat(tenantANames).containsExactlyInAnyOrder("key-1", "key-2"); // GH-90000
-            assertThat(tenantBNames).containsExactly("key-3 [GH-90000]");
+            assertThat(tenantBNames).containsExactly("key-3");
             assertThat(tenantCNames).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("hasSecret is tenant-scoped [GH-90000]")
+        @DisplayName("hasSecret is tenant-scoped")
         void hasSecretTenantScoped() { // GH-90000
             secretProvider.putSecret(TENANT_A, "my-secret", "value"); // GH-90000
 
@@ -166,37 +166,37 @@ class SecretProviderTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Secret Rotation [GH-90000]")
+    @DisplayName("Secret Rotation")
     class SecretRotation {
 
         @Test
-        @DisplayName("Rotation replaces value and returns metadata [GH-90000]")
+        @DisplayName("Rotation replaces value and returns metadata")
         void rotationReplacesValue() { // GH-90000
             secretProvider.putSecret(TENANT_A, "api-key", "old-key"); // GH-90000
 
             RotationResult result = secretProvider.rotateSecret(TENANT_A, "api-key", "new-key"); // GH-90000
 
             assertThat(secretProvider.getSecret(TENANT_A, "api-key")) // GH-90000
-                    .isPresent().contains("new-key [GH-90000]");
+                    .isPresent().contains("new-key");
             assertThat(result.tenantId()).isEqualTo(TENANT_A); // GH-90000
-            assertThat(result.secretName()).isEqualTo("api-key [GH-90000]");
+            assertThat(result.secretName()).isEqualTo("api-key");
             assertThat(result.previousVersionAt()).isNotNull(); // GH-90000
             assertThat(result.newVersionAt()).isNotNull(); // GH-90000
             assertThat(result.newVersionAt()).isAfterOrEqualTo(result.previousVersionAt()); // GH-90000
         }
 
         @Test
-        @DisplayName("Rotation of non-existent secret throws NoSuchElementException [GH-90000]")
+        @DisplayName("Rotation of non-existent secret throws NoSuchElementException")
         void rotationNonExistentThrows() { // GH-90000
             assertThatThrownBy(() -> // GH-90000
                     secretProvider.rotateSecret(TENANT_A, "ghost-key", "value")) // GH-90000
                     .isInstanceOf(NoSuchElementException.class) // GH-90000
-                    .hasMessageContaining("ghost-key [GH-90000]")
+                    .hasMessageContaining("ghost-key")
                     .hasMessageContaining(TENANT_A); // GH-90000
         }
 
         @Test
-        @DisplayName("Rotation for tenant A does not affect tenant B's same-name secret [GH-90000]")
+        @DisplayName("Rotation for tenant A does not affect tenant B's same-name secret")
         void rotationTenantIsolated() { // GH-90000
             secretProvider.putSecret(TENANT_A, "shared-key", "alpha-v1"); // GH-90000
             secretProvider.putSecret(TENANT_B, "shared-key", "beta-v1"); // GH-90000
@@ -204,9 +204,9 @@ class SecretProviderTest {
             secretProvider.rotateSecret(TENANT_A, "shared-key", "alpha-v2"); // GH-90000
 
             assertThat(secretProvider.getSecret(TENANT_A, "shared-key")) // GH-90000
-                    .isPresent().contains("alpha-v2 [GH-90000]");
+                    .isPresent().contains("alpha-v2");
             assertThat(secretProvider.getSecret(TENANT_B, "shared-key")) // GH-90000
-                    .isPresent().contains("beta-v1 [GH-90000]"); // Unchanged
+                    .isPresent().contains("beta-v1"); // Unchanged
         }
     }
 
@@ -215,11 +215,11 @@ class SecretProviderTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Input Validation [GH-90000]")
+    @DisplayName("Input Validation")
     class InputValidation {
 
         @Test
-        @DisplayName("putSecret rejects null arguments [GH-90000]")
+        @DisplayName("putSecret rejects null arguments")
         void putRejectsNulls() { // GH-90000
             assertThatThrownBy(() -> secretProvider.putSecret(null, "key", "value")) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
@@ -235,11 +235,11 @@ class SecretProviderTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Concurrent Access [GH-90000]")
+    @DisplayName("Concurrent Access")
     class ConcurrentAccess {
 
         @Test
-        @DisplayName("Concurrent put/get across tenants maintains isolation [GH-90000]")
+        @DisplayName("Concurrent put/get across tenants maintains isolation")
         void concurrentPutGetIsolation() throws Exception { // GH-90000
             int opsPerTenant = 30;
             ExecutorService executor = Executors.newFixedThreadPool(6); // GH-90000
@@ -288,11 +288,11 @@ class SecretProviderTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("End-to-End Lifecycle [GH-90000]")
+    @DisplayName("End-to-End Lifecycle")
     class EndToEndLifecycle {
 
         @Test
-        @DisplayName("Full lifecycle: create, read, rotate, list, delete [GH-90000]")
+        @DisplayName("Full lifecycle: create, read, rotate, list, delete")
         void fullLifecycle() { // GH-90000
             // Create
             secretProvider.putSecret(TENANT_A, "model-endpoint-key", "sk-initial-key"); // GH-90000
@@ -300,7 +300,7 @@ class SecretProviderTest {
 
             // Read
             assertThat(secretProvider.getSecret(TENANT_A, "model-endpoint-key")) // GH-90000
-                    .isPresent().contains("sk-initial-key [GH-90000]");
+                    .isPresent().contains("sk-initial-key");
 
             // List
             assertThat(secretProvider.listSecretNames(TENANT_A)) // GH-90000
@@ -309,14 +309,14 @@ class SecretProviderTest {
             // Rotate
             RotationResult rotation = secretProvider.rotateSecret( // GH-90000
                     TENANT_A, "model-endpoint-key", "sk-rotated-key");
-            assertThat(rotation.secretName()).isEqualTo("model-endpoint-key [GH-90000]");
+            assertThat(rotation.secretName()).isEqualTo("model-endpoint-key");
             assertThat(secretProvider.getSecret(TENANT_A, "model-endpoint-key")) // GH-90000
-                    .isPresent().contains("sk-rotated-key [GH-90000]");
+                    .isPresent().contains("sk-rotated-key");
 
             // Delete one
             secretProvider.deleteSecret(TENANT_A, "db-password"); // GH-90000
             assertThat(secretProvider.listSecretNames(TENANT_A)) // GH-90000
-                    .containsExactly("model-endpoint-key [GH-90000]");
+                    .containsExactly("model-endpoint-key");
 
             // Delete last
             secretProvider.deleteSecret(TENANT_A, "model-endpoint-key"); // GH-90000
@@ -325,7 +325,7 @@ class SecretProviderTest {
         }
 
         @Test
-        @DisplayName("Multi-tenant parallel lifecycle maintains full isolation [GH-90000]")
+        @DisplayName("Multi-tenant parallel lifecycle maintains full isolation")
         void multiTenantParallelLifecycle() { // GH-90000
             // Tenant A: model credentials
             secretProvider.putSecret(TENANT_A, "openai-key", "sk-alpha"); // GH-90000
@@ -341,9 +341,9 @@ class SecretProviderTest {
             // Rotate tenant A — tenant B unaffected
             secretProvider.rotateSecret(TENANT_A, "openai-key", "sk-alpha-v2"); // GH-90000
             assertThat(secretProvider.getSecret(TENANT_A, "openai-key")) // GH-90000
-                    .contains("sk-alpha-v2 [GH-90000]");
+                    .contains("sk-alpha-v2");
             assertThat(secretProvider.getSecret(TENANT_B, "openai-key")) // GH-90000
-                    .contains("sk-beta [GH-90000]"); // unchanged
+                    .contains("sk-beta"); // unchanged
 
             // Delete all tenant A secrets
             secretProvider.deleteSecret(TENANT_A, "openai-key"); // GH-90000
@@ -351,7 +351,7 @@ class SecretProviderTest {
 
             // Tenant B still has its secret
             assertThat(secretProvider.listSecretNames(TENANT_A)).isEmpty(); // GH-90000
-            assertThat(secretProvider.listSecretNames(TENANT_B)).containsExactly("openai-key [GH-90000]");
+            assertThat(secretProvider.listSecretNames(TENANT_B)).containsExactly("openai-key");
         }
     }
 }

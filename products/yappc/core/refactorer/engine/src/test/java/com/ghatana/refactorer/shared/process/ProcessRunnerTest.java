@@ -38,15 +38,15 @@ class ProcessRunnerTest {
 
         assertThatThrownBy(() -> runner.execute("command-that-does-not-exist-123", List.of(), tempDir, true)) // GH-90000
                 .isInstanceOf(RefactorerOperationException.class) // GH-90000
-                .hasMessageContaining("Failed to execute process [GH-90000]")
-                .hasMessageContaining("command-that-does-not-exist-123 [GH-90000]")
+                .hasMessageContaining("Failed to execute process")
+                .hasMessageContaining("command-that-does-not-exist-123")
                 .hasCauseInstanceOf(java.io.IOException.class); // GH-90000
     }
 
     private PolyfixProjectContext createContext(Path root) { // GH-90000
         PolyfixConfig config = new PolyfixConfig( // GH-90000
-                List.of("java [GH-90000]"),
-                List.of("schemas [GH-90000]"),
+                List.of("java"),
+                List.of("schemas"),
                 new PolyfixConfig.Budgets(3, 20), // GH-90000
                 new PolyfixConfig.Policies(true, true, true, false), // GH-90000
                 new PolyfixConfig.Tools( // GH-90000

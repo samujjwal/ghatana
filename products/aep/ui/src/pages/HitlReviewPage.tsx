@@ -20,6 +20,8 @@ import { ReviewCard } from '@/components/hitl/ReviewCard';
 import type { ReviewItem } from '@/api/aep.api';
 import { Button } from '@ghatana/design-system';
 import { TextArea } from '@ghatana/design-system';
+import { EmptyState } from '@/components/core/EmptyState';
+import { ErrorState } from '@/components/core/ErrorState';
 
 // ─── PolicyDiff ──────────────────────────────────────────────────────
 
@@ -253,14 +255,22 @@ export function HitlReviewPage() {
 
         {/* List */}
         <div className="flex-1 overflow-auto px-6 py-4">
-          {isLoading && <p className="text-center text-gray-400 py-12">Loading review queue…</p>}
-          {isError && <p className="text-center text-red-500 py-12">Failed to load HITL queue.</p>}
+          {isLoading && (
+            <EmptyState title="Loading review queue…" description="Fetching HITL items." />
+          )}
+          {isError && (
+            <ErrorState
+              title="Failed to load HITL queue"
+              onRetry={() => window.location.reload()}
+            />
+          )}
           {!isLoading && !isError && (
             <div className="space-y-2">
               {items.length === 0 && (
-                <p className="text-center text-gray-400 italic py-12">
-                  Queue is empty — no items pending review
-                </p>
+                <EmptyState
+                  title="Queue is empty"
+                  description="No items are pending review at the moment."
+                />
               )}
               {items.map((item) => (
                 <ReviewCard

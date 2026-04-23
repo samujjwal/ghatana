@@ -29,7 +29,7 @@ class MfaBackupCodeTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should generate 10 unique backup codes on enrollment [GH-90000]")
+    @DisplayName("Should generate 10 unique backup codes on enrollment")
     void testGenerateBackupCodes() throws Exception { // GH-90000
         Promise<MfaService.EnrollmentData> promise = mfaService.enrollUser(TEST_USER, "TestApp"); // GH-90000
         MfaService.EnrollmentData enrollment = runPromise(() -> promise); // GH-90000
@@ -42,19 +42,19 @@ class MfaBackupCodeTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Backup codes should be 8 characters alphanumeric [GH-90000]")
+    @DisplayName("Backup codes should be 8 characters alphanumeric")
     void testBackupCodeFormat() throws Exception { // GH-90000
         Promise<MfaService.EnrollmentData> promise = mfaService.enrollUser(TEST_USER, "TestApp"); // GH-90000
         MfaService.EnrollmentData enrollment = runPromise(() -> promise); // GH-90000
 
         for (String code : enrollment.backupCodes()) { // GH-90000
             assertThat(code).hasSize(8); // GH-90000
-            assertThat(code).matches("[A-Z0-9]+ [GH-90000]");
+            assertThat(code).matches("[A-Z0-9]+");
         }
     }
 
     @Test
-    @DisplayName("Should validate backup code successfully [GH-90000]")
+    @DisplayName("Should validate backup code successfully")
     void testValidateBackupCode() throws Exception { // GH-90000
         // Enroll user and get backup codes
         MfaService.EnrollmentData enrollment = runPromise(() -> mfaService.enrollUser(TEST_USER, "TestApp")); // GH-90000
@@ -67,7 +67,7 @@ class MfaBackupCodeTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should invalidate backup code after single use [GH-90000]")
+    @DisplayName("Should invalidate backup code after single use")
     void testBackupCodeSingleUse() throws Exception { // GH-90000
         // Enroll user
         MfaService.EnrollmentData enrollment = runPromise(() -> mfaService.enrollUser(TEST_USER, "TestApp")); // GH-90000
@@ -83,7 +83,7 @@ class MfaBackupCodeTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should allow use of different backup codes [GH-90000]")
+    @DisplayName("Should allow use of different backup codes")
     void testMultipleBackupCodes() throws Exception { // GH-90000
         // Enroll user
         MfaService.EnrollmentData enrollment = runPromise(() -> mfaService.enrollUser(TEST_USER, "TestApp")); // GH-90000
@@ -104,7 +104,7 @@ class MfaBackupCodeTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should reject invalid backup code format [GH-90000]")
+    @DisplayName("Should reject invalid backup code format")
     void testRejectInvalidFormat() throws Exception { // GH-90000
         runPromise(() -> mfaService.enrollUser(TEST_USER, "TestApp")); // GH-90000
 
@@ -117,7 +117,7 @@ class MfaBackupCodeTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should reject backup code for non-existent user [GH-90000]")
+    @DisplayName("Should reject backup code for non-existent user")
     void testRejectUnknownUser() throws Exception { // GH-90000
         Promise<Boolean> promise = mfaService.validateBackupCode("unknown-user", "ABCD1234"); // GH-90000
         Boolean valid = runPromise(() -> promise); // GH-90000
@@ -126,7 +126,7 @@ class MfaBackupCodeTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should reject backup code when user not enrolled [GH-90000]")
+    @DisplayName("Should reject backup code when user not enrolled")
     void testRejectWhenMfaDisabled() throws Exception { // GH-90000
         // User was never enrolled — no backup codes have been generated
         Boolean valid = runPromise(() -> mfaService.validateBackupCode("unenrolled-user", "VALIDCOD")); // GH-90000
@@ -134,7 +134,7 @@ class MfaBackupCodeTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should regenerate backup codes on re-enrollment [GH-90000]")
+    @DisplayName("Should regenerate backup codes on re-enrollment")
     void testRegenerateOnReenrollment() throws Exception { // GH-90000
         // First enrollment
         MfaService.EnrollmentData enrollment1 = runPromise(() -> mfaService.enrollUser(TEST_USER, "TestApp")); // GH-90000
@@ -149,7 +149,7 @@ class MfaBackupCodeTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should track remaining backup codes count [GH-90000]")
+    @DisplayName("Should track remaining backup codes count")
     void testTrackRemainingCodes() throws Exception { // GH-90000
         // This would require extending MfaService to expose remaining codes count
         // For now, we verify through usage
@@ -170,7 +170,7 @@ class MfaBackupCodeTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle all backup codes being used [GH-90000]")
+    @DisplayName("Should handle all backup codes being used")
     void testAllCodesUsed() throws Exception { // GH-90000
         MfaService.EnrollmentData enrollment = runPromise(() -> mfaService.enrollUser(TEST_USER, "TestApp")); // GH-90000
 
@@ -189,7 +189,7 @@ class MfaBackupCodeTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should not allow backup code to be guessed [GH-90000]")
+    @DisplayName("Should not allow backup code to be guessed")
     void testBackupCodeRandomness() throws Exception { // GH-90000
         // Generate multiple sets of backup codes
         Set<String> allCodes = new HashSet<>(); // GH-90000
@@ -205,7 +205,7 @@ class MfaBackupCodeTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Backup codes should be case-insensitive for validation [GH-90000]")
+    @DisplayName("Backup codes should be case-insensitive for validation")
     void testCaseInsensitiveValidation() throws Exception { // GH-90000
         MfaService.EnrollmentData enrollment = runPromise(() -> mfaService.enrollUser(TEST_USER, "TestApp")); // GH-90000
         String originalCode = enrollment.backupCodes()[0]; // GH-90000

@@ -31,14 +31,14 @@ class HttpResponseAssertionsTest {
             .build(); // GH-90000
 
         successHeaders = HttpHeaders.of( // GH-90000
-            Map.of("Content-Type", List.of("text/plain [GH-90000]")),
+            Map.of("Content-Type", List.of("text/plain")),
             (name, value) -> true // GH-90000
         );
 
         jsonHeaders = HttpHeaders.of( // GH-90000
             Map.of( // GH-90000
-                "Content-Type", List.of("application/json [GH-90000]"),
-                "X-Custom-Header", List.of("custom-value [GH-90000]")
+                "Content-Type", List.of("application/json"),
+                "X-Custom-Header", List.of("custom-value")
             ),
             (name, value) -> true // GH-90000
         );
@@ -53,7 +53,7 @@ class HttpResponseAssertionsTest {
         HttpResponse<String> errorResponse = new TestResponse<>(404, successHeaders, "Not Found"); // GH-90000
         AssertionError error = assertThrows(AssertionError.class, // GH-90000
             () -> HttpResponseAssertions.assertStatusCode(errorResponse, 200)); // GH-90000
-        assertTrue(error.getMessage().contains("Expected status code 200 but was 404 [GH-90000]"));
+        assertTrue(error.getMessage().contains("Expected status code 200 but was 404"));
     }
 
     @Test
@@ -64,7 +64,7 @@ class HttpResponseAssertionsTest {
         // Test missing header
         AssertionError error = assertThrows(AssertionError.class, // GH-90000
             () -> HttpResponseAssertions.assertHeader(response, "Missing-Header", "value")); // GH-90000
-        assertTrue(error.getMessage().contains("Header 'Missing-Header' not found [GH-90000]"));
+        assertTrue(error.getMessage().contains("Header 'Missing-Header' not found"));
     }
 
     @Test
@@ -75,7 +75,7 @@ class HttpResponseAssertionsTest {
         // Test missing text
         AssertionError error = assertThrows(AssertionError.class, // GH-90000
             () -> HttpResponseAssertions.assertBodyContains(response, "NotFound")); // GH-90000
-        assertTrue(error.getMessage().contains("Response body does not contain 'NotFound' [GH-90000]"));
+        assertTrue(error.getMessage().contains("Response body does not contain 'NotFound'"));
     }
 
     @Test
@@ -84,7 +84,7 @@ class HttpResponseAssertionsTest {
 
         // Test with lambda predicate - positive case
         HttpResponseAssertions.assertBodyMatches(response, // GH-90000
-            body -> body.contains("Test [GH-90000]"),
+            body -> body.contains("Test"),
             "Body should contain 'Test'");
 
         // Test with method reference - check that the body is not empty
@@ -95,9 +95,9 @@ class HttpResponseAssertionsTest {
         // Test with a failing assertion
         AssertionError error = assertThrows(AssertionError.class, // GH-90000
             () -> HttpResponseAssertions.assertBodyMatches(response, // GH-90000
-                body -> body.contains("NonExistent [GH-90000]"),
+                body -> body.contains("NonExistent"),
                 "Body should contain 'NonExistent'"));
-        assertTrue(error.getMessage().contains("Body should contain 'NonExistent' [GH-90000]"));
+        assertTrue(error.getMessage().contains("Body should contain 'NonExistent'"));
     }
 
     @Test
@@ -109,7 +109,7 @@ class HttpResponseAssertionsTest {
         HttpResponse<String> invalidResponse = new TestResponse<>(200, successHeaders, "Not JSON"); // GH-90000
         AssertionError error = assertThrows(AssertionError.class, // GH-90000
             () -> HttpResponseAssertions.assertJsonContentType(invalidResponse)); // GH-90000
-        assertTrue(error.getMessage().contains("Unexpected value for header 'Content-Type' [GH-90000]"));
+        assertTrue(error.getMessage().contains("Unexpected value for header 'Content-Type'"));
     }
 
     @Test

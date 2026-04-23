@@ -37,7 +37,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("RegistryReadThroughDispatcher Tests [GH-90000]")
+@DisplayName("RegistryReadThroughDispatcher Tests")
 class RegistryReadThroughDispatcherTest extends EventloopTestBase {
 
     private static final String TENANT_ID = "tenant-alpha";
@@ -67,11 +67,11 @@ class RegistryReadThroughDispatcherTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Cache Miss → JDBC Read-Through [GH-90000]")
+    @DisplayName("Cache Miss → JDBC Read-Through")
     class CacheMissReadThrough {
 
         @Test
-        @DisplayName("miss: JDBC returns record → record returned and cached [GH-90000]")
+        @DisplayName("miss: JDBC returns record → record returned and cached")
         void missJdbcHitPopulatesCache() { // GH-90000
             when(lookup.findById(TENANT_ID, AGENT_ID)) // GH-90000
                     .thenReturn(Promise.of(Optional.of(stubRecord))); // GH-90000
@@ -87,7 +87,7 @@ class RegistryReadThroughDispatcherTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("miss then hit: second call served from cache, no second JDBC call [GH-90000]")
+        @DisplayName("miss then hit: second call served from cache, no second JDBC call")
         void secondCallServesFromCache() { // GH-90000
             when(lookup.findById(TENANT_ID, AGENT_ID)) // GH-90000
                     .thenReturn(Promise.of(Optional.of(stubRecord))); // GH-90000
@@ -105,7 +105,7 @@ class RegistryReadThroughDispatcherTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("miss: JDBC returns empty → Optional.empty returned, cache not polluted [GH-90000]")
+        @DisplayName("miss: JDBC returns empty → Optional.empty returned, cache not polluted")
         void missJdbcNotFoundLeavesNoCacheEntry() { // GH-90000
             when(lookup.findById(TENANT_ID, AGENT_ID)) // GH-90000
                     .thenReturn(Promise.of(Optional.empty())); // GH-90000
@@ -123,11 +123,11 @@ class RegistryReadThroughDispatcherTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Pre-Seeded Cache (registerFromRegistry) [GH-90000]")
+    @DisplayName("Pre-Seeded Cache (registerFromRegistry)")
     class PreSeededCache {
 
         @Test
-        @DisplayName("pre-seeded entry: resolveAsync returns record without touching JDBC [GH-90000]")
+        @DisplayName("pre-seeded entry: resolveAsync returns record without touching JDBC")
         void preSeededEntryBypassesJdbc() { // GH-90000
             dispatcher.registerFromRegistry(stubRecord); // GH-90000
 
@@ -139,7 +139,7 @@ class RegistryReadThroughDispatcherTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("sync resolve() returns pre-seeded entry [GH-90000]")
+        @DisplayName("sync resolve() returns pre-seeded entry")
         void syncResolveReturnsCachedEntry() { // GH-90000
             dispatcher.registerFromRegistry(stubRecord); // GH-90000
 
@@ -149,7 +149,7 @@ class RegistryReadThroughDispatcherTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("registerFromRegistry replaces an existing entry [GH-90000]")
+        @DisplayName("registerFromRegistry replaces an existing entry")
         void registerFromRegistryOverwritesExistingEntry() { // GH-90000
             dispatcher.registerFromRegistry(stubRecord); // GH-90000
 
@@ -162,7 +162,7 @@ class RegistryReadThroughDispatcherTest extends EventloopTestBase {
 
             Optional<AgentRegistryRecord> result = dispatcher.resolve(AGENT_ID, TENANT_ID); // GH-90000
             assertThat(result).contains(updated); // GH-90000
-            assertThat(result.get().version()).isEqualTo("2.1.0 [GH-90000]");
+            assertThat(result.get().version()).isEqualTo("2.1.0");
         }
     }
 
@@ -171,11 +171,11 @@ class RegistryReadThroughDispatcherTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Capability Resolution [GH-90000]")
+    @DisplayName("Capability Resolution")
     class CapabilityResolution {
 
         @Test
-        @DisplayName("resolveByCapability returns matching pre-seeded entries for tenant [GH-90000]")
+        @DisplayName("resolveByCapability returns matching pre-seeded entries for tenant")
         void resolveByCapabilityFiltersCorrectly() { // GH-90000
             AgentRegistryRecord architect = AgentRegistryRecord.of( // GH-90000
                     "architect-v1", "Architect Agent", "LLM",
@@ -187,7 +187,7 @@ class RegistryReadThroughDispatcherTest extends EventloopTestBase {
                     TENANT_ID, "1.0.0");
             AgentRegistryRecord otherTenant = AgentRegistryRecord.of( // GH-90000
                     "analyst-other", "Other Agent", "LLM",
-                    List.of("requirements [GH-90000]"),
+                    List.of("requirements"),
                     "tenant-beta", "1.0.0");
 
             dispatcher.registerFromRegistry(architect); // GH-90000
@@ -205,11 +205,11 @@ class RegistryReadThroughDispatcherTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Cache Statistics [GH-90000]")
+    @DisplayName("Cache Statistics")
     class CacheStatistics {
 
         @Test
-        @DisplayName("cachedEntryCount reflects registered entries [GH-90000]")
+        @DisplayName("cachedEntryCount reflects registered entries")
         void cachedEntryCountMatchesRegistrations() { // GH-90000
             assertThat(dispatcher.cachedEntryCount()).isZero(); // GH-90000
 

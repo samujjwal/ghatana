@@ -26,7 +26,8 @@ import java.util.stream.Collectors;
  * @doc.type class
  * @doc.purpose Backward-compat adapter (MemoryPlane → MemoryStore)
  * @doc.layer agent-memory
- */
+  * @doc.pattern Repository
+*/
 public class MemoryStoreAdapter implements MemoryStore {
 
     private static final Logger log = LoggerFactory.getLogger(MemoryStoreAdapter.class);

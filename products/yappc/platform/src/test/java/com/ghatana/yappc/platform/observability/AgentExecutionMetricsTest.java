@@ -25,7 +25,7 @@ import static org.mockito.Mockito.verify;
  * <p>Verifies that the correct counters, timers, and error events are emitted
  * for each lifecycle event and that constructor guards reject nulls.
  */
-@DisplayName("AgentExecutionMetrics [GH-90000]")
+@DisplayName("AgentExecutionMetrics")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class AgentExecutionMetricsTest {
 
@@ -44,14 +44,14 @@ class AgentExecutionMetricsTest {
     // ─── Constructor guards ────────────────────────────────────────────────
 
     @Test
-    @DisplayName("constructor rejects null MetricsCollector [GH-90000]")
+    @DisplayName("constructor rejects null MetricsCollector")
     void constructor_rejectsNullMetricsCollector() { // GH-90000
         assertThatThrownBy(() -> new AgentExecutionMetrics(null, meterRegistry)) // GH-90000
                 .isInstanceOf(NullPointerException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("constructor rejects null MeterRegistry [GH-90000]")
+    @DisplayName("constructor rejects null MeterRegistry")
     void constructor_rejectsNullMeterRegistry() { // GH-90000
         assertThatThrownBy(() -> new AgentExecutionMetrics(metricsCollector, null)) // GH-90000
                 .isInstanceOf(NullPointerException.class); // GH-90000
@@ -60,7 +60,7 @@ class AgentExecutionMetricsTest {
     // ─── startDispatch ─────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("startDispatch increments dispatched counter and returns a Sample [GH-90000]")
+    @DisplayName("startDispatch increments dispatched counter and returns a Sample")
     void startDispatch_incrementsCounterAndReturnsSample() { // GH-90000
         Timer.Sample sample = metrics.startDispatch("expert.java", "tenant-1"); // GH-90000
 
@@ -74,7 +74,7 @@ class AgentExecutionMetricsTest {
     // ─── recordDispatchSuccess ──────────────────────────────────────────────
 
     @Test
-    @DisplayName("recordDispatchSuccess increments succeeded counter and stops timer [GH-90000]")
+    @DisplayName("recordDispatchSuccess increments succeeded counter and stops timer")
     void recordDispatchSuccess_incrementsCounterAndStopsTimer() { // GH-90000
         Timer.Sample sample = metrics.startDispatch("code-review-v2", "tenant-a"); // GH-90000
 
@@ -91,10 +91,10 @@ class AgentExecutionMetricsTest {
     // ─── recordDispatchFailure ─────────────────────────────────────────────
 
     @Test
-    @DisplayName("recordDispatchFailure increments failed counter and records error [GH-90000]")
+    @DisplayName("recordDispatchFailure increments failed counter and records error")
     void recordDispatchFailure_withCause_incrementsAndRecordsError() { // GH-90000
         Timer.Sample sample = metrics.startDispatch("scaffold-agent", "tenant-x"); // GH-90000
-        RuntimeException cause = new RuntimeException("LLM timeout [GH-90000]");
+        RuntimeException cause = new RuntimeException("LLM timeout");
 
         metrics.recordDispatchFailure(sample, "scaffold-agent", "tenant-x", "timeout", cause); // GH-90000
 
@@ -110,7 +110,7 @@ class AgentExecutionMetricsTest {
     }
 
     @Test
-    @DisplayName("recordDispatchFailure without cause skips recordError [GH-90000]")
+    @DisplayName("recordDispatchFailure without cause skips recordError")
     void recordDispatchFailure_withoutCause_skipsRecordError() { // GH-90000
         Timer.Sample sample = metrics.startDispatch("agent-x", "t1"); // GH-90000
 
@@ -125,7 +125,7 @@ class AgentExecutionMetricsTest {
     }
 
     @Test
-    @DisplayName("recordDispatchFailure with null sample logs a warning and does not throw [GH-90000]")
+    @DisplayName("recordDispatchFailure with null sample logs a warning and does not throw")
     void recordDispatchFailure_withNullSample_doesNotThrow() { // GH-90000
         // should not throw even with null sample
         metrics.recordDispatchFailure(null, "agent-x", "t1", "unknown", null); // GH-90000
@@ -140,7 +140,7 @@ class AgentExecutionMetricsTest {
     // ─── Registry lifecycle ────────────────────────────────────────────────
 
     @Test
-    @DisplayName("recordAgentRegistered increments registered counter [GH-90000]")
+    @DisplayName("recordAgentRegistered increments registered counter")
     void recordAgentRegistered_incrementsCounter() { // GH-90000
         metrics.recordAgentRegistered("new-agent", "tenant-1"); // GH-90000
 
@@ -151,7 +151,7 @@ class AgentExecutionMetricsTest {
     }
 
     @Test
-    @DisplayName("recordAgentUnregistered increments unregistered counter [GH-90000]")
+    @DisplayName("recordAgentUnregistered increments unregistered counter")
     void recordAgentUnregistered_incrementsCounter() { // GH-90000
         metrics.recordAgentUnregistered("old-agent", "tenant-1"); // GH-90000
 
@@ -164,7 +164,7 @@ class AgentExecutionMetricsTest {
     // ─── Full round-trip with real registry ───────────────────────────────
 
     @Test
-    @DisplayName("full dispatch success round-trip records duration timer in registry [GH-90000]")
+    @DisplayName("full dispatch success round-trip records duration timer in registry")
     void fullRoundTrip_recordsDurationInRegistry() { // GH-90000
         MeterRegistry real = new SimpleMeterRegistry(); // GH-90000
         AgentExecutionMetrics m = new AgentExecutionMetrics(metricsCollector, real); // GH-90000

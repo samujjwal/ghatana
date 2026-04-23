@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("Report Generation Tests [GH-90000]")
+@DisplayName("Report Generation Tests")
 class ReportGenerationTest extends EventloopTestBase {
 
     // ── Report model ──────────────────────────────────────────────────────────
@@ -49,7 +49,7 @@ class ReportGenerationTest extends EventloopTestBase {
     void setUp() { // GH-90000
         engine = new ReportEngine(); // GH-90000
         // Seed reports
-        Instant base = Instant.parse("2026-03-01T00:00:00Z [GH-90000]");
+        Instant base = Instant.parse("2026-03-01T00:00:00Z");
         for (ReportType type : ReportType.values()) { // GH-90000
             for (int i = 0; i < 4; i++) { // GH-90000
                 engine.addReport(new ReportRow( // GH-90000
@@ -71,7 +71,7 @@ class ReportGenerationTest extends EventloopTestBase {
 
     @ParameterizedTest(name = "type={0}") // GH-90000
     @EnumSource(ReportType.class) // GH-90000
-    @DisplayName("can generate a report for every supported type [GH-90000]")
+    @DisplayName("can generate a report for every supported type")
     void generateReportForEveryType(ReportType type) { // GH-90000
         ReportFilter filter = new ReportFilter("tenant-gen", null, null, Map.of()); // GH-90000
         List<ReportRow> rows = engine.generate(type, filter); // GH-90000
@@ -83,20 +83,20 @@ class ReportGenerationTest extends EventloopTestBase {
     // ── Filtering ─────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("filter by tenantId returns only that tenant's reports [GH-90000]")
+    @DisplayName("filter by tenantId returns only that tenant's reports")
     void filterByTenantReturnsOnlyMatchingReports() { // GH-90000
         ReportFilter filter = new ReportFilter("tenant-gen", null, null, Map.of()); // GH-90000
         List<ReportRow> rows = engine.generate(ReportType.ANALYTICS_AGGREGATE, filter); // GH-90000
 
         assertThat(rows).isNotEmpty(); // GH-90000
-        assertThat(rows).allMatch(r -> r.tenantId().equals("tenant-gen [GH-90000]"));
+        assertThat(rows).allMatch(r -> r.tenantId().equals("tenant-gen"));
     }
 
     @Test
-    @DisplayName("filter by time range retains only reports within the window [GH-90000]")
+    @DisplayName("filter by time range retains only reports within the window")
     void filterByTimeRangeRetainsBoundedReports() { // GH-90000
-        Instant from = Instant.parse("2026-03-01T01:00:00Z [GH-90000]");
-        Instant to   = Instant.parse("2026-03-01T03:00:00Z [GH-90000]");
+        Instant from = Instant.parse("2026-03-01T01:00:00Z");
+        Instant to   = Instant.parse("2026-03-01T03:00:00Z");
         ReportFilter filter = new ReportFilter("tenant-gen", from, to, Map.of()); // GH-90000
 
         List<ReportRow> rows = engine.generateAll(filter); // GH-90000
@@ -107,10 +107,10 @@ class ReportGenerationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("filter returns empty list when no reports match the time window [GH-90000]")
+    @DisplayName("filter returns empty list when no reports match the time window")
     void filterReturnsEmptyForUnmatchedTimeWindow() { // GH-90000
-        Instant from = Instant.parse("2020-01-01T00:00:00Z [GH-90000]");
-        Instant to   = Instant.parse("2020-01-02T00:00:00Z [GH-90000]");
+        Instant from = Instant.parse("2020-01-01T00:00:00Z");
+        Instant to   = Instant.parse("2020-01-02T00:00:00Z");
         ReportFilter filter = new ReportFilter("tenant-gen", from, to, Map.of()); // GH-90000
 
         List<ReportRow> rows = engine.generateAll(filter); // GH-90000
@@ -120,7 +120,7 @@ class ReportGenerationTest extends EventloopTestBase {
     // ── Pagination ────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("pagination returns the correct subset of results [GH-90000]")
+    @DisplayName("pagination returns the correct subset of results")
     void paginationReturnsCorrectSubset() { // GH-90000
         ReportFilter filter = new ReportFilter("tenant-gen", null, null, Map.of()); // GH-90000
         List<ReportRow> all = engine.generateAll(filter); // GH-90000
@@ -137,7 +137,7 @@ class ReportGenerationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("total pages calculation is correct for given page size [GH-90000]")
+    @DisplayName("total pages calculation is correct for given page size")
     void totalPagesCalculationIsCorrect() { // GH-90000
         List<ReportRow> all = new ArrayList<>(); // GH-90000
         for (int i = 0; i < 25; i++) { // GH-90000
@@ -152,7 +152,7 @@ class ReportGenerationTest extends EventloopTestBase {
 
     @ParameterizedTest(name = "format={0}") // GH-90000
     @EnumSource(ExportFormat.class) // GH-90000
-    @DisplayName("export produces non-empty output for each supported format [GH-90000]")
+    @DisplayName("export produces non-empty output for each supported format")
     void exportProducesNonEmptyOutputForEachFormat(ExportFormat format) { // GH-90000
         ReportFilter filter = new ReportFilter("tenant-gen", null, null, Map.of()); // GH-90000
         List<ReportRow> rows = engine.generate(ReportType.COLLECTION_SUMMARY, filter); // GH-90000
@@ -162,26 +162,26 @@ class ReportGenerationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("CSV export contains header and data rows [GH-90000]")
+    @DisplayName("CSV export contains header and data rows")
     void csvExportContainsHeaderAndDataRows() { // GH-90000
         List<ReportRow> rows = List.of( // GH-90000
                 new ReportRow("r1", ReportType.EVENT_TREND, "t", Instant.now(), Map.of("metric", "42"))); // GH-90000
         String csv = engine.export(rows, ExportFormat.CSV); // GH-90000
 
-        assertThat(csv).contains("id,type,tenantId,generatedAt [GH-90000]");
+        assertThat(csv).contains("id,type,tenantId,generatedAt");
         assertThat(csv.lines().count()).isGreaterThan(1); // GH-90000
     }
 
     @Test
-    @DisplayName("JSON export is parseable and contains all row IDs [GH-90000]")
+    @DisplayName("JSON export is parseable and contains all row IDs")
     void jsonExportContainsAllRowIds() { // GH-90000
         List<ReportRow> rows = List.of( // GH-90000
                 new ReportRow("rex-1", ReportType.MODEL_PERFORMANCE, "t", Instant.now(), Map.of()), // GH-90000
                 new ReportRow("rex-2", ReportType.MODEL_PERFORMANCE, "t", Instant.now(), Map.of())); // GH-90000
         String json = engine.export(rows, ExportFormat.JSON); // GH-90000
 
-        assertThat(json).contains("rex-1 [GH-90000]");
-        assertThat(json).contains("rex-2 [GH-90000]");
+        assertThat(json).contains("rex-1");
+        assertThat(json).contains("rex-2");
     }
 
     // ── Report engine (inner, for tests) ────────────────────────────────────── // GH-90000
@@ -219,17 +219,17 @@ class ReportGenerationTest extends EventloopTestBase {
         String export(List<ReportRow> rows, ExportFormat format) { // GH-90000
             return switch (format) { // GH-90000
                 case JSON -> {
-                    StringBuilder sb = new StringBuilder("[ [GH-90000]");
+                    StringBuilder sb = new StringBuilder("[");
                     rows.forEach(r -> sb.append("{\"id\":\"").append(r.id()) // GH-90000
                             .append("\",\"type\":\"").append(r.type()) // GH-90000
                             .append("\",\"tenantId\":\"").append(r.tenantId()) // GH-90000
                             .append("\"},")); // GH-90000
                     if (!rows.isEmpty()) sb.setLength(sb.length() - 1); // GH-90000
-                    sb.append("] [GH-90000]");
+                    sb.append("]");
                     yield sb.toString(); // GH-90000
                 }
                 case CSV -> {
-                    StringBuilder sb = new StringBuilder("id,type,tenantId,generatedAt\n [GH-90000]");
+                    StringBuilder sb = new StringBuilder("id,type,tenantId,generatedAt\n");
                     rows.forEach(r -> sb.append(r.id()).append(',') // GH-90000
                             .append(r.type()).append(',') // GH-90000
                             .append(r.tenantId()).append(',') // GH-90000

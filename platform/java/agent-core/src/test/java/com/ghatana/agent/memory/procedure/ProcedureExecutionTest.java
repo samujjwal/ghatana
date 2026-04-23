@@ -23,27 +23,27 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Procedure Execution Tests [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("Procedure Execution Tests")
+@Tag("integration")
 class ProcedureExecutionTest extends EventloopTestBase {
 
     // ── Step ordering ─────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("step ordering [GH-90000]")
+    @DisplayName("step ordering")
     class StepOrdering {
 
         @Test
-        @DisplayName("steps are returned in ordinal order [GH-90000]")
+        @DisplayName("steps are returned in ordinal order")
         void steps_areReturnedInOrdinalOrder() { // GH-90000
-            ProcedureStep step1 = ProcedureStep.builder().ordinal(1).description("Start VM [GH-90000]").build();
-            ProcedureStep step2 = ProcedureStep.builder().ordinal(2).description("Configure network [GH-90000]").build();
-            ProcedureStep step3 = ProcedureStep.builder().ordinal(3).description("Start app [GH-90000]").build();
+            ProcedureStep step1 = ProcedureStep.builder().ordinal(1).description("Start VM").build();
+            ProcedureStep step2 = ProcedureStep.builder().ordinal(2).description("Configure network").build();
+            ProcedureStep step3 = ProcedureStep.builder().ordinal(3).description("Start app").build();
 
             EnhancedProcedure procedure = EnhancedProcedure.builder() // GH-90000
                     .id(UUID.randomUUID().toString()) // GH-90000
-                    .situation("Deploy service [GH-90000]")
-                    .action("Full deployment [GH-90000]")
+                    .situation("Deploy service")
+                    .action("Full deployment")
                     .steps(List.of(step1, step2, step3)) // GH-90000
                     .build(); // GH-90000
 
@@ -56,12 +56,12 @@ class ProcedureExecutionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("procedure with no steps has empty steps list [GH-90000]")
+        @DisplayName("procedure with no steps has empty steps list")
         void procedure_withNoSteps_hasEmptyStepsList() { // GH-90000
             EnhancedProcedure procedure = EnhancedProcedure.builder() // GH-90000
                     .id(UUID.randomUUID().toString()) // GH-90000
-                    .situation("Simple situation [GH-90000]")
-                    .action("Direct action (no steps) [GH-90000]")
+                    .situation("Simple situation")
+                    .action("Direct action (no steps)")
                     .build(); // GH-90000
 
             assertThat(procedure.getSteps()).isEmpty(); // GH-90000
@@ -71,23 +71,23 @@ class ProcedureExecutionTest extends EventloopTestBase {
     // ── Fallback step ─────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("fallback step resolution [GH-90000]")
+    @DisplayName("fallback step resolution")
     class FallbackStepResolution {
 
         @Test
-        @DisplayName("step with non-zero fallbackStep references alternative step [GH-90000]")
+        @DisplayName("step with non-zero fallbackStep references alternative step")
         void stepWithFallbackStep_referencesAlternativeStep() { // GH-90000
             ProcedureStep mainStep = ProcedureStep.builder() // GH-90000
                     .ordinal(2) // GH-90000
-                    .description("Try fast path [GH-90000]")
-                    .toolName("fast-tool [GH-90000]")
+                    .description("Try fast path")
+                    .toolName("fast-tool")
                     .fallbackStep(3) // GH-90000
                     .build(); // GH-90000
 
             ProcedureStep fallbackStep = ProcedureStep.builder() // GH-90000
                     .ordinal(3) // GH-90000
-                    .description("Slow fallback path [GH-90000]")
-                    .toolName("slow-tool [GH-90000]")
+                    .description("Slow fallback path")
+                    .toolName("slow-tool")
                     .build(); // GH-90000
 
             // Resolve fallback: if step 2 fails, execute step 3
@@ -95,15 +95,15 @@ class ProcedureExecutionTest extends EventloopTestBase {
 
             assertThat(mainStep.getFallbackStep()).isEqualTo(3); // GH-90000
             assertThat(resolvedFallback).isNotNull(); // GH-90000
-            assertThat(resolvedFallback.getDescription()).contains("Slow fallback [GH-90000]");
+            assertThat(resolvedFallback.getDescription()).contains("Slow fallback");
         }
 
         @Test
-        @DisplayName("step with fallbackStep 0 has no fallback [GH-90000]")
+        @DisplayName("step with fallbackStep 0 has no fallback")
         void stepWithFallbackStep0_hasNoFallback() { // GH-90000
             ProcedureStep step = ProcedureStep.builder() // GH-90000
                     .ordinal(1) // GH-90000
-                    .description("Mandatory initialization [GH-90000]")
+                    .description("Mandatory initialization")
                     .build(); // GH-90000
 
             assertThat(step.getFallbackStep()).isEqualTo(0); // GH-90000
@@ -113,16 +113,16 @@ class ProcedureExecutionTest extends EventloopTestBase {
     // ── Success rate tracking ─────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("use count and success rate [GH-90000]")
+    @DisplayName("use count and success rate")
     class SuccessRateTracking {
 
         @Test
-        @DisplayName("procedure stores success rate from 0.0 to 1.0 [GH-90000]")
+        @DisplayName("procedure stores success rate from 0.0 to 1.0")
         void procedure_storesSuccessRateFrom0To1() { // GH-90000
             EnhancedProcedure procedure = EnhancedProcedure.builder() // GH-90000
                     .id(UUID.randomUUID().toString()) // GH-90000
-                    .situation("S [GH-90000]")
-                    .action("A [GH-90000]")
+                    .situation("S")
+                    .action("A")
                     .successRate(0.87) // GH-90000
                     .useCount(23) // GH-90000
                     .build(); // GH-90000
@@ -132,12 +132,12 @@ class ProcedureExecutionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("newly created procedure has default success rate of 0.0 [GH-90000]")
+        @DisplayName("newly created procedure has default success rate of 0.0")
         void newProcedure_hasDefaultSuccessRateOf0() { // GH-90000
             EnhancedProcedure procedure = EnhancedProcedure.builder() // GH-90000
                     .id(UUID.randomUUID().toString()) // GH-90000
-                    .situation("S [GH-90000]")
-                    .action("A [GH-90000]")
+                    .situation("S")
+                    .action("A")
                     .build(); // GH-90000
 
             assertThat(procedure.getSuccessRate()).isEqualTo(0.0); // GH-90000
@@ -148,11 +148,11 @@ class ProcedureExecutionTest extends EventloopTestBase {
     // ── Prerequisites ─────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("prerequisites enforcement [GH-90000]")
+    @DisplayName("prerequisites enforcement")
     class PrerequisitesEnforcement {
 
         @Test
-        @DisplayName("procedure with prerequisites records them and they can be checked [GH-90000]")
+        @DisplayName("procedure with prerequisites records them and they can be checked")
         void procedure_withPrerequisites_recordsThemForChecking() { // GH-90000
             Map<String, Object> prereqs = Map.of( // GH-90000
                     "requires-java-version", "21",
@@ -161,22 +161,22 @@ class ProcedureExecutionTest extends EventloopTestBase {
 
             EnhancedProcedure procedure = EnhancedProcedure.builder() // GH-90000
                     .id(UUID.randomUUID().toString()) // GH-90000
-                    .situation("S [GH-90000]")
-                    .action("A [GH-90000]")
+                    .situation("S")
+                    .action("A")
                     .prerequisites(prereqs) // GH-90000
                     .build(); // GH-90000
 
-            assertThat(procedure.getPrerequisites()).containsKey("requires-java-version [GH-90000]");
-            assertThat(procedure.getPrerequisites().get("requires-java-version [GH-90000]")).isEqualTo("21 [GH-90000]");
+            assertThat(procedure.getPrerequisites()).containsKey("requires-java-version");
+            assertThat(procedure.getPrerequisites().get("requires-java-version")).isEqualTo("21");
         }
 
         @Test
-        @DisplayName("procedure with no prerequisites has empty prerequisites map [GH-90000]")
+        @DisplayName("procedure with no prerequisites has empty prerequisites map")
         void procedure_withNoPrerequisites_hasEmptyMap() { // GH-90000
             EnhancedProcedure procedure = EnhancedProcedure.builder() // GH-90000
                     .id(UUID.randomUUID().toString()) // GH-90000
-                    .situation("S [GH-90000]")
-                    .action("A [GH-90000]")
+                    .situation("S")
+                    .action("A")
                     .build(); // GH-90000
 
             assertThat(procedure.getPrerequisites()).isEmpty(); // GH-90000
@@ -186,29 +186,29 @@ class ProcedureExecutionTest extends EventloopTestBase {
     // ── Tool invocation per step ──────────────────────────────────────────────
 
     @Nested
-    @DisplayName("tool invocation per step [GH-90000]")
+    @DisplayName("tool invocation per step")
     class ToolInvocationPerStep {
 
         @Test
-        @DisplayName("step with toolName records the tool to invoke [GH-90000]")
+        @DisplayName("step with toolName records the tool to invoke")
         void stepWithToolName_recordsToolToInvoke() { // GH-90000
             ProcedureStep step = ProcedureStep.builder() // GH-90000
                     .ordinal(1) // GH-90000
-                    .description("Search repositories [GH-90000]")
-                    .toolName("git-search-tool [GH-90000]")
-                    .expectedOutcome("list of matching repos [GH-90000]")
+                    .description("Search repositories")
+                    .toolName("git-search-tool")
+                    .expectedOutcome("list of matching repos")
                     .build(); // GH-90000
 
-            assertThat(step.getToolName()).isEqualTo("git-search-tool [GH-90000]");
-            assertThat(step.getExpectedOutcome()).isEqualTo("list of matching repos [GH-90000]");
+            assertThat(step.getToolName()).isEqualTo("git-search-tool");
+            assertThat(step.getExpectedOutcome()).isEqualTo("list of matching repos");
         }
 
         @Test
-        @DisplayName("step without toolName represents manual/LLM action [GH-90000]")
+        @DisplayName("step without toolName represents manual/LLM action")
         void stepWithoutToolName_representsManaualOrLlmAction() { // GH-90000
             ProcedureStep step = ProcedureStep.builder() // GH-90000
                     .ordinal(1) // GH-90000
-                    .description("Analyze result with LLM [GH-90000]")
+                    .description("Analyze result with LLM")
                     .build(); // GH-90000
 
             assertThat(step.getToolName()).isNull(); // GH-90000

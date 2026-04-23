@@ -126,8 +126,8 @@ class StorageRouterServiceTest extends EventloopTestBase {
         RoutingTarget t1 = resolve(router.resolveBackendFor("tenant-A", COLLECTION, QUERY)); // GH-90000
         RoutingTarget t2 = resolve(router.resolveBackendFor("tenant-B", COLLECTION, QUERY)); // GH-90000
 
-        assertThat(t1.getPrimaryBackendId()).isEqualTo("backend-A [GH-90000]");
-        assertThat(t2.getPrimaryBackendId()).isEqualTo("backend-B [GH-90000]");
+        assertThat(t1.getPrimaryBackendId()).isEqualTo("backend-A");
+        assertThat(t2.getPrimaryBackendId()).isEqualTo("backend-B");
     }
 
     // ── validation ───────────────────────────────────────────────────────────

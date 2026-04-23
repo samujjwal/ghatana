@@ -11,7 +11,7 @@ import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.*;
 
-@DisplayName("WorkflowLifecycleEvent Tests [GH-90000]")
+@DisplayName("WorkflowLifecycleEvent Tests")
 class WorkflowLifecycleEventTest {
 
     @Test
@@ -19,8 +19,8 @@ class WorkflowLifecycleEventTest {
         WorkflowLifecycleEvent event = WorkflowLifecycleEvent.of( // GH-90000
             "run-1", "wf-1", WorkflowLifecycleEvent.Phase.WORKFLOW_STARTED);
 
-        assertThat(event.runId()).isEqualTo("run-1 [GH-90000]");
-        assertThat(event.workflowId()).isEqualTo("wf-1 [GH-90000]");
+        assertThat(event.runId()).isEqualTo("run-1");
+        assertThat(event.workflowId()).isEqualTo("wf-1");
         assertThat(event.phase()).isEqualTo(WorkflowLifecycleEvent.Phase.WORKFLOW_STARTED); // GH-90000
         assertThat(event.timestamp()).isBeforeOrEqualTo(Instant.now()); // GH-90000
         assertThat(event.stepId()).isNull(); // GH-90000
@@ -32,7 +32,7 @@ class WorkflowLifecycleEventTest {
             "run-1", "wf-1",
             WorkflowLifecycleEvent.Phase.STEP_STARTED, "step-validate");
 
-        assertThat(event.stepId()).isEqualTo("step-validate [GH-90000]");
+        assertThat(event.stepId()).isEqualTo("step-validate");
         assertThat(event.phase()).isEqualTo(WorkflowLifecycleEvent.Phase.STEP_STARTED); // GH-90000
     }
 

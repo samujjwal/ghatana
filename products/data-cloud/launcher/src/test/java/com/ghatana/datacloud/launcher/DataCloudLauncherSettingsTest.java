@@ -13,11 +13,11 @@ import org.junit.jupiter.api.Test;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataCloudLauncherSettings - launcher configuration resolution [GH-90000]")
+@DisplayName("DataCloudLauncherSettings - launcher configuration resolution")
 class DataCloudLauncherSettingsTest {
 
     @Test
-    @DisplayName("environment overrides client config flags [GH-90000]")
+    @DisplayName("environment overrides client config flags")
     void environmentOverridesClientConfigFlags() { // GH-90000
         DataCloud.DataCloudConfig config =
                 DataCloudLauncherSettings.parseClientConfig( // GH-90000
@@ -26,12 +26,12 @@ class DataCloudLauncherSettingsTest {
                                 "DATACLOUD_INSTANCE_ID", "env-instance",
                                 "DATACLOUD_MAX_CONNECTIONS", "42"));
 
-        assertThat(config.instanceId()).isEqualTo("env-instance [GH-90000]");
+        assertThat(config.instanceId()).isEqualTo("env-instance");
         assertThat(config.maxConnectionsPerTenant()).isEqualTo(42); // GH-90000
     }
 
     @Test
-    @DisplayName("http server starts from cli flags [GH-90000]")
+    @DisplayName("http server starts from cli flags")
     void httpServerStartsFromCliFlags() { // GH-90000
         boolean startHttp =
                 DataCloudLauncherSettings.shouldStartHttpServer( // GH-90000
@@ -42,7 +42,7 @@ class DataCloudLauncherSettingsTest {
     }
 
     @Test
-    @DisplayName("http server stays disabled when env flag is false [GH-90000]")
+    @DisplayName("http server stays disabled when env flag is false")
     void httpServerRespectsFalseEnvFlag() { // GH-90000
         boolean startHttp =
                 DataCloudLauncherSettings.shouldStartHttpServer( // GH-90000
@@ -53,7 +53,7 @@ class DataCloudLauncherSettingsTest {
     }
 
     @Test
-    @DisplayName("grpc server starts when port is configured [GH-90000]")
+    @DisplayName("grpc server starts when port is configured")
     void grpcServerStartsWhenPortConfigured() { // GH-90000
         boolean startGrpc =
                 DataCloudLauncherSettings.shouldStartGrpcServer( // GH-90000
@@ -64,7 +64,7 @@ class DataCloudLauncherSettingsTest {
     }
 
     @Test
-    @DisplayName("grpc server stays disabled when enable flag is false and no port is configured [GH-90000]")
+    @DisplayName("grpc server stays disabled when enable flag is false and no port is configured")
     void grpcServerRespectsFalseEnvFlag() { // GH-90000
         boolean startGrpc =
                 DataCloudLauncherSettings.shouldStartGrpcServer( // GH-90000
@@ -75,7 +75,7 @@ class DataCloudLauncherSettingsTest {
     }
 
     @Test
-    @DisplayName("http server starts when enable flag is true [GH-90000]")
+    @DisplayName("http server starts when enable flag is true")
     void httpServerStartsWhenEnabledInEnvironment() { // GH-90000
         boolean startHttp =
                 DataCloudLauncherSettings.shouldStartHttpServer( // GH-90000
@@ -86,7 +86,7 @@ class DataCloudLauncherSettingsTest {
     }
 
     @Test
-    @DisplayName("launcher detects when no transport is enabled [GH-90000]")
+    @DisplayName("launcher detects when no transport is enabled")
     void launcherDetectsNoEnabledTransport() { // GH-90000
         boolean hasEnabledTransport =
                 DataCloudLauncherSettings.hasEnabledTransport(new String[0], Map.of()); // GH-90000
@@ -95,7 +95,7 @@ class DataCloudLauncherSettingsTest {
     }
 
     @Test
-    @DisplayName("http port falls back to default when missing [GH-90000]")
+    @DisplayName("http port falls back to default when missing")
     void httpPortFallsBackToDefault() { // GH-90000
         int port = DataCloudLauncherSettings.resolveHttpPort(Map.of()); // GH-90000
 
@@ -103,7 +103,7 @@ class DataCloudLauncherSettingsTest {
     }
 
     @Test
-    @DisplayName("http port is resolved from environment [GH-90000]")
+    @DisplayName("http port is resolved from environment")
     void httpPortResolvesFromEnvironment() { // GH-90000
         int port = DataCloudLauncherSettings.resolveHttpPort( // GH-90000
                 Map.of("DATACLOUD_HTTP_PORT", "8181")); // GH-90000
@@ -112,7 +112,7 @@ class DataCloudLauncherSettingsTest {
     }
 
     @Test
-    @DisplayName("rate limit requests falls back to default 200 when env var absent [GH-90000]")
+    @DisplayName("rate limit requests falls back to default 200 when env var absent")
     void rateLimitRequestsDefaultsTo200() { // GH-90000
         int requests = DataCloudLauncherSettings.resolveRateLimitRequests(Map.of()); // GH-90000
 
@@ -120,7 +120,7 @@ class DataCloudLauncherSettingsTest {
     }
 
     @Test
-    @DisplayName("rate limit requests is resolved from DATACLOUD_RATE_LIMIT_REQUESTS env var [GH-90000]")
+    @DisplayName("rate limit requests is resolved from DATACLOUD_RATE_LIMIT_REQUESTS env var")
     void rateLimitRequestsResolvesFromEnvironment() { // GH-90000
         int requests = DataCloudLauncherSettings.resolveRateLimitRequests( // GH-90000
                 Map.of("DATACLOUD_RATE_LIMIT_REQUESTS", "500")); // GH-90000
@@ -129,7 +129,7 @@ class DataCloudLauncherSettingsTest {
     }
 
     @Test
-    @DisplayName("rate limit window seconds falls back to default 60 when env var absent [GH-90000]")
+    @DisplayName("rate limit window seconds falls back to default 60 when env var absent")
     void rateLimitWindowSecondsDefaultsTo60() { // GH-90000
         long windowSec = DataCloudLauncherSettings.resolveRateLimitWindowSeconds(Map.of()); // GH-90000
 
@@ -137,7 +137,7 @@ class DataCloudLauncherSettingsTest {
     }
 
     @Test
-    @DisplayName("rate limit window seconds resolves from DATACLOUD_RATE_LIMIT_WINDOW_SECONDS env var [GH-90000]")
+    @DisplayName("rate limit window seconds resolves from DATACLOUD_RATE_LIMIT_WINDOW_SECONDS env var")
     void rateLimitWindowSecondsResolvesFromEnvironment() { // GH-90000
         long windowSec = DataCloudLauncherSettings.resolveRateLimitWindowSeconds( // GH-90000
                 Map.of("DATACLOUD_RATE_LIMIT_WINDOW_SECONDS", "120")); // GH-90000
@@ -146,7 +146,7 @@ class DataCloudLauncherSettingsTest {
     }
 
     @Test
-    @DisplayName("rate limit ignores blank env var and falls back to defaults [GH-90000]")
+    @DisplayName("rate limit ignores blank env var and falls back to defaults")
     void rateLimitIgnoresBlankEnvVar() { // GH-90000
         int requests = DataCloudLauncherSettings.resolveRateLimitRequests( // GH-90000
                 Map.of("DATACLOUD_RATE_LIMIT_REQUESTS", "  ")); // GH-90000
@@ -158,7 +158,7 @@ class DataCloudLauncherSettingsTest {
     }
 
     @Test
-    @DisplayName("client config resolves sovereign profile and data dir from env [GH-90000]")
+    @DisplayName("client config resolves sovereign profile and data dir from env")
     void clientConfigResolvesSovereignProfileAndDataDirFromEnvironment() { // GH-90000
         DataCloud.DataCloudConfig config = DataCloudLauncherSettings.parseClientConfig( // GH-90000
                 new String[0],
@@ -172,7 +172,7 @@ class DataCloudLauncherSettingsTest {
     }
 
     @Test
-    @DisplayName("client config resolves sovereign profile from cli flag [GH-90000]")
+    @DisplayName("client config resolves sovereign profile from cli flag")
     void clientConfigResolvesSovereignProfileFromCliFlag() { // GH-90000
         DataCloud.DataCloudConfig config = DataCloudLauncherSettings.parseClientConfig( // GH-90000
                 new String[] {"--profile=sovereign", "--sovereign-data-dir=/var/lib/datacloud"},
@@ -183,7 +183,7 @@ class DataCloudLauncherSettingsTest {
     }
 
     @Test
-    @DisplayName("storage compaction settings fall back to sovereign defaults [GH-90000]")
+    @DisplayName("storage compaction settings fall back to sovereign defaults")
     void storageCompactionSettingsFallBackToDefaults() { // GH-90000
         assertThat(DataCloudLauncherSettings.resolveStorageCompactionThreshold(Map.of())).isEqualTo(25); // GH-90000
         assertThat(DataCloudLauncherSettings.resolveStorageCompactionIntervalSeconds(Map.of())).isEqualTo(300L); // GH-90000

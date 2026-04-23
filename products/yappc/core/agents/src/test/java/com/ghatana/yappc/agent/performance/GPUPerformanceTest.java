@@ -26,13 +26,13 @@ import org.slf4j.LoggerFactory;
  * @doc.pattern Integration Test
  * @since Session 14C (GPU Acceleration) // GH-90000
  */
-@DisplayName("GPU Performance Tests [GH-90000]")
+@DisplayName("GPU Performance Tests")
 class GPUPerformanceTest extends EventloopTestBase {
 
   private static final Logger log = LoggerFactory.getLogger(GPUPerformanceTest.class); // GH-90000
 
   @Test
-  @DisplayName("Should detect GPU availability [GH-90000]")
+  @DisplayName("Should detect GPU availability")
   void shouldDetectGPU() { // GH-90000
     // GIVEN
     GPUDetector detector = new GPUDetector(); // GH-90000
@@ -56,7 +56,7 @@ class GPUPerformanceTest extends EventloopTestBase {
                 assertThat(info.memoryFreeMB()).isGreaterThan(0); // GH-90000
               });
     } else {
-      log.warn("⚠ No GPU detected - tests will use CPU simulation [GH-90000]");
+      log.warn("⚠ No GPU detected - tests will use CPU simulation");
     }
 
     // Test should not fail regardless of GPU availability
@@ -64,7 +64,7 @@ class GPUPerformanceTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should provide GPU configuration recommendations [GH-90000]")
+  @DisplayName("Should provide GPU configuration recommendations")
   void shouldProvideGPUConfig() { // GH-90000
     // GIVEN
     GPUDetector detector = new GPUDetector(); // GH-90000
@@ -86,12 +86,12 @@ class GPUPerformanceTest extends EventloopTestBase {
       assertThat(config.parallelRequests()).isBetween(2, 8); // GH-90000
     } else {
       assertThat(config.gpuLayers()).isEqualTo(0); // GH-90000
-      log.info("✓ CPU-only configuration generated [GH-90000]");
+      log.info("✓ CPU-only configuration generated");
     }
   }
 
   @Test
-  @DisplayName("Should print GPU detection report [GH-90000]")
+  @DisplayName("Should print GPU detection report")
   void shouldPrintGPUReport() { // GH-90000
     // GIVEN
     GPUDetector detector = new GPUDetector(); // GH-90000
@@ -99,11 +99,11 @@ class GPUPerformanceTest extends EventloopTestBase {
     // WHEN / THEN (no exceptions should be thrown) // GH-90000
     assertThatCode(() -> detector.printReport()).doesNotThrowAnyException(); // GH-90000
 
-    log.info("✓ GPU report generated successfully [GH-90000]");
+    log.info("✓ GPU report generated successfully");
   }
 
   @Test
-  @DisplayName("Should create batch processor with default settings [GH-90000]")
+  @DisplayName("Should create batch processor with default settings")
   void shouldCreateBatchProcessor() { // GH-90000
     // GIVEN / WHEN
     BatchProcessor processor = BatchProcessor.createDefault(); // GH-90000
@@ -119,18 +119,18 @@ class GPUPerformanceTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should create high-throughput batch processor [GH-90000]")
+  @DisplayName("Should create high-throughput batch processor")
   void shouldCreateHighThroughputProcessor() { // GH-90000
     // GIVEN / WHEN
     BatchProcessor processor = BatchProcessor.createHighThroughput(); // GH-90000
 
     // THEN
     assertThat(processor).isNotNull(); // GH-90000
-    log.info("✓ High-throughput BatchProcessor created [GH-90000]");
+    log.info("✓ High-throughput BatchProcessor created");
   }
 
   @Test
-  @DisplayName("Should collect LLM performance metrics [GH-90000]")
+  @DisplayName("Should collect LLM performance metrics")
   void shouldCollectMetrics() { // GH-90000
     // GIVEN
     LLMInferenceMetrics metrics = LLMInferenceMetrics.getInstance(); // GH-90000
@@ -159,14 +159,14 @@ class GPUPerformanceTest extends EventloopTestBase {
     // Print full report
     metrics.printReport(); // GH-90000
 
-    log.info("✓ Metrics collection verified [GH-90000]");
+    log.info("✓ Metrics collection verified");
 
     // Cleanup
     metrics.reset(); // GH-90000
   }
 
   @Test
-  @DisplayName("Should track latency distribution [GH-90000]")
+  @DisplayName("Should track latency distribution")
   void shouldTrackLatencyDistribution() { // GH-90000
     // GIVEN
     LLMInferenceMetrics metrics = LLMInferenceMetrics.getInstance(); // GH-90000
@@ -185,21 +185,21 @@ class GPUPerformanceTest extends EventloopTestBase {
 
     assertThat(snapshot.latencyDistribution()) // GH-90000
         .containsKeys("<100ms", "<500ms", "<1s", "<2s", "<5s", "5s+"); // GH-90000
-    assertThat(snapshot.latencyDistribution().get("<100ms [GH-90000]")).isEqualTo(1);
-    assertThat(snapshot.latencyDistribution().get("<500ms [GH-90000]")).isEqualTo(1);
-    assertThat(snapshot.latencyDistribution().get("<1s [GH-90000]")).isEqualTo(1);
-    assertThat(snapshot.latencyDistribution().get("<2s [GH-90000]")).isEqualTo(1);
-    assertThat(snapshot.latencyDistribution().get("<5s [GH-90000]")).isEqualTo(1);
-    assertThat(snapshot.latencyDistribution().get("5s+ [GH-90000]")).isEqualTo(1);
+    assertThat(snapshot.latencyDistribution().get("<100ms")).isEqualTo(1);
+    assertThat(snapshot.latencyDistribution().get("<500ms")).isEqualTo(1);
+    assertThat(snapshot.latencyDistribution().get("<1s")).isEqualTo(1);
+    assertThat(snapshot.latencyDistribution().get("<2s")).isEqualTo(1);
+    assertThat(snapshot.latencyDistribution().get("<5s")).isEqualTo(1);
+    assertThat(snapshot.latencyDistribution().get("5s+")).isEqualTo(1);
 
-    log.info("✓ Latency distribution tracking verified [GH-90000]");
+    log.info("✓ Latency distribution tracking verified");
 
     // Cleanup
     metrics.reset(); // GH-90000
   }
 
   @Test
-  @DisplayName("Should calculate throughput metrics [GH-90000]")
+  @DisplayName("Should calculate throughput metrics")
   void shouldCalculateThroughput() throws InterruptedException { // GH-90000
     // GIVEN
     LLMInferenceMetrics metrics = LLMInferenceMetrics.getInstance(); // GH-90000
@@ -224,18 +224,18 @@ class GPUPerformanceTest extends EventloopTestBase {
         snapshot.requestsPerSecond(), // GH-90000
         snapshot.tokensPerSecond()); // GH-90000
 
-    log.info("✓ Throughput calculation verified [GH-90000]");
+    log.info("✓ Throughput calculation verified");
 
     // Cleanup
     metrics.reset(); // GH-90000
   }
 
   @Test
-  @DisplayName("Should demonstrate GPU performance improvement [GH-90000]")
+  @DisplayName("Should demonstrate GPU performance improvement")
   void shouldDemonstrateGPUPerformance() { // GH-90000
     // This is a demonstration test showing expected improvements
     log.info("═".repeat(70)); // GH-90000
-    log.info("GPU Performance Improvement Demonstration [GH-90000]");
+    log.info("GPU Performance Improvement Demonstration");
     log.info("═".repeat(70)); // GH-90000
 
     // Simulated CPU performance
@@ -249,15 +249,15 @@ class GPUPerformanceTest extends EventloopTestBase {
     double latencySpeedup = (double) cpuLatencyMs / gpuLatencyMs; // GH-90000
     double throughputSpeedup = (double) gpuThroughput / cpuThroughput; // GH-90000
 
-    log.info("CPU Performance: [GH-90000]");
+    log.info("CPU Performance:");
     log.info("  Latency: {}ms per request", cpuLatencyMs); // GH-90000
     log.info("  Throughput: {} req/s", cpuThroughput); // GH-90000
-    log.info(" [GH-90000]");
-    log.info("GPU Performance: [GH-90000]");
+    log.info("");
+    log.info("GPU Performance:");
     log.info("  Latency: {}ms per request", gpuLatencyMs); // GH-90000
     log.info("  Throughput: {} req/s", gpuThroughput); // GH-90000
-    log.info(" [GH-90000]");
-    log.info("Improvement: [GH-90000]");
+    log.info("");
+    log.info("Improvement:");
     log.info("  Latency: {:.1f}x faster", latencySpeedup); // GH-90000
     log.info("  Throughput: {:.1f}x more requests", throughputSpeedup); // GH-90000
     log.info("═".repeat(70)); // GH-90000
@@ -265,6 +265,6 @@ class GPUPerformanceTest extends EventloopTestBase {
     assertThat(latencySpeedup).isBetween(5.0, 15.0); // GH-90000
     assertThat(throughputSpeedup).isBetween(5.0, 15.0); // GH-90000
 
-    log.info("✓ GPU performance demonstration complete [GH-90000]");
+    log.info("✓ GPU performance demonstration complete");
   }
 }

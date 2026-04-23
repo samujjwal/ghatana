@@ -18,8 +18,8 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("HttpRequestOptimizerTest [GH-90000]")
-@Tag("launcher [GH-90000]")
+@DisplayName("HttpRequestOptimizerTest")
+@Tag("launcher")
 class HttpRequestOptimizerTest {
 
     private HttpRequestOptimizer optimizer;
@@ -37,9 +37,9 @@ class HttpRequestOptimizerTest {
     // ─── Request optimization ─────────────────────────────────────────────────
 
     @Test
-    @DisplayName("generates optimization hints for request [GH-90000]")
+    @DisplayName("generates optimization hints for request")
     void generatesOptimizationHintsForRequest() { // GH-90000
-        HttpRequest request = HttpRequest.get("http://localhost/api/data [GH-90000]").build();
+        HttpRequest request = HttpRequest.get("http://localhost/api/data").build();
         HttpRequestOptimizer.OptimizationHints hints = optimizer.optimizeRequest(request); // GH-90000
 
         assertThat(hints).isNotNull(); // GH-90000
@@ -47,9 +47,9 @@ class HttpRequestOptimizerTest {
     }
 
     @Test
-    @DisplayName("tracks request statistics [GH-90000]")
+    @DisplayName("tracks request statistics")
     void tracksRequestStatistics() { // GH-90000
-        HttpRequest request = HttpRequest.get("http://localhost/api/data [GH-90000]").build();
+        HttpRequest request = HttpRequest.get("http://localhost/api/data").build();
         optimizer.optimizeRequest(request); // GH-90000
 
         HttpRequestOptimizer.OptimizationMetrics metrics = optimizer.getMetrics(); // GH-90000
@@ -59,7 +59,7 @@ class HttpRequestOptimizerTest {
     // ─── Response optimization ────────────────────────────────────────────────
 
     @Test
-    @DisplayName("generates optimization hints for response [GH-90000]")
+    @DisplayName("generates optimization hints for response")
     void generatesOptimizationHintsForResponse() { // GH-90000
         HttpResponse response = HttpResponse.ok200().build(); // GH-90000
         HttpRequestOptimizer.OptimizationHints hints = optimizer.optimizeResponse(response); // GH-90000
@@ -70,7 +70,7 @@ class HttpRequestOptimizerTest {
     }
 
     @Test
-    @DisplayName("does not enable compression for non-200 responses [GH-90000]")
+    @DisplayName("does not enable compression for non-200 responses")
     void doesNotEnableCompressionForNon200Responses() { // GH-90000
         HttpResponse response = HttpResponse.ofCode(404).build(); // GH-90000
         HttpRequestOptimizer.OptimizationHints hints = optimizer.optimizeResponse(response); // GH-90000
@@ -81,9 +81,9 @@ class HttpRequestOptimizerTest {
     // ─── Metrics tracking ─────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("tracks total requests [GH-90000]")
+    @DisplayName("tracks total requests")
     void tracksTotalRequests() { // GH-90000
-        HttpRequest request = HttpRequest.get("http://localhost/api/data [GH-90000]").build();
+        HttpRequest request = HttpRequest.get("http://localhost/api/data").build();
         optimizer.optimizeRequest(request); // GH-90000
         optimizer.optimizeRequest(request); // GH-90000
 
@@ -91,9 +91,9 @@ class HttpRequestOptimizerTest {
     }
 
     @Test
-    @DisplayName("tracks optimized requests [GH-90000]")
+    @DisplayName("tracks optimized requests")
     void tracksOptimizedRequests() { // GH-90000
-        HttpRequest request = HttpRequest.get("http://localhost/api/data [GH-90000]").build();
+        HttpRequest request = HttpRequest.get("http://localhost/api/data").build();
         HttpResponse response = HttpResponse.ok200().build(); // GH-90000
         
         optimizer.optimizeRequest(request); // GH-90000
@@ -103,9 +103,9 @@ class HttpRequestOptimizerTest {
     }
 
     @Test
-    @DisplayName("calculates optimization rate [GH-90000]")
+    @DisplayName("calculates optimization rate")
     void calculatesOptimizationRate() { // GH-90000
-        HttpRequest request = HttpRequest.get("http://localhost/api/data [GH-90000]").build();
+        HttpRequest request = HttpRequest.get("http://localhost/api/data").build();
         HttpResponse response = HttpResponse.ok200().build(); // GH-90000
         
         optimizer.optimizeRequest(request); // GH-90000
@@ -116,10 +116,10 @@ class HttpRequestOptimizerTest {
     }
 
     @Test
-    @DisplayName("tracks path-specific statistics [GH-90000]")
+    @DisplayName("tracks path-specific statistics")
     void tracksPathSpecificStatistics() { // GH-90000
-        HttpRequest request1 = HttpRequest.get("http://localhost/api/data1 [GH-90000]").build();
-        HttpRequest request2 = HttpRequest.get("http://localhost/api/data2 [GH-90000]").build();
+        HttpRequest request1 = HttpRequest.get("http://localhost/api/data1").build();
+        HttpRequest request2 = HttpRequest.get("http://localhost/api/data2").build();
 
         optimizer.optimizeRequest(request1); // GH-90000
         optimizer.optimizeRequest(request1); // GH-90000
@@ -131,9 +131,9 @@ class HttpRequestOptimizerTest {
     // ─── Metrics reset ────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("resets metrics correctly [GH-90000]")
+    @DisplayName("resets metrics correctly")
     void resetsMetricsCorrectly() { // GH-90000
-        HttpRequest request = HttpRequest.get("http://localhost/api/data [GH-90000]").build();
+        HttpRequest request = HttpRequest.get("http://localhost/api/data").build();
         optimizer.optimizeRequest(request); // GH-90000
 
         optimizer.resetMetrics(); // GH-90000
@@ -145,7 +145,7 @@ class HttpRequestOptimizerTest {
     // ─── Configuration ────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("respects compression enabled setting [GH-90000]")
+    @DisplayName("respects compression enabled setting")
     void respectsCompressionEnabledSetting() { // GH-90000
         HttpRequestOptimizer noCompressionOptimizer = new HttpRequestOptimizer(false, true); // GH-90000
         HttpResponse response = HttpResponse.ok200().build(); // GH-90000
@@ -156,10 +156,10 @@ class HttpRequestOptimizerTest {
     }
 
     @Test
-    @DisplayName("respects keep-alive enabled setting [GH-90000]")
+    @DisplayName("respects keep-alive enabled setting")
     void respectsKeepAliveEnabledSetting() { // GH-90000
         HttpRequestOptimizer noKeepAliveOptimizer = new HttpRequestOptimizer(true, false); // GH-90000
-        HttpRequest request = HttpRequest.get("http://localhost/api/data [GH-90000]").build();
+        HttpRequest request = HttpRequest.get("http://localhost/api/data").build();
 
         HttpRequestOptimizer.OptimizationHints hints = noKeepAliveOptimizer.optimizeRequest(request); // GH-90000
         

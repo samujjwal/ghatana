@@ -19,7 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Implementation PlanUnitsStep Tests [GH-90000]")
+@DisplayName("Implementation PlanUnitsStep Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles plan units step test operations
@@ -40,13 +40,13 @@ class PlanUnitsStepTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should return correct step ID [GH-90000]")
+  @DisplayName("Should return correct step ID")
   void shouldReturnCorrectStepId() { // GH-90000
-    assertThat(step.getStepId()).isEqualTo("implementation.plan_units [GH-90000]");
+    assertThat(step.getStepId()).isEqualTo("implementation.plan_units");
   }
 
   @Test
-  @DisplayName("Should plan implementation units from architecture baseline [GH-90000]")
+  @DisplayName("Should plan implementation units from architecture baseline")
   void shouldPlanImplementationUnits() { // GH-90000
     // GIVEN
     WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
@@ -65,7 +65,7 @@ class PlanUnitsStepTest extends EventloopTestBase {
                 "c4ComponentView", "Component1, Component2"),
             "components",
             List.of()); // GH-90000
-    when(dbClient.query(eq("architecture_published [GH-90000]"), any(), anyInt()))
+    when(dbClient.query(eq("architecture_published"), any(), anyInt()))
         .thenReturn(Promise.of(List.of(baseline))); // GH-90000
     when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
     when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
@@ -76,6 +76,6 @@ class PlanUnitsStepTest extends EventloopTestBase {
 
     // THEN
     assertThat(result).isNotNull(); // GH-90000
-    assertThat(result.get("architectureBaselineId [GH-90000]")).isEqualTo("arch-baseline-001 [GH-90000]");
+    assertThat(result.get("architectureBaselineId")).isEqualTo("arch-baseline-001");
   }
 }

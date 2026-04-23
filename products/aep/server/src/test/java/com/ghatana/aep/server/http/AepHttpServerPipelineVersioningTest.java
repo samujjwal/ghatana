@@ -41,7 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AepHttpServer – Pipeline Versioning (AEP-07) [GH-90000]")
+@DisplayName("AepHttpServer – Pipeline Versioning (AEP-07)")
 class AepHttpServerPipelineVersioningTest {
 
     private static final String DEFAULT_TENANT_ID = "test-tenant";
@@ -71,40 +71,40 @@ class AepHttpServerPipelineVersioningTest {
     // ─── GET /api/v1/pipelines/:id/versions ──────────────────────────────────
 
     @Nested
-    @DisplayName("GET /api/v1/pipelines/:id/versions — version history [GH-90000]")
+    @DisplayName("GET /api/v1/pipelines/:id/versions — version history")
     class GetVersionHistory {
 
         @Test
-        @DisplayName("returns empty history for a newly created pipeline [GH-90000]")
+        @DisplayName("returns empty history for a newly created pipeline")
         void returnsEmptyHistoryForNewPipeline() throws Exception { // GH-90000
-            String pipelineId = createPipelineAndGetId("versioning-test-pipeline [GH-90000]");
+            String pipelineId = createPipelineAndGetId("versioning-test-pipeline");
 
             HttpResponse<String> resp = get("/api/v1/pipelines/" + pipelineId + "/versions"); // GH-90000
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<String, Object> body = parseBody(resp); // GH-90000
-            assertThat(body).containsKey("versions [GH-90000]");
-            List<?> versions = (List<?>) body.get("versions [GH-90000]");
+            assertThat(body).containsKey("versions");
+            List<?> versions = (List<?>) body.get("versions");
             assertThat(versions).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("returns 200 with pipelineId in response [GH-90000]")
+        @DisplayName("returns 200 with pipelineId in response")
         void includesPipelineIdInResponse() throws Exception { // GH-90000
-            String pipelineId = createPipelineAndGetId("versions-response-test [GH-90000]");
+            String pipelineId = createPipelineAndGetId("versions-response-test");
 
             HttpResponse<String> resp = get("/api/v1/pipelines/" + pipelineId + "/versions"); // GH-90000
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<String, Object> body = parseBody(resp); // GH-90000
-            assertThat(body.get("pipelineId [GH-90000]")).isEqualTo(pipelineId);
-            assertThat(body).containsKey("count [GH-90000]");
+            assertThat(body.get("pipelineId")).isEqualTo(pipelineId);
+            assertThat(body).containsKey("count");
         }
 
         @Test
-        @DisplayName("returns version snapshot after publish [GH-90000]")
+        @DisplayName("returns version snapshot after publish")
         void returnsVersionAfterPublish() throws Exception { // GH-90000
-            String pipelineId = createPipelineAndGetId("publish-history-test [GH-90000]");
+            String pipelineId = createPipelineAndGetId("publish-history-test");
 
             post("/api/v1/pipelines/" + pipelineId + "/publish", // GH-90000
                 mapper.writeValueAsString(Map.of("versionLabel", "v1.0.0"))); // GH-90000
@@ -112,19 +112,19 @@ class AepHttpServerPipelineVersioningTest {
             HttpResponse<String> resp = get("/api/v1/pipelines/" + pipelineId + "/versions"); // GH-90000
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<String, Object> body = parseBody(resp); // GH-90000
-            List<?> versions = (List<?>) body.get("versions [GH-90000]");
+            List<?> versions = (List<?>) body.get("versions");
             assertThat(versions).hasSize(1); // GH-90000
 
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, Object> snap = (Map<String, Object>) versions.get(0); // GH-90000
-            assertThat(snap.get("versionLabel [GH-90000]")).isEqualTo("v1.0.0 [GH-90000]");
-            assertThat(snap.get("versionStatus [GH-90000]")).isEqualTo("PUBLISHED [GH-90000]");
+            assertThat(snap.get("versionLabel")).isEqualTo("v1.0.0");
+            assertThat(snap.get("versionStatus")).isEqualTo("PUBLISHED");
         }
 
         @Test
-        @DisplayName("version history accumulates multiple publishes in order [GH-90000]")
+        @DisplayName("version history accumulates multiple publishes in order")
         void accumulatesMultiplePublishesInOrder() throws Exception { // GH-90000
-            String pipelineId = createPipelineAndGetId("multi-publish-test [GH-90000]");
+            String pipelineId = createPipelineAndGetId("multi-publish-test");
 
             post("/api/v1/pipelines/" + pipelineId + "/publish", // GH-90000
                 mapper.writeValueAsString(Map.of("versionLabel", "v1.0.0"))); // GH-90000
@@ -134,7 +134,7 @@ class AepHttpServerPipelineVersioningTest {
             HttpResponse<String> resp = get("/api/v1/pipelines/" + pipelineId + "/versions"); // GH-90000
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<String, Object> body = parseBody(resp); // GH-90000
-            List<?> versions = (List<?>) body.get("versions [GH-90000]");
+            List<?> versions = (List<?>) body.get("versions");
             assertThat(versions).hasSize(2); // GH-90000
         }
     }
@@ -142,13 +142,13 @@ class AepHttpServerPipelineVersioningTest {
     // ─── POST /api/v1/pipelines/:id/publish ──────────────────────────────────
 
     @Nested
-    @DisplayName("POST /api/v1/pipelines/:id/publish — publish named version [GH-90000]")
+    @DisplayName("POST /api/v1/pipelines/:id/publish — publish named version")
     class PublishVersion {
 
         @Test
-        @DisplayName("returns 200 with published=true and versionLabel [GH-90000]")
+        @DisplayName("returns 200 with published=true and versionLabel")
         void publishesDraftWithLabel() throws Exception { // GH-90000
-            String pipelineId = createPipelineAndGetId("publish-test [GH-90000]");
+            String pipelineId = createPipelineAndGetId("publish-test");
 
             HttpResponse<String> resp = post( // GH-90000
                 "/api/v1/pipelines/" + pipelineId + "/publish",
@@ -156,15 +156,15 @@ class AepHttpServerPipelineVersioningTest {
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<String, Object> body = parseBody(resp); // GH-90000
-            assertThat(body.get("published [GH-90000]")).isEqualTo(true);
-            assertThat(body.get("versionLabel [GH-90000]")).isEqualTo("v1.0.0 [GH-90000]");
-            assertThat(body.get("pipelineId [GH-90000]")).isEqualTo(pipelineId);
+            assertThat(body.get("published")).isEqualTo(true);
+            assertThat(body.get("versionLabel")).isEqualTo("v1.0.0");
+            assertThat(body.get("pipelineId")).isEqualTo(pipelineId);
         }
 
         @Test
-        @DisplayName("sets pipeline versionStatus to PUBLISHED after publish [GH-90000]")
+        @DisplayName("sets pipeline versionStatus to PUBLISHED after publish")
         void setsPublishedStatus() throws Exception { // GH-90000
-            String pipelineId = createPipelineAndGetId("status-after-publish [GH-90000]");
+            String pipelineId = createPipelineAndGetId("status-after-publish");
 
             post("/api/v1/pipelines/" + pipelineId + "/publish", // GH-90000
                 mapper.writeValueAsString(Map.of("versionLabel", "release-1"))); // GH-90000
@@ -172,14 +172,14 @@ class AepHttpServerPipelineVersioningTest {
             HttpResponse<String> pipelineResp = get("/api/v1/pipelines/" + pipelineId); // GH-90000
             assertThat(pipelineResp.statusCode()).isEqualTo(200); // GH-90000
             Map<String, Object> pipeline = parseBody(pipelineResp); // GH-90000
-            assertThat(pipeline.get("versionLabel [GH-90000]")).isEqualTo("release-1 [GH-90000]");
-            assertThat(pipeline.get("versionStatus [GH-90000]")).isEqualTo("PUBLISHED [GH-90000]");
+            assertThat(pipeline.get("versionLabel")).isEqualTo("release-1");
+            assertThat(pipeline.get("versionStatus")).isEqualTo("PUBLISHED");
         }
 
         @Test
-        @DisplayName("returns 400 when versionLabel is missing [GH-90000]")
+        @DisplayName("returns 400 when versionLabel is missing")
         void rejects400WhenLabelMissing() throws Exception { // GH-90000
-            String pipelineId = createPipelineAndGetId("publish-no-label [GH-90000]");
+            String pipelineId = createPipelineAndGetId("publish-no-label");
 
             HttpResponse<String> resp = post( // GH-90000
                 "/api/v1/pipelines/" + pipelineId + "/publish",
@@ -189,9 +189,9 @@ class AepHttpServerPipelineVersioningTest {
         }
 
         @Test
-        @DisplayName("returns 400 when versionLabel is blank [GH-90000]")
+        @DisplayName("returns 400 when versionLabel is blank")
         void rejects400WhenLabelBlank() throws Exception { // GH-90000
-            String pipelineId = createPipelineAndGetId("publish-blank-label [GH-90000]");
+            String pipelineId = createPipelineAndGetId("publish-blank-label");
 
             HttpResponse<String> resp = post( // GH-90000
                 "/api/v1/pipelines/" + pipelineId + "/publish",
@@ -201,7 +201,7 @@ class AepHttpServerPipelineVersioningTest {
         }
 
         @Test
-        @DisplayName("returns 404 for unknown pipeline ID [GH-90000]")
+        @DisplayName("returns 404 for unknown pipeline ID")
         void returns404ForUnknownPipeline() throws Exception { // GH-90000
             HttpResponse<String> resp = post( // GH-90000
                 "/api/v1/pipelines/does-not-exist/publish",
@@ -214,17 +214,17 @@ class AepHttpServerPipelineVersioningTest {
     // ─── POST /api/v1/pipelines/:id/rollback ─────────────────────────────────
 
     @Nested
-    @DisplayName("POST /api/v1/pipelines/:id/rollback — restore prior version [GH-90000]")
+    @DisplayName("POST /api/v1/pipelines/:id/rollback — restore prior version")
     class RollbackVersion {
 
         @Test
-        @DisplayName("rolls back pipeline to a published snapshot version [GH-90000]")
+        @DisplayName("rolls back pipeline to a published snapshot version")
         void rollsBackToPublishedSnapshot() throws Exception { // GH-90000
-            String pipelineId = createPipelineAndGetId("rollback-test [GH-90000]");
+            String pipelineId = createPipelineAndGetId("rollback-test");
 
             // Capture version number from create
             HttpResponse<String> created = get("/api/v1/pipelines/" + pipelineId); // GH-90000
-            int originalVersion = ((Number) parseBody(created).get("version [GH-90000]")).intValue();
+            int originalVersion = ((Number) parseBody(created).get("version")).intValue();
 
             // Publish to create a snapshot
             post("/api/v1/pipelines/" + pipelineId + "/publish", // GH-90000
@@ -237,18 +237,18 @@ class AepHttpServerPipelineVersioningTest {
 
             assertThat(rollbackResp.statusCode()).isEqualTo(200); // GH-90000
             Map<String, Object> body = parseBody(rollbackResp); // GH-90000
-            assertThat(body.get("rolledBack [GH-90000]")).isEqualTo(true);
-            assertThat(body.get("pipelineId [GH-90000]")).isEqualTo(pipelineId);
-            assertThat(((Number) body.get("restoredVersion [GH-90000]")).intValue()).isEqualTo(originalVersion);
+            assertThat(body.get("rolledBack")).isEqualTo(true);
+            assertThat(body.get("pipelineId")).isEqualTo(pipelineId);
+            assertThat(((Number) body.get("restoredVersion")).intValue()).isEqualTo(originalVersion);
         }
 
         @Test
-        @DisplayName("rolled-back pipeline has DRAFT status [GH-90000]")
+        @DisplayName("rolled-back pipeline has DRAFT status")
         void rolledBackPipelineIsDraft() throws Exception { // GH-90000
-            String pipelineId = createPipelineAndGetId("rollback-draft-status [GH-90000]");
+            String pipelineId = createPipelineAndGetId("rollback-draft-status");
 
             HttpResponse<String> created = get("/api/v1/pipelines/" + pipelineId); // GH-90000
-            int originalVersion = ((Number) parseBody(created).get("version [GH-90000]")).intValue();
+            int originalVersion = ((Number) parseBody(created).get("version")).intValue();
 
             post("/api/v1/pipelines/" + pipelineId + "/publish", // GH-90000
                 mapper.writeValueAsString(Map.of("versionLabel", "v1"))); // GH-90000
@@ -257,14 +257,14 @@ class AepHttpServerPipelineVersioningTest {
 
             HttpResponse<String> pipeline = get("/api/v1/pipelines/" + pipelineId); // GH-90000
             Map<String, Object> pipelineBody = parseBody(pipeline); // GH-90000
-            assertThat(pipelineBody.get("versionStatus [GH-90000]")).isEqualTo("DRAFT [GH-90000]");
-            assertThat(pipelineBody.get("versionLabel [GH-90000]")).isEqualTo(" [GH-90000]");
+            assertThat(pipelineBody.get("versionStatus")).isEqualTo("DRAFT");
+            assertThat(pipelineBody.get("versionLabel")).isEqualTo("");
         }
 
         @Test
-        @DisplayName("returns 400 when toVersion parameter is missing [GH-90000]")
+        @DisplayName("returns 400 when toVersion parameter is missing")
         void returns400WhenToVersionMissing() throws Exception { // GH-90000
-            String pipelineId = createPipelineAndGetId("rollback-no-version [GH-90000]");
+            String pipelineId = createPipelineAndGetId("rollback-no-version");
 
             HttpResponse<String> resp = post( // GH-90000
                 "/api/v1/pipelines/" + pipelineId + "/rollback",
@@ -274,9 +274,9 @@ class AepHttpServerPipelineVersioningTest {
         }
 
         @Test
-        @DisplayName("returns 400 when toVersion is not a number [GH-90000]")
+        @DisplayName("returns 400 when toVersion is not a number")
         void returns400WhenToVersionNotNumeric() throws Exception { // GH-90000
-            String pipelineId = createPipelineAndGetId("rollback-bad-version [GH-90000]");
+            String pipelineId = createPipelineAndGetId("rollback-bad-version");
 
             HttpResponse<String> resp = post( // GH-90000
                 "/api/v1/pipelines/" + pipelineId + "/rollback?toVersion=abc",
@@ -286,9 +286,9 @@ class AepHttpServerPipelineVersioningTest {
         }
 
         @Test
-        @DisplayName("returns 404 when version snapshot does not exist [GH-90000]")
+        @DisplayName("returns 404 when version snapshot does not exist")
         void returns404WhenSnapshotMissing() throws Exception { // GH-90000
-            String pipelineId = createPipelineAndGetId("rollback-missing-snap [GH-90000]");
+            String pipelineId = createPipelineAndGetId("rollback-missing-snap");
 
             HttpResponse<String> resp = post( // GH-90000
                 "/api/v1/pipelines/" + pipelineId + "/rollback?toVersion=999",
@@ -299,11 +299,11 @@ class AepHttpServerPipelineVersioningTest {
     }
 
     @Nested
-    @DisplayName("Tenant isolation [GH-90000]")
+    @DisplayName("Tenant isolation")
     class TenantIsolation {
 
         @Test
-        @DisplayName("list endpoint only returns pipelines for the requested tenant [GH-90000]")
+        @DisplayName("list endpoint only returns pipelines for the requested tenant")
         void listEndpointIsTenantScoped() throws Exception { // GH-90000
             String tenantOnePipelineId = createPipelineAndGetId("tenant-one-pipeline", "tenant-one"); // GH-90000
             String tenantTwoPipelineId = createPipelineAndGetId("tenant-two-pipeline", "tenant-two"); // GH-90000
@@ -335,12 +335,12 @@ class AepHttpServerPipelineVersioningTest {
             )), tenantId);
         assertThat(resp.statusCode()).isIn(200, 201); // GH-90000
         Map<String, Object> body = parseBody(resp); // GH-90000
-        assertThat(body.get("id [GH-90000]")).as("Pipeline create response must contain 'id'; body=%s", resp.body())
+        assertThat(body.get("id")).as("Pipeline create response must contain 'id'; body=%s", resp.body())
             .isNotNull(); // GH-90000
-        return (String) body.get("id [GH-90000]");
+        return (String) body.get("id");
     }
 
-    @SuppressWarnings("unchecked [GH-90000]")
+    @SuppressWarnings("unchecked")
     private Map<String, Object> parseBody(HttpResponse<String> resp) throws Exception { // GH-90000
         return mapper.readValue(resp.body(), Map.class); // GH-90000
     }
@@ -375,10 +375,10 @@ class AepHttpServerPipelineVersioningTest {
     }
 
     private List<String> pipelineIds(HttpResponse<String> response) throws Exception { // GH-90000
-        @SuppressWarnings("unchecked [GH-90000]")
-        List<Map<String, Object>> pipelines = (List<Map<String, Object>>) parseBody(response).get("pipelines [GH-90000]");
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> pipelines = (List<Map<String, Object>>) parseBody(response).get("pipelines");
         return pipelines.stream() // GH-90000
-            .map(pipeline -> (String) pipeline.get("id [GH-90000]"))
+            .map(pipeline -> (String) pipeline.get("id"))
             .collect(Collectors.toList()); // GH-90000
     }
 

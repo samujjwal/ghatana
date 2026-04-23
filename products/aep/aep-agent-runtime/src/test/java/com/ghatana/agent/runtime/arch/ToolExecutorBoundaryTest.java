@@ -63,9 +63,9 @@ class ToolExecutorBoundaryTest {
     @ArchTest
     static final ArchRule safety_layer_must_not_use_tool_sandbox_directly =
             noClasses() // GH-90000
-                    .that().resideInAPackage("com.ghatana.agent.runtime.safety.. [GH-90000]")
+                    .that().resideInAPackage("com.ghatana.agent.runtime.safety..")
                     .should().dependOnClassesThat() // GH-90000
-                    .haveFullyQualifiedName("com.ghatana.platform.toolruntime.ToolSandbox [GH-90000]")
+                    .haveFullyQualifiedName("com.ghatana.platform.toolruntime.ToolSandbox")
                     .allowEmptyShould(true) // GH-90000
                     .because("The safety layer must use ToolExecutor as the governed entry point, " // GH-90000
                             + "not reach into ToolSandbox directly. "

@@ -21,11 +21,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("SamlIdentityProvider [GH-90000]")
+@DisplayName("SamlIdentityProvider")
 class SamlIdentityProviderTest extends EventloopTestBase {
 
     @Test
-    @DisplayName("resolve returns federated agent identity when the configured assertion matches [GH-90000]")
+    @DisplayName("resolve returns federated agent identity when the configured assertion matches")
     void resolveReturnsFederatedAgentIdentity() { // GH-90000
         SamlIdentityProvider provider = new SamlIdentityProvider( // GH-90000
             "https://idp.example.com/metadata",
@@ -35,21 +35,21 @@ class SamlIdentityProviderTest extends EventloopTestBase {
                 "agent-1",
                 "saml-subject-1",
                 encode(assertionXml("saml-subject-1", "https://idp.example.com/metadata", "https://aep.example.com/sp", "2099-04-15T00:00:00Z")), // GH-90000
-                Set.of("aep:capability:routing [GH-90000]"))));
+                Set.of("aep:capability:routing"))));
 
         Optional<AgentIdentity> identity = runPromise(() -> provider.resolve("tenant-a", "agent-1")); // GH-90000
 
         assertThat(identity).isPresent(); // GH-90000
-        assertThat(identity.orElseThrow().tenantId()).isEqualTo("tenant-a [GH-90000]");
-        assertThat(identity.orElseThrow().agentId()).isEqualTo("agent-1 [GH-90000]");
+        assertThat(identity.orElseThrow().tenantId()).isEqualTo("tenant-a");
+        assertThat(identity.orElseThrow().agentId()).isEqualTo("agent-1");
         assertThat(identity.orElseThrow().spiffeId()) // GH-90000
-            .isEqualTo("https://idp.example.com/metadata/subject/saml-subject-1 [GH-90000]");
+            .isEqualTo("https://idp.example.com/metadata/subject/saml-subject-1");
         assertThat(identity.orElseThrow().scopes()) // GH-90000
             .contains("aep:execute", "aep:capability:routing"); // GH-90000
     }
 
     @Test
-    @DisplayName("resolve returns empty when the SAML subject does not match the registration [GH-90000]")
+    @DisplayName("resolve returns empty when the SAML subject does not match the registration")
     void resolveReturnsEmptyWhenSubjectDoesNotMatch() { // GH-90000
         SamlIdentityProvider provider = new SamlIdentityProvider( // GH-90000
             "https://idp.example.com/metadata",
@@ -67,7 +67,7 @@ class SamlIdentityProviderTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("resolve returns empty when the SAML assertion is expired [GH-90000]")
+    @DisplayName("resolve returns empty when the SAML assertion is expired")
     void resolveReturnsEmptyWhenAssertionExpired() { // GH-90000
         SamlIdentityProvider provider = new SamlIdentityProvider( // GH-90000
             "https://idp.example.com/metadata",
@@ -85,7 +85,7 @@ class SamlIdentityProviderTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("supports and resolve return negative results for unregistered agents [GH-90000]")
+    @DisplayName("supports and resolve return negative results for unregistered agents")
     void unregisteredAgentsAreNotSupported() { // GH-90000
         SamlIdentityProvider provider = new SamlIdentityProvider( // GH-90000
             "https://idp.example.com/metadata",

@@ -28,7 +28,7 @@ import static org.mockito.Mockito.when;
 /**
  * Unit tests for {@link GrpcCorrelationInterceptors} (CP-002.1). // GH-90000
  */
-@DisplayName("GrpcCorrelationInterceptors — CP-002.1 [GH-90000]")
+@DisplayName("GrpcCorrelationInterceptors — CP-002.1")
 class GrpcCorrelationInterceptorsTest {
 
     @BeforeEach
@@ -42,7 +42,7 @@ class GrpcCorrelationInterceptorsTest {
     }
 
     @Test
-    @DisplayName("clientInterceptor() injects MDC correlation ID into outbound metadata [GH-90000]")
+    @DisplayName("clientInterceptor() injects MDC correlation ID into outbound metadata")
     void clientInjectsCorrelationId() { // GH-90000
         MDC.put(GrpcCorrelationInterceptors.MDC_KEY, "test-corr-id-123"); // GH-90000
 
@@ -66,20 +66,20 @@ class GrpcCorrelationInterceptorsTest {
             public String authority() { return "localhost"; } // GH-90000
         };
 
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         MethodDescriptor<Object, Object> method = (MethodDescriptor<Object, Object>) // GH-90000
                 mock(MethodDescriptor.class); // GH-90000
-        when(method.getFullMethodName()).thenReturn("TestService/TestMethod [GH-90000]");
+        when(method.getFullMethodName()).thenReturn("TestService/TestMethod");
 
         ClientCall<Object, Object> call = interceptor.interceptCall(method, CallOptions.DEFAULT, fakeChannel); // GH-90000
         call.start(mock(ClientCall.Listener.class), new Metadata()); // GH-90000
 
         assertThat(capturedHeaders.get(GrpcCorrelationInterceptors.CORRELATION_ID_KEY)) // GH-90000
-                .isEqualTo("test-corr-id-123 [GH-90000]");
+                .isEqualTo("test-corr-id-123");
     }
 
     @Test
-    @DisplayName("clientInterceptor() generates correlation ID when MDC is empty [GH-90000]")
+    @DisplayName("clientInterceptor() generates correlation ID when MDC is empty")
     void clientGeneratesCorrelationIdWhenMdcEmpty() { // GH-90000
         ClientInterceptor interceptor = GrpcCorrelationInterceptors.clientInterceptor(); // GH-90000
         Metadata capturedHeaders = new Metadata(); // GH-90000
@@ -100,10 +100,10 @@ class GrpcCorrelationInterceptorsTest {
             public String authority() { return "localhost"; } // GH-90000
         };
 
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         MethodDescriptor<Object, Object> method = (MethodDescriptor<Object, Object>) // GH-90000
                 mock(MethodDescriptor.class); // GH-90000
-        when(method.getFullMethodName()).thenReturn("Svc/Method [GH-90000]");
+        when(method.getFullMethodName()).thenReturn("Svc/Method");
 
         ClientCall<Object, Object> call = interceptor.interceptCall(method, CallOptions.DEFAULT, fakeChannel); // GH-90000
         call.start(mock(ClientCall.Listener.class), new Metadata()); // GH-90000
@@ -111,30 +111,30 @@ class GrpcCorrelationInterceptorsTest {
         String correlationId = capturedHeaders.get(GrpcCorrelationInterceptors.CORRELATION_ID_KEY); // GH-90000
         assertThat(correlationId).isNotBlank(); // GH-90000
         // Must be a valid UUID
-        assertThat(correlationId).matches("[0-9a-fA-F-]{36} [GH-90000]");
+        assertThat(correlationId).matches("[0-9a-fA-F-]{36}");
     }
 
     @Test
-    @DisplayName("CORRELATION_ID_KEY constant is 'x-correlation-id' [GH-90000]")
+    @DisplayName("CORRELATION_ID_KEY constant is 'x-correlation-id'")
     void correlationIdKeyName() { // GH-90000
         assertThat(GrpcCorrelationInterceptors.CORRELATION_ID_KEY.name()) // GH-90000
-                .isEqualTo("x-correlation-id [GH-90000]");
+                .isEqualTo("x-correlation-id");
     }
 
     @Test
-    @DisplayName("MDC_KEY constant is 'correlationId' [GH-90000]")
+    @DisplayName("MDC_KEY constant is 'correlationId'")
     void mdcKeyName() { // GH-90000
-        assertThat(GrpcCorrelationInterceptors.MDC_KEY).isEqualTo("correlationId [GH-90000]");
+        assertThat(GrpcCorrelationInterceptors.MDC_KEY).isEqualTo("correlationId");
     }
 
     @Test
-    @DisplayName("serverInterceptor() returns a non-null ServerInterceptor [GH-90000]")
+    @DisplayName("serverInterceptor() returns a non-null ServerInterceptor")
     void serverInterceptorNonNull() { // GH-90000
         assertThat(GrpcCorrelationInterceptors.serverInterceptor()).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("clientInterceptor() returns a non-null ClientInterceptor [GH-90000]")
+    @DisplayName("clientInterceptor() returns a non-null ClientInterceptor")
     void clientInterceptorNonNull() { // GH-90000
         assertThat(GrpcCorrelationInterceptors.clientInterceptor()).isNotNull(); // GH-90000
     }

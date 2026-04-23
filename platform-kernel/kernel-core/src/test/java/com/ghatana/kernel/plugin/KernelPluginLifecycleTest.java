@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Kernel Plugin Lifecycle Tests [GH-90000]")
+@DisplayName("Kernel Plugin Lifecycle Tests")
 class KernelPluginLifecycleTest extends EventloopTestBase {
 
     private KernelRegistryImpl registry;
@@ -43,7 +43,7 @@ class KernelPluginLifecycleTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should register and initialize plugin successfully [GH-90000]")
+    @DisplayName("Should register and initialize plugin successfully")
     void testPluginRegistrationAndInitialization() { // GH-90000
         // GIVEN: A plugin module
         TestPlugin plugin = new TestPlugin("test-plugin", "1.0.0"); // GH-90000
@@ -58,7 +58,7 @@ class KernelPluginLifecycleTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle plugin start and stop lifecycle [GH-90000]")
+    @DisplayName("Should handle plugin start and stop lifecycle")
     void testPluginStartStopLifecycle() { // GH-90000
         // GIVEN: An initialized plugin
         TestPlugin plugin = new TestPlugin("test-plugin", "1.0.0"); // GH-90000
@@ -80,7 +80,7 @@ class KernelPluginLifecycleTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should prevent double initialization [GH-90000]")
+    @DisplayName("Should prevent double initialization")
     void testPreventDoubleInitialization() { // GH-90000
         // GIVEN: An initialized plugin
         TestPlugin plugin = new TestPlugin("test-plugin", "1.0.0"); // GH-90000
@@ -95,11 +95,11 @@ class KernelPluginLifecycleTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle plugin dependencies during initialization [GH-90000]")
+    @DisplayName("Should handle plugin dependencies during initialization")
     void testPluginDependencyInitialization() { // GH-90000
         // GIVEN: Two plugins with dependency relationship
         TestPlugin providerPlugin = new TestPlugin("provider-plugin", "1.0.0"); // GH-90000
-        providerPlugin.addCapability(createTestCapability("test-capability [GH-90000]"));
+        providerPlugin.addCapability(createTestCapability("test-capability"));
 
         DependentPlugin dependentPlugin = new DependentPlugin( // GH-90000
             "dependent-plugin",
@@ -120,7 +120,7 @@ class KernelPluginLifecycleTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle plugin unregistration [GH-90000]")
+    @DisplayName("Should handle plugin unregistration")
     void testPluginUnregistration() { // GH-90000
         // GIVEN: A registered and started plugin
         TestPlugin plugin = new TestPlugin("test-plugin", "1.0.0"); // GH-90000
@@ -137,7 +137,7 @@ class KernelPluginLifecycleTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle plugin state transitions [GH-90000]")
+    @DisplayName("Should handle plugin state transitions")
     void testPluginStateTransitions() { // GH-90000
         // GIVEN: A plugin tracking state transitions
         StateTrackingPlugin plugin = new StateTrackingPlugin("state-plugin", "1.0.0"); // GH-90000
@@ -163,7 +163,7 @@ class KernelPluginLifecycleTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle plugin initialization failure [GH-90000]")
+    @DisplayName("Should handle plugin initialization failure")
     void testPluginInitializationFailure() { // GH-90000
         // GIVEN: A plugin that fails initialization
         FailingPlugin plugin = new FailingPlugin("failing-plugin", "1.0.0"); // GH-90000
@@ -173,13 +173,13 @@ class KernelPluginLifecycleTest extends EventloopTestBase {
         // THEN: Initialization fails
         assertThatThrownBy(() -> plugin.initialize(context)) // GH-90000
             .isInstanceOf(RuntimeException.class) // GH-90000
-            .hasMessageContaining("Initialization failed [GH-90000]");
+            .hasMessageContaining("Initialization failed");
 
         assertThat(plugin.isInitialized()).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle plugin hot reload [GH-90000]")
+    @DisplayName("Should handle plugin hot reload")
     void testPluginHotReload() { // GH-90000
         // GIVEN: A running plugin
         TestPlugin plugin = new TestPlugin("hot-reload-plugin", "1.0.0"); // GH-90000
@@ -189,12 +189,12 @@ class KernelPluginLifecycleTest extends EventloopTestBase {
 
         // WHEN: Stop, update, and restart
         runPromise(() -> plugin.stop()); // GH-90000
-        plugin.updateVersion("2.0.0 [GH-90000]");
+        plugin.updateVersion("2.0.0");
         runPromise(() -> plugin.start()); // GH-90000
 
         // THEN: Plugin restarted with new version
         assertThat(plugin.isStarted()).isTrue(); // GH-90000
-        assertThat(plugin.getVersion()).isEqualTo("2.0.0 [GH-90000]");
+        assertThat(plugin.getVersion()).isEqualTo("2.0.0");
     }
 
     // Test plugin implementations
@@ -355,7 +355,7 @@ class KernelPluginLifecycleTest extends EventloopTestBase {
 
         @Override
         public void initialize(KernelContext context) { // GH-90000
-            throw new RuntimeException("Initialization failed [GH-90000]");
+            throw new RuntimeException("Initialization failed");
         }
     }
 

@@ -74,7 +74,7 @@ class NodeIndexerTest {
         logger.info("Starting test in directory: {}", tempDir); // GH-90000
 
         // Create a simple TypeScript file
-        Path srcDir = tempDir.resolve("src [GH-90000]");
+        Path srcDir = tempDir.resolve("src");
         Files.createDirectories(srcDir); // GH-90000
         logger.debug("Created source directory: {}", srcDir); // GH-90000
 
@@ -101,7 +101,7 @@ class NodeIndexerTest {
                 export type Operation = (a: number, b: number) => number; // GH-90000
                 """;
 
-        Path tsFile = srcDir.resolve("math.ts [GH-90000]");
+        Path tsFile = srcDir.resolve("math.ts");
         Files.writeString(tsFile, tsContent); // GH-90000
         logger.debug("Created TypeScript file: {}", tsFile); // GH-90000
 
@@ -112,24 +112,24 @@ class NodeIndexerTest {
         // Index the directory
         logger.info("Starting to index directory: {}", tempDir); // GH-90000
         nodeIndexer.index(tempDir, symbolStore); // GH-90000
-        logger.info("Completed indexing directory [GH-90000]");
+        logger.info("Completed indexing directory");
 
         // Debug: Print all exports found
-        logger.debug("All exports found: [GH-90000]");
+        logger.debug("All exports found:");
         symbolStore.debugPrintExports(); // GH-90000
 
         // Verify the exports were found
-        var exports = symbolStore.findTsExports("add [GH-90000]");
+        var exports = symbolStore.findTsExports("add");
         assertFalse(exports.isEmpty(), "Should find 'add' export"); // GH-90000
 
         // Check for default export (multiply) // GH-90000
-        exports = symbolStore.findTsExports("default [GH-90000]");
+        exports = symbolStore.findTsExports("default");
         assertFalse(exports.isEmpty(), "Should find 'default' export"); // GH-90000
 
-        exports = symbolStore.findTsExports("PI [GH-90000]");
+        exports = symbolStore.findTsExports("PI");
         assertFalse(exports.isEmpty(), "Should find 'PI' export"); // GH-90000
 
-        exports = symbolStore.findTsExports("EulerNumber [GH-90000]");
+        exports = symbolStore.findTsExports("EulerNumber");
         assertFalse(exports.isEmpty(), "Should find 'EulerNumber' export"); // GH-90000
     }
 }

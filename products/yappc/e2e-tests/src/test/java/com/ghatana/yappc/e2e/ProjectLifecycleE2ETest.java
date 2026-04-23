@@ -31,12 +31,12 @@ class ProjectLifecycleE2ETest extends EventloopTestBase {
 
     @Test
     @Order(1) // GH-90000
-    @DisplayName("E2E: Should create new project with intent [GH-90000]")
+    @DisplayName("E2E: Should create new project with intent")
     void testCreateProject() throws Exception { // GH-90000
         CreateProjectRequest request = CreateProjectRequest.builder() // GH-90000
                 .tenantId(tenantId) // GH-90000
-                .projectName("E2E Test Microservice [GH-90000]")
-                .intent("Build a user authentication microservice with JWT [GH-90000]")
+                .projectName("E2E Test Microservice")
+                .intent("Build a user authentication microservice with JWT")
                 .build(); // GH-90000
 
         Promise<Project> promise = platform.createProject(request); // GH-90000
@@ -44,20 +44,20 @@ class ProjectLifecycleE2ETest extends EventloopTestBase {
 
         assertThat(project).isNotNull(); // GH-90000
         assertThat(project.id()).isNotNull(); // GH-90000
-        assertThat(project.name()).isEqualTo("E2E Test Microservice [GH-90000]");
-        assertThat(project.status()).isEqualTo("CREATED [GH-90000]");
-        assertThat(project.currentPhase()).isEqualTo("PLANNING [GH-90000]");
+        assertThat(project.name()).isEqualTo("E2E Test Microservice");
+        assertThat(project.status()).isEqualTo("CREATED");
+        assertThat(project.currentPhase()).isEqualTo("PLANNING");
 
         projectId = project.id(); // GH-90000
     }
 
     @Test
     @Order(2) // GH-90000
-    @DisplayName("E2E: Should complete PLANNING phase [GH-90000]")
+    @DisplayName("E2E: Should complete PLANNING phase")
     void testCompletePlanningPhase() throws Exception { // GH-90000
         PhaseExecutionRequest request = PhaseExecutionRequest.builder() // GH-90000
                 .projectId(projectId) // GH-90000
-                .phase("PLANNING [GH-90000]")
+                .phase("PLANNING")
                 .tenantId(tenantId) // GH-90000
                 .build(); // GH-90000
 
@@ -66,18 +66,18 @@ class ProjectLifecycleE2ETest extends EventloopTestBase {
 
         assertThat(result).isNotNull(); // GH-90000
         assertThat(result.success()).isTrue(); // GH-90000
-        assertThat(result.phase()).isEqualTo("PLANNING [GH-90000]");
-        assertThat(result.artifacts()).containsKey("requirements [GH-90000]");
-        assertThat(result.artifacts()).containsKey("architecture [GH-90000]");
+        assertThat(result.phase()).isEqualTo("PLANNING");
+        assertThat(result.artifacts()).containsKey("requirements");
+        assertThat(result.artifacts()).containsKey("architecture");
     }
 
     @Test
     @Order(3) // GH-90000
-    @DisplayName("E2E: Should complete DESIGN phase [GH-90000]")
+    @DisplayName("E2E: Should complete DESIGN phase")
     void testCompleteDesignPhase() throws Exception { // GH-90000
         PhaseExecutionRequest request = PhaseExecutionRequest.builder() // GH-90000
                 .projectId(projectId) // GH-90000
-                .phase("DESIGN [GH-90000]")
+                .phase("DESIGN")
                 .tenantId(tenantId) // GH-90000
                 .build(); // GH-90000
 
@@ -85,18 +85,18 @@ class ProjectLifecycleE2ETest extends EventloopTestBase {
         PhaseResult result = runPromise(() -> promise); // GH-90000
 
         assertThat(result.success()).isTrue(); // GH-90000
-        assertThat(result.phase()).isEqualTo("DESIGN [GH-90000]");
-        assertThat(result.artifacts()).containsKey("apiSpec [GH-90000]");
-        assertThat(result.artifacts()).containsKey("dataModel [GH-90000]");
+        assertThat(result.phase()).isEqualTo("DESIGN");
+        assertThat(result.artifacts()).containsKey("apiSpec");
+        assertThat(result.artifacts()).containsKey("dataModel");
     }
 
     @Test
     @Order(4) // GH-90000
-    @DisplayName("E2E: Should complete IMPLEMENTATION phase [GH-90000]")
+    @DisplayName("E2E: Should complete IMPLEMENTATION phase")
     void testCompleteImplementationPhase() throws Exception { // GH-90000
         PhaseExecutionRequest request = PhaseExecutionRequest.builder() // GH-90000
                 .projectId(projectId) // GH-90000
-                .phase("IMPLEMENTATION [GH-90000]")
+                .phase("IMPLEMENTATION")
                 .tenantId(tenantId) // GH-90000
                 .build(); // GH-90000
 
@@ -104,18 +104,18 @@ class ProjectLifecycleE2ETest extends EventloopTestBase {
         PhaseResult result = runPromise(() -> promise); // GH-90000
 
         assertThat(result.success()).isTrue(); // GH-90000
-        assertThat(result.phase()).isEqualTo("IMPLEMENTATION [GH-90000]");
-        assertThat(result.artifacts()).containsKey("sourceCode [GH-90000]");
-        assertThat(result.artifacts()).containsKey("buildConfig [GH-90000]");
+        assertThat(result.phase()).isEqualTo("IMPLEMENTATION");
+        assertThat(result.artifacts()).containsKey("sourceCode");
+        assertThat(result.artifacts()).containsKey("buildConfig");
     }
 
     @Test
     @Order(5) // GH-90000
-    @DisplayName("E2E: Should complete TESTING phase [GH-90000]")
+    @DisplayName("E2E: Should complete TESTING phase")
     void testCompleteTestingPhase() throws Exception { // GH-90000
         PhaseExecutionRequest request = PhaseExecutionRequest.builder() // GH-90000
                 .projectId(projectId) // GH-90000
-                .phase("TESTING [GH-90000]")
+                .phase("TESTING")
                 .tenantId(tenantId) // GH-90000
                 .build(); // GH-90000
 
@@ -123,14 +123,14 @@ class ProjectLifecycleE2ETest extends EventloopTestBase {
         PhaseResult result = runPromise(() -> promise); // GH-90000
 
         assertThat(result.success()).isTrue(); // GH-90000
-        assertThat(result.phase()).isEqualTo("TESTING [GH-90000]");
-        assertThat(result.artifacts()).containsKey("testResults [GH-90000]");
-        assertThat(result.artifacts()).containsKey("coverageReport [GH-90000]");
+        assertThat(result.phase()).isEqualTo("TESTING");
+        assertThat(result.artifacts()).containsKey("testResults");
+        assertThat(result.artifacts()).containsKey("coverageReport");
     }
 
     @Test
     @Order(6) // GH-90000
-    @DisplayName("E2E: Should retrieve complete project with all phases [GH-90000]")
+    @DisplayName("E2E: Should retrieve complete project with all phases")
     void testGetCompleteProject() throws Exception { // GH-90000
         Promise<Project> promise = platform.getProject(projectId, tenantId); // GH-90000
         Project project = runPromise(() -> promise); // GH-90000
@@ -141,12 +141,12 @@ class ProjectLifecycleE2ETest extends EventloopTestBase {
         assertThat(project.completedPhases()).containsExactly( // GH-90000
             "PLANNING", "DESIGN", "IMPLEMENTATION", "TESTING"
         );
-        assertThat(project.status()).isEqualTo("COMPLETED [GH-90000]");
+        assertThat(project.status()).isEqualTo("COMPLETED");
     }
 
     @Test
     @Order(7) // GH-90000
-    @DisplayName("E2E: Should track project metrics [GH-90000]")
+    @DisplayName("E2E: Should track project metrics")
     void testProjectMetrics() throws Exception { // GH-90000
         Promise<ProjectMetrics> promise = platform.getProjectMetrics(projectId, tenantId); // GH-90000
         ProjectMetrics metrics = runPromise(() -> promise); // GH-90000
@@ -160,7 +160,7 @@ class ProjectLifecycleE2ETest extends EventloopTestBase {
 
     @Test
     @Order(8) // GH-90000
-    @DisplayName("E2E: Should list projects for tenant [GH-90000]")
+    @DisplayName("E2E: Should list projects for tenant")
     void testListProjects() throws Exception { // GH-90000
         Promise<Project[]> promise = platform.listProjects(tenantId); // GH-90000
         Project[] projects = runPromise(() -> promise); // GH-90000

@@ -64,7 +64,11 @@ import java.util.concurrent.atomic.AtomicReference;
  * @see ProbabilisticEvaluator
  * @see NFA
  * @see DetectionPlan
- */
+  * @doc.type interface
+ * @doc.purpose Provides pattern detection agent functionality.
+ * @doc.layer product
+ * @doc.pattern Agent
+*/
 public class PatternDetectionAgent extends AbstractOperator {
 
     // ─── Configuration ───────────────────────────────────────────────────────────

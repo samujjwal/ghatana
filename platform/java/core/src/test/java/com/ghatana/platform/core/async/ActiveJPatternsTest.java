@@ -26,7 +26,7 @@ class ActiveJPatternsTest extends EventloopTestBase {
     private <T> Throwable runExpectFailure(Promise<T> p) { // GH-90000
         try {
             runPromise(() -> p); // GH-90000
-            throw new AssertionError("Expected promise to fail but it succeeded [GH-90000]");
+            throw new AssertionError("Expected promise to fail but it succeeded");
         } catch (RuntimeException e) { // GH-90000
             return e.getCause() != null ? e.getCause() : e; // GH-90000
         }
@@ -58,21 +58,21 @@ class ActiveJPatternsTest extends EventloopTestBase {
     @Test
     void sequential_firstFails_stopsEarly() { // GH-90000
         AtomicInteger executed = new AtomicInteger(0); // GH-90000
-        Promise<Integer> failing = Promise.ofException(new RuntimeException("boom [GH-90000]"));
+        Promise<Integer> failing = Promise.ofException(new RuntimeException("boom"));
         Promise<Integer> second  = Promise.of(executed.incrementAndGet()); // GH-90000
 
         Throwable error = runExpectFailure(ActiveJPatterns.sequential(failing, second)); // GH-90000
-        assertThat(error).hasMessageContaining("boom [GH-90000]");
+        assertThat(error).hasMessageContaining("boom");
     }
 
     @Test
     void sequential_middleFails_remainingNotRun() { // GH-90000
         Promise<Integer> p1 = Promise.of(1); // GH-90000
-        Promise<Integer> pFail = Promise.ofException(new RuntimeException("mid-fail [GH-90000]"));
+        Promise<Integer> pFail = Promise.ofException(new RuntimeException("mid-fail"));
         Promise<Integer> p3 = Promise.of(3); // GH-90000
 
         Throwable error = runExpectFailure(ActiveJPatterns.sequential(p1, pFail, p3)); // GH-90000
-        assertThat(error).hasMessageContaining("mid-fail [GH-90000]");
+        assertThat(error).hasMessageContaining("mid-fail");
     }
 
     // =========================================================================
@@ -106,7 +106,7 @@ class ActiveJPatternsTest extends EventloopTestBase {
     @Test
     void parallel_multipleElements_returnsAll() { // GH-90000
         List<String> result = run(ActiveJPatterns.parallel( // GH-90000
-                Promise.of("a [GH-90000]"), Promise.of("b [GH-90000]"), Promise.of("c [GH-90000]")));
+                Promise.of("a"), Promise.of("b"), Promise.of("c")));
         assertThat(result).containsExactlyInAnyOrder("a", "b", "c"); // GH-90000
     }
 
@@ -172,11 +172,11 @@ class ActiveJPatternsTest extends EventloopTestBase {
     void withRetry_maxRetriesExhausted_propagatesLastError() { // GH-90000
         AtomicInteger calls = new AtomicInteger(0); // GH-90000
         Throwable error = runExpectFailure(ActiveJPatterns.withRetry( // GH-90000
-                () -> { calls.incrementAndGet(); return Promise.ofException(new RuntimeException("always-fails [GH-90000]")); },
+                () -> { calls.incrementAndGet(); return Promise.ofException(new RuntimeException("always-fails")); },
                 2,
                 Duration.ofMillis(1), // GH-90000
                 Duration.ofMillis(10))); // GH-90000
-        assertThat(error).hasMessageContaining("always-fails [GH-90000]");
+        assertThat(error).hasMessageContaining("always-fails");
         assertThat(calls.get()).isEqualTo(3); // 1 initial + 2 retries // GH-90000
     }
 
@@ -184,7 +184,7 @@ class ActiveJPatternsTest extends EventloopTestBase {
     void withRetry_zeroRetries_failsImmediately() { // GH-90000
         AtomicInteger calls = new AtomicInteger(0); // GH-90000
         runExpectFailure(ActiveJPatterns.withRetry( // GH-90000
-                () -> { calls.incrementAndGet(); return Promise.ofException(new RuntimeException("no-retry [GH-90000]")); },
+                () -> { calls.incrementAndGet(); return Promise.ofException(new RuntimeException("no-retry")); },
                 0,
                 Duration.ofMillis(1), // GH-90000
                 Duration.ofMillis(10))); // GH-90000

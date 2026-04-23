@@ -14,6 +14,11 @@ import com.ghatana.core.operator.UnifiedOperator;
 import java.util.Set;
 
 /**
+ * @doc.type interface
+ * @doc.purpose Defines a ServiceLoader SPI for discovering and creating external operators.
+ * @doc.layer product
+ * @doc.pattern Provider
+ *
  * Service Provider Interface for external operator implementations.
  *
  * <p>Third-party operator providers implement this interface and register via
@@ -22,21 +27,35 @@ import java.util.Set;
  *
  * <h2>Usage</h2>
  * <pre>{@code
- * // 1. Implement the SPI
- * public class CustomFilterProvider implements OperatorProvider {
+ * public final class CustomFilterProvider implements OperatorProvider {
+ *     @Override
  *     public String getProviderId() { return "acme-filters"; }
- *     public Set<OperatorId> getOperatorIds() { return Set.of(OperatorId.parse("acme:filter:1.0")); }
- *     public UnifiedOperator createOperator(OperatorId id, OperatorConfig config) { ... }
+ *
+ *     @Override
+ *     public String getProviderName() { return "ACME Filters"; }
+ *
+ *     @Override
+ *     public Set<OperatorId> getOperatorIds() {
+ *         return Set.of(OperatorId.parse("acme:filter:1.0"));
+ *     }
+ *
+ *     @Override
+ *     public Set<OperatorType> getOperatorTypes() {
+ *         return Set.of(OperatorType.FILTER);
+ *     }
+ *
+ *     @Override
+ *     public UnifiedOperator createOperator(OperatorId operatorId, OperatorConfig config) {
+ *         throw new UnsupportedOperationException("example");
+ *     }
  * }
  *
- * // 2. Register in META-INF/services/com.ghatana.core.operator.spi.OperatorProvider:
- * //    com.acme.CustomFilterProvider
- *
- * // 3. Platform auto-discovers and registers operators in OperatorCatalog
+ * // Register in META-INF/services/com.ghatana.core.operator.spi.OperatorProvider:
+ * // com.acme.CustomFilterProvider
  * }</pre>
  *
- * @see OperatorProviderRegistry Discovery and registration coordinator
- * @see com.ghatana.core.operator.UnifiedOperator The core operator interface
+ * @see OperatorProviderRegistry discovery and registration coordinator
+ * @see com.ghatana.core.operator.UnifiedOperator core operator contract
  */
 public interface OperatorProvider {
 

@@ -40,7 +40,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer knowledge
  * @doc.pattern Test
  */
-@DisplayName("Knowledge Retrieval Integration Tests [GH-90000]")
+@DisplayName("Knowledge Retrieval Integration Tests")
 public class KnowledgeRetrievalIntegrationTest {
 
     @ClassRule
@@ -54,7 +54,7 @@ public class KnowledgeRetrievalIntegrationTest {
     }
 
     @Test
-    @DisplayName("BM25Retriever#retrieve - returns structured RetrievalResult [GH-90000]")
+    @DisplayName("BM25Retriever#retrieve - returns structured RetrievalResult")
     public void testBM25RetrievalReturnsStructuredResult() { // GH-90000
         // GIVEN
         YappcBM25Retriever retriever = new YappcBM25Retriever( // GH-90000
@@ -63,8 +63,8 @@ public class KnowledgeRetrievalIntegrationTest {
         );
 
         RetrievalRequest request = new RetrievalRequest.Builder() // GH-90000
-            .query("How do I configure the agent lifecycle? [GH-90000]")
-            .tenantId("tenant-1 [GH-90000]")
+            .query("How do I configure the agent lifecycle?")
+            .tenantId("tenant-1")
             .limit(10) // GH-90000
             .build(); // GH-90000
 
@@ -74,7 +74,7 @@ public class KnowledgeRetrievalIntegrationTest {
     }
 
     @Test
-    @DisplayName("DenseVectorRetriever#retrieve - framework initialized correctly [GH-90000]")
+    @DisplayName("DenseVectorRetriever#retrieve - framework initialized correctly")
     public void testDenseVectorReviewerFrameworkInit() { // GH-90000
         // GIVEN
         YappcDenseVectorRetriever retriever = new YappcDenseVectorRetriever( // GH-90000
@@ -88,7 +88,7 @@ public class KnowledgeRetrievalIntegrationTest {
     }
 
     @Test
-    @DisplayName("KnowledgeModule - DI configuration provides both retrievers [GH-90000]")
+    @DisplayName("KnowledgeModule - DI configuration provides both retrievers")
     public void testKnowledgeModuleDiConfiguration() { // GH-90000
         // GIVEN
         KnowledgeModule module = new KnowledgeModule(); // GH-90000
@@ -105,20 +105,20 @@ public class KnowledgeRetrievalIntegrationTest {
             // If DI fails due to missing dependencies, that's OK for unit test
             // The important thing is the module structure is correct
             assertThat(e.getMessage()) // GH-90000
-                .doesNotContain("KnowledgeModule [GH-90000]")
-                .doesNotContain("@Provides [GH-90000]"); // Not a configuration error
+                .doesNotContain("KnowledgeModule")
+                .doesNotContain("@Provides"); // Not a configuration error
         }
     }
 
     @Test
-    @DisplayName("BM25Retriever#retrieve - handles empty query correctly [GH-90000]")
+    @DisplayName("BM25Retriever#retrieve - handles empty query correctly")
     public void testBM25HandlesEmptyQuery() { // GH-90000
         // GIVEN
         YappcBM25Retriever retriever = new YappcBM25Retriever(null, executor); // GH-90000
 
         RetrievalRequest emptyRequest = new RetrievalRequest.Builder() // GH-90000
-            .query(" [GH-90000]")
-            .tenantId("tenant-1 [GH-90000]")
+            .query("")
+            .tenantId("tenant-1")
             .limit(10) // GH-90000
             .build(); // GH-90000
 
@@ -128,14 +128,14 @@ public class KnowledgeRetrievalIntegrationTest {
     }
 
     @Test
-    @DisplayName("DenseVectorRetriever#retrieve - handles missing embedding gracefully [GH-90000]")
+    @DisplayName("DenseVectorRetriever#retrieve - handles missing embedding gracefully")
     public void testDenseVectorHandlesMissingEmbedding() { // GH-90000
         // GIVEN
         YappcDenseVectorRetriever retriever = new YappcDenseVectorRetriever(null, executor); // GH-90000
 
         RetrievalRequest request = new RetrievalRequest.Builder() // GH-90000
-            .query("What is the best practice for agent authorization? [GH-90000]")
-            .tenantId("tenant-1 [GH-90000]")
+            .query("What is the best practice for agent authorization?")
+            .tenantId("tenant-1")
             .limit(5) // GH-90000
             .build(); // GH-90000
 
@@ -145,7 +145,7 @@ public class KnowledgeRetrievalIntegrationTest {
     }
 
     @Test
-    @DisplayName("Hybrid Retrieval - both BM25 and Dense can be composed [GH-90000]")
+    @DisplayName("Hybrid Retrieval - both BM25 and Dense can be composed")
     public void testHybridRetrievalCompositionPattern() { // GH-90000
         // GIVEN
         RetrievalPipeline bm25 = new YappcBM25Retriever(null, executor); // GH-90000

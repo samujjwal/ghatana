@@ -37,7 +37,7 @@ import org.mockito.quality.Strictness;
 class InteractiveCommandTest {
 
     private static final java.util.regex.Pattern ANSI_PATTERN =
-            java.util.regex.Pattern.compile("\\x1B\\[[;\\d]*m [GH-90000]");
+            java.util.regex.Pattern.compile("\\x1B\\[[;\\d]*m");
 
     @Mock private PolyfixCommand parentCommand;
 
@@ -72,11 +72,11 @@ class InteractiveCommandTest {
         command.parent = parentCommand;
 
         // Setup mocks
-        when(mockContext.getProjectRoot()).thenReturn(Path.of("/test/project [GH-90000]"));
+        when(mockContext.getProjectRoot()).thenReturn(Path.of("/test/project"));
         when(mockContext.getMaxPasses()).thenReturn(3); // GH-90000
         when(mockContext.isDryRun()).thenReturn(false); // GH-90000
         when(mockContext.getSourceFiles()) // GH-90000
-                .thenReturn(Set.of(Path.of("test1.java [GH-90000]"), Path.of("test2.py [GH-90000]")));
+                .thenReturn(Set.of(Path.of("test1.java"), Path.of("test2.py")));
         when(mockContext.getActiveRules()) // GH-90000
                 .thenReturn( // GH-90000
                         List.of( // GH-90000
@@ -105,82 +105,82 @@ class InteractiveCommandTest {
         command.initialize(); // GH-90000
 
         // Execute
-        command.processCommand("diagnose [GH-90000]");
+        command.processCommand("diagnose");
         terminal.writer().flush(); // GH-90000
 
         // Verify output contains expected sections
-        String outputStr = ANSI_PATTERN.matcher(output.toString()).replaceAll(" [GH-90000]");
+        String outputStr = ANSI_PATTERN.matcher(output.toString()).replaceAll("");
 
         assertAll( // GH-90000
                 () -> // GH-90000
                         assertTrue( // GH-90000
-                                outputStr.contains("=== Running Diagnostics === [GH-90000]"),
+                                outputStr.contains("=== Running Diagnostics ==="),
                                 "Should include diagnostics header"),
                 () -> // GH-90000
                         assertTrue( // GH-90000
-                                outputStr.contains("Project Structure [GH-90000]"),
+                                outputStr.contains("Project Structure"),
                                 "Should include project structure section"),
                 () -> // GH-90000
                         assertTrue( // GH-90000
-                                outputStr.contains("Language Support [GH-90000]"),
+                                outputStr.contains("Language Support"),
                                 "Should include language support section"),
                 () -> // GH-90000
                         assertTrue( // GH-90000
-                                outputStr.contains("Configuration [GH-90000]"),
+                                outputStr.contains("Configuration"),
                                 "Should include configuration section"),
                 () -> // GH-90000
                         assertTrue( // GH-90000
-                                outputStr.contains("File Analysis [GH-90000]"),
+                                outputStr.contains("File Analysis"),
                                 "Should include file analysis section"),
                 () -> // GH-90000
                         assertTrue( // GH-90000
-                                outputStr.contains("Active Rules [GH-90000]"),
+                                outputStr.contains("Active Rules"),
                                 "Should include active rules section"),
                 () -> // GH-90000
                         assertTrue( // GH-90000
-                                outputStr.contains("Performance Metrics [GH-90000]"),
+                                outputStr.contains("Performance Metrics"),
                                 "Should include performance metrics section"),
                 () -> // GH-90000
                         assertTrue( // GH-90000
-                                outputStr.contains("=== End of Diagnostics === [GH-90000]"),
+                                outputStr.contains("=== End of Diagnostics ==="),
                                 "Should include end of diagnostics marker"));
     }
 
     @Test
     void testDiagnoseWithError() throws Exception { // GH-90000
         // Setup to throw an exception
-        when(mockContext.getProjectRoot()).thenThrow(new RuntimeException("Test error [GH-90000]"));
+        when(mockContext.getProjectRoot()).thenThrow(new RuntimeException("Test error"));
         command.initialize(); // GH-90000
 
         // Execute
-        command.processCommand("diagnose [GH-90000]");
+        command.processCommand("diagnose");
         terminal.writer().flush(); // GH-90000
 
         // Verify error is handled and output contains error message
-        String outputStr = ANSI_PATTERN.matcher(output.toString()).replaceAll(" [GH-90000]");
-        assertTrue(outputStr.contains("Error running diagnostics [GH-90000]"), "Should include error message");
-        assertTrue(outputStr.contains("Test error [GH-90000]"), "Should include the actual error message");
+        String outputStr = ANSI_PATTERN.matcher(output.toString()).replaceAll("");
+        assertTrue(outputStr.contains("Error running diagnostics"), "Should include error message");
+        assertTrue(outputStr.contains("Test error"), "Should include the actual error message");
     }
 
     @Test
     void testHelpCommand() throws Exception { // GH-90000
         command.initialize(); // GH-90000
-        command.processCommand("help [GH-90000]");
+        command.processCommand("help");
         terminal.writer().flush(); // GH-90000
 
-        String outputStr = ANSI_PATTERN.matcher(output.toString()).replaceAll(" [GH-90000]");
+        String outputStr = ANSI_PATTERN.matcher(output.toString()).replaceAll("");
         assertAll( // GH-90000
                 () -> // GH-90000
                         assertTrue( // GH-90000
-                                outputStr.contains("Available commands: [GH-90000]"),
+                                outputStr.contains("Available commands:"),
                                 "Should include available commands header"),
-                () -> assertTrue(outputStr.contains("run [GH-90000]"), "Should include run command"),
-                () -> assertTrue(outputStr.contains("diagnose [GH-90000]"), "Should include diagnose command"),
-                () -> assertTrue(outputStr.contains("help [GH-90000]"), "Should include help command"),
-                () -> assertTrue(outputStr.contains("clear [GH-90000]"), "Should include clear command"),
+                () -> assertTrue(outputStr.contains("run"), "Should include run command"),
+                () -> assertTrue(outputStr.contains("diagnose"), "Should include diagnose command"),
+                () -> assertTrue(outputStr.contains("help"), "Should include help command"),
+                () -> assertTrue(outputStr.contains("clear"), "Should include clear command"),
                 () -> // GH-90000
                         assertTrue( // GH-90000
-                                outputStr.contains("exit|quit [GH-90000]"),
+                                outputStr.contains("exit|quit"),
                                 "Should include exit/quit commands"));
     }
 }

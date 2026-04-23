@@ -28,7 +28,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer infrastructure
  * @doc.pattern Repository
  */
-@DisplayName("JpaEntityRepositoryImpl Regression Tests [GH-90000]")
+@DisplayName("JpaEntityRepositoryImpl Regression Tests")
 class JpaEntityRepositoryImplTest extends EventloopTestBase {
 
     private JpaEntityRepositoryImpl repository;
@@ -44,11 +44,11 @@ class JpaEntityRepositoryImplTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("findAll() filter fast-fail constraint [GH-90000]")
+    @DisplayName("findAll() filter fast-fail constraint")
     class FindAllFilterFastFail {
 
         @Test
-        @DisplayName("should reject Promise with UnsupportedOperationException when filter is non-empty [GH-90000]")
+        @DisplayName("should reject Promise with UnsupportedOperationException when filter is non-empty")
         void shouldRejectWhenFilterIsNonEmpty() { // GH-90000
             Map<String, Object> nonEmptyFilter = Map.of("status", "active"); // GH-90000
 
@@ -61,12 +61,12 @@ class JpaEntityRepositoryImplTest extends EventloopTestBase {
                             0,
                             100)))
                     .isInstanceOf(UnsupportedOperationException.class) // GH-90000
-                    .hasMessageContaining("findAll() [GH-90000]")
-                    .hasMessageContaining("findByQuery() [GH-90000]");
+                    .hasMessageContaining("findAll()")
+                    .hasMessageContaining("findByQuery()");
         }
 
         @Test
-        @DisplayName("should reject Promise with UnsupportedOperationException for any key-value filter [GH-90000]")
+        @DisplayName("should reject Promise with UnsupportedOperationException for any key-value filter")
         void shouldRejectForAnyNonEmptyFilter() { // GH-90000
             Map<String, Object> multiKeyFilter = Map.of( // GH-90000
                     "category", "electronics",
@@ -85,7 +85,7 @@ class JpaEntityRepositoryImplTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should NOT reject Promise when filter is null [GH-90000]")
+        @DisplayName("should NOT reject Promise when filter is null")
         void shouldNotRejectWhenFilterIsNull() { // GH-90000
             // null filter is the permitted fast path — it proceeds to the blocking JPA call.
             // We cannot fully execute the JPA call without EntityManager, but verifying that
@@ -104,7 +104,7 @@ class JpaEntityRepositoryImplTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should NOT reject Promise when filter is empty map [GH-90000]")
+        @DisplayName("should NOT reject Promise when filter is empty map")
         void shouldNotRejectWhenFilterIsEmpty() { // GH-90000
             assertThatThrownBy(() -> // GH-90000
                     runPromise(() -> repository.findAll( // GH-90000
@@ -118,7 +118,7 @@ class JpaEntityRepositoryImplTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should throw NullPointerException for null tenantId (constructor precondition) [GH-90000]")
+        @DisplayName("should throw NullPointerException for null tenantId (constructor precondition)")
         void shouldThrowForNullTenantId() { // GH-90000
             assertThatThrownBy(() -> // GH-90000
                     runPromise(() -> repository.findAll( // GH-90000
@@ -132,7 +132,7 @@ class JpaEntityRepositoryImplTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should throw NullPointerException for null collectionName [GH-90000]")
+        @DisplayName("should throw NullPointerException for null collectionName")
         void shouldThrowForNullCollectionName() { // GH-90000
             assertThatThrownBy(() -> // GH-90000
                     runPromise(() -> repository.findAll( // GH-90000

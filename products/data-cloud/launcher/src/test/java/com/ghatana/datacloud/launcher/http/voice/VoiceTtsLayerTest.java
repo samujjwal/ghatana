@@ -17,7 +17,7 @@ import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("Voice TTS Layer Tests [GH-90000]")
+@DisplayName("Voice TTS Layer Tests")
 class VoiceTtsLayerTest extends EventloopTestBase {
 
     private HttpServer server;
@@ -30,11 +30,11 @@ class VoiceTtsLayerTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("NopVoiceTtsAdapter [GH-90000]")
+    @DisplayName("NopVoiceTtsAdapter")
     class NopVoiceTtsAdapterTests {
 
         @Test
-        @DisplayName("isAvailable returns false and synthesize returns empty audio [GH-90000]")
+        @DisplayName("isAvailable returns false and synthesize returns empty audio")
         void nopAdapterReturnsEmptyAudio() { // GH-90000
             assertThat(NopVoiceTtsAdapter.INSTANCE.isAvailable()).isFalse(); // GH-90000
             byte[] audio = runPromise(() -> NopVoiceTtsAdapter.INSTANCE.synthesize("hello", "en")); // GH-90000
@@ -43,7 +43,7 @@ class VoiceTtsLayerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("HTTP TTS adapter synthesizes audio bytes from a configured endpoint [GH-90000]")
+    @DisplayName("HTTP TTS adapter synthesizes audio bytes from a configured endpoint")
     void httpTtsAdapterSynthesizesAudioBytes() throws Exception { // GH-90000
         byte[] expectedAudio = "RIFFdemo-audio".getBytes(StandardCharsets.UTF_8); // GH-90000
         server = HttpServer.create(new InetSocketAddress(0), 0); // GH-90000

@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("TraceIdMdcFilter Tests [GH-90000]")
+@DisplayName("TraceIdMdcFilter Tests")
 class TraceIdMdcFilterTest extends EventloopTestBase {
 
     @AfterEach
@@ -26,7 +26,7 @@ class TraceIdMdcFilterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should keep correlation context available for async delegate execution [GH-90000]")
+    @DisplayName("Should keep correlation context available for async delegate execution")
     void shouldKeepCorrelationContextAvailableForAsyncDelegateExecution() { // GH-90000
         TraceIdMdcFilter filter = new TraceIdMdcFilter(); // GH-90000
         AtomicReference<String> observedCorrelationId = new AtomicReference<>(); // GH-90000
@@ -44,16 +44,16 @@ class TraceIdMdcFilterTest extends EventloopTestBase {
             })));
 
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/traces") // GH-90000
-            .withHeader(HttpHeaders.of("X-Request-Id [GH-90000]"), "req-shared-123")
+            .withHeader(HttpHeaders.of("X-Request-Id"), "req-shared-123")
             .build(); // GH-90000
 
         HttpResponse response = ActiveJServletTestUtil.serve(servlet, request, runner); // GH-90000
 
         assertThat(response.getCode()).isEqualTo(200); // GH-90000
-        assertThat(observedCorrelationId.get()).isEqualTo("req-shared-123 [GH-90000]");
-        assertThat(observedRequestId.get()).isEqualTo("req-shared-123 [GH-90000]");
-        assertThat(observedMdcCorrelationId.get()).isEqualTo("req-shared-123 [GH-90000]");
-        assertThat(observedMdcRequestId.get()).isEqualTo("req-shared-123 [GH-90000]");
+        assertThat(observedCorrelationId.get()).isEqualTo("req-shared-123");
+        assertThat(observedRequestId.get()).isEqualTo("req-shared-123");
+        assertThat(observedMdcCorrelationId.get()).isEqualTo("req-shared-123");
+        assertThat(observedMdcRequestId.get()).isEqualTo("req-shared-123");
         assertThat(CorrelationContext.getCorrelationId()).isNull(); // GH-90000
         assertThat(CorrelationContext.getRequestId()).isNull(); // GH-90000
         assertThat(MDC.get(CorrelationContext.CORRELATION_ID_KEY)).isNull(); // GH-90000
@@ -61,7 +61,7 @@ class TraceIdMdcFilterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should restore outer correlation context after wrapped request completes [GH-90000]")
+    @DisplayName("Should restore outer correlation context after wrapped request completes")
     void shouldRestoreOuterCorrelationContextAfterWrappedRequestCompletes() { // GH-90000
         TraceIdMdcFilter filter = new TraceIdMdcFilter(); // GH-90000
         CorrelationContext.initialize("outer-corr", "outer-user", "outer-tenant", "outer-req"); // GH-90000
@@ -72,13 +72,13 @@ class TraceIdMdcFilterTest extends EventloopTestBase {
         HttpResponse response = ActiveJServletTestUtil.serve(servlet, request, runner); // GH-90000
 
         assertThat(response.getCode()).isEqualTo(200); // GH-90000
-        assertThat(CorrelationContext.getCorrelationId()).isEqualTo("outer-corr [GH-90000]");
-        assertThat(CorrelationContext.getUserId()).isEqualTo("outer-user [GH-90000]");
-        assertThat(CorrelationContext.getTenantId()).isEqualTo("outer-tenant [GH-90000]");
-        assertThat(CorrelationContext.getRequestId()).isEqualTo("outer-req [GH-90000]");
-        assertThat(MDC.get(CorrelationContext.CORRELATION_ID_KEY)).isEqualTo("outer-corr [GH-90000]");
-        assertThat(MDC.get(CorrelationContext.USER_ID_KEY)).isEqualTo("outer-user [GH-90000]");
-        assertThat(MDC.get(CorrelationContext.TENANT_ID_KEY)).isEqualTo("outer-tenant [GH-90000]");
-        assertThat(MDC.get(CorrelationContext.REQUEST_ID_KEY)).isEqualTo("outer-req [GH-90000]");
+        assertThat(CorrelationContext.getCorrelationId()).isEqualTo("outer-corr");
+        assertThat(CorrelationContext.getUserId()).isEqualTo("outer-user");
+        assertThat(CorrelationContext.getTenantId()).isEqualTo("outer-tenant");
+        assertThat(CorrelationContext.getRequestId()).isEqualTo("outer-req");
+        assertThat(MDC.get(CorrelationContext.CORRELATION_ID_KEY)).isEqualTo("outer-corr");
+        assertThat(MDC.get(CorrelationContext.USER_ID_KEY)).isEqualTo("outer-user");
+        assertThat(MDC.get(CorrelationContext.TENANT_ID_KEY)).isEqualTo("outer-tenant");
+        assertThat(MDC.get(CorrelationContext.REQUEST_ID_KEY)).isEqualTo("outer-req");
     }
 }

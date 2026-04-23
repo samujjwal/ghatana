@@ -80,7 +80,7 @@ class RuffRunnerTest extends EventloopTestBase {
                 assertFalse(diagnostics.isEmpty(), "Should find at least one diagnostic"); // GH-90000
                 UnifiedDiagnostic first = diagnostics.get(0); // GH-90000
                 assertEquals(SYNTAX_ERROR_PY, first.getFile()); // GH-90000
-                assertTrue(first.getMessage().contains("SyntaxError [GH-90000]"), "Should be a syntax error");
+                assertTrue(first.getMessage().contains("SyntaxError"), "Should be a syntax error");
         }
 
         @Test
@@ -156,7 +156,7 @@ class RuffRunnerTest extends EventloopTestBase {
                 // After fixing, the file should be modified
                 String fixedCode = Files.readString(pythonFile); // GH-90000
                 assertNotEquals(originalCode, fixedCode, "File should be modified after fix"); // GH-90000
-                assertFalse(fixedCode.contains("import os [GH-90000]"), "Unused import should be removed");
+                assertFalse(fixedCode.contains("import os"), "Unused import should be removed");
         }
 
         @Test
@@ -168,7 +168,7 @@ class RuffRunnerTest extends EventloopTestBase {
                                 FakeProcessRunner.response(new ProcessResult(0, "[]", ""))); // GH-90000
 
                 List<UnifiedDiagnostic> diagnostics = runPromise(() -> // GH-90000
-                                ruffRunner.withIncludePatterns(List.of("nonexistent.py [GH-90000]")).run());
+                                ruffRunner.withIncludePatterns(List.of("nonexistent.py")).run());
 
                 assertTrue(diagnostics.isEmpty(), "Should return empty diagnostics for nonexistent file"); // GH-90000
         }
@@ -200,22 +200,22 @@ class RuffRunnerTest extends EventloopTestBase {
 
                 assertFalse(diagnostics.isEmpty(), "Should find syntax error in invalid Python"); // GH-90000
                 assertTrue( // GH-90000
-                                diagnostics.stream().anyMatch(d -> d.getCode().startsWith("E9 [GH-90000]")),
+                                diagnostics.stream().anyMatch(d -> d.getCode().startsWith("E9")),
                                 "Should have syntax error code (E9xx)"); // GH-90000
         }
 
         private static List<String> ruffArgs(boolean fix, String... include) { // GH-90000
                 List<String> args = new ArrayList<>(); // GH-90000
-                args.add("check [GH-90000]");
-                args.add("--format=json [GH-90000]");
+                args.add("check");
+                args.add("--format=json");
                 if (fix) { // GH-90000
-                        args.add("--fix [GH-90000]");
+                        args.add("--fix");
                 }
                 for (String entry : include) { // GH-90000
                         args.add(entry); // GH-90000
                 }
                 if (!DEFAULT_IGNORE_PATTERNS.isEmpty()) { // GH-90000
-                        args.add("--exclude [GH-90000]");
+                        args.add("--exclude");
                         args.add(String.join(",", DEFAULT_IGNORE_PATTERNS)); // GH-90000
                 }
                 return args;
@@ -243,7 +243,7 @@ class RuffRunnerTest extends EventloopTestBase {
                                 List<String> lines = Files.readAllLines(file); // GH-90000
                                 List<String> filtered = new ArrayList<>(); // GH-90000
                                 for (String line : lines) { // GH-90000
-                                        if (!line.startsWith("import  [GH-90000]")) {
+                                        if (!line.startsWith("import ")) {
                                                 filtered.add(line); // GH-90000
                                         }
                                 }

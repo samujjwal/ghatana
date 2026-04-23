@@ -70,32 +70,32 @@ class PluginManagementServiceTest {
         Path jar = buildTestPluginJar(); // GH-90000
 
         // Load plugin directly through PluginManager to get clear error messages
-        Path workspace = Path.of(System.getProperty("user.dir [GH-90000]"));
-        Path packs = workspace.resolve("packs [GH-90000]");
+        Path workspace = Path.of(System.getProperty("user.dir"));
+        Path packs = workspace.resolve("packs");
         com.ghatana.yappc.core.plugin.PluginContext context = new com.ghatana.yappc.core.plugin.PluginContext( // GH-90000
                 workspace, packs, Map.of(), // GH-90000
                 pluginManager.getEventBus(), // GH-90000
                 com.ghatana.yappc.core.plugin.PluginSandbox.permissive(workspace)); // GH-90000
         pluginManager.loadAndInitialize(jar, context); // GH-90000
 
-        assertThat(pluginManager.getPluginState("test-plugin [GH-90000]")).isEqualTo(PluginState.ACTIVE);
+        assertThat(pluginManager.getPluginState("test-plugin")).isEqualTo(PluginState.ACTIVE);
 
         // Now test the gRPC service layer for unload
         var unloadResponses = new ArrayList<PluginManagementService.UnloadPluginResponse>(); // GH-90000
         TestObserver<PluginManagementService.UnloadPluginResponse> unloadObserver = new TestObserver<>(unloadResponses); // GH-90000
         PluginManagementService.UnloadPluginRequest unloadReq = new PluginManagementService.UnloadPluginRequest(); // GH-90000
-        unloadReq.setPluginId("test-plugin [GH-90000]");
+        unloadReq.setPluginId("test-plugin");
         service.unloadPlugin(unloadReq, unloadObserver); // GH-90000
 
         assertThat(unloadObserver.completed).isTrue(); // GH-90000
-        assertThat(pluginManager.getPluginState("test-plugin [GH-90000]")).isEqualTo(PluginState.SHUTDOWN);
+        assertThat(pluginManager.getPluginState("test-plugin")).isEqualTo(PluginState.SHUTDOWN);
     }
 
     private Path buildTestPluginJar() throws IOException { // GH-90000
-        Path tempDir = Files.createTempDirectory("yappc-plugin [GH-90000]");
-        Path srcDir = Files.createDirectories(tempDir.resolve("src/testplugin [GH-90000]"));
-        Path classesDir = Files.createDirectories(tempDir.resolve("classes [GH-90000]"));
-        Path servicesDir = Files.createDirectories(tempDir.resolve("services/META-INF/services [GH-90000]"));
+        Path tempDir = Files.createTempDirectory("yappc-plugin");
+        Path srcDir = Files.createDirectories(tempDir.resolve("src/testplugin"));
+        Path classesDir = Files.createDirectories(tempDir.resolve("classes"));
+        Path servicesDir = Files.createDirectories(tempDir.resolve("services/META-INF/services"));
 
         String pluginClass = """
                 package testplugin;
@@ -115,8 +115,8 @@ class PluginManagementServiceTest {
                                 "Test plugin for integration",
                                 "Test",
                                 java.util.List.of(PluginCapability.TEMPLATE_HELPER), // GH-90000
-                                java.util.List.of("java [GH-90000]"),
-                                java.util.List.of("gradle [GH-90000]"),
+                                java.util.List.of("java"),
+                                java.util.List.of("gradle"),
                                 Map.of(), // GH-90000
                                 Map.of(), // GH-90000
                                 PluginMetadata.StabilityLevel.EXPERIMENTAL,
@@ -131,7 +131,7 @@ class PluginManagementServiceTest {
 
                     @Override
                     public PluginHealthResult healthCheck() { // GH-90000
-                        return PluginHealthResult.createHealthy("ok [GH-90000]");
+                        return PluginHealthResult.createHealthy("ok");
                     }
 
                     @Override
@@ -146,7 +146,7 @@ class PluginManagementServiceTest {
                 }
                 """;
 
-        Path javaFile = srcDir.resolve("TestPlugin.java [GH-90000]");
+        Path javaFile = srcDir.resolve("TestPlugin.java");
         Files.writeString(javaFile, pluginClass); // GH-90000
 
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler(); // GH-90000
@@ -161,29 +161,29 @@ class PluginManagementServiceTest {
             if (!task.call()) { // GH-90000
                 StringBuilder errors = new StringBuilder("Failed to compile test plugin.\nClasspath: " + classpath + "\n"); // GH-90000
                 for (javax.tools.Diagnostic<? extends javax.tools.JavaFileObject> d : diagnostics.getDiagnostics()) { // GH-90000
-                    errors.append(d.getKind()).append(":  [GH-90000]").append(d.getMessage(null)).append("\n [GH-90000]");
+                    errors.append(d.getKind()).append(": ").append(d.getMessage(null)).append("\n");
                 }
                 throw new IllegalStateException(errors.toString()); // GH-90000
             }
         }
 
         // Service loader registration
-        Path serviceFile = servicesDir.resolve("com.ghatana.yappc.core.plugin.YappcPlugin [GH-90000]");
+        Path serviceFile = servicesDir.resolve("com.ghatana.yappc.core.plugin.YappcPlugin");
         Files.writeString(serviceFile, "testplugin.TestPlugin"); // GH-90000
 
         // Build JAR
-        Path jarPath = tempDir.resolve("test-plugin.jar [GH-90000]");
+        Path jarPath = tempDir.resolve("test-plugin.jar");
         java.util.jar.Manifest manifest = new java.util.jar.Manifest(); // GH-90000
         manifest.getMainAttributes().put(java.util.jar.Attributes.Name.MANIFEST_VERSION, "1.0"); // GH-90000
         try (JarOutputStream jos = new JarOutputStream(Files.newOutputStream(jarPath), manifest)) { // GH-90000
             // classes
-            Path classFile = classesDir.resolve("testplugin/TestPlugin.class [GH-90000]");
-            jos.putNextEntry(new JarEntry("testplugin/TestPlugin.class [GH-90000]"));
+            Path classFile = classesDir.resolve("testplugin/TestPlugin.class");
+            jos.putNextEntry(new JarEntry("testplugin/TestPlugin.class"));
             jos.write(Files.readAllBytes(classFile)); // GH-90000
             jos.closeEntry(); // GH-90000
 
             // services entry
-            jos.putNextEntry(new JarEntry("META-INF/services/com.ghatana.yappc.core.plugin.YappcPlugin [GH-90000]"));
+            jos.putNextEntry(new JarEntry("META-INF/services/com.ghatana.yappc.core.plugin.YappcPlugin"));
             jos.write(Files.readAllBytes(serviceFile)); // GH-90000
             jos.closeEntry(); // GH-90000
         }
@@ -222,7 +222,7 @@ class PluginManagementServiceTest {
         addClassLocation(paths, com.ghatana.yappc.core.plugin.PluginManager.class); // GH-90000
         addClassLocation(paths, com.ghatana.yappc.core.plugin.PluginState.class); // GH-90000
         // Also add system classpath entries
-        String sysCp = System.getProperty("java.class.path [GH-90000]");
+        String sysCp = System.getProperty("java.class.path");
         if (sysCp != null) { // GH-90000
             for (String p : sysCp.split(File.pathSeparator)) { // GH-90000
                 if (!p.isBlank()) paths.add(p); // GH-90000

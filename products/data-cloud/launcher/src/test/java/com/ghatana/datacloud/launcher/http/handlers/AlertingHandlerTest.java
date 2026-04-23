@@ -22,7 +22,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AlertingHandler [GH-90000]")
+@DisplayName("AlertingHandler")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class AlertingHandlerTest extends EventloopTestBase {
 
@@ -47,7 +47,7 @@ class AlertingHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("list alerts rejects missing tenant before query access [GH-90000]")
+    @DisplayName("list alerts rejects missing tenant before query access")
     void listAlertsRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
@@ -58,7 +58,7 @@ class AlertingHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("create alert rule rejects missing tenant before loading body [GH-90000]")
+    @DisplayName("create alert rule rejects missing tenant before loading body")
     void createAlertRuleRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 

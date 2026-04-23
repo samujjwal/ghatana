@@ -27,28 +27,28 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern Unit Test
  */
-@DisplayName("ForecastingEngine [GH-90000]")
+@DisplayName("ForecastingEngine")
 class ForecastingEngineTest extends EventloopTestBase {
 
-    private static final Instant T0 = Instant.parse("2026-01-01T00:00:00Z [GH-90000]");
+    private static final Instant T0 = Instant.parse("2026-01-01T00:00:00Z");
 
     @Nested
-    @DisplayName("NaiveForecastingEngine [GH-90000]")
+    @DisplayName("NaiveForecastingEngine")
     class NaiveTests {
 
         private final NaiveForecastingEngine engine = new NaiveForecastingEngine(); // GH-90000
 
         @Test
-        @DisplayName("returns empty predictions for empty input [GH-90000]")
+        @DisplayName("returns empty predictions for empty input")
         void emptyInputReturnsEmpty() { // GH-90000
             AepEngine.TimeSeriesData data = new AepEngine.TimeSeriesData("counter", List.of()); // GH-90000
             AepEngine.Forecast result = runPromise(() -> engine.forecast("t1", data)); // GH-90000
             assertThat(result.predictions()).isEmpty(); // GH-90000
-            assertThat(result.metric()).isEqualTo("counter [GH-90000]");
+            assertThat(result.metric()).isEqualTo("counter");
         }
 
         @Test
-        @DisplayName("generates 5 predictions from a single data point [GH-90000]")
+        @DisplayName("generates 5 predictions from a single data point")
         void singlePointGeneratesFivePredictions() { // GH-90000
             AepEngine.DataPoint p = new AepEngine.DataPoint(T0, 100.0); // GH-90000
             AepEngine.TimeSeriesData data = new AepEngine.TimeSeriesData("r", List.of(p)); // GH-90000
@@ -57,7 +57,7 @@ class ForecastingEngineTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("each step grows by 1% over last value [GH-90000]")
+        @DisplayName("each step grows by 1% over last value")
         void growthRateIsCorrect() { // GH-90000
             AepEngine.DataPoint p = new AepEngine.DataPoint(T0, 200.0); // GH-90000
             AepEngine.TimeSeriesData data = new AepEngine.TimeSeriesData("m", List.of(p)); // GH-90000
@@ -67,7 +67,7 @@ class ForecastingEngineTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("predictions are spaced stepSeconds apart (default 3600s) [GH-90000]")
+        @DisplayName("predictions are spaced stepSeconds apart (default 3600s)")
         void predictionsAreSpacedCorrectly() { // GH-90000
             AepEngine.DataPoint p = new AepEngine.DataPoint(T0, 50.0); // GH-90000
             AepEngine.TimeSeriesData data = new AepEngine.TimeSeriesData("m", List.of(p)); // GH-90000
@@ -77,7 +77,7 @@ class ForecastingEngineTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("confidence is 0.75 [GH-90000]")
+        @DisplayName("confidence is 0.75")
         void confidenceIsFixed() { // GH-90000
             AepEngine.DataPoint p = new AepEngine.DataPoint(T0, 10.0); // GH-90000
             AepEngine.TimeSeriesData data = new AepEngine.TimeSeriesData("m", List.of(p)); // GH-90000
@@ -86,7 +86,7 @@ class ForecastingEngineTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("custom horizon and step are respected [GH-90000]")
+        @DisplayName("custom horizon and step are respected")
         void customHorizonAndStep() { // GH-90000
             NaiveForecastingEngine custom = new NaiveForecastingEngine(3, 60L); // GH-90000
             AepEngine.DataPoint p = new AepEngine.DataPoint(T0, 10.0); // GH-90000
@@ -97,13 +97,13 @@ class ForecastingEngineTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("algorithm name is 'naive' [GH-90000]")
+        @DisplayName("algorithm name is 'naive'")
         void algorithmName() { // GH-90000
-            assertThat(engine.algorithmName()).isEqualTo("naive [GH-90000]");
+            assertThat(engine.algorithmName()).isEqualTo("naive");
         }
 
         @Test
-        @DisplayName("invalid horizon throws IllegalArgumentException [GH-90000]")
+        @DisplayName("invalid horizon throws IllegalArgumentException")
         void invalidHorizonThrows() { // GH-90000
             assertThatThrownBy(() -> new NaiveForecastingEngine(0, 60L)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class); // GH-90000
@@ -111,13 +111,13 @@ class ForecastingEngineTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("LinearTrendForecastingEngine [GH-90000]")
+    @DisplayName("LinearTrendForecastingEngine")
     class LinearTrendTests {
 
         private final LinearTrendForecastingEngine engine = new LinearTrendForecastingEngine(); // GH-90000
 
         @Test
-        @DisplayName("returns empty predictions for empty input [GH-90000]")
+        @DisplayName("returns empty predictions for empty input")
         void emptyInputReturnsEmpty() { // GH-90000
             AepEngine.TimeSeriesData data = new AepEngine.TimeSeriesData("m", List.of()); // GH-90000
             AepEngine.Forecast result = runPromise(() -> engine.forecast("t1", data)); // GH-90000
@@ -125,7 +125,7 @@ class ForecastingEngineTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("single-point series falls back to naive [GH-90000]")
+        @DisplayName("single-point series falls back to naive")
         void singlePointFallsBackToNaive() { // GH-90000
             AepEngine.DataPoint p = new AepEngine.DataPoint(T0, 100.0); // GH-90000
             AepEngine.TimeSeriesData data = new AepEngine.TimeSeriesData("m", List.of(p)); // GH-90000
@@ -135,7 +135,7 @@ class ForecastingEngineTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("perfectly linear series predicts next value correctly [GH-90000]")
+        @DisplayName("perfectly linear series predicts next value correctly")
         void perfectLinearSeries() { // GH-90000
             // Points: t0=0, y=10; t1=3600, y=20; t2=7200, y=30  -> slope = 10/3600 per sec
             List<AepEngine.DataPoint> pts = List.of( // GH-90000
@@ -151,7 +151,7 @@ class ForecastingEngineTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("confidence is in [0.5, 0.99] for non-trivial series [GH-90000]")
+        @DisplayName("confidence is in [0.5, 0.99] for non-trivial series")
         void confidenceInRange() { // GH-90000
             List<AepEngine.DataPoint> pts = List.of( // GH-90000
                 new AepEngine.DataPoint(T0,                   10.0), // GH-90000
@@ -164,7 +164,7 @@ class ForecastingEngineTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("metadata includes algorithm and slope [GH-90000]")
+        @DisplayName("metadata includes algorithm and slope")
         void metadataContainsAlgorithm() { // GH-90000
             List<AepEngine.DataPoint> pts = List.of( // GH-90000
                 new AepEngine.DataPoint(T0,                   5.0), // GH-90000
@@ -172,18 +172,18 @@ class ForecastingEngineTest extends EventloopTestBase {
             );
             AepEngine.TimeSeriesData data = new AepEngine.TimeSeriesData("m", pts); // GH-90000
             AepEngine.Forecast result = runPromise(() -> engine.forecast("t1", data)); // GH-90000
-            assertThat(result.metadata()).containsKey("algorithm [GH-90000]");
-            assertThat(result.metadata()).containsKey("slope [GH-90000]");
+            assertThat(result.metadata()).containsKey("algorithm");
+            assertThat(result.metadata()).containsKey("slope");
         }
 
         @Test
-        @DisplayName("algorithm name is 'linear-trend' [GH-90000]")
+        @DisplayName("algorithm name is 'linear-trend'")
         void algorithmName() { // GH-90000
-            assertThat(engine.algorithmName()).isEqualTo("linear-trend [GH-90000]");
+            assertThat(engine.algorithmName()).isEqualTo("linear-trend");
         }
 
         @Test
-        @DisplayName("generates correct number of predictions [GH-90000]")
+        @DisplayName("generates correct number of predictions")
         void generatesCorrectHorizon() { // GH-90000
             List<AepEngine.DataPoint> pts = List.of( // GH-90000
                 new AepEngine.DataPoint(T0,                   10.0), // GH-90000
@@ -196,7 +196,7 @@ class ForecastingEngineTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("StatisticalForecastingEngine [GH-90000]")
+    @DisplayName("StatisticalForecastingEngine")
     class StatisticalTests {
 
         // Use a same-thread executor so runPromise() can resolve ofBlocking() synchronously // GH-90000
@@ -204,13 +204,13 @@ class ForecastingEngineTest extends EventloopTestBase {
             0.3, 0.1, 5, 3600L, Executors.newSingleThreadExecutor()); // GH-90000
 
         @Test
-        @DisplayName("algorithm name is 'exponential-smoothing' [GH-90000]")
+        @DisplayName("algorithm name is 'exponential-smoothing'")
         void algorithmName() { // GH-90000
-            assertThat(engine.algorithmName()).isEqualTo("exponential-smoothing [GH-90000]");
+            assertThat(engine.algorithmName()).isEqualTo("exponential-smoothing");
         }
 
         @Test
-        @DisplayName("falls back to naive for single-point series [GH-90000]")
+        @DisplayName("falls back to naive for single-point series")
         void singlePoint_fallsBackToNaive() { // GH-90000
             AepEngine.DataPoint p = new AepEngine.DataPoint(T0, 100.0); // GH-90000
             AepEngine.TimeSeriesData data = new AepEngine.TimeSeriesData("m", List.of(p)); // GH-90000
@@ -221,7 +221,7 @@ class ForecastingEngineTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("falls back to naive for empty series [GH-90000]")
+        @DisplayName("falls back to naive for empty series")
         void emptyInput_fallsBackToNaive() { // GH-90000
             AepEngine.TimeSeriesData data = new AepEngine.TimeSeriesData("m", List.of()); // GH-90000
             AepEngine.Forecast result = runPromise(() -> engine.forecast("t1", data)); // GH-90000
@@ -229,7 +229,7 @@ class ForecastingEngineTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("generates 5 predictions for a valid series [GH-90000]")
+        @DisplayName("generates 5 predictions for a valid series")
         void validSeries_generatesHorizonPredictions() { // GH-90000
             List<AepEngine.DataPoint> pts = List.of( // GH-90000
                 new AepEngine.DataPoint(T0,                   10.0), // GH-90000
@@ -242,7 +242,7 @@ class ForecastingEngineTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("predictions extend from the last timestamp [GH-90000]")
+        @DisplayName("predictions extend from the last timestamp")
         void predictionsAnchoredAtLastTimestamp() { // GH-90000
             Instant last = T0.plusSeconds(7200); // GH-90000
             List<AepEngine.DataPoint> pts = List.of( // GH-90000
@@ -257,7 +257,7 @@ class ForecastingEngineTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("confidence is in [0.5, 0.99] for a smooth trend [GH-90000]")
+        @DisplayName("confidence is in [0.5, 0.99] for a smooth trend")
         void confidence_inExpectedRange() { // GH-90000
             List<AepEngine.DataPoint> pts = List.of( // GH-90000
                 new AepEngine.DataPoint(T0,                   100.0), // GH-90000
@@ -268,12 +268,12 @@ class ForecastingEngineTest extends EventloopTestBase {
             AepEngine.TimeSeriesData data = new AepEngine.TimeSeriesData("cpu_usage", pts); // GH-90000
             AepEngine.Forecast result = runPromise(() -> engine.forecast("t1", data)); // GH-90000
             assertThat(result.confidence()) // GH-90000
-                .as("confidence should be in [0.5, 0.99] [GH-90000]")
+                .as("confidence should be in [0.5, 0.99]")
                 .isBetween(0.5, 0.99); // GH-90000
         }
 
         @Test
-        @DisplayName("upward trend in data produces predictions above last observed value [GH-90000]")
+        @DisplayName("upward trend in data produces predictions above last observed value")
         void upwardTrend_predictionsAboveLastValue() { // GH-90000
             List<AepEngine.DataPoint> pts = List.of( // GH-90000
                 new AepEngine.DataPoint(T0,                    10.0), // GH-90000
@@ -285,12 +285,12 @@ class ForecastingEngineTest extends EventloopTestBase {
             AepEngine.Forecast result = runPromise(() -> engine.forecast("t1", data)); // GH-90000
             double lastValue = 40.0;
             assertThat(result.predictions().get(0).value()) // GH-90000
-                .as("first prediction should be above last observed for upward trend [GH-90000]")
+                .as("first prediction should be above last observed for upward trend")
                 .isGreaterThan(lastValue); // GH-90000
         }
 
         @Test
-        @DisplayName("metadata contains algorithm, alpha, beta, and finalLevel [GH-90000]")
+        @DisplayName("metadata contains algorithm, alpha, beta, and finalLevel")
         void metadata_containsExpectedKeys() { // GH-90000
             List<AepEngine.DataPoint> pts = List.of( // GH-90000
                 new AepEngine.DataPoint(T0,                   5.0), // GH-90000
@@ -299,32 +299,32 @@ class ForecastingEngineTest extends EventloopTestBase {
             AepEngine.TimeSeriesData data = new AepEngine.TimeSeriesData("m", pts); // GH-90000
             AepEngine.Forecast result = runPromise(() -> engine.forecast("t1", data)); // GH-90000
             assertThat(result.metadata()) // GH-90000
-                .containsKey("algorithm [GH-90000]")
-                .containsKey("alpha [GH-90000]")
-                .containsKey("beta [GH-90000]")
-                .containsKey("finalLevel [GH-90000]")
-                .containsKey("finalTrend [GH-90000]");
+                .containsKey("algorithm")
+                .containsKey("alpha")
+                .containsKey("beta")
+                .containsKey("finalLevel")
+                .containsKey("finalTrend");
         }
 
         @Test
-        @DisplayName("invalid alpha (0.0) throws IllegalArgumentException [GH-90000]")
+        @DisplayName("invalid alpha (0.0) throws IllegalArgumentException")
         void invalidAlpha_throws() { // GH-90000
             assertThatThrownBy(() -> new StatisticalForecastingEngine(0.0, 0.1, 5, 3600L)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("alpha [GH-90000]");
+                .hasMessageContaining("alpha");
         }
 
         @Test
-        @DisplayName("invalid beta (1.0) throws IllegalArgumentException [GH-90000]")
+        @DisplayName("invalid beta (1.0) throws IllegalArgumentException")
         void invalidBeta_throws() { // GH-90000
             assertThatThrownBy(() -> new StatisticalForecastingEngine(0.3, 1.0, 5, 3600L)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("beta [GH-90000]");
+                .hasMessageContaining("beta");
         }
     }
 
     @Nested
-    @DisplayName("AdaptiveForecastingEngine [GH-90000]")
+    @DisplayName("AdaptiveForecastingEngine")
     class AdaptiveTests {
 
         private final AdaptiveForecastingEngine engine = new AdaptiveForecastingEngine( // GH-90000
@@ -336,7 +336,7 @@ class ForecastingEngineTest extends EventloopTestBase {
         );
 
         @Test
-        @DisplayName("selects a non-naive model for a stable linear trend [GH-90000]")
+        @DisplayName("selects a non-naive model for a stable linear trend")
         void selectsBestModelForTrend() { // GH-90000
             List<AepEngine.DataPoint> pts = List.of( // GH-90000
                 new AepEngine.DataPoint(T0, 10.0), // GH-90000
@@ -349,13 +349,13 @@ class ForecastingEngineTest extends EventloopTestBase {
             AepEngine.Forecast result = runPromise(() -> engine.forecast("t1", new AepEngine.TimeSeriesData("m", pts))); // GH-90000
 
             assertThat(result.metadata()).containsEntry("algorithm", "adaptive"); // GH-90000
-            assertThat(result.metadata()).containsKey("selectedAlgorithm [GH-90000]");
-            assertThat(result.metadata()).containsKey("candidateRmse [GH-90000]");
-            assertThat(result.metadata().get("selectedAlgorithm [GH-90000]")).isNotEqualTo("naive [GH-90000]");
+            assertThat(result.metadata()).containsKey("selectedAlgorithm");
+            assertThat(result.metadata()).containsKey("candidateRmse");
+            assertThat(result.metadata().get("selectedAlgorithm")).isNotEqualTo("naive");
         }
 
         @Test
-        @DisplayName("falls back to linear selection when history is too short [GH-90000]")
+        @DisplayName("falls back to linear selection when history is too short")
         void shortHistoryFallsBack() { // GH-90000
             List<AepEngine.DataPoint> pts = List.of( // GH-90000
                 new AepEngine.DataPoint(T0, 10.0), // GH-90000
@@ -370,7 +370,7 @@ class ForecastingEngineTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("OnlineRegressionForecastingEngine [GH-90000]")
+    @DisplayName("OnlineRegressionForecastingEngine")
     class OnlineRegressionTests {
 
         private final OnlineRegressionForecastingEngine engine = new OnlineRegressionForecastingEngine( // GH-90000
@@ -382,7 +382,7 @@ class ForecastingEngineTest extends EventloopTestBase {
         );
 
         @Test
-        @DisplayName("learns an upward trend from historical series [GH-90000]")
+        @DisplayName("learns an upward trend from historical series")
         void learnsUpwardTrend() { // GH-90000
             List<AepEngine.DataPoint> pts = List.of( // GH-90000
                 new AepEngine.DataPoint(T0, 15.0), // GH-90000
@@ -396,13 +396,13 @@ class ForecastingEngineTest extends EventloopTestBase {
 
             assertThat(result.metadata()).containsEntry("algorithm", "online-regression"); // GH-90000
             assertThat(result.metadata()).containsEntry("warmStarted", false); // GH-90000
-            assertThat((Double) result.metadata().get("slope [GH-90000]")).isPositive();
+            assertThat((Double) result.metadata().get("slope")).isPositive();
             assertThat(result.predictions()).hasSize(3); // GH-90000
             assertThat(result.predictions().get(2).value()).isGreaterThan(result.predictions().get(0).value()); // GH-90000
         }
 
         @Test
-        @DisplayName("reuses learned state for the same tenant and metric [GH-90000]")
+        @DisplayName("reuses learned state for the same tenant and metric")
         void reusesWarmState() { // GH-90000
             List<AepEngine.DataPoint> pts = List.of( // GH-90000
                 new AepEngine.DataPoint(T0, 10.0), // GH-90000

@@ -32,7 +32,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer test
  * @doc.pattern Integration Test
  */
-@DisplayName("Service Integration Tests [GH-90000]")
+@DisplayName("Service Integration Tests")
 class ServiceIntegrationTest extends EventloopTestBase {
 
     @Mock
@@ -50,7 +50,7 @@ class ServiceIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[INTEGRATION-001]: entity_creation_emits_event [GH-90000]")
+    @DisplayName("[INTEGRATION-001]: entity_creation_emits_event")
     void entityCreationEmitsEvent() { // GH-90000
         // Given - Setup entity repository to return saved entity
         String tenantId = "tenant-alpha";
@@ -88,7 +88,7 @@ class ServiceIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[INTEGRATION-002]: entity_update_increments_version [GH-90000]")
+    @DisplayName("[INTEGRATION-002]: entity_update_increments_version")
     void entityUpdateIncrementsVersion() { // GH-90000
         // Given - Existing entity
         String tenantId = "tenant-alpha";
@@ -101,9 +101,9 @@ class ServiceIntegrationTest extends EventloopTestBase {
             .tenantId(tenantId) // GH-90000
             .collectionName(collectionName) // GH-90000
             .data(Map.of("name", "Old Name")) // GH-90000
-            .createdBy("user-1 [GH-90000]")
+            .createdBy("user-1")
             .createdAt(Instant.now()) // GH-90000
-            .updatedBy("user-1 [GH-90000]")
+            .updatedBy("user-1")
             .updatedAt(Instant.now()) // GH-90000
             .version(1) // GH-90000
             .build(); // GH-90000
@@ -126,7 +126,7 @@ class ServiceIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[INTEGRATION-003]: full_entity_lifecycle [GH-90000]")
+    @DisplayName("[INTEGRATION-003]: full_entity_lifecycle")
     void fullEntityLifecycle() { // GH-90000
         // Given
         String tenantId = "tenant-lifecycle";
@@ -187,19 +187,19 @@ class ServiceIntegrationTest extends EventloopTestBase {
         Entity getResult = runPromise(() -> entityService.getEntity(tenantId, collectionName, entityId)); // GH-90000
 
         assertThat(getResult).isNotNull(); // GH-90000
-        assertThat(getResult.getData().get("price [GH-90000]")).isEqualTo(89.99);
-        System.out.println("[INTEGRATION] Retrieved: price = " + getResult.getData().get("price [GH-90000]"));
+        assertThat(getResult.getData().get("price")).isEqualTo(89.99);
+        System.out.println("[INTEGRATION] Retrieved: price = " + getResult.getData().get("price"));
 
         // Step 4: Delete
         when(entityRepository.delete(tenantId, collectionName, entityId)) // GH-90000
             .thenReturn(Promise.of(null)); // GH-90000
 
         runPromise(() -> entityService.deleteEntity(tenantId, collectionName, entityId, userId)); // GH-90000
-        System.out.println("[INTEGRATION] Deleted successfully [GH-90000]");
+        System.out.println("[INTEGRATION] Deleted successfully");
     }
 
     @Test
-    @DisplayName("[INTEGRATION-004]: multi_tenant_isolation [GH-90000]")
+    @DisplayName("[INTEGRATION-004]: multi_tenant_isolation")
     void multiTenantIsolation() { // GH-90000
         // Given - Two tenants with same entity ID
         String tenantA = "tenant-alpha";
@@ -231,10 +231,10 @@ class ServiceIntegrationTest extends EventloopTestBase {
         Entity resultB = runPromise(() -> entityService.getEntity(tenantB, collectionName, entityId)); // GH-90000
 
         // Then - Each tenant sees their own data
-        assertThat(resultA.getData().get("tenant [GH-90000]")).isEqualTo("A [GH-90000]");
-        assertThat(resultB.getData().get("tenant [GH-90000]")).isEqualTo("B [GH-90000]");
+        assertThat(resultA.getData().get("tenant")).isEqualTo("A");
+        assertThat(resultB.getData().get("tenant")).isEqualTo("B");
 
-        System.out.println("[INTEGRATION] Tenant A sees: " + resultA.getData().get("tenant [GH-90000]"));
-        System.out.println("[INTEGRATION] Tenant B sees: " + resultB.getData().get("tenant [GH-90000]"));
+        System.out.println("[INTEGRATION] Tenant A sees: " + resultA.getData().get("tenant"));
+        System.out.println("[INTEGRATION] Tenant B sees: " + resultB.getData().get("tenant"));
     }
 }

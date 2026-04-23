@@ -18,7 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Architecture DeriveDataModelsStep Tests [GH-90000]")
+@DisplayName("Architecture DeriveDataModelsStep Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles derive data models step test operations
@@ -39,13 +39,13 @@ class DeriveDataModelsStepTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should return correct step ID [GH-90000]")
+  @DisplayName("Should return correct step ID")
   void shouldReturnCorrectStepId() { // GH-90000
-    assertThat(step.getStepId()).isEqualTo("architecture.derivedatamodels [GH-90000]");
+    assertThat(step.getStepId()).isEqualTo("architecture.derivedatamodels");
   }
 
   @Test
-  @DisplayName("Should derive data models from architecture [GH-90000]")
+  @DisplayName("Should derive data models from architecture")
   void shouldDeriveDataModels() { // GH-90000
     // GIVEN
     WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
@@ -67,16 +67,16 @@ class DeriveDataModelsStepTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should fail when architectureId is missing [GH-90000]")
+  @DisplayName("Should fail when architectureId is missing")
   void shouldFailWhenArchitectureIdMissing() { // GH-90000
     // GIVEN
     WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
-    context.put("functionalRequirements", List.of("Some requirement [GH-90000]"));
+    context.put("functionalRequirements", List.of("Some requirement"));
     when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
 
     // WHEN/THEN
     assertThatThrownBy(() -> runPromise(() -> step.execute(context))) // GH-90000
         .isInstanceOf(IllegalArgumentException.class) // GH-90000
-        .hasMessageContaining("architectureId [GH-90000]");
+        .hasMessageContaining("architectureId");
   }
 }

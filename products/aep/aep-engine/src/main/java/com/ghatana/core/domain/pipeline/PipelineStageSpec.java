@@ -13,7 +13,8 @@ import java.util.Objects;
  * @doc.type class
  * @doc.purpose Pipeline stage specification
  * @doc.layer core
- */
+  * @doc.pattern Component
+*/
 public class PipelineStageSpec {
     private final String id;
     private final String name;

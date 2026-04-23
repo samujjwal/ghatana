@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test Data Cloud event integration, consumption, and processing with actual persistence.
  */
-@DisplayName("Data Cloud Event Integration Tests [GH-90000]")
+@DisplayName("Data Cloud Event Integration Tests")
 class DataCloudEventIntegrationTest extends EventloopTestBase {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper(); // GH-90000
@@ -56,11 +56,11 @@ class DataCloudEventIntegrationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Event Persistence [GH-90000]")
+    @DisplayName("Event Persistence")
     class PersistenceTests {
 
         @Test
-        @DisplayName("events persist to Data Cloud and can be retrieved [GH-90000]")
+        @DisplayName("events persist to Data Cloud and can be retrieved")
         void eventsPersistToDataCloudAndCanBeRetrieved() { // GH-90000
             String tenantId = "tenant-persistence";
             String eventType = "test.event";
@@ -86,7 +86,7 @@ class DataCloudEventIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("events with same correlationId are grouped in Data Cloud [GH-90000]")
+        @DisplayName("events with same correlationId are grouped in Data Cloud")
         void eventsWithSameCorrelationIdAreGroupedInDataCloud() { // GH-90000
             String tenantId = "tenant-grouping";
             String correlationId = "corr-group-123";
@@ -107,17 +107,17 @@ class DataCloudEventIntegrationTest extends EventloopTestBase {
                 dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.all()) // GH-90000
             ).stream() // GH-90000
                 .filter(retrievedEvent -> retrievedEvent.headers() != null // GH-90000
-                    && correlationId.equals(retrievedEvent.headers().get("correlationId [GH-90000]")))
+                    && correlationId.equals(retrievedEvent.headers().get("correlationId")))
                 .toList(); // GH-90000
 
             assertThat(retrievedEvents).hasSize(5); // GH-90000
             assertThat(retrievedEvents).allMatch(e ->  // GH-90000
-                e.headers() != null && correlationId.equals(e.headers().get("correlationId [GH-90000]"))
+                e.headers() != null && correlationId.equals(e.headers().get("correlationId"))
             );
         }
 
         @Test
-        @DisplayName("persisted events survive engine restart [GH-90000]")
+        @DisplayName("persisted events survive engine restart")
         void persistedEventsSurviveEngineRestart() { // GH-90000
             String tenantId = "tenant-restart";
             String eventType = "restart.event";
@@ -151,11 +151,11 @@ class DataCloudEventIntegrationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Event Processing [GH-90000]")
+    @DisplayName("Event Processing")
     class ProcessingTests {
 
         @Test
-        @DisplayName("events are processed by registered patterns [GH-90000]")
+        @DisplayName("events are processed by registered patterns")
         void eventsAreProcessedByRegisteredPatterns() { // GH-90000
             String tenantId = "tenant-processing";
 
@@ -187,14 +187,14 @@ class DataCloudEventIntegrationTest extends EventloopTestBase {
 
             // Verify event persisted
             List<DataCloudClient.Event> retrievedEvents = runPromise(() -> // GH-90000
-                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType("processing.event [GH-90000]"))
+                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType("processing.event"))
             );
 
             assertThat(retrievedEvents).isNotEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("event processing errors do not prevent persistence [GH-90000]")
+        @DisplayName("event processing errors do not prevent persistence")
         void eventProcessingErrorsDoNotPreventPersistence() { // GH-90000
             String tenantId = "tenant-error-handling";
 
@@ -210,7 +210,7 @@ class DataCloudEventIntegrationTest extends EventloopTestBase {
 
             // Verify event persisted despite potential processing errors
             List<DataCloudClient.Event> retrievedEvents = runPromise(() -> // GH-90000
-                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType("error.event [GH-90000]"))
+                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType("error.event"))
             );
 
             assertThat(retrievedEvents).isNotEmpty(); // GH-90000
@@ -218,11 +218,11 @@ class DataCloudEventIntegrationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Event Versioning [GH-90000]")
+    @DisplayName("Event Versioning")
     class VersioningTests {
 
         @Test
-        @DisplayName("events with different versions are stored separately [GH-90000]")
+        @DisplayName("events with different versions are stored separately")
         void eventsWithDifferentVersionsAreStoredSeparately() { // GH-90000
             String tenantId = "tenant-versioning";
 
@@ -246,21 +246,21 @@ class DataCloudEventIntegrationTest extends EventloopTestBase {
 
             // Verify both versions persisted
             List<DataCloudClient.Event> retrievedEvents = runPromise(() -> // GH-90000
-                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType("versioned.event [GH-90000]"))
+                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType("versioned.event"))
             );
 
             assertThat(retrievedEvents).hasSize(2); // GH-90000
-            assertThat(retrievedEvents).extracting(e -> e.payload().get("version [GH-90000]"))
+            assertThat(retrievedEvents).extracting(e -> e.payload().get("version"))
                 .containsExactly(1, 2); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Event Schema Validation [GH-90000]")
+    @DisplayName("Event Schema Validation")
     class SchemaValidationTests {
 
         @Test
-        @DisplayName("events with valid schema are persisted [GH-90000]")
+        @DisplayName("events with valid schema are persisted")
         void eventsWithValidSchemaArePersisted() { // GH-90000
             String tenantId = "tenant-schema-valid";
 
@@ -275,14 +275,14 @@ class DataCloudEventIntegrationTest extends EventloopTestBase {
 
             // Verify persisted
             List<DataCloudClient.Event> retrievedEvents = runPromise(() -> // GH-90000
-                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType("schema.valid [GH-90000]"))
+                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType("schema.valid"))
             );
 
             assertThat(retrievedEvents).hasSize(1); // GH-90000
         }
 
         @Test
-        @DisplayName("events with missing required fields are rejected [GH-90000]")
+        @DisplayName("events with missing required fields are rejected")
         void eventsWithMissingRequiredFieldsAreRejected() { // GH-90000
             String tenantId = "tenant-schema-invalid";
 
@@ -299,7 +299,7 @@ class DataCloudEventIntegrationTest extends EventloopTestBase {
 
             // Verify not persisted or handled appropriately
             List<DataCloudClient.Event> retrievedEvents = runPromise(() -> // GH-90000
-                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType("schema.invalid [GH-90000]"))
+                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType("schema.invalid"))
             );
 
             // Either not persisted or handled with error tracking
@@ -309,11 +309,11 @@ class DataCloudEventIntegrationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Event Transformation [GH-90000]")
+    @DisplayName("Event Transformation")
     class TransformationTests {
 
         @Test
-        @DisplayName("events are transformed before persistence [GH-90000]")
+        @DisplayName("events are transformed before persistence")
         void eventsAreTransformedBeforePersistence() { // GH-90000
             String tenantId = "tenant-transform";
 
@@ -328,21 +328,21 @@ class DataCloudEventIntegrationTest extends EventloopTestBase {
 
             // Verify transformation applied (e.g., string to number) // GH-90000
             List<DataCloudClient.Event> retrievedEvents = runPromise(() -> // GH-90000
-                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType("transform.event [GH-90000]"))
+                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType("transform.event"))
             );
 
             assertThat(retrievedEvents).isNotEmpty(); // GH-90000
             // Verify payload structure
-            assertThat(retrievedEvents.get(0).payload()).containsKey("rawValue [GH-90000]");
+            assertThat(retrievedEvents.get(0).payload()).containsKey("rawValue");
         }
     }
 
     @Nested
-    @DisplayName("Event Batching [GH-90000]")
+    @DisplayName("Event Batching")
     class BatchingTests {
 
         @Test
-        @DisplayName("multiple events can be ingested in batch [GH-90000]")
+        @DisplayName("multiple events can be ingested in batch")
         void multipleEventsCanBeIngestedInBatch() { // GH-90000
             String tenantId = "tenant-batch";
 
@@ -359,14 +359,14 @@ class DataCloudEventIntegrationTest extends EventloopTestBase {
 
             // Verify all persisted
             List<DataCloudClient.Event> retrievedEvents = runPromise(() -> // GH-90000
-                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType("batch.event [GH-90000]"))
+                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType("batch.event"))
             );
 
             assertThat(retrievedEvents).hasSize(10); // GH-90000
         }
 
         @Test
-        @DisplayName("batch ingestion maintains event order [GH-90000]")
+        @DisplayName("batch ingestion maintains event order")
         void batchIngestionMaintainsEventOrder() { // GH-90000
             String tenantId = "tenant-order";
 
@@ -383,13 +383,13 @@ class DataCloudEventIntegrationTest extends EventloopTestBase {
 
             // Verify order preserved
             List<DataCloudClient.Event> retrievedEvents = runPromise(() -> // GH-90000
-                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType("order.event [GH-90000]"))
+                dataCloud.queryEvents(tenantId, DataCloudClient.EventQuery.byType("order.event"))
             );
 
             assertThat(retrievedEvents).hasSize(5); // GH-90000
             // Verify sequence order (may need to sort by timestamp) // GH-90000
             List<Integer> sequences = retrievedEvents.stream() // GH-90000
-                .map(e -> (Integer) e.payload().get("sequence [GH-90000]"))
+                .map(e -> (Integer) e.payload().get("sequence"))
                 .toList(); // GH-90000
             assertThat(sequences).containsExactly(0, 1, 2, 3, 4); // GH-90000
         }
@@ -406,9 +406,9 @@ class DataCloudEventIntegrationTest extends EventloopTestBase {
         public String append(String tenantId, String eventType, byte[] payload) { // GH-90000
             try {
                 Map<String, Object> envelope = OBJECT_MAPPER.readValue(payload, new TypeReference<>() {}); // GH-90000
-                @SuppressWarnings("unchecked [GH-90000]")
+                @SuppressWarnings("unchecked")
                 Map<String, Object> eventPayload = (Map<String, Object>) envelope.getOrDefault("payload", Map.of()); // GH-90000
-                @SuppressWarnings("unchecked [GH-90000]")
+                @SuppressWarnings("unchecked")
                 Map<String, String> headers = (Map<String, String>) envelope.getOrDefault("headers", Map.of()); // GH-90000
                 Instant timestamp = Instant.parse(envelope.getOrDefault("timestamp", Instant.now().toString()).toString()); // GH-90000
 

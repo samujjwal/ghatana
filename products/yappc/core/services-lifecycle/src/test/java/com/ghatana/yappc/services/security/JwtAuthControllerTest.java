@@ -29,11 +29,11 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("JwtAuthController [GH-90000]")
+@DisplayName("JwtAuthController")
 class JwtAuthControllerTest extends EventloopTestBase {
 
     @Test
-    @DisplayName("/api/auth/me returns 401 when authorization header is missing [GH-90000]")
+    @DisplayName("/api/auth/me returns 401 when authorization header is missing")
     void currentUserMissingAuthorizationReturns401() { // GH-90000
         JwtTokenProvider tokenProvider = mock(JwtTokenProvider.class); // GH-90000
         JwtAuthController controller = new JwtAuthController(tokenProvider); // GH-90000
@@ -46,17 +46,17 @@ class JwtAuthControllerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("/api/auth/me returns 200 with user payload when token is valid [GH-90000]")
+    @DisplayName("/api/auth/me returns 200 with user payload when token is valid")
     void currentUserValidTokenReturnsUserPayload() { // GH-90000
         JwtTokenProvider tokenProvider = mock(JwtTokenProvider.class); // GH-90000
-        when(tokenProvider.validateToken("valid-token [GH-90000]")).thenReturn(true);
-        when(tokenProvider.getUserIdFromToken("valid-token [GH-90000]")).thenReturn(Optional.of("user-123 [GH-90000]"));
-        when(tokenProvider.extractClaims("valid-token [GH-90000]")).thenReturn(Optional.of(Map.of(
+        when(tokenProvider.validateToken("valid-token")).thenReturn(true);
+        when(tokenProvider.getUserIdFromToken("valid-token")).thenReturn(Optional.of("user-123"));
+        when(tokenProvider.extractClaims("valid-token")).thenReturn(Optional.of(Map.of(
                 "name", "Sam User",
                 "email", "sam@example.com",
                 "tenantId", "tenant-123"
         )));
-        when(tokenProvider.getRolesFromToken("valid-token [GH-90000]")).thenReturn(List.of("editor", "viewer"));
+        when(tokenProvider.getRolesFromToken("valid-token")).thenReturn(List.of("editor", "viewer"));
 
         JwtAuthController controller = new JwtAuthController(tokenProvider); // GH-90000
 
@@ -74,12 +74,12 @@ class JwtAuthControllerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("/api/auth/validate returns 200 and valid=true when token is valid [GH-90000]")
+    @DisplayName("/api/auth/validate returns 200 and valid=true when token is valid")
     void validateValidTokenReturns200() { // GH-90000
         JwtTokenProvider tokenProvider = mock(JwtTokenProvider.class); // GH-90000
-        when(tokenProvider.validateToken("valid-token [GH-90000]")).thenReturn(true);
-        when(tokenProvider.getUserIdFromToken("valid-token [GH-90000]")).thenReturn(Optional.of("user-abc [GH-90000]"));
-        when(tokenProvider.extractClaims("valid-token [GH-90000]")).thenReturn(Optional.of(Map.of("tenantId", "tenant-abc")));
+        when(tokenProvider.validateToken("valid-token")).thenReturn(true);
+        when(tokenProvider.getUserIdFromToken("valid-token")).thenReturn(Optional.of("user-abc"));
+        when(tokenProvider.extractClaims("valid-token")).thenReturn(Optional.of(Map.of("tenantId", "tenant-abc")));
 
         JwtAuthController controller = new JwtAuthController(tokenProvider); // GH-90000
 
@@ -96,10 +96,10 @@ class JwtAuthControllerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("/api/auth/validate returns 401 for invalid token [GH-90000]")
+    @DisplayName("/api/auth/validate returns 401 for invalid token")
     void validateInvalidTokenReturns401() { // GH-90000
         JwtTokenProvider tokenProvider = mock(JwtTokenProvider.class); // GH-90000
-        when(tokenProvider.validateToken("bad-token [GH-90000]")).thenReturn(false);
+        when(tokenProvider.validateToken("bad-token")).thenReturn(false);
 
         JwtAuthController controller = new JwtAuthController(tokenProvider); // GH-90000
 

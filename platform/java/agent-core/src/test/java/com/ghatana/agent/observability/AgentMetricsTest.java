@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.purpose Validate agent observability metrics contract
  * @doc.layer core
  */
-@DisplayName("Agent Observability Metrics [GH-90000]")
+@DisplayName("Agent Observability Metrics")
 class AgentMetricsTest {
 
     private MeterRegistry registry;
@@ -46,19 +46,19 @@ class AgentMetricsTest {
     // ════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Construction [GH-90000]")
+    @DisplayName("Construction")
     class ConstructionTests {
 
         @Test
-        @DisplayName("rejects null MetricsCollector [GH-90000]")
+        @DisplayName("rejects null MetricsCollector")
         void rejectsNullCollector() { // GH-90000
             assertThatThrownBy(() -> new AgentMetrics(null)) // GH-90000
                     .isInstanceOf(NullPointerException.class) // GH-90000
-                    .hasMessageContaining("MetricsCollector [GH-90000]");
+                    .hasMessageContaining("MetricsCollector");
         }
 
         @Test
-        @DisplayName("exposes underlying collector [GH-90000]")
+        @DisplayName("exposes underlying collector")
         void exposesCollector() { // GH-90000
             assertThat(metrics.getCollector()).isSameAs(collector); // GH-90000
         }
@@ -69,11 +69,11 @@ class AgentMetricsTest {
     // ════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Processing Metrics [GH-90000]")
+    @DisplayName("Processing Metrics")
     class ProcessingMetricsTests {
 
         @Test
-        @DisplayName("records successful processing for deterministic agent [GH-90000]")
+        @DisplayName("records successful processing for deterministic agent")
         void recordsSuccessfulDeterministicProcessing() { // GH-90000
             metrics.recordProcessing("deterministic", "agent-1", 15, true); // GH-90000
 
@@ -93,7 +93,7 @@ class AgentMetricsTest {
         }
 
         @Test
-        @DisplayName("records failed processing with error counter [GH-90000]")
+        @DisplayName("records failed processing with error counter")
         void recordsFailedProcessing() { // GH-90000
             metrics.recordProcessing("probabilistic", "agent-2", 5, false); // GH-90000
 
@@ -105,7 +105,7 @@ class AgentMetricsTest {
         }
 
         @Test
-        @DisplayName("does not record error counter for success [GH-90000]")
+        @DisplayName("does not record error counter for success")
         void noErrorCounterForSuccess() { // GH-90000
             metrics.recordProcessing("adaptive", "agent-3", 10, true); // GH-90000
 
@@ -116,7 +116,7 @@ class AgentMetricsTest {
         }
 
         @Test
-        @DisplayName("records processing for all six agent types [GH-90000]")
+        @DisplayName("records processing for all six agent types")
         void recordsAllAgentTypes() { // GH-90000
             String[] types = {"deterministic", "probabilistic", "adaptive",
                     "reactive", "composite", "hybrid"};
@@ -137,7 +137,7 @@ class AgentMetricsTest {
         }
 
         @Test
-        @DisplayName("accumulates processing count across invocations [GH-90000]")
+        @DisplayName("accumulates processing count across invocations")
         void accumulatesProcessingCount() { // GH-90000
             for (int i = 0; i < 50; i++) { // GH-90000
                 metrics.recordProcessing("deterministic", "agent-1", 5, true); // GH-90000
@@ -156,11 +156,11 @@ class AgentMetricsTest {
     // ════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Decision Metrics [GH-90000]")
+    @DisplayName("Decision Metrics")
     class DecisionMetricsTests {
 
         @Test
-        @DisplayName("records decision with outcome [GH-90000]")
+        @DisplayName("records decision with outcome")
         void recordsDecision() { // GH-90000
             metrics.recordDecision("deterministic", "agent-1", "approved"); // GH-90000
 
@@ -173,7 +173,7 @@ class AgentMetricsTest {
         }
 
         @Test
-        @DisplayName("tracks different decision outcomes separately [GH-90000]")
+        @DisplayName("tracks different decision outcomes separately")
         void tracksDifferentOutcomes() { // GH-90000
             metrics.recordDecision("probabilistic", "agent-1", "approved"); // GH-90000
             metrics.recordDecision("probabilistic", "agent-1", "rejected"); // GH-90000
@@ -191,7 +191,7 @@ class AgentMetricsTest {
         }
 
         @Test
-        @DisplayName("records confidence score [GH-90000]")
+        @DisplayName("records confidence score")
         void recordsConfidenceScore() { // GH-90000
             metrics.recordConfidence("probabilistic", "agent-1", 0.85); // GH-90000
 
@@ -209,11 +209,11 @@ class AgentMetricsTest {
     // ════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Lifecycle Metrics [GH-90000]")
+    @DisplayName("Lifecycle Metrics")
     class LifecycleMetricsTests {
 
         @Test
-        @DisplayName("records agent creation [GH-90000]")
+        @DisplayName("records agent creation")
         void recordsCreation() { // GH-90000
             metrics.recordCreated("adaptive", "agent-1"); // GH-90000
 
@@ -225,7 +225,7 @@ class AgentMetricsTest {
         }
 
         @Test
-        @DisplayName("records agent start [GH-90000]")
+        @DisplayName("records agent start")
         void recordsStart() { // GH-90000
             metrics.recordStarted("reactive", "agent-2"); // GH-90000
 
@@ -237,7 +237,7 @@ class AgentMetricsTest {
         }
 
         @Test
-        @DisplayName("records agent stop [GH-90000]")
+        @DisplayName("records agent stop")
         void recordsStop() { // GH-90000
             metrics.recordStopped("composite", "agent-3"); // GH-90000
 
@@ -249,7 +249,7 @@ class AgentMetricsTest {
         }
 
         @Test
-        @DisplayName("tracks full lifecycle: created → started → stopped [GH-90000]")
+        @DisplayName("tracks full lifecycle: created → started → stopped")
         void tracksFullLifecycle() { // GH-90000
             metrics.recordCreated("hybrid", "agent-4"); // GH-90000
             metrics.recordStarted("hybrid", "agent-4"); // GH-90000
@@ -269,11 +269,11 @@ class AgentMetricsTest {
     // ════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Adaptive Agent Metrics [GH-90000]")
+    @DisplayName("Adaptive Agent Metrics")
     class AdaptiveMetricsTests {
 
         @Test
-        @DisplayName("records arm selection [GH-90000]")
+        @DisplayName("records arm selection")
         void recordsArmSelection() { // GH-90000
             metrics.recordArmSelected("bandit-1", "arm-A"); // GH-90000
 
@@ -286,7 +286,7 @@ class AgentMetricsTest {
         }
 
         @Test
-        @DisplayName("tracks arm selection distribution [GH-90000]")
+        @DisplayName("tracks arm selection distribution")
         void tracksArmSelectionDistribution() { // GH-90000
             // Simulate epsilon-greedy: mostly arm-A, sometimes arm-B
             for (int i = 0; i < 80; i++) { // GH-90000
@@ -308,7 +308,7 @@ class AgentMetricsTest {
         }
 
         @Test
-        @DisplayName("records reward signal [GH-90000]")
+        @DisplayName("records reward signal")
         void recordsReward() { // GH-90000
             metrics.recordReward("bandit-1", 1.0); // GH-90000
 
@@ -320,7 +320,7 @@ class AgentMetricsTest {
         }
 
         @Test
-        @DisplayName("records exploration rate gauge [GH-90000]")
+        @DisplayName("records exploration rate gauge")
         void recordsExplorationRate() { // GH-90000
             metrics.recordExplorationRate("bandit-1", 0.15); // GH-90000
 
@@ -335,11 +335,11 @@ class AgentMetricsTest {
     // ════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Rule-Based Agent Metrics [GH-90000]")
+    @DisplayName("Rule-Based Agent Metrics")
     class RuleBasedMetricsTests {
 
         @Test
-        @DisplayName("records rule matched [GH-90000]")
+        @DisplayName("records rule matched")
         void recordsRuleMatched() { // GH-90000
             metrics.recordRuleMatched("rule-agent-1", "rule-A"); // GH-90000
 
@@ -352,9 +352,9 @@ class AgentMetricsTest {
         }
 
         @Test
-        @DisplayName("records no rule match [GH-90000]")
+        @DisplayName("records no rule match")
         void recordsNoRuleMatch() { // GH-90000
-            metrics.recordNoRuleMatch("rule-agent-1 [GH-90000]");
+            metrics.recordNoRuleMatch("rule-agent-1");
 
             Counter counter = registry.find(AgentMetrics.RULE_NO_MATCH) // GH-90000
                     .tag("agent_id", "rule-agent-1") // GH-90000
@@ -364,13 +364,13 @@ class AgentMetricsTest {
         }
 
         @Test
-        @DisplayName("tracks rule match ratio [GH-90000]")
+        @DisplayName("tracks rule match ratio")
         void tracksRuleMatchRatio() { // GH-90000
             for (int i = 0; i < 7; i++) { // GH-90000
                 metrics.recordRuleMatched("rule-agent-1", "rule-X"); // GH-90000
             }
             for (int i = 0; i < 3; i++) { // GH-90000
-                metrics.recordNoRuleMatch("rule-agent-1 [GH-90000]");
+                metrics.recordNoRuleMatch("rule-agent-1");
             }
 
             double matched = registry.find(AgentMetrics.RULE_MATCHED) // GH-90000
@@ -391,37 +391,37 @@ class AgentMetricsTest {
     // ════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Naming Conventions [GH-90000]")
+    @DisplayName("Naming Conventions")
     class NamingConventionTests {
 
         @Test
-        @DisplayName("all metric names follow agent.* namespace [GH-90000]")
+        @DisplayName("all metric names follow agent.* namespace")
         void allMetricsFollowNamespace() { // GH-90000
-            assertThat(AgentMetrics.PROCESS_COUNT).startsWith("agent. [GH-90000]");
-            assertThat(AgentMetrics.PROCESS_DURATION_MS).startsWith("agent. [GH-90000]");
-            assertThat(AgentMetrics.PROCESS_ERRORS).startsWith("agent. [GH-90000]");
-            assertThat(AgentMetrics.DECISION_COUNT).startsWith("agent. [GH-90000]");
-            assertThat(AgentMetrics.CONFIDENCE_SCORE).startsWith("agent. [GH-90000]");
-            assertThat(AgentMetrics.LIFECYCLE_CREATED).startsWith("agent. [GH-90000]");
-            assertThat(AgentMetrics.LIFECYCLE_STARTED).startsWith("agent. [GH-90000]");
-            assertThat(AgentMetrics.LIFECYCLE_STOPPED).startsWith("agent. [GH-90000]");
-            assertThat(AgentMetrics.ARM_SELECTED).startsWith("agent. [GH-90000]");
-            assertThat(AgentMetrics.REWARD_RECORDED).startsWith("agent. [GH-90000]");
-            assertThat(AgentMetrics.EXPLORATION_RATE).startsWith("agent. [GH-90000]");
-            assertThat(AgentMetrics.RULE_MATCHED).startsWith("agent. [GH-90000]");
-            assertThat(AgentMetrics.RULE_NO_MATCH).startsWith("agent. [GH-90000]");
+            assertThat(AgentMetrics.PROCESS_COUNT).startsWith("agent.");
+            assertThat(AgentMetrics.PROCESS_DURATION_MS).startsWith("agent.");
+            assertThat(AgentMetrics.PROCESS_ERRORS).startsWith("agent.");
+            assertThat(AgentMetrics.DECISION_COUNT).startsWith("agent.");
+            assertThat(AgentMetrics.CONFIDENCE_SCORE).startsWith("agent.");
+            assertThat(AgentMetrics.LIFECYCLE_CREATED).startsWith("agent.");
+            assertThat(AgentMetrics.LIFECYCLE_STARTED).startsWith("agent.");
+            assertThat(AgentMetrics.LIFECYCLE_STOPPED).startsWith("agent.");
+            assertThat(AgentMetrics.ARM_SELECTED).startsWith("agent.");
+            assertThat(AgentMetrics.REWARD_RECORDED).startsWith("agent.");
+            assertThat(AgentMetrics.EXPLORATION_RATE).startsWith("agent.");
+            assertThat(AgentMetrics.RULE_MATCHED).startsWith("agent.");
+            assertThat(AgentMetrics.RULE_NO_MATCH).startsWith("agent.");
         }
 
         @Test
-        @DisplayName("tag keys use snake_case [GH-90000]")
+        @DisplayName("tag keys use snake_case")
         void tagKeysUseSnakeCase() { // GH-90000
-            assertThat(AgentMetrics.TAG_AGENT_TYPE).matches("[a-z_]+ [GH-90000]");
-            assertThat(AgentMetrics.TAG_AGENT_ID).matches("[a-z_]+ [GH-90000]");
-            assertThat(AgentMetrics.TAG_TENANT_ID).matches("[a-z_]+ [GH-90000]");
-            assertThat(AgentMetrics.TAG_STATUS).matches("[a-z_]+ [GH-90000]");
-            assertThat(AgentMetrics.TAG_ARM_ID).matches("[a-z_]+ [GH-90000]");
-            assertThat(AgentMetrics.TAG_RULE_ID).matches("[a-z_]+ [GH-90000]");
-            assertThat(AgentMetrics.TAG_ERROR_TYPE).matches("[a-z_]+ [GH-90000]");
+            assertThat(AgentMetrics.TAG_AGENT_TYPE).matches("[a-z_]+");
+            assertThat(AgentMetrics.TAG_AGENT_ID).matches("[a-z_]+");
+            assertThat(AgentMetrics.TAG_TENANT_ID).matches("[a-z_]+");
+            assertThat(AgentMetrics.TAG_STATUS).matches("[a-z_]+");
+            assertThat(AgentMetrics.TAG_ARM_ID).matches("[a-z_]+");
+            assertThat(AgentMetrics.TAG_RULE_ID).matches("[a-z_]+");
+            assertThat(AgentMetrics.TAG_ERROR_TYPE).matches("[a-z_]+");
         }
     }
 
@@ -430,11 +430,11 @@ class AgentMetricsTest {
     // ════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Concurrency Safety [GH-90000]")
+    @DisplayName("Concurrency Safety")
     class ConcurrencyTests {
 
         @Test
-        @DisplayName("concurrent metric recording is thread-safe [GH-90000]")
+        @DisplayName("concurrent metric recording is thread-safe")
         void concurrentRecordingIsThreadSafe() throws InterruptedException { // GH-90000
             int threads = 10;
             int iterationsPerThread = 100;
@@ -469,11 +469,11 @@ class AgentMetricsTest {
     // ════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("End-to-End Scenarios [GH-90000]")
+    @DisplayName("End-to-End Scenarios")
     class EndToEndTests {
 
         @Test
-        @DisplayName("tracks complete agent lifecycle with processing [GH-90000]")
+        @DisplayName("tracks complete agent lifecycle with processing")
         void completeAgentLifecycle() { // GH-90000
             String agentType = "adaptive";
             String agentId = "epsilon-greedy-1";
@@ -521,7 +521,7 @@ class AgentMetricsTest {
         }
 
         @Test
-        @DisplayName("tracks deterministic agent rule matching pattern [GH-90000]")
+        @DisplayName("tracks deterministic agent rule matching pattern")
         void deterministicRulePattern() { // GH-90000
             String agentId = "rule-agent-1";
 

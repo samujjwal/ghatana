@@ -45,10 +45,10 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test, Mockito
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("FeatureStoreIngestLauncher — DLQ routing (DC-007) [GH-90000]")
+@DisplayName("FeatureStoreIngestLauncher — DLQ routing (DC-007)")
 class FeatureStoreIngestLauncherDlqTest {
 
-    private static final TenantId TENANT = TenantId.of("test-tenant [GH-90000]");
+    private static final TenantId TENANT = TenantId.of("test-tenant");
 
     @Mock private EventLogStore eventLogStore;
     @Mock private FeatureStoreService featureStore;
@@ -80,7 +80,7 @@ class FeatureStoreIngestLauncherDlqTest {
         byte[] payload = "{\"amount\":42.0}".getBytes(); // GH-90000
         return EventLogStore.EventEntry.builder() // GH-90000
             .eventId(UUID.randomUUID()) // GH-90000
-            .eventType("test.event [GH-90000]")
+            .eventType("test.event")
             .payload(ByteBuffer.wrap(payload)) // GH-90000
             .headers(Map.of("entityId", "entity-1")) // GH-90000
             .timestamp(Instant.now()) // GH-90000
@@ -91,7 +91,7 @@ class FeatureStoreIngestLauncherDlqTest {
         // payload is not valid JSON — extraction fails deterministically
         return EventLogStore.EventEntry.builder() // GH-90000
             .eventId(UUID.randomUUID()) // GH-90000
-            .eventType("test.event [GH-90000]")
+            .eventType("test.event")
             .payload(ByteBuffer.wrap("NOT_JSON".getBytes())) // GH-90000
             .headers(Map.of()) // GH-90000
             .timestamp(Instant.now()) // GH-90000
@@ -101,12 +101,12 @@ class FeatureStoreIngestLauncherDlqTest {
     // ── Tests ─────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("malformed payload — extraction failure [GH-90000]")
+    @DisplayName("malformed payload — extraction failure")
     class ExtractionFailureTests {
 
         @BeforeEach
         void setUp() { // GH-90000
-            CircuitBreaker cb = CircuitBreaker.builder("test-cb [GH-90000]")
+            CircuitBreaker cb = CircuitBreaker.builder("test-cb")
                 .failureThreshold(10) // GH-90000
                 .resetTimeout(Duration.ofSeconds(30)) // GH-90000
                 .build(); // GH-90000
@@ -114,7 +114,7 @@ class FeatureStoreIngestLauncherDlqTest {
         }
 
         @Test
-        @DisplayName("malformed payload routes entry to DLQ with extraction-failure reason [GH-90000]")
+        @DisplayName("malformed payload routes entry to DLQ with extraction-failure reason")
         void malformedPayloadRoutesToDlq() { // GH-90000
             EventLogStore.EventEntry entry = malformedEntry(); // GH-90000
 
@@ -122,17 +122,17 @@ class FeatureStoreIngestLauncherDlqTest {
 
             DeadLetterQueue dlqRef = launcher.getDeadLetterQueueForTesting(); // GH-90000
             assertThat(dlqRef.size()) // GH-90000
-                .as("DLQ must hold the entry that failed extraction [GH-90000]")
+                .as("DLQ must hold the entry that failed extraction")
                 .isEqualTo(1); // GH-90000
 
             var stored = dlqRef.getAll(); // GH-90000
             assertThat(stored).hasSize(1); // GH-90000
             assertThat(stored.get(0).getReason()) // GH-90000
-                .isEqualTo("extraction-failure [GH-90000]");
+                .isEqualTo("extraction-failure");
         }
 
         @Test
-        @DisplayName("extraction failure does not write any features to the feature store [GH-90000]")
+        @DisplayName("extraction failure does not write any features to the feature store")
         void extractionFailureDoesNotWriteFeatures() { // GH-90000
             launcher.processEntryForTesting(TENANT, malformedEntry()); // GH-90000
 
@@ -140,22 +140,22 @@ class FeatureStoreIngestLauncherDlqTest {
         }
 
         @Test
-        @DisplayName("extraction failure increments the extraction error counter [GH-90000]")
+        @DisplayName("extraction failure increments the extraction error counter")
         void extractionFailureIncrementsMetric() { // GH-90000
             launcher.processEntryForTesting(TENANT, malformedEntry()); // GH-90000
 
             verify(metrics, atLeastOnce()).incrementCounter( // GH-90000
-                eq("feature.ingest.extraction.errors [GH-90000]"), any(String[].class));
+                eq("feature.ingest.extraction.errors"), any(String[].class));
         }
     }
 
     @Nested
-    @DisplayName("feature store write failure [GH-90000]")
+    @DisplayName("feature store write failure")
     class WriteFailureTests {
 
         @BeforeEach
         void setUp() { // GH-90000
-            CircuitBreaker closedCb = CircuitBreaker.builder("test-write-cb [GH-90000]")
+            CircuitBreaker closedCb = CircuitBreaker.builder("test-write-cb")
                 .failureThreshold(100) // high threshold — stays CLOSED // GH-90000
                 .resetTimeout(Duration.ofSeconds(30)) // GH-90000
                 .build(); // GH-90000
@@ -163,43 +163,43 @@ class FeatureStoreIngestLauncherDlqTest {
         }
 
         @Test
-        @DisplayName("write failure routes entry to DLQ with write-failure reason [GH-90000]")
+        @DisplayName("write failure routes entry to DLQ with write-failure reason")
         void writeFailureRoutesToDlq() throws Exception { // GH-90000
-            doThrow(new RuntimeException("DB down [GH-90000]")).when(featureStore).ingest(anyString(), any(MLFeature.class));
+            doThrow(new RuntimeException("DB down")).when(featureStore).ingest(anyString(), any(MLFeature.class));
 
             launcher.processEntryForTesting(TENANT, validEntry()); // GH-90000
 
             DeadLetterQueue dlqRef = launcher.getDeadLetterQueueForTesting(); // GH-90000
             assertThat(dlqRef.size()) // GH-90000
-                .as("DLQ must hold the entry(ies) that failed writing [GH-90000]")
+                .as("DLQ must hold the entry(ies) that failed writing")
                 .isGreaterThan(0); // GH-90000
 
             assertThat(dlqRef.getAll()) // GH-90000
                 .extracting(e -> e.getReason()) // GH-90000
-                .containsOnly("write-failure [GH-90000]");
+                .containsOnly("write-failure");
         }
     }
 
     @Nested
-    @DisplayName("circuit breaker OPEN — DLQ fallback [GH-90000]")
+    @DisplayName("circuit breaker OPEN — DLQ fallback")
     class CircuitOpenTests {
 
         @Test
-        @DisplayName("open circuit routes entry to DLQ with circuit-open reason [GH-90000]")
+        @DisplayName("open circuit routes entry to DLQ with circuit-open reason")
         void openCircuitRoutesToDlq() { // GH-90000
             // Circuit with threshold=1 — trips after one failed call
-            CircuitBreaker trippedCb = CircuitBreaker.builder("test-tripped [GH-90000]")
+            CircuitBreaker trippedCb = CircuitBreaker.builder("test-tripped")
                 .failureThreshold(1) // GH-90000
                 .resetTimeout(Duration.ofHours(1))  // won't reset during test // GH-90000
                 .build(); // GH-90000
 
             // Trip it manually by causing one failure through executeSync
             try {
-                trippedCb.executeSync(() -> { throw new RuntimeException("trip [GH-90000]"); });
+                trippedCb.executeSync(() -> { throw new RuntimeException("trip"); });
             } catch (Exception ignored) { /* expected */ } // GH-90000
 
             assertThat(trippedCb.getState()) // GH-90000
-                .as("circuit must be OPEN after threshold exceeded [GH-90000]")
+                .as("circuit must be OPEN after threshold exceeded")
                 .isEqualTo(CircuitBreaker.State.OPEN); // GH-90000
 
             launcher = launcherWithCircuitBreaker(trippedCb); // GH-90000
@@ -208,23 +208,23 @@ class FeatureStoreIngestLauncherDlqTest {
 
             DeadLetterQueue dlqRef = launcher.getDeadLetterQueueForTesting(); // GH-90000
             assertThat(dlqRef.size()) // GH-90000
-                .as("DLQ must hold entries rejected by open circuit [GH-90000]")
+                .as("DLQ must hold entries rejected by open circuit")
                 .isGreaterThan(0); // GH-90000
 
             assertThat(dlqRef.getAll()) // GH-90000
                 .extracting(e -> e.getReason()) // GH-90000
-                .containsOnly("circuit-open [GH-90000]");
+                .containsOnly("circuit-open");
         }
 
         @Test
-        @DisplayName("open circuit does not invoke featureStore.ingest() [GH-90000]")
+        @DisplayName("open circuit does not invoke featureStore.ingest()")
         void openCircuitDoesNotCallFeatureStore() { // GH-90000
-            CircuitBreaker trippedCb = CircuitBreaker.builder("test-tripped-2 [GH-90000]")
+            CircuitBreaker trippedCb = CircuitBreaker.builder("test-tripped-2")
                 .failureThreshold(1) // GH-90000
                 .resetTimeout(Duration.ofHours(1)) // GH-90000
                 .build(); // GH-90000
             try {
-                trippedCb.executeSync(() -> { throw new RuntimeException("trip [GH-90000]"); });
+                trippedCb.executeSync(() -> { throw new RuntimeException("trip"); });
             } catch (Exception ignored) {} // GH-90000
 
             launcher = launcherWithCircuitBreaker(trippedCb); // GH-90000

@@ -20,11 +20,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.purpose Unit tests for episode clustering
  * @doc.layer test
  */
-@DisplayName("Episode Clustering Service Tests [GH-90000]")
+@DisplayName("Episode Clustering Service Tests")
 class EpisodeClusteringServiceTest {
 
     @Test
-    @DisplayName("clusters episodes with embeddings [GH-90000]")
+    @DisplayName("clusters episodes with embeddings")
     void clustersEpisodesWithEmbeddings() { // GH-90000
         EpisodeClusteringService service = new EpisodeClusteringService(); // GH-90000
 
@@ -43,7 +43,7 @@ class EpisodeClusteringServiceTest {
     }
 
     @Test
-    @DisplayName("handles episodes without embeddings [GH-90000]")
+    @DisplayName("handles episodes without embeddings")
     void handlesEpisodesWithoutEmbeddings() { // GH-90000
         EpisodeClusteringService service = new EpisodeClusteringService(); // GH-90000
 
@@ -59,7 +59,7 @@ class EpisodeClusteringServiceTest {
     }
 
     @Test
-    @DisplayName("uses hierarchical clustering algorithm [GH-90000]")
+    @DisplayName("uses hierarchical clustering algorithm")
     void usesHierarchicalClustering() { // GH-90000
         EpisodeClusteringService service = new EpisodeClusteringService( // GH-90000
             100, 0.5, EpisodeClusteringService.ClusteringAlgorithm.HIERARCHICAL);
@@ -76,7 +76,7 @@ class EpisodeClusteringServiceTest {
     }
 
     @Test
-    @DisplayName("uses k-means clustering algorithm [GH-90000]")
+    @DisplayName("uses k-means clustering algorithm")
     void usesKMeansClustering() { // GH-90000
         EpisodeClusteringService service = new EpisodeClusteringService( // GH-90000
             100, 0.5, EpisodeClusteringService.ClusteringAlgorithm.K_MEANS);
@@ -94,7 +94,7 @@ class EpisodeClusteringServiceTest {
     }
 
     @Test
-    @DisplayName("retrieves clusters by ID [GH-90000]")
+    @DisplayName("retrieves clusters by ID")
     void retrievesClustersById() { // GH-90000
         EpisodeClusteringService service = new EpisodeClusteringService(); // GH-90000
 
@@ -112,7 +112,7 @@ class EpisodeClusteringServiceTest {
     }
 
     @Test
-    @DisplayName("clears clusters [GH-90000]")
+    @DisplayName("clears clusters")
     void clearsClusters() { // GH-90000
         EpisodeClusteringService service = new EpisodeClusteringService(); // GH-90000
 
@@ -128,7 +128,7 @@ class EpisodeClusteringServiceTest {
     }
 
     @Test
-    @DisplayName("prunes clusters when over limit [GH-90000]")
+    @DisplayName("prunes clusters when over limit")
     void prunesClustersWhenOverLimit() { // GH-90000
         EpisodeClusteringService service = new EpisodeClusteringService(2, 0.5, EpisodeClusteringService.ClusteringAlgorithm.HIERARCHICAL); // GH-90000
 
@@ -151,10 +151,10 @@ class EpisodeClusteringServiceTest {
     private EnhancedEpisode createEpisode(String id, float[] embedding) { // GH-90000
         return EnhancedEpisode.builder() // GH-90000
             .id(id) // GH-90000
-            .agentId("agent-1 [GH-90000]")
+            .agentId("agent-1")
             .turnId("turn-" + id) // GH-90000
-            .input("input [GH-90000]")
-            .output("output [GH-90000]")
+            .input("input")
+            .output("output")
             .embedding(embedding) // GH-90000
             .createdAt(Instant.now()) // GH-90000
             .build(); // GH-90000

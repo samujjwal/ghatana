@@ -13,7 +13,11 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Base class for JPA repositories with manual EntityManager management.
- */
+  * @doc.type class
+ * @doc.purpose Provides abstract repository functionality.
+ * @doc.layer product
+ * @doc.pattern Repository
+*/
 public abstract class AbstractRepository<E> {
     protected final Logger logger = LoggerFactory.getLogger(getClass());
     protected final EntityManagerFactory entityManagerFactory;

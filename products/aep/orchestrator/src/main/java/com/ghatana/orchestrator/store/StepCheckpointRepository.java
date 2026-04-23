@@ -16,7 +16,11 @@ import org.slf4j.LoggerFactory;
 
 /**
  * ActiveJ-friendly JPA repository for step checkpoint persistence.
- */
+  * @doc.type class
+ * @doc.purpose Provides step checkpoint repository functionality.
+ * @doc.layer product
+ * @doc.pattern Repository
+*/
 public class StepCheckpointRepository {
     private static final Logger logger = LoggerFactory.getLogger(StepCheckpointRepository.class);
 

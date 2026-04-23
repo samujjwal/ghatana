@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class VectorRecordTest {
 
     @Test
-    @DisplayName("of normalizes embeddings and keeps record identity [GH-90000]")
+    @DisplayName("of normalizes embeddings and keeps record identity")
     void ofNormalizesEmbeddingsAndKeepsRecordIdentity() { // GH-90000
         UUID recordId = UUID.randomUUID(); // GH-90000
         TestDataRecord record = new TestDataRecord(recordId); // GH-90000
@@ -22,14 +22,14 @@ class VectorRecordTest {
 
         assertThat(vectorRecord.isNormalized()).isTrue(); // GH-90000
         assertThat(vectorRecord.getDimension()).isEqualTo(2); // GH-90000
-        assertThat(vectorRecord.getEmbeddingModel()).isEqualTo("test-model [GH-90000]");
+        assertThat(vectorRecord.getEmbeddingModel()).isEqualTo("test-model");
         assertThat(vectorRecord.id()).isEqualTo(recordId.toString()); // GH-90000
-        assertThat(vectorRecord.recordType()).isEqualTo("TestDataRecord [GH-90000]");
+        assertThat(vectorRecord.recordType()).isEqualTo("TestDataRecord");
         assertThat(vectorRecord.getEmbedding()).containsExactly(0.6f, 0.8f); // GH-90000
     }
 
     @Test
-    @DisplayName("cosine similarity uses normalized dot product [GH-90000]")
+    @DisplayName("cosine similarity uses normalized dot product")
     void cosineSimilarityUsesNormalizedDotProduct() { // GH-90000
         VectorRecord vectorRecord = VectorRecord.builder() // GH-90000
                 .record(new TestDataRecord(UUID.randomUUID())) // GH-90000
@@ -45,7 +45,7 @@ class VectorRecordTest {
     }
 
     @Test
-    @DisplayName("normalize returns the same instance for zero vectors [GH-90000]")
+    @DisplayName("normalize returns the same instance for zero vectors")
     void normalizeReturnsSameInstanceForZeroVectors() { // GH-90000
         VectorRecord vectorRecord = VectorRecord.builder() // GH-90000
                 .record(new TestDataRecord(UUID.randomUUID())) // GH-90000
@@ -59,7 +59,7 @@ class VectorRecordTest {
     }
 
     @Test
-    @DisplayName("vector operations reject mismatched dimensions [GH-90000]")
+    @DisplayName("vector operations reject mismatched dimensions")
     void vectorOperationsRejectMismatchedDimensions() { // GH-90000
         VectorRecord vectorRecord = VectorRecord.builder() // GH-90000
                 .record(new TestDataRecord(UUID.randomUUID())) // GH-90000
@@ -70,11 +70,11 @@ class VectorRecordTest {
 
         assertThatThrownBy(() -> vectorRecord.cosineSimilarity(new float[]{1f, 2f})) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("Embedding dimensions must match [GH-90000]");
+                .hasMessageContaining("Embedding dimensions must match");
 
         assertThatThrownBy(() -> vectorRecord.euclideanDistance(new float[]{1f, 2f})) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("Embedding dimensions must match [GH-90000]");
+                .hasMessageContaining("Embedding dimensions must match");
     }
 
     private static final class TestDataRecord extends DataRecord {

@@ -19,13 +19,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("ArchitectureAdvisor Tests [GH-90000]")
+@DisplayName("ArchitectureAdvisor Tests")
 class ArchitectureAdvisorTest extends EventloopTestBase {
 
   @Mock private YAPPCAIService aiService;
 
   @Test
-  @DisplayName("analyze returns deterministic findings for boundary crossings and broad module impact [GH-90000]")
+  @DisplayName("analyze returns deterministic findings for boundary crossings and broad module impact")
   void analyzeReturnsDeterministicFindingsForBoundaryCrossingsAndBroadModuleImpact() { // GH-90000
     ArchitectureAdvisor advisor = new ArchitectureAdvisor(aiService); // GH-90000
 
@@ -51,7 +51,7 @@ class ArchitectureAdvisorTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("analyze parses structured AI findings when deterministic checks are clean [GH-90000]")
+  @DisplayName("analyze parses structured AI findings when deterministic checks are clean")
   void analyzeParsesStructuredAiFindingsWhenDeterministicChecksAreClean() { // GH-90000
     when(aiService.reason(anyString(), anyMap())) // GH-90000
         .thenReturn( // GH-90000
@@ -73,15 +73,15 @@ class ArchitectureAdvisorTest extends EventloopTestBase {
 
     assertThat(insights).singleElement().satisfies(insight -> { // GH-90000
       assertThat(insight.type()).isEqualTo(AIInsight.InsightType.ARCHITECTURE); // GH-90000
-      assertThat(insight.title()).isEqualTo("Boundary leak [GH-90000]");
+      assertThat(insight.title()).isEqualTo("Boundary leak");
       assertThat(insight.confidence()).isEqualTo(0.91); // GH-90000
     });
   }
 
   @Test
-  @DisplayName("analyze falls back to manual review insight for malformed AI response [GH-90000]")
+  @DisplayName("analyze falls back to manual review insight for malformed AI response")
   void analyzeFallsBackToManualReviewInsightForMalformedAiResponse() { // GH-90000
-    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("not-json [GH-90000]"));
+    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("not-json"));
 
     ArchitectureAdvisor advisor = new ArchitectureAdvisor(aiService); // GH-90000
     List<AIInsight> insights =
@@ -97,8 +97,8 @@ class ArchitectureAdvisorTest extends EventloopTestBase {
                         false)));
 
     assertThat(insights).singleElement().satisfies(insight -> { // GH-90000
-      assertThat(insight.title()).isEqualTo("Manual architecture review recommended [GH-90000]");
-      assertThat(insight.description()).isEqualTo("not-json [GH-90000]");
+      assertThat(insight.title()).isEqualTo("Manual architecture review recommended");
+      assertThat(insight.description()).isEqualTo("not-json");
     });
   }
 }

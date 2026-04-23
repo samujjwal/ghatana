@@ -18,22 +18,22 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern Test, Unit
  */
-@DisplayName("ClickHouseTimeSeriesConnector Tenant Validation Tests [GH-90000]")
+@DisplayName("ClickHouseTimeSeriesConnector Tenant Validation Tests")
 class ClickHouseTimeSeriesConnectorTenantValidationTest {
 
     @Test
-    @DisplayName("requireValidTenantId accepts Data Cloud safe tenant identifiers [GH-90000]")
+    @DisplayName("requireValidTenantId accepts Data Cloud safe tenant identifiers")
     void requireValidTenantIdAcceptsSafeIdentifiers() { // GH-90000
-        String tenantId = ClickHouseTimeSeriesConnector.requireValidTenantId("tenant.alpha-01:_prod [GH-90000]");
+        String tenantId = ClickHouseTimeSeriesConnector.requireValidTenantId("tenant.alpha-01:_prod");
 
-        assertThat(tenantId).isEqualTo("tenant.alpha-01:_prod [GH-90000]");
+        assertThat(tenantId).isEqualTo("tenant.alpha-01:_prod");
     }
 
     @Test
-    @DisplayName("requireValidTenantId rejects SQL injection payloads [GH-90000]")
+    @DisplayName("requireValidTenantId rejects SQL injection payloads")
     void requireValidTenantIdRejectsSqlInjectionPayloads() { // GH-90000
-        assertThatThrownBy(() -> ClickHouseTimeSeriesConnector.requireValidTenantId("tenant' OR 1=1 -- [GH-90000]"))
+        assertThatThrownBy(() -> ClickHouseTimeSeriesConnector.requireValidTenantId("tenant' OR 1=1 --"))
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("tenantId contains illegal characters [GH-90000]");
+                .hasMessageContaining("tenantId contains illegal characters");
     }
 }

@@ -24,8 +24,8 @@ class DebugControllerFactoryTest {
 
     @BeforeEach
     void setUp() { // GH-90000
-        configDir = tempDir.resolve("config [GH-90000]").resolve("debug [GH-90000]");
-        patternsFile = configDir.resolve("stacktrace.patterns.json [GH-90000]");
+        configDir = tempDir.resolve("config").resolve("debug");
+        patternsFile = configDir.resolve("stacktrace.patterns.json");
     }
 
     @Test
@@ -44,7 +44,7 @@ class DebugControllerFactoryTest {
 
         // When: Creating a DebugController with the custom patterns
         // Set the working directory to our temp dir
-        Path originalDir = Paths.get(". [GH-90000]").toAbsolutePath();
+        Path originalDir = Paths.get(".").toAbsolutePath();
         try {
             System.setProperty("user.dir", tempDir.toAbsolutePath().toString()); // GH-90000
             DebugController controller = DebugControllerFactory.create(); // GH-90000
@@ -71,7 +71,7 @@ class DebugControllerFactoryTest {
         Files.writeString(patternsFile, invalidJson); // GH-90000
 
         // When: Creating a DebugController with invalid patterns
-        Path originalDir = Paths.get(". [GH-90000]").toAbsolutePath();
+        Path originalDir = Paths.get(".").toAbsolutePath();
         try {
             System.setProperty("user.dir", tempDir.toAbsolutePath().toString()); // GH-90000
             DebugController controller = DebugControllerFactory.create(); // GH-90000
@@ -89,7 +89,7 @@ class DebugControllerFactoryTest {
         assertFalse(Files.exists(patternsFile), "Patterns file should not exist"); // GH-90000
 
         // When: Creating a DebugController with no patterns file
-        Path originalDir = Paths.get(". [GH-90000]").toAbsolutePath();
+        Path originalDir = Paths.get(".").toAbsolutePath();
         try {
             System.setProperty("user.dir", tempDir.toAbsolutePath().toString()); // GH-90000
             DebugController controller = DebugControllerFactory.create(); // GH-90000

@@ -33,10 +33,10 @@ class AIModelRouterTest extends EventloopTestBase {
 
         // Check available models
         assertEquals(4, router.getAvailableModels().size(), "Should have 4 models"); // GH-90000
-        assertTrue(router.getAvailableModels().containsKey("llama3.2 [GH-90000]"), "Should have llama3.2");
-        assertTrue(router.getAvailableModels().containsKey("codellama [GH-90000]"), "Should have codellama");
-        assertTrue(router.getAvailableModels().containsKey("mistral [GH-90000]"), "Should have mistral");
-        assertTrue(router.getAvailableModels().containsKey("phi-3 [GH-90000]"), "Should have phi-3");
+        assertTrue(router.getAvailableModels().containsKey("llama3.2"), "Should have llama3.2");
+        assertTrue(router.getAvailableModels().containsKey("codellama"), "Should have codellama");
+        assertTrue(router.getAvailableModels().containsKey("mistral"), "Should have mistral");
+        assertTrue(router.getAvailableModels().containsKey("phi-3"), "Should have phi-3");
 
         router.shutdown(); // GH-90000
     }
@@ -49,7 +49,7 @@ class AIModelRouterTest extends EventloopTestBase {
         // Test code generation selection
         AIRequest codeRequest = AIRequest.builder() // GH-90000
                 .taskType(CODE_GENERATION) // GH-90000
-                .prompt("Write a Java function to calculate fibonacci [GH-90000]")
+                .prompt("Write a Java function to calculate fibonacci")
                 .build(); // GH-90000
 
         // Should select codellama for code tasks
@@ -71,13 +71,13 @@ class AIModelRouterTest extends EventloopTestBase {
         // Create request and response
         AIRequest request = AIRequest.builder() // GH-90000
                 .taskType(CHAT) // GH-90000
-                .prompt("Hello, how are you? [GH-90000]")
+                .prompt("Hello, how are you?")
                 .build(); // GH-90000
 
         AIResponse response = AIResponse.builder() // GH-90000
                 .requestId(request.getRequestId()) // GH-90000
-                .modelId("llama3.2 [GH-90000]")
-                .content("I'm doing well, thank you! [GH-90000]")
+                .modelId("llama3.2")
+                .content("I'm doing well, thank you!")
                 .metrics(AIResponse.ResponseMetrics.builder() // GH-90000
                         .latencyMs(100) // GH-90000
                         .tokenCount(10) // GH-90000
@@ -117,13 +117,13 @@ class AIModelRouterTest extends EventloopTestBase {
 
         AIRequest request = AIRequest.builder() // GH-90000
                 .taskType(CHAT) // GH-90000
-                .prompt("Test expiration [GH-90000]")
+                .prompt("Test expiration")
                 .build(); // GH-90000
 
         AIResponse response = AIResponse.builder() // GH-90000
                 .requestId(request.getRequestId()) // GH-90000
-                .modelId("llama3.2 [GH-90000]")
-                .content("Test response [GH-90000]")
+                .modelId("llama3.2")
+                .content("Test response")
                 .metrics(AIResponse.ResponseMetrics.builder().latencyMs(100).build()) // GH-90000
                 .build(); // GH-90000
 

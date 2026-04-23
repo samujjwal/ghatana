@@ -61,12 +61,12 @@ class ReportGeneratorTest {
         // Then
         assertTrue(Files.exists(reportPath), "Report file should exist"); // GH-90000
         assertTrue(Files.size(reportPath) > 0, "Report file should not be empty"); // GH-90000
-        assertTrue(reportPath.toString().endsWith(".json [GH-90000]"), "Report should be a JSON file");
+        assertTrue(reportPath.toString().endsWith(".json"), "Report should be a JSON file");
         assertTrue( // GH-90000
-                reportPath.getFileName().toString().startsWith("report- [GH-90000]"),
+                reportPath.getFileName().toString().startsWith("report-"),
                 "Report filename should start with 'report-'");
         assertTrue( // GH-90000
-                reportPath.getFileName().toString().endsWith(".json [GH-90000]"),
+                reportPath.getFileName().toString().endsWith(".json"),
                 "Report filename should end with '.json'");
     }
 
@@ -89,22 +89,22 @@ class ReportGeneratorTest {
         String content = Files.readString(reportPath); // GH-90000
 
         // Then - check that all data is included in the JSON
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         Map<String, Object> reportJson = objectMapper.readValue(content, Map.class); // GH-90000
 
-        assertEquals("COMPLETED", reportJson.get("status [GH-90000]"), "Status should be included");
-        assertEquals(3, reportJson.get("passes [GH-90000]"), "Passes should be included");
-        assertEquals(5, reportJson.get("editsApplied [GH-90000]"), "Edits applied should be included");
-        assertNotNull(reportJson.get("timestamp [GH-90000]"), "Timestamp should be included");
+        assertEquals("COMPLETED", reportJson.get("status"), "Status should be included");
+        assertEquals(3, reportJson.get("passes"), "Passes should be included");
+        assertEquals(5, reportJson.get("editsApplied"), "Edits applied should be included");
+        assertNotNull(reportJson.get("timestamp"), "Timestamp should be included");
 
-        @SuppressWarnings("unchecked [GH-90000]")
-        Map<String, Object> reportMetrics = (Map<String, Object>) reportJson.get("metrics [GH-90000]");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> reportMetrics = (Map<String, Object>) reportJson.get("metrics");
         assertNotNull(reportMetrics, "Metrics should be included"); // GH-90000
         assertEquals( // GH-90000
-                12345, reportMetrics.get("duration [GH-90000]"), "Duration should be included in metrics");
+                12345, reportMetrics.get("duration"), "Duration should be included in metrics");
         assertEquals( // GH-90000
                 10,
-                reportMetrics.get("filesProcessed [GH-90000]"),
+                reportMetrics.get("filesProcessed"),
                 "Files processed should be included in metrics");
     }
 
@@ -125,10 +125,10 @@ class ReportGeneratorTest {
             String content = Files.readString(reportPath); // GH-90000
 
             // Then - should include the status in the JSON
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, Object> reportJson = objectMapper.readValue(content, Map.class); // GH-90000
             assertEquals( // GH-90000
-                    status, reportJson.get("status [GH-90000]"), "Report should include status: " + status);
+                    status, reportJson.get("status"), "Report should include status: " + status);
         }
     }
 
@@ -180,7 +180,7 @@ class ReportGeneratorTest {
     @Test
     void generateReport_shouldCreateParentDirectories() throws IOException { // GH-90000
         // Given
-        Path nestedDir = tempDir.resolve("nested/directory [GH-90000]");
+        Path nestedDir = tempDir.resolve("nested/directory");
         ReportGenerator nestedGenerator = new ReportGenerator(nestedDir, testRunId); // GH-90000
         try {
             Map<String, Object> reportData = new HashMap<>(); // GH-90000

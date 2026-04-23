@@ -21,8 +21,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  *   <li>JSON AST deserialization from the JNI bridge (when library is present)</li> // GH-90000
  * </ul>
  */
-@DisplayName("TreeSitterParser JNI Bridge Tests [GH-90000]")
-@Tag("native [GH-90000]")
+@DisplayName("TreeSitterParser JNI Bridge Tests")
+@Tag("native")
 class TreeSitterParserTest {
 
     private static final boolean NATIVE_AVAILABLE;
@@ -30,7 +30,7 @@ class TreeSitterParserTest {
     static {
         boolean available = false;
         try {
-            System.loadLibrary("tree_sitter_jni [GH-90000]");
+            System.loadLibrary("tree_sitter_jni");
             available = true;
         } catch (UnsatisfiedLinkError ignored) { // GH-90000
             available = false;
@@ -48,7 +48,7 @@ class TreeSitterParserTest {
      * subsequent native-present tests.
      */
     @Test
-    @DisplayName("Should throw helpful error when native library is missing [GH-90000]")
+    @DisplayName("Should throw helpful error when native library is missing")
     void shouldThrowHelpfulErrorWhenNativeLibraryMissing() throws Exception { // GH-90000
         if (NATIVE_AVAILABLE) { // GH-90000
             return; // Nothing to assert when library is present
@@ -57,7 +57,7 @@ class TreeSitterParserTest {
         Class<?> isolated = loadClassInIsolatedLoader(TreeSitterParser.class); // GH-90000
 
         assertThatThrownBy(() -> { // GH-90000
-            isolated.getDeclaredConstructor(String.class).newInstance("java [GH-90000]");
+            isolated.getDeclaredConstructor(String.class).newInstance("java");
         })
                 .isInstanceOf(InvocationTargetException.class) // GH-90000
                 .hasCauseInstanceOf(ExceptionInInitializerError.class) // GH-90000
@@ -68,9 +68,9 @@ class TreeSitterParserTest {
                     }
                     assertThat(root) // GH-90000
                             .isInstanceOf(UnsatisfiedLinkError.class) // GH-90000
-                            .hasMessageContaining("tree_sitter_jni [GH-90000]")
-                            .hasMessageContaining("build_native.sh [GH-90000]")
-                            .hasMessageContaining("java.library.path [GH-90000]");
+                            .hasMessageContaining("tree_sitter_jni")
+                            .hasMessageContaining("build_native.sh")
+                            .hasMessageContaining("java.library.path");
                 });
     }
 
@@ -79,25 +79,25 @@ class TreeSitterParserTest {
      * Skipped automatically when the library has not been built.
      */
     @Test
-    @DisplayName("Should parse Java source and return AST map when native library is present [GH-90000]")
+    @DisplayName("Should parse Java source and return AST map when native library is present")
     void shouldParseJavaSourceWhenNativeLibraryPresent() { // GH-90000
         org.junit.jupiter.api.Assumptions.assumeTrue(NATIVE_AVAILABLE, // GH-90000
                 "Native library 'tree_sitter_jni' not available — run './build_native.sh' in src/main/native");
 
         String source = "public class Hello { public static void main(String[] args) { } }"; // GH-90000
 
-        try (TreeSitterParser parser = new TreeSitterParser("java [GH-90000]")) {
+        try (TreeSitterParser parser = new TreeSitterParser("java")) {
             java.util.Map<String, Object> ast = parser.parse(source); // GH-90000
 
             assertThat(ast).isNotNull(); // GH-90000
-            assertThat(ast).containsKey("root [GH-90000]");
-            assertThat(ast).containsKey("_language [GH-90000]");
+            assertThat(ast).containsKey("root");
+            assertThat(ast).containsKey("_language");
 
-            @SuppressWarnings("unchecked [GH-90000]")
-            java.util.Map<String, Object> root = (java.util.Map<String, Object>) ast.get("root [GH-90000]");
-            assertThat(root).containsKey("type [GH-90000]");
-            assertThat(root).containsKey("children [GH-90000]");
-            assertThat(root.get("type [GH-90000]")).isEqualTo("program [GH-90000]");
+            @SuppressWarnings("unchecked")
+            java.util.Map<String, Object> root = (java.util.Map<String, Object>) ast.get("root");
+            assertThat(root).containsKey("type");
+            assertThat(root).containsKey("children");
+            assertThat(root.get("type")).isEqualTo("program");
         }
     }
 

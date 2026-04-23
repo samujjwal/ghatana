@@ -37,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer core
  * @doc.pattern Compatibility Test
  */
-@DisplayName("SPI Evolution Compatibility Tests [GH-90000]")
+@DisplayName("SPI Evolution Compatibility Tests")
 class SpiEvolutionCompatibilityTest {
 
     // =========================================================================
@@ -45,59 +45,59 @@ class SpiEvolutionCompatibilityTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Version compatibility [GH-90000]")
+    @DisplayName("Version compatibility")
     class VersionCompatibility {
 
         @Test
-        @DisplayName("plugin with same major version is compatible [GH-90000]")
+        @DisplayName("plugin with same major version is compatible")
         void sameMajorVersionIsCompatible() { // GH-90000
-            SpiVersion consumerVersion = new SpiVersion("2.5.0 [GH-90000]");
-            SpiVersion providerVersion = new SpiVersion("2.3.1 [GH-90000]");
+            SpiVersion consumerVersion = new SpiVersion("2.5.0");
+            SpiVersion providerVersion = new SpiVersion("2.3.1");
 
             assertThat(consumerVersion.isCompatibleWith(providerVersion)).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("plugin with higher major version is incompatible [GH-90000]")
+        @DisplayName("plugin with higher major version is incompatible")
         void higherMajorVersionIsIncompatible() { // GH-90000
-            SpiVersion consumerVersion = new SpiVersion("3.0.0 [GH-90000]");
-            SpiVersion providerVersion = new SpiVersion("2.5.0 [GH-90000]");
+            SpiVersion consumerVersion = new SpiVersion("3.0.0");
+            SpiVersion providerVersion = new SpiVersion("2.5.0");
 
             assertThat(consumerVersion.isCompatibleWith(providerVersion)).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("plugin with lower major version is compatible [GH-90000]")
+        @DisplayName("plugin with lower major version is compatible")
         void lowerMajorVersionIsCompatible() { // GH-90000
-            SpiVersion consumerVersion = new SpiVersion("2.0.0 [GH-90000]");
-            SpiVersion providerVersion = new SpiVersion("2.5.0 [GH-90000]");
+            SpiVersion consumerVersion = new SpiVersion("2.0.0");
+            SpiVersion providerVersion = new SpiVersion("2.5.0");
 
             assertThat(consumerVersion.isCompatibleWith(providerVersion)).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("minor version differences are compatible [GH-90000]")
+        @DisplayName("minor version differences are compatible")
         void minorVersionDifferencesAreCompatible() { // GH-90000
-            SpiVersion consumerVersion = new SpiVersion("2.1.0 [GH-90000]");
-            SpiVersion providerVersion = new SpiVersion("2.5.0 [GH-90000]");
+            SpiVersion consumerVersion = new SpiVersion("2.1.0");
+            SpiVersion providerVersion = new SpiVersion("2.5.0");
 
             assertThat(consumerVersion.isCompatibleWith(providerVersion)).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("patch version differences are compatible [GH-90000]")
+        @DisplayName("patch version differences are compatible")
         void patchVersionDifferencesAreCompatible() { // GH-90000
-            SpiVersion consumerVersion = new SpiVersion("2.5.3 [GH-90000]");
-            SpiVersion providerVersion = new SpiVersion("2.5.1 [GH-90000]");
+            SpiVersion consumerVersion = new SpiVersion("2.5.3");
+            SpiVersion providerVersion = new SpiVersion("2.5.1");
 
             assertThat(consumerVersion.isCompatibleWith(providerVersion)).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("pre-release versions are compatible with same major [GH-90000]")
+        @DisplayName("pre-release versions are compatible with same major")
         void preReleaseVersionsAreCompatible() { // GH-90000
-            SpiVersion consumerVersion = new SpiVersion("2.0.0-alpha [GH-90000]");
-            SpiVersion providerVersion = new SpiVersion("2.0.0-beta [GH-90000]");
+            SpiVersion consumerVersion = new SpiVersion("2.0.0-alpha");
+            SpiVersion providerVersion = new SpiVersion("2.0.0-beta");
 
             assertThat(consumerVersion.isCompatibleWith(providerVersion)).isTrue(); // GH-90000
         }
@@ -108,34 +108,34 @@ class SpiEvolutionCompatibilityTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Interface evolution [GH-90000]")
+    @DisplayName("Interface evolution")
     class InterfaceEvolution {
 
         @Test
-        @DisplayName("V1 plugin works with V2 interface (backward compatibility) [GH-90000]")
+        @DisplayName("V1 plugin works with V2 interface (backward compatibility)")
         void v1PluginWorksWithV2Interface() { // GH-90000
             V1StoragePlugin v1Plugin = new V1StoragePluginImpl("v1-plugin", "1.0.0"); // GH-90000
             
             // V1 plugin should be able to implement V2 interface via adapter
             V2StoragePlugin v2Adapter = new V1ToV2Adapter(v1Plugin); // GH-90000
             
-            assertThat(v2Adapter.getPluginId()).isEqualTo("v1-plugin [GH-90000]");
-            assertThat(v2Adapter.getVersion()).isEqualTo("1.0.0 [GH-90000]");
+            assertThat(v2Adapter.getPluginId()).isEqualTo("v1-plugin");
+            assertThat(v2Adapter.getVersion()).isEqualTo("1.0.0");
             assertThat(v2Adapter.getSupportedRecordTypes()).isNotEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("V2 plugin works with V1 interface (forward compatibility) [GH-90000]")
+        @DisplayName("V2 plugin works with V1 interface (forward compatibility)")
         void v2PluginWorksWithV1Interface() { // GH-90000
             V2StoragePlugin v2Plugin = new V2StoragePluginImpl("v2-plugin", "2.0.0"); // GH-90000
             
             // V2 plugin should work with V1 consumers if it only uses V1 methods
-            assertThat(v2Plugin.getPluginId()).isEqualTo("v2-plugin [GH-90000]");
+            assertThat(v2Plugin.getPluginId()).isEqualTo("v2-plugin");
             assertThat(v2Plugin.getSupportedRecordTypes()).isNotEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("new method with default implementation maintains compatibility [GH-90000]")
+        @DisplayName("new method with default implementation maintains compatibility")
         void newMethodWithDefaultImplementationMaintainsCompatibility() { // GH-90000
             // Simulating a V3 plugin that doesn't implement new V3 method
             V2StoragePlugin v2Plugin = new V2StoragePluginImpl("v2-plugin", "2.0.0"); // GH-90000
@@ -153,11 +153,11 @@ class SpiEvolutionCompatibilityTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Provider discovery edge cases [GH-90000]")
+    @DisplayName("Provider discovery edge cases")
     class ProviderDiscovery {
 
         @Test
-        @DisplayName("handles duplicate plugin IDs gracefully [GH-90000]")
+        @DisplayName("handles duplicate plugin IDs gracefully")
         void handlesDuplicatePluginIds() { // GH-90000
             StoragePluginRegistry registry = StoragePluginRegistry.getInstance(); // GH-90000
             
@@ -172,17 +172,17 @@ class SpiEvolutionCompatibilityTest {
         }
 
         @Test
-        @DisplayName("handles missing plugin gracefully [GH-90000]")
+        @DisplayName("handles missing plugin gracefully")
         void handlesMissingPlugin() { // GH-90000
             StoragePluginRegistry registry = StoragePluginRegistry.getInstance(); // GH-90000
             
-            Optional<StoragePlugin<?>> plugin = registry.getPlugin("non-existent [GH-90000]");
+            Optional<StoragePlugin<?>> plugin = registry.getPlugin("non-existent");
             
             assertThat(plugin).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("handles plugin with invalid version format [GH-90000]")
+        @DisplayName("handles plugin with invalid version format")
         void handlesInvalidVersionFormat() { // GH-90000
             TestPlugin plugin = new TestPlugin("invalid-version", "not-a-version", Set.of(RecordType.EVENT)); // GH-90000
             
@@ -191,7 +191,7 @@ class SpiEvolutionCompatibilityTest {
         }
 
         @Test
-        @DisplayName("handles plugin initialization failure [GH-90000]")
+        @DisplayName("handles plugin initialization failure")
         void handlesInitializationFailure() { // GH-90000
             FailingPlugin plugin = new FailingPlugin("failing", "1.0.0"); // GH-90000
             StoragePluginRegistry registry = StoragePluginRegistry.getInstance(); // GH-90000
@@ -199,11 +199,11 @@ class SpiEvolutionCompatibilityTest {
             registry.register(plugin); // GH-90000
             
             // Should not throw during registration
-            assertThat(registry.getPlugin("failing [GH-90000]")).isPresent();
+            assertThat(registry.getPlugin("failing")).isPresent();
         }
 
         @Test
-        @DisplayName("handles plugin with no supported record types [GH-90000]")
+        @DisplayName("handles plugin with no supported record types")
         void handlesNoSupportedRecordTypes() { // GH-90000
             TestPlugin plugin = new TestPlugin("empty-support", "1.0.0", Set.of()); // GH-90000
             
@@ -217,11 +217,11 @@ class SpiEvolutionCompatibilityTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Backward compatibility [GH-90000]")
+    @DisplayName("Backward compatibility")
     class BackwardCompatibility {
 
         @Test
-        @DisplayName("old consumers can use new plugins [GH-90000]")
+        @DisplayName("old consumers can use new plugins")
         void oldConsumersCanUseNewPlugins() { // GH-90000
             V2StoragePlugin newPlugin = new V2StoragePluginImpl("new-plugin", "2.0.0"); // GH-90000
             
@@ -233,7 +233,7 @@ class SpiEvolutionCompatibilityTest {
         }
 
         @Test
-        @DisplayName("new consumers can use old plugins [GH-90000]")
+        @DisplayName("new consumers can use old plugins")
         void newConsumersCanUseOldPlugins() { // GH-90000
             V1StoragePlugin oldPlugin = new V1StoragePluginImpl("old-plugin", "1.0.0"); // GH-90000
             
@@ -245,7 +245,7 @@ class SpiEvolutionCompatibilityTest {
         }
 
         @Test
-        @DisplayName("default methods provide safe fallbacks [GH-90000]")
+        @DisplayName("default methods provide safe fallbacks")
         void defaultMethodsProvideSafeFallbacks() { // GH-90000
             V2StoragePlugin plugin = new V2StoragePluginImpl("test", "1.0.0"); // GH-90000
             
@@ -265,7 +265,7 @@ class SpiEvolutionCompatibilityTest {
             String[] parts = version.split("-", 2); // GH-90000
             String versionPart = parts[0];
             
-            String[] versionParts = versionPart.split("\\. [GH-90000]");
+            String[] versionParts = versionPart.split("\\.");
             if (versionParts.length != 3) { // GH-90000
                 throw new IllegalArgumentException("Invalid version format: " + version); // GH-90000
             }
@@ -325,9 +325,9 @@ class SpiEvolutionCompatibilityTest {
         @Override public String getDisplayName() { return id; } // GH-90000
         @Override public String getVersion() { return "1.0.0"; } // GH-90000
         @Override public List<RecordType> getSupportedRecordTypes() { return List.of(RecordType.EVENT); } // GH-90000
-        @Override public Promise<Void> initialize(Map<String, Object> config) { return Promise.ofException(new RuntimeException("Init failed [GH-90000]")); }
+        @Override public Promise<Void> initialize(Map<String, Object> config) { return Promise.ofException(new RuntimeException("Init failed")); }
         @Override public Promise<Void> shutdown() { return Promise.complete(); } // GH-90000
-        @Override public Promise<HealthStatus> healthCheck() { return Promise.of(HealthStatus.error("Failed [GH-90000]")); }
+        @Override public Promise<HealthStatus> healthCheck() { return Promise.of(HealthStatus.error("Failed")); }
         @Override public Promise<com.ghatana.datacloud.Collection> createCollection(com.ghatana.datacloud.Collection collection) { return Promise.of(collection); } // GH-90000
         @Override public Promise<Optional<com.ghatana.datacloud.Collection>> getCollection(String tenantId, String name) { return Promise.of(Optional.empty()); } // GH-90000
         @Override public Promise<com.ghatana.datacloud.Collection> updateCollection(com.ghatana.datacloud.Collection collection) { return Promise.of(collection); } // GH-90000

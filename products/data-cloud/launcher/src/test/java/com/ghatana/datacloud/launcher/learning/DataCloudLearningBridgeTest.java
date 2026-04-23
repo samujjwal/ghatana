@@ -25,7 +25,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataCloudLearningBridge (DC-7) [GH-90000]")
+@DisplayName("DataCloudLearningBridge (DC-7)")
 class DataCloudLearningBridgeTest {
 
     private DataCloudBrain mockBrain;
@@ -40,28 +40,28 @@ class DataCloudLearningBridgeTest {
     // ==================== Construction ====================
 
     @Nested
-    @DisplayName("Construction [GH-90000]")
+    @DisplayName("Construction")
     class ConstructionTests {
 
         @Test
-        @DisplayName("null brain throws IllegalArgumentException [GH-90000]")
+        @DisplayName("null brain throws IllegalArgumentException")
         void nullBrain_throws() { // GH-90000
             assertThatThrownBy(() -> new DataCloudLearningBridge(null)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("brain [GH-90000]");
+                .hasMessageContaining("brain");
         }
 
         @Test
-        @DisplayName("initial status shows RUNNING=false and lastRunTime=never [GH-90000]")
+        @DisplayName("initial status shows RUNNING=false and lastRunTime=never")
         void initialStatus_isCorrect() { // GH-90000
             Map<String, Object> status = bridge.getStatus(); // GH-90000
-            assertThat(status.get("running [GH-90000]")).isEqualTo(false);
-            assertThat(status.get("lastRunTime [GH-90000]")).isEqualTo("never [GH-90000]");
-            assertThat(status.get("intervalMinutes [GH-90000]")).isEqualTo(DataCloudLearningBridge.INTERVAL_MINUTES);
+            assertThat(status.get("running")).isEqualTo(false);
+            assertThat(status.get("lastRunTime")).isEqualTo("never");
+            assertThat(status.get("intervalMinutes")).isEqualTo(DataCloudLearningBridge.INTERVAL_MINUTES);
         }
 
         @Test
-        @DisplayName("initial review queue is empty [GH-90000]")
+        @DisplayName("initial review queue is empty")
         void initialReviewQueue_isEmpty() { // GH-90000
             assertThat(bridge.getReviewQueue()).isEmpty(); // GH-90000
         }
@@ -70,11 +70,11 @@ class DataCloudLearningBridgeTest {
     // ==================== runLearning ====================
 
     @Nested
-    @DisplayName("runLearning() [GH-90000]")
+    @DisplayName("runLearning()")
     class RunLearningTests {
 
         @Test
-        @DisplayName("returns COMPLETED status on success [GH-90000]")
+        @DisplayName("returns COMPLETED status on success")
         void runLearning_success_returnsCompleted() { // GH-90000
             DataCloudBrain.LearningResult result = DataCloudBrain.LearningResult.builder() // GH-90000
                 .patternsDiscovered(List.of()) // GH-90000
@@ -88,16 +88,16 @@ class DataCloudLearningBridgeTest {
 
             Map<String, Object> summary = bridge.runLearning("tenant-1", true); // GH-90000
 
-            assertThat(summary.get("status [GH-90000]")).isEqualTo("COMPLETED [GH-90000]");
-            assertThat(summary.get("tenantId [GH-90000]")).isEqualTo("tenant-1 [GH-90000]");
-            assertThat(summary.get("manual [GH-90000]")).isEqualTo(true);
-            assertThat(((Number) summary.get("patternsDiscovered [GH-90000]")).intValue()).isEqualTo(0);
-            assertThat(((Number) summary.get("recordsAnalyzed [GH-90000]")).longValue()).isEqualTo(100L);
-            assertThat(summary.get("ranAt [GH-90000]")).isNotNull();
+            assertThat(summary.get("status")).isEqualTo("COMPLETED");
+            assertThat(summary.get("tenantId")).isEqualTo("tenant-1");
+            assertThat(summary.get("manual")).isEqualTo(true);
+            assertThat(((Number) summary.get("patternsDiscovered")).intValue()).isEqualTo(0);
+            assertThat(((Number) summary.get("recordsAnalyzed")).longValue()).isEqualTo(100L);
+            assertThat(summary.get("ranAt")).isNotNull();
         }
 
         @Test
-        @DisplayName("SKIPPED when already running (concurrent guard) [GH-90000]")
+        @DisplayName("SKIPPED when already running (concurrent guard)")
         void runLearning_alreadyRunning_returnsSkipped() throws Exception { // GH-90000
             // Block the bridge so a second call sees it as running
             DataCloudBrain.LearningResult result = DataCloudBrain.LearningResult.builder() // GH-90000
@@ -120,26 +120,26 @@ class DataCloudLearningBridgeTest {
             entered.await(); // wait until first thread is inside runLearning // GH-90000
 
             Map<String, Object> secondResult = bridge.runLearning("t2", true); // GH-90000
-            assertThat(secondResult.get("status [GH-90000]")).isEqualTo("SKIPPED [GH-90000]");
+            assertThat(secondResult.get("status")).isEqualTo("SKIPPED");
 
             release.countDown(); // GH-90000
             firstThread.join(2_000); // GH-90000
         }
 
         @Test
-        @DisplayName("FAILED status when brain.learn() throws [GH-90000]")
+        @DisplayName("FAILED status when brain.learn() throws")
         void runLearning_brainThrows_returnsFailed() { // GH-90000
             when(mockBrain.learn(any(DataCloudBrain.LearningConfig.class), any(BrainContext.class))) // GH-90000
-                .thenThrow(new RuntimeException("brain exploded [GH-90000]"));
+                .thenThrow(new RuntimeException("brain exploded"));
 
             Map<String, Object> summary = bridge.runLearning("default", false); // GH-90000
 
-            assertThat(summary.get("status [GH-90000]")).isEqualTo("FAILED [GH-90000]");
-            assertThat(summary.get("error [GH-90000]").toString()).contains("brain exploded [GH-90000]");
+            assertThat(summary.get("status")).isEqualTo("FAILED");
+            assertThat(summary.get("error").toString()).contains("brain exploded");
         }
 
         @Test
-        @DisplayName("lastResult is updated after a successful run [GH-90000]")
+        @DisplayName("lastResult is updated after a successful run")
         void runLearning_updatesLastResult() { // GH-90000
             DataCloudBrain.LearningResult result = DataCloudBrain.LearningResult.builder() // GH-90000
                 .patternsDiscovered(List.of()) // GH-90000
@@ -152,12 +152,12 @@ class DataCloudLearningBridgeTest {
             bridge.runLearning("t", false); // GH-90000
 
             Map<String, Object> status = bridge.getStatus(); // GH-90000
-            Map<?, ?> lastResult = (Map<?, ?>) status.get("lastResult [GH-90000]");
-            assertThat(lastResult.get("status [GH-90000]")).isEqualTo("COMPLETED [GH-90000]");
+            Map<?, ?> lastResult = (Map<?, ?>) status.get("lastResult");
+            assertThat(lastResult.get("status")).isEqualTo("COMPLETED");
         }
 
         @Test
-        @DisplayName("lastRunTime is set after a successful run [GH-90000]")
+        @DisplayName("lastRunTime is set after a successful run")
         void runLearning_setsLastRunTime() { // GH-90000
             when(mockBrain.learn(any(), any())).thenReturn(Promise.of( // GH-90000
                 DataCloudBrain.LearningResult.builder() // GH-90000
@@ -168,58 +168,58 @@ class DataCloudLearningBridgeTest {
             bridge.runLearning("t", false); // GH-90000
 
             Map<String, Object> status = bridge.getStatus(); // GH-90000
-            assertThat(status.get("lastRunTime [GH-90000]")).isNotEqualTo("never [GH-90000]");
+            assertThat(status.get("lastRunTime")).isNotEqualTo("never");
         }
     }
 
     // ==================== Review Queue ====================
 
     @Nested
-    @DisplayName("Review Queue [GH-90000]")
+    @DisplayName("Review Queue")
     class ReviewQueueTests {
 
         @Test
-        @DisplayName("approveReview: returns true and updates status to APPROVED [GH-90000]")
+        @DisplayName("approveReview: returns true and updates status to APPROVED")
         void approveReview_found_returnsTrue() { // GH-90000
-            // seedReviewItem("pat-1 [GH-90000]") → runLearning seeds key "review-pat-1"
-            seedReviewItem("pat-1 [GH-90000]");
+            // seedReviewItem("pat-1") → runLearning seeds key "review-pat-1"
+            seedReviewItem("pat-1");
             String reviewKey = "review-pat-1";
 
             boolean ok = bridge.approveReview(reviewKey); // GH-90000
 
             assertThat(ok).isTrue(); // GH-90000
             Map<String, Object> item = bridge.getReviewQueue().get(reviewKey); // GH-90000
-            assertThat(item.get("status [GH-90000]")).isEqualTo("APPROVED [GH-90000]");
-            assertThat(item.get("reviewedAt [GH-90000]")).isNotNull();
+            assertThat(item.get("status")).isEqualTo("APPROVED");
+            assertThat(item.get("reviewedAt")).isNotNull();
         }
 
         @Test
-        @DisplayName("rejectReview: returns true and updates status to REJECTED [GH-90000]")
+        @DisplayName("rejectReview: returns true and updates status to REJECTED")
         void rejectReview_found_returnsTrue() { // GH-90000
-            seedReviewItem("pat-2 [GH-90000]");
+            seedReviewItem("pat-2");
             String reviewKey = "review-pat-2";
 
             boolean ok = bridge.rejectReview(reviewKey); // GH-90000
 
             assertThat(ok).isTrue(); // GH-90000
             Map<String, Object> item = bridge.getReviewQueue().get(reviewKey); // GH-90000
-            assertThat(item.get("status [GH-90000]")).isEqualTo("REJECTED [GH-90000]");
+            assertThat(item.get("status")).isEqualTo("REJECTED");
         }
 
         @Test
-        @DisplayName("approveReview: returns false when item not found [GH-90000]")
+        @DisplayName("approveReview: returns false when item not found")
         void approveReview_notFound_returnsFalse() { // GH-90000
-            assertThat(bridge.approveReview("no-such-id [GH-90000]")).isFalse();
+            assertThat(bridge.approveReview("no-such-id")).isFalse();
         }
 
         @Test
-        @DisplayName("rejectReview: returns false when item not found [GH-90000]")
+        @DisplayName("rejectReview: returns false when item not found")
         void rejectReview_notFound_returnsFalse() { // GH-90000
-            assertThat(bridge.rejectReview("no-such-id [GH-90000]")).isFalse();
+            assertThat(bridge.rejectReview("no-such-id")).isFalse();
         }
 
         @Test
-        @DisplayName("getReviewQueue returns unmodifiable snapshot [GH-90000]")
+        @DisplayName("getReviewQueue returns unmodifiable snapshot")
         void getReviewQueue_returnsSnapshot() { // GH-90000
             assertThat(bridge.getReviewQueue()).isEmpty(); // GH-90000
         }
@@ -250,35 +250,35 @@ class DataCloudLearningBridgeTest {
     // ==================== Status Reporting ====================
 
     @Nested
-    @DisplayName("Status Reporting [GH-90000]")
+    @DisplayName("Status Reporting")
     class StatusReportingTests {
 
         @Test
-        @DisplayName("status always contains required keys [GH-90000]")
+        @DisplayName("status always contains required keys")
         void status_alwaysContainsRequiredKeys() { // GH-90000
             Map<String, Object> status = bridge.getStatus(); // GH-90000
 
-            assertThat(status.containsKey("running [GH-90000]")).isTrue();
-            assertThat(status.containsKey("lastRunTime [GH-90000]")).isTrue();
-            assertThat(status.containsKey("nextScheduledRun [GH-90000]")).isTrue();
-            assertThat(status.containsKey("intervalMinutes [GH-90000]")).isTrue();
-            assertThat(status.containsKey("pendingReviews [GH-90000]")).isTrue();
-            assertThat(status.containsKey("lastResult [GH-90000]")).isTrue();
+            assertThat(status.containsKey("running")).isTrue();
+            assertThat(status.containsKey("lastRunTime")).isTrue();
+            assertThat(status.containsKey("nextScheduledRun")).isTrue();
+            assertThat(status.containsKey("intervalMinutes")).isTrue();
+            assertThat(status.containsKey("pendingReviews")).isTrue();
+            assertThat(status.containsKey("lastResult")).isTrue();
         }
 
         @Test
-        @DisplayName("initial lastResult has status=NOT_RUN [GH-90000]")
+        @DisplayName("initial lastResult has status=NOT_RUN")
         void status_initialLastResult_isNotRun() { // GH-90000
             Map<String, Object> status = bridge.getStatus(); // GH-90000
-            Map<?, ?> lastResult = (Map<?, ?>) status.get("lastResult [GH-90000]");
-            assertThat(lastResult.get("status [GH-90000]")).isEqualTo("NOT_RUN [GH-90000]");
+            Map<?, ?> lastResult = (Map<?, ?>) status.get("lastResult");
+            assertThat(lastResult.get("status")).isEqualTo("NOT_RUN");
         }
 
         @Test
-        @DisplayName("intervalMinutes matches INTERVAL_MINUTES constant [GH-90000]")
+        @DisplayName("intervalMinutes matches INTERVAL_MINUTES constant")
         void status_intervalMinutes_matchesConstant() { // GH-90000
             Map<String, Object> status = bridge.getStatus(); // GH-90000
-            assertThat(((Number) status.get("intervalMinutes [GH-90000]")).longValue())
+            assertThat(((Number) status.get("intervalMinutes")).longValue())
                 .isEqualTo(DataCloudLearningBridge.INTERVAL_MINUTES); // GH-90000
         }
     }
@@ -286,11 +286,11 @@ class DataCloudLearningBridgeTest {
     // ==================== AutoCloseable ====================
 
     @Nested
-    @DisplayName("AutoCloseable [GH-90000]")
+    @DisplayName("AutoCloseable")
     class CloseTests {
 
         @Test
-        @DisplayName("close() does not throw [GH-90000]")
+        @DisplayName("close() does not throw")
         void close_doesNotThrow() { // GH-90000
             bridge.close(); // should not throw // GH-90000
         }
@@ -299,29 +299,29 @@ class DataCloudLearningBridgeTest {
     // ==================== Hardening (P3.7.1) ==================== // GH-90000
 
     @Nested
-    @DisplayName("Hardening [GH-90000]")
+    @DisplayName("Hardening")
     class HardeningTests {
 
         @Test
-        @DisplayName("purgeCompletedReviews: removes APPROVED and REJECTED items from queue [GH-90000]")
+        @DisplayName("purgeCompletedReviews: removes APPROVED and REJECTED items from queue")
         void purgeCompleted_removesApprovedAndRejected() { // GH-90000
-            seedReviewItem("a [GH-90000]");
-            seedReviewItem("b [GH-90000]");
-            seedReviewItem("c [GH-90000]");
-            bridge.approveReview("review-a [GH-90000]");
-            bridge.rejectReview("review-b [GH-90000]");
+            seedReviewItem("a");
+            seedReviewItem("b");
+            seedReviewItem("c");
+            bridge.approveReview("review-a");
+            bridge.rejectReview("review-b");
             // "review-c" stays PENDING
 
             int purged = bridge.purgeCompletedReviews(); // GH-90000
 
             assertThat(purged).isEqualTo(2); // GH-90000
-            assertThat(bridge.getReviewQueue()).containsOnlyKeys("review-c [GH-90000]");
+            assertThat(bridge.getReviewQueue()).containsOnlyKeys("review-c");
         }
 
         @Test
-        @DisplayName("purgeCompletedReviews: returns 0 when no completed reviews exist [GH-90000]")
+        @DisplayName("purgeCompletedReviews: returns 0 when no completed reviews exist")
         void purgeCompleted_returnsZeroWhenEmpty() { // GH-90000
-            seedReviewItem("x [GH-90000]");
+            seedReviewItem("x");
             // leave it PENDING
 
             int purged = bridge.purgeCompletedReviews(); // GH-90000
@@ -331,10 +331,10 @@ class DataCloudLearningBridgeTest {
         }
 
         @Test
-        @DisplayName("purgeCompletedReviews: idempotent — second call returns 0 [GH-90000]")
+        @DisplayName("purgeCompletedReviews: idempotent — second call returns 0")
         void purgeCompleted_idempotent() { // GH-90000
-            seedReviewItem("y [GH-90000]");
-            bridge.approveReview("review-y [GH-90000]");
+            seedReviewItem("y");
+            bridge.approveReview("review-y");
 
             bridge.purgeCompletedReviews(); // GH-90000
             int secondPurge = bridge.purgeCompletedReviews(); // GH-90000
@@ -344,7 +344,7 @@ class DataCloudLearningBridgeTest {
         }
 
         @Test
-        @DisplayName("review queue cap: items beyond MAX_REVIEW_QUEUE_SIZE are not enqueued [GH-90000]")
+        @DisplayName("review queue cap: items beyond MAX_REVIEW_QUEUE_SIZE are not enqueued")
         void queueCap_enforcedOnEnqueue() { // GH-90000
             // Build a result with many low-confidence patterns to overflow the cap
             java.util.List<com.ghatana.datacloud.pattern.PatternRecord> manyPatterns =

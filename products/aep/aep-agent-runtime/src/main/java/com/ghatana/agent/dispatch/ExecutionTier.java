@@ -18,7 +18,8 @@ package com.ghatana.agent.dispatch;
  *
  * @author Ghatana AI Platform
  * @since 2.2.0
- */
+  * @doc.pattern Enum
+*/
 public enum ExecutionTier {
 
     /**

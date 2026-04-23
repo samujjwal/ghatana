@@ -100,7 +100,10 @@ package com.ghatana.pattern.api.model;
  *     <td>❌</td>
  *   </tr>
  * </table>
- */
+  * @doc.type enum
+ * @doc.purpose Provides pattern status functionality.
+ * @doc.layer product
+*/
 public enum PatternStatus {
 
     /**

@@ -47,7 +47,7 @@ import static org.mockito.Mockito.when;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("YAPPC Lifecycle Operators [GH-90000]")
+@DisplayName("YAPPC Lifecycle Operators")
 class YappcLifecycleOperatorsTest extends EventloopTestBase {
 
     // ─── shared fixtures ─────────────────────────────────────────────────────
@@ -97,7 +97,7 @@ class YappcLifecycleOperatorsTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("PhaseTransitionValidatorOperator [GH-90000]")
+    @DisplayName("PhaseTransitionValidatorOperator")
     class ValidatorOperatorTests {
 
         private PhaseTransitionValidatorOperator operator;
@@ -112,7 +112,7 @@ class YappcLifecycleOperatorsTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should emit validated event when transition is allowed and gate is open [GH-90000]")
+        @DisplayName("should emit validated event when transition is allowed and gate is open")
         void shouldEmitValidatedEventForAllowedTransition() { // GH-90000
             // GIVEN
             TransitionSpec spec = new TransitionSpec(); // GH-90000
@@ -122,7 +122,7 @@ class YappcLifecycleOperatorsTest extends EventloopTestBase {
 
             when(transitionConfig.findTransition("intent", "context")) // GH-90000
                     .thenReturn(Optional.of(spec)); // GH-90000
-            when(stageConfig.findById("context [GH-90000]"))
+            when(stageConfig.findById("context"))
                     .thenReturn(Optional.of(targetStage)); // GH-90000
             when(gateEvaluator.evaluateEntry(any(), any())) // GH-90000
                     .thenReturn(gateResult); // GH-90000
@@ -139,12 +139,12 @@ class YappcLifecycleOperatorsTest extends EventloopTestBase {
             Event outputEvent = result.getOutputEvents().get(0); // GH-90000
             assertThat(outputEvent.getType()) // GH-90000
                     .isEqualTo(PhaseTransitionValidatorOperator.EVENT_TRANSITION_VALIDATED); // GH-90000
-            assertThat(outputEvent.getPayload("toPhase [GH-90000]")).isEqualTo("context [GH-90000]");
-            assertThat(outputEvent.getPayload("gateOpen [GH-90000]")).isEqualTo(true);
+            assertThat(outputEvent.getPayload("toPhase")).isEqualTo("context");
+            assertThat(outputEvent.getPayload("gateOpen")).isEqualTo(true);
         }
 
         @Test
-        @DisplayName("should fail when no transition rule matches [GH-90000]")
+        @DisplayName("should fail when no transition rule matches")
         void shouldFailForUnknownTransition() { // GH-90000
             // GIVEN
             when(transitionConfig.findTransition("intent", "ship")) // GH-90000
@@ -158,17 +158,17 @@ class YappcLifecycleOperatorsTest extends EventloopTestBase {
 
             // THEN
             assertThat(result.isSuccess()).isFalse(); // GH-90000
-            assertThat(result.getErrorMessage()).contains("INVALID_TRANSITION [GH-90000]");
+            assertThat(result.getErrorMessage()).contains("INVALID_TRANSITION");
         }
 
         @Test
-        @DisplayName("should fail when target stage is unknown [GH-90000]")
+        @DisplayName("should fail when target stage is unknown")
         void shouldFailForUnknownTargetStage() { // GH-90000
             // GIVEN
             TransitionSpec spec = new TransitionSpec(); // GH-90000
             when(transitionConfig.findTransition("intent", "unknown-stage")) // GH-90000
                     .thenReturn(Optional.of(spec)); // GH-90000
-            when(stageConfig.findById("unknown-stage [GH-90000]"))
+            when(stageConfig.findById("unknown-stage"))
                     .thenReturn(Optional.empty()); // GH-90000
 
             Event requestedEvent = buildTransitionRequestedEvent( // GH-90000
@@ -179,7 +179,7 @@ class YappcLifecycleOperatorsTest extends EventloopTestBase {
 
             // THEN
             assertThat(result.isSuccess()).isFalse(); // GH-90000
-            assertThat(result.getErrorMessage()).contains("UNKNOWN_TARGET_STAGE [GH-90000]");
+            assertThat(result.getErrorMessage()).contains("UNKNOWN_TARGET_STAGE");
         }
     }
 
@@ -188,7 +188,7 @@ class YappcLifecycleOperatorsTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("GateOrchestratorOperator [GH-90000]")
+    @DisplayName("GateOrchestratorOperator")
     class GateOrchestratorTests {
 
         private GateOrchestratorOperator operator;
@@ -202,7 +202,7 @@ class YappcLifecycleOperatorsTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should emit gate.passed when policy passes and gate is open [GH-90000]")
+        @DisplayName("should emit gate.passed when policy passes and gate is open")
         void shouldEmitGatePassedWhenPolicyPassesAndGateOpen() { // GH-90000
             // GIVEN
             when(policyEngine.evaluate(anyString(), any())) // GH-90000
@@ -222,7 +222,7 @@ class YappcLifecycleOperatorsTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should fail result when policy denies the transition [GH-90000]")
+        @DisplayName("should fail result when policy denies the transition")
         void shouldFailWhenPolicyDenies() { // GH-90000
             // GIVEN
             when(policyEngine.evaluate(anyString(), any())) // GH-90000
@@ -236,11 +236,11 @@ class YappcLifecycleOperatorsTest extends EventloopTestBase {
 
             // THEN
             assertThat(result.isSuccess()).isFalse(); // GH-90000
-            assertThat(result.getErrorMessage()).contains("POLICY_DENIED [GH-90000]");
+            assertThat(result.getErrorMessage()).contains("POLICY_DENIED");
         }
 
         @Test
-        @DisplayName("should request human approval when gate has unmet criteria [GH-90000]")
+        @DisplayName("should request human approval when gate has unmet criteria")
         void shouldRequestHumanApprovalForUnmetCriteria() { // GH-90000
             // GIVEN
             when(policyEngine.evaluate(anyString(), any())) // GH-90000
@@ -267,8 +267,8 @@ class YappcLifecycleOperatorsTest extends EventloopTestBase {
             assertThat(result.getOutputEvents()).hasSize(1); // GH-90000
             assertThat(result.getOutputEvents().get(0).getType()) // GH-90000
                     .isEqualTo(GateOrchestratorOperator.EVENT_APPROVAL_REQUESTED); // GH-90000
-            assertThat(result.getOutputEvents().get(0).getPayload("approvalId [GH-90000]"))
-                    .isEqualTo("req-1 [GH-90000]");
+            assertThat(result.getOutputEvents().get(0).getPayload("approvalId"))
+                    .isEqualTo("req-1");
         }
     }
 
@@ -277,7 +277,7 @@ class YappcLifecycleOperatorsTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("AgentDispatchOperator [GH-90000]")
+    @DisplayName("AgentDispatchOperator")
     class AgentDispatchTests {
 
         private AgentDispatchOperator operator;
@@ -289,14 +289,14 @@ class YappcLifecycleOperatorsTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should emit one dispatch event per agent assignment [GH-90000]")
+        @DisplayName("should emit one dispatch event per agent assignment")
         void shouldEmitDispatchEventsForEachAgent() { // GH-90000
             // GIVEN
             StageSpec stage = new StageSpec(); // GH-90000
             // Inject agent assignments via reflection to avoid package-private setters
             setAgentAssignments(stage, List.of("context-analyzer", "requirement-extractor")); // GH-90000
 
-            when(stageConfig.findById("context [GH-90000]")).thenReturn(Optional.of(stage));
+            when(stageConfig.findById("context")).thenReturn(Optional.of(stage));
 
             Event gatePassedEvent = buildGatePassedEvent("proj-1", "intent", "context", "tenant-1"); // GH-90000
 
@@ -312,12 +312,12 @@ class YappcLifecycleOperatorsTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should forward event unchanged when no agents are assigned [GH-90000]")
+        @DisplayName("should forward event unchanged when no agents are assigned")
         void shouldForwardEventWhenNoAgentsAssigned() { // GH-90000
             // GIVEN
             StageSpec stage = new StageSpec(); // GH-90000
             // No agent assignments (default empty) // GH-90000
-            when(stageConfig.findById("context [GH-90000]")).thenReturn(Optional.of(stage));
+            when(stageConfig.findById("context")).thenReturn(Optional.of(stage));
 
             Event gatePassedEvent = buildGatePassedEvent("proj-2", "intent", "context", "tenant-1"); // GH-90000
 
@@ -335,7 +335,7 @@ class YappcLifecycleOperatorsTest extends EventloopTestBase {
         /** Injects agentAssignments into a StageSpec (field is package-private JsonProperty). */ // GH-90000
         private void setAgentAssignments(StageSpec stage, List<String> agents) { // GH-90000
             try {
-                var field = StageSpec.class.getDeclaredField("agentAssignments [GH-90000]");
+                var field = StageSpec.class.getDeclaredField("agentAssignments");
                 field.setAccessible(true); // GH-90000
                 field.set(stage, agents); // GH-90000
             } catch (Exception e) { // GH-90000
@@ -349,7 +349,7 @@ class YappcLifecycleOperatorsTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("LifecycleStatePublisherOperator [GH-90000]")
+    @DisplayName("LifecycleStatePublisherOperator")
     class PublisherOperatorTests {
 
         private LifecycleStatePublisherOperator operator;
@@ -363,7 +363,7 @@ class YappcLifecycleOperatorsTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should emit lifecycle.phase.advanced for agent.dispatched events [GH-90000]")
+        @DisplayName("should emit lifecycle.phase.advanced for agent.dispatched events")
         void shouldEmitPhaseAdvancedForAgentDispatch() { // GH-90000
             // GIVEN
             Event agentDispatchedEvent = GEvent.builder() // GH-90000
@@ -385,9 +385,9 @@ class YappcLifecycleOperatorsTest extends EventloopTestBase {
             Event output = result.getOutputEvents().get(0); // GH-90000
             assertThat(output.getType()) // GH-90000
                     .isEqualTo(LifecycleStatePublisherOperator.EVENT_PHASE_ADVANCED); // GH-90000
-            assertThat(output.getPayload("fromPhase [GH-90000]")).isEqualTo("intent [GH-90000]");
-            assertThat(output.getPayload("toPhase [GH-90000]")).isEqualTo("context [GH-90000]");
-            assertThat(output.getPayload("agentId [GH-90000]")).isEqualTo("context-analyzer [GH-90000]");
+            assertThat(output.getPayload("fromPhase")).isEqualTo("intent");
+            assertThat(output.getPayload("toPhase")).isEqualTo("context");
+            assertThat(output.getPayload("agentId")).isEqualTo("context-analyzer");
         }
     }
 }

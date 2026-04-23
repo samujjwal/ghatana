@@ -21,13 +21,13 @@ import static org.assertj.core.api.Assertions.assertThat;
  * {@link ArchivePlugin.VacuumResult}, {@link ArchivePlugin.ArchiveStatistics},
  * and {@link StreamingPlugin.SubscriptionOptions}.
  */
-@DisplayName("SPI value types [GH-90000]")
+@DisplayName("SPI value types")
 class SpiValueTypesTest {
 
     // ─── RoutingPlugin.Strategy ───────────────────────────────────────────────
 
     @Nested
-    @DisplayName("RoutingPlugin.Strategy [GH-90000]")
+    @DisplayName("RoutingPlugin.Strategy")
     class RoutingStrategy {
 
         @Test
@@ -44,15 +44,15 @@ class SpiValueTypesTest {
 
         @Test
         void valueOfByName() { // GH-90000
-            assertThat(RoutingPlugin.Strategy.valueOf("HASH [GH-90000]")).isSameAs(RoutingPlugin.Strategy.HASH);
-            assertThat(RoutingPlugin.Strategy.valueOf("ROUND_ROBIN [GH-90000]")).isSameAs(RoutingPlugin.Strategy.ROUND_ROBIN);
+            assertThat(RoutingPlugin.Strategy.valueOf("HASH")).isSameAs(RoutingPlugin.Strategy.HASH);
+            assertThat(RoutingPlugin.Strategy.valueOf("ROUND_ROBIN")).isSameAs(RoutingPlugin.Strategy.ROUND_ROBIN);
         }
     }
 
     // ─── ArchivePlugin records ────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("ArchivePlugin.ArchiveResult [GH-90000]")
+    @DisplayName("ArchivePlugin.ArchiveResult")
     class ArchiveResultTest {
 
         @Test
@@ -62,16 +62,16 @@ class SpiValueTypesTest {
             assertThat(r.eventsArchived()).isEqualTo(100); // GH-90000
             assertThat(r.bytesWritten()).isEqualTo(5000L); // GH-90000
             assertThat(r.durationMillis()).isEqualTo(200L); // GH-90000
-            assertThat(r.archiveLocation()).contains("s3://bucket/path [GH-90000]");
+            assertThat(r.archiveLocation()).contains("s3://bucket/path");
             assertThat(r.errorMessage()).isEmpty(); // GH-90000
         }
 
         @Test
         void failureFactory() { // GH-90000
-            ArchivePlugin.ArchiveResult r = ArchivePlugin.ArchiveResult.failure("disk full [GH-90000]");
+            ArchivePlugin.ArchiveResult r = ArchivePlugin.ArchiveResult.failure("disk full");
             assertThat(r.success()).isFalse(); // GH-90000
             assertThat(r.eventsArchived()).isZero(); // GH-90000
-            assertThat(r.errorMessage()).contains("disk full [GH-90000]");
+            assertThat(r.errorMessage()).contains("disk full");
         }
 
         @Test
@@ -84,7 +84,7 @@ class SpiValueTypesTest {
     }
 
     @Nested
-    @DisplayName("ArchivePlugin.CompactionResult [GH-90000]")
+    @DisplayName("ArchivePlugin.CompactionResult")
     class CompactionResultTest {
 
         @Test
@@ -99,14 +99,14 @@ class SpiValueTypesTest {
 
         @Test
         void failureFactory() { // GH-90000
-            ArchivePlugin.CompactionResult r = ArchivePlugin.CompactionResult.failure("io error [GH-90000]");
+            ArchivePlugin.CompactionResult r = ArchivePlugin.CompactionResult.failure("io error");
             assertThat(r.success()).isFalse(); // GH-90000
-            assertThat(r.errorMessage()).contains("io error [GH-90000]");
+            assertThat(r.errorMessage()).contains("io error");
         }
     }
 
     @Nested
-    @DisplayName("ArchivePlugin.VacuumResult [GH-90000]")
+    @DisplayName("ArchivePlugin.VacuumResult")
     class VacuumResultTest {
 
         @Test
@@ -120,20 +120,20 @@ class SpiValueTypesTest {
 
         @Test
         void failureFactory() { // GH-90000
-            ArchivePlugin.VacuumResult r = ArchivePlugin.VacuumResult.failure("permission denied [GH-90000]");
+            ArchivePlugin.VacuumResult r = ArchivePlugin.VacuumResult.failure("permission denied");
             assertThat(r.success()).isFalse(); // GH-90000
-            assertThat(r.errorMessage()).contains("permission denied [GH-90000]");
+            assertThat(r.errorMessage()).contains("permission denied");
         }
     }
 
     @Nested
-    @DisplayName("ArchivePlugin.ArchiveStatistics [GH-90000]")
+    @DisplayName("ArchivePlugin.ArchiveStatistics")
     class ArchiveStatisticsTest {
 
         @Test
         void recordConstruction() { // GH-90000
-            Instant oldest = Instant.parse("2026-01-01T00:00:00Z [GH-90000]");
-            Instant newest = Instant.parse("2026-04-01T00:00:00Z [GH-90000]");
+            Instant oldest = Instant.parse("2026-01-01T00:00:00Z");
+            Instant newest = Instant.parse("2026-04-01T00:00:00Z");
             ArchivePlugin.ArchiveStatistics stats = new ArchivePlugin.ArchiveStatistics( // GH-90000
                     1000L, 50000L, 10, 4, 42L, oldest, newest
             );
@@ -150,7 +150,7 @@ class SpiValueTypesTest {
     // ─── StreamingPlugin.SubscriptionOptions ─────────────────────────────────
 
     @Nested
-    @DisplayName("StreamingPlugin.SubscriptionOptions builder [GH-90000]")
+    @DisplayName("StreamingPlugin.SubscriptionOptions builder")
     class SubscriptionOptionsTest {
 
         @Test
@@ -170,7 +170,7 @@ class SpiValueTypesTest {
             StreamingPlugin.SubscriptionOptions opts = StreamingPlugin.SubscriptionOptions.builder() // GH-90000
                     .partitionId(PartitionId.of(2)) // GH-90000
                     .startOffset(Offset.EARLIEST) // GH-90000
-                    .consumerGroup("my-group [GH-90000]")
+                    .consumerGroup("my-group")
                     .batchSize(50) // GH-90000
                     .batchTimeout(Duration.ofMillis(200)) // GH-90000
                     .autoCommit(true) // GH-90000
@@ -178,7 +178,7 @@ class SpiValueTypesTest {
                     .build(); // GH-90000
             assertThat(opts.partitionId()).isEqualTo(PartitionId.of(2)); // GH-90000
             assertThat(opts.startOffset()).isSameAs(Offset.EARLIEST); // GH-90000
-            assertThat(opts.consumerGroup()).isEqualTo("my-group [GH-90000]");
+            assertThat(opts.consumerGroup()).isEqualTo("my-group");
             assertThat(opts.batchSize()).isEqualTo(50); // GH-90000
             assertThat(opts.autoCommit()).isTrue(); // GH-90000
         }
@@ -186,9 +186,9 @@ class SpiValueTypesTest {
         @Test
         void recordEquality() { // GH-90000
             StreamingPlugin.SubscriptionOptions a = StreamingPlugin.SubscriptionOptions.builder() // GH-90000
-                    .consumerGroup("g [GH-90000]").batchSize(200).build();
+                    .consumerGroup("g").batchSize(200).build();
             StreamingPlugin.SubscriptionOptions b = StreamingPlugin.SubscriptionOptions.builder() // GH-90000
-                    .consumerGroup("g [GH-90000]").batchSize(200).build();
+                    .consumerGroup("g").batchSize(200).build();
             assertThat(a).isEqualTo(b); // GH-90000
         }
     }

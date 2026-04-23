@@ -18,35 +18,35 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * Covers: required checks, type compatibility, enum allowlist,
  * recursive array/list/map/object validation, and edge cases.
  */
-@DisplayName("EventParameterSpec.validate() [GH-90000]")
+@DisplayName("EventParameterSpec.validate()")
 class EventParameterSpecValidationTest {
 
     // ── Required / Optional ────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Required parameter checks [GH-90000]")
+    @DisplayName("Required parameter checks")
     class RequiredChecks {
 
         @Test
-        @DisplayName("throws NullPointerException when required parameter is null [GH-90000]")
+        @DisplayName("throws NullPointerException when required parameter is null")
         void requiredParameterRejectsNull() { // GH-90000
             EventParameterSpec spec = EventParameterSpec.builder() // GH-90000
-                    .name("userId [GH-90000]")
+                    .name("userId")
                     .type(EventParameterType.STRING) // GH-90000
                     .required(true) // GH-90000
                     .build(); // GH-90000
 
             assertThatThrownBy(() -> spec.validate(null)) // GH-90000
                     .isInstanceOf(NullPointerException.class) // GH-90000
-                    .hasMessageContaining("userId [GH-90000]")
-                    .hasMessageContaining("required [GH-90000]");
+                    .hasMessageContaining("userId")
+                    .hasMessageContaining("required");
         }
 
         @Test
-        @DisplayName("accepts null for optional parameter [GH-90000]")
+        @DisplayName("accepts null for optional parameter")
         void optionalParameterAcceptsNull() { // GH-90000
             EventParameterSpec spec = EventParameterSpec.builder() // GH-90000
-                    .name("tag [GH-90000]")
+                    .name("tag")
                     .type(EventParameterType.STRING) // GH-90000
                     .required(false) // GH-90000
                     .build(); // GH-90000
@@ -58,26 +58,26 @@ class EventParameterSpecValidationTest {
     // ── Type Compatibility ─────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Type compatibility checks [GH-90000]")
+    @DisplayName("Type compatibility checks")
     class TypeCompatibility {
 
         @Test
-        @DisplayName("accepts compatible string value [GH-90000]")
+        @DisplayName("accepts compatible string value")
         void acceptsCompatibleString() { // GH-90000
             EventParameterSpec spec = EventParameterSpec.builder() // GH-90000
-                    .name("name [GH-90000]")
+                    .name("name")
                     .type(EventParameterType.STRING) // GH-90000
                     .required(true) // GH-90000
                     .build(); // GH-90000
 
-            assertThatCode(() -> spec.validate("hello [GH-90000]")).doesNotThrowAnyException();
+            assertThatCode(() -> spec.validate("hello")).doesNotThrowAnyException();
         }
 
         @Test
-        @DisplayName("accepts compatible integer value (boxed) [GH-90000]")
+        @DisplayName("accepts compatible integer value (boxed)")
         void acceptsCompatibleInteger() { // GH-90000
             EventParameterSpec spec = EventParameterSpec.builder() // GH-90000
-                    .name("count [GH-90000]")
+                    .name("count")
                     .type(EventParameterType.INTEGER) // GH-90000
                     .required(true) // GH-90000
                     .build(); // GH-90000
@@ -86,10 +86,10 @@ class EventParameterSpecValidationTest {
         }
 
         @Test
-        @DisplayName("accepts compatible boolean value [GH-90000]")
+        @DisplayName("accepts compatible boolean value")
         void acceptsCompatibleBoolean() { // GH-90000
             EventParameterSpec spec = EventParameterSpec.builder() // GH-90000
-                    .name("flag [GH-90000]")
+                    .name("flag")
                     .type(EventParameterType.BOOLEAN) // GH-90000
                     .required(true) // GH-90000
                     .build(); // GH-90000
@@ -98,10 +98,10 @@ class EventParameterSpecValidationTest {
         }
 
         @Test
-        @DisplayName("accepts compatible double value [GH-90000]")
+        @DisplayName("accepts compatible double value")
         void acceptsCompatibleDouble() { // GH-90000
             EventParameterSpec spec = EventParameterSpec.builder() // GH-90000
-                    .name("score [GH-90000]")
+                    .name("score")
                     .type(EventParameterType.DOUBLE) // GH-90000
                     .required(true) // GH-90000
                     .build(); // GH-90000
@@ -110,71 +110,71 @@ class EventParameterSpecValidationTest {
         }
 
         @Test
-        @DisplayName("rejects incompatible type [GH-90000]")
+        @DisplayName("rejects incompatible type")
         void rejectsIncompatibleType() { // GH-90000
             EventParameterSpec spec = EventParameterSpec.builder() // GH-90000
-                    .name("count [GH-90000]")
+                    .name("count")
                     .type(EventParameterType.INTEGER) // GH-90000
                     .required(true) // GH-90000
                     .build(); // GH-90000
 
-            assertThatThrownBy(() -> spec.validate("not-a-number [GH-90000]"))
+            assertThatThrownBy(() -> spec.validate("not-a-number"))
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("count [GH-90000]")
-                    .hasMessageContaining("Integer [GH-90000]");
+                    .hasMessageContaining("count")
+                    .hasMessageContaining("Integer");
         }
     }
 
     // ── Enum Allowlist ─────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Enum allowlist checks [GH-90000]")
+    @DisplayName("Enum allowlist checks")
     class EnumAllowlist {
 
         @Test
-        @DisplayName("accepts value in enum set [GH-90000]")
+        @DisplayName("accepts value in enum set")
         void acceptsAllowedValue() { // GH-90000
             EventParameterSpec spec = EventParameterSpec.builder() // GH-90000
-                    .name("status [GH-90000]")
+                    .name("status")
                     .type(EventParameterType.STRING) // GH-90000
                     .enumValues(new LinkedHashSet<>(Arrays.asList("PENDING", "ACTIVE", "COMPLETED"))) // GH-90000
                     .required(true) // GH-90000
                     .build(); // GH-90000
 
-            assertThatCode(() -> spec.validate("ACTIVE [GH-90000]")).doesNotThrowAnyException();
+            assertThatCode(() -> spec.validate("ACTIVE")).doesNotThrowAnyException();
         }
 
         @Test
-        @DisplayName("rejects value not in enum set [GH-90000]")
+        @DisplayName("rejects value not in enum set")
         void rejectsDisallowedValue() { // GH-90000
             EventParameterSpec spec = EventParameterSpec.builder() // GH-90000
-                    .name("status [GH-90000]")
+                    .name("status")
                     .type(EventParameterType.STRING) // GH-90000
                     .enumValues(new LinkedHashSet<>(Arrays.asList("PENDING", "ACTIVE", "COMPLETED"))) // GH-90000
                     .required(true) // GH-90000
                     .build(); // GH-90000
 
-            assertThatThrownBy(() -> spec.validate("UNKNOWN [GH-90000]"))
+            assertThatThrownBy(() -> spec.validate("UNKNOWN"))
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("status [GH-90000]")
-                    .hasMessageContaining("not in allowed values [GH-90000]");
+                    .hasMessageContaining("status")
+                    .hasMessageContaining("not in allowed values");
         }
     }
 
     // ── Recursive: Array / List ────────────────────────────────────────
 
     @Nested
-    @DisplayName("Array/List recursive validation [GH-90000]")
+    @DisplayName("Array/List recursive validation")
     class ArrayListValidation {
 
         @Test
-        @DisplayName("validates list elements against itemsSpec [GH-90000]")
+        @DisplayName("validates list elements against itemsSpec")
         void validatesListElements() { // GH-90000
             EventParameterSpec spec = EventParameterSpec.builder() // GH-90000
-                    .name("tags [GH-90000]")
+                    .name("tags")
                     .type(EventParameterType.LIST) // GH-90000
                     .itemsSpec(EventParameterSpec.builder() // GH-90000
-                            .name("tag [GH-90000]")
+                            .name("tag")
                             .type(EventParameterType.STRING) // GH-90000
                             .required(true) // GH-90000
                             .build()) // GH-90000
@@ -186,13 +186,13 @@ class EventParameterSpecValidationTest {
         }
 
         @Test
-        @DisplayName("rejects list with invalid element type [GH-90000]")
+        @DisplayName("rejects list with invalid element type")
         void rejectsInvalidListElement() { // GH-90000
             EventParameterSpec spec = EventParameterSpec.builder() // GH-90000
-                    .name("tags [GH-90000]")
+                    .name("tags")
                     .type(EventParameterType.LIST) // GH-90000
                     .itemsSpec(EventParameterSpec.builder() // GH-90000
-                            .name("tag [GH-90000]")
+                            .name("tag")
                             .type(EventParameterType.STRING) // GH-90000
                             .required(true) // GH-90000
                             .build()) // GH-90000
@@ -201,17 +201,17 @@ class EventParameterSpecValidationTest {
 
             assertThatThrownBy(() -> spec.validate(List.of("a", 42, "c"))) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("tags[1] [GH-90000]");
+                    .hasMessageContaining("tags[1]");
         }
 
         @Test
-        @DisplayName("rejects list element that is null when required [GH-90000]")
+        @DisplayName("rejects list element that is null when required")
         void rejectsNullListElement() { // GH-90000
             EventParameterSpec spec = EventParameterSpec.builder() // GH-90000
-                    .name("ids [GH-90000]")
+                    .name("ids")
                     .type(EventParameterType.LIST) // GH-90000
                     .itemsSpec(EventParameterSpec.builder() // GH-90000
-                            .name("id [GH-90000]")
+                            .name("id")
                             .type(EventParameterType.STRING) // GH-90000
                             .required(true) // GH-90000
                             .build()) // GH-90000
@@ -220,24 +220,24 @@ class EventParameterSpecValidationTest {
 
             assertThatThrownBy(() -> spec.validate(Arrays.asList("a", null))) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("ids[1] [GH-90000]");
+                    .hasMessageContaining("ids[1]");
         }
     }
 
     // ── Recursive: Map ─────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Map recursive validation [GH-90000]")
+    @DisplayName("Map recursive validation")
     class MapValidation {
 
         @Test
-        @DisplayName("validates map values against valueSpec [GH-90000]")
+        @DisplayName("validates map values against valueSpec")
         void validatesMapValues() { // GH-90000
             EventParameterSpec spec = EventParameterSpec.builder() // GH-90000
-                    .name("metadata [GH-90000]")
+                    .name("metadata")
                     .type(EventParameterType.MAP) // GH-90000
                     .valueSpec(EventParameterSpec.builder() // GH-90000
-                            .name("value [GH-90000]")
+                            .name("value")
                             .type(EventParameterType.STRING) // GH-90000
                             .required(true) // GH-90000
                             .build()) // GH-90000
@@ -249,13 +249,13 @@ class EventParameterSpecValidationTest {
         }
 
         @Test
-        @DisplayName("rejects map with invalid value type [GH-90000]")
+        @DisplayName("rejects map with invalid value type")
         void rejectsInvalidMapValue() { // GH-90000
             EventParameterSpec spec = EventParameterSpec.builder() // GH-90000
-                    .name("metadata [GH-90000]")
+                    .name("metadata")
                     .type(EventParameterType.MAP) // GH-90000
                     .valueSpec(EventParameterSpec.builder() // GH-90000
-                            .name("value [GH-90000]")
+                            .name("value")
                             .type(EventParameterType.STRING) // GH-90000
                             .required(true) // GH-90000
                             .build()) // GH-90000
@@ -264,31 +264,31 @@ class EventParameterSpecValidationTest {
 
             assertThatThrownBy(() -> spec.validate(Map.of("k1", "v1", "k2", 42))) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("metadata [GH-90000]")
-                    .hasMessageContaining("k2 [GH-90000]");
+                    .hasMessageContaining("metadata")
+                    .hasMessageContaining("k2");
         }
     }
 
     // ── Recursive: Object ──────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Object recursive validation [GH-90000]")
+    @DisplayName("Object recursive validation")
     class ObjectValidation {
 
         @Test
-        @DisplayName("validates object properties recursively [GH-90000]")
+        @DisplayName("validates object properties recursively")
         void validatesObjectProperties() { // GH-90000
             EventParameterSpec spec = EventParameterSpec.builder() // GH-90000
-                    .name("user [GH-90000]")
+                    .name("user")
                     .type(EventParameterType.OBJECT) // GH-90000
                     .properties(Map.of( // GH-90000
                             "name", EventParameterSpec.builder() // GH-90000
-                                    .name("name [GH-90000]")
+                                    .name("name")
                                     .type(EventParameterType.STRING) // GH-90000
                                     .required(true) // GH-90000
                                     .build(), // GH-90000
                             "age", EventParameterSpec.builder() // GH-90000
-                                    .name("age [GH-90000]")
+                                    .name("age")
                                     .type(EventParameterType.INTEGER) // GH-90000
                                     .required(false) // GH-90000
                                     .build() // GH-90000
@@ -301,14 +301,14 @@ class EventParameterSpecValidationTest {
         }
 
         @Test
-        @DisplayName("rejects object with missing required property [GH-90000]")
+        @DisplayName("rejects object with missing required property")
         void rejectsMissingRequiredProperty() { // GH-90000
             EventParameterSpec spec = EventParameterSpec.builder() // GH-90000
-                    .name("user [GH-90000]")
+                    .name("user")
                     .type(EventParameterType.OBJECT) // GH-90000
                     .properties(Map.of( // GH-90000
                             "name", EventParameterSpec.builder() // GH-90000
-                                    .name("name [GH-90000]")
+                                    .name("name")
                                     .type(EventParameterType.STRING) // GH-90000
                                     .required(true) // GH-90000
                                     .build() // GH-90000
@@ -318,18 +318,18 @@ class EventParameterSpecValidationTest {
 
             assertThatThrownBy(() -> spec.validate(Map.of())) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("user.name [GH-90000]");
+                    .hasMessageContaining("user.name");
         }
 
         @Test
-        @DisplayName("rejects object with wrong property type [GH-90000]")
+        @DisplayName("rejects object with wrong property type")
         void rejectsWrongPropertyType() { // GH-90000
             EventParameterSpec spec = EventParameterSpec.builder() // GH-90000
-                    .name("config [GH-90000]")
+                    .name("config")
                     .type(EventParameterType.OBJECT) // GH-90000
                     .properties(Map.of( // GH-90000
                             "retries", EventParameterSpec.builder() // GH-90000
-                                    .name("retries [GH-90000]")
+                                    .name("retries")
                                     .type(EventParameterType.INTEGER) // GH-90000
                                     .required(true) // GH-90000
                                     .build() // GH-90000
@@ -339,32 +339,32 @@ class EventParameterSpecValidationTest {
 
             assertThatThrownBy(() -> spec.validate(Map.of("retries", "not-a-number"))) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("config.retries [GH-90000]");
+                    .hasMessageContaining("config.retries");
         }
     }
 
     // ── Edge Cases ─────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Edge cases [GH-90000]")
+    @DisplayName("Edge cases")
     class EdgeCases {
 
         @Test
-        @DisplayName("validates without type set (null type accepts any value) [GH-90000]")
+        @DisplayName("validates without type set (null type accepts any value)")
         void nullTypeAcceptsAnyValue() { // GH-90000
             EventParameterSpec spec = EventParameterSpec.builder() // GH-90000
-                    .name("anything [GH-90000]")
+                    .name("anything")
                     .required(true) // GH-90000
                     .build(); // GH-90000
 
-            assertThatCode(() -> spec.validate("hello [GH-90000]")).doesNotThrowAnyException();
+            assertThatCode(() -> spec.validate("hello")).doesNotThrowAnyException();
             assertThatCode(() -> spec.validate(42)).doesNotThrowAnyException(); // GH-90000
         }
 
         @Test
-        @DisplayName("validates pre-defined constant specs [GH-90000]")
+        @DisplayName("validates pre-defined constant specs")
         void predefinedConstantsAcceptValidValues() { // GH-90000
-            assertThatCode(() -> EventParameterSpec.EVENT_CORRELATION_ID.validate("corr-123 [GH-90000]"))
+            assertThatCode(() -> EventParameterSpec.EVENT_CORRELATION_ID.validate("corr-123"))
                     .doesNotThrowAnyException(); // GH-90000
             assertThatCode(() -> EventParameterSpec.EVENT_CONFIDENCE.validate(0.95)) // GH-90000
                     .doesNotThrowAnyException(); // GH-90000
@@ -373,7 +373,7 @@ class EventParameterSpecValidationTest {
         }
 
         @Test
-        @DisplayName("pre-defined optional constants accept null [GH-90000]")
+        @DisplayName("pre-defined optional constants accept null")
         void predefinedConstantsAcceptNull() { // GH-90000
             assertThatCode(() -> EventParameterSpec.EVENT_CORRELATION_ID.validate(null)) // GH-90000
                     .doesNotThrowAnyException(); // GH-90000

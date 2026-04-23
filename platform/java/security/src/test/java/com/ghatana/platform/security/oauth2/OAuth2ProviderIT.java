@@ -30,8 +30,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer core
  * @doc.pattern Test
  */
-@Tag("integration [GH-90000]")
-@DisplayName("OAuth2Provider — integration tests with WireMock [GH-90000]")
+@Tag("integration")
+@DisplayName("OAuth2Provider — integration tests with WireMock")
 class OAuth2ProviderIT {
 
     private static WireMockServer wireMock;
@@ -60,11 +60,11 @@ class OAuth2ProviderIT {
 
         // Use manual config (no discoveryUri) so no HTTP call is made in the constructor // GH-90000
         config = OAuth2Config.builder() // GH-90000
-                .clientId("test-client [GH-90000]")
-                .clientSecret("test-secret [GH-90000]")
+                .clientId("test-client")
+                .clientSecret("test-secret")
                 .tokenEndpoint(URI.create(baseUrl + "/oauth/token")) // GH-90000
                 .authorizationEndpoint(URI.create(baseUrl + "/oauth/authorize")) // GH-90000
-                .redirectUri(URI.create("http://localhost:8080/callback [GH-90000]"))
+                .redirectUri(URI.create("http://localhost:8080/callback"))
                 .issuerUri(URI.create(baseUrl)) // GH-90000
                 .jwksUri(URI.create(baseUrl + "/.well-known/jwks.json")) // GH-90000
                 .scopes("openid", "profile", "email") // GH-90000
@@ -74,30 +74,30 @@ class OAuth2ProviderIT {
     }
 
     @Test
-    @DisplayName("generateAuthorizationUrl returns URL with expected parameters [GH-90000]")
+    @DisplayName("generateAuthorizationUrl returns URL with expected parameters")
     void generateAuthorizationUrl_returnsUrlWithClientId() { // GH-90000
         OAuth2Provider.AuthResponse response =
                 provider.generateAuthorizationUrl("http://localhost:8080/callback", "test-nonce"); // GH-90000
 
         assertThat(response.getAuthorizationUrl()) // GH-90000
-                .contains("client_id=test-client [GH-90000]")
-                .contains("response_type=code [GH-90000]");
+                .contains("client_id=test-client")
+                .contains("response_type=code");
         assertThat(response.getState()).isNotBlank(); // GH-90000
         assertThat(response.getNonce()).isNotBlank(); // GH-90000
     }
 
     @Test
-    @DisplayName("generateAuthorizationUrl includes nonce in URL [GH-90000]")
+    @DisplayName("generateAuthorizationUrl includes nonce in URL")
     void generateAuthorizationUrl_includesNonceParameter() { // GH-90000
         OAuth2Provider.AuthResponse response =
                 provider.generateAuthorizationUrl("http://localhost:8080/callback", "my-nonce"); // GH-90000
 
-        assertThat(response.getAuthorizationUrl()).contains("nonce= [GH-90000]");
-        assertThat(response.getNonce()).isEqualTo("my-nonce [GH-90000]");
+        assertThat(response.getAuthorizationUrl()).contains("nonce=");
+        assertThat(response.getNonce()).isEqualTo("my-nonce");
     }
 
     @Test
-    @DisplayName("generateAuthorizationUrl generates unique state on each call [GH-90000]")
+    @DisplayName("generateAuthorizationUrl generates unique state on each call")
     void generateAuthorizationUrl_uniqueStatePerCall() { // GH-90000
         OAuth2Provider.AuthResponse first =
                 provider.generateAuthorizationUrl("http://localhost:8080/callback", "nonce-1"); // GH-90000
@@ -108,7 +108,7 @@ class OAuth2ProviderIT {
     }
 
     @Test
-    @DisplayName("authenticate throws OAuth2Exception when state is invalid [GH-90000]")
+    @DisplayName("authenticate throws OAuth2Exception when state is invalid")
     void authenticate_invalidState_throwsOAuth2Exception() { // GH-90000
         // Generate a valid state so the stateStore has an entry
         OAuth2Provider.AuthResponse authResponse =
@@ -118,13 +118,13 @@ class OAuth2ProviderIT {
                 provider.authenticate("auth-code", "wrong-state", authResponse.getState(), // GH-90000
                         "http://localhost:8080/callback"))
                 .isInstanceOf(OAuth2Exception.class) // GH-90000
-                .hasMessageContaining("state [GH-90000]");
+                .hasMessageContaining("state");
     }
 
     @Test
-    @DisplayName("authenticate throws OAuth2Exception when token endpoint returns error [GH-90000]")
+    @DisplayName("authenticate throws OAuth2Exception when token endpoint returns error")
     void authenticate_tokenEndpointError_throwsOAuth2Exception() { // GH-90000
-        wireMock.stubFor(post(urlEqualTo("/oauth/token [GH-90000]"))
+        wireMock.stubFor(post(urlEqualTo("/oauth/token"))
                 .willReturn(aResponse() // GH-90000
                         .withStatus(400) // GH-90000
                         .withHeader("Content-Type", "application/json") // GH-90000
@@ -140,7 +140,7 @@ class OAuth2ProviderIT {
     }
 
     @Test
-    @DisplayName("authenticate succeeds when token endpoint returns valid access token [GH-90000]")
+    @DisplayName("authenticate succeeds when token endpoint returns valid access token")
     void authenticate_validTokenResponse_returnsUser() throws OAuth2Exception { // GH-90000
         String tokenJson = """
                 {
@@ -151,7 +151,7 @@ class OAuth2ProviderIT {
                 }
                 """;
 
-        wireMock.stubFor(post(urlEqualTo("/oauth/token [GH-90000]"))
+        wireMock.stubFor(post(urlEqualTo("/oauth/token"))
                 .willReturn(aResponse() // GH-90000
                         .withStatus(200) // GH-90000
                         .withHeader("Content-Type", "application/json") // GH-90000
@@ -172,7 +172,7 @@ class OAuth2ProviderIT {
     }
 
     @Test
-    @DisplayName("authenticate with null state throws OAuth2Exception [GH-90000]")
+    @DisplayName("authenticate with null state throws OAuth2Exception")
     void authenticate_nullState_throwsOAuth2Exception() { // GH-90000
         assertThatThrownBy(() -> // GH-90000
                 provider.authenticate("some-code", null, null, "http://localhost:8080/callback")) // GH-90000

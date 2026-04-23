@@ -18,12 +18,12 @@ import java.util.UUID;
  * <p><strong>Example:</strong>
  * <pre>
  * {@code
- * Map<String, Object> entity = EntityBuilder.create("products [GH-90000]")
- *     .withId("prod-001 [GH-90000]")
+ * Map<String, Object> entity = EntityBuilder.create("products")
+ *     .withId("prod-001")
  *     .withField("name", "Widget") // GH-90000
  *     .withField("price", 19.99) // GH-90000
  *     .withField("quantity", 100) // GH-90000
- *     .withTenant("tenant-alpha [GH-90000]")
+ *     .withTenant("tenant-alpha")
  *     .withVersion(1) // GH-90000
  *     .build(); // GH-90000
  * }
@@ -47,7 +47,7 @@ public final class EntityBuilder {
     private EntityBuilder(String collection) { // GH-90000
         this.collection = collection;
         this.id = UUID.randomUUID().toString(); // GH-90000
-        this.createdAt = Instant.parse("2026-01-01T00:00:00Z [GH-90000]");
+        this.createdAt = Instant.parse("2026-01-01T00:00:00Z");
         this.updatedAt = createdAt;
     }
 
@@ -191,7 +191,7 @@ public final class EntityBuilder {
      * @return product entity builder
      */
     public static EntityBuilder product() { // GH-90000
-        return EntityBuilder.create("products [GH-90000]")
+        return EntityBuilder.create("products")
             .withField("name", "Standard Product") // GH-90000
             .withField("sku", "SKU-001") // GH-90000
             .withField("price", 99.99) // GH-90000
@@ -205,7 +205,7 @@ public final class EntityBuilder {
      * @return customer entity builder
      */
     public static EntityBuilder customer() { // GH-90000
-        return EntityBuilder.create("customers [GH-90000]")
+        return EntityBuilder.create("customers")
             .withField("name", "John Doe") // GH-90000
             .withField("email", "john@example.com") // GH-90000
             .withField("phone", "+1-555-0100") // GH-90000
@@ -218,7 +218,7 @@ public final class EntityBuilder {
      * @return order entity builder
      */
     public static EntityBuilder order() { // GH-90000
-        return EntityBuilder.create("orders [GH-90000]")
+        return EntityBuilder.create("orders")
             .withField("customerId", "cust-001") // GH-90000
             .withField("status", "pending") // GH-90000
             .withField("total", 199.98) // GH-90000

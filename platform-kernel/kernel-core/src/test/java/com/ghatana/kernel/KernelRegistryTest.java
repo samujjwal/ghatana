@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.*;
  * @author Ghatana Kernel Team
  * @since 1.0.0
  */
-@DisplayName("KernelRegistry Tests [GH-90000]")
+@DisplayName("KernelRegistry Tests")
 class KernelRegistryTest extends EventloopTestBase {
 
     private KernelRegistryImpl registry;
@@ -38,7 +38,7 @@ class KernelRegistryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should register and retrieve module by ID [GH-90000]")
+    @DisplayName("Should register and retrieve module by ID")
     void testModuleRegistration() { // GH-90000
         // GIVEN
         TestKernelModule module = new TestKernelModule("test-module", "1.0.0"); // GH-90000
@@ -47,13 +47,13 @@ class KernelRegistryTest extends EventloopTestBase {
         registry.registerModule(module); // GH-90000
 
         // THEN
-        Optional<KernelModule> retrieved = registry.getModule("test-module [GH-90000]");
+        Optional<KernelModule> retrieved = registry.getModule("test-module");
         assertThat(retrieved).isPresent(); // GH-90000
         assertThat(retrieved.get()).isEqualTo(module); // GH-90000
     }
 
     @Test
-    @DisplayName("Should throw exception when registering duplicate module [GH-90000]")
+    @DisplayName("Should throw exception when registering duplicate module")
     void testDuplicateModuleRegistration() { // GH-90000
         // GIVEN
         TestKernelModule module = new TestKernelModule("test-module", "1.0.0"); // GH-90000
@@ -62,11 +62,11 @@ class KernelRegistryTest extends EventloopTestBase {
         // WHEN/THEN
         assertThatThrownBy(() -> registry.registerModule(module)) // GH-90000
             .isInstanceOf(IllegalStateException.class) // GH-90000
-            .hasMessageContaining("Module already registered [GH-90000]");
+            .hasMessageContaining("Module already registered");
     }
 
     @Test
-    @DisplayName("Should resolve dependencies in topological order [GH-90000]")
+    @DisplayName("Should resolve dependencies in topological order")
     void testDependencyResolution() { // GH-90000
         // GIVEN
         TestKernelModule moduleA = new TestKernelModule("module-a", "1.0.0", Set.of()); // GH-90000
@@ -85,7 +85,7 @@ class KernelRegistryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should validate module dependencies [GH-90000]")
+    @DisplayName("Should validate module dependencies")
     void testDependencyValidation() { // GH-90000
         // GIVEN
         TestKernelModule module = new TestKernelModule("test-module", "1.0.0", // GH-90000
@@ -94,11 +94,11 @@ class KernelRegistryTest extends EventloopTestBase {
         // WHEN/THEN
         assertThatThrownBy(() -> registry.registerModule(module)) // GH-90000
             .isInstanceOf(IllegalStateException.class) // GH-90000
-            .hasMessageContaining("Dependency validation failed [GH-90000]");
+            .hasMessageContaining("Dependency validation failed");
     }
 
     @Test
-    @DisplayName("Should start all modules in dependency order using runPromise [GH-90000]")
+    @DisplayName("Should start all modules in dependency order using runPromise")
     void testModuleLifecycle_async() { // GH-90000
         // GIVEN
         TestKernelModule module = new TestKernelModule("lifecycle-test", "1.0.0"); // GH-90000
@@ -116,7 +116,7 @@ class KernelRegistryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should start multiple modules in parallel using Promises.all [GH-90000]")
+    @DisplayName("Should start multiple modules in parallel using Promises.all")
     void testMultipleModuleStart() { // GH-90000
         // GIVEN
         TestKernelModule module1 = new TestKernelModule("module-1", "1.0.0"); // GH-90000
@@ -134,7 +134,7 @@ class KernelRegistryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should return healthy status for operational module [GH-90000]")
+    @DisplayName("Should return healthy status for operational module")
     void testHealthStatus() { // GH-90000
         // GIVEN
         TestKernelModule module = new TestKernelModule("health-test", "1.0.0"); // GH-90000
@@ -149,14 +149,14 @@ class KernelRegistryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should aggregate health status from all modules [GH-90000]")
+    @DisplayName("Should aggregate health status from all modules")
     void testAggregateHealthStatus() { // GH-90000
         // GIVEN
         TestKernelModule healthyModule = new TestKernelModule("healthy", "1.0.0"); // GH-90000
         TestKernelModule unhealthyModule = new TestKernelModule("unhealthy", "1.0.0") { // GH-90000
             @Override
             public HealthStatus getHealthStatus() { // GH-90000
-                return HealthStatus.unhealthy("Test failure [GH-90000]");
+                return HealthStatus.unhealthy("Test failure");
             }
         };
 
@@ -171,7 +171,7 @@ class KernelRegistryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should get modules by capability [GH-90000]")
+    @DisplayName("Should get modules by capability")
     void testGetModulesByCapability() { // GH-90000
         // GIVEN
         KernelCapability dataStorage = KernelCapability.Core.DATA_STORAGE;
@@ -188,7 +188,7 @@ class KernelRegistryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle plugin registration [GH-90000]")
+    @DisplayName("Should handle plugin registration")
     void testPluginRegistration() { // GH-90000
         // GIVEN
         TestKernelPlugin plugin = new TestKernelPlugin("test-plugin", "1.0.0"); // GH-90000
@@ -197,13 +197,13 @@ class KernelRegistryTest extends EventloopTestBase {
         registry.registerPlugin(plugin); // GH-90000
 
         // THEN
-        Optional<KernelPlugin> retrieved = registry.getPlugin("test-plugin [GH-90000]");
+        Optional<KernelPlugin> retrieved = registry.getPlugin("test-plugin");
         assertThat(retrieved).isPresent(); // GH-90000
         assertThat(retrieved.get()).isEqualTo(plugin); // GH-90000
     }
 
     @Test
-    @DisplayName("Should validate capability dependencies [GH-90000]")
+    @DisplayName("Should validate capability dependencies")
     void testCapabilityDependencyValidation() { // GH-90000
         // GIVEN - module requiring DATA_STORAGE capability
         TestKernelModule module = new TestKernelModule("storage-user", "1.0.0", // GH-90000
@@ -220,7 +220,7 @@ class KernelRegistryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should reject module with missing capability dependency [GH-90000]")
+    @DisplayName("Should reject module with missing capability dependency")
     void testMissingCapabilityDependency() { // GH-90000
         // GIVEN - module requiring non-existent capability
         TestKernelModule module = new TestKernelModule("storage-user", "1.0.0", // GH-90000
@@ -230,7 +230,7 @@ class KernelRegistryTest extends EventloopTestBase {
         // WHEN/THEN
         assertThatThrownBy(() -> registry.registerModule(module)) // GH-90000
             .isInstanceOf(IllegalStateException.class) // GH-90000
-            .hasMessageContaining("Missing required capability [GH-90000]");
+            .hasMessageContaining("Missing required capability");
     }
 
     // ==================== Test Helpers ====================
@@ -290,7 +290,7 @@ class KernelRegistryTest extends EventloopTestBase {
         @Override
         public HealthStatus getHealthStatus() { // GH-90000
             if (!started.get()) { // GH-90000
-                return HealthStatus.unhealthy("Not started [GH-90000]");
+                return HealthStatus.unhealthy("Not started");
             }
             return HealthStatus.healthy(); // GH-90000
         }

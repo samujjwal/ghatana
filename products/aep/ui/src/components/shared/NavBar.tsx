@@ -137,8 +137,8 @@ function navLinkClass({ isActive }: NavLinkRenderProps) {
   return [
     'flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors',
     isActive
-      ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300'
-      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800',
+      ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200'
+      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800',
   ].join(' ');
 }
 
@@ -162,7 +162,7 @@ export function NavBar() {
       {NAV_GROUPS.map((group, gi) => (
         <div key={group.label} className={gi > 0 ? 'mt-3' : undefined}>
           {/* Section header — visual grouping label, not a link */}
-          <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-600 select-none">
+          <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400 select-none">
             {group.label}
           </p>
           {group.items.map((item) => (
@@ -192,7 +192,7 @@ export function NavBar() {
       {/* Bottom section: tenant selector + SSE indicator */}
       <div className="mt-auto flex flex-col gap-1 pb-2 pt-4">
         <div className="mx-3 mb-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 dark:border-gray-800 dark:bg-gray-900">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-600">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 dark:text-gray-400">
             Access
           </p>
           <p className="mt-1 text-xs text-gray-600 dark:text-gray-300">

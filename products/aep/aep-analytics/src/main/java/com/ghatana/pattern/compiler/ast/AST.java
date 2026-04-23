@@ -48,7 +48,10 @@ import java.util.Map;
  *     <td>Find all operators of specific type</td>
  *   </tr>
  * </table>
- */
+  * @doc.type class
+ * @doc.purpose Provides ast functionality.
+ * @doc.layer product
+*/
 public class AST {
 
     private final ASTNode root;

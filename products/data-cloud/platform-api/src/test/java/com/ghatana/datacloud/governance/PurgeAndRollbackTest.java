@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("Purge and Rollback Tests [GH-90000]")
+@DisplayName("Purge and Rollback Tests")
 class PurgeAndRollbackTest extends EventloopTestBase {
 
     // ── Data model ────────────────────────────────────────────────────────────
@@ -52,32 +52,32 @@ class PurgeAndRollbackTest extends EventloopTestBase {
     // ── Purge execution ───────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("purge removes all entities for the specified tenant [GH-90000]")
+    @DisplayName("purge removes all entities for the specified tenant")
     void purgeRemovesAllEntitiesForTenant() { // GH-90000
-        assertThat(purgeManager.count("tenant-A [GH-90000]")).isEqualTo(5);
+        assertThat(purgeManager.count("tenant-A")).isEqualTo(5);
 
-        PurgeResult result = purgeManager.purge("tenant-A [GH-90000]");
+        PurgeResult result = purgeManager.purge("tenant-A");
 
         assertThat(result.entitiesRemoved()).isEqualTo(5); // GH-90000
-        assertThat(purgeManager.count("tenant-A [GH-90000]")).isEqualTo(0);
+        assertThat(purgeManager.count("tenant-A")).isEqualTo(0);
     }
 
     @Test
-    @DisplayName("purge does not affect other tenants' data [GH-90000]")
+    @DisplayName("purge does not affect other tenants' data")
     void purgeDoesNotAffectOtherTenants() { // GH-90000
-        purgeManager.purge("tenant-A [GH-90000]");
-        assertThat(purgeManager.count("tenant-B [GH-90000]")).isEqualTo(3);
+        purgeManager.purge("tenant-A");
+        assertThat(purgeManager.count("tenant-B")).isEqualTo(3);
     }
 
     @Test
-    @DisplayName("purge of a tenant with no data completes with zero removals [GH-90000]")
+    @DisplayName("purge of a tenant with no data completes with zero removals")
     void purgeOfEmptyTenantReturnsZero() { // GH-90000
-        PurgeResult result = purgeManager.purge("tenant-ghost [GH-90000]");
+        PurgeResult result = purgeManager.purge("tenant-ghost");
         assertThat(result.entitiesRemoved()).isEqualTo(0); // GH-90000
     }
 
     @Test
-    @DisplayName("purge by cutoff timestamp removes only expired entities [GH-90000]")
+    @DisplayName("purge by cutoff timestamp removes only expired entities")
     void purgeByTimestampRemovesOnlyExpiredEntities() { // GH-90000
         // Entity inserted 5+ hours ago should be purged; newer ones should survive
         Instant cutoff = Instant.now().minusSeconds(4 * 3600); // 4 hours ago // GH-90000
@@ -86,55 +86,55 @@ class PurgeAndRollbackTest extends EventloopTestBase {
 
         // entity-A-5 (5h ago) is before cutoff; entity-A-4 (4h ago) is right at/before too // GH-90000
         assertThat(result.entitiesRemoved()).isGreaterThan(0); // GH-90000
-        assertThat(purgeManager.count("tenant-A [GH-90000]")).isLessThan(5);
+        assertThat(purgeManager.count("tenant-A")).isLessThan(5);
     }
 
     // ── Pre-purge snapshot ────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("snapshot taken before purge captures all entities for the tenant [GH-90000]")
+    @DisplayName("snapshot taken before purge captures all entities for the tenant")
     void snapshotCapturesAllEntities() { // GH-90000
-        PurgeSnapshot snapshot = purgeManager.snapshot("tenant-A [GH-90000]");
+        PurgeSnapshot snapshot = purgeManager.snapshot("tenant-A");
 
         assertThat(snapshot.snapshotId()).isNotBlank(); // GH-90000
-        assertThat(snapshot.tenantId()).isEqualTo("tenant-A [GH-90000]");
+        assertThat(snapshot.tenantId()).isEqualTo("tenant-A");
         assertThat(snapshot.entities()).hasSize(5); // GH-90000
         assertThat(snapshot.takenAt()).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("snapshot does not remove entities from the store [GH-90000]")
+    @DisplayName("snapshot does not remove entities from the store")
     void snapshotDoesNotRemoveEntities() { // GH-90000
-        purgeManager.snapshot("tenant-A [GH-90000]");
-        assertThat(purgeManager.count("tenant-A [GH-90000]")).isEqualTo(5);
+        purgeManager.snapshot("tenant-A");
+        assertThat(purgeManager.count("tenant-A")).isEqualTo(5);
     }
 
     // ── Rollback from snapshot ────────────────────────────────────────────────
 
     @Test
-    @DisplayName("rollback after purge restores all entities from snapshot [GH-90000]")
+    @DisplayName("rollback after purge restores all entities from snapshot")
     void rollbackRestoresEntitiesAfterPurge() { // GH-90000
-        PurgeSnapshot snapshot = purgeManager.snapshot("tenant-A [GH-90000]");
+        PurgeSnapshot snapshot = purgeManager.snapshot("tenant-A");
 
-        purgeManager.purge("tenant-A [GH-90000]");
-        assertThat(purgeManager.count("tenant-A [GH-90000]")).isEqualTo(0);
+        purgeManager.purge("tenant-A");
+        assertThat(purgeManager.count("tenant-A")).isEqualTo(0);
 
         purgeManager.restore(snapshot); // GH-90000
-        assertThat(purgeManager.count("tenant-A [GH-90000]")).isEqualTo(5);
+        assertThat(purgeManager.count("tenant-A")).isEqualTo(5);
     }
 
     @Test
-    @DisplayName("rollback restores correct entity IDs and payloads [GH-90000]")
+    @DisplayName("rollback restores correct entity IDs and payloads")
     void rollbackRestoresCorrectEntities() { // GH-90000
-        PurgeSnapshot snapshot = purgeManager.snapshot("tenant-A [GH-90000]");
+        PurgeSnapshot snapshot = purgeManager.snapshot("tenant-A");
         Set<String> originalIds = snapshot.entities().stream() // GH-90000
                 .map(DataEntity::id) // GH-90000
                 .collect(java.util.stream.Collectors.toSet()); // GH-90000
 
-        purgeManager.purge("tenant-A [GH-90000]");
+        purgeManager.purge("tenant-A");
         purgeManager.restore(snapshot); // GH-90000
 
-        List<DataEntity> restored = purgeManager.findByTenant("tenant-A [GH-90000]");
+        List<DataEntity> restored = purgeManager.findByTenant("tenant-A");
         Set<String> restoredIds = restored.stream() // GH-90000
                 .map(DataEntity::id) // GH-90000
                 .collect(java.util.stream.Collectors.toSet()); // GH-90000
@@ -143,25 +143,25 @@ class PurgeAndRollbackTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("rollback does not affect other tenants [GH-90000]")
+    @DisplayName("rollback does not affect other tenants")
     void rollbackDoesNotAffectOtherTenants() { // GH-90000
-        PurgeSnapshot snapshotA = purgeManager.snapshot("tenant-A [GH-90000]");
-        purgeManager.purge("tenant-A [GH-90000]");
+        PurgeSnapshot snapshotA = purgeManager.snapshot("tenant-A");
+        purgeManager.purge("tenant-A");
         purgeManager.restore(snapshotA); // GH-90000
 
         // tenant-B was not touched
-        assertThat(purgeManager.count("tenant-B [GH-90000]")).isEqualTo(3);
+        assertThat(purgeManager.count("tenant-B")).isEqualTo(3);
     }
 
     @Test
-    @DisplayName("restore of snapshot for already-populated tenant merges without duplicate IDs [GH-90000]")
+    @DisplayName("restore of snapshot for already-populated tenant merges without duplicate IDs")
     void restoreMergesWithoutDuplicates() { // GH-90000
-        PurgeSnapshot snapshot = purgeManager.snapshot("tenant-A [GH-90000]");
+        PurgeSnapshot snapshot = purgeManager.snapshot("tenant-A");
         // Do NOT purge — restore on top of existing data
         purgeManager.restore(snapshot); // GH-90000
 
         // After restore over existing data, count must remain 5 (no duplicates) // GH-90000
-        assertThat(purgeManager.count("tenant-A [GH-90000]")).isEqualTo(5);
+        assertThat(purgeManager.count("tenant-A")).isEqualTo(5);
     }
 
     // ── Purge manager implementation (for tests) ────────────────────────────── // GH-90000

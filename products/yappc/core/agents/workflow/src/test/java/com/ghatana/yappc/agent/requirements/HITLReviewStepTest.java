@@ -15,7 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Requirements HITLReviewStep Tests [GH-90000]")
+@DisplayName("Requirements HITLReviewStep Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles hitl review step test operations
@@ -36,13 +36,13 @@ class HITLReviewStepTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should return correct step ID [GH-90000]")
+  @DisplayName("Should return correct step ID")
   void shouldReturnCorrectStepId() { // GH-90000
-    assertThat(step.getStepId()).isEqualTo("requirements.hitlreview [GH-90000]");
+    assertThat(step.getStepId()).isEqualTo("requirements.hitlreview");
   }
 
   @Test
-  @DisplayName("Should create HITL review for requirements [GH-90000]")
+  @DisplayName("Should create HITL review for requirements")
   void shouldCreateHitlReview() { // GH-90000
     // GIVEN
     WorkflowContext context = WorkflowContext.forWorkflow("wf-123", "tenant-abc"); // GH-90000
@@ -62,7 +62,7 @@ class HITLReviewStepTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should fail when requirementId is missing [GH-90000]")
+  @DisplayName("Should fail when requirementId is missing")
   void shouldFailWhenRequirementIdMissing() { // GH-90000
     // GIVEN
     WorkflowContext context = WorkflowContext.forWorkflow("wf-123", "tenant-abc"); // GH-90000
@@ -71,6 +71,6 @@ class HITLReviewStepTest extends EventloopTestBase {
     // WHEN / THEN
     assertThatExceptionOfType(IllegalArgumentException.class) // GH-90000
         .isThrownBy(() -> runPromise(() -> step.execute(context))) // GH-90000
-        .withMessageContaining("requirementId [GH-90000]");
+        .withMessageContaining("requirementId");
   }
 }

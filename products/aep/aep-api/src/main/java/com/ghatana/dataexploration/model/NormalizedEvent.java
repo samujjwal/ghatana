@@ -7,7 +7,11 @@ import java.util.Map;
  * Normalized event with standardized properties for pattern analysis.
  *
  * Day 28 Implementation: Standardized event representation for correlation analysis.
- */
+  * @doc.type class
+ * @doc.purpose Provides normalized event functionality.
+ * @doc.layer product
+ * @doc.pattern Event
+*/
 public class NormalizedEvent {
 
     private final String eventId;

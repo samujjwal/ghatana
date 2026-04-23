@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("KP-013 — DurableConsentPlugin cross-product isolation tests [GH-90000]")
+@DisplayName("KP-013 — DurableConsentPlugin cross-product isolation tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class DurableConsentPluginCrossProductTest extends EventloopTestBase {
 
@@ -59,7 +59,7 @@ class DurableConsentPluginCrossProductTest extends EventloopTestBase {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("PHR consent grant must NOT satisfy a Finance purpose consent check [GH-90000]")
+    @DisplayName("PHR consent grant must NOT satisfy a Finance purpose consent check")
     void testPhrConsentDoesNotSatisfyFinancePurpose() { // GH-90000
         runPromise(() -> plugin.recordConsent( // GH-90000
                 "patient-001", "phr.data-sharing", ConsentPlugin.ConsentAction.GRANT));
@@ -74,7 +74,7 @@ class DurableConsentPluginCrossProductTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Finance consent grant must NOT satisfy a PHR medical-records purpose check [GH-90000]")
+    @DisplayName("Finance consent grant must NOT satisfy a PHR medical-records purpose check")
     void testFinanceConsentDoesNotSatisfyPhrPurpose() { // GH-90000
         runPromise(() -> plugin.recordConsent( // GH-90000
                 "customer-001", "finance.transactions", ConsentPlugin.ConsentAction.GRANT));
@@ -89,7 +89,7 @@ class DurableConsentPluginCrossProductTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Revoking a PHR consent must not affect a separately granted Finance consent [GH-90000]")
+    @DisplayName("Revoking a PHR consent must not affect a separately granted Finance consent")
     void testRevocationIsPurposeScoped() { // GH-90000
         runPromise(() -> plugin.recordConsent( // GH-90000
                 "multi-consent-user", "phr.data-sharing", ConsentPlugin.ConsentAction.GRANT));
@@ -111,16 +111,16 @@ class DurableConsentPluginCrossProductTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Consent history is subject-scoped — different subjects have independent histories [GH-90000]")
+    @DisplayName("Consent history is subject-scoped — different subjects have independent histories")
     void testSubjectIsolation() { // GH-90000
         runPromise(() -> plugin.recordConsent("subj-a", "shared.purpose", ConsentPlugin.ConsentAction.GRANT)); // GH-90000
         runPromise(() -> plugin.recordConsent("subj-a", "shared.purpose", ConsentPlugin.ConsentAction.WITHDRAW)); // GH-90000
         runPromise(() -> plugin.recordConsent("subj-b", "shared.purpose", ConsentPlugin.ConsentAction.GRANT)); // GH-90000
 
         List<ConsentPlugin.ConsentRecord> histA =
-                runPromise(() -> plugin.getConsentHistory("subj-a [GH-90000]"));
+                runPromise(() -> plugin.getConsentHistory("subj-a"));
         List<ConsentPlugin.ConsentRecord> histB =
-                runPromise(() -> plugin.getConsentHistory("subj-b [GH-90000]"));
+                runPromise(() -> plugin.getConsentHistory("subj-b"));
 
         assertThat(histA).hasSize(2); // GH-90000
         assertThat(histA).allMatch(r -> "subj-a".equals(r.subjectId())); // GH-90000
@@ -130,7 +130,7 @@ class DurableConsentPluginCrossProductTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("revokeConsent by ID must update status to REVOKED [GH-90000]")
+    @DisplayName("revokeConsent by ID must update status to REVOKED")
     void testRevokeConsentById() { // GH-90000
         ConsentPlugin.ConsentRecord record = runPromise(() -> // GH-90000
                 plugin.recordConsent("subj-revoke", "phr.imaging", ConsentPlugin.ConsentAction.GRANT)); // GH-90000
@@ -144,7 +144,7 @@ class DurableConsentPluginCrossProductTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("NOT_REQUESTED status must be returned for a subject-purpose pair with no history [GH-90000]")
+    @DisplayName("NOT_REQUESTED status must be returned for a subject-purpose pair with no history")
     void testNotRequestedStatus() { // GH-90000
         ConsentPlugin.ConsentStatus status =
                 runPromise(() -> plugin.getCurrentConsent("unknown-subject", "any.purpose")); // GH-90000

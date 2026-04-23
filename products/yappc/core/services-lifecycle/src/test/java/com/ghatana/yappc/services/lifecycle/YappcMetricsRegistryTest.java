@@ -19,11 +19,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("YAPPC Metrics Registry [GH-90000]")
+@DisplayName("YAPPC Metrics Registry")
 class YappcMetricsRegistryTest {
 
     @Test
-    @DisplayName("MetricsProvider.getRegistry() returns a PrometheusMeterRegistry [GH-90000]")
+    @DisplayName("MetricsProvider.getRegistry() returns a PrometheusMeterRegistry")
     void getRegistryShouldReturnPrometheusRegistry() { // GH-90000
         PrometheusMeterRegistry registry = MetricsProvider.getRegistry(); // GH-90000
 
@@ -32,7 +32,7 @@ class YappcMetricsRegistryTest {
     }
 
     @Test
-    @DisplayName("Metrics recorded via MetricsProvider appear in the shared registry scrape output [GH-90000]")
+    @DisplayName("Metrics recorded via MetricsProvider appear in the shared registry scrape output")
     void metricsShouldBeVisibleInSharedRegistryScrape() { // GH-90000
         PrometheusMeterRegistry registry = MetricsProvider.getRegistry(); // GH-90000
         String tenantId = "test-tenant-yappc-lifecycle-" + System.nanoTime(); // GH-90000
@@ -42,12 +42,12 @@ class YappcMetricsRegistryTest {
 
         // The scrape output should contain the counter we just recorded
         String scrape = registry.scrape(); // GH-90000
-        assertThat(scrape).contains("yappc_lifecycle_test_events [GH-90000]");
+        assertThat(scrape).contains("yappc_lifecycle_test_events");
         assertThat(scrape).contains(tenantId); // GH-90000
     }
 
     @Test
-    @DisplayName("MetricsProvider.getRegistry() returns the same singleton instance across calls [GH-90000]")
+    @DisplayName("MetricsProvider.getRegistry() returns the same singleton instance across calls")
     void getRegistryShouldBeSingleton() { // GH-90000
         PrometheusMeterRegistry first = MetricsProvider.getRegistry(); // GH-90000
         PrometheusMeterRegistry second = MetricsProvider.getRegistry(); // GH-90000

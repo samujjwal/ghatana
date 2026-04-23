@@ -32,7 +32,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("MemoryRecallAccuracy – Deterministic Fixtures (D010) [GH-90000]")
+@DisplayName("MemoryRecallAccuracy – Deterministic Fixtures (D010)")
 class MemoryRecallAccuracyTest extends EventloopTestBase {
 
     @Mock
@@ -43,11 +43,11 @@ class MemoryRecallAccuracyTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Recall Accuracy [GH-90000]")
+    @DisplayName("Recall Accuracy")
     class RecallAccuracyTests {
 
         @Test
-        @DisplayName("[D010]: exact_match_recall_returns_correct_memory [GH-90000]")
+        @DisplayName("[D010]: exact_match_recall_returns_correct_memory")
         void exactMatchRecallReturnsCorrectMemory() { // GH-90000
             String agentId = "agent-001";
             String searchContent = "weather forecast";
@@ -69,7 +69,7 @@ class MemoryRecallAccuracyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D010]: partial_match_recall_returns_relevant_memories [GH-90000]")
+        @DisplayName("[D010]: partial_match_recall_returns_relevant_memories")
         void partialMatchRecallReturnsRelevantMemories() { // GH-90000
             String agentId = "agent-001";
             String searchPattern = "weather";
@@ -91,12 +91,12 @@ class MemoryRecallAccuracyTest extends EventloopTestBase {
             );
 
             assertThat(results).hasSize(2); // GH-90000
-            assertThat(results.get(0).content()).contains("weather [GH-90000]");
-            assertThat(results.get(1).content()).contains("weather [GH-90000]");
+            assertThat(results.get(0).content()).contains("weather");
+            assertThat(results.get(1).content()).contains("weather");
         }
 
         @Test
-        @DisplayName("[D010]: recall_with_importance_threshold_filters_by_score [GH-90000]")
+        @DisplayName("[D010]: recall_with_importance_threshold_filters_by_score")
         void recallWithImportanceThresholdFiltersByScore() { // GH-90000
             String agentId = "agent-001";
 
@@ -123,7 +123,7 @@ class MemoryRecallAccuracyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D010]: recall_with_time_range_filters_by_date [GH-90000]")
+        @DisplayName("[D010]: recall_with_time_range_filters_by_date")
         void recallWithTimeRangeFiltersByDate() { // GH-90000
             String agentId = "agent-001";
             long startTime = 1704067200000L; // 2024-01-01
@@ -144,11 +144,11 @@ class MemoryRecallAccuracyTest extends EventloopTestBase {
             );
 
             assertThat(results).hasSize(1); // GH-90000
-            assertThat(results.get(0).content()).isEqualTo("January event [GH-90000]");
+            assertThat(results.get(0).content()).isEqualTo("January event");
         }
 
         @Test
-        @DisplayName("[D010]: recall_results_ordered_by_relevance [GH-90000]")
+        @DisplayName("[D010]: recall_results_ordered_by_relevance")
         void recallResultsOrderedByRelevance() { // GH-90000
             String agentId = "agent-001";
 
@@ -165,9 +165,9 @@ class MemoryRecallAccuracyTest extends EventloopTestBase {
                 .sorted(Comparator.comparingDouble(MemoryService.MemoryEntry::importance).reversed()) // GH-90000
                 .toList(); // GH-90000
 
-            assertThat(sorted.get(0).content()).isEqualTo("high relevance [GH-90000]");
-            assertThat(sorted.get(1).content()).isEqualTo("medium relevance [GH-90000]");
-            assertThat(sorted.get(2).content()).isEqualTo("low relevance [GH-90000]");
+            assertThat(sorted.get(0).content()).isEqualTo("high relevance");
+            assertThat(sorted.get(1).content()).isEqualTo("medium relevance");
+            assertThat(sorted.get(2).content()).isEqualTo("low relevance");
         }
     }
 
@@ -176,11 +176,11 @@ class MemoryRecallAccuracyTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Deterministic Fixtures [GH-90000]")
+    @DisplayName("Deterministic Fixtures")
     class DeterministicFixtureTests {
 
         @Test
-        @DisplayName("[D010]: same_query_produces_same_results [GH-90000]")
+        @DisplayName("[D010]: same_query_produces_same_results")
         void sameQueryProducesSameResults() { // GH-90000
             String agentId = "agent-001";
             String query = "weather";
@@ -208,7 +208,7 @@ class MemoryRecallAccuracyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D010]: memory_ids_consistent_in_fixtures [GH-90000]")
+        @DisplayName("[D010]: memory_ids_consistent_in_fixtures")
         void memoryIdsConsistentInFixtures() { // GH-90000
             String agentId = "agent-001";
             String memoryId = "mem-001";
@@ -223,7 +223,7 @@ class MemoryRecallAccuracyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D010]: timestamps_deterministic_in_fixtures [GH-90000]")
+        @DisplayName("[D010]: timestamps_deterministic_in_fixtures")
         void timestampsDeterministicInFixtures() { // GH-90000
             long fixedTimestamp = 1704067200000L;
 
@@ -243,11 +243,11 @@ class MemoryRecallAccuracyTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Memory Access Tracking [GH-90000]")
+    @DisplayName("Memory Access Tracking")
     class MemoryAccessTrackingTests {
 
         @Test
-        @DisplayName("[D010]: accessed_increments_count [GH-90000]")
+        @DisplayName("[D010]: accessed_increments_count")
         void accessedIncrementsCount() { // GH-90000
             MemoryService.MemoryEntry original = new MemoryService.MemoryEntry( // GH-90000
                 "mem-001", "agent-001", MemoryService.MemoryTier.EPISODIC,
@@ -261,7 +261,7 @@ class MemoryRecallAccuracyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D010]: accessed_updates_last_accessed_timestamp [GH-90000]")
+        @DisplayName("[D010]: accessed_updates_last_accessed_timestamp")
         void accessedUpdatesLastAccessedTimestamp() { // GH-90000
             long originalTime = System.currentTimeMillis() - 10000; // GH-90000
 
@@ -277,7 +277,7 @@ class MemoryRecallAccuracyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D010]: high_access_count_memories_prioritized [GH-90000]")
+        @DisplayName("[D010]: high_access_count_memories_prioritized")
         void highAccessCountMemoriesPrioritized() { // GH-90000
             List<MemoryService.MemoryEntry> memories = List.of( // GH-90000
                 new MemoryService.MemoryEntry("mem-1", "agent-001", MemoryService.MemoryTier.EPISODIC, // GH-90000
@@ -290,7 +290,7 @@ class MemoryRecallAccuracyTest extends EventloopTestBase {
                 .sorted(Comparator.comparingLong(MemoryService.MemoryEntry::accessCount).reversed()) // GH-90000
                 .toList(); // GH-90000
 
-            assertThat(sorted.get(0).id()).isEqualTo("mem-2 [GH-90000]");
+            assertThat(sorted.get(0).id()).isEqualTo("mem-2");
         }
     }
 
@@ -299,11 +299,11 @@ class MemoryRecallAccuracyTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Relevance Scoring [GH-90000]")
+    @DisplayName("Relevance Scoring")
     class RelevanceScoringTests {
 
         @Test
-        @DisplayName("[D010]: exact_match_highest_relevance [GH-90000]")
+        @DisplayName("[D010]: exact_match_highest_relevance")
         void exactMatchHighestRelevance() { // GH-90000
             String query = "weather forecast";
             String content = "weather forecast";
@@ -314,7 +314,7 @@ class MemoryRecallAccuracyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D010]: partial_match_medium_relevance [GH-90000]")
+        @DisplayName("[D010]: partial_match_medium_relevance")
         void partialMatchMediumRelevance() { // GH-90000
             String query = "weather";
             String content = "weather forecast today";
@@ -325,7 +325,7 @@ class MemoryRecallAccuracyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D010]: no_match_zero_relevance [GH-90000]")
+        @DisplayName("[D010]: no_match_zero_relevance")
         void noMatchZeroRelevance() { // GH-90000
             String query = "weather";
             String content = "completely unrelated topic";

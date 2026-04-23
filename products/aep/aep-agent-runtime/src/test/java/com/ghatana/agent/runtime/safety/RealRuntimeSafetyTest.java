@@ -16,46 +16,46 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test real agent execution with safety constraints enforced.
  */
-@DisplayName("Agent Runtime Safety Tests [GH-90000]")
+@DisplayName("Agent Runtime Safety Tests")
 class RealRuntimeSafetyTest {
 
     @Test
-    @DisplayName("Should enforce resource limits [GH-90000]")
+    @DisplayName("Should enforce resource limits")
     void shouldEnforceResourceLimits() { // GH-90000
         long maxMemoryBytes = 512 * 1024 * 1024; // 512MB
         assertThat(maxMemoryBytes).isPositive(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should enforce execution timeouts [GH-90000]")
+    @DisplayName("Should enforce execution timeouts")
     void shouldEnforceExecutionTimeouts() { // GH-90000
         long timeoutMs = 30000; // 30 seconds
         assertThat(timeoutMs).isPositive(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should prevent unsafe operations [GH-90000]")
+    @DisplayName("Should prevent unsafe operations")
     void shouldPreventUnsafeOperations() { // GH-90000
         boolean safe = true;
         assertThat(safe).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should validate agent permissions [GH-90000]")
+    @DisplayName("Should validate agent permissions")
     void shouldValidateAgentPermissions() { // GH-90000
         String permission = "read:entities";
         assertThat(permission).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle agent isolation [GH-90000]")
+    @DisplayName("Should handle agent isolation")
     void shouldHandleAgentIsolation() { // GH-90000
         boolean isolated = true;
         assertThat(isolated).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle safety violation logging [GH-90000]")
+    @DisplayName("Should handle safety violation logging")
     void shouldHandleSafetyViolationLogging() { // GH-90000
         String violationId = "violation-123";
         assertThat(violationId).isNotNull(); // GH-90000

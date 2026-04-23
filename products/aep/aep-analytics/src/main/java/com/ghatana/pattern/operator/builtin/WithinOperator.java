@@ -68,7 +68,10 @@ import java.util.Map;
  *                 Runtime execution logic (time window enforcement, absolute time bounds, inclusive/exclusive
  *                 boundary checking) is handled by the pattern engine's execution layer. Does not provide
  *                 runtime matching logic.
- */
+  * @doc.type class
+ * @doc.purpose Provides within operator functionality.
+ * @doc.layer product
+*/
 public class WithinOperator implements Operator {
 
     private static final String TYPE = "WITHIN";

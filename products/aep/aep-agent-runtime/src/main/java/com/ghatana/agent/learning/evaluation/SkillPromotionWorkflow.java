@@ -21,7 +21,8 @@ import java.util.Objects;
  * @doc.type class
  * @doc.purpose Skill promotion orchestration
  * @doc.layer agent-learning
- */
+  * @doc.pattern Workflow
+*/
 public class SkillPromotionWorkflow {
 
     private static final Logger log = LoggerFactory.getLogger(SkillPromotionWorkflow.class);

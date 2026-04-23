@@ -19,7 +19,8 @@ import java.util.concurrent.TimeUnit;
  * @doc.type class
  * @doc.purpose Consolidation scheduling
  * @doc.layer agent-learning
- */
+  * @doc.pattern Scheduler
+*/
 public class ConsolidationScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(ConsolidationScheduler.class);

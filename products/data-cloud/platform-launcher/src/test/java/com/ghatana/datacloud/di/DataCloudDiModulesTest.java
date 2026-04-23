@@ -78,7 +78,7 @@ import static org.mockito.Mockito.mock;
  *   <li>Config defaults are sensible</li>
  * </ul>
  */
-@DisplayName("Data-Cloud ActiveJ DI Modules [GH-90000]")
+@DisplayName("Data-Cloud ActiveJ DI Modules")
 class DataCloudDiModulesTest {
 
     // ═══════════════════════════════════════════════════════════════
@@ -86,7 +86,7 @@ class DataCloudDiModulesTest {
     // ═══════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("DataCloudConfigModule [GH-90000]")
+    @DisplayName("DataCloudConfigModule")
     class DataCloudConfigModuleTests {
 
         private Injector createConfigInjector() { // GH-90000
@@ -94,7 +94,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides ConfigValidator [GH-90000]")
+        @DisplayName("provides ConfigValidator")
         void providesConfigValidator() { // GH-90000
             Injector injector = createConfigInjector(); // GH-90000
 
@@ -104,7 +104,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides all 4 config compilers [GH-90000]")
+        @DisplayName("provides all 4 config compilers")
         void providesAllCompilers() { // GH-90000
             Injector injector = createConfigInjector(); // GH-90000
 
@@ -115,7 +115,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides ConfigLoader with Eventloop and Executor [GH-90000]")
+        @DisplayName("provides ConfigLoader with Eventloop and Executor")
         void providesConfigLoader() { // GH-90000
             Injector injector = createConfigInjector(); // GH-90000
 
@@ -125,7 +125,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides ConfigRegistry with all 7 dependencies wired [GH-90000]")
+        @DisplayName("provides ConfigRegistry with all 7 dependencies wired")
         void providesConfigRegistry() { // GH-90000
             Injector injector = createConfigInjector(); // GH-90000
 
@@ -135,7 +135,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides ConfigReloadManager [GH-90000]")
+        @DisplayName("provides ConfigReloadManager")
         void providesConfigReloadManager() { // GH-90000
             Injector injector = createConfigInjector(); // GH-90000
 
@@ -145,7 +145,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides ConfigMetrics [GH-90000]")
+        @DisplayName("provides ConfigMetrics")
         void providesConfigMetrics() { // GH-90000
             Injector injector = createConfigInjector(); // GH-90000
 
@@ -155,7 +155,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides GracefulReloadManager [GH-90000]")
+        @DisplayName("provides GracefulReloadManager")
         void providesGracefulReloadManager() { // GH-90000
             Injector injector = createConfigInjector(); // GH-90000
 
@@ -165,7 +165,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("ConfigRegistry is singleton [GH-90000]")
+        @DisplayName("ConfigRegistry is singleton")
         void configRegistryIsSingleton() { // GH-90000
             Injector injector = createConfigInjector(); // GH-90000
 
@@ -176,7 +176,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("all 10 bindings are provided [GH-90000]")
+        @DisplayName("all 10 bindings are provided")
         void allBindingsProvided() { // GH-90000
             Injector injector = createConfigInjector(); // GH-90000
 
@@ -203,11 +203,11 @@ class DataCloudDiModulesTest {
     // ═══════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("DataCloudCoreModule [GH-90000]")
+    @DisplayName("DataCloudCoreModule")
     class DataCloudCoreModuleTests {
 
         @Test
-        @DisplayName("provides DataCloudConfig with defaults [GH-90000]")
+        @DisplayName("provides DataCloudConfig with defaults")
         void providesDataCloudConfig() { // GH-90000
             Injector injector = Injector.of(new DataCloudCoreModule()); // GH-90000
 
@@ -218,7 +218,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides DataCloudClient via factory [GH-90000]")
+        @DisplayName("provides DataCloudClient via factory")
         void providesDataCloudClient() { // GH-90000
             Injector injector = Injector.of(new DataCloudCoreModule()); // GH-90000
 
@@ -228,7 +228,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides StoragePluginRegistry singleton [GH-90000]")
+        @DisplayName("provides StoragePluginRegistry singleton")
         void providesStoragePluginRegistry() { // GH-90000
             Injector injector = Injector.of(new DataCloudCoreModule()); // GH-90000
 
@@ -238,7 +238,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("DataCloudClient is singleton [GH-90000]")
+        @DisplayName("DataCloudClient is singleton")
         void dataCloudClientIsSingleton() { // GH-90000
             Injector injector = Injector.of(new DataCloudCoreModule()); // GH-90000
 
@@ -249,7 +249,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("is self-contained — no external deps required [GH-90000]")
+        @DisplayName("is self-contained — no external deps required")
         void selfContained() { // GH-90000
             assertThatCode(() -> Injector.of(new DataCloudCoreModule())) // GH-90000
                     .doesNotThrowAnyException(); // GH-90000
@@ -261,11 +261,11 @@ class DataCloudDiModulesTest {
     // ═══════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("DataCloudStorageModule [GH-90000]")
+    @DisplayName("DataCloudStorageModule")
     class DataCloudStorageModuleTests {
 
         @Test
-        @DisplayName("provides RedisStorageConfig with defaults [GH-90000]")
+        @DisplayName("provides RedisStorageConfig with defaults")
         void providesRedisStorageConfig() { // GH-90000
             Injector injector = Injector.of(new DataCloudStorageModule()); // GH-90000
 
@@ -275,7 +275,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides RedisHotTierPlugin [GH-90000]")
+        @DisplayName("provides RedisHotTierPlugin")
         void providesRedisHotTierPlugin() { // GH-90000
             Injector injector = Injector.of(new DataCloudStorageModule()); // GH-90000
 
@@ -285,7 +285,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides IcebergStorageConfig with defaults [GH-90000]")
+        @DisplayName("provides IcebergStorageConfig with defaults")
         void providesIcebergStorageConfig() { // GH-90000
             Injector injector = Injector.of(new DataCloudStorageModule()); // GH-90000
 
@@ -295,7 +295,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides CoolTierStoragePlugin [GH-90000]")
+        @DisplayName("provides CoolTierStoragePlugin")
         void providesCoolTierStoragePlugin() { // GH-90000
             Injector injector = Injector.of(new DataCloudStorageModule()); // GH-90000
 
@@ -305,7 +305,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides S3ArchiveConfig with defaults [GH-90000]")
+        @DisplayName("provides S3ArchiveConfig with defaults")
         void providesS3ArchiveConfig() { // GH-90000
             Injector injector = Injector.of(new DataCloudStorageModule()); // GH-90000
 
@@ -315,7 +315,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides ColdTierArchivePlugin [GH-90000]")
+        @DisplayName("provides ColdTierArchivePlugin")
         void providesColdTierArchivePlugin() { // GH-90000
             Injector injector = Injector.of(new DataCloudStorageModule()); // GH-90000
 
@@ -325,7 +325,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("all 6 bindings (3 configs + 3 plugins) are provided [GH-90000]")
+        @DisplayName("all 6 bindings (3 configs + 3 plugins) are provided")
         void allBindingsProvided() { // GH-90000
             Injector injector = Injector.of(new DataCloudStorageModule()); // GH-90000
 
@@ -341,7 +341,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("warm-tier DataSource applies bounded idle and validation defaults [GH-90000]")
+        @DisplayName("warm-tier DataSource applies bounded idle and validation defaults")
         void warmTierDataSourceAppliesBoundedIdleAndValidationDefaults() { // GH-90000
             DataCloudStorageModule module = new DataCloudStorageModule(); // GH-90000
 
@@ -354,7 +354,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("is self-contained — no external deps required [GH-90000]")
+        @DisplayName("is self-contained — no external deps required")
         void selfContained() { // GH-90000
             assertThatCode(() -> Injector.of(new DataCloudStorageModule())) // GH-90000
                     .doesNotThrowAnyException(); // GH-90000
@@ -366,7 +366,7 @@ class DataCloudDiModulesTest {
     // ═══════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("DataCloudStreamingModule [GH-90000]")
+    @DisplayName("DataCloudStreamingModule")
     class DataCloudStreamingModuleTests {
 
         private Injector createStreamingInjector() { // GH-90000
@@ -374,7 +374,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides KafkaStreamingConfig with defaults [GH-90000]")
+        @DisplayName("provides KafkaStreamingConfig with defaults")
         void providesKafkaStreamingConfig() { // GH-90000
             Injector injector = createStreamingInjector(); // GH-90000
 
@@ -384,7 +384,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides KafkaStreamingPlugin with Eventloop and MeterRegistry [GH-90000]")
+        @DisplayName("provides KafkaStreamingPlugin with Eventloop and MeterRegistry")
         void providesKafkaStreamingPlugin() { // GH-90000
             Injector injector = createStreamingInjector(); // GH-90000
 
@@ -394,7 +394,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides EventSerializer [GH-90000]")
+        @DisplayName("provides EventSerializer")
         void providesEventSerializer() { // GH-90000
             Injector injector = createStreamingInjector(); // GH-90000
 
@@ -404,7 +404,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides RedisStateAdapter [GH-90000]")
+        @DisplayName("provides RedisStateAdapter")
         void providesRedisStateAdapter() { // GH-90000
             Injector injector = createStreamingInjector(); // GH-90000
 
@@ -414,7 +414,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("all 4 bindings are provided [GH-90000]")
+        @DisplayName("all 4 bindings are provided")
         void allBindingsProvided() { // GH-90000
             Injector injector = createStreamingInjector(); // GH-90000
 
@@ -425,7 +425,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("KafkaStreamingPlugin is singleton [GH-90000]")
+        @DisplayName("KafkaStreamingPlugin is singleton")
         void kafkaPluginIsSingleton() { // GH-90000
             Injector injector = createStreamingInjector(); // GH-90000
 
@@ -441,7 +441,7 @@ class DataCloudDiModulesTest {
     // ═══════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("DataCloudBrainModule [GH-90000]")
+    @DisplayName("DataCloudBrainModule")
     class DataCloudBrainModuleTests {
 
         private Injector createBrainInjector() { // GH-90000
@@ -449,7 +449,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides BrainConfig with defaults [GH-90000]")
+        @DisplayName("provides BrainConfig with defaults")
         void providesBrainConfig() { // GH-90000
             Injector injector = createBrainInjector(); // GH-90000
 
@@ -459,7 +459,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides ReflexEngine bound to DefaultReflexEngine [GH-90000]")
+        @DisplayName("provides ReflexEngine bound to DefaultReflexEngine")
         void providesReflexEngine() { // GH-90000
             Injector injector = createBrainInjector(); // GH-90000
 
@@ -470,7 +470,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides PatternCatalog bound to DefaultPatternCatalog [GH-90000]")
+        @DisplayName("provides PatternCatalog bound to DefaultPatternCatalog")
         void providesPatternCatalog() { // GH-90000
             Injector injector = createBrainInjector(); // GH-90000
 
@@ -481,7 +481,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides MemoryTierRouter bound to DefaultMemoryTierRouter [GH-90000]")
+        @DisplayName("provides MemoryTierRouter bound to DefaultMemoryTierRouter")
         void providesMemoryTierRouter() { // GH-90000
             Injector injector = createBrainInjector(); // GH-90000
 
@@ -493,7 +493,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides SalienceScorer bound to DefaultSalienceScorer [GH-90000]")
+        @DisplayName("provides SalienceScorer bound to DefaultSalienceScorer")
         void providesSalienceScorer() { // GH-90000
             Injector injector = createBrainInjector(); // GH-90000
 
@@ -504,7 +504,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides GlobalWorkspace with defaults [GH-90000]")
+        @DisplayName("provides GlobalWorkspace with defaults")
         void providesGlobalWorkspace() { // GH-90000
             Injector injector = createBrainInjector(); // GH-90000
 
@@ -514,7 +514,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides AttentionManager [GH-90000]")
+        @DisplayName("provides AttentionManager")
         void providesAttentionManager() { // GH-90000
             Injector injector = createBrainInjector(); // GH-90000
 
@@ -524,7 +524,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides DataCloudBrain bound to DefaultDataCloudBrain [GH-90000]")
+        @DisplayName("provides DataCloudBrain bound to DefaultDataCloudBrain")
         void providesDataCloudBrain() { // GH-90000
             Injector injector = createBrainInjector(); // GH-90000
 
@@ -535,7 +535,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("all 8 bindings are provided [GH-90000]")
+        @DisplayName("all 8 bindings are provided")
         void allBindingsProvided() { // GH-90000
             Injector injector = createBrainInjector(); // GH-90000
 
@@ -550,7 +550,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("DataCloudBrain is singleton [GH-90000]")
+        @DisplayName("DataCloudBrain is singleton")
         void brainIsSingleton() { // GH-90000
             Injector injector = createBrainInjector(); // GH-90000
 
@@ -566,11 +566,11 @@ class DataCloudDiModulesTest {
     // ═══════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Module Composition [GH-90000]")
+    @DisplayName("Module Composition")
     class ModuleCompositionTests {
 
         @Test
-        @DisplayName("DataCloudCoreModule + DataCloudStorageModule compose correctly [GH-90000]")
+        @DisplayName("DataCloudCoreModule + DataCloudStorageModule compose correctly")
         void coreAndStorageCompose() { // GH-90000
             Injector injector = Injector.of( // GH-90000
                     new DataCloudCoreModule(), // GH-90000
@@ -584,7 +584,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("DataCloudCoreModule + DataCloudStreamingModule compose correctly [GH-90000]")
+        @DisplayName("DataCloudCoreModule + DataCloudStreamingModule compose correctly")
         void coreAndStreamingCompose() { // GH-90000
             Injector injector = Injector.of( // GH-90000
                     new DataCloudCoreModule(), // GH-90000
@@ -597,7 +597,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("DataCloudCoreModule + DataCloudBrainModule compose correctly [GH-90000]")
+        @DisplayName("DataCloudCoreModule + DataCloudBrainModule compose correctly")
         void coreAndBrainCompose() { // GH-90000
             Injector injector = Injector.of( // GH-90000
                     new DataCloudCoreModule(), // GH-90000
@@ -610,7 +610,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("full module stack creates valid injector [GH-90000]")
+        @DisplayName("full module stack creates valid injector")
         void fullModuleStack() { // GH-90000
             // External stubs for streaming (Eventloop, MeterRegistry) // GH-90000
             // and brain (AI SPIs, MetricsCollector) — MetricsCollector from ObservabilityModule // GH-90000
@@ -650,11 +650,11 @@ class DataCloudDiModulesTest {
     // ═══════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Edge Cases [GH-90000]")
+    @DisplayName("Edge Cases")
     class EdgeCaseTests {
 
         @Test
-        @DisplayName("modules can be instantiated multiple times [GH-90000]")
+        @DisplayName("modules can be instantiated multiple times")
         void multipleInstances() { // GH-90000
             Injector i1 = Injector.of(new DataCloudCoreModule()); // GH-90000
             Injector i2 = Injector.of(new DataCloudCoreModule()); // GH-90000
@@ -668,10 +668,10 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("storage config can be provided by custom module [GH-90000]")
+        @DisplayName("storage config can be provided by custom module")
         void storageConfigOverride() { // GH-90000
             RedisStorageConfig custom = RedisStorageConfig.builder() // GH-90000
-                    .host("redis.production.local [GH-90000]")
+                    .host("redis.production.local")
                     .port(6380) // GH-90000
                     .build(); // GH-90000
 
@@ -682,12 +682,12 @@ class DataCloudDiModulesTest {
             Injector injector = Injector.of(customModule); // GH-90000
 
             RedisStorageConfig resolved = injector.getInstance(RedisStorageConfig.class); // GH-90000
-            assertThat(resolved.getHost()).isEqualTo("redis.production.local [GH-90000]");
+            assertThat(resolved.getHost()).isEqualTo("redis.production.local");
             assertThat(resolved.getPort()).isEqualTo(6380); // GH-90000
         }
 
         @Test
-        @DisplayName("brain sub-services are distinct singletons [GH-90000]")
+        @DisplayName("brain sub-services are distinct singletons")
         void brainSubServicesDistinct() { // GH-90000
             Injector injector = Injector.of(brainExternalStubModule(), new DataCloudBrainModule()); // GH-90000
 
@@ -699,7 +699,7 @@ class DataCloudDiModulesTest {
         }
 
         @Test
-        @DisplayName("self-contained modules work without any external deps [GH-90000]")
+        @DisplayName("self-contained modules work without any external deps")
         void selfContainedModules() { // GH-90000
             assertThatCode(() -> Injector.of(new DataCloudCoreModule())).doesNotThrowAnyException(); // GH-90000
             assertThatCode(() -> Injector.of(new DataCloudStorageModule())).doesNotThrowAnyException(); // GH-90000

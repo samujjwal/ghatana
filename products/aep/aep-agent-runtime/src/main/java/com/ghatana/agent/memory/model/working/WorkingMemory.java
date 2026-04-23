@@ -16,7 +16,8 @@ import java.util.function.BiConsumer;
  * @doc.type interface
  * @doc.purpose Bounded in-run working memory
  * @doc.layer agent-memory
- */
+  * @doc.pattern Interface
+*/
 public interface WorkingMemory {
 
     /**

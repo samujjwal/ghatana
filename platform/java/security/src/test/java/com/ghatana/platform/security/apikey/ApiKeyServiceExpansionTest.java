@@ -30,7 +30,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("ApiKeyService - Phase 3 Expansion [GH-90000]")
+@DisplayName("ApiKeyService - Phase 3 Expansion")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class ApiKeyServiceExpansionTest {
 
@@ -49,29 +49,29 @@ class ApiKeyServiceExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Key Rotation [GH-90000]")
+    @DisplayName("Key Rotation")
     class KeyRotationTests {
 
         @Test
-        @DisplayName("Rotating a key invalidates the old key and creates new valid key [GH-90000]")
+        @DisplayName("Rotating a key invalidates the old key and creates new valid key")
         void keyRotationCreatesNewKey() { // GH-90000
             // Setup: Create original key
             ApiKey original = new ApiKey("ak_original_123", "Original Key", "Old description", "owner-1", // GH-90000
                 Instant.now().plus(30, ChronoUnit.DAYS), false); // GH-90000
 
-            when(apiKeyRepository.findByKey("ak_original_123 [GH-90000]"))
+            when(apiKeyRepository.findByKey("ak_original_123"))
                 .thenReturn(Optional.of(original)); // GH-90000
             when(apiKeyRepository.save(any(ApiKey.class))) // GH-90000
                 .thenAnswer(inv -> inv.getArgument(0)); // GH-90000
 
             // Test: Rotate the key - should create new key with same metadata
-            ApiKey rotated = service.rotateApiKey("ak_original_123 [GH-90000]");
+            ApiKey rotated = service.rotateApiKey("ak_original_123");
 
             // Verify: New key is different from old
-            assertThat(rotated.getKey()).isNotEqualTo("ak_original_123 [GH-90000]");
-            assertThat(rotated.getKey()).startsWith("ak_ [GH-90000]");
-            assertThat(rotated.getName()).isEqualTo("Original Key [GH-90000]");
-            assertThat(rotated.getOwner()).isEqualTo("owner-1 [GH-90000]");
+            assertThat(rotated.getKey()).isNotEqualTo("ak_original_123");
+            assertThat(rotated.getKey()).startsWith("ak_");
+            assertThat(rotated.getName()).isEqualTo("Original Key");
+            assertThat(rotated.getOwner()).isEqualTo("owner-1");
 
             // Verify: Repository saved the new key
             verify(apiKeyRepository).save(any(ApiKey.class)); // GH-90000
@@ -83,11 +83,11 @@ class ApiKeyServiceExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Concurrent Key Generation [GH-90000]")
+    @DisplayName("Concurrent Key Generation")
     class ConcurrencyTests {
 
         @Test
-        @DisplayName("Concurrent key creation produces unique keys [GH-90000]")
+        @DisplayName("Concurrent key creation produces unique keys")
         void concurrentKeyGenerationUniqueness() throws InterruptedException { // GH-90000
             int threadCount = 5;
             Set<String> generatedKeys = new HashSet<>(); // GH-90000
@@ -126,7 +126,7 @@ class ApiKeyServiceExpansionTest {
             assertThat(successCount.get()).isEqualTo(threadCount); // GH-90000
 
             // All keys should start with the correct prefix
-            generatedKeys.forEach(key -> assertThat(key).startsWith("ak_ [GH-90000]"));
+            generatedKeys.forEach(key -> assertThat(key).startsWith("ak_"));
         }
     }
 
@@ -135,25 +135,25 @@ class ApiKeyServiceExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Key Expiration Handling [GH-90000]")
+    @DisplayName("Key Expiration Handling")
     class ExpirationTests {
 
         @Test
-        @DisplayName("Expired API keys can be queried but should be marked as inactive [GH-90000]")
+        @DisplayName("Expired API keys can be queried but should be marked as inactive")
         void expiredKeyHandling() { // GH-90000
             Instant pastTime = Instant.now().minus(1, ChronoUnit.DAYS); // GH-90000
             ApiKey expiredKey = new ApiKey("ak_expired_123", "Expired Key", "Old key", // GH-90000
                 "owner-1", pastTime, false);
 
             // When: Query for expired key
-            when(apiKeyRepository.findByKey("ak_expired_123 [GH-90000]"))
+            when(apiKeyRepository.findByKey("ak_expired_123"))
                 .thenReturn(Optional.of(expiredKey)); // GH-90000
 
-            ApiKey result = service.getApiKeyByKey("ak_expired_123 [GH-90000]")
-                .orElseThrow(() -> new ResourceNotFoundException("Key not found [GH-90000]"));
+            ApiKey result = service.getApiKeyByKey("ak_expired_123")
+                .orElseThrow(() -> new ResourceNotFoundException("Key not found"));
 
             // Then: Key should be found but marked as expired (date is in the past) // GH-90000
-            assertThat(result.getKey()).isEqualTo("ak_expired_123 [GH-90000]");
+            assertThat(result.getKey()).isEqualTo("ak_expired_123");
             assertThat(result.getExpiresAt()).isBefore(Instant.now()); // GH-90000
         }
     }
@@ -221,7 +221,7 @@ class ApiKeyServiceExpansionTest {
 
         public ApiKey rotateApiKey(String oldKey) { // GH-90000
             ApiKey existing = repository.findByKey(oldKey) // GH-90000
-                .orElseThrow(() -> new ResourceNotFoundException("Key not found [GH-90000]"));
+                .orElseThrow(() -> new ResourceNotFoundException("Key not found"));
 
             String newKey = generateKey(); // GH-90000
             ApiKey rotated = new ApiKey(newKey, existing.getName(), existing.getDescription(), // GH-90000

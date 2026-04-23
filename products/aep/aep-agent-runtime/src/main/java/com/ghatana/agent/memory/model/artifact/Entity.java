@@ -16,7 +16,8 @@ import java.util.Map;
  * @doc.type value-object
  * @doc.purpose Entity artifact for memory
  * @doc.layer agent-memory
- */
+  * @doc.pattern Entity
+*/
 @Value
 @Builder
 public class Entity implements TypedArtifact {

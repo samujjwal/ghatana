@@ -66,7 +66,10 @@ import java.util.stream.Collectors;
  *     <td>Orphaned operators deleted</td>
  *   </tr>
  * </table>
- */
+  * @doc.type class
+ * @doc.purpose Provides dagoptimizer functionality.
+ * @doc.layer product
+*/
 public class DAGOptimizer {
 
     private final OperatorRegistry operatorRegistry;

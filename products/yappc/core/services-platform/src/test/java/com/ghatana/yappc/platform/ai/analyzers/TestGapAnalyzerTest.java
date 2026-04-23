@@ -19,13 +19,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("TestGapAnalyzer Tests [GH-90000]")
+@DisplayName("TestGapAnalyzer Tests")
 class TestGapAnalyzerTest extends EventloopTestBase {
 
   @Mock private YAPPCAIService aiService;
 
   @Test
-  @DisplayName("analyze skips Java test files [GH-90000]")
+  @DisplayName("analyze skips Java test files")
   void analyzeSkipsJavaTestFiles() { // GH-90000
     TestGapAnalyzer analyzer = analyzer(healthyCoverage(), healthyHistory()); // GH-90000
 
@@ -37,7 +37,7 @@ class TestGapAnalyzerTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("analyze skips TypeScript test file variants [GH-90000]")
+  @DisplayName("analyze skips TypeScript test file variants")
   void analyzeSkipsTypescriptTestFileVariants() { // GH-90000
     TestGapAnalyzer analyzer = analyzer(healthyCoverage(), healthyHistory()); // GH-90000
 
@@ -53,11 +53,11 @@ class TestGapAnalyzerTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("analyze returns deterministic findings for coverage and stability gaps [GH-90000]")
+  @DisplayName("analyze returns deterministic findings for coverage and stability gaps")
   void analyzeReturnsDeterministicFindingsForCoverageAndStabilityGaps() { // GH-90000
     TestGapAnalyzer analyzer =
         analyzer( // GH-90000
-            new TestGapAnalyzer.CoverageSnapshot(0.62, 0.5, 9, 3, List.of("OrderService#submit [GH-90000]")),
+            new TestGapAnalyzer.CoverageSnapshot(0.62, 0.5, 9, 3, List.of("OrderService#submit")),
             new TestGapAnalyzer.RecentTestHistory(List.of(), 2, 1, 4)); // GH-90000
 
     List<AIInsight> insights =
@@ -71,12 +71,12 @@ class TestGapAnalyzerTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("analyze flags alternate coverage and flaky-only deterministic paths [GH-90000]")
+  @DisplayName("analyze flags alternate coverage and flaky-only deterministic paths")
   void analyzeFlagsAlternateCoverageAndFlakyOnlyDeterministicPaths() { // GH-90000
     TestGapAnalyzer analyzer =
         analyzer( // GH-90000
-            new TestGapAnalyzer.CoverageSnapshot(0.95, 0.7, 1, 1, List.of("OrderService#submit [GH-90000]")),
-            new TestGapAnalyzer.RecentTestHistory(List.of("OrderServiceTest [GH-90000]"), 0, 1, 2));
+            new TestGapAnalyzer.CoverageSnapshot(0.95, 0.7, 1, 1, List.of("OrderService#submit")),
+            new TestGapAnalyzer.RecentTestHistory(List.of("OrderServiceTest"), 0, 1, 2));
 
     List<AIInsight> insights =
         runPromise(() -> analyzer.analyze(event("src/main/java/com/acme/OrderService.java", "+if (ready) {}"))); // GH-90000
@@ -87,41 +87,41 @@ class TestGapAnalyzerTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("analyze flags missed lines even when aggregate coverage percentages are healthy [GH-90000]")
+  @DisplayName("analyze flags missed lines even when aggregate coverage percentages are healthy")
   void analyzeFlagsMissedLinesWhenCoveragePercentagesAreHealthy() { // GH-90000
     TestGapAnalyzer analyzer =
         analyzer( // GH-90000
-            new TestGapAnalyzer.CoverageSnapshot(0.95, 0.92, 2, 0, List.of("OrderService#submit [GH-90000]")),
+            new TestGapAnalyzer.CoverageSnapshot(0.95, 0.92, 2, 0, List.of("OrderService#submit")),
             healthyHistory()); // GH-90000
 
     List<AIInsight> insights =
         runPromise(() -> analyzer.analyze(event("src/main/java/com/acme/OrderService.java", "+line"))); // GH-90000
 
     assertThat(insights).singleElement().satisfies(insight -> { // GH-90000
-      assertThat(insight.title()).isEqualTo("Coverage gap detected [GH-90000]");
+      assertThat(insight.title()).isEqualTo("Coverage gap detected");
       assertThat(insight.type()).isEqualTo(AIInsight.InsightType.TEST_GAP); // GH-90000
     });
   }
 
   @Test
-  @DisplayName("analyze flags missed branches even when missed lines are zero [GH-90000]")
+  @DisplayName("analyze flags missed branches even when missed lines are zero")
   void analyzeFlagsMissedBranchesWhenMissedLinesAreZero() { // GH-90000
     TestGapAnalyzer analyzer =
         analyzer( // GH-90000
-            new TestGapAnalyzer.CoverageSnapshot(0.95, 0.92, 0, 2, List.of("OrderService#submit [GH-90000]")),
+            new TestGapAnalyzer.CoverageSnapshot(0.95, 0.92, 0, 2, List.of("OrderService#submit")),
             healthyHistory()); // GH-90000
 
     List<AIInsight> insights =
         runPromise(() -> analyzer.analyze(event("src/main/java/com/acme/OrderService.java", "+branch"))); // GH-90000
 
     assertThat(insights).singleElement().satisfies(insight -> { // GH-90000
-      assertThat(insight.title()).isEqualTo("Coverage gap detected [GH-90000]");
+      assertThat(insight.title()).isEqualTo("Coverage gap detected");
       assertThat(insight.type()).isEqualTo(AIInsight.InsightType.TEST_GAP); // GH-90000
     });
   }
 
   @Test
-  @DisplayName("analyze parses structured AI test gap suggestions [GH-90000]")
+  @DisplayName("analyze parses structured AI test gap suggestions")
   void analyzeParsesStructuredAiTestGapSuggestions() { // GH-90000
     when(aiService.reason(anyString(), anyMap())) // GH-90000
         .thenReturn( // GH-90000
@@ -134,13 +134,13 @@ class TestGapAnalyzerTest extends EventloopTestBase {
         runPromise(() -> analyzer.analyze(event("src/main/java/com/acme/OrderService.java", "+service.submit();"))); // GH-90000
 
     assertThat(insights).hasSize(1); // GH-90000
-    assertThat(insights.getFirst().title()).isEqualTo("OrderService#submit unhappy path [GH-90000]");
+    assertThat(insights.getFirst().title()).isEqualTo("OrderService#submit unhappy path");
     assertThat(insights.getFirst().lineNumber()).isEqualTo(17); // GH-90000
     assertThat(insights.getFirst().confidence()).isEqualTo(0.84); // GH-90000
   }
 
   @Test
-  @DisplayName("analyze defaults missing AI numeric fields [GH-90000]")
+  @DisplayName("analyze defaults missing AI numeric fields")
   void analyzeDefaultsMissingAiNumericFields() { // GH-90000
     when(aiService.reason(anyString(), anyMap())) // GH-90000
         .thenReturn(Promise.of("[{\"severity\":\"info\",\"uncoveredPath\":\"InvoiceService#publish\"}]")); // GH-90000
@@ -158,7 +158,7 @@ class TestGapAnalyzerTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("analyze accepts numeric AI line and confidence values [GH-90000]")
+  @DisplayName("analyze accepts numeric AI line and confidence values")
   void analyzeAcceptsNumericAiLineAndConfidenceValues() { // GH-90000
     when(aiService.reason(anyString(), anyMap())) // GH-90000
         .thenReturn( // GH-90000
@@ -177,10 +177,10 @@ class TestGapAnalyzerTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("analyze returns empty list for blank and null AI responses [GH-90000]")
+  @DisplayName("analyze returns empty list for blank and null AI responses")
   void analyzeReturnsEmptyListForBlankAndNullAiResponses() { // GH-90000
     when(aiService.reason(anyString(), anyMap())) // GH-90000
-        .thenReturn(Promise.of("  [GH-90000]"))
+        .thenReturn(Promise.of(" "))
         .thenReturn(Promise.of(null)); // GH-90000
 
     TestGapAnalyzer analyzer = analyzer(healthyCoverage(), healthyHistory()); // GH-90000
@@ -196,9 +196,9 @@ class TestGapAnalyzerTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("analyze falls back to manual review insight for malformed AI response [GH-90000]")
+  @DisplayName("analyze falls back to manual review insight for malformed AI response")
   void analyzeFallsBackToManualReviewInsightForMalformedAiResponse() { // GH-90000
-    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("not-json [GH-90000]"));
+    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("not-json"));
 
     TestGapAnalyzer analyzer = analyzer(healthyCoverage(), healthyHistory()); // GH-90000
 
@@ -206,11 +206,11 @@ class TestGapAnalyzerTest extends EventloopTestBase {
         runPromise(() -> analyzer.analyze(event("src/main/java/com/acme/ReviewService.java", "+review();"))); // GH-90000
 
     assertThat(insights).hasSize(1); // GH-90000
-    assertThat(insights.getFirst().title()).isEqualTo("Manual test gap review recommended [GH-90000]");
+    assertThat(insights.getFirst().title()).isEqualTo("Manual test gap review recommended");
   }
 
   @Test
-  @DisplayName("coverage and history records normalize invalid values [GH-90000]")
+  @DisplayName("coverage and history records normalize invalid values")
   void recordsNormalizeInvalidValues() { // GH-90000
     TestGapAnalyzer.CoverageSnapshot coverage =
         new TestGapAnalyzer.CoverageSnapshot(1.5, -1.0, -2, -3, null); // GH-90000
@@ -237,11 +237,11 @@ class TestGapAnalyzerTest extends EventloopTestBase {
   }
 
   private TestGapAnalyzer.CoverageSnapshot healthyCoverage() { // GH-90000
-    return new TestGapAnalyzer.CoverageSnapshot(0.95, 0.92, 0, 0, List.of("OrderService#submit [GH-90000]"));
+    return new TestGapAnalyzer.CoverageSnapshot(0.95, 0.92, 0, 0, List.of("OrderService#submit"));
   }
 
   private TestGapAnalyzer.RecentTestHistory healthyHistory() { // GH-90000
-    return new TestGapAnalyzer.RecentTestHistory(List.of("OrderServiceTest [GH-90000]"), 0, 0, 1);
+    return new TestGapAnalyzer.RecentTestHistory(List.of("OrderServiceTest"), 0, 0, 1);
   }
 
   private CodeChangedEvent event(String filePath, String diff) { // GH-90000

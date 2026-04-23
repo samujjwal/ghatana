@@ -25,15 +25,15 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AuthGatewayLauncher ServiceLauncher Migration Tests [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("AuthGatewayLauncher ServiceLauncher Migration Tests")
+@Tag("integration")
 class AuthGatewayLauncherIntegrationTest {
 
     /**
      * Test that verifies AuthGatewayLauncher extends ServiceLauncher.
      */
     @Test
-    @DisplayName("AuthGatewayLauncher extends ServiceLauncher [GH-90000]")
+    @DisplayName("AuthGatewayLauncher extends ServiceLauncher")
     void authGatewayLauncherExtendsServiceLauncher() { // GH-90000
         AuthGatewayLauncher launcher = new AuthGatewayLauncher(); // GH-90000
         assertThat(launcher).isInstanceOf(com.ghatana.core.activej.launcher.ServiceLauncher.class); // GH-90000
@@ -43,7 +43,7 @@ class AuthGatewayLauncherIntegrationTest {
      * Test that verifies createModule() returns a valid module. // GH-90000
      */
     @Test
-    @DisplayName("createModule() returns valid module [GH-90000]")
+    @DisplayName("createModule() returns valid module")
     void createModuleReturnsValidModule() { // GH-90000
         AuthGatewayLauncher launcher = new AuthGatewayLauncher(); // GH-90000
         Module module = launcher.createModule(); // GH-90000
@@ -54,7 +54,7 @@ class AuthGatewayLauncherIntegrationTest {
      * Test that verifies the module provides Eventloop binding.
      */
     @Test
-    @DisplayName("Module provides Eventloop binding [GH-90000]")
+    @DisplayName("Module provides Eventloop binding")
     void moduleProvidesEventloopBinding() { // GH-90000
         AuthGatewayLauncher launcher = new AuthGatewayLauncher(); // GH-90000
         Module module = launcher.createModule(); // GH-90000
@@ -71,7 +71,7 @@ class AuthGatewayLauncherIntegrationTest {
      * Test that verifies the module provides MeterRegistry binding.
      */
     @Test
-    @DisplayName("Module provides MeterRegistry binding [GH-90000]")
+    @DisplayName("Module provides MeterRegistry binding")
     void moduleProvidesMeterRegistryBinding() { // GH-90000
         AuthGatewayLauncher launcher = new AuthGatewayLauncher(); // GH-90000
         Module module = launcher.createModule(); // GH-90000
@@ -89,7 +89,7 @@ class AuthGatewayLauncherIntegrationTest {
      * Test that verifies the module provides MetricsCollector binding.
      */
     @Test
-    @DisplayName("Module provides MetricsCollector binding [GH-90000]")
+    @DisplayName("Module provides MetricsCollector binding")
     void moduleProvidesMetricsCollectorBinding() { // GH-90000
         AuthGatewayLauncher launcher = new AuthGatewayLauncher(); // GH-90000
         Module module = launcher.createModule(); // GH-90000
@@ -107,7 +107,7 @@ class AuthGatewayLauncherIntegrationTest {
      * Test that verifies the module provides ConfigManager binding.
      */
     @Test
-    @DisplayName("Module provides ConfigManager binding [GH-90000]")
+    @DisplayName("Module provides ConfigManager binding")
     void moduleProvidesConfigManagerBinding() { // GH-90000
         AuthGatewayLauncher launcher = new AuthGatewayLauncher(); // GH-90000
         Module module = launcher.createModule(); // GH-90000
@@ -125,7 +125,7 @@ class AuthGatewayLauncherIntegrationTest {
      * Test that verifies the module provides JwtTokenProvider binding.
      */
     @Test
-    @DisplayName("Module provides JwtTokenProvider binding [GH-90000]")
+    @DisplayName("Module provides JwtTokenProvider binding")
     void moduleProvidesJwtTokenProviderBinding() { // GH-90000
         AuthGatewayLauncher launcher = new AuthGatewayLauncher(); // GH-90000
         Module module = launcher.createModule(); // GH-90000
@@ -143,7 +143,7 @@ class AuthGatewayLauncherIntegrationTest {
      * Test that verifies the module provides CredentialStore binding.
      */
     @Test
-    @DisplayName("Module provides CredentialStore binding [GH-90000]")
+    @DisplayName("Module provides CredentialStore binding")
     void moduleProvidesCredentialStoreBinding() { // GH-90000
         AuthGatewayLauncher launcher = new AuthGatewayLauncher(); // GH-90000
         Module module = launcher.createModule(); // GH-90000
@@ -160,7 +160,7 @@ class AuthGatewayLauncherIntegrationTest {
      * Test that verifies the module provides TenantExtractor binding.
      */
     @Test
-    @DisplayName("Module provides TenantExtractor binding [GH-90000]")
+    @DisplayName("Module provides TenantExtractor binding")
     void moduleProvidesTenantExtractorBinding() { // GH-90000
         AuthGatewayLauncher launcher = new AuthGatewayLauncher(); // GH-90000
         Module module = launcher.createModule(); // GH-90000
@@ -177,7 +177,7 @@ class AuthGatewayLauncherIntegrationTest {
      * Test that verifies the module provides RateLimiter binding.
      */
     @Test
-    @DisplayName("Module provides RateLimiter binding [GH-90000]")
+    @DisplayName("Module provides RateLimiter binding")
     void moduleProvidesRateLimiterBinding() { // GH-90000
         AuthGatewayLauncher launcher = new AuthGatewayLauncher(); // GH-90000
         Module module = launcher.createModule(); // GH-90000
@@ -195,7 +195,7 @@ class AuthGatewayLauncherIntegrationTest {
      * Test that verifies the module provides RoutingServlet binding.
      */
     @Test
-    @DisplayName("Module provides RoutingServlet binding [GH-90000]")
+    @DisplayName("Module provides RoutingServlet binding")
     void moduleProvidesRoutingServletBinding() { // GH-90000
         AuthGatewayLauncher launcher = new AuthGatewayLauncher(); // GH-90000
         Module module = launcher.createModule(); // GH-90000
@@ -212,7 +212,7 @@ class AuthGatewayLauncherIntegrationTest {
      * Test that verifies the module provides HttpServer binding.
      */
     @Test
-    @DisplayName("Module provides HttpServer binding [GH-90000]")
+    @DisplayName("Module provides HttpServer binding")
     void moduleProvidesHttpServerBinding() { // GH-90000
         AuthGatewayLauncher launcher = new AuthGatewayLauncher(); // GH-90000
         Module module = launcher.createModule(); // GH-90000

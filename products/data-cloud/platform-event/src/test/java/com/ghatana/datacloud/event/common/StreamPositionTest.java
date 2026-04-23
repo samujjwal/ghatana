@@ -14,11 +14,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * Tests for {@link StreamPosition}.
  */
-@DisplayName("StreamPosition [GH-90000]")
+@DisplayName("StreamPosition")
 class StreamPositionTest {
 
     @Nested
-    @DisplayName("factory methods [GH-90000]")
+    @DisplayName("factory methods")
     class FactoryMethods {
 
         @Test
@@ -63,7 +63,7 @@ class StreamPositionTest {
     }
 
     @Nested
-    @DisplayName("nextOffset() [GH-90000]")
+    @DisplayName("nextOffset()")
     class NextOffset {
 
         @Test
@@ -76,7 +76,7 @@ class StreamPositionTest {
     }
 
     @Nested
-    @DisplayName("isBefore() / isAfter() [GH-90000]")
+    @DisplayName("isBefore() / isAfter()")
     class InPartitionComparison {
 
         @Test
@@ -101,7 +101,7 @@ class StreamPositionTest {
             StreamPosition b = StreamPosition.of(1, 1L); // GH-90000
             assertThatThrownBy(() -> a.isBefore(b)) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("different partitions [GH-90000]");
+                    .hasMessageContaining("different partitions");
         }
 
         @Test
@@ -110,7 +110,7 @@ class StreamPositionTest {
             StreamPosition b = StreamPosition.of(1, 1L); // GH-90000
             assertThatThrownBy(() -> a.isAfter(b)) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("different partitions [GH-90000]");
+                    .hasMessageContaining("different partitions");
         }
 
         @Test
@@ -127,7 +127,7 @@ class StreamPositionTest {
     }
 
     @Test
-    @DisplayName("compareTo() orders by partition then offset [GH-90000]")
+    @DisplayName("compareTo() orders by partition then offset")
     void compareToOrdering() { // GH-90000
         StreamPosition p0o1 = StreamPosition.of(0, 1L); // GH-90000
         StreamPosition p0o9 = StreamPosition.of(0, 9L); // GH-90000
@@ -140,7 +140,7 @@ class StreamPositionTest {
     }
 
     @Test
-    @DisplayName("record equality [GH-90000]")
+    @DisplayName("record equality")
     void recordEquality() { // GH-90000
         StreamPosition a = StreamPosition.of(2, 5L); // GH-90000
         StreamPosition b = StreamPosition.of(2, 5L); // GH-90000

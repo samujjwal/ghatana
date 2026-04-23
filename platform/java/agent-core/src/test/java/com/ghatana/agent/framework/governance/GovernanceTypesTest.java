@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.*;
  * Tests for WP1/WP2 governance value objects: ActionClass, ReversibilityClass,
  * PolicyDecisionType, ActionIntent, PolicyDecision, PolicyObligation, AgentDatasheet.
  */
-@DisplayName("Governance Types [GH-90000]")
+@DisplayName("Governance Types")
 class GovernanceTypesTest {
 
     // =========================================================================
@@ -27,18 +27,18 @@ class GovernanceTypesTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("ActionClass [GH-90000]")
+    @DisplayName("ActionClass")
     class ActionClassTests {
 
         @Test
-        @DisplayName("READ and DRAFT should not be privileged [GH-90000]")
+        @DisplayName("READ and DRAFT should not be privileged")
         void readAndDraftShouldNotBePrivileged() { // GH-90000
             assertThat(ActionClass.READ.isPrivileged()).isFalse(); // GH-90000
             assertThat(ActionClass.DRAFT.isPrivileged()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("all write and external actions should be privileged [GH-90000]")
+        @DisplayName("all write and external actions should be privileged")
         void writeAndExternalShouldBePrivileged() { // GH-90000
             assertThat(ActionClass.WRITE_REVERSIBLE.isPrivileged()).isTrue(); // GH-90000
             assertThat(ActionClass.WRITE_IRREVERSIBLE.isPrivileged()).isTrue(); // GH-90000
@@ -49,7 +49,7 @@ class GovernanceTypesTest {
         }
 
         @Test
-        @DisplayName("irreversible actions should be correctly classified [GH-90000]")
+        @DisplayName("irreversible actions should be correctly classified")
         void irreversibleActions() { // GH-90000
             assertThat(ActionClass.WRITE_IRREVERSIBLE.isIrreversible()).isTrue(); // GH-90000
             assertThat(ActionClass.CALL_EXTERNAL.isIrreversible()).isTrue(); // GH-90000
@@ -60,7 +60,7 @@ class GovernanceTypesTest {
         }
 
         @Test
-        @DisplayName("should have exactly 8 values per spec [GH-90000]")
+        @DisplayName("should have exactly 8 values per spec")
         void shouldHaveEightValues() { // GH-90000
             assertThat(ActionClass.values()).hasSize(8); // GH-90000
         }
@@ -71,16 +71,16 @@ class GovernanceTypesTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("ReversibilityClass [GH-90000]")
+    @DisplayName("ReversibilityClass")
     class ReversibilityClassTests {
 
         @Test
-        @DisplayName("should have exactly 3 values [GH-90000]")
+        @DisplayName("should have exactly 3 values")
         void shouldHaveThreeValues() { // GH-90000
             assertThat(ReversibilityClass.values()).hasSize(3); // GH-90000
-            assertThat(ReversibilityClass.valueOf("REVERSIBLE [GH-90000]")).isNotNull();
-            assertThat(ReversibilityClass.valueOf("COMPENSATABLE [GH-90000]")).isNotNull();
-            assertThat(ReversibilityClass.valueOf("IRREVERSIBLE [GH-90000]")).isNotNull();
+            assertThat(ReversibilityClass.valueOf("REVERSIBLE")).isNotNull();
+            assertThat(ReversibilityClass.valueOf("COMPENSATABLE")).isNotNull();
+            assertThat(ReversibilityClass.valueOf("IRREVERSIBLE")).isNotNull();
         }
     }
 
@@ -89,18 +89,18 @@ class GovernanceTypesTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("PolicyDecisionType [GH-90000]")
+    @DisplayName("PolicyDecisionType")
     class PolicyDecisionTypeTests {
 
         @Test
-        @DisplayName("DENY and ESCALATE should not be permitted [GH-90000]")
+        @DisplayName("DENY and ESCALATE should not be permitted")
         void denyAndEscalateShouldNotBePermitted() { // GH-90000
             assertThat(PolicyDecisionType.DENY.isPermitted()).isFalse(); // GH-90000
             assertThat(PolicyDecisionType.ESCALATE.isPermitted()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("ALLOW variants should be permitted [GH-90000]")
+        @DisplayName("ALLOW variants should be permitted")
         void allowVariantsShouldBePermitted() { // GH-90000
             assertThat(PolicyDecisionType.ALLOW.isPermitted()).isTrue(); // GH-90000
             assertThat(PolicyDecisionType.ALLOW_WITH_APPROVAL.isPermitted()).isTrue(); // GH-90000
@@ -109,7 +109,7 @@ class GovernanceTypesTest {
         }
 
         @Test
-        @DisplayName("conditional decisions should have obligations [GH-90000]")
+        @DisplayName("conditional decisions should have obligations")
         void conditionalShouldHaveObligations() { // GH-90000
             assertThat(PolicyDecisionType.ALLOW_WITH_APPROVAL.hasObligations()).isTrue(); // GH-90000
             assertThat(PolicyDecisionType.ALLOW_WITH_COMPENSATION.hasObligations()).isTrue(); // GH-90000
@@ -119,7 +119,7 @@ class GovernanceTypesTest {
         }
 
         @Test
-        @DisplayName("should have exactly 6 values per spec [GH-90000]")
+        @DisplayName("should have exactly 6 values per spec")
         void shouldHaveSixValues() { // GH-90000
             assertThat(PolicyDecisionType.values()).hasSize(6); // GH-90000
         }
@@ -130,11 +130,11 @@ class GovernanceTypesTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("ActionIntent [GH-90000]")
+    @DisplayName("ActionIntent")
     class ActionIntentTests {
 
         @Test
-        @DisplayName("should construct with all required fields [GH-90000]")
+        @DisplayName("should construct with all required fields")
         void shouldConstructWithRequiredFields() { // GH-90000
             ActionIntent intent = new ActionIntent( // GH-90000
                     "trace-1", "agent-1", "tenant-1",
@@ -144,13 +144,13 @@ class GovernanceTypesTest {
                     "user-1", null, "v1.0",
                     Instant.now()); // GH-90000
 
-            assertThat(intent.traceId()).isEqualTo("trace-1 [GH-90000]");
-            assertThat(intent.agentId()).isEqualTo("agent-1 [GH-90000]");
+            assertThat(intent.traceId()).isEqualTo("trace-1");
+            assertThat(intent.agentId()).isEqualTo("agent-1");
             assertThat(intent.isPrivileged()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("should reject null required fields [GH-90000]")
+        @DisplayName("should reject null required fields")
         void shouldRejectNullRequiredFields() { // GH-90000
             assertThatThrownBy(() -> new ActionIntent( // GH-90000
                     null, "agent-1", "tenant-1",
@@ -161,7 +161,7 @@ class GovernanceTypesTest {
         }
 
         @Test
-        @DisplayName("READ actions should not be privileged [GH-90000]")
+        @DisplayName("READ actions should not be privileged")
         void readActionsShouldNotBePrivileged() { // GH-90000
             ActionIntent intent = new ActionIntent( // GH-90000
                     "trace-1", "agent-1", "tenant-1",
@@ -178,37 +178,37 @@ class GovernanceTypesTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("PolicyDecision [GH-90000]")
+    @DisplayName("PolicyDecision")
     class PolicyDecisionTests {
 
         @Test
-        @DisplayName("allow() should create permitted decision [GH-90000]")
+        @DisplayName("allow() should create permitted decision")
         void allowShouldCreatePermittedDecision() { // GH-90000
-            PolicyDecision decision = PolicyDecision.allow(List.of("policy-1 [GH-90000]"), "Low risk");
+            PolicyDecision decision = PolicyDecision.allow(List.of("policy-1"), "Low risk");
 
             assertThat(decision.decision()).isEqualTo(PolicyDecisionType.ALLOW); // GH-90000
             assertThat(decision.isPermitted()).isTrue(); // GH-90000
-            assertThat(decision.policyRefsApplied()).containsExactly("policy-1 [GH-90000]");
-            assertThat(decision.reasons()).containsExactly("Low risk [GH-90000]");
+            assertThat(decision.policyRefsApplied()).containsExactly("policy-1");
+            assertThat(decision.reasons()).containsExactly("Low risk");
             assertThat(decision.obligations()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("deny() should create non-permitted decision [GH-90000]")
+        @DisplayName("deny() should create non-permitted decision")
         void denyShouldCreateNonPermittedDecision() { // GH-90000
             PolicyDecision decision = PolicyDecision.deny( // GH-90000
-                    List.of("policy-2 [GH-90000]"), List.of("rule-1 [GH-90000]"), "High risk action");
+                    List.of("policy-2"), List.of("rule-1"), "High risk action");
 
             assertThat(decision.decision()).isEqualTo(PolicyDecisionType.DENY); // GH-90000
             assertThat(decision.isPermitted()).isFalse(); // GH-90000
-            assertThat(decision.matchedRules()).containsExactly("rule-1 [GH-90000]");
+            assertThat(decision.matchedRules()).containsExactly("rule-1");
         }
 
         @Test
-        @DisplayName("requireApproval() should carry required roles [GH-90000]")
+        @DisplayName("requireApproval() should carry required roles")
         void requireApprovalShouldCarryRoles() { // GH-90000
             PolicyDecision decision = PolicyDecision.requireApproval( // GH-90000
-                    List.of("policy-3 [GH-90000]"), List.of("manager", "compliance"), "Needs review");
+                    List.of("policy-3"), List.of("manager", "compliance"), "Needs review");
 
             assertThat(decision.decision()).isEqualTo(PolicyDecisionType.ALLOW_WITH_APPROVAL); // GH-90000
             assertThat(decision.requiredApprovals()).containsExactlyInAnyOrder("manager", "compliance"); // GH-90000
@@ -216,11 +216,11 @@ class GovernanceTypesTest {
         }
 
         @Test
-        @DisplayName("lists should be immutable copies [GH-90000]")
+        @DisplayName("lists should be immutable copies")
         void listsShouldBeImmutable() { // GH-90000
-            PolicyDecision decision = PolicyDecision.allow(List.of("p [GH-90000]"), "ok");
+            PolicyDecision decision = PolicyDecision.allow(List.of("p"), "ok");
 
-            assertThatThrownBy(() -> decision.reasons().add("extra [GH-90000]"))
+            assertThatThrownBy(() -> decision.reasons().add("extra"))
                     .isInstanceOf(UnsupportedOperationException.class); // GH-90000
             assertThatThrownBy(() -> decision.obligations().add(null)) // GH-90000
                     .isInstanceOf(UnsupportedOperationException.class); // GH-90000
@@ -232,11 +232,11 @@ class GovernanceTypesTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("AgentDatasheet [GH-90000]")
+    @DisplayName("AgentDatasheet")
     class AgentDatasheetTests {
 
         @Test
-        @DisplayName("should construct with all fields from spec section 7.1 [GH-90000]")
+        @DisplayName("should construct with all fields from spec section 7.1")
         void shouldConstructWithAllFields() { // GH-90000
             AgentDatasheet ds = new AgentDatasheet( // GH-90000
                     "agent.procurement-assistant",
@@ -255,26 +255,26 @@ class GovernanceTypesTest {
                     90,
                     List.of(new AgentDatasheet.ApprovalRule( // GH-90000
                             ActionClass.WRITE_IRREVERSIBLE, List.of("manager", "compliance"))), // GH-90000
-                    List.of("eval.procurement.regression.v1 [GH-90000]"),
+                    List.of("eval.procurement.regression.v1"),
                     "runbook://agent-control/procurement-assistant",
                     "rollback-via-compensation",
                     "regulated",
                     List.of("production", "staging"), // GH-90000
-                    Instant.parse("2026-03-22T00:00:00Z [GH-90000]"),
-                    Instant.parse("2026-06-22T00:00:00Z [GH-90000]"));
+                    Instant.parse("2026-03-22T00:00:00Z"),
+                    Instant.parse("2026-06-22T00:00:00Z"));
 
-            assertThat(ds.agentId()).isEqualTo("agent.procurement-assistant [GH-90000]");
+            assertThat(ds.agentId()).isEqualTo("agent.procurement-assistant");
             assertThat(ds.autonomyTier()).isEqualTo(AutonomyLevel.SUPERVISED); // GH-90000
             assertThat(ds.allowedActionClasses()).hasSize(3); // GH-90000
             assertThat(ds.toolPermissions()).hasSize(1); // GH-90000
             assertThat(ds.memoryBindings()).hasSize(1); // GH-90000
             assertThat(ds.approvalRules()).hasSize(1); // GH-90000
-            assertThat(ds.evaluationPackRefs()).containsExactly("eval.procurement.regression.v1 [GH-90000]");
-            assertThat(ds.auditMode()).isEqualTo("regulated [GH-90000]");
+            assertThat(ds.evaluationPackRefs()).containsExactly("eval.procurement.regression.v1");
+            assertThat(ds.auditMode()).isEqualTo("regulated");
         }
 
         @Test
-        @DisplayName("collections should be immutable [GH-90000]")
+        @DisplayName("collections should be immutable")
         void collectionsShouldBeImmutable() { // GH-90000
             AgentDatasheet ds = new AgentDatasheet( // GH-90000
                     "agent-1", "1.0", "ns", List.of(), "tier-1", // GH-90000
@@ -290,7 +290,7 @@ class GovernanceTypesTest {
         }
 
         @Test
-        @DisplayName("should reject null required fields [GH-90000]")
+        @DisplayName("should reject null required fields")
         void shouldRejectNullRequiredFields() { // GH-90000
             assertThatThrownBy(() -> new AgentDatasheet( // GH-90000
                     null, "1.0", "ns", List.of(), "tier-1", // GH-90000

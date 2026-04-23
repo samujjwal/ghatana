@@ -58,13 +58,9 @@ import {
   Loader2,
 } from 'lucide-react';
 import { cn } from '../lib/theme';
-import {
-  PageHeader,
-  PageContent,
-  ContextPanel,
-  SuggestionCard,
-  StatCard,
-} from '../components/layout/PageLayout';
+import { CommandBar, CommandBarTrigger, ContextSidebar } from '../components/core';
+import { PageHeader, PageContent, ContextPanel, StatCard, SuggestionCard } from '../components/layout/PageLayout';
+import { Tabs } from '@ghatana/design-system';
 import { SpotlightRing } from '../components/brain/SpotlightRing';
 import { AutonomyTimeline } from '../components/brain/AutonomyTimeline';
 import { CapabilityTruthPanel } from '../components/capabilities/CapabilityTruthPanel';
@@ -331,39 +327,6 @@ function ModelTelemetryPanel({
 }
 
 // =============================================================================
-// TAB NAVIGATION
-// =============================================================================
-
-interface TabButtonProps {
-  id: TabType;
-  label: string;
-  icon: React.ReactNode;
-  active: boolean;
-  onClick: () => void;
-  ariaControls?: string;
-}
-
-function TabButton({ label, icon, active, onClick, ariaControls }: TabButtonProps) {
-  return (
-    <button
-      onClick={onClick}
-      role="tab"
-      aria-selected={active}
-      aria-controls={ariaControls}
-      className={cn(
-        'flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors',
-        active
-          ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
-          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
-      )}
-    >
-      {icon}
-      {label}
-    </button>
-  );
-}
-
-// =============================================================================
 // OVERVIEW TAB
 // =============================================================================
 
@@ -443,12 +406,12 @@ function OverviewTab({
 
       {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* AI Spotlight */}
+        {/* Assistance Spotlight */}
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
               <Zap className="h-4 w-4 text-yellow-500" />
-              AI Spotlight
+              Assistance Spotlight
             </h3>
             <div className="text-right">
               <span className="block text-xs text-gray-500">
@@ -1278,21 +1241,19 @@ export function InsightsPage() {
         }
       />
 
-      {/* Tabs */}
-      <div className="px-6 py-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800" role="tablist" aria-label="Insights sections">
-        <div className="flex items-center gap-2">
-          {tabs.map((tab) => (
-            <TabButton
-              key={tab.id}
-              id={tab.id}
-              label={tab.label}
-              icon={tab.icon}
-              active={activeTab === tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              ariaControls={`insights-panel-${tab.id}`}
-            />
-          ))}
-        </div>
+      {/* Tabs — migrated to @ghatana/design-system Tabs (DS-009) */}
+      <div className="px-6 py-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <Tabs
+          tabs={tabs.map((tab) => ({
+            key: tab.id,
+            label: tab.label,
+            icon: tab.icon,
+          }))}
+          activeTab={activeTab}
+          onChange={(key: string) => setActiveTab(key as TabType)}
+          variant="pills"
+          size="sm"
+        />
       </div>
 
       <PageContent contextSidebar={sidebarContent}>

@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer integration
  */
 @Testcontainers
-@DisplayName("Audio-Video Integration Tests [GH-90000]")
+@DisplayName("Audio-Video Integration Tests")
 class AudioVideoIntegrationTest {
 
     private static final String STT_IMAGE = System.getenv().getOrDefault("STT_IMAGE", "ghatana/stt-service:latest"); // GH-90000
@@ -40,7 +40,7 @@ class AudioVideoIntegrationTest {
             .withEnv("STT_DEFAULT_MODEL", "whisper-tiny") // GH-90000
             .withEnv("LOG_LEVEL", "info") // GH-90000
             .withNetwork(Network.newNetwork()) // GH-90000
-            .withNetworkAliases("stt-service [GH-90000]")
+            .withNetworkAliases("stt-service")
             .withStartupTimeoutSeconds(120); // GH-90000
 
     @Container
@@ -50,7 +50,7 @@ class AudioVideoIntegrationTest {
             .withEnv("TTS_DEFAULT_VOICE", "en-US-default") // GH-90000
             .withEnv("LOG_LEVEL", "info") // GH-90000
             .withNetwork(sttService.getNetwork()) // GH-90000
-            .withNetworkAliases("tts-service [GH-90000]")
+            .withNetworkAliases("tts-service")
             .withStartupTimeoutSeconds(120); // GH-90000
 
     private ManagedChannel sttChannel;
@@ -61,9 +61,9 @@ class AudioVideoIntegrationTest {
     @BeforeEach
     void setUp() { // GH-90000
         // Wait for services to be ready
-        sttService.waitingFor(org.testcontainers.containers.wait.strategy.Wait.forHttp("/health/live [GH-90000]")
+        sttService.waitingFor(org.testcontainers.containers.wait.strategy.Wait.forHttp("/health/live")
                 .forPort(8080)); // GH-90000
-        ttsService.waitingFor(org.testcontainers.containers.wait.strategy.Wait.forHttp("/health/live [GH-90000]")
+        ttsService.waitingFor(org.testcontainers.containers.wait.strategy.Wait.forHttp("/health/live")
                 .forPort(8080)); // GH-90000
 
         // Create gRPC channels
@@ -94,7 +94,7 @@ class AudioVideoIntegrationTest {
     }
 
     @Test
-    @DisplayName("STT service should be healthy and ready [GH-90000]")
+    @DisplayName("STT service should be healthy and ready")
     void sttServiceShouldBeHealthy() { // GH-90000
         // This test verifies that STT service is running and healthy
         assertThat(sttService.isRunning()).isTrue(); // GH-90000
@@ -103,7 +103,7 @@ class AudioVideoIntegrationTest {
     }
 
     @Test
-    @DisplayName("TTS service should be healthy and ready [GH-90000]")
+    @DisplayName("TTS service should be healthy and ready")
     void ttsServiceShouldBeHealthy() { // GH-90000
         // This test verifies that TTS service is running and healthy
         assertThat(ttsService.isRunning()).isTrue(); // GH-90000
@@ -112,35 +112,35 @@ class AudioVideoIntegrationTest {
     }
 
     @Test
-    @DisplayName("Services should communicate on same network [GH-90000]")
+    @DisplayName("Services should communicate on same network")
     void servicesShouldCommunicate() { // GH-90000
         // Verify services can resolve each other on the network
         String sttHost = sttService.getNetworkAliases().get(0); // GH-90000
         String ttsHost = ttsService.getNetworkAliases().get(0); // GH-90000
         
-        assertThat(sttHost).isEqualTo("stt-service [GH-90000]");
-        assertThat(ttsHost).isEqualTo("tts-service [GH-90000]");
+        assertThat(sttHost).isEqualTo("stt-service");
+        assertThat(ttsHost).isEqualTo("tts-service");
         
         // Verify they share the same network
         assertThat(sttService.getNetwork()).isEqualTo(ttsService.getNetwork()); // GH-90000
     }
 
     @Test
-    @DisplayName("Services should have proper environment configuration [GH-90000]")
+    @DisplayName("Services should have proper environment configuration")
     void servicesShouldHaveProperConfiguration() { // GH-90000
         // Verify STT configuration
         String sttLogs = sttService.getLogs(); // GH-90000
-        assertThat(sttLogs).contains("STT_GRPC_PORT=50051 [GH-90000]");
-        assertThat(sttLogs).contains("STT_DEFAULT_MODEL=whisper-tiny [GH-90000]");
+        assertThat(sttLogs).contains("STT_GRPC_PORT=50051");
+        assertThat(sttLogs).contains("STT_DEFAULT_MODEL=whisper-tiny");
         
         // Verify TTS configuration
         String ttsLogs = ttsService.getLogs(); // GH-90000
-        assertThat(ttsLogs).contains("TTS_GRPC_PORT=50052 [GH-90000]");
-        assertThat(ttsLogs).contains("TTS_DEFAULT_VOICE=en-US-default [GH-90000]");
+        assertThat(ttsLogs).contains("TTS_GRPC_PORT=50052");
+        assertThat(ttsLogs).contains("TTS_DEFAULT_VOICE=en-US-default");
     }
 
     @Test
-    @DisplayName("Services should handle concurrent requests [GH-90000]")
+    @DisplayName("Services should handle concurrent requests")
     void servicesShouldHandleConcurrentRequests() { // GH-90000
         // This is a basic test to verify services can handle load
         // In a real scenario, you would make actual gRPC calls
@@ -156,7 +156,7 @@ class AudioVideoIntegrationTest {
     }
 
     @Test
-    @DisplayName("Services should maintain health under load [GH-90000]")
+    @DisplayName("Services should maintain health under load")
     void servicesShouldMaintainHealthUnderLoad() { // GH-90000
         // Simulate basic load by checking container stats
         var sttStats = sttService.getCurrentContainerInfo(); // GH-90000

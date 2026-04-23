@@ -35,11 +35,11 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern IntegrationTest
  */
-@DisplayName("OpaClient Tests [GH-90000]")
+@DisplayName("OpaClient Tests")
 @Testcontainers
 class OpaClientTest extends EventloopTestBase {
 
-    private static final DockerImageName OPA_IMAGE = DockerImageName.parse("openpolicyagent/opa:latest [GH-90000]");
+    private static final DockerImageName OPA_IMAGE = DockerImageName.parse("openpolicyagent/opa:latest");
 
     @Container
     static final GenericContainer<?> opaContainer = new GenericContainer<>(OPA_IMAGE) // GH-90000
@@ -57,7 +57,7 @@ class OpaClientTest extends EventloopTestBase {
     // ── Unit Tests with Mock HTTP ─────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("should serialize input map with Jackson [GH-90000]")
+    @DisplayName("should serialize input map with Jackson")
     void shouldSerializeInputWithJackson() { // GH-90000
         Map<String, Object> input = Map.of( // GH-90000
             "userId", "user-123",
@@ -68,13 +68,13 @@ class OpaClientTest extends EventloopTestBase {
         // This test validates that Jackson serialization works correctly
         // The actual serialization is tested indirectly via integration tests
         assertThat(input).isNotNull(); // GH-90000
-        assertThat(input).containsKey("userId [GH-90000]");
+        assertThat(input).containsKey("userId");
     }
 
     // ── Integration Tests with Real OPA ───────────────────────────────────────────────
 
     @Test
-    @DisplayName("should return allow when OPA policy permits [GH-90000]")
+    @DisplayName("should return allow when OPA policy permits")
     void shouldReturnAllowWhenOPAPermits() throws Exception { // GH-90000
         // Load a simple allow policy
         String policy = """
@@ -98,7 +98,7 @@ class OpaClientTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should handle connection failure gracefully [GH-90000]")
+    @DisplayName("should handle connection failure gracefully")
     void shouldHandleConnectionFailure() { // GH-90000
         OpaClient badClient = new OpaClient("http://invalid-host:9999",  // GH-90000
             Executors.newVirtualThreadPerTaskExecutor()); // GH-90000
@@ -109,12 +109,12 @@ class OpaClientTest extends EventloopTestBase {
             badClient.evaluate("tenant-1", "test", input)); // GH-90000
 
         assertThat(result.allowed()).isFalse(); // GH-90000
-        assertThat(result.reasons()).anyMatch(r -> r.contains("Failed to connect [GH-90000]"));
+        assertThat(result.reasons()).anyMatch(r -> r.contains("Failed to connect"));
         assertThat(result.riskScore()).isEqualTo(100); // GH-90000
     }
 
     @Test
-    @DisplayName("should handle malformed JSON response [GH-90000]")
+    @DisplayName("should handle malformed JSON response")
     void shouldHandleMalformedJson() { // GH-90000
         // This would require mocking the HTTP client to return malformed JSON
         // For now, we test the error handling path exists
@@ -129,7 +129,7 @@ class OpaClientTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should handle timeout [GH-90000]")
+    @DisplayName("should handle timeout")
     void shouldHandleTimeout() { // GH-90000
         // Create a client with a very short timeout
         OpaClient timeoutClient = new OpaClient("http://10.255.255.1:9999",  // GH-90000
@@ -141,11 +141,11 @@ class OpaClientTest extends EventloopTestBase {
             timeoutClient.evaluate("tenant-1", "test", input)); // GH-90000
 
         assertThat(result.allowed()).isFalse(); // GH-90000
-        assertThat(result.reasons()).anyMatch(r -> r.contains("Failed to connect [GH-90000]") || r.contains("timed out [GH-90000]"));
+        assertThat(result.reasons()).anyMatch(r -> r.contains("Failed to connect") || r.contains("timed out"));
     }
 
     @Test
-    @DisplayName("should handle HTTP 4xx errors [GH-90000]")
+    @DisplayName("should handle HTTP 4xx errors")
     void shouldHandle4xxErrors() { // GH-90000
         // This would require OPA to return a 4xx, which is uncommon
         // The error handling is validated by the connection failure test
@@ -159,7 +159,7 @@ class OpaClientTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should handle HTTP 5xx errors [GH-90000]")
+    @DisplayName("should handle HTTP 5xx errors")
     void shouldHandle5xxErrors() { // GH-90000
         // Similar to 4xx, validated by error handling path
         Map<String, Object> input = Map.of("user", "test"); // GH-90000
@@ -171,7 +171,7 @@ class OpaClientTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should handle missing result field in response [GH-90000]")
+    @DisplayName("should handle missing result field in response")
     void shouldHandleMissingResultField() { // GH-90000
         // This would require mocking to return {"result": null}
         // The error handling is in place
@@ -184,7 +184,7 @@ class OpaClientTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should extract reasons from OPA response when available [GH-90000]")
+    @DisplayName("should extract reasons from OPA response when available")
     void shouldExtractReasonsFromOPAResponse() { // GH-90000
         // This would require loading a policy that returns reasons
         // The code path is implemented
@@ -198,7 +198,7 @@ class OpaClientTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should use default reason when OPA provides none [GH-90000]")
+    @DisplayName("should use default reason when OPA provides none")
     void shouldUseDefaultReasonWhenOPAProvidesNone() { // GH-90000
         Map<String, Object> input = Map.of("user", "test"); // GH-90000
         
@@ -212,7 +212,7 @@ class OpaClientTest extends EventloopTestBase {
     // ── Structural Validation ────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("should have proper constructor [GH-90000]")
+    @DisplayName("should have proper constructor")
     void shouldHaveProperConstructor() { // GH-90000
         String opaUrl = "http://localhost:8181";
         OpaClient newClient = new OpaClient(opaUrl, Executors.newVirtualThreadPerTaskExecutor()); // GH-90000
@@ -221,7 +221,7 @@ class OpaClientTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should strip trailing slash from base URL [GH-90000]")
+    @DisplayName("should strip trailing slash from base URL")
     void shouldStripTrailingSlash() { // GH-90000
         OpaClient client1 = new OpaClient("http://localhost:8181/",  // GH-90000
             Executors.newVirtualThreadPerTaskExecutor()); // GH-90000
@@ -234,13 +234,13 @@ class OpaClientTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should replace dots in policy name with slashes [GH-90000]")
+    @DisplayName("should replace dots in policy name with slashes")
     void shouldReplaceDotsWithSlashes() { // GH-90000
         // The URL construction logic: policyName.replace('.', '/') // GH-90000
         // This is tested implicitly by the integration tests
         String policyName = "data.access.read";
         String expectedPath = policyName.replace('.', '/'); // GH-90000
         
-        assertThat(expectedPath).isEqualTo("data/access/read [GH-90000]");
+        assertThat(expectedPath).isEqualTo("data/access/read");
     }
 }

@@ -45,7 +45,7 @@ class JsonYamlCodemodsTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() { // GH-90000
-        schemaDir = tempDir.resolve("schemas [GH-90000]");
+        schemaDir = tempDir.resolve("schemas");
 
         mockNodeBridge = mock(NodeBridge.class); // GH-90000
         when(mockNodeBridge.executeScript(anyString(), anyString(), anyString())) // GH-90000
@@ -74,7 +74,7 @@ class JsonYamlCodemodsTest extends EventloopTestBase {
 
     @Test
     void testNonExistentFile() { // GH-90000
-        Path nonExistent = tempDir.resolve("nonexistent.json [GH-90000]");
+        Path nonExistent = tempDir.resolve("nonexistent.json");
         List<UnifiedDiagnostic> results =
                 runPromise(() -> codemods.normalizeAndValidate(List.of(nonExistent), schemaDir)); // GH-90000
 
@@ -131,7 +131,7 @@ class JsonYamlCodemodsTest extends EventloopTestBase {
 
         assertThat(results).hasSize(1); // GH-90000
         // The actual message includes the error details from the Node.js script
-        assertThat(results.get(0).getMessage()).contains("must be string [GH-90000]");
+        assertThat(results.get(0).getMessage()).contains("must be string");
     }
 
     @Test
@@ -155,7 +155,7 @@ class JsonYamlCodemodsTest extends EventloopTestBase {
 
         assertThat(results).hasSize(1); // GH-90000
         assertThat(results.get(0).getMessage()) // GH-90000
-                .contains("Schema validation failed: Invalid schema [GH-90000]");
+                .contains("Schema validation failed: Invalid schema");
     }
 
     @Test
@@ -169,7 +169,7 @@ class JsonYamlCodemodsTest extends EventloopTestBase {
 
         // Create schemas with different extensions
         Path schemaJson = schemaDir.resolve(TEST_SCHEMA_JSON); // GH-90000
-        Path schemaYaml = schemaDir.resolve("test.schema.yaml [GH-90000]");
+        Path schemaYaml = schemaDir.resolve("test.schema.yaml");
 
         Files.writeString(schemaJson, "{}"); // GH-90000
 
@@ -191,6 +191,6 @@ class JsonYamlCodemodsTest extends EventloopTestBase {
         verify(mockNodeBridge, times(2)) // GH-90000
                 .executeScript(anyString(), schemaPathCaptor.capture(), anyString()); // GH-90000
 
-        assertThat(schemaPathCaptor.getValue()).endsWith("test.schema.yaml [GH-90000]");
+        assertThat(schemaPathCaptor.getValue()).endsWith("test.schema.yaml");
     }
 }

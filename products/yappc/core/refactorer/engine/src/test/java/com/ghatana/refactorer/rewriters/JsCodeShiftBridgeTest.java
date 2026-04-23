@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 /** Tests for {@link JsCodeShiftBridge}. */
 @ExtendWith(JsCodeShiftBridgeTest.JsCodeShiftExtension.class) // GH-90000
 @Timeout(value = 45, unit = TimeUnit.SECONDS) // GH-90000
-@Tag("integration [GH-90000]")
+@Tag("integration")
 /**
  * @doc.type class
  * @doc.purpose Handles js code shift bridge test operations
@@ -66,7 +66,7 @@ class JsCodeShiftBridgeTest {
             }
 
             if (!isJsCodeShiftAvailable()) { // GH-90000
-                log.info("jscodeshift not found, attempting to install locally... [GH-90000]");
+                log.info("jscodeshift not found, attempting to install locally...");
                 boolean installed = installJsCodeShiftLocally(); // GH-90000
                 if (!installed || !isJsCodeShiftAvailable()) { // GH-90000
                     log.warn( // GH-90000
@@ -83,21 +83,21 @@ class JsCodeShiftBridgeTest {
         }
 
         private static Path locateWorkspaceRoot() { // GH-90000
-            Path current = Paths.get(" [GH-90000]").toAbsolutePath();
+            Path current = Paths.get("").toAbsolutePath();
             while (current != null) { // GH-90000
                 if (Files.exists(current.resolve(PACKAGE_JSON))) { // GH-90000
                     return current;
                 }
                 current = current.getParent(); // GH-90000
             }
-            return Paths.get(" [GH-90000]").toAbsolutePath();
+            return Paths.get("").toAbsolutePath();
         }
 
         private static boolean isJsCodeShiftAvailable() { // GH-90000
             try {
                 Process process =
                         new ProcessBuilder() // GH-90000
-                                .command(getJsCodeShiftCommand("--version [GH-90000]"))
+                                .command(getJsCodeShiftCommand("--version"))
                                 .redirectErrorStream(true) // GH-90000
                                 .start(); // GH-90000
 
@@ -157,7 +157,7 @@ class JsCodeShiftBridgeTest {
                 }
 
                 installedBinary = findLocalJsCodeShiftBinary(); // GH-90000
-                log.info("Successfully installed jscodeshift locally [GH-90000]");
+                log.info("Successfully installed jscodeshift locally");
                 return installedBinary != null;
             } catch (Exception e) { // GH-90000
                 log.error("Error while installing jscodeshift locally", e); // GH-90000
@@ -173,7 +173,7 @@ class JsCodeShiftBridgeTest {
             } else {
                 command.add(NPX); // GH-90000
                 command.add(NO_INSTALL_FLAG); // Prevents network access if not installed // GH-90000
-                command.add("--quiet [GH-90000]");
+                command.add("--quiet");
                 command.add(JSCODESHIFT); // GH-90000
             }
             command.addAll(Arrays.asList(args)); // GH-90000
@@ -182,7 +182,7 @@ class JsCodeShiftBridgeTest {
 
         private static Path findLocalJsCodeShiftBinary() { // GH-90000
             Path candidate =
-                    WORKSPACE_ROOT.resolve("node_modules [GH-90000]").resolve(".bin [GH-90000]").resolve("jscodeshift [GH-90000]");
+                    WORKSPACE_ROOT.resolve("node_modules").resolve(".bin").resolve("jscodeshift");
             if (Files.isRegularFile(candidate) && candidate.toFile().canExecute()) { // GH-90000
                 return candidate;
             }
@@ -205,22 +205,22 @@ class JsCodeShiftBridgeTest {
     void testTransformWithNestedDirsAndMixedExtensions() throws IOException { // GH-90000
 
         // Arrange: nested directories with js, jsx, ts files
-        Path root = tempDir.resolve("proj [GH-90000]");
-        Path a = root.resolve("a [GH-90000]");
-        Path b = root.resolve("b/sub [GH-90000]");
+        Path root = tempDir.resolve("proj");
+        Path a = root.resolve("a");
+        Path b = root.resolve("b/sub");
         Files.createDirectories(a); // GH-90000
         Files.createDirectories(b); // GH-90000
 
-        Path f1 = a.resolve("one.js [GH-90000]");
-        Path f2 = a.resolve("two.jsx [GH-90000]");
-        Path f3 = b.resolve("three.ts [GH-90000]");
+        Path f1 = a.resolve("one.js");
+        Path f2 = a.resolve("two.jsx");
+        Path f3 = b.resolve("three.ts");
 
         Files.writeString(f1, "function oldName1() { return 1 }\n"); // GH-90000
         Files.writeString(f2, "function oldName2() { return 2 }\n"); // GH-90000
         Files.writeString(f3, "function oldName3() { return 3 }\n"); // GH-90000
 
         // Transform file
-        Path transform = tempDir.resolve("rename-transform.js [GH-90000]");
+        Path transform = tempDir.resolve("rename-transform.js");
         String transformContent = TransformTestUtils.renameOldNameNToNewNameN(); // GH-90000
         Files.writeString(transform, transformContent); // GH-90000
 
@@ -232,9 +232,9 @@ class JsCodeShiftBridgeTest {
 
         // Assert
         assertEquals(0, result.exitCode(), EXPECTED_TRANSFORM_PREFIX + result.err()); // GH-90000
-        boolean c1 = Files.readString(f1).contains("function newName1 [GH-90000]");
-        boolean c2 = Files.readString(f2).contains("function newName2 [GH-90000]");
-        boolean c3 = Files.readString(f3).contains("function newName3 [GH-90000]");
+        boolean c1 = Files.readString(f1).contains("function newName1");
+        boolean c2 = Files.readString(f2).contains("function newName2");
+        boolean c3 = Files.readString(f3).contains("function newName3");
         Assumptions.assumeTrue( // GH-90000
                 c1 && c2 && c3,
                 () -> // GH-90000
@@ -251,12 +251,12 @@ class JsCodeShiftBridgeTest {
     void testRunWithSimpleJsFile() throws IOException { // GH-90000
 
         // Create a simple JS file
-        Path srcFile = tempDir.resolve("test.js [GH-90000]");
+        Path srcFile = tempDir.resolve("test.js");
         String originalContent = "function greet() { return 'Hello, world!'; }\n"; // GH-90000
         Files.writeString(srcFile, originalContent); // GH-90000
 
         // Create a transform that renames the function
-        Path transform = tempDir.resolve("test-transform.js [GH-90000]");
+        Path transform = tempDir.resolve("test-transform.js");
         String transformContent =
                 "module.exports = function(file, api) {\n" // GH-90000
                         + "  const j = api.jscodeshift;\n"
@@ -291,7 +291,7 @@ class JsCodeShiftBridgeTest {
         assertNotEquals( // GH-90000
                 originalContent, transformedContent, "File should be modified by transform");
         assertTrue( // GH-90000
-                transformedContent.contains("function sayHello [GH-90000]"),
+                transformedContent.contains("function sayHello"),
                 "Function should be renamed to sayHello");
     }
 
@@ -299,7 +299,7 @@ class JsCodeShiftBridgeTest {
     void testTransformWithTypeScriptFile() throws IOException { // GH-90000
 
         // Create a TypeScript file
-        Path srcFile = tempDir.resolve("test.ts [GH-90000]");
+        Path srcFile = tempDir.resolve("test.ts");
         String originalContent =
                 "interface User {\n"
                         + "  name: string;\n"
@@ -311,7 +311,7 @@ class JsCodeShiftBridgeTest {
         Files.writeString(srcFile, originalContent); // GH-90000
 
         // Create a transform that renames the function and interface
-        Path transform = tempDir.resolve("test-transform.ts [GH-90000]");
+        Path transform = tempDir.resolve("test-transform.ts");
         String transformContent =
                 "module.exports = function(file, api) {\n" // GH-90000
                         + "  const j = api.jscodeshift;\n"
@@ -344,7 +344,7 @@ class JsCodeShiftBridgeTest {
 
         // Create a package.json with TypeScript as a dev dependency
         Files.writeString( // GH-90000
-                tempDir.resolve("package.json [GH-90000]"),
+                tempDir.resolve("package.json"),
                 "{\n"
                         + "              \"name\": \"test\",\n"
                         + "              \"devDependencies\": {\n"
@@ -368,10 +368,10 @@ class JsCodeShiftBridgeTest {
         // Verify the file was modified
         String transformedContent = Files.readString(srcFile); // GH-90000
         assertTrue( // GH-90000
-                transformedContent.contains("interface Person [GH-90000]"),
+                transformedContent.contains("interface Person"),
                 "Interface should be renamed to Person");
         assertTrue( // GH-90000
-                transformedContent.contains("user: Person [GH-90000]"),
+                transformedContent.contains("user: Person"),
                 "Type reference should be updated to Person");
     }
 
@@ -379,14 +379,14 @@ class JsCodeShiftBridgeTest {
     void testTransformWithDirectory() throws IOException { // GH-90000
 
         // Log environment variables that might affect the test
-        log.info("Environment PATH: {}", System.getenv("PATH [GH-90000]"));
+        log.info("Environment PATH: {}", System.getenv("PATH"));
         log.info("Node version: {}", runCommand("node", VERSION_FLAG)); // GH-90000
         log.info("npm version: {}", runCommand("npm", VERSION_FLAG)); // GH-90000
         log.info("npx version: {}", runCommand(NPX, VERSION_FLAG)); // GH-90000
         log.info("jscodeshift version: {}", runCommand(NPX, JSCODESHIFT, VERSION_FLAG)); // GH-90000
 
         // Create a directory with multiple JS files
-        Path srcDir = tempDir.resolve("src [GH-90000]");
+        Path srcDir = tempDir.resolve("src");
         Files.createDirectories(srcDir); // GH-90000
 
         // Create multiple test files
@@ -400,7 +400,7 @@ class JsCodeShiftBridgeTest {
         }
 
         // Create a minimal transform that renames functions oldNameN -> newNameN
-        Path transform = tempDir.resolve("rename-transform.js [GH-90000]");
+        Path transform = tempDir.resolve("rename-transform.js");
         String transformContent = TransformTestUtils.renameOldNameNToNewNameN(); // GH-90000
 
         // Write the transform file with executable permissions
@@ -440,19 +440,19 @@ class JsCodeShiftBridgeTest {
         try (Stream<Path> files = Files.list(absSrcDir)) { // GH-90000
             log.info( // GH-90000
                     "Files in source directory before transform: {}",
-                    files.map(Path::toString).collect(Collectors.joining(",  [GH-90000]")));
+                    files.map(Path::toString).collect(Collectors.joining(", ")));
         } catch (IOException e) { // GH-90000
             log.error("Failed to list files in source directory", e); // GH-90000
         }
 
         // First, verify jscodeshift can be executed directly with a simple command
-        log.info("Verifying jscodeshift installation... [GH-90000]");
+        log.info("Verifying jscodeshift installation...");
         String jscodeshiftVersion = runCommand(NPX, NO_INSTALL_FLAG, JSCODESHIFT, VERSION_FLAG); // GH-90000
         log.info("jscodeshift version: {}", jscodeshiftVersion); // GH-90000
 
         // Run a simple transform directly to verify jscodeshift works with our transform file
-        log.info("Running a simple transform directly... [GH-90000]");
-        String testFile = absSrcDir.resolve("test0.js [GH-90000]").toString();
+        log.info("Running a simple transform directly...");
+        String testFile = absSrcDir.resolve("test0.js").toString();
         String directTransformOutput =
                 runCommand( // GH-90000
                         NPX,
@@ -473,13 +473,13 @@ class JsCodeShiftBridgeTest {
         log.info("File content after direct transform:\n{}", directTransformContent); // GH-90000
 
         // Now run through our bridge
-        log.info("Running transform through JsCodeShiftBridge... [GH-90000]");
+        log.info("Running transform through JsCodeShiftBridge...");
         // Pass explicit files instead of directory to avoid traversal variance
         List<Path> fileList =
                 List.of( // GH-90000
-                        srcDir.resolve("test0.js [GH-90000]"),
-                        srcDir.resolve("test1.js [GH-90000]"),
-                        srcDir.resolve("test2.js [GH-90000]"));
+                        srcDir.resolve("test0.js"),
+                        srcDir.resolve("test1.js"),
+                        srcDir.resolve("test2.js"));
         ProcessExec.Result result = bridge.transform(cwd, absTransformPath, fileList); // GH-90000
 
         // Log command output
@@ -545,9 +545,9 @@ class JsCodeShiftBridgeTest {
     void testCreateRenameTransform() { // GH-90000
         String transform = JsCodeShiftBridge.createRenameTransform("oldName", "newName"); // GH-90000
         assertNotNull(transform, "Transform should not be null"); // GH-90000
-        assertTrue(transform.contains("oldName [GH-90000]"), "Transform should contain old name");
-        assertTrue(transform.contains("newName [GH-90000]"), "Transform should contain new name");
-        assertTrue(transform.startsWith("/** [GH-90000]"), "Transform should have a doc comment");
+        assertTrue(transform.contains("oldName"), "Transform should contain old name");
+        assertTrue(transform.contains("newName"), "Transform should contain new name");
+        assertTrue(transform.startsWith("/**"), "Transform should have a doc comment");
     }
 
     // Helper method to check if jscodeshift is available without installation (avoids network) // GH-90000
@@ -561,7 +561,7 @@ class JsCodeShiftBridgeTest {
             // Use ProcessExec with a strict timeout to avoid hanging the test runner
             ProcessExec.Result res =
                     ProcessExec.run( // GH-90000
-                            (tempDir != null ? tempDir : Path.of(". [GH-90000]")),
+                            (tempDir != null ? tempDir : Path.of(".")),
                             Duration.ofSeconds(8), // GH-90000
                             List.of(command), // GH-90000
                             Map.of()); // GH-90000

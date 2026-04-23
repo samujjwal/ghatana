@@ -35,8 +35,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.purpose Performance integration tests for service load scenarios
  * @doc.layer integration
  */
-@Tag("performance [GH-90000]")
-@DisplayName("Audio-Video Performance Integration Tests (AV-012.3) [GH-90000]")
+@Tag("performance")
+@DisplayName("Audio-Video Performance Integration Tests (AV-012.3)")
 class PerformanceIntegrationTest {
 
     private static final int CONCURRENT_REQUESTS = 10;
@@ -46,7 +46,7 @@ class PerformanceIntegrationTest {
     private static final long STUB_CALL_LATENCY_MS = 50;
 
     @Test
-    @DisplayName("STT service: avg transcription latency < 2s under 10 concurrent requests [GH-90000]")
+    @DisplayName("STT service: avg transcription latency < 2s under 10 concurrent requests")
     void sttLatencyUnderLoad() throws InterruptedException { // GH-90000
         List<Long> latencies = runConcurrent(CONCURRENT_REQUESTS, this::simulateSttCall); // GH-90000
 
@@ -54,7 +54,7 @@ class PerformanceIntegrationTest {
         double maxMs = latencies.stream().mapToLong(Long::longValue).max().orElse(0); // GH-90000
 
         assertThat(avgMs) // GH-90000
-                .as("Average STT latency should be < 2000ms [GH-90000]")
+                .as("Average STT latency should be < 2000ms")
                 .isLessThan(2_000); // GH-90000
 
         assertThat(latencies).hasSize(CONCURRENT_REQUESTS); // GH-90000
@@ -63,35 +63,35 @@ class PerformanceIntegrationTest {
     }
 
     @Test
-    @DisplayName("TTS service: avg synthesis latency < 1.5s under 10 concurrent requests [GH-90000]")
+    @DisplayName("TTS service: avg synthesis latency < 1.5s under 10 concurrent requests")
     void ttsLatencyUnderLoad() throws InterruptedException { // GH-90000
         List<Long> latencies = runConcurrent(CONCURRENT_REQUESTS, this::simulateTtsCall); // GH-90000
 
         double avgMs = latencies.stream().mapToLong(Long::longValue).average().orElse(0); // GH-90000
 
         assertThat(avgMs) // GH-90000
-                .as("Average TTS latency should be < 1500ms [GH-90000]")
+                .as("Average TTS latency should be < 1500ms")
                 .isLessThan(1_500); // GH-90000
 
         System.out.printf("TTS perf: avg=%.0fms requests=%d%n", avgMs, CONCURRENT_REQUESTS); // GH-90000
     }
 
     @Test
-    @DisplayName("Vision service: avg detection latency < 500ms under 5 concurrent requests [GH-90000]")
+    @DisplayName("Vision service: avg detection latency < 500ms under 5 concurrent requests")
     void visionLatencyUnderLoad() throws InterruptedException { // GH-90000
         List<Long> latencies = runConcurrent(VISION_CONCURRENT, this::simulateVisionCall); // GH-90000
 
         double avgMs = latencies.stream().mapToLong(Long::longValue).average().orElse(0); // GH-90000
 
         assertThat(avgMs) // GH-90000
-                .as("Average Vision detection latency should be < 500ms [GH-90000]")
+                .as("Average Vision detection latency should be < 500ms")
                 .isLessThan(500); // GH-90000
 
         System.out.printf("Vision perf: avg=%.0fms requests=%d%n", avgMs, VISION_CONCURRENT); // GH-90000
     }
 
     @Test
-    @DisplayName("Sustained load: 100 STT requests completed in < 30s with < 1% failure rate [GH-90000]")
+    @DisplayName("Sustained load: 100 STT requests completed in < 30s with < 1% failure rate")
     void sustainedSttLoad() throws InterruptedException { // GH-90000
         int total = 100;
         AtomicInteger failures = new AtomicInteger(0); // GH-90000
@@ -122,8 +122,8 @@ class PerformanceIntegrationTest {
         Duration elapsed = Duration.between(start, Instant.now()); // GH-90000
         double failureRate = (double) failures.get() / total; // GH-90000
 
-        assertThat(elapsed.toSeconds()).as("100 requests must complete in < 30s [GH-90000]").isLessThan(30);
-        assertThat(failureRate).as("Failure rate must be < 1% [GH-90000]").isLessThan(0.01);
+        assertThat(elapsed.toSeconds()).as("100 requests must complete in < 30s").isLessThan(30);
+        assertThat(failureRate).as("Failure rate must be < 1%").isLessThan(0.01);
 
         System.out.printf("Sustained STT load: total=%d elapsed=%ds failures=%d (%.1f%%)%n", // GH-90000
                 total, elapsed.toSeconds(), failures.get(), failureRate * 100); // GH-90000

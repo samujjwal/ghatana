@@ -4,7 +4,11 @@ import java.util.List;
 
 /**
  * Base interface for all pattern specifications.
- */
+  * @doc.type interface
+ * @doc.purpose Provides ipattern spec functionality.
+ * @doc.layer product
+ * @doc.pattern Interface
+*/
 public interface IPatternSpec {
     /**
      * @return List of sub-patterns that make up this pattern

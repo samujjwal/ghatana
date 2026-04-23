@@ -24,15 +24,15 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AdvancedAnalyticsFeatures Tests [GH-90000]")
+@DisplayName("AdvancedAnalyticsFeatures Tests")
 class AdvancedAnalyticsFeaturesTest {
 
     @Nested
-    @DisplayName("Percentile Calculation [GH-90000]")
+    @DisplayName("Percentile Calculation")
     class PercentileTests {
 
         @Test
-        @DisplayName("calculatePercentile with valid values returns correct percentile [GH-90000]")
+        @DisplayName("calculatePercentile with valid values returns correct percentile")
         void calculatePercentile_validValues_returnsCorrect() { // GH-90000
             List<Double> values = List.of(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0); // GH-90000
             
@@ -44,23 +44,23 @@ class AdvancedAnalyticsFeaturesTest {
         }
 
         @Test
-        @DisplayName("calculatePercentile with null values throws exception [GH-90000]")
+        @DisplayName("calculatePercentile with null values throws exception")
         void calculatePercentile_nullValues_throws() { // GH-90000
             assertThatThrownBy(() -> AdvancedAnalyticsFeatures.calculatePercentile(null, 0.5)) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("cannot be null or empty [GH-90000]");
+                    .hasMessageContaining("cannot be null or empty");
         }
 
         @Test
-        @DisplayName("calculatePercentile with empty values throws exception [GH-90000]")
+        @DisplayName("calculatePercentile with empty values throws exception")
         void calculatePercentile_emptyValues_throws() { // GH-90000
             assertThatThrownBy(() -> AdvancedAnalyticsFeatures.calculatePercentile(List.of(), 0.5)) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("cannot be null or empty [GH-90000]");
+                    .hasMessageContaining("cannot be null or empty");
         }
 
         @Test
-        @DisplayName("calculatePercentile with invalid percentile throws exception [GH-90000]")
+        @DisplayName("calculatePercentile with invalid percentile throws exception")
         void calculatePercentile_invalidPercentile_throws() { // GH-90000
             List<Double> values = List.of(1.0, 2.0, 3.0); // GH-90000
             
@@ -72,7 +72,7 @@ class AdvancedAnalyticsFeaturesTest {
         }
 
         @Test
-        @DisplayName("calculatePercentile with single value returns that value [GH-90000]")
+        @DisplayName("calculatePercentile with single value returns that value")
         void calculatePercentile_singleValue_returnsValue() { // GH-90000
             List<Double> values = List.of(42.0); // GH-90000
             
@@ -83,11 +83,11 @@ class AdvancedAnalyticsFeaturesTest {
     }
 
     @Nested
-    @DisplayName("Rolling Average [GH-90000]")
+    @DisplayName("Rolling Average")
     class RollingAverageTests {
 
         @Test
-        @DisplayName("calculateRollingAverage with valid values returns correct averages [GH-90000]")
+        @DisplayName("calculateRollingAverage with valid values returns correct averages")
         void calculateRollingAverage_validValues_returnsCorrect() { // GH-90000
             List<Double> values = List.of(1.0, 2.0, 3.0, 4.0, 5.0); // GH-90000
             
@@ -102,21 +102,21 @@ class AdvancedAnalyticsFeaturesTest {
         }
 
         @Test
-        @DisplayName("calculateRollingAverage with null values returns empty list [GH-90000]")
+        @DisplayName("calculateRollingAverage with null values returns empty list")
         void calculateRollingAverage_nullValues_returnsEmpty() { // GH-90000
             List<Double> rolling = AdvancedAnalyticsFeatures.calculateRollingAverage(null, 3); // GH-90000
             assertThat(rolling).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("calculateRollingAverage with empty values returns empty list [GH-90000]")
+        @DisplayName("calculateRollingAverage with empty values returns empty list")
         void calculateRollingAverage_emptyValues_returnsEmpty() { // GH-90000
             List<Double> rolling = AdvancedAnalyticsFeatures.calculateRollingAverage(List.of(), 3); // GH-90000
             assertThat(rolling).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("calculateRollingAverage with invalid window size throws exception [GH-90000]")
+        @DisplayName("calculateRollingAverage with invalid window size throws exception")
         void calculateRollingAverage_invalidWindow_throws() { // GH-90000
             List<Double> values = List.of(1.0, 2.0, 3.0); // GH-90000
             
@@ -129,11 +129,11 @@ class AdvancedAnalyticsFeaturesTest {
     }
 
     @Nested
-    @DisplayName("Histogram Generation [GH-90000]")
+    @DisplayName("Histogram Generation")
     class HistogramTests {
 
         @Test
-        @DisplayName("generateHistogram with valid values returns correct histogram [GH-90000]")
+        @DisplayName("generateHistogram with valid values returns correct histogram")
         void generateHistogram_validValues_returnsCorrect() { // GH-90000
             List<Double> values = List.of(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0); // GH-90000
             
@@ -144,21 +144,21 @@ class AdvancedAnalyticsFeaturesTest {
         }
 
         @Test
-        @DisplayName("generateHistogram with null values returns empty map [GH-90000]")
+        @DisplayName("generateHistogram with null values returns empty map")
         void generateHistogram_nullValues_returnsEmpty() { // GH-90000
             Map<String, Integer> histogram = AdvancedAnalyticsFeatures.generateHistogram(null, 5); // GH-90000
             assertThat(histogram).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("generateHistogram with empty values returns empty map [GH-90000]")
+        @DisplayName("generateHistogram with empty values returns empty map")
         void generateHistogram_emptyValues_returnsEmpty() { // GH-90000
             Map<String, Integer> histogram = AdvancedAnalyticsFeatures.generateHistogram(List.of(), 5); // GH-90000
             assertThat(histogram).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("generateHistogram with invalid bin count throws exception [GH-90000]")
+        @DisplayName("generateHistogram with invalid bin count throws exception")
         void generateHistogram_invalidBinCount_throws() { // GH-90000
             List<Double> values = List.of(1.0, 2.0, 3.0); // GH-90000
             
@@ -168,11 +168,11 @@ class AdvancedAnalyticsFeaturesTest {
     }
 
     @Nested
-    @DisplayName("Trend Calculation [GH-90000]")
+    @DisplayName("Trend Calculation")
     class TrendTests {
 
         @Test
-        @DisplayName("calculateTrend with increasing values returns positive slope [GH-90000]")
+        @DisplayName("calculateTrend with increasing values returns positive slope")
         void calculateTrend_increasing_returnsPositive() { // GH-90000
             List<Double> values = List.of(1.0, 2.0, 3.0, 4.0, 5.0); // GH-90000
             
@@ -182,7 +182,7 @@ class AdvancedAnalyticsFeaturesTest {
         }
 
         @Test
-        @DisplayName("calculateTrend with decreasing values returns negative slope [GH-90000]")
+        @DisplayName("calculateTrend with decreasing values returns negative slope")
         void calculateTrend_decreasing_returnsNegative() { // GH-90000
             List<Double> values = List.of(5.0, 4.0, 3.0, 2.0, 1.0); // GH-90000
             
@@ -192,7 +192,7 @@ class AdvancedAnalyticsFeaturesTest {
         }
 
         @Test
-        @DisplayName("calculateTrend with constant values returns zero slope [GH-90000]")
+        @DisplayName("calculateTrend with constant values returns zero slope")
         void calculateTrend_constant_returnsZero() { // GH-90000
             List<Double> values = List.of(5.0, 5.0, 5.0, 5.0); // GH-90000
             
@@ -202,14 +202,14 @@ class AdvancedAnalyticsFeaturesTest {
         }
 
         @Test
-        @DisplayName("calculateTrend with null values returns zero [GH-90000]")
+        @DisplayName("calculateTrend with null values returns zero")
         void calculateTrend_null_returnsZero() { // GH-90000
             double trend = AdvancedAnalyticsFeatures.calculateTrend(null); // GH-90000
             assertThat(trend).isEqualTo(0.0); // GH-90000
         }
 
         @Test
-        @DisplayName("calculateTrend with single value returns zero [GH-90000]")
+        @DisplayName("calculateTrend with single value returns zero")
         void calculateTrend_singleValue_returnsZero() { // GH-90000
             double trend = AdvancedAnalyticsFeatures.calculateTrend(List.of(42.0)); // GH-90000
             assertThat(trend).isEqualTo(0.0); // GH-90000
@@ -217,11 +217,11 @@ class AdvancedAnalyticsFeaturesTest {
     }
 
     @Nested
-    @DisplayName("Time Series Aggregation [GH-90000]")
+    @DisplayName("Time Series Aggregation")
     class TimeSeriesAggregationTests {
 
         @Test
-        @DisplayName("aggregateTimeSeries with valid data returns aggregated results [GH-90000]")
+        @DisplayName("aggregateTimeSeries with valid data returns aggregated results")
         void aggregateTimeSeries_validData_returnsAggregated() { // GH-90000
             List<Map<String, Object>> data = new ArrayList<>(); // GH-90000
             for (int i = 0; i < 10; i++) { // GH-90000
@@ -238,14 +238,14 @@ class AdvancedAnalyticsFeaturesTest {
         }
 
         @Test
-        @DisplayName("aggregateTimeSeries with null data returns empty list [GH-90000]")
+        @DisplayName("aggregateTimeSeries with null data returns empty list")
         void aggregateTimeSeries_null_returnsEmpty() { // GH-90000
             List<Map<String, Object>> aggregated = AdvancedAnalyticsFeatures.aggregateTimeSeries(null, 3000); // GH-90000
             assertThat(aggregated).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("aggregateTimeSeries with empty data returns empty list [GH-90000]")
+        @DisplayName("aggregateTimeSeries with empty data returns empty list")
         void aggregateTimeSeries_empty_returnsEmpty() { // GH-90000
             List<Map<String, Object>> aggregated = AdvancedAnalyticsFeatures.aggregateTimeSeries(List.of(), 3000); // GH-90000
             assertThat(aggregated).isEmpty(); // GH-90000
@@ -253,11 +253,11 @@ class AdvancedAnalyticsFeaturesTest {
     }
 
     @Nested
-    @DisplayName("Moving Standard Deviation [GH-90000]")
+    @DisplayName("Moving Standard Deviation")
     class MovingStdDevTests {
 
         @Test
-        @DisplayName("calculateMovingStdDev with valid values returns correct std devs [GH-90000]")
+        @DisplayName("calculateMovingStdDev with valid values returns correct std devs")
         void calculateMovingStdDev_validValues_returnsCorrect() { // GH-90000
             List<Double> values = List.of(1.0, 2.0, 3.0, 4.0, 5.0); // GH-90000
             
@@ -268,21 +268,21 @@ class AdvancedAnalyticsFeaturesTest {
         }
 
         @Test
-        @DisplayName("calculateMovingStdDev with null values returns empty list [GH-90000]")
+        @DisplayName("calculateMovingStdDev with null values returns empty list")
         void calculateMovingStdDev_null_returnsEmpty() { // GH-90000
             List<Double> stdDevs = AdvancedAnalyticsFeatures.calculateMovingStdDev(null, 3); // GH-90000
             assertThat(stdDevs).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("calculateMovingStdDev with empty values returns empty list [GH-90000]")
+        @DisplayName("calculateMovingStdDev with empty values returns empty list")
         void calculateMovingStdDev_empty_returnsEmpty() { // GH-90000
             List<Double> stdDevs = AdvancedAnalyticsFeatures.calculateMovingStdDev(List.of(), 3); // GH-90000
             assertThat(stdDevs).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("calculateMovingStdDev with invalid window size throws exception [GH-90000]")
+        @DisplayName("calculateMovingStdDev with invalid window size throws exception")
         void calculateMovingStdDev_invalidWindow_throws() { // GH-90000
             List<Double> values = List.of(1.0, 2.0, 3.0); // GH-90000
             
@@ -292,11 +292,11 @@ class AdvancedAnalyticsFeaturesTest {
     }
 
     @Nested
-    @DisplayName("Exponential Moving Average [GH-90000]")
+    @DisplayName("Exponential Moving Average")
     class EmaTests {
 
         @Test
-        @DisplayName("calculateExponentialMovingAverage with valid values returns correct EMA [GH-90000]")
+        @DisplayName("calculateExponentialMovingAverage with valid values returns correct EMA")
         void calculateEma_validValues_returnsCorrect() { // GH-90000
             List<Double> values = List.of(1.0, 2.0, 3.0, 4.0, 5.0); // GH-90000
             
@@ -307,21 +307,21 @@ class AdvancedAnalyticsFeaturesTest {
         }
 
         @Test
-        @DisplayName("calculateExponentialMovingAverage with null values returns empty list [GH-90000]")
+        @DisplayName("calculateExponentialMovingAverage with null values returns empty list")
         void calculateEma_null_returnsEmpty() { // GH-90000
             List<Double> ema = AdvancedAnalyticsFeatures.calculateExponentialMovingAverage(null, 0.5); // GH-90000
             assertThat(ema).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("calculateExponentialMovingAverage with empty values returns empty list [GH-90000]")
+        @DisplayName("calculateExponentialMovingAverage with empty values returns empty list")
         void calculateEma_empty_returnsEmpty() { // GH-90000
             List<Double> ema = AdvancedAnalyticsFeatures.calculateExponentialMovingAverage(List.of(), 0.5); // GH-90000
             assertThat(ema).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("calculateExponentialMovingAverage with invalid alpha throws exception [GH-90000]")
+        @DisplayName("calculateExponentialMovingAverage with invalid alpha throws exception")
         void calculateEma_invalidAlpha_throws() { // GH-90000
             List<Double> values = List.of(1.0, 2.0, 3.0); // GH-90000
             
@@ -334,11 +334,11 @@ class AdvancedAnalyticsFeaturesTest {
     }
 
     @Nested
-    @DisplayName("Z-Score Calculation [GH-90000]")
+    @DisplayName("Z-Score Calculation")
     class ZScoreTests {
 
         @Test
-        @DisplayName("calculateZScores with valid values returns correct z-scores [GH-90000]")
+        @DisplayName("calculateZScores with valid values returns correct z-scores")
         void calculateZScores_validValues_returnsCorrect() { // GH-90000
             List<Double> values = List.of(1.0, 2.0, 3.0, 4.0, 5.0); // GH-90000
             
@@ -352,21 +352,21 @@ class AdvancedAnalyticsFeaturesTest {
         }
 
         @Test
-        @DisplayName("calculateZScores with null values returns empty list [GH-90000]")
+        @DisplayName("calculateZScores with null values returns empty list")
         void calculateZScores_null_returnsEmpty() { // GH-90000
             List<Double> zScores = AdvancedAnalyticsFeatures.calculateZScores(null); // GH-90000
             assertThat(zScores).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("calculateZScores with empty values returns empty list [GH-90000]")
+        @DisplayName("calculateZScores with empty values returns empty list")
         void calculateZScores_empty_returnsEmpty() { // GH-90000
             List<Double> zScores = AdvancedAnalyticsFeatures.calculateZScores(List.of()); // GH-90000
             assertThat(zScores).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("calculateZScores with constant values returns all zeros [GH-90000]")
+        @DisplayName("calculateZScores with constant values returns all zeros")
         void calculateZScores_constant_returnsZeros() { // GH-90000
             List<Double> values = List.of(5.0, 5.0, 5.0, 5.0); // GH-90000
             

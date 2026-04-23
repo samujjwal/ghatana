@@ -14,7 +14,7 @@ import java.time.Duration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-@DisplayName("PluginCacheManager Tests [GH-90000]")
+@DisplayName("PluginCacheManager Tests")
 class PluginCacheManagerTest {
 
     @BeforeEach
@@ -26,11 +26,11 @@ class PluginCacheManagerTest {
     }
 
     @Nested
-    @DisplayName("Singleton Pattern [GH-90000]")
+    @DisplayName("Singleton Pattern")
     class SingletonTests {
 
         @Test
-        @DisplayName("returns same instance on multiple calls [GH-90000]")
+        @DisplayName("returns same instance on multiple calls")
         void returnsSameInstanceOnMultipleCalls() { // GH-90000
             PluginCacheManager instance1 = PluginCacheManager.getInstance(); // GH-90000
             PluginCacheManager instance2 = PluginCacheManager.getInstance(); // GH-90000
@@ -39,7 +39,7 @@ class PluginCacheManagerTest {
         }
 
         @Test
-        @DisplayName("returns instance with custom TTL [GH-90000]")
+        @DisplayName("returns instance with custom TTL")
         void returnsInstanceWithCustomTtl() { // GH-90000
             Duration customTtl = Duration.ofMinutes(10); // GH-90000
             PluginCacheManager instance = PluginCacheManager.getInstanceWithTtl(customTtl); // GH-90000
@@ -48,7 +48,7 @@ class PluginCacheManagerTest {
         }
 
         @Test
-        @DisplayName("returns same instance even with custom TTL [GH-90000]")
+        @DisplayName("returns same instance even with custom TTL")
         void returnsSameInstanceWithCustomTtl() { // GH-90000
             PluginCacheManager instance1 = PluginCacheManager.getInstanceWithTtl(Duration.ofMinutes(5)); // GH-90000
             PluginCacheManager instance2 = PluginCacheManager.getInstanceWithTtl(Duration.ofMinutes(10)); // GH-90000
@@ -58,18 +58,18 @@ class PluginCacheManagerTest {
     }
 
     @Nested
-    @DisplayName("Metadata Caching [GH-90000]")
+    @DisplayName("Metadata Caching")
     class MetadataCachingTests {
 
         @Test
-        @DisplayName("caches and retrieves plugin metadata [GH-90000]")
+        @DisplayName("caches and retrieves plugin metadata")
         void cachesAndRetrievesMetadata() { // GH-90000
             PluginCacheManager cache = PluginCacheManager.getInstance(); // GH-90000
             String pluginId = "test-plugin";
             PluginMetadata metadata = PluginMetadata.builder() // GH-90000
                     .id(pluginId) // GH-90000
-                    .name("Test Plugin [GH-90000]")
-                    .version("1.0.0 [GH-90000]")
+                    .name("Test Plugin")
+                    .version("1.0.0")
                     .type(PluginType.STORAGE) // GH-90000
                     .build(); // GH-90000
 
@@ -78,28 +78,28 @@ class PluginCacheManagerTest {
 
             assertThat(retrieved).isNotNull(); // GH-90000
             assertThat(retrieved.id()).isEqualTo(pluginId); // GH-90000
-            assertThat(retrieved.name()).isEqualTo("Test Plugin [GH-90000]");
+            assertThat(retrieved.name()).isEqualTo("Test Plugin");
         }
 
         @Test
-        @DisplayName("returns null for non-existent metadata [GH-90000]")
+        @DisplayName("returns null for non-existent metadata")
         void returnsNullForNonExistentMetadata() { // GH-90000
             PluginCacheManager cache = PluginCacheManager.getInstance(); // GH-90000
 
-            PluginMetadata retrieved = cache.getCachedMetadata("non-existent [GH-90000]");
+            PluginMetadata retrieved = cache.getCachedMetadata("non-existent");
 
             assertThat(retrieved).isNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("checks if metadata is cached [GH-90000]")
+        @DisplayName("checks if metadata is cached")
         void checksIfMetadataIsCached() { // GH-90000
             PluginCacheManager cache = PluginCacheManager.getInstance(); // GH-90000
             String pluginId = "test-plugin";
             PluginMetadata metadata = PluginMetadata.builder() // GH-90000
                     .id(pluginId) // GH-90000
-                    .name("Test Plugin [GH-90000]")
-                    .version("1.0.0 [GH-90000]")
+                    .name("Test Plugin")
+                    .version("1.0.0")
                     .build(); // GH-90000
 
             assertThat(cache.hasCachedMetadata(pluginId)).isFalse(); // GH-90000
@@ -110,14 +110,14 @@ class PluginCacheManagerTest {
         }
 
         @Test
-        @DisplayName("invalidates metadata cache [GH-90000]")
+        @DisplayName("invalidates metadata cache")
         void invalidatesMetadataCache() { // GH-90000
             PluginCacheManager cache = PluginCacheManager.getInstance(); // GH-90000
             String pluginId = "test-plugin";
             PluginMetadata metadata = PluginMetadata.builder() // GH-90000
                     .id(pluginId) // GH-90000
-                    .name("Test Plugin [GH-90000]")
-                    .version("1.0.0 [GH-90000]")
+                    .name("Test Plugin")
+                    .version("1.0.0")
                     .build(); // GH-90000
 
             cache.cacheMetadata(pluginId, metadata); // GH-90000
@@ -127,26 +127,26 @@ class PluginCacheManagerTest {
         }
 
         @Test
-        @DisplayName("clears all metadata cache [GH-90000]")
+        @DisplayName("clears all metadata cache")
         void clearsAllMetadataCache() { // GH-90000
             PluginCacheManager cache = PluginCacheManager.getInstance(); // GH-90000
             
-            cache.cacheMetadata("plugin1", PluginMetadata.builder().id("plugin1 [GH-90000]").build());
-            cache.cacheMetadata("plugin2", PluginMetadata.builder().id("plugin2 [GH-90000]").build());
+            cache.cacheMetadata("plugin1", PluginMetadata.builder().id("plugin1").build());
+            cache.cacheMetadata("plugin2", PluginMetadata.builder().id("plugin2").build());
             
             cache.clearMetadataCache(); // GH-90000
             
-            assertThat(cache.getCachedMetadata("plugin1 [GH-90000]")).isNull();
-            assertThat(cache.getCachedMetadata("plugin2 [GH-90000]")).isNull();
+            assertThat(cache.getCachedMetadata("plugin1")).isNull();
+            assertThat(cache.getCachedMetadata("plugin2")).isNull();
         }
     }
 
     @Nested
-    @DisplayName("Instance Caching [GH-90000]")
+    @DisplayName("Instance Caching")
     class InstanceCachingTests {
 
         @Test
-        @DisplayName("caches and retrieves plugin instance [GH-90000]")
+        @DisplayName("caches and retrieves plugin instance")
         void cachesAndRetrievesInstance() { // GH-90000
             PluginCacheManager cache = PluginCacheManager.getInstance(); // GH-90000
             String pluginId = "test-plugin";
@@ -163,17 +163,17 @@ class PluginCacheManagerTest {
         }
 
         @Test
-        @DisplayName("returns null for non-existent instance [GH-90000]")
+        @DisplayName("returns null for non-existent instance")
         void returnsNullForNonExistentInstance() { // GH-90000
             PluginCacheManager cache = PluginCacheManager.getInstance(); // GH-90000
 
-            PluginCacheManager.CachedPluginInstance cached = cache.getCachedInstance("non-existent [GH-90000]");
+            PluginCacheManager.CachedPluginInstance cached = cache.getCachedInstance("non-existent");
 
             assertThat(cached).isNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("returns null for stopped instances [GH-90000]")
+        @DisplayName("returns null for stopped instances")
         void returnsNullForStoppedInstances() { // GH-90000
             PluginCacheManager cache = PluginCacheManager.getInstance(); // GH-90000
             String pluginId = "test-plugin";
@@ -187,7 +187,7 @@ class PluginCacheManagerTest {
         }
 
         @Test
-        @DisplayName("checks if instance is cached and valid [GH-90000]")
+        @DisplayName("checks if instance is cached and valid")
         void checksIfInstanceIsCached() { // GH-90000
             PluginCacheManager cache = PluginCacheManager.getInstance(); // GH-90000
             String pluginId = "test-plugin";
@@ -202,7 +202,7 @@ class PluginCacheManagerTest {
         }
 
         @Test
-        @DisplayName("updates plugin state in cache [GH-90000]")
+        @DisplayName("updates plugin state in cache")
         void updatesInstanceState() { // GH-90000
             PluginCacheManager cache = PluginCacheManager.getInstance(); // GH-90000
             String pluginId = "test-plugin";
@@ -217,7 +217,7 @@ class PluginCacheManagerTest {
         }
 
         @Test
-        @DisplayName("invalidates instance cache [GH-90000]")
+        @DisplayName("invalidates instance cache")
         void invalidatesInstanceCache() { // GH-90000
             PluginCacheManager cache = PluginCacheManager.getInstance(); // GH-90000
             String pluginId = "test-plugin";
@@ -231,7 +231,7 @@ class PluginCacheManagerTest {
         }
 
         @Test
-        @DisplayName("clears all instance cache [GH-90000]")
+        @DisplayName("clears all instance cache")
         void clearsAllInstanceCache() { // GH-90000
             PluginCacheManager cache = PluginCacheManager.getInstance(); // GH-90000
             Object instance1 = new Object(); // GH-90000
@@ -243,17 +243,17 @@ class PluginCacheManagerTest {
             
             cache.clearInstanceCache(); // GH-90000
             
-            assertThat(cache.getCachedInstance("plugin1 [GH-90000]")).isNull();
-            assertThat(cache.getCachedInstance("plugin2 [GH-90000]")).isNull();
+            assertThat(cache.getCachedInstance("plugin1")).isNull();
+            assertThat(cache.getCachedInstance("plugin2")).isNull();
         }
     }
 
     @Nested
-    @DisplayName("Operation Caching [GH-90000]")
+    @DisplayName("Operation Caching")
     class OperationCachingTests {
 
         @Test
-        @DisplayName("caches and retrieves operation result [GH-90000]")
+        @DisplayName("caches and retrieves operation result")
         void cachesAndRetrievesOperationResult() { // GH-90000
             PluginCacheManager cache = PluginCacheManager.getInstance(); // GH-90000
             String pluginId = "test-plugin";
@@ -269,7 +269,7 @@ class PluginCacheManagerTest {
         }
 
         @Test
-        @DisplayName("returns null for non-existent operation result [GH-90000]")
+        @DisplayName("returns null for non-existent operation result")
         void returnsNullForNonExistentOperationResult() { // GH-90000
             PluginCacheManager cache = PluginCacheManager.getInstance(); // GH-90000
 
@@ -279,7 +279,7 @@ class PluginCacheManagerTest {
         }
 
         @Test
-        @DisplayName("checks if operation result is cached and valid [GH-90000]")
+        @DisplayName("checks if operation result is cached and valid")
         void checksIfOperationResultIsCached() { // GH-90000
             PluginCacheManager cache = PluginCacheManager.getInstance(); // GH-90000
             String pluginId = "test-plugin";
@@ -295,7 +295,7 @@ class PluginCacheManagerTest {
         }
 
         @Test
-        @DisplayName("invalidates all operations for a plugin [GH-90000]")
+        @DisplayName("invalidates all operations for a plugin")
         void invalidatesAllOperationsForPlugin() { // GH-90000
             PluginCacheManager cache = PluginCacheManager.getInstance(); // GH-90000
             String pluginId = "test-plugin";
@@ -310,7 +310,7 @@ class PluginCacheManagerTest {
         }
 
         @Test
-        @DisplayName("invalidates specific operation for a plugin [GH-90000]")
+        @DisplayName("invalidates specific operation for a plugin")
         void invalidatesSpecificOperationForPlugin() { // GH-90000
             PluginCacheManager cache = PluginCacheManager.getInstance(); // GH-90000
             String pluginId = "test-plugin";
@@ -325,7 +325,7 @@ class PluginCacheManagerTest {
         }
 
         @Test
-        @DisplayName("clears all operation cache [GH-90000]")
+        @DisplayName("clears all operation cache")
         void clearsAllOperationCache() { // GH-90000
             PluginCacheManager cache = PluginCacheManager.getInstance(); // GH-90000
 
@@ -340,14 +340,14 @@ class PluginCacheManagerTest {
     }
 
     @Nested
-    @DisplayName("Cache Statistics [GH-90000]")
+    @DisplayName("Cache Statistics")
     class StatisticsTests {
 
         @Test
-        @DisplayName("returns cache statistics [GH-90000]")
+        @DisplayName("returns cache statistics")
         void returnsCacheStatistics() { // GH-90000
             PluginCacheManager cache = PluginCacheManager.getInstance(); // GH-90000
-            PluginMetadata metadata = PluginMetadata.builder().id("plugin1 [GH-90000]").build();
+            PluginMetadata metadata = PluginMetadata.builder().id("plugin1").build();
             Object instance = new Object(); // GH-90000
             PluginContext context = mock(PluginContext.class); // GH-90000
 
@@ -363,7 +363,7 @@ class PluginCacheManagerTest {
         }
 
         @Test
-        @DisplayName("returns zero statistics for empty cache [GH-90000]")
+        @DisplayName("returns zero statistics for empty cache")
         void returnsZeroStatisticsForEmptyCache() { // GH-90000
             PluginCacheManager cache = PluginCacheManager.getInstance(); // GH-90000
             

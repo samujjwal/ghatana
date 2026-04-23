@@ -74,25 +74,25 @@ class EventSchemaRegistryTest {
     // ─────────────────── Factory Tests ───────────────────
 
     @Nested
-    @DisplayName("Factory methods [GH-90000]")
+    @DisplayName("Factory methods")
     class FactoryMethods {
 
         @Test
-        @DisplayName("create() uses BACKWARD as default [GH-90000]")
+        @DisplayName("create() uses BACKWARD as default")
         void defaultModeIsBackward() { // GH-90000
             EventSchemaRegistry reg = EventSchemaRegistry.create(); // GH-90000
-            assertEquals(CompatibilityMode.BACKWARD, reg.getCompatibilityMode("any.subject [GH-90000]"));
+            assertEquals(CompatibilityMode.BACKWARD, reg.getCompatibilityMode("any.subject"));
         }
 
         @Test
-        @DisplayName("create(mode) uses custom default [GH-90000]")
+        @DisplayName("create(mode) uses custom default")
         void customDefaultMode() { // GH-90000
             EventSchemaRegistry reg = EventSchemaRegistry.create(CompatibilityMode.FULL); // GH-90000
-            assertEquals(CompatibilityMode.FULL, reg.getCompatibilityMode("any.subject [GH-90000]"));
+            assertEquals(CompatibilityMode.FULL, reg.getCompatibilityMode("any.subject"));
         }
 
         @Test
-        @DisplayName("empty registry has zero counts [GH-90000]")
+        @DisplayName("empty registry has zero counts")
         void emptyRegistryCounts() { // GH-90000
             assertEquals(0, registry.subjectCount()); // GH-90000
             assertEquals(0, registry.totalSchemaCount()); // GH-90000
@@ -103,11 +103,11 @@ class EventSchemaRegistryTest {
     // ─────────────────── Registration Tests ───────────────────
 
     @Nested
-    @DisplayName("Schema registration [GH-90000]")
+    @DisplayName("Schema registration")
     class Registration {
 
         @Test
-        @DisplayName("first version registers successfully [GH-90000]")
+        @DisplayName("first version registers successfully")
         void firstVersionRegisters() { // GH-90000
             EventSchema v1 = orderSchemaV1(); // GH-90000
             EventSchema registered = registry.register(v1); // GH-90000
@@ -118,7 +118,7 @@ class EventSchemaRegistryTest {
         }
 
         @Test
-        @DisplayName("multiple subjects coexist [GH-90000]")
+        @DisplayName("multiple subjects coexist")
         void multipleSubjects() { // GH-90000
             registry.register(orderSchemaV1()); // GH-90000
             registry.register(EventSchema.create("user.created", SchemaFormat.AVRO, // GH-90000
@@ -130,13 +130,13 @@ class EventSchemaRegistryTest {
         }
 
         @Test
-        @DisplayName("null schema throws NullPointerException [GH-90000]")
+        @DisplayName("null schema throws NullPointerException")
         void nullSchemaThrows() { // GH-90000
             assertThrows(NullPointerException.class, () -> registry.register(null)); // GH-90000
         }
 
         @Test
-        @DisplayName("version must increment [GH-90000]")
+        @DisplayName("version must increment")
         void versionMustIncrement() { // GH-90000
             registry.register(orderSchemaV1()); // GH-90000
             EventSchema duplicateV1 = EventSchema.create("order.created", SchemaFormat.JSON_SCHEMA, // GH-90000
@@ -150,23 +150,23 @@ class EventSchemaRegistryTest {
     // ─────────────────── Versioning Tests ───────────────────
 
     @Nested
-    @DisplayName("Version management [GH-90000]")
+    @DisplayName("Version management")
     class Versioning {
 
         @Test
-        @DisplayName("getLatest returns most recent version [GH-90000]")
+        @DisplayName("getLatest returns most recent version")
         void getLatestReturnsNewest() { // GH-90000
             registry.register(orderSchemaV1()); // GH-90000
             EventSchema v2 = orderSchemaV2WithOptionalField(); // GH-90000
             registry.register(v2); // GH-90000
 
-            Optional<EventSchema> latest = registry.getLatest("order.created [GH-90000]");
+            Optional<EventSchema> latest = registry.getLatest("order.created");
             assertTrue(latest.isPresent()); // GH-90000
             assertEquals(2, latest.get().version()); // GH-90000
         }
 
         @Test
-        @DisplayName("getVersion returns specific version [GH-90000]")
+        @DisplayName("getVersion returns specific version")
         void getSpecificVersion() { // GH-90000
             registry.register(orderSchemaV1()); // GH-90000
             registry.register(orderSchemaV2WithOptionalField()); // GH-90000
@@ -181,38 +181,38 @@ class EventSchemaRegistryTest {
         }
 
         @Test
-        @DisplayName("getVersion returns empty for nonexistent version [GH-90000]")
+        @DisplayName("getVersion returns empty for nonexistent version")
         void nonexistentVersionReturnsEmpty() { // GH-90000
             registry.register(orderSchemaV1()); // GH-90000
             assertTrue(registry.getVersion("order.created", 99).isEmpty()); // GH-90000
         }
 
         @Test
-        @DisplayName("getLatest returns empty for unknown subject [GH-90000]")
+        @DisplayName("getLatest returns empty for unknown subject")
         void unknownSubjectReturnsEmpty() { // GH-90000
-            assertTrue(registry.getLatest("nonexistent [GH-90000]").isEmpty());
+            assertTrue(registry.getLatest("nonexistent").isEmpty());
         }
 
         @Test
-        @DisplayName("getAllVersions returns ordered history [GH-90000]")
+        @DisplayName("getAllVersions returns ordered history")
         void allVersionsOrdered() { // GH-90000
             registry.register(orderSchemaV1()); // GH-90000
             registry.register(orderSchemaV2WithOptionalField()); // GH-90000
 
-            List<EventSchema> all = registry.getAllVersions("order.created [GH-90000]");
+            List<EventSchema> all = registry.getAllVersions("order.created");
             assertEquals(2, all.size()); // GH-90000
             assertEquals(1, all.get(0).version()); // GH-90000
             assertEquals(2, all.get(1).version()); // GH-90000
         }
 
         @Test
-        @DisplayName("getAllVersions returns empty for unknown subject [GH-90000]")
+        @DisplayName("getAllVersions returns empty for unknown subject")
         void allVersionsUnknown() { // GH-90000
-            assertTrue(registry.getAllVersions("nonexistent [GH-90000]").isEmpty());
+            assertTrue(registry.getAllVersions("nonexistent").isEmpty());
         }
 
         @Test
-        @DisplayName("totalSchemaCount spans subjects and versions [GH-90000]")
+        @DisplayName("totalSchemaCount spans subjects and versions")
         void totalCountSpansAll() { // GH-90000
             registry.register(orderSchemaV1()); // GH-90000
             registry.register(orderSchemaV2WithOptionalField()); // GH-90000
@@ -227,7 +227,7 @@ class EventSchemaRegistryTest {
     // ─────────────────── BACKWARD Compatibility ───────────────────
 
     @Nested
-    @DisplayName("BACKWARD compatibility [GH-90000]")
+    @DisplayName("BACKWARD compatibility")
     class BackwardCompatibility {
 
         @BeforeEach
@@ -237,14 +237,14 @@ class EventSchemaRegistryTest {
         }
 
         @Test
-        @DisplayName("adding optional field is backward compatible [GH-90000]")
+        @DisplayName("adding optional field is backward compatible")
         void addOptionalFieldCompatible() { // GH-90000
             assertDoesNotThrow(() -> registry.register(orderSchemaV2WithOptionalField())); // GH-90000
             assertEquals(2, registry.totalSchemaCount()); // GH-90000
         }
 
         @Test
-        @DisplayName("adding required field WITHOUT default is incompatible [GH-90000]")
+        @DisplayName("adding required field WITHOUT default is incompatible")
         void addRequiredFieldIncompatible() { // GH-90000
             SchemaRegistrationException ex = assertThrows(SchemaRegistrationException.class, // GH-90000
                     () -> registry.register(orderSchemaV2WithRequiredField())); // GH-90000
@@ -254,19 +254,19 @@ class EventSchemaRegistryTest {
         }
 
         @Test
-        @DisplayName("adding required field WITH default is backward compatible [GH-90000]")
+        @DisplayName("adding required field WITH default is backward compatible")
         void addRequiredFieldWithDefaultCompatible() { // GH-90000
             assertDoesNotThrow(() -> registry.register(orderSchemaV2WithRequiredFieldAndDefault())); // GH-90000
         }
 
         @Test
-        @DisplayName("removing field is allowed in backward mode [GH-90000]")
+        @DisplayName("removing field is allowed in backward mode")
         void removeFieldAllowed() { // GH-90000
             assertDoesNotThrow(() -> registry.register(orderSchemaV2WithFieldRemoved())); // GH-90000
         }
 
         @Test
-        @DisplayName("changing field type is incompatible [GH-90000]")
+        @DisplayName("changing field type is incompatible")
         void typeChangeIncompatible() { // GH-90000
             assertThrows(SchemaRegistrationException.class, // GH-90000
                     () -> registry.register(orderSchemaV2WithTypeChange())); // GH-90000
@@ -276,7 +276,7 @@ class EventSchemaRegistryTest {
     // ─────────────────── FORWARD Compatibility ───────────────────
 
     @Nested
-    @DisplayName("FORWARD compatibility [GH-90000]")
+    @DisplayName("FORWARD compatibility")
     class ForwardCompatibility {
 
         @BeforeEach
@@ -286,20 +286,20 @@ class EventSchemaRegistryTest {
         }
 
         @Test
-        @DisplayName("adding optional field is forward compatible [GH-90000]")
+        @DisplayName("adding optional field is forward compatible")
         void addOptionalFieldCompatible() { // GH-90000
             assertDoesNotThrow(() -> registry.register(orderSchemaV2WithOptionalField())); // GH-90000
         }
 
         @Test
-        @DisplayName("removing field is incompatible in forward mode [GH-90000]")
+        @DisplayName("removing field is incompatible in forward mode")
         void removeFieldIncompatible() { // GH-90000
             assertThrows(SchemaRegistrationException.class, // GH-90000
                     () -> registry.register(orderSchemaV2WithFieldRemoved())); // GH-90000
         }
 
         @Test
-        @DisplayName("changing field type is incompatible [GH-90000]")
+        @DisplayName("changing field type is incompatible")
         void typeChangeIncompatible() { // GH-90000
             assertThrows(SchemaRegistrationException.class, // GH-90000
                     () -> registry.register(orderSchemaV2WithTypeChange())); // GH-90000
@@ -309,7 +309,7 @@ class EventSchemaRegistryTest {
     // ─────────────────── FULL Compatibility ───────────────────
 
     @Nested
-    @DisplayName("FULL compatibility [GH-90000]")
+    @DisplayName("FULL compatibility")
     class FullCompatibility {
 
         @BeforeEach
@@ -319,27 +319,27 @@ class EventSchemaRegistryTest {
         }
 
         @Test
-        @DisplayName("adding optional field is fully compatible [GH-90000]")
+        @DisplayName("adding optional field is fully compatible")
         void addOptionalFieldCompatible() { // GH-90000
             assertDoesNotThrow(() -> registry.register(orderSchemaV2WithOptionalField())); // GH-90000
         }
 
         @Test
-        @DisplayName("adding required field is incompatible under FULL [GH-90000]")
+        @DisplayName("adding required field is incompatible under FULL")
         void addRequiredFieldIncompatible() { // GH-90000
             assertThrows(SchemaRegistrationException.class, // GH-90000
                     () -> registry.register(orderSchemaV2WithRequiredField())); // GH-90000
         }
 
         @Test
-        @DisplayName("removing field is incompatible under FULL [GH-90000]")
+        @DisplayName("removing field is incompatible under FULL")
         void removeFieldIncompatible() { // GH-90000
             assertThrows(SchemaRegistrationException.class, // GH-90000
                     () -> registry.register(orderSchemaV2WithFieldRemoved())); // GH-90000
         }
 
         @Test
-        @DisplayName("type change is incompatible under FULL [GH-90000]")
+        @DisplayName("type change is incompatible under FULL")
         void typeChangeIncompatible() { // GH-90000
             assertThrows(SchemaRegistrationException.class, // GH-90000
                     () -> registry.register(orderSchemaV2WithTypeChange())); // GH-90000
@@ -349,7 +349,7 @@ class EventSchemaRegistryTest {
     // ─────────────────── NONE Compatibility ───────────────────
 
     @Nested
-    @DisplayName("NONE compatibility (no checks) [GH-90000]")
+    @DisplayName("NONE compatibility (no checks)")
     class NoneCompatibility {
 
         @BeforeEach
@@ -359,19 +359,19 @@ class EventSchemaRegistryTest {
         }
 
         @Test
-        @DisplayName("adding required field is allowed with NONE [GH-90000]")
+        @DisplayName("adding required field is allowed with NONE")
         void requireFieldAllowed() { // GH-90000
             assertDoesNotThrow(() -> registry.register(orderSchemaV2WithRequiredField())); // GH-90000
         }
 
         @Test
-        @DisplayName("removing field is allowed with NONE [GH-90000]")
+        @DisplayName("removing field is allowed with NONE")
         void removeFieldAllowed() { // GH-90000
             assertDoesNotThrow(() -> registry.register(orderSchemaV2WithFieldRemoved())); // GH-90000
         }
 
         @Test
-        @DisplayName("type change is allowed with NONE [GH-90000]")
+        @DisplayName("type change is allowed with NONE")
         void typeChangeAllowed() { // GH-90000
             assertDoesNotThrow(() -> registry.register(orderSchemaV2WithTypeChange())); // GH-90000
         }
@@ -380,18 +380,18 @@ class EventSchemaRegistryTest {
     // ─────────────────── testCompatibility ───────────────────
 
     @Nested
-    @DisplayName("Test compatibility without registration [GH-90000]")
+    @DisplayName("Test compatibility without registration")
     class TestCompatibilityDryRun {
 
         @Test
-        @DisplayName("first schema is always compatible [GH-90000]")
+        @DisplayName("first schema is always compatible")
         void firstSchemaCompatible() { // GH-90000
             CompatibilityResult result = registry.testCompatibility(orderSchemaV1()); // GH-90000
             assertTrue(result.compatible()); // GH-90000
         }
 
         @Test
-        @DisplayName("dry-run reports violations without registering [GH-90000]")
+        @DisplayName("dry-run reports violations without registering")
         void dryRunDoesNotRegister() { // GH-90000
             registry.register(orderSchemaV1()); // GH-90000
             registry.setCompatibilityMode("order.created", CompatibilityMode.BACKWARD); // GH-90000
@@ -404,7 +404,7 @@ class EventSchemaRegistryTest {
         }
 
         @Test
-        @DisplayName("dry-run succeeds for compatible schema [GH-90000]")
+        @DisplayName("dry-run succeeds for compatible schema")
         void dryRunSucceeds() { // GH-90000
             registry.register(orderSchemaV1()); // GH-90000
             CompatibilityResult result = registry.testCompatibility(orderSchemaV2WithOptionalField()); // GH-90000
@@ -416,66 +416,66 @@ class EventSchemaRegistryTest {
     // ─────────────────── Compatibility Mode Config ───────────────────
 
     @Nested
-    @DisplayName("Compatibility mode configuration [GH-90000]")
+    @DisplayName("Compatibility mode configuration")
     class ModeConfiguration {
 
         @Test
-        @DisplayName("subject-level mode overrides default [GH-90000]")
+        @DisplayName("subject-level mode overrides default")
         void subjectOverridesDefault() { // GH-90000
-            assertEquals(CompatibilityMode.BACKWARD, registry.getCompatibilityMode("order.created [GH-90000]"));
+            assertEquals(CompatibilityMode.BACKWARD, registry.getCompatibilityMode("order.created"));
             registry.setCompatibilityMode("order.created", CompatibilityMode.NONE); // GH-90000
-            assertEquals(CompatibilityMode.NONE, registry.getCompatibilityMode("order.created [GH-90000]"));
+            assertEquals(CompatibilityMode.NONE, registry.getCompatibilityMode("order.created"));
             // Other subjects still use default
-            assertEquals(CompatibilityMode.BACKWARD, registry.getCompatibilityMode("other.subject [GH-90000]"));
+            assertEquals(CompatibilityMode.BACKWARD, registry.getCompatibilityMode("other.subject"));
         }
 
         @Test
-        @DisplayName("setDefaultCompatibilityMode changes default [GH-90000]")
+        @DisplayName("setDefaultCompatibilityMode changes default")
         void changeDefault() { // GH-90000
             registry.setDefaultCompatibilityMode(CompatibilityMode.FULL); // GH-90000
-            assertEquals(CompatibilityMode.FULL, registry.getCompatibilityMode("any.new.subject [GH-90000]"));
+            assertEquals(CompatibilityMode.FULL, registry.getCompatibilityMode("any.new.subject"));
         }
     }
 
     // ─────────────────── Subject Management ───────────────────
 
     @Nested
-    @DisplayName("Subject management [GH-90000]")
+    @DisplayName("Subject management")
     class SubjectManagement {
 
         @Test
-        @DisplayName("deleteSubject removes all versions [GH-90000]")
+        @DisplayName("deleteSubject removes all versions")
         void deleteRemovesAll() { // GH-90000
             registry.register(orderSchemaV1()); // GH-90000
             registry.register(orderSchemaV2WithOptionalField()); // GH-90000
 
-            int deleted = registry.deleteSubject("order.created [GH-90000]");
+            int deleted = registry.deleteSubject("order.created");
             assertEquals(2, deleted); // GH-90000
-            assertTrue(registry.getLatest("order.created [GH-90000]").isEmpty());
+            assertTrue(registry.getLatest("order.created").isEmpty());
             assertEquals(0, registry.subjectCount()); // GH-90000
         }
 
         @Test
-        @DisplayName("deleteSubject for unknown returns zero [GH-90000]")
+        @DisplayName("deleteSubject for unknown returns zero")
         void deleteUnknownReturnsZero() { // GH-90000
-            assertEquals(0, registry.deleteSubject("nonexistent [GH-90000]"));
+            assertEquals(0, registry.deleteSubject("nonexistent"));
         }
 
         @Test
-        @DisplayName("deleteSubject also removes compatibility mode [GH-90000]")
+        @DisplayName("deleteSubject also removes compatibility mode")
         void deleteRemovesCompatibilityMode() { // GH-90000
             registry.setCompatibilityMode("order.created", CompatibilityMode.FULL); // GH-90000
             registry.register(orderSchemaV1()); // GH-90000
-            registry.deleteSubject("order.created [GH-90000]");
+            registry.deleteSubject("order.created");
             // Falls back to default since subject-level config was removed
-            assertEquals(CompatibilityMode.BACKWARD, registry.getCompatibilityMode("order.created [GH-90000]"));
+            assertEquals(CompatibilityMode.BACKWARD, registry.getCompatibilityMode("order.created"));
         }
 
         @Test
-        @DisplayName("re-register after delete works as fresh registration [GH-90000]")
+        @DisplayName("re-register after delete works as fresh registration")
         void reRegisterAfterDelete() { // GH-90000
             registry.register(orderSchemaV1()); // GH-90000
-            registry.deleteSubject("order.created [GH-90000]");
+            registry.deleteSubject("order.created");
 
             EventSchema fresh = EventSchema.create("order.created", SchemaFormat.JSON_SCHEMA, // GH-90000
                     "{\"fresh\":true}", List.of(SchemaField.required("id", "string"))); // GH-90000
@@ -487,11 +487,11 @@ class EventSchemaRegistryTest {
     // ─────────────────── SchemaRegistrationException ───────────────────
 
     @Nested
-    @DisplayName("SchemaRegistrationException [GH-90000]")
+    @DisplayName("SchemaRegistrationException")
     class RegistrationExceptionTests {
 
         @Test
-        @DisplayName("carries all context fields [GH-90000]")
+        @DisplayName("carries all context fields")
         void exceptionContextFields() { // GH-90000
             registry.setCompatibilityMode("order.created", CompatibilityMode.BACKWARD); // GH-90000
             registry.register(orderSchemaV1()); // GH-90000
@@ -503,19 +503,19 @@ class EventSchemaRegistryTest {
             assertEquals(2, ex.getVersion()); // GH-90000
             assertEquals(CompatibilityMode.BACKWARD, ex.getMode()); // GH-90000
             assertFalse(ex.getViolations().isEmpty()); // GH-90000
-            assertTrue(ex.getMessage().contains("order.created [GH-90000]"));
-            assertTrue(ex.getMessage().contains("BACKWARD [GH-90000]"));
+            assertTrue(ex.getMessage().contains("order.created"));
+            assertTrue(ex.getMessage().contains("BACKWARD"));
         }
     }
 
     // ─────────────────── Concurrent Access ───────────────────
 
     @Nested
-    @DisplayName("Concurrent access [GH-90000]")
+    @DisplayName("Concurrent access")
     class ConcurrentAccess {
 
         @Test
-        @DisplayName("concurrent registrations for different subjects are safe [GH-90000]")
+        @DisplayName("concurrent registrations for different subjects are safe")
         void concurrentDifferentSubjects() throws Exception { // GH-90000
             int threadCount = 10;
             ExecutorService executor = Executors.newFixedThreadPool(threadCount); // GH-90000
@@ -542,7 +542,7 @@ class EventSchemaRegistryTest {
         }
 
         @Test
-        @DisplayName("concurrent reads while writing are safe [GH-90000]")
+        @DisplayName("concurrent reads while writing are safe")
         void concurrentReadsDuringWrite() throws Exception { // GH-90000
             registry.register(orderSchemaV1()); // GH-90000
 
@@ -554,7 +554,7 @@ class EventSchemaRegistryTest {
             for (int i = 0; i < 3; i++) { // GH-90000
                 readers.add(executor.submit(() -> { // GH-90000
                     start.await(); // GH-90000
-                    return registry.getLatest("order.created [GH-90000]");
+                    return registry.getLatest("order.created");
                 }));
             }
 
@@ -576,11 +576,11 @@ class EventSchemaRegistryTest {
     // ─────────────────── EventSchema record tests ───────────────────
 
     @Nested
-    @DisplayName("EventSchema record [GH-90000]")
+    @DisplayName("EventSchema record")
     class EventSchemaRecordTests {
 
         @Test
-        @DisplayName("create() produces version 1 with UUID id [GH-90000]")
+        @DisplayName("create() produces version 1 with UUID id")
         void createProducesV1() { // GH-90000
             EventSchema schema = orderSchemaV1(); // GH-90000
             assertEquals(1, schema.version()); // GH-90000
@@ -591,7 +591,7 @@ class EventSchemaRegistryTest {
         }
 
         @Test
-        @DisplayName("nextVersion increments version [GH-90000]")
+        @DisplayName("nextVersion increments version")
         void nextVersionIncrements() { // GH-90000
             EventSchema v1 = orderSchemaV1(); // GH-90000
             EventSchema v2 = v1.nextVersion("{}", List.of()); // GH-90000
@@ -601,7 +601,7 @@ class EventSchemaRegistryTest {
         }
 
         @Test
-        @DisplayName("SchemaField factories work correctly [GH-90000]")
+        @DisplayName("SchemaField factories work correctly")
         void schemaFieldFactories() { // GH-90000
             SchemaField req = SchemaField.required("name", "string"); // GH-90000
             assertTrue(req.required()); // GH-90000
@@ -620,13 +620,13 @@ class EventSchemaRegistryTest {
     // ─────────────────── SchemaCompatibilityChecker unit tests ───────────────────
 
     @Nested
-    @DisplayName("SchemaCompatibilityChecker [GH-90000]")
+    @DisplayName("SchemaCompatibilityChecker")
     class CompatibilityCheckerTests {
 
         private final SchemaCompatibilityChecker checker = new SchemaCompatibilityChecker(); // GH-90000
 
         @Test
-        @DisplayName("identical schemas are compatible in all modes [GH-90000]")
+        @DisplayName("identical schemas are compatible in all modes")
         void identicalSchemasCompatible() { // GH-90000
             EventSchema v1 = orderSchemaV1(); // GH-90000
             EventSchema v2 = v1.nextVersion(v1.definition(), v1.fields()); // GH-90000
@@ -638,7 +638,7 @@ class EventSchemaRegistryTest {
         }
 
         @Test
-        @DisplayName("NONE mode always returns compatible [GH-90000]")
+        @DisplayName("NONE mode always returns compatible")
         void noneModeAlwaysCompatible() { // GH-90000
             EventSchema v1 = orderSchemaV1(); // GH-90000
             EventSchema v2 = v1.nextVersion("{}", List.of()); // completely different // GH-90000
@@ -649,11 +649,11 @@ class EventSchemaRegistryTest {
     // ─────────────────── Edge Cases ───────────────────
 
     @Nested
-    @DisplayName("Edge cases [GH-90000]")
+    @DisplayName("Edge cases")
     class EdgeCases {
 
         @Test
-        @DisplayName("schema with no fields is valid [GH-90000]")
+        @DisplayName("schema with no fields is valid")
         void emptyFieldsValid() { // GH-90000
             EventSchema empty = EventSchema.create("empty.subject", SchemaFormat.JSON_SCHEMA, // GH-90000
                     "{}", List.of()); // GH-90000
@@ -661,7 +661,7 @@ class EventSchemaRegistryTest {
         }
 
         @Test
-        @DisplayName("different formats for same subject coexist via versioning [GH-90000]")
+        @DisplayName("different formats for same subject coexist via versioning")
         void differentFormats() { // GH-90000
             registry.setCompatibilityMode("mixed.format", CompatibilityMode.NONE); // GH-90000
             EventSchema v1 = EventSchema.create("mixed.format", SchemaFormat.JSON_SCHEMA, // GH-90000
@@ -674,23 +674,23 @@ class EventSchemaRegistryTest {
         }
 
         @Test
-        @DisplayName("PROTOBUF format schemas register [GH-90000]")
+        @DisplayName("PROTOBUF format schemas register")
         void protobufFormat() { // GH-90000
             EventSchema proto = EventSchema.create("proto.event", SchemaFormat.PROTOBUF, // GH-90000
                     "message Event { string id = 1; }", List.of( // GH-90000
                             SchemaField.required("id", "string"))); // GH-90000
             assertDoesNotThrow(() -> registry.register(proto)); // GH-90000
-            assertEquals(SchemaFormat.PROTOBUF, registry.getLatest("proto.event [GH-90000]").get().format());
+            assertEquals(SchemaFormat.PROTOBUF, registry.getLatest("proto.event").get().format());
         }
 
         @Test
-        @DisplayName("AVRO format schemas register [GH-90000]")
+        @DisplayName("AVRO format schemas register")
         void avroFormat() { // GH-90000
             EventSchema avro = EventSchema.create("avro.event", SchemaFormat.AVRO, // GH-90000
                     "{\"type\":\"record\",\"name\":\"Event\"}", List.of( // GH-90000
                             SchemaField.required("id", "string"))); // GH-90000
             assertDoesNotThrow(() -> registry.register(avro)); // GH-90000
-            assertEquals(SchemaFormat.AVRO, registry.getLatest("avro.event [GH-90000]").get().format());
+            assertEquals(SchemaFormat.AVRO, registry.getLatest("avro.event").get().format());
         }
     }
 }

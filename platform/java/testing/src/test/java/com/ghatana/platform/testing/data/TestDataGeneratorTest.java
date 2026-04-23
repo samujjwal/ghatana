@@ -12,11 +12,11 @@ import java.time.LocalDate;
 import static org.assertj.core.api.Assertions.*;
 
 @UnitTest
-@DisplayName("Test Data Generator [GH-90000]")
+@DisplayName("Test Data Generator")
 class TestDataGeneratorTest {
 
     @Test
-    @DisplayName("should generate random string [GH-90000]")
+    @DisplayName("should generate random string")
     void shouldGenerateRandomString() { // GH-90000
         // When
         String result = TestDataGenerator.randomString(); // GH-90000
@@ -28,7 +28,7 @@ class TestDataGeneratorTest {
     }
 
     @RepeatedTest(5) // GH-90000
-    @DisplayName("should generate random email [GH-90000]")
+    @DisplayName("should generate random email")
     void shouldGenerateRandomEmail() { // GH-90000
         // When
         String email = TestDataGenerator.randomEmail(); // GH-90000
@@ -36,13 +36,13 @@ class TestDataGeneratorTest {
         // Then
         assertThat(email) // GH-90000
             .isNotBlank() // GH-90000
-            .contains("@ [GH-90000]")
-            .contains(". [GH-90000]");
+            .contains("@")
+            .contains(".");
     }
 
     @ParameterizedTest
     @ValueSource(ints = {1, 10, 100}) // GH-90000
-    @DisplayName("should generate random int within range [GH-90000]")
+    @DisplayName("should generate random int within range")
     void shouldGenerateRandomInt(int max) { // GH-90000
         // When
         int result = TestDataGenerator.randomInt(0, max); // GH-90000
@@ -54,7 +54,7 @@ class TestDataGeneratorTest {
     }
 
     @Test
-    @DisplayName("should generate random date [GH-90000]")
+    @DisplayName("should generate random date")
     void shouldGenerateRandomDate() { // GH-90000
         // When
         LocalDate date = TestDataGenerator.randomDate(); // GH-90000
@@ -68,7 +68,7 @@ class TestDataGeneratorTest {
     }
 
     @Test
-    @DisplayName("should generate random name [GH-90000]")
+    @DisplayName("should generate random name")
     void shouldGenerateRandomName() { // GH-90000
         // When
         String name = TestDataGenerator.randomName(); // GH-90000
@@ -76,11 +76,11 @@ class TestDataGeneratorTest {
         // Then
         assertThat(name) // GH-90000
             .isNotBlank() // GH-90000
-            .contains("  [GH-90000]"); // At least first and last name
+            .contains(" "); // At least first and last name
     }
 
     @Test
-    @DisplayName("should generate random sentence [GH-90000]")
+    @DisplayName("should generate random sentence")
     void shouldGenerateRandomSentence() { // GH-90000
         // When
         String sentence = TestDataGenerator.randomSentence(); // GH-90000
@@ -88,6 +88,6 @@ class TestDataGeneratorTest {
         // Then
         assertThat(sentence) // GH-90000
             .isNotBlank() // GH-90000
-            .endsWith(". [GH-90000]");
+            .endsWith(".");
     }
 }

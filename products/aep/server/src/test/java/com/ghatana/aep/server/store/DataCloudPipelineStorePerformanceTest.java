@@ -25,11 +25,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-@DisplayName("DataCloudPipelineStore Performance [GH-90000]")
+@DisplayName("DataCloudPipelineStore Performance")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class DataCloudPipelineStorePerformanceTest extends EventloopTestBase {
 
-    private static final TenantId TENANT = TenantId.of("tenant-beta [GH-90000]");
+    private static final TenantId TENANT = TenantId.of("tenant-beta");
 
     @Mock
     private DataCloudClient client;
@@ -42,18 +42,18 @@ class DataCloudPipelineStorePerformanceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("save completes within the latency budget [GH-90000]")
+    @DisplayName("save completes within the latency budget")
     void saveCompletesWithinLatencyBudget() { // GH-90000
-        when(client.save(eq("tenant-beta [GH-90000]"), eq(DataCloudPipelineStore.COLLECTION), any()))
+        when(client.save(eq("tenant-beta"), eq(DataCloudPipelineStore.COLLECTION), any()))
             .thenAnswer(invocation -> { // GH-90000
-                @SuppressWarnings("unchecked [GH-90000]")
+                @SuppressWarnings("unchecked")
                 Map<String, Object> data = invocation.getArgument(2, Map.class); // GH-90000
                 return Promise.of(new DataCloudClient.Entity( // GH-90000
-                    data.get("id [GH-90000]").toString(),
+                    data.get("id").toString(),
                     DataCloudPipelineStore.COLLECTION,
                     data,
-                    Instant.parse(data.get("createdAt [GH-90000]").toString()),
-                    Instant.parse(data.get("updatedAt [GH-90000]").toString()),
+                    Instant.parse(data.get("createdAt").toString()),
+                    Instant.parse(data.get("updatedAt").toString()),
                     1L
                 ));
             });
@@ -61,17 +61,17 @@ class DataCloudPipelineStorePerformanceTest extends EventloopTestBase {
         Pipeline persisted = runPromise(() -> store.save(pipeline("pipeline-0", "Pipeline 0"))); // GH-90000
         long medianMillis = medianMillis(() -> runPromise(() -> store.save(pipeline("pipeline-0", "Pipeline 0"))), 5); // GH-90000
 
-        assertThat(persisted.getId()).isEqualTo("pipeline-0 [GH-90000]");
+        assertThat(persisted.getId()).isEqualTo("pipeline-0");
         assertThat(medianMillis).isLessThan(50L); // GH-90000
     }
 
     @Test
-    @DisplayName("findAll returns 100 pipelines within the latency budget [GH-90000]")
+    @DisplayName("findAll returns 100 pipelines within the latency budget")
     void findAllReturnsHundredPipelinesWithinLatencyBudget() { // GH-90000
         List<DataCloudClient.Entity> entities = IntStream.range(0, 100) // GH-90000
             .mapToObj(index -> entityFrom(pipeline("pipeline-" + index, "Pipeline " + index))) // GH-90000
             .toList(); // GH-90000
-        when(client.query(eq("tenant-beta [GH-90000]"), eq(DataCloudPipelineStore.COLLECTION), any(DataCloudClient.Query.class)))
+        when(client.query(eq("tenant-beta"), eq(DataCloudPipelineStore.COLLECTION), any(DataCloudClient.Query.class)))
             .thenReturn(Promise.of(entities)); // GH-90000
 
         Page<Pipeline> page = runPromise(() -> store.findAll(TENANT, null, null, 1, 100)); // GH-90000
@@ -98,14 +98,14 @@ class DataCloudPipelineStorePerformanceTest extends EventloopTestBase {
         pipeline.setId(id); // GH-90000
         pipeline.setTenantId(TENANT); // GH-90000
         pipeline.setName(name); // GH-90000
-        pipeline.setDescription("Performance regression pipeline [GH-90000]");
+        pipeline.setDescription("Performance regression pipeline");
         pipeline.setVersion(1); // GH-90000
         pipeline.setActive(true); // GH-90000
-        pipeline.setConfig("{} [GH-90000]");
-        pipeline.setCreatedAt(Instant.parse("2026-04-17T00:00:00Z [GH-90000]"));
-        pipeline.setUpdatedAt(Instant.parse("2026-04-17T00:00:00Z [GH-90000]"));
-        pipeline.setCreatedBy("perf-test [GH-90000]");
-        pipeline.setUpdatedBy("perf-test [GH-90000]");
+        pipeline.setConfig("{}");
+        pipeline.setCreatedAt(Instant.parse("2026-04-17T00:00:00Z"));
+        pipeline.setUpdatedAt(Instant.parse("2026-04-17T00:00:00Z"));
+        pipeline.setCreatedBy("perf-test");
+        pipeline.setUpdatedBy("perf-test");
         return pipeline;
     }
 

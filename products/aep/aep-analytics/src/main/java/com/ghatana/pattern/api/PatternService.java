@@ -98,7 +98,10 @@ import java.util.UUID;
  * // 4. Deactivate when done
  * patternService.deactivatePattern(patternId);
  * </pre>
- */
+  * @doc.type interface
+ * @doc.purpose Provides pattern service functionality.
+ * @doc.layer product
+*/
 public interface PatternService {
 
     /**

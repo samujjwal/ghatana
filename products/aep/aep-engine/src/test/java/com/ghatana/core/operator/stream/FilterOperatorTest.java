@@ -22,7 +22,7 @@ import static org.mockito.Mockito.mock;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("FilterOperator [GH-90000]")
+@DisplayName("FilterOperator")
 class FilterOperatorTest extends EventloopTestBase {
 
     private static final OperatorId ID = OperatorId.of("test", "stream", "filter", "1.0"); // GH-90000
@@ -38,9 +38,9 @@ class FilterOperatorTest extends EventloopTestBase {
     private FilterOperator alwaysPass() { // GH-90000
         return FilterOperator.builder() // GH-90000
                 .id(ID) // GH-90000
-                .name("pass-all [GH-90000]")
-                .description("passes every event [GH-90000]")
-                .eventTypes(List.of("* [GH-90000]"))
+                .name("pass-all")
+                .description("passes every event")
+                .eventTypes(List.of("*"))
                 .predicate(e -> true) // GH-90000
                 .metricsCollector(metrics) // GH-90000
                 .build(); // GH-90000
@@ -49,20 +49,20 @@ class FilterOperatorTest extends EventloopTestBase {
     private FilterOperator alwaysBlock() { // GH-90000
         return FilterOperator.builder() // GH-90000
                 .id(ID) // GH-90000
-                .name("block-all [GH-90000]")
-                .description("blocks every event [GH-90000]")
-                .eventTypes(List.of("* [GH-90000]"))
+                .name("block-all")
+                .description("blocks every event")
+                .eventTypes(List.of("*"))
                 .predicate(e -> false) // GH-90000
                 .metricsCollector(metrics) // GH-90000
                 .build(); // GH-90000
     }
 
     @Nested
-    @DisplayName("process() — passing predicate [GH-90000]")
+    @DisplayName("process() — passing predicate")
     class PassTests {
 
         @Test
-        @DisplayName("returns non-empty OperatorResult when predicate returns true [GH-90000]")
+        @DisplayName("returns non-empty OperatorResult when predicate returns true")
         void shouldReturnResultWhenPredicatePasses() { // GH-90000
             FilterOperator op = alwaysPass(); // GH-90000
 
@@ -73,7 +73,7 @@ class FilterOperatorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("increments passThroughCount on each passing event [GH-90000]")
+        @DisplayName("increments passThroughCount on each passing event")
         void shouldIncrementPassThroughCount() { // GH-90000
             FilterOperator op = alwaysPass(); // GH-90000
 
@@ -85,7 +85,7 @@ class FilterOperatorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("returned event is the original event [GH-90000]")
+        @DisplayName("returned event is the original event")
         void shouldReturnOriginalEvent() { // GH-90000
             FilterOperator op = alwaysPass(); // GH-90000
 
@@ -96,11 +96,11 @@ class FilterOperatorTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("process() — blocking predicate [GH-90000]")
+    @DisplayName("process() — blocking predicate")
     class BlockTests {
 
         @Test
-        @DisplayName("returns empty OperatorResult when predicate returns false [GH-90000]")
+        @DisplayName("returns empty OperatorResult when predicate returns false")
         void shouldReturnEmptyWhenPredicateBlocks() { // GH-90000
             FilterOperator op = alwaysBlock(); // GH-90000
 
@@ -110,7 +110,7 @@ class FilterOperatorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("increments filterCount on each blocked event [GH-90000]")
+        @DisplayName("increments filterCount on each blocked event")
         void shouldIncrementFilterCount() { // GH-90000
             FilterOperator op = alwaysBlock(); // GH-90000
 
@@ -124,18 +124,18 @@ class FilterOperatorTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("process() — predicate throws exception [GH-90000]")
+    @DisplayName("process() — predicate throws exception")
     class ExceptionTests {
 
         @Test
-        @DisplayName("exception in predicate counts as filtered and returns empty result [GH-90000]")
+        @DisplayName("exception in predicate counts as filtered and returns empty result")
         void shouldCountAsFiltedWhenPredicateThrows() { // GH-90000
             FilterOperator op = FilterOperator.builder() // GH-90000
                     .id(ID) // GH-90000
-                    .name("throws [GH-90000]")
-                    .description("always throws [GH-90000]")
-                    .eventTypes(List.of("* [GH-90000]"))
-                    .predicate(e -> { throw new RuntimeException("boom [GH-90000]"); })
+                    .name("throws")
+                    .description("always throws")
+                    .eventTypes(List.of("*"))
+                    .predicate(e -> { throw new RuntimeException("boom"); })
                     .metricsCollector(metrics) // GH-90000
                     .build(); // GH-90000
 
@@ -148,23 +148,23 @@ class FilterOperatorTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("null guard [GH-90000]")
+    @DisplayName("null guard")
     class NullGuards {
 
         @Test
-        @DisplayName("null predicate throws NullPointerException during construction [GH-90000]")
+        @DisplayName("null predicate throws NullPointerException during construction")
         void shouldRejectNullPredicate() { // GH-90000
             assertThatThrownBy(() -> FilterOperator.builder() // GH-90000
-                    .id(ID).name("x [GH-90000]").description("y [GH-90000]").eventTypes(List.of())
+                    .id(ID).name("x").description("y").eventTypes(List.of())
                     .predicate(null) // GH-90000
                     .metricsCollector(metrics) // GH-90000
                     .build()) // GH-90000
                     .isInstanceOf(NullPointerException.class) // GH-90000
-                    .hasMessageContaining("Predicate [GH-90000]");
+                    .hasMessageContaining("Predicate");
         }
 
         @Test
-        @DisplayName("null event throws NullPointerException in process() [GH-90000]")
+        @DisplayName("null event throws NullPointerException in process()")
         void shouldRejectNullEvent() { // GH-90000
             FilterOperator op = alwaysPass(); // GH-90000
 
@@ -174,20 +174,20 @@ class FilterOperatorTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("toString() [GH-90000]")
+    @DisplayName("toString()")
     class ToStringTests {
 
         @Test
-        @DisplayName("includes operator name and counters [GH-90000]")
+        @DisplayName("includes operator name and counters")
         void shouldIncludeNameAndCounters() { // GH-90000
             FilterOperator op = alwaysPass(); // GH-90000
             runPromise(() -> op.process(event)); // GH-90000
 
             String s = op.toString(); // GH-90000
 
-            assertThat(s).contains("pass-all [GH-90000]");
-            assertThat(s).contains("pass=1 [GH-90000]");
-            assertThat(s).contains("filtered=0 [GH-90000]");
+            assertThat(s).contains("pass-all");
+            assertThat(s).contains("pass=1");
+            assertThat(s).contains("filtered=0");
         }
     }
 }

@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("Governance Audit Logging Tests [GH-90000]")
+@DisplayName("Governance Audit Logging Tests")
 class AuditLoggingTest extends EventloopTestBase {
 
     // ── Audit model ───────────────────────────────────────────────────────────
@@ -52,7 +52,7 @@ class AuditLoggingTest extends EventloopTestBase {
     // ── Audit log creation ────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("log returns an entry with all required fields populated [GH-90000]")
+    @DisplayName("log returns an entry with all required fields populated")
     void logCreatesEntryWithAllRequiredFields() { // GH-90000
         AuditEntry entry = auditLog.log( // GH-90000
                 "tenant-audit", "user-001",
@@ -60,17 +60,17 @@ class AuditLoggingTest extends EventloopTestBase {
 
         assertThat(entry.entryId()).isNotNull().isNotBlank(); // GH-90000
         assertThat(entry.timestamp()).isNotNull().isBefore(Instant.now().plusSeconds(1)); // GH-90000
-        assertThat(entry.tenantId()).isEqualTo("tenant-audit [GH-90000]");
-        assertThat(entry.userId()).isEqualTo("user-001 [GH-90000]");
-        assertThat(entry.action()).isEqualTo("data.purge [GH-90000]");
-        assertThat(entry.resourceType()).isEqualTo("Collection [GH-90000]");
-        assertThat(entry.resourceId()).isEqualTo("col-xyz [GH-90000]");
+        assertThat(entry.tenantId()).isEqualTo("tenant-audit");
+        assertThat(entry.userId()).isEqualTo("user-001");
+        assertThat(entry.action()).isEqualTo("data.purge");
+        assertThat(entry.resourceType()).isEqualTo("Collection");
+        assertThat(entry.resourceId()).isEqualTo("col-xyz");
         assertThat(entry.success()).isTrue(); // GH-90000
-        assertThat(entry.details()).isEqualTo("Purge executed successfully [GH-90000]");
+        assertThat(entry.details()).isEqualTo("Purge executed successfully");
     }
 
     @Test
-    @DisplayName("log assigns unique entry IDs to each audit event [GH-90000]")
+    @DisplayName("log assigns unique entry IDs to each audit event")
     void logAssignsUniqueEntryIds() { // GH-90000
         AuditEntry a = auditLog.log("tenant-a", "u1", "read", "Dataset", "ds-1", true, null); // GH-90000
         AuditEntry b = auditLog.log("tenant-a", "u1", "read", "Dataset", "ds-2", true, null); // GH-90000
@@ -79,46 +79,46 @@ class AuditLoggingTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("failed operations are logged with success=false [GH-90000]")
+    @DisplayName("failed operations are logged with success=false")
     void failedOperationsLoggedWithSuccessFalse() { // GH-90000
         AuditEntry entry = auditLog.log( // GH-90000
                 "tenant-fail", "user-002",
                 "data.delete", "Feature", "feature-1", false, "Insufficient permissions");
 
         assertThat(entry.success()).isFalse(); // GH-90000
-        assertThat(entry.details()).contains("Insufficient permissions [GH-90000]");
+        assertThat(entry.details()).contains("Insufficient permissions");
     }
 
     // ── Audit log querying ────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("queryByTenant returns only entries for the specified tenant [GH-90000]")
+    @DisplayName("queryByTenant returns only entries for the specified tenant")
     void queryByTenantReturnsOnlyMatchingEntries() { // GH-90000
         auditLog.log("tenant-Q", "u1", "read", "X", "r1", true, null); // GH-90000
         auditLog.log("tenant-Q", "u2", "write", "X", "r2", true, null); // GH-90000
         auditLog.log("tenant-other", "u3", "read", "X", "r3", true, null); // GH-90000
 
-        List<AuditEntry> results = auditLog.queryByTenant("tenant-Q [GH-90000]");
+        List<AuditEntry> results = auditLog.queryByTenant("tenant-Q");
 
         assertThat(results).hasSize(2); // GH-90000
-        assertThat(results).allMatch(e -> e.tenantId().equals("tenant-Q [GH-90000]"));
+        assertThat(results).allMatch(e -> e.tenantId().equals("tenant-Q"));
     }
 
     @Test
-    @DisplayName("queryByAction returns only entries matching the specified action [GH-90000]")
+    @DisplayName("queryByAction returns only entries matching the specified action")
     void queryByActionReturnsMatchingEntries() { // GH-90000
         auditLog.log("tenant-R", "u1", "data.purge", "Col", "c1", true, null); // GH-90000
         auditLog.log("tenant-R", "u2", "data.read", "Col", "c2", true, null); // GH-90000
         auditLog.log("tenant-R", "u3", "data.purge", "Col", "c3", true, null); // GH-90000
 
-        List<AuditEntry> results = auditLog.queryByAction("data.purge [GH-90000]");
+        List<AuditEntry> results = auditLog.queryByAction("data.purge");
 
         assertThat(results).hasSize(2); // GH-90000
-        assertThat(results).allMatch(e -> e.action().equals("data.purge [GH-90000]"));
+        assertThat(results).allMatch(e -> e.action().equals("data.purge"));
     }
 
     @Test
-    @DisplayName("queryByTimeRange returns only entries within the specified window [GH-90000]")
+    @DisplayName("queryByTimeRange returns only entries within the specified window")
     void queryByTimeRangeReturnsBoundedEntries() throws InterruptedException { // GH-90000
         Instant before = Instant.now().minusSeconds(1); // GH-90000
         auditLog.log("tenant-T", "u1", "write", "X", "x1", true, null); // GH-90000
@@ -133,16 +133,16 @@ class AuditLoggingTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("queryByTenant returns empty list when no entries exist for that tenant [GH-90000]")
+    @DisplayName("queryByTenant returns empty list when no entries exist for that tenant")
     void queryByTenantReturnsEmptyWhenNoEntries() { // GH-90000
-        List<AuditEntry> results = auditLog.queryByTenant("tenant-ghost [GH-90000]");
+        List<AuditEntry> results = auditLog.queryByTenant("tenant-ghost");
         assertThat(results).isEmpty(); // GH-90000
     }
 
     // ── Retention ─────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("pruneOlderThan removes entries before the cutoff timestamp [GH-90000]")
+    @DisplayName("pruneOlderThan removes entries before the cutoff timestamp")
     void pruneOlderThanRemovesOldEntries() throws InterruptedException { // GH-90000
         auditLog.log("tenant-P", "u1", "write", "X", "x1", true, null); // GH-90000
         Thread.sleep(20); // GH-90000
@@ -153,13 +153,13 @@ class AuditLoggingTest extends EventloopTestBase {
         int removed = auditLog.pruneOlderThan(cutoff); // GH-90000
 
         assertThat(removed).isEqualTo(1); // GH-90000
-        List<AuditEntry> remaining = auditLog.queryByTenant("tenant-P [GH-90000]");
+        List<AuditEntry> remaining = auditLog.queryByTenant("tenant-P");
         assertThat(remaining).hasSize(1); // GH-90000
-        assertThat(remaining.get(0).userId()).isEqualTo("u2 [GH-90000]");
+        assertThat(remaining.get(0).userId()).isEqualTo("u2");
     }
 
     @Test
-    @DisplayName("pruneOlderThan returns 0 when all entries are newer than cutoff [GH-90000]")
+    @DisplayName("pruneOlderThan returns 0 when all entries are newer than cutoff")
     void pruneOlderThanReturnZeroWhenAllNewer() { // GH-90000
         auditLog.log("tenant-P2", "u1", "read", "X", "x1", true, null); // GH-90000
 
@@ -170,16 +170,16 @@ class AuditLoggingTest extends EventloopTestBase {
     // ── Audit log export ──────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("export produces JSON-like string containing required fields [GH-90000]")
+    @DisplayName("export produces JSON-like string containing required fields")
     void exportProducesStructuredOutput() { // GH-90000
         auditLog.log("tenant-E", "u1", "data.export", "Dataset", "ds-export", true, "Export succeeded"); // GH-90000
 
-        String exported = auditLog.exportAsJson("tenant-E [GH-90000]");
+        String exported = auditLog.exportAsJson("tenant-E");
 
-        assertThat(exported).contains("tenant-E [GH-90000]");
-        assertThat(exported).contains("data.export [GH-90000]");
-        assertThat(exported).contains("Dataset [GH-90000]");
-        assertThat(exported).contains("ds-export [GH-90000]");
+        assertThat(exported).contains("tenant-E");
+        assertThat(exported).contains("data.export");
+        assertThat(exported).contains("Dataset");
+        assertThat(exported).contains("ds-export");
     }
 
     // ── In-memory audit log implementation (for tests) ──────────────────────── // GH-90000
@@ -228,7 +228,7 @@ class AuditLoggingTest extends EventloopTestBase {
         }
 
         String exportAsJson(String tenantId) { // GH-90000
-            StringBuilder sb = new StringBuilder("[ [GH-90000]");
+            StringBuilder sb = new StringBuilder("[");
             queryByTenant(tenantId).forEach(e -> { // GH-90000
                 sb.append("{\"entryId\":\"").append(e.entryId()).append("\"") // GH-90000
                   .append(",\"tenantId\":\"").append(e.tenantId()).append("\"") // GH-90000
@@ -236,12 +236,12 @@ class AuditLoggingTest extends EventloopTestBase {
                   .append(",\"resourceType\":\"").append(e.resourceType()).append("\"") // GH-90000
                   .append(",\"resourceId\":\"").append(e.resourceId()).append("\"") // GH-90000
                   .append(",\"success\":").append(e.success()) // GH-90000
-                  .append("}, [GH-90000]");
+                  .append("},");
             });
             if (!queryByTenant(tenantId).isEmpty()) { // GH-90000
                 sb.setLength(sb.length() - 1); // GH-90000
             }
-            sb.append("] [GH-90000]");
+            sb.append("]");
             return sb.toString(); // GH-90000
         }
     }

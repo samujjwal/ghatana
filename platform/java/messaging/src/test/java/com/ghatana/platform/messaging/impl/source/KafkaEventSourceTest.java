@@ -21,15 +21,15 @@ import static org.mockito.Mockito.when;
  * Uses a mock KafkaConsumerAdapter to verify delegation, lifecycle state,
  * and error handling without requiring a real Kafka broker.
  */
-@DisplayName("KafkaEventSource [GH-90000]")
+@DisplayName("KafkaEventSource")
 class KafkaEventSourceTest extends EventloopTestBase {
 
     @Nested
-    @DisplayName("constructor [GH-90000]")
+    @DisplayName("constructor")
     class Constructor {
 
         @Test
-        @DisplayName("null adapter throws NullPointerException [GH-90000]")
+        @DisplayName("null adapter throws NullPointerException")
         void nullAdapter() { // GH-90000
             assertThatThrownBy(() -> new KafkaEventSource(null)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
@@ -37,11 +37,11 @@ class KafkaEventSourceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("lifecycle [GH-90000]")
+    @DisplayName("lifecycle")
     class Lifecycle {
 
         @Test
-        @DisplayName("start completes successfully [GH-90000]")
+        @DisplayName("start completes successfully")
         void startCompletes() { // GH-90000
             KafkaConsumerAdapter adapter = mock(KafkaConsumerAdapter.class); // GH-90000
             KafkaEventSource source = new KafkaEventSource(adapter); // GH-90000
@@ -50,7 +50,7 @@ class KafkaEventSourceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("stop calls adapter.close() [GH-90000]")
+        @DisplayName("stop calls adapter.close()")
         void stopClosesAdapter() { // GH-90000
             KafkaConsumerAdapter adapter = mock(KafkaConsumerAdapter.class); // GH-90000
             KafkaEventSource source = new KafkaEventSource(adapter); // GH-90000
@@ -61,26 +61,26 @@ class KafkaEventSourceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("next [GH-90000]")
+    @DisplayName("next")
     class Next {
 
         @Test
-        @DisplayName("next before start returns failed Promise [GH-90000]")
+        @DisplayName("next before start returns failed Promise")
         void nextBeforeStart() { // GH-90000
             KafkaConsumerAdapter adapter = mock(KafkaConsumerAdapter.class); // GH-90000
             KafkaEventSource source = new KafkaEventSource(adapter); // GH-90000
 
             try {
                 runPromise(source::next); // GH-90000
-                assertThat(false).as("expected exception [GH-90000]").isTrue();
+                assertThat(false).as("expected exception").isTrue();
             } catch (Exception e) { // GH-90000
                 assertThat(e).isInstanceOf(IllegalStateException.class) // GH-90000
-                        .hasMessageContaining("source not started [GH-90000]");
+                        .hasMessageContaining("source not started");
             }
         }
 
         @Test
-        @DisplayName("next with events returns first event [GH-90000]")
+        @DisplayName("next with events returns first event")
         void nextReturnsFirstEvent() { // GH-90000
             KafkaConsumerAdapter adapter = mock(KafkaConsumerAdapter.class); // GH-90000
             IngestEvent event = mock(IngestEvent.class); // GH-90000
@@ -93,7 +93,7 @@ class KafkaEventSourceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("next with empty list returns failed Promise [GH-90000]")
+        @DisplayName("next with empty list returns failed Promise")
         void nextEmptyList() { // GH-90000
             KafkaConsumerAdapter adapter = mock(KafkaConsumerAdapter.class); // GH-90000
             when(adapter.poll()).thenReturn(Promise.of(List.of())); // GH-90000
@@ -103,15 +103,15 @@ class KafkaEventSourceTest extends EventloopTestBase {
 
             try {
                 runPromise(source::next); // GH-90000
-                assertThat(false).as("expected exception [GH-90000]").isTrue();
+                assertThat(false).as("expected exception").isTrue();
             } catch (Exception e) { // GH-90000
                 assertThat(e).isInstanceOf(IllegalStateException.class) // GH-90000
-                        .hasMessageContaining("no events available [GH-90000]");
+                        .hasMessageContaining("no events available");
             }
         }
 
         @Test
-        @DisplayName("next with null list returns failed Promise [GH-90000]")
+        @DisplayName("next with null list returns failed Promise")
         void nextNullList() { // GH-90000
             KafkaConsumerAdapter adapter = mock(KafkaConsumerAdapter.class); // GH-90000
             when(adapter.poll()).thenReturn(Promise.of(null)); // GH-90000
@@ -121,15 +121,15 @@ class KafkaEventSourceTest extends EventloopTestBase {
 
             try {
                 runPromise(source::next); // GH-90000
-                assertThat(false).as("expected exception [GH-90000]").isTrue();
+                assertThat(false).as("expected exception").isTrue();
             } catch (Exception e) { // GH-90000
                 assertThat(e).isInstanceOf(IllegalStateException.class) // GH-90000
-                        .hasMessageContaining("no events available [GH-90000]");
+                        .hasMessageContaining("no events available");
             }
         }
 
         @Test
-        @DisplayName("next after stop returns failed Promise [GH-90000]")
+        @DisplayName("next after stop returns failed Promise")
         void nextAfterStop() { // GH-90000
             KafkaConsumerAdapter adapter = mock(KafkaConsumerAdapter.class); // GH-90000
             KafkaEventSource source = new KafkaEventSource(adapter); // GH-90000
@@ -138,10 +138,10 @@ class KafkaEventSourceTest extends EventloopTestBase {
 
             try {
                 runPromise(source::next); // GH-90000
-                assertThat(false).as("expected exception [GH-90000]").isTrue();
+                assertThat(false).as("expected exception").isTrue();
             } catch (Exception e) { // GH-90000
                 assertThat(e).isInstanceOf(IllegalStateException.class) // GH-90000
-                        .hasMessageContaining("source not started [GH-90000]");
+                        .hasMessageContaining("source not started");
             }
         }
     }

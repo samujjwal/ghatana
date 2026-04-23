@@ -88,7 +88,7 @@ class TsJsLanguageServiceTest extends EventloopTestBase {
     @Test
     void testPlanFixes() { // GH-90000
         if (!languageService.isAvailable()) { // GH-90000
-            System.out.println("Skipping testPlanFixes: TypeScript/JavaScript not available [GH-90000]");
+            System.out.println("Skipping testPlanFixes: TypeScript/JavaScript not available");
             return;
         }
 
@@ -128,10 +128,10 @@ class TsJsLanguageServiceTest extends EventloopTestBase {
         """;
 
         // Create project structure
-        Path srcDir = projectDir.resolve("src [GH-90000]");
+        Path srcDir = projectDir.resolve("src");
         Files.createDirectories(srcDir); // GH-90000
 
-        Files.writeString(projectDir.resolve("tsconfig.json [GH-90000]"), tsConfig);
-        Files.writeString(srcDir.resolve("index.ts [GH-90000]"), sourceCode);
+        Files.writeString(projectDir.resolve("tsconfig.json"), tsConfig);
+        Files.writeString(srcDir.resolve("index.ts"), sourceCode);
     }
 }

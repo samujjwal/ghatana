@@ -33,12 +33,12 @@ class EventWorkflowIntegrationTest extends EventloopTestBase {
 
     @Test
     @Order(1) // GH-90000
-    @DisplayName("Integration: Should publish event to Data Cloud [GH-90000]")
+    @DisplayName("Integration: Should publish event to Data Cloud")
     void testPublishEvent() throws Exception { // GH-90000
         Event event = Event.builder() // GH-90000
                 .eventId(UUID.randomUUID().toString()) // GH-90000
-                .eventType("PROJECT_CREATED [GH-90000]")
-                .tenantId("test-tenant [GH-90000]")
+                .eventType("PROJECT_CREATED")
+                .tenantId("test-tenant")
                 .payload(Map.of("projectId", "proj-123", "name", "Test Project")) // GH-90000
                 .timestamp(Instant.now()) // GH-90000
                 .build(); // GH-90000
@@ -52,12 +52,12 @@ class EventWorkflowIntegrationTest extends EventloopTestBase {
 
     @Test
     @Order(2) // GH-90000
-    @DisplayName("Integration: Should consume published events [GH-90000]")
+    @DisplayName("Integration: Should consume published events")
     void testConsumeEvents() throws Exception { // GH-90000
         Event event = Event.builder() // GH-90000
                 .eventId(UUID.randomUUID().toString()) // GH-90000
-                .eventType("PHASE_COMPLETED [GH-90000]")
-                .tenantId("test-tenant [GH-90000]")
+                .eventType("PHASE_COMPLETED")
+                .tenantId("test-tenant")
                 .payload(Map.of("phase", "PLANNING", "projectId", "proj-123")) // GH-90000
                 .timestamp(Instant.now()) // GH-90000
                 .build(); // GH-90000
@@ -73,20 +73,20 @@ class EventWorkflowIntegrationTest extends EventloopTestBase {
 
     @Test
     @Order(3) // GH-90000
-    @DisplayName("Integration: Should filter events by type [GH-90000]")
+    @DisplayName("Integration: Should filter events by type")
     void testFilterEventsByType() throws Exception { // GH-90000
         Event event1 = Event.builder() // GH-90000
                 .eventId(UUID.randomUUID().toString()) // GH-90000
-                .eventType("USER_LOGIN [GH-90000]")
-                .tenantId("test-tenant [GH-90000]")
+                .eventType("USER_LOGIN")
+                .tenantId("test-tenant")
                 .payload(Map.of("userId", "user-1")) // GH-90000
                 .timestamp(Instant.now()) // GH-90000
                 .build(); // GH-90000
 
         Event event2 = Event.builder() // GH-90000
                 .eventId(UUID.randomUUID().toString()) // GH-90000
-                .eventType("USER_LOGOUT [GH-90000]")
-                .tenantId("test-tenant [GH-90000]")
+                .eventType("USER_LOGOUT")
+                .tenantId("test-tenant")
                 .payload(Map.of("userId", "user-1")) // GH-90000
                 .timestamp(Instant.now()) // GH-90000
                 .build(); // GH-90000
@@ -99,19 +99,19 @@ class EventWorkflowIntegrationTest extends EventloopTestBase {
 
         assertThat(events).isNotEmpty(); // GH-90000
         for (Event event : events) { // GH-90000
-            assertThat(event.eventType()).isEqualTo("USER_LOGIN [GH-90000]");
+            assertThat(event.eventType()).isEqualTo("USER_LOGIN");
         }
     }
 
     @Test
     @Order(4) // GH-90000
-    @DisplayName("Integration: Should handle event ordering [GH-90000]")
+    @DisplayName("Integration: Should handle event ordering")
     void testEventOrdering() throws Exception { // GH-90000
         for (int i = 0; i < 5; i++) { // GH-90000
             Event event = Event.builder() // GH-90000
                     .eventId(UUID.randomUUID().toString()) // GH-90000
-                    .eventType("SEQUENCE_TEST [GH-90000]")
-                    .tenantId("test-tenant [GH-90000]")
+                    .eventType("SEQUENCE_TEST")
+                    .tenantId("test-tenant")
                     .payload(Map.of("sequence", String.valueOf(i))) // GH-90000
                     .timestamp(Instant.now()) // GH-90000
                     .build(); // GH-90000
@@ -132,20 +132,20 @@ class EventWorkflowIntegrationTest extends EventloopTestBase {
 
     @Test
     @Order(5) // GH-90000
-    @DisplayName("Integration: Should handle multi-tenant event isolation [GH-90000]")
+    @DisplayName("Integration: Should handle multi-tenant event isolation")
     void testMultiTenantIsolation() throws Exception { // GH-90000
         Event tenant1Event = Event.builder() // GH-90000
                 .eventId(UUID.randomUUID().toString()) // GH-90000
-                .eventType("TENANT_EVENT [GH-90000]")
-                .tenantId("tenant-1 [GH-90000]")
+                .eventType("TENANT_EVENT")
+                .tenantId("tenant-1")
                 .payload(Map.of("data", "tenant1")) // GH-90000
                 .timestamp(Instant.now()) // GH-90000
                 .build(); // GH-90000
 
         Event tenant2Event = Event.builder() // GH-90000
                 .eventId(UUID.randomUUID().toString()) // GH-90000
-                .eventType("TENANT_EVENT [GH-90000]")
-                .tenantId("tenant-2 [GH-90000]")
+                .eventType("TENANT_EVENT")
+                .tenantId("tenant-2")
                 .payload(Map.of("data", "tenant2")) // GH-90000
                 .timestamp(Instant.now()) // GH-90000
                 .build(); // GH-90000
@@ -157,7 +157,7 @@ class EventWorkflowIntegrationTest extends EventloopTestBase {
         Event[] t1Events = runPromise(() -> tenant1Events); // GH-90000
 
         for (Event event : t1Events) { // GH-90000
-            assertThat(event.tenantId()).isEqualTo("tenant-1 [GH-90000]");
+            assertThat(event.tenantId()).isEqualTo("tenant-1");
         }
     }
 

@@ -26,10 +26,10 @@ class CMakeBuildSpecTest {
     @Test
     void testBuilderCreatesValidSpec() { // GH-90000
         CMakeBuildSpec spec = CMakeBuildSpec.builder() // GH-90000
-                .projectName("TestProject [GH-90000]")
-                .version("1.0.0 [GH-90000]")
-                .cmakeVersion("3.20 [GH-90000]")
-                .cxxStandard("17 [GH-90000]")
+                .projectName("TestProject")
+                .version("1.0.0")
+                .cmakeVersion("3.20")
+                .cxxStandard("17")
                 .projectType(CMakeBuildSpec.CMakeProjectType.EXECUTABLE) // GH-90000
                 .build(); // GH-90000
 
@@ -44,7 +44,7 @@ class CMakeBuildSpecTest {
     void testBuilderRequiresProjectName() { // GH-90000
         assertThrows(IllegalStateException.class, () -> { // GH-90000
             CMakeBuildSpec.builder() // GH-90000
-                    .version("1.0.0 [GH-90000]")
+                    .version("1.0.0")
                     .build(); // GH-90000
         });
     }
@@ -55,12 +55,12 @@ class CMakeBuildSpecTest {
                 new CMakeBuildSpec.CMakeTarget( // GH-90000
                         "main",
                         "executable",
-                        List.of("src/main.cpp [GH-90000]"),
-                        List.of("include/main.h [GH-90000]"),
+                        List.of("src/main.cpp"),
+                        List.of("include/main.h"),
                         List.of())); // GH-90000
 
         CMakeBuildSpec spec = CMakeBuildSpec.builder() // GH-90000
-                .projectName("TestProject [GH-90000]")
+                .projectName("TestProject")
                 .targets(targets) // GH-90000
                 .build(); // GH-90000
 

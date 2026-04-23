@@ -27,7 +27,7 @@ import static org.mockito.Mockito.mock;
  * @doc.layer test
  * @doc.pattern Test
  */
-@DisplayName("AgentController — Tenant Isolation Regression [GH-90000]")
+@DisplayName("AgentController — Tenant Isolation Regression")
 class AgentControllerTenantTest extends EventloopTestBase {
 
     private AgentController controller;
@@ -41,18 +41,18 @@ class AgentControllerTenantTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Missing Tenant Headers [GH-90000]")
+    @DisplayName("Missing Tenant Headers")
     class MissingTenantHeaders {
 
         @Test
-        @DisplayName("should reject request missing X-Tenant-ID with 400 [GH-90000]")
+        @DisplayName("should reject request missing X-Tenant-ID with 400")
         void shouldRejectMissingTenantId() { // GH-90000
             // GIVEN — request with workspace+org but NO tenant header
             String body = "{\"prompt\": \"hello\", \"workspaceId\": \"ws-1\"}";
             HttpRequest request = HttpRequest.builder(HttpMethod.POST, // GH-90000
                     "http://localhost/api/v1/agents/copilot/execute")
-                    .withHeader(HttpHeaders.of("X-Workspace-ID [GH-90000]"), "ws-1")
-                    .withHeader(HttpHeaders.of("X-Organization-ID [GH-90000]"), "org-1")
+                    .withHeader(HttpHeaders.of("X-Workspace-ID"), "ws-1")
+                    .withHeader(HttpHeaders.of("X-Organization-ID"), "org-1")
                     .withBody(body.getBytes()) // GH-90000
                     .build(); // GH-90000
 
@@ -64,14 +64,14 @@ class AgentControllerTenantTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should reject request missing X-Organization-ID with 400 [GH-90000]")
+        @DisplayName("should reject request missing X-Organization-ID with 400")
         void shouldRejectMissingOrganizationId() { // GH-90000
             // GIVEN — request with tenant+workspace but NO org header
             String body = "{\"prompt\": \"hello\", \"workspaceId\": \"ws-1\"}";
             HttpRequest request = HttpRequest.builder(HttpMethod.POST, // GH-90000
                     "http://localhost/api/v1/agents/copilot/execute")
-                    .withHeader(HttpHeaders.of("X-Workspace-ID [GH-90000]"), "ws-1")
-                    .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-1")
+                    .withHeader(HttpHeaders.of("X-Workspace-ID"), "ws-1")
+                    .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
                     .withBody(body.getBytes()) // GH-90000
                     .build(); // GH-90000
 
@@ -83,14 +83,14 @@ class AgentControllerTenantTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should reject request missing X-Workspace-ID with 400 [GH-90000]")
+        @DisplayName("should reject request missing X-Workspace-ID with 400")
         void shouldRejectMissingWorkspaceId() { // GH-90000
             // GIVEN — request with tenant+org but NO workspace header or body field
             String body = "{\"prompt\": \"hello\"}";
             HttpRequest request = HttpRequest.builder(HttpMethod.POST, // GH-90000
                     "http://localhost/api/v1/agents/copilot/execute")
-                    .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-1")
-                    .withHeader(HttpHeaders.of("X-Organization-ID [GH-90000]"), "org-1")
+                    .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+                    .withHeader(HttpHeaders.of("X-Organization-ID"), "org-1")
                     .withBody(body.getBytes()) // GH-90000
                     .build(); // GH-90000
 
@@ -102,15 +102,15 @@ class AgentControllerTenantTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should accept request with all required headers [GH-90000]")
+        @DisplayName("should accept request with all required headers")
         void shouldAcceptWithAllHeaders() { // GH-90000
             // GIVEN — request with all required headers
             String body = "{\"prompt\": \"hello\", \"workspaceId\": \"ws-1\"}";
             HttpRequest request = HttpRequest.builder(HttpMethod.POST, // GH-90000
                     "http://localhost/api/v1/agents/copilot/execute")
-                    .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-1")
-                    .withHeader(HttpHeaders.of("X-Organization-ID [GH-90000]"), "org-1")
-                    .withHeader(HttpHeaders.of("X-Workspace-ID [GH-90000]"), "ws-1")
+                    .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+                    .withHeader(HttpHeaders.of("X-Organization-ID"), "org-1")
+                    .withHeader(HttpHeaders.of("X-Workspace-ID"), "ws-1")
                     .withBody(body.getBytes()) // GH-90000
                     .build(); // GH-90000
 

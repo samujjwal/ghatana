@@ -44,7 +44,8 @@ import java.util.UUID;
  * @doc.type class
  * @doc.purpose Enforce JWT authentication on launcher endpoints
  * @doc.layer product
- */
+  * @doc.pattern Filter
+*/
 public final class AepAuthFilter implements AsyncServlet {
 
     private static final Logger log = LoggerFactory.getLogger(AepAuthFilter.class);

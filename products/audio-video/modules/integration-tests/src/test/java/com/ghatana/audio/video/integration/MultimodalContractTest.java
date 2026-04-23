@@ -34,16 +34,16 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer test
  * @doc.pattern ContractTest
  */
-@Tag("contract [GH-90000]")
-@DisplayName("Multimodal Service API Contract Tests (AV-P1-07) [GH-90000]")
+@Tag("contract")
+@DisplayName("Multimodal Service API Contract Tests (AV-P1-07)")
 class MultimodalContractTest {
 
     @Nested
-    @DisplayName("MultimodalRequest contract [GH-90000]")
+    @DisplayName("MultimodalRequest contract")
     class RequestContract {
 
         @Test
-        @DisplayName("hasAudio returns false when no audio data provided [GH-90000]")
+        @DisplayName("hasAudio returns false when no audio data provided")
         void shouldReturnFalseHasAudioWhenAbsent() { // GH-90000
             MultimodalRequest request = MultimodalRequest.builder() // GH-90000
                     .imageData(new byte[]{1, 2, 3}) // GH-90000
@@ -55,7 +55,7 @@ class MultimodalContractTest {
         }
 
         @Test
-        @DisplayName("hasAudio returns false for empty byte array [GH-90000]")
+        @DisplayName("hasAudio returns false for empty byte array")
         void shouldReturnFalseHasAudioForEmptyArray() { // GH-90000
             MultimodalRequest request = MultimodalRequest.builder() // GH-90000
                     .audioData(new byte[0]) // GH-90000
@@ -65,7 +65,7 @@ class MultimodalContractTest {
         }
 
         @Test
-        @DisplayName("hasAudio/hasImage/hasVideo all true when all provided [GH-90000]")
+        @DisplayName("hasAudio/hasImage/hasVideo all true when all provided")
         void shouldReportAllModalitiesWhenAllPresent() { // GH-90000
             MultimodalRequest request = MultimodalRequest.builder() // GH-90000
                     .audioData(new byte[]{1}) // GH-90000
@@ -79,7 +79,7 @@ class MultimodalContractTest {
         }
 
         @Test
-        @DisplayName("getText returns empty string when not set [GH-90000]")
+        @DisplayName("getText returns empty string when not set")
         void shouldReturnEmptyStringForAbsentText() { // GH-90000
             MultimodalRequest request = MultimodalRequest.builder().build(); // GH-90000
 
@@ -87,7 +87,7 @@ class MultimodalContractTest {
         }
 
         @Test
-        @DisplayName("videoSampleFps defaults to 1 when not set [GH-90000]")
+        @DisplayName("videoSampleFps defaults to 1 when not set")
         void shouldDefaultVideoSampleFpsToOne() { // GH-90000
             MultimodalRequest request = MultimodalRequest.builder().build(); // GH-90000
 
@@ -95,7 +95,7 @@ class MultimodalContractTest {
         }
 
         @Test
-        @DisplayName("videoMaxFrames defaults to 50 when not set [GH-90000]")
+        @DisplayName("videoMaxFrames defaults to 50 when not set")
         void shouldDefaultVideoMaxFramesToFifty() { // GH-90000
             MultimodalRequest request = MultimodalRequest.builder().build(); // GH-90000
 
@@ -104,11 +104,11 @@ class MultimodalContractTest {
     }
 
     @Nested
-    @DisplayName("MultimodalResult contract [GH-90000]")
+    @DisplayName("MultimodalResult contract")
     class ResultContract {
 
         @Test
-        @DisplayName("combinedAnalysis defaults to empty string (never null) [GH-90000]")
+        @DisplayName("combinedAnalysis defaults to empty string (never null)")
         void combinedAnalysisDefaultsToEmptyString() { // GH-90000
             MultimodalResult result = MultimodalResult.builder().build(); // GH-90000
 
@@ -116,7 +116,7 @@ class MultimodalContractTest {
         }
 
         @Test
-        @DisplayName("processingTimeMs is zero when not set [GH-90000]")
+        @DisplayName("processingTimeMs is zero when not set")
         void processingTimeMsDefaultsToZero() { // GH-90000
             MultimodalResult result = MultimodalResult.builder().build(); // GH-90000
 
@@ -124,14 +124,14 @@ class MultimodalContractTest {
         }
 
         @Test
-        @DisplayName("Result fields are accessible after builder construction [GH-90000]")
+        @DisplayName("Result fields are accessible after builder construction")
         void shouldExposeBuilderSetFields() { // GH-90000
             MultimodalResult result = MultimodalResult.builder() // GH-90000
-                    .combinedAnalysis("Audio: Hello | Scene: Room [GH-90000]")
+                    .combinedAnalysis("Audio: Hello | Scene: Room")
                     .processingTimeMs(99L) // GH-90000
                     .build(); // GH-90000
 
-            assertThat(result.getCombinedAnalysis()).isEqualTo("Audio: Hello | Scene: Room [GH-90000]");
+            assertThat(result.getCombinedAnalysis()).isEqualTo("Audio: Hello | Scene: Room");
             assertThat(result.getProcessingTimeMs()).isEqualTo(99L); // GH-90000
         }
     }

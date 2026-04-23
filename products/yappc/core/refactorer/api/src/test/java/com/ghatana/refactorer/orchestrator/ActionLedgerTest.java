@@ -27,7 +27,7 @@ class ActionLedgerTest {
 
     @BeforeEach
     void setUp() throws IOException { // GH-90000
-        ledgerFile = tempDir.resolve("actions.ledger [GH-90000]");
+        ledgerFile = tempDir.resolve("actions.ledger");
         ledger = new ActionLedger(ledgerFile); // GH-90000
     }
 
@@ -62,7 +62,7 @@ class ActionLedgerTest {
         assertTrue(json.contains("\"ruleId\":\"test-rule\""), "Should contain rule ID"); // GH-90000
         assertTrue(json.contains("\"diffHash\":\"abc123\""), "Should contain hash"); // GH-90000
         assertTrue(json.contains("\"outcome\":\"APPLIED\""), "Should contain status"); // GH-90000
-        assertTrue(json.endsWith("} [GH-90000]"), "Should end with closing brace");
+        assertTrue(json.endsWith("}"), "Should end with closing brace");
     }
 
     @Test
@@ -123,7 +123,7 @@ class ActionLedgerTest {
         for (String line : lines) { // GH-90000
             String json = line.trim(); // GH-90000
             assertTrue(json.startsWith("{\"ts\":"), "Should start with timestamp"); // GH-90000
-            assertTrue(json.endsWith("} [GH-90000]"), "Should end with closing brace");
+            assertTrue(json.endsWith("}"), "Should end with closing brace");
             assertTrue(json.contains("\"repo\":"), "Should contain repo field"); // GH-90000
             assertTrue(json.contains("\"file\":"), "Should contain file field"); // GH-90000
             assertTrue(json.contains("\"ruleId\":"), "Should contain ruleId field"); // GH-90000

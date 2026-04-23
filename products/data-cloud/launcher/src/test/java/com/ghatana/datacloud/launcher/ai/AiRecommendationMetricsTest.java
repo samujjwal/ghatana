@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.within;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AiRecommendationMetrics [GH-90000]")
+@DisplayName("AiRecommendationMetrics")
 class AiRecommendationMetricsTest {
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -37,17 +37,17 @@ class AiRecommendationMetricsTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("NOOP singleton [GH-90000]")
+    @DisplayName("NOOP singleton")
     class NoopTests {
 
         @Test
-        @DisplayName("NOOP is not null [GH-90000]")
+        @DisplayName("NOOP is not null")
         void noopIsNotNull() { // GH-90000
             assertThat(AiRecommendationMetrics.NOOP).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("NOOP.recordRecommendation does not throw [GH-90000]")
+        @DisplayName("NOOP.recordRecommendation does not throw")
         void noopRecordRecommendation_doesNotThrow() { // GH-90000
             assertThatCode(() -> // GH-90000
                 AiRecommendationMetrics.NOOP.recordRecommendation( // GH-90000
@@ -56,7 +56,7 @@ class AiRecommendationMetricsTest {
         }
 
         @Test
-        @DisplayName("NOOP.recordError does not throw with null cause [GH-90000]")
+        @DisplayName("NOOP.recordError does not throw with null cause")
         void noopRecordError_doesNotThrow() { // GH-90000
             assertThatCode(() -> // GH-90000
                 AiRecommendationMetrics.NOOP.recordError( // GH-90000
@@ -65,7 +65,7 @@ class AiRecommendationMetricsTest {
         }
 
         @Test
-        @DisplayName("NOOP.recordFeedback does not throw [GH-90000]")
+        @DisplayName("NOOP.recordFeedback does not throw")
         void noopRecordFeedback_doesNotThrow() { // GH-90000
             assertThatCode(() -> // GH-90000
                 AiRecommendationMetrics.NOOP.recordFeedback( // GH-90000
@@ -74,14 +74,14 @@ class AiRecommendationMetricsTest {
         }
 
         @Test
-        @DisplayName("NOOP.getMeanConfidence returns NaN (no data, null metrics) [GH-90000]")
+        @DisplayName("NOOP.getMeanConfidence returns NaN (no data, null metrics)")
         void noopGetMeanConfidence_isNaN() { // GH-90000
             assertThat(AiRecommendationMetrics.NOOP.getMeanConfidence( // GH-90000
                 AiRecommendationMetrics.TYPE_ENTITY_SUGGEST)).isNaN(); // GH-90000
         }
 
         @Test
-        @DisplayName("NOOP.getRequestCount returns 0 (null metrics path exits early) [GH-90000]")
+        @DisplayName("NOOP.getRequestCount returns 0 (null metrics path exits early)")
         void noopGetRequestCount_isZero() { // GH-90000
             assertThat(AiRecommendationMetrics.NOOP.getRequestCount( // GH-90000
                 AiRecommendationMetrics.TYPE_PIPELINE_HINT)).isZero(); // GH-90000
@@ -93,11 +93,11 @@ class AiRecommendationMetricsTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("recordRecommendation – in-process counters [GH-90000]")
+    @DisplayName("recordRecommendation – in-process counters")
     class RecordRecommendationTests {
 
         @Test
-        @DisplayName("getRequestCount increments on each call [GH-90000]")
+        @DisplayName("getRequestCount increments on each call")
         void requestCountIncrements() { // GH-90000
             AiRecommendationMetrics m = withNoopCollector(); // GH-90000
             m.recordRecommendation(AiRecommendationMetrics.TYPE_ENTITY_SUGGEST, "t1", 0.8, false, 10L); // GH-90000
@@ -106,7 +106,7 @@ class AiRecommendationMetricsTest {
         }
 
         @Test
-        @DisplayName("different types have independent counters [GH-90000]")
+        @DisplayName("different types have independent counters")
         void differentTypesHaveIndependentCounters() { // GH-90000
             AiRecommendationMetrics m = withNoopCollector(); // GH-90000
             m.recordRecommendation(AiRecommendationMetrics.TYPE_ENTITY_SUGGEST,    "t1", 0.7, false, 5L); // GH-90000
@@ -119,7 +119,7 @@ class AiRecommendationMetricsTest {
         }
 
         @Test
-        @DisplayName("getMeanConfidence returns mean of recorded values [GH-90000]")
+        @DisplayName("getMeanConfidence returns mean of recorded values")
         void meanConfidenceIsAccurate() { // GH-90000
             AiRecommendationMetrics m = withNoopCollector(); // GH-90000
             m.recordRecommendation(AiRecommendationMetrics.TYPE_BRAIN_EXPLAIN, "t1", 0.80, false, 5L); // GH-90000
@@ -131,14 +131,14 @@ class AiRecommendationMetricsTest {
         }
 
         @Test
-        @DisplayName("getMeanConfidence is NaN before any observations [GH-90000]")
+        @DisplayName("getMeanConfidence is NaN before any observations")
         void meanConfidenceIsNaNBeforeAnyData() { // GH-90000
             AiRecommendationMetrics m = withNoopCollector(); // GH-90000
             assertThat(m.getMeanConfidence(AiRecommendationMetrics.TYPE_VOICE_INTENT)).isNaN(); // GH-90000
         }
 
         @Test
-        @DisplayName("null type is silently ignored (no counter increment) [GH-90000]")
+        @DisplayName("null type is silently ignored (no counter increment)")
         void nullType_isIgnored() { // GH-90000
             AiRecommendationMetrics m = withNoopCollector(); // GH-90000
             assertThatCode(() -> m.recordRecommendation(null, "t1", 0.5, false, 10L)) // GH-90000
@@ -148,7 +148,7 @@ class AiRecommendationMetricsTest {
         }
 
         @Test
-        @DisplayName("blank type is silently ignored [GH-90000]")
+        @DisplayName("blank type is silently ignored")
         void blankType_isIgnored() { // GH-90000
             AiRecommendationMetrics m = withNoopCollector(); // GH-90000
             assertThatCode(() -> m.recordRecommendation("  ", "t1", 0.5, false, 10L)) // GH-90000
@@ -156,7 +156,7 @@ class AiRecommendationMetricsTest {
         }
 
         @Test
-        @DisplayName("single observation: mean equals that observation [GH-90000]")
+        @DisplayName("single observation: mean equals that observation")
         void singleObservation_meanEqualsThatValue() { // GH-90000
             AiRecommendationMetrics m = withNoopCollector(); // GH-90000
             m.recordRecommendation(AiRecommendationMetrics.TYPE_PIPELINE_HINT, "t1", 0.77, false, 15L); // GH-90000
@@ -170,11 +170,11 @@ class AiRecommendationMetricsTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("recordFeedback [GH-90000]")
+    @DisplayName("recordFeedback")
     class RecordFeedbackTests {
 
         @Test
-        @DisplayName("thumbs-up feedback does not throw [GH-90000]")
+        @DisplayName("thumbs-up feedback does not throw")
         void thumbsUp_doesNotThrow() { // GH-90000
             assertThatCode(() -> // GH-90000
                 withNoopCollector().recordFeedback( // GH-90000
@@ -183,7 +183,7 @@ class AiRecommendationMetricsTest {
         }
 
         @Test
-        @DisplayName("thumbs-down feedback does not throw [GH-90000]")
+        @DisplayName("thumbs-down feedback does not throw")
         void thumbsDown_doesNotThrow() { // GH-90000
             assertThatCode(() -> // GH-90000
                 withNoopCollector().recordFeedback( // GH-90000
@@ -192,7 +192,7 @@ class AiRecommendationMetricsTest {
         }
 
         @Test
-        @DisplayName("null type does not throw [GH-90000]")
+        @DisplayName("null type does not throw")
         void nullType_doesNotThrow() { // GH-90000
             assertThatCode(() -> // GH-90000
                 withNoopCollector().recordFeedback(null, "t1", true)) // GH-90000
@@ -205,21 +205,21 @@ class AiRecommendationMetricsTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("recordError [GH-90000]")
+    @DisplayName("recordError")
     class RecordErrorTests {
 
         @Test
-        @DisplayName("records error without throwing [GH-90000]")
+        @DisplayName("records error without throwing")
         void recordsErrorWithoutThrowing() { // GH-90000
             AiRecommendationMetrics m = withNoopCollector(); // GH-90000
-            Exception cause = new RuntimeException("LLM timeout [GH-90000]");
+            Exception cause = new RuntimeException("LLM timeout");
             assertThatCode(() -> m.recordError( // GH-90000
                 AiRecommendationMetrics.TYPE_BRAIN_EXPLAIN, "t1", cause))
                 .doesNotThrowAnyException(); // GH-90000
         }
 
         @Test
-        @DisplayName("null cause does not throw [GH-90000]")
+        @DisplayName("null cause does not throw")
         void nullCause_doesNotThrow() { // GH-90000
             assertThatCode(() -> // GH-90000
                 withNoopCollector().recordError( // GH-90000
@@ -233,11 +233,11 @@ class AiRecommendationMetricsTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Tenant tag sanitisation [GH-90000]")
+    @DisplayName("Tenant tag sanitisation")
     class TenantTagTests {
 
         @Test
-        @DisplayName("null tenant does not throw and still records [GH-90000]")
+        @DisplayName("null tenant does not throw and still records")
         void nullTenant_doesNotThrow() { // GH-90000
             AiRecommendationMetrics m = withNoopCollector(); // GH-90000
             assertThatCode(() -> m.recordRecommendation( // GH-90000
@@ -247,7 +247,7 @@ class AiRecommendationMetricsTest {
         }
 
         @Test
-        @DisplayName("very long tenant ID (> 64 chars) does not throw [GH-90000]")
+        @DisplayName("very long tenant ID (> 64 chars) does not throw")
         void longTenantId_doesNotThrow() { // GH-90000
             String longTenant = "t".repeat(200); // GH-90000
             AiRecommendationMetrics m = withNoopCollector(); // GH-90000
@@ -257,7 +257,7 @@ class AiRecommendationMetricsTest {
         }
 
         @Test
-        @DisplayName("tenant with special characters does not throw [GH-90000]")
+        @DisplayName("tenant with special characters does not throw")
         void tenantWithSpecialChars_doesNotThrow() { // GH-90000
             AiRecommendationMetrics m = withNoopCollector(); // GH-90000
             assertThatCode(() -> m.recordRecommendation( // GH-90000
@@ -271,7 +271,7 @@ class AiRecommendationMetricsTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("TYPE_* constants [GH-90000]")
+    @DisplayName("TYPE_* constants")
     class TypeConstantTests {
 
         @ParameterizedTest
@@ -282,7 +282,7 @@ class AiRecommendationMetricsTest {
             AiRecommendationMetrics.TYPE_BRAIN_EXPLAIN,
             AiRecommendationMetrics.TYPE_VOICE_INTENT
         })
-        @DisplayName("each TYPE_* constant is accepted by recordRecommendation [GH-90000]")
+        @DisplayName("each TYPE_* constant is accepted by recordRecommendation")
         void eachTypeConstant_isAccepted(String type) { // GH-90000
             AiRecommendationMetrics m = withNoopCollector(); // GH-90000
             assertThatCode(() -> m.recordRecommendation(type, "tenant-1", 0.75, false, 10L)) // GH-90000
@@ -296,11 +296,11 @@ class AiRecommendationMetricsTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Thread-safety [GH-90000]")
+    @DisplayName("Thread-safety")
     class ThreadSafetyTests {
 
         @Test
-        @DisplayName("concurrent recordRecommendation calls produce consistent count [GH-90000]")
+        @DisplayName("concurrent recordRecommendation calls produce consistent count")
         void concurrentCalls_produceConsistentCount() throws InterruptedException { // GH-90000
             AiRecommendationMetrics m = withNoopCollector(); // GH-90000
             int threads = 10;

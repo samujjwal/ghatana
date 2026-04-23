@@ -27,7 +27,7 @@ import static org.mockito.Mockito.when;
  * {@link com.ghatana.yappc.agent.spi.AgentRuntimePort#dispatch} to
  * the underlying {@link AgentDispatcher}.
  */
-@DisplayName("AepAgentRuntimeAdapter — delegation contract [GH-90000]")
+@DisplayName("AepAgentRuntimeAdapter — delegation contract")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class AepAgentRuntimeAdapterTest {
 
@@ -45,7 +45,7 @@ class AepAgentRuntimeAdapterTest {
     }
 
     @Test
-    @DisplayName("dispatch delegates to AgentDispatcher [GH-90000]")
+    @DisplayName("dispatch delegates to AgentDispatcher")
     void dispatch_delegatesToAgentDispatcher() { // GH-90000
         String agentId = "code-gen-v1";
         String input = "write a hello-world function";
@@ -60,7 +60,7 @@ class AepAgentRuntimeAdapterTest {
     }
 
     @Test
-    @DisplayName("dispatch forwards non-string payloads without coercion [GH-90000]")
+    @DisplayName("dispatch forwards non-string payloads without coercion")
     void dispatch_forwardsArbitraryPayloadType() { // GH-90000
         String agentId = "review-agent";
         Integer input = 42;
@@ -74,7 +74,7 @@ class AepAgentRuntimeAdapterTest {
     }
 
     @Test
-    @DisplayName("constructor rejects null delegate [GH-90000]")
+    @DisplayName("constructor rejects null delegate")
     void constructor_rejectsNullDelegate() { // GH-90000
         assertThatThrownBy(() -> new AepAgentRuntimeAdapter(null)) // GH-90000
                 .isInstanceOf(NullPointerException.class); // GH-90000

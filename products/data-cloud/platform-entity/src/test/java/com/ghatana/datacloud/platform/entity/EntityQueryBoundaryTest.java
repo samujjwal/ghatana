@@ -33,7 +33,7 @@ import static org.mockito.Mockito.lenient;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("[Entity]: query_boundary_schema_versioning_cdc [GH-90000]")
+@DisplayName("[Entity]: query_boundary_schema_versioning_cdc")
 class EntityQueryBoundaryTest extends EventloopTestBase {
 
     @Mock
@@ -53,7 +53,7 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("[QuerySpec]: negative_offset_normalized_to_zero [GH-90000]")
+    @DisplayName("[QuerySpec]: negative_offset_normalized_to_zero")
     void negativeOffsetNormalizedToZero() { // GH-90000
         EntityStore.QuerySpec spec = new EntityStore.QuerySpec( // GH-90000
             "products",
@@ -68,7 +68,7 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[QuerySpec]: zero_limit_defaults_to_100 [GH-90000]")
+    @DisplayName("[QuerySpec]: zero_limit_defaults_to_100")
     void zeroLimitDefaultsTo100() { // GH-90000
         EntityStore.QuerySpec spec = new EntityStore.QuerySpec( // GH-90000
             "products",
@@ -82,16 +82,16 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[QuerySpec]: limit_above_max_throws_exception [GH-90000]")
+    @DisplayName("[QuerySpec]: limit_above_max_throws_exception")
     void limitAboveMaxThrowsException() { // GH-90000
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> // GH-90000
             new EntityStore.QuerySpec("products", List.of(), List.of(), 0, 10001) // GH-90000
         ).isInstanceOf(IllegalArgumentException.class) // GH-90000
-            .hasMessageContaining("exceeds maximum allowed value [GH-90000]");
+            .hasMessageContaining("exceeds maximum allowed value");
     }
 
     @Test
-    @DisplayName("[QuerySpec]: max_limit_boundary_accepted [GH-90000]")
+    @DisplayName("[QuerySpec]: max_limit_boundary_accepted")
     void maxLimitBoundaryAccepted() { // GH-90000
         EntityStore.QuerySpec spec = new EntityStore.QuerySpec( // GH-90000
             "products",
@@ -109,17 +109,17 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("[Filter]: eq_operator_creates_equality_filter [GH-90000]")
+    @DisplayName("[Filter]: eq_operator_creates_equality_filter")
     void eqOperatorCreatesEqualityFilter() { // GH-90000
         EntityStore.Filter filter = EntityStore.Filter.eq("status", "active"); // GH-90000
 
-        assertThat(filter.field()).isEqualTo("status [GH-90000]");
+        assertThat(filter.field()).isEqualTo("status");
         assertThat(filter.operator()).isEqualTo(EntityStore.Operator.EQ); // GH-90000
-        assertThat(filter.value()).isEqualTo("active [GH-90000]");
+        assertThat(filter.value()).isEqualTo("active");
     }
 
     @Test
-    @DisplayName("[Filter]: comparison_operators_created_correctly [GH-90000]")
+    @DisplayName("[Filter]: comparison_operators_created_correctly")
     void comparisonOperatorsCreatedCorrectly() { // GH-90000
         EntityStore.Filter gt = EntityStore.Filter.gt("price", 100); // GH-90000
         EntityStore.Filter gte = EntityStore.Filter.gte("price", 100); // GH-90000
@@ -133,16 +133,16 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[Filter]: like_operator_creates_pattern_filter [GH-90000]")
+    @DisplayName("[Filter]: like_operator_creates_pattern_filter")
     void likeOperatorCreatesPatternFilter() { // GH-90000
         EntityStore.Filter filter = EntityStore.Filter.like("name", "test%"); // GH-90000
 
         assertThat(filter.operator()).isEqualTo(EntityStore.Operator.LIKE); // GH-90000
-        assertThat(filter.value()).isEqualTo("test% [GH-90000]");
+        assertThat(filter.value()).isEqualTo("test%");
     }
 
     @Test
-    @DisplayName("[Filter]: in_operator_creates_set_membership_filter [GH-90000]")
+    @DisplayName("[Filter]: in_operator_creates_set_membership_filter")
     void inOperatorCreatesSetMembershipFilter() { // GH-90000
         List<String> values = List.of("active", "pending"); // GH-90000
         EntityStore.Filter filter = EntityStore.Filter.in("status", values); // GH-90000
@@ -156,20 +156,20 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("[Sort]: asc_creates_ascending_sort [GH-90000]")
+    @DisplayName("[Sort]: asc_creates_ascending_sort")
     void ascCreatesAscendingSort() { // GH-90000
-        EntityStore.Sort sort = EntityStore.Sort.asc("createdAt [GH-90000]");
+        EntityStore.Sort sort = EntityStore.Sort.asc("createdAt");
 
-        assertThat(sort.field()).isEqualTo("createdAt [GH-90000]");
+        assertThat(sort.field()).isEqualTo("createdAt");
         assertThat(sort.direction()).isEqualTo(EntityStore.Direction.ASC); // GH-90000
     }
 
     @Test
-    @DisplayName("[Sort]: desc_creates_descending_sort [GH-90000]")
+    @DisplayName("[Sort]: desc_creates_descending_sort")
     void descCreatesDescendingSort() { // GH-90000
-        EntityStore.Sort sort = EntityStore.Sort.desc("createdAt [GH-90000]");
+        EntityStore.Sort sort = EntityStore.Sort.desc("createdAt");
 
-        assertThat(sort.field()).isEqualTo("createdAt [GH-90000]");
+        assertThat(sort.field()).isEqualTo("createdAt");
         assertThat(sort.direction()).isEqualTo(EntityStore.Direction.DESC); // GH-90000
     }
 
@@ -178,13 +178,13 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("[Entity]: builder_creates_entity_with_all_fields [GH-90000]")
+    @DisplayName("[Entity]: builder_creates_entity_with_all_fields")
     void builderCreatesEntityWithAllFields() { // GH-90000
-        Map<String, Object> entity = TestEntityBuilder.create("products [GH-90000]")
-            .withId("prod-001 [GH-90000]")
+        Map<String, Object> entity = TestEntityBuilder.create("products")
+            .withId("prod-001")
             .withField("name", "Test Product") // GH-90000
             .withField("price", 29.99) // GH-90000
-            .withTenant("tenant-alpha [GH-90000]")
+            .withTenant("tenant-alpha")
             .withVersion(1) // GH-90000
             .build(); // GH-90000
 
@@ -197,10 +197,10 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[Entity]: product_template_creates_valid_product [GH-90000]")
+    @DisplayName("[Entity]: product_template_creates_valid_product")
     void productTemplateCreatesValidProduct() { // GH-90000
         Map<String, Object> product = TestEntityBuilder.product() // GH-90000
-            .withId("prod-template-001 [GH-90000]")
+            .withId("prod-template-001")
             .build(); // GH-90000
 
         assertThat(product).containsEntry("collection", "products"); // GH-90000
@@ -208,10 +208,10 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[Entity]: customer_template_creates_valid_customer [GH-90000]")
+    @DisplayName("[Entity]: customer_template_creates_valid_customer")
     void customerTemplateCreatesValidCustomer() { // GH-90000
         Map<String, Object> customer = TestEntityBuilder.customer() // GH-90000
-            .withId("cust-001 [GH-90000]")
+            .withId("cust-001")
             .build(); // GH-90000
 
         assertThat(customer).containsEntry("collection", "customers"); // GH-90000
@@ -223,7 +223,7 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("[QueryResult]: empty_result_has_zero_count [GH-90000]")
+    @DisplayName("[QueryResult]: empty_result_has_zero_count")
     void emptyResultHasZeroCount() { // GH-90000
         EntityStore.QueryResult result = runPromise(() -> Promise.of(EntityStore.QueryResult.empty())); // GH-90000
 
@@ -233,10 +233,10 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[QueryResult]: result_with_entities_calculates_hasMore [GH-90000]")
+    @DisplayName("[QueryResult]: result_with_entities_calculates_hasMore")
     void resultWithEntitiesCalculatesHasMore() { // GH-90000
         EntityStore.Entity entity = EntityStore.Entity.builder() // GH-90000
-            .collection("products [GH-90000]")
+            .collection("products")
             .data(Map.of("name", "Test")) // GH-90000
             .build(); // GH-90000
 
@@ -253,15 +253,15 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("[EntityId]: of_creates_id_from_string [GH-90000]")
+    @DisplayName("[EntityId]: of_creates_id_from_string")
     void ofCreatesIdFromString() { // GH-90000
-        EntityStore.EntityId id = EntityStore.EntityId.of("test-id-123 [GH-90000]");
+        EntityStore.EntityId id = EntityStore.EntityId.of("test-id-123");
 
-        assertThat(id.value()).isEqualTo("test-id-123 [GH-90000]");
+        assertThat(id.value()).isEqualTo("test-id-123");
     }
 
     @Test
-    @DisplayName("[EntityId]: random_creates_uuid_based_id [GH-90000]")
+    @DisplayName("[EntityId]: random_creates_uuid_based_id")
     void randomCreatesUuidBasedId() { // GH-90000
         EntityStore.EntityId id = EntityStore.EntityId.random(); // GH-90000
 
@@ -270,12 +270,12 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[EntityId]: blank_value_throws_exception [GH-90000]")
+    @DisplayName("[EntityId]: blank_value_throws_exception")
     void blankValueThrowsException() { // GH-90000
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> // GH-90000
-            new EntityStore.EntityId(" [GH-90000]")
+            new EntityStore.EntityId("")
         ).isInstanceOf(IllegalArgumentException.class) // GH-90000
-            .hasMessageContaining("cannot be blank [GH-90000]");
+            .hasMessageContaining("cannot be blank");
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -283,7 +283,7 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("[EntityMetadata]: empty_creates_default_metadata [GH-90000]")
+    @DisplayName("[EntityMetadata]: empty_creates_default_metadata")
     void emptyCreatesDefaultMetadata() { // GH-90000
         EntityStore.EntityMetadata metadata = EntityStore.EntityMetadata.empty(); // GH-90000
 
@@ -295,13 +295,13 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[EntityMetadata]: withUpdate_increments_version_and_updates_timestamp [GH-90000]")
+    @DisplayName("[EntityMetadata]: withUpdate_increments_version_and_updates_timestamp")
     void withUpdateIncrementsVersionAndUpdatesTimestamp() { // GH-90000
         EntityStore.EntityMetadata original = EntityStore.EntityMetadata.empty(); // GH-90000
-        EntityStore.EntityMetadata updated = original.withUpdate("user-123 [GH-90000]");
+        EntityStore.EntityMetadata updated = original.withUpdate("user-123");
 
         assertThat(updated.version()).isEqualTo(original.version() + 1); // GH-90000
-        assertThat(updated.updatedBy()).hasValue("user-123 [GH-90000]");
+        assertThat(updated.updatedBy()).hasValue("user-123");
         assertThat(updated.createdAt()).isEqualTo(original.createdAt()); // GH-90000
     }
 
@@ -317,7 +317,7 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
         }
 
         static TestEntityBuilder product() { // GH-90000
-            return create("products [GH-90000]")
+            return create("products")
                 .withField("name", "Test Product") // GH-90000
                 .withField("sku", "SKU-001") // GH-90000
                 .withField("price", 29.99) // GH-90000
@@ -326,7 +326,7 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
         }
 
         static TestEntityBuilder customer() { // GH-90000
-            return create("customers [GH-90000]")
+            return create("customers")
                 .withField("name", "Test Customer") // GH-90000
                 .withField("email", "customer@example.com") // GH-90000
                 .withField("phone", "+977-0000000000") // GH-90000

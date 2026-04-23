@@ -16,11 +16,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @doc.purpose Verifies canonical BoundingBox math used by all vision detectors
  * @doc.layer product
  */
-@DisplayName("BoundingBox Tests [GH-90000]")
+@DisplayName("BoundingBox Tests")
 class BoundingBoxTest extends EventloopTestBase {
 
     @Test
-    @DisplayName("Should calculate IoU for overlapping boxes [GH-90000]")
+    @DisplayName("Should calculate IoU for overlapping boxes")
     void shouldCalculateIouForOverlappingBoxes() { // GH-90000
         BoundingBox left = BoundingBox.builder().x(0).y(0).width(4).height(4).build(); // GH-90000
         BoundingBox right = BoundingBox.builder().x(2).y(2).width(4).height(4).build(); // GH-90000
@@ -32,7 +32,7 @@ class BoundingBoxTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should expose default and tuned detection presets [GH-90000]")
+    @DisplayName("Should expose default and tuned detection presets")
     void shouldExposeDefaultAndTunedDetectionPresets() { // GH-90000
         DetectionOptions defaults = runPromise(() -> Promise.of(DetectionOptions.defaults())); // GH-90000
         DetectionOptions highPrecision = runPromise(() -> Promise.of(DetectionOptions.highPrecision())); // GH-90000

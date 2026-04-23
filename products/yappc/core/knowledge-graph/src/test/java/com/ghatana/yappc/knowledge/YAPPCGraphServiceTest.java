@@ -36,7 +36,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer service
  * @doc.pattern Test
  */
-@DisplayName("YAPPCGraphService [GH-90000]")
+@DisplayName("YAPPCGraphService")
 class YAPPCGraphServiceTest extends EventloopTestBase {
 
     private KnowledgeGraphPlugin graphPlugin;
@@ -66,10 +66,10 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
         return YAPPCGraphNode.builder() // GH-90000
                 .id(id) // GH-90000
                 .type(type) // GH-90000
-                .name("MyComponent [GH-90000]")
-                .description("A test component [GH-90000]")
+                .name("MyComponent")
+                .description("A test component")
                 .properties(Map.of()) // GH-90000
-                .tags(Set.of("java [GH-90000]"))
+                .tags(Set.of("java"))
                 .metadata(new YAPPCGraphMetadata( // GH-90000
                         "tenant-1", "proj-1", "ws-1",
                         "tester", Instant.now(), Instant.now(), // GH-90000
@@ -79,10 +79,10 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
 
     private GraphNode dcNode(String id) { // GH-90000
         return GraphNode.builder() // GH-90000
-                .id(id).type("CLASS [GH-90000]")
+                .id(id).type("CLASS")
                 .properties(Map.of()) // GH-90000
                 .labels(Set.of()) // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
+                .tenantId("tenant-1")
                 .build(); // GH-90000
     }
 
@@ -92,7 +92,7 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
                 .sourceNodeId(src).targetNodeId(tgt) // GH-90000
                 .relationshipType(rel) // GH-90000
                 .properties(Map.of()) // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
+                .tenantId("tenant-1")
                 .build(); // GH-90000
     }
 
@@ -110,14 +110,14 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("createYAPPCNode() [GH-90000]")
+    @DisplayName("createYAPPCNode()")
     class CreateYAPPCNodeTests {
 
         @Test
-        @DisplayName("validates, maps, persists and returns YAPPC node [GH-90000]")
+        @DisplayName("validates, maps, persists and returns YAPPC node")
         void shouldCreateNode() { // GH-90000
             YAPPCGraphNode input = yappcNode("node-1", YAPPCGraphNode.YAPPCNodeType.SERVICE); // GH-90000
-            GraphNode dc = dcNode("node-1 [GH-90000]");
+            GraphNode dc = dcNode("node-1");
             YAPPCGraphNode expected = yappcNode("node-1", YAPPCGraphNode.YAPPCNodeType.SERVICE); // GH-90000
 
             when(mapper.toDataCloudNode(input)).thenReturn(dc); // GH-90000
@@ -134,24 +134,24 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("validation failure propagates as IllegalArgumentException [GH-90000]")
+        @DisplayName("validation failure propagates as IllegalArgumentException")
         void shouldPropagateValidationFailure() { // GH-90000
             YAPPCGraphNode bad = yappcNode("", YAPPCGraphNode.YAPPCNodeType.CLASS); // GH-90000
-            doThrow(new IllegalArgumentException("Node id cannot be null or blank [GH-90000]"))
+            doThrow(new IllegalArgumentException("Node id cannot be null or blank"))
                     .when(validator).validateNode(bad); // GH-90000
 
             assertThatThrownBy(() -> runPromise(() -> service.createYAPPCNode(bad))) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("Node id [GH-90000]");
+                    .hasMessageContaining("Node id");
 
             verify(graphPlugin, never()).createNode(any()); // GH-90000
         }
 
         @Test
-        @DisplayName("persists to JDBC repository before publishing to plugin when repository is configured [GH-90000]")
+        @DisplayName("persists to JDBC repository before publishing to plugin when repository is configured")
         void shouldPersistToRepositoryWhenConfigured() { // GH-90000
             YAPPCGraphNode input = yappcNode("node-2", YAPPCGraphNode.YAPPCNodeType.SERVICE); // GH-90000
-            GraphNode dc = dcNode("node-2 [GH-90000]");
+            GraphNode dc = dcNode("node-2");
 
             service = new YAPPCGraphService( // GH-90000
                     graphPlugin,
@@ -176,7 +176,7 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("returns persisted node without publishing when plugin is absent [GH-90000]")
+        @DisplayName("returns persisted node without publishing when plugin is absent")
         void shouldReturnPersistedNodeWhenPluginIsAbsent() { // GH-90000
             YAPPCGraphNode input = yappcNode("node-3", YAPPCGraphNode.YAPPCNodeType.SERVICE); // GH-90000
 
@@ -191,11 +191,11 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("findCodeDependencies() [GH-90000]")
+    @DisplayName("findCodeDependencies()")
     class FindCodeDependenciesTests {
 
         @Test
-        @DisplayName("queries plugin for DEPENDS_ON, IMPORTS, EXTENDS, IMPLEMENTS edges and maps result [GH-90000]")
+        @DisplayName("queries plugin for DEPENDS_ON, IMPORTS, EXTENDS, IMPLEMENTS edges and maps result")
         void shouldFindDependencies() { // GH-90000
             GraphEdge dcDep1 = dcEdge("comp-A", "comp-B", "DEPENDS_ON"); // GH-90000
             GraphEdge dcDep2 = dcEdge("comp-A", "comp-C", "IMPORTS"); // GH-90000
@@ -213,7 +213,7 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("returns empty list when plugin finds no edges [GH-90000]")
+        @DisplayName("returns empty list when plugin finds no edges")
         void shouldReturnEmptyWhenNoDependencies() { // GH-90000
             when(graphPlugin.queryEdges(any())).thenReturn(Promise.of(List.of())); // GH-90000
 
@@ -224,13 +224,13 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("uses JDBC edge repository when configured [GH-90000]")
+        @DisplayName("uses JDBC edge repository when configured")
         void shouldUseEdgeRepositoryWhenConfigured() { // GH-90000
             YAPPCGraphEdge e1 = yappcEdge("comp-A", "comp-B"); // GH-90000
             service = new YAPPCGraphService(graphPlugin, mapper, validator, nodeRepository, edgeRepository); // GH-90000
             when(edgeRepository.findEdgesFromSource( // GH-90000
-                    eq("comp-A [GH-90000]"),
-                    eq("tenant-1 [GH-90000]"),
+                    eq("comp-A"),
+                    eq("tenant-1"),
                     eq(Set.of("DEPENDS_ON", "IMPORTS", "EXTENDS", "IMPLEMENTS")))) // GH-90000
                     .thenReturn(Promise.of(List.of(e1))); // GH-90000
 
@@ -242,18 +242,18 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("analyzeChangeImpact() [GH-90000]")
+    @DisplayName("analyzeChangeImpact()")
     class AnalyzeChangeImpactTests {
 
         @Test
-        @DisplayName("returns impact analysis with affected node count and score [GH-90000]")
+        @DisplayName("returns impact analysis with affected node count and score")
         void shouldBuildImpactAnalysis() { // GH-90000
-            GraphNode n1 = dcNode("dep-1 [GH-90000]");
-            GraphNode n2 = dcNode("dep-2 [GH-90000]");
+            GraphNode n1 = dcNode("dep-1");
+            GraphNode n2 = dcNode("dep-2");
             YAPPCGraphNode yn1 = yappcNode("dep-1", YAPPCGraphNode.YAPPCNodeType.SERVICE); // GH-90000
             YAPPCGraphNode yn2 = yappcNode("dep-2", YAPPCGraphNode.YAPPCNodeType.CLASS); // GH-90000
 
-            when(graphPlugin.getNeighbors(eq("comp-A [GH-90000]"), eq(5), eq("tenant-1 [GH-90000]")))
+            when(graphPlugin.getNeighbors(eq("comp-A"), eq(5), eq("tenant-1")))
                     .thenReturn(Promise.of(List.of(n1, n2))); // GH-90000
             when(mapper.fromDataCloudNode(n1)).thenReturn(yn1); // GH-90000
             when(mapper.fromDataCloudNode(n2)).thenReturn(yn2); // GH-90000
@@ -261,13 +261,13 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
             YAPPCImpactAnalysis analysis = runPromise( // GH-90000
                     () -> service.analyzeChangeImpact("comp-A", "tenant-1")); // GH-90000
 
-            assertThat(analysis.componentId()).isEqualTo("comp-A [GH-90000]");
+            assertThat(analysis.componentId()).isEqualTo("comp-A");
             assertThat(analysis.affectedNodes()).hasSize(2); // GH-90000
             assertThat(analysis.impactScore()).isGreaterThan(0.0); // GH-90000
         }
 
         @Test
-        @DisplayName("returns zero impact score when no neighbors found [GH-90000]")
+        @DisplayName("returns zero impact score when no neighbors found")
         void shouldReturnZeroImpactWhenNoNeighbors() { // GH-90000
             when(graphPlugin.getNeighbors(any(), anyInt(), any())) // GH-90000
                     .thenReturn(Promise.of(List.of())); // GH-90000
@@ -280,7 +280,7 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
         }
 
             @Test
-            @DisplayName("uses KGQueryService traversal when configured [GH-90000]")
+            @DisplayName("uses KGQueryService traversal when configured")
             void shouldUseQueryServiceWhenConfigured() { // GH-90000
                 YAPPCGraphNode serviceNode = yappcNode("dep-svc", YAPPCGraphNode.YAPPCNodeType.SERVICE); // GH-90000
                 YAPPCGraphNode apiNode = yappcNode("dep-api", YAPPCGraphNode.YAPPCNodeType.API); // GH-90000
@@ -303,20 +303,20 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
                 assertThat(analysis.affectedNodes()).containsExactly(serviceNode, apiNode, testNode); // GH-90000
                     assertThat(analysis.impactScore()).isCloseTo(0.7, org.assertj.core.data.Offset.offset(0.0000001)); // GH-90000
                 assertThat(analysis.recommendations()) // GH-90000
-                    .contains("Update service contracts and API documentation [GH-90000]")
-                    .contains("Review and update affected tests [GH-90000]");
+                    .contains("Update service contracts and API documentation")
+                    .contains("Review and update affected tests");
                 verify(graphPlugin, never()).getNeighbors(any(), anyInt(), any()); // GH-90000
             }
     }
 
     @Nested
-    @DisplayName("findComponentsByType() [GH-90000]")
+    @DisplayName("findComponentsByType()")
     class FindComponentsByTypeTests {
 
         @Test
-        @DisplayName("queries plugin for nodes matching type and maps results [GH-90000]")
+        @DisplayName("queries plugin for nodes matching type and maps results")
         void shouldFindComponentsByType() { // GH-90000
-            GraphNode n1 = dcNode("svc-1 [GH-90000]");
+            GraphNode n1 = dcNode("svc-1");
             YAPPCGraphNode yn1 = yappcNode("svc-1", YAPPCGraphNode.YAPPCNodeType.SERVICE); // GH-90000
 
             when(graphPlugin.queryNodes(any())).thenReturn(Promise.of(List.of(n1))); // GH-90000
@@ -330,7 +330,7 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("uses JDBC node repository when configured [GH-90000]")
+        @DisplayName("uses JDBC node repository when configured")
         void shouldUseNodeRepositoryWhenConfigured() { // GH-90000
             YAPPCGraphNode yn1 = yappcNode("svc-2", YAPPCGraphNode.YAPPCNodeType.SERVICE); // GH-90000
             service = new YAPPCGraphService(graphPlugin, mapper, validator, nodeRepository, edgeRepository); // GH-90000
@@ -345,11 +345,11 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
     }
 
         @Nested
-        @DisplayName("semanticSearch [GH-90000]")
+        @DisplayName("semanticSearch")
         class SemanticSearchTests {
 
         @Test
-        @DisplayName("returns semantic node matches when semantic search service is configured [GH-90000]")
+        @DisplayName("returns semantic node matches when semantic search service is configured")
         void shouldReturnSemanticMatches() { // GH-90000
             YAPPCGraphNode node = yappcNode("svc-3", YAPPCGraphNode.YAPPCNodeType.SERVICE); // GH-90000
             KGSemanticSearchService.SemanticNodeMatch match =
@@ -373,18 +373,18 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("returns empty list when semantic search service is absent [GH-90000]")
+        @DisplayName("returns empty list when semantic search service is absent")
         void shouldReturnEmptyWhenSemanticSearchServiceIsAbsent() { // GH-90000
             assertThat(runPromise(() -> service.semanticSearch("billing service", "tenant-1", 5, 0.75))).isEmpty(); // GH-90000
         }
         }
 
     @Nested
-    @DisplayName("createCodeRelationship() [GH-90000]")
+    @DisplayName("createCodeRelationship()")
     class CreateCodeRelationshipTests {
 
         @Test
-        @DisplayName("creates edge in plugin and returns mapped YAPPC edge [GH-90000]")
+        @DisplayName("creates edge in plugin and returns mapped YAPPC edge")
         void shouldCreateCodeRelationship() { // GH-90000
             GraphEdge createdEdge = dcEdge("comp-A", "comp-B", "DEPENDS_ON"); // GH-90000
             YAPPCGraphEdge expected = yappcEdge("comp-A", "comp-B"); // GH-90000
@@ -403,7 +403,7 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("persists relationship to JDBC repository when configured [GH-90000]")
+        @DisplayName("persists relationship to JDBC repository when configured")
         void shouldPersistRelationshipWhenConfigured() { // GH-90000
             GraphEdge createdEdge = dcEdge("comp-A", "comp-B", "DEPENDS_ON"); // GH-90000
             YAPPCGraphEdge expected = yappcEdge("comp-A", "comp-B"); // GH-90000
@@ -421,7 +421,7 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("returns persisted relationship when plugin is absent [GH-90000]")
+        @DisplayName("returns persisted relationship when plugin is absent")
         void shouldReturnPersistedRelationshipWhenPluginIsAbsent() { // GH-90000
             YAPPCGraphEdge expected = yappcEdge("comp-A", "comp-B"); // GH-90000
 
@@ -436,13 +436,13 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("findDependencyPath() [GH-90000]")
+    @DisplayName("findDependencyPath()")
     class FindDependencyPathTests {
 
         @Test
-        @DisplayName("delegates to plugin findShortestPath and maps result nodes [GH-90000]")
+        @DisplayName("delegates to plugin findShortestPath and maps result nodes")
         void shouldFindDependencyPath() { // GH-90000
-            GraphNode mid = dcNode("mid-1 [GH-90000]");
+            GraphNode mid = dcNode("mid-1");
             YAPPCGraphNode yMid = yappcNode("mid-1", YAPPCGraphNode.YAPPCNodeType.CLASS); // GH-90000
 
             when(graphPlugin.findShortestPath("A", "B", "tenant-1")) // GH-90000
@@ -456,7 +456,7 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("returns empty list when no path exists [GH-90000]")
+        @DisplayName("returns empty list when no path exists")
         void shouldReturnEmptyPathWhenNotConnected() { // GH-90000
             when(graphPlugin.findShortestPath(any(), any(), any())) // GH-90000
                     .thenReturn(Promise.of(List.of())); // GH-90000
@@ -468,7 +468,7 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("uses KGQueryService path search when configured [GH-90000]")
+        @DisplayName("uses KGQueryService path search when configured")
         void shouldUseQueryServiceForDependencyPath() { // GH-90000
             YAPPCGraphNode source = yappcNode("A", YAPPCGraphNode.YAPPCNodeType.CLASS); // GH-90000
             YAPPCGraphNode target = yappcNode("B", YAPPCGraphNode.YAPPCNodeType.SERVICE); // GH-90000
@@ -492,7 +492,7 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("returns empty path when query service has no paths [GH-90000]")
+        @DisplayName("returns empty path when query service has no paths")
         void shouldReturnEmptyPathWhenQueryServiceHasNoPaths() { // GH-90000
             service = new YAPPCGraphService( // GH-90000
                     graphPlugin,
@@ -512,16 +512,16 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("getWorkspaceDependencies() [GH-90000]")
+    @DisplayName("getWorkspaceDependencies()")
     class GetWorkspaceDependenciesTests {
 
         @Test
-        @DisplayName("uses JDBC repository when configured [GH-90000]")
+        @DisplayName("uses JDBC repository when configured")
         void shouldUseRepositoryWhenConfigured() { // GH-90000
             YAPPCGraphEdge calls = YAPPCGraphEdge.builder() // GH-90000
-                    .id("edge-calls [GH-90000]")
-                    .sourceNodeId("comp-A [GH-90000]")
-                    .targetNodeId("comp-B [GH-90000]")
+                    .id("edge-calls")
+                    .sourceNodeId("comp-A")
+                    .targetNodeId("comp-B")
                     .relationshipType(YAPPCGraphEdge.YAPPCRelationshipType.CALLS) // GH-90000
                     .properties(Map.of()) // GH-90000
                     .metadata(new YAPPCGraphMetadata("tenant-1", "proj-1", "ws-1", "tester", Instant.now(), Instant.now(), "1.0", Map.of())) // GH-90000
@@ -533,19 +533,19 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
 
             Map<String, List<YAPPCGraphEdge>> grouped = runPromise(() -> service.getWorkspaceDependencies("ws-1", "tenant-1")); // GH-90000
 
-            assertThat(grouped).containsKey("CALLS [GH-90000]");
-            assertThat(grouped.get("CALLS [GH-90000]")).containsExactly(calls);
+            assertThat(grouped).containsKey("CALLS");
+            assertThat(grouped.get("CALLS")).containsExactly(calls);
             verify(graphPlugin, never()).queryEdges(any()); // GH-90000
         }
 
         @Test
-        @DisplayName("uses plugin query when repository is absent [GH-90000]")
+        @DisplayName("uses plugin query when repository is absent")
         void shouldUsePluginWhenRepositoryIsAbsent() { // GH-90000
             GraphEdge dcCall = dcEdge("comp-A", "comp-B", "CALLS"); // GH-90000
             YAPPCGraphEdge mapped = YAPPCGraphEdge.builder() // GH-90000
-                    .id("edge-calls [GH-90000]")
-                    .sourceNodeId("comp-A [GH-90000]")
-                    .targetNodeId("comp-B [GH-90000]")
+                    .id("edge-calls")
+                    .sourceNodeId("comp-A")
+                    .targetNodeId("comp-B")
                     .relationshipType(YAPPCGraphEdge.YAPPCRelationshipType.CALLS) // GH-90000
                     .properties(Map.of()) // GH-90000
                     .metadata(new YAPPCGraphMetadata("tenant-1", "proj-1", "ws-1", "tester", Instant.now(), Instant.now(), "1.0", Map.of())) // GH-90000
@@ -556,17 +556,17 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
 
             Map<String, List<YAPPCGraphEdge>> grouped = runPromise(() -> service.getWorkspaceDependencies("ws-1", "tenant-1")); // GH-90000
 
-            assertThat(grouped).containsKey("CALLS [GH-90000]");
-            assertThat(grouped.get("CALLS [GH-90000]")).containsExactly(mapped);
+            assertThat(grouped).containsKey("CALLS");
+            assertThat(grouped.get("CALLS")).containsExactly(mapped);
         }
     }
 
     @Nested
-    @DisplayName("impact recommendations [GH-90000]")
+    @DisplayName("impact recommendations")
     class ImpactRecommendationTests {
 
         @Test
-        @DisplayName("adds high impact recommendation when more than ten nodes are affected [GH-90000]")
+        @DisplayName("adds high impact recommendation when more than ten nodes are affected")
         void shouldAddHighImpactRecommendationForLargeImpactSets() { // GH-90000
             List<YAPPCGraphNode> affectedNodes = java.util.stream.IntStream.range(0, 11) // GH-90000
                     .mapToObj(index -> yappcNode("node-" + index, YAPPCGraphNode.YAPPCNodeType.CLASS)) // GH-90000
@@ -585,7 +585,7 @@ class YAPPCGraphServiceTest extends EventloopTestBase {
 
             YAPPCImpactAnalysis analysis = runPromise(() -> service.analyzeChangeImpact("large-impact", "tenant-1")); // GH-90000
 
-            assertThat(analysis.recommendations()).contains("High impact change - consider breaking into smaller changes [GH-90000]");
+            assertThat(analysis.recommendations()).contains("High impact change - consider breaking into smaller changes");
         }
     }
 }

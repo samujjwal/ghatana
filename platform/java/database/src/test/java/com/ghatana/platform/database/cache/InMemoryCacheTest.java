@@ -33,7 +33,7 @@ class InMemoryCacheTest {
     void testPutAndGet() { // GH-90000
         cache.put("key1", "value1"); // GH-90000
 
-        Optional<String> result = cache.get("key1 [GH-90000]");
+        Optional<String> result = cache.get("key1");
 
         assertTrue(result.isPresent()); // GH-90000
         assertEquals("value1", result.get()); // GH-90000
@@ -41,7 +41,7 @@ class InMemoryCacheTest {
 
     @Test
     void testGetNonExistent() { // GH-90000
-        Optional<String> result = cache.get("nonexistent [GH-90000]");
+        Optional<String> result = cache.get("nonexistent");
 
         assertFalse(result.isPresent()); // GH-90000
     }
@@ -49,9 +49,9 @@ class InMemoryCacheTest {
     @Test
     void testRemove() { // GH-90000
         cache.put("key1", "value1"); // GH-90000
-        cache.remove("key1 [GH-90000]");
+        cache.remove("key1");
 
-        Optional<String> result = cache.get("key1 [GH-90000]");
+        Optional<String> result = cache.get("key1");
 
         assertFalse(result.isPresent()); // GH-90000
     }
@@ -60,8 +60,8 @@ class InMemoryCacheTest {
     void testContains() { // GH-90000
         cache.put("key1", "value1"); // GH-90000
 
-        assertTrue(cache.contains("key1 [GH-90000]"));
-        assertFalse(cache.contains("nonexistent [GH-90000]"));
+        assertTrue(cache.contains("key1"));
+        assertFalse(cache.contains("nonexistent"));
     }
 
     @Test
@@ -72,9 +72,9 @@ class InMemoryCacheTest {
 
         cache.clear(); // GH-90000
 
-        assertFalse(cache.contains("key1 [GH-90000]"));
-        assertFalse(cache.contains("key2 [GH-90000]"));
-        assertFalse(cache.contains("key3 [GH-90000]"));
+        assertFalse(cache.contains("key1"));
+        assertFalse(cache.contains("key2"));
+        assertFalse(cache.contains("key3"));
         assertEquals(0, cache.size()); // GH-90000
     }
 
@@ -88,7 +88,7 @@ class InMemoryCacheTest {
         cache.put("key2", "value2"); // GH-90000
         assertEquals(2, cache.size()); // GH-90000
 
-        cache.remove("key1 [GH-90000]");
+        cache.remove("key1");
         assertEquals(1, cache.size()); // GH-90000
     }
 
@@ -97,7 +97,7 @@ class InMemoryCacheTest {
         cache.put("key1", "value1"); // GH-90000
         cache.put("key1", "value2"); // GH-90000
 
-        Optional<String> result = cache.get("key1 [GH-90000]");
+        Optional<String> result = cache.get("key1");
 
         assertTrue(result.isPresent()); // GH-90000
         assertEquals("value2", result.get()); // GH-90000
@@ -110,12 +110,12 @@ class InMemoryCacheTest {
         InMemoryCache<String, String> shortTtlCache = InMemoryCache.create("short-ttl-cache", Duration.ofMillis(500)); // GH-90000
         try {
             shortTtlCache.put("key1", "value1"); // GH-90000
-            assertTrue(shortTtlCache.get("key1 [GH-90000]").isPresent());
+            assertTrue(shortTtlCache.get("key1").isPresent());
 
             // Wait for expiration (sleep > 2x TTL to handle slow/loaded machines) // GH-90000
             TimeUnit.MILLISECONDS.sleep(1000); // GH-90000
 
-            assertFalse(shortTtlCache.get("key1 [GH-90000]").isPresent());
+            assertFalse(shortTtlCache.get("key1").isPresent());
         } finally {
             shortTtlCache.close(); // GH-90000
         }
@@ -127,9 +127,9 @@ class InMemoryCacheTest {
         cache.put("key2", "value2"); // GH-90000
         cache.put("key3", "value3"); // GH-90000
 
-        assertEquals("value1", cache.get("key1 [GH-90000]").orElse(null));
-        assertEquals("value2", cache.get("key2 [GH-90000]").orElse(null));
-        assertEquals("value3", cache.get("key3 [GH-90000]").orElse(null));
+        assertEquals("value1", cache.get("key1").orElse(null));
+        assertEquals("value2", cache.get("key2").orElse(null));
+        assertEquals("value3", cache.get("key3").orElse(null));
     }
 
     @Test
@@ -148,7 +148,7 @@ class InMemoryCacheTest {
     @Test
     void testRemoveNonExistent() { // GH-90000
         // Should not throw
-        cache.remove("nonexistent [GH-90000]");
+        cache.remove("nonexistent");
         assertEquals(0, cache.size()); // GH-90000
     }
 

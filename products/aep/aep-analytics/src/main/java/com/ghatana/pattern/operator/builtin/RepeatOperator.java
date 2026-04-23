@@ -75,7 +75,10 @@ import java.util.Map;
  *                 Runtime execution logic (occurrence counting, gap enforcement, greedy vs non-greedy
  *                 matching) is handled by the pattern engine's execution layer. Does not provide runtime
  *                 matching logic. Auto-computes minCount/maxCount from quantifier string during validation.
- */
+  * @doc.type class
+ * @doc.purpose Provides repeat operator functionality.
+ * @doc.layer product
+*/
 public class RepeatOperator implements Operator {
 
     private static final String TYPE = "REPEAT";

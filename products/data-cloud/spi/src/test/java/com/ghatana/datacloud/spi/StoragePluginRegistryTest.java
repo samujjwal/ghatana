@@ -48,7 +48,7 @@ class StoragePluginRegistryTest {
         StoragePluginRegistry reg = StoragePluginRegistry.getInstance(); // GH-90000
         DummyPlugin plugin = new DummyPlugin("test", RecordType.EVENT); // GH-90000
         reg.register(plugin); // GH-90000
-        assertThat(reg.getPlugin("test [GH-90000]")).contains(plugin);
+        assertThat(reg.getPlugin("test")).contains(plugin);
         assertThatThrownBy(() -> reg.register(plugin)).isInstanceOf(IllegalArgumentException.class); // GH-90000
     }
 
@@ -66,8 +66,8 @@ class StoragePluginRegistryTest {
         StoragePluginRegistry reg = StoragePluginRegistry.getInstance(); // GH-90000
         DummyPlugin plugin = new DummyPlugin("unreg", RecordType.EVENT); // GH-90000
         reg.register(plugin); // GH-90000
-        reg.unregister("unreg [GH-90000]").whenComplete(($,e) -> {});
-        assertThat(reg.getPlugin("unreg [GH-90000]")).isEmpty();
+        reg.unregister("unreg").whenComplete(($,e) -> {});
+        assertThat(reg.getPlugin("unreg")).isEmpty();
     }
 
     @Test
@@ -77,6 +77,6 @@ class StoragePluginRegistryTest {
         reg.register(plugin); // GH-90000
         Map<String,Object> cfg = Map.of("foo", 42); // GH-90000
         reg.setPluginConfig("cfg", cfg); // GH-90000
-        assertThat(reg.getPluginConfig("cfg [GH-90000]")).containsEntry("foo", 42);
+        assertThat(reg.getPluginConfig("cfg")).containsEntry("foo", 42);
     }
 }

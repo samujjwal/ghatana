@@ -6,7 +6,11 @@ import lombok.Data;
 /**
  * Metadata about an event history instance.
  * Contains essential information about the history's identity, type, and state.
- */
+  * @doc.type class
+ * @doc.purpose Provides event history meta functionality.
+ * @doc.layer product
+ * @doc.pattern Event
+*/
 @Data
 @AllArgsConstructor
 public class EventHistoryMeta {

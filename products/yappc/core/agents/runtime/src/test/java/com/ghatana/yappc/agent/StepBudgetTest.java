@@ -13,11 +13,11 @@ import org.junit.jupiter.api.Test;
  * @doc.layer test
  * @doc.pattern Unit Test
  */
-@DisplayName("StepBudget Tests [GH-90000]")
+@DisplayName("StepBudget Tests")
 class StepBudgetTest {
 
   @Test
-  @DisplayName("should create StepBudget with all fields [GH-90000]")
+  @DisplayName("should create StepBudget with all fields")
   void shouldCreateStepBudget() { // GH-90000
     double maxCostUsd = 5.0;
     long maxWallTimeMs = 60000L;
@@ -29,7 +29,7 @@ class StepBudgetTest {
   }
 
   @Test
-  @DisplayName("should convert to Budget with zero tokens [GH-90000]")
+  @DisplayName("should convert to Budget with zero tokens")
   void shouldConvertToBudget() { // GH-90000
     StepBudget stepBudget = new StepBudget(10.0, 5000L); // GH-90000
 
@@ -41,7 +41,7 @@ class StepBudgetTest {
   }
 
   @Test
-  @DisplayName("should handle zero values [GH-90000]")
+  @DisplayName("should handle zero values")
   void shouldHandleZeroValues() { // GH-90000
     StepBudget budget = new StepBudget(0.0, 0L); // GH-90000
 
@@ -55,7 +55,7 @@ class StepBudgetTest {
   }
 
   @Test
-  @DisplayName("should implement equals correctly [GH-90000]")
+  @DisplayName("should implement equals correctly")
   void shouldImplementEquals() { // GH-90000
     StepBudget budget1 = new StepBudget(1.0, 1000L); // GH-90000
     StepBudget budget2 = new StepBudget(1.0, 1000L); // GH-90000

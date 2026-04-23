@@ -35,7 +35,7 @@ class EnginePoolLeakDetectionTest {
     }
 
     @Test
-    @DisplayName("Should detect resource leaks when engines not returned [GH-90000]")
+    @DisplayName("Should detect resource leaks when engines not returned")
     void testLeakDetection() throws Exception { // GH-90000
         EnginePool.PoolConfig config = EnginePool.PoolConfig.defaults() // GH-90000
             .minSize(1) // GH-90000
@@ -73,7 +73,7 @@ class EnginePoolLeakDetectionTest {
     }
 
     @Test
-    @DisplayName("Should track resource usage metrics [GH-90000]")
+    @DisplayName("Should track resource usage metrics")
     void testResourceUsageTracking() throws Exception { // GH-90000
         EnginePool.PoolConfig config = EnginePool.PoolConfig.defaults() // GH-90000
             .minSize(2) // GH-90000
@@ -109,7 +109,7 @@ class EnginePoolLeakDetectionTest {
     }
 
     @Test
-    @DisplayName("Should detect pool exhaustion and apply backpressure [GH-90000]")
+    @DisplayName("Should detect pool exhaustion and apply backpressure")
     void testBackpressureDetection() throws Exception { // GH-90000
         EnginePool.PoolConfig config = EnginePool.PoolConfig.defaults() // GH-90000
             .minSize(1) // GH-90000
@@ -143,7 +143,7 @@ class EnginePoolLeakDetectionTest {
     }
 
     @Test
-    @DisplayName("Should provide detailed leak information with stack traces [GH-90000]")
+    @DisplayName("Should provide detailed leak information with stack traces")
     void testLeakInfoDetails() throws Exception { // GH-90000
         EnginePool.PoolConfig config = EnginePool.PoolConfig.defaults() // GH-90000
             .minSize(1) // GH-90000
@@ -176,7 +176,7 @@ class EnginePoolLeakDetectionTest {
     }
 
     @Test
-    @DisplayName("Should handle concurrent borrows and returns safely [GH-90000]")
+    @DisplayName("Should handle concurrent borrows and returns safely")
     void testConcurrentLeakDetection() throws Exception { // GH-90000
         EnginePool.PoolConfig config = EnginePool.PoolConfig.defaults() // GH-90000
             .minSize(2) // GH-90000
@@ -227,7 +227,7 @@ class EnginePoolLeakDetectionTest {
     }
 
     @Test
-    @DisplayName("Should report pool exhaustion in resource usage [GH-90000]")
+    @DisplayName("Should report pool exhaustion in resource usage")
     void testExhaustionDetection() throws Exception { // GH-90000
         EnginePool.PoolConfig config = EnginePool.PoolConfig.defaults() // GH-90000
             .minSize(1) // GH-90000
@@ -254,7 +254,7 @@ class EnginePoolLeakDetectionTest {
     }
 
     @Test
-    @DisplayName("Should log leaked engines on pool close [GH-90000]")
+    @DisplayName("Should log leaked engines on pool close")
     void testLeakLoggingOnClose() throws Exception { // GH-90000
         EnginePool.PoolConfig config = EnginePool.PoolConfig.defaults() // GH-90000
             .minSize(1) // GH-90000
@@ -279,7 +279,7 @@ class EnginePoolLeakDetectionTest {
     }
 
     @Test
-    @DisplayName("Should track utilization percentage [GH-90000]")
+    @DisplayName("Should track utilization percentage")
     void testUtilizationTracking() throws Exception { // GH-90000
         EnginePool.PoolConfig config = EnginePool.PoolConfig.defaults() // GH-90000
             .minSize(2) // GH-90000
@@ -312,7 +312,7 @@ class EnginePoolLeakDetectionTest {
     }
 
     @Test
-    @DisplayName("Should clear leak tracking when engines returned [GH-90000]")
+    @DisplayName("Should clear leak tracking when engines returned")
     void testLeakTrackingCleanup() throws Exception { // GH-90000
         EnginePool.PoolConfig config = EnginePool.PoolConfig.defaults() // GH-90000
             .minSize(1) // GH-90000

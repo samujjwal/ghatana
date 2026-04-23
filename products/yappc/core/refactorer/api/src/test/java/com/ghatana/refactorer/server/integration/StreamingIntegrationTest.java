@@ -53,13 +53,13 @@ class StreamingIntegrationTest extends IntegrationTestSupport {
                 httpClient.send(request, HttpResponse.BodyHandlers.ofString()); // GH-90000
 
         assertThat(response.statusCode()).isEqualTo(200); // GH-90000
-        assertThat(response.headers().firstValue("Content-Type [GH-90000]")).contains("text/event-stream [GH-90000]");
+        assertThat(response.headers().firstValue("Content-Type")).contains("text/event-stream");
 
         String body = response.body(); // GH-90000
-        int idxConnected = body.indexOf("event: connected [GH-90000]");
-        int idxStatus = body.indexOf("event: status [GH-90000]");
-        int idxProgress = body.indexOf("event: progress [GH-90000]");
-        int idxComplete = body.indexOf("event: complete [GH-90000]");
+        int idxConnected = body.indexOf("event: connected");
+        int idxStatus = body.indexOf("event: status");
+        int idxProgress = body.indexOf("event: progress");
+        int idxComplete = body.indexOf("event: complete");
 
         assertThat(idxConnected).isGreaterThanOrEqualTo(0); // GH-90000
         assertThat(idxStatus).isGreaterThan(idxConnected); // GH-90000
@@ -69,7 +69,7 @@ class StreamingIntegrationTest extends IntegrationTestSupport {
         assertThat(body).contains("event: complete\ndata: {\"jobId\":\"" + jobId + "\"}"); // GH-90000
     }
 
-    @Disabled("JDK HttpServer does not support WebSocket upgrade - requires alternative server impl [GH-90000]")
+    @Disabled("JDK HttpServer does not support WebSocket upgrade - requires alternative server impl")
     @Test
     void webSocketStreamReturnsStructuredEvents() throws Exception { // GH-90000
         String jobId = TestJobs.submit(harness.getJobService(), "ws-seq-1").jobId(); // GH-90000
@@ -132,27 +132,27 @@ class StreamingIntegrationTest extends IntegrationTestSupport {
                                 })
                         .toList(); // GH-90000
 
-        assertThat(events.get(0).get("event [GH-90000]")).isEqualTo("connected [GH-90000]");
-        assertThat(events.get(1).get("event [GH-90000]")).isEqualTo("status [GH-90000]");
-        assertThat(events.get(2).get("event [GH-90000]")).isEqualTo("progress [GH-90000]");
-        assertThat(events.get(3).get("event [GH-90000]")).isEqualTo("complete [GH-90000]");
+        assertThat(events.get(0).get("event")).isEqualTo("connected");
+        assertThat(events.get(1).get("event")).isEqualTo("status");
+        assertThat(events.get(2).get("event")).isEqualTo("progress");
+        assertThat(events.get(3).get("event")).isEqualTo("complete");
 
-        @SuppressWarnings("unchecked [GH-90000]")
-        Map<String, Object> connected = (Map<String, Object>) events.get(0).get("data [GH-90000]");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> connected = (Map<String, Object>) events.get(0).get("data");
         assertThat(connected).containsEntry("message", "Connected to job stream"); // GH-90000
 
-        @SuppressWarnings("unchecked [GH-90000]")
-        Map<String, Object> status = (Map<String, Object>) events.get(1).get("data [GH-90000]");
-        assertThat(status.get("jobId [GH-90000]")).isEqualTo(jobId);
-        assertThat(status.get("state [GH-90000]")).isEqualTo("QUEUED [GH-90000]");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> status = (Map<String, Object>) events.get(1).get("data");
+        assertThat(status.get("jobId")).isEqualTo(jobId);
+        assertThat(status.get("state")).isEqualTo("QUEUED");
 
-        @SuppressWarnings("unchecked [GH-90000]")
-        Map<String, Object> progress = (Map<String, Object>) events.get(2).get("data [GH-90000]");
-        assertThat(progress.get("jobId [GH-90000]")).isEqualTo(jobId);
-        assertThat(progress.get("eventType [GH-90000]")).isEqualTo("progress [GH-90000]");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> progress = (Map<String, Object>) events.get(2).get("data");
+        assertThat(progress.get("jobId")).isEqualTo(jobId);
+        assertThat(progress.get("eventType")).isEqualTo("progress");
 
-        @SuppressWarnings("unchecked [GH-90000]")
-        Map<String, Object> complete = (Map<String, Object>) events.get(3).get("data [GH-90000]");
-        assertThat(complete.get("jobId [GH-90000]")).isEqualTo(jobId);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> complete = (Map<String, Object>) events.get(3).get("data");
+        assertThat(complete.get("jobId")).isEqualTo(jobId);
     }
 }

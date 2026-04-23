@@ -8,7 +8,11 @@ import java.util.Map;
  *
  * <p>Records cannot extend {@code GEvent}, so this interface captures the fields that
  * downstream processors expect for lightweight analytics workloads.</p>
- */
+  * @doc.type interface
+ * @doc.purpose Provides gevent like functionality.
+ * @doc.layer product
+ * @doc.pattern Event
+*/
 public interface GEventLike {
 
     /**

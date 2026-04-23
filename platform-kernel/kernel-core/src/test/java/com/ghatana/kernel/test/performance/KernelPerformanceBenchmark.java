@@ -66,9 +66,9 @@ public class KernelPerformanceBenchmark {
     @Benchmark
     public PolicyEnforcementPoint.EnforcementDecision benchmarkPolicyEnforcement() { // GH-90000
         PolicyEnforcementPoint.Request request = PolicyEnforcementPoint.Request.builder() // GH-90000
-            .resource("patient-records [GH-90000]")
-            .operation("read [GH-90000]")
-            .scope("phr [GH-90000]")
+            .resource("patient-records")
+            .operation("read")
+            .scope("phr")
             .build(); // GH-90000
 
         return policyEnforcementPoint.enforce(request, securityContext); // GH-90000
@@ -90,12 +90,12 @@ public class KernelPerformanceBenchmark {
     @Benchmark
     public void benchmarkRecordAuditEvent() { // GH-90000
         AuditTrailService.AuditEvent event = AuditTrailService.AuditEvent.builder() // GH-90000
-            .eventId("event-1 [GH-90000]")
-            .eventType("user.action [GH-90000]")
-            .entityId("entity-1 [GH-90000]")
-            .userId("user-1 [GH-90000]")
-            .tenantId("tenant-1 [GH-90000]")
-            .action("read [GH-90000]")
+            .eventId("event-1")
+            .eventType("user.action")
+            .entityId("entity-1")
+            .userId("user-1")
+            .tenantId("tenant-1")
+            .action("read")
             .build(); // GH-90000
 
         auditTrailService.recordAuditEvent(event); // GH-90000
@@ -103,7 +103,7 @@ public class KernelPerformanceBenchmark {
 
     @Benchmark
     public AgentOrchestrator.AgentResponse benchmarkAgentExecution() { // GH-90000
-        AgentOrchestrator.KernelAgent agent = new MockAgent("test-agent [GH-90000]");
+        AgentOrchestrator.KernelAgent agent = new MockAgent("test-agent");
         AgentOrchestrator.AgentRequest request = new AgentOrchestrator.AgentRequest( // GH-90000
             "req-1", "classify", Map.of("input", "test"), Map.of() // GH-90000
         );
@@ -113,7 +113,7 @@ public class KernelPerformanceBenchmark {
 
     @Benchmark
     public KernelTelemetryManager.Timer benchmarkTimerOperations() { // GH-90000
-        KernelTelemetryManager.Timer timer = telemetryManager.startTimer("test.timer [GH-90000]");
+        KernelTelemetryManager.Timer timer = telemetryManager.startTimer("test.timer");
         timer.stop(); // GH-90000
         return timer;
     }
@@ -126,9 +126,9 @@ public class KernelPerformanceBenchmark {
             return TenantSecurityContext.builder() // GH-90000
                 .tenantId(tenantId) // GH-90000
                 .userId(userId) // GH-90000
-                .sessionId("session-1 [GH-90000]")
-                .role("user [GH-90000]")
-                .permission("read:patient-records [GH-90000]")
+                .sessionId("session-1")
+                .role("user")
+                .permission("read:patient-records")
                 .build(); // GH-90000
         }
 
@@ -323,7 +323,7 @@ public class KernelPerformanceBenchmark {
     private static class MockCapabilities implements AgentOrchestrator.AgentCapabilities {
         @Override
         public java.util.List<String> getSupportedOperations() { // GH-90000
-            return java.util.List.of("classify [GH-90000]");
+            return java.util.List.of("classify");
         }
 
         @Override

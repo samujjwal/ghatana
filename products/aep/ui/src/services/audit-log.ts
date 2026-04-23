@@ -9,48 +9,58 @@
  * @doc.layer frontend
  */
 
-import { z } from 'zod';
+import { z } from "zod";
+import { apiClient } from "@/lib/http-client";
 
 /**
  * Audit event schema for runtime validation
  */
-const AuditEvent = z.object({
-  id: z.string(),
-  timestamp: z.string().datetime(),
-  userId: z.string(),
-  tenantId: z.string(),
-  action: z.enum([
-    'voice_command',
-    'hitl_approve',
-    'hitl_reject',
-    'pipeline_run',
-    'pipeline_cancel',
-    'policy_approve',
-    'policy_reject',
-    'data_access',
-    'consent_change',
-    'ai_suggestion_apply',
-    'bulk_delete',
-    'bulk_approve',
-    'bulk_reject',
-  ]),
-  resource: z.string(),
-  resourceType: z.enum([
-    'pipeline',
-    'run',
-    'agent',
-    'policy',
-    'review_item',
-    'entity',
-    'collection',
-    'workflow',
-    'user',
-  ]).optional(),
-  status: z.enum(['success', 'failure', 'denied']),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-  ipAddress: z.string().regex(/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/).optional(),
-  userAgent: z.string().optional(),
-}).strict();
+const AuditEvent = z
+  .object({
+    id: z.string(),
+    timestamp: z.string().datetime(),
+    userId: z.string(),
+    tenantId: z.string(),
+    action: z.enum([
+      "voice_command",
+      "hitl_approve",
+      "hitl_reject",
+      "pipeline_run",
+      "pipeline_cancel",
+      "policy_approve",
+      "policy_reject",
+      "data_access",
+      "consent_change",
+      "ai_suggestion_apply",
+      "bulk_delete",
+      "bulk_approve",
+      "bulk_reject",
+    ]),
+    resource: z.string(),
+    resourceType: z
+      .enum([
+        "pipeline",
+        "run",
+        "agent",
+        "policy",
+        "review_item",
+        "entity",
+        "collection",
+        "workflow",
+        "user",
+      ])
+      .optional(),
+    status: z.enum(["success", "failure", "denied"]),
+    metadata: z.record(z.string(), z.unknown()).optional(),
+    ipAddress: z
+      .string()
+      .regex(
+        /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$|^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/,
+      )
+      .optional(),
+    userAgent: z.string().optional(),
+  })
+  .strict();
 
 export type AuditEvent = z.infer<typeof AuditEvent>;
 
@@ -59,10 +69,10 @@ export type AuditEvent = z.infer<typeof AuditEvent>;
  */
 export interface AuditLogFilters {
   userId?: string;
-  action?: AuditEvent['action'];
+  action?: AuditEvent["action"];
   resource?: string;
-  resourceType?: AuditEvent['resourceType'];
-  status?: AuditEvent['status'];
+  resourceType?: AuditEvent["resourceType"];
+  status?: AuditEvent["status"];
   from?: string;
   to?: string;
   limit?: number;
@@ -105,7 +115,7 @@ export const auditLogService = {
    * @param event - The audit event to log (without id and timestamp)
    * @returns Promise that resolves when the event is logged
    */
-  async log(event: Omit<AuditEvent, 'id' | 'timestamp'>): Promise<void> {
+  async log(event: Omit<AuditEvent, "id" | "timestamp">): Promise<void> {
     const auditEvent: AuditEvent = {
       id: crypto.randomUUID(),
       timestamp: new Date().toISOString(),
@@ -116,22 +126,9 @@ export const auditLogService = {
     const validated = AuditEvent.parse(auditEvent);
 
     try {
-      const response = await fetch('/api/v1/audit/log', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(validated),
-      });
-
-      if (!response.ok) {
-        // Log failure locally as fallback
-        console.error('Failed to log audit event:', await response.text());
-        // Store in localStorage as backup
-        this.storeLocally(validated);
-      }
+      await apiClient.post("/api/v1/audit/log", validated);
     } catch (error) {
-      console.error('Error logging audit event:', error);
+      console.error("Error logging audit event:", error);
       // Store in localStorage as backup
       this.storeLocally(validated);
     }
@@ -145,41 +142,34 @@ export const auditLogService = {
    */
   async query(filters: AuditLogFilters = {}): Promise<AuditLogQueryResponse> {
     const params = new URLSearchParams();
-    
-    if (filters.userId) params.set('userId', filters.userId);
-    if (filters.action) params.set('action', filters.action);
-    if (filters.resource) params.set('resource', filters.resource);
-    if (filters.resourceType) params.set('resourceType', filters.resourceType);
-    if (filters.status) params.set('status', filters.status);
-    if (filters.from) params.set('from', filters.from);
-    if (filters.to) params.set('to', filters.to);
-    if (filters.limit) params.set('limit', filters.limit.toString());
-    if (filters.offset) params.set('offset', filters.offset.toString());
+
+    if (filters.userId) params.set("userId", filters.userId);
+    if (filters.action) params.set("action", filters.action);
+    if (filters.resource) params.set("resource", filters.resource);
+    if (filters.resourceType) params.set("resourceType", filters.resourceType);
+    if (filters.status) params.set("status", filters.status);
+    if (filters.from) params.set("from", filters.from);
+    if (filters.to) params.set("to", filters.to);
+    if (filters.limit) params.set("limit", filters.limit.toString());
+    if (filters.offset) params.set("offset", filters.offset.toString());
 
     try {
-      const response = await fetch(`/api/v1/audit/query?${params.toString()}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const { data } = await apiClient.get<unknown>(`/api/v1/audit/query`, {
+        params: Object.fromEntries(params.entries()),
       });
 
-      if (!response.ok) {
-        throw new Error(`Failed to query audit logs: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      
       // Validate response
-      const validated = z.object({
-        events: z.array(AuditEvent),
-        total: z.number(),
-        hasMore: z.boolean(),
-      }).parse(data);
+      const validated = z
+        .object({
+          events: z.array(AuditEvent),
+          total: z.number(),
+          hasMore: z.boolean(),
+        })
+        .parse(data);
 
       return validated;
     } catch (error) {
-      console.error('Error querying audit logs:', error);
+      console.error("Error querying audit logs:", error);
       throw error;
     }
   },
@@ -204,19 +194,21 @@ export const auditLogService = {
     try {
       const key = `audit_backup_${event.id}`;
       localStorage.setItem(key, JSON.stringify(event));
-      
+
       // Clean up old backups (keep last 100)
       const keys = getStorageKeys(localStorage)
-        .filter(k => k.startsWith('audit_backup_'))
+        .filter((k) => k.startsWith("audit_backup_"))
         .sort((a, b) => {
-          const aTime = JSON.parse(localStorage.getItem(a) || '{}').timestamp || '';
-          const bTime = JSON.parse(localStorage.getItem(b) || '{}').timestamp || '';
+          const aTime =
+            JSON.parse(localStorage.getItem(a) || "{}").timestamp || "";
+          const bTime =
+            JSON.parse(localStorage.getItem(b) || "{}").timestamp || "";
           return bTime.localeCompare(aTime);
         });
-      
-      keys.slice(100).forEach(k => localStorage.removeItem(k));
+
+      keys.slice(100).forEach((k) => localStorage.removeItem(k));
     } catch (error) {
-      console.error('Failed to store audit event locally:', error);
+      console.error("Failed to store audit event locally:", error);
     }
   },
 
@@ -227,9 +219,11 @@ export const auditLogService = {
    */
   getLocalBackups(): AuditEvent[] {
     try {
-      const keys = getStorageKeys(localStorage).filter(k => k.startsWith('audit_backup_'));
+      const keys = getStorageKeys(localStorage).filter((k) =>
+        k.startsWith("audit_backup_"),
+      );
       return keys
-        .map(k => {
+        .map((k) => {
           const data = localStorage.getItem(k);
           if (!data) return null;
           try {
@@ -242,7 +236,7 @@ export const auditLogService = {
         .filter((e): e is AuditEvent => e !== null)
         .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
     } catch (error) {
-      console.error('Failed to get local audit backups:', error);
+      console.error("Failed to get local audit backups:", error);
       return [];
     }
   },
@@ -252,10 +246,12 @@ export const auditLogService = {
    */
   clearLocalBackups(): void {
     try {
-      const keys = getStorageKeys(localStorage).filter(k => k.startsWith('audit_backup_'));
-      keys.forEach(k => localStorage.removeItem(k));
+      const keys = getStorageKeys(localStorage).filter((k) =>
+        k.startsWith("audit_backup_"),
+      );
+      keys.forEach((k) => localStorage.removeItem(k));
     } catch (error) {
-      console.error('Failed to clear local audit backups:', error);
+      console.error("Failed to clear local audit backups:", error);
     }
   },
 
@@ -266,7 +262,7 @@ export const auditLogService = {
    */
   async syncBackups(): Promise<void> {
     const backups = this.getLocalBackups();
-    
+
     for (const event of backups) {
       try {
         await this.log(event);
@@ -283,7 +279,7 @@ export const auditLogService = {
  * Hook for using audit log service in React components
  */
 export function useAuditLog() {
-  const log = async (event: Omit<AuditEvent, 'id' | 'timestamp'>) => {
+  const log = async (event: Omit<AuditEvent, "id" | "timestamp">) => {
     await auditLogService.log(event);
   };
 

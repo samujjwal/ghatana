@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern Unit Test
  */
-@DisplayName("CollectionConfigCompiler [GH-90000]")
+@DisplayName("CollectionConfigCompiler")
 class CollectionConfigCompilerTest {
 
     private CollectionConfigCompiler compiler;
@@ -38,49 +38,49 @@ class CollectionConfigCompilerTest {
     }
 
     @Nested
-    @DisplayName("Standard Collection Compilation [GH-90000]")
+    @DisplayName("Standard Collection Compilation")
     class StandardCollectionTests {
 
         @Test
-        @DisplayName("compiles a minimal entity collection [GH-90000]")
+        @DisplayName("compiles a minimal entity collection")
         void compilesMinimalEntityCollection() { // GH-90000
             RawCollectionConfig raw = buildRaw("users", "ENTITY"); // GH-90000
 
             CompiledCollectionConfig compiled = compiler.compile(raw); // GH-90000
 
             assertThat(compiled).isNotNull(); // GH-90000
-            assertThat(compiled.name()).isEqualTo("users [GH-90000]");
+            assertThat(compiled.name()).isEqualTo("users");
         }
 
         @Test
-        @DisplayName("compiles document collection type [GH-90000]")
+        @DisplayName("compiles document collection type")
         void compilesDocumentCollection() { // GH-90000
             RawCollectionConfig raw = buildRaw("docs", "DOCUMENT"); // GH-90000
 
             CompiledCollectionConfig compiled = compiler.compile(raw); // GH-90000
 
-            assertThat(compiled.name()).isEqualTo("docs [GH-90000]");
+            assertThat(compiled.name()).isEqualTo("docs");
         }
 
         @Test
-        @DisplayName("throws ConfigurationException for event record type [GH-90000]")
+        @DisplayName("throws ConfigurationException for event record type")
         void throwsForEventRecordType() { // GH-90000
             RawCollectionConfig raw = buildRaw("events", "EVENT"); // GH-90000
 
             assertThatThrownBy(() -> compiler.compile(raw)) // GH-90000
                     .isInstanceOf(ConfigurationException.class) // GH-90000
-                    .hasMessageContaining("compileEventCollection [GH-90000]");
+                    .hasMessageContaining("compileEventCollection");
         }
 
         @Test
-        @DisplayName("throws NullPointerException when null is passed [GH-90000]")
+        @DisplayName("throws NullPointerException when null is passed")
         void throwsForNullInput() { // GH-90000
             assertThatThrownBy(() -> compiler.compile(null)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("compiled result has fields from schema [GH-90000]")
+        @DisplayName("compiled result has fields from schema")
         void compiledResultHasFields() { // GH-90000
             RawSchema schema = new RawSchema("1.0", null, List.of( // GH-90000
                     new RawField("id", "string", null, true, true, true, // GH-90000
@@ -96,12 +96,12 @@ class CollectionConfigCompilerTest {
 
             assertThat(compiled.fields()).isNotNull(); // GH-90000
             assertThat(compiled.fields()).hasSize(2); // GH-90000
-            assertThat(compiled.fieldsByName()).containsKey("id [GH-90000]");
-            assertThat(compiled.fieldsByName()).containsKey("name [GH-90000]");
+            assertThat(compiled.fieldsByName()).containsKey("id");
+            assertThat(compiled.fieldsByName()).containsKey("name");
         }
 
         @Test
-        @DisplayName("compiled config has version number [GH-90000]")
+        @DisplayName("compiled config has version number")
         void compiledConfigHasVersion() { // GH-90000
             RawCollectionConfig raw = buildRaw("versioned", "ENTITY"); // GH-90000
             CompiledCollectionConfig compiled = compiler.compile(raw); // GH-90000
@@ -109,7 +109,7 @@ class CollectionConfigCompilerTest {
         }
 
         @Test
-        @DisplayName("version increments across compilations [GH-90000]")
+        @DisplayName("version increments across compilations")
         void versionIncrementsAcrossCompilations() { // GH-90000
             CompiledCollectionConfig first = compiler.compile(buildRaw("col1", "ENTITY")); // GH-90000
             CompiledCollectionConfig second = compiler.compile(buildRaw("col2", "ENTITY")); // GH-90000

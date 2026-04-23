@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("Agent Execution Metrics Tests [GH-90000]")
+@DisplayName("Agent Execution Metrics Tests")
 class AgentExecutionMetricsTest {
 
     private MeterRegistry registry;
@@ -27,9 +27,9 @@ class AgentExecutionMetricsTest {
         metrics.recordExecution(System.currentTimeMillis() - 100, true); // GH-90000
 
         // Then
-        assertThat(registry.find("agent.execution.success [GH-90000]").counter().count()).isEqualTo(1.0);
-        assertThat(registry.find("agent.execution.failure [GH-90000]").counter().count()).isEqualTo(0.0);
-        assertThat(registry.find("agent.execution.duration [GH-90000]").timer().count()).isEqualTo(1L);
+        assertThat(registry.find("agent.execution.success").counter().count()).isEqualTo(1.0);
+        assertThat(registry.find("agent.execution.failure").counter().count()).isEqualTo(0.0);
+        assertThat(registry.find("agent.execution.duration").timer().count()).isEqualTo(1L);
     }
 
     @Test
@@ -38,8 +38,8 @@ class AgentExecutionMetricsTest {
         metrics.recordExecution(System.currentTimeMillis() - 50, false); // GH-90000
 
         // Then
-        assertThat(registry.find("agent.execution.failure [GH-90000]").counter().count()).isEqualTo(1.0);
-        assertThat(registry.find("agent.execution.success [GH-90000]").counter().count()).isEqualTo(0.0);
+        assertThat(registry.find("agent.execution.failure").counter().count()).isEqualTo(1.0);
+        assertThat(registry.find("agent.execution.success").counter().count()).isEqualTo(0.0);
     }
 
     @Test
@@ -48,6 +48,6 @@ class AgentExecutionMetricsTest {
         metrics.recordStall(); // GH-90000
 
         // Then
-        assertThat(registry.find("agent.execution.stalls [GH-90000]").counter().count()).isEqualTo(1.0);
+        assertThat(registry.find("agent.execution.stalls").counter().count()).isEqualTo(1.0);
     }
 }

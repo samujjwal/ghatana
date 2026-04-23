@@ -25,9 +25,15 @@ import {
   setAuthToken,
   setSessionToken,
 } from '@/lib/http-client';
+import { isFeatureEnabled } from '@/lib/feature-flags';
 
 interface SessionResponse {
   session?: string;
+  expiresInSeconds?: number;
+}
+
+interface PlatformSessionResponse {
+  session: string;
   expiresInSeconds?: number;
 }
 
@@ -37,6 +43,7 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   isBootstrappingSession: boolean;
   loginWithToken: (token: string) => Promise<void>;
+  loginWithPlatform: () => Promise<void>;
   logout: () => void;
 }
 
@@ -86,11 +93,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     void bootstrapSession();
   }, [authTokenState, sessionTokenState]);
 
+  const bootstrapPlatformSession = async (): Promise<void> => {
+    if (!isFeatureEnabled('LEGACY_JWT_PASTE')) {
+      try {
+        const response = await apiClient.get<PlatformSessionResponse>('/api/v1/auth/platform-session');
+        const platformSession = response.data.session;
+        if (platformSession) {
+          setSessionToken(platformSession);
+          setSessionTokenState(platformSession);
+        }
+      } catch {
+        // Platform session not available — rely on explicit login
+      }
+    }
+  };
+
+  useEffect(() => {
+    void bootstrapPlatformSession();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       authToken: authTokenState,
       sessionToken: sessionTokenState,
-      isAuthenticated: authTokenState !== null,
+      isAuthenticated: authTokenState !== null || sessionTokenState !== null,
       isBootstrappingSession,
       async loginWithToken(token: string): Promise<void> {
         const normalizedToken = token.trim();
@@ -103,6 +130,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setAuthTokenState(normalizedToken);
         const issuedSessionToken = await requestSessionToken();
         setSessionTokenState(issuedSessionToken);
+      },
+      async loginWithPlatform(): Promise<void> {
+        await bootstrapPlatformSession();
       },
       logout(): void {
         attemptedSessionBootstrap.current = null;

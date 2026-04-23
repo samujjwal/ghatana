@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.*;
  * throws UnsupportedOperationException (not yet implemented). These tests should // GH-90000
  * be re-enabled once the engine is fully implemented.
  */
-@DisplayName("SpeechRecognitionServiceTest [GH-90000]")
+@DisplayName("SpeechRecognitionServiceTest")
 class SpeechRecognitionServiceTest {
 
     private static final byte[] SAMPLE_AUDIO_EN = "SAMPLE_PCM_DATA_HELLO_WORLD".getBytes(StandardCharsets.UTF_8); // GH-90000
@@ -52,39 +52,39 @@ class SpeechRecognitionServiceTest {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("input validation [GH-90000]")
+    @DisplayName("input validation")
     class InputValidation {
 
         @Test
-        @DisplayName("null audio data throws TranscriptionException [GH-90000]")
-        @Disabled("WhisperTranscriptionEngine not yet implemented - throws UnsupportedOperationException before input validation [GH-90000]")
+        @DisplayName("null audio data throws TranscriptionException")
+        @Disabled("WhisperTranscriptionEngine not yet implemented - throws UnsupportedOperationException before input validation")
         void nullAudioData_throwsTranscriptionException() { // GH-90000
             assertThatThrownBy(() -> engine.transcribe(null, AudioFormat.PCM, "en")) // GH-90000
                     .isInstanceOf(TranscriptionException.class) // GH-90000
-                    .hasMessageContaining("must not be null or empty [GH-90000]");
+                    .hasMessageContaining("must not be null or empty");
         }
 
         @Test
-        @DisplayName("empty audio bytes throws TranscriptionException [GH-90000]")
-        @Disabled("WhisperTranscriptionEngine not yet implemented - throws UnsupportedOperationException before input validation [GH-90000]")
+        @DisplayName("empty audio bytes throws TranscriptionException")
+        @Disabled("WhisperTranscriptionEngine not yet implemented - throws UnsupportedOperationException before input validation")
         void emptyAudioBytes_throwsTranscriptionException() { // GH-90000
             byte[] empty = new byte[0];
             assertThatThrownBy(() -> engine.transcribe(empty, AudioFormat.PCM, "en")) // GH-90000
                     .isInstanceOf(TranscriptionException.class) // GH-90000
-                    .hasMessageContaining("must not be null or empty [GH-90000]");
+                    .hasMessageContaining("must not be null or empty");
         }
 
         @Test
-        @DisplayName("null audio format throws NullPointerException [GH-90000]")
-        @Disabled("WhisperTranscriptionEngine not yet implemented - throws UnsupportedOperationException before input validation [GH-90000]")
+        @DisplayName("null audio format throws NullPointerException")
+        @Disabled("WhisperTranscriptionEngine not yet implemented - throws UnsupportedOperationException before input validation")
         void nullAudioFormat_throwsNullPointerException() { // GH-90000
             assertThatThrownBy(() -> engine.transcribe(SAMPLE_AUDIO_EN, null, "en")) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("single byte audio is accepted and processed [GH-90000]")
-        @Disabled("WhisperTranscriptionEngine not yet implemented - throws UnsupportedOperationException [GH-90000]")
+        @DisplayName("single byte audio is accepted and processed")
+        @Disabled("WhisperTranscriptionEngine not yet implemented - throws UnsupportedOperationException")
         void singleByteAudio_isAccepted() { // GH-90000
             TranscriptionResult result = engine.transcribe(new byte[] {1}, AudioFormat.PCM, "en"); // GH-90000
             assertThat(result).isNotNull(); // GH-90000
@@ -97,13 +97,13 @@ class SpeechRecognitionServiceTest {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("audio format handling [GH-90000]")
-    @Disabled("WhisperTranscriptionEngine not yet implemented - all format tests throw UnsupportedOperationException [GH-90000]")
+    @DisplayName("audio format handling")
+    @Disabled("WhisperTranscriptionEngine not yet implemented - all format tests throw UnsupportedOperationException")
     class AudioFormatHandling {
 
         @ParameterizedTest
         @EnumSource(AudioFormat.class) // GH-90000
-        @DisplayName("transcription succeeds for all supported formats [GH-90000]")
+        @DisplayName("transcription succeeds for all supported formats")
         void transcriptionSucceedsForAllFormats(AudioFormat format) { // GH-90000
             TranscriptionResult result = engine.transcribe(SAMPLE_AUDIO_EN, format, "en"); // GH-90000
 
@@ -114,7 +114,7 @@ class SpeechRecognitionServiceTest {
         }
 
         @Test
-        @DisplayName("PCM format produces consistent transcription [GH-90000]")
+        @DisplayName("PCM format produces consistent transcription")
         void pcmFormatProducesConsistentTranscription() { // GH-90000
             TranscriptionResult r1 = engine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.PCM, "en"); // GH-90000
             TranscriptionResult r2 = engine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.PCM, "en"); // GH-90000
@@ -124,16 +124,16 @@ class SpeechRecognitionServiceTest {
         }
 
         @Test
-        @DisplayName("WAV format output matches expected pattern [GH-90000]")
+        @DisplayName("WAV format output matches expected pattern")
         void wavFormatOutputMatchesPattern() { // GH-90000
             TranscriptionResult result = engine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.WAV, "en"); // GH-90000
 
-            assertThat(result.text()).containsIgnoringCase("transcribed [GH-90000]");
+            assertThat(result.text()).containsIgnoringCase("transcribed");
             assertThat(result.inputFormat()).isEqualTo(AudioFormat.WAV); // GH-90000
         }
 
         @Test
-        @DisplayName("MP3 format produces valid transcription [GH-90000]")
+        @DisplayName("MP3 format produces valid transcription")
         void mp3FormatProducesValidTranscription() { // GH-90000
             TranscriptionResult result = engine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.MP3, "en"); // GH-90000
 
@@ -142,21 +142,21 @@ class SpeechRecognitionServiceTest {
         }
 
         @Test
-        @DisplayName("FLAC format completes without error [GH-90000]")
+        @DisplayName("FLAC format completes without error")
         void flacFormatCompletesWithoutError() { // GH-90000
             assertThatCode(() -> engine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.FLAC, "de")) // GH-90000
                     .doesNotThrowAnyException(); // GH-90000
         }
 
         @Test
-        @DisplayName("OGG format completes without error [GH-90000]")
+        @DisplayName("OGG format completes without error")
         void oggFormatCompletesWithoutError() { // GH-90000
             assertThatCode(() -> engine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.OGG, null)) // GH-90000
                     .doesNotThrowAnyException(); // GH-90000
         }
 
         @Test
-        @DisplayName("AAC format completes without error [GH-90000]")
+        @DisplayName("AAC format completes without error")
         void aacFormatCompletesWithoutError() { // GH-90000
             assertThatCode(() -> engine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.AAC, "ja")) // GH-90000
                     .doesNotThrowAnyException(); // GH-90000
@@ -168,19 +168,19 @@ class SpeechRecognitionServiceTest {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("confidence scoring [GH-90000]")
-    @Disabled("WhisperTranscriptionEngine not yet implemented - confidence tests throw UnsupportedOperationException [GH-90000]")
+    @DisplayName("confidence scoring")
+    @Disabled("WhisperTranscriptionEngine not yet implemented - confidence tests throw UnsupportedOperationException")
     class ConfidenceScoring {
 
         @Test
-        @DisplayName("confidence is in valid range [0.0, 1.0] [GH-90000]")
+        @DisplayName("confidence is in valid range [0.0, 1.0]")
         void confidenceIsInValidRange() { // GH-90000
             TranscriptionResult result = engine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.WAV, "en"); // GH-90000
             assertThat(result.confidence()).isBetween(0.0, 1.0); // GH-90000
         }
 
         @Test
-        @DisplayName("confidence is deterministic for identical input [GH-90000]")
+        @DisplayName("confidence is deterministic for identical input")
         void confidenceIsDeterministic() { // GH-90000
             TranscriptionResult r1 = engine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.PCM, "en"); // GH-90000
             TranscriptionResult r2 = engine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.PCM, "en"); // GH-90000
@@ -189,7 +189,7 @@ class SpeechRecognitionServiceTest {
         }
 
         @Test
-        @DisplayName("different inputs may produce different confidence scores [GH-90000]")
+        @DisplayName("different inputs may produce different confidence scores")
         void differentInputsMayProduceDifferentConfidence() { // GH-90000
             TranscriptionResult r1 = engine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.PCM, "en"); // GH-90000
             TranscriptionResult r2 = engine.transcribe(SAMPLE_AUDIO_FR, AudioFormat.PCM, "fr"); // GH-90000
@@ -200,7 +200,7 @@ class SpeechRecognitionServiceTest {
         }
 
         @Test
-        @DisplayName("noisy audio produces valid confidence (may be lower) [GH-90000]")
+        @DisplayName("noisy audio produces valid confidence (may be lower)")
         void noisyAudioProducesValidConfidence() { // GH-90000
             TranscriptionResult result = engine.transcribe(SAMPLE_AUDIO_WITH_NOISE, AudioFormat.PCM, "en"); // GH-90000
 
@@ -213,20 +213,20 @@ class SpeechRecognitionServiceTest {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("language detection [GH-90000]")
+    @DisplayName("language detection")
     class LanguageDetection {
 
         @Test
-        @DisplayName("explicit language hint is preserved in result [GH-90000]")
-        @Disabled("WhisperTranscriptionEngine not yet implemented - throws UnsupportedOperationException [GH-90000]")
+        @DisplayName("explicit language hint is preserved in result")
+        @Disabled("WhisperTranscriptionEngine not yet implemented - throws UnsupportedOperationException")
         void explicitLanguageHintIsPreserved() { // GH-90000
             TranscriptionResult result = engine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.WAV, "en"); // GH-90000
-            assertThat(result.detectedLanguage()).isEqualTo("en [GH-90000]");
+            assertThat(result.detectedLanguage()).isEqualTo("en");
         }
 
         @Test
-        @DisplayName("different language hints are preserved [GH-90000]")
-        @Disabled("WhisperTranscriptionEngine not yet implemented - throws UnsupportedOperationException [GH-90000]")
+        @DisplayName("different language hints are preserved")
+        @Disabled("WhisperTranscriptionEngine not yet implemented - throws UnsupportedOperationException")
         void differentLanguageHintsArePreserved() { // GH-90000
             String[] hints = {"en", "fr", "de", "ja", "es", "zh", "pt"};
             for (String hint : hints) { // GH-90000
@@ -236,8 +236,8 @@ class SpeechRecognitionServiceTest {
         }
 
         @Test
-        @DisplayName("null language hint triggers auto-detection [GH-90000]")
-        @Disabled("WhisperTranscriptionEngine not yet implemented - throws UnsupportedOperationException [GH-90000]")
+        @DisplayName("null language hint triggers auto-detection")
+        @Disabled("WhisperTranscriptionEngine not yet implemented - throws UnsupportedOperationException")
         void nullLanguageHintTriggersAutoDetection() { // GH-90000
             TranscriptionResult result = engine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.WAV, null); // GH-90000
 
@@ -246,18 +246,18 @@ class SpeechRecognitionServiceTest {
         }
 
         @Test
-        @DisplayName("detectLanguage() method returns valid BCP47 tag [GH-90000]")
-        @Disabled("WhisperTranscriptionEngine not yet implemented - throws UnsupportedOperationException [GH-90000]")
+        @DisplayName("detectLanguage() method returns valid BCP47 tag")
+        @Disabled("WhisperTranscriptionEngine not yet implemented - throws UnsupportedOperationException")
         void detectLanguageMethodReturnsValidTag() { // GH-90000
             String lang = engine.detectLanguage(SAMPLE_AUDIO_EN, AudioFormat.PCM); // GH-90000
 
             assertThat(lang).isNotBlank(); // GH-90000
-            assertThat(lang).matches("[a-z]{2}(-[A-Z]{2})? [GH-90000]");
+            assertThat(lang).matches("[a-z]{2}(-[A-Z]{2})?");
         }
 
         @Test
-        @DisplayName("auto-detected language matches content for multiple languages [GH-90000]")
-        @Disabled("WhisperTranscriptionEngine not yet implemented - throws UnsupportedOperationException [GH-90000]")
+        @DisplayName("auto-detected language matches content for multiple languages")
+        @Disabled("WhisperTranscriptionEngine not yet implemented - throws UnsupportedOperationException")
         void autoDetectedLanguageMatchesContent() { // GH-90000
             String langEn = engine.detectLanguage(SAMPLE_AUDIO_EN, AudioFormat.PCM); // GH-90000
             String langFr = engine.detectLanguage(SAMPLE_AUDIO_FR, AudioFormat.PCM); // GH-90000
@@ -269,8 +269,8 @@ class SpeechRecognitionServiceTest {
         }
 
         @Test
-        @DisplayName("language detection is deterministic for same input [GH-90000]")
-        @Disabled("WhisperTranscriptionEngine not yet implemented - throws UnsupportedOperationException [GH-90000]")
+        @DisplayName("language detection is deterministic for same input")
+        @Disabled("WhisperTranscriptionEngine not yet implemented - throws UnsupportedOperationException")
         void languageDetectionIsDeterministic() { // GH-90000
             String lang1 = engine.detectLanguage(SAMPLE_AUDIO_EN, AudioFormat.PCM); // GH-90000
             String lang2 = engine.detectLanguage(SAMPLE_AUDIO_EN, AudioFormat.PCM); // GH-90000
@@ -284,12 +284,12 @@ class SpeechRecognitionServiceTest {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("speaker diarization [GH-90000]")
-    @Disabled("WhisperTranscriptionEngine not yet implemented - diarization tests throw UnsupportedOperationException [GH-90000]")
+    @DisplayName("speaker diarization")
+    @Disabled("WhisperTranscriptionEngine not yet implemented - diarization tests throw UnsupportedOperationException")
     class SpeakerDiarization {
 
         @Test
-        @DisplayName("diarization disabled produces empty speaker segments [GH-90000]")
+        @DisplayName("diarization disabled produces empty speaker segments")
         void diarizationDisabledProducesEmptySegments() { // GH-90000
             TranscriptionResult result = engine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.WAV, "en"); // GH-90000
 
@@ -297,7 +297,7 @@ class SpeechRecognitionServiceTest {
         }
 
         @Test
-        @DisplayName("diarization enabled produces non-empty speaker segments [GH-90000]")
+        @DisplayName("diarization enabled produces non-empty speaker segments")
         void diarizationEnabledProducesNonEmptySegments() { // GH-90000
             TranscriptionResult result = diarizationEngine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.WAV, "en"); // GH-90000
 
@@ -305,7 +305,7 @@ class SpeechRecognitionServiceTest {
         }
 
         @Test
-        @DisplayName("each speaker segment contains valid speaker ID [GH-90000]")
+        @DisplayName("each speaker segment contains valid speaker ID")
         void eachSpeakerSegmentContainsValidId() { // GH-90000
             TranscriptionResult result = diarizationEngine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.WAV, "en"); // GH-90000
 
@@ -316,7 +316,7 @@ class SpeechRecognitionServiceTest {
         }
 
         @Test
-        @DisplayName("speaker segments have valid time boundaries [GH-90000]")
+        @DisplayName("speaker segments have valid time boundaries")
         void speakerSegmentsHaveValidTimeBoundaries() { // GH-90000
             TranscriptionResult result = diarizationEngine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.WAV, "en"); // GH-90000
 
@@ -328,7 +328,7 @@ class SpeechRecognitionServiceTest {
         }
 
         @Test
-        @DisplayName("speaker text is non-blank in all segments [GH-90000]")
+        @DisplayName("speaker text is non-blank in all segments")
         void speakerTextIsNonBlank() { // GH-90000
             TranscriptionResult result = diarizationEngine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.WAV, "en"); // GH-90000
 
@@ -338,7 +338,7 @@ class SpeechRecognitionServiceTest {
         }
 
         @Test
-        @DisplayName("speaker segments are ordered by start time [GH-90000]")
+        @DisplayName("speaker segments are ordered by start time")
         void speakerSegmentsAreOrdered() { // GH-90000
             TranscriptionResult result = diarizationEngine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.WAV, "en"); // GH-90000
 
@@ -355,12 +355,12 @@ class SpeechRecognitionServiceTest {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("performance and concurrency [GH-90000]")
-    @Disabled("WhisperTranscriptionEngine not yet implemented - performance tests throw UnsupportedOperationException [GH-90000]")
+    @DisplayName("performance and concurrency")
+    @Disabled("WhisperTranscriptionEngine not yet implemented - performance tests throw UnsupportedOperationException")
     class PerformanceAndConcurrency {
 
         @Test
-        @DisplayName("processing time is recorded and non-negative [GH-90000]")
+        @DisplayName("processing time is recorded and non-negative")
         void processingTimeIsRecordedAndNonNegative() { // GH-90000
             TranscriptionResult result = engine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.WAV, "en"); // GH-90000
 
@@ -369,7 +369,7 @@ class SpeechRecognitionServiceTest {
         }
 
         @Test
-        @DisplayName("processing time increases with larger audio (approximately) [GH-90000]")
+        @DisplayName("processing time increases with larger audio (approximately)")
         void processingTimeIncreasesWithLargerAudio() { // GH-90000
             byte[] smallAudio = new byte[100];
             byte[] largeAudio = new byte[10_000];
@@ -388,7 +388,7 @@ class SpeechRecognitionServiceTest {
         }
 
         @Test
-        @DisplayName("concurrent transcriptions produce consistent results [GH-90000]")
+        @DisplayName("concurrent transcriptions produce consistent results")
         void concurrentTranscriptionsProduceConsistentResults() throws InterruptedException { // GH-90000
             int threadCount = 5;
             Thread[] threads = new Thread[threadCount];
@@ -414,7 +414,7 @@ class SpeechRecognitionServiceTest {
         }
 
         @Test
-        @DisplayName("large audio file (10MB) is handled without failure [GH-90000]")
+        @DisplayName("large audio file (10MB) is handled without failure")
         void largeAudioFileIsHandledWithoutFailure() { // GH-90000
             // Fill with deterministic data
             for (int i = 0; i < LARGE_AUDIO_DATA.length; i++) { // GH-90000
@@ -431,12 +431,12 @@ class SpeechRecognitionServiceTest {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("output formatting [GH-90000]")
-    @Disabled("WhisperTranscriptionEngine not yet implemented - output tests throw UnsupportedOperationException [GH-90000]")
+    @DisplayName("output formatting")
+    @Disabled("WhisperTranscriptionEngine not yet implemented - output tests throw UnsupportedOperationException")
     class OutputFormatting {
 
         @Test
-        @DisplayName("result contains non-blank transcription text [GH-90000]")
+        @DisplayName("result contains non-blank transcription text")
         void resultContainsNonBlankText() { // GH-90000
             TranscriptionResult result = engine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.WAV, "en"); // GH-90000
 
@@ -445,7 +445,7 @@ class SpeechRecognitionServiceTest {
         }
 
         @Test
-        @DisplayName("result isEmpty() is consistent with text content [GH-90000]")
+        @DisplayName("result isEmpty() is consistent with text content")
         void resultIsEmptyIsConsistent() { // GH-90000
             TranscriptionResult result = engine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.WAV, "en"); // GH-90000
 
@@ -454,7 +454,7 @@ class SpeechRecognitionServiceTest {
         }
 
         @Test
-        @DisplayName("transcription result contains expected audio format [GH-90000]")
+        @DisplayName("transcription result contains expected audio format")
         void transcriptionResultContainsExpectedFormat() { // GH-90000
             for (AudioFormat format : AudioFormat.values()) { // GH-90000
                 TranscriptionResult result = engine.transcribe(SAMPLE_AUDIO_EN, format, "en"); // GH-90000
@@ -468,18 +468,18 @@ class SpeechRecognitionServiceTest {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("engine properties [GH-90000]")
+    @DisplayName("engine properties")
     class EngineProperties {
 
         @Test
-        @DisplayName("engine returns configured model ID [GH-90000]")
+        @DisplayName("engine returns configured model ID")
         void engineReturnsConfiguredModelId() { // GH-90000
-            assertThat(engine.getModelId()).isEqualTo("whisper-base [GH-90000]");
-            assertThat(diarizationEngine.getModelId()).isEqualTo("whisper-large-v3 [GH-90000]");
+            assertThat(engine.getModelId()).isEqualTo("whisper-base");
+            assertThat(diarizationEngine.getModelId()).isEqualTo("whisper-large-v3");
         }
 
         @Test
-        @DisplayName("diarization flag is accurately reflected [GH-90000]")
+        @DisplayName("diarization flag is accurately reflected")
         void diarizationFlagIsAccurate() { // GH-90000
             assertThat(engine.isDiarizationEnabled()).isFalse(); // GH-90000
             assertThat(diarizationEngine.isDiarizationEnabled()).isTrue(); // GH-90000
@@ -491,12 +491,12 @@ class SpeechRecognitionServiceTest {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("exception handling [GH-90000]")
+    @DisplayName("exception handling")
     class ExceptionHandling {
 
         @Test
-        @DisplayName("multiple consecutive errors don't affect next successful transcription [GH-90000]")
-        @Disabled("WhisperTranscriptionEngine not yet implemented - successful transcription part throws UnsupportedOperationException [GH-90000]")
+        @DisplayName("multiple consecutive errors don't affect next successful transcription")
+        @Disabled("WhisperTranscriptionEngine not yet implemented - successful transcription part throws UnsupportedOperationException")
         void multipleErrorsDontAffectNextSuccess() { // GH-90000
             // First, trigger some errors
             assertThatThrownBy(() -> engine.transcribe(null, AudioFormat.PCM, "en")) // GH-90000
@@ -511,8 +511,8 @@ class SpeechRecognitionServiceTest {
         }
 
         @Test
-        @DisplayName("invalid null language hint with null check doesn't crash [GH-90000]")
-        @Disabled("WhisperTranscriptionEngine not yet implemented - throws UnsupportedOperationException [GH-90000]")
+        @DisplayName("invalid null language hint with null check doesn't crash")
+        @Disabled("WhisperTranscriptionEngine not yet implemented - throws UnsupportedOperationException")
         void invalidInputHandlingIsRobust() { // GH-90000
             // Test with null language — should auto-detect, not crash
             TranscriptionResult result = engine.transcribe(SAMPLE_AUDIO_EN, AudioFormat.PCM, null); // GH-90000

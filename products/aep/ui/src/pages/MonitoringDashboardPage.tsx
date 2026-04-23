@@ -33,12 +33,14 @@ import { tenantIdAtom } from '@/stores/tenant.store';
 import { useLivePipelineRuns, useCancelRun } from '@/hooks/usePipelineRuns';
 import { StatCard } from '@/components/monitoring/StatCard';
 import { RunTable } from '@/components/monitoring/RunTable';
-import { AiSuggestionsPanel } from '@/components/monitoring/AiSuggestionsPanel';
+import { useAiSuggestions } from '@/components/monitoring/AiSuggestionsPanel';
 import { useSelection } from '@/hooks/useSelection';
 import { isFeatureEnabled } from '@/lib/feature-flags';
 import { useConsent } from '@/components/privacy/ConsentManager';
 import { useSpeechSynthesis } from '@audio-video/ui';
 import { Button } from '@ghatana/design-system';
+import { EmptyState } from '@/components/core/EmptyState';
+import { ErrorState } from '@/components/core/ErrorState';
 
 // ─── Chart ───────────────────────────────────────────────────────────
 
@@ -102,6 +104,9 @@ export function MonitoringDashboardPage() {
   const cancelRun = useCancelRun();
   const { speak } = useSpeechSynthesis();
   const { consentGranted: voiceConsent } = useConsent('voice_processing');
+
+  // AI suggestions surfaced per run row instead of a separate panel (TASK-M6)
+  const { suggestions: aiSuggestions = [] } = useAiSuggestions(tenantId);
 
   const { data: metrics = [], isLoading: metricsLoading } = useQuery({
     queryKey: ['aep', 'metrics', tenantId],
@@ -283,11 +288,13 @@ export function MonitoringDashboardPage() {
               </div>
             )}
 
-            {/* AI suggestions panel */}
-            <AiSuggestionsPanel tenantId={tenantId} className="mb-4" />
-
             {runsLoading ? (
-              <p className="text-gray-400 text-center py-8">Loading runs…</p>
+              <EmptyState title="Loading runs…" description="Fetching recent pipeline execution data." />
+            ) : runs.length === 0 ? (
+              <EmptyState
+                title="No pipeline runs yet"
+                description="Runs will appear here once pipelines are executed."
+              />
             ) : (
               <RunTable
                 runs={runs}
@@ -297,6 +304,7 @@ export function MonitoringDashboardPage() {
                 onSelectAll={toggleAll}
                 isAllSelected={isAllSelected}
                 isIndeterminate={isIndeterminate}
+                aiSuggestions={aiSuggestions}
               />
             )}
           </>
@@ -304,46 +312,44 @@ export function MonitoringDashboardPage() {
 
         {/* Metrics tab */}
         {tab === 'metrics' && (
-          metricsLoading
-            ? <p className="text-gray-400 text-center py-8">Loading metrics…</p>
-            : (
-              <table className="w-full text-sm border-collapse">
-                <thead>
-                  <tr className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 dark:border-gray-800">
-                    <th className="pb-2 pr-4">Pipeline</th>
-                    <th className="pb-2 pr-4">Throughput/s</th>
-                    <th className="pb-2 pr-4">Error rate</th>
-                    <th className="pb-2 pr-4">Avg latency</th>
-                    <th className="pb-2 pr-4">Active</th>
-                    <th className="pb-2">Total runs</th>
+          metricsLoading ? (
+            <EmptyState title="Loading metrics…" description="Fetching pipeline performance metrics." />
+          ) : metrics.length === 0 ? (
+            <EmptyState
+              title="No metrics available"
+              description="Metrics will populate once pipelines have run."
+            />
+          ) : (
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 dark:border-gray-800">
+                  <th className="pb-2 pr-4">Pipeline</th>
+                  <th className="pb-2 pr-4">Throughput/s</th>
+                  <th className="pb-2 pr-4">Error rate</th>
+                  <th className="pb-2 pr-4">Avg latency</th>
+                  <th className="pb-2 pr-4">Active</th>
+                  <th className="pb-2">Total runs</th>
+                </tr>
+              </thead>
+              <tbody>
+                {metrics.map((m: PipelineMetrics) => (
+                  <tr
+                    key={m.pipelineId}
+                    className="border-b border-gray-100 dark:border-gray-900 hover:bg-white dark:hover:bg-gray-900"
+                  >
+                    <td className="py-2 pr-4 font-medium text-gray-900 dark:text-white">{m.pipelineName}</td>
+                    <td className="py-2 pr-4 font-mono text-xs">{m.throughputPerSec.toFixed(1)}</td>
+                    <td className={['py-2 pr-4 font-mono text-xs', m.errorRate > 0.05 ? 'text-red-600' : 'text-gray-500'].join(' ')}>
+                      {(m.errorRate * 100).toFixed(2)}%
+                    </td>
+                    <td className="py-2 pr-4 font-mono text-xs">{m.avgLatencyMs.toFixed(0)}ms</td>
+                    <td className="py-2 pr-4 text-gray-500">{m.activeRuns}</td>
+                    <td className="py-2 text-gray-500">{m.totalRuns}</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {metrics.length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="py-8 text-center text-gray-400 italic">
-                        No metrics available
-                      </td>
-                    </tr>
-                  )}
-                  {metrics.map((m: PipelineMetrics) => (
-                    <tr
-                      key={m.pipelineId}
-                      className="border-b border-gray-100 dark:border-gray-900 hover:bg-white dark:hover:bg-gray-900"
-                    >
-                      <td className="py-2 pr-4 font-medium text-gray-900 dark:text-white">{m.pipelineName}</td>
-                      <td className="py-2 pr-4 font-mono text-xs">{m.throughputPerSec.toFixed(1)}</td>
-                      <td className={['py-2 pr-4 font-mono text-xs', m.errorRate > 0.05 ? 'text-red-600' : 'text-gray-500'].join(' ')}>
-                        {(m.errorRate * 100).toFixed(2)}%
-                      </td>
-                      <td className="py-2 pr-4 font-mono text-xs">{m.avgLatencyMs.toFixed(0)}ms</td>
-                      <td className="py-2 pr-4 text-gray-500">{m.activeRuns}</td>
-                      <td className="py-2 text-gray-500">{m.totalRuns}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )
+                ))}
+              </tbody>
+            </table>
+          )
         )}
       </div>
     </div>

@@ -50,7 +50,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern TestCase
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("SttGrpcService [GH-90000]")
+@DisplayName("SttGrpcService")
 class SttGrpcServiceTest {
 
     @Mock
@@ -73,7 +73,7 @@ class SttGrpcServiceTest {
     // ─────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("transcribe: valid audio → text returned in response [GH-90000]")
+    @DisplayName("transcribe: valid audio → text returned in response")
     void transcribe_validAudio_returnsTranscription() throws Exception { // GH-90000
         byte[] audioBytes = new byte[]{0x01, 0x02, 0x03, 0x04};
         TranscriptionResult result = new TranscriptionResult( // GH-90000
@@ -91,14 +91,14 @@ class SttGrpcServiceTest {
         service.transcribe(request, observer); // GH-90000
 
         assertThat(observer.hasError()).isFalse(); // GH-90000
-        assertThat(observer.getValue().getText()).isEqualTo("hello world [GH-90000]");
+        assertThat(observer.getValue().getText()).isEqualTo("hello world");
         assertThat(observer.getValue().getConfidence()).isEqualTo(0.95f); // GH-90000
         assertThat(observer.getValue().getProcessingTimeMs()).isEqualTo(120L); // GH-90000
-        assertThat(observer.getValue().getModelUsed()).isEqualTo("whisper-base [GH-90000]");
+        assertThat(observer.getValue().getModelUsed()).isEqualTo("whisper-base");
     }
 
     @Test
-    @DisplayName("transcribe: empty audio bytes → INVALID_ARGUMENT gRPC error [GH-90000]")
+    @DisplayName("transcribe: empty audio bytes → INVALID_ARGUMENT gRPC error")
     void transcribe_emptyAudio_returnsInvalidArgument() { // GH-90000
         TranscribeRequest request = TranscribeRequest.newBuilder() // GH-90000
             .setAudioData(ByteString.EMPTY) // GH-90000
@@ -114,10 +114,10 @@ class SttGrpcServiceTest {
     }
 
     @Test
-    @DisplayName("transcribe: ValidationError from engine → INVALID_ARGUMENT gRPC error [GH-90000]")
+    @DisplayName("transcribe: ValidationError from engine → INVALID_ARGUMENT gRPC error")
     void transcribe_validationError_returnsInvalidArgument() throws Exception { // GH-90000
         when(mockEngine.transcribe(any(), any(TranscriptionOptions.class))) // GH-90000
-            .thenThrow(new ValidationError("bad audio format [GH-90000]"));
+            .thenThrow(new ValidationError("bad audio format"));
 
         TranscribeRequest request = TranscribeRequest.newBuilder() // GH-90000
             .setAudioData(ByteString.copyFrom(new byte[]{0x01})) // GH-90000
@@ -130,11 +130,11 @@ class SttGrpcServiceTest {
         assertThat(observer.hasError()).isTrue(); // GH-90000
         StatusRuntimeException ex = (StatusRuntimeException) observer.getError(); // GH-90000
         assertThat(ex.getStatus().getCode()).isEqualTo(Status.INVALID_ARGUMENT.getCode()); // GH-90000
-        assertThat(ex.getStatus().getDescription()).contains("bad audio format [GH-90000]");
+        assertThat(ex.getStatus().getDescription()).contains("bad audio format");
     }
 
     @Test
-    @DisplayName("transcribe: non-retryable InferenceError → INTERNAL gRPC error [GH-90000]")
+    @DisplayName("transcribe: non-retryable InferenceError → INTERNAL gRPC error")
     void transcribe_nonRetryableInferenceError_returnsInternal() throws Exception { // GH-90000
         when(mockEngine.transcribe(any(), any(TranscriptionOptions.class))) // GH-90000
             .thenThrow(new InferenceError("model crash", null, false)); // GH-90000
@@ -153,7 +153,7 @@ class SttGrpcServiceTest {
     }
 
     @Test
-    @DisplayName("transcribe: retryable InferenceError → UNAVAILABLE gRPC error [GH-90000]")
+    @DisplayName("transcribe: retryable InferenceError → UNAVAILABLE gRPC error")
     void transcribe_retryableInferenceError_returnsUnavailable() throws Exception { // GH-90000
         when(mockEngine.transcribe(any(), any(TranscriptionOptions.class))) // GH-90000
             .thenThrow(new InferenceError("backend overloaded", null, true)); // GH-90000
@@ -172,7 +172,7 @@ class SttGrpcServiceTest {
     }
 
     @Test
-    @DisplayName("transcribe: default sample rate applied when not set in request [GH-90000]")
+    @DisplayName("transcribe: default sample rate applied when not set in request")
     void transcribe_defaultSampleRate_noNullPointer() throws Exception { // GH-90000
         TranscriptionResult result = new TranscriptionResult( // GH-90000
             "test", 1.0, Collections.emptyList(), Collections.emptyList(), // GH-90000
@@ -188,7 +188,7 @@ class SttGrpcServiceTest {
         service.transcribe(request, observer); // GH-90000
 
         assertThat(observer.hasError()).isFalse(); // GH-90000
-        assertThat(observer.getValue().getText()).isEqualTo("test [GH-90000]");
+        assertThat(observer.getValue().getText()).isEqualTo("test");
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -196,28 +196,28 @@ class SttGrpcServiceTest {
     // ─────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("loadModel: valid modelId → success response with timing [GH-90000]")
+    @DisplayName("loadModel: valid modelId → success response with timing")
     void loadModel_validId_succeeds() throws Exception { // GH-90000
-        doNothing().when(mockEngine).loadModel("whisper-base [GH-90000]");
+        doNothing().when(mockEngine).loadModel("whisper-base");
         when(mockEngine.getMetrics()).thenReturn(new EngineMetrics(1L, 0L, 0.0, 0L, 150_000_000L)); // GH-90000
 
         CapturingObserver<LoadModelResponse> observer = new CapturingObserver<>(); // GH-90000
         service.loadModel( // GH-90000
-            LoadModelRequest.newBuilder().setModelId("whisper-base [GH-90000]").build(),
+            LoadModelRequest.newBuilder().setModelId("whisper-base").build(),
             observer);
 
         assertThat(observer.hasError()).isFalse(); // GH-90000
         LoadModelResponse response = observer.getValue(); // GH-90000
         assertThat(response.getSuccess()).isTrue(); // GH-90000
-        assertThat(response.getModelId()).isEqualTo("whisper-base [GH-90000]");
+        assertThat(response.getModelId()).isEqualTo("whisper-base");
         assertThat(response.getLoadTimeMs()).isGreaterThanOrEqualTo(0L); // GH-90000
     }
 
     @Test
-    @DisplayName("loadModel: blank modelId → INVALID_ARGUMENT [GH-90000]")
+    @DisplayName("loadModel: blank modelId → INVALID_ARGUMENT")
     void loadModel_blankId_returnsInvalidArgument() { // GH-90000
         CapturingObserver<LoadModelResponse> observer = new CapturingObserver<>(); // GH-90000
-        service.loadModel(LoadModelRequest.newBuilder().setModelId(" [GH-90000]").build(), observer);
+        service.loadModel(LoadModelRequest.newBuilder().setModelId("").build(), observer);
 
         assertThat(observer.hasError()).isTrue(); // GH-90000
         assertThat(((StatusRuntimeException) observer.getError()).getStatus().getCode()) // GH-90000
@@ -225,13 +225,13 @@ class SttGrpcServiceTest {
     }
 
     @Test
-    @DisplayName("loadModel: ModelLoadingError from engine → NOT_FOUND [GH-90000]")
+    @DisplayName("loadModel: ModelLoadingError from engine → NOT_FOUND")
     void loadModel_modelNotFound_returnsNotFound() throws Exception { // GH-90000
         doThrow(new ModelLoadingError("Model not found: whisper-xl", null)) // GH-90000
-            .when(mockEngine).loadModel("whisper-xl [GH-90000]");
+            .when(mockEngine).loadModel("whisper-xl");
 
         CapturingObserver<LoadModelResponse> observer = new CapturingObserver<>(); // GH-90000
-        service.loadModel(LoadModelRequest.newBuilder().setModelId("whisper-xl [GH-90000]").build(), observer);
+        service.loadModel(LoadModelRequest.newBuilder().setModelId("whisper-xl").build(), observer);
 
         assertThat(observer.hasError()).isTrue(); // GH-90000
         assertThat(((StatusRuntimeException) observer.getError()).getStatus().getCode()) // GH-90000
@@ -243,7 +243,7 @@ class SttGrpcServiceTest {
     // ─────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("unloadModel: model exists → success response [GH-90000]")
+    @DisplayName("unloadModel: model exists → success response")
     void unloadModel_modelExists_succeeds() throws Exception { // GH-90000
         ModelInfo info = new ModelInfo("whisper-base", "Whisper Base", "1.0", // GH-90000
             new Locale[]{Locale.ENGLISH}, 150_000_000L, false);
@@ -251,19 +251,19 @@ class SttGrpcServiceTest {
         when(mockEngine.getMetrics()).thenReturn(new EngineMetrics(1L, 0L, 0.0, 0L, 150_000_000L)); // GH-90000
 
         CapturingObserver<UnloadModelResponse> observer = new CapturingObserver<>(); // GH-90000
-        service.unloadModel(UnloadModelRequest.newBuilder().setModelId("whisper-base [GH-90000]").build(), observer);
+        service.unloadModel(UnloadModelRequest.newBuilder().setModelId("whisper-base").build(), observer);
 
         assertThat(observer.hasError()).isFalse(); // GH-90000
         assertThat(observer.getValue().getSuccess()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("unloadModel: model not in list → NOT_FOUND [GH-90000]")
+    @DisplayName("unloadModel: model not in list → NOT_FOUND")
     void unloadModel_unknownModel_returnsNotFound() throws Exception { // GH-90000
         when(mockEngine.getAvailableModels()).thenReturn(List.of()); // GH-90000
 
         CapturingObserver<UnloadModelResponse> observer = new CapturingObserver<>(); // GH-90000
-        service.unloadModel(UnloadModelRequest.newBuilder().setModelId("ghost [GH-90000]").build(), observer);
+        service.unloadModel(UnloadModelRequest.newBuilder().setModelId("ghost").build(), observer);
 
         assertThat(observer.hasError()).isTrue(); // GH-90000
         assertThat(((StatusRuntimeException) observer.getError()).getStatus().getCode()) // GH-90000
@@ -275,7 +275,7 @@ class SttGrpcServiceTest {
     // ─────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("listModels: returns all registered models [GH-90000]")
+    @DisplayName("listModels: returns all registered models")
     void listModels_returnsAll() throws Exception { // GH-90000
         ModelInfo m1 = new ModelInfo("whisper-base", "Whisper Base", "1.0", // GH-90000
             new Locale[]{Locale.ENGLISH}, 100_000_000L, false);
@@ -294,7 +294,7 @@ class SttGrpcServiceTest {
     }
 
     @Test
-    @DisplayName("listModels: loadedOnly=true returns only active model [GH-90000]")
+    @DisplayName("listModels: loadedOnly=true returns only active model")
     void listModels_loadedOnlyFilter() throws Exception { // GH-90000
         ModelInfo m1 = new ModelInfo("whisper-base", "Whisper Base", "1.0", // GH-90000
             new Locale[]{Locale.ENGLISH}, 100_000_000L, false);
@@ -308,7 +308,7 @@ class SttGrpcServiceTest {
 
         assertThat(observer.hasError()).isFalse(); // GH-90000
         assertThat(observer.getValue().getTotalCount()).isEqualTo(1); // GH-90000
-        assertThat(observer.getValue().getModels(0).getModelId()).isEqualTo("whisper-base [GH-90000]");
+        assertThat(observer.getValue().getModels(0).getModelId()).isEqualTo("whisper-base");
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -316,17 +316,17 @@ class SttGrpcServiceTest {
     // ─────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("adaptModel: valid profile + interactions → success with vocab count [GH-90000]")
+    @DisplayName("adaptModel: valid profile + interactions → success with vocab count")
     void adaptModel_validRequest_succeeds() throws Exception { // GH-90000
         UserProfile profile = new UserProfile("p1", "Alice", Locale.ENGLISH, // GH-90000
-            List.of("existing [GH-90000]"), new byte[0]);
-        when(mockEngine.loadProfile("p1 [GH-90000]")).thenReturn(Optional.of(profile));
+            List.of("existing"), new byte[0]);
+        when(mockEngine.loadProfile("p1")).thenReturn(Optional.of(profile));
         doNothing().when(mockEngine).saveProfile(any()); // GH-90000
 
         AdaptRequest request = AdaptRequest.newBuilder() // GH-90000
-            .setProfileId("p1 [GH-90000]")
+            .setProfileId("p1")
             .addInteractions(Interaction.newBuilder() // GH-90000
-                .setCorrectedTranscript("ghatana platform agent [GH-90000]")
+                .setCorrectedTranscript("ghatana platform agent")
                 .build()) // GH-90000
             .build(); // GH-90000
         CapturingObserver<AdaptResponse> observer = new CapturingObserver<>(); // GH-90000
@@ -339,7 +339,7 @@ class SttGrpcServiceTest {
     }
 
     @Test
-    @DisplayName("adaptModel: blank profileId → INVALID_ARGUMENT [GH-90000]")
+    @DisplayName("adaptModel: blank profileId → INVALID_ARGUMENT")
     void adaptModel_blankProfileId_returnsInvalidArgument() { // GH-90000
         CapturingObserver<AdaptResponse> observer = new CapturingObserver<>(); // GH-90000
         service.adaptModel(AdaptRequest.getDefaultInstance(), observer); // GH-90000
@@ -350,13 +350,13 @@ class SttGrpcServiceTest {
     }
 
     @Test
-    @DisplayName("adaptModel: profile not found → NOT_FOUND [GH-90000]")
+    @DisplayName("adaptModel: profile not found → NOT_FOUND")
     void adaptModel_profileNotFound_returnsNotFound() throws Exception { // GH-90000
-        when(mockEngine.loadProfile("ghost [GH-90000]")).thenReturn(Optional.empty());
+        when(mockEngine.loadProfile("ghost")).thenReturn(Optional.empty());
 
         AdaptRequest request = AdaptRequest.newBuilder() // GH-90000
-            .setProfileId("ghost [GH-90000]")
-            .addInteractions(Interaction.newBuilder().setCorrectedTranscript("word [GH-90000]").build())
+            .setProfileId("ghost")
+            .addInteractions(Interaction.newBuilder().setCorrectedTranscript("word").build())
             .build(); // GH-90000
         CapturingObserver<AdaptResponse> observer = new CapturingObserver<>(); // GH-90000
         service.adaptModel(request, observer); // GH-90000
@@ -371,7 +371,7 @@ class SttGrpcServiceTest {
     // ─────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("createProfile: valid name → profile created and returned [GH-90000]")
+    @DisplayName("createProfile: valid name → profile created and returned")
     void createProfile_validName_returnsProfile() throws Exception { // GH-90000
         UserProfile created = new UserProfile("uuid-1", "Alice", Locale.ENGLISH, // GH-90000
             List.of(), new byte[0]); // GH-90000
@@ -379,16 +379,16 @@ class SttGrpcServiceTest {
 
         CapturingObserver<ProfileResponse> observer = new CapturingObserver<>(); // GH-90000
         service.createProfile( // GH-90000
-            CreateProfileRequest.newBuilder().setDisplayName("Alice [GH-90000]").build(),
+            CreateProfileRequest.newBuilder().setDisplayName("Alice").build(),
             observer);
 
         assertThat(observer.hasError()).isFalse(); // GH-90000
-        assertThat(observer.getValue().getDisplayName()).isEqualTo("Alice [GH-90000]");
+        assertThat(observer.getValue().getDisplayName()).isEqualTo("Alice");
         assertThat(observer.getValue().getProfileId()).isNotBlank(); // GH-90000
     }
 
     @Test
-    @DisplayName("createProfile: blank displayName → INVALID_ARGUMENT [GH-90000]")
+    @DisplayName("createProfile: blank displayName → INVALID_ARGUMENT")
     void createProfile_blankName_returnsInvalidArgument() { // GH-90000
         CapturingObserver<ProfileResponse> observer = new CapturingObserver<>(); // GH-90000
         service.createProfile(CreateProfileRequest.getDefaultInstance(), observer); // GH-90000
@@ -403,27 +403,27 @@ class SttGrpcServiceTest {
     // ─────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("getProfile: existing profile → profile returned [GH-90000]")
+    @DisplayName("getProfile: existing profile → profile returned")
     void getProfile_existing_returnsProfile() throws Exception { // GH-90000
-        UserProfile profile = new UserProfile("p1", "Bob", Locale.ENGLISH, List.of("word [GH-90000]"), new byte[0]);
-        when(mockEngine.loadProfile("p1 [GH-90000]")).thenReturn(Optional.of(profile));
+        UserProfile profile = new UserProfile("p1", "Bob", Locale.ENGLISH, List.of("word"), new byte[0]);
+        when(mockEngine.loadProfile("p1")).thenReturn(Optional.of(profile));
 
         CapturingObserver<ProfileResponse> observer = new CapturingObserver<>(); // GH-90000
-        service.getProfile(GetProfileRequest.newBuilder().setProfileId("p1 [GH-90000]").build(), observer);
+        service.getProfile(GetProfileRequest.newBuilder().setProfileId("p1").build(), observer);
 
         assertThat(observer.hasError()).isFalse(); // GH-90000
-        assertThat(observer.getValue().getProfileId()).isEqualTo("p1 [GH-90000]");
-        assertThat(observer.getValue().getDisplayName()).isEqualTo("Bob [GH-90000]");
+        assertThat(observer.getValue().getProfileId()).isEqualTo("p1");
+        assertThat(observer.getValue().getDisplayName()).isEqualTo("Bob");
         assertThat(observer.getValue().getStats().getVocabularySize()).isEqualTo(1); // GH-90000
     }
 
     @Test
-    @DisplayName("getProfile: unknown profileId → NOT_FOUND [GH-90000]")
+    @DisplayName("getProfile: unknown profileId → NOT_FOUND")
     void getProfile_unknown_returnsNotFound() throws Exception { // GH-90000
-        when(mockEngine.loadProfile("ghost [GH-90000]")).thenReturn(Optional.empty());
+        when(mockEngine.loadProfile("ghost")).thenReturn(Optional.empty());
 
         CapturingObserver<ProfileResponse> observer = new CapturingObserver<>(); // GH-90000
-        service.getProfile(GetProfileRequest.newBuilder().setProfileId("ghost [GH-90000]").build(), observer);
+        service.getProfile(GetProfileRequest.newBuilder().setProfileId("ghost").build(), observer);
 
         assertThat(observer.hasError()).isTrue(); // GH-90000
         assertThat(((StatusRuntimeException) observer.getError()).getStatus().getCode()) // GH-90000
@@ -431,7 +431,7 @@ class SttGrpcServiceTest {
     }
 
     @Test
-    @DisplayName("getProfile: blank profileId → INVALID_ARGUMENT [GH-90000]")
+    @DisplayName("getProfile: blank profileId → INVALID_ARGUMENT")
     void getProfile_blankId_returnsInvalidArgument() { // GH-90000
         CapturingObserver<ProfileResponse> observer = new CapturingObserver<>(); // GH-90000
         service.getProfile(GetProfileRequest.getDefaultInstance(), observer); // GH-90000
@@ -446,31 +446,31 @@ class SttGrpcServiceTest {
     // ─────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("updateProfile: existing profile → updated and returned [GH-90000]")
+    @DisplayName("updateProfile: existing profile → updated and returned")
     void updateProfile_existing_updatesProfile() throws Exception { // GH-90000
         UserProfile existing = new UserProfile("p1", "Carol", Locale.ENGLISH, List.of(), new byte[0]); // GH-90000
-        when(mockEngine.loadProfile("p1 [GH-90000]")).thenReturn(Optional.of(existing));
+        when(mockEngine.loadProfile("p1")).thenReturn(Optional.of(existing));
         doNothing().when(mockEngine).saveProfile(any()); // GH-90000
 
         UpdateProfileRequest request = UpdateProfileRequest.newBuilder() // GH-90000
-            .setProfileId("p1 [GH-90000]")
-            .setSettings(ProfileSettings.newBuilder().setPreferredLanguage("fr [GH-90000]").build())
+            .setProfileId("p1")
+            .setSettings(ProfileSettings.newBuilder().setPreferredLanguage("fr").build())
             .build(); // GH-90000
         CapturingObserver<ProfileResponse> observer = new CapturingObserver<>(); // GH-90000
         service.updateProfile(request, observer); // GH-90000
 
         assertThat(observer.hasError()).isFalse(); // GH-90000
-        assertThat(observer.getValue().getProfileId()).isEqualTo("p1 [GH-90000]");
+        assertThat(observer.getValue().getProfileId()).isEqualTo("p1");
         verify(mockEngine).saveProfile(any()); // GH-90000
     }
 
     @Test
-    @DisplayName("updateProfile: unknown profileId → NOT_FOUND [GH-90000]")
+    @DisplayName("updateProfile: unknown profileId → NOT_FOUND")
     void updateProfile_unknown_returnsNotFound() throws Exception { // GH-90000
-        when(mockEngine.loadProfile("ghost [GH-90000]")).thenReturn(Optional.empty());
+        when(mockEngine.loadProfile("ghost")).thenReturn(Optional.empty());
 
         CapturingObserver<ProfileResponse> observer = new CapturingObserver<>(); // GH-90000
-        service.updateProfile(UpdateProfileRequest.newBuilder().setProfileId("ghost [GH-90000]").build(), observer);
+        service.updateProfile(UpdateProfileRequest.newBuilder().setProfileId("ghost").build(), observer);
 
         assertThat(observer.hasError()).isTrue(); // GH-90000
         assertThat(((StatusRuntimeException) observer.getError()).getStatus().getCode()) // GH-90000
@@ -482,7 +482,7 @@ class SttGrpcServiceTest {
     // ─────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("getStatus: engine READY → active model name returned [GH-90000]")
+    @DisplayName("getStatus: engine READY → active model name returned")
     void getStatus_engineReady_returnsModel() throws Exception { // GH-90000
         EngineStatus engineStatus = new EngineStatus( // GH-90000
             EngineStatus.State.READY, "whisper-base", "1.0", 5000L, null
@@ -493,7 +493,7 @@ class SttGrpcServiceTest {
         service.getStatus(StatusRequest.getDefaultInstance(), observer); // GH-90000
 
         assertThat(observer.hasError()).isFalse(); // GH-90000
-        assertThat(observer.getValue().getActiveModel()).isEqualTo("whisper-base [GH-90000]");
+        assertThat(observer.getValue().getActiveModel()).isEqualTo("whisper-base");
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -501,7 +501,7 @@ class SttGrpcServiceTest {
     // ─────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("submitCorrection: always accepted [GH-90000]")
+    @DisplayName("submitCorrection: always accepted")
     void submitCorrection_alwaysAccepted() { // GH-90000
         CapturingObserver<CorrectionResponse> observer = new CapturingObserver<>(); // GH-90000
         service.submitCorrection(CorrectionRequest.getDefaultInstance(), observer); // GH-90000
@@ -511,7 +511,7 @@ class SttGrpcServiceTest {
     }
 
     @Test
-    @DisplayName("streamAudio: completion ends stream before closing session [GH-90000]")
+    @DisplayName("streamAudio: completion ends stream before closing session")
     void streamAudio_completionEndsStreamBeforeClosingSession() throws Exception { // GH-90000
         StreamingSession streamingSession = mock(StreamingSession.class); // GH-90000
         when(mockEngine.createStreamingSession()).thenReturn(streamingSession); // GH-90000

@@ -18,16 +18,22 @@ import { listPipelines, deletePipeline } from '@/api/pipeline.api';
 import type { PipelineStatus } from '@/types/pipeline.types';
 import { Button } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
+import {
+  getNewPipelineUrl,
+  getEditPipelineUrl,
+} from '@/lib/routes';
+import { EmptyState } from '@/components/core/EmptyState';
+import { ErrorState } from '@/components/core/ErrorState';
 
 // ─── Status badge ────────────────────────────────────────────────────
 
 const STATUS_STYLES: Record<PipelineStatus, string> = {
-  DRAFT:     'bg-gray-100 text-gray-600',
-  VALID:     'bg-green-100 text-green-700',
+  DRAFT: 'bg-gray-100 text-gray-600',
+  VALID: 'bg-green-100 text-green-700',
   PUBLISHED: 'bg-blue-100 text-blue-700',
-  RUNNING:   'bg-amber-100 text-amber-700',
-  FAILED:    'bg-red-100 text-red-700',
-  ARCHIVED:  'bg-gray-200 text-gray-500',
+  RUNNING: 'bg-amber-100 text-amber-700',
+  FAILED: 'bg-red-100 text-red-700',
+  ARCHIVED: 'bg-gray-200 text-gray-500',
 };
 
 function StatusBadge({ status }: { status: PipelineStatus }) {
@@ -75,14 +81,14 @@ export function PipelineListPage() {
 
   function handleEdit(id: string | undefined) {
     if (id) {
-      void navigate(`/pipelines?id=${encodeURIComponent(id)}`);
+      void navigate(getEditPipelineUrl(id));
     } else {
-      void navigate('/pipelines');
+      void navigate(getNewPipelineUrl());
     }
   }
 
   function handleNew() {
-    void navigate('/pipelines');
+    void navigate(getNewPipelineUrl());
   }
 
   return (
@@ -115,39 +121,22 @@ export function PipelineListPage() {
         />
       </div>
 
-      {/* Loading / Error */}
+      {/* Loading / Error / Empty */}
       {isLoading && (
         <div className="text-center py-12 text-gray-400">Loading pipelines…</div>
       )}
       {isError && (
-        <div className="text-center py-12">
-          <p className="text-red-500 text-sm mb-2">Failed to load pipelines</p>
-          <Button
-            onClick={() => void refetch()}
-            variant="text"
-            className="text-xs text-indigo-600 underline"
-          >
-            Retry
-          </Button>
-        </div>
+        <ErrorState
+          title="Failed to load pipelines"
+          onRetry={() => void refetch()}
+        />
       )}
-
-      {/* Empty state */}
       {!isLoading && !isError && filtered.length === 0 && (
-        <div className="text-center py-16 text-gray-400">
-          <p className="text-lg mb-1">No pipelines found</p>
-          <p className="text-sm mb-4">
-            {search ? 'Try clearing the search filter.' : 'Create your first pipeline to get started.'}
-          </p>
-          {!search && (
-            <Button
-              onClick={handleNew}
-              variant="primary"
-            >
-              + New Pipeline
-            </Button>
-          )}
-        </div>
+        <EmptyState
+          title={search ? 'No pipelines match your search' : 'No pipelines found'}
+          description={search ? 'Try clearing the search filter.' : 'Create your first pipeline to get started.'}
+          action={!search ? { label: '+ New Pipeline', onClick: handleNew } : undefined}
+        />
       )}
 
       {/* Pipeline list */}

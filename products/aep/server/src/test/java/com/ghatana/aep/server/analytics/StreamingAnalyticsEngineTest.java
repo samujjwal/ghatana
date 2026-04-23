@@ -41,7 +41,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("StreamingAnalyticsEngine [GH-90000]")
+@DisplayName("StreamingAnalyticsEngine")
 class StreamingAnalyticsEngineTest {
 
     private static final String TENANT = "tenant-stream";
@@ -71,27 +71,27 @@ class StreamingAnalyticsEngineTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Construction [GH-90000]")
+    @DisplayName("Construction")
     class ConstructionTests {
 
         @Test
-        @DisplayName("null dataCloud throws NullPointerException [GH-90000]")
+        @DisplayName("null dataCloud throws NullPointerException")
         void nullDataCloud_throwsNpe() { // GH-90000
             assertThatThrownBy(() -> new StreamingAnalyticsEngine(null, metrics)) // GH-90000
                     .isInstanceOf(NullPointerException.class) // GH-90000
-                    .hasMessageContaining("dataCloud [GH-90000]");
+                    .hasMessageContaining("dataCloud");
         }
 
         @Test
-        @DisplayName("null metrics throws NullPointerException [GH-90000]")
+        @DisplayName("null metrics throws NullPointerException")
         void nullMetrics_throwsNpe() { // GH-90000
             assertThatThrownBy(() -> new StreamingAnalyticsEngine(dataCloud, null)) // GH-90000
                     .isInstanceOf(NullPointerException.class) // GH-90000
-                    .hasMessageContaining("metrics [GH-90000]");
+                    .hasMessageContaining("metrics");
         }
 
         @Test
-        @DisplayName("getActiveSubscriptions returns empty on fresh engine [GH-90000]")
+        @DisplayName("getActiveSubscriptions returns empty on fresh engine")
         void freshEngine_noActiveSubscriptions() { // GH-90000
             assertThat(engine.getActiveSubscriptions()).isEmpty(); // GH-90000
         }
@@ -102,11 +102,11 @@ class StreamingAnalyticsEngineTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("subscribeToAnomalies() [GH-90000]")
+    @DisplayName("subscribeToAnomalies()")
     class SubscribeToAnomaliesTests {
 
         @Test
-        @DisplayName("creates subscription and returns non-null ID [GH-90000]")
+        @DisplayName("creates subscription and returns non-null ID")
         void subscribe_returnsNonNullId() { // GH-90000
             AnomalyFilter filter = AnomalyFilter.allFor(TENANT); // GH-90000
             String id = engine.subscribeToAnomalies(filter, anomaly -> {}); // GH-90000
@@ -115,7 +115,7 @@ class StreamingAnalyticsEngineTest {
         }
 
         @Test
-        @DisplayName("calls tailEvents on DataCloudClient with LATEST offset [GH-90000]")
+        @DisplayName("calls tailEvents on DataCloudClient with LATEST offset")
         void subscribe_callsTailEvents() { // GH-90000
             AnomalyFilter filter = AnomalyFilter.allFor(TENANT); // GH-90000
             engine.subscribeToAnomalies(filter, anomaly -> {}); // GH-90000
@@ -124,7 +124,7 @@ class StreamingAnalyticsEngineTest {
         }
 
         @Test
-        @DisplayName("increments streaming.subscriptions.active counter for ANOMALY [GH-90000]")
+        @DisplayName("increments streaming.subscriptions.active counter for ANOMALY")
         void subscribe_incrementsCounter() { // GH-90000
             AnomalyFilter filter = AnomalyFilter.allFor(TENANT); // GH-90000
             engine.subscribeToAnomalies(filter, anomaly -> {}); // GH-90000
@@ -133,7 +133,7 @@ class StreamingAnalyticsEngineTest {
         }
 
         @Test
-        @DisplayName("subscription appears in getActiveSubscriptions [GH-90000]")
+        @DisplayName("subscription appears in getActiveSubscriptions")
         void subscribe_appearsInActiveList() { // GH-90000
             AnomalyFilter filter = AnomalyFilter.allFor(TENANT); // GH-90000
             String id = engine.subscribeToAnomalies(filter, anomaly -> {}); // GH-90000
@@ -142,26 +142,26 @@ class StreamingAnalyticsEngineTest {
             assertThat(active).hasSize(1); // GH-90000
             assertThat(active.get(0).id()).isEqualTo(id); // GH-90000
             assertThat(active.get(0).tenantId()).isEqualTo(TENANT); // GH-90000
-            assertThat(active.get(0).type()).isEqualTo("ANOMALY [GH-90000]");
+            assertThat(active.get(0).type()).isEqualTo("ANOMALY");
             assertThat(active.get(0).createdAt()).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("null filter throws NullPointerException [GH-90000]")
+        @DisplayName("null filter throws NullPointerException")
         void nullFilter_throwsNpe() { // GH-90000
             assertThatThrownBy(() -> engine.subscribeToAnomalies(null, a -> {})) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("null handler throws NullPointerException [GH-90000]")
+        @DisplayName("null handler throws NullPointerException")
         void nullHandler_throwsNpe() { // GH-90000
             assertThatThrownBy(() -> engine.subscribeToAnomalies(AnomalyFilter.allFor(TENANT), null)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("event with matching type is parsed and delivered to handler [GH-90000]")
+        @DisplayName("event with matching type is parsed and delivered to handler")
         void subscribe_matchingAnomalyEvent_deliveredToHandler() { // GH-90000
             // Capture the event handler installed on DataCloud
             ArgumentCaptor<Consumer<Event>> handlerCaptor = eventConsumerCaptor(); // GH-90000
@@ -183,17 +183,17 @@ class StreamingAnalyticsEngineTest {
             handlerCaptor.getValue().accept(event); // GH-90000
 
             assertThat(received).hasSize(1); // GH-90000
-            assertThat(received.get(0).id()).isEqualTo("anomaly-1 [GH-90000]");
-            assertThat(received.get(0).anomalyType()).isEqualTo("FREQUENCY_SPIKE [GH-90000]");
-            assertThat(received.get(0).severity()).isEqualTo("HIGH [GH-90000]");
+            assertThat(received.get(0).id()).isEqualTo("anomaly-1");
+            assertThat(received.get(0).anomalyType()).isEqualTo("FREQUENCY_SPIKE");
+            assertThat(received.get(0).severity()).isEqualTo("HIGH");
             assertThat(received.get(0).score()).isEqualTo(0.92); // GH-90000
         }
 
         @Test
-        @DisplayName("event with wrong type is silently ignored [GH-90000]")
+        @DisplayName("event with wrong type is silently ignored")
         void subscribe_wrongTypeEvent_ignored() { // GH-90000
             ArgumentCaptor<Consumer<Event>> handlerCaptor = eventConsumerCaptor(); // GH-90000
-            engine.subscribeToAnomalies(AnomalyFilter.allFor(TENANT), a -> fail("should not be called [GH-90000]"));
+            engine.subscribeToAnomalies(AnomalyFilter.allFor(TENANT), a -> fail("should not be called"));
 
             verify(dataCloud).tailEvents(any(), any(), handlerCaptor.capture()); // GH-90000
 
@@ -204,7 +204,7 @@ class StreamingAnalyticsEngineTest {
         }
 
         @Test
-        @DisplayName("score filter drops events below minimum score [GH-90000]")
+        @DisplayName("score filter drops events below minimum score")
         void scoreFilter_dropsLowScoreEvents() { // GH-90000
             ArgumentCaptor<Consumer<Event>> handlerCaptor = eventConsumerCaptor(); // GH-90000
             AnomalyFilter filter = AnomalyFilter.of(TENANT, null, 0.8); // minimum score 0.8 // GH-90000
@@ -221,11 +221,11 @@ class StreamingAnalyticsEngineTest {
                     "severity", "HIGH", "score", 0.9, "anomalyType", "T2", "description", "D2")));
 
             assertThat(received).hasSize(1); // GH-90000
-            assertThat(received.get(0).anomalyType()).isEqualTo("T2 [GH-90000]");
+            assertThat(received.get(0).anomalyType()).isEqualTo("T2");
         }
 
         @Test
-        @DisplayName("severity filter drops events below minimum severity [GH-90000]")
+        @DisplayName("severity filter drops events below minimum severity")
         void severityFilter_dropsLowSeverityEvents() { // GH-90000
             ArgumentCaptor<Consumer<Event>> handlerCaptor = eventConsumerCaptor(); // GH-90000
             AnomalyFilter filter = AnomalyFilter.of(TENANT, "HIGH", 0.0); // minimum severity HIGH // GH-90000
@@ -240,11 +240,11 @@ class StreamingAnalyticsEngineTest {
                     "severity", "CRITICAL", "score", 0.9, "anomalyType", "T2", "description", "D")));
 
             assertThat(received).hasSize(1); // GH-90000
-            assertThat(received.get(0).severity()).isEqualTo("CRITICAL [GH-90000]");
+            assertThat(received.get(0).severity()).isEqualTo("CRITICAL");
         }
 
         @Test
-        @DisplayName("multiple subscribers receive independent event streams [GH-90000]")
+        @DisplayName("multiple subscribers receive independent event streams")
         void multipleSubscribers_receiveIndependentEvents() { // GH-90000
             engine.subscribeToAnomalies(AnomalyFilter.allFor(TENANT), a -> {}); // GH-90000
             engine.subscribeToAnomalies(AnomalyFilter.allFor(TENANT), a -> {}); // GH-90000
@@ -259,11 +259,11 @@ class StreamingAnalyticsEngineTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("subscribeToKPIs() [GH-90000]")
+    @DisplayName("subscribeToKPIs()")
     class SubscribeToKpisTests {
 
         @Test
-        @DisplayName("creates subscription and returns non-null ID [GH-90000]")
+        @DisplayName("creates subscription and returns non-null ID")
         void subscribe_returnsNonNullId() { // GH-90000
             String id = engine.subscribeToKPIs(KpiFilter.allFor(TENANT), snap -> {}); // GH-90000
 
@@ -271,7 +271,7 @@ class StreamingAnalyticsEngineTest {
         }
 
         @Test
-        @DisplayName("calls tailEvents on DataCloudClient [GH-90000]")
+        @DisplayName("calls tailEvents on DataCloudClient")
         void subscribe_callsTailEvents() { // GH-90000
             engine.subscribeToKPIs(KpiFilter.allFor(TENANT), snap -> {}); // GH-90000
 
@@ -279,7 +279,7 @@ class StreamingAnalyticsEngineTest {
         }
 
         @Test
-        @DisplayName("increments streaming.subscriptions.active counter for KPI [GH-90000]")
+        @DisplayName("increments streaming.subscriptions.active counter for KPI")
         void subscribe_incrementsCounter() { // GH-90000
             engine.subscribeToKPIs(KpiFilter.allFor(TENANT), snap -> {}); // GH-90000
 
@@ -287,18 +287,18 @@ class StreamingAnalyticsEngineTest {
         }
 
         @Test
-        @DisplayName("subscription appears in getActiveSubscriptions as KPI type [GH-90000]")
+        @DisplayName("subscription appears in getActiveSubscriptions as KPI type")
         void subscribe_appearsInActiveListAsKPI() { // GH-90000
             String id = engine.subscribeToKPIs(KpiFilter.allFor(TENANT), snap -> {}); // GH-90000
 
             List<SubscriptionInfo> active = engine.getActiveSubscriptions(); // GH-90000
             assertThat(active).hasSize(1); // GH-90000
             assertThat(active.get(0).id()).isEqualTo(id); // GH-90000
-            assertThat(active.get(0).type()).isEqualTo("KPI [GH-90000]");
+            assertThat(active.get(0).type()).isEqualTo("KPI");
         }
 
         @Test
-        @DisplayName("KPI event is parsed and forwarded to handler [GH-90000]")
+        @DisplayName("KPI event is parsed and forwarded to handler")
         void kpiEvent_parsedAndDelivered() { // GH-90000
             ArgumentCaptor<Consumer<Event>> handlerCaptor = eventConsumerCaptor(); // GH-90000
             List<DataCloudAnalyticsStore.KpiSnapshot> received = new ArrayList<>(); // GH-90000
@@ -314,13 +314,13 @@ class StreamingAnalyticsEngineTest {
             )));
 
             assertThat(received).hasSize(1); // GH-90000
-            assertThat(received.get(0).kpiName()).isEqualTo("event.throughput [GH-90000]");
+            assertThat(received.get(0).kpiName()).isEqualTo("event.throughput");
             assertThat(received.get(0).value()).isEqualTo(1500.0); // GH-90000
-            assertThat(received.get(0).unit()).isEqualTo("events/s [GH-90000]");
+            assertThat(received.get(0).unit()).isEqualTo("events/s");
         }
 
         @Test
-        @DisplayName("kpiName filter drops events for other KPIs [GH-90000]")
+        @DisplayName("kpiName filter drops events for other KPIs")
         void kpiNameFilter_dropsNonMatchingKpis() { // GH-90000
             ArgumentCaptor<Consumer<Event>> handlerCaptor = eventConsumerCaptor(); // GH-90000
             KpiFilter filter = KpiFilter.forKpi(TENANT, "cpu.usage"); // GH-90000
@@ -335,14 +335,14 @@ class StreamingAnalyticsEngineTest {
                     "kpiName", "cpu.usage", "value", 0.4, "unit", "%")));
 
             assertThat(received).hasSize(1); // GH-90000
-            assertThat(received.get(0).kpiName()).isEqualTo("cpu.usage [GH-90000]");
+            assertThat(received.get(0).kpiName()).isEqualTo("cpu.usage");
         }
 
         @Test
-        @DisplayName("anomaly event is ignored by KPI subscriber [GH-90000]")
+        @DisplayName("anomaly event is ignored by KPI subscriber")
         void anomalyEvent_ignoredByKpiSubscriber() { // GH-90000
             ArgumentCaptor<Consumer<Event>> handlerCaptor = eventConsumerCaptor(); // GH-90000
-            engine.subscribeToKPIs(KpiFilter.allFor(TENANT), s -> fail("should not be called [GH-90000]"));
+            engine.subscribeToKPIs(KpiFilter.allFor(TENANT), s -> fail("should not be called"));
 
             verify(dataCloud).tailEvents(any(), any(), handlerCaptor.capture()); // GH-90000
             handlerCaptor.getValue().accept(Event.of(EVENT_TYPE_ANOMALY, Map.of("severity", "HIGH"))); // GH-90000
@@ -354,11 +354,11 @@ class StreamingAnalyticsEngineTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("unsubscribe() [GH-90000]")
+    @DisplayName("unsubscribe()")
     class UnsubscribeTests {
 
         @Test
-        @DisplayName("valid subscription → cancels DataCloud subscription and removes from active list [GH-90000]")
+        @DisplayName("valid subscription → cancels DataCloud subscription and removes from active list")
         void validSubscription_cancelledAndRemoved() { // GH-90000
             String id = engine.subscribeToAnomalies(AnomalyFilter.allFor(TENANT), a -> {}); // GH-90000
 
@@ -369,21 +369,21 @@ class StreamingAnalyticsEngineTest {
         }
 
         @Test
-        @DisplayName("unknown subscription ID → no-op (no exception) [GH-90000]")
+        @DisplayName("unknown subscription ID → no-op (no exception)")
         void unknownId_noOp() { // GH-90000
-            assertThatCode(() -> engine.unsubscribe("nonexistent-id [GH-90000]"))
+            assertThatCode(() -> engine.unsubscribe("nonexistent-id"))
                     .doesNotThrowAnyException(); // GH-90000
         }
 
         @Test
-        @DisplayName("null subscription ID throws NullPointerException [GH-90000]")
+        @DisplayName("null subscription ID throws NullPointerException")
         void nullId_throwsNpe() { // GH-90000
             assertThatThrownBy(() -> engine.unsubscribe(null)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("unsubscribing one does not affect others [GH-90000]")
+        @DisplayName("unsubscribing one does not affect others")
         void unsubscribeOne_othersRemain() { // GH-90000
             String id1 = engine.subscribeToAnomalies(AnomalyFilter.allFor(TENANT), a -> {}); // GH-90000
             String id2 = engine.subscribeToKPIs(KpiFilter.allFor(TENANT), k -> {}); // GH-90000
@@ -400,11 +400,11 @@ class StreamingAnalyticsEngineTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("close() [GH-90000]")
+    @DisplayName("close()")
     class CloseTests {
 
         @Test
-        @DisplayName("cancels all active subscriptions [GH-90000]")
+        @DisplayName("cancels all active subscriptions")
         void close_cancelsAll() { // GH-90000
             Subscription sub1 = mock(Subscription.class); // GH-90000
             Subscription sub2 = mock(Subscription.class); // GH-90000
@@ -422,13 +422,13 @@ class StreamingAnalyticsEngineTest {
         }
 
         @Test
-        @DisplayName("safe to call close() on fresh engine (no subscriptions) [GH-90000]")
+        @DisplayName("safe to call close() on fresh engine (no subscriptions)")
         void closeFreshEngine_noException() { // GH-90000
             assertThatCode(() -> engine.close()).doesNotThrowAnyException(); // GH-90000
         }
 
         @Test
-        @DisplayName("safe to call close() multiple times [GH-90000]")
+        @DisplayName("safe to call close() multiple times")
         void closeMultipleTimes_noException() { // GH-90000
             engine.subscribeToAnomalies(AnomalyFilter.allFor(TENANT), a -> {}); // GH-90000
             engine.close(); // GH-90000
@@ -441,11 +441,11 @@ class StreamingAnalyticsEngineTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("AnomalyFilter [GH-90000]")
+    @DisplayName("AnomalyFilter")
     class AnomalyFilterTests {
 
         @Test
-        @DisplayName("allFor creates filter accepting all severities and scores [GH-90000]")
+        @DisplayName("allFor creates filter accepting all severities and scores")
         void allFor_acceptsAll() { // GH-90000
             AnomalyFilter f = AnomalyFilter.allFor(TENANT); // GH-90000
             assertThat(f.minimumSeverity()).isNull(); // GH-90000
@@ -453,28 +453,28 @@ class StreamingAnalyticsEngineTest {
         }
 
         @Test
-        @DisplayName("null tenantId throws NullPointerException [GH-90000]")
+        @DisplayName("null tenantId throws NullPointerException")
         void nullTenant_throwsNpe() { // GH-90000
             assertThatThrownBy(() -> AnomalyFilter.allFor(null)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("minimumScore outside [0,1] throws IllegalArgumentException [GH-90000]")
+        @DisplayName("minimumScore outside [0,1] throws IllegalArgumentException")
         void invalidScore_throwsIae() { // GH-90000
             assertThatThrownBy(() -> AnomalyFilter.of(TENANT, null, 1.5)) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("minimumScore [GH-90000]");
+                    .hasMessageContaining("minimumScore");
         }
 
         @Test
-        @DisplayName("matches returns false for null record [GH-90000]")
+        @DisplayName("matches returns false for null record")
         void nullRecord_returnsFalse() { // GH-90000
             assertThat(AnomalyFilter.allFor(TENANT).matches(null)).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("severity matching: CRITICAL passes HIGH filter [GH-90000]")
+        @DisplayName("severity matching: CRITICAL passes HIGH filter")
         void criticalPassesHighFilter() { // GH-90000
             AnomalyFilter f = AnomalyFilter.of(TENANT, "HIGH", 0.0); // GH-90000
             DataCloudAnalyticsStore.AnomalyRecord critical = DataCloudAnalyticsStore.AnomalyRecord.of( // GH-90000
@@ -483,7 +483,7 @@ class StreamingAnalyticsEngineTest {
         }
 
         @Test
-        @DisplayName("severity matching: LOW blocked by HIGH filter [GH-90000]")
+        @DisplayName("severity matching: LOW blocked by HIGH filter")
         void lowBlockedByHighFilter() { // GH-90000
             AnomalyFilter f = AnomalyFilter.of(TENANT, "HIGH", 0.0); // GH-90000
             DataCloudAnalyticsStore.AnomalyRecord low = DataCloudAnalyticsStore.AnomalyRecord.of( // GH-90000
@@ -497,11 +497,11 @@ class StreamingAnalyticsEngineTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("KpiFilter [GH-90000]")
+    @DisplayName("KpiFilter")
     class KpiFilterTests {
 
         @Test
-        @DisplayName("allFor accepts all KPIs [GH-90000]")
+        @DisplayName("allFor accepts all KPIs")
         void allFor_acceptsAll() { // GH-90000
             KpiFilter f = KpiFilter.allFor(TENANT); // GH-90000
             DataCloudAnalyticsStore.KpiSnapshot snap =
@@ -510,7 +510,7 @@ class StreamingAnalyticsEngineTest {
         }
 
         @Test
-        @DisplayName("forKpi filter accepts matching KPI name [GH-90000]")
+        @DisplayName("forKpi filter accepts matching KPI name")
         void forKpi_acceptsMatchingName() { // GH-90000
             KpiFilter f = KpiFilter.forKpi(TENANT, "cpu.usage"); // GH-90000
             DataCloudAnalyticsStore.KpiSnapshot snap =
@@ -519,7 +519,7 @@ class StreamingAnalyticsEngineTest {
         }
 
         @Test
-        @DisplayName("forKpi filter rejects non-matching KPI name [GH-90000]")
+        @DisplayName("forKpi filter rejects non-matching KPI name")
         void forKpi_rejectsNonMatchingName() { // GH-90000
             KpiFilter f = KpiFilter.forKpi(TENANT, "cpu.usage"); // GH-90000
             DataCloudAnalyticsStore.KpiSnapshot snap =
@@ -528,13 +528,13 @@ class StreamingAnalyticsEngineTest {
         }
 
         @Test
-        @DisplayName("matches returns false for null snapshot [GH-90000]")
+        @DisplayName("matches returns false for null snapshot")
         void nullSnapshot_returnsFalse() { // GH-90000
             assertThat(KpiFilter.allFor(TENANT).matches(null)).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("null tenantId throws NullPointerException [GH-90000]")
+        @DisplayName("null tenantId throws NullPointerException")
         void nullTenant_throwsNpe() { // GH-90000
             assertThatThrownBy(() -> KpiFilter.allFor(null)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000

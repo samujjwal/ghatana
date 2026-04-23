@@ -2,6 +2,12 @@ package com.ghatana.tutorputor.contentgeneration.domain;
 
 import java.util.List;
 
+/**
+ * @doc.type class
+ * @doc.purpose Provides animation config functionality.
+ * @doc.layer product
+ * @doc.pattern Configuration
+ */
 public class AnimationConfig {
     private final String id;
     private final String title;

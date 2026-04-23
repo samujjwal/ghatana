@@ -18,7 +18,7 @@ class ConfigManagerTest {
 
     @Test
     void testConstructorWithName() { // GH-90000
-        ConfigManager manager = new ConfigManager("test [GH-90000]");
+        ConfigManager manager = new ConfigManager("test");
 
         assertEquals("test", manager.getName()); // GH-90000
         assertTrue(manager.getSources().isEmpty()); // GH-90000
@@ -35,7 +35,7 @@ class ConfigManagerTest {
 
     @Test
     void testAddSource() { // GH-90000
-        ConfigManager manager = new ConfigManager("test [GH-90000]");
+        ConfigManager manager = new ConfigManager("test");
 
         manager.addSource(new SystemPropertiesConfigSource()); // GH-90000
 
@@ -44,7 +44,7 @@ class ConfigManagerTest {
 
     @Test
     void testAddSources() { // GH-90000
-        ConfigManager manager = new ConfigManager("test [GH-90000]");
+        ConfigManager manager = new ConfigManager("test");
 
         manager.addSources(java.util.List.of( // GH-90000
             new SystemPropertiesConfigSource(), // GH-90000
@@ -57,7 +57,7 @@ class ConfigManagerTest {
     @Test
     void testRemoveSource() { // GH-90000
         SystemPropertiesConfigSource source = new SystemPropertiesConfigSource(); // GH-90000
-        ConfigManager manager = new ConfigManager("test [GH-90000]");
+        ConfigManager manager = new ConfigManager("test");
         manager.addSource(source); // GH-90000
 
         manager.removeSource(source); // GH-90000
@@ -67,7 +67,7 @@ class ConfigManagerTest {
 
     @Test
     void testClearSources() { // GH-90000
-        ConfigManager manager = new ConfigManager("test [GH-90000]");
+        ConfigManager manager = new ConfigManager("test");
         manager.addSource(new SystemPropertiesConfigSource()); // GH-90000
 
         manager.clearSources(); // GH-90000
@@ -77,7 +77,7 @@ class ConfigManagerTest {
 
     @Test
     void testChaining() { // GH-90000
-        ConfigManager manager = new ConfigManager("test [GH-90000]")
+        ConfigManager manager = new ConfigManager("test")
             .addSource(new SystemPropertiesConfigSource()) // GH-90000
             .addSource(new EnvironmentConfigSource()); // GH-90000
 
@@ -86,14 +86,14 @@ class ConfigManagerTest {
 
     @Test
     void testGetStringFromFirstSource() { // GH-90000
-        ConfigManager manager = new ConfigManager("test [GH-90000]");
+        ConfigManager manager = new ConfigManager("test");
 
         // Create a mock source that returns a value
         ConfigSource mockSource = new ConfigSource() { // GH-90000
             @Override
             public Optional<String> getString(String key) { // GH-90000
-                if (key.equals("test.key [GH-90000]")) {
-                    return Optional.of("value [GH-90000]");
+                if (key.equals("test.key")) {
+                    return Optional.of("value");
                 }
                 return Optional.empty(); // GH-90000
             }
@@ -113,20 +113,20 @@ class ConfigManagerTest {
 
         manager.addSource(mockSource); // GH-90000
 
-        Optional<String> value = manager.getString("test.key [GH-90000]");
+        Optional<String> value = manager.getString("test.key");
         assertTrue(value.isPresent()); // GH-90000
         assertEquals("value", value.get()); // GH-90000
     }
 
     @Test
     void testSourcePriority() { // GH-90000
-        ConfigManager manager = new ConfigManager("test [GH-90000]");
+        ConfigManager manager = new ConfigManager("test");
 
         // First source returns a value
         ConfigSource firstSource = new ConfigSource() { // GH-90000
             @Override
             public Optional<String> getString(String key) { // GH-90000
-                return Optional.of("first [GH-90000]");
+                return Optional.of("first");
             }
             @Override public Optional<Integer> getInt(String key) { return Optional.empty(); } // GH-90000
             @Override public Optional<Long> getLong(String key) { return Optional.empty(); } // GH-90000
@@ -145,7 +145,7 @@ class ConfigManagerTest {
         ConfigSource secondSource = new ConfigSource() { // GH-90000
             @Override
             public Optional<String> getString(String key) { // GH-90000
-                return Optional.of("second [GH-90000]");
+                return Optional.of("second");
             }
             @Override public Optional<Integer> getInt(String key) { return Optional.empty(); } // GH-90000
             @Override public Optional<Long> getLong(String key) { return Optional.empty(); } // GH-90000
@@ -163,19 +163,19 @@ class ConfigManagerTest {
         manager.addSource(firstSource).addSource(secondSource); // GH-90000
 
         // Should get value from first source
-        Optional<String> value = manager.getString("any.key [GH-90000]");
+        Optional<String> value = manager.getString("any.key");
         assertTrue(value.isPresent()); // GH-90000
         assertEquals("first", value.get()); // GH-90000
     }
 
     @Test
     void testHasKey() { // GH-90000
-        ConfigManager manager = new ConfigManager("test [GH-90000]");
+        ConfigManager manager = new ConfigManager("test");
 
         ConfigSource mockSource = new ConfigSource() { // GH-90000
             @Override
             public boolean hasKey(String key) { // GH-90000
-                return key.equals("existing [GH-90000]");
+                return key.equals("existing");
             }
             @Override public Optional<String> getString(String key) { return Optional.empty(); } // GH-90000
             @Override public Optional<Integer> getInt(String key) { return Optional.empty(); } // GH-90000
@@ -192,13 +192,13 @@ class ConfigManagerTest {
 
         manager.addSource(mockSource); // GH-90000
 
-        assertTrue(manager.hasKey("existing [GH-90000]"));
-        assertFalse(manager.hasKey("non-existing [GH-90000]"));
+        assertTrue(manager.hasKey("existing"));
+        assertFalse(manager.hasKey("non-existing"));
     }
 
     @Test
     void testCreateDefault() { // GH-90000
-        ConfigManager manager = ConfigManager.createDefault("default-test [GH-90000]");
+        ConfigManager manager = ConfigManager.createDefault("default-test");
 
         assertEquals("default-test", manager.getName()); // GH-90000
         assertEquals(2, manager.getSources().size()); // System properties + Environment // GH-90000
@@ -207,19 +207,19 @@ class ConfigManagerTest {
     @Test
     void testGetAll(@TempDir Path tempDir) throws Exception { // GH-90000
         // Create a temporary config file
-        File configFile = tempDir.resolve("test.conf [GH-90000]").toFile();
+        File configFile = tempDir.resolve("test.conf").toFile();
         try (FileWriter writer = new FileWriter(configFile)) { // GH-90000
-            writer.write("key1 = value1\n [GH-90000]");
-            writer.write("key2 = value2\n [GH-90000]");
+            writer.write("key1 = value1\n");
+            writer.write("key2 = value2\n");
         }
 
-        ConfigManager manager = new ConfigManager("test [GH-90000]");
+        ConfigManager manager = new ConfigManager("test");
         manager.addSource(new FileConfigSource(configFile.getAbsolutePath())); // GH-90000
 
         Map<String, Object> all = manager.getAll(); // GH-90000
 
         assertFalse(all.isEmpty()); // GH-90000
-        assertEquals("value1", all.get("key1 [GH-90000]"));
-        assertEquals("value2", all.get("key2 [GH-90000]"));
+        assertEquals("value1", all.get("key1"));
+        assertEquals("value2", all.get("key2"));
     }
 }

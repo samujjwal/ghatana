@@ -21,22 +21,22 @@ import static org.assertj.core.api.Assertions.fail;
  * @doc.layer product
  * @doc.pattern UnitTest
  */
-@DisplayName("Analytics UI Contract Tests [GH-90000]")
+@DisplayName("Analytics UI Contract Tests")
 public class AnalyticsUiContractTest {
 
     @Nested
-    @DisplayName("AnalyticsDashboardPageTests [GH-90000]")
+    @DisplayName("AnalyticsDashboardPageTests")
     class AnalyticsDashboardPageTests {
 
         @Test
-        @DisplayName("GET /analytics: dashboard with KPIs [GH-90000]")
+        @DisplayName("GET /analytics: dashboard with KPIs")
         void shouldReturnDashboard() { // GH-90000
             Map<String, Object> response = getAnalyticsDashboard(); // GH-90000
             assertThat(response).containsKeys("kpis", "trends", "topMetrics", "period"); // GH-90000
         }
 
         @Test
-        @DisplayName("KPIs: revenue, users, queries, storage [GH-90000]")
+        @DisplayName("KPIs: revenue, users, queries, storage")
         void shouldHaveKpis() { // GH-90000
             Map<String, Object> response = getAnalyticsDashboard(); // GH-90000
             Map<String, ?> kpis = requireMap(response, "kpis"); // GH-90000
@@ -45,7 +45,7 @@ public class AnalyticsUiContractTest {
         }
 
         @Test
-        @DisplayName("trends: growth metrics over time [GH-90000]")
+        @DisplayName("trends: growth metrics over time")
         void shouldHaveTrends() { // GH-90000
             Map<String, Object> response = getAnalyticsDashboard(); // GH-90000
             Map<String, ?> trends = requireMap(response, "trends"); // GH-90000
@@ -54,101 +54,101 @@ public class AnalyticsUiContractTest {
         }
 
         @Test
-        @DisplayName("period selection: day, week, month, quarter, year [GH-90000]")
+        @DisplayName("period selection: day, week, month, quarter, year")
         void shouldSupportPeriods() { // GH-90000
-            Map<String, Object> response = getAnalyticsDashboardForPeriod("MONTH [GH-90000]");
-            assertThat(response.get("period [GH-90000]")).isEqualTo("MONTH [GH-90000]");
+            Map<String, Object> response = getAnalyticsDashboardForPeriod("MONTH");
+            assertThat(response.get("period")).isEqualTo("MONTH");
         }
 
         @Test
-        @DisplayName("date range: custom start and end [GH-90000]")
+        @DisplayName("date range: custom start and end")
         void shouldSupportDateRange() { // GH-90000
             Map<String, Object> response = getAnalyticsForDateRange("2026-01-01", "2026-03-31"); // GH-90000
-            assertThat(response).containsKey("dateRange [GH-90000]");
+            assertThat(response).containsKey("dateRange");
         }
 
         @Test
-        @DisplayName("analytics tenant isolation [GH-90000]")
+        @DisplayName("analytics tenant isolation")
         void shouldIsolateTenant() { // GH-90000
-            Map<String, Object> t1 = getAnalyticsForTenant("tenant-1 [GH-90000]");
-            assertThat(t1.get("tenantId [GH-90000]")).isEqualTo("tenant-1 [GH-90000]");
+            Map<String, Object> t1 = getAnalyticsForTenant("tenant-1");
+            assertThat(t1.get("tenantId")).isEqualTo("tenant-1");
         }
 
         @Test
-        @DisplayName("metric comparison: current vs previous period [GH-90000]")
+        @DisplayName("metric comparison: current vs previous period")
         void shouldCompareMetrics() { // GH-90000
             Map<String, Object> response = getAnalyticsDashboard(); // GH-90000
             Map<String, ?> kpis = requireMap(response, "kpis"); // GH-90000
 
-            if (kpis.containsKey("totalRevenue [GH-90000]")) {
+            if (kpis.containsKey("totalRevenue")) {
                 Map<String, ?> revenue = requireMap(kpis, "totalRevenue"); // GH-90000
                 assertThat(revenue).containsKeys("current", "previous", "change"); // GH-90000
             }
         }
 
         @Test
-        @DisplayName("analytics refresh timestamp: when last updated [GH-90000]")
+        @DisplayName("analytics refresh timestamp: when last updated")
         void shouldIncludeRefreshTime() { // GH-90000
             Map<String, Object> response = getAnalyticsDashboard(); // GH-90000
-            assertThat(response).containsKey("lastUpdated [GH-90000]");
+            assertThat(response).containsKey("lastUpdated");
         }
     }
 
     @Nested
-    @DisplayName("AnalyticsDetailPageTests [GH-90000]")
+    @DisplayName("AnalyticsDetailPageTests")
     class AnalyticsDetailPageTests {
 
         @Test
-        @DisplayName("GET /analytics/{metric}: detailed metric view [GH-90000]")
+        @DisplayName("GET /analytics/{metric}: detailed metric view")
         void shouldReturnDetail() { // GH-90000
-            Map<String, Object> response = getAnalyticsDetail("queries_executed [GH-90000]");
+            Map<String, Object> response = getAnalyticsDetail("queries_executed");
             assertThat(response).containsKeys("metric", "data", "breakdown"); // GH-90000
         }
 
         @Test
-        @DisplayName("metric data: time series with values [GH-90000]")
+        @DisplayName("metric data: time series with values")
         void shouldHaveTimeSeries() { // GH-90000
-            Map<String, Object> response = getAnalyticsDetail("queries_executed [GH-90000]");
-            List<?> data = (List<?>) response.get("data [GH-90000]");
+            Map<String, Object> response = getAnalyticsDetail("queries_executed");
+            List<?> data = (List<?>) response.get("data");
 
             assertThat(data).isNotEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("metric breakdown: by category, user, collection [GH-90000]")
+        @DisplayName("metric breakdown: by category, user, collection")
         void shouldHaveBreakdown() { // GH-90000
-            Map<String, Object> response = getAnalyticsDetail("queries_executed [GH-90000]");
+            Map<String, Object> response = getAnalyticsDetail("queries_executed");
             Map<String, ?> breakdown = requireMap(response, "breakdown"); // GH-90000
 
             assertThat(breakdown).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("metric aggregation options: sum, average, max [GH-90000]")
+        @DisplayName("metric aggregation options: sum, average, max")
         void shouldSupportAggregation() { // GH-90000
-            Map<String, Object> response = getAnalyticsDetail("queries_executed [GH-90000]");
-            assertThat(response).containsKey("aggregation [GH-90000]");
+            Map<String, Object> response = getAnalyticsDetail("queries_executed");
+            assertThat(response).containsKey("aggregation");
         }
 
         @Test
-        @DisplayName("metric visualization: chart metadata [GH-90000]")
+        @DisplayName("metric visualization: chart metadata")
         void shouldHaveVisualization() { // GH-90000
-            Map<String, Object> response = getAnalyticsDetail("queries_executed [GH-90000]");
-            assertThat(response).containsKey("chartType [GH-90000]");
+            Map<String, Object> response = getAnalyticsDetail("queries_executed");
+            assertThat(response).containsKey("chartType");
         }
 
         @Test
-        @DisplayName("metric anomalies: detected outliers [GH-90000]")
+        @DisplayName("metric anomalies: detected outliers")
         void shouldDetectAnomalies() { // GH-90000
-            Map<String, Object> response = getAnalyticsDetail("queries_executed [GH-90000]");
-            assertThat(response).containsKey("anomalies [GH-90000]");
+            Map<String, Object> response = getAnalyticsDetail("queries_executed");
+            assertThat(response).containsKey("anomalies");
         }
 
         @Test
-        @DisplayName("metric export: CSV or JSON [GH-90000]")
+        @DisplayName("metric export: CSV or JSON")
         void shouldSupportExport() { // GH-90000
-            Map<String, Object> response = getAnalyticsDetail("queries_executed [GH-90000]");
-            assertThat(response).containsKey("exportUrl [GH-90000]");
+            Map<String, Object> response = getAnalyticsDetail("queries_executed");
+            assertThat(response).containsKey("exportUrl");
         }
     }
 
@@ -157,7 +157,7 @@ public class AnalyticsUiContractTest {
     // ─────────────────────────────────────────────────────────────────────
 
     private Map<String, Object> getAnalyticsDashboard() { // GH-90000
-        return getAnalyticsForTenant("tenant-default [GH-90000]");
+        return getAnalyticsForTenant("tenant-default");
     }
 
     private Map<String, Object> getAnalyticsForTenant(String tenantId) { // GH-90000

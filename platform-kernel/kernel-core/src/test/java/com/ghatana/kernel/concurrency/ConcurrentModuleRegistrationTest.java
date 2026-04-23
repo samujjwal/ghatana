@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Concurrent Module Registration Tests [GH-90000]")
+@DisplayName("Concurrent Module Registration Tests")
 class ConcurrentModuleRegistrationTest extends EventloopTestBase {
 
     private KernelRegistryImpl registry;
@@ -42,7 +42,7 @@ class ConcurrentModuleRegistrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle 100 concurrent module registrations [GH-90000]")
+    @DisplayName("Should handle 100 concurrent module registrations")
     void testConcurrentModuleRegistration() throws Exception { // GH-90000
         // GIVEN: 100 modules to register concurrently
         int moduleCount = 100;
@@ -78,7 +78,7 @@ class ConcurrentModuleRegistrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should prevent duplicate module registration under concurrent load [GH-90000]")
+    @DisplayName("Should prevent duplicate module registration under concurrent load")
     void testConcurrentDuplicateRegistration() throws Exception { // GH-90000
         // GIVEN: Multiple threads trying to register the same module
         int threadCount = 50;
@@ -97,7 +97,7 @@ class ConcurrentModuleRegistrationTest extends EventloopTestBase {
                     registry.registerModule(module); // GH-90000
                     successCount.incrementAndGet(); // GH-90000
                 } catch (IllegalStateException e) { // GH-90000
-                    if (e.getMessage().contains("already registered [GH-90000]")) {
+                    if (e.getMessage().contains("already registered")) {
                         failureCount.incrementAndGet(); // GH-90000
                     }
                 } catch (Exception e) { // GH-90000
@@ -118,7 +118,7 @@ class ConcurrentModuleRegistrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle concurrent capability registration [GH-90000]")
+    @DisplayName("Should handle concurrent capability registration")
     void testConcurrentCapabilityRegistration() throws Exception { // GH-90000
         // GIVEN: 100 modules with capabilities to register concurrently
         int moduleCount = 100;
@@ -156,7 +156,7 @@ class ConcurrentModuleRegistrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle concurrent dependency resolution [GH-90000]")
+    @DisplayName("Should handle concurrent dependency resolution")
     void testConcurrentDependencyResolution() throws Exception { // GH-90000
         // GIVEN: Modules with dependencies
         TestModule moduleA = new TestModule("module-a", "1.0.0"); // GH-90000
@@ -201,7 +201,7 @@ class ConcurrentModuleRegistrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle concurrent module unregistration [GH-90000]")
+    @DisplayName("Should handle concurrent module unregistration")
     void testConcurrentModuleUnregistration() throws Exception { // GH-90000
         // GIVEN: 100 registered modules
         int moduleCount = 100;
@@ -242,7 +242,7 @@ class ConcurrentModuleRegistrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle race condition in capability registration [GH-90000]")
+    @DisplayName("Should handle race condition in capability registration")
     void testRaceConditionInCapabilityRegistration() throws Exception { // GH-90000
         // GIVEN: Multiple modules providing the same capability
         int moduleCount = 10;

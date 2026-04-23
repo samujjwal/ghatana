@@ -42,7 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @Testcontainers(disabledWithoutDocker = true) // GH-90000
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class) // GH-90000
-@DisplayName("BlobStorageConnector — Integration Tests (MinIO via Testcontainers) [GH-90000]")
+@DisplayName("BlobStorageConnector — Integration Tests (MinIO via Testcontainers)")
 class BlobStorageConnectorTest extends EventloopTestBase {
 
     private static final int MINIO_PORT  = 9000;
@@ -53,15 +53,15 @@ class BlobStorageConnectorTest extends EventloopTestBase {
     private static final String COLLECT  = "products";
 
     @Container
-    @SuppressWarnings("resource [GH-90000]")
+    @SuppressWarnings("resource")
     static final GenericContainer<?> MINIO =
-            new GenericContainer<>("minio/minio:RELEASE.2024-02-26T09-33-48Z [GH-90000]")
+            new GenericContainer<>("minio/minio:RELEASE.2024-02-26T09-33-48Z")
                     .withExposedPorts(MINIO_PORT, 9001) // GH-90000
                     .withEnv("MINIO_ROOT_USER",     ACCESS) // GH-90000
                     .withEnv("MINIO_ROOT_PASSWORD",  SECRET) // GH-90000
                     .withCommand("server", "/data", "--console-address", ":9001") // GH-90000
                     .waitingFor(new HttpWaitStrategy() // GH-90000
-                            .forPath("/minio/health/live [GH-90000]")
+                            .forPath("/minio/health/live")
                             .forPort(MINIO_PORT) // GH-90000
                             .withStartupTimeout(Duration.ofMinutes(2))); // GH-90000
 
@@ -76,9 +76,9 @@ class BlobStorageConnectorTest extends EventloopTestBase {
                 .accessKeyId(ACCESS) // GH-90000
                 .secretAccessKey(SECRET) // GH-90000
                 .bucketName(BUCKET) // GH-90000
-                .region("us-east-1 [GH-90000]")
+                .region("us-east-1")
                 .pathStyleAccess(true)     // MinIO requires path-style // GH-90000
-                .keyPrefix("dc/ [GH-90000]")
+                .keyPrefix("dc/")
                 .build(); // GH-90000
         connector = new BlobStorageConnector(config, new SimpleMeterRegistry()); // GH-90000
     }
@@ -94,7 +94,7 @@ class BlobStorageConnectorTest extends EventloopTestBase {
 
     @Test
     @Order(1) // GH-90000
-    @DisplayName("healthCheck — bucket accessible [GH-90000]")
+    @DisplayName("healthCheck — bucket accessible")
     void healthCheck_bucketAccessible() { // GH-90000
         runPromise(() -> connector.healthCheck()); // GH-90000
         // No exception == healthy
@@ -106,13 +106,13 @@ class BlobStorageConnectorTest extends EventloopTestBase {
 
     @Test
     @Order(2) // GH-90000
-    @DisplayName("create — stores entity and returns it [GH-90000]")
+    @DisplayName("create — stores entity and returns it")
     void create_storesAndReturnsEntity() { // GH-90000
         Entity entity = entity(null, Map.of("name", "Widget", "price", 9.99)); // GH-90000
 
         Entity saved = runPromise(() -> connector.create(entity)); // GH-90000
 
-        assertThat(saved.getId()).as("saved entity must retain ID [GH-90000]").isEqualTo(entity.getId());
+        assertThat(saved.getId()).as("saved entity must retain ID").isEqualTo(entity.getId());
         assertThat(saved.getTenantId()).isEqualTo(TENANT); // GH-90000
         assertThat(saved.getCollectionName()).isEqualTo(COLLECT); // GH-90000
     }
@@ -123,7 +123,7 @@ class BlobStorageConnectorTest extends EventloopTestBase {
 
     @Test
     @Order(3) // GH-90000
-    @DisplayName("readByName — retrieves previously stored entity [GH-90000]")
+    @DisplayName("readByName — retrieves previously stored entity")
     void readByName_returnsSavedEntity() { // GH-90000
         UUID id     = UUID.randomUUID(); // GH-90000
         Entity e    = entity(id, Map.of("sku", "SKU-001", "qty", 42)); // GH-90000
@@ -138,7 +138,7 @@ class BlobStorageConnectorTest extends EventloopTestBase {
 
     @Test
     @Order(4) // GH-90000
-    @DisplayName("readByName — returns empty for unknown ID [GH-90000]")
+    @DisplayName("readByName — returns empty for unknown ID")
     void readByName_emptyForUnknown() { // GH-90000
         Optional<Entity> found = runPromise(() -> // GH-90000
                 connector.readByName(TENANT, COLLECT, UUID.randomUUID())); // GH-90000
@@ -152,7 +152,7 @@ class BlobStorageConnectorTest extends EventloopTestBase {
 
     @Test
     @Order(5) // GH-90000
-    @DisplayName("update — overwrites object in place [GH-90000]")
+    @DisplayName("update — overwrites object in place")
     void update_overwritesObject() { // GH-90000
         UUID id  = UUID.randomUUID(); // GH-90000
         runPromise(() -> connector.create(entity(id, Map.of("status", "draft")))); // GH-90000
@@ -171,7 +171,7 @@ class BlobStorageConnectorTest extends EventloopTestBase {
 
     @Test
     @Order(6) // GH-90000
-    @DisplayName("deleteByName — object no longer findable after deletion [GH-90000]")
+    @DisplayName("deleteByName — object no longer findable after deletion")
     void deleteByName_removesObject() { // GH-90000
         UUID id = UUID.randomUUID(); // GH-90000
         runPromise(() -> connector.create(entity(id, Map.of("temp", true)))); // GH-90000
@@ -188,7 +188,7 @@ class BlobStorageConnectorTest extends EventloopTestBase {
 
     @Test
     @Order(7) // GH-90000
-    @DisplayName("scanByName — lists all entities in a collection [GH-90000]")
+    @DisplayName("scanByName — lists all entities in a collection")
     void scanByName_returnsAllEntities() { // GH-90000
         // Use a unique collection per test to avoid cross-test pollution
         String col = "scan-" + UUID.randomUUID(); // GH-90000
@@ -203,7 +203,7 @@ class BlobStorageConnectorTest extends EventloopTestBase {
 
     @Test
     @Order(8) // GH-90000
-    @DisplayName("query — paginated results via QuerySpec [GH-90000]")
+    @DisplayName("query — paginated results via QuerySpec")
     void query_paginatesResults() { // GH-90000
         // collectionName must equal collectionId.toString() so that create() // GH-90000
         // and query() agree on the S3 key-path prefix. // GH-90000
@@ -227,7 +227,7 @@ class BlobStorageConnectorTest extends EventloopTestBase {
 
     @Test
     @Order(9) // GH-90000
-    @DisplayName("count — accurate entity count per collection [GH-90000]")
+    @DisplayName("count — accurate entity count per collection")
     void count_accurateCount() { // GH-90000
         UUID cid = UUID.randomUUID(); // GH-90000
         // collectionName must equal cid.toString() so create() and count() use the same S3 prefix. // GH-90000
@@ -246,7 +246,7 @@ class BlobStorageConnectorTest extends EventloopTestBase {
 
     @Test
     @Order(10) // GH-90000
-    @DisplayName("bulkCreate — creates all entities [GH-90000]")
+    @DisplayName("bulkCreate — creates all entities")
     void bulkCreate_createsAll() { // GH-90000
         // collectionName must equal cid.toString() so bulkCreate() and count() agree on the S3 prefix. // GH-90000
         UUID   cid  = UUID.randomUUID(); // GH-90000

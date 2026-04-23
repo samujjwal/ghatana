@@ -50,7 +50,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("LifecycleApiController [GH-90000]")
+@DisplayName("LifecycleApiController")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class LifecycleApiControllerTest extends EventloopTestBase {
 
@@ -103,36 +103,36 @@ class LifecycleApiControllerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("execute full lifecycle returns all phase outputs when validation passes [GH-90000]")
+    @DisplayName("execute full lifecycle returns all phase outputs when validation passes")
     void executeFullLifecycleSuccessPath() throws Exception { // GH-90000
         IntentSpec intentSpec = IntentSpec.builder() // GH-90000
-            .id("intent-1 [GH-90000]")
-            .productName("Order Service [GH-90000]")
-            .description("Build an order service [GH-90000]")
+            .id("intent-1")
+            .productName("Order Service")
+            .description("Build an order service")
             .goals(List.of()) // GH-90000
             .personas(List.of()) // GH-90000
             .constraints(List.of()) // GH-90000
             .metadata(Map.of()) // GH-90000
-            .tenantId("tenant-1 [GH-90000]")
+            .tenantId("tenant-1")
             .build(); // GH-90000
         ShapeSpec shapeSpec = ShapeSpec.builder() // GH-90000
-            .id("shape-1 [GH-90000]")
+            .id("shape-1")
             .intentRef(intentSpec.id()) // GH-90000
             .metadata(Map.of()) // GH-90000
-            .tenantId("tenant-1 [GH-90000]")
+            .tenantId("tenant-1")
             .build(); // GH-90000
         LifecycleValidationResult validationResult = LifecycleValidationResult.builder() // GH-90000
             .passed(true) // GH-90000
             .issues(List.of()) // GH-90000
             .build(); // GH-90000
         GeneratedArtifacts artifacts = GeneratedArtifacts.builder() // GH-90000
-            .id("artifacts-1 [GH-90000]")
+            .id("artifacts-1")
             .specRef(shapeSpec.id()) // GH-90000
             .artifacts(List.of()) // GH-90000
             .build(); // GH-90000
         RunResult runResult = RunResult.builder() // GH-90000
-            .id("run-1 [GH-90000]")
-            .runSpecRef("run-spec-1 [GH-90000]")
+            .id("run-1")
+            .runSpecRef("run-spec-1")
             .status(RunStatus.SUCCESS) // GH-90000
             .taskResults(List.of()) // GH-90000
             .startedAt(Instant.now()) // GH-90000
@@ -140,21 +140,21 @@ class LifecycleApiControllerTest extends EventloopTestBase {
             .metadata(Map.of()) // GH-90000
             .build(); // GH-90000
         Observation observation = Observation.builder() // GH-90000
-            .id("obs-1 [GH-90000]")
+            .id("obs-1")
             .runRef(runResult.runSpecRef()) // GH-90000
             .metrics(List.of()) // GH-90000
             .logs(List.of()) // GH-90000
             .traces(List.of()) // GH-90000
             .build(); // GH-90000
         Insights insights = Insights.builder() // GH-90000
-            .id("insights-1 [GH-90000]")
+            .id("insights-1")
             .observationRef(observation.id()) // GH-90000
             .patterns(List.of()) // GH-90000
             .anomalies(List.of()) // GH-90000
             .recommendations(List.of()) // GH-90000
             .build(); // GH-90000
         EvolutionPlan evolutionPlan = EvolutionPlan.builder() // GH-90000
-            .id("evolution-1 [GH-90000]")
+            .id("evolution-1")
             .insightsRef(insights.id()) // GH-90000
             .tasks(List.of()) // GH-90000
             .metadata(Map.of()) // GH-90000
@@ -169,8 +169,8 @@ class LifecycleApiControllerTest extends EventloopTestBase {
         when(learningService.analyze(any())).thenReturn(Promise.of(insights)); // GH-90000
         when(evolutionService.propose(any())).thenReturn(Promise.of(evolutionPlan)); // GH-90000
 
-        String requestJson = JsonMapper.toJson(new LifecycleRequest(IntentInput.of("Build an order service [GH-90000]"), "staging"));
-        HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/lifecycle/execute [GH-90000]")
+        String requestJson = JsonMapper.toJson(new LifecycleRequest(IntentInput.of("Build an order service"), "staging"));
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/lifecycle/execute")
             .withBody(ByteBuf.wrapForReading(requestJson.getBytes(StandardCharsets.UTF_8))) // GH-90000
             .build(); // GH-90000
 
@@ -184,23 +184,23 @@ class LifecycleApiControllerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("execute full lifecycle stops after validation when blocking issues exist [GH-90000]")
+    @DisplayName("execute full lifecycle stops after validation when blocking issues exist")
     void executeFullLifecycleStopsOnValidationFailure() throws Exception { // GH-90000
         IntentSpec intentSpec = IntentSpec.builder() // GH-90000
-            .id("intent-1 [GH-90000]")
-            .productName("Order Service [GH-90000]")
-            .description("Build an order service [GH-90000]")
+            .id("intent-1")
+            .productName("Order Service")
+            .description("Build an order service")
             .goals(List.of()) // GH-90000
             .personas(List.of()) // GH-90000
             .constraints(List.of()) // GH-90000
             .metadata(Map.of()) // GH-90000
-            .tenantId("tenant-1 [GH-90000]")
+            .tenantId("tenant-1")
             .build(); // GH-90000
         ShapeSpec shapeSpec = ShapeSpec.builder() // GH-90000
-            .id("shape-1 [GH-90000]")
+            .id("shape-1")
             .intentRef(intentSpec.id()) // GH-90000
             .metadata(Map.of()) // GH-90000
-            .tenantId("tenant-1 [GH-90000]")
+            .tenantId("tenant-1")
             .build(); // GH-90000
         LifecycleValidationResult validationResult = LifecycleValidationResult.builder() // GH-90000
             .passed(false) // GH-90000
@@ -211,8 +211,8 @@ class LifecycleApiControllerTest extends EventloopTestBase {
         when(shapeService.derive(any())).thenReturn(Promise.of(shapeSpec)); // GH-90000
         when(validationService.validate(any())).thenReturn(Promise.of(validationResult)); // GH-90000
 
-        String requestJson = JsonMapper.toJson(new LifecycleRequest(IntentInput.of("Build an order service [GH-90000]"), "staging"));
-        HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/lifecycle/execute [GH-90000]")
+        String requestJson = JsonMapper.toJson(new LifecycleRequest(IntentInput.of("Build an order service"), "staging"));
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/lifecycle/execute")
             .withBody(ByteBuf.wrapForReading(requestJson.getBytes(StandardCharsets.UTF_8))) // GH-90000
             .build(); // GH-90000
 

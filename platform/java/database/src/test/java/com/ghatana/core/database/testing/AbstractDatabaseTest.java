@@ -19,10 +19,10 @@ import javax.sql.DataSource;
 public abstract class AbstractDatabaseTest {
 
     @Container
-    protected static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine [GH-90000]")
-        .withDatabaseName("testdb [GH-90000]")
-        .withUsername("test [GH-90000]")
-        .withPassword("test [GH-90000]");
+    protected static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
+        .withDatabaseName("testdb")
+        .withUsername("test")
+        .withPassword("test");
 
     protected DataSource dataSource;
     protected JpaConfig jpaConfig;
@@ -35,8 +35,8 @@ public abstract class AbstractDatabaseTest {
             .jdbcUrl(postgres.getJdbcUrl()) // GH-90000
             .username(postgres.getUsername()) // GH-90000
             .password(postgres.getPassword()) // GH-90000
-            .entityPackages("com.ghatana [GH-90000]")
-            .ddlAuto("create-drop [GH-90000]")  // Create and drop schema for tests
+            .entityPackages("com.ghatana")
+            .ddlAuto("create-drop")  // Create and drop schema for tests
             .showSql(true)           // Show SQL for debugging // GH-90000
             .formatSql(true)         // Format SQL for better readability // GH-90000
             .build(); // GH-90000

@@ -27,7 +27,11 @@ import java.util.List;
  *       .intercept(GrpcInterceptorChain.build())  // single varargs call
  *       .build();
  * }</pre>
- */
+  * @doc.type class
+ * @doc.purpose Provides grpc interceptor chain functionality.
+ * @doc.layer product
+ * @doc.pattern Filter
+*/
 public final class GrpcInterceptorChain {
 
     private GrpcInterceptorChain() {}

@@ -36,7 +36,7 @@ import static org.mockito.Mockito.*;
  *   <li>Constructor rejects null arguments</li>
  * </ul>
  */
-@DisplayName("KeyRotationService [GH-90000]")
+@DisplayName("KeyRotationService")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class KeyRotationServiceTest extends EventloopTestBase {
 
@@ -71,12 +71,12 @@ class KeyRotationServiceTest extends EventloopTestBase {
     // ── registerKey ──────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("registerKey: inserts ACTIVE key_versions row and returns version ID [GH-90000]")
+    @DisplayName("registerKey: inserts ACTIVE key_versions row and returns version ID")
     void registerKey_insertsActiveRow() throws SQLException { // GH-90000
         String versionId = runPromise(() -> service.registerKey("yappc-main-key", "system")); // GH-90000
 
         assertThat(versionId).isNotBlank(); // GH-90000
-        verify(connection).prepareStatement(contains("INSERT INTO key_versions [GH-90000]"));
+        verify(connection).prepareStatement(contains("INSERT INTO key_versions"));
         verify(insertVersionStmt).setString(2, "yappc-main-key"); // GH-90000
         verify(insertVersionStmt).setString(3, "ACTIVE"); // GH-90000
         verify(insertVersionStmt).setString(4, "system"); // GH-90000
@@ -84,7 +84,7 @@ class KeyRotationServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("registerKey: returns unique UUID for each call [GH-90000]")
+    @DisplayName("registerKey: returns unique UUID for each call")
     void registerKey_returnsUniqueIds() { // GH-90000
         String id1 = runPromise(() -> service.registerKey("key-alias", "system")); // GH-90000
         String id2 = runPromise(() -> service.registerKey("key-alias", "system")); // GH-90000
@@ -93,25 +93,25 @@ class KeyRotationServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("registerKey: null keyAlias throws NullPointerException [GH-90000]")
+    @DisplayName("registerKey: null keyAlias throws NullPointerException")
     void registerKey_nullAlias_throws() { // GH-90000
         assertThatThrownBy(() -> runPromise(() -> service.registerKey(null, "system"))) // GH-90000
                 .isInstanceOf(NullPointerException.class) // GH-90000
-                .hasMessageContaining("keyAlias [GH-90000]");
+                .hasMessageContaining("keyAlias");
     }
 
     @Test
-    @DisplayName("registerKey: null createdBy throws NullPointerException [GH-90000]")
+    @DisplayName("registerKey: null createdBy throws NullPointerException")
     void registerKey_nullCreatedBy_throws() { // GH-90000
         assertThatThrownBy(() -> runPromise(() -> service.registerKey("key-alias", null))) // GH-90000
                 .isInstanceOf(NullPointerException.class) // GH-90000
-                .hasMessageContaining("createdBy [GH-90000]");
+                .hasMessageContaining("createdBy");
     }
 
     // ── rotateKey ────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("rotateKey: supersedes old key, activates new key, creates job row [GH-90000]")
+    @DisplayName("rotateKey: supersedes old key, activates new key, creates job row")
     void rotateKey_fullWorkflow() throws SQLException { // GH-90000
         // rotateKey opens one Connection and calls prepareStatement 4 times in order:
         //   1. SELECT (findActiveVersion) // GH-90000
@@ -126,7 +126,7 @@ class KeyRotationServiceTest extends EventloopTestBase {
 
         when(selectActiveStmt.executeQuery()).thenReturn(resultSet); // GH-90000
         when(resultSet.next()).thenReturn(true); // GH-90000
-        when(resultSet.getString("version_id [GH-90000]")).thenReturn("old-version-id [GH-90000]");
+        when(resultSet.getString("version_id")).thenReturn("old-version-id");
         when(supersedeStmt.executeUpdate()).thenReturn(1); // GH-90000
         when(activateStmt.executeUpdate()).thenReturn(1); // GH-90000
         when(insertJobStmt.executeUpdate()).thenReturn(1); // GH-90000
@@ -144,33 +144,33 @@ class KeyRotationServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("rotateKey: rolls back transaction when no active key found [GH-90000]")
+    @DisplayName("rotateKey: rolls back transaction when no active key found")
     void rotateKey_noActiveKey_rollsBack() throws SQLException { // GH-90000
-        when(connection.prepareStatement(contains("SELECT version_id [GH-90000]"))).thenReturn(selectActiveStmt);
+        when(connection.prepareStatement(contains("SELECT version_id"))).thenReturn(selectActiveStmt);
         when(selectActiveStmt.executeQuery()).thenReturn(resultSet); // GH-90000
         when(resultSet.next()).thenReturn(false);    // no active key // GH-90000
 
         assertThatThrownBy(() -> // GH-90000
                 runPromise(() -> service.rotateKey("yappc-main-key", "new-id", "admin"))) // GH-90000
                 .isInstanceOf(IllegalStateException.class) // GH-90000
-                .hasMessageContaining("No active key found for alias [GH-90000]");
+                .hasMessageContaining("No active key found for alias");
 
         verify(connection).rollback(); // GH-90000
     }
 
     @Test
-    @DisplayName("rotateKey: null keyAlias throws NullPointerException [GH-90000]")
+    @DisplayName("rotateKey: null keyAlias throws NullPointerException")
     void rotateKey_nullAlias_throws() { // GH-90000
         assertThatThrownBy(() -> // GH-90000
                 runPromise(() -> service.rotateKey(null, "new-id", "admin"))) // GH-90000
                 .isInstanceOf(NullPointerException.class) // GH-90000
-                .hasMessageContaining("keyAlias [GH-90000]");
+                .hasMessageContaining("keyAlias");
     }
 
     // ── completeRotationJob ──────────────────────────────────────────────────
 
     @Test
-    @DisplayName("completeRotationJob: marks job COMPLETE when zero failures [GH-90000]")
+    @DisplayName("completeRotationJob: marks job COMPLETE when zero failures")
     void completeRotationJob_zeroFailures_marksComplete() throws SQLException { // GH-90000
         when(connection.prepareStatement(anyString())).thenReturn(completeJobStmt); // GH-90000
         when(completeJobStmt.executeUpdate()).thenReturn(1); // GH-90000
@@ -185,7 +185,7 @@ class KeyRotationServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("completeRotationJob: marks job FAILED when failures > 0 [GH-90000]")
+    @DisplayName("completeRotationJob: marks job FAILED when failures > 0")
     void completeRotationJob_withFailures_marksFailed() throws SQLException { // GH-90000
         when(connection.prepareStatement(anyString())).thenReturn(completeJobStmt); // GH-90000
         when(completeJobStmt.executeUpdate()).thenReturn(1); // GH-90000
@@ -198,39 +198,39 @@ class KeyRotationServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("completeRotationJob: null jobId throws NullPointerException [GH-90000]")
+    @DisplayName("completeRotationJob: null jobId throws NullPointerException")
     void completeRotationJob_nullJobId_throws() { // GH-90000
         assertThatThrownBy(() -> // GH-90000
                 runPromise(() -> service.completeRotationJob(null, 0L, 0L, null))) // GH-90000
                 .isInstanceOf(NullPointerException.class) // GH-90000
-                .hasMessageContaining("jobId [GH-90000]");
+                .hasMessageContaining("jobId");
     }
 
     // ── getActiveVersionId ───────────────────────────────────────────────────
 
     @Test
-    @DisplayName("getActiveVersionId: returns version ID when ACTIVE key exists [GH-90000]")
+    @DisplayName("getActiveVersionId: returns version ID when ACTIVE key exists")
     void getActiveVersionId_found() throws SQLException { // GH-90000
         when(connection.prepareStatement(anyString())).thenReturn(selectActiveStmt); // GH-90000
         when(selectActiveStmt.executeQuery()).thenReturn(resultSet); // GH-90000
         when(resultSet.next()).thenReturn(true); // GH-90000
-        when(resultSet.getString("version_id [GH-90000]")).thenReturn("v-abc-123 [GH-90000]");
+        when(resultSet.getString("version_id")).thenReturn("v-abc-123");
 
         Optional<String> result = runPromise(() -> // GH-90000
-                service.getActiveVersionId("yappc-main-key [GH-90000]"));
+                service.getActiveVersionId("yappc-main-key"));
 
-        assertThat(result).isPresent().hasValue("v-abc-123 [GH-90000]");
+        assertThat(result).isPresent().hasValue("v-abc-123");
     }
 
     @Test
-    @DisplayName("getActiveVersionId: returns empty when no ACTIVE key for alias [GH-90000]")
+    @DisplayName("getActiveVersionId: returns empty when no ACTIVE key for alias")
     void getActiveVersionId_notFound() throws SQLException { // GH-90000
         when(connection.prepareStatement(anyString())).thenReturn(selectActiveStmt); // GH-90000
         when(selectActiveStmt.executeQuery()).thenReturn(resultSet); // GH-90000
         when(resultSet.next()).thenReturn(false); // GH-90000
 
         Optional<String> result = runPromise(() -> // GH-90000
-                service.getActiveVersionId("yappc-main-key [GH-90000]"));
+                service.getActiveVersionId("yappc-main-key"));
 
         assertThat(result).isEmpty(); // GH-90000
     }
@@ -238,14 +238,14 @@ class KeyRotationServiceTest extends EventloopTestBase {
     // ── encryptionServiceForKey ──────────────────────────────────────────────
 
     @Test
-    @DisplayName("encryptionServiceForKey: returns EncryptionService for given key bytes [GH-90000]")
+    @DisplayName("encryptionServiceForKey: returns EncryptionService for given key bytes")
     void encryptionServiceForKey_returnsInstance() { // GH-90000
         EncryptionService enc = service.encryptionServiceForKey(TEST_KEY_BYTES); // GH-90000
         assertThat(enc).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("encryptionServiceForKey: null keyBytes throws NullPointerException [GH-90000]")
+    @DisplayName("encryptionServiceForKey: null keyBytes throws NullPointerException")
     void encryptionServiceForKey_nullThrows() { // GH-90000
         assertThatThrownBy(() -> service.encryptionServiceForKey(null)) // GH-90000
                 .isInstanceOf(NullPointerException.class); // GH-90000
@@ -254,7 +254,7 @@ class KeyRotationServiceTest extends EventloopTestBase {
     // ── decryptWithOldKey ────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("decryptWithOldKey: decrypts ciphertext produced by EncryptionService [GH-90000]")
+    @DisplayName("decryptWithOldKey: decrypts ciphertext produced by EncryptionService")
     void decryptWithOldKey_roundTrip() { // GH-90000
         EncryptionService enc = new EncryptionService(TEST_KEY_BYTES); // GH-90000
         String plaintext  = "my-secret-env-value";
@@ -266,7 +266,7 @@ class KeyRotationServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("decryptWithOldKey: null ciphertext throws NullPointerException [GH-90000]")
+    @DisplayName("decryptWithOldKey: null ciphertext throws NullPointerException")
     void decryptWithOldKey_nullCiphertext_throws() { // GH-90000
         assertThatThrownBy(() -> service.decryptWithOldKey(null, TEST_KEY_BYTES)) // GH-90000
                 .isInstanceOf(NullPointerException.class); // GH-90000
@@ -275,18 +275,18 @@ class KeyRotationServiceTest extends EventloopTestBase {
     // ── Constructor validation ────────────────────────────────────────────────
 
     @Test
-    @DisplayName("null dataSource throws NullPointerException [GH-90000]")
+    @DisplayName("null dataSource throws NullPointerException")
     void constructor_nullDataSource_throws() { // GH-90000
         assertThatThrownBy(() -> new KeyRotationService(null, eventloop())) // GH-90000
                 .isInstanceOf(NullPointerException.class) // GH-90000
-                .hasMessageContaining("dataSource [GH-90000]");
+                .hasMessageContaining("dataSource");
     }
 
     @Test
-    @DisplayName("null eventloop throws NullPointerException [GH-90000]")
+    @DisplayName("null eventloop throws NullPointerException")
     void constructor_nullEventloop_throws() { // GH-90000
         assertThatThrownBy(() -> new KeyRotationService(dataSource, null)) // GH-90000
                 .isInstanceOf(NullPointerException.class) // GH-90000
-                .hasMessageContaining("eventloop [GH-90000]");
+                .hasMessageContaining("eventloop");
     }
 }

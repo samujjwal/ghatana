@@ -85,7 +85,10 @@ import com.ghatana.pattern.api.exception.PatternValidationException;
  * <p><b>Design Reference:</b>
  * This SPI implements the Unified Operator Model from WORLD_CLASS_DESIGN_MASTER.md.
  * See .github/copilot-instructions.md "Unified Operator Model" for operator integration.
- */
+  * @doc.type interface
+ * @doc.purpose Provides operator functionality.
+ * @doc.layer product
+*/
 public interface Operator {
 
     /**

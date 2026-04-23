@@ -44,8 +44,8 @@ class TypeScriptJavaScriptLanguageServiceTest extends EventloopTestBase {
         // Create a basic configuration
         PolyfixConfig config =
                 new PolyfixConfig( // GH-90000
-                        List.of("typescript-javascript [GH-90000]"),
-                        List.of("schemas [GH-90000]"),
+                        List.of("typescript-javascript"),
+                        List.of("schemas"),
                         new PolyfixConfig.Budgets(3, 20), // GH-90000
                         new PolyfixConfig.Policies(true, true, true, false), // GH-90000
                         new PolyfixConfig.Tools( // GH-90000
@@ -81,25 +81,25 @@ class TypeScriptJavaScriptLanguageServiceTest extends EventloopTestBase {
     @Test
     void testSupportsTypeScriptJavaScriptFiles() { // GH-90000
         // TypeScript files
-        assertTrue(tsJsService.supports(Path.of("test.ts [GH-90000]")));
-        assertTrue(tsJsService.supports(Path.of("src/main/ts/module.ts [GH-90000]")));
-        assertTrue(tsJsService.supports(Path.of("component.tsx [GH-90000]")));
+        assertTrue(tsJsService.supports(Path.of("test.ts")));
+        assertTrue(tsJsService.supports(Path.of("src/main/ts/module.ts")));
+        assertTrue(tsJsService.supports(Path.of("component.tsx")));
 
         // JavaScript files
-        assertTrue(tsJsService.supports(Path.of("script.js [GH-90000]")));
-        assertTrue(tsJsService.supports(Path.of("src/main/js/app.js [GH-90000]")));
-        assertTrue(tsJsService.supports(Path.of("component.jsx [GH-90000]")));
-        assertTrue(tsJsService.supports(Path.of("module.mjs [GH-90000]")));
-        assertTrue(tsJsService.supports(Path.of("common.cjs [GH-90000]")));
+        assertTrue(tsJsService.supports(Path.of("script.js")));
+        assertTrue(tsJsService.supports(Path.of("src/main/js/app.js")));
+        assertTrue(tsJsService.supports(Path.of("component.jsx")));
+        assertTrue(tsJsService.supports(Path.of("module.mjs")));
+        assertTrue(tsJsService.supports(Path.of("common.cjs")));
     }
 
     @Test
     void testDoesNotSupportNonTypeScriptJavaScriptFiles() { // GH-90000
-        assertFalse(tsJsService.supports(Path.of("test.java [GH-90000]")), "Should not support Java files");
+        assertFalse(tsJsService.supports(Path.of("test.java")), "Should not support Java files");
         assertFalse( // GH-90000
-                tsJsService.supports(Path.of("package.json [GH-90000]")), "Should not support package.json");
+                tsJsService.supports(Path.of("package.json")), "Should not support package.json");
         assertFalse( // GH-90000
-                tsJsService.supports(Path.of("tsconfig.json [GH-90000]")), "Should not support tsconfig.json");
+                tsJsService.supports(Path.of("tsconfig.json")), "Should not support tsconfig.json");
     }
 
     @Test
@@ -113,7 +113,7 @@ class TypeScriptJavaScriptLanguageServiceTest extends EventloopTestBase {
     @Test
     void testDiagnoseValidTypeScriptFile(@TempDir Path tempDir) throws Exception { // GH-90000
         // Create a simple TypeScript file
-        Path tsFile = tempDir.resolve("test.ts [GH-90000]");
+        Path tsFile = tempDir.resolve("test.ts");
         Files.writeString( // GH-90000
                 tsFile, "const message: string = 'Hello, TypeScript!';\nconsole.log(message);"); // GH-90000
 
@@ -127,7 +127,7 @@ class TypeScriptJavaScriptLanguageServiceTest extends EventloopTestBase {
     @Test
     void testDiagnoseEmptyFile(@TempDir Path tempDir) throws Exception { // GH-90000
         // Create an empty TypeScript file
-        Path emptyFile = tempDir.resolve("empty.ts [GH-90000]");
+        Path emptyFile = tempDir.resolve("empty.ts");
         Files.createFile(emptyFile); // GH-90000
 
         List<UnifiedDiagnostic> diagnostics = runPromise( // GH-90000

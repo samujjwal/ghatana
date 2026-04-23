@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("RateLimiter Tests [GH-90000]")
+@DisplayName("RateLimiter Tests")
 class RateLimiterTest {
 
     private DefaultRateLimiter rateLimiter;
@@ -41,51 +41,51 @@ class RateLimiterTest {
     // ─── Basic allow / reject ─────────────────────────────────────────────────
 
     @Test
-    @DisplayName("Requests within limit should be allowed [GH-90000]")
+    @DisplayName("Requests within limit should be allowed")
     void requestsWithinLimitShouldBeAllowed() { // GH-90000
         for (int i = 0; i < 5; i++) { // GH-90000
-            assertThat(rateLimiter.tryAcquire("tenant-1 [GH-90000]").allowed()).isTrue();
+            assertThat(rateLimiter.tryAcquire("tenant-1").allowed()).isTrue();
         }
     }
 
     @Test
-    @DisplayName("Request exceeding limit should be rejected [GH-90000]")
+    @DisplayName("Request exceeding limit should be rejected")
     void requestExceedingLimitShouldBeRejected() { // GH-90000
         for (int i = 0; i < 5; i++) { // GH-90000
-            rateLimiter.tryAcquire("tenant-1 [GH-90000]");
+            rateLimiter.tryAcquire("tenant-1");
         }
-        assertThat(rateLimiter.tryAcquire("tenant-1 [GH-90000]").allowed()).isFalse();
+        assertThat(rateLimiter.tryAcquire("tenant-1").allowed()).isFalse();
     }
 
     // ─── Tenant isolation ─────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("Rate limit should be per-tenant [GH-90000]")
+    @DisplayName("Rate limit should be per-tenant")
     void rateLimitShouldBePerTenant() { // GH-90000
         for (int i = 0; i < 5; i++) { // GH-90000
-            rateLimiter.tryAcquire("tenant-1 [GH-90000]");
+            rateLimiter.tryAcquire("tenant-1");
         }
-        assertThat(rateLimiter.tryAcquire("tenant-1 [GH-90000]").allowed()).isFalse();
-        assertThat(rateLimiter.tryAcquire("tenant-2 [GH-90000]").allowed()).isTrue();
+        assertThat(rateLimiter.tryAcquire("tenant-1").allowed()).isFalse();
+        assertThat(rateLimiter.tryAcquire("tenant-2").allowed()).isTrue();
     }
 
     // ─── Reset ────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("Reset should clear tenant counter [GH-90000]")
+    @DisplayName("Reset should clear tenant counter")
     void resetShouldClearCounter() { // GH-90000
         for (int i = 0; i < 5; i++) { // GH-90000
-            rateLimiter.tryAcquire("tenant-1 [GH-90000]");
+            rateLimiter.tryAcquire("tenant-1");
         }
-        rateLimiter.reset("tenant-1 [GH-90000]");
-        assertThat(rateLimiter.tryAcquire("tenant-1 [GH-90000]").allowed()).isTrue();
+        rateLimiter.reset("tenant-1");
+        assertThat(rateLimiter.tryAcquire("tenant-1").allowed()).isTrue();
     }
 
     @Test
-    @DisplayName("resetAll should clear all tenant counters [GH-90000]")
+    @DisplayName("resetAll should clear all tenant counters")
     void resetAllShouldClearAllCounters() { // GH-90000
-        rateLimiter.tryAcquire("tenant-1 [GH-90000]");
-        rateLimiter.tryAcquire("tenant-2 [GH-90000]");
+        rateLimiter.tryAcquire("tenant-1");
+        rateLimiter.tryAcquire("tenant-2");
         rateLimiter.resetAll(); // GH-90000
         assertThat(rateLimiter.getTrackedKeyCount()).isEqualTo(0); // GH-90000
     }
@@ -93,35 +93,35 @@ class RateLimiterTest {
     // ─── Inspection ───────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("getCurrentCount should reflect actual count [GH-90000]")
+    @DisplayName("getCurrentCount should reflect actual count")
     void getCurrentCountShouldReflectActualCount() { // GH-90000
-        rateLimiter.tryAcquire("tenant-1 [GH-90000]");
-        rateLimiter.tryAcquire("tenant-1 [GH-90000]");
-        rateLimiter.tryAcquire("tenant-1 [GH-90000]");
+        rateLimiter.tryAcquire("tenant-1");
+        rateLimiter.tryAcquire("tenant-1");
+        rateLimiter.tryAcquire("tenant-1");
         assertThat(rateLimiter.getStats().getTotalAllowed()).isEqualTo(3); // GH-90000
     }
 
     @Test
-    @DisplayName("getActiveTenantCount should count distinct tenants [GH-90000]")
+    @DisplayName("getActiveTenantCount should count distinct tenants")
     void getActiveTenantCountShouldCountDistinctTenants() { // GH-90000
-        rateLimiter.tryAcquire("tenant-1 [GH-90000]");
-        rateLimiter.tryAcquire("tenant-2 [GH-90000]");
-        rateLimiter.tryAcquire("tenant-3 [GH-90000]");
+        rateLimiter.tryAcquire("tenant-1");
+        rateLimiter.tryAcquire("tenant-2");
+        rateLimiter.tryAcquire("tenant-3");
         assertThat(rateLimiter.getTrackedKeyCount()).isEqualTo(3); // GH-90000
     }
 
     // ─── Construction validation ──────────────────────────────────────────────
 
     @Test
-    @DisplayName("Zero requestsPerMinute should throw [GH-90000]")
+    @DisplayName("Zero requestsPerMinute should throw")
     void zeroRequestsPerMinuteShouldThrow() { // GH-90000
         assertThatThrownBy(() -> RateLimiterConfig.builder().maxRequestsPerMinute(0).build()) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-            .hasMessageContaining("maxRequestsPerMinute must be positive [GH-90000]");
+            .hasMessageContaining("maxRequestsPerMinute must be positive");
     }
 
     @Test
-    @DisplayName("Null metrics should throw NullPointerException [GH-90000]")
+    @DisplayName("Null metrics should throw NullPointerException")
     void nullMetricsShouldThrow() { // GH-90000
         assertThatThrownBy(() -> DefaultRateLimiter.create(RateLimiterConfig.builder().build(), null, "auth.gateway.rate_limit")) // GH-90000
                 .isInstanceOf(NullPointerException.class); // GH-90000

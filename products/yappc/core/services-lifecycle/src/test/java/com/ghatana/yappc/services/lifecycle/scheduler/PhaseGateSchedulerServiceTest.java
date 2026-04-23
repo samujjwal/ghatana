@@ -23,7 +23,7 @@ import static org.mockito.Mockito.*;
  * Tests for PhaseGateSchedulerService using EventloopTestExtension for proper
  * async test lifecycle management with timeouts.
  */
-@DisplayName("Phase Gate Scheduler Service Tests [GH-90000]")
+@DisplayName("Phase Gate Scheduler Service Tests")
 @ExtendWith(EventloopTestExtension.class) // GH-90000
 class PhaseGateSchedulerServiceTest {
 
@@ -37,7 +37,7 @@ class PhaseGateSchedulerServiceTest {
     }
 
     @Test
-    @DisplayName("Should start and stop scheduler [GH-90000]")
+    @DisplayName("Should start and stop scheduler")
     void shouldStartAndStopScheduler(EventloopTestRunner runner) { // GH-90000
         setupMocks(); // GH-90000
         // Use long interval (1 hour) so scheduled check doesn't run during this test // GH-90000
@@ -62,7 +62,7 @@ class PhaseGateSchedulerServiceTest {
     }
 
     @Test
-    @DisplayName("Should not start when disabled in config [GH-90000]")
+    @DisplayName("Should not start when disabled in config")
     void shouldNotStartWhenDisabled(EventloopTestRunner runner) { // GH-90000
         setupMocks(); // GH-90000
         Map<String, String> config = Map.of( // GH-90000
@@ -82,7 +82,7 @@ class PhaseGateSchedulerServiceTest {
     }
 
     @Test
-    @DisplayName("Should parse config and set check interval correctly [GH-90000]")
+    @DisplayName("Should parse config and set check interval correctly")
     void shouldParseConfigAndSetCheckInterval(EventloopTestRunner runner) { // GH-90000
         setupMocks(); // GH-90000
         // Test various interval configurations
@@ -104,7 +104,7 @@ class PhaseGateSchedulerServiceTest {
     }
 
     @Test
-    @DisplayName("Should track blocked projects correctly [GH-90000]")
+    @DisplayName("Should track blocked projects correctly")
     void shouldTrackBlockedProjects(EventloopTestRunner runner) { // GH-90000
         setupMocks(); // GH-90000
         // Verify blocked projects list is initially empty
@@ -125,7 +125,7 @@ class PhaseGateSchedulerServiceTest {
     }
 
     @Test
-    @DisplayName("Should return correct statistics [GH-90000]")
+    @DisplayName("Should return correct statistics")
     void shouldReturnCorrectStatistics(EventloopTestRunner runner) { // GH-90000
         setupMocks(); // GH-90000
         Map<String, String> config = Map.of( // GH-90000

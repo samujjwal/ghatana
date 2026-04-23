@@ -25,7 +25,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("SemanticSearchHandler [GH-90000]")
+@DisplayName("SemanticSearchHandler")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class SemanticSearchHandlerTest extends EventloopTestBase {
 
@@ -53,7 +53,7 @@ class SemanticSearchHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("similar-entities rejects missing tenant before vector lookup [GH-90000]")
+    @DisplayName("similar-entities rejects missing tenant before vector lookup")
     void similarEntitiesRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
@@ -64,7 +64,7 @@ class SemanticSearchHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("collection rag rejects missing tenant before reading body [GH-90000]")
+    @DisplayName("collection rag rejects missing tenant before reading body")
     void collectionRagRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 

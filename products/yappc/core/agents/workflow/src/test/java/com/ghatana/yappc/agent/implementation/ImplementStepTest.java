@@ -18,7 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Implementation ImplementStep Tests [GH-90000]")
+@DisplayName("Implementation ImplementStep Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles implement step test operations
@@ -39,7 +39,7 @@ class ImplementStepTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should track implementation progress for scaffolded units [GH-90000]")
+  @DisplayName("Should track implementation progress for scaffolded units")
   void shouldTrackImplementationProgress() { // GH-90000
     // GIVEN
     WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
@@ -71,6 +71,6 @@ class ImplementStepTest extends EventloopTestBase {
 
     // THEN
     assertThat(result).isNotNull(); // GH-90000
-    assertThat(result.get("status [GH-90000]")).isEqualTo("COMPLETED [GH-90000]");
+    assertThat(result.get("status")).isEqualTo("COMPLETED");
   }
 }

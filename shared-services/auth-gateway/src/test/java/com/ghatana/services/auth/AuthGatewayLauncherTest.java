@@ -11,18 +11,18 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AuthGatewayLauncher — JSON field extraction with Jackson [GH-90000]")
+@DisplayName("AuthGatewayLauncher — JSON field extraction with Jackson")
 class AuthGatewayLauncherTest {
 
     @Test
-    @DisplayName("extractJsonField returns null for null input [GH-90000]")
+    @DisplayName("extractJsonField returns null for null input")
     void extractJsonFieldReturnsNullForNullInput() { // GH-90000
         String result = invokeExtractJsonField(null, "username"); // GH-90000
         assertThat(result).isNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("extractJsonField returns null for missing field [GH-90000]")
+    @DisplayName("extractJsonField returns null for missing field")
     void extractJsonFieldReturnsNullForMissingField() { // GH-90000
         String json = "{\"username\":\"test\"}";
         String result = invokeExtractJsonField(json, "password"); // GH-90000
@@ -30,15 +30,15 @@ class AuthGatewayLauncherTest {
     }
 
     @Test
-    @DisplayName("extractJsonField extracts simple string field [GH-90000]")
+    @DisplayName("extractJsonField extracts simple string field")
     void extractJsonFieldExtractsSimpleStringField() { // GH-90000
         String json = "{\"username\":\"testuser\"}";
         String result = invokeExtractJsonField(json, "username"); // GH-90000
-        assertThat(result).isEqualTo("testuser [GH-90000]");
+        assertThat(result).isEqualTo("testuser");
     }
 
     @Test
-    @DisplayName("extractJsonField handles escaped quotes [GH-90000]")
+    @DisplayName("extractJsonField handles escaped quotes")
     void extractJsonFieldHandlesEscapedQuotes() { // GH-90000
         String json = "{\"username\":\"test\\\"user\"}";
         String result = invokeExtractJsonField(json, "username"); // GH-90000
@@ -46,7 +46,7 @@ class AuthGatewayLauncherTest {
     }
 
     @Test
-    @DisplayName("extractJsonField handles nested objects [GH-90000]")
+    @DisplayName("extractJsonField handles nested objects")
     void extractJsonFieldHandlesNestedObjects() { // GH-90000
         String json = "{\"user\":{\"username\":\"testuser\"}}";
         String result = invokeExtractJsonField(json, "user"); // GH-90000
@@ -54,23 +54,23 @@ class AuthGatewayLauncherTest {
     }
 
     @Test
-    @DisplayName("extractJsonField handles numeric field [GH-90000]")
+    @DisplayName("extractJsonField handles numeric field")
     void extractJsonFieldHandlesNumericField() { // GH-90000
         String json = "{\"age\":30}";
         String result = invokeExtractJsonField(json, "age"); // GH-90000
-        assertThat(result).isEqualTo("30 [GH-90000]");
+        assertThat(result).isEqualTo("30");
     }
 
     @Test
-    @DisplayName("extractJsonField handles boolean field [GH-90000]")
+    @DisplayName("extractJsonField handles boolean field")
     void extractJsonFieldHandlesBooleanField() { // GH-90000
         String json = "{\"active\":true}";
         String result = invokeExtractJsonField(json, "active"); // GH-90000
-        assertThat(result).isEqualTo("true [GH-90000]");
+        assertThat(result).isEqualTo("true");
     }
 
     @Test
-    @DisplayName("extractJsonField handles complex nested JSON [GH-90000]")
+    @DisplayName("extractJsonField handles complex nested JSON")
     void extractJsonFieldHandlesComplexNestedJson() { // GH-90000
         String json = "{\"user\":{\"profile\":{\"username\":\"testuser\",\"email\":\"test@example.com\"}},\"active\":true}";
         String result = invokeExtractJsonField(json, "user"); // GH-90000
@@ -78,15 +78,15 @@ class AuthGatewayLauncherTest {
     }
 
     @Test
-    @DisplayName("extractJsonField handles field with null value [GH-90000]")
+    @DisplayName("extractJsonField handles field with null value")
     void extractJsonFieldHandlesNullFieldValue() { // GH-90000
         String json = "{\"username\":null}";
         String result = invokeExtractJsonField(json, "username"); // GH-90000
-        assertThat(result).isEqualTo("null [GH-90000]");
+        assertThat(result).isEqualTo("null");
     }
 
     @Test
-    @DisplayName("extractJsonField handles malformed JSON gracefully [GH-90000]")
+    @DisplayName("extractJsonField handles malformed JSON gracefully")
     void extractJsonFieldHandlesMalformedJson() { // GH-90000
         String json = "{invalid json}";
         String result = invokeExtractJsonField(json, "username"); // GH-90000
@@ -94,7 +94,7 @@ class AuthGatewayLauncherTest {
     }
 
     @Test
-    @DisplayName("extractJsonField handles empty JSON object [GH-90000]")
+    @DisplayName("extractJsonField handles empty JSON object")
     void extractJsonFieldHandlesEmptyJsonObject() { // GH-90000
         String json = "{}";
         String result = invokeExtractJsonField(json, "username"); // GH-90000
@@ -102,7 +102,7 @@ class AuthGatewayLauncherTest {
     }
 
     @Test
-    @DisplayName("extractJsonField handles array field [GH-90000]")
+    @DisplayName("extractJsonField handles array field")
     void extractJsonFieldHandlesArrayField() { // GH-90000
         String json = "{\"roles\":[\"admin\",\"user\"]}";
         String result = invokeExtractJsonField(json, "roles"); // GH-90000
@@ -110,27 +110,27 @@ class AuthGatewayLauncherTest {
     }
 
     @Test
-    @DisplayName("extractJsonField handles special characters in value [GH-90000]")
+    @DisplayName("extractJsonField handles special characters in value")
     void extractJsonFieldHandlesSpecialCharacters() { // GH-90000
         String json = "{\"password\":\"p@$$w0rd!@#\"}";
         String result = invokeExtractJsonField(json, "password"); // GH-90000
-        assertThat(result).isEqualTo("p@$$w0rd!@# [GH-90000]");
+        assertThat(result).isEqualTo("p@$$w0rd!@#");
     }
 
     @Test
-    @DisplayName("extractJsonField handles unicode characters [GH-90000]")
+    @DisplayName("extractJsonField handles unicode characters")
     void extractJsonFieldHandlesUnicodeCharacters() { // GH-90000
         String json = "{\"name\":\"José García\"}";
         String result = invokeExtractJsonField(json, "name"); // GH-90000
-        assertThat(result).isEqualTo("José García [GH-90000]");
+        assertThat(result).isEqualTo("José García");
     }
 
     @Test
-    @DisplayName("extractJsonField handles field name with underscores [GH-90000]")
+    @DisplayName("extractJsonField handles field name with underscores")
     void extractJsonFieldHandlesUnderscoreFieldName() { // GH-90000
         String json = "{\"user_name\":\"testuser\"}";
         String result = invokeExtractJsonField(json, "user_name"); // GH-90000
-        assertThat(result).isEqualTo("testuser [GH-90000]");
+        assertThat(result).isEqualTo("testuser");
     }
 
     /**

@@ -28,16 +28,16 @@ public class AudioVideoLibraryTest {
     void setUp() { // GH-90000
         library = AudioVideoLibrary.builder() // GH-90000
             .withSttConfig(SttConfig.builder() // GH-90000
-                .modelPath(Paths.get("/models/whisper-base.onnx [GH-90000]"))
-                .modelId("whisper-base [GH-90000]")
+                .modelPath(Paths.get("/models/whisper-base.onnx"))
+                .modelId("whisper-base")
                 .build()) // GH-90000
             .withTtsConfig(TtsConfig.builder() // GH-90000
-                .voiceModelPath(Paths.get("/models/piper-en.onnx [GH-90000]"))
-                .defaultVoiceId("piper-en [GH-90000]")
+                .voiceModelPath(Paths.get("/models/piper-en.onnx"))
+                .defaultVoiceId("piper-en")
                 .build()) // GH-90000
             .withVisionConfig(VisionConfig.builder() // GH-90000
-                .modelPath(Paths.get("/models/yolov8n.onnx [GH-90000]"))
-                .modelId("yolov8n [GH-90000]")
+                .modelPath(Paths.get("/models/yolov8n.onnx"))
+                .modelId("yolov8n")
                 .build()) // GH-90000
             .build(); // GH-90000
     }
@@ -54,7 +54,7 @@ public class AudioVideoLibraryTest {
         IllegalStateException exception = assertThrows(IllegalStateException.class, () -> // GH-90000
             AudioVideoLibrary.builder().build() // GH-90000
         );
-        assertTrue(exception.getMessage().contains("At least one engine [GH-90000]"));
+        assertTrue(exception.getMessage().contains("At least one engine"));
     }
 
     @Test
@@ -146,7 +146,7 @@ class SttEngineTest {
     void setUp() { // GH-90000
         library = AudioVideoLibrary.builder() // GH-90000
             .withSttConfig(SttConfig.builder() // GH-90000
-                .modelId("test-model [GH-90000]")
+                .modelId("test-model")
                 .maxConcurrentRequests(5) // GH-90000
                 .maxAudioLengthSeconds(300) // GH-90000
                 .build()) // GH-90000
@@ -235,7 +235,7 @@ class SttEngineTest {
 
         // Save and load
         engine.saveProfile(profile); // GH-90000
-        var loaded = engine.loadProfile("test-profile [GH-90000]");
+        var loaded = engine.loadProfile("test-profile");
         assertTrue(loaded.isPresent()); // GH-90000
     }
 
@@ -279,7 +279,7 @@ class TtsEngineTest {
     void setUp() { // GH-90000
         library = AudioVideoLibrary.builder() // GH-90000
             .withTtsConfig(TtsConfig.builder() // GH-90000
-                .defaultVoiceId("test-voice [GH-90000]")
+                .defaultVoiceId("test-voice")
                 .sampleRate(22050) // GH-90000
                 .maxTextLength(5000) // GH-90000
                 .enableProsody(true) // GH-90000
@@ -309,7 +309,7 @@ class TtsEngineTest {
 
     @Test
     void testSynthesizeReturnsAudio() { // GH-90000
-        AudioData audio = engine.synthesize("Hello, world! [GH-90000]");
+        AudioData audio = engine.synthesize("Hello, world!");
 
         assertNotNull(audio); // GH-90000
         assertTrue(audio.data().length > 0); // GH-90000
@@ -353,7 +353,7 @@ class TtsEngineTest {
     @Test
     void testVoiceSwitching() { // GH-90000
         VoiceInfo voice1 = engine.getActiveVoice(); // GH-90000
-        engine.setActiveVoice("new-voice [GH-90000]");
+        engine.setActiveVoice("new-voice");
         VoiceInfo voice2 = engine.getActiveVoice(); // GH-90000
 
         assertEquals("new-voice", voice2.voiceId()); // GH-90000
@@ -367,7 +367,7 @@ class TtsEngineTest {
         assertEquals("tts-profile", profile.profileId()); // GH-90000
 
         engine.saveProfile(profile); // GH-90000
-        var loaded = engine.loadProfile("tts-profile [GH-90000]");
+        var loaded = engine.loadProfile("tts-profile");
         assertTrue(loaded.isPresent()); // GH-90000
     }
 
@@ -392,7 +392,7 @@ class VisionEngineTest {
     void setUp() { // GH-90000
         library = AudioVideoLibrary.builder() // GH-90000
             .withVisionConfig(VisionConfig.builder() // GH-90000
-                .modelId("yolov8n [GH-90000]")
+                .modelId("yolov8n")
                 .defaultConfidenceThreshold(0.5) // GH-90000
                 .defaultMaxDetections(100) // GH-90000
                 .inputSize(640) // GH-90000

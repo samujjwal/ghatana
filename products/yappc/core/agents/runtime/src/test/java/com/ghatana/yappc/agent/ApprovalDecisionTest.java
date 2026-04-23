@@ -15,11 +15,11 @@ import org.junit.jupiter.api.Test;
  * @doc.layer test
  * @doc.pattern Unit Test
  */
-@DisplayName("ApprovalDecision Tests [GH-90000]")
+@DisplayName("ApprovalDecision Tests")
 class ApprovalDecisionTest {
 
   @Test
-  @DisplayName("should create ApprovalDecision with all fields [GH-90000]")
+  @DisplayName("should create ApprovalDecision with all fields")
   void shouldCreateApprovalDecision() { // GH-90000
     Instant now = Instant.now(); // GH-90000
 
@@ -27,15 +27,15 @@ class ApprovalDecisionTest {
         "req-1", true, "user-1", now, "Approved"
     );
 
-    assertThat(decision.requestId()).isEqualTo("req-1 [GH-90000]");
+    assertThat(decision.requestId()).isEqualTo("req-1");
     assertThat(decision.approved()).isTrue(); // GH-90000
-    assertThat(decision.decidedBy()).isEqualTo("user-1 [GH-90000]");
+    assertThat(decision.decidedBy()).isEqualTo("user-1");
     assertThat(decision.decidedAt()).isEqualTo(now); // GH-90000
-    assertThat(decision.comment()).isEqualTo("Approved [GH-90000]");
+    assertThat(decision.comment()).isEqualTo("Approved");
   }
 
   @Test
-  @DisplayName("isApproved should return true for approved decision [GH-90000]")
+  @DisplayName("isApproved should return true for approved decision")
   void isApprovedShouldReturnTrue() { // GH-90000
     ApprovalDecision decision = new ApprovalDecision("req-1", true, "user-1", Instant.now(), null); // GH-90000
 
@@ -44,7 +44,7 @@ class ApprovalDecisionTest {
   }
 
   @Test
-  @DisplayName("isRejected should return true for rejected decision [GH-90000]")
+  @DisplayName("isRejected should return true for rejected decision")
   void isRejectedShouldReturnTrue() { // GH-90000
     ApprovalDecision decision = new ApprovalDecision("req-1", false, "user-1", Instant.now(), null); // GH-90000
 
@@ -53,31 +53,31 @@ class ApprovalDecisionTest {
   }
 
   @Test
-  @DisplayName("approved factory should create approved decision with current timestamp [GH-90000]")
+  @DisplayName("approved factory should create approved decision with current timestamp")
   void approvedFactoryShouldCreateApprovedDecision() { // GH-90000
     ApprovalDecision decision = ApprovalDecision.approved("req-1", "user-1", "Looks good"); // GH-90000
 
-    assertThat(decision.requestId()).isEqualTo("req-1 [GH-90000]");
+    assertThat(decision.requestId()).isEqualTo("req-1");
     assertThat(decision.approved()).isTrue(); // GH-90000
-    assertThat(decision.decidedBy()).isEqualTo("user-1 [GH-90000]");
-    assertThat(decision.comment()).isEqualTo("Looks good [GH-90000]");
+    assertThat(decision.decidedBy()).isEqualTo("user-1");
+    assertThat(decision.comment()).isEqualTo("Looks good");
     assertThat(decision.decidedAt()).isNotNull(); // GH-90000
   }
 
   @Test
-  @DisplayName("rejected factory should create rejected decision with current timestamp [GH-90000]")
+  @DisplayName("rejected factory should create rejected decision with current timestamp")
   void rejectedFactoryShouldCreateRejectedDecision() { // GH-90000
     ApprovalDecision decision = ApprovalDecision.rejected("req-2", "user-2", "Needs work"); // GH-90000
 
-    assertThat(decision.requestId()).isEqualTo("req-2 [GH-90000]");
+    assertThat(decision.requestId()).isEqualTo("req-2");
     assertThat(decision.approved()).isFalse(); // GH-90000
-    assertThat(decision.decidedBy()).isEqualTo("user-2 [GH-90000]");
-    assertThat(decision.comment()).isEqualTo("Needs work [GH-90000]");
+    assertThat(decision.decidedBy()).isEqualTo("user-2");
+    assertThat(decision.comment()).isEqualTo("Needs work");
     assertThat(decision.decidedAt()).isNotNull(); // GH-90000
   }
 
   @Test
-  @DisplayName("should handle null fields [GH-90000]")
+  @DisplayName("should handle null fields")
   void shouldHandleNullFields() { // GH-90000
     ApprovalDecision decision = new ApprovalDecision(null, false, null, null, null); // GH-90000
 
@@ -88,7 +88,7 @@ class ApprovalDecisionTest {
   }
 
   @Test
-  @DisplayName("should implement equals correctly [GH-90000]")
+  @DisplayName("should implement equals correctly")
   void shouldImplementEquals() { // GH-90000
     Instant now = Instant.now(); // GH-90000
     ApprovalDecision d1 = new ApprovalDecision("req-1", true, "user-1", now, "comment"); // GH-90000

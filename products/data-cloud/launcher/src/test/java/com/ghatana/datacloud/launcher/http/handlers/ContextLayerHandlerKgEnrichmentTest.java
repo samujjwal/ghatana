@@ -46,7 +46,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("ContextLayerHandler – knowledge graph enrichment (P3.5.1) [GH-90000]")
+@DisplayName("ContextLayerHandler – knowledge graph enrichment (P3.5.1)")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class ContextLayerHandlerKgEnrichmentTest {
 
@@ -64,8 +64,8 @@ class ContextLayerHandlerKgEnrichmentTest {
     @BeforeEach
     void setUpCommon() { // GH-90000
         objectMapper = new ObjectMapper(); // GH-90000
-        lenient().when(http.requireTenantIdOrFail(any())).thenReturn("tenant-kg-test [GH-90000]");
-        lenient().when(http.resolveCorrelationId(any())).thenReturn("req-123 [GH-90000]");
+        lenient().when(http.requireTenantIdOrFail(any())).thenReturn("tenant-kg-test");
+        lenient().when(http.resolveCorrelationId(any())).thenReturn("req-123");
         lenient().when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(null); // GH-90000
         // Return null by default — tests that need to inspect the map provide their own Answer
         lenient().doAnswer(inv -> null).when(http).jsonResponse(any(), any()); // GH-90000
@@ -74,11 +74,11 @@ class ContextLayerHandlerKgEnrichmentTest {
     // ── No knowledge graph ────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("when knowledge graph is not configured [GH-90000]")
+    @DisplayName("when knowledge graph is not configured")
     class WithoutKnowledgeGraph {
 
         @Test
-        @DisplayName("handleGetContext resolves without error (no relationships field) [GH-90000]")
+        @DisplayName("handleGetContext resolves without error (no relationships field)")
         void noKgWired_resolvesCleanly() { // GH-90000
             ContextLayerHandler handler = new ContextLayerHandler(http, objectMapper); // GH-90000
 
@@ -87,7 +87,7 @@ class ContextLayerHandlerKgEnrichmentTest {
         }
 
         @Test
-        @DisplayName("handleGetContext returns 400 when tenant header is missing [GH-90000]")
+        @DisplayName("handleGetContext returns 400 when tenant header is missing")
         void missingTenant_returns400() { // GH-90000
             ContextLayerHandler handler = new ContextLayerHandler(http, objectMapper); // GH-90000
             when(http.requireTenantIdOrFail(any())).thenReturn(null); // GH-90000
@@ -102,7 +102,7 @@ class ContextLayerHandlerKgEnrichmentTest {
     // ── With wired knowledge graph ────────────────────────────────────────────
 
     @Nested
-    @DisplayName("when knowledge graph is wired [GH-90000]")
+    @DisplayName("when knowledge graph is wired")
     class WithKnowledgeGraph {
 
         private ContextLayerHandler handler;
@@ -113,14 +113,14 @@ class ContextLayerHandlerKgEnrichmentTest {
         }
 
         @Test
-        @DisplayName("relationships included in response body passed to jsonResponse [GH-90000]")
+        @DisplayName("relationships included in response body passed to jsonResponse")
         void relationships_includedInBody() throws Exception { // GH-90000
             GraphEdge edge = GraphEdge.builder() // GH-90000
-                    .id("edge-1 [GH-90000]")
-                    .sourceNodeId("entity-orders [GH-90000]")
-                    .targetNodeId("entity-products [GH-90000]")
-                    .relationshipType("REFERENCES [GH-90000]")
-                    .tenantId("tenant-kg-test [GH-90000]")
+                    .id("edge-1")
+                    .sourceNodeId("entity-orders")
+                    .targetNodeId("entity-products")
+                    .relationshipType("REFERENCES")
+                    .tenantId("tenant-kg-test")
                     .properties(Map.of("confidence", 0.9)) // GH-90000
                     .createdAt(Instant.now()) // GH-90000
                     .updatedAt(Instant.now()) // GH-90000
@@ -133,7 +133,7 @@ class ContextLayerHandlerKgEnrichmentTest {
             // Capture the body map passed to jsonResponse
             AtomicReference<Map<String, Object>> captured = new AtomicReference<>(); // GH-90000
             doAnswer(inv -> { // GH-90000
-                @SuppressWarnings("unchecked [GH-90000]")
+                @SuppressWarnings("unchecked")
                 Map<String, Object> body = (Map<String, Object>) inv.getArgument(0); // GH-90000
                 captured.set(body); // GH-90000
                 return null;
@@ -143,9 +143,9 @@ class ContextLayerHandlerKgEnrichmentTest {
 
             Map<String, Object> capturedBody = captured.get(); // GH-90000
             assertThat(capturedBody).isNotNull(); // GH-90000
-            assertThat(capturedBody).containsKey("relationships [GH-90000]");
-            @SuppressWarnings("unchecked [GH-90000]")
-            List<Map<String, Object>> rels = (List<Map<String, Object>>) capturedBody.get("relationships [GH-90000]");
+            assertThat(capturedBody).containsKey("relationships");
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> rels = (List<Map<String, Object>>) capturedBody.get("relationships");
             assertThat(rels).hasSize(1); // GH-90000
             assertThat(rels.get(0)).containsEntry("sourceEntity", "entity-orders"); // GH-90000
             assertThat(rels.get(0)).containsEntry("targetEntity", "entity-products"); // GH-90000
@@ -154,14 +154,14 @@ class ContextLayerHandlerKgEnrichmentTest {
         }
 
         @Test
-        @DisplayName("empty relationships when knowledge graph returns no edges [GH-90000]")
+        @DisplayName("empty relationships when knowledge graph returns no edges")
         void noEdges_emptyRelationshipsList() throws Exception { // GH-90000
             when(knowledgeGraph.queryEdges(any(GraphQuery.class))) // GH-90000
                     .thenReturn(Promise.of(List.of())); // GH-90000
 
             AtomicReference<Map<String, Object>> captured = new AtomicReference<>(); // GH-90000
             doAnswer(inv -> { // GH-90000
-                @SuppressWarnings("unchecked [GH-90000]")
+                @SuppressWarnings("unchecked")
                 Map<String, Object> body = (Map<String, Object>) inv.getArgument(0); // GH-90000
                 captured.set(body); // GH-90000
                 return null;
@@ -169,19 +169,19 @@ class ContextLayerHandlerKgEnrichmentTest {
 
             handler.handleGetContext(request).getResult(); // GH-90000
 
-            assertThat(captured.get()).containsKey("relationships [GH-90000]");
-            assertThat((List<?>) captured.get().get("relationships [GH-90000]")).isEmpty();
+            assertThat(captured.get()).containsKey("relationships");
+            assertThat((List<?>) captured.get().get("relationships")).isEmpty();
         }
 
         @Test
-        @DisplayName("relationship without confidence omits confidence field [GH-90000]")
+        @DisplayName("relationship without confidence omits confidence field")
         void edgeWithoutConfidence_noConfidenceInRelationship() throws Exception { // GH-90000
             GraphEdge edge = GraphEdge.builder() // GH-90000
-                    .id("edge-2 [GH-90000]")
-                    .sourceNodeId("svc-a [GH-90000]")
-                    .targetNodeId("svc-b [GH-90000]")
-                    .relationshipType("DEPENDS_ON [GH-90000]")
-                    .tenantId("tenant-kg-test [GH-90000]")
+                    .id("edge-2")
+                    .sourceNodeId("svc-a")
+                    .targetNodeId("svc-b")
+                    .relationshipType("DEPENDS_ON")
+                    .tenantId("tenant-kg-test")
                     .properties(Map.of()) // GH-90000
                     .createdAt(Instant.now()) // GH-90000
                     .updatedAt(Instant.now()) // GH-90000
@@ -193,7 +193,7 @@ class ContextLayerHandlerKgEnrichmentTest {
 
             AtomicReference<Map<String, Object>> captured = new AtomicReference<>(); // GH-90000
             doAnswer(inv -> { // GH-90000
-                @SuppressWarnings("unchecked [GH-90000]")
+                @SuppressWarnings("unchecked")
                 Map<String, Object> body = (Map<String, Object>) inv.getArgument(0); // GH-90000
                 captured.set(body); // GH-90000
                 return null;
@@ -201,22 +201,22 @@ class ContextLayerHandlerKgEnrichmentTest {
 
             handler.handleGetContext(request).getResult(); // GH-90000
 
-            @SuppressWarnings("unchecked [GH-90000]")
-            List<Map<String, Object>> rels = (List<Map<String, Object>>) captured.get().get("relationships [GH-90000]");
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> rels = (List<Map<String, Object>>) captured.get().get("relationships");
             assertThat(rels).hasSize(1); // GH-90000
-            assertThat(rels.get(0)).doesNotContainKey("confidence [GH-90000]");
+            assertThat(rels.get(0)).doesNotContainKey("confidence");
             assertThat(rels.get(0)).containsEntry("type", "DEPENDS_ON"); // GH-90000
         }
 
         @Test
-        @DisplayName("knowledge graph failure falls back to response without relationships [GH-90000]")
+        @DisplayName("knowledge graph failure falls back to response without relationships")
         void kgFailure_responseDeliveredWithoutRelationships() throws Exception { // GH-90000
             when(knowledgeGraph.queryEdges(any(GraphQuery.class))) // GH-90000
-                    .thenReturn(Promise.ofException(new RuntimeException("graph unavailable [GH-90000]")));
+                    .thenReturn(Promise.ofException(new RuntimeException("graph unavailable")));
 
             AtomicReference<Map<String, Object>> captured = new AtomicReference<>(); // GH-90000
             doAnswer(inv -> { // GH-90000
-                @SuppressWarnings("unchecked [GH-90000]")
+                @SuppressWarnings("unchecked")
                 Map<String, Object> body = (Map<String, Object>) inv.getArgument(0); // GH-90000
                 captured.set(body); // GH-90000
                 return null;
@@ -225,7 +225,7 @@ class ContextLayerHandlerKgEnrichmentTest {
             // Should not throw; graceful fallback returns base context
             assertThatCode(() -> handler.handleGetContext(request).getResult()) // GH-90000
                     .doesNotThrowAnyException(); // GH-90000
-            assertThat(captured.get()).doesNotContainKey("relationships [GH-90000]");
+            assertThat(captured.get()).doesNotContainKey("relationships");
         }
     }
 }

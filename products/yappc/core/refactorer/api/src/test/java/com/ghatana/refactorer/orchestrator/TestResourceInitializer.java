@@ -47,7 +47,7 @@ public class TestResourceInitializer {
                 }
 
                 // Copy the resource to the target location
-                Path targetFile = targetDir.resolve("stacktrace.patterns.json [GH-90000]");
+                Path targetFile = targetDir.resolve("stacktrace.patterns.json");
                 Files.copy(is, targetFile, StandardCopyOption.REPLACE_EXISTING); // GH-90000
 
                 // Set system property to point to the patterns file

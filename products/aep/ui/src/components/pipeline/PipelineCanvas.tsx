@@ -224,7 +224,13 @@ export function PipelineCanvas() {
   // ── Render ──────────────────────────────────────────────────────
 
   return (
-    <div data-testid="pipeline-canvas" className="flex-1 h-full" onKeyDown={onKeyDown} tabIndex={0}>
+    <div
+      data-testid="pipeline-canvas"
+      className="flex-1 h-full min-h-[400px]"
+      style={{ width: '100%', height: '100%' }}
+      onKeyDown={onKeyDown}
+      tabIndex={0}
+    >
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -244,7 +250,7 @@ export function PipelineCanvas() {
         onDrop={onDrop}
         onDragOver={onDragOver}
         onKeyDown={onKeyDown}
-        className="flex-1 h-full"
+        style={{ width: '100%', height: '100%' }}
         aria-label="AEP pipeline builder canvas"
       />
     </div>

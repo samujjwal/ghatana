@@ -25,7 +25,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AiModelHandler [GH-90000]")
+@DisplayName("AiModelHandler")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class AiModelHandlerTest extends EventloopTestBase {
 
@@ -57,18 +57,18 @@ class AiModelHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("list models rejects missing tenant before manager access [GH-90000]")
+    @DisplayName("list models rejects missing tenant before manager access")
     void listModelsRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
         HttpResponse response = runPromise(() -> handler.handleListAiModels(request)); // GH-90000
 
         assertThat(response).isSameAs(errorResponse); // GH-90000
-        verify(aiModelManager, never()).getAllModels("default [GH-90000]");
+        verify(aiModelManager, never()).getAllModels("default");
     }
 
     @Test
-    @DisplayName("register model rejects missing tenant before loading body [GH-90000]")
+    @DisplayName("register model rejects missing tenant before loading body")
     void registerModelRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
@@ -79,7 +79,7 @@ class AiModelHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("promote model rejects missing tenant before loading body [GH-90000]")
+    @DisplayName("promote model rejects missing tenant before loading body")
     void promoteModelRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
@@ -90,7 +90,7 @@ class AiModelHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("ingest feature rejects missing tenant before loading body [GH-90000]")
+    @DisplayName("ingest feature rejects missing tenant before loading body")
     void ingestFeatureRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
@@ -101,7 +101,7 @@ class AiModelHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("get features rejects missing tenant before feature lookup [GH-90000]")
+    @DisplayName("get features rejects missing tenant before feature lookup")
     void getFeaturesRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 

@@ -26,8 +26,8 @@ import static org.mockito.Mockito.mock;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataCloudRouterBuilder Integration Tests [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("DataCloudRouterBuilder Integration Tests")
+@Tag("integration")
 class DataCloudRouterBuilderIntegrationTest {
 
     private static final HttpHandlerSupport HTTP_SUPPORT = new HttpHandlerSupport( // GH-90000
@@ -40,7 +40,7 @@ class DataCloudRouterBuilderIntegrationTest {
      * Test that verifies the router builder creates a valid RoutingServlet.
      */
     @Test
-    @DisplayName("Router builder creates valid RoutingServlet [GH-90000]")
+    @DisplayName("Router builder creates valid RoutingServlet")
     void routerBuilderCreatesValidRoutingServlet() { // GH-90000
         Eventloop eventloop = Eventloop.create(); // GH-90000
         DataCloudRouterBuilder builder = new DataCloudRouterBuilder(eventloop); // GH-90000
@@ -54,7 +54,7 @@ class DataCloudRouterBuilderIntegrationTest {
      * Test that verifies health routes are registered.
      */
     @Test
-    @DisplayName("Health routes are registered [GH-90000]")
+    @DisplayName("Health routes are registered")
     void healthRoutesAreRegistered() { // GH-90000
         Eventloop eventloop = Eventloop.create(); // GH-90000
         HealthHandler mockHealthHandler = new HealthHandler(HTTP_SUPPORT); // GH-90000
@@ -69,7 +69,7 @@ class DataCloudRouterBuilderIntegrationTest {
      * Test that verifies the router builder supports method chaining.
      */
     @Test
-    @DisplayName("Router builder supports method chaining [GH-90000]")
+    @DisplayName("Router builder supports method chaining")
     void routerBuilderSupportsMethodChaining() { // GH-90000
         Eventloop eventloop = Eventloop.create(); // GH-90000
         
@@ -83,7 +83,7 @@ class DataCloudRouterBuilderIntegrationTest {
      * Test that verifies the router builder handles null handlers gracefully.
      */
     @Test
-    @DisplayName("Router builder handles null handlers gracefully [GH-90000]")
+    @DisplayName("Router builder handles null handlers gracefully")
     void routerBuilderHandlesNullHandlersGracefully() { // GH-90000
         Eventloop eventloop = Eventloop.create(); // GH-90000
         
@@ -103,7 +103,7 @@ class DataCloudRouterBuilderIntegrationTest {
      * Test that verifies the router builder registers all domain route groups.
      */
     @Test
-    @DisplayName("Router builder registers all domain route groups [GH-90000]")
+    @DisplayName("Router builder registers all domain route groups")
     void routerBuilderRegistersAllDomainRouteGroups() { // GH-90000
         Eventloop eventloop = Eventloop.create(); // GH-90000
         HealthHandler mockHealthHandler = new HealthHandler(HTTP_SUPPORT); // GH-90000

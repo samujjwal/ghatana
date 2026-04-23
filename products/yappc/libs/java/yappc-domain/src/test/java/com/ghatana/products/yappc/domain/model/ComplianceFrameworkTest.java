@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern UnitTest
  */
-@DisplayName("ComplianceFramework Domain Model Tests [GH-90000]")
+@DisplayName("ComplianceFramework Domain Model Tests")
 class ComplianceFrameworkTest {
 
     private static final String FRAMEWORK_NAME = "SOC2";
@@ -26,11 +26,11 @@ class ComplianceFrameworkTest {
     private static final String DESCRIPTION = "SOC 2 compliance framework for service organizations";
 
     @Nested
-    @DisplayName("Factory Method Tests [GH-90000]")
+    @DisplayName("Factory Method Tests")
     class FactoryMethodTests {
 
         @Test
-        @DisplayName("of() creates framework with required fields and defaults [GH-90000]")
+        @DisplayName("of() creates framework with required fields and defaults")
         void ofCreatesWithRequiredFieldsAndDefaults() { // GH-90000
             // WHEN
             ComplianceFramework framework = ComplianceFramework.of(FRAMEWORK_NAME); // GH-90000
@@ -45,15 +45,15 @@ class ComplianceFrameworkTest {
         }
 
         @Test
-        @DisplayName("of() throws NullPointerException when name is null [GH-90000]")
+        @DisplayName("of() throws NullPointerException when name is null")
         void ofThrowsWhenNameNull() { // GH-90000
             assertThatThrownBy(() -> ComplianceFramework.of(null)) // GH-90000
                     .isInstanceOf(NullPointerException.class) // GH-90000
-                    .hasMessageContaining("name must not be null [GH-90000]");
+                    .hasMessageContaining("name must not be null");
         }
 
         @Test
-        @DisplayName("builtin() creates built-in framework with all fields [GH-90000]")
+        @DisplayName("builtin() creates built-in framework with all fields")
         void builtinCreatesBuiltInFramework() { // GH-90000
             // WHEN
             ComplianceFramework framework = ComplianceFramework.builtin(FRAMEWORK_NAME, DISPLAY_NAME, DESCRIPTION); // GH-90000
@@ -68,20 +68,20 @@ class ComplianceFrameworkTest {
         }
 
         @Test
-        @DisplayName("builtin() throws NullPointerException when name is null [GH-90000]")
+        @DisplayName("builtin() throws NullPointerException when name is null")
         void builtinThrowsWhenNameNull() { // GH-90000
             assertThatThrownBy(() -> ComplianceFramework.builtin(null, DISPLAY_NAME, DESCRIPTION)) // GH-90000
                     .isInstanceOf(NullPointerException.class) // GH-90000
-                    .hasMessageContaining("name must not be null [GH-90000]");
+                    .hasMessageContaining("name must not be null");
         }
     }
 
     @Nested
-    @DisplayName("Builder Tests [GH-90000]")
+    @DisplayName("Builder Tests")
     class BuilderTests {
 
         @Test
-        @DisplayName("builder creates framework with all fields [GH-90000]")
+        @DisplayName("builder creates framework with all fields")
         void builderCreatesWithAllFields() { // GH-90000
             // GIVEN
             UUID id = UUID.randomUUID(); // GH-90000
@@ -93,9 +93,9 @@ class ComplianceFrameworkTest {
                     .name(FRAMEWORK_NAME) // GH-90000
                     .displayName(DISPLAY_NAME) // GH-90000
                     .description(DESCRIPTION) // GH-90000
-                    .frameworkVersion("2.0 [GH-90000]")
-                    .category("SECURITY [GH-90000]")
-                    .documentationUrl("https://docs.example.com/soc2 [GH-90000]")
+                    .frameworkVersion("2.0")
+                    .category("SECURITY")
+                    .documentationUrl("https://docs.example.com/soc2")
                     .enabledByDefault(true) // GH-90000
                     .isBuiltin(true) // GH-90000
                     .controlCount(150) // GH-90000
@@ -109,9 +109,9 @@ class ComplianceFrameworkTest {
             assertThat(framework.getName()).isEqualTo(FRAMEWORK_NAME); // GH-90000
             assertThat(framework.getDisplayName()).isEqualTo(DISPLAY_NAME); // GH-90000
             assertThat(framework.getDescription()).isEqualTo(DESCRIPTION); // GH-90000
-            assertThat(framework.getFrameworkVersion()).isEqualTo("2.0 [GH-90000]");
-            assertThat(framework.getCategory()).isEqualTo("SECURITY [GH-90000]");
-            assertThat(framework.getDocumentationUrl()).isEqualTo("https://docs.example.com/soc2 [GH-90000]");
+            assertThat(framework.getFrameworkVersion()).isEqualTo("2.0");
+            assertThat(framework.getCategory()).isEqualTo("SECURITY");
+            assertThat(framework.getDocumentationUrl()).isEqualTo("https://docs.example.com/soc2");
             assertThat(framework.isEnabledByDefault()).isTrue(); // GH-90000
             assertThat(framework.isBuiltin()).isTrue(); // GH-90000
             assertThat(framework.getControlCount()).isEqualTo(150); // GH-90000
@@ -119,7 +119,7 @@ class ComplianceFrameworkTest {
         }
 
         @Test
-        @DisplayName("builder defaults enabledByDefault to false [GH-90000]")
+        @DisplayName("builder defaults enabledByDefault to false")
         void builderDefaultsEnabledByDefaultToFalse() { // GH-90000
             ComplianceFramework framework = ComplianceFramework.builder() // GH-90000
                     .name(FRAMEWORK_NAME) // GH-90000
@@ -129,7 +129,7 @@ class ComplianceFrameworkTest {
         }
 
         @Test
-        @DisplayName("builder defaults isBuiltin to false [GH-90000]")
+        @DisplayName("builder defaults isBuiltin to false")
         void builderDefaultsIsBuiltinToFalse() { // GH-90000
             ComplianceFramework framework = ComplianceFramework.builder() // GH-90000
                     .name(FRAMEWORK_NAME) // GH-90000
@@ -139,7 +139,7 @@ class ComplianceFrameworkTest {
         }
 
         @Test
-        @DisplayName("builder defaults controlCount to 0 [GH-90000]")
+        @DisplayName("builder defaults controlCount to 0")
         void builderDefaultsControlCountToZero() { // GH-90000
             ComplianceFramework framework = ComplianceFramework.builder() // GH-90000
                     .name(FRAMEWORK_NAME) // GH-90000
@@ -150,22 +150,22 @@ class ComplianceFrameworkTest {
     }
 
     @Nested
-    @DisplayName("Equality Tests [GH-90000]")
+    @DisplayName("Equality Tests")
     class EqualityTests {
 
         @Test
-        @DisplayName("equals returns true for same id [GH-90000]")
+        @DisplayName("equals returns true for same id")
         void equalsReturnsTrueForSameId() { // GH-90000
             UUID id = UUID.randomUUID(); // GH-90000
-            ComplianceFramework framework1 = ComplianceFramework.builder().id(id).name("SOC2 [GH-90000]").build();
-            ComplianceFramework framework2 = ComplianceFramework.builder().id(id).name("PCI-DSS [GH-90000]").build();
+            ComplianceFramework framework1 = ComplianceFramework.builder().id(id).name("SOC2").build();
+            ComplianceFramework framework2 = ComplianceFramework.builder().id(id).name("PCI-DSS").build();
 
             assertThat(framework1).isEqualTo(framework2); // GH-90000
             assertThat(framework1.hashCode()).isEqualTo(framework2.hashCode()); // GH-90000
         }
 
         @Test
-        @DisplayName("equals returns false for different ids [GH-90000]")
+        @DisplayName("equals returns false for different ids")
         void equalsReturnsFalseForDifferentIds() { // GH-90000
             ComplianceFramework framework1 = ComplianceFramework.builder().id(UUID.randomUUID()).build(); // GH-90000
             ComplianceFramework framework2 = ComplianceFramework.builder().id(UUID.randomUUID()).build(); // GH-90000
@@ -175,11 +175,11 @@ class ComplianceFrameworkTest {
     }
 
     @Nested
-    @DisplayName("Framework Category Tests [GH-90000]")
+    @DisplayName("Framework Category Tests")
     class CategoryTests {
 
         @Test
-        @DisplayName("can set various framework categories [GH-90000]")
+        @DisplayName("can set various framework categories")
         void canSetVariousCategories() { // GH-90000
             String[] categories = {"SECURITY", "PRIVACY", "INDUSTRY", "GOVERNMENT", "FINANCIAL"};
 
@@ -195,11 +195,11 @@ class ComplianceFrameworkTest {
     }
 
     @Nested
-    @DisplayName("Common Frameworks Tests [GH-90000]")
+    @DisplayName("Common Frameworks Tests")
     class CommonFrameworksTests {
 
         @Test
-        @DisplayName("can create SOC 2 framework [GH-90000]")
+        @DisplayName("can create SOC 2 framework")
         void canCreateSoc2Framework() { // GH-90000
             ComplianceFramework soc2 = ComplianceFramework.builtin( // GH-90000
                     "SOC2",
@@ -207,12 +207,12 @@ class ComplianceFrameworkTest {
                     "SOC 2 Type II compliance for service organizations"
             );
 
-            assertThat(soc2.getName()).isEqualTo("SOC2 [GH-90000]");
+            assertThat(soc2.getName()).isEqualTo("SOC2");
             assertThat(soc2.isBuiltin()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("can create PCI-DSS framework [GH-90000]")
+        @DisplayName("can create PCI-DSS framework")
         void canCreatePciDssFramework() { // GH-90000
             ComplianceFramework pciDss = ComplianceFramework.builtin( // GH-90000
                     "PCI-DSS",
@@ -220,12 +220,12 @@ class ComplianceFrameworkTest {
                     "Security standard for organizations handling credit card data"
             );
 
-            assertThat(pciDss.getName()).isEqualTo("PCI-DSS [GH-90000]");
+            assertThat(pciDss.getName()).isEqualTo("PCI-DSS");
             assertThat(pciDss.isBuiltin()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("can create HIPAA framework [GH-90000]")
+        @DisplayName("can create HIPAA framework")
         void canCreateHipaaFramework() { // GH-90000
             ComplianceFramework hipaa = ComplianceFramework.builtin( // GH-90000
                     "HIPAA",
@@ -233,12 +233,12 @@ class ComplianceFrameworkTest {
                     "Healthcare data protection standard"
             );
 
-            assertThat(hipaa.getName()).isEqualTo("HIPAA [GH-90000]");
+            assertThat(hipaa.getName()).isEqualTo("HIPAA");
             assertThat(hipaa.isBuiltin()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("can create GDPR framework [GH-90000]")
+        @DisplayName("can create GDPR framework")
         void canCreateGdprFramework() { // GH-90000
             ComplianceFramework gdpr = ComplianceFramework.builtin( // GH-90000
                     "GDPR",
@@ -246,17 +246,17 @@ class ComplianceFrameworkTest {
                     "EU data protection and privacy regulation"
             );
 
-            assertThat(gdpr.getName()).isEqualTo("GDPR [GH-90000]");
+            assertThat(gdpr.getName()).isEqualTo("GDPR");
             assertThat(gdpr.isBuiltin()).isTrue(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Control Count Tests [GH-90000]")
+    @DisplayName("Control Count Tests")
     class ControlCountTests {
 
         @Test
-        @DisplayName("can update control count [GH-90000]")
+        @DisplayName("can update control count")
         void canUpdateControlCount() { // GH-90000
             ComplianceFramework framework = ComplianceFramework.of(FRAMEWORK_NAME); // GH-90000
             framework.setControlCount(125); // GH-90000

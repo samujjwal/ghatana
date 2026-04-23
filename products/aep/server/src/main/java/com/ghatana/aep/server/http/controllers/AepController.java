@@ -17,7 +17,8 @@ import io.activej.promise.Promise;
  * @doc.type interface
  * @doc.purpose Define contract for HTTP controllers
  * @doc.layer product
- */
+  * @doc.pattern Interface
+*/
 public interface AepController {
 
     /**

@@ -28,14 +28,14 @@ import static org.mockito.Mockito.mock;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataCloudRuntimePluginManager [GH-90000]")
+@DisplayName("DataCloudRuntimePluginManager")
 class DataCloudRuntimePluginManagerTest extends EventloopTestBase {
 
     private static final String TENANT_ID = "tenant-default";
     private static final String PIPELINE_ID = "pipeline-001";
 
     @Test
-    @DisplayName("workflow executions and logs survive plugin manager restart [GH-90000]")
+    @DisplayName("workflow executions and logs survive plugin manager restart")
     void workflowExecutionsSurvivePluginManagerRestart() { // GH-90000
         InMemoryDataCloudClient client = new InMemoryDataCloudClient(); // GH-90000
         runPromise(() -> client.save(TENANT_ID, "dc_pipelines", Map.of( // GH-90000
@@ -51,7 +51,7 @@ class DataCloudRuntimePluginManagerTest extends EventloopTestBase {
         manager.registerWorkflowPlugin(client); // GH-90000
 
         WorkflowExecutionCapability capability = manager.findCapability(WorkflowExecutionCapability.class) // GH-90000
-            .orElseThrow(() -> new AssertionError("workflow capability missing [GH-90000]"));
+            .orElseThrow(() -> new AssertionError("workflow capability missing"));
 
         WorkflowExecutionCapability.ExecutionSnapshot created = runPromise(() -> capability.execute( // GH-90000
             TENANT_ID,
@@ -60,7 +60,7 @@ class DataCloudRuntimePluginManagerTest extends EventloopTestBase {
         ));
         List<WorkflowExecutionCapability.ExecutionLogEntry> initialLogs = runPromise(() -> capability.getExecutionLogs(TENANT_ID, created.id())); // GH-90000
 
-        assertThat(created.status()).isEqualTo("COMPLETED [GH-90000]");
+        assertThat(created.status()).isEqualTo("COMPLETED");
         assertThat(initialLogs).hasSize(4); // GH-90000
 
         manager.close(); // GH-90000
@@ -69,7 +69,7 @@ class DataCloudRuntimePluginManagerTest extends EventloopTestBase {
         restartedManager.registerWorkflowPlugin(client); // GH-90000
 
         WorkflowExecutionCapability restartedCapability = restartedManager.findCapability(WorkflowExecutionCapability.class) // GH-90000
-            .orElseThrow(() -> new AssertionError("workflow capability missing after restart [GH-90000]"));
+            .orElseThrow(() -> new AssertionError("workflow capability missing after restart"));
 
         Optional<WorkflowExecutionCapability.ExecutionSnapshot> reloaded = runPromise(() -> restartedCapability.getExecution(TENANT_ID, created.id())); // GH-90000
         List<WorkflowExecutionCapability.ExecutionLogEntry> reloadedLogs = runPromise(() -> restartedCapability.getExecutionLogs(TENANT_ID, created.id())); // GH-90000
@@ -77,7 +77,7 @@ class DataCloudRuntimePluginManagerTest extends EventloopTestBase {
 
         assertThat(reloaded).isPresent(); // GH-90000
         assertThat(reloaded.orElseThrow().workflowId()).isEqualTo(PIPELINE_ID); // GH-90000
-        assertThat(reloaded.orElseThrow().status()).isEqualTo("COMPLETED [GH-90000]");
+        assertThat(reloaded.orElseThrow().status()).isEqualTo("COMPLETED");
         assertThat(reloadedLogs).hasSameSizeAs(initialLogs); // GH-90000
         assertThat(workflowExecutions).extracting(WorkflowExecutionCapability.ExecutionSnapshot::id) // GH-90000
             .contains(created.id()); // GH-90000
@@ -86,7 +86,7 @@ class DataCloudRuntimePluginManagerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("cancelExecution persists CANCELLED status and cancellation log [GH-90000]")
+    @DisplayName("cancelExecution persists CANCELLED status and cancellation log")
     void cancelExecutionPersistsCancelledState() { // GH-90000
         InMemoryDataCloudClient client = new InMemoryDataCloudClient(); // GH-90000
         String executionId = "exec-running-001";
@@ -126,15 +126,15 @@ class DataCloudRuntimePluginManagerTest extends EventloopTestBase {
         manager.registerWorkflowPlugin(client); // GH-90000
 
         WorkflowExecutionCapability capability = manager.findCapability(WorkflowExecutionCapability.class) // GH-90000
-            .orElseThrow(() -> new AssertionError("workflow capability missing [GH-90000]"));
+            .orElseThrow(() -> new AssertionError("workflow capability missing"));
 
         WorkflowExecutionCapability.ExecutionSnapshot cancelled = runPromise(() -> capability.cancelExecution(TENANT_ID, executionId)); // GH-90000
         List<WorkflowExecutionCapability.ExecutionLogEntry> logs = runPromise(() -> capability.getExecutionLogs(TENANT_ID, executionId)); // GH-90000
 
-        assertThat(cancelled.status()).isEqualTo("CANCELLED [GH-90000]");
+        assertThat(cancelled.status()).isEqualTo("CANCELLED");
         assertThat(cancelled.completedAt()).isNotNull(); // GH-90000
         assertThat(logs).extracting(WorkflowExecutionCapability.ExecutionLogEntry::message) // GH-90000
-            .contains("Execution cancelled [GH-90000]");
+            .contains("Execution cancelled");
 
         manager.close(); // GH-90000
     }
@@ -147,7 +147,7 @@ class DataCloudRuntimePluginManagerTest extends EventloopTestBase {
 
         @Override
         public Promise<Entity> save(String tenantId, String collection, Map<String, Object> data) { // GH-90000
-            String recordId = data.get("id [GH-90000]") instanceof String id && !id.isBlank()
+            String recordId = data.get("id") instanceof String id && !id.isBlank()
                 ? id
                 : UUID.randomUUID().toString(); // GH-90000
             String bucketKey = bucketKey(tenantId, collection); // GH-90000
@@ -203,7 +203,7 @@ class DataCloudRuntimePluginManagerTest extends EventloopTestBase {
 
         @Override
         public Promise<Offset> appendEvent(String tenantId, Event event) { // GH-90000
-            return Promise.ofException(new UnsupportedOperationException("appendEvent not used in this test [GH-90000]"));
+            return Promise.ofException(new UnsupportedOperationException("appendEvent not used in this test"));
         }
 
         @Override

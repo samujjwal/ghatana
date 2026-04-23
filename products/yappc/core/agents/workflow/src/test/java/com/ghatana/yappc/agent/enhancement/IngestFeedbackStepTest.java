@@ -19,7 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Enhancement IngestFeedbackStep Tests [GH-90000]")
+@DisplayName("Enhancement IngestFeedbackStep Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles ingest feedback step test operations
@@ -40,13 +40,13 @@ class IngestFeedbackStepTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should return correct step ID [GH-90000]")
+  @DisplayName("Should return correct step ID")
   void shouldReturnCorrectStepId() { // GH-90000
-    assertThat(step.getStepId()).isEqualTo("enhancement.ingest_feedback [GH-90000]");
+    assertThat(step.getStepId()).isEqualTo("enhancement.ingest_feedback");
   }
 
   @Test
-  @DisplayName("Should ingest feedback from multiple sources [GH-90000]")
+  @DisplayName("Should ingest feedback from multiple sources")
   void shouldIngestFeedback() { // GH-90000
     // GIVEN
     WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
@@ -67,11 +67,11 @@ class IngestFeedbackStepTest extends EventloopTestBase {
                 "avgRecoveryTime", 60),
             "metrics",
             Map.of()); // GH-90000
-    when(dbClient.query(eq("ops_baselines [GH-90000]"), any(), anyInt()))
+    when(dbClient.query(eq("ops_baselines"), any(), anyInt()))
         .thenReturn(Promise.of(List.of(baseline))); // GH-90000
-    when(dbClient.query(eq("feedback [GH-90000]"), any(), anyInt())).thenReturn(Promise.of(List.of()));
-    when(dbClient.query(eq("incidents [GH-90000]"), any(), anyInt())).thenReturn(Promise.of(List.of()));
-    when(dbClient.query(eq("app_usage [GH-90000]"), any(), anyInt())).thenReturn(Promise.of(List.of()));
+    when(dbClient.query(eq("feedback"), any(), anyInt())).thenReturn(Promise.of(List.of()));
+    when(dbClient.query(eq("incidents"), any(), anyInt())).thenReturn(Promise.of(List.of()));
+    when(dbClient.query(eq("app_usage"), any(), anyInt())).thenReturn(Promise.of(List.of()));
     when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
     when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
     when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
@@ -81,6 +81,6 @@ class IngestFeedbackStepTest extends EventloopTestBase {
 
     // THEN
     assertThat(result).isNotNull(); // GH-90000
-    assertThat(result.get("opsBaselineId [GH-90000]")).isEqualTo("ops-baseline-001 [GH-90000]");
+    assertThat(result.get("opsBaselineId")).isEqualTo("ops-baseline-001");
   }
 }

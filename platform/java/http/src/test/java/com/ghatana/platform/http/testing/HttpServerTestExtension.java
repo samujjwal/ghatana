@@ -45,10 +45,10 @@ import java.time.Duration;
  *
  *     @Test
  *     void shouldReturnUserById(HttpServerTestRunner runner) { // GH-90000
- *         HttpResponse response = runner.get("/api/users/123 [GH-90000]");
+ *         HttpResponse response = runner.get("/api/users/123");
  *
  *         assertEquals(200, response.getCode()); // GH-90000
- *         assertEquals("application/json", response.getHeader("Content-Type [GH-90000]"));
+ *         assertEquals("application/json", response.getHeader("Content-Type"));
  *
  *         User user = parseJson(response, User.class); // GH-90000
  *         assertEquals("123", user.getId()); // GH-90000
@@ -61,7 +61,7 @@ import java.time.Duration;
  *         HttpResponse response = runner.post("/api/users", userJson); // GH-90000
  *
  *         assertEquals(201, response.getCode()); // GH-90000
- *         assertNotNull(response.getHeader("Location [GH-90000]"));
+ *         assertNotNull(response.getHeader("Location"));
  *     }
  * }
  *
@@ -74,7 +74,7 @@ import java.time.Duration;
  *
  *     @Test
  *     void shouldReturnUsers() { // GH-90000
- *         HttpResponse response = runner.get("/api/users [GH-90000]");
+ *         HttpResponse response = runner.get("/api/users");
  *
  *         assertEquals(200, response.getCode()); // GH-90000
  *
@@ -95,7 +95,7 @@ import java.time.Duration;
  *
  *     @Test
  *     void shouldHandleSlowOperation(HttpServerTestRunner runner) { // GH-90000
- *         HttpResponse response = runner.get("/api/slow-operation [GH-90000]");
+ *         HttpResponse response = runner.get("/api/slow-operation");
  *         assertEquals(200, response.getCode()); // GH-90000
  *     }
  * }
@@ -108,19 +108,19 @@ import java.time.Duration;
  *
  *     @Test
  *     void shouldListProducts(HttpServerTestRunner runner) { // GH-90000
- *         HttpResponse response = runner.get("/api/products [GH-90000]");
+ *         HttpResponse response = runner.get("/api/products");
  *         assertEquals(200, response.getCode()); // GH-90000
  *     }
  *
  *     @Test
  *     void shouldGetProductById(HttpServerTestRunner runner) { // GH-90000
- *         HttpResponse response = runner.get("/api/products/123 [GH-90000]");
+ *         HttpResponse response = runner.get("/api/products/123");
  *         assertEquals(200, response.getCode()); // GH-90000
  *     }
  *
  *     @Test
  *     void shouldReturn404ForMissingProduct(HttpServerTestRunner runner) { // GH-90000
- *         HttpResponse response = runner.get("/api/products/999 [GH-90000]");
+ *         HttpResponse response = runner.get("/api/products/999");
  *         assertEquals(404, response.getCode()); // GH-90000
  *     }
  * }
@@ -139,7 +139,7 @@ import java.time.Duration;
  *         assertEquals(201, response.getCode()); // GH-90000
  *
  *         // Verify in database
- *         User user = userRepository.findByName("Test User [GH-90000]");
+ *         User user = userRepository.findByName("Test User");
  *         assertNotNull(user); // GH-90000
  *     }
  * }
@@ -241,7 +241,7 @@ import java.time.Duration;
  *
  * // Pattern 4: Multiple servlets (parameterize tests) // GH-90000
  * @ParameterizedTest
- * @MethodSource("servlets [GH-90000]")
+ * @MethodSource("servlets")
  * void testMultipleServlets(AsyncServlet servlet, HttpServerTestRunner runner) { // GH-90000
  *     // Test different servlet implementations
  * }
@@ -347,7 +347,7 @@ public class HttpServerTestExtension implements BeforeEachCallback, AfterEachCal
 
         // Prefer an explicitly-named field 'servlet' when present so tests can declare multiple AsyncServlet fields
         try {
-            Field servletField = testClass.getDeclaredField("servlet [GH-90000]");
+            Field servletField = testClass.getDeclaredField("servlet");
             if (AsyncServlet.class.isAssignableFrom(servletField.getType()) && !servletField.isSynthetic()) { // GH-90000
                 servletField.setAccessible(true); // GH-90000
                 return (AsyncServlet) servletField.get(testInstance); // GH-90000

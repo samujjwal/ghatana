@@ -22,13 +22,13 @@ class PromiseUtilsTest {
 
     @Test
     void testWithTimeout_completesBeforeTimeout(EventloopTestRunner runner) { // GH-90000
-        Promise<String> promise = Promise.of("success [GH-90000]");
+        Promise<String> promise = Promise.of("success");
 
         String result = runner.runPromise(() -> // GH-90000
             PromiseUtils.withTimeout(promise, Duration.ofSeconds(1)) // GH-90000
         );
 
-        assertThat(result).isEqualTo("success [GH-90000]");
+        assertThat(result).isEqualTo("success");
     }
 
     @Test
@@ -50,14 +50,14 @@ class PromiseUtilsTest {
             PromiseUtils.withRetry( // GH-90000
                 () -> { // GH-90000
                     attempts.incrementAndGet(); // GH-90000
-                    return Promise.of("success [GH-90000]");
+                    return Promise.of("success");
                 },
                 3,
                 Duration.ofMillis(10) // GH-90000
             )
         );
 
-        assertThat(result).isEqualTo("success [GH-90000]");
+        assertThat(result).isEqualTo("success");
         assertThat(attempts.get()).isEqualTo(1); // GH-90000
     }
 
@@ -72,14 +72,14 @@ class PromiseUtilsTest {
                     if (attempt < 3) { // GH-90000
                         return Promise.ofException(new RuntimeException("Attempt " + attempt)); // GH-90000
                     }
-                    return Promise.of("success [GH-90000]");
+                    return Promise.of("success");
                 },
                 3,
                 Duration.ofMillis(10) // GH-90000
             )
         );
 
-        assertThat(result).isEqualTo("success [GH-90000]");
+        assertThat(result).isEqualTo("success");
         assertThat(attempts.get()).isEqualTo(3); // GH-90000
     }
 
@@ -91,12 +91,12 @@ class PromiseUtilsTest {
             PromiseUtils.withRetry( // GH-90000
                 () -> { // GH-90000
                     attempts.incrementAndGet(); // GH-90000
-                    return Promise.ofException(new RuntimeException("Always fails [GH-90000]"));
+                    return Promise.ofException(new RuntimeException("Always fails"));
                 },
                 3,
                 Duration.ofMillis(10) // GH-90000
             )
-        )).hasMessageContaining("Always fails [GH-90000]");
+        )).hasMessageContaining("Always fails");
 
         assertThat(attempts.get()).isEqualTo(3); // GH-90000
     }
@@ -105,7 +105,7 @@ class PromiseUtilsTest {
     void testWithRetry_requiresPositiveAttempts(EventloopTestRunner runner) { // GH-90000
         assertThatThrownBy(() -> runner.runPromise(() -> // GH-90000
             PromiseUtils.withRetry( // GH-90000
-                () -> Promise.of("test [GH-90000]"),
+                () -> Promise.of("test"),
                 0,
                 Duration.ofMillis(10) // GH-90000
             )
@@ -114,18 +114,18 @@ class PromiseUtilsTest {
 
     @Test
     void testToCompletableFuture_success(EventloopTestRunner runner) { // GH-90000
-        Promise<String> promise = Promise.of("test [GH-90000]");
+        Promise<String> promise = Promise.of("test");
 
         CompletableFuture<String> future = runner.runBlocking(() -> // GH-90000
             PromiseUtils.toCompletableFuture(promise) // GH-90000
         );
 
-        assertThat(future).isCompletedWithValue("test [GH-90000]");
+        assertThat(future).isCompletedWithValue("test");
     }
 
     @Test
     void testToCompletableFuture_failure(EventloopTestRunner runner) { // GH-90000
-        Promise<String> promise = Promise.ofException(new RuntimeException("error [GH-90000]"));
+        Promise<String> promise = Promise.ofException(new RuntimeException("error"));
 
         CompletableFuture<String> future = runner.runBlocking(() -> // GH-90000
             PromiseUtils.toCompletableFuture(promise) // GH-90000
@@ -136,23 +136,23 @@ class PromiseUtilsTest {
 
     @Test
     void testFromCompletableFuture_success(EventloopTestRunner runner) { // GH-90000
-        CompletableFuture<String> future = CompletableFuture.completedFuture("test [GH-90000]");
+        CompletableFuture<String> future = CompletableFuture.completedFuture("test");
 
         String result = runner.runPromise(() -> // GH-90000
             PromiseUtils.fromCompletableFuture(future) // GH-90000
         );
 
-        assertThat(result).isEqualTo("test [GH-90000]");
+        assertThat(result).isEqualTo("test");
     }
 
     @Test
     void testFromCompletableFuture_failure(EventloopTestRunner runner) { // GH-90000
         CompletableFuture<String> future = new CompletableFuture<>(); // GH-90000
-        future.completeExceptionally(new RuntimeException("error [GH-90000]"));
+        future.completeExceptionally(new RuntimeException("error"));
 
         assertThatThrownBy(() -> runner.runPromise(() -> // GH-90000
             PromiseUtils.fromCompletableFuture(future) // GH-90000
-        )).hasMessageContaining("error [GH-90000]");
+        )).hasMessageContaining("error");
     }
 
     @Test
@@ -174,28 +174,28 @@ class PromiseUtilsTest {
     void testAll_failsIfAnyFails(EventloopTestRunner runner) { // GH-90000
         List<Promise<Integer>> promises = List.of( // GH-90000
             Promise.of(1), // GH-90000
-            Promise.ofException(new RuntimeException("error [GH-90000]")),
+            Promise.ofException(new RuntimeException("error")),
             Promise.of(3) // GH-90000
         );
 
         assertThatThrownBy(() -> runner.runPromise(() -> // GH-90000
             PromiseUtils.all(promises) // GH-90000
-        )).hasMessageContaining("error [GH-90000]");
+        )).hasMessageContaining("error");
     }
 
     @Test
     void testAny_returnsFirstSuccess(EventloopTestRunner runner) { // GH-90000
         List<Promise<String>> promises = List.of( // GH-90000
-            Promise.ofException(new RuntimeException("error1 [GH-90000]")),
-            Promise.of("success [GH-90000]"),
-            Promise.ofException(new RuntimeException("error2 [GH-90000]"))
+            Promise.ofException(new RuntimeException("error1")),
+            Promise.of("success"),
+            Promise.ofException(new RuntimeException("error2"))
         );
 
         String result = runner.runPromise(() -> // GH-90000
             PromiseUtils.any(promises) // GH-90000
         );
 
-        assertThat(result).isEqualTo("success [GH-90000]");
+        assertThat(result).isEqualTo("success");
     }
 
     @Test
@@ -206,7 +206,7 @@ class PromiseUtilsTest {
             PromiseUtils.map(promise, n -> "Number: " + n) // GH-90000
         );
 
-        assertThat(result).isEqualTo("Number: 10 [GH-90000]");
+        assertThat(result).isEqualTo("Number: 10");
     }
 
     @Test
@@ -222,38 +222,38 @@ class PromiseUtilsTest {
 
     @Test
     void testWithFallback_usesFallbackOnError(EventloopTestRunner runner) { // GH-90000
-        Promise<String> failingPromise = Promise.ofException(new RuntimeException("error [GH-90000]"));
+        Promise<String> failingPromise = Promise.ofException(new RuntimeException("error"));
 
         String result = runner.runPromise(() -> // GH-90000
             PromiseUtils.withFallback(failingPromise, "fallback") // GH-90000
         );
 
-        assertThat(result).isEqualTo("fallback [GH-90000]");
+        assertThat(result).isEqualTo("fallback");
     }
 
     @Test
     void testWithFallback_usesOriginalOnSuccess(EventloopTestRunner runner) { // GH-90000
-        Promise<String> promise = Promise.of("original [GH-90000]");
+        Promise<String> promise = Promise.of("original");
 
         String result = runner.runPromise(() -> // GH-90000
             PromiseUtils.withFallback(promise, "fallback") // GH-90000
         );
 
-        assertThat(result).isEqualTo("original [GH-90000]");
+        assertThat(result).isEqualTo("original");
     }
 
     @Test
     void testWithFallbackPromise_usesFallbackOnError(EventloopTestRunner runner) { // GH-90000
-        Promise<String> failingPromise = Promise.ofException(new RuntimeException("error [GH-90000]"));
+        Promise<String> failingPromise = Promise.ofException(new RuntimeException("error"));
 
         String result = runner.runPromise(() -> // GH-90000
             PromiseUtils.withFallbackPromise( // GH-90000
                 failingPromise,
-                () -> Promise.of("fallback [GH-90000]")
+                () -> Promise.of("fallback")
             )
         );
 
-        assertThat(result).isEqualTo("fallback [GH-90000]");
+        assertThat(result).isEqualTo("fallback");
     }
 
     @Test
@@ -278,30 +278,30 @@ class PromiseUtilsTest {
         String result = runner.runPromise(() -> // GH-90000
             PromiseUtils.delay( // GH-90000
                 Duration.ofMillis(100), // GH-90000
-                () -> Promise.of("delayed [GH-90000]")
+                () -> Promise.of("delayed")
             )
         );
 
         long elapsed = System.currentTimeMillis() - start; // GH-90000
 
-        assertThat(result).isEqualTo("delayed [GH-90000]");
+        assertThat(result).isEqualTo("delayed");
         assertThat(elapsed).isGreaterThanOrEqualTo(100); // GH-90000
     }
 
     @Test
     void testOf_createsCompletedPromise(EventloopTestRunner runner) { // GH-90000
         String result = runner.runPromise(() -> // GH-90000
-            PromiseUtils.of("test [GH-90000]")
+            PromiseUtils.of("test")
         );
 
-        assertThat(result).isEqualTo("test [GH-90000]");
+        assertThat(result).isEqualTo("test");
     }
 
     @Test
     void testOfException_createsFailedPromise(EventloopTestRunner runner) { // GH-90000
         assertThatThrownBy(() -> runner.runPromise(() -> // GH-90000
-            PromiseUtils.ofException(new RuntimeException("error [GH-90000]"))
-        )).hasMessageContaining("error [GH-90000]");
+            PromiseUtils.ofException(new RuntimeException("error"))
+        )).hasMessageContaining("error");
     }
 
     @Test
@@ -310,12 +310,12 @@ class PromiseUtilsTest {
 
         String result = runner.runPromise(() -> // GH-90000
             PromiseUtils.doFinally( // GH-90000
-                Promise.of("success [GH-90000]"),
+                Promise.of("success"),
                 finallyCount::incrementAndGet
             )
         );
 
-        assertThat(result).isEqualTo("success [GH-90000]");
+        assertThat(result).isEqualTo("success");
         assertThat(finallyCount.get()).isEqualTo(1); // GH-90000
     }
 
@@ -325,10 +325,10 @@ class PromiseUtilsTest {
 
         assertThatThrownBy(() -> runner.runPromise(() -> // GH-90000
             PromiseUtils.doFinally( // GH-90000
-                Promise.ofException(new RuntimeException("error [GH-90000]")),
+                Promise.ofException(new RuntimeException("error")),
                 finallyCount::incrementAndGet
             )
-        )).hasMessageContaining("error [GH-90000]");
+        )).hasMessageContaining("error");
 
         assertThat(finallyCount.get()).isEqualTo(1); // GH-90000
     }

@@ -13,7 +13,8 @@ import org.jetbrains.annotations.NotNull;
  * @doc.type interface
  * @doc.purpose Base for typed artifact memory items
  * @doc.layer agent-memory
- */
+  * @doc.pattern Enum
+*/
 public sealed interface TypedArtifact extends MemoryItem
         permits Decision, ToolUse, Observation, ErrorArtifact, Lesson, Entity {
 

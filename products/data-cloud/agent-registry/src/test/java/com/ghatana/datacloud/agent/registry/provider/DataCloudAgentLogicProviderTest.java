@@ -25,7 +25,7 @@ import static org.mockito.Mockito.mock;
  * @doc.layer product
  * @doc.pattern Unit Test
  */
-@DisplayName("DataCloudAgentLogicProvider [GH-90000]")
+@DisplayName("DataCloudAgentLogicProvider")
 class DataCloudAgentLogicProviderTest {
 
     private DataCloudAgentLogicProvider provider;
@@ -36,13 +36,13 @@ class DataCloudAgentLogicProviderTest {
     }
 
     @Test
-    @DisplayName("providerId is 'data-cloud' [GH-90000]")
+    @DisplayName("providerId is 'data-cloud'")
     void providerIdIsDataCloud() { // GH-90000
-        assertThat(provider.getProviderId()).isEqualTo("data-cloud [GH-90000]");
+        assertThat(provider.getProviderId()).isEqualTo("data-cloud");
     }
 
     @Test
-    @DisplayName("exposes exactly three supported refs by default [GH-90000]")
+    @DisplayName("exposes exactly three supported refs by default")
     void exposesThreeSupportedRefs() { // GH-90000
         assertThat(provider.getSupportedRefs()).containsExactlyInAnyOrder( // GH-90000
                 "data-cloud:agent.data-cloud.schema-validator",
@@ -51,7 +51,7 @@ class DataCloudAgentLogicProviderTest {
     }
 
     @Test
-    @DisplayName("creates SchemaValidatorAgent for schema-validator ref [GH-90000]")
+    @DisplayName("creates SchemaValidatorAgent for schema-validator ref")
     void createsSchemaValidatorAgent() { // GH-90000
         AgentConfig config = mock(AgentConfig.class); // GH-90000
         TypedAgent<?, ?> agent = provider.createAgent( // GH-90000
@@ -60,7 +60,7 @@ class DataCloudAgentLogicProviderTest {
     }
 
     @Test
-    @DisplayName("creates DataSyncAgent for data-sync ref [GH-90000]")
+    @DisplayName("creates DataSyncAgent for data-sync ref")
     void createsDataSyncAgent() { // GH-90000
         AgentConfig config = mock(AgentConfig.class); // GH-90000
         TypedAgent<?, ?> agent = provider.createAgent( // GH-90000
@@ -69,7 +69,7 @@ class DataCloudAgentLogicProviderTest {
     }
 
     @Test
-    @DisplayName("creates DataAnomalyDetectorAgent for anomaly-detector ref [GH-90000]")
+    @DisplayName("creates DataAnomalyDetectorAgent for anomaly-detector ref")
     void createsDataAnomalyDetectorAgent() { // GH-90000
         AgentConfig config = mock(AgentConfig.class); // GH-90000
         TypedAgent<?, ?> agent = provider.createAgent( // GH-90000
@@ -78,22 +78,22 @@ class DataCloudAgentLogicProviderTest {
     }
 
     @Test
-    @DisplayName("throws IllegalArgumentException for unknown ref [GH-90000]")
+    @DisplayName("throws IllegalArgumentException for unknown ref")
     void throwsForUnknownRef() { // GH-90000
         AgentConfig config = mock(AgentConfig.class); // GH-90000
         assertThatThrownBy(() -> // GH-90000
                 provider.createAgent("data-cloud:agent.unknown", config)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("Unsupported implementationRef [GH-90000]");
+                .hasMessageContaining("Unsupported implementationRef");
     }
 
     @Test
-    @DisplayName("registerFactory adds a new ref [GH-90000]")
+    @DisplayName("registerFactory adds a new ref")
     void registerFactoryAddsRef() { // GH-90000
         AgentConfig config = mock(AgentConfig.class); // GH-90000
         provider.registerFactory("data-cloud:agent.custom", c -> new SchemaValidatorAgent()); // GH-90000
 
-        assertThat(provider.getSupportedRefs()).contains("data-cloud:agent.custom [GH-90000]");
+        assertThat(provider.getSupportedRefs()).contains("data-cloud:agent.custom");
         assertThat(provider.createAgent("data-cloud:agent.custom", config)) // GH-90000
                 .isInstanceOf(SchemaValidatorAgent.class); // GH-90000
     }

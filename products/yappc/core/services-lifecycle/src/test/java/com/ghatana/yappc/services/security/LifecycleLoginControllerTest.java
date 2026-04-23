@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
  * Unit tests for {@link LifecycleLoginController}.
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("LifecycleLoginController Tests [GH-90000]")
+@DisplayName("LifecycleLoginController Tests")
 class LifecycleLoginControllerTest extends EventloopTestBase {
 
     @Mock
@@ -59,12 +59,12 @@ class LifecycleLoginControllerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Login with correct credentials returns 200 with token and user payload [GH-90000]")
+    @DisplayName("Login with correct credentials returns 200 with token and user payload")
     void loginWithValidCredentialsReturns200() { // GH-90000
-        when(tokenProvider.createToken(eq("test-user-1 [GH-90000]"), anyList(), any(Map.class)))
-                .thenReturn("mock-jwt-token [GH-90000]");
+        when(tokenProvider.createToken(eq("test-user-1"), anyList(), any(Map.class)))
+                .thenReturn("mock-jwt-token");
 
-        HttpRequest request = HttpRequest.post("http://localhost/api/auth/login [GH-90000]")
+        HttpRequest request = HttpRequest.post("http://localhost/api/auth/login")
                 .withBody("{\"email\":\"test@yappc.io\",\"password\":\"correct-password\"}") // GH-90000
                 .build(); // GH-90000
 
@@ -72,15 +72,15 @@ class LifecycleLoginControllerTest extends EventloopTestBase {
 
         assertThat(response.getCode()).isEqualTo(200); // GH-90000
         String body = response.getBody().getString(StandardCharsets.UTF_8); // GH-90000
-        assertThat(body).contains("mock-jwt-token [GH-90000]");
-        assertThat(body).contains("test-user-1 [GH-90000]");
-        assertThat(body).contains("test@yappc.io [GH-90000]");
+        assertThat(body).contains("mock-jwt-token");
+        assertThat(body).contains("test-user-1");
+        assertThat(body).contains("test@yappc.io");
     }
 
     @Test
-    @DisplayName("Login with wrong password returns 401 [GH-90000]")
+    @DisplayName("Login with wrong password returns 401")
     void loginWithWrongPasswordReturns401() { // GH-90000
-        HttpRequest request = HttpRequest.post("http://localhost/api/auth/login [GH-90000]")
+        HttpRequest request = HttpRequest.post("http://localhost/api/auth/login")
                 .withBody("{\"email\":\"test@yappc.io\",\"password\":\"wrong-password\"}") // GH-90000
                 .build(); // GH-90000
 
@@ -88,13 +88,13 @@ class LifecycleLoginControllerTest extends EventloopTestBase {
 
         assertThat(response.getCode()).isEqualTo(401); // GH-90000
         String body = response.getBody().getString(StandardCharsets.UTF_8); // GH-90000
-        assertThat(body).contains("UNAUTHORIZED [GH-90000]");
+        assertThat(body).contains("UNAUTHORIZED");
     }
 
     @Test
-    @DisplayName("Login with unknown email returns 401 [GH-90000]")
+    @DisplayName("Login with unknown email returns 401")
     void loginWithUnknownEmailReturns401() { // GH-90000
-        HttpRequest request = HttpRequest.post("http://localhost/api/auth/login [GH-90000]")
+        HttpRequest request = HttpRequest.post("http://localhost/api/auth/login")
                 .withBody("{\"email\":\"nobody@yappc.io\",\"password\":\"correct-password\"}") // GH-90000
                 .build(); // GH-90000
 
@@ -104,9 +104,9 @@ class LifecycleLoginControllerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Login with missing email field returns 400 [GH-90000]")
+    @DisplayName("Login with missing email field returns 400")
     void loginMissingEmailReturns400() { // GH-90000
-        HttpRequest request = HttpRequest.post("http://localhost/api/auth/login [GH-90000]")
+        HttpRequest request = HttpRequest.post("http://localhost/api/auth/login")
                 .withBody("{\"password\":\"correct-password\"}") // GH-90000
                 .build(); // GH-90000
 
@@ -114,13 +114,13 @@ class LifecycleLoginControllerTest extends EventloopTestBase {
 
         assertThat(response.getCode()).isEqualTo(400); // GH-90000
         String body = response.getBody().getString(StandardCharsets.UTF_8); // GH-90000
-        assertThat(body).contains("BAD_REQUEST [GH-90000]");
+        assertThat(body).contains("BAD_REQUEST");
     }
 
     @Test
-    @DisplayName("Login with empty body returns 400 [GH-90000]")
+    @DisplayName("Login with empty body returns 400")
     void loginEmptyBodyReturns400() { // GH-90000
-        HttpRequest request = HttpRequest.post("http://localhost/api/auth/login [GH-90000]")
+        HttpRequest request = HttpRequest.post("http://localhost/api/auth/login")
                 .build(); // GH-90000
 
         HttpResponse response = runPromise(() -> controller.login(request)); // GH-90000
@@ -129,25 +129,25 @@ class LifecycleLoginControllerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Logout always returns 200 regardless of auth header [GH-90000]")
+    @DisplayName("Logout always returns 200 regardless of auth header")
     void logoutAlwaysReturns200() { // GH-90000
-        HttpRequest request = HttpRequest.post("http://localhost/api/auth/logout [GH-90000]")
+        HttpRequest request = HttpRequest.post("http://localhost/api/auth/logout")
                 .build(); // GH-90000
 
         HttpResponse response = runPromise(() -> controller.logout(request)); // GH-90000
 
         assertThat(response.getCode()).isEqualTo(200); // GH-90000
         String body = response.getBody().getString(StandardCharsets.UTF_8); // GH-90000
-        assertThat(body).contains("Logged out successfully [GH-90000]");
+        assertThat(body).contains("Logged out successfully");
     }
 
     @Test
-    @DisplayName("Logout with valid bearer token logs user id and returns 200 [GH-90000]")
+    @DisplayName("Logout with valid bearer token logs user id and returns 200")
     void logoutWithTokenReturns200() { // GH-90000
-        when(tokenProvider.getUserIdFromToken("valid-token [GH-90000]"))
-                .thenReturn(Optional.of("test-user-1 [GH-90000]"));
+        when(tokenProvider.getUserIdFromToken("valid-token"))
+                .thenReturn(Optional.of("test-user-1"));
 
-        HttpRequest request = HttpRequest.post("http://localhost/api/auth/logout [GH-90000]")
+        HttpRequest request = HttpRequest.post("http://localhost/api/auth/logout")
             .withHeader(HttpHeaders.AUTHORIZATION, "Bearer valid-token") // GH-90000
                 .build(); // GH-90000
 

@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   <li>Stream cancellation</li>
  * </ul>
  */
-@DisplayName("LLM Streaming [GH-90000]")
+@DisplayName("LLM Streaming")
 class LLMStreamingTest {
 
     // ── Stubs ────────────────────────────────────────────────────────────────
@@ -83,8 +83,8 @@ class LLMStreamingTest {
         @Override
         public Promise<TokenStream> stream(CompletionRequest request) { // GH-90000
             DefaultTokenStream ts = new DefaultTokenStream(); // GH-90000
-            ts.emitToken("Hello [GH-90000]");
-            ts.emitToken(" World [GH-90000]");
+            ts.emitToken("Hello");
+            ts.emitToken(" World");
             ts.complete(); // GH-90000
             return Promise.of(ts); // GH-90000
         }
@@ -96,22 +96,22 @@ class LLMStreamingTest {
     // ── DefaultTokenStream unit tests ────────────────────────────────────────
 
     @Nested
-    @DisplayName("DefaultTokenStream [GH-90000]")
+    @DisplayName("DefaultTokenStream")
     class DefaultTokenStreamTests {
 
         @Test
-        @DisplayName("accumulates tokens for after-the-fact retrieval [GH-90000]")
+        @DisplayName("accumulates tokens for after-the-fact retrieval")
         void shouldAccumulateTokens() { // GH-90000
             DefaultTokenStream ts = new DefaultTokenStream(); // GH-90000
-            ts.emitToken("foo [GH-90000]");
-            ts.emitToken("bar [GH-90000]");
+            ts.emitToken("foo");
+            ts.emitToken("bar");
             ts.complete(); // GH-90000
 
-            assertThat(ts.getAccumulatedText()).isEqualTo("foobar [GH-90000]");
+            assertThat(ts.getAccumulatedText()).isEqualTo("foobar");
         }
 
         @Test
-        @DisplayName("invokes callbacks in registration order [GH-90000]")
+        @DisplayName("invokes callbacks in registration order")
         void shouldInvokeCallbacks() { // GH-90000
             DefaultTokenStream ts = new DefaultTokenStream(); // GH-90000
             List<String> received = new ArrayList<>(); // GH-90000
@@ -120,8 +120,8 @@ class LLMStreamingTest {
             ts.onToken(received::add) // GH-90000
               .onComplete(() -> completed[0] = true); // GH-90000
 
-            ts.emitToken("a [GH-90000]");
-            ts.emitToken("b [GH-90000]");
+            ts.emitToken("a");
+            ts.emitToken("b");
             ts.complete(); // GH-90000
 
             assertThat(received).containsExactly("a", "b"); // GH-90000
@@ -129,37 +129,37 @@ class LLMStreamingTest {
         }
 
         @Test
-        @DisplayName("fires error callback on failure [GH-90000]")
+        @DisplayName("fires error callback on failure")
         void shouldFireErrorCallback() { // GH-90000
             DefaultTokenStream ts = new DefaultTokenStream(); // GH-90000
             Throwable[] captured = {null};
             ts.onError(err -> captured[0] = err); // GH-90000
 
-            ts.error(new RuntimeException("boom [GH-90000]"));
+            ts.error(new RuntimeException("boom"));
 
-            assertThat(captured[0]).hasMessage("boom [GH-90000]");
+            assertThat(captured[0]).hasMessage("boom");
         }
 
         @Test
-        @DisplayName("ignores tokens after cancellation [GH-90000]")
+        @DisplayName("ignores tokens after cancellation")
         void shouldStopAfterCancel() { // GH-90000
             DefaultTokenStream ts = new DefaultTokenStream(); // GH-90000
             List<String> received = new ArrayList<>(); // GH-90000
             ts.onToken(received::add); // GH-90000
 
-            ts.emitToken("before [GH-90000]");
+            ts.emitToken("before");
             ts.cancel(); // GH-90000
-            ts.emitToken("after [GH-90000]");
+            ts.emitToken("after");
 
-            assertThat(received).containsExactly("before [GH-90000]");
-            assertThat(ts.getAccumulatedText()).isEqualTo("before [GH-90000]");
+            assertThat(received).containsExactly("before");
+            assertThat(ts.getAccumulatedText()).isEqualTo("before");
         }
     }
 
     // ── Gateway streaming tests ──────────────────────────────────────────────
 
     @Nested
-    @DisplayName("DefaultLLMGateway.stream() [GH-90000]")
+    @DisplayName("DefaultLLMGateway.stream()")
     class GatewayStreamTests extends EventloopTestBase {
 
         private CompletionRequest request;
@@ -167,42 +167,42 @@ class LLMStreamingTest {
         @BeforeEach
         void setUp() { // GH-90000
             request = CompletionRequest.builder() // GH-90000
-                    .prompt("test prompt [GH-90000]")
+                    .prompt("test prompt")
                     .build(); // GH-90000
         }
 
         @Test
-        @DisplayName("delegates to StreamingCompletionService when available [GH-90000]")
+        @DisplayName("delegates to StreamingCompletionService when available")
         void shouldUseNativeStreaming() { // GH-90000
             DefaultLLMGateway gateway = DefaultLLMGateway.builder() // GH-90000
-                    .addProvider("streaming", new NativeStreamingProvider("streaming [GH-90000]"))
-                    .defaultProvider("streaming [GH-90000]")
+                    .addProvider("streaming", new NativeStreamingProvider("streaming"))
+                    .defaultProvider("streaming")
                     .metrics(NOOP_METRICS) // GH-90000
                     .build(); // GH-90000
 
             TokenStream stream = runPromise(() -> gateway.stream(request)); // GH-90000
-            assertThat(stream.getAccumulatedText()).isEqualTo("Hello World [GH-90000]");
+            assertThat(stream.getAccumulatedText()).isEqualTo("Hello World");
         }
 
         @Test
-        @DisplayName("adapts batch completion to token stream for non-streaming providers [GH-90000]")
+        @DisplayName("adapts batch completion to token stream for non-streaming providers")
         void shouldFallbackToBatchAdapter() { // GH-90000
             DefaultLLMGateway gateway = DefaultLLMGateway.builder() // GH-90000
-                    .addProvider("batch", new BatchOnlyProvider("batch [GH-90000]"))
-                    .defaultProvider("batch [GH-90000]")
+                    .addProvider("batch", new BatchOnlyProvider("batch"))
+                    .defaultProvider("batch")
                     .metrics(NOOP_METRICS) // GH-90000
                     .build(); // GH-90000
 
             TokenStream stream = runPromise(() -> gateway.stream(request)); // GH-90000
-            assertThat(stream.getAccumulatedText()).isEqualTo("batch:batch [GH-90000]");
+            assertThat(stream.getAccumulatedText()).isEqualTo("batch:batch");
         }
 
         @Test
-        @DisplayName("streaming callback receives tokens from native provider [GH-90000]")
+        @DisplayName("streaming callback receives tokens from native provider")
         void shouldDeliverTokensViaCallback() { // GH-90000
             DefaultLLMGateway gateway = DefaultLLMGateway.builder() // GH-90000
-                    .addProvider("streaming", new NativeStreamingProvider("streaming [GH-90000]"))
-                    .defaultProvider("streaming [GH-90000]")
+                    .addProvider("streaming", new NativeStreamingProvider("streaming"))
+                    .defaultProvider("streaming")
                     .metrics(NOOP_METRICS) // GH-90000
                     .build(); // GH-90000
 
@@ -212,7 +212,7 @@ class LLMStreamingTest {
             // the accumulated text should be available
             List<String> tokens = new ArrayList<>(); // GH-90000
             stream.onToken(tokens::add); // won't receive retroactively, but accumulated is there // GH-90000
-            assertThat(stream.getAccumulatedText()).isEqualTo("Hello World [GH-90000]");
+            assertThat(stream.getAccumulatedText()).isEqualTo("Hello World");
         }
     }
 }

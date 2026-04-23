@@ -19,7 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Architecture IntakeStep Tests [GH-90000]")
+@DisplayName("Architecture IntakeStep Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles intake step test operations
@@ -40,13 +40,13 @@ class IntakeStepTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should return correct step ID [GH-90000]")
+  @DisplayName("Should return correct step ID")
   void shouldReturnCorrectStepId() { // GH-90000
-    assertThat(step.getStepId()).isEqualTo("architecture.intake [GH-90000]");
+    assertThat(step.getStepId()).isEqualTo("architecture.intake");
   }
 
   @Test
-  @DisplayName("Should load requirements baseline and initiate architecture phase [GH-90000]")
+  @DisplayName("Should load requirements baseline and initiate architecture phase")
   void shouldInitiateArchitecturePhase() { // GH-90000
     // GIVEN
     WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
@@ -59,7 +59,7 @@ class IntakeStepTest extends EventloopTestBase {
             "requirementId", "req-001",
             "version", "1.0",
             "requirements", List.of()); // GH-90000
-    when(dbClient.query(eq("requirements_published [GH-90000]"), any(), anyInt()))
+    when(dbClient.query(eq("requirements_published"), any(), anyInt()))
         .thenReturn(Promise.of(List.of(baseline))); // GH-90000
     when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
     when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
@@ -69,6 +69,6 @@ class IntakeStepTest extends EventloopTestBase {
 
     // THEN
     assertThat(result).isNotNull(); // GH-90000
-    assertThat(result.get("baselineId [GH-90000]")).isEqualTo("req-baseline-001 [GH-90000]");
+    assertThat(result.get("baselineId")).isEqualTo("req-baseline-001");
   }
 }

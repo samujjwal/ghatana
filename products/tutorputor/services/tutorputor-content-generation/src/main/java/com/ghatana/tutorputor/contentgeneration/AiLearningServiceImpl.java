@@ -16,7 +16,11 @@ import java.util.UUID;
 
 /**
  * Implementation of AI Learning gRPC service.
- */
+  * @doc.type class
+ * @doc.purpose Provides ai learning service impl functionality.
+ * @doc.layer product
+ * @doc.pattern Service
+*/
 public class AiLearningServiceImpl extends AiLearningServiceGrpc.AiLearningServiceImplBase {
 
     private static final Logger logger = LoggerFactory.getLogger(AiLearningServiceImpl.class);

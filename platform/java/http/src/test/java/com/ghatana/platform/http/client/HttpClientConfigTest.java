@@ -35,7 +35,7 @@ class HttpClientConfigTest {
                 .keepAliveDuration(Duration.ofMinutes(10)) // GH-90000
                 .retryOnConnectionFailure(false) // GH-90000
                 .requestsPerSecond(5.0) // GH-90000
-                .userAgent("MyApp/1.0 [GH-90000]")
+                .userAgent("MyApp/1.0")
                 .build(); // GH-90000
 
         assertEquals(Duration.ofSeconds(5), config.getConnectTimeout()); // GH-90000
@@ -52,12 +52,12 @@ class HttpClientConfigTest {
     void testToBuilder() { // GH-90000
         HttpClientConfig original = HttpClientConfig.builder() // GH-90000
                 .connectTimeout(Duration.ofSeconds(5)) // GH-90000
-                .userAgent("Original/1.0 [GH-90000]")
+                .userAgent("Original/1.0")
                 .build(); // GH-90000
 
         HttpClientConfig modified = original.toBuilder() // GH-90000
                 .maxConnections(50) // GH-90000
-                .userAgent("Modified/2.0 [GH-90000]")
+                .userAgent("Modified/2.0")
                 .build(); // GH-90000
 
         // Original unchanged
@@ -175,15 +175,15 @@ class HttpClientConfigTest {
         HttpClientConfig config = HttpClientConfig.builder() // GH-90000
                 .connectTimeout(Duration.ofSeconds(5)) // GH-90000
                 .maxConnections(20) // GH-90000
-                .userAgent("TestAgent/1.0 [GH-90000]")
+                .userAgent("TestAgent/1.0")
                 .build(); // GH-90000
 
         String str = config.toString(); // GH-90000
 
         assertNotNull(str); // GH-90000
-        assertTrue(str.contains("connectTimeout [GH-90000]"));
-        assertTrue(str.contains("maxConnections [GH-90000]"));
-        assertTrue(str.contains("20 [GH-90000]"));
-        assertTrue(str.contains("TestAgent/1.0 [GH-90000]"));
+        assertTrue(str.contains("connectTimeout"));
+        assertTrue(str.contains("maxConnections"));
+        assertTrue(str.contains("20"));
+        assertTrue(str.contains("TestAgent/1.0"));
     }
 }

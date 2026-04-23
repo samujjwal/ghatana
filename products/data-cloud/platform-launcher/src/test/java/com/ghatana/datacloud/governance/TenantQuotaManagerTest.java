@@ -36,7 +36,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern UnitTest
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("TenantQuotaManager [GH-90000]")
+@DisplayName("TenantQuotaManager")
 class TenantQuotaManagerTest extends EventloopTestBase {
 
     @Mock
@@ -81,11 +81,11 @@ class TenantQuotaManagerTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Default Quota Values [GH-90000]")
+    @DisplayName("Default Quota Values")
     class DefaultQuotaValues {
 
         @Test
-        @DisplayName("default config has 100 concurrent connections [GH-90000]")
+        @DisplayName("default config has 100 concurrent connections")
         void defaultMaxConnections() { // GH-90000
             TenantQuotaManager.QuotaCheckResult result =
                 runPromise(() -> manager.checkQuota("t-default", "CONNECTION", 1)); // GH-90000
@@ -94,7 +94,7 @@ class TenantQuotaManagerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("checkQuota returns a well-formed result [GH-90000]")
+        @DisplayName("checkQuota returns a well-formed result")
         void checkQuotaReturnsResult() { // GH-90000
             TenantQuotaManager.QuotaCheckResult result =
                 runPromise(() -> manager.checkQuota("t-default", "REQUEST", 1)); // GH-90000
@@ -110,7 +110,7 @@ class TenantQuotaManagerTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Connection Quota [GH-90000]")
+    @DisplayName("Connection Quota")
     class ConnectionQuota {
 
         private static final String TENANT = "t-conn";
@@ -121,7 +121,7 @@ class TenantQuotaManagerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("allows connection when under the limit [GH-90000]")
+        @DisplayName("allows connection when under the limit")
         void allowsConnectionUnderLimit() { // GH-90000
             TenantQuotaManager.QuotaCheckResult result =
                 runPromise(() -> manager.checkQuota(TENANT, "CONNECTION", 1)); // GH-90000
@@ -130,7 +130,7 @@ class TenantQuotaManagerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("rejects connection when limit is exceeded [GH-90000]")
+        @DisplayName("rejects connection when limit is exceeded")
         void rejectsConnectionAtLimit() { // GH-90000
             // Consume both slots
             runPromise(() -> manager.checkQuota(TENANT, "CONNECTION", 1)); // GH-90000
@@ -145,7 +145,7 @@ class TenantQuotaManagerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("releaseConnection allows a previously rejected connection [GH-90000]")
+        @DisplayName("releaseConnection allows a previously rejected connection")
         void releaseAllowsNextConnection() { // GH-90000
             runPromise(() -> manager.checkQuota(TENANT, "CONNECTION", 1)); // GH-90000
             runPromise(() -> manager.checkQuota(TENANT, "CONNECTION", 1)); // GH-90000
@@ -161,7 +161,7 @@ class TenantQuotaManagerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("QuotaCheckResult carries usage percentage for connections [GH-90000]")
+        @DisplayName("QuotaCheckResult carries usage percentage for connections")
         void resultCarriesUsagePercentage() { // GH-90000
             runPromise(() -> manager.checkQuota(TENANT, "CONNECTION", 1)); // 1/2 = 50% // GH-90000
 
@@ -177,7 +177,7 @@ class TenantQuotaManagerTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Request Rate Quota [GH-90000]")
+    @DisplayName("Request Rate Quota")
     class RequestRateQuota {
 
         private static final String TENANT = "t-req";
@@ -188,7 +188,7 @@ class TenantQuotaManagerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("allows requests within the per-minute limit [GH-90000]")
+        @DisplayName("allows requests within the per-minute limit")
         void allowsRequestsUnderLimit() { // GH-90000
             TenantQuotaManager.QuotaCheckResult result =
                 runPromise(() -> manager.checkQuota(TENANT, "REQUEST", 1)); // GH-90000
@@ -197,7 +197,7 @@ class TenantQuotaManagerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("rejects request when per-minute limit is exceeded [GH-90000]")
+        @DisplayName("rejects request when per-minute limit is exceeded")
         void rejectsRequestOverLimit() { // GH-90000
             runPromise(() -> manager.checkQuota(TENANT, "REQUEST", 1)); // GH-90000
             runPromise(() -> manager.checkQuota(TENANT, "REQUEST", 1)); // GH-90000
@@ -210,7 +210,7 @@ class TenantQuotaManagerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("different tenants have independent request counters [GH-90000]")
+        @DisplayName("different tenants have independent request counters")
         void tenantsAreIsolatedForRequestCounts() { // GH-90000
             setLowQuota("t-req-a", 100, 1, 100, 10240, 100); // GH-90000
             setLowQuota("t-req-b", 100, 1, 100, 10240, 100); // GH-90000
@@ -234,7 +234,7 @@ class TenantQuotaManagerTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Event Rate Quota [GH-90000]")
+    @DisplayName("Event Rate Quota")
     class EventRateQuota {
 
         private static final String TENANT = "t-evt";
@@ -245,7 +245,7 @@ class TenantQuotaManagerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("allows events within the per-second limit [GH-90000]")
+        @DisplayName("allows events within the per-second limit")
         void allowsEventsUnderLimit() { // GH-90000
             TenantQuotaManager.QuotaCheckResult result =
                 runPromise(() -> manager.checkQuota(TENANT, "EVENT", 1)); // GH-90000
@@ -254,7 +254,7 @@ class TenantQuotaManagerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("rejects event burst exceeding per-second limit [GH-90000]")
+        @DisplayName("rejects event burst exceeding per-second limit")
         void rejectsEventBursts() { // GH-90000
             runPromise(() -> manager.checkQuota(TENANT, "EVENT", 1)); // GH-90000
             runPromise(() -> manager.checkQuota(TENANT, "EVENT", 1)); // GH-90000
@@ -271,7 +271,7 @@ class TenantQuotaManagerTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Storage Quota [GH-90000]")
+    @DisplayName("Storage Quota")
     class StorageQuota {
 
         private static final String TENANT = "t-storage";
@@ -282,7 +282,7 @@ class TenantQuotaManagerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("allows storage operation well under the quota [GH-90000]")
+        @DisplayName("allows storage operation well under the quota")
         void allowsStorageUnderQuota() { // GH-90000
             TenantQuotaManager.QuotaCheckResult result =
                 runPromise(() -> manager.checkQuota(TENANT, "STORAGE", 50)); // 50MB // GH-90000
@@ -291,7 +291,7 @@ class TenantQuotaManagerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("rejects storage operation that would exceed the quota [GH-90000]")
+        @DisplayName("rejects storage operation that would exceed the quota")
         void rejectsStorageOverQuota() { // GH-90000
             // checkStorageQuota converts bytes → MB. Pass 200MB in bytes to exceed 100MB limit.
             TenantQuotaManager.QuotaCheckResult result =
@@ -301,7 +301,7 @@ class TenantQuotaManagerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("storage between 80-100% returns isAllowed=true with a warning reason [GH-90000]")
+        @DisplayName("storage between 80-100% returns isAllowed=true with a warning reason")
         void storageWarningZoneReturnsAllowedWithReason() { // GH-90000
             // Pass 85MB in bytes (85% of 100MB = warning zone 80-100%) // GH-90000
             TenantQuotaManager.QuotaCheckResult result =
@@ -317,7 +317,7 @@ class TenantQuotaManagerTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Collection Quota [GH-90000]")
+    @DisplayName("Collection Quota")
     class CollectionQuota {
 
         private static final String TENANT = "t-coll";
@@ -328,7 +328,7 @@ class TenantQuotaManagerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("allows collection creation under the limit [GH-90000]")
+        @DisplayName("allows collection creation under the limit")
         void allowsCollectionCreationUnderLimit() { // GH-90000
             TenantQuotaManager.QuotaCheckResult result =
                 runPromise(() -> manager.checkQuota(TENANT, "COLLECTION", 1)); // GH-90000
@@ -337,7 +337,7 @@ class TenantQuotaManagerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("rejects collection creation when DB count is at the limit [GH-90000]")
+        @DisplayName("rejects collection creation when DB count is at the limit")
         void rejectsCollectionCreationOverLimit() throws Exception { // GH-90000
             // Stub DB to report currentCollections == maxCollections (2) // GH-90000
             when(resultSet.next()).thenReturn(true); // GH-90000
@@ -355,11 +355,11 @@ class TenantQuotaManagerTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("QuotaCheckResult API [GH-90000]")
+    @DisplayName("QuotaCheckResult API")
     class QuotaCheckResultApi {
 
         @Test
-        @DisplayName("allowed result has isAllowed=true and non-negative usage percentage [GH-90000]")
+        @DisplayName("allowed result has isAllowed=true and non-negative usage percentage")
         void allowedResultProperties() { // GH-90000
             TenantQuotaManager.QuotaCheckResult result =
                 runPromise(() -> manager.checkQuota("t-api", "REQUEST", 1)); // GH-90000
@@ -369,7 +369,7 @@ class TenantQuotaManagerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("denied result has isAllowed=false and non-blank reason [GH-90000]")
+        @DisplayName("denied result has isAllowed=false and non-blank reason")
         void deniedResultHasReason() { // GH-90000
             setLowQuota("t-api-deny", 100, 1, 100, 10240, 100); // GH-90000
             runPromise(() -> manager.checkQuota("t-api-deny", "REQUEST", 1)); // GH-90000
@@ -387,36 +387,36 @@ class TenantQuotaManagerTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Tenant Usage Statistics [GH-90000]")
+    @DisplayName("Tenant Usage Statistics")
     class TenantUsageStatistics {
 
         @Test
-        @DisplayName("getTenantUsage returns a non-null stats object [GH-90000]")
+        @DisplayName("getTenantUsage returns a non-null stats object")
         void returnsNonNullStats() { // GH-90000
-            TenantQuotaManager.TenantUsageStats stats = manager.getTenantUsage("any-tenant [GH-90000]");
+            TenantQuotaManager.TenantUsageStats stats = manager.getTenantUsage("any-tenant");
 
             assertThat(stats).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("active connection count increases as connections are checked [GH-90000]")
+        @DisplayName("active connection count increases as connections are checked")
         void activeConnectionCountIncreases() { // GH-90000
             setLowQuota("t-usage", 100, 1000, 100, 10240, 100); // GH-90000
             runPromise(() -> manager.checkQuota("t-usage", "CONNECTION", 1)); // GH-90000
             runPromise(() -> manager.checkQuota("t-usage", "CONNECTION", 1)); // GH-90000
 
-            TenantQuotaManager.TenantUsageStats stats = manager.getTenantUsage("t-usage [GH-90000]");
+            TenantQuotaManager.TenantUsageStats stats = manager.getTenantUsage("t-usage");
 
             assertThat(stats.getActiveConnections()).isGreaterThan(0); // GH-90000
         }
 
         @Test
-        @DisplayName("request count tracks per-tenant request volume [GH-90000]")
+        @DisplayName("request count tracks per-tenant request volume")
         void requestCountTracksPerTenant() { // GH-90000
             runPromise(() -> manager.checkQuota("t-usage-req", "REQUEST", 1)); // GH-90000
             runPromise(() -> manager.checkQuota("t-usage-req", "REQUEST", 1)); // GH-90000
 
-            TenantQuotaManager.TenantUsageStats stats = manager.getTenantUsage("t-usage-req [GH-90000]");
+            TenantQuotaManager.TenantUsageStats stats = manager.getTenantUsage("t-usage-req");
 
             assertThat(stats.getRequestsLastMinute()).isGreaterThan(0); // GH-90000
         }
@@ -427,11 +427,11 @@ class TenantQuotaManagerTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("TenantQuotaConfig API [GH-90000]")
+    @DisplayName("TenantQuotaConfig API")
     class TenantQuotaConfigApi {
 
         @Test
-        @DisplayName("config exposes all getter values correctly [GH-90000]")
+        @DisplayName("config exposes all getter values correctly")
         void configGettersReturnExpectedValues() { // GH-90000
             TenantQuotaManager.TenantQuotaConfig config =
                 new TenantQuotaManager.TenantQuotaConfig(512, 50, 200, 10, 25, 500000); // GH-90000
@@ -445,10 +445,10 @@ class TenantQuotaManagerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("getTenantQuota returns a config with defaults when no record exists in DB [GH-90000]")
+        @DisplayName("getTenantQuota returns a config with defaults when no record exists in DB")
         void returnsDefaultWhenNoDbRecord() { // GH-90000
             TenantQuotaManager.TenantQuotaConfig config =
-                runPromise(() -> manager.getTenantQuota("unknown-tenant [GH-90000]"));
+                runPromise(() -> manager.getTenantQuota("unknown-tenant"));
 
             assertThat(config).isNotNull(); // GH-90000
             assertThat(config.getMaxConcurrentConnections()).isGreaterThan(0); // GH-90000

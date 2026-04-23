@@ -30,7 +30,7 @@ class PackGenerationSnapshotTest {
 
     @BeforeEach
     void setUp(@TempDir Path tempDir) { // GH-90000
-        snapshotDir = tempDir.resolve("snapshots [GH-90000]");
+        snapshotDir = tempDir.resolve("snapshots");
         packEngine = new DefaultPackEngine(new SimpleTemplateEngine()); // GH-90000
         snapshotTester = new DefaultSnapshotTester(snapshotDir); // GH-90000
     }
@@ -38,7 +38,7 @@ class PackGenerationSnapshotTest {
     @Test
     void testBasePackSnapshot(@TempDir Path tempDir) throws Exception { // GH-90000
         // Test base pack generation against golden snapshot
-        var basePackResource = getClass().getClassLoader().getResource("packs/base [GH-90000]");
+        var basePackResource = getClass().getClassLoader().getResource("packs/base");
         assumePackExists(basePackResource, "Base pack"); // GH-90000
 
         Path basePackPath = Path.of(basePackResource.getPath()); // GH-90000
@@ -65,7 +65,7 @@ class PackGenerationSnapshotTest {
 
         // First run creates snapshots, subsequent runs should match
         if (!metadataResult.matches()) { // GH-90000
-            System.out.println("Base pack metadata snapshot created/updated [GH-90000]");
+            System.out.println("Base pack metadata snapshot created/updated");
         }
     }
 
@@ -73,7 +73,7 @@ class PackGenerationSnapshotTest {
     void testJavaServicePackSnapshot(@TempDir Path tempDir) throws Exception { // GH-90000
         // Test Java ActiveJ service pack generation
         var javaPackResource =
-                getClass().getClassLoader().getResource("packs/java-service-activej-gradle [GH-90000]");
+                getClass().getClassLoader().getResource("packs/java-service-activej-gradle");
         assumePackExists(javaPackResource, "Java service pack"); // GH-90000
 
         Path javaPackPath = Path.of(javaPackResource.getPath()); // GH-90000
@@ -95,9 +95,9 @@ class PackGenerationSnapshotTest {
         assertTrue(result.filesGenerated() > 0, "Should generate Java service files"); // GH-90000
 
         // Validate expected files exist
-        assertTrue(Files.exists(tempDir.resolve("build.gradle [GH-90000]")), "Should generate build.gradle");
+        assertTrue(Files.exists(tempDir.resolve("build.gradle")), "Should generate build.gradle");
         assertTrue( // GH-90000
-                Files.exists(tempDir.resolve("settings.gradle [GH-90000]")),
+                Files.exists(tempDir.resolve("settings.gradle")),
                 "Should generate settings.gradle");
 
         // Test snapshots
@@ -107,7 +107,7 @@ class PackGenerationSnapshotTest {
     @Test
     void testReactPackSnapshot(@TempDir Path tempDir) throws Exception { // GH-90000
         // Test TypeScript React pack generation
-        var reactPackResource = getClass().getClassLoader().getResource("packs/ts-react-vite [GH-90000]");
+        var reactPackResource = getClass().getClassLoader().getResource("packs/ts-react-vite");
         assumePackExists(reactPackResource, "React pack"); // GH-90000
 
         Path reactPackPath = Path.of(reactPackResource.getPath()); // GH-90000
@@ -132,10 +132,10 @@ class PackGenerationSnapshotTest {
         assertTrue(result.filesGenerated() > 0, "Should generate React files"); // GH-90000
 
         // Validate expected files exist
-        assertTrue(Files.exists(tempDir.resolve("package.json [GH-90000]")), "Should generate package.json");
-        assertTrue(Files.exists(tempDir.resolve("tsconfig.json [GH-90000]")), "Should generate tsconfig.json");
+        assertTrue(Files.exists(tempDir.resolve("package.json")), "Should generate package.json");
+        assertTrue(Files.exists(tempDir.resolve("tsconfig.json")), "Should generate tsconfig.json");
         assertTrue( // GH-90000
-                Files.exists(tempDir.resolve("vite.config.ts [GH-90000]")), "Should generate vite.config.ts");
+                Files.exists(tempDir.resolve("vite.config.ts")), "Should generate vite.config.ts");
 
         // Test snapshots
         validateGeneratedFilesAsSnapshots("react_pack", tempDir); // GH-90000
@@ -144,7 +144,7 @@ class PackGenerationSnapshotTest {
     @Test
     void testPackWithHooks(@TempDir Path tempDir) throws Exception { // GH-90000
         // Test pack generation with hook execution enabled
-        var basePackResource = getClass().getClassLoader().getResource("packs/base [GH-90000]");
+        var basePackResource = getClass().getClassLoader().getResource("packs/base");
         assumePackExists(basePackResource, "Base pack for hooks test"); // GH-90000
 
         Path basePackPath = Path.of(basePackResource.getPath()); // GH-90000
@@ -182,13 +182,13 @@ class PackGenerationSnapshotTest {
         // Test that we can capture hook execution metadata
         String metadata = formatGenerationMetadata(result); // GH-90000
         assertNotNull(metadata, "Should generate metadata"); // GH-90000
-        assertTrue(metadata.contains("Generation Result Summary [GH-90000]"), "Metadata should have summary");
+        assertTrue(metadata.contains("Generation Result Summary"), "Metadata should have summary");
     }
 
     @Test
     void testSnapshotUpdateMode(@TempDir Path tempDir) throws Exception { // GH-90000
         // Test snapshot update functionality
-        Path updateSnapshotDir = tempDir.resolve("update_snapshots [GH-90000]");
+        Path updateSnapshotDir = tempDir.resolve("update_snapshots");
         SnapshotTester updateTester = new DefaultSnapshotTester(updateSnapshotDir, true); // GH-90000
 
         String testContent = "Test content for snapshot update\\nLine 2\\n";
@@ -199,7 +199,7 @@ class PackGenerationSnapshotTest {
         assertTrue(result.matches(), "Update mode should always match"); // GH-90000
 
         // Verify snapshot was created
-        assertTrue(updateTester.hasSnapshot("update_test [GH-90000]"), "Snapshot should exist");
+        assertTrue(updateTester.hasSnapshot("update_test"), "Snapshot should exist");
 
         // Verify content is correct
         String differentContent = "Different content\\n";
@@ -225,7 +225,7 @@ class PackGenerationSnapshotTest {
         assertFalse(result.diff().isEmpty(), "Diff should not be empty"); // GH-90000
 
         // Print diff for debugging
-        System.out.println("Generated diff: [GH-90000]");
+        System.out.println("Generated diff:");
         System.out.println(result.diff()); // GH-90000
     }
 
@@ -256,8 +256,8 @@ class PackGenerationSnapshotTest {
     /** Format generation metadata for snapshotting */
     private String formatGenerationMetadata(PackEngine.GenerationResult result) { // GH-90000
         StringBuilder metadata = new StringBuilder(); // GH-90000
-        metadata.append("Generation Result Summary\\n [GH-90000]");
-        metadata.append("========================\\n [GH-90000]");
+        metadata.append("Generation Result Summary\\n");
+        metadata.append("========================\\n");
         metadata.append(String.format("Successful: %s\\n", result.successful())); // GH-90000
         metadata.append(String.format("Files Generated: %d\\n", result.filesGenerated())); // GH-90000
         metadata.append(String.format("Errors: %d\\n", result.errors().size())); // GH-90000
@@ -269,14 +269,14 @@ class PackGenerationSnapshotTest {
 
         // Try to access hooks if available using reflection to avoid compilation issues
         try {
-            var postHooksMethod = result.getClass().getMethod("postGenerationHooks [GH-90000]");
+            var postHooksMethod = result.getClass().getMethod("postGenerationHooks");
             Object postHooks = postHooksMethod.invoke(result); // GH-90000
             if (postHooks != null) { // GH-90000
-                metadata.append("\\nPost-Generation Hooks: Present\\n [GH-90000]");
+                metadata.append("\\nPost-Generation Hooks: Present\\n");
             }
         } catch (Exception e) { // GH-90000
             // Hooks not available or accessible
-            metadata.append("\\nPost-Generation Hooks: Not available\\n [GH-90000]");
+            metadata.append("\\nPost-Generation Hooks: Not available\\n");
         }
 
         return metadata.toString(); // GH-90000

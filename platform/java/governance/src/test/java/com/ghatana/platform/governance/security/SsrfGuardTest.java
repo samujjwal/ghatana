@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * and blocks dangerous targets: non-HTTP schemes, cloud metadata IPs,
  * link-local ranges, and (in strict mode) private/loopback addresses. // GH-90000
  */
-@DisplayName("SsrfGuard [GH-90000]")
+@DisplayName("SsrfGuard")
 class SsrfGuardTest {
 
     // -----------------------------------------------------------------------
@@ -22,115 +22,115 @@ class SsrfGuardTest {
     // -----------------------------------------------------------------------
 
     @Nested
-    @DisplayName("validateEndpoint — allowed URLs [GH-90000]")
+    @DisplayName("validateEndpoint — allowed URLs")
     class AllowedUrls {
 
         @Test
-        @DisplayName("http localhost (Ollama default) is allowed [GH-90000]")
+        @DisplayName("http localhost (Ollama default) is allowed")
         void ollamaDefaultIsAllowed() { // GH-90000
-            assertThatCode(() -> SsrfGuard.validateEndpoint("http://localhost:11434 [GH-90000]"))
+            assertThatCode(() -> SsrfGuard.validateEndpoint("http://localhost:11434"))
                 .doesNotThrowAnyException(); // GH-90000
         }
 
         @Test
-        @DisplayName("https external API is allowed [GH-90000]")
+        @DisplayName("https external API is allowed")
         void httpsExternalAllowed() { // GH-90000
-            assertThatCode(() -> SsrfGuard.validateEndpoint("https://api.example.com [GH-90000]"))
+            assertThatCode(() -> SsrfGuard.validateEndpoint("https://api.example.com"))
                 .doesNotThrowAnyException(); // GH-90000
         }
 
         @Test
-        @DisplayName("http private IP is allowed in permissive mode [GH-90000]")
+        @DisplayName("http private IP is allowed in permissive mode")
         void privateIpAllowedPermissive() { // GH-90000
-            assertThatCode(() -> SsrfGuard.validateEndpoint("http://10.0.0.5:11434 [GH-90000]"))
+            assertThatCode(() -> SsrfGuard.validateEndpoint("http://10.0.0.5:11434"))
                 .doesNotThrowAnyException(); // GH-90000
         }
 
         @Test
-        @DisplayName("http 192.168.x.x is allowed in permissive mode [GH-90000]")
+        @DisplayName("http 192.168.x.x is allowed in permissive mode")
         void rfc1918AllowedPermissive() { // GH-90000
-            assertThatCode(() -> SsrfGuard.validateEndpoint("http://192.168.1.1:8080 [GH-90000]"))
+            assertThatCode(() -> SsrfGuard.validateEndpoint("http://192.168.1.1:8080"))
                 .doesNotThrowAnyException(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("validateEndpoint — blocked URLs [GH-90000]")
+    @DisplayName("validateEndpoint — blocked URLs")
     class BlockedUrls {
 
         @Test
-        @DisplayName("null URL throws IllegalArgumentException [GH-90000]")
+        @DisplayName("null URL throws IllegalArgumentException")
         void nullUrlThrows() { // GH-90000
             assertThatThrownBy(() -> SsrfGuard.validateEndpoint(null)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("file:// scheme is blocked [GH-90000]")
+        @DisplayName("file:// scheme is blocked")
         void fileSchemeBlocked() { // GH-90000
-            assertThatThrownBy(() -> SsrfGuard.validateEndpoint("file:///etc/passwd [GH-90000]"))
+            assertThatThrownBy(() -> SsrfGuard.validateEndpoint("file:///etc/passwd"))
                 .isInstanceOf(SecurityException.class) // GH-90000
-                .hasMessageContaining("http/https [GH-90000]");
+                .hasMessageContaining("http/https");
         }
 
         @Test
-        @DisplayName("ftp:// scheme is blocked [GH-90000]")
+        @DisplayName("ftp:// scheme is blocked")
         void ftpSchemeBlocked() { // GH-90000
-            assertThatThrownBy(() -> SsrfGuard.validateEndpoint("ftp://attacker.com/data [GH-90000]"))
+            assertThatThrownBy(() -> SsrfGuard.validateEndpoint("ftp://attacker.com/data"))
                 .isInstanceOf(SecurityException.class) // GH-90000
-                .hasMessageContaining("http/https [GH-90000]");
+                .hasMessageContaining("http/https");
         }
 
         @Test
-        @DisplayName("gopher:// scheme is blocked [GH-90000]")
+        @DisplayName("gopher:// scheme is blocked")
         void gopherSchemeBlocked() { // GH-90000
-            assertThatThrownBy(() -> SsrfGuard.validateEndpoint("gopher://attacker.com/ [GH-90000]"))
+            assertThatThrownBy(() -> SsrfGuard.validateEndpoint("gopher://attacker.com/"))
                 .isInstanceOf(SecurityException.class) // GH-90000
-                .hasMessageContaining("http/https [GH-90000]");
+                .hasMessageContaining("http/https");
         }
 
         @Test
-        @DisplayName("AWS IMDS ip (169.254.169.254) is blocked [GH-90000]")
+        @DisplayName("AWS IMDS ip (169.254.169.254) is blocked")
         void awsImdsIpBlocked() { // GH-90000
-            assertThatThrownBy(() -> SsrfGuard.validateEndpoint("http://169.254.169.254/latest/meta-data/ [GH-90000]"))
+            assertThatThrownBy(() -> SsrfGuard.validateEndpoint("http://169.254.169.254/latest/meta-data/"))
                 .isInstanceOf(SecurityException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("link-local prefix 169.254.x.x is blocked [GH-90000]")
+        @DisplayName("link-local prefix 169.254.x.x is blocked")
         void linkLocalPrefixBlocked() { // GH-90000
-            assertThatThrownBy(() -> SsrfGuard.validateEndpoint("http://169.254.0.1/ [GH-90000]"))
+            assertThatThrownBy(() -> SsrfGuard.validateEndpoint("http://169.254.0.1/"))
                 .isInstanceOf(SecurityException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("Alibaba Cloud metadata (100.100.100.200) is blocked [GH-90000]")
+        @DisplayName("Alibaba Cloud metadata (100.100.100.200) is blocked")
         void alibabaMetadataBlocked() { // GH-90000
-            assertThatThrownBy(() -> SsrfGuard.validateEndpoint("http://100.100.100.200/latest/meta-data/ [GH-90000]"))
+            assertThatThrownBy(() -> SsrfGuard.validateEndpoint("http://100.100.100.200/latest/meta-data/"))
                 .isInstanceOf(SecurityException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("GCP metadata hostname is blocked [GH-90000]")
+        @DisplayName("GCP metadata hostname is blocked")
         void gcpMetadataHostBlocked() { // GH-90000
-            assertThatThrownBy(() -> SsrfGuard.validateEndpoint("http://metadata.google.internal/ [GH-90000]"))
+            assertThatThrownBy(() -> SsrfGuard.validateEndpoint("http://metadata.google.internal/"))
                 .isInstanceOf(SecurityException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("URL with embedded credentials is blocked [GH-90000]")
+        @DisplayName("URL with embedded credentials is blocked")
         void embeddedCredentialsBlocked() { // GH-90000
-            assertThatThrownBy(() -> SsrfGuard.validateEndpoint("http://user:pass@internal-service/ [GH-90000]"))
+            assertThatThrownBy(() -> SsrfGuard.validateEndpoint("http://user:pass@internal-service/"))
                 .isInstanceOf(SecurityException.class) // GH-90000
-                .hasMessageContaining("credentials [GH-90000]");
+                .hasMessageContaining("credentials");
         }
 
         @Test
-        @DisplayName("URL with no host is blocked [GH-90000]")
+        @DisplayName("URL with no host is blocked")
         void noHostBlocked() { // GH-90000
-            assertThatThrownBy(() -> SsrfGuard.validateEndpoint("http:///path [GH-90000]"))
+            assertThatThrownBy(() -> SsrfGuard.validateEndpoint("http:///path"))
                 .isInstanceOf(SecurityException.class) // GH-90000
-                .hasMessageContaining("no host [GH-90000]");
+                .hasMessageContaining("no host");
         }
     }
 
@@ -139,54 +139,54 @@ class SsrfGuardTest {
     // -----------------------------------------------------------------------
 
     @Nested
-    @DisplayName("validateEndpointStrict — additional private/loopback blocking [GH-90000]")
+    @DisplayName("validateEndpointStrict — additional private/loopback blocking")
     class StrictMode {
 
         @Test
-        @DisplayName("https external API still allowed in strict mode [GH-90000]")
+        @DisplayName("https external API still allowed in strict mode")
         void externalAllowedStrict() { // GH-90000
-            assertThatCode(() -> SsrfGuard.validateEndpointStrict("https://api.openai.com/v1 [GH-90000]"))
+            assertThatCode(() -> SsrfGuard.validateEndpointStrict("https://api.openai.com/v1"))
                 .doesNotThrowAnyException(); // GH-90000
         }
 
         @Test
-        @DisplayName("localhost is blocked in strict mode [GH-90000]")
+        @DisplayName("localhost is blocked in strict mode")
         void localhostBlockedStrict() { // GH-90000
-            assertThatThrownBy(() -> SsrfGuard.validateEndpointStrict("http://localhost:11434 [GH-90000]"))
+            assertThatThrownBy(() -> SsrfGuard.validateEndpointStrict("http://localhost:11434"))
                 .isInstanceOf(SecurityException.class) // GH-90000
-                .hasMessageContaining("strict mode [GH-90000]");
+                .hasMessageContaining("strict mode");
         }
 
         @Test
-        @DisplayName("127.0.0.1 is blocked in strict mode [GH-90000]")
+        @DisplayName("127.0.0.1 is blocked in strict mode")
         void loopbackIpBlockedStrict() { // GH-90000
-            assertThatThrownBy(() -> SsrfGuard.validateEndpointStrict("http://127.0.0.1:6379 [GH-90000]"))
+            assertThatThrownBy(() -> SsrfGuard.validateEndpointStrict("http://127.0.0.1:6379"))
                 .isInstanceOf(SecurityException.class) // GH-90000
-                .hasMessageContaining("strict mode [GH-90000]");
+                .hasMessageContaining("strict mode");
         }
 
         @Test
-        @DisplayName("10.x.x.x private IP is blocked in strict mode [GH-90000]")
+        @DisplayName("10.x.x.x private IP is blocked in strict mode")
         void privateIpBlockedStrict() { // GH-90000
-            assertThatThrownBy(() -> SsrfGuard.validateEndpointStrict("http://10.0.0.5:8080 [GH-90000]"))
+            assertThatThrownBy(() -> SsrfGuard.validateEndpointStrict("http://10.0.0.5:8080"))
                 .isInstanceOf(SecurityException.class) // GH-90000
-                .hasMessageContaining("strict mode [GH-90000]");
+                .hasMessageContaining("strict mode");
         }
 
         @Test
-        @DisplayName("172.16.x.x private IP is blocked in strict mode [GH-90000]")
+        @DisplayName("172.16.x.x private IP is blocked in strict mode")
         void privateIp172BlockedStrict() { // GH-90000
-            assertThatThrownBy(() -> SsrfGuard.validateEndpointStrict("http://172.16.0.1/ [GH-90000]"))
+            assertThatThrownBy(() -> SsrfGuard.validateEndpointStrict("http://172.16.0.1/"))
                 .isInstanceOf(SecurityException.class) // GH-90000
-                .hasMessageContaining("strict mode [GH-90000]");
+                .hasMessageContaining("strict mode");
         }
 
         @Test
-        @DisplayName("192.168.x.x is blocked in strict mode [GH-90000]")
+        @DisplayName("192.168.x.x is blocked in strict mode")
         void privateIp192BlockedStrict() { // GH-90000
-            assertThatThrownBy(() -> SsrfGuard.validateEndpointStrict("http://192.168.1.100:9200 [GH-90000]"))
+            assertThatThrownBy(() -> SsrfGuard.validateEndpointStrict("http://192.168.1.100:9200"))
                 .isInstanceOf(SecurityException.class) // GH-90000
-                .hasMessageContaining("strict mode [GH-90000]");
+                .hasMessageContaining("strict mode");
         }
     }
 }

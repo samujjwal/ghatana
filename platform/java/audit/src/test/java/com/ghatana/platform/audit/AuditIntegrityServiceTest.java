@@ -20,13 +20,13 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Audit Integrity Service Tests [GH-90000]")
+@DisplayName("Audit Integrity Service Tests")
 class AuditIntegrityServiceTest {
 
     private final AuditIntegrityService service = new AuditIntegrityService(); // GH-90000
 
     @Test
-    @DisplayName("should compute consistent hash for same event [GH-90000]")
+    @DisplayName("should compute consistent hash for same event")
     void shouldComputeConsistentHash() { // GH-90000
         AuditEventEntity event = createTestEvent("id-1", "tenant-1"); // GH-90000
         String hash1 = service.computeChainHash(event, null); // GH-90000
@@ -36,7 +36,7 @@ class AuditIntegrityServiceTest {
     }
 
     @Test
-    @DisplayName("should compute different hashes for different events [GH-90000]")
+    @DisplayName("should compute different hashes for different events")
     void shouldComputeDifferentHashesForDifferentEvents() { // GH-90000
         AuditEventEntity event1 = createTestEvent("id-1", "tenant-1"); // GH-90000
         AuditEventEntity event2 = createTestEvent("id-2", "tenant-1"); // GH-90000
@@ -48,7 +48,7 @@ class AuditIntegrityServiceTest {
     }
 
     @Test
-    @DisplayName("should compute different hashes with different previous hash [GH-90000]")
+    @DisplayName("should compute different hashes with different previous hash")
     void shouldComputeDifferentHashesWithDifferentPreviousHash() { // GH-90000
         AuditEventEntity event = createTestEvent("id-1", "tenant-1"); // GH-90000
         
@@ -59,7 +59,7 @@ class AuditIntegrityServiceTest {
     }
 
     @Test
-    @DisplayName("should verify intact chain [GH-90000]")
+    @DisplayName("should verify intact chain")
     void shouldVerifyIntactChain() { // GH-90000
         AuditEventEntity event1 = createTestEvent("id-1", "tenant-1"); // GH-90000
         String hash1 = service.computeChainHash(event1, null); // GH-90000
@@ -75,7 +75,7 @@ class AuditIntegrityServiceTest {
     }
 
     @Test
-    @DisplayName("should detect broken chain [GH-90000]")
+    @DisplayName("should detect broken chain")
     void shouldDetectBrokenChain() { // GH-90000
         AuditEventEntity event1 = createTestEvent("id-1", "tenant-1"); // GH-90000
         String hash1 = service.computeChainHash(event1, null); // GH-90000
@@ -92,14 +92,14 @@ class AuditIntegrityServiceTest {
     }
 
     @Test
-    @DisplayName("should verify empty chain as valid [GH-90000]")
+    @DisplayName("should verify empty chain as valid")
     void shouldVerifyEmptyChainAsValid() { // GH-90000
         boolean isValid = service.verifyChainIntegrity(List.of()); // GH-90000
         assertThat(isValid).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("should verify single event chain [GH-90000]")
+    @DisplayName("should verify single event chain")
     void shouldVerifySingleEventChain() { // GH-90000
         AuditEventEntity event1 = createTestEvent("id-1", "tenant-1"); // GH-90000
         String hash1 = service.computeChainHash(event1, null); // GH-90000
@@ -111,7 +111,7 @@ class AuditIntegrityServiceTest {
     }
 
     @Test
-    @DisplayName("should verify single event hash [GH-90000]")
+    @DisplayName("should verify single event hash")
     void shouldVerifySingleEventHash() { // GH-90000
         AuditEventEntity event = createTestEvent("id-1", "tenant-1"); // GH-90000
         String hash = service.computeChainHash(event, null); // GH-90000
@@ -123,7 +123,7 @@ class AuditIntegrityServiceTest {
     }
 
     @Test
-    @DisplayName("should detect tampered single event [GH-90000]")
+    @DisplayName("should detect tampered single event")
     void shouldDetectTamperedSingleEvent() { // GH-90000
         AuditEventEntity event = createTestEvent("id-1", "tenant-1"); // GH-90000
         String hash = service.computeChainHash(event, null); // GH-90000

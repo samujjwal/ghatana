@@ -22,7 +22,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("EntityExportHandler [GH-90000]")
+@DisplayName("EntityExportHandler")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class EntityExportHandlerTest extends EventloopTestBase {
 
@@ -47,7 +47,7 @@ class EntityExportHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("export rejects missing tenant before export service access [GH-90000]")
+    @DisplayName("export rejects missing tenant before export service access")
     void exportRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 

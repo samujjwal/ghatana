@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @Tag("integration") // GH-90000
 @Testcontainers(disabledWithoutDocker = true) // GH-90000
-@DisplayName("JdbcMemoryItemRepositoryIntegrationTest [GH-90000]")
+@DisplayName("JdbcMemoryItemRepositoryIntegrationTest")
 class JdbcMemoryItemRepositoryIntegrationTest extends EventloopTestBase {
 
     @Container
@@ -44,7 +44,7 @@ class JdbcMemoryItemRepositoryIntegrationTest extends EventloopTestBase {
             .withPassword("aep");
 
     @Test
-    @DisplayName("save persists an episode that can be queried by tenant [GH-90000]")
+    @DisplayName("save persists an episode that can be queried by tenant")
     void savePersistsEpisode() throws Exception { // GH-90000
         HikariConfig config = new HikariConfig(); // GH-90000
         config.setJdbcUrl(POSTGRES.getJdbcUrl()); // GH-90000

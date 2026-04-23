@@ -9,7 +9,8 @@ package com.ghatana.core.domain.pipeline;
  * @doc.type enum
  * @doc.purpose Pipeline connector classification
  * @doc.layer domain
- */
+  * @doc.pattern Enum
+*/
 public enum ConnectorType {
 
     /**

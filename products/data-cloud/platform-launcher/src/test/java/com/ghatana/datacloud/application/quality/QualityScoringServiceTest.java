@@ -34,7 +34,7 @@ import static org.mockito.Mockito.*;
  * @doc.purpose Validate entity quality scoring, batch scoring, configuration management, and dimension queries
  * @doc.layer application
  */
-@DisplayName("QualityScoringService Tests [GH-90000]")
+@DisplayName("QualityScoringService Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class QualityScoringServiceTest extends EventloopTestBase {
 
@@ -55,8 +55,8 @@ class QualityScoringServiceTest extends EventloopTestBase {
         service = new QualityScoringService(qualityScorer, metrics); // GH-90000
         sampleEntity = Entity.builder() // GH-90000
                 .id(UUID.randomUUID()) // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("test_collection [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("test_collection")
                 .data(new HashMap<>(Map.of("name", "Test Entity"))) // GH-90000
                 .createdAt(Instant.now()) // GH-90000
                 .build(); // GH-90000
@@ -78,18 +78,18 @@ class QualityScoringServiceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Construction [GH-90000]")
+    @DisplayName("Construction")
     class Construction {
 
         @Test
-        @DisplayName("should throw NullPointerException for null scorer [GH-90000]")
+        @DisplayName("should throw NullPointerException for null scorer")
         void shouldThrowForNullScorer() { // GH-90000
             assertThatThrownBy(() -> new QualityScoringService(null, metrics)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("should throw NullPointerException for null metrics [GH-90000]")
+        @DisplayName("should throw NullPointerException for null metrics")
         void shouldThrowForNullMetrics() { // GH-90000
             assertThatThrownBy(() -> new QualityScoringService(qualityScorer, null)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
@@ -101,13 +101,13 @@ class QualityScoringServiceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("scoreEntity [GH-90000]")
+    @DisplayName("scoreEntity")
     class ScoreEntity {
 
         @Test
-        @DisplayName("should return successful scoring response for valid entity [GH-90000]")
+        @DisplayName("should return successful scoring response for valid entity")
         void shouldScoreValidEntity() { // GH-90000
-            when(qualityScorer.scoreEntity(eq("tenant-1 [GH-90000]"), eq(sampleEntity), any()))
+            when(qualityScorer.scoreEntity(eq("tenant-1"), eq(sampleEntity), any()))
                     .thenReturn(Promise.of(perfectMetrics)); // GH-90000
 
             QualityScoringService.ScoringResponse response =
@@ -118,9 +118,9 @@ class QualityScoringServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should expose quality level in successful response [GH-90000]")
+        @DisplayName("should expose quality level in successful response")
         void shouldExposeQualityLevel() { // GH-90000
-            when(qualityScorer.scoreEntity(eq("tenant-1 [GH-90000]"), eq(sampleEntity), any()))
+            when(qualityScorer.scoreEntity(eq("tenant-1"), eq(sampleEntity), any()))
                     .thenReturn(Promise.of(perfectMetrics)); // GH-90000
 
             QualityScoringService.ScoringResponse response =
@@ -130,28 +130,28 @@ class QualityScoringServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should throw NullPointerException for null entity [GH-90000]")
+        @DisplayName("should throw NullPointerException for null entity")
         void shouldThrowForNullEntity() { // GH-90000
             assertThatThrownBy(() -> runPromise(() -> service.scoreEntity("tenant-1", null))) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("should throw NullPointerException for null tenantId [GH-90000]")
+        @DisplayName("should throw NullPointerException for null tenantId")
         void shouldThrowForNullTenantId() { // GH-90000
             assertThatThrownBy(() -> runPromise(() -> service.scoreEntity(null, sampleEntity))) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("should delegate scoring to QualityScorer with tenant context [GH-90000]")
+        @DisplayName("should delegate scoring to QualityScorer with tenant context")
         void shouldDelegateToScorer() { // GH-90000
-            when(qualityScorer.scoreEntity(eq("tenant-1 [GH-90000]"), eq(sampleEntity), any()))
+            when(qualityScorer.scoreEntity(eq("tenant-1"), eq(sampleEntity), any()))
                     .thenReturn(Promise.of(perfectMetrics)); // GH-90000
 
             runPromise(() -> service.scoreEntity("tenant-1", sampleEntity)); // GH-90000
 
-            verify(qualityScorer).scoreEntity(eq("tenant-1 [GH-90000]"), eq(sampleEntity), any());
+            verify(qualityScorer).scoreEntity(eq("tenant-1"), eq(sampleEntity), any());
         }
     }
 
@@ -160,13 +160,13 @@ class QualityScoringServiceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("scoreEntitiesBatch [GH-90000]")
+    @DisplayName("scoreEntitiesBatch")
     class ScoreEntitiesBatch {
 
         @Test
-        @DisplayName("should return batch response with results for all entities [GH-90000]")
+        @DisplayName("should return batch response with results for all entities")
         void shouldReturnBatchResponse() { // GH-90000
-            when(qualityScorer.scoreEntity(eq("tenant-1 [GH-90000]"), eq(sampleEntity), any()))
+            when(qualityScorer.scoreEntity(eq("tenant-1"), eq(sampleEntity), any()))
                     .thenReturn(Promise.of(perfectMetrics)); // GH-90000
 
             QualityScoringService.BatchScoringResponse response =
@@ -177,9 +177,9 @@ class QualityScoringServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should return success rate of 1.0 when all entities score successfully [GH-90000]")
+        @DisplayName("should return success rate of 1.0 when all entities score successfully")
         void shouldReturnFullSuccessRate() { // GH-90000
-            when(qualityScorer.scoreEntity(eq("tenant-1 [GH-90000]"), any(), any()))
+            when(qualityScorer.scoreEntity(eq("tenant-1"), any(), any()))
                     .thenReturn(Promise.of(perfectMetrics)); // GH-90000
 
             QualityScoringService.BatchScoringResponse response =
@@ -189,14 +189,14 @@ class QualityScoringServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should throw NullPointerException for null entities list [GH-90000]")
+        @DisplayName("should throw NullPointerException for null entities list")
         void shouldThrowForNullEntities() { // GH-90000
             assertThatThrownBy(() -> runPromise(() -> service.scoreEntitiesBatch("tenant-1", null))) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("should throw for empty entities list [GH-90000]")
+        @DisplayName("should throw for empty entities list")
         void shouldThrowForEmptyEntities() { // GH-90000
             assertThatThrownBy(() -> runPromise(() -> service.scoreEntitiesBatch("tenant-1", List.of()))) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class); // GH-90000
@@ -208,11 +208,11 @@ class QualityScoringServiceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("getSupportedDimensions [GH-90000]")
+    @DisplayName("getSupportedDimensions")
     class GetSupportedDimensions {
 
         @Test
-        @DisplayName("should return non-empty list of supported quality dimensions [GH-90000]")
+        @DisplayName("should return non-empty list of supported quality dimensions")
         void shouldReturnSupportedDimensions() { // GH-90000
             lenient().when(qualityScorer.getSupportedDimensions()) // GH-90000
                     .thenReturn(Promise.of(List.of("completeness", "accuracy", "consistency"))); // GH-90000
@@ -227,11 +227,11 @@ class QualityScoringServiceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("updateConfiguration [GH-90000]")
+    @DisplayName("updateConfiguration")
     class UpdateConfiguration {
 
         @Test
-        @DisplayName("should delegate configuration update to scorer [GH-90000]")
+        @DisplayName("should delegate configuration update to scorer")
         void shouldDelegateUpdateToScorer() { // GH-90000
             when(qualityScorer.updateConfiguration("tenant-1", Map.of("threshold", 80))) // GH-90000
                     .thenReturn(Promise.complete()); // GH-90000
@@ -243,7 +243,7 @@ class QualityScoringServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should throw NullPointerException for null tenantId in update [GH-90000]")
+        @DisplayName("should throw NullPointerException for null tenantId in update")
         void shouldThrowForNullTenantId() { // GH-90000
             assertThatThrownBy(() -> runPromise(() -> // GH-90000
                     service.updateConfiguration(null, Map.of()))) // GH-90000
@@ -256,17 +256,17 @@ class QualityScoringServiceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("getConfiguration [GH-90000]")
+    @DisplayName("getConfiguration")
     class GetConfiguration {
 
         @Test
-        @DisplayName("should return configuration map for tenant [GH-90000]")
+        @DisplayName("should return configuration map for tenant")
         void shouldReturnConfiguration() { // GH-90000
-            when(qualityScorer.getConfiguration("tenant-1 [GH-90000]"))
+            when(qualityScorer.getConfiguration("tenant-1"))
                     .thenReturn(Promise.of(Map.of("threshold", 80))); // GH-90000
 
-            Map<String, Object> config = runPromise(() -> service.getConfiguration("tenant-1 [GH-90000]"));
-            assertThat(config).isNotNull().containsKey("threshold [GH-90000]");
+            Map<String, Object> config = runPromise(() -> service.getConfiguration("tenant-1"));
+            assertThat(config).isNotNull().containsKey("threshold");
         }
     }
 }

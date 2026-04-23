@@ -10,11 +10,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("QueueProducerStrategy batching [GH-90000]")
+@DisplayName("QueueProducerStrategy batching")
 class QueueProducerStrategyBatchTest {
 
     @Test
-    @DisplayName("default sendBatch() delegates each message through send() [GH-90000]")
+    @DisplayName("default sendBatch() delegates each message through send()")
     void shouldDelegateEachMessageThroughSend() { // GH-90000
         AtomicInteger sendCount = new AtomicInteger(); // GH-90000
         QueueProducerStrategy strategy = new StubProducer() { // GH-90000
@@ -36,7 +36,7 @@ class QueueProducerStrategyBatchTest {
     }
 
     @Test
-    @DisplayName("default sendBatch() stops when a message send fails [GH-90000]")
+    @DisplayName("default sendBatch() stops when a message send fails")
     void shouldStopWhenAnyMessageFails() { // GH-90000
         AtomicInteger sendCount = new AtomicInteger(); // GH-90000
         QueueProducerStrategy strategy = new StubProducer() { // GH-90000

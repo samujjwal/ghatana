@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("DefaultAuthenticationService [GH-90000]")
+@DisplayName("DefaultAuthenticationService")
 class AuthenticationServiceTest extends EventloopTestBase {
 
     private DefaultAuthenticationService authService;
@@ -48,11 +48,11 @@ class AuthenticationServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("recordFailedAttempt() [GH-90000]")
+    @DisplayName("recordFailedAttempt()")
     class FailedAttemptTests {
 
         @Test
-        @DisplayName("Records and increments failed attempts [GH-90000]")
+        @DisplayName("Records and increments failed attempts")
         void recordsFailedAttempts() { // GH-90000
             runPromise(() -> authService.recordFailedAttempt("t1", "agent-1")); // GH-90000
             runPromise(() -> authService.recordFailedAttempt("t1", "agent-1")); // GH-90000
@@ -63,7 +63,7 @@ class AuthenticationServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Locks account after 5 failed attempts [GH-90000]")
+        @DisplayName("Locks account after 5 failed attempts")
         void locksAfter5Attempts() { // GH-90000
             for (int i = 0; i < 5; i++) { // GH-90000
                 runPromise(() -> authService.recordFailedAttempt("t1", "agent-1")); // GH-90000
@@ -76,7 +76,7 @@ class AuthenticationServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Different tenants have separate counters [GH-90000]")
+        @DisplayName("Different tenants have separate counters")
         void tenantSeparation() { // GH-90000
             runPromise(() -> authService.recordFailedAttempt("t1", "agent-1")); // GH-90000
             runPromise(() -> authService.recordFailedAttempt("t1", "agent-1")); // GH-90000
@@ -91,18 +91,18 @@ class AuthenticationServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("checkLockout() [GH-90000]")
+    @DisplayName("checkLockout()")
     class LockoutCheckTests {
 
         @Test
-        @DisplayName("Returns empty when not locked [GH-90000]")
+        @DisplayName("Returns empty when not locked")
         void returnsEmptyWhenNotLocked() { // GH-90000
             Optional<LockoutInfo> lockout = runPromise(() -> authService.checkLockout("t1", "agent-1")); // GH-90000
             assertThat(lockout).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("Returns active lockout info [GH-90000]")
+        @DisplayName("Returns active lockout info")
         void returnsLockoutInfo() { // GH-90000
             for (int i = 0; i < 5; i++) { // GH-90000
                 runPromise(() -> authService.recordFailedAttempt("t1", "agent-1")); // GH-90000
@@ -115,7 +115,7 @@ class AuthenticationServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Expires lockout after grace period [GH-90000]")
+        @DisplayName("Expires lockout after grace period")
         void expiresLockoutAfterDelay() { // GH-90000
             for (int i = 0; i < 5; i++) { // GH-90000
                 runPromise(() -> authService.recordFailedAttempt("t1", "agent-1")); // GH-90000
@@ -131,11 +131,11 @@ class AuthenticationServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("resetFailedAttempts() [GH-90000]")
+    @DisplayName("resetFailedAttempts()")
     class ResetFailedAttemptsTests {
 
         @Test
-        @DisplayName("Clears failed attempt counter [GH-90000]")
+        @DisplayName("Clears failed attempt counter")
         void clearsCounter() { // GH-90000
             runPromise(() -> authService.recordFailedAttempt("t1", "agent-1")); // GH-90000
             runPromise(() -> authService.recordFailedAttempt("t1", "agent-1")); // GH-90000
@@ -150,7 +150,7 @@ class AuthenticationServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Removes active lockout [GH-90000]")
+        @DisplayName("Removes active lockout")
         void removesLockout() { // GH-90000
             for (int i = 0; i < 5; i++) { // GH-90000
                 runPromise(() -> authService.recordFailedAttempt("t1", "agent-1")); // GH-90000
@@ -166,11 +166,11 @@ class AuthenticationServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("authenticate() [GH-90000]")
+    @DisplayName("authenticate()")
     class AuthenticateTests {
 
         @Test
-        @DisplayName("Successful authentication returns session token [GH-90000]")
+        @DisplayName("Successful authentication returns session token")
         void successfulAuthReturnsToken() { // GH-90000
             Optional<String> sessionToken = runPromise(() -> // GH-90000
                 authService.authenticate("t1", "agent-1", "valid-hash")); // GH-90000
@@ -180,7 +180,7 @@ class AuthenticationServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Failed authentication with invalid credentials [GH-90000]")
+        @DisplayName("Failed authentication with invalid credentials")
         void failedAuthWithInvalidCredentials() { // GH-90000
             Optional<String> sessionToken = runPromise(() -> // GH-90000
                 authService.authenticate("t1", "agent-1", "")); // GH-90000
@@ -189,7 +189,7 @@ class AuthenticationServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Failed authentication increments attempt counter [GH-90000]")
+        @DisplayName("Failed authentication increments attempt counter")
         void failedAuthIncrementsCounter() { // GH-90000
             runPromise(() -> authService.authenticate("t1", "agent-1", "")); // GH-90000
             runPromise(() -> authService.authenticate("t1", "agent-1", "")); // GH-90000
@@ -199,7 +199,7 @@ class AuthenticationServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Cannot authenticate when locked [GH-90000]")
+        @DisplayName("Cannot authenticate when locked")
         void cannotAuthWhenLocked() { // GH-90000
             // Lock the account
             for (int i = 0; i < 5; i++) { // GH-90000
@@ -213,7 +213,7 @@ class AuthenticationServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Successful auth resets failed attempts [GH-90000]")
+        @DisplayName("Successful auth resets failed attempts")
         void successfulAuthResetsAttempts() { // GH-90000
             runPromise(() -> authService.recordFailedAttempt("t1", "agent-1")); // GH-90000
             runPromise(() -> authService.recordFailedAttempt("t1", "agent-1")); // GH-90000
@@ -230,7 +230,7 @@ class AuthenticationServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Authentication rejects unknown agent [GH-90000]")
+        @DisplayName("Authentication rejects unknown agent")
         void authRejectsUnknownAgent() { // GH-90000
             Optional<String> sessionToken = runPromise(() -> // GH-90000
                 authService.authenticate("t1", "unknown-agent", "valid-hash")); // GH-90000
@@ -239,7 +239,7 @@ class AuthenticationServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Authenticated session token is valid immediately [GH-90000]")
+        @DisplayName("Authenticated session token is valid immediately")
         void sessionTokenValid() { // GH-90000
             Optional<String> sessionToken = runPromise(() -> // GH-90000
                 authService.authenticate("t1", "agent-1", "valid-hash")); // GH-90000
@@ -250,11 +250,11 @@ class AuthenticationServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("logout() [GH-90000]")
+    @DisplayName("logout()")
     class LogoutTests {
 
         @Test
-        @DisplayName("Logout invalidates session token [GH-90000]")
+        @DisplayName("Logout invalidates session token")
         void logoutInvalidatesToken() { // GH-90000
             Optional<String> sessionToken = runPromise(() -> // GH-90000
                 authService.authenticate("t1", "agent-1", "valid-hash")); // GH-90000
@@ -267,14 +267,14 @@ class AuthenticationServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Logout unknown token is no-op [GH-90000]")
+        @DisplayName("Logout unknown token is no-op")
         void logoutUnknownTokenNoOp() { // GH-90000
             // Must not throw
-            runPromise(() -> authService.logout("nonexistent-session [GH-90000]"));
+            runPromise(() -> authService.logout("nonexistent-session"));
         }
 
         @Test
-        @DisplayName("Multiple logouts of same token is no-op [GH-90000]")
+        @DisplayName("Multiple logouts of same token is no-op")
         void multipleLogoutsNoOp() { // GH-90000
             Optional<String> sessionToken = runPromise(() -> // GH-90000
                 authService.authenticate("t1", "agent-1", "valid-hash")); // GH-90000

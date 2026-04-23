@@ -26,7 +26,7 @@ class ConfigurationProviderTest {
     }
 
     @Test
-    @DisplayName("Should get string configuration with default [GH-90000]")
+    @DisplayName("Should get string configuration with default")
     void testGetStringWithDefault() { // GH-90000
         ConfigurationProvider config = ConfigurationProvider.getInstance(); // GH-90000
 
@@ -37,7 +37,7 @@ class ConfigurationProviderTest {
     }
 
     @Test
-    @DisplayName("Should get integer configuration [GH-90000]")
+    @DisplayName("Should get integer configuration")
     void testGetInt() { // GH-90000
         ConfigurationProvider config = ConfigurationProvider.getInstance(); // GH-90000
 
@@ -52,7 +52,7 @@ class ConfigurationProviderTest {
     }
 
     @Test
-    @DisplayName("Should get boolean configuration [GH-90000]")
+    @DisplayName("Should get boolean configuration")
     void testGetBoolean() { // GH-90000
         ConfigurationProvider config = ConfigurationProvider.getInstance(); // GH-90000
 
@@ -67,7 +67,7 @@ class ConfigurationProviderTest {
     }
 
     @Test
-    @DisplayName("Should get double configuration [GH-90000]")
+    @DisplayName("Should get double configuration")
     void testGetDouble() { // GH-90000
         ConfigurationProvider config = ConfigurationProvider.getInstance(); // GH-90000
 
@@ -78,7 +78,7 @@ class ConfigurationProviderTest {
     }
 
     @Test
-    @DisplayName("Should get timeout configuration with defaults [GH-90000]")
+    @DisplayName("Should get timeout configuration with defaults")
     void testTimeoutConfig() { // GH-90000
         ConfigurationProvider config = ConfigurationProvider.getInstance(); // GH-90000
         TimeoutConfig timeoutConfig = config.getTimeoutConfig(); // GH-90000
@@ -90,7 +90,7 @@ class ConfigurationProviderTest {
     }
 
     @Test
-    @DisplayName("Should create high latency timeout config [GH-90000]")
+    @DisplayName("Should create high latency timeout config")
     void testHighLatencyConfig() { // GH-90000
         TimeoutConfig config = TimeoutConfig.highLatency(); // GH-90000
 
@@ -99,7 +99,7 @@ class ConfigurationProviderTest {
     }
 
     @Test
-    @DisplayName("Should create low latency timeout config [GH-90000]")
+    @DisplayName("Should create low latency timeout config")
     void testLowLatencyConfig() { // GH-90000
         TimeoutConfig config = TimeoutConfig.lowLatency(); // GH-90000
 
@@ -108,7 +108,7 @@ class ConfigurationProviderTest {
     }
 
     @Test
-    @DisplayName("Should build custom timeout config [GH-90000]")
+    @DisplayName("Should build custom timeout config")
     void testCustomTimeoutConfig() { // GH-90000
         TimeoutConfig config = TimeoutConfig.builder() // GH-90000
             .connectionTimeout(Duration.ofSeconds(10)) // GH-90000
@@ -122,7 +122,7 @@ class ConfigurationProviderTest {
     }
 
     @Test
-    @DisplayName("Should reload configuration [GH-90000]")
+    @DisplayName("Should reload configuration")
     void testReload() { // GH-90000
         ConfigurationProvider config = ConfigurationProvider.getInstance(); // GH-90000
         config.set("test.reload", "before"); // GH-90000
@@ -135,7 +135,7 @@ class ConfigurationProviderTest {
     }
 
     @Test
-    @DisplayName("Should provide all configuration entries [GH-90000]")
+    @DisplayName("Should provide all configuration entries")
     void testGetAll() { // GH-90000
         ConfigurationProvider config = ConfigurationProvider.getInstance(); // GH-90000
         config.set("key1", "value1"); // GH-90000
@@ -144,12 +144,12 @@ class ConfigurationProviderTest {
         var all = config.getAll(); // GH-90000
 
         assertTrue(all.size() >= 2); // GH-90000
-        assertEquals("value1", all.get("key1 [GH-90000]"));
-        assertEquals("value2", all.get("key2 [GH-90000]"));
+        assertEquals("value1", all.get("key1"));
+        assertEquals("value2", all.get("key2"));
     }
 
     @Test
-    @DisplayName("Should return default timeout config [GH-90000]")
+    @DisplayName("Should return default timeout config")
     void testDefaultTimeoutConfig() { // GH-90000
         TimeoutConfig config = TimeoutConfig.defaults(); // GH-90000
 
@@ -162,7 +162,7 @@ class ConfigurationProviderTest {
     }
 
     @Test
-    @DisplayName("Timeout config should have proper equals and hashCode [GH-90000]")
+    @DisplayName("Timeout config should have proper equals and hashCode")
     void testTimeoutConfigEquality() { // GH-90000
         TimeoutConfig config1 = TimeoutConfig.defaults(); // GH-90000
         TimeoutConfig config2 = TimeoutConfig.defaults(); // GH-90000
@@ -174,13 +174,13 @@ class ConfigurationProviderTest {
     }
 
     @Test
-    @DisplayName("Timeout config should have meaningful toString [GH-90000]")
+    @DisplayName("Timeout config should have meaningful toString")
     void testTimeoutConfigToString() { // GH-90000
         TimeoutConfig config = TimeoutConfig.defaults(); // GH-90000
         String str = config.toString(); // GH-90000
 
-        assertTrue(str.contains("TimeoutConfig [GH-90000]"));
-        assertTrue(str.contains("connection [GH-90000]"));
-        assertTrue(str.contains("operation [GH-90000]"));
+        assertTrue(str.contains("TimeoutConfig"));
+        assertTrue(str.contains("connection"));
+        assertTrue(str.contains("operation"));
     }
 }

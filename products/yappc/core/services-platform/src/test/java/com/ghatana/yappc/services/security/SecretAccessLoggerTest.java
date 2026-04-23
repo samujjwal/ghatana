@@ -28,7 +28,7 @@ import static org.mockito.Mockito.*;
  * reliably on the eventloop, then verify the PreparedStatement parameters.
  * The public fire-and-forget methods are lightly smoke-tested for constructor validation.
  */
-@DisplayName("SecretAccessLogger [GH-90000]")
+@DisplayName("SecretAccessLogger")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class SecretAccessLoggerTest extends EventloopTestBase {
 
@@ -50,13 +50,13 @@ class SecretAccessLoggerTest extends EventloopTestBase {
     // ── ENCRYPT / SUCCESS ────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("recordEncrypt: persists ENCRYPT / SUCCESS row [GH-90000]")
+    @DisplayName("recordEncrypt: persists ENCRYPT / SUCCESS row")
     void recordEncrypt_persistsCorrectRow() throws SQLException { // GH-90000
         runPromise(() -> logger.persistPromise( // GH-90000
                 "user-1", "tenant-A", "project.environmentVariables",
                 SecretAccessLogger.Action.ENCRYPT, SecretAccessLogger.Outcome.SUCCESS, null));
 
-        verify(connection).prepareStatement(contains("INSERT INTO secret_access_audit [GH-90000]"));
+        verify(connection).prepareStatement(contains("INSERT INTO secret_access_audit"));
         verify(ps).setString(2, "tenant-A"); // GH-90000
         verify(ps).setString(3, "user-1"); // GH-90000
         verify(ps).setString(4, "project.environmentVariables"); // GH-90000
@@ -67,7 +67,7 @@ class SecretAccessLoggerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("recordEncrypt: sets all supplied fields correctly [GH-90000]")
+    @DisplayName("recordEncrypt: sets all supplied fields correctly")
     void recordEncrypt_allFields() throws SQLException { // GH-90000
         runPromise(() -> logger.persistPromise( // GH-90000
                 "agent-42", "tenant-B", "approval.sensitivePayload",
@@ -80,7 +80,7 @@ class SecretAccessLoggerTest extends EventloopTestBase {
     // ── ENCRYPT / FAILURE ────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("recordEncryptFailure: persists ENCRYPT / FAILURE row with detail [GH-90000]")
+    @DisplayName("recordEncryptFailure: persists ENCRYPT / FAILURE row with detail")
     void recordEncryptFailure_persistsDetail() throws SQLException { // GH-90000
         runPromise(() -> logger.persistPromise( // GH-90000
                 "user-1", "tenant-A", "project.environmentVariables",
@@ -95,7 +95,7 @@ class SecretAccessLoggerTest extends EventloopTestBase {
     // ── DECRYPT / SUCCESS ────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("recordDecrypt: persists DECRYPT / SUCCESS row [GH-90000]")
+    @DisplayName("recordDecrypt: persists DECRYPT / SUCCESS row")
     void recordDecrypt_persistsDecryptRow() throws SQLException { // GH-90000
         runPromise(() -> logger.persistPromise( // GH-90000
                 "user-2", "tenant-C", "project.environmentVariables",
@@ -109,7 +109,7 @@ class SecretAccessLoggerTest extends EventloopTestBase {
     // ── DECRYPT / FAILURE ────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("recordDecryptFailure: persists DECRYPT / FAILURE row with detail [GH-90000]")
+    @DisplayName("recordDecryptFailure: persists DECRYPT / FAILURE row with detail")
     void recordDecryptFailure_persistsDetail() throws SQLException { // GH-90000
         runPromise(() -> logger.persistPromise( // GH-90000
                 "user-3", "tenant-D", "approval.attachments",
@@ -124,10 +124,10 @@ class SecretAccessLoggerTest extends EventloopTestBase {
     // ── JDBC failure propagates through promise ──────────────────────────────
 
     @Test
-    @DisplayName("JDBC connection failure propagates through persistPromise [GH-90000]")
+    @DisplayName("JDBC connection failure propagates through persistPromise")
     void jdbcConnectionFailure_propagatesThroughPromise() throws Exception { // GH-90000
         when(connection.prepareStatement(anyString())) // GH-90000
-                .thenThrow(new SQLException("connection lost [GH-90000]"));
+                .thenThrow(new SQLException("connection lost"));
 
         // persistAsync (public API) swallows this; persistPromise surfaces it in the promise // GH-90000
         // Here we verify the exception is thrown so outer fire-and-forget can log it
@@ -141,9 +141,9 @@ class SecretAccessLoggerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("executeUpdate failure propagates through persistPromise [GH-90000]")
+    @DisplayName("executeUpdate failure propagates through persistPromise")
     void executeUpdateFailure_propagatesThroughPromise() throws Exception { // GH-90000
-        when(ps.executeUpdate()).thenThrow(new SQLException("statement failed [GH-90000]"));
+        when(ps.executeUpdate()).thenThrow(new SQLException("statement failed"));
 
         org.assertj.core.api.ThrowableAssert.ThrowingCallable callable = () -> // GH-90000
             runPromise(() -> logger.persistPromise( // GH-90000
@@ -157,18 +157,18 @@ class SecretAccessLoggerTest extends EventloopTestBase {
     // ── Constructor validation ────────────────────────────────────────────────
 
     @Test
-    @DisplayName("null dataSource throws NullPointerException [GH-90000]")
+    @DisplayName("null dataSource throws NullPointerException")
     void nullDataSource_throws() { // GH-90000
         assertThatThrownBy(() -> new SecretAccessLogger(null, eventloop())) // GH-90000
                 .isInstanceOf(NullPointerException.class) // GH-90000
-                .hasMessageContaining("dataSource [GH-90000]");
+                .hasMessageContaining("dataSource");
     }
 
     @Test
-    @DisplayName("null eventloop throws NullPointerException [GH-90000]")
+    @DisplayName("null eventloop throws NullPointerException")
     void nullEventloop_throws() { // GH-90000
         assertThatThrownBy(() -> new SecretAccessLogger(dataSource, null)) // GH-90000
                 .isInstanceOf(NullPointerException.class) // GH-90000
-                .hasMessageContaining("eventloop [GH-90000]");
+                .hasMessageContaining("eventloop");
     }
 }

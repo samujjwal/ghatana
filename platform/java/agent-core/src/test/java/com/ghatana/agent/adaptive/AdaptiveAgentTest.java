@@ -21,7 +21,7 @@ import static org.mockito.Mockito.mock;
 /**
  * Comprehensive tests for AdaptiveAgent — bandit algorithms and feedback.
  */
-@DisplayName("Adaptive Agent [GH-90000]")
+@DisplayName("Adaptive Agent")
 class AdaptiveAgentTest {
 
     private AgentContext ctx;
@@ -29,9 +29,9 @@ class AdaptiveAgentTest {
     @BeforeEach
     void setUp() { // GH-90000
         ctx = AgentContext.builder() // GH-90000
-                .turnId("turn-1 [GH-90000]")
-                .agentId("adaptive-test [GH-90000]")
-                .tenantId("test-tenant [GH-90000]")
+                .turnId("turn-1")
+                .agentId("adaptive-test")
+                .tenantId("test-tenant")
                 .memoryStore(mock(MemoryStore.class)) // GH-90000
                 .build(); // GH-90000
     }
@@ -54,7 +54,7 @@ class AdaptiveAgentTest {
                 .agentId(id) // GH-90000
                 .type(AgentType.ADAPTIVE) // GH-90000
                 .banditAlgorithm(algo) // GH-90000
-                .tunedParameter("threshold [GH-90000]")
+                .tunedParameter("threshold")
                 .parameterMin(0.0) // GH-90000
                 .parameterMax(1.0) // GH-90000
                 .armCount(arms) // GH-90000
@@ -69,7 +69,7 @@ class AdaptiveAgentTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("UCB1 [GH-90000]")
+    @DisplayName("UCB1")
     class UCB1Tests {
 
         @Test void selectsAllArmsInitially() { // GH-90000
@@ -78,7 +78,7 @@ class AdaptiveAgentTest {
             Set<Integer> selectedArms = new HashSet<>(); // GH-90000
             for (int i = 0; i < 20; i++) { // GH-90000
                 var result = runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
-                Object armObj = result.getOutput().get("_adaptive.selectedArm [GH-90000]");
+                Object armObj = result.getOutput().get("_adaptive.selectedArm");
                 selectedArms.add(((Number) armObj).intValue()); // GH-90000
             }
             // UCB1 explores all arms before exploiting
@@ -109,7 +109,7 @@ class AdaptiveAgentTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Thompson Sampling [GH-90000]")
+    @DisplayName("Thompson Sampling")
     class ThompsonTests {
 
         @Test void producesValidOutput() { // GH-90000
@@ -118,10 +118,10 @@ class AdaptiveAgentTest {
 
             var result = runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
             assertThat(result.isSuccess()).isTrue(); // GH-90000
-            assertThat(result.getOutput()).containsKey("_adaptive.selectedArm [GH-90000]");
-            assertThat(result.getOutput()).containsKey("threshold [GH-90000]");
+            assertThat(result.getOutput()).containsKey("_adaptive.selectedArm");
+            assertThat(result.getOutput()).containsKey("threshold");
 
-            double pv = ((Number) result.getOutput().get("threshold [GH-90000]")).doubleValue();
+            double pv = ((Number) result.getOutput().get("threshold")).doubleValue();
             assertThat(pv).isBetween(0.0, 1.0); // GH-90000
         }
 
@@ -134,7 +134,7 @@ class AdaptiveAgentTest {
             // Over many iterations, getBestArm should converge to arm 2.
             for (int i = 0; i < 150; i++) { // GH-90000
                 var result = runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
-                int arm = ((Number) result.getOutput().get("_adaptive.selectedArm [GH-90000]")).intValue();
+                int arm = ((Number) result.getOutput().get("_adaptive.selectedArm")).intValue();
                 // Reward: 1.0 for arm 2, 0.0 for others
                 agent.recordFeedback(arm, arm == 2 ? 1.0 : 0.0); // GH-90000
             }
@@ -148,7 +148,7 @@ class AdaptiveAgentTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Epsilon-Greedy [GH-90000]")
+    @DisplayName("Epsilon-Greedy")
     class EpsilonGreedyTests {
 
         @Test void producesValidOutput() { // GH-90000
@@ -157,7 +157,7 @@ class AdaptiveAgentTest {
 
             var result = runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
             assertThat(result.isSuccess()).isTrue(); // GH-90000
-            assertThat(result.getOutput()).containsKey("_adaptive.selectedArm [GH-90000]");
+            assertThat(result.getOutput()).containsKey("_adaptive.selectedArm");
         }
 
         @Test void mostlyExploitsBestArm() { // GH-90000
@@ -170,7 +170,7 @@ class AdaptiveAgentTest {
             double[] armRewards = {1.0, 0.2, 0.1};
             for (int i = 0; i < 200; i++) { // GH-90000
                 var result = runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
-                int arm = ((Number) result.getOutput().get("_adaptive.selectedArm [GH-90000]")).intValue();
+                int arm = ((Number) result.getOutput().get("_adaptive.selectedArm")).intValue();
                 agent.recordFeedback(arm, armRewards[arm]); // GH-90000
             }
 
@@ -178,7 +178,7 @@ class AdaptiveAgentTest {
             Map<Integer, Integer> counts = new HashMap<>(); // GH-90000
             for (int i = 0; i < 100; i++) { // GH-90000
                 var result = runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
-                int arm = ((Number) result.getOutput().get("_adaptive.selectedArm [GH-90000]")).intValue();
+                int arm = ((Number) result.getOutput().get("_adaptive.selectedArm")).intValue();
                 counts.merge(arm, 1, Integer::sum); // GH-90000
             }
 
@@ -193,7 +193,7 @@ class AdaptiveAgentTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Feedback & Statistics [GH-90000]")
+    @DisplayName("Feedback & Statistics")
     class FeedbackTests {
 
         @Test void recordFeedbackUpdatesStats() { // GH-90000
@@ -226,7 +226,7 @@ class AdaptiveAgentTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Lifecycle [GH-90000]")
+    @DisplayName("Lifecycle")
     class LifecycleTests {
 
         @Test void metricsTracked() { // GH-90000

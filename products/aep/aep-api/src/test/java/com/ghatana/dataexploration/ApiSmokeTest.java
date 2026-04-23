@@ -26,18 +26,18 @@ import static org.junit.jupiter.api.Assertions.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("Platform API — Smoke Tests [GH-90000]")
+@DisplayName("Platform API — Smoke Tests")
 class ApiSmokeTest {
 
     @Test
-    @DisplayName("BasicDataPreprocessor can be instantiated [GH-90000]")
+    @DisplayName("BasicDataPreprocessor can be instantiated")
     void basicDataPreprocessorInstantiates() { // GH-90000
         var preprocessor = new BasicDataPreprocessor(); // GH-90000
         assertNotNull(preprocessor); // GH-90000
     }
 
     @Test
-    @DisplayName("ExplorationEvent can be constructed and fields accessed [GH-90000]")
+    @DisplayName("ExplorationEvent can be constructed and fields accessed")
     void explorationEventFields() { // GH-90000
         var now = Instant.now(); // GH-90000
         var event = new ExplorationEvent("ev-1", "click", now, Map.of("page", "/home"), "tenant-1"); // GH-90000
@@ -48,7 +48,7 @@ class ApiSmokeTest {
     }
 
     @Test
-    @DisplayName("NormalizedEvent can be constructed and fields accessed [GH-90000]")
+    @DisplayName("NormalizedEvent can be constructed and fields accessed")
     void normalizedEventFields() { // GH-90000
         var now = Instant.now(); // GH-90000
         var event = new NormalizedEvent("nev-1", "click", now, Map.of("page", "/home"), "tenant-1", 0.95); // GH-90000
@@ -57,7 +57,7 @@ class ApiSmokeTest {
     }
 
     @Test
-    @DisplayName("PreprocessingConfig can be built with defaults [GH-90000]")
+    @DisplayName("PreprocessingConfig can be built with defaults")
     void preprocessingConfigBuilder() { // GH-90000
         var config = new PreprocessingConfig( // GH-90000
                 Duration.ofMinutes(5), 0.7, 1000, true, true, Map.of()); // GH-90000
@@ -67,7 +67,7 @@ class ApiSmokeTest {
     }
 
     @Test
-    @DisplayName("EventStreamStatistics can be constructed [GH-90000]")
+    @DisplayName("EventStreamStatistics can be constructed")
     void eventStreamStatisticsFields() { // GH-90000
         var now = Instant.now(); // GH-90000
         var stats = new EventStreamStatistics( // GH-90000
@@ -80,7 +80,7 @@ class ApiSmokeTest {
     }
 
     @Test
-    @DisplayName("TemporalFeatures can be constructed [GH-90000]")
+    @DisplayName("TemporalFeatures can be constructed")
     void temporalFeaturesFields() { // GH-90000
         var now = Instant.now(); // GH-90000
         var features = new TemporalFeatures( // GH-90000
@@ -92,7 +92,7 @@ class ApiSmokeTest {
     }
 
     @Test
-    @DisplayName("CorrelatedEventGroup and CorrelationRule can be constructed [GH-90000]")
+    @DisplayName("CorrelatedEventGroup and CorrelationRule can be constructed")
     void correlatedEventGroupFields() { // GH-90000
         var rule = new CorrelatedEventGroup.CorrelationRule("click", "purchase", 0.8, 1.5); // GH-90000
         assertEquals("click", rule.getAntecedent()); // GH-90000

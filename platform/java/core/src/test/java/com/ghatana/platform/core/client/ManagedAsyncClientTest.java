@@ -7,11 +7,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("ManagedAsyncClient [GH-90000]")
+@DisplayName("ManagedAsyncClient")
 class ManagedAsyncClientTest extends EventloopTestBase {
 
     @Test
-    @DisplayName("tracks running state transitions [GH-90000]")
+    @DisplayName("tracks running state transitions")
     void tracksRunningStateTransitions() { // GH-90000
         TestManagedAsyncClient client = new TestManagedAsyncClient(); // GH-90000
 
@@ -23,7 +23,7 @@ class ManagedAsyncClientTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("markStarted and markStopped are idempotent [GH-90000]")
+    @DisplayName("markStarted and markStopped are idempotent")
     void lifecycleMarkersAreIdempotent() { // GH-90000
         TestManagedAsyncClient client = new TestManagedAsyncClient(); // GH-90000
 

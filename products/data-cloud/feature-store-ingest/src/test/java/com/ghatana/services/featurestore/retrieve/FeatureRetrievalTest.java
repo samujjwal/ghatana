@@ -22,8 +22,8 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("FeatureRetrievalTest [GH-90000]")
-@Tag("feature-store [GH-90000]")
+@DisplayName("FeatureRetrievalTest")
+@Tag("feature-store")
 class FeatureRetrievalTest {
 
     private FeatureRegistry registry;
@@ -31,7 +31,7 @@ class FeatureRetrievalTest {
     @BeforeEach
     void setUp() { // GH-90000
         registry = new FeatureRegistry(); // GH-90000
-        Instant base = Instant.parse("2026-01-01T12:00:00Z [GH-90000]");
+        Instant base = Instant.parse("2026-01-01T12:00:00Z");
         // Seed features for entity-1
         registry.store("entity-1", "age",    42.0, base); // GH-90000
         registry.store("entity-1", "zipcode", 90210.0, base); // GH-90000
@@ -43,38 +43,38 @@ class FeatureRetrievalTest {
     // ── Point-in-time retrieval ───────────────────────────────────────────────
 
     @Test
-    @DisplayName("retrieve returns the correct value for a known entity + feature [GH-90000]")
+    @DisplayName("retrieve returns the correct value for a known entity + feature")
     void retrieveKnownFeature() { // GH-90000
         Optional<Double> value = registry.retrieve("entity-1", "age", Instant.now()); // GH-90000
         assertThat(value).isPresent().contains(42.0); // GH-90000
     }
 
     @Test
-    @DisplayName("retrieve returns empty for unknown entity [GH-90000]")
+    @DisplayName("retrieve returns empty for unknown entity")
     void retrieveUnknownEntityReturnsEmpty() { // GH-90000
         Optional<Double> value = registry.retrieve("ghost-entity", "age", Instant.now()); // GH-90000
         assertThat(value).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("retrieve returns empty for unknown feature on known entity [GH-90000]")
+    @DisplayName("retrieve returns empty for unknown feature on known entity")
     void retrieveUnknownFeatureReturnsEmpty() { // GH-90000
         Optional<Double> value = registry.retrieve("entity-1", "unknown-feature", Instant.now()); // GH-90000
         assertThat(value).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("retrieve respects timestamp — feature written after query time is not returned [GH-90000]")
+    @DisplayName("retrieve respects timestamp — feature written after query time is not returned")
     void retrieveRespectsTimestamp() { // GH-90000
-        Instant queryTime = Instant.parse("2026-01-01T12:00:30Z [GH-90000]"); // before score was written at +60s
+        Instant queryTime = Instant.parse("2026-01-01T12:00:30Z"); // before score was written at +60s
         Optional<Double> value = registry.retrieve("entity-1", "score", queryTime); // GH-90000
         assertThat(value).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("retrieve returns feature when query time is after write time [GH-90000]")
+    @DisplayName("retrieve returns feature when query time is after write time")
     void retrieveReturnsFeatureAfterWriteTime() { // GH-90000
-        Instant queryTime = Instant.parse("2026-01-01T12:02:00Z [GH-90000]"); // after +60s
+        Instant queryTime = Instant.parse("2026-01-01T12:02:00Z"); // after +60s
         Optional<Double> value = registry.retrieve("entity-1", "score", queryTime); // GH-90000
         assertThat(value).isPresent().contains(95.5); // GH-90000
     }
@@ -82,26 +82,26 @@ class FeatureRetrievalTest {
     // ── Batch retrieval ───────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("batch retrieve returns values for all known features of an entity [GH-90000]")
+    @DisplayName("batch retrieve returns values for all known features of an entity")
     void batchRetrieveKnownEntity() { // GH-90000
         Map<String, Optional<Double>> values =
                 registry.retrieveAll("entity-1", List.of("age", "zipcode"), Instant.now()); // GH-90000
-        assertThat(values).containsKey("age [GH-90000]").containsKey("zipcode [GH-90000]");
-        assertThat(values.get("age [GH-90000]")).isPresent().contains(42.0);
-        assertThat(values.get("zipcode [GH-90000]")).isPresent().contains(90210.0);
+        assertThat(values).containsKey("age").containsKey("zipcode");
+        assertThat(values.get("age")).isPresent().contains(42.0);
+        assertThat(values.get("zipcode")).isPresent().contains(90210.0);
     }
 
     @Test
-    @DisplayName("batch retrieve includes empty optional for missing features [GH-90000]")
+    @DisplayName("batch retrieve includes empty optional for missing features")
     void batchRetrieveIncludesMissingFeatures() { // GH-90000
         Map<String, Optional<Double>> values =
                 registry.retrieveAll("entity-1", List.of("age", "nonexistent"), Instant.now()); // GH-90000
-        assertThat(values.get("age [GH-90000]")).isPresent();
-        assertThat(values.get("nonexistent [GH-90000]")).isEmpty();
+        assertThat(values.get("age")).isPresent();
+        assertThat(values.get("nonexistent")).isEmpty();
     }
 
     @Test
-    @DisplayName("batch retrieve returns empty optionals for all features of unknown entity [GH-90000]")
+    @DisplayName("batch retrieve returns empty optionals for all features of unknown entity")
     void batchRetrieveUnknownEntity() { // GH-90000
         Map<String, Optional<Double>> values =
                 registry.retrieveAll("nobody", List.of("age", "score"), Instant.now()); // GH-90000
@@ -111,14 +111,14 @@ class FeatureRetrievalTest {
     // ── Default value handling ────────────────────────────────────────────────
 
     @Test
-    @DisplayName("retrieveOrDefault returns stored value when present [GH-90000]")
+    @DisplayName("retrieveOrDefault returns stored value when present")
     void retrieveOrDefaultReturnsStoredValue() { // GH-90000
         double value = registry.retrieveOrDefault("entity-1", "age", 0.0, Instant.now()); // GH-90000
         assertThat(value).isEqualTo(42.0); // GH-90000
     }
 
     @Test
-    @DisplayName("retrieveOrDefault returns default value when feature is missing [GH-90000]")
+    @DisplayName("retrieveOrDefault returns default value when feature is missing")
     void retrieveOrDefaultReturnsFallback() { // GH-90000
         double value = registry.retrieveOrDefault("entity-1", "missing", -1.0, Instant.now()); // GH-90000
         assertThat(value).isEqualTo(-1.0); // GH-90000
@@ -127,21 +127,21 @@ class FeatureRetrievalTest {
     // ── Multi-entity retrieval ────────────────────────────────────────────────
 
     @Test
-    @DisplayName("multi-entity retrieve returns data for both entities [GH-90000]")
+    @DisplayName("multi-entity retrieve returns data for both entities")
     void multiEntityRetrieve() { // GH-90000
         Map<String, Optional<Double>> result =
                 registry.retrieveMultiEntity(List.of("entity-1", "entity-2"), "age", Instant.now()); // GH-90000
-        assertThat(result.get("entity-1 [GH-90000]")).isPresent().contains(42.0);
-        assertThat(result.get("entity-2 [GH-90000]")).isPresent().contains(28.0);
+        assertThat(result.get("entity-1")).isPresent().contains(42.0);
+        assertThat(result.get("entity-2")).isPresent().contains(28.0);
     }
 
     @Test
-    @DisplayName("multi-entity retrieve returns empty for each entity that lacks the feature [GH-90000]")
+    @DisplayName("multi-entity retrieve returns empty for each entity that lacks the feature")
     void multiEntityRetrieveMissingFeature() { // GH-90000
         Map<String, Optional<Double>> result =
                 registry.retrieveMultiEntity(List.of("entity-1", "entity-2"), "score", Instant.now()); // GH-90000
-        assertThat(result.get("entity-1 [GH-90000]")).isPresent().contains(95.5);
-        assertThat(result.get("entity-2 [GH-90000]")).isEmpty();
+        assertThat(result.get("entity-1")).isPresent().contains(95.5);
+        assertThat(result.get("entity-2")).isEmpty();
     }
 
     // ─────────────────────────────────────────────────────────────────────────

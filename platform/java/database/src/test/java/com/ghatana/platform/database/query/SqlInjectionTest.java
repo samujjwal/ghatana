@@ -26,11 +26,11 @@ import static org.mockito.Mockito.*;
  * Verifies that JdbcTemplate properly protects against SQL injection attacks
  * through parameterized queries and proper escaping.
  */
-@DisplayName("SQL Injection Protection Tests [GH-90000]")
+@DisplayName("SQL Injection Protection Tests")
 class SqlInjectionTest {
 
     @Test
-    @DisplayName("Should escape single quote in parameterized query [GH-90000]")
+    @DisplayName("Should escape single quote in parameterized query")
     void shouldEscapeSingleQuoteInParameterizedQuery() throws SQLException { // GH-90000
         DataSource mockDataSource = mock(DataSource.class); // GH-90000
         Connection mockConnection = mock(Connection.class); // GH-90000
@@ -48,7 +48,7 @@ class SqlInjectionTest {
         String maliciousInput = "admin' OR '1'='1";
         jdbcTemplate.queryForObject( // GH-90000
             "SELECT * FROM users WHERE username = ?",
-            rs -> rs.getString("username [GH-90000]"),
+            rs -> rs.getString("username"),
             maliciousInput
         );
 
@@ -58,7 +58,7 @@ class SqlInjectionTest {
     }
 
     @Test
-    @DisplayName("Should escape comment-based SQL injection [GH-90000]")
+    @DisplayName("Should escape comment-based SQL injection")
     void shouldEscapeCommentBasedSqlInjection() throws SQLException { // GH-90000
         DataSource mockDataSource = mock(DataSource.class); // GH-90000
         Connection mockConnection = mock(Connection.class); // GH-90000
@@ -76,7 +76,7 @@ class SqlInjectionTest {
         String maliciousInput = "admin'--";
         jdbcTemplate.queryForList( // GH-90000
             "SELECT * FROM users WHERE username = ?",
-            rs -> rs.getString("username [GH-90000]"),
+            rs -> rs.getString("username"),
             maliciousInput
         );
 
@@ -86,7 +86,7 @@ class SqlInjectionTest {
     }
 
     @Test
-    @DisplayName("Should escape union-based SQL injection [GH-90000]")
+    @DisplayName("Should escape union-based SQL injection")
     void shouldEscapeUnionBasedSqlInjection() throws SQLException { // GH-90000
         DataSource mockDataSource = mock(DataSource.class); // GH-90000
         Connection mockConnection = mock(Connection.class); // GH-90000
@@ -104,7 +104,7 @@ class SqlInjectionTest {
         String maliciousInput = "admin' UNION SELECT password FROM users--";
         jdbcTemplate.queryForObject( // GH-90000
             "SELECT * FROM users WHERE username = ?",
-            rs -> rs.getString("username [GH-90000]"),
+            rs -> rs.getString("username"),
             maliciousInput
         );
 
@@ -114,7 +114,7 @@ class SqlInjectionTest {
     }
 
     @Test
-    @DisplayName("Should escape tautology-based SQL injection [GH-90000]")
+    @DisplayName("Should escape tautology-based SQL injection")
     void shouldEscapeTautologyBasedSqlInjection() throws SQLException { // GH-90000
         DataSource mockDataSource = mock(DataSource.class); // GH-90000
         Connection mockConnection = mock(Connection.class); // GH-90000
@@ -132,7 +132,7 @@ class SqlInjectionTest {
         String maliciousInput = "1' OR '1'='1";
         jdbcTemplate.queryForList( // GH-90000
             "SELECT * FROM users WHERE id = ?",
-            rs -> rs.getString("username [GH-90000]"),
+            rs -> rs.getString("username"),
             maliciousInput
         );
 
@@ -142,7 +142,7 @@ class SqlInjectionTest {
     }
 
     @Test
-    @DisplayName("Should escape stacked query SQL injection [GH-90000]")
+    @DisplayName("Should escape stacked query SQL injection")
     void shouldEscapeStackedQuerySqlInjection() throws SQLException { // GH-90000
         DataSource mockDataSource = mock(DataSource.class); // GH-90000
         Connection mockConnection = mock(Connection.class); // GH-90000
@@ -160,7 +160,7 @@ class SqlInjectionTest {
         String maliciousInput = "admin'; DROP TABLE users;--";
         jdbcTemplate.queryForObject( // GH-90000
             "SELECT * FROM users WHERE username = ?",
-            rs -> rs.getString("username [GH-90000]"),
+            rs -> rs.getString("username"),
             maliciousInput
         );
 
@@ -170,7 +170,7 @@ class SqlInjectionTest {
     }
 
     @Test
-    @DisplayName("Should escape time-based blind SQL injection [GH-90000]")
+    @DisplayName("Should escape time-based blind SQL injection")
     void shouldEscapeTimeBasedBlindSqlInjection() throws SQLException { // GH-90000
         DataSource mockDataSource = mock(DataSource.class); // GH-90000
         Connection mockConnection = mock(Connection.class); // GH-90000
@@ -188,7 +188,7 @@ class SqlInjectionTest {
         String maliciousInput = "admin' AND SLEEP(10)--"; // GH-90000
         jdbcTemplate.queryForList( // GH-90000
             "SELECT * FROM users WHERE username = ?",
-            rs -> rs.getString("username [GH-90000]"),
+            rs -> rs.getString("username"),
             maliciousInput
         );
 
@@ -198,7 +198,7 @@ class SqlInjectionTest {
     }
 
     @Test
-    @DisplayName("Should escape boolean-based blind SQL injection [GH-90000]")
+    @DisplayName("Should escape boolean-based blind SQL injection")
     void shouldEscapeBooleanBasedBlindSqlInjection() throws SQLException { // GH-90000
         DataSource mockDataSource = mock(DataSource.class); // GH-90000
         Connection mockConnection = mock(Connection.class); // GH-90000
@@ -216,7 +216,7 @@ class SqlInjectionTest {
         String maliciousInput = "admin' AND 1=1--";
         jdbcTemplate.queryForObject( // GH-90000
             "SELECT * FROM users WHERE username = ?",
-            rs -> rs.getString("username [GH-90000]"),
+            rs -> rs.getString("username"),
             maliciousInput
         );
 
@@ -226,7 +226,7 @@ class SqlInjectionTest {
     }
 
     @Test
-    @DisplayName("Should protect against SQL injection in update operations [GH-90000]")
+    @DisplayName("Should protect against SQL injection in update operations")
     void shouldProtectAgainstSqlInjectionInUpdateOperations() throws SQLException { // GH-90000
         DataSource mockDataSource = mock(DataSource.class); // GH-90000
         Connection mockConnection = mock(Connection.class); // GH-90000
@@ -251,7 +251,7 @@ class SqlInjectionTest {
     }
 
     @Test
-    @DisplayName("Should protect against SQL injection in batch operations [GH-90000]")
+    @DisplayName("Should protect against SQL injection in batch operations")
     void shouldProtectAgainstSqlInjectionInBatchOperations() throws SQLException { // GH-90000
         DataSource mockDataSource = mock(DataSource.class); // GH-90000
         Connection mockConnection = mock(Connection.class); // GH-90000
@@ -281,7 +281,7 @@ class SqlInjectionTest {
     }
 
     @Test
-    @DisplayName("Should protect against SQL injection with special characters [GH-90000]")
+    @DisplayName("Should protect against SQL injection with special characters")
     void shouldProtectAgainstSqlInjectionWithSpecialCharacters() throws SQLException { // GH-90000
         DataSource mockDataSource = mock(DataSource.class); // GH-90000
         Connection mockConnection = mock(Connection.class); // GH-90000
@@ -299,7 +299,7 @@ class SqlInjectionTest {
         String maliciousInput = "admin'\";\\--\n\t\r";
         jdbcTemplate.queryForObject( // GH-90000
             "SELECT * FROM users WHERE username = ?",
-            rs -> rs.getString("username [GH-90000]"),
+            rs -> rs.getString("username"),
             maliciousInput
         );
 
@@ -309,7 +309,7 @@ class SqlInjectionTest {
     }
 
     @Test
-    @DisplayName("Should protect against second-order SQL injection [GH-90000]")
+    @DisplayName("Should protect against second-order SQL injection")
     void shouldProtectAgainstSecondOrderSqlInjection() throws SQLException { // GH-90000
         DataSource mockDataSource = mock(DataSource.class); // GH-90000
         Connection mockConnection = mock(Connection.class); // GH-90000
@@ -335,7 +335,7 @@ class SqlInjectionTest {
         // Second operation: use the stored value in a query
         jdbcTemplate.queryForObject( // GH-90000
             "SELECT * FROM users WHERE username = (SELECT input_value FROM user_inputs LIMIT 1)", // GH-90000
-            rs -> rs.getString("username [GH-90000]")
+            rs -> rs.getString("username")
         );
 
         // Verify both operations used parameterized queries
@@ -343,7 +343,7 @@ class SqlInjectionTest {
     }
 
     @Test
-    @DisplayName("Should protect against SQL injection in pagination parameters [GH-90000]")
+    @DisplayName("Should protect against SQL injection in pagination parameters")
     void shouldProtectAgainstSqlInjectionInPaginationParameters() throws SQLException { // GH-90000
         DataSource mockDataSource = mock(DataSource.class); // GH-90000
         Connection mockConnection = mock(Connection.class); // GH-90000
@@ -360,7 +360,7 @@ class SqlInjectionTest {
         // Attempt SQL injection in pagination offset (simplified test without pagination) // GH-90000
         jdbcTemplate.queryForList( // GH-90000
             "SELECT * FROM users WHERE active = ?",
-            rs -> rs.getString("username [GH-90000]"),
+            rs -> rs.getString("username"),
             true
         );
 
@@ -370,7 +370,7 @@ class SqlInjectionTest {
     }
 
     @Test
-    @DisplayName("Should protect against SQL injection in LIKE queries [GH-90000]")
+    @DisplayName("Should protect against SQL injection in LIKE queries")
     void shouldProtectAgainstSqlInjectionInLikeQueries() throws SQLException { // GH-90000
         DataSource mockDataSource = mock(DataSource.class); // GH-90000
         Connection mockConnection = mock(Connection.class); // GH-90000
@@ -388,7 +388,7 @@ class SqlInjectionTest {
         String maliciousInput = "%' OR '1'='1'--";
         jdbcTemplate.queryForList( // GH-90000
             "SELECT * FROM users WHERE username LIKE ?",
-            rs -> rs.getString("username [GH-90000]"),
+            rs -> rs.getString("username"),
             maliciousInput
         );
 
@@ -398,7 +398,7 @@ class SqlInjectionTest {
     }
 
     @Test
-    @DisplayName("Should protect against SQL injection with encoded characters [GH-90000]")
+    @DisplayName("Should protect against SQL injection with encoded characters")
     void shouldProtectAgainstSqlInjectionWithEncodedCharacters() throws SQLException { // GH-90000
         DataSource mockDataSource = mock(DataSource.class); // GH-90000
         Connection mockConnection = mock(Connection.class); // GH-90000
@@ -416,7 +416,7 @@ class SqlInjectionTest {
         String maliciousInput = "admin%27%20OR%20%271%27%3D%271"; // admin' OR '1'='1
         jdbcTemplate.queryForObject( // GH-90000
             "SELECT * FROM users WHERE username = ?",
-            rs -> rs.getString("username [GH-90000]"),
+            rs -> rs.getString("username"),
             maliciousInput
         );
 
@@ -426,7 +426,7 @@ class SqlInjectionTest {
     }
 
     @Test
-    @DisplayName("Should protect against SQL injection in IN clause parameters [GH-90000]")
+    @DisplayName("Should protect against SQL injection in IN clause parameters")
     void shouldProtectAgainstSqlInjectionInInClauseParameters() throws SQLException { // GH-90000
         DataSource mockDataSource = mock(DataSource.class); // GH-90000
         Connection mockConnection = mock(Connection.class); // GH-90000
@@ -444,7 +444,7 @@ class SqlInjectionTest {
         String maliciousInput = "admin') OR '1'='1'--";
         jdbcTemplate.queryForList( // GH-90000
             "SELECT * FROM users WHERE username IN (?)", // GH-90000
-            rs -> rs.getString("username [GH-90000]"),
+            rs -> rs.getString("username"),
             maliciousInput
         );
 
@@ -454,7 +454,7 @@ class SqlInjectionTest {
     }
 
     @Test
-    @DisplayName("Should use PreparedStatement for all queries (no Statement) [GH-90000]")
+    @DisplayName("Should use PreparedStatement for all queries (no Statement)")
     void shouldUsePreparedStatementForAllQueries() throws SQLException { // GH-90000
         DataSource mockDataSource = mock(DataSource.class); // GH-90000
         Connection mockConnection = mock(Connection.class); // GH-90000
@@ -471,7 +471,7 @@ class SqlInjectionTest {
         // Execute a query
         jdbcTemplate.queryForObject( // GH-90000
             "SELECT * FROM users WHERE id = ?",
-            rs -> rs.getString("username [GH-90000]"),
+            rs -> rs.getString("username"),
             123
         );
 

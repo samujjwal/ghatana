@@ -64,8 +64,8 @@ public class MockTypeScriptRenameRefactoring implements RenameRefactoring {
         try {
             Path sourceFile = Path.of(context.getSourceFile()); // GH-90000
             if (!Files.exists(sourceFile) // GH-90000
-                    || !(sourceFile.toString().endsWith(".ts [GH-90000]")
-                            || sourceFile.toString().endsWith(".tsx [GH-90000]"))) {
+                    || !(sourceFile.toString().endsWith(".ts")
+                            || sourceFile.toString().endsWith(".tsx"))) {
                 return false;
             }
             return true;
@@ -80,7 +80,7 @@ public class MockTypeScriptRenameRefactoring implements RenameRefactoring {
         try {
             // Check for null new name first
             if (context.getNewName() == null) { // GH-90000
-                return RefactoringResult.failure("New name cannot be null [GH-90000]");
+                return RefactoringResult.failure("New name cannot be null");
             }
 
             Path sourceFile = Path.of(context.getSourceFile()); // GH-90000
@@ -143,7 +143,7 @@ public class MockTypeScriptRenameRefactoring implements RenameRefactoring {
                                 match -> {
                                     // If it's a method definition (has : before function), keep the // GH-90000
                                     // property name format
-                                    if (match.group().contains(": [GH-90000]")) {
+                                    if (match.group().contains(":")) {
                                         return newName + ": function($1)"; // GH-90000
                                     } else {
                                         return "function " + newName + "($1)"; // GH-90000

@@ -24,8 +24,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Query Correctness Tests [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("Query Correctness Tests")
+@Tag("integration")
 class QueryCorrectnessTest extends EventloopTestBase {
 
     // ── Test data ─────────────────────────────────────────────────────────────
@@ -44,11 +44,11 @@ class QueryCorrectnessTest extends EventloopTestBase {
     // ── SELECT with filters ───────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("SELECT with filters (WHERE clause) [GH-90000]")
+    @DisplayName("SELECT with filters (WHERE clause)")
     class SelectWithFilters {
 
         @Test
-        @DisplayName("equality filter returns only matching rows [GH-90000]")
+        @DisplayName("equality filter returns only matching rows")
         void equalityFilter_returnsOnlyMatchingRows() { // GH-90000
             List<User> engineering = USERS.stream() // GH-90000
                     .filter(u -> "Engineering".equals(u.department())) // GH-90000
@@ -60,7 +60,7 @@ class QueryCorrectnessTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("range filter (salary > X) returns correct rows [GH-90000]")
+        @DisplayName("range filter (salary > X) returns correct rows")
         void rangeFilter_returnsCorrectRows() { // GH-90000
             List<User> highEarners = USERS.stream() // GH-90000
                     .filter(u -> u.salary() > 80_000) // GH-90000
@@ -72,7 +72,7 @@ class QueryCorrectnessTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("IN filter returns all matching rows [GH-90000]")
+        @DisplayName("IN filter returns all matching rows")
         void inFilter_returnsAllMatchingRows() { // GH-90000
             List<String> departments = List.of("Marketing", "HR"); // GH-90000
             List<User> filtered = USERS.stream() // GH-90000
@@ -85,7 +85,7 @@ class QueryCorrectnessTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("compound AND filter narrows result set correctly [GH-90000]")
+        @DisplayName("compound AND filter narrows result set correctly")
         void compoundAndFilter_narrowsResultSet() { // GH-90000
             List<User> result = USERS.stream() // GH-90000
                     .filter(u -> "Engineering".equals(u.department()) && u.salary() >= 90_000) // GH-90000
@@ -100,11 +100,11 @@ class QueryCorrectnessTest extends EventloopTestBase {
     // ── ORDER BY ─────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("ORDER BY sorting [GH-90000]")
+    @DisplayName("ORDER BY sorting")
     class OrderBy {
 
         @Test
-        @DisplayName("ORDER BY salary ASC produces correct order [GH-90000]")
+        @DisplayName("ORDER BY salary ASC produces correct order")
         void orderBySalaryAsc_producesCorrectOrder() { // GH-90000
             List<User> sorted = USERS.stream() // GH-90000
                     .sorted(Comparator.comparingInt(User::salary)) // GH-90000
@@ -115,7 +115,7 @@ class QueryCorrectnessTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("ORDER BY salary DESC produces reversed correct order [GH-90000]")
+        @DisplayName("ORDER BY salary DESC produces reversed correct order")
         void orderBySalaryDesc_producesReversedCorrectOrder() { // GH-90000
             List<User> sorted = USERS.stream() // GH-90000
                     .sorted(Comparator.comparingInt(User::salary).reversed()) // GH-90000
@@ -126,7 +126,7 @@ class QueryCorrectnessTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("ORDER BY multiple columns applies tie-breaking correctly [GH-90000]")
+        @DisplayName("ORDER BY multiple columns applies tie-breaking correctly")
         void orderByMultipleColumns_appliesTieBreaking() { // GH-90000
             List<User> sorted = USERS.stream() // GH-90000
                     .sorted(Comparator.comparing(User::department) // GH-90000
@@ -134,18 +134,18 @@ class QueryCorrectnessTest extends EventloopTestBase {
                     .toList(); // GH-90000
 
             // Engineering comes before HR and Marketing alphabetically
-            assertThat(sorted.getFirst().department()).isEqualTo("Engineering [GH-90000]");
+            assertThat(sorted.getFirst().department()).isEqualTo("Engineering");
         }
     }
 
     // ── LIMIT and OFFSET ──────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("LIMIT / OFFSET pagination [GH-90000]")
+    @DisplayName("LIMIT / OFFSET pagination")
     class LimitOffset {
 
         @Test
-        @DisplayName("LIMIT 2 returns only first 2 rows [GH-90000]")
+        @DisplayName("LIMIT 2 returns only first 2 rows")
         void limit2_returnsOnlyFirst2Rows() { // GH-90000
             List<User> page = USERS.stream() // GH-90000
                     .sorted(Comparator.comparingInt(User::id)) // GH-90000
@@ -157,7 +157,7 @@ class QueryCorrectnessTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("OFFSET 2 LIMIT 2 returns correct middle page [GH-90000]")
+        @DisplayName("OFFSET 2 LIMIT 2 returns correct middle page")
         void offset2Limit2_returnsCorrectMiddlePage() { // GH-90000
             List<User> page = USERS.stream() // GH-90000
                     .sorted(Comparator.comparingInt(User::id)) // GH-90000
@@ -170,7 +170,7 @@ class QueryCorrectnessTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("OFFSET beyond total rows returns empty result [GH-90000]")
+        @DisplayName("OFFSET beyond total rows returns empty result")
         void offsetBeyondTotalRows_returnsEmptyResult() { // GH-90000
             List<User> page = USERS.stream() // GH-90000
                     .skip(100) // GH-90000
@@ -184,11 +184,11 @@ class QueryCorrectnessTest extends EventloopTestBase {
     // ── GROUP BY with aggregation ─────────────────────────────────────────────
 
     @Nested
-    @DisplayName("GROUP BY with aggregation [GH-90000]")
+    @DisplayName("GROUP BY with aggregation")
     class GroupBy {
 
         @Test
-        @DisplayName("GROUP BY department with COUNT returns correct counts [GH-90000]")
+        @DisplayName("GROUP BY department with COUNT returns correct counts")
         void groupByDepartment_withCount_returnsCorrectCounts() { // GH-90000
             Map<String, Long> counts = USERS.stream() // GH-90000
                     .collect(Collectors.groupingBy(User::department, Collectors.counting())); // GH-90000
@@ -199,18 +199,18 @@ class QueryCorrectnessTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("GROUP BY department with AVG salary computes correct averages [GH-90000]")
+        @DisplayName("GROUP BY department with AVG salary computes correct averages")
         void groupByDepartment_withAvgSalary_computesCorrectAverages() { // GH-90000
             Map<String, Double> avgSalaries = USERS.stream() // GH-90000
                     .collect(Collectors.groupingBy(User::department, // GH-90000
                             Collectors.averagingInt(User::salary))); // GH-90000
 
-            assertThat(avgSalaries.get("Engineering [GH-90000]")).isEqualTo((90_000.0 + 85_000.0 + 95_000.0) / 3);
-            assertThat(avgSalaries.get("Marketing [GH-90000]")).isEqualTo((70_000.0 + 72_000.0) / 2);
+            assertThat(avgSalaries.get("Engineering")).isEqualTo((90_000.0 + 85_000.0 + 95_000.0) / 3);
+            assertThat(avgSalaries.get("Marketing")).isEqualTo((70_000.0 + 72_000.0) / 2);
         }
 
         @Test
-        @DisplayName("HAVING filters groups by aggregate condition [GH-90000]")
+        @DisplayName("HAVING filters groups by aggregate condition")
         void having_filtersGroupsByAggregateCondition() { // GH-90000
             Map<String, Long> counts = USERS.stream() // GH-90000
                     .collect(Collectors.groupingBy(User::department, Collectors.counting())); // GH-90000
@@ -221,18 +221,18 @@ class QueryCorrectnessTest extends EventloopTestBase {
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)); // GH-90000
 
             assertThat(filtered).containsKeys("Engineering", "Marketing"); // GH-90000
-            assertThat(filtered).doesNotContainKey("HR [GH-90000]");
+            assertThat(filtered).doesNotContainKey("HR");
         }
     }
 
     // ── UNION ─────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("UNION operations [GH-90000]")
+    @DisplayName("UNION operations")
     class UnionOperations {
 
         @Test
-        @DisplayName("UNION deduplicates rows from both sets [GH-90000]")
+        @DisplayName("UNION deduplicates rows from both sets")
         void union_deduplicatesRowsFromBothSets() { // GH-90000
             List<String> setA = List.of("alice", "bob", "charlie"); // GH-90000
             List<String> setB = List.of("charlie", "diana", "eve"); // GH-90000
@@ -246,7 +246,7 @@ class QueryCorrectnessTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("UNION ALL preserves duplicates [GH-90000]")
+        @DisplayName("UNION ALL preserves duplicates")
         void unionAll_preservesDuplicates() { // GH-90000
             List<String> setA = List.of("alice", "bob"); // GH-90000
             List<String> setB = List.of("alice", "charlie"); // GH-90000
@@ -263,7 +263,7 @@ class QueryCorrectnessTest extends EventloopTestBase {
     // ── JOIN operations ───────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("JOIN operations [GH-90000]")
+    @DisplayName("JOIN operations")
     class JoinOperations {
 
         record Department(String name, String manager) {} // GH-90000
@@ -275,7 +275,7 @@ class QueryCorrectnessTest extends EventloopTestBase {
         );
 
         @Test
-        @DisplayName("INNER JOIN returns only rows with matching key in both tables [GH-90000]")
+        @DisplayName("INNER JOIN returns only rows with matching key in both tables")
         void innerJoin_returnsOnlyMatchingRows() { // GH-90000
             // Join users to departments on department name
             List<String> joined = USERS.stream() // GH-90000
@@ -288,7 +288,7 @@ class QueryCorrectnessTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("LEFT JOIN preserves all left rows even without right match [GH-90000]")
+        @DisplayName("LEFT JOIN preserves all left rows even without right match")
         void leftJoin_preservesAllLeftRows() { // GH-90000
             List<User> usersWithUnmatchedDept = List.of( // GH-90000
                     new User(99, "Orphan", "UnknownDept", 50_000) // GH-90000
@@ -303,13 +303,13 @@ class QueryCorrectnessTest extends EventloopTestBase {
                                 .filter(d -> d.name().equals(u.department())) // GH-90000
                                 .map(Department::manager) // GH-90000
                                 .findFirst() // GH-90000
-                                .orElse("NULL [GH-90000]");
+                                .orElse("NULL");
                         return u.name() + "-" + manager; // GH-90000
                     })
                     .toList(); // GH-90000
 
             assertThat(leftJoined).hasSize(7); // GH-90000
-            assertThat(leftJoined).contains("Orphan-NULL [GH-90000]");
+            assertThat(leftJoined).contains("Orphan-NULL");
         }
     }
 }

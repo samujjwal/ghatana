@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("TTL Expiration Tests [GH-90000]")
+@DisplayName("TTL Expiration Tests")
 class TtlExpirationTest {
 
     // ── Time-aware in-memory backend ──────────────────────────────────────────
@@ -61,18 +61,18 @@ class TtlExpirationTest {
         @Override public long getKeyCount(String pattern) { return store.size(); } // GH-90000
         @Override public long getCacheSize(String pattern) { return store.size(); } // GH-90000
         @Override public <T> String serialize(T value) { return value == null ? null : value.toString(); } // GH-90000
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         @Override public <T> T deserialize(String value, Class<T> type) { return (T) value; } // GH-90000
     }
 
     // ── Time-based eviction ───────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("time-based eviction [GH-90000]")
+    @DisplayName("time-based eviction")
     class TimeBasedEviction {
 
         @Test
-        @DisplayName("key is accessible before TTL expiry [GH-90000]")
+        @DisplayName("key is accessible before TTL expiry")
         void keyIsAccessible_beforeTtlExpiry() { // GH-90000
             TimedInMemoryCacheBackend backend = new TimedInMemoryCacheBackend(0L); // GH-90000
             DistributedCacheService cache = new DistributedCacheService(backend, "tenant"); // GH-90000
@@ -83,11 +83,11 @@ class TtlExpirationTest {
             Optional<String> result = cache.get("session:a", String.class); // GH-90000
 
             assertThat(result).isPresent(); // GH-90000
-            assertThat(result.get()).isEqualTo("active [GH-90000]");
+            assertThat(result.get()).isEqualTo("active");
         }
 
         @Test
-        @DisplayName("key is evicted after TTL expiry [GH-90000]")
+        @DisplayName("key is evicted after TTL expiry")
         void keyIsEvicted_afterTtlExpiry() { // GH-90000
             TimedInMemoryCacheBackend backend = new TimedInMemoryCacheBackend(0L); // GH-90000
             DistributedCacheService cache = new DistributedCacheService(backend, "tenant"); // GH-90000
@@ -101,7 +101,7 @@ class TtlExpirationTest {
         }
 
         @Test
-        @DisplayName("key expires exactly at TTL boundary [GH-90000]")
+        @DisplayName("key expires exactly at TTL boundary")
         void keyExpires_exactlyAtTtlBoundary() { // GH-90000
             TimedInMemoryCacheBackend backend = new TimedInMemoryCacheBackend(0L); // GH-90000
             DistributedCacheService cache = new DistributedCacheService(backend, "tenant"); // GH-90000
@@ -118,11 +118,11 @@ class TtlExpirationTest {
     // ── No-TTL keys ───────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("no-TTL keys persist indefinitely [GH-90000]")
+    @DisplayName("no-TTL keys persist indefinitely")
     class NoTtlKeys {
 
         @Test
-        @DisplayName("key with TTL=0 never expires [GH-90000]")
+        @DisplayName("key with TTL=0 never expires")
         void keyWithTtl0_neverExpires() { // GH-90000
             TimedInMemoryCacheBackend backend = new TimedInMemoryCacheBackend(0L); // GH-90000
             DistributedCacheService cache = new DistributedCacheService(backend, "tenant"); // GH-90000
@@ -139,11 +139,11 @@ class TtlExpirationTest {
     // ── Different TTLs ────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("different TTLs for different keys [GH-90000]")
+    @DisplayName("different TTLs for different keys")
     class DifferentTtls {
 
         @Test
-        @DisplayName("short-lived key expires while long-lived key stays [GH-90000]")
+        @DisplayName("short-lived key expires while long-lived key stays")
         void shortLivedKey_expires_whileLongLivedKeyStays() { // GH-90000
             TimedInMemoryCacheBackend backend = new TimedInMemoryCacheBackend(0L); // GH-90000
             DistributedCacheService cache = new DistributedCacheService(backend, "tenant"); // GH-90000

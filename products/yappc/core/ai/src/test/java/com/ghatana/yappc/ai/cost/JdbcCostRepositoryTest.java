@@ -22,7 +22,7 @@ import static org.mockito.Mockito.*;
 /**
  * Unit tests for {@link JdbcCostRepository}.
  */
-@DisplayName("JdbcCostRepository Tests [GH-90000]")
+@DisplayName("JdbcCostRepository Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class JdbcCostRepositoryTest extends EventloopTestBase {
 
@@ -46,7 +46,7 @@ class JdbcCostRepositoryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("save persists event with all fields to the database [GH-90000]")
+    @DisplayName("save persists event with all fields to the database")
     void save_persistsEvent_withAllFields() { // GH-90000
         CostEvent event = buildEvent("tenant-1", "user-A", "gpt-4", "openai", 100, 50, 0.0045); // GH-90000
 
@@ -74,7 +74,7 @@ class JdbcCostRepositoryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("save returns completed promise on success [GH-90000]")
+    @DisplayName("save returns completed promise on success")
     void save_returnsCompletedPromise_onSuccess() { // GH-90000
         CostEvent event = buildEvent("t1", "u1", "claude-3-sonnet", "anthropic", 200, 80, 0.002); // GH-90000
 
@@ -83,22 +83,22 @@ class JdbcCostRepositoryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("save propagates database exception as Promise failure [GH-90000]")
+    @DisplayName("save propagates database exception as Promise failure")
     void save_propagatesException_onDatabaseError() throws Exception { // GH-90000
-        when(preparedStatement.executeUpdate()).thenThrow(new java.sql.SQLException("DB unavailable [GH-90000]"));
+        when(preparedStatement.executeUpdate()).thenThrow(new java.sql.SQLException("DB unavailable"));
 
         CostEvent event = buildEvent("t1", "u1", "gpt-4", "openai", 10, 10, 0.001); // GH-90000
 
         try {
             runPromise(() -> repository.save(event)); // GH-90000
-            throw new AssertionError("Expected exception was not thrown [GH-90000]");
+            throw new AssertionError("Expected exception was not thrown");
         } catch (Exception ex) { // GH-90000
             // Expected: Promise failure propagated
         }
     }
 
     @Test
-    @DisplayName("save handles null userId and null featureId [GH-90000]")
+    @DisplayName("save handles null userId and null featureId")
     void save_handlesNullOptionalFields() { // GH-90000
         CostEvent event = new CostEvent( // GH-90000
             UUID.randomUUID().toString(), // GH-90000
@@ -117,7 +117,7 @@ class JdbcCostRepositoryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("save opens fresh connection per call [GH-90000]")
+    @DisplayName("save opens fresh connection per call")
     void save_opensFreshConnection_perCall() throws Exception { // GH-90000
         CostEvent event1 = buildEvent("t1", "u1", "gpt-4", "openai", 100, 50, 0.005); // GH-90000
         CostEvent event2 = buildEvent("t2", "u2", "gpt-4", "openai", 200, 100, 0.01); // GH-90000

@@ -11,7 +11,8 @@ import org.jetbrains.annotations.NotNull;
  * @doc.type interface
  * @doc.purpose Evaluation gate SPI
  * @doc.layer agent-learning
- */
+  * @doc.pattern Interface
+*/
 public interface EvaluationGate {
 
     /** Unique name of this gate (e.g., "regression", "safety"). */

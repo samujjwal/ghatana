@@ -19,17 +19,17 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * Unit tests for {@link ToolExecutionEnvelope}, {@link ToolExecutionResult}, and {@link ToolExecutionStatus}.
  */
-@DisplayName("ToolExecutionResult [GH-90000]")
+@DisplayName("ToolExecutionResult")
 class ToolExecutionResultTest {
 
     // ─── ToolExecutionStatus ───────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("ToolExecutionStatus [GH-90000]")
+    @DisplayName("ToolExecutionStatus")
     class StatusTests {
 
         @Test
-        @DisplayName("only SUCCESS is successful [GH-90000]")
+        @DisplayName("only SUCCESS is successful")
         void onlySuccessIsSuccessful() { // GH-90000
             assertThat(ToolExecutionStatus.SUCCESS.isSuccessful()).isTrue(); // GH-90000
             assertThat(ToolExecutionStatus.FAILED.isSuccessful()).isFalse(); // GH-90000
@@ -39,7 +39,7 @@ class ToolExecutionResultTest {
         }
 
         @Test
-        @DisplayName("DENIED and APPROVAL_PENDING are blocked statuses [GH-90000]")
+        @DisplayName("DENIED and APPROVAL_PENDING are blocked statuses")
         void blockedStatuses() { // GH-90000
             assertThat(ToolExecutionStatus.DENIED.isBlocked()).isTrue(); // GH-90000
             assertThat(ToolExecutionStatus.APPROVAL_PENDING.isBlocked()).isTrue(); // GH-90000
@@ -49,7 +49,7 @@ class ToolExecutionResultTest {
         }
 
         @Test
-        @DisplayName("5 canonical status values defined [GH-90000]")
+        @DisplayName("5 canonical status values defined")
         void fiveValues() { // GH-90000
             assertThat(ToolExecutionStatus.values()).hasSize(5); // GH-90000
         }
@@ -58,11 +58,11 @@ class ToolExecutionResultTest {
     // ─── ToolExecutionEnvelope ─────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("ToolExecutionEnvelope [GH-90000]")
+    @DisplayName("ToolExecutionEnvelope")
     class EnvelopeTests {
 
         @Test
-        @DisplayName("envelope created with all required fields [GH-90000]")
+        @DisplayName("envelope created with all required fields")
         void envelopeCreation() { // GH-90000
             Instant now = Instant.now(); // GH-90000
             ToolExecutionEnvelope envelope = new ToolExecutionEnvelope( // GH-90000
@@ -71,16 +71,16 @@ class ToolExecutionResultTest {
                     ActionClass.READ, "1.0",
                     Map.of("query", "foo"), now); // GH-90000
 
-            assertThat(envelope.invocationId()).isEqualTo("inv-001 [GH-90000]");
-            assertThat(envelope.toolId()).isEqualTo("tool-a [GH-90000]");
-            assertThat(envelope.callerAgentId()).isEqualTo("agent-x [GH-90000]");
-            assertThat(envelope.tenantId()).isEqualTo("tenant-1 [GH-90000]");
+            assertThat(envelope.invocationId()).isEqualTo("inv-001");
+            assertThat(envelope.toolId()).isEqualTo("tool-a");
+            assertThat(envelope.callerAgentId()).isEqualTo("agent-x");
+            assertThat(envelope.tenantId()).isEqualTo("tenant-1");
             assertThat(envelope.actionClass()).isEqualTo(ActionClass.READ); // GH-90000
             assertThat(envelope.input()).containsEntry("query", "foo"); // GH-90000
         }
 
         @Test
-        @DisplayName("of() factory creates envelope with generated invocationId [GH-90000]")
+        @DisplayName("of() factory creates envelope with generated invocationId")
         void factoryGeneratesId() { // GH-90000
             ToolExecutionEnvelope e1 = ToolExecutionEnvelope.of( // GH-90000
                     "tool-a", "1.0.0", "agent-x", null, "tenant-1",
@@ -95,7 +95,7 @@ class ToolExecutionResultTest {
         }
 
         @Test
-        @DisplayName("null tenantId throws NullPointerException [GH-90000]")
+        @DisplayName("null tenantId throws NullPointerException")
         void nullTenantIdThrows() { // GH-90000
             assertThatThrownBy(() -> new ToolExecutionEnvelope( // GH-90000
                     "inv-001", "tool-a", "1.0.0", "agent-x", null, null,
@@ -104,17 +104,17 @@ class ToolExecutionResultTest {
         }
 
         @Test
-        @DisplayName("blank callerAgentId throws IllegalArgumentException [GH-90000]")
+        @DisplayName("blank callerAgentId throws IllegalArgumentException")
         void blankAgentIdThrows() { // GH-90000
             assertThatThrownBy(() -> new ToolExecutionEnvelope( // GH-90000
                     "inv-001", "tool-a", "1.0.0", "  ", null, "tenant-1",
                     ActionClass.READ, "1.0", Map.of(), Instant.now())) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("callerAgentId [GH-90000]");
+                    .hasMessageContaining("callerAgentId");
         }
 
         @Test
-        @DisplayName("input map is unmodifiable after construction [GH-90000]")
+        @DisplayName("input map is unmodifiable after construction")
         void inputMapImmutable() { // GH-90000
             Map<String, Object> mutable = new java.util.HashMap<>(); // GH-90000
             mutable.put("key", "value"); // GH-90000
@@ -127,7 +127,7 @@ class ToolExecutionResultTest {
         }
 
         @Test
-        @DisplayName("null input defaults to empty map [GH-90000]")
+        @DisplayName("null input defaults to empty map")
         void nullInputDefaultsToEmpty() { // GH-90000
             ToolExecutionEnvelope envelope = new ToolExecutionEnvelope( // GH-90000
                     "inv-001", "tool-a", "1.0.0", "agent-x", null, "tenant-1",
@@ -139,64 +139,64 @@ class ToolExecutionResultTest {
     // ─── ToolExecutionResult ──────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("ToolExecutionResult [GH-90000]")
+    @DisplayName("ToolExecutionResult")
     class ResultTests {
 
-        private static final Instant NOW = Instant.parse("2026-04-10T12:00:00Z [GH-90000]");
+        private static final Instant NOW = Instant.parse("2026-04-10T12:00:00Z");
 
         @Test
-        @DisplayName("succeeded factory produces SUCCESS with ALLOW policy [GH-90000]")
+        @DisplayName("succeeded factory produces SUCCESS with ALLOW policy")
         void succeededFactory() { // GH-90000
             ToolExecutionResult result = ToolExecutionResult.succeeded( // GH-90000
                     "inv-001", "output-value", Map.of("records", 3), // GH-90000
                     "corr-abc", NOW, Duration.ofMillis(150)); // GH-90000
 
             assertThat(result.status()).isEqualTo(ToolExecutionStatus.SUCCESS); // GH-90000
-            assertThat(result.output()).isEqualTo("output-value [GH-90000]");
-            assertThat(result.policyDecision()).isEqualTo("ALLOW [GH-90000]");
-            assertThat(result.approvalDecision()).isEqualTo("N/A [GH-90000]");
+            assertThat(result.output()).isEqualTo("output-value");
+            assertThat(result.policyDecision()).isEqualTo("ALLOW");
+            assertThat(result.approvalDecision()).isEqualTo("N/A");
             assertThat(result.errorMessage()).isNull(); // GH-90000
             assertThat(result.sideEffectSummary()).containsEntry("records", 3); // GH-90000
             assertThat(result.executionDuration()).isEqualTo(Duration.ofMillis(150)); // GH-90000
         }
 
         @Test
-        @DisplayName("denied factory produces DENIED with DENY policy [GH-90000]")
+        @DisplayName("denied factory produces DENIED with DENY policy")
         void deniedFactory() { // GH-90000
             ToolExecutionResult result = ToolExecutionResult.denied( // GH-90000
                     "inv-002", "policy rule X violated", NOW);
 
             assertThat(result.status()).isEqualTo(ToolExecutionStatus.DENIED); // GH-90000
             assertThat(result.output()).isNull(); // GH-90000
-            assertThat(result.policyDecision()).isEqualTo("DENY [GH-90000]");
-            assertThat(result.errorMessage()).isEqualTo("policy rule X violated [GH-90000]");
+            assertThat(result.policyDecision()).isEqualTo("DENY");
+            assertThat(result.errorMessage()).isEqualTo("policy rule X violated");
             assertThat(result.executionDuration()).isEqualTo(Duration.ZERO); // GH-90000
         }
 
         @Test
-        @DisplayName("failed factory produces FAILED with error message [GH-90000]")
+        @DisplayName("failed factory produces FAILED with error message")
         void failedFactory() { // GH-90000
             ToolExecutionResult result = ToolExecutionResult.failed( // GH-90000
                     "inv-003", "connection timeout", "corr-xyz", NOW, Duration.ofMillis(500)); // GH-90000
 
             assertThat(result.status()).isEqualTo(ToolExecutionStatus.FAILED); // GH-90000
-            assertThat(result.errorMessage()).isEqualTo("connection timeout [GH-90000]");
-            assertThat(result.correlationId()).isEqualTo("corr-xyz [GH-90000]");
+            assertThat(result.errorMessage()).isEqualTo("connection timeout");
+            assertThat(result.correlationId()).isEqualTo("corr-xyz");
         }
 
         @Test
-        @DisplayName("pendingApproval factory produces APPROVAL_PENDING with CONDITIONAL policy [GH-90000]")
+        @DisplayName("pendingApproval factory produces APPROVAL_PENDING with CONDITIONAL policy")
         void pendingApprovalFactory() { // GH-90000
             ToolExecutionResult result = ToolExecutionResult.pendingApproval("inv-004", NOW); // GH-90000
 
             assertThat(result.status()).isEqualTo(ToolExecutionStatus.APPROVAL_PENDING); // GH-90000
-            assertThat(result.policyDecision()).isEqualTo("CONDITIONAL [GH-90000]");
-            assertThat(result.approvalDecision()).isEqualTo("PENDING [GH-90000]");
+            assertThat(result.policyDecision()).isEqualTo("CONDITIONAL");
+            assertThat(result.approvalDecision()).isEqualTo("PENDING");
             assertThat(result.output()).isNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("null invocationId throws NullPointerException [GH-90000]")
+        @DisplayName("null invocationId throws NullPointerException")
         void nullInvocationIdThrows() { // GH-90000
             assertThatThrownBy(() -> new ToolExecutionResult( // GH-90000
                     null, ToolExecutionStatus.SUCCESS, null, "ALLOW", "N/A",
@@ -205,7 +205,7 @@ class ToolExecutionResultTest {
         }
 
         @Test
-        @DisplayName("sideEffectSummary is unmodifiable after construction [GH-90000]")
+        @DisplayName("sideEffectSummary is unmodifiable after construction")
         void sideEffectSummaryImmutable() { // GH-90000
             Map<String, Object> mutableEffects = new java.util.HashMap<>(); // GH-90000
             mutableEffects.put("records", 5); // GH-90000
@@ -218,7 +218,7 @@ class ToolExecutionResultTest {
         }
 
         @Test
-        @DisplayName("null sideEffectSummary defaults to empty map [GH-90000]")
+        @DisplayName("null sideEffectSummary defaults to empty map")
         void nullSideEffectsDefaultsToEmpty() { // GH-90000
             ToolExecutionResult result = new ToolExecutionResult( // GH-90000
                     "inv-001", ToolExecutionStatus.SUCCESS, null,

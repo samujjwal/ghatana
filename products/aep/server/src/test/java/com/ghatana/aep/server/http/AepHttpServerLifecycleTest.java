@@ -39,7 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AepHttpServer – Lifecycle Endpoints [GH-90000]")
+@DisplayName("AepHttpServer – Lifecycle Endpoints")
 class AepHttpServerLifecycleTest {
 
     private AepEngine engine;
@@ -64,11 +64,11 @@ class AepHttpServerLifecycleTest {
     // ==================== POST /lifecycle/changes ====================
 
     @Nested
-    @DisplayName("POST /lifecycle/changes [GH-90000]")
+    @DisplayName("POST /lifecycle/changes")
     class SubmitChangeTests {
 
         @Test
-        @DisplayName("low-risk change (FEATURE_FLAG, risk=20) is auto-approved immediately [GH-90000]")
+        @DisplayName("low-risk change (FEATURE_FLAG, risk=20) is auto-approved immediately")
         void autoApprovesLowRiskChange() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -83,17 +83,17 @@ class AepHttpServerLifecycleTest {
                 )));
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
 
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("tenantId [GH-90000]")).isEqualTo("tenant-1 [GH-90000]");
-            assertThat(body.get("changeType [GH-90000]")).isEqualTo("FEATURE_FLAG [GH-90000]");
-            assertThat(body.get("status [GH-90000]")).isEqualTo("APPROVED [GH-90000]");
-            assertThat(body).containsKey("changeId [GH-90000]");
-            assertThat(body).containsKey("riskScore [GH-90000]");
+            assertThat(body.get("tenantId")).isEqualTo("tenant-1");
+            assertThat(body.get("changeType")).isEqualTo("FEATURE_FLAG");
+            assertThat(body.get("status")).isEqualTo("APPROVED");
+            assertThat(body).containsKey("changeId");
+            assertThat(body).containsKey("riskScore");
         }
 
         @Test
-        @DisplayName("high-risk change (AGENT_DEPLOYMENT, risk=65) enters PENDING_REVIEW [GH-90000]")
+        @DisplayName("high-risk change (AGENT_DEPLOYMENT, risk=65) enters PENDING_REVIEW")
         void highRiskChangePendingReview() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -108,14 +108,14 @@ class AepHttpServerLifecycleTest {
                 )));
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
 
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("status [GH-90000]")).isEqualTo("PENDING_REVIEW [GH-90000]");
-            assertThat(body).containsKey("changeId [GH-90000]");
+            assertThat(body.get("status")).isEqualTo("PENDING_REVIEW");
+            assertThat(body).containsKey("changeId");
         }
 
         @Test
-        @DisplayName("returns 400 when required fields are missing [GH-90000]")
+        @DisplayName("returns 400 when required fields are missing")
         void returns400WhenFieldsMissing() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -131,7 +131,7 @@ class AepHttpServerLifecycleTest {
         }
 
         @Test
-        @DisplayName("returns 400 for unknown changeType [GH-90000]")
+        @DisplayName("returns 400 for unknown changeType")
         void returns400ForUnknownChangeType() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -151,11 +151,11 @@ class AepHttpServerLifecycleTest {
     // ==================== GET /lifecycle/changes ====================
 
     @Nested
-    @DisplayName("GET /lifecycle/changes [GH-90000]")
+    @DisplayName("GET /lifecycle/changes")
     class ListPendingChangesTests {
 
         @Test
-        @DisplayName("returns pending changes list for a tenant [GH-90000]")
+        @DisplayName("returns pending changes list for a tenant")
         void returnsPendingChanges() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -170,28 +170,28 @@ class AepHttpServerLifecycleTest {
                     "description", "Deploy summarizer"
                 )));
 
-            HttpResponse<String> resp = get("/lifecycle/changes?tenantId=tenant-1 [GH-90000]");
+            HttpResponse<String> resp = get("/lifecycle/changes?tenantId=tenant-1");
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
 
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("tenantId [GH-90000]")).isEqualTo("tenant-1 [GH-90000]");
-            assertThat(body).containsKey("pending [GH-90000]");
-            assertThat(body).containsKey("count [GH-90000]");
+            assertThat(body.get("tenantId")).isEqualTo("tenant-1");
+            assertThat(body).containsKey("pending");
+            assertThat(body).containsKey("count");
 
-            @SuppressWarnings("unchecked [GH-90000]")
-            List<Object> pending = (List<Object>) body.get("pending [GH-90000]");
+            @SuppressWarnings("unchecked")
+            List<Object> pending = (List<Object>) body.get("pending");
             assertThat(pending).isNotEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("returns 400 when tenantId is missing [GH-90000]")
+        @DisplayName("returns 400 when tenantId is missing")
         void returns400WhenTenantIdMissing() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
-            HttpResponse<String> resp = get("/lifecycle/changes [GH-90000]");
+            HttpResponse<String> resp = get("/lifecycle/changes");
             assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
         }
     }
@@ -199,11 +199,11 @@ class AepHttpServerLifecycleTest {
     // ==================== GET /lifecycle/changes/:changeId ====================
 
     @Nested
-    @DisplayName("GET /lifecycle/changes/:changeId [GH-90000]")
+    @DisplayName("GET /lifecycle/changes/:changeId")
     class GetChangeTests {
 
         @Test
-        @DisplayName("returns 200 with change details for existing changeId [GH-90000]")
+        @DisplayName("returns 200 with change details for existing changeId")
         void returnsExistingChange() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -216,7 +216,7 @@ class AepHttpServerLifecycleTest {
                     "changeType", "CONFIG_CHANGE",
                     "description", "Update rate limit"
                 )));
-            String changeId = (String) mapper.readValue(submitResp.body(), Map.class).get("changeId [GH-90000]");
+            String changeId = (String) mapper.readValue(submitResp.body(), Map.class).get("changeId");
 
             HttpResponse<String> resp = get("/lifecycle/changes/" + changeId); // GH-90000
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
@@ -225,18 +225,18 @@ class AepHttpServerLifecycleTest {
                 resp.body(), // GH-90000
                 new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {} // GH-90000
             );
-            assertThat(body.get("changeId [GH-90000]")).isEqualTo(changeId);
-            assertThat(body.get("tenantId [GH-90000]")).isEqualTo("tenant-1 [GH-90000]");
+            assertThat(body.get("changeId")).isEqualTo(changeId);
+            assertThat(body.get("tenantId")).isEqualTo("tenant-1");
         }
 
         @Test
-        @DisplayName("returns 404 for non-existent changeId [GH-90000]")
+        @DisplayName("returns 404 for non-existent changeId")
         void returns404ForMissingChange() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
-            HttpResponse<String> resp = get("/lifecycle/changes/non-existent-change-id [GH-90000]");
+            HttpResponse<String> resp = get("/lifecycle/changes/non-existent-change-id");
             assertThat(resp.statusCode()).isEqualTo(404); // GH-90000
         }
     }
@@ -244,11 +244,11 @@ class AepHttpServerLifecycleTest {
     // ==================== POST /lifecycle/changes/:changeId/approve ====================
 
     @Nested
-    @DisplayName("POST /lifecycle/changes/:changeId/approve [GH-90000]")
+    @DisplayName("POST /lifecycle/changes/:changeId/approve")
     class ApproveChangeTests {
 
         @Test
-        @DisplayName("approves a PENDING_REVIEW change, returns APPROVED status with reviewerId [GH-90000]")
+        @DisplayName("approves a PENDING_REVIEW change, returns APPROVED status with reviewerId")
         void approvesPendingChange() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -261,7 +261,7 @@ class AepHttpServerLifecycleTest {
                     "changeType", "AGENT_DEPLOYMENT",
                     "description", "Deploy audit agent"
                 )));
-            String changeId = (String) mapper.readValue(submitResp.body(), Map.class).get("changeId [GH-90000]");
+            String changeId = (String) mapper.readValue(submitResp.body(), Map.class).get("changeId");
 
             HttpResponse<String> resp = post("/lifecycle/changes/" + changeId + "/approve", // GH-90000
                 mapper.writeValueAsString(Map.of( // GH-90000
@@ -274,12 +274,12 @@ class AepHttpServerLifecycleTest {
                 resp.body(), // GH-90000
                 new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {} // GH-90000
             );
-            assertThat(body.get("status [GH-90000]")).isEqualTo("APPROVED [GH-90000]");
-            assertThat(body.get("reviewerId [GH-90000]")).isEqualTo("reviewer-001 [GH-90000]");
+            assertThat(body.get("status")).isEqualTo("APPROVED");
+            assertThat(body.get("reviewerId")).isEqualTo("reviewer-001");
         }
 
         @Test
-        @DisplayName("returns 400 when reviewerId is missing [GH-90000]")
+        @DisplayName("returns 400 when reviewerId is missing")
         void returns400WhenReviewerIdMissing() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -292,7 +292,7 @@ class AepHttpServerLifecycleTest {
                     "changeType", "AGENT_DEPLOYMENT",
                     "description", "deploy"
                 )));
-            String changeId = (String) mapper.readValue(submitResp.body(), Map.class).get("changeId [GH-90000]");
+            String changeId = (String) mapper.readValue(submitResp.body(), Map.class).get("changeId");
 
             HttpResponse<String> resp = post("/lifecycle/changes/" + changeId + "/approve", // GH-90000
                 mapper.writeValueAsString(Map.of())); // GH-90000
@@ -300,7 +300,7 @@ class AepHttpServerLifecycleTest {
         }
 
         @Test
-        @DisplayName("returns 409 when change is already in a terminal state [GH-90000]")
+        @DisplayName("returns 409 when change is already in a terminal state")
         void returns409WhenAlreadyApproved() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -314,7 +314,7 @@ class AepHttpServerLifecycleTest {
                     "changeType", "FEATURE_FLAG",
                     "description", "enable dark mode"
                 )));
-            String changeId = (String) mapper.readValue(submitResp.body(), Map.class).get("changeId [GH-90000]");
+            String changeId = (String) mapper.readValue(submitResp.body(), Map.class).get("changeId");
 
             // Attempting to approve an already-APPROVED change → 409
             HttpResponse<String> resp = post("/lifecycle/changes/" + changeId + "/approve", // GH-90000
@@ -323,7 +323,7 @@ class AepHttpServerLifecycleTest {
         }
 
         @Test
-        @DisplayName("returns 404 for non-existent changeId [GH-90000]")
+        @DisplayName("returns 404 for non-existent changeId")
         void returns404ForMissingChange() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -338,11 +338,11 @@ class AepHttpServerLifecycleTest {
     // ==================== POST /lifecycle/changes/:changeId/reject ====================
 
     @Nested
-    @DisplayName("POST /lifecycle/changes/:changeId/reject [GH-90000]")
+    @DisplayName("POST /lifecycle/changes/:changeId/reject")
     class RejectChangeTests {
 
         @Test
-        @DisplayName("rejects a PENDING_REVIEW change, returns REJECTED status [GH-90000]")
+        @DisplayName("rejects a PENDING_REVIEW change, returns REJECTED status")
         void rejectsPendingChange() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -355,7 +355,7 @@ class AepHttpServerLifecycleTest {
                     "changeType", "PERMISSION_GRANT",
                     "description", "Grant elevated read access"
                 )));
-            String changeId = (String) mapper.readValue(submitResp.body(), Map.class).get("changeId [GH-90000]");
+            String changeId = (String) mapper.readValue(submitResp.body(), Map.class).get("changeId");
 
             HttpResponse<String> resp = post("/lifecycle/changes/" + changeId + "/reject", // GH-90000
                 mapper.writeValueAsString(Map.of( // GH-90000
@@ -368,11 +368,11 @@ class AepHttpServerLifecycleTest {
                 resp.body(), // GH-90000
                 new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {} // GH-90000
             );
-            assertThat(body.get("status [GH-90000]")).isEqualTo("REJECTED [GH-90000]");
+            assertThat(body.get("status")).isEqualTo("REJECTED");
         }
 
         @Test
-        @DisplayName("returns 400 when reason is missing [GH-90000]")
+        @DisplayName("returns 400 when reason is missing")
         void returns400WhenReasonMissing() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -385,7 +385,7 @@ class AepHttpServerLifecycleTest {
                     "changeType", "PERMISSION_GRANT",
                     "description", "grant elevated read"
                 )));
-            String changeId = (String) mapper.readValue(submitResp.body(), Map.class).get("changeId [GH-90000]");
+            String changeId = (String) mapper.readValue(submitResp.body(), Map.class).get("changeId");
 
             HttpResponse<String> resp = post("/lifecycle/changes/" + changeId + "/reject", // GH-90000
                 mapper.writeValueAsString(Map.of("reviewerId", "reviewer-1"))); // GH-90000
@@ -396,11 +396,11 @@ class AepHttpServerLifecycleTest {
     // ==================== POST /lifecycle/changes/:changeId/withdraw ====================
 
     @Nested
-    @DisplayName("POST /lifecycle/changes/:changeId/withdraw [GH-90000]")
+    @DisplayName("POST /lifecycle/changes/:changeId/withdraw")
     class WithdrawChangeTests {
 
         @Test
-        @DisplayName("withdraws a PENDING_REVIEW change, returns WITHDRAWN status [GH-90000]")
+        @DisplayName("withdraws a PENDING_REVIEW change, returns WITHDRAWN status")
         void withdrawsPendingChange() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -414,7 +414,7 @@ class AepHttpServerLifecycleTest {
                     "changeType", "TOOL_REGISTRATION",
                     "description", "Register new search tool"
                 )));
-            String changeId = (String) mapper.readValue(submitResp.body(), Map.class).get("changeId [GH-90000]");
+            String changeId = (String) mapper.readValue(submitResp.body(), Map.class).get("changeId");
 
             HttpResponse<String> resp = post("/lifecycle/changes/" + changeId + "/withdraw", "{}"); // GH-90000
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
@@ -423,11 +423,11 @@ class AepHttpServerLifecycleTest {
                 resp.body(), // GH-90000
                 new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {} // GH-90000
             );
-            assertThat(body.get("status [GH-90000]")).isEqualTo("WITHDRAWN [GH-90000]");
+            assertThat(body.get("status")).isEqualTo("WITHDRAWN");
         }
 
         @Test
-        @DisplayName("returns 409 when withdrawing an already-approved change [GH-90000]")
+        @DisplayName("returns 409 when withdrawing an already-approved change")
         void returns409WhenWithdrawingApproved() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -441,7 +441,7 @@ class AepHttpServerLifecycleTest {
                     "changeType", "FEATURE_FLAG",
                     "description", "some feature flag"
                 )));
-            String changeId = (String) mapper.readValue(submitResp.body(), Map.class).get("changeId [GH-90000]");
+            String changeId = (String) mapper.readValue(submitResp.body(), Map.class).get("changeId");
 
             HttpResponse<String> resp = post("/lifecycle/changes/" + changeId + "/withdraw", "{}"); // GH-90000
             assertThat(resp.statusCode()).isEqualTo(409); // GH-90000
@@ -451,11 +451,11 @@ class AepHttpServerLifecycleTest {
     // ==================== POST /lifecycle/recertification/campaigns ====================
 
     @Nested
-    @DisplayName("POST /lifecycle/recertification/campaigns [GH-90000]")
+    @DisplayName("POST /lifecycle/recertification/campaigns")
     class CreateCampaignTests {
 
         @Test
-        @DisplayName("creates a campaign and returns campaign details with items pre-populated [GH-90000]")
+        @DisplayName("creates a campaign and returns campaign details with items pre-populated")
         void createsCampaign() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -473,15 +473,15 @@ class AepHttpServerLifecycleTest {
                 resp.body(), // GH-90000
                 new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {} // GH-90000
             );
-            assertThat(body.get("tenantId [GH-90000]")).isEqualTo("tenant-1 [GH-90000]");
-            assertThat(body.get("campaignName [GH-90000]")).isEqualTo("Q1 Policy Review [GH-90000]");
-            assertThat(body.get("scope [GH-90000]")).isEqualTo("POLICIES [GH-90000]");
-            assertThat(body).containsKey("campaignId [GH-90000]");
-            assertThat((int) body.get("totalItems [GH-90000]")).isGreaterThanOrEqualTo(1);
+            assertThat(body.get("tenantId")).isEqualTo("tenant-1");
+            assertThat(body.get("campaignName")).isEqualTo("Q1 Policy Review");
+            assertThat(body.get("scope")).isEqualTo("POLICIES");
+            assertThat(body).containsKey("campaignId");
+            assertThat((int) body.get("totalItems")).isGreaterThanOrEqualTo(1);
         }
 
         @Test
-        @DisplayName("returns 400 when required fields are missing [GH-90000]")
+        @DisplayName("returns 400 when required fields are missing")
         void returns400WhenFieldsMissing() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -493,7 +493,7 @@ class AepHttpServerLifecycleTest {
         }
 
         @Test
-        @DisplayName("returns 400 for unknown scope [GH-90000]")
+        @DisplayName("returns 400 for unknown scope")
         void returns400ForUnknownScope() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -512,11 +512,11 @@ class AepHttpServerLifecycleTest {
     // ==================== GET /lifecycle/recertification/campaigns ====================
 
     @Nested
-    @DisplayName("GET /lifecycle/recertification/campaigns [GH-90000]")
+    @DisplayName("GET /lifecycle/recertification/campaigns")
     class ListCampaignsTests {
 
         @Test
-        @DisplayName("lists all campaigns for a tenant [GH-90000]")
+        @DisplayName("lists all campaigns for a tenant")
         void listsCampaigns() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -529,30 +529,30 @@ class AepHttpServerLifecycleTest {
                     "scope", "AGENT_PERMISSIONS"
                 )));
 
-            HttpResponse<String> resp = get("/lifecycle/recertification/campaigns?tenantId=tenant-1 [GH-90000]");
+            HttpResponse<String> resp = get("/lifecycle/recertification/campaigns?tenantId=tenant-1");
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
 
             Map<String, Object> body = mapper.readValue( // GH-90000
                 resp.body(), // GH-90000
                 new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {} // GH-90000
             );
-            assertThat(body.get("tenantId [GH-90000]")).isEqualTo("tenant-1 [GH-90000]");
-            assertThat(body).containsKey("campaigns [GH-90000]");
-            assertThat(body).containsKey("count [GH-90000]");
+            assertThat(body.get("tenantId")).isEqualTo("tenant-1");
+            assertThat(body).containsKey("campaigns");
+            assertThat(body).containsKey("count");
 
-            @SuppressWarnings("unchecked [GH-90000]")
-            List<Object> campaigns = (List<Object>) body.get("campaigns [GH-90000]");
+            @SuppressWarnings("unchecked")
+            List<Object> campaigns = (List<Object>) body.get("campaigns");
             assertThat(campaigns).isNotEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("returns 400 when tenantId is missing [GH-90000]")
+        @DisplayName("returns 400 when tenantId is missing")
         void returns400WhenTenantIdMissing() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
-            HttpResponse<String> resp = get("/lifecycle/recertification/campaigns [GH-90000]");
+            HttpResponse<String> resp = get("/lifecycle/recertification/campaigns");
             assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
         }
     }
@@ -560,11 +560,11 @@ class AepHttpServerLifecycleTest {
     // ==================== GET /lifecycle/recertification/campaigns/:campaignId ====================
 
     @Nested
-    @DisplayName("GET /lifecycle/recertification/campaigns/:campaignId [GH-90000]")
+    @DisplayName("GET /lifecycle/recertification/campaigns/:campaignId")
     class GetCampaignTests {
 
         @Test
-        @DisplayName("returns 200 with campaign details for existing campaignId [GH-90000]")
+        @DisplayName("returns 200 with campaign details for existing campaignId")
         void returnsExistingCampaign() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -576,7 +576,7 @@ class AepHttpServerLifecycleTest {
                     "campaignName", "Tool Review",
                     "scope", "TOOL_REGISTRATIONS"
                 )));
-            String campaignId = (String) mapper.readValue(createResp.body(), Map.class).get("campaignId [GH-90000]");
+            String campaignId = (String) mapper.readValue(createResp.body(), Map.class).get("campaignId");
 
             HttpResponse<String> resp = get("/lifecycle/recertification/campaigns/" + campaignId); // GH-90000
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
@@ -585,19 +585,19 @@ class AepHttpServerLifecycleTest {
                 resp.body(), // GH-90000
                 new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {} // GH-90000
             );
-            assertThat(body.get("campaignId [GH-90000]")).isEqualTo(campaignId);
-            assertThat(body.get("scope [GH-90000]")).isEqualTo("TOOL_REGISTRATIONS [GH-90000]");
+            assertThat(body.get("campaignId")).isEqualTo(campaignId);
+            assertThat(body.get("scope")).isEqualTo("TOOL_REGISTRATIONS");
         }
 
         @Test
-        @DisplayName("returns 404 for non-existent campaignId [GH-90000]")
+        @DisplayName("returns 404 for non-existent campaignId")
         void returns404ForMissingCampaign() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
             HttpResponse<String> resp =
-                get("/lifecycle/recertification/campaigns/no-such-campaign-id [GH-90000]");
+                get("/lifecycle/recertification/campaigns/no-such-campaign-id");
             assertThat(resp.statusCode()).isEqualTo(404); // GH-90000
         }
     }
@@ -605,11 +605,11 @@ class AepHttpServerLifecycleTest {
     // ==================== GET .../campaigns/:campaignId/items ====================
 
     @Nested
-    @DisplayName("GET /lifecycle/recertification/campaigns/:campaignId/items [GH-90000]")
+    @DisplayName("GET /lifecycle/recertification/campaigns/:campaignId/items")
     class GetCampaignItemsTests {
 
         @Test
-        @DisplayName("returns items list for an existing campaign [GH-90000]")
+        @DisplayName("returns items list for an existing campaign")
         void returnsItems() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -622,22 +622,22 @@ class AepHttpServerLifecycleTest {
                 get("/lifecycle/recertification/campaigns/" + campaignId + "/items"); // GH-90000
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
 
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("campaignId [GH-90000]")).isEqualTo(campaignId);
-            assertThat(body).containsKey("items [GH-90000]");
-            assertThat((int) body.get("count [GH-90000]")).isGreaterThanOrEqualTo(1);
+            assertThat(body.get("campaignId")).isEqualTo(campaignId);
+            assertThat(body).containsKey("items");
+            assertThat((int) body.get("count")).isGreaterThanOrEqualTo(1);
         }
 
         @Test
-        @DisplayName("returns 404 for non-existent campaignId [GH-90000]")
+        @DisplayName("returns 404 for non-existent campaignId")
         void returns404ForMissingCampaign() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
             HttpResponse<String> resp =
-                get("/lifecycle/recertification/campaigns/no-such-campaign-id/items [GH-90000]");
+                get("/lifecycle/recertification/campaigns/no-such-campaign-id/items");
             assertThat(resp.statusCode()).isEqualTo(404); // GH-90000
         }
     }
@@ -645,11 +645,11 @@ class AepHttpServerLifecycleTest {
     // ==================== POST .../items/:itemId/certify ====================
 
     @Nested
-    @DisplayName("POST /lifecycle/recertification/campaigns/:campaignId/items/:itemId/certify [GH-90000]")
+    @DisplayName("POST /lifecycle/recertification/campaigns/:campaignId/items/:itemId/certify")
     class CertifyItemTests {
 
         @Test
-        @DisplayName("certifies a PENDING item, returns CERTIFIED decision [GH-90000]")
+        @DisplayName("certifies a PENDING item, returns CERTIFIED decision")
         void certifiesItem() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -664,14 +664,14 @@ class AepHttpServerLifecycleTest {
                 mapper.writeValueAsString(Map.of("certifierId", "compliance-officer-001"))); // GH-90000
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
 
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("decision [GH-90000]")).isEqualTo("CERTIFIED [GH-90000]");
-            assertThat(body.get("certifierId [GH-90000]")).isEqualTo("compliance-officer-001 [GH-90000]");
+            assertThat(body.get("decision")).isEqualTo("CERTIFIED");
+            assertThat(body.get("certifierId")).isEqualTo("compliance-officer-001");
         }
 
         @Test
-        @DisplayName("returns 400 when certifierId is missing [GH-90000]")
+        @DisplayName("returns 400 when certifierId is missing")
         void returns400WhenCertifierIdMissing() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -688,7 +688,7 @@ class AepHttpServerLifecycleTest {
         }
 
         @Test
-        @DisplayName("returns 409 when item has already been reviewed [GH-90000]")
+        @DisplayName("returns 409 when item has already been reviewed")
         void returns409WhenAlreadyReviewed() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -713,11 +713,11 @@ class AepHttpServerLifecycleTest {
     // ==================== POST .../items/:itemId/revoke ====================
 
     @Nested
-    @DisplayName("POST /lifecycle/recertification/campaigns/:campaignId/items/:itemId/revoke [GH-90000]")
+    @DisplayName("POST /lifecycle/recertification/campaigns/:campaignId/items/:itemId/revoke")
     class RevokeItemTests {
 
         @Test
-        @DisplayName("revokes a PENDING item, returns REVOKED decision [GH-90000]")
+        @DisplayName("revokes a PENDING item, returns REVOKED decision")
         void revokesItem() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -735,13 +735,13 @@ class AepHttpServerLifecycleTest {
                 )));
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
 
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("decision [GH-90000]")).isEqualTo("REVOKED [GH-90000]");
+            assertThat(body.get("decision")).isEqualTo("REVOKED");
         }
 
         @Test
-        @DisplayName("returns 400 when reason is missing [GH-90000]")
+        @DisplayName("returns 400 when reason is missing")
         void returns400WhenReasonMissing() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -761,11 +761,11 @@ class AepHttpServerLifecycleTest {
     // ==================== GET .../campaigns/:campaignId/report ====================
 
     @Nested
-    @DisplayName("GET /lifecycle/recertification/campaigns/:campaignId/report [GH-90000]")
+    @DisplayName("GET /lifecycle/recertification/campaigns/:campaignId/report")
     class GenerateReportTests {
 
         @Test
-        @DisplayName("returns audit report with campaign summary and certification rate [GH-90000]")
+        @DisplayName("returns audit report with campaign summary and certification rate")
         void returnsAuditReport() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -777,24 +777,24 @@ class AepHttpServerLifecycleTest {
                 get("/lifecycle/recertification/campaigns/" + campaignId + "/report"); // GH-90000
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
 
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("campaignId [GH-90000]")).isEqualTo(campaignId);
-            assertThat(body.get("tenantId [GH-90000]")).isEqualTo("tenant-1 [GH-90000]");
-            assertThat(body).containsKey("certificationRate [GH-90000]");
-            assertThat(body).containsKey("totalItems [GH-90000]");
-            assertThat(body).containsKey("revokedItems [GH-90000]");
+            assertThat(body.get("campaignId")).isEqualTo(campaignId);
+            assertThat(body.get("tenantId")).isEqualTo("tenant-1");
+            assertThat(body).containsKey("certificationRate");
+            assertThat(body).containsKey("totalItems");
+            assertThat(body).containsKey("revokedItems");
         }
 
         @Test
-        @DisplayName("returns 404 for non-existent campaignId [GH-90000]")
+        @DisplayName("returns 404 for non-existent campaignId")
         void returns404ForMissingCampaign() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
             HttpResponse<String> resp =
-                get("/lifecycle/recertification/campaigns/no-such-campaign-id/report [GH-90000]");
+                get("/lifecycle/recertification/campaigns/no-such-campaign-id/report");
             assertThat(resp.statusCode()).isEqualTo(404); // GH-90000
         }
     }
@@ -810,20 +810,20 @@ class AepHttpServerLifecycleTest {
                 "campaignName", name,
                 "scope", scope
             )));
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-        return (String) body.get("campaignId [GH-90000]");
+        return (String) body.get("campaignId");
     }
 
     /** Retrieves items for a campaign and returns the first item's {@code itemId}. */
     private String getFirstItemId(String campaignId) throws Exception { // GH-90000
         HttpResponse<String> resp =
             get("/lifecycle/recertification/campaigns/" + campaignId + "/items"); // GH-90000
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-        @SuppressWarnings("unchecked [GH-90000]")
-        List<Map<String, Object>> items = (List<Map<String, Object>>) body.get("items [GH-90000]");
-        return (String) items.get(0).get("itemId [GH-90000]");
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> items = (List<Map<String, Object>>) body.get("items");
+        return (String) items.get(0).get("itemId");
     }
 
     private int findFreePort() throws IOException { // GH-90000

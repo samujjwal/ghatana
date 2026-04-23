@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("WhisperTranscriptionEngineTest [GH-90000]")
+@DisplayName("WhisperTranscriptionEngineTest")
 @SuppressWarnings({"removal", "deprecation"}) // GH-90000
 class WhisperTranscriptionEngineTest {
 
@@ -30,30 +30,30 @@ class WhisperTranscriptionEngineTest {
     }
 
     @Test
-    @DisplayName("transcribe throws UnsupportedOperationException with LLM_FALLBACK guidance [GH-90000]")
+    @DisplayName("transcribe throws UnsupportedOperationException with LLM_FALLBACK guidance")
     void transcribeThrowsWithFallbackGuidance() { // GH-90000
         assertThatThrownBy(() -> engine.transcribe(SAMPLE_AUDIO, AudioFormat.PCM, "en")) // GH-90000
             .isInstanceOf(UnsupportedOperationException.class) // GH-90000
-            .hasMessageContaining("LLM_FALLBACK [GH-90000]")
-            .hasMessageContaining("GrpcSttClientAdapter [GH-90000]");
+            .hasMessageContaining("LLM_FALLBACK")
+            .hasMessageContaining("GrpcSttClientAdapter");
     }
 
     @Test
-    @DisplayName("detectLanguage(byte[], format) returns a non-blank language tag [GH-90000]")
+    @DisplayName("detectLanguage(byte[], format) returns a non-blank language tag")
     void detectLanguageMethod() { // GH-90000
         String lang = engine.detectLanguage(SAMPLE_AUDIO, AudioFormat.PCM); // GH-90000
         assertThat(lang).isNotBlank(); // GH-90000
     }
 
     @Test
-    @DisplayName("detectLanguage rejects null audio [GH-90000]")
+    @DisplayName("detectLanguage rejects null audio")
     void nullAudioDataThrows() { // GH-90000
         assertThatThrownBy(() -> engine.detectLanguage(null, AudioFormat.WAV)) // GH-90000
             .isInstanceOf(WhisperTranscriptionEngine.TranscriptionException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("detectLanguage rejects empty audio [GH-90000]")
+    @DisplayName("detectLanguage rejects empty audio")
     void emptyAudioDataThrows() { // GH-90000
         assertThatThrownBy(() -> engine.detectLanguage(new byte[0], AudioFormat.WAV)) // GH-90000
             .isInstanceOf(WhisperTranscriptionEngine.TranscriptionException.class); // GH-90000
@@ -61,13 +61,13 @@ class WhisperTranscriptionEngineTest {
 
 
     @Test
-    @DisplayName("engine reports correct model ID [GH-90000]")
+    @DisplayName("engine reports correct model ID")
     void engineReportsModelId() { // GH-90000
-        assertThat(engine.getModelId()).isEqualTo("whisper-base [GH-90000]");
+        assertThat(engine.getModelId()).isEqualTo("whisper-base");
     }
 
     @Test
-    @DisplayName("engine reports diarization disabled [GH-90000]")
+    @DisplayName("engine reports diarization disabled")
     void engineReportsDiarizationDisabled() { // GH-90000
         assertThat(engine.isDiarizationEnabled()).isFalse(); // GH-90000
     }

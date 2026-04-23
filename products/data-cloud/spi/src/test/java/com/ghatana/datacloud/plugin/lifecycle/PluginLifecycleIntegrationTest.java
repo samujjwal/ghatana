@@ -25,8 +25,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("Plugin Lifecycle Integration Tests [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("Plugin Lifecycle Integration Tests")
+@Tag("integration")
 class PluginLifecycleIntegrationTest extends EventloopTestBase {
 
     // ── Plugin model ──────────────────────────────────────────────────────────
@@ -49,7 +49,7 @@ class PluginLifecycleIntegrationTest extends EventloopTestBase {
     // ── Discovery ─────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("discovered plugins are available in DISCOVERED status [GH-90000]")
+    @DisplayName("discovered plugins are available in DISCOVERED status")
     void discoveredPluginsAvailableInDiscoveredStatus() { // GH-90000
         PluginDescriptor descriptor = new PluginDescriptor( // GH-90000
                 "plugin-csv", "CSV Connector", "1.0.0",
@@ -57,13 +57,13 @@ class PluginLifecycleIntegrationTest extends EventloopTestBase {
 
         manager.discover(descriptor); // GH-90000
 
-        Optional<PluginState> state = manager.getState("plugin-csv [GH-90000]");
+        Optional<PluginState> state = manager.getState("plugin-csv");
         assertThat(state).isPresent(); // GH-90000
         assertThat(state.get().status()).isEqualTo(PluginStatus.DISCOVERED); // GH-90000
     }
 
     @Test
-    @DisplayName("discovering the same plugin twice is idempotent [GH-90000]")
+    @DisplayName("discovering the same plugin twice is idempotent")
     void discoveringSamePluginTwiceIsIdempotent() { // GH-90000
         PluginDescriptor desc = new PluginDescriptor("plugin-idem", "Idem", "1.0", "com.Idem", Map.of()); // GH-90000
         manager.discover(desc); // GH-90000
@@ -75,119 +75,119 @@ class PluginLifecycleIntegrationTest extends EventloopTestBase {
     // ── Installation ──────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("installed plugin transitions from DISCOVERED to INSTALLED [GH-90000]")
+    @DisplayName("installed plugin transitions from DISCOVERED to INSTALLED")
     void installedPluginTransitionsToInstalled() { // GH-90000
         PluginDescriptor desc = new PluginDescriptor("plugin-inst", "Inst", "1.0", "Inst", Map.of()); // GH-90000
         manager.discover(desc); // GH-90000
-        manager.install("plugin-inst [GH-90000]");
+        manager.install("plugin-inst");
 
-        assertThat(manager.getState("plugin-inst [GH-90000]").get().status()).isEqualTo(PluginStatus.INSTALLED);
+        assertThat(manager.getState("plugin-inst").get().status()).isEqualTo(PluginStatus.INSTALLED);
     }
 
     @Test
-    @DisplayName("installing a non-discovered plugin throws an exception [GH-90000]")
+    @DisplayName("installing a non-discovered plugin throws an exception")
     void installingUndiscoveredPluginThrows() { // GH-90000
-        assertThatThrownBy(() -> manager.install("plugin-ghost [GH-90000]"))
+        assertThatThrownBy(() -> manager.install("plugin-ghost"))
                 .isInstanceOf(IllegalStateException.class) // GH-90000
-                .hasMessageContaining("not discovered [GH-90000]");
+                .hasMessageContaining("not discovered");
     }
 
     // ── Activation ────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("activated plugin transitions from INSTALLED to ACTIVE [GH-90000]")
+    @DisplayName("activated plugin transitions from INSTALLED to ACTIVE")
     void activationTransitionsToActive() { // GH-90000
         PluginDescriptor desc = new PluginDescriptor("plugin-act", "Act", "1.0", "Act", Map.of()); // GH-90000
         manager.discover(desc); // GH-90000
-        manager.install("plugin-act [GH-90000]");
-        manager.activate("plugin-act [GH-90000]");
+        manager.install("plugin-act");
+        manager.activate("plugin-act");
 
-        assertThat(manager.getState("plugin-act [GH-90000]").get().status()).isEqualTo(PluginStatus.ACTIVE);
+        assertThat(manager.getState("plugin-act").get().status()).isEqualTo(PluginStatus.ACTIVE);
     }
 
     @Test
-    @DisplayName("activating an uninstalled plugin throws [GH-90000]")
+    @DisplayName("activating an uninstalled plugin throws")
     void activatingUninstalledPluginThrows() { // GH-90000
         PluginDescriptor desc = new PluginDescriptor("plugin-noact", "NoAct", "1.0", "NoAct", Map.of()); // GH-90000
         manager.discover(desc); // GH-90000
 
-        assertThatThrownBy(() -> manager.activate("plugin-noact [GH-90000]"))
+        assertThatThrownBy(() -> manager.activate("plugin-noact"))
                 .isInstanceOf(IllegalStateException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("lifecycle log records each transition in order [GH-90000]")
+    @DisplayName("lifecycle log records each transition in order")
     void lifecycleLogRecordsTransitionsInOrder() { // GH-90000
         PluginDescriptor desc = new PluginDescriptor("plugin-log", "Log", "1.0", "Log", Map.of()); // GH-90000
         manager.discover(desc); // GH-90000
-        manager.install("plugin-log [GH-90000]");
-        manager.activate("plugin-log [GH-90000]");
-        manager.deactivate("plugin-log [GH-90000]");
+        manager.install("plugin-log");
+        manager.activate("plugin-log");
+        manager.deactivate("plugin-log");
 
-        List<String> log = manager.getState("plugin-log [GH-90000]").get().lifecycleLog();
+        List<String> log = manager.getState("plugin-log").get().lifecycleLog();
         assertThat(log).containsExactly("DISCOVERED", "INSTALLED", "ACTIVE", "INACTIVE"); // GH-90000
     }
 
     // ── Deactivation ──────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("deactivated plugin transitions from ACTIVE to INACTIVE [GH-90000]")
+    @DisplayName("deactivated plugin transitions from ACTIVE to INACTIVE")
     void deactivationTransitionsToInactive() { // GH-90000
         PluginDescriptor desc = new PluginDescriptor("plugin-deact", "Deact", "1.0", "Deact", Map.of()); // GH-90000
         manager.discover(desc); // GH-90000
-        manager.install("plugin-deact [GH-90000]");
-        manager.activate("plugin-deact [GH-90000]");
-        manager.deactivate("plugin-deact [GH-90000]");
+        manager.install("plugin-deact");
+        manager.activate("plugin-deact");
+        manager.deactivate("plugin-deact");
 
-        assertThat(manager.getState("plugin-deact [GH-90000]").get().status()).isEqualTo(PluginStatus.INACTIVE);
+        assertThat(manager.getState("plugin-deact").get().status()).isEqualTo(PluginStatus.INACTIVE);
     }
 
     // ── Uninstallation ────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("uninstalled plugin gets removed from the registry [GH-90000]")
+    @DisplayName("uninstalled plugin gets removed from the registry")
     void uninstalledPluginRemovedFromRegistry() { // GH-90000
         PluginDescriptor desc = new PluginDescriptor("plugin-uninst", "Uninst", "1.0", "Uninst", Map.of()); // GH-90000
         manager.discover(desc); // GH-90000
-        manager.install("plugin-uninst [GH-90000]");
-        manager.uninstall("plugin-uninst [GH-90000]");
+        manager.install("plugin-uninst");
+        manager.uninstall("plugin-uninst");
 
-        assertThat(manager.getState("plugin-uninst [GH-90000]").get().status())
+        assertThat(manager.getState("plugin-uninst").get().status())
                 .isEqualTo(PluginStatus.UNINSTALLED); // GH-90000
     }
 
     @Test
-    @DisplayName("active plugin cannot be uninstalled without deactivation [GH-90000]")
+    @DisplayName("active plugin cannot be uninstalled without deactivation")
     void activePluginCannotBeUninstalledDirectly() { // GH-90000
         PluginDescriptor desc = new PluginDescriptor("plugin-blocked", "Blocked", "1.0", "B", Map.of()); // GH-90000
         manager.discover(desc); // GH-90000
-        manager.install("plugin-blocked [GH-90000]");
-        manager.activate("plugin-blocked [GH-90000]");
+        manager.install("plugin-blocked");
+        manager.activate("plugin-blocked");
 
-        assertThatThrownBy(() -> manager.uninstall("plugin-blocked [GH-90000]"))
+        assertThatThrownBy(() -> manager.uninstall("plugin-blocked"))
                 .isInstanceOf(IllegalStateException.class) // GH-90000
-                .hasMessageContaining("active [GH-90000]");
+                .hasMessageContaining("active");
     }
 
     // ── Isolation ─────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("failure in one plugin does not affect lifecycle of other plugins [GH-90000]")
+    @DisplayName("failure in one plugin does not affect lifecycle of other plugins")
     void failureInOnePluginDoesNotAffectOthers() { // GH-90000
         PluginDescriptor healthy = new PluginDescriptor("plugin-ok", "Ok", "1.0", "Ok", Map.of()); // GH-90000
         PluginDescriptor bad = new PluginDescriptor("plugin-bad", "Bad", "1.0", "Bad", Map.of()); // GH-90000
 
         manager.discover(healthy); // GH-90000
         manager.discover(bad); // GH-90000
-        manager.install("plugin-ok [GH-90000]");
-        manager.install("plugin-bad [GH-90000]");
-        manager.activate("plugin-ok [GH-90000]");
+        manager.install("plugin-ok");
+        manager.install("plugin-bad");
+        manager.activate("plugin-ok");
 
         // Activating the bad plugin fails, but the healthy plugin stays ACTIVE
         manager.simulateFault("plugin-bad", "activation_error"); // GH-90000
-        try { manager.activate("plugin-bad [GH-90000]"); } catch (Exception ignored) {}
+        try { manager.activate("plugin-bad"); } catch (Exception ignored) {}
 
-        assertThat(manager.getState("plugin-ok [GH-90000]").get().status()).isEqualTo(PluginStatus.ACTIVE);
+        assertThat(manager.getState("plugin-ok").get().status()).isEqualTo(PluginStatus.ACTIVE);
     }
 
     // ── Plugin manager implementation (for tests) ───────────────────────────── // GH-90000
@@ -199,7 +199,7 @@ class PluginLifecycleIntegrationTest extends EventloopTestBase {
         void discover(PluginDescriptor descriptor) { // GH-90000
             registry.computeIfAbsent(descriptor.pluginId(), k -> { // GH-90000
                 List<String> log = new CopyOnWriteArrayList<>(); // GH-90000
-                log.add("DISCOVERED [GH-90000]");
+                log.add("DISCOVERED");
                 return new PluginState(descriptor, PluginStatus.DISCOVERED, log); // GH-90000
             });
         }
@@ -207,7 +207,7 @@ class PluginLifecycleIntegrationTest extends EventloopTestBase {
         void install(String pluginId) { // GH-90000
             PluginState state = registry.get(pluginId); // GH-90000
             if (state == null || state.status() != PluginStatus.DISCOVERED) { // GH-90000
-                throw new IllegalStateException("Plugin not discovered [GH-90000]");
+                throw new IllegalStateException("Plugin not discovered");
             }
             transition(pluginId, PluginStatus.INSTALLED, "INSTALLED"); // GH-90000
         }
@@ -230,7 +230,7 @@ class PluginLifecycleIntegrationTest extends EventloopTestBase {
         void uninstall(String pluginId) { // GH-90000
             PluginState state = requireState(pluginId); // GH-90000
             if (state.status() == PluginStatus.ACTIVE) { // GH-90000
-                throw new IllegalStateException("Cannot uninstall an active plugin [GH-90000]");
+                throw new IllegalStateException("Cannot uninstall an active plugin");
             }
             transition(pluginId, PluginStatus.UNINSTALLED, "UNINSTALLED"); // GH-90000
         }

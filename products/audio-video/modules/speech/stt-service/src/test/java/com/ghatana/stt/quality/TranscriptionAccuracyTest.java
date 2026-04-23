@@ -25,8 +25,8 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("TranscriptionAccuracyTest [GH-90000]")
-@Disabled("WhisperTranscriptionEngine not yet implemented - all tests throw UnsupportedOperationException [GH-90000]")
+@DisplayName("TranscriptionAccuracyTest")
+@Disabled("WhisperTranscriptionEngine not yet implemented - all tests throw UnsupportedOperationException")
 class TranscriptionAccuracyTest {
 
     private WhisperTranscriptionEngine engine;
@@ -47,7 +47,7 @@ class TranscriptionAccuracyTest {
         "clean_question,       What is the weather like, en",
         "clean_punctuation,    Yes no maybe I do not know, en",
     })
-    @DisplayName("known benchmark fixtures produce non-empty transcription [GH-90000]")
+    @DisplayName("known benchmark fixtures produce non-empty transcription")
     void benchmarkFixturesProduceTranscription(String fixtureId, String expectedPhrase, String language) { // GH-90000
         byte[] audio = makeFixture(fixtureId); // GH-90000
         TranscriptionResult result = engine.transcribe(audio, AudioFormat.WAV, language); // GH-90000
@@ -60,7 +60,7 @@ class TranscriptionAccuracyTest {
     // ── Noise robustness ──────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("noisy audio still produces a transcription [GH-90000]")
+    @DisplayName("noisy audio still produces a transcription")
     void noisyAudioProducesTranscription() { // GH-90000
         byte[] noisy = buildNoisy(256); // GH-90000
         TranscriptionResult result = engine.transcribe(noisy, AudioFormat.WAV, "en"); // GH-90000
@@ -68,7 +68,7 @@ class TranscriptionAccuracyTest {
     }
 
     @Test
-    @DisplayName("noise level does not reduce confidence below 0 [GH-90000]")
+    @DisplayName("noise level does not reduce confidence below 0")
     void noisyAudioConfidenceIsNonNegative() { // GH-90000
         byte[] noisy = buildNoisy(1024); // GH-90000
         TranscriptionResult result = engine.transcribe(noisy, AudioFormat.WAV, "en"); // GH-90000
@@ -76,7 +76,7 @@ class TranscriptionAccuracyTest {
     }
 
     @Test
-    @DisplayName("high-noise audio is processed without throwing [GH-90000]")
+    @DisplayName("high-noise audio is processed without throwing")
     void highNoiseAudioNoException() { // GH-90000
         byte[] noisy = buildNoisy(8192); // GH-90000
         assertThatCode(() -> engine.transcribe(noisy, AudioFormat.WAV, "en")) // GH-90000
@@ -89,7 +89,7 @@ class TranscriptionAccuracyTest {
     @CsvSource({ // GH-90000
         "en-US", "en-GB", "en-AU", "en-IN"
     })
-    @DisplayName("transcription completes for English accent variants [GH-90000]")
+    @DisplayName("transcription completes for English accent variants")
     void accentVariantsComplete(String language) { // GH-90000
         byte[] audio = makeFixture("accent_" + language); // GH-90000
         assertThatCode(() -> engine.transcribe(audio, AudioFormat.WAV, language)) // GH-90000
@@ -99,17 +99,17 @@ class TranscriptionAccuracyTest {
     // ── Multiple speakers ─────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("multi-speaker audio produces diarization segments when enabled [GH-90000]")
+    @DisplayName("multi-speaker audio produces diarization segments when enabled")
     void multiSpeakerProducesSegments() { // GH-90000
-        byte[] audio = makeFixture("multi_speaker_two_persons [GH-90000]");
+        byte[] audio = makeFixture("multi_speaker_two_persons");
         TranscriptionResult result = diarEngine.transcribe(audio, AudioFormat.WAV, "en"); // GH-90000
         assertThat(result.speakerSegments()).isNotEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("each diarization segment has a non-blank speaker ID [GH-90000]")
+    @DisplayName("each diarization segment has a non-blank speaker ID")
     void speakerSegmentsHaveIds() { // GH-90000
-        byte[] audio = makeFixture("multi_speaker_dialog [GH-90000]");
+        byte[] audio = makeFixture("multi_speaker_dialog");
         TranscriptionResult result = diarEngine.transcribe(audio, AudioFormat.WAV, "en"); // GH-90000
         result.speakerSegments().forEach(seg -> // GH-90000
                 assertThat(seg.speakerId()).isNotBlank()); // GH-90000
@@ -118,7 +118,7 @@ class TranscriptionAccuracyTest {
     // ── Background music ──────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("audio with simulated background music is processed without error [GH-90000]")
+    @DisplayName("audio with simulated background music is processed without error")
     void backgroundMusicHandled() { // GH-90000
         byte[] mixed = buildMixed(256); // GH-90000
         assertThatCode(() -> engine.transcribe(mixed, AudioFormat.WAV, "en")) // GH-90000
@@ -126,7 +126,7 @@ class TranscriptionAccuracyTest {
     }
 
     @Test
-    @DisplayName("mixed audio confidence stays within [0, 1] [GH-90000]")
+    @DisplayName("mixed audio confidence stays within [0, 1]")
     void backgroundMusicConfidenceInRange() { // GH-90000
         byte[] mixed = buildMixed(1024); // GH-90000
         TranscriptionResult result = engine.transcribe(mixed, AudioFormat.WAV, "en"); // GH-90000
@@ -144,7 +144,7 @@ class TranscriptionAccuracyTest {
         "OGG, ogg_sample",
         "AAC, aac_sample",
     })
-    @DisplayName("known sample fixture accepted for each format [GH-90000]")
+    @DisplayName("known sample fixture accepted for each format")
     void formatMatrixAccepted(AudioFormat format, String fixtureId) { // GH-90000
         byte[] audio = makeFixture(fixtureId); // GH-90000
         TranscriptionResult result = engine.transcribe(audio, format, "en"); // GH-90000
@@ -155,9 +155,9 @@ class TranscriptionAccuracyTest {
     // ── Processing time ───────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("processing time is always non-negative [GH-90000]")
+    @DisplayName("processing time is always non-negative")
     void processingTimeIsNonNegative() { // GH-90000
-        TranscriptionResult result = engine.transcribe(makeFixture("clean_hello_world [GH-90000]"), AudioFormat.WAV, "en");
+        TranscriptionResult result = engine.transcribe(makeFixture("clean_hello_world"), AudioFormat.WAV, "en");
         assertThat(result.processingTime().isNegative()).isFalse(); // GH-90000
     }
 

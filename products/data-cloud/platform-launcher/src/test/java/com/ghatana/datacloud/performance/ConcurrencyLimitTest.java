@@ -26,7 +26,7 @@ import static org.mockito.Mockito.*;
  * Focus: Thread pool saturation, connection pool limits, ordering, fairness, deadlock detection
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("ConcurrencyLimitTest - DC-F-026 [GH-90000]")
+@DisplayName("ConcurrencyLimitTest - DC-F-026")
 class ConcurrencyLimitTest {
 
     @Mock private ThreadPoolMonitorService threadPoolMonitor;
@@ -41,11 +41,11 @@ class ConcurrencyLimitTest {
     }
 
     @Nested
-    @DisplayName("Thread Pool Exhaustion Scenarios [GH-90000]")
+    @DisplayName("Thread Pool Exhaustion Scenarios")
     class ThreadPoolExhaustionScenarios {
 
         @Test
-        @DisplayName("shouldQueueTasksWhenThreadsMaxed_whenThreadPoolFull_thenWaitList [GH-90000]")
+        @DisplayName("shouldQueueTasksWhenThreadsMaxed_whenThreadPoolFull_thenWaitList")
         void shouldQueueTasksWhenThreadsMaxed_whenThreadPoolFull_thenWaitList() { // GH-90000
             when(threadPoolMonitor.getQueuedTasks()).thenReturn(5000L); // GH-90000
 
@@ -56,7 +56,7 @@ class ConcurrencyLimitTest {
         }
 
         @Test
-        @DisplayName("shouldMeasureThreadPoolUtilization_whenConcurrencyIncreases_thenUtilizationPercent [GH-90000]")
+        @DisplayName("shouldMeasureThreadPoolUtilization_whenConcurrencyIncreases_thenUtilizationPercent")
         void shouldMeasureThreadPoolUtilization_whenConcurrencyIncreases_thenUtilizationPercent() { // GH-90000
             when(threadPoolMonitor.getThreadPoolSize()).thenReturn(1024); // GH-90000
             when(threadPoolMonitor.getActiveThreads()).thenReturn(1024); // GH-90000
@@ -69,7 +69,7 @@ class ConcurrencyLimitTest {
         }
 
         @Test
-        @DisplayName("shouldDetectThreadStarvation_whenHighPriorityTasksWaiting_thenLowPriorityBlocked [GH-90000]")
+        @DisplayName("shouldDetectThreadStarvation_whenHighPriorityTasksWaiting_thenLowPriorityBlocked")
         void shouldDetectThreadStarvation_whenHighPriorityTasksWaiting_thenLowPriorityBlocked() { // GH-90000
             when(threadPoolMonitor.getHighPriorityWaitTime()).thenReturn(5000L); // GH-90000
 
@@ -79,7 +79,7 @@ class ConcurrencyLimitTest {
         }
 
         @Test
-        @DisplayName("shouldPreventThreadLeaks_whenTasksCancel_thenThreadsReturned [GH-90000]")
+        @DisplayName("shouldPreventThreadLeaks_whenTasksCancel_thenThreadsReturned")
         void shouldPreventThreadLeaks_whenTasksCancel_thenThreadsReturned() { // GH-90000
             when(threadPoolMonitor.detectThreadLeaks()).thenReturn(false); // GH-90000
 
@@ -89,7 +89,7 @@ class ConcurrencyLimitTest {
         }
 
         @Test
-        @DisplayName("shouldHandleDeadlock_whenTasksDeadlock_thenDetectionActivated [GH-90000]")
+        @DisplayName("shouldHandleDeadlock_whenTasksDeadlock_thenDetectionActivated")
         void shouldHandleDeadlock_whenTasksDeadlock_thenDetectionActivated() { // GH-90000
             when(raceConditionDetector.detectDeadlock()).thenReturn(true); // GH-90000
 
@@ -99,7 +99,7 @@ class ConcurrencyLimitTest {
         }
 
         @Test
-        @DisplayName("shouldValidateFairnessInQueue_whenThreadPoolFull_thenQueueOrderRespected [GH-90000]")
+        @DisplayName("shouldValidateFairnessInQueue_whenThreadPoolFull_thenQueueOrderRespected")
         void shouldValidateFairnessInQueue_whenThreadPoolFull_thenQueueOrderRespected() { // GH-90000
             when(threadPoolMonitor.validateQueueFairness()).thenReturn(true); // GH-90000
 
@@ -109,7 +109,7 @@ class ConcurrencyLimitTest {
         }
 
         @Test
-        @DisplayName("shouldRecoverWhenThreadPoolRecovers_afterSpike_thenNormalProcessingResumes [GH-90000]")
+        @DisplayName("shouldRecoverWhenThreadPoolRecovers_afterSpike_thenNormalProcessingResumes")
         void shouldRecoverWhenThreadPoolRecovers_afterSpike_thenNormalProcessingResumes() { // GH-90000
             when(threadPoolMonitor.getRecoveryTimeMs()).thenReturn(3000L); // GH-90000
 
@@ -120,11 +120,11 @@ class ConcurrencyLimitTest {
     }
 
     @Nested
-    @DisplayName("Connection Pool Concurrency Limits [GH-90000]")
+    @DisplayName("Connection Pool Concurrency Limits")
     class ConnectionPoolConcurrencyLimits {
 
         @Test
-        @DisplayName("shouldLimitConcurrentConnections_whenMaxConnectionsReached_thenWaitQueue [GH-90000]")
+        @DisplayName("shouldLimitConcurrentConnections_whenMaxConnectionsReached_thenWaitQueue")
         void shouldLimitConcurrentConnections_whenMaxConnectionsReached_thenWaitQueue() { // GH-90000
             when(connectionPoolMonitor.getWaitingRequestCount()).thenReturn(500L); // GH-90000
 
@@ -134,7 +134,7 @@ class ConcurrencyLimitTest {
         }
 
         @Test
-        @DisplayName("shouldMeasureConnectionUtilization_whenConcurrencyIncreases_thenUtilizationPercent [GH-90000]")
+        @DisplayName("shouldMeasureConnectionUtilization_whenConcurrencyIncreases_thenUtilizationPercent")
         void shouldMeasureConnectionUtilization_whenConcurrencyIncreases_thenUtilizationPercent() { // GH-90000
             when(connectionPoolMonitor.getPoolSize()).thenReturn(500); // GH-90000
             when(connectionPoolMonitor.getActiveConnections()).thenReturn(475); // GH-90000
@@ -147,7 +147,7 @@ class ConcurrencyLimitTest {
         }
 
         @Test
-        @DisplayName("shouldDetectConnectionLeaks_whenConnectionsNotReleased_thenLeakDetected [GH-90000]")
+        @DisplayName("shouldDetectConnectionLeaks_whenConnectionsNotReleased_thenLeakDetected")
         void shouldDetectConnectionLeaks_whenConnectionsNotReleased_thenLeakDetected() { // GH-90000
             when(connectionPoolMonitor.detectConnectionLeaks()).thenReturn(true); // GH-90000
 
@@ -157,7 +157,7 @@ class ConcurrencyLimitTest {
         }
 
         @Test
-        @DisplayName("shouldEnforceConnectionIdleTimeout_whenConnectionUnused_thenClosedAndRecycled [GH-90000]")
+        @DisplayName("shouldEnforceConnectionIdleTimeout_whenConnectionUnused_thenClosedAndRecycled")
         void shouldEnforceConnectionIdleTimeout_whenConnectionUnused_thenClosedAndRecycled() { // GH-90000
             when(connectionPoolMonitor.getIdleConnectionCount()).thenReturn(50L); // GH-90000
 
@@ -167,7 +167,7 @@ class ConcurrencyLimitTest {
         }
 
         @Test
-        @DisplayName("shouldHandleConnectionFailure_whenNetworkDown_thenFailoverActivated [GH-90000]")
+        @DisplayName("shouldHandleConnectionFailure_whenNetworkDown_thenFailoverActivated")
         void shouldHandleConnectionFailure_whenNetworkDown_thenFailoverActivated() { // GH-90000
             when(connectionPoolMonitor.isFailoverActive()).thenReturn(true); // GH-90000
 
@@ -177,7 +177,7 @@ class ConcurrencyLimitTest {
         }
 
         @Test
-        @DisplayName("shouldValidateFairnessInConnectionQueue_whenPoolFull_thenRequestOrderRespected [GH-90000]")
+        @DisplayName("shouldValidateFairnessInConnectionQueue_whenPoolFull_thenRequestOrderRespected")
         void shouldValidateFairnessInConnectionQueue_whenPoolFull_thenRequestOrderRespected() { // GH-90000
             when(connectionPoolMonitor.validateQueueFairness()).thenReturn(true); // GH-90000
 
@@ -187,7 +187,7 @@ class ConcurrencyLimitTest {
         }
 
         @Test
-        @DisplayName("shouldScaleConnectionPoolDynamically_whenDemandIncreases_thenPoolGrows [GH-90000]")
+        @DisplayName("shouldScaleConnectionPoolDynamically_whenDemandIncreases_thenPoolGrows")
         void shouldScaleConnectionPoolDynamically_whenDemandIncreases_thenPoolGrows() { // GH-90000
             int sizeBefore = 100;
             int sizeAfter = 150;
@@ -197,11 +197,11 @@ class ConcurrencyLimitTest {
     }
 
     @Nested
-    @DisplayName("Concurrent Request Ordering [GH-90000]")
+    @DisplayName("Concurrent Request Ordering")
     class ConcurrentRequestOrdering {
 
         @Test
-        @DisplayName("shouldPreserveRequestOrder_whenMultipleConcurrentRequests_thenSequencingMaintained [GH-90000]")
+        @DisplayName("shouldPreserveRequestOrder_whenMultipleConcurrentRequests_thenSequencingMaintained")
         void shouldPreserveRequestOrder_whenMultipleConcurrentRequests_thenSequencingMaintained() { // GH-90000
             when(raceConditionDetector.detectOrderingViolations()).thenReturn(false); // GH-90000
 
@@ -211,7 +211,7 @@ class ConcurrencyLimitTest {
         }
 
         @Test
-        @DisplayName("shouldIsolateConcurrentRequests_whenProcessedInParallel_thenNoInterference [GH-90000]")
+        @DisplayName("shouldIsolateConcurrentRequests_whenProcessedInParallel_thenNoInterference")
         void shouldIsolateConcurrentRequests_whenProcessedInParallel_thenNoInterference() { // GH-90000
             when(raceConditionDetector.detectInterference()).thenReturn(false); // GH-90000
 
@@ -221,7 +221,7 @@ class ConcurrencyLimitTest {
         }
 
         @Test
-        @DisplayName("shouldDetectRaceConditions_whenConcurrentAccessOccurs_thenAnomaliesMarked [GH-90000]")
+        @DisplayName("shouldDetectRaceConditions_whenConcurrentAccessOccurs_thenAnomaliesMarked")
         void shouldDetectRaceConditions_whenConcurrentAccessOccurs_thenAnomaliesMarked() { // GH-90000
             when(raceConditionDetector.detectRaceConditions()).thenReturn(5L); // GH-90000
 
@@ -231,7 +231,7 @@ class ConcurrencyLimitTest {
         }
 
         @Test
-        @DisplayName("shouldEnforceExclusivityWhereRequired_whenCriticalSectionAccessed_thenSerializationApplied [GH-90000]")
+        @DisplayName("shouldEnforceExclusivityWhereRequired_whenCriticalSectionAccessed_thenSerializationApplied")
         void shouldEnforceExclusivityWhereRequired_whenCriticalSectionAccessed_thenSerializationApplied() { // GH-90000
             when(raceConditionDetector.validateMutualExclusion()).thenReturn(true); // GH-90000
 
@@ -241,7 +241,7 @@ class ConcurrencyLimitTest {
         }
 
         @Test
-        @DisplayName("shouldDetectDeadlocks_whenCircularWaitsForm_thenDetectionTriggered [GH-90000]")
+        @DisplayName("shouldDetectDeadlocks_whenCircularWaitsForm_thenDetectionTriggered")
         void shouldDetectDeadlocks_whenCircularWaitsForm_thenDetectionTriggered() { // GH-90000
             when(raceConditionDetector.detectDeadlock()).thenReturn(false); // GH-90000
 
@@ -251,7 +251,7 @@ class ConcurrencyLimitTest {
         }
 
         @Test
-        @DisplayName("shouldValidateCausalityPreservation_whenEventsOrdering_thenCausalityRespected [GH-90000]")
+        @DisplayName("shouldValidateCausalityPreservation_whenEventsOrdering_thenCausalityRespected")
         void shouldValidateCausalityPreservation_whenEventsOrdering_thenCausalityRespected() { // GH-90000
             when(raceConditionDetector.validateCausality()).thenReturn(true); // GH-90000
 
@@ -261,7 +261,7 @@ class ConcurrencyLimitTest {
         }
 
         @Test
-        @DisplayName("shouldMeasureConcurrencyLevel_whenMultipleRequestsInFlight_thenConcurrencyCount [GH-90000]")
+        @DisplayName("shouldMeasureConcurrencyLevel_whenMultipleRequestsInFlight_thenConcurrencyCount")
         void shouldMeasureConcurrencyLevel_whenMultipleRequestsInFlight_thenConcurrencyCount() { // GH-90000
             when(threadPoolMonitor.getCurrentConcurrencyLevel()).thenReturn(512); // GH-90000
 
@@ -272,11 +272,11 @@ class ConcurrencyLimitTest {
     }
 
     @Nested
-    @DisplayName("Concurrency Boundary Validation [GH-90000]")
+    @DisplayName("Concurrency Boundary Validation")
     class ConcurrencyBoundaryValidation {
 
         @Test
-        @DisplayName("shouldMeasureMaxConcurrentRequests_whenSystemAtCapacity_thenMaxConcurrency [GH-90000]")
+        @DisplayName("shouldMeasureMaxConcurrentRequests_whenSystemAtCapacity_thenMaxConcurrency")
         void shouldMeasureMaxConcurrentRequests_whenSystemAtCapacity_thenMaxConcurrency() { // GH-90000
             when(threadPoolMonitor.getMaxConcurrency()).thenReturn(2048); // GH-90000
 
@@ -286,9 +286,9 @@ class ConcurrencyLimitTest {
         }
 
         @Test
-        @DisplayName("shouldDetectConcurrencyBottleneck_whenLimitReached_thenIdentified [GH-90000]")
+        @DisplayName("shouldDetectConcurrencyBottleneck_whenLimitReached_thenIdentified")
         void shouldDetectConcurrencyBottleneck_whenLimitReached_thenIdentified() { // GH-90000
-            when(threadPoolMonitor.identifyBottleneck()).thenReturn("ThreadPool [GH-90000]");
+            when(threadPoolMonitor.identifyBottleneck()).thenReturn("ThreadPool");
 
             String bottleneck = threadPoolMonitor.identifyBottleneck(); // GH-90000
 
@@ -296,7 +296,7 @@ class ConcurrencyLimitTest {
         }
 
         @Test
-        @DisplayName("shouldValidateLinearScalingWithConcurrency_untilBottleneckHit_thenPlateaus [GH-90000]")
+        @DisplayName("shouldValidateLinearScalingWithConcurrency_untilBottleneckHit_thenPlateaus")
         void shouldValidateLinearScalingWithConcurrency_untilBottleneckHit_thenPlateaus() { // GH-90000
             long tps256 = 20_000L;
             long tps512 = 38_000L;
@@ -310,7 +310,7 @@ class ConcurrencyLimitTest {
         }
 
         @Test
-        @DisplayName("shouldMaintainConsistency_underHighConcurrency_thenDataCorruptionNone [GH-90000]")
+        @DisplayName("shouldMaintainConsistency_underHighConcurrency_thenDataCorruptionNone")
         void shouldMaintainConsistency_underHighConcurrency_thenDataCorruptionNone() { // GH-90000
             when(raceConditionDetector.detectDataCorruption()).thenReturn(0L); // GH-90000
 
@@ -320,7 +320,7 @@ class ConcurrencyLimitTest {
         }
 
         @Test
-        @DisplayName("shouldDetectContentionLevels_whenResourceShared_thenContentionQuantified [GH-90000]")
+        @DisplayName("shouldDetectContentionLevels_whenResourceShared_thenContentionQuantified")
         void shouldDetectContentionLevels_whenResourceShared_thenContentionQuantified() { // GH-90000
             when(raceConditionDetector.measureLockContention()).thenReturn(0.25); // GH-90000
 
@@ -330,7 +330,7 @@ class ConcurrencyLimitTest {
         }
 
         @Test
-        @DisplayName("shouldMeasureContextSwitchOverhead_whenConcurrencyHigh_thenOverheadQuantified [GH-90000]")
+        @DisplayName("shouldMeasureContextSwitchOverhead_whenConcurrencyHigh_thenOverheadQuantified")
         void shouldMeasureContextSwitchOverhead_whenConcurrencyHigh_thenOverheadQuantified() { // GH-90000
             when(threadPoolMonitor.computeContextSwitchOverhead()).thenReturn(0.15); // GH-90000
 
@@ -340,7 +340,7 @@ class ConcurrencyLimitTest {
         }
 
         @Test
-        @DisplayName("shouldValidateFairnessMetrics_underHighConcurrency_thenNoThreadStarvation [GH-90000]")
+        @DisplayName("shouldValidateFairnessMetrics_underHighConcurrency_thenNoThreadStarvation")
         void shouldValidateFairnessMetrics_underHighConcurrency_thenNoThreadStarvation() { // GH-90000
             when(threadPoolMonitor.validateNoStarvation()).thenReturn(true); // GH-90000
 

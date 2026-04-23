@@ -29,7 +29,7 @@ import static org.mockito.Mockito.when;
 /**
  * Tests for {@link EventCloudPlugin} lifecycle and capabilities.
  */
-@DisplayName("EventCloudPlugin [GH-90000]")
+@DisplayName("EventCloudPlugin")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class EventCloudPluginTest extends EventloopTestBase {
 
@@ -52,9 +52,9 @@ class EventCloudPluginTest extends EventloopTestBase {
 
     @Test
     void shouldHaveCorrectMetadata() { // GH-90000
-        assertThat(plugin.metadata().id()).isEqualTo("aep-event-cloud [GH-90000]");
-        assertThat(plugin.metadata().name()).isEqualTo("AEP Event-Cloud Plugin [GH-90000]");
-        assertThat(plugin.metadata().version()).isEqualTo("1.0.0 [GH-90000]");
+        assertThat(plugin.metadata().id()).isEqualTo("aep-event-cloud");
+        assertThat(plugin.metadata().name()).isEqualTo("AEP Event-Cloud Plugin");
+        assertThat(plugin.metadata().version()).isEqualTo("1.0.0");
         assertThat(plugin.metadata().capabilities()) // GH-90000
             .contains("event-storage", "event-streaming", "entity-registry"); // GH-90000
     }
@@ -171,7 +171,7 @@ class EventCloudPluginTest extends EventloopTestBase {
     void shouldReportUnhealthyWhenDataCloudUnreachable() { // GH-90000
         // GIVEN
         when(eventLogStore.getLatestOffset(any(TenantContext.class))) // GH-90000
-            .thenReturn(Promise.ofException(new RuntimeException("Connection refused [GH-90000]")));
+            .thenReturn(Promise.ofException(new RuntimeException("Connection refused")));
 
         runPromise(() -> plugin.initialize(pluginContext)); // GH-90000
         runPromise(() -> plugin.start()); // GH-90000
@@ -181,7 +181,7 @@ class EventCloudPluginTest extends EventloopTestBase {
 
         // THEN
         assertThat(health.isHealthy()).isFalse(); // GH-90000
-        assertThat(health.getMessage()).contains("Data-Cloud unreachable [GH-90000]");
+        assertThat(health.getMessage()).contains("Data-Cloud unreachable");
     }
 
     @Test

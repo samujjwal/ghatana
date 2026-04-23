@@ -28,7 +28,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DefaultLlmExecutionPlan [GH-90000]")
+@DisplayName("DefaultLlmExecutionPlan")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class DefaultLlmExecutionPlanTest extends EventloopTestBase {
 
@@ -36,12 +36,12 @@ class DefaultLlmExecutionPlanTest extends EventloopTestBase {
     private LlmProvider llmProvider;
 
     @Test
-    @DisplayName("execute hydrates the prompt and forwards provider and model settings [GH-90000]")
+    @DisplayName("execute hydrates the prompt and forwards provider and model settings")
     void executeHydratesPromptAndForwardsRoutingSettings() { // GH-90000
         DefaultLlmExecutionPlan plan = new DefaultLlmExecutionPlan(llmProvider); // GH-90000
         CatalogAgentEntry entry = CatalogAgentEntry.builder() // GH-90000
-            .id("fraud-triage [GH-90000]")
-            .name("Fraud Triage [GH-90000]")
+            .id("fraud-triage")
+            .name("Fraud Triage")
             .generator(Map.of( // GH-90000
                 "steps", List.of(Map.of( // GH-90000
                     "type", "LLM",
@@ -52,9 +52,9 @@ class DefaultLlmExecutionPlanTest extends EventloopTestBase {
                     "max_tokens", 512))))
             .build(); // GH-90000
         AgentContext context = AgentContext.builder() // GH-90000
-            .turnId("turn-1 [GH-90000]")
-            .agentId("fraud-triage [GH-90000]")
-            .tenantId("tenant-a [GH-90000]")
+            .turnId("turn-1")
+            .agentId("fraud-triage")
+            .tenantId("tenant-a")
             .memoryStore(com.ghatana.agent.framework.memory.MemoryStore.noOp()) // GH-90000
             .build(); // GH-90000
 
@@ -66,8 +66,8 @@ class DefaultLlmExecutionPlanTest extends EventloopTestBase {
                 512,
                 context))
             .thenReturn(Promise.of(CompletionResult.builder() // GH-90000
-                .text("triage-result [GH-90000]")
-                .modelUsed("gpt-4o-mini [GH-90000]")
+                .text("triage-result")
+                .modelUsed("gpt-4o-mini")
                 .promptTokens(120) // GH-90000
                 .completionTokens(60) // GH-90000
                 .tokensUsed(180) // GH-90000
@@ -77,7 +77,7 @@ class DefaultLlmExecutionPlanTest extends EventloopTestBase {
         AgentResult<Object> result = runPromise(() -> plan.execute(entry, "suspicious payment", context)); // GH-90000
 
         assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS); // GH-90000
-        assertThat(result.getOutput()).isEqualTo("triage-result [GH-90000]");
+        assertThat(result.getOutput()).isEqualTo("triage-result");
         assertThat(result.getMetrics()) // GH-90000
             .containsEntry("tier", "LLM_EXECUTED") // GH-90000
             .containsEntry("provider", "OPENAI") // GH-90000
@@ -88,12 +88,12 @@ class DefaultLlmExecutionPlanTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("execute uses the default provider and token limit when optional values are omitted [GH-90000]")
+    @DisplayName("execute uses the default provider and token limit when optional values are omitted")
     void executeUsesDefaultProviderAndTokenLimit() { // GH-90000
         DefaultLlmExecutionPlan plan = new DefaultLlmExecutionPlan(llmProvider); // GH-90000
         CatalogAgentEntry entry = CatalogAgentEntry.builder() // GH-90000
-            .id("summary-agent [GH-90000]")
-            .name("Summary Agent [GH-90000]")
+            .id("summary-agent")
+            .name("Summary Agent")
             .generator(Map.of( // GH-90000
                 "steps", List.of(Map.of( // GH-90000
                     "type", "LLM",
@@ -110,8 +110,8 @@ class DefaultLlmExecutionPlanTest extends EventloopTestBase {
                 2000,
                 context))
             .thenReturn(Promise.of(CompletionResult.builder() // GH-90000
-                .text("summary [GH-90000]")
-                .modelUsed("claude-3-5-sonnet-20241022 [GH-90000]")
+                .text("summary")
+                .modelUsed("claude-3-5-sonnet-20241022")
                 .promptTokens(40) // GH-90000
                 .completionTokens(20) // GH-90000
                 .tokensUsed(60) // GH-90000
@@ -121,16 +121,16 @@ class DefaultLlmExecutionPlanTest extends EventloopTestBase {
         AgentResult<Object> result = runPromise(() -> plan.execute(entry, "inbox backlog", context)); // GH-90000
 
         assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS); // GH-90000
-        assertThat(result.getExplanation()).contains("ANTHROPIC/claude-3-5-sonnet-20241022 [GH-90000]");
+        assertThat(result.getExplanation()).contains("ANTHROPIC/claude-3-5-sonnet-20241022");
     }
 
     @Test
-    @DisplayName("execute records token metrics and deducts cost from the agent budget [GH-90000]")
+    @DisplayName("execute records token metrics and deducts cost from the agent budget")
     void executeRecordsTokenMetricsAndDeductsCost() { // GH-90000
         DefaultLlmExecutionPlan plan = new DefaultLlmExecutionPlan(llmProvider); // GH-90000
         CatalogAgentEntry entry = CatalogAgentEntry.builder() // GH-90000
-            .id("budget-agent [GH-90000]")
-            .name("Budget Agent [GH-90000]")
+            .id("budget-agent")
+            .name("Budget Agent")
             .generator(Map.of( // GH-90000
                 "steps", List.of(Map.of( // GH-90000
                     "type", "LLM",
@@ -139,9 +139,9 @@ class DefaultLlmExecutionPlanTest extends EventloopTestBase {
                     "prompt", "Assess {{input}}"))))
             .build(); // GH-90000
         DefaultAgentContext context = (DefaultAgentContext) AgentContext.builder() // GH-90000
-            .turnId("turn-budget [GH-90000]")
-            .agentId("budget-agent [GH-90000]")
-            .tenantId("tenant-budget [GH-90000]")
+            .turnId("turn-budget")
+            .agentId("budget-agent")
+            .tenantId("tenant-budget")
             .memoryStore(com.ghatana.agent.framework.memory.MemoryStore.noOp()) // GH-90000
             .remainingBudget(5.0) // GH-90000
             .addConfig("llm.cost.inputPer1kUsd", 0.02) // GH-90000
@@ -156,8 +156,8 @@ class DefaultLlmExecutionPlanTest extends EventloopTestBase {
                 2000,
                 context))
             .thenReturn(Promise.of(CompletionResult.builder() // GH-90000
-                .text("approved [GH-90000]")
-                .modelUsed("gpt-4o-mini [GH-90000]")
+                .text("approved")
+                .modelUsed("gpt-4o-mini")
                 .promptTokens(100) // GH-90000
                 .completionTokens(50) // GH-90000
                 .tokensUsed(150) // GH-90000
@@ -178,12 +178,12 @@ class DefaultLlmExecutionPlanTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("execute returns a failed result when no LLM step exists in the generator [GH-90000]")
+    @DisplayName("execute returns a failed result when no LLM step exists in the generator")
     void executeFailsWhenNoLlmStepExists() { // GH-90000
         DefaultLlmExecutionPlan plan = new DefaultLlmExecutionPlan(llmProvider); // GH-90000
         CatalogAgentEntry entry = CatalogAgentEntry.builder() // GH-90000
-            .id("rule-agent [GH-90000]")
-            .name("Rule Agent [GH-90000]")
+            .id("rule-agent")
+            .name("Rule Agent")
             .generator(Map.of( // GH-90000
                 "steps", List.of(Map.of( // GH-90000
                     "type", "SERVICE",
@@ -193,16 +193,16 @@ class DefaultLlmExecutionPlanTest extends EventloopTestBase {
         AgentResult<Object> result = runPromise(() -> plan.execute(entry, Map.of("signal", "x"), AgentContext.empty())); // GH-90000
 
         assertThat(result.getStatus()).isEqualTo(AgentResultStatus.FAILED); // GH-90000
-        assertThat(result.getExplanation()).contains("No LLM step found [GH-90000]");
+        assertThat(result.getExplanation()).contains("No LLM step found");
     }
 
     @Test
-    @DisplayName("execute returns a failed result when the LLM step omits the model [GH-90000]")
+    @DisplayName("execute returns a failed result when the LLM step omits the model")
     void executeFailsWhenModelIsMissing() { // GH-90000
         DefaultLlmExecutionPlan plan = new DefaultLlmExecutionPlan(llmProvider); // GH-90000
         CatalogAgentEntry entry = CatalogAgentEntry.builder() // GH-90000
-            .id("broken-agent [GH-90000]")
-            .name("Broken Agent [GH-90000]")
+            .id("broken-agent")
+            .name("Broken Agent")
             .generator(Map.of( // GH-90000
                 "steps", List.of(Map.of( // GH-90000
                     "type", "LLM",
@@ -212,6 +212,6 @@ class DefaultLlmExecutionPlanTest extends EventloopTestBase {
         AgentResult<Object> result = runPromise(() -> plan.execute(entry, "request", AgentContext.empty())); // GH-90000
 
         assertThat(result.getStatus()).isEqualTo(AgentResultStatus.FAILED); // GH-90000
-        assertThat(result.getExplanation()).contains("missing required 'model' property [GH-90000]");
+        assertThat(result.getExplanation()).contains("missing required 'model' property");
     }
 }

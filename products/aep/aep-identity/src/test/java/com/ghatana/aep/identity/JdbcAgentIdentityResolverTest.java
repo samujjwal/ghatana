@@ -32,7 +32,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("JdbcAgentIdentityResolver [GH-90000]")
+@DisplayName("JdbcAgentIdentityResolver")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class JdbcAgentIdentityResolverTest extends EventloopTestBase {
 
@@ -50,7 +50,7 @@ class JdbcAgentIdentityResolverTest extends EventloopTestBase {
     private ResultSet capabilitiesResultSet;
 
     @Test
-    @DisplayName("resolve returns active registered agent identity with derived capability scopes [GH-90000]")
+    @DisplayName("resolve returns active registered agent identity with derived capability scopes")
     void resolveReturnsActiveRegisteredIdentity() throws Exception { // GH-90000
         when(dataSource.getConnection()).thenReturn(connection); // GH-90000
         when(connection.prepareStatement(anyString())) // GH-90000
@@ -59,11 +59,11 @@ class JdbcAgentIdentityResolverTest extends EventloopTestBase {
         when(capabilitiesStatement.executeQuery()).thenReturn(capabilitiesResultSet); // GH-90000
 
         when(agentResultSet.next()).thenReturn(true, false); // GH-90000
-        when(agentResultSet.getTimestamp("updated_at [GH-90000]"))
-            .thenReturn(Timestamp.from(Instant.parse("2026-04-15T12:00:00Z [GH-90000]")));
+        when(agentResultSet.getTimestamp("updated_at"))
+            .thenReturn(Timestamp.from(Instant.parse("2026-04-15T12:00:00Z")));
 
         when(capabilitiesResultSet.next()).thenReturn(true, true, false); // GH-90000
-        when(capabilitiesResultSet.getString("capability [GH-90000]"))
+        when(capabilitiesResultSet.getString("capability"))
             .thenReturn("routing", "enrichment"); // GH-90000
 
         JdbcAgentIdentityResolver resolver = new JdbcAgentIdentityResolver(dataSource); // GH-90000
@@ -71,16 +71,16 @@ class JdbcAgentIdentityResolverTest extends EventloopTestBase {
         Optional<AgentIdentity> identity = runPromise(() -> resolver.resolve("tenant-a", "agent-1")); // GH-90000
 
         assertThat(identity).isPresent(); // GH-90000
-        assertThat(identity.orElseThrow().tenantId()).isEqualTo("tenant-a [GH-90000]");
-        assertThat(identity.orElseThrow().agentId()).isEqualTo("agent-1 [GH-90000]");
+        assertThat(identity.orElseThrow().tenantId()).isEqualTo("tenant-a");
+        assertThat(identity.orElseThrow().agentId()).isEqualTo("agent-1");
         assertThat(identity.orElseThrow().spiffeId()) // GH-90000
-            .isEqualTo("spiffe://ghatana.io/tenant/tenant-a/agent/agent-1 [GH-90000]");
+            .isEqualTo("spiffe://ghatana.io/tenant/tenant-a/agent/agent-1");
         assertThat(identity.orElseThrow().scopes()) // GH-90000
             .contains("aep:execute", "aep:capability:routing", "aep:capability:enrichment"); // GH-90000
     }
 
     @Test
-    @DisplayName("resolve returns empty for unknown or inactive agent [GH-90000]")
+    @DisplayName("resolve returns empty for unknown or inactive agent")
     void resolveReturnsEmptyWhenAgentMissing() throws Exception { // GH-90000
         when(dataSource.getConnection()).thenReturn(connection); // GH-90000
         when(connection.prepareStatement(anyString())).thenReturn(resolveAgentStatement); // GH-90000

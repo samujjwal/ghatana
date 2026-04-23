@@ -44,10 +44,10 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("DataCloudPipelineStore [GH-90000]")
+@DisplayName("DataCloudPipelineStore")
 class DataCloudPipelineStoreTest {
 
-    private static final TenantId TENANT = TenantId.of("tenant-beta [GH-90000]");
+    private static final TenantId TENANT = TenantId.of("tenant-beta");
     private static final String TENANT_STR = "tenant-beta";
 
     @Mock
@@ -65,11 +65,11 @@ class DataCloudPipelineStoreTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("save() [GH-90000]")
+    @DisplayName("save()")
     class SaveTests {
 
         @Test
-        @DisplayName("save: assigns UUID when pipeline.id is blank [GH-90000]")
+        @DisplayName("save: assigns UUID when pipeline.id is blank")
         void save_whenIdBlank_assignsUuid() { // GH-90000
             Pipeline p = pipeline(null); // GH-90000
             Entity saved = pipelineEntity(UUID.randomUUID().toString(), p); // GH-90000
@@ -80,12 +80,12 @@ class DataCloudPipelineStoreTest {
 
             ArgumentCaptor<Map<String, Object>> cap = mapCaptor(); // GH-90000
             verify(client).save(eq(TENANT_STR), eq(DataCloudPipelineStore.COLLECTION), cap.capture()); // GH-90000
-            assertThat(cap.getValue().get("id [GH-90000]")).isNotNull().asString().isNotBlank();
+            assertThat(cap.getValue().get("id")).isNotNull().asString().isNotBlank();
             assertThat(result).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("save: preserves existing pipeline.id [GH-90000]")
+        @DisplayName("save: preserves existing pipeline.id")
         void save_whenIdPresent_keepsId() { // GH-90000
             String id = UUID.randomUUID().toString(); // GH-90000
             Pipeline p = pipeline(id); // GH-90000
@@ -96,15 +96,15 @@ class DataCloudPipelineStoreTest {
 
             ArgumentCaptor<Map<String, Object>> cap = mapCaptor(); // GH-90000
             verify(client).save(eq(TENANT_STR), eq(DataCloudPipelineStore.COLLECTION), cap.capture()); // GH-90000
-            assertThat(cap.getValue().get("id [GH-90000]")).isEqualTo(id);
+            assertThat(cap.getValue().get("id")).isEqualTo(id);
         }
 
         @Test
-        @DisplayName("save: persists version label and status metadata [GH-90000]")
+        @DisplayName("save: persists version label and status metadata")
         void save_persistsVersionMetadata() { // GH-90000
             String id = UUID.randomUUID().toString(); // GH-90000
             Pipeline p = pipeline(id); // GH-90000
-            p.setVersionLabel("release-2026-04 [GH-90000]");
+            p.setVersionLabel("release-2026-04");
             p.setVersionStatus(PipelineVersionStatus.PUBLISHED); // GH-90000
             p.setVersionControl(7L); // GH-90000
             when(client.save(eq(TENANT_STR), eq(DataCloudPipelineStore.COLLECTION), anyMap())) // GH-90000
@@ -126,11 +126,11 @@ class DataCloudPipelineStoreTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("findById() [GH-90000]")
+    @DisplayName("findById()")
     class FindByIdTests {
 
         @Test
-        @DisplayName("findById: returns present Optional for same tenant entity [GH-90000]")
+        @DisplayName("findById: returns present Optional for same tenant entity")
         void findById_whenEntityBelongsToTenant_returnsPresent() { // GH-90000
             String id = UUID.randomUUID().toString(); // GH-90000
             Pipeline source = pipeline(id); // GH-90000
@@ -143,7 +143,7 @@ class DataCloudPipelineStoreTest {
         }
 
         @Test
-        @DisplayName("findById: returns empty when entity belongs to different tenant [GH-90000]")
+        @DisplayName("findById: returns empty when entity belongs to different tenant")
         void findById_whenEntityBelongsToDifferentTenant_returnsEmpty() { // GH-90000
             String id = UUID.randomUUID().toString(); // GH-90000
             // Entity has tenantId "other-tenant" in data map
@@ -161,7 +161,7 @@ class DataCloudPipelineStoreTest {
         }
 
         @Test
-        @DisplayName("findById: returns empty when not found [GH-90000]")
+        @DisplayName("findById: returns empty when not found")
         void findById_whenMissing_returnsEmpty() { // GH-90000
             String id = UUID.randomUUID().toString(); // GH-90000
             when(client.findById(TENANT_STR, DataCloudPipelineStore.COLLECTION, id)) // GH-90000
@@ -178,11 +178,11 @@ class DataCloudPipelineStoreTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("findAll() [GH-90000]")
+    @DisplayName("findAll()")
     class FindAllTests {
 
         @Test
-        @DisplayName("findAll: pages results when count exceeds page size [GH-90000]")
+        @DisplayName("findAll: pages results when count exceeds page size")
         void findAll_paginatesResults() { // GH-90000
             // Create 5 pipelines returned by DataCloud
             List<Entity> entities = java.util.stream.IntStream.range(0, 5) // GH-90000
@@ -202,7 +202,7 @@ class DataCloudPipelineStoreTest {
         }
 
         @Test
-        @DisplayName("findAll: filters by name when nameFilter provided [GH-90000]")
+        @DisplayName("findAll: filters by name when nameFilter provided")
         void findAll_filtersbyName() { // GH-90000
             String matchId = UUID.randomUUID().toString(); // GH-90000
             String noMatchId = UUID.randomUUID().toString(); // GH-90000
@@ -216,7 +216,7 @@ class DataCloudPipelineStoreTest {
             Page<Pipeline> page = store.findAll(TENANT, "fraud", null, 1, 10).getResult(); // GH-90000
 
             assertThat(page.content()).hasSize(1); // GH-90000
-            assertThat(page.content().get(0).getName()).contains("fraud [GH-90000]");
+            assertThat(page.content().get(0).getName()).contains("fraud");
         }
     }
 
@@ -225,7 +225,7 @@ class DataCloudPipelineStoreTest {
     // =========================================================================
 
     @Test
-    @DisplayName("exists: returns true when entity present [GH-90000]")
+    @DisplayName("exists: returns true when entity present")
     void exists_whenPresent_returnsTrue() { // GH-90000
         String id = UUID.randomUUID().toString(); // GH-90000
         Pipeline p = pipeline(id); // GH-90000
@@ -242,7 +242,7 @@ class DataCloudPipelineStoreTest {
     // =========================================================================
 
     @Test
-    @DisplayName("nextVersion: returns 1 when no pipelines found [GH-90000]")
+    @DisplayName("nextVersion: returns 1 when no pipelines found")
     void nextVersion_whenNoPipelinesExist_returnsOne() { // GH-90000
         when(client.query(eq(TENANT_STR), eq(DataCloudPipelineStore.COLLECTION), any(Query.class))) // GH-90000
                 .thenReturn(Promise.of(List.of())); // GH-90000
@@ -253,7 +253,7 @@ class DataCloudPipelineStoreTest {
     }
 
     @Test
-    @DisplayName("nextVersion: returns max version + 1 when pipelines exist [GH-90000]")
+    @DisplayName("nextVersion: returns max version + 1 when pipelines exist")
     void nextVersion_whenPipelinesExist_returnsMaxPlusOne() { // GH-90000
         String id1 = UUID.randomUUID().toString(); // GH-90000
         String id2 = UUID.randomUUID().toString(); // GH-90000
@@ -272,7 +272,7 @@ class DataCloudPipelineStoreTest {
     // =========================================================================
 
     @Test
-    @DisplayName("countLegacyConfigPipelines: counts pipelines without structuredConfig [GH-90000]")
+    @DisplayName("countLegacyConfigPipelines: counts pipelines without structuredConfig")
     void countLegacyConfigPipelines_countsLegacyOnes() { // GH-90000
         // Two legacy (config only, no structuredConfig) + one structured // GH-90000
         String id1 = UUID.randomUUID().toString(); // GH-90000
@@ -292,7 +292,7 @@ class DataCloudPipelineStoreTest {
     }
 
     @Test
-    @DisplayName("countStructuredConfigPipelines: returns 0 when no structured pipelines [GH-90000]")
+    @DisplayName("countStructuredConfigPipelines: returns 0 when no structured pipelines")
     void countStructuredConfigPipelines_returnsZeroWhenNone() { // GH-90000
         when(client.query(eq(TENANT_STR), eq(DataCloudPipelineStore.COLLECTION), any(Query.class))) // GH-90000
                 .thenReturn(Promise.of(List.of())); // GH-90000
@@ -307,11 +307,11 @@ class DataCloudPipelineStoreTest {
         // =========================================================================
 
         @Test
-        @DisplayName("saveVersionSnapshot: writes snapshot into version collection with stable composite id [GH-90000]")
+        @DisplayName("saveVersionSnapshot: writes snapshot into version collection with stable composite id")
         void saveVersionSnapshot_writesToVersionCollection() { // GH-90000
         String pipelineId = "pipeline-123";
         Pipeline snapshot = pipelineWithVersion(pipelineId, 3); // GH-90000
-        snapshot.setVersionLabel("v3.0.0 [GH-90000]");
+        snapshot.setVersionLabel("v3.0.0");
         snapshot.setVersionStatus(PipelineVersionStatus.PUBLISHED); // GH-90000
         when(client.save(eq(TENANT_STR), eq(DataCloudPipelineStore.VERSION_COLLECTION), anyMap())) // GH-90000
             .thenReturn(Promise.of(versionEntity(pipelineId, snapshot))); // GH-90000
@@ -329,13 +329,13 @@ class DataCloudPipelineStoreTest {
         }
 
         @Test
-        @DisplayName("findVersionHistory: returns snapshots sorted by version [GH-90000]")
+        @DisplayName("findVersionHistory: returns snapshots sorted by version")
         void findVersionHistory_returnsSortedSnapshots() { // GH-90000
         String pipelineId = "versioned-pipeline";
         Pipeline v3 = pipelineWithVersion(pipelineId, 3); // GH-90000
-        v3.setVersionLabel("v3 [GH-90000]");
+        v3.setVersionLabel("v3");
         Pipeline v1 = pipelineWithVersion(pipelineId, 1); // GH-90000
-        v1.setVersionLabel("v1 [GH-90000]");
+        v1.setVersionLabel("v1");
         when(client.query(eq(TENANT_STR), eq(DataCloudPipelineStore.VERSION_COLLECTION), any(Query.class))) // GH-90000
             .thenReturn(Promise.of(List.of(versionEntity(pipelineId, v3), versionEntity(pipelineId, v1)))); // GH-90000
 
@@ -350,11 +350,11 @@ class DataCloudPipelineStoreTest {
         }
 
         @Test
-        @DisplayName("findVersionSnapshot: returns snapshot with original pipeline id and version metadata [GH-90000]")
+        @DisplayName("findVersionSnapshot: returns snapshot with original pipeline id and version metadata")
         void findVersionSnapshot_returnsSnapshot() { // GH-90000
         String pipelineId = "pipeline-rollback";
         Pipeline snapshot = pipelineWithVersion(pipelineId, 4); // GH-90000
-        snapshot.setVersionLabel("release-4 [GH-90000]");
+        snapshot.setVersionLabel("release-4");
         snapshot.setVersionStatus(PipelineVersionStatus.ARCHIVED); // GH-90000
         when(client.findById(TENANT_STR, DataCloudPipelineStore.VERSION_COLLECTION, pipelineId + ":v4")) // GH-90000
             .thenReturn(Promise.of(Optional.of(versionEntity(pipelineId, snapshot)))); // GH-90000
@@ -364,7 +364,7 @@ class DataCloudPipelineStoreTest {
         assertThat(result).isPresent(); // GH-90000
         assertThat(result.get().getId()).isEqualTo(pipelineId); // GH-90000
         assertThat(result.get().getVersion()).isEqualTo(4); // GH-90000
-        assertThat(result.get().getVersionLabel()).isEqualTo("release-4 [GH-90000]");
+        assertThat(result.get().getVersionLabel()).isEqualTo("release-4");
         assertThat(result.get().getVersionStatus()).isEqualTo(PipelineVersionStatus.ARCHIVED); // GH-90000
         }
 
@@ -373,11 +373,11 @@ class DataCloudPipelineStoreTest {
     // =========================================================================
 
     @Test
-    @DisplayName("constructor: throws NullPointerException when client is null [GH-90000]")
+    @DisplayName("constructor: throws NullPointerException when client is null")
     void constructor_withNullClient_throwsNpe() { // GH-90000
         assertThatNullPointerException() // GH-90000
                 .isThrownBy(() -> new DataCloudPipelineStore(null)) // GH-90000
-                .withMessageContaining("DataCloudClient [GH-90000]");
+                .withMessageContaining("DataCloudClient");
     }
 
     // =========================================================================
@@ -393,15 +393,15 @@ class DataCloudPipelineStoreTest {
         Pipeline p = new Pipeline(); // GH-90000
         if (id != null) p.setId(id); // GH-90000
         p.setTenantId(TENANT); // GH-90000
-        p.setName("test-pipeline [GH-90000]");
+        p.setName("test-pipeline");
         p.setVersion(1); // GH-90000
         p.setActive(true); // GH-90000
         p.setConfig("{\"steps\":[]}"); // GH-90000
         p.setCreatedAt(Instant.now()); // GH-90000
         p.setUpdatedAt(Instant.now()); // GH-90000
-        p.setCreatedBy("test [GH-90000]");
-        p.setUpdatedBy("test [GH-90000]");
-        p.setVersionLabel(" [GH-90000]");
+        p.setCreatedBy("test");
+        p.setUpdatedBy("test");
+        p.setVersionLabel("");
         p.setVersionStatus(PipelineVersionStatus.DRAFT); // GH-90000
         p.setVersionControl(0L); // GH-90000
         return p;

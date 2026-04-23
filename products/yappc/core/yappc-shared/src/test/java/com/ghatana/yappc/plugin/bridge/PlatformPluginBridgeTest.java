@@ -34,15 +34,15 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@DisplayName("Platform Plugin Bridge Tests [GH-90000]")
+@DisplayName("Platform Plugin Bridge Tests")
 class PlatformPluginBridgeTest extends EventloopTestBase {
 
     @Nested
-    @DisplayName("PlatformPluginBridge [GH-90000]")
+    @DisplayName("PlatformPluginBridge")
     class BridgeTests {
 
         @Test
-        @DisplayName("should convert YAPPC metadata to platform format [GH-90000]")
+        @DisplayName("should convert YAPPC metadata to platform format")
         void shouldConvertMetadata() { // GH-90000
             // GIVEN
             YAPPCPlugin plugin = new StubPlugin("test-validator", "Test Validator", "ai"); // GH-90000
@@ -51,14 +51,14 @@ class PlatformPluginBridgeTest extends EventloopTestBase {
             Plugin bridged = new PlatformPluginBridge(plugin); // GH-90000
 
             // THEN
-            assertThat(bridged.metadata().id()).isEqualTo("yappc.test-validator [GH-90000]");
-            assertThat(bridged.metadata().name()).isEqualTo("Test Validator [GH-90000]");
-            assertThat(bridged.metadata().version()).isEqualTo("1.0.0 [GH-90000]");
-            assertThat(bridged.metadata().type().name()).isEqualTo("AI [GH-90000]");
+            assertThat(bridged.metadata().id()).isEqualTo("yappc.test-validator");
+            assertThat(bridged.metadata().name()).isEqualTo("Test Validator");
+            assertThat(bridged.metadata().version()).isEqualTo("1.0.0");
+            assertThat(bridged.metadata().type().name()).isEqualTo("AI");
         }
 
         @Test
-        @DisplayName("should start in DISCOVERED state [GH-90000]")
+        @DisplayName("should start in DISCOVERED state")
         void shouldStartInDiscoveredState() { // GH-90000
             // GIVEN / WHEN
             Plugin bridged = new PlatformPluginBridge(new StubPlugin("p1", "P1", "general")); // GH-90000
@@ -68,7 +68,7 @@ class PlatformPluginBridgeTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should delegate start lifecycle to YAPPC plugin [GH-90000]")
+        @DisplayName("should delegate start lifecycle to YAPPC plugin")
         void shouldDelegateStart() { // GH-90000
             // GIVEN
             StubPlugin stub = new StubPlugin("p1", "P1", "general"); // GH-90000
@@ -83,7 +83,7 @@ class PlatformPluginBridgeTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should delegate stop lifecycle to YAPPC plugin [GH-90000]")
+        @DisplayName("should delegate stop lifecycle to YAPPC plugin")
         void shouldDelegateStop() { // GH-90000
             // GIVEN
             StubPlugin stub = new StubPlugin("p1", "P1", "general"); // GH-90000
@@ -99,7 +99,7 @@ class PlatformPluginBridgeTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should delegate health check to YAPPC plugin [GH-90000]")
+        @DisplayName("should delegate health check to YAPPC plugin")
         void shouldDelegateHealthCheck() { // GH-90000
             // GIVEN
             StubPlugin stub = new StubPlugin("p1", "P1", "general"); // GH-90000
@@ -113,7 +113,7 @@ class PlatformPluginBridgeTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should reject null delegate [GH-90000]")
+        @DisplayName("should reject null delegate")
         void shouldRejectNullDelegate() { // GH-90000
             assertThatThrownBy(() -> new PlatformPluginBridge(null)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
@@ -121,11 +121,11 @@ class PlatformPluginBridgeTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("UnifiedPluginBootstrap [GH-90000]")
+    @DisplayName("UnifiedPluginBootstrap")
     class BootstrapTests {
 
         @Test
-        @DisplayName("should register bridged plugins with platform registry [GH-90000]")
+        @DisplayName("should register bridged plugins with platform registry")
         void shouldRegisterWithPlatformRegistry() { // GH-90000
             // GIVEN
             PluginRegistry registry = new PluginRegistry(); // GH-90000
@@ -134,12 +134,12 @@ class PlatformPluginBridgeTest extends EventloopTestBase {
             registry.register(bridge); // GH-90000
 
             // THEN
-            assertThat(registry.isRegistered("yappc.boot-test [GH-90000]")).isTrue();
+            assertThat(registry.isRegistered("yappc.boot-test")).isTrue();
             assertThat(registry.size()).isEqualTo(1); // GH-90000
         }
 
         @Test
-        @DisplayName("should not duplicate registration [GH-90000]")
+        @DisplayName("should not duplicate registration")
         void shouldNotDuplicateRegistration() { // GH-90000
             // GIVEN
             PluginRegistry registry = new PluginRegistry(); // GH-90000
@@ -150,7 +150,7 @@ class PlatformPluginBridgeTest extends EventloopTestBase {
             // WHEN / THEN
             assertThatThrownBy(() -> registry.register(bridge)) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("already registered [GH-90000]");
+                    .hasMessageContaining("already registered");
         }
     }
 

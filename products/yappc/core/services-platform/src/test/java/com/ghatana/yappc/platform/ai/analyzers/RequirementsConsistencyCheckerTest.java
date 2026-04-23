@@ -19,13 +19,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("RequirementsConsistencyChecker Tests [GH-90000]")
+@DisplayName("RequirementsConsistencyChecker Tests")
 class RequirementsConsistencyCheckerTest extends EventloopTestBase {
 
   @Mock private YAPPCAIService aiService;
 
   @Test
-  @DisplayName("analyze returns deterministic findings for placeholders and duplicate requirements [GH-90000]")
+  @DisplayName("analyze returns deterministic findings for placeholders and duplicate requirements")
   void analyzeReturnsDeterministicFindingsForPlaceholdersAndDuplicateRequirements() { // GH-90000
     RequirementsConsistencyChecker checker = new RequirementsConsistencyChecker(aiService); // GH-90000
 
@@ -39,7 +39,7 @@ class RequirementsConsistencyCheckerTest extends EventloopTestBase {
                         "REQ-1",
                         "TBD offline edits",
                         "TBD offline edits",
-                        List.of("tbd offline edits [GH-90000]"))));
+                        List.of("tbd offline edits"))));
 
     assertThat(insights).hasSize(3); // GH-90000
     assertThat(insights).extracting(AIInsight::title) // GH-90000
@@ -51,7 +51,7 @@ class RequirementsConsistencyCheckerTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("analyze parses structured AI findings when deterministic checks are clean [GH-90000]")
+  @DisplayName("analyze parses structured AI findings when deterministic checks are clean")
   void analyzeParsesStructuredAiFindingsWhenDeterministicChecksAreClean() { // GH-90000
     when(aiService.reason(anyString(), anyMap())) // GH-90000
         .thenReturn( // GH-90000
@@ -69,19 +69,19 @@ class RequirementsConsistencyCheckerTest extends EventloopTestBase {
                         "REQ-2",
                         "Offline editing support",
                         "The platform must support offline editing with eventual synchronization and measurable recovery acceptance criteria for mobile and web sessions.",
-                        List.of("Sync recovery requirement [GH-90000]"))));
+                        List.of("Sync recovery requirement"))));
 
     assertThat(insights).singleElement().satisfies(insight -> { // GH-90000
       assertThat(insight.type()).isEqualTo(AIInsight.InsightType.REQUIREMENT); // GH-90000
-      assertThat(insight.title()).isEqualTo("Missing acceptance criteria [GH-90000]");
+      assertThat(insight.title()).isEqualTo("Missing acceptance criteria");
       assertThat(insight.confidence()).isEqualTo(0.87); // GH-90000
     });
   }
 
   @Test
-  @DisplayName("analyze falls back to manual review insight for malformed AI response [GH-90000]")
+  @DisplayName("analyze falls back to manual review insight for malformed AI response")
   void analyzeFallsBackToManualReviewInsightForMalformedAiResponse() { // GH-90000
-    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("not-json [GH-90000]"));
+    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("not-json"));
 
     RequirementsConsistencyChecker checker = new RequirementsConsistencyChecker(aiService); // GH-90000
     List<AIInsight> insights =
@@ -94,11 +94,11 @@ class RequirementsConsistencyCheckerTest extends EventloopTestBase {
                         "REQ-3",
                         "Clear requirement",
                         "The platform must provide operator-visible audit trails for generated changes, including actor identity, timestamps, policy checks, and rollback steps.",
-                        List.of("Security audit requirement [GH-90000]"))));
+                        List.of("Security audit requirement"))));
 
     assertThat(insights).singleElement().satisfies(insight -> { // GH-90000
-      assertThat(insight.title()).isEqualTo("Manual requirement review recommended [GH-90000]");
-      assertThat(insight.description()).isEqualTo("not-json [GH-90000]");
+      assertThat(insight.title()).isEqualTo("Manual requirement review recommended");
+      assertThat(insight.description()).isEqualTo("not-json");
     });
   }
 }

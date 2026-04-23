@@ -18,7 +18,8 @@ import java.util.Map;
  * @doc.type value-object
  * @doc.purpose Working memory entry as MemoryItem
  * @doc.layer agent-memory
- */
+  * @doc.pattern Component
+*/
 @Value
 @Builder
 @Jacksonized

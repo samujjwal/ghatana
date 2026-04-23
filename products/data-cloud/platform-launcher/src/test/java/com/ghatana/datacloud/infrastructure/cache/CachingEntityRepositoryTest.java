@@ -32,7 +32,7 @@ import static org.mockito.Mockito.*;
  * so that {@code runPromise()} correctly drives ActiveJ Promises. // GH-90000
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("CachingEntityRepository Tests [GH-90000]")
+@DisplayName("CachingEntityRepository Tests")
 class CachingEntityRepositoryTest extends EventloopTestBase {
 
     private static final String TENANT = "tenant-1";
@@ -57,11 +57,11 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Constructor validation [GH-90000]")
+    @DisplayName("Constructor validation")
     class ConstructorTests {
 
         @Test
-        @DisplayName("null delegate throws NullPointerException [GH-90000]")
+        @DisplayName("null delegate throws NullPointerException")
         void nullDelegateFails() { // GH-90000
             assertThatThrownBy(() -> // GH-90000
                     new CachingEntityRepository(null, meterRegistry)) // GH-90000
@@ -69,7 +69,7 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("zero TTL throws IllegalArgumentException [GH-90000]")
+        @DisplayName("zero TTL throws IllegalArgumentException")
         void zeroTtlFails() { // GH-90000
             assertThatThrownBy(() -> // GH-90000
                     new CachingEntityRepository(delegate, meterRegistry, // GH-90000
@@ -78,7 +78,7 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("negative TTL throws IllegalArgumentException [GH-90000]")
+        @DisplayName("negative TTL throws IllegalArgumentException")
         void negativeTtlFails() { // GH-90000
             assertThatThrownBy(() -> // GH-90000
                     new CachingEntityRepository(delegate, meterRegistry, // GH-90000
@@ -87,7 +87,7 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("maxSize zero throws IllegalArgumentException [GH-90000]")
+        @DisplayName("maxSize zero throws IllegalArgumentException")
         void zeroMaxSizeFails() { // GH-90000
             assertThatThrownBy(() -> // GH-90000
                     new CachingEntityRepository(delegate, meterRegistry, // GH-90000
@@ -96,7 +96,7 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("null MeterRegistry is accepted (no metrics) [GH-90000]")
+        @DisplayName("null MeterRegistry is accepted (no metrics)")
         void nullMeterRegistryIsAccepted() { // GH-90000
             // should not throw
             var c = new CachingEntityRepository(delegate, null); // GH-90000
@@ -109,11 +109,11 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("findById — cache-aside behaviour [GH-90000]")
+    @DisplayName("findById — cache-aside behaviour")
     class FindByIdTests {
 
         @Test
-        @DisplayName("first call is a miss → delegates to repository [GH-90000]")
+        @DisplayName("first call is a miss → delegates to repository")
         void firstCallMissesAndDelegates() { // GH-90000
             UUID id = UUID.randomUUID(); // GH-90000
             Entity entity = stubEntity(id); // GH-90000
@@ -128,7 +128,7 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("second call with same key is a hit → delegate not called again [GH-90000]")
+        @DisplayName("second call with same key is a hit → delegate not called again")
         void secondCallHitsCache() { // GH-90000
             UUID id = UUID.randomUUID(); // GH-90000
             Entity entity = stubEntity(id); // GH-90000
@@ -147,7 +147,7 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("empty optional is also cached to prevent repeated DB misses [GH-90000]")
+        @DisplayName("empty optional is also cached to prevent repeated DB misses")
         void emptyOptionalIsCached() { // GH-90000
             UUID id = UUID.randomUUID(); // GH-90000
             when(delegate.findById(TENANT, COLLECTION, id)) // GH-90000
@@ -161,7 +161,7 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("different entity IDs produce independent cache entries [GH-90000]")
+        @DisplayName("different entity IDs produce independent cache entries")
         void differentIdsAreIndependent() { // GH-90000
             UUID id1 = UUID.randomUUID(); // GH-90000
             UUID id2 = UUID.randomUUID(); // GH-90000
@@ -182,7 +182,7 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("different tenants produce independent cache entries (multi-tenancy) [GH-90000]")
+        @DisplayName("different tenants produce independent cache entries (multi-tenancy)")
         void differentTenantsAreIndependent() { // GH-90000
             UUID id = UUID.randomUUID(); // GH-90000
             Entity e1 = stubEntity(id); // GH-90000
@@ -201,7 +201,7 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("TTL expiry causes re-fetch from delegate [GH-90000]")
+        @DisplayName("TTL expiry causes re-fetch from delegate")
         void ttlExpiryRecallsDelegate() throws InterruptedException { // GH-90000
             UUID id = UUID.randomUUID(); // GH-90000
             Entity entity = stubEntity(id); // GH-90000
@@ -224,11 +224,11 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("save — delegate + invalidate [GH-90000]")
+    @DisplayName("save — delegate + invalidate")
     class SaveTests {
 
         @Test
-        @DisplayName("save delegates to backing repository [GH-90000]")
+        @DisplayName("save delegates to backing repository")
         void saveDelegates() { // GH-90000
             UUID id = UUID.randomUUID(); // GH-90000
             Entity entity = stubEntity(id); // GH-90000
@@ -241,7 +241,7 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("save invalidates the cached findById entry for the entity [GH-90000]")
+        @DisplayName("save invalidates the cached findById entry for the entity")
         void saveInvalidatesCacheEntry() { // GH-90000
             UUID id = UUID.randomUUID(); // GH-90000
             Entity v1 = stubEntity(id); // GH-90000
@@ -270,11 +270,11 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("delete — delegate + invalidate [GH-90000]")
+    @DisplayName("delete — delegate + invalidate")
     class DeleteTests {
 
         @Test
-        @DisplayName("delete delegates to backing repository [GH-90000]")
+        @DisplayName("delete delegates to backing repository")
         void deleteDelegates() { // GH-90000
             UUID id = UUID.randomUUID(); // GH-90000
             when(delegate.delete(TENANT, COLLECTION, id)).thenReturn(Promise.of(null)); // GH-90000
@@ -285,7 +285,7 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("delete invalidates the cached findById entry [GH-90000]")
+        @DisplayName("delete invalidates the cached findById entry")
         void deleteInvalidatesCacheEntry() { // GH-90000
             UUID id = UUID.randomUUID(); // GH-90000
             Entity entity = stubEntity(id); // GH-90000
@@ -312,11 +312,11 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Collection-scoped ops pass through without caching [GH-90000]")
+    @DisplayName("Collection-scoped ops pass through without caching")
     class PassThroughTests {
 
         @Test
-        @DisplayName("findAll always delegates [GH-90000]")
+        @DisplayName("findAll always delegates")
         void findAllAlwaysDelegates() { // GH-90000
             when(delegate.findAll(any(), any(), any(), any(), anyInt(), anyInt())) // GH-90000
                     .thenReturn(Promise.of(List.of())); // GH-90000
@@ -328,7 +328,7 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("exists always delegates [GH-90000]")
+        @DisplayName("exists always delegates")
         void existsAlwaysDelegates() { // GH-90000
             UUID id = UUID.randomUUID(); // GH-90000
             when(delegate.exists(TENANT, COLLECTION, id)).thenReturn(Promise.of(true)); // GH-90000
@@ -340,7 +340,7 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("count always delegates [GH-90000]")
+        @DisplayName("count always delegates")
         void countAlwaysDelegates() { // GH-90000
             when(delegate.count(TENANT, COLLECTION)).thenReturn(Promise.of(42L)); // GH-90000
 
@@ -351,7 +351,7 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("findByQuery always delegates [GH-90000]")
+        @DisplayName("findByQuery always delegates")
         void findByQueryAlwaysDelegates() { // GH-90000
             when(delegate.findByQuery(any(), any(), any())).thenReturn(Promise.of(List.of())); // GH-90000
 
@@ -367,11 +367,11 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Cache management [GH-90000]")
+    @DisplayName("Cache management")
     class CacheManagementTests {
 
         @Test
-        @DisplayName("invalidateCollection evicts all entries for that tenant+collection [GH-90000]")
+        @DisplayName("invalidateCollection evicts all entries for that tenant+collection")
         void invalidateCollectionEvictsCorrectEntries() { // GH-90000
             UUID id1 = UUID.randomUUID(); // GH-90000
             UUID id2 = UUID.randomUUID(); // GH-90000
@@ -409,7 +409,7 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("invalidateAll clears every entry [GH-90000]")
+        @DisplayName("invalidateAll clears every entry")
         void invalidateAllClearsEverything() { // GH-90000
             UUID id = UUID.randomUUID(); // GH-90000
             Entity entity = stubEntity(id); // GH-90000
@@ -424,7 +424,7 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("estimatedSize reflects populated cache entries [GH-90000]")
+        @DisplayName("estimatedSize reflects populated cache entries")
         void estimatedSizeReflectsCacheState() { // GH-90000
             UUID id = UUID.randomUUID(); // GH-90000
             when(delegate.findById(any(), any(), any())).thenReturn(Promise.of(Optional.empty())); // GH-90000
@@ -440,11 +440,11 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Metrics counters [GH-90000]")
+    @DisplayName("Metrics counters")
     class MetricsTests {
 
         @Test
-        @DisplayName("cache miss increments miss counter [GH-90000]")
+        @DisplayName("cache miss increments miss counter")
         void missIncrementsCounter() { // GH-90000
             UUID id = UUID.randomUUID(); // GH-90000
             when(delegate.findById(any(), any(), any())).thenReturn(Promise.of(Optional.empty())); // GH-90000
@@ -457,7 +457,7 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("cache hit increments hit counter [GH-90000]")
+        @DisplayName("cache hit increments hit counter")
         void hitIncrementsCounter() { // GH-90000
             UUID id = UUID.randomUUID(); // GH-90000
             when(delegate.findById(any(), any(), any())).thenReturn(Promise.of(Optional.empty())); // GH-90000
@@ -476,7 +476,7 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("no NullPointerException when meterRegistry is null [GH-90000]")
+        @DisplayName("no NullPointerException when meterRegistry is null")
         void noNpeWithNullMetrics() { // GH-90000
             var c = new CachingEntityRepository(delegate, null, // GH-90000
                     Duration.ofSeconds(5), 10L); // GH-90000

@@ -46,7 +46,7 @@ import static org.mockito.Mockito.*;
  *
  * @since 2.4.0
  */
-@DisplayName("DLQ Retry E2E Tests [GH-90000]")
+@DisplayName("DLQ Retry E2E Tests")
 class DlqRetryE2eTest extends EventloopTestBase {
 
     private ObjectMapper objectMapper;
@@ -97,11 +97,11 @@ class DlqRetryE2eTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Event Failure Publishing [GH-90000]")
+    @DisplayName("Event Failure Publishing")
     class EventFailurePublishingTests {
 
         @Test
-        @DisplayName("should publish operator failure to DLQ with PENDING status [GH-90000]")
+        @DisplayName("should publish operator failure to DLQ with PENDING status")
         void shouldPublishFailureToDlqWithPendingStatus() { // GH-90000
             // GIVEN
             String tenantId = "tenant-001";
@@ -138,13 +138,13 @@ class DlqRetryE2eTest extends EventloopTestBase {
             assertThat(entry.eventType()).isEqualTo(eventType); // GH-90000
             assertThat(entry.failureReason()).isEqualTo(failureReason); // GH-90000
             assertThat(entry.correlationId()).isEqualTo(correlationId); // GH-90000
-            assertThat(entry.status()).isEqualTo("PENDING [GH-90000]");
+            assertThat(entry.status()).isEqualTo("PENDING");
             assertThat(entry.retryCount()).isZero(); // GH-90000
             assertThat(entry.eventPayload()).containsAllEntriesOf(eventPayload); // GH-90000
         }
 
         @Test
-        @DisplayName("should handle null payload and store empty object [GH-90000]")
+        @DisplayName("should handle null payload and store empty object")
         void shouldHandleNullPayload() { // GH-90000
             // WHEN — publish with null payload
             runPromise(() -> // GH-90000
@@ -165,7 +165,7 @@ class DlqRetryE2eTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should publish multiple failures independently [GH-90000]")
+        @DisplayName("should publish multiple failures independently")
         void shouldPublishMultipleFailures() { // GH-90000
             // WHEN — publish 3 independent failures
             for (int i = 1; i <= 3; i++) { // GH-90000
@@ -192,7 +192,7 @@ class DlqRetryE2eTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should preserve correlation ID across DLQ entries [GH-90000]")
+        @DisplayName("should preserve correlation ID across DLQ entries")
         void shouldPreserveCorrelationId() { // GH-90000
             // GIVEN
             String correlationId = "trace-999";
@@ -221,11 +221,11 @@ class DlqRetryE2eTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Retry Processing and State Transitions [GH-90000]")
+    @DisplayName("Retry Processing and State Transitions")
     class RetryProcessingTests {
 
         @Test
-        @DisplayName("should transition entry from PENDING to RETRYING on retry attempt [GH-90000]")
+        @DisplayName("should transition entry from PENDING to RETRYING on retry attempt")
         void shouldTransitionToPendingFromRetrying() { // GH-90000
             // GIVEN — published failure
             runPromise(() -> // GH-90000
@@ -252,11 +252,11 @@ class DlqRetryE2eTest extends EventloopTestBase {
             // THEN — entry status updated
             Optional<DlqEntry> updated = inMemoryDlqPublisher.getEntryById(original.id()); // GH-90000
             assertThat(updated).isPresent(); // GH-90000
-            assertThat(updated.get().status()).isEqualTo("RETRYING [GH-90000]");
+            assertThat(updated.get().status()).isEqualTo("RETRYING");
         }
 
         @Test
-        @DisplayName("should increment retry count on each retry [GH-90000]")
+        @DisplayName("should increment retry count on each retry")
         void shouldIncrementRetryCount() { // GH-90000
             // GIVEN — published failure
             runPromise(() -> // GH-90000
@@ -288,7 +288,7 @@ class DlqRetryE2eTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should transition entry to RESOLVED after successful retry [GH-90000]")
+        @DisplayName("should transition entry to RESOLVED after successful retry")
         void shouldTransitionToResolved() { // GH-90000
             // GIVEN — published failure
             runPromise(() -> // GH-90000
@@ -316,11 +316,11 @@ class DlqRetryE2eTest extends EventloopTestBase {
             // THEN — status is RESOLVED
             Optional<DlqEntry> resolved = inMemoryDlqPublisher.getEntryById(original.id()); // GH-90000
             assertThat(resolved).isPresent(); // GH-90000
-            assertThat(resolved.get().status()).isEqualTo("RESOLVED [GH-90000]");
+            assertThat(resolved.get().status()).isEqualTo("RESOLVED");
         }
 
         @Test
-        @DisplayName("should abandon entry after max retry attempts (5) [GH-90000]")
+        @DisplayName("should abandon entry after max retry attempts (5)")
         void shouldAbandonAfterMaxRetries() { // GH-90000
             // GIVEN — published failure
             runPromise(() -> // GH-90000
@@ -349,7 +349,7 @@ class DlqRetryE2eTest extends EventloopTestBase {
             // THEN — status is ABANDONED, retryCount=5
             Optional<DlqEntry> abandoned = inMemoryDlqPublisher.getEntryById(entryId); // GH-90000
             assertThat(abandoned).isPresent(); // GH-90000
-            assertThat(abandoned.get().status()).isEqualTo("ABANDONED [GH-90000]");
+            assertThat(abandoned.get().status()).isEqualTo("ABANDONED");
             assertThat(abandoned.get().retryCount()).isEqualTo(5); // GH-90000
         }
     }
@@ -359,11 +359,11 @@ class DlqRetryE2eTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Full DLQ Retry Workflow [GH-90000]")
+    @DisplayName("Full DLQ Retry Workflow")
     class FullRetryWorkflowTests {
 
         @Test
-        @DisplayName("should execute full flow: failure → DLQ PENDING → retry → RESOLVED [GH-90000]")
+        @DisplayName("should execute full flow: failure → DLQ PENDING → retry → RESOLVED")
         void shouldExecuteFullDlqRetryWorkflow() { // GH-90000
             // GIVEN — operator failure published
             String tenantId = "tenant-prod";
@@ -393,7 +393,7 @@ class DlqRetryE2eTest extends EventloopTestBase {
             // WHEN — entry appears in DLQ with PENDING status
             assertThat(inMemoryDlqPublisher.getAllEntries()).hasSize(1); // GH-90000
             DlqEntry pendingEntry = inMemoryDlqPublisher.getAllEntries().get(0); // GH-90000
-            assertThat(pendingEntry.status()).isEqualTo("PENDING [GH-90000]");
+            assertThat(pendingEntry.status()).isEqualTo("PENDING");
             assertThat(pendingEntry.retryCount()).isZero(); // GH-90000
 
             UUID entryId = pendingEntry.id(); // GH-90000
@@ -402,7 +402,7 @@ class DlqRetryE2eTest extends EventloopTestBase {
             runPromise(() -> inMemoryDlqPublisher.updateStatus(entryId, "RETRYING")); // GH-90000
 
             DlqEntry retryngEntry = inMemoryDlqPublisher.getEntryById(entryId).orElseThrow(); // GH-90000
-            assertThat(retryngEntry.status()).isEqualTo("RETRYING [GH-90000]");
+            assertThat(retryngEntry.status()).isEqualTo("RETRYING");
 
             // Step 3: Increment retry count
             runPromise(() -> inMemoryDlqPublisher.incrementRetryCount(entryId)); // GH-90000
@@ -414,7 +414,7 @@ class DlqRetryE2eTest extends EventloopTestBase {
             runPromise(() -> inMemoryDlqPublisher.updateStatus(entryId, "RESOLVED")); // GH-90000
 
             DlqEntry resolvedEntry = inMemoryDlqPublisher.getEntryById(entryId).orElseThrow(); // GH-90000
-            assertThat(resolvedEntry.status()).isEqualTo("RESOLVED [GH-90000]");
+            assertThat(resolvedEntry.status()).isEqualTo("RESOLVED");
 
             // THEN — full workflow validation
             assertThat(resolvedEntry.tenantId()).isEqualTo(tenantId); // GH-90000
@@ -422,11 +422,11 @@ class DlqRetryE2eTest extends EventloopTestBase {
             assertThat(resolvedEntry.nodeId()).isEqualTo(nodeId); // GH-90000
             assertThat(resolvedEntry.eventType()).isEqualTo(eventType); // GH-90000
             assertThat(resolvedEntry.eventPayload()).containsAllEntriesOf(payload); // GH-90000
-            assertThat(resolvedEntry.failureReason()).isEqualTo("PHASE_GUARD_VIOLATION [GH-90000]");
+            assertThat(resolvedEntry.failureReason()).isEqualTo("PHASE_GUARD_VIOLATION");
         }
 
         @Test
-        @DisplayName("should handle multiple DLQ entries with different retry states [GH-90000]")
+        @DisplayName("should handle multiple DLQ entries with different retry states")
         void shouldHandleMultipleDlqEntriesWithDifferentStates() { // GH-90000
             // GIVEN — publish 3 failures
             List<UUID> entryIds = new ArrayList<>(); // GH-90000
@@ -455,13 +455,13 @@ class DlqRetryE2eTest extends EventloopTestBase {
             runPromise(() -> inMemoryDlqPublisher.updateStatus(entryIds.get(2), "RESOLVED")); // GH-90000
 
             // THEN — all entries have correct states
-            assertThat(inMemoryDlqPublisher.getEntryById(entryIds.get(0)).get().status()).isEqualTo("PENDING [GH-90000]");
-            assertThat(inMemoryDlqPublisher.getEntryById(entryIds.get(1)).get().status()).isEqualTo("RETRYING [GH-90000]");
-            assertThat(inMemoryDlqPublisher.getEntryById(entryIds.get(2)).get().status()).isEqualTo("RESOLVED [GH-90000]");
+            assertThat(inMemoryDlqPublisher.getEntryById(entryIds.get(0)).get().status()).isEqualTo("PENDING");
+            assertThat(inMemoryDlqPublisher.getEntryById(entryIds.get(1)).get().status()).isEqualTo("RETRYING");
+            assertThat(inMemoryDlqPublisher.getEntryById(entryIds.get(2)).get().status()).isEqualTo("RESOLVED");
         }
 
         @Test
-        @DisplayName("should query DLQ entries by status filter [GH-90000]")
+        @DisplayName("should query DLQ entries by status filter")
         void shouldQueryDlqByStatus() { // GH-90000
             // GIVEN — mixed status entries
             for (int i = 1; i <= 3; i++) { // GH-90000
@@ -488,9 +488,9 @@ class DlqRetryE2eTest extends EventloopTestBase {
             runPromise(() -> inMemoryDlqPublisher.updateStatus(id2, "RESOLVED")); // GH-90000
 
             // WHEN — query by status
-            List<DlqEntry> pending = inMemoryDlqPublisher.getEntriesByStatus("PENDING [GH-90000]");
-            List<DlqEntry> retrying = inMemoryDlqPublisher.getEntriesByStatus("RETRYING [GH-90000]");
-            List<DlqEntry> resolved = inMemoryDlqPublisher.getEntriesByStatus("RESOLVED [GH-90000]");
+            List<DlqEntry> pending = inMemoryDlqPublisher.getEntriesByStatus("PENDING");
+            List<DlqEntry> retrying = inMemoryDlqPublisher.getEntriesByStatus("RETRYING");
+            List<DlqEntry> resolved = inMemoryDlqPublisher.getEntriesByStatus("RESOLVED");
 
             // THEN — correct filtering
             assertThat(pending).hasSize(1); // GH-90000
@@ -504,11 +504,11 @@ class DlqRetryE2eTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Retry Idempotency and Guard Rails [GH-90000]")
+    @DisplayName("Retry Idempotency and Guard Rails")
     class RetryIdempotencyTests {
 
         @Test
-        @DisplayName("should allow retrying PENDING entry multiple times [GH-90000]")
+        @DisplayName("should allow retrying PENDING entry multiple times")
         void shouldAllowRetryingPendingEntry() { // GH-90000
             // GIVEN — published failure
             runPromise(() -> // GH-90000
@@ -536,7 +536,7 @@ class DlqRetryE2eTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should preserve original event data across retries [GH-90000]")
+        @DisplayName("should preserve original event data across retries")
         void shouldPreserveOriginalEventData() { // GH-90000
             // GIVEN — complex event payload
             Map<String, Object> originalPayload = Map.of( // GH-90000
@@ -567,7 +567,7 @@ class DlqRetryE2eTest extends EventloopTestBase {
             // THEN — original payload unchanged
             DlqEntry result = inMemoryDlqPublisher.getEntryById(entryId).orElseThrow(); // GH-90000
             assertThat(result.eventPayload()).containsAllEntriesOf(originalPayload); // GH-90000
-            assertThat(result.failureReason()).isEqualTo("COMPLEX_ERROR [GH-90000]");
+            assertThat(result.failureReason()).isEqualTo("COMPLEX_ERROR");
         }
     }
 

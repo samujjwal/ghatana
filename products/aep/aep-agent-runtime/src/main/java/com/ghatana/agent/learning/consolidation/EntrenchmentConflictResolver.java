@@ -17,7 +17,8 @@ import org.slf4j.LoggerFactory;
  * @doc.type class
  * @doc.purpose Entrenchment-based conflict resolution
  * @doc.layer agent-learning
- */
+  * @doc.pattern Component
+*/
 public class EntrenchmentConflictResolver implements ConflictResolver {
 
     private static final Logger log = LoggerFactory.getLogger(EntrenchmentConflictResolver.class);

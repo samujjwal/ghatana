@@ -35,7 +35,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AEP Agent Registry Integration [GH-90000]")
+@DisplayName("AEP Agent Registry Integration")
 class AepHttpServerAgentRegistryIntegrationTest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();

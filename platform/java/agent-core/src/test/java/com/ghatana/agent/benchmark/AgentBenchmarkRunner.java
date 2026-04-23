@@ -28,8 +28,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * ./gradlew :platform:java:agent-framework:test --tests "*AgentBenchmarkRunner*" -DrunBenchmarks=true
  * }</pre>
  */
-@DisplayName("Agent Performance Benchmarks [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("Agent Performance Benchmarks")
+@Tag("integration")
 class AgentBenchmarkRunner {
 
     /**
@@ -43,9 +43,9 @@ class AgentBenchmarkRunner {
      * </ul>
      */
     @Test
-    @DisplayName("Agent throughput meets production targets [GH-90000]")
+    @DisplayName("Agent throughput meets production targets")
     void runAgentBenchmarks() throws RunnerException { // GH-90000
-        Assumptions.assumeTrue(Boolean.getBoolean("runBenchmarks [GH-90000]"),
+        Assumptions.assumeTrue(Boolean.getBoolean("runBenchmarks"),
                 "JMH benchmarks are opt-in; enable with -DrunBenchmarks=true");
 
         Options opt = new OptionsBuilder() // GH-90000
@@ -64,17 +64,17 @@ class AgentBenchmarkRunner {
 
             System.out.printf("Benchmark: %s → %.0f ops/sec%n", benchmarkName, opsPerSec); // GH-90000
 
-            if (benchmarkName.contains("deterministic [GH-90000]")) {
+            if (benchmarkName.contains("deterministic")) {
                 assertThat(opsPerSec) // GH-90000
-                        .as("Deterministic agent throughput should exceed 100K ops/sec [GH-90000]")
+                        .as("Deterministic agent throughput should exceed 100K ops/sec")
                         .isGreaterThan(100_000); // GH-90000
-            } else if (benchmarkName.contains("probabilistic [GH-90000]")) {
+            } else if (benchmarkName.contains("probabilistic")) {
                 assertThat(opsPerSec) // GH-90000
-                        .as("Probabilistic agent throughput should exceed 10K ops/sec [GH-90000]")
+                        .as("Probabilistic agent throughput should exceed 10K ops/sec")
                         .isGreaterThan(10_000); // GH-90000
-            } else if (benchmarkName.contains("adaptive [GH-90000]")) {
+            } else if (benchmarkName.contains("adaptive")) {
                 assertThat(opsPerSec) // GH-90000
-                        .as("Adaptive agent throughput should exceed 50K ops/sec [GH-90000]")
+                        .as("Adaptive agent throughput should exceed 50K ops/sec")
                         .isGreaterThan(50_000); // GH-90000
             }
         }

@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("Data Retention Classification Tests [GH-90000]")
+@DisplayName("Data Retention Classification Tests")
 class RetentionClassificationTest extends EventloopTestBase {
 
     // ── Retention tier model ──────────────────────────────────────────────────
@@ -78,14 +78,14 @@ class RetentionClassificationTest extends EventloopTestBase {
             "CONFIDENTIAL,        LONG_TERM",
             "RESTRICTED,          LONG_TERM"
     })
-    @DisplayName("sensitivity level maps to expected default retention tier [GH-90000]")
+    @DisplayName("sensitivity level maps to expected default retention tier")
     void sensitivityMapsToDefaultTier(DataSensitivity sensitivity, RetentionTier expectedTier) { // GH-90000
         RetentionTier resolved = classifyByDefaultSensitivity(sensitivity); // GH-90000
         assertThat(resolved).isEqualTo(expectedTier); // GH-90000
     }
 
     @Test
-    @DisplayName("PUBLIC data has the shortest default retention [GH-90000]")
+    @DisplayName("PUBLIC data has the shortest default retention")
     void publicDataHasShortestRetention() { // GH-90000
         RetentionTier tier = classifyByDefaultSensitivity(DataSensitivity.PUBLIC); // GH-90000
         assertThat(tier.defaultTtl).isLessThan(RetentionTier.MEDIUM_TERM.defaultTtl); // GH-90000
@@ -94,7 +94,7 @@ class RetentionClassificationTest extends EventloopTestBase {
     // ── Regulatory TTL overrides ──────────────────────────────────────────────
 
     @Test
-    @DisplayName("GDPR + RESTRICTED yields at least 5-year effective TTL [GH-90000]")
+    @DisplayName("GDPR + RESTRICTED yields at least 5-year effective TTL")
     void gdprRestrictedYieldsAtLeastFiveYearTtl() { // GH-90000
         RetentionPolicy policy = new RetentionPolicy( // GH-90000
                 RetentionTier.LONG_TERM, DataSensitivity.RESTRICTED, Regulation.GDPR);
@@ -103,7 +103,7 @@ class RetentionClassificationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("HIPAA data has a minimum 6-year effective TTL [GH-90000]")
+    @DisplayName("HIPAA data has a minimum 6-year effective TTL")
     void hipaaDataHasMinimumSixYearTtl() { // GH-90000
         RetentionPolicy policy = new RetentionPolicy( // GH-90000
                 RetentionTier.MEDIUM_TERM, DataSensitivity.CONFIDENTIAL, Regulation.HIPAA);
@@ -112,7 +112,7 @@ class RetentionClassificationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("NONE regulation uses the tier's default TTL [GH-90000]")
+    @DisplayName("NONE regulation uses the tier's default TTL")
     void noRegulationUsesTierDefault() { // GH-90000
         RetentionPolicy policy = new RetentionPolicy( // GH-90000
                 RetentionTier.SHORT_TERM, DataSensitivity.PUBLIC, Regulation.NONE);
@@ -123,7 +123,7 @@ class RetentionClassificationTest extends EventloopTestBase {
     // ── Encryption requirement ────────────────────────────────────────────────
 
     @Test
-    @DisplayName("CONFIDENTIAL data requires encryption at rest [GH-90000]")
+    @DisplayName("CONFIDENTIAL data requires encryption at rest")
     void confidentialDataRequiresEncryption() { // GH-90000
         RetentionPolicy policy = new RetentionPolicy( // GH-90000
                 RetentionTier.LONG_TERM, DataSensitivity.CONFIDENTIAL, Regulation.NONE);
@@ -132,7 +132,7 @@ class RetentionClassificationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("PUBLIC data does not require encryption at rest [GH-90000]")
+    @DisplayName("PUBLIC data does not require encryption at rest")
     void publicDataDoesNotRequireEncryption() { // GH-90000
         RetentionPolicy policy = new RetentionPolicy( // GH-90000
                 RetentionTier.SHORT_TERM, DataSensitivity.PUBLIC, Regulation.NONE);
@@ -143,7 +143,7 @@ class RetentionClassificationTest extends EventloopTestBase {
     // ── Audit log requirement ─────────────────────────────────────────────────
 
     @Test
-    @DisplayName("non-PUBLIC data requires audit logging [GH-90000]")
+    @DisplayName("non-PUBLIC data requires audit logging")
     void nonPublicDataRequiresAuditLog() { // GH-90000
         for (DataSensitivity s : new DataSensitivity[]{ // GH-90000
                 DataSensitivity.INTERNAL, DataSensitivity.CONFIDENTIAL, DataSensitivity.RESTRICTED}) {
@@ -155,7 +155,7 @@ class RetentionClassificationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("PUBLIC data does not require audit logging [GH-90000]")
+    @DisplayName("PUBLIC data does not require audit logging")
     void publicDataDoesNotRequireAuditLog() { // GH-90000
         RetentionPolicy policy = new RetentionPolicy( // GH-90000
                 RetentionTier.SHORT_TERM, DataSensitivity.PUBLIC, Regulation.NONE);
@@ -166,9 +166,9 @@ class RetentionClassificationTest extends EventloopTestBase {
     // ── Policy expiry comparison ──────────────────────────────────────────────
 
     @Test
-    @DisplayName("data purge is scheduled at createdAt + effective TTL [GH-90000]")
+    @DisplayName("data purge is scheduled at createdAt + effective TTL")
     void purgeIsScheduledAtCreationPlusTtl() { // GH-90000
-        Instant created = Instant.parse("2026-01-01T00:00:00Z [GH-90000]");
+        Instant created = Instant.parse("2026-01-01T00:00:00Z");
         RetentionPolicy policy = new RetentionPolicy( // GH-90000
                 RetentionTier.SHORT_TERM, DataSensitivity.PUBLIC, Regulation.NONE);
 

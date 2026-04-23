@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.*;
 
-@DisplayName("RedisClientFactory Tests [GH-90000]")
+@DisplayName("RedisClientFactory Tests")
 class RedisClientFactoryTest {
 
     @AfterEach
@@ -39,7 +39,7 @@ class RedisClientFactoryTest {
     void shouldCreateRedisConfigWithDefaults() { // GH-90000
         RedisConfig config = RedisConfig.localhost(); // GH-90000
 
-        assertThat(config.host()).isEqualTo("localhost [GH-90000]");
+        assertThat(config.host()).isEqualTo("localhost");
         assertThat(config.port()).isEqualTo(6379); // GH-90000
         assertThat(config.password()).isNull(); // GH-90000
         assertThat(config.maxTotal()).isEqualTo(8); // GH-90000
@@ -48,16 +48,16 @@ class RedisClientFactoryTest {
     @Test
     void shouldCreateRedisConfigWithBuilder() { // GH-90000
         RedisConfig config = RedisConfig.builder() // GH-90000
-            .host("redis.internal [GH-90000]")
+            .host("redis.internal")
             .port(6380) // GH-90000
-            .password("secret [GH-90000]")
+            .password("secret")
             .maxTotal(16) // GH-90000
             .maxIdle(8) // GH-90000
             .build(); // GH-90000
 
-        assertThat(config.host()).isEqualTo("redis.internal [GH-90000]");
+        assertThat(config.host()).isEqualTo("redis.internal");
         assertThat(config.port()).isEqualTo(6380); // GH-90000
-        assertThat(config.password()).isEqualTo("secret [GH-90000]");
+        assertThat(config.password()).isEqualTo("secret");
         assertThat(config.maxTotal()).isEqualTo(16); // GH-90000
         assertThat(config.maxIdle()).isEqualTo(8); // GH-90000
     }

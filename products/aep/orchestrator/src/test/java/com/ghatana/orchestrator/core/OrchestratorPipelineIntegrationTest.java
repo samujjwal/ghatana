@@ -34,7 +34,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-@DisplayName("Orchestrator Pipeline Integration [GH-90000]")
+@DisplayName("Orchestrator Pipeline Integration")
 class OrchestratorPipelineIntegrationTest extends EventloopTestBase {
 
     @Mock
@@ -78,85 +78,85 @@ class OrchestratorPipelineIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("deployPipeline succeeds when all referenced agents are active [GH-90000]")
+    @DisplayName("deployPipeline succeeds when all referenced agents are active")
     void shouldDeployPipelineWhenAgentsAreActive() { // GH-90000
         OrchestratorPipelineEntity pipeline = pipeline("pipe-1", "agent-1"); // GH-90000
-        when(pipelineRegistryClient.getPipeline("pipe-1 [GH-90000]")).thenReturn(Promise.of(Optional.of(pipeline)));
-        when(agentRegistryClient.getAgent("agent-1 [GH-90000]"))
+        when(pipelineRegistryClient.getPipeline("pipe-1")).thenReturn(Promise.of(Optional.of(pipeline)));
+        when(agentRegistryClient.getAgent("agent-1"))
                 .thenReturn(Promise.of(Optional.of(new AgentRegistryClient.AgentInfo("agent-1", "Agent 1", "active")))); // GH-90000
 
-        OrchestratorPipelineEntity deployed = runPromise(() -> orchestrator.deployPipeline("pipe-1 [GH-90000]"));
+        OrchestratorPipelineEntity deployed = runPromise(() -> orchestrator.deployPipeline("pipe-1"));
 
         assertEquals("pipe-1", deployed.id); // GH-90000
-        verify(metricsCollector).incrementCounter("orch.pipeline.deployed [GH-90000]");
+        verify(metricsCollector).incrementCounter("orch.pipeline.deployed");
     }
 
     @Test
-    @DisplayName("deployPipeline returns null when referenced agent is missing [GH-90000]")
+    @DisplayName("deployPipeline returns null when referenced agent is missing")
     void shouldRejectPipelineWhenAgentIsMissing() { // GH-90000
         OrchestratorPipelineEntity pipeline = pipeline("pipe-missing", "missing-agent"); // GH-90000
-        when(pipelineRegistryClient.getPipeline("pipe-missing [GH-90000]")).thenReturn(Promise.of(Optional.of(pipeline)));
-        when(agentRegistryClient.getAgent("missing-agent [GH-90000]")).thenReturn(Promise.of(Optional.empty()));
+        when(pipelineRegistryClient.getPipeline("pipe-missing")).thenReturn(Promise.of(Optional.of(pipeline)));
+        when(agentRegistryClient.getAgent("missing-agent")).thenReturn(Promise.of(Optional.empty()));
 
-        OrchestratorPipelineEntity deployed = runPromise(() -> orchestrator.deployPipeline("pipe-missing [GH-90000]"));
+        OrchestratorPipelineEntity deployed = runPromise(() -> orchestrator.deployPipeline("pipe-missing"));
 
         assertNull(deployed); // GH-90000
-        verify(metricsCollector).incrementCounter("orch.pipeline.validation.failed [GH-90000]");
+        verify(metricsCollector).incrementCounter("orch.pipeline.validation.failed");
     }
 
     @Test
-    @DisplayName("undeployPipeline removes deployed pipeline [GH-90000]")
+    @DisplayName("undeployPipeline removes deployed pipeline")
     void shouldUndeployPipeline() { // GH-90000
         OrchestratorPipelineEntity pipeline = pipeline("pipe-2", "agent-2"); // GH-90000
-        when(pipelineRegistryClient.getPipeline("pipe-2 [GH-90000]")).thenReturn(Promise.of(Optional.of(pipeline)));
-        when(agentRegistryClient.getAgent("agent-2 [GH-90000]"))
+        when(pipelineRegistryClient.getPipeline("pipe-2")).thenReturn(Promise.of(Optional.of(pipeline)));
+        when(agentRegistryClient.getAgent("agent-2"))
                 .thenReturn(Promise.of(Optional.of(new AgentRegistryClient.AgentInfo("agent-2", "Agent 2", "active")))); // GH-90000
 
-        runPromise(() -> orchestrator.deployPipeline("pipe-2 [GH-90000]"));
-        Boolean removed = runPromise(() -> orchestrator.undeployPipeline("pipe-2 [GH-90000]"));
+        runPromise(() -> orchestrator.deployPipeline("pipe-2"));
+        Boolean removed = runPromise(() -> orchestrator.undeployPipeline("pipe-2"));
 
         assertTrue(removed); // GH-90000
-        verify(metricsCollector).incrementCounter("orch.pipeline.undeployed [GH-90000]");
+        verify(metricsCollector).incrementCounter("orch.pipeline.undeployed");
     }
 
     // ── Planning integration ───────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Planning agent integration via PlanCompiler [GH-90000]")
+    @DisplayName("Planning agent integration via PlanCompiler")
     class PlanningIntegration {
 
         @Test
-        @DisplayName("compilePlan delegates to PlanCompiler [GH-90000]")
+        @DisplayName("compilePlan delegates to PlanCompiler")
         void compilePlanDelegatesToCompiler() { // GH-90000
             PlanGraph expectedGraph = PlanGraph.of( // GH-90000
                     "p1", "agent-1", "Do something", List.of(PlannedAction.simple("a1", "Step 1", ActionClass.READ))); // GH-90000
-            when(planCompiler.compile(eq("agent-1 [GH-90000]"), eq("tenant-1 [GH-90000]"), eq("Do something [GH-90000]"), any()))
+            when(planCompiler.compile(eq("agent-1"), eq("tenant-1"), eq("Do something"), any()))
                     .thenReturn(Promise.of(expectedGraph)); // GH-90000
 
             PlanGraph graph =
                     runPromise(() -> orchestratorWithPlanning.compilePlan("agent-1", "tenant-1", "Do something")); // GH-90000
 
-            assertThat(graph.planId()).isEqualTo("p1 [GH-90000]");
+            assertThat(graph.planId()).isEqualTo("p1");
             assertThat(graph.actions()).hasSize(1); // GH-90000
-            verify(planCompiler).compile(eq("agent-1 [GH-90000]"), eq("tenant-1 [GH-90000]"), eq("Do something [GH-90000]"), any());
+            verify(planCompiler).compile(eq("agent-1"), eq("tenant-1"), eq("Do something"), any());
         }
 
         @Test
-        @DisplayName("compilePlan throws when PlanCompiler is not configured [GH-90000]")
+        @DisplayName("compilePlan throws when PlanCompiler is not configured")
         void compilePlanThrowsWhenNoPlanCompiler() { // GH-90000
             assertThatThrownBy(() -> runPromise(() -> orchestrator.compilePlan("a", "t", "Obj"))) // GH-90000
                     .isInstanceOf(IllegalStateException.class) // GH-90000
-                    .hasMessageContaining("PlanCompiler is not configured [GH-90000]");
+                    .hasMessageContaining("PlanCompiler is not configured");
         }
 
         @Test
-        @DisplayName("hasPlanCompiler returns true when compiler is set [GH-90000]")
+        @DisplayName("hasPlanCompiler returns true when compiler is set")
         void hasPlanCompilerTrueWhenSet() { // GH-90000
             assertThat(orchestratorWithPlanning.hasPlanCompiler()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("hasPlanCompiler returns false when no compiler is set [GH-90000]")
+        @DisplayName("hasPlanCompiler returns false when no compiler is set")
         void hasPlanCompilerFalseWhenNotSet() { // GH-90000
             assertThat(orchestrator.hasPlanCompiler()).isFalse(); // GH-90000
         }

@@ -18,11 +18,11 @@ import static org.mockito.Mockito.when;
 /**
  * Unit tests for {@link AepGcTuningAdvisor} (AEP-005.3). // GH-90000
  */
-@DisplayName("AepGcTuningAdvisor — AEP-005.3 [GH-90000]")
+@DisplayName("AepGcTuningAdvisor — AEP-005.3")
 class AepGcTuningAdvisorTest {
 
     @Test
-    @DisplayName("analyze returns meetsTarget=true when avg pause is below threshold [GH-90000]")
+    @DisplayName("analyze returns meetsTarget=true when avg pause is below threshold")
     void meetsTargetWhenAvgPauseLow() { // GH-90000
         GarbageCollectorMXBean gc = mockGcBean("G1 Young", 100, 500); // avg 5ms // GH-90000
         AepGcTuningAdvisor advisor = AepGcTuningAdvisor.builder() // GH-90000
@@ -36,7 +36,7 @@ class AepGcTuningAdvisorTest {
     }
 
     @Test
-    @DisplayName("analyze returns meetsTarget=false when avg pause exceeds threshold [GH-90000]")
+    @DisplayName("analyze returns meetsTarget=false when avg pause exceeds threshold")
     void doesNotMeetTargetWhenAvgPauseHigh() { // GH-90000
         GarbageCollectorMXBean gc = mockGcBean("G1 Young", 10, 500); // avg 50ms // GH-90000
         AepGcTuningAdvisor advisor = AepGcTuningAdvisor.builder() // GH-90000
@@ -46,11 +46,11 @@ class AepGcTuningAdvisorTest {
 
         AepGcTuningAdvisor.GcAnalysis analysis = advisor.analyze(); // GH-90000
         assertThat(analysis.meetsTarget()).isFalse(); // GH-90000
-        assertThat(analysis.recommendation()).containsIgnoringCase("consider [GH-90000]");
+        assertThat(analysis.recommendation()).containsIgnoringCase("consider");
     }
 
     @Test
-    @DisplayName("analyze with no collections returns meetsTarget=true and 0 avg pause [GH-90000]")
+    @DisplayName("analyze with no collections returns meetsTarget=true and 0 avg pause")
     void noCollectionsReturnsZeroAvgAndMeetsTarget() { // GH-90000
         GarbageCollectorMXBean gc = mockGcBean("G1", 0, 0); // GH-90000
         AepGcTuningAdvisor advisor = AepGcTuningAdvisor.builder() // GH-90000
@@ -64,7 +64,7 @@ class AepGcTuningAdvisorTest {
     }
 
     @Test
-    @DisplayName("analyze recommendation includes ZGC hint for very high pause times [GH-90000]")
+    @DisplayName("analyze recommendation includes ZGC hint for very high pause times")
     void recommendationIncludesZgcForVeryHighPause() { // GH-90000
         GarbageCollectorMXBean gc = mockGcBean("G1", 10, 1_000); // avg 100ms = 10× target // GH-90000
         AepGcTuningAdvisor advisor = AepGcTuningAdvisor.builder() // GH-90000
@@ -73,11 +73,11 @@ class AepGcTuningAdvisorTest {
                 .build(); // GH-90000
 
         AepGcTuningAdvisor.GcAnalysis analysis = advisor.analyze(); // GH-90000
-        assertThat(analysis.recommendation()).containsIgnoringCase("ZGC [GH-90000]");
+        assertThat(analysis.recommendation()).containsIgnoringCase("ZGC");
     }
 
     @Test
-    @DisplayName("Builder rejects non-positive pauseTargetMs [GH-90000]")
+    @DisplayName("Builder rejects non-positive pauseTargetMs")
     void builderRejectsNonPositiveTarget() { // GH-90000
         assertThatThrownBy(() -> AepGcTuningAdvisor.builder().pauseTargetMs(0)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class); // GH-90000

@@ -44,7 +44,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataCloudHttpServer – Entity CRUD Endpoints [GH-90000]")
+@DisplayName("DataCloudHttpServer – Entity CRUD Endpoints")
 class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
 
     private DataCloudClient mockClient;
@@ -67,7 +67,7 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("POST /api/v1/entities/:collection – save entity [GH-90000]")
+    @DisplayName("POST /api/v1/entities/:collection – save entity")
     class SaveEntityTests {
 
         /**
@@ -75,7 +75,7 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
          * Route: POST /api/v1/entities/{collection}
          */
         @Test
-        @DisplayName("returns 200 with saved entity id when client save succeeds [GH-90000]")
+        @DisplayName("returns 200 with saved entity id when client save succeeds")
         void saveEntity_validPayload_returns200() throws Exception { // GH-90000
             DataCloudClient.Entity saved = DataCloudClient.Entity.of( // GH-90000
                     "ent-1", TestConstants.COLLECTION_PRODUCTS,
@@ -92,8 +92,8 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
 
             assertStatusCode(resp, TestConstants.HTTP_OK); // GH-90000
             Map<String, Object> body = parseJsonResponse(resp); // GH-90000
-            assertThat(body.get("id [GH-90000]")).isEqualTo("ent-1 [GH-90000]");
-            assertThat(body.get("collection [GH-90000]")).isEqualTo(TestConstants.COLLECTION_PRODUCTS);
+            assertThat(body.get("id")).isEqualTo("ent-1");
+            assertThat(body.get("collection")).isEqualTo(TestConstants.COLLECTION_PRODUCTS);
         }
 
         /**
@@ -101,7 +101,7 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
          * Route: POST /api/v1/entities/{collection}
          */
         @Test
-        @DisplayName("returns 415 when Content-Type is not application/json [GH-90000]")
+        @DisplayName("returns 415 when Content-Type is not application/json")
         void saveEntity_wrongContentType_returns415() throws Exception { // GH-90000
             startServer(); // GH-90000
 
@@ -116,7 +116,7 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
         }
 
         @Test
-        @DisplayName("returns 415 when Content-Type header is missing [GH-90000]")
+        @DisplayName("returns 415 when Content-Type header is missing")
         void saveEntity_missingContentType_returns415() throws Exception { // GH-90000
             startServer(); // GH-90000
 
@@ -130,7 +130,7 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
         }
 
         @Test
-        @DisplayName("returns 400 when request body is empty [GH-90000]")
+        @DisplayName("returns 400 when request body is empty")
         void saveEntity_emptyBody_returns400() throws Exception { // GH-90000
             startServer(); // GH-90000
 
@@ -140,7 +140,7 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
         }
 
         @Test
-        @DisplayName("returns 400 when collection name contains path traversal [GH-90000]")
+        @DisplayName("returns 400 when collection name contains path traversal")
         void saveEntity_maliciousCollection_returns400() throws Exception { // GH-90000
             startServer(); // GH-90000
 
@@ -157,50 +157,50 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("GET /api/v1/entities/:collection/:id – get entity [GH-90000]")
+    @DisplayName("GET /api/v1/entities/:collection/:id – get entity")
     class GetEntityTests {
 
         @Test
-        @DisplayName("returns 200 with entity data when found [GH-90000]")
+        @DisplayName("returns 200 with entity data when found")
         void getEntity_exists_returns200() throws Exception { // GH-90000
             DataCloudClient.Entity entity = DataCloudClient.Entity.of( // GH-90000
                     "ent-42", "products", Map.of("name", "Gadget", "sku", "SKU-001")); // GH-90000
-            when(mockClient.findById(anyString(), eq("products [GH-90000]"), eq("ent-42 [GH-90000]")))
+            when(mockClient.findById(anyString(), eq("products"), eq("ent-42")))
                     .thenReturn(Promise.of(Optional.of(entity))); // GH-90000
 
             startServer(); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/entities/products/ent-42 [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/entities/products/ent-42");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("id [GH-90000]")).isEqualTo("ent-42 [GH-90000]");
-            assertThat(body.get("collection [GH-90000]")).isEqualTo("products [GH-90000]");
+            assertThat(body.get("id")).isEqualTo("ent-42");
+            assertThat(body.get("collection")).isEqualTo("products");
         }
 
         @Test
-        @DisplayName("returns 404 when entity does not exist [GH-90000]")
+        @DisplayName("returns 404 when entity does not exist")
         void getEntity_notFound_returns404() throws Exception { // GH-90000
-            when(mockClient.findById(anyString(), eq("products [GH-90000]"), eq("missing-id [GH-90000]")))
+            when(mockClient.findById(anyString(), eq("products"), eq("missing-id")))
                     .thenReturn(Promise.of(Optional.empty())); // GH-90000
 
             startServer(); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/entities/products/missing-id [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/entities/products/missing-id");
 
             assertThat(resp.statusCode()).isEqualTo(404); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("message [GH-90000]")).isNotNull();
+            assertThat(body.get("message")).isNotNull();
         }
 
         @Test
-        @DisplayName("tenant is resolved from X-Tenant-ID header when present [GH-90000]")
+        @DisplayName("tenant is resolved from X-Tenant-ID header when present")
         void getEntity_withTenantHeader_usesTenantId() throws Exception { // GH-90000
             DataCloudClient.Entity entity = DataCloudClient.Entity.of( // GH-90000
                     "ent-7", "orders", Map.of("status", "pending")); // GH-90000
-            when(mockClient.findById(eq("acme [GH-90000]"), eq("orders [GH-90000]"), eq("ent-7 [GH-90000]")))
+            when(mockClient.findById(eq("acme"), eq("orders"), eq("ent-7")))
                     .thenReturn(Promise.of(Optional.of(entity))); // GH-90000
 
             startServer(); // GH-90000
@@ -209,7 +209,7 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
                     "/api/v1/entities/orders/ent-7", "X-Tenant-ID", "acme");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            verify(mockClient).findById(eq("acme [GH-90000]"), eq("orders [GH-90000]"), eq("ent-7 [GH-90000]"));
+            verify(mockClient).findById(eq("acme"), eq("orders"), eq("ent-7"));
         }
     }
 
@@ -218,53 +218,53 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("GET /api/v1/entities/:collection – query entities [GH-90000]")
+    @DisplayName("GET /api/v1/entities/:collection – query entities")
     class QueryEntitiesTests {
 
         @Test
-        @DisplayName("returns 200 with entities list and count [GH-90000]")
+        @DisplayName("returns 200 with entities list and count")
         void queryEntities_returns200WithList() throws Exception { // GH-90000
             List<DataCloudClient.Entity> entities = List.of( // GH-90000
                     DataCloudClient.Entity.of("e1", "products", Map.of("name", "A")), // GH-90000
                     DataCloudClient.Entity.of("e2", "products", Map.of("name", "B"))); // GH-90000
-            when(mockClient.query(anyString(), eq("products [GH-90000]"), any()))
+            when(mockClient.query(anyString(), eq("products"), any()))
                     .thenReturn(Promise.of(entities)); // GH-90000
 
             startServer(); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/entities/products [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/entities/products");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
-            List<?> items = (List<?>) body.get("entities [GH-90000]");
+            @SuppressWarnings("unchecked")
+            List<?> items = (List<?>) body.get("entities");
             assertThat(items).hasSize(2); // GH-90000
-            assertThat(((Number) body.get("count [GH-90000]")).intValue()).isEqualTo(2);
+            assertThat(((Number) body.get("count")).intValue()).isEqualTo(2);
         }
 
         @Test
-        @DisplayName("returns 200 with empty list when no entities exist [GH-90000]")
+        @DisplayName("returns 200 with empty list when no entities exist")
         void queryEntities_empty_returns200EmptyList() throws Exception { // GH-90000
-            when(mockClient.query(anyString(), eq("sensors [GH-90000]"), any()))
+            when(mockClient.query(anyString(), eq("sensors"), any()))
                     .thenReturn(Promise.of(List.of())); // GH-90000
 
             startServer(); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/entities/sensors [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/entities/sensors");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat((List<?>) body.get("entities [GH-90000]")).isEmpty();
+            assertThat((List<?>) body.get("entities")).isEmpty();
         }
 
         @Test
-        @DisplayName("returns 400 when limit parameter is invalid [GH-90000]")
+        @DisplayName("returns 400 when limit parameter is invalid")
         void queryEntities_invalidLimit_returns400() throws Exception { // GH-90000
             startServer(); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/entities/products?limit=-5 [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/entities/products?limit=-5");
 
             assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
         }
@@ -275,41 +275,41 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("DELETE /api/v1/entities/:collection/:id – delete entity [GH-90000]")
+    @DisplayName("DELETE /api/v1/entities/:collection/:id – delete entity")
     class DeleteEntityTests {
 
         @Test
-        @DisplayName("returns 200 with deleted=true when client confirms deletion [GH-90000]")
+        @DisplayName("returns 200 with deleted=true when client confirms deletion")
         void deleteEntity_exists_returns200() throws Exception { // GH-90000
             DataCloudClient.Entity toDelete = DataCloudClient.Entity.of( // GH-90000
                     "ent-1", "products", Map.of("name", "Widget")); // GH-90000
-            when(mockClient.findById(anyString(), eq("products [GH-90000]"), eq("ent-1 [GH-90000]")))
+            when(mockClient.findById(anyString(), eq("products"), eq("ent-1")))
                     .thenReturn(Promise.of(Optional.of(toDelete))); // GH-90000
-            when(mockClient.delete(anyString(), eq("products [GH-90000]"), eq("ent-1 [GH-90000]")))
+            when(mockClient.delete(anyString(), eq("products"), eq("ent-1")))
                     .thenReturn(Promise.of((Void) null)); // GH-90000
             when(mockClient.appendEvent(anyString(), any())) // GH-90000
                     .thenReturn(Promise.of(DataCloudClient.Offset.of(1))); // GH-90000
 
             startServer(); // GH-90000
 
-            HttpResponse<String> resp = delete("/api/v1/entities/products/ent-1 [GH-90000]");
+            HttpResponse<String> resp = delete("/api/v1/entities/products/ent-1");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("deleted [GH-90000]")).isEqualTo(Boolean.TRUE);
-            assertThat(body.get("id [GH-90000]")).isEqualTo("ent-1 [GH-90000]");
+            assertThat(body.get("deleted")).isEqualTo(Boolean.TRUE);
+            assertThat(body.get("id")).isEqualTo("ent-1");
         }
 
         @Test
-        @DisplayName("returns 404 when entity does not exist [GH-90000]")
+        @DisplayName("returns 404 when entity does not exist")
         void deleteEntity_notFound_returns404() throws Exception { // GH-90000
-            when(mockClient.findById(anyString(), eq("products [GH-90000]"), eq("ghost [GH-90000]")))
+            when(mockClient.findById(anyString(), eq("products"), eq("ghost")))
                     .thenReturn(Promise.of(Optional.empty())); // GH-90000
 
             startServer(); // GH-90000
 
-            HttpResponse<String> resp = delete("/api/v1/entities/products/ghost [GH-90000]");
+            HttpResponse<String> resp = delete("/api/v1/entities/products/ghost");
 
             assertThat(resp.statusCode()).isEqualTo(404); // GH-90000
         }
@@ -320,15 +320,15 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("POST /api/v1/entities/:collection/batch – batch save [GH-90000]")
+    @DisplayName("POST /api/v1/entities/:collection/batch – batch save")
     class BatchSaveTests {
 
         @Test
-        @DisplayName("returns 200 with saved count when entities are valid [GH-90000]")
+        @DisplayName("returns 200 with saved count when entities are valid")
         void batchSave_validEntities_returns200() throws Exception { // GH-90000
             DataCloudClient.Entity e1 = DataCloudClient.Entity.of("b1", "sensors", Map.of("v", 1)); // GH-90000
             DataCloudClient.Entity e2 = DataCloudClient.Entity.of("b2", "sensors", Map.of("v", 2)); // GH-90000
-            when(mockClient.save(anyString(), eq("sensors [GH-90000]"), any()))
+            when(mockClient.save(anyString(), eq("sensors"), any()))
                     .thenReturn(Promise.of(e1)) // GH-90000
                     .thenReturn(Promise.of(e2)); // GH-90000
             when(mockClient.appendEvent(anyString(), any())).thenReturn(Promise.of(DataCloudClient.Offset.of(1))); // GH-90000
@@ -339,13 +339,13 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
                     Map.of("entities", List.of(Map.of("v", 1), Map.of("v", 2)))); // GH-90000
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("saved [GH-90000]")).isNotNull();
+            assertThat(body.get("saved")).isNotNull();
         }
 
         @Test
-        @DisplayName("returns 400 when entities list is missing [GH-90000]")
+        @DisplayName("returns 400 when entities list is missing")
         void batchSave_missingEntities_returns400() throws Exception { // GH-90000
             startServer(); // GH-90000
 
@@ -361,13 +361,13 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("DELETE /api/v1/entities/:collection/batch – batch delete [GH-90000]")
+    @DisplayName("DELETE /api/v1/entities/:collection/batch – batch delete")
     class BatchDeleteTests {
 
         @Test
-        @DisplayName("returns 200 with deletedCount when ids are provided [GH-90000]")
+        @DisplayName("returns 200 with deletedCount when ids are provided")
         void batchDelete_withIds_returns200() throws Exception { // GH-90000
-            when(mockClient.delete(anyString(), eq("products [GH-90000]"), anyString()))
+            when(mockClient.delete(anyString(), eq("products"), anyString()))
                     .thenReturn(Promise.of((Void) null)); // GH-90000
             when(mockClient.appendEvent(anyString(), any())).thenReturn(Promise.of(DataCloudClient.Offset.of(1))); // GH-90000
 
@@ -390,15 +390,15 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("GET /api/v1/entities/:collection/export – export [GH-90000]")
+    @DisplayName("GET /api/v1/entities/:collection/export – export")
     class ExportTests {
 
         @Test
-        @DisplayName("returns 501 when export service is not configured [GH-90000]")
+        @DisplayName("returns 501 when export service is not configured")
         void export_noService_returns501() throws Exception { // GH-90000
             startServer(); // no withExportService() // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/entities/products/export [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/entities/products/export");
 
             assertThat(resp.statusCode()).isEqualTo(501); // GH-90000
         }
@@ -409,11 +409,11 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("POST /api/v1/entities/:collection/anomalies – anomaly detection [GH-90000]")
+    @DisplayName("POST /api/v1/entities/:collection/anomalies – anomaly detection")
     class AnomalyTests {
 
         @Test
-        @DisplayName("returns 501 when anomaly detector is not configured [GH-90000]")
+        @DisplayName("returns 501 when anomaly detector is not configured")
         void anomalies_noDetector_returns501() throws Exception { // GH-90000
             startServer(); // no withAnomalyDetector() // GH-90000
 
@@ -429,15 +429,15 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("GET /api/v1/entities/:collection/search – full-text search [GH-90000]")
+    @DisplayName("GET /api/v1/entities/:collection/search – full-text search")
     class FullTextSearchTests {
 
         @Test
-        @DisplayName("returns 501 when OpenSearch connector is not configured [GH-90000]")
+        @DisplayName("returns 501 when OpenSearch connector is not configured")
         void search_noConnector_returns501() throws Exception { // GH-90000
             startServer(); // no withOpenSearchConnector() // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/entities/products/search?q=widget [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/entities/products/search?q=widget");
 
             assertThat(resp.statusCode()).isEqualTo(501); // GH-90000
         }
@@ -448,11 +448,11 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Request Validation – security and input guards [GH-90000]")
+    @DisplayName("Request Validation – security and input guards")
     class ValidationTests {
 
         @Test
-        @DisplayName("returns 413 when Content-Length exceeds 10 MB limit [GH-90000]")
+        @DisplayName("returns 413 when Content-Length exceeds 10 MB limit")
         void payloadSize_exceeds10MB_returns413() throws Exception { // GH-90000
             startServer(); // GH-90000
 
@@ -474,13 +474,13 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
                 byte[] buf = new byte[512];
                 int n = socket.getInputStream().read(buf); // GH-90000
                 String statusLine = new String(buf, 0, n, java.nio.charset.StandardCharsets.US_ASCII) // GH-90000
-                        .split("\r\n [GH-90000]")[0];
-                assertThat(statusLine).containsIgnoringCase("413 [GH-90000]");
+                        .split("\r\n")[0];
+                assertThat(statusLine).containsIgnoringCase("413");
             }
         }
 
         @Test
-        @DisplayName("OPTIONS preflight returns 200 with CORS headers [GH-90000]")
+        @DisplayName("OPTIONS preflight returns 200 with CORS headers")
         void preflight_returnsOkWithCors() throws Exception { // GH-90000
             startServer(); // GH-90000
 
@@ -491,7 +491,7 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
             HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString()); // GH-90000
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            assertThat(resp.headers().firstValue("Access-Control-Allow-Origin [GH-90000]")).isPresent();
+            assertThat(resp.headers().firstValue("Access-Control-Allow-Origin")).isPresent();
         }
     }
 

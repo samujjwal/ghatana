@@ -120,7 +120,6 @@ public class RedisCacheManager {
      * @param unit the time unit
      * @return Promise of cached value
      */
-    @SuppressWarnings("unchecked")
     public <T> Promise<T> getOrCompute(
             String key,
             java.util.function.Supplier<Promise<T>> loader,
@@ -137,7 +136,7 @@ public class RedisCacheManager {
             .then(cached -> {
                 if (cached != null) {
                     metrics.incrementCounter("cache.hit", "namespace", namespace);
-                    return Promise.of((T) cached);
+                    return Promise.of(castCachedValue(cached));
                 }
 
                 metrics.incrementCounter("cache.miss", "namespace", namespace);
@@ -160,6 +159,11 @@ public class RedisCacheManager {
                     return loader.get();
                 }
             );
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T castCachedValue(Object cached) {
+        return (T) cached;
     }
 
     /**

@@ -18,7 +18,7 @@ import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.api.io.TempDir;
 
 /** Tests for {@link GoToolsRunner}. */
-@Tag("integration [GH-90000]")
+@Tag("integration")
 /**
  * @doc.type class
  * @doc.purpose Handles go tools runner test operations
@@ -61,12 +61,12 @@ class GoToolsRunnerTest {
     }
 
     @Test
-    @EnabledIf("isGoAvailable [GH-90000]")
+    @EnabledIf("isGoAvailable")
     void testVetOnCleanModule() throws IOException { // GH-90000
         // Initialize a tiny Go module
         Files.writeString(tempDir.resolve(GO_MOD), GO_MOD_CONTENT); // GH-90000
-        Files.createDirectories(tempDir.resolve("cmd/app [GH-90000]"));
-        Path mainGo = tempDir.resolve("cmd/app/main.go [GH-90000]");
+        Files.createDirectories(tempDir.resolve("cmd/app"));
+        Path mainGo = tempDir.resolve("cmd/app/main.go");
         Files.writeString( // GH-90000
                 mainGo,
                 "package main\n\nimport \"fmt\"\n\nfunc main() {\n\tfmt.Println(\"hello\")\n}\n"); // GH-90000
@@ -77,11 +77,11 @@ class GoToolsRunnerTest {
     }
 
     @Test
-    @EnabledIf("isGoAvailable [GH-90000]")
+    @EnabledIf("isGoAvailable")
     void testVetWithIssues() throws IOException { // GH-90000
         // Initialize a Go module with potential issues
         Files.writeString(tempDir.resolve(GO_MOD), GO_MOD_CONTENT); // GH-90000
-        Path mainGo = tempDir.resolve("main.go [GH-90000]");
+        Path mainGo = tempDir.resolve("main.go");
         Files.writeString( // GH-90000
                 mainGo,
                 "package main\n\n"
@@ -97,20 +97,20 @@ class GoToolsRunnerTest {
         var diags = runner.vet(tempDir, 30000); // GH-90000
 
         // Print diagnostics for debugging
-        System.out.println("=== Go vet diagnostics === [GH-90000]");
+        System.out.println("=== Go vet diagnostics ===");
         diags.forEach(d -> System.out.println(d.message())); // GH-90000
-        System.out.println("========================= [GH-90000]");
+        System.out.println("=========================");
 
         // Check if we got any diagnostics at all
         if (diags.isEmpty()) { // GH-90000
-            System.out.println("Warning: No diagnostics from go vet. This might be because: [GH-90000]");
-            System.out.println("1. The Go code doesn't trigger any vet warnings in this version [GH-90000]");
-            System.out.println("2. The Go toolchain is not properly installed or in PATH [GH-90000]");
+            System.out.println("Warning: No diagnostics from go vet. This might be because:");
+            System.out.println("1. The Go code doesn't trigger any vet warnings in this version");
+            System.out.println("2. The Go toolchain is not properly installed or in PATH");
             System.out.println( // GH-90000
                     "3. The test environment doesn't have network access to download Go modules");
 
             // Instead of failing, we'll just log a warning and skip the test
-            System.out.println("Skipping testVetWithIssues as no diagnostics were produced [GH-90000]");
+            System.out.println("Skipping testVetWithIssues as no diagnostics were produced");
             return;
         }
 
@@ -119,14 +119,14 @@ class GoToolsRunnerTest {
                 diags.stream() // GH-90000
                         .anyMatch( // GH-90000
                                 d ->
-                                        d.message().contains("out of bounds [GH-90000]")
-                                                || d.message().contains("invalid array index [GH-90000]")
-                                                || d.message().contains("invalid argument [GH-90000]")
-                                                || d.message().contains("index out of range [GH-90000]")
-                                                || d.message().contains("range [GH-90000]"));
+                                        d.message().contains("out of bounds")
+                                                || d.message().contains("invalid array index")
+                                                || d.message().contains("invalid argument")
+                                                || d.message().contains("index out of range")
+                                                || d.message().contains("range"));
 
         if (!hasRelevantDiagnostic) { // GH-90000
-            System.out.println("No expected diagnostic messages found. Actual messages: [GH-90000]");
+            System.out.println("No expected diagnostic messages found. Actual messages:");
             diags.forEach(d -> System.out.println("- " + d.message())); // GH-90000
         }
 
@@ -137,22 +137,22 @@ class GoToolsRunnerTest {
     void testStaticcheck() throws IOException { // GH-90000
         // Check if staticcheck is available
         if (!isStaticcheckAvailable()) { // GH-90000
-            System.out.println("staticcheck not available, skipping test [GH-90000]");
+            System.out.println("staticcheck not available, skipping test");
             return;
         }
 
         // Check if Go is available
         if (!isGoAvailable()) { // GH-90000
-            System.out.println("Go not available, skipping test [GH-90000]");
+            System.out.println("Go not available, skipping test");
             return;
         }
 
         // Initialize a Go module with potential staticcheck issues
-        System.out.println("Initializing test Go module... [GH-90000]");
+        System.out.println("Initializing test Go module...");
         Files.writeString(tempDir.resolve(GO_MOD), GO_MOD_CONTENT); // GH-90000
 
         // Create a Go file with a staticcheck issue
-        Path mainGo = tempDir.resolve("main.go [GH-90000]");
+        Path mainGo = tempDir.resolve("main.go");
         String goCode =
                 "package main\n\n"
                         + "import \"fmt\"\n\n"
@@ -162,27 +162,27 @@ class GoToolsRunnerTest {
                         + "\t}\n"
                         + "}\n";
 
-        System.out.println("Writing test Go file... [GH-90000]");
+        System.out.println("Writing test Go file...");
         Files.writeString(mainGo, goCode); // GH-90000
 
         try {
-            System.out.println("Running staticcheck... [GH-90000]");
+            System.out.println("Running staticcheck...");
             var diags = runner.staticcheck(tempDir, 30000); // GH-90000
 
             // Print diagnostics for debugging
-            System.out.println("=== Staticcheck diagnostics === [GH-90000]");
+            System.out.println("=== Staticcheck diagnostics ===");
             diags.forEach(d -> System.out.println(d.message())); // GH-90000
-            System.out.println("============================== [GH-90000]");
+            System.out.println("==============================");
 
             if (diags.isEmpty()) { // GH-90000
-                System.out.println("No diagnostics from staticcheck. This might be because: [GH-90000]");
+                System.out.println("No diagnostics from staticcheck. This might be because:");
                 System.out.println( // GH-90000
                         "1. The code doesn't trigger any staticcheck warnings in this version");
-                System.out.println("2. staticcheck is not properly installed or in PATH [GH-90000]");
-                System.out.println("3. The test environment has issues [GH-90000]");
+                System.out.println("2. staticcheck is not properly installed or in PATH");
+                System.out.println("3. The test environment has issues");
 
                 // Instead of failing, we'll just log a warning and skip the test
-                System.out.println("Skipping testStaticcheck as no diagnostics were produced [GH-90000]");
+                System.out.println("Skipping testStaticcheck as no diagnostics were produced");
                 return;
             }
 
@@ -191,14 +191,14 @@ class GoToolsRunnerTest {
                     diags.stream() // GH-90000
                             .anyMatch( // GH-90000
                                     d ->
-                                            d.message().contains("will not be matched [GH-90000]")
-                                                    || d.message().contains("empty branch [GH-90000]")
-                                                    || d.message().contains("SA5000 [GH-90000]")
-                                                    || d.message().contains("staticcheck [GH-90000]")
-                                                    || d.message().contains("if [GH-90000]"));
+                                            d.message().contains("will not be matched")
+                                                    || d.message().contains("empty branch")
+                                                    || d.message().contains("SA5000")
+                                                    || d.message().contains("staticcheck")
+                                                    || d.message().contains("if"));
 
             if (!hasRelevantWarning) { // GH-90000
-                System.out.println("No expected staticcheck warnings found. Actual messages: [GH-90000]");
+                System.out.println("No expected staticcheck warnings found. Actual messages:");
                 diags.forEach(d -> System.out.println("- " + d.message())); // GH-90000
             }
 
@@ -211,13 +211,13 @@ class GoToolsRunnerTest {
     }
 
     @Test
-    @EnabledIf("isGoimportsAvailable [GH-90000]")
+    @EnabledIf("isGoimportsAvailable")
     void testGoimportsFormatsFile() throws IOException { // GH-90000
         assumeTrue(isGoAvailable(), "Go must be available for goimports test"); // GH-90000
 
         // Initialize module and an improperly formatted file
         Files.writeString(tempDir.resolve(GO_MOD), GO_MOD_CONTENT); // GH-90000
-        Path file = tempDir.resolve("x.go [GH-90000]");
+        Path file = tempDir.resolve("x.go");
         String ugly = "package main\nimport \"fmt\"\nfunc main(){fmt.Println(\"x\")}\n"; // GH-90000
         Files.writeString(file, ugly); // GH-90000
 
@@ -233,12 +233,12 @@ class GoToolsRunnerTest {
             if (modifiedCount == 0) { // GH-90000
                 // If not modified, verify it's already in the expected format
                 assertTrue( // GH-90000
-                        formatted.contains("\n\n [GH-90000]"),
+                        formatted.contains("\n\n"),
                         "File was not modified but doesn't have expected formatting");
             } else {
                 assertEquals(1, modifiedCount, "Expected one file to be modified by goimports"); // GH-90000
                 assertTrue( // GH-90000
-                        formatted.contains("\n\n [GH-90000]"),
+                        formatted.contains("\n\n"),
                         "Expected blank line after package declaration");
             }
         } catch (Exception e) { // GH-90000
@@ -250,7 +250,7 @@ class GoToolsRunnerTest {
     // Uncomment and implement when gofmt support is added
     /*
     @Test
-    @EnabledIf("gofmtAvailable [GH-90000]")
+    @EnabledIf("gofmtAvailable")
     void testGofmt() throws IOException { // GH-90000
         // Implementation will be added when gofmt support is implemented
         assumeTrue(false, "gofmt test not yet implemented"); // GH-90000
@@ -261,7 +261,7 @@ class GoToolsRunnerTest {
     // Uncomment and implement when runAll support is added
     /*
     @Test
-    @EnabledIf("isGoAvailable [GH-90000]")
+    @EnabledIf("isGoAvailable")
     void testRunAll() throws IOException { // GH-90000
         // Implementation will be added when runAll support is implemented
         assumeTrue(false, "runAll test not yet implemented"); // GH-90000

@@ -25,7 +25,7 @@ import org.junit.jupiter.params.provider.MethodSource;
  */
 
 class ParserGoldenTest {
-    private static final Path FIXTURES_DIR = Paths.get("src/test/resources/fixtures [GH-90000]");
+    private static final Path FIXTURES_DIR = Paths.get("src/test/resources/fixtures");
 
     static Stream<Arguments> provideFixtures() { // GH-90000
         return Stream.of( // GH-90000
@@ -37,15 +37,15 @@ class ParserGoldenTest {
     }
 
     @ParameterizedTest
-    @MethodSource("provideFixtures [GH-90000]")
+    @MethodSource("provideFixtures")
     void testParser(String fixture, StackTraceParser parser) throws IOException { // GH-90000
         Path path = FIXTURES_DIR.resolve(fixture); // GH-90000
         String content = Files.readString(path); // GH-90000
 
         System.out.println("\n=== Testing " + fixture + " ==="); // GH-90000
-        System.out.println("Raw content (first 5 lines): [GH-90000]");
+        System.out.println("Raw content (first 5 lines):");
         content.lines().limit(5).forEach(System.out::println); // GH-90000
-        if (content.lines().count() > 5) System.out.println("... [GH-90000]");
+        if (content.lines().count() > 5) System.out.println("...");
 
         List<StackTraceParser.TraceFrame> frames = parser.parse(content); // GH-90000
 
@@ -61,7 +61,7 @@ class ParserGoldenTest {
         // Basic validation of first frame
         var first = frames.get(0); // GH-90000
         assertNotNull(first.file(), "Missing file in first frame"); // GH-90000
-        if (!first.file().equals("<panic> [GH-90000]")) { // Skip line check for panic frames
+        if (!first.file().equals("<panic>")) { // Skip line check for panic frames
             assertTrue(first.line() > 0, "Invalid line number in first frame"); // GH-90000
         }
         assertNotNull(first.function(), "Missing function in first frame"); // GH-90000

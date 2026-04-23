@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class WorkflowRunRepositoryTest {
 
     @Test
-    @DisplayName("startRun stores generic executionId in the event payload and status view [GH-90000]")
+    @DisplayName("startRun stores generic executionId in the event payload and status view")
     void startRunStoresExecutionId() { // GH-90000
         InMemoryEventLogStore store = new InMemoryEventLogStore(); // GH-90000
         WorkflowRunRepository repository = new WorkflowRunRepository(store); // GH-90000
@@ -31,12 +31,12 @@ class WorkflowRunRepositoryTest {
                 .getResult() // GH-90000
                 .orElseThrow(); // GH-90000
 
-        assertThat(status.executionId()).isEqualTo("exec-42 [GH-90000]");
+        assertThat(status.executionId()).isEqualTo("exec-42");
         assertThat(readPayload(store.entries().getFirst()).contains("\"executionId\":\"exec-42\"")).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("getRunStatus remains backward compatible with legacy pipelineId payloads [GH-90000]")
+    @DisplayName("getRunStatus remains backward compatible with legacy pipelineId payloads")
     void getRunStatusSupportsLegacyPipelineIdPayloads() { // GH-90000
         InMemoryEventLogStore store = new InMemoryEventLogStore(); // GH-90000
         WorkflowRunRepository repository = new WorkflowRunRepository(store); // GH-90000
@@ -50,7 +50,7 @@ class WorkflowRunRepositoryTest {
                 .getResult() // GH-90000
                 .orElseThrow(); // GH-90000
 
-        assertThat(status.executionId()).isEqualTo("pipe-9 [GH-90000]");
+        assertThat(status.executionId()).isEqualTo("pipe-9");
     }
 
     private static String readPayload(EventLogStore.EventEntry entry) { // GH-90000
@@ -73,7 +73,7 @@ class WorkflowRunRepositoryTest {
                     .eventType(eventType) // GH-90000
                     .timestamp(Instant.now()) // GH-90000
                     .payload(payloadJson) // GH-90000
-                    .contentType("application/json [GH-90000]")
+                    .contentType("application/json")
                     .build()); // GH-90000
         }
 

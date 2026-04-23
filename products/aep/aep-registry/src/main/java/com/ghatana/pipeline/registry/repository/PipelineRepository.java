@@ -16,7 +16,11 @@ import java.util.Optional;
 /**
  * Repository interface for pipeline persistence.
  * Simplified implementation for platform-registry module without external dependencies.
- */
+  * @doc.type interface
+ * @doc.purpose Provides pipeline repository functionality.
+ * @doc.layer product
+ * @doc.pattern Repository
+*/
 public interface PipelineRepository {
 
     /**

@@ -24,11 +24,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@DisplayName("AepComplianceServiceIntegrationTest [GH-90000]")
+@DisplayName("AepComplianceServiceIntegrationTest")
 class AepComplianceServiceIntegrationTest extends EventloopTestBase {
 
     @Test
-    @DisplayName("checkCompliance succeeds when broker and retention checks both pass [GH-90000]")
+    @DisplayName("checkCompliance succeeds when broker and retention checks both pass")
     void checkComplianceSucceedsWhenAllChecksPass() { // GH-90000
         AtomicBoolean brokerCalled = new AtomicBoolean(false); // GH-90000
         DataAccessBroker broker = (tenantId, subjectId, dataId, purpose) -> { // GH-90000
@@ -45,7 +45,7 @@ class AepComplianceServiceIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("checkCompliance fails when retention has expired after access approval [GH-90000]")
+    @DisplayName("checkCompliance fails when retention has expired after access approval")
     void checkComplianceFailsWhenRetentionExpired() { // GH-90000
         AtomicBoolean brokerCalled = new AtomicBoolean(false); // GH-90000
         DataAccessBroker broker = (tenantId, subjectId, dataId, purpose) -> { // GH-90000

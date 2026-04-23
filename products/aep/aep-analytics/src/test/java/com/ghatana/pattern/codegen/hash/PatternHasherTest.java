@@ -18,29 +18,29 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@DisplayName("PatternHasher Tests [GH-90000]")
+@DisplayName("PatternHasher Tests")
 class PatternHasherTest {
 
     @Test
-    @DisplayName("hash is stable for identical input and changes when specification changes [GH-90000]")
+    @DisplayName("hash is stable for identical input and changes when specification changes")
     void hashIsStableForIdenticalInputAndChangesWhenSpecificationChanges() { // GH-90000
         PatternHasher hasher = new PatternHasher(new ObjectMapper()); // GH-90000
         EventType eventType = testEventType("tenant-a", "Order.Created", "1.0"); // GH-90000
         PatternSpecification baseline = PatternSpecification.builder() // GH-90000
-                .id(UUID.fromString("33333333-3333-3333-3333-333333333333 [GH-90000]"))
-                .tenantId("tenant-a [GH-90000]")
-                .name("Rule A [GH-90000]")
-                .operator(OperatorSpec.builder().type("SEQ [GH-90000]").build())
-                .eventTypes(List.of("Order.Created [GH-90000]"))
+                .id(UUID.fromString("33333333-3333-3333-3333-333333333333"))
+                .tenantId("tenant-a")
+                .name("Rule A")
+                .operator(OperatorSpec.builder().type("SEQ").build())
+                .eventTypes(List.of("Order.Created"))
                 .createdAt(null) // GH-90000
                 .updatedAt(null) // GH-90000
                 .build(); // GH-90000
         PatternSpecification changed = PatternSpecification.builder() // GH-90000
-                .id(UUID.fromString("33333333-3333-3333-3333-333333333333 [GH-90000]"))
-                .tenantId("tenant-a [GH-90000]")
-                .name("Rule A [GH-90000]")
-                .operator(OperatorSpec.builder().type("AND [GH-90000]").build())
-                .eventTypes(List.of("Order.Created [GH-90000]"))
+                .id(UUID.fromString("33333333-3333-3333-3333-333333333333"))
+                .tenantId("tenant-a")
+                .name("Rule A")
+                .operator(OperatorSpec.builder().type("AND").build())
+                .eventTypes(List.of("Order.Created"))
                 .createdAt(null) // GH-90000
                 .updatedAt(null) // GH-90000
                 .build(); // GH-90000
@@ -55,10 +55,10 @@ class PatternHasherTest {
     }
 
     @Test
-    @DisplayName("hash rejects null input [GH-90000]")
+    @DisplayName("hash rejects null input")
     void hashRejectsNullInput() { // GH-90000
         PatternHasher hasher = new PatternHasher(new ObjectMapper()); // GH-90000
-        PatternSpecification specification = PatternSpecification.builder().name("Rule A [GH-90000]").build();
+        PatternSpecification specification = PatternSpecification.builder().name("Rule A").build();
 
         assertThrows(NullPointerException.class, () -> hasher.hash(null, specification)); // GH-90000
         assertThrows(NullPointerException.class, () -> hasher.hash(testEventType("tenant-a", "Order.Created", "1.0"), null)); // GH-90000

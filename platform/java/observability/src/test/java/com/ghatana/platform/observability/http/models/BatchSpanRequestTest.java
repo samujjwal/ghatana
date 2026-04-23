@@ -12,7 +12,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("BatchSpanRequest Tests [GH-90000]")
+@DisplayName("BatchSpanRequest Tests")
 class BatchSpanRequestTest {
 
     private ObjectMapper objectMapper;
@@ -24,19 +24,19 @@ class BatchSpanRequestTest {
     }
 
     @Test
-    @DisplayName("Should serialize batch to JSON [GH-90000]")
+    @DisplayName("Should serialize batch to JSON")
     void shouldSerializeBatchToJson() throws Exception { // GH-90000
         // Given
         SpanRequest span1 = new SpanRequest( // GH-90000
                 "span-1", "trace-1", null, "op1", "service1",
-                Instant.parse("2024-01-01T00:00:00Z [GH-90000]"),
-                Instant.parse("2024-01-01T00:00:01Z [GH-90000]"),
+                Instant.parse("2024-01-01T00:00:00Z"),
+                Instant.parse("2024-01-01T00:00:01Z"),
                 1000L, "OK", Map.of(), Map.of() // GH-90000
         );
         SpanRequest span2 = new SpanRequest( // GH-90000
                 "span-2", "trace-1", "span-1", "op2", "service1",
-                Instant.parse("2024-01-01T00:00:01Z [GH-90000]"),
-                Instant.parse("2024-01-01T00:00:02Z [GH-90000]"),
+                Instant.parse("2024-01-01T00:00:01Z"),
+                Instant.parse("2024-01-01T00:00:02Z"),
                 1000L, "OK", Map.of(), Map.of() // GH-90000
         );
         BatchSpanRequest batch = new BatchSpanRequest(List.of(span1, span2)); // GH-90000
@@ -45,13 +45,13 @@ class BatchSpanRequestTest {
         String json = objectMapper.writeValueAsString(batch); // GH-90000
 
         // Then
-        assertThat(json).contains("span-1 [GH-90000]");
-        assertThat(json).contains("span-2 [GH-90000]");
-        assertThat(json).contains("trace-1 [GH-90000]");
+        assertThat(json).contains("span-1");
+        assertThat(json).contains("span-2");
+        assertThat(json).contains("trace-1");
     }
 
     @Test
-    @DisplayName("Should deserialize batch from JSON [GH-90000]")
+    @DisplayName("Should deserialize batch from JSON")
     void shouldDeserializeBatchFromJson() throws Exception { // GH-90000
         // Given
         String json = """
@@ -85,13 +85,13 @@ class BatchSpanRequestTest {
 
         // Then
         assertThat(batch.getSpans()).hasSize(2); // GH-90000
-        assertThat(batch.getSpans().get(0).getSpanId()).isEqualTo("span-1 [GH-90000]");
-        assertThat(batch.getSpans().get(1).getSpanId()).isEqualTo("span-2 [GH-90000]");
-        assertThat(batch.getSpans().get(1).getParentSpanId()).isEqualTo("span-1 [GH-90000]");
+        assertThat(batch.getSpans().get(0).getSpanId()).isEqualTo("span-1");
+        assertThat(batch.getSpans().get(1).getSpanId()).isEqualTo("span-2");
+        assertThat(batch.getSpans().get(1).getParentSpanId()).isEqualTo("span-1");
     }
 
     @Test
-    @DisplayName("Should handle empty batch [GH-90000]")
+    @DisplayName("Should handle empty batch")
     void shouldHandleEmptyBatch() throws Exception { // GH-90000
         // Given
         String json = """
@@ -108,7 +108,7 @@ class BatchSpanRequestTest {
     }
 
     @Test
-    @DisplayName("Should handle large batch [GH-90000]")
+    @DisplayName("Should handle large batch")
     void shouldHandleLargeBatch() { // GH-90000
         // Given
         List<SpanRequest> spans = java.util.stream.IntStream.range(0, 100) // GH-90000
@@ -135,13 +135,13 @@ class BatchSpanRequestTest {
     }
 
     @Test
-    @DisplayName("Should round-trip correctly [GH-90000]")
+    @DisplayName("Should round-trip correctly")
     void shouldRoundTripCorrectly() throws Exception { // GH-90000
         // Given
         SpanRequest span = new SpanRequest( // GH-90000
                 "span-1", "trace-1", null, "op1", "service1",
-                Instant.parse("2024-01-01T00:00:00Z [GH-90000]"),
-                Instant.parse("2024-01-01T00:00:01Z [GH-90000]"),
+                Instant.parse("2024-01-01T00:00:00Z"),
+                Instant.parse("2024-01-01T00:00:01Z"),
                 1000L, "OK",
                 Map.of("key", "value"), // GH-90000
                 Map.of("log", "logvalue") // GH-90000
@@ -154,7 +154,7 @@ class BatchSpanRequestTest {
 
         // Then
         assertThat(deserialized.getSpans()).hasSize(1); // GH-90000
-        assertThat(deserialized.getSpans().get(0).getSpanId()).isEqualTo("span-1 [GH-90000]");
+        assertThat(deserialized.getSpans().get(0).getSpanId()).isEqualTo("span-1");
         assertThat(deserialized.getSpans().get(0).getTags()).containsEntry("key", "value"); // GH-90000
     }
 }

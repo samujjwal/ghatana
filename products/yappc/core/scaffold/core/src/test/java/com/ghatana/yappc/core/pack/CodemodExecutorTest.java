@@ -40,7 +40,7 @@ class CodemodExecutorTest {
         CodemodExecutor executor = new CodemodExecutor(); // GH-90000
 
         // Create a Java file with unsorted imports
-        Path javaFile = tempDir.resolve("TestClass.java [GH-90000]");
+        Path javaFile = tempDir.resolve("TestClass.java");
         String javaContent =
                 """
             package com.example;
@@ -65,7 +65,7 @@ class CodemodExecutorTest {
 
         // Verify import formatting was applied
         String transformedContent = Files.readString(javaFile); // GH-90000
-        assertFalse(transformedContent.contains("\n\n\nimport [GH-90000]"));
+        assertFalse(transformedContent.contains("\n\n\nimport"));
     }
 
     @Test
@@ -73,7 +73,7 @@ class CodemodExecutorTest {
         CodemodExecutor executor = new CodemodExecutor(); // GH-90000
 
         // Create TypeScript files with formatting issues
-        Path tsFile = tempDir.resolve("test.ts [GH-90000]");
+        Path tsFile = tempDir.resolve("test.ts");
         String tsContent =
                 """
             import {  Component,  useState  } from 'react';
@@ -98,9 +98,9 @@ class CodemodExecutorTest {
         CodemodExecutor executor = new CodemodExecutor(); // GH-90000
 
         // Create TypeScript file in src directory with ESLint issues
-        Path srcDir = tempDir.resolve("src [GH-90000]");
+        Path srcDir = tempDir.resolve("src");
         Files.createDirectories(srcDir); // GH-90000
-        Path tsFile = srcDir.resolve("component.tsx [GH-90000]");
+        Path tsFile = srcDir.resolve("component.tsx");
 
         String tsContent =
                 """

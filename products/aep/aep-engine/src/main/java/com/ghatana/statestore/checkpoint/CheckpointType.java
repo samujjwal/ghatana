@@ -2,7 +2,11 @@ package com.ghatana.statestore.checkpoint;
 
 /**
  * Type of checkpoint: automatic checkpoint or manual savepoint.
- */
+  * @doc.type enum
+ * @doc.purpose Provides checkpoint type functionality.
+ * @doc.layer product
+ * @doc.pattern Enum
+*/
 public enum CheckpointType {
     /**
      * Automatic checkpoint triggered by coordinator for fault tolerance.

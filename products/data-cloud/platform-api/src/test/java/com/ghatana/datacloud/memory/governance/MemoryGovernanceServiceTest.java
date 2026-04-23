@@ -35,21 +35,21 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("MemoryGovernanceService and RetrievalQualityService [GH-90000]")
+@DisplayName("MemoryGovernanceService and RetrievalQualityService")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class MemoryGovernanceServiceTest extends EventloopTestBase {
 
     private static final String AGENT_ID   = "agent-gov-001";
     private static final String TENANT_ID  = "tenant-gov-test";
     private static final String NS_ID      = "ns-gov-001";
-    private static final Instant NOW       = Instant.parse("2026-04-01T12:00:00Z [GH-90000]");
+    private static final Instant NOW       = Instant.parse("2026-04-01T12:00:00Z");
 
     // ─══════════════════════════════════════════════════════════════════════════
     //  DefaultMemoryGovernanceService
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("DefaultMemoryGovernanceService [GH-90000]")
+    @DisplayName("DefaultMemoryGovernanceService")
     class GovernanceServiceTests {
 
         @Mock
@@ -73,18 +73,18 @@ class MemoryGovernanceServiceTest extends EventloopTestBase {
         // ── constructor ───────────────────────────────────────────────────────
 
         @Nested
-        @DisplayName("constructor [GH-90000]")
+        @DisplayName("constructor")
         class Constructor {
 
             @Test
-            @DisplayName("rejects null namespaceRepository [GH-90000]")
+            @DisplayName("rejects null namespaceRepository")
             void rejectsNullRepo() { // GH-90000
                 assertThatThrownBy(() -> new DefaultMemoryGovernanceService(null, memoryService)) // GH-90000
                         .isInstanceOf(NullPointerException.class); // GH-90000
             }
 
             @Test
-            @DisplayName("rejects null memoryService [GH-90000]")
+            @DisplayName("rejects null memoryService")
             void rejectsNullMemoryService() { // GH-90000
                 assertThatThrownBy(() -> new DefaultMemoryGovernanceService(namespaceRepository, null)) // GH-90000
                         .isInstanceOf(NullPointerException.class); // GH-90000
@@ -94,11 +94,11 @@ class MemoryGovernanceServiceTest extends EventloopTestBase {
         // ── enforceRetention ──────────────────────────────────────────────────
 
         @Nested
-        @DisplayName("enforceRetention [GH-90000]")
+        @DisplayName("enforceRetention")
         class EnforceRetention {
 
             @Test
-            @DisplayName("returns result with matching agentId [GH-90000]")
+            @DisplayName("returns result with matching agentId")
             void returnsResultWithAgentId() { // GH-90000
                 when(namespaceRepository.findByAgent(AGENT_ID, TENANT_ID)) // GH-90000
                         .thenReturn(Promise.of(List.of())); // GH-90000
@@ -108,7 +108,7 @@ class MemoryGovernanceServiceTest extends EventloopTestBase {
             }
 
             @Test
-            @DisplayName("returns zero eviction for namespace with no retention policy [GH-90000]")
+            @DisplayName("returns zero eviction for namespace with no retention policy")
             void zeroEvictionForNoRetentionPolicy() { // GH-90000
                 MemoryNamespace ns = new MemoryNamespace(NS_ID, TENANT_ID, AGENT_ID, // GH-90000
                         MemoryScope.EPISODIC, "NS", null, null /* no retention */,
@@ -121,7 +121,7 @@ class MemoryGovernanceServiceTest extends EventloopTestBase {
             }
 
             @Test
-            @DisplayName("null agentId throws NullPointerException [GH-90000]")
+            @DisplayName("null agentId throws NullPointerException")
             void nullAgentIdThrows() { // GH-90000
                 assertThatThrownBy(() -> runPromise(() -> service.enforceRetention(null, TENANT_ID))) // GH-90000
                         .isInstanceOf(NullPointerException.class); // GH-90000
@@ -131,11 +131,11 @@ class MemoryGovernanceServiceTest extends EventloopTestBase {
         // ── evaluateAccess ────────────────────────────────────────────────────
 
         @Nested
-        @DisplayName("evaluateAccess [GH-90000]")
+        @DisplayName("evaluateAccess")
         class EvaluateAccess {
 
             @Test
-            @DisplayName("permits when namespace found and tenant matches [GH-90000]")
+            @DisplayName("permits when namespace found and tenant matches")
             void permitsOnMatch() { // GH-90000
                 when(namespaceRepository.findById(NS_ID)) // GH-90000
                         .thenReturn(Promise.of(Optional.of(namespace(NOW)))); // GH-90000
@@ -145,36 +145,36 @@ class MemoryGovernanceServiceTest extends EventloopTestBase {
             }
 
             @Test
-            @DisplayName("denies when namespace not found [GH-90000]")
+            @DisplayName("denies when namespace not found")
             void deniesWhenNotFound() { // GH-90000
                 when(namespaceRepository.findById(NS_ID)) // GH-90000
                         .thenReturn(Promise.of(Optional.empty())); // GH-90000
                 MemoryGovernanceService.AccessDecision d =
                         runPromise(() -> service.evaluateAccess(NS_ID, "principal-1", TENANT_ID)); // GH-90000
                 assertThat(d.permitted()).isFalse(); // GH-90000
-                assertThat(d.reason()).containsIgnoringCase("not found [GH-90000]");
+                assertThat(d.reason()).containsIgnoringCase("not found");
             }
 
             @Test
-            @DisplayName("denies when tenant does not match [GH-90000]")
+            @DisplayName("denies when tenant does not match")
             void deniesOnTenantMismatch() { // GH-90000
                 when(namespaceRepository.findById(NS_ID)) // GH-90000
                         .thenReturn(Promise.of(Optional.of(namespace(NOW)))); // GH-90000
                 MemoryGovernanceService.AccessDecision d =
                         runPromise(() -> service.evaluateAccess(NS_ID, "principal-1", "other-tenant")); // GH-90000
                 assertThat(d.permitted()).isFalse(); // GH-90000
-                assertThat(d.reason()).containsIgnoringCase("tenant [GH-90000]");
+                assertThat(d.reason()).containsIgnoringCase("tenant");
             }
         }
 
         // ── setRetentionPolicy ────────────────────────────────────────────────
 
         @Nested
-        @DisplayName("setRetentionPolicy [GH-90000]")
+        @DisplayName("setRetentionPolicy")
         class SetRetentionPolicy {
 
             @Test
-            @DisplayName("saves updated namespace with new retentionDays [GH-90000]")
+            @DisplayName("saves updated namespace with new retentionDays")
             void savesWithNewRetentionDays() { // GH-90000
                 MemoryNamespace ns = namespace(NOW); // GH-90000
                 when(namespaceRepository.findById(NS_ID)) // GH-90000
@@ -188,25 +188,25 @@ class MemoryGovernanceServiceTest extends EventloopTestBase {
             }
 
             @Test
-            @DisplayName("fails with IllegalArgumentException when namespace not found [GH-90000]")
+            @DisplayName("fails with IllegalArgumentException when namespace not found")
             void failsWhenNotFound() { // GH-90000
                 when(namespaceRepository.findById(NS_ID)) // GH-90000
                         .thenReturn(Promise.of(Optional.empty())); // GH-90000
                 assertThatThrownBy(() -> runPromise(() -> // GH-90000
                         service.setRetentionPolicy(NS_ID, 30, TENANT_ID))) // GH-90000
                         .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                        .hasMessageContaining("not found [GH-90000]");
+                        .hasMessageContaining("not found");
             }
         }
 
         // ── auditLog ──────────────────────────────────────────────────────────
 
         @Nested
-        @DisplayName("auditLog [GH-90000]")
+        @DisplayName("auditLog")
         class AuditLog {
 
             @Test
-            @DisplayName("returns empty list (baseline implementation) [GH-90000]")
+            @DisplayName("returns empty list (baseline implementation)")
             void returnsEmptyList() { // GH-90000
                 List<MemoryGovernanceService.GovernanceEvent> events =
                         runPromise(() -> service.auditLog(NS_ID, TENANT_ID, NOW)); // GH-90000
@@ -220,7 +220,7 @@ class MemoryGovernanceServiceTest extends EventloopTestBase {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("DefaultRetrievalQualityService [GH-90000]")
+    @DisplayName("DefaultRetrievalQualityService")
     class RetrievalQualityServiceTests {
 
         private DefaultRetrievalQualityService service;
@@ -231,7 +231,7 @@ class MemoryGovernanceServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("perfect recall: precision=1.0, recall=1.0, f1=1.0 [GH-90000]")
+        @DisplayName("perfect recall: precision=1.0, recall=1.0, f1=1.0")
         void perfectRecall() { // GH-90000
             RetrievalQualityService.QualityReport report = runPromise(() -> // GH-90000
                     service.score(AGENT_ID, TENANT_ID, List.of("a", "b"), List.of("a", "b"))); // GH-90000
@@ -241,17 +241,17 @@ class MemoryGovernanceServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("zero overlap: precision=0, recall=0, f1=0 [GH-90000]")
+        @DisplayName("zero overlap: precision=0, recall=0, f1=0")
         void zeroOverlap() { // GH-90000
             RetrievalQualityService.QualityReport report = runPromise(() -> // GH-90000
-                    service.score(AGENT_ID, TENANT_ID, List.of("x [GH-90000]"), List.of("a", "b")));
+                    service.score(AGENT_ID, TENANT_ID, List.of("x"), List.of("a", "b")));
             assertThat(report.precision()).isZero(); // GH-90000
             assertThat(report.recall()).isZero(); // GH-90000
             assertThat(report.f1Score()).isZero(); // GH-90000
         }
 
         @Test
-        @DisplayName("partial recall: computes correct precision, recall, f1 [GH-90000]")
+        @DisplayName("partial recall: computes correct precision, recall, f1")
         void partialRecall() { // GH-90000
             // recalled: {a, b, c}  expected: {a, b, d}
             // TP=2 FP=1 FN=1 → p=0.667  r=0.667  f1=0.667
@@ -266,24 +266,24 @@ class MemoryGovernanceServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("meetsThreshold returns true when precision and recall both pass [GH-90000]")
+        @DisplayName("meetsThreshold returns true when precision and recall both pass")
         void meetsThresholdTrue() { // GH-90000
             RetrievalQualityService.QualityReport report = runPromise(() -> // GH-90000
-                    service.score(AGENT_ID, TENANT_ID, List.of("a [GH-90000]"), List.of("a [GH-90000]")));
+                    service.score(AGENT_ID, TENANT_ID, List.of("a"), List.of("a")));
             assertThat(report.meetsThreshold(0.8)).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("meetsThreshold returns false when precision is below threshold [GH-90000]")
+        @DisplayName("meetsThreshold returns false when precision is below threshold")
         void meetsThresholdFalse() { // GH-90000
             // recalled {a, b}  expected {a} → TP=1  FP=1 → p=0.5 r=1.0
             RetrievalQualityService.QualityReport report = runPromise(() -> // GH-90000
-                    service.score(AGENT_ID, TENANT_ID, List.of("a", "b"), List.of("a [GH-90000]")));
+                    service.score(AGENT_ID, TENANT_ID, List.of("a", "b"), List.of("a")));
             assertThat(report.meetsThreshold(0.8)).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("rollingAverage returns zero summary when no reports recorded [GH-90000]")
+        @DisplayName("rollingAverage returns zero summary when no reports recorded")
         void rollingAverageEmptyHistory() { // GH-90000
             RetrievalQualityService.QualitySummary summary = runPromise(() -> // GH-90000
                     service.rollingAverage(AGENT_ID, TENANT_ID, 10)); // GH-90000
@@ -292,10 +292,10 @@ class MemoryGovernanceServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("rollingAverage aggregates recorded reports [GH-90000]")
+        @DisplayName("rollingAverage aggregates recorded reports")
         void rollingAverageAggregates() { // GH-90000
-            runPromise(() -> service.score(AGENT_ID, TENANT_ID, List.of("a [GH-90000]"), List.of("a [GH-90000]")));
-            runPromise(() -> service.score(AGENT_ID, TENANT_ID, List.of("x [GH-90000]"), List.of("a [GH-90000]")));
+            runPromise(() -> service.score(AGENT_ID, TENANT_ID, List.of("a"), List.of("a")));
+            runPromise(() -> service.score(AGENT_ID, TENANT_ID, List.of("x"), List.of("a")));
             RetrievalQualityService.QualitySummary summary = runPromise(() -> // GH-90000
                     service.rollingAverage(AGENT_ID, TENANT_ID, 10)); // GH-90000
             assertThat(summary.reportsConsidered()).isEqualTo(2); // GH-90000
@@ -303,11 +303,11 @@ class MemoryGovernanceServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("rollingAverage respects window limit [GH-90000]")
+        @DisplayName("rollingAverage respects window limit")
         void rollingAverageRespectsWindow() { // GH-90000
             // Record 5 reports
             for (int i = 0; i < 5; i++) { // GH-90000
-                runPromise(() -> service.score(AGENT_ID, TENANT_ID, List.of("a [GH-90000]"), List.of("a [GH-90000]")));
+                runPromise(() -> service.score(AGENT_ID, TENANT_ID, List.of("a"), List.of("a")));
             }
             RetrievalQualityService.QualitySummary summary = runPromise(() -> // GH-90000
                     service.rollingAverage(AGENT_ID, TENANT_ID, 3)); // GH-90000
@@ -315,14 +315,14 @@ class MemoryGovernanceServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("constructor rejects historyLimit <= 0 [GH-90000]")
+        @DisplayName("constructor rejects historyLimit <= 0")
         void constructorInvalidHistoryLimit() { // GH-90000
             assertThatThrownBy(() -> new DefaultRetrievalQualityService(0)) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("rollingAverage rejects window <= 0 [GH-90000]")
+        @DisplayName("rollingAverage rejects window <= 0")
         void rollingAverageInvalidWindow() { // GH-90000
             assertThatThrownBy(() -> runPromise(() -> // GH-90000
                     service.rollingAverage(AGENT_ID, TENANT_ID, 0))) // GH-90000
@@ -335,11 +335,11 @@ class MemoryGovernanceServiceTest extends EventloopTestBase {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("AccessDecision value type [GH-90000]")
+    @DisplayName("AccessDecision value type")
     class AccessDecisionTests {
 
         @Test
-        @DisplayName("permit() factory marks decision as permitted [GH-90000]")
+        @DisplayName("permit() factory marks decision as permitted")
         void permitFactoryIsPermitted() { // GH-90000
             MemoryGovernanceService.AccessDecision d =
                     MemoryGovernanceService.AccessDecision.permit("user-1", NS_ID); // GH-90000
@@ -347,12 +347,12 @@ class MemoryGovernanceServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("deny() factory marks decision as not permitted with reason [GH-90000]")
+        @DisplayName("deny() factory marks decision as not permitted with reason")
         void denyFactoryHasReason() { // GH-90000
             MemoryGovernanceService.AccessDecision d =
                     MemoryGovernanceService.AccessDecision.deny("user-1", NS_ID, "No access"); // GH-90000
             assertThat(d.permitted()).isFalse(); // GH-90000
-            assertThat(d.reason()).isEqualTo("No access [GH-90000]");
+            assertThat(d.reason()).isEqualTo("No access");
         }
     }
 }

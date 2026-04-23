@@ -17,7 +17,8 @@ import java.util.Objects;
  * @doc.type class
  * @doc.purpose Composite evaluation gate
  * @doc.layer agent-learning
- */
+  * @doc.pattern Component
+*/
 public class CompositeEvaluationGate implements EvaluationGate {
 
     private static final Logger log = LoggerFactory.getLogger(CompositeEvaluationGate.class);

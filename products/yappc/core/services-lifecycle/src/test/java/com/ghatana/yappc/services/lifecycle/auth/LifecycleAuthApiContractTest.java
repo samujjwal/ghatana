@@ -44,7 +44,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test, Contract
  */
-@DisplayName("Lifecycle Auth API Contract Tests [GH-90000]")
+@DisplayName("Lifecycle Auth API Contract Tests")
 class LifecycleAuthApiContractTest extends EventloopTestBase {
 
     private com.ghatana.platform.security.port.JwtTokenProvider tokenProvider;
@@ -64,22 +64,22 @@ class LifecycleAuthApiContractTest extends EventloopTestBase {
                 hash,
                 Base64.getEncoder().encodeToString(salt), // GH-90000
                 "Contract Tester",
-                List.of("admin [GH-90000]"),
+                List.of("admin"),
                 "test-tenant");
         loginController = new LifecycleLoginController(tokenProvider, List.of(user)); // GH-90000
     }
 
     @Nested
-    @DisplayName("POST /api/auth/login [GH-90000]")
+    @DisplayName("POST /api/auth/login")
     class LoginContract {
 
         @Test
-        @DisplayName("success response contains token and user object with all required fields [GH-90000]")
+        @DisplayName("success response contains token and user object with all required fields")
         void loginSuccessResponseShape() { // GH-90000
-            when(tokenProvider.createToken(eq("user-42 [GH-90000]"), anyList(), any(Map.class)))
-                    .thenReturn("jwt.token.value [GH-90000]");
+            when(tokenProvider.createToken(eq("user-42"), anyList(), any(Map.class)))
+                    .thenReturn("jwt.token.value");
 
-            HttpRequest request = HttpRequest.post("http://localhost/api/auth/login [GH-90000]")
+            HttpRequest request = HttpRequest.post("http://localhost/api/auth/login")
                     .withBody("{\"email\":\"contract-test@yappc.io\",\"password\":\"test-pass\"}") // GH-90000
                     .build(); // GH-90000
 
@@ -96,13 +96,13 @@ class LifecycleAuthApiContractTest extends EventloopTestBase {
             assertThat(body).contains("\"email\""); // GH-90000
             assertThat(body).contains("\"roles\""); // GH-90000
             assertThat(body).contains("\"tenantId\""); // GH-90000
-            assertThat(body).contains("jwt.token.value [GH-90000]");
+            assertThat(body).contains("jwt.token.value");
         }
 
         @Test
-        @DisplayName("failure response contains error and message fields [GH-90000]")
+        @DisplayName("failure response contains error and message fields")
         void loginFailureResponseShape() { // GH-90000
-            HttpRequest request = HttpRequest.post("http://localhost/api/auth/login [GH-90000]")
+            HttpRequest request = HttpRequest.post("http://localhost/api/auth/login")
                     .withBody("{\"email\":\"contract-test@yappc.io\",\"password\":\"wrong\"}") // GH-90000
                     .build(); // GH-90000
 
@@ -112,18 +112,18 @@ class LifecycleAuthApiContractTest extends EventloopTestBase {
             String body = response.getBody().getString(StandardCharsets.UTF_8); // GH-90000
             assertThat(body).contains("\"error\""); // GH-90000
             assertThat(body).contains("\"message\""); // GH-90000
-            assertThat(body).contains("UNAUTHORIZED [GH-90000]");
+            assertThat(body).contains("UNAUTHORIZED");
         }
     }
 
     @Nested
-    @DisplayName("POST /api/auth/logout [GH-90000]")
+    @DisplayName("POST /api/auth/logout")
     class LogoutContract {
 
         @Test
-        @DisplayName("response contains message field [GH-90000]")
+        @DisplayName("response contains message field")
         void logoutResponseShape() { // GH-90000
-            HttpRequest request = HttpRequest.post("http://localhost/api/auth/logout [GH-90000]")
+            HttpRequest request = HttpRequest.post("http://localhost/api/auth/logout")
                     .build(); // GH-90000
 
             HttpResponse response = runPromise(() -> loginController.logout(request)); // GH-90000
@@ -135,22 +135,22 @@ class LifecycleAuthApiContractTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("GET /api/auth/me [GH-90000]")
+    @DisplayName("GET /api/auth/me")
     class MeContract {
 
         @Test
-        @DisplayName("success response contains id, name, email, roles, tenantId [GH-90000]")
+        @DisplayName("success response contains id, name, email, roles, tenantId")
         void meSuccessResponseShape() { // GH-90000
-            when(tokenProvider.validateToken("valid-token [GH-90000]")).thenReturn(true);
-            when(tokenProvider.getUserIdFromToken("valid-token [GH-90000]")).thenReturn(Optional.of("user-42 [GH-90000]"));
-            when(tokenProvider.extractClaims("valid-token [GH-90000]")).thenReturn(Optional.of(Map.of(
+            when(tokenProvider.validateToken("valid-token")).thenReturn(true);
+            when(tokenProvider.getUserIdFromToken("valid-token")).thenReturn(Optional.of("user-42"));
+            when(tokenProvider.extractClaims("valid-token")).thenReturn(Optional.of(Map.of(
                     "name", "Contract Tester",
                     "email", "contract-test@yappc.io",
                     "tenantId", "test-tenant"
             )));
-            when(tokenProvider.getRolesFromToken("valid-token [GH-90000]")).thenReturn(List.of("admin [GH-90000]"));
+            when(tokenProvider.getRolesFromToken("valid-token")).thenReturn(List.of("admin"));
 
-            HttpRequest request = HttpRequest.get("http://localhost/api/auth/me [GH-90000]")
+            HttpRequest request = HttpRequest.get("http://localhost/api/auth/me")
                     .withHeader(HttpHeaders.AUTHORIZATION, "Bearer valid-token") // GH-90000
                     .build(); // GH-90000
 
@@ -166,9 +166,9 @@ class LifecycleAuthApiContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("missing auth header returns 401 with error/message fields [GH-90000]")
+        @DisplayName("missing auth header returns 401 with error/message fields")
         void meNoAuthReturns401() { // GH-90000
-            HttpRequest request = HttpRequest.get("http://localhost/api/auth/me [GH-90000]").build();
+            HttpRequest request = HttpRequest.get("http://localhost/api/auth/me").build();
 
             HttpResponse response = runPromise(() -> authController.currentUser(request)); // GH-90000
 
@@ -180,19 +180,19 @@ class LifecycleAuthApiContractTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("GET /api/auth/validate [GH-90000]")
+    @DisplayName("GET /api/auth/validate")
     class ValidateContract {
 
         @Test
-        @DisplayName("success response contains valid, userId, tenantId fields [GH-90000]")
+        @DisplayName("success response contains valid, userId, tenantId fields")
         void validateSuccessResponseShape() { // GH-90000
-            when(tokenProvider.validateToken("valid-token [GH-90000]")).thenReturn(true);
-            when(tokenProvider.getUserIdFromToken("valid-token [GH-90000]")).thenReturn(Optional.of("user-42 [GH-90000]"));
-            when(tokenProvider.extractClaims("valid-token [GH-90000]")).thenReturn(Optional.of(Map.of(
+            when(tokenProvider.validateToken("valid-token")).thenReturn(true);
+            when(tokenProvider.getUserIdFromToken("valid-token")).thenReturn(Optional.of("user-42"));
+            when(tokenProvider.extractClaims("valid-token")).thenReturn(Optional.of(Map.of(
                     "tenantId", "test-tenant"
             )));
 
-            HttpRequest request = HttpRequest.get("http://localhost/api/auth/validate [GH-90000]")
+            HttpRequest request = HttpRequest.get("http://localhost/api/auth/validate")
                     .withHeader(HttpHeaders.AUTHORIZATION, "Bearer valid-token") // GH-90000
                     .build(); // GH-90000
 
@@ -203,7 +203,7 @@ class LifecycleAuthApiContractTest extends EventloopTestBase {
             assertThat(body).contains("\"valid\""); // GH-90000
             assertThat(body).contains("\"userId\""); // GH-90000
             assertThat(body).contains("\"tenantId\""); // GH-90000
-            assertThat(body).contains("true [GH-90000]");
+            assertThat(body).contains("true");
         }
     }
 }

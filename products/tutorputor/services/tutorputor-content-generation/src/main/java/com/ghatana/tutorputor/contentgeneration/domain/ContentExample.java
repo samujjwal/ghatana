@@ -2,6 +2,12 @@ package com.ghatana.tutorputor.contentgeneration.domain;
 
 import java.util.List;
 
+/**
+ * @doc.type class
+ * @doc.purpose Provides content example functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+ */
 public class ContentExample {
     private final String id;
     private final String claimId;

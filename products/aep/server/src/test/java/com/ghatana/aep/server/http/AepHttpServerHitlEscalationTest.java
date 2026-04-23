@@ -46,7 +46,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AepHttpServer – HITL Auto-Escalation (AEP-08) [GH-90000]")
+@DisplayName("AepHttpServer – HITL Auto-Escalation (AEP-08)")
 class AepHttpServerHitlEscalationTest extends EventloopTestBase {
 
     private AepEngine engine;
@@ -64,7 +64,7 @@ class AepHttpServerHitlEscalationTest extends EventloopTestBase {
 
     @AfterEach
     void tearDown() { // GH-90000
-        System.clearProperty("AEP_HITL_TIMEOUT_POLICIES [GH-90000]");
+        System.clearProperty("AEP_HITL_TIMEOUT_POLICIES");
         if (server != null) server.stop(); // GH-90000
         if (engine != null) engine.close(); // GH-90000
     }
@@ -72,11 +72,11 @@ class AepHttpServerHitlEscalationTest extends EventloopTestBase {
     // ─── Manual Escalation: POST /api/v1/hitl/:reviewId/escalate ─────────────
 
     @Nested
-    @DisplayName("POST /api/v1/hitl/:reviewId/escalate — manual escalation [GH-90000]")
+    @DisplayName("POST /api/v1/hitl/:reviewId/escalate — manual escalation")
     class ManualEscalationTests {
 
         @Test
-        @DisplayName("returns 501 when HITL queue is not configured [GH-90000]")
+        @DisplayName("returns 501 when HITL queue is not configured")
         void returns501WhenQueueNotConfigured() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -85,12 +85,12 @@ class AepHttpServerHitlEscalationTest extends EventloopTestBase {
             HttpResponse<String> resp = post("/api/v1/hitl/r-001/escalate", "{}"); // GH-90000
 
             assertThat(resp.statusCode()).isEqualTo(501); // GH-90000
-            assertThat(mapper.readValue(resp.body(), Map.class).get("message [GH-90000]").toString())
-                .contains("HITL queue not configured [GH-90000]");
+            assertThat(mapper.readValue(resp.body(), Map.class).get("message").toString())
+                .contains("HITL queue not configured");
         }
 
         @Test
-        @DisplayName("returns 200 and escalates a PENDING review item [GH-90000]")
+        @DisplayName("returns 200 and escalates a PENDING review item")
         void escalatesPendingItem() throws Exception { // GH-90000
             InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP); // GH-90000
             ReviewItem item = buildItem("review-esc-1", "tenant-a", "skill-x"); // GH-90000
@@ -104,14 +104,14 @@ class AepHttpServerHitlEscalationTest extends EventloopTestBase {
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("reviewId [GH-90000]")).isEqualTo("review-esc-1 [GH-90000]");
-            assertThat(body.get("status [GH-90000]")).isEqualTo("ESCALATED [GH-90000]");
-            assertThat(body.get("escalatedAt [GH-90000]")).isNotNull();
-            assertThat(body.get("reason [GH-90000]")).isEqualTo("manual [GH-90000]");
+            assertThat(body.get("reviewId")).isEqualTo("review-esc-1");
+            assertThat(body.get("status")).isEqualTo("ESCALATED");
+            assertThat(body.get("escalatedAt")).isNotNull();
+            assertThat(body.get("reason")).isEqualTo("manual");
         }
 
         @Test
-        @DisplayName("manual escalation includes explicit destination metadata when provided [GH-90000]")
+        @DisplayName("manual escalation includes explicit destination metadata when provided")
         void escalationIncludesDestinationMetadata() throws Exception { // GH-90000
             InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP); // GH-90000
             queue.enqueue(buildItem("review-esc-dest", "tenant-a", "skill-x")); // GH-90000
@@ -126,13 +126,13 @@ class AepHttpServerHitlEscalationTest extends EventloopTestBase {
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("destinationType [GH-90000]")).isEqualTo("manager [GH-90000]");
-            assertThat(body.get("destination [GH-90000]")).isEqualTo("ops-oncall [GH-90000]");
-            assertThat(body.get("policyAction [GH-90000]")).isEqualTo("escalate [GH-90000]");
+            assertThat(body.get("destinationType")).isEqualTo("manager");
+            assertThat(body.get("destination")).isEqualTo("ops-oncall");
+            assertThat(body.get("policyAction")).isEqualTo("escalate");
         }
 
         @Test
-        @DisplayName("item status transitions to ESCALATED in queue after escalation [GH-90000]")
+        @DisplayName("item status transitions to ESCALATED in queue after escalation")
         void itemStatusIsEscalatedAfterEscalation() throws Exception { // GH-90000
             InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP); // GH-90000
             ReviewItem item = buildItem("review-esc-2", "tenant-b", "skill-y"); // GH-90000
@@ -145,15 +145,15 @@ class AepHttpServerHitlEscalationTest extends EventloopTestBase {
             post("/api/v1/hitl/review-esc-2/escalate", "{}"); // GH-90000
 
             // Verify via list-pending: ESCALATED items are excluded from pending
-            HttpResponse<String> listResp = get("/api/v1/hitl/pending?tenantId=tenant-b [GH-90000]");
+            HttpResponse<String> listResp = get("/api/v1/hitl/pending?tenantId=tenant-b");
             assertThat(listResp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> listBody = mapper.readValue(listResp.body(), Map.class); // GH-90000
             // After escalation the item is no longer PENDING/IN_REVIEW — count should be 0
-            assertThat(listBody.get("count [GH-90000]")).isEqualTo(0);
+            assertThat(listBody.get("count")).isEqualTo(0);
         }
 
         @Test
-        @DisplayName("fires hitl_escalated SSE event on manual escalation [GH-90000]")
+        @DisplayName("fires hitl_escalated SSE event on manual escalation")
         void firesSseEventOnManualEscalation() throws Exception { // GH-90000
             List<Map<?, ?>> sseEvents = new CopyOnWriteArrayList<>(); // GH-90000
 
@@ -166,7 +166,7 @@ class AepHttpServerHitlEscalationTest extends EventloopTestBase {
                 (tenantId, payload) -> sseEvents.add(Map.copyOf(payload))); // GH-90000
 
             // Simulate escalation: escalate directly then invoke SSE callback
-            queue.escalate("review-esc-3 [GH-90000]").whenComplete((escalated, err) -> {
+            queue.escalate("review-esc-3").whenComplete((escalated, err) -> {
                 if (err == null) { // GH-90000
                     Map<String, Object> event = new HashMap<>(); // GH-90000
                     event.put("reviewId", escalated.getReviewId()); // GH-90000
@@ -181,12 +181,12 @@ class AepHttpServerHitlEscalationTest extends EventloopTestBase {
 
             assertThat(sseEvents).hasSize(1); // GH-90000
             Map<?, ?> event = sseEvents.get(0); // GH-90000
-            assertThat(event.get("reviewId [GH-90000]")).isEqualTo("review-esc-3 [GH-90000]");
-            assertThat(event.get("status [GH-90000]")).isEqualTo("ESCALATED [GH-90000]");
+            assertThat(event.get("reviewId")).isEqualTo("review-esc-3");
+            assertThat(event.get("status")).isEqualTo("ESCALATED");
         }
 
         @Test
-        @DisplayName("returns 404 when review item does not exist [GH-90000]")
+        @DisplayName("returns 404 when review item does not exist")
         void returns404ForUnknownReviewId() throws Exception { // GH-90000
             InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP); // GH-90000
             server = new AepHttpServer(engine, port, queue); // GH-90000
@@ -199,7 +199,7 @@ class AepHttpServerHitlEscalationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("returns 404 when trying to escalate an already-approved item [GH-90000]")
+        @DisplayName("returns 404 when trying to escalate an already-approved item")
         void returns404WhenAlreadyApproved() throws Exception { // GH-90000
             InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP); // GH-90000
             ReviewItem item = buildItem("review-approved", "tenant-d", "skill-w"); // GH-90000
@@ -223,11 +223,11 @@ class AepHttpServerHitlEscalationTest extends EventloopTestBase {
     // ─── Auto-escalation Timeout Logic ──────────────────────────────────────
 
     @Nested
-    @DisplayName("Auto-escalation: findOverdue + escalate flow [GH-90000]")
+    @DisplayName("Auto-escalation: findOverdue + escalate flow")
     class AutoEscalationLogicTests {
 
         @Test
-        @DisplayName("findOverdue returns empty when items are within timeout [GH-90000]")
+        @DisplayName("findOverdue returns empty when items are within timeout")
         void findOverdueReturnsEmptyForRecentItems() throws Exception { // GH-90000
             InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP); // GH-90000
             ReviewItem item = buildItem("fresh-review", "tenant-e", "skill-p"); // GH-90000
@@ -241,7 +241,7 @@ class AepHttpServerHitlEscalationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("findOverdue returns item when threshold is 0 seconds (immediate) [GH-90000]")
+        @DisplayName("findOverdue returns item when threshold is 0 seconds (immediate)")
         void findOverdueReturnsItemWithZeroThreshold() throws Exception { // GH-90000
             InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP); // GH-90000
             ReviewItem item = buildItem("overdue-review", "tenant-f", "skill-q", Instant.now().minusSeconds(5)); // GH-90000
@@ -255,7 +255,7 @@ class AepHttpServerHitlEscalationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("findOverdue scopes to specific tenant when tenantId provided [GH-90000]")
+        @DisplayName("findOverdue scopes to specific tenant when tenantId provided")
         void findOverdueFiltersByTenant() throws Exception { // GH-90000
             InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP); // GH-90000
             queue.enqueue(buildItem("r-tenant-1", "tenant-x", "sk-1", Instant.now().minusSeconds(5))); // GH-90000
@@ -269,30 +269,30 @@ class AepHttpServerHitlEscalationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("escalation does not affect ESCALATED items (idempotent guard) [GH-90000]")
+        @DisplayName("escalation does not affect ESCALATED items (idempotent guard)")
         void alreadyEscalatedItemIsRejectedByEscalate() throws Exception { // GH-90000
             InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP); // GH-90000
             ReviewItem item = buildItem("already-escalated", "tenant-g", "skill-r"); // GH-90000
             queue.enqueue(item); // GH-90000
             // First escalation — succeeds synchronously via ConcurrentHashMap
-            queue.escalate("already-escalated [GH-90000]");
+            queue.escalate("already-escalated");
 
             // Second escalation — Promise wraps exception
             boolean[] exceptionFired = {false};
-            queue.escalate("already-escalated [GH-90000]")
+            queue.escalate("already-escalated")
                 .whenComplete((esc, e) -> { if (e != null) exceptionFired[0] = true; }); // GH-90000
 
             assertThat(exceptionFired[0]).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("HitlController default timeout is 1800 seconds (30 min) [GH-90000]")
+        @DisplayName("HitlController default timeout is 1800 seconds (30 min)")
         void defaultTimeoutIs30Minutes() { // GH-90000
             assertThat(HitlController.DEFAULT_ESCALATION_TIMEOUT_SECONDS).isEqualTo(1800L); // GH-90000
         }
 
         @Test
-        @DisplayName("pending endpoint auto-escalates overdue items when requested [GH-90000]")
+        @DisplayName("pending endpoint auto-escalates overdue items when requested")
         void pendingEndpointAutoEscalatesOverdueItems() throws Exception { // GH-90000
             InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP); // GH-90000
             queue.enqueue(buildItem( // GH-90000
@@ -305,21 +305,21 @@ class AepHttpServerHitlEscalationTest extends EventloopTestBase {
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/hitl/pending?tenantId=tenant-http&thresholdSeconds=60&autoEscalate=true [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/hitl/pending?tenantId=tenant-http&thresholdSeconds=60&autoEscalate=true");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("count [GH-90000]")).isEqualTo(0);
-            assertThat(body.get("overdueCount [GH-90000]")).isEqualTo(1);
-            assertThat(body.get("autoEscalatedCount [GH-90000]")).isEqualTo(1);
-            assertThat(body.get("escalationTimeoutSeconds [GH-90000]")).isEqualTo(60);
+            assertThat(body.get("count")).isEqualTo(0);
+            assertThat(body.get("overdueCount")).isEqualTo(1);
+            assertThat(body.get("autoEscalatedCount")).isEqualTo(1);
+            assertThat(body.get("escalationTimeoutSeconds")).isEqualTo(60);
 
-            HttpResponse<String> followUp = get("/api/v1/hitl/pending?tenantId=tenant-http [GH-90000]");
-            assertThat(mapper.readValue(followUp.body(), Map.class).get("count [GH-90000]")).isEqualTo(0);
+            HttpResponse<String> followUp = get("/api/v1/hitl/pending?tenantId=tenant-http");
+            assertThat(mapper.readValue(followUp.body(), Map.class).get("count")).isEqualTo(0);
         }
 
         @Test
-        @DisplayName("tenant timeout policy auto-approves overdue items when configured [GH-90000]")
+        @DisplayName("tenant timeout policy auto-approves overdue items when configured")
         void tenantTimeoutPolicyAutoApprovesOverdueItems() throws Exception { // GH-90000
             System.setProperty("AEP_HITL_TIMEOUT_POLICIES", "tenant-policy=60:auto_approve:manager:ops-oncall"); // GH-90000
             InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP); // GH-90000
@@ -333,25 +333,25 @@ class AepHttpServerHitlEscalationTest extends EventloopTestBase {
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/hitl/pending?tenantId=tenant-policy&autoEscalate=true [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/hitl/pending?tenantId=tenant-policy&autoEscalate=true");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("count [GH-90000]")).isEqualTo(0);
-            assertThat(body.get("overdueCount [GH-90000]")).isEqualTo(1);
-            assertThat(body.get("autoApprovedCount [GH-90000]")).isEqualTo(1);
-            assertThat(body.get("autoEscalatedCount [GH-90000]")).isEqualTo(0);
-            assertThat(body.get("policyAction [GH-90000]")).isEqualTo("auto_approve [GH-90000]");
-            assertThat(body.get("escalationDestinationType [GH-90000]")).isEqualTo("manager [GH-90000]");
-            assertThat(body.get("escalationDestination [GH-90000]")).isEqualTo("ops-oncall [GH-90000]");
+            assertThat(body.get("count")).isEqualTo(0);
+            assertThat(body.get("overdueCount")).isEqualTo(1);
+            assertThat(body.get("autoApprovedCount")).isEqualTo(1);
+            assertThat(body.get("autoEscalatedCount")).isEqualTo(0);
+            assertThat(body.get("policyAction")).isEqualTo("auto_approve");
+            assertThat(body.get("escalationDestinationType")).isEqualTo("manager");
+            assertThat(body.get("escalationDestination")).isEqualTo("ops-oncall");
 
-            ReviewItem resolved = runPromise(() -> queue.getById("review-auto-approve [GH-90000]"));
+            ReviewItem resolved = runPromise(() -> queue.getById("review-auto-approve"));
             assertThat(resolved).isNotNull(); // GH-90000
             assertThat(resolved.getStatus()).isEqualTo(com.ghatana.agent.learning.review.ReviewStatus.APPROVED); // GH-90000
         }
 
         @Test
-        @DisplayName("tenant timeout policy auto-rejects overdue items when configured [GH-90000]")
+        @DisplayName("tenant timeout policy auto-rejects overdue items when configured")
         void tenantTimeoutPolicyAutoRejectsOverdueItems() throws Exception { // GH-90000
             System.setProperty("AEP_HITL_TIMEOUT_POLICIES", "tenant-reject=45:auto_reject:queue:compliance"); // GH-90000
             InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP); // GH-90000
@@ -365,23 +365,23 @@ class AepHttpServerHitlEscalationTest extends EventloopTestBase {
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/hitl/pending?tenantId=tenant-reject&autoEscalate=true [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/hitl/pending?tenantId=tenant-reject&autoEscalate=true");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("autoRejectedCount [GH-90000]")).isEqualTo(1);
-            assertThat(body.get("autoEscalatedCount [GH-90000]")).isEqualTo(0);
-            assertThat(body.get("policyAction [GH-90000]")).isEqualTo("auto_reject [GH-90000]");
-            assertThat(body.get("escalationDestinationType [GH-90000]")).isEqualTo("queue [GH-90000]");
-            assertThat(body.get("escalationDestination [GH-90000]")).isEqualTo("compliance [GH-90000]");
+            assertThat(body.get("autoRejectedCount")).isEqualTo(1);
+            assertThat(body.get("autoEscalatedCount")).isEqualTo(0);
+            assertThat(body.get("policyAction")).isEqualTo("auto_reject");
+            assertThat(body.get("escalationDestinationType")).isEqualTo("queue");
+            assertThat(body.get("escalationDestination")).isEqualTo("compliance");
 
-            ReviewItem resolved = runPromise(() -> queue.getById("review-auto-reject [GH-90000]"));
+            ReviewItem resolved = runPromise(() -> queue.getById("review-auto-reject"));
             assertThat(resolved).isNotNull(); // GH-90000
             assertThat(resolved.getStatus()).isEqualTo(com.ghatana.agent.learning.review.ReviewStatus.REJECTED); // GH-90000
         }
 
         @Test
-        @DisplayName("auto-escalation fires SSE event for overdue item via scheduler callback [GH-90000]")
+        @DisplayName("auto-escalation fires SSE event for overdue item via scheduler callback")
         void autoEscalationFiresSseEventForOverdueItem() throws Exception { // GH-90000
             List<Map<?, ?>> capturedEvents = new CopyOnWriteArrayList<>(); // GH-90000
 
@@ -410,9 +410,9 @@ class AepHttpServerHitlEscalationTest extends EventloopTestBase {
 
             assertThat(capturedEvents).hasSize(1); // GH-90000
             Map<?, ?> event = capturedEvents.get(0); // GH-90000
-            assertThat(event.get("reviewId [GH-90000]")).isEqualTo("overdue-auto [GH-90000]");
-            assertThat(event.get("status [GH-90000]")).isEqualTo("ESCALATED [GH-90000]");
-            assertThat(event.get("reason [GH-90000]")).isEqualTo("sla_breach [GH-90000]");
+            assertThat(event.get("reviewId")).isEqualTo("overdue-auto");
+            assertThat(event.get("status")).isEqualTo("ESCALATED");
+            assertThat(event.get("reason")).isEqualTo("sla_breach");
         }
     }
 
@@ -427,7 +427,7 @@ class AepHttpServerHitlEscalationTest extends EventloopTestBase {
             .reviewId(reviewId) // GH-90000
             .tenantId(tenantId) // GH-90000
             .skillId(skillId) // GH-90000
-            .proposedVersion("v1.0 [GH-90000]")
+            .proposedVersion("v1.0")
             .itemType(ReviewItemType.POLICY) // GH-90000
             .confidenceScore(0.55) // GH-90000
             .createdAt(createdAt) // GH-90000

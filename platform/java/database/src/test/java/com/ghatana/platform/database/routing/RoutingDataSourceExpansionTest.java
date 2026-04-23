@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("RoutingDataSource - Phase 3 Expansion [GH-90000]")
+@DisplayName("RoutingDataSource - Phase 3 Expansion")
 class RoutingDataSourceExpansionTest {
 
     // ============================================
@@ -31,16 +31,16 @@ class RoutingDataSourceExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Read/Write Routing [GH-90000]")
+    @DisplayName("Read/Write Routing")
     class RoutingTests {
 
         @Test
-        @DisplayName("Routes read-only requests to replicas [GH-90000]")
+        @DisplayName("Routes read-only requests to replicas")
         void routeReadOnlyToReplicas() { // GH-90000
-            DataSource primary = createMockDataSource("primary [GH-90000]");
+            DataSource primary = createMockDataSource("primary");
             Map<String, DataSource> replicas = new HashMap<>(); // GH-90000
-            replicas.put("replica-1", createMockDataSource("replica-1 [GH-90000]"));
-            replicas.put("replica-2", createMockDataSource("replica-2 [GH-90000]"));
+            replicas.put("replica-1", createMockDataSource("replica-1"));
+            replicas.put("replica-2", createMockDataSource("replica-2"));
 
             RoutingDataSource routingDS = new RoutingDataSource(primary, replicas); // GH-90000
 
@@ -56,11 +56,11 @@ class RoutingDataSourceExpansionTest {
         }
 
         @Test
-        @DisplayName("Routes write requests to primary [GH-90000]")
+        @DisplayName("Routes write requests to primary")
         void routeWriteToPrimary() { // GH-90000
-            DataSource primary = createMockDataSource("primary [GH-90000]");
+            DataSource primary = createMockDataSource("primary");
             Map<String, DataSource> replicas = new HashMap<>(); // GH-90000
-            replicas.put("replica-1", createMockDataSource("replica-1 [GH-90000]"));
+            replicas.put("replica-1", createMockDataSource("replica-1"));
 
             RoutingDataSource routingDS = new RoutingDataSource(primary, replicas); // GH-90000
 
@@ -70,11 +70,11 @@ class RoutingDataSourceExpansionTest {
         }
 
         @Test
-        @DisplayName("Maintains routing consistency across requests [GH-90000]")
+        @DisplayName("Maintains routing consistency across requests")
         void consistentRouting() { // GH-90000
-            DataSource primary = createMockDataSource("primary [GH-90000]");
+            DataSource primary = createMockDataSource("primary");
             Map<String, DataSource> replicas = new HashMap<>(); // GH-90000
-            replicas.put("replica-1", createMockDataSource("replica-1 [GH-90000]"));
+            replicas.put("replica-1", createMockDataSource("replica-1"));
 
             RoutingDataSource routingDS1 = new RoutingDataSource(primary, replicas); // GH-90000
             RoutingDataSource routingDS2 = new RoutingDataSource(primary, replicas); // GH-90000
@@ -90,17 +90,17 @@ class RoutingDataSourceExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Replica Load-Balancing [GH-90000]")
+    @DisplayName("Replica Load-Balancing")
     class LoadBalancingTests {
 
         @Test
-        @DisplayName("Round-robins across available replicas [GH-90000]")
+        @DisplayName("Round-robins across available replicas")
         void roundRobinLoadBalancing() { // GH-90000
-            DataSource primary = createMockDataSource("primary [GH-90000]");
+            DataSource primary = createMockDataSource("primary");
             Map<String, DataSource> replicas = new HashMap<>(); // GH-90000
-            replicas.put("replica-1", createMockDataSource("replica-1 [GH-90000]"));
-            replicas.put("replica-2", createMockDataSource("replica-2 [GH-90000]"));
-            replicas.put("replica-3", createMockDataSource("replica-3 [GH-90000]"));
+            replicas.put("replica-1", createMockDataSource("replica-1"));
+            replicas.put("replica-2", createMockDataSource("replica-2"));
+            replicas.put("replica-3", createMockDataSource("replica-3"));
 
             RoutingDataSource routingDS = new RoutingDataSource(primary, replicas); // GH-90000
 
@@ -117,9 +117,9 @@ class RoutingDataSourceExpansionTest {
         }
 
         @Test
-        @DisplayName("Falls back to primary when replicas unavailable [GH-90000]")
+        @DisplayName("Falls back to primary when replicas unavailable")
         void fallbackToPrimary() { // GH-90000
-            DataSource primary = createMockDataSource("primary [GH-90000]");
+            DataSource primary = createMockDataSource("primary");
             Map<String, DataSource> replicas = new HashMap<>(); // GH-90000
 
             RoutingDataSource routingDS = new RoutingDataSource(primary, replicas); // GH-90000
@@ -139,13 +139,13 @@ class RoutingDataSourceExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Circuit Breaker Behavior [GH-90000]")
+    @DisplayName("Circuit Breaker Behavior")
     class CircuitBreakerTests {
 
         @Test
-        @DisplayName("Handles multiple replica initialization [GH-90000]")
+        @DisplayName("Handles multiple replica initialization")
         void multipleReplicaInitialization() { // GH-90000
-            DataSource primary = createMockDataSource("primary [GH-90000]");
+            DataSource primary = createMockDataSource("primary");
             Map<String, DataSource> replicas = new HashMap<>(); // GH-90000
 
             for (int i = 1; i <= 5; i++) { // GH-90000
@@ -159,11 +159,11 @@ class RoutingDataSourceExpansionTest {
         }
 
         @Test
-        @DisplayName("Supports custom circuit breaker timeout [GH-90000]")
+        @DisplayName("Supports custom circuit breaker timeout")
         void customCircuitBreakerTimeout() { // GH-90000
-            DataSource primary = createMockDataSource("primary [GH-90000]");
+            DataSource primary = createMockDataSource("primary");
             Map<String, DataSource> replicas = new HashMap<>(); // GH-90000
-            replicas.put("replica-1", createMockDataSource("replica-1 [GH-90000]"));
+            replicas.put("replica-1", createMockDataSource("replica-1"));
 
             long customTimeout = 120000; // 2 minutes
             RoutingDataSource routingDS = new RoutingDataSource(primary, replicas, customTimeout); // GH-90000
@@ -222,7 +222,7 @@ class RoutingDataSourceExpansionTest {
 
             @Override
             public String toString() { // GH-90000
-                return "MockDataSource(" + name +  [GH-90000]")";
+                return "MockDataSource(" + name + ")";
             }
         };
     }

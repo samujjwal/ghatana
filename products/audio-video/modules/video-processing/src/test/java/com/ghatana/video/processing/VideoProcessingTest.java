@@ -18,11 +18,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test video transcoding, encoding, and quality validation.
  */
-@DisplayName("Video Processing Tests [GH-90000]")
+@DisplayName("Video Processing Tests")
 class VideoProcessingTest {
 
     @Test
-    @DisplayName("Should handle video transcoding [GH-90000]")
+    @DisplayName("Should handle video transcoding")
     void shouldHandleVideoTranscoding() { // GH-90000
         String sourceFormat = "MOV";
         String targetFormat = "MP4";
@@ -34,7 +34,7 @@ class VideoProcessingTest {
     }
 
     @Test
-    @DisplayName("Should handle format conversion [GH-90000]")
+    @DisplayName("Should handle format conversion")
     void shouldHandleFormatConversion() { // GH-90000
         String from = "AVI";
         String to = "WEBM";
@@ -46,7 +46,7 @@ class VideoProcessingTest {
     }
 
     @Test
-    @DisplayName("Should validate video quality [GH-90000]")
+    @DisplayName("Should validate video quality")
     void shouldValidateVideoQuality() { // GH-90000
         int bitrate = 5000;
         int resolution = 1080;
@@ -60,7 +60,7 @@ class VideoProcessingTest {
     }
 
     @Test
-    @DisplayName("Should handle video compression [GH-90000]")
+    @DisplayName("Should handle video compression")
     void shouldHandleVideoCompression() { // GH-90000
         int originalSize = 100 * 1024 * 1024; // 100MB
         int compressedSize = 50 * 1024 * 1024; // 50MB
@@ -71,7 +71,7 @@ class VideoProcessingTest {
     }
 
     @Test
-    @DisplayName("Should handle video filtering [GH-90000]")
+    @DisplayName("Should handle video filtering")
     void shouldHandleVideoFiltering() { // GH-90000
         String filterType = "deinterlace";
         boolean applied = true;
@@ -81,7 +81,7 @@ class VideoProcessingTest {
     }
 
     @Test
-    @DisplayName("Should handle processing failures [GH-90000]")
+    @DisplayName("Should handle processing failures")
     void shouldHandleProcessingFailures() { // GH-90000
         boolean failed = false;
         String error = null;

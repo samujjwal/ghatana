@@ -22,7 +22,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("MemoryPlaneHandler [GH-90000]")
+@DisplayName("MemoryPlaneHandler")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class MemoryPlaneHandlerTest extends EventloopTestBase {
 
@@ -47,7 +47,7 @@ class MemoryPlaneHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("store memory rejects missing tenant before loading body [GH-90000]")
+    @DisplayName("store memory rejects missing tenant before loading body")
     void storeMemoryRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
@@ -58,7 +58,7 @@ class MemoryPlaneHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("list memory rejects missing tenant before query access [GH-90000]")
+    @DisplayName("list memory rejects missing tenant before query access")
     void listMemoryRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
@@ -69,7 +69,7 @@ class MemoryPlaneHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("get agent memory rejects missing tenant before query access [GH-90000]")
+    @DisplayName("get agent memory rejects missing tenant before query access")
     void getAgentMemoryRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
@@ -80,7 +80,7 @@ class MemoryPlaneHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("memory by tier rejects missing tenant before query access [GH-90000]")
+    @DisplayName("memory by tier rejects missing tenant before query access")
     void getMemoryByTierRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
@@ -91,7 +91,7 @@ class MemoryPlaneHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("search memory rejects missing tenant before loading body [GH-90000]")
+    @DisplayName("search memory rejects missing tenant before loading body")
     void searchMemoryRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
@@ -102,7 +102,7 @@ class MemoryPlaneHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("delete memory rejects missing tenant before delete access [GH-90000]")
+    @DisplayName("delete memory rejects missing tenant before delete access")
     void deleteMemoryRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
@@ -113,7 +113,7 @@ class MemoryPlaneHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("retain memory rejects missing tenant before loading body [GH-90000]")
+    @DisplayName("retain memory rejects missing tenant before loading body")
     void retainMemoryRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 

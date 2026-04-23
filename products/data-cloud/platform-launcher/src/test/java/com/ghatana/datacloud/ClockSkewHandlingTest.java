@@ -44,7 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("Clock Skew and Timestamp Handling [GH-90000]")
+@DisplayName("Clock Skew and Timestamp Handling")
 class ClockSkewHandlingTest extends EventloopTestBase {
 
     private static final String TENANT_ID  = "clock-skew-tenant";
@@ -67,11 +67,11 @@ class ClockSkewHandlingTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Timestamp normalisation [GH-90000]")
+    @DisplayName("Timestamp normalisation")
     class TimestampNormalisationTests {
 
         @Test
-        @DisplayName("entity saved with explicit UTC timestamp is stored and queryable [GH-90000]")
+        @DisplayName("entity saved with explicit UTC timestamp is stored and queryable")
         void entityWithUtcTimestamp_storedAndQueryable() throws Exception { // GH-90000
             String utcTimestamp = Instant.now().toString(); // ISO-8601 UTC // GH-90000
 
@@ -88,7 +88,7 @@ class ClockSkewHandlingTest extends EventloopTestBase {
 
         @ParameterizedTest(name = "timezone=''{0}''") // GH-90000
         @ValueSource(strings = {"America/New_York", "Asia/Tokyo", "Europe/London", "UTC", "Pacific/Auckland"}) // GH-90000
-        @DisplayName("entity saved from various timezones is retrievable consistently [GH-90000]")
+        @DisplayName("entity saved from various timezones is retrievable consistently")
         void entityFromVariousTimezones_retrievableConsistently(String timezone) throws Exception { // GH-90000
             ZonedDateTime zdt         = ZonedDateTime.now(ZoneId.of(timezone)); // GH-90000
             String        localTs     = zdt.toString(); // GH-90000
@@ -110,7 +110,7 @@ class ClockSkewHandlingTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("two entities saved in quick succession have distinct IDs (no clock collision) [GH-90000]")
+        @DisplayName("two entities saved in quick succession have distinct IDs (no clock collision)")
         void quickSuccession_entitiesHaveDistinctIds() throws Exception { // GH-90000
             Entity e1 = runPromise(() -> // GH-90000
                 client.save(TENANT_ID, COLLECTION, Map.of("seq", 1))); // GH-90000
@@ -126,11 +126,11 @@ class ClockSkewHandlingTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("TTL enforcement [GH-90000]")
+    @DisplayName("TTL enforcement")
     class TtlEnforcementTests {
 
         @Test
-        @DisplayName("entity saved with past 'createdAt' — store is agnostic to client-skewed timestamps [GH-90000]")
+        @DisplayName("entity saved with past 'createdAt' — store is agnostic to client-skewed timestamps")
         void pastCreatedAt_storeAgnosticToClientSkew() throws Exception { // GH-90000
             // Simulate a client with a 24-hour backward clock skew
             String skewedTs = Instant.now().minus(Duration.ofHours(24)).toString(); // GH-90000
@@ -149,7 +149,7 @@ class ClockSkewHandlingTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("entity saved with future 'createdAt' — store accepts without rejection [GH-90000]")
+        @DisplayName("entity saved with future 'createdAt' — store accepts without rejection")
         void futureCreatedAt_acceptedByStore() throws Exception { // GH-90000
             // Simulate a client with 1-hour forward clock skew
             String futureTs = Instant.now().plus(Duration.ofHours(1)).toString(); // GH-90000
@@ -162,7 +162,7 @@ class ClockSkewHandlingTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("retention window calculation uses server time, not client-supplied timestamps [GH-90000]")
+        @DisplayName("retention window calculation uses server time, not client-supplied timestamps")
         void retentionWindow_usesServerTime() throws Exception { // GH-90000
             // Write an entity with a very old client timestamp (simulating max skew) // GH-90000
             String ancientTs = Instant.EPOCH.toString(); // 1970-01-01 // GH-90000
@@ -176,7 +176,7 @@ class ClockSkewHandlingTest extends EventloopTestBase {
             List<Entity> found = runPromise(() -> // GH-90000
                 client.query(TENANT_ID, COLLECTION, Query.all())); // GH-90000
             assertThat(found) // GH-90000
-                .as("Entity must not be auto-expired merely because client timestamp is in the past [GH-90000]")
+                .as("Entity must not be auto-expired merely because client timestamp is in the past")
                 .anyMatch(e -> e.id().equals(saved.id())); // GH-90000
         }
     }
@@ -186,11 +186,11 @@ class ClockSkewHandlingTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Monotonic ordering [GH-90000]")
+    @DisplayName("Monotonic ordering")
     class MonotonicOrderingTests {
 
         @Test
-        @DisplayName("entities saved sequentially are assigned monotonically increasing offsets [GH-90000]")
+        @DisplayName("entities saved sequentially are assigned monotonically increasing offsets")
         void sequentialSaves_monotonicOffsets() throws Exception { // GH-90000
             List<Long> offsets = new java.util.ArrayList<>(); // GH-90000
             for (int i = 0; i < 5; i++) { // GH-90000
@@ -210,7 +210,7 @@ class ClockSkewHandlingTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("concurrent event appends produce unique, monotonic offsets [GH-90000]")
+        @DisplayName("concurrent event appends produce unique, monotonic offsets")
         void concurrentAppends_uniqueOffsets() throws Exception { // GH-90000
             int eventCount = 20;
             List<Long> offsets = new java.util.concurrent.CopyOnWriteArrayList<>(); // GH-90000
@@ -225,7 +225,7 @@ class ClockSkewHandlingTest extends EventloopTestBase {
 
             assertThat(offsets).hasSize(eventCount); // GH-90000
             long distinctCount = offsets.stream().distinct().count(); // GH-90000
-            assertThat(distinctCount).as("All offsets must be unique [GH-90000]").isEqualTo(eventCount);
+            assertThat(distinctCount).as("All offsets must be unique").isEqualTo(eventCount);
         }
     }
 
@@ -234,15 +234,15 @@ class ClockSkewHandlingTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("DST boundary and special timestamps [GH-90000]")
+    @DisplayName("DST boundary and special timestamps")
     class DstAndSpecialTimestampTests {
 
         @Test
-        @DisplayName("entity with timestamp at DST transition is stored correctly [GH-90000]")
+        @DisplayName("entity with timestamp at DST transition is stored correctly")
         void entityAtDstBoundary_storedCorrectly() throws Exception { // GH-90000
             // 2026-03-08 02:00 US/Eastern is a DST transition — clocks spring forward
             Instant dstTransition = ZonedDateTime.of(2026, 3, 8, 3, 0, 0, 0, // GH-90000
-                ZoneId.of("America/New_York [GH-90000]")).toInstant();
+                ZoneId.of("America/New_York")).toInstant();
 
             Entity saved = runPromise(() -> // GH-90000
                 client.save(TENANT_ID, COLLECTION, // GH-90000
@@ -252,13 +252,13 @@ class ClockSkewHandlingTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("timestamp at Unix epoch boundary is handled without overflow [GH-90000]")
+        @DisplayName("timestamp at Unix epoch boundary is handled without overflow")
         void epochBoundaryTimestamp_noOverflow() throws Exception { // GH-90000
             // Test timestamps near common boundary values
             List<Instant> boundaries = List.of( // GH-90000
                 Instant.EPOCH,                                      // 1970-01-01T00:00:00Z
                 Instant.ofEpochSecond(Integer.MAX_VALUE),           // 2038 problem boundary // GH-90000
-                Instant.parse("2026-01-01T00:00:00Z [GH-90000]")              // Year boundary
+                Instant.parse("2026-01-01T00:00:00Z")              // Year boundary
             );
 
             for (Instant boundary : boundaries) { // GH-90000
@@ -272,7 +272,7 @@ class ClockSkewHandlingTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("entity query returns results regardless of server-vs-client clock offset [GH-90000]")
+        @DisplayName("entity query returns results regardless of server-vs-client clock offset")
         void queryResult_independentOfClockOffset() throws Exception { // GH-90000
             // Save some entities
             for (int i = 0; i < 5; i++) { // GH-90000

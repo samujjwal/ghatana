@@ -31,7 +31,11 @@ import java.util.concurrent.atomic.LongAdder;
  * to keep the common module lightweight. When a Micrometer/OpenTelemetry SDK is present
  * in the consuming service, the service can bridge these counters or simply use its own
  * instrumentation on top of this interceptor.
- */
+  * @doc.type class
+ * @doc.purpose Provides metrics server interceptor functionality.
+ * @doc.layer product
+ * @doc.pattern Filter
+*/
 public class MetricsServerInterceptor implements ServerInterceptor {
 
     private static final Logger LOG = LoggerFactory.getLogger(MetricsServerInterceptor.class);

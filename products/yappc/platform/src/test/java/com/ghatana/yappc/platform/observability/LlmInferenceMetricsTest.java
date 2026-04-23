@@ -25,7 +25,7 @@ import static org.mockito.Mockito.verify;
  * <p>Verifies that correct counters, timers, and token summaries are emitted for each
  * inference lifecycle event, and that constructor guards reject nulls.
  */
-@DisplayName("LlmInferenceMetrics [GH-90000]")
+@DisplayName("LlmInferenceMetrics")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class LlmInferenceMetricsTest {
 
@@ -44,14 +44,14 @@ class LlmInferenceMetricsTest {
     // ─── Constructor guards ────────────────────────────────────────────────
 
     @Test
-    @DisplayName("constructor rejects null MetricsCollector [GH-90000]")
+    @DisplayName("constructor rejects null MetricsCollector")
     void constructor_rejectsNullMetricsCollector() { // GH-90000
         assertThatThrownBy(() -> new LlmInferenceMetrics(null, meterRegistry)) // GH-90000
                 .isInstanceOf(NullPointerException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("constructor rejects null MeterRegistry [GH-90000]")
+    @DisplayName("constructor rejects null MeterRegistry")
     void constructor_rejectsNullMeterRegistry() { // GH-90000
         assertThatThrownBy(() -> new LlmInferenceMetrics(metricsCollector, null)) // GH-90000
                 .isInstanceOf(NullPointerException.class); // GH-90000
@@ -60,7 +60,7 @@ class LlmInferenceMetricsTest {
     // ─── startInference ───────────────────────────────────────────────────
 
     @Test
-    @DisplayName("startInference increments invoked counter and returns a non-null Sample [GH-90000]")
+    @DisplayName("startInference increments invoked counter and returns a non-null Sample")
     void startInference_incrementsCounterAndReturnsSample() { // GH-90000
         Timer.Sample sample = metrics.startInference("scaffolding", "gpt-4o"); // GH-90000
 
@@ -74,7 +74,7 @@ class LlmInferenceMetricsTest {
     // ─── recordInferenceSuccess ───────────────────────────────────────────
 
     @Test
-    @DisplayName("recordInferenceSuccess increments succeeded counter and stops timer [GH-90000]")
+    @DisplayName("recordInferenceSuccess increments succeeded counter and stops timer")
     void recordInferenceSuccess_incrementsCounterAndStopsTimer() { // GH-90000
         Timer.Sample sample = metrics.startInference("scaffolding", "gpt-4o"); // GH-90000
 
@@ -90,7 +90,7 @@ class LlmInferenceMetricsTest {
     }
 
     @Test
-    @DisplayName("recordInferenceSuccess records token usage when tokensUsed > 0 [GH-90000]")
+    @DisplayName("recordInferenceSuccess records token usage when tokensUsed > 0")
     void recordInferenceSuccess_recordsTokenUsageWhenPositive() { // GH-90000
         Timer.Sample sample = metrics.startInference("requirements-nlp", "claude-3-opus"); // GH-90000
 
@@ -104,7 +104,7 @@ class LlmInferenceMetricsTest {
     }
 
     @Test
-    @DisplayName("recordInferenceSuccess skips token recording when tokensUsed is zero [GH-90000]")
+    @DisplayName("recordInferenceSuccess skips token recording when tokensUsed is zero")
     void recordInferenceSuccess_skipsTokenRecordingForZero() { // GH-90000
         Timer.Sample sample = metrics.startInference("canvas-layout", "unknown"); // GH-90000
 
@@ -115,7 +115,7 @@ class LlmInferenceMetricsTest {
     }
 
     @Test
-    @DisplayName("recordInferenceSuccess handles null sample gracefully [GH-90000]")
+    @DisplayName("recordInferenceSuccess handles null sample gracefully")
     void recordInferenceSuccess_handlesNullSampleGracefully() { // GH-90000
         // Should not throw
         metrics.recordInferenceSuccess(null, "scaffolding", "gpt-4o", 256); // GH-90000
@@ -129,10 +129,10 @@ class LlmInferenceMetricsTest {
     // ─── recordInferenceFailure ───────────────────────────────────────────
 
     @Test
-    @DisplayName("recordInferenceFailure increments failed counter with error_type tag [GH-90000]")
+    @DisplayName("recordInferenceFailure increments failed counter with error_type tag")
     void recordInferenceFailure_incrementsFailedCounterWithErrorType() { // GH-90000
         Timer.Sample sample = metrics.startInference("scaffolding", "gpt-4o"); // GH-90000
-        RuntimeException cause = new RuntimeException("rate limit exceeded [GH-90000]");
+        RuntimeException cause = new RuntimeException("rate limit exceeded");
 
         metrics.recordInferenceFailure(sample, "scaffolding", "gpt-4o", "rate_limit", cause); // GH-90000
 
@@ -144,10 +144,10 @@ class LlmInferenceMetricsTest {
     }
 
     @Test
-    @DisplayName("recordInferenceFailure records error event when cause is provided [GH-90000]")
+    @DisplayName("recordInferenceFailure records error event when cause is provided")
     void recordInferenceFailure_recordsErrorEventWithCause() { // GH-90000
         Timer.Sample sample = metrics.startInference("scaffolding", "gpt-4o"); // GH-90000
-        RuntimeException cause = new RuntimeException("timeout [GH-90000]");
+        RuntimeException cause = new RuntimeException("timeout");
 
         metrics.recordInferenceFailure(sample, "scaffolding", "gpt-4o", "timeout", cause); // GH-90000
 
@@ -155,7 +155,7 @@ class LlmInferenceMetricsTest {
     }
 
     @Test
-    @DisplayName("recordInferenceFailure skips recordError when cause is null [GH-90000]")
+    @DisplayName("recordInferenceFailure skips recordError when cause is null")
     void recordInferenceFailure_skipsRecordErrorWhenCauseIsNull() { // GH-90000
         Timer.Sample sample = metrics.startInference("scaffolding", "gpt-4o"); // GH-90000
 
@@ -165,7 +165,7 @@ class LlmInferenceMetricsTest {
     }
 
     @Test
-    @DisplayName("recordInferenceFailure stops timer for failure status [GH-90000]")
+    @DisplayName("recordInferenceFailure stops timer for failure status")
     void recordInferenceFailure_stopsTimerWithFailureStatus() { // GH-90000
         Timer.Sample sample = metrics.startInference("requirements-nlp", "claude-3-opus"); // GH-90000
 
@@ -175,7 +175,7 @@ class LlmInferenceMetricsTest {
     }
 
     @Test
-    @DisplayName("recordInferenceFailure handles null sample gracefully [GH-90000]")
+    @DisplayName("recordInferenceFailure handles null sample gracefully")
     void recordInferenceFailure_handlesNullSampleGracefully() { // GH-90000
         // Should not throw
         metrics.recordInferenceFailure(null, "scaffolding", "gpt-4o", "timeout", null); // GH-90000
@@ -190,7 +190,7 @@ class LlmInferenceMetricsTest {
     // ─── Multiple workflows and models ────────────────────────────────────
 
     @Test
-    @DisplayName("independent invocations do not cross-contaminate counters [GH-90000]")
+    @DisplayName("independent invocations do not cross-contaminate counters")
     void independentInvocations_doNotCrossContaminateCounters() { // GH-90000
         Timer.Sample s1 = metrics.startInference("scaffolding", "gpt-4o"); // GH-90000
         Timer.Sample s2 = metrics.startInference("requirements-nlp", "claude-3-opus"); // GH-90000

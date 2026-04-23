@@ -18,11 +18,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test codec support, format compatibility, and codec negotiation.
  */
-@DisplayName("Codec Support Tests [GH-90000]")
+@DisplayName("Codec Support Tests")
 class CodecSupportTest {
 
     @Test
-    @DisplayName("Should support common audio codecs [GH-90000]")
+    @DisplayName("Should support common audio codecs")
     void shouldSupportCommonAudioCodecs() { // GH-90000
         Set<String> audioCodecs = Set.of("AAC", "MP3", "OPUS", "FLAC"); // GH-90000
         String codec = "AAC";
@@ -32,7 +32,7 @@ class CodecSupportTest {
     }
 
     @Test
-    @DisplayName("Should support common video codecs [GH-90000]")
+    @DisplayName("Should support common video codecs")
     void shouldSupportCommonVideoCodecs() { // GH-90000
         Set<String> videoCodecs = Set.of("H264", "H265", "VP9", "AV1"); // GH-90000
         String codec = "H264";
@@ -42,7 +42,7 @@ class CodecSupportTest {
     }
 
     @Test
-    @DisplayName("Should handle codec negotiation [GH-90000]")
+    @DisplayName("Should handle codec negotiation")
     void shouldHandleCodecNegotiation() { // GH-90000
         String preferredCodec = "AAC";
         String supportedCodec = "MP3";
@@ -52,7 +52,7 @@ class CodecSupportTest {
     }
 
     @Test
-    @DisplayName("Should handle codec fallback [GH-90000]")
+    @DisplayName("Should handle codec fallback")
     void shouldHandleCodecFallback() { // GH-90000
         String primaryCodec = "AV1";
         String fallbackCodec = "H264";
@@ -62,7 +62,7 @@ class CodecSupportTest {
     }
 
     @Test
-    @DisplayName("Should validate codec compatibility [GH-90000]")
+    @DisplayName("Should validate codec compatibility")
     void shouldValidateCodecCompatibility() { // GH-90000
         String container = "MP4";
         String codec = "H264";
@@ -74,7 +74,7 @@ class CodecSupportTest {
     }
 
     @Test
-    @DisplayName("Should handle unsupported codecs [GH-90000]")
+    @DisplayName("Should handle unsupported codecs")
     void shouldHandleUnsupportedCodecs() { // GH-90000
         String unsupportedCodec = "UNKNOWN_CODEC";
         boolean supported = false;

@@ -37,7 +37,7 @@ import static org.mockito.Mockito.when;
  * </ul>
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("JdbcHumanApprovalService Tests [GH-90000]")
+@DisplayName("JdbcHumanApprovalService Tests")
 class JdbcHumanApprovalServiceTest extends EventloopTestBase {
 
     @Mock
@@ -55,7 +55,7 @@ class JdbcHumanApprovalServiceTest extends EventloopTestBase {
     private JdbcHumanApprovalService service;
 
     private static final ApprovalRequest.ApprovalContext CTX = new ApprovalRequest.ApprovalContext( // GH-90000
-            "INTENT", "SHAPE", "Unit test block", List.of("criteria-1 [GH-90000]"), List.of());
+            "INTENT", "SHAPE", "Unit test block", List.of("criteria-1"), List.of());
 
     @BeforeEach
     void setup() { // GH-90000
@@ -67,7 +67,7 @@ class JdbcHumanApprovalServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("requestApproval stores in-memory and attempts JDBC insert [GH-90000]")
+    @DisplayName("requestApproval stores in-memory and attempts JDBC insert")
     void requestApprovalPersistsToJdbc() throws Exception { // GH-90000
         when(dataSource.getConnection()).thenReturn(connection); // GH-90000
         when(connection.prepareStatement(anyString())).thenReturn(preparedStatement); // GH-90000
@@ -79,8 +79,8 @@ class JdbcHumanApprovalServiceTest extends EventloopTestBase {
 
         assertThat(result).isNotNull(); // GH-90000
         assertThat(result.status()).isEqualTo(ApprovalRequest.ApprovalStatus.PENDING); // GH-90000
-        assertThat(result.tenantId()).isEqualTo("tenant-1 [GH-90000]");
-        assertThat(result.projectId()).isEqualTo("proj-1 [GH-90000]");
+        assertThat(result.tenantId()).isEqualTo("tenant-1");
+        assertThat(result.projectId()).isEqualTo("proj-1");
 
         // Verify JDBC insert was attempted
         verify(dataSource).getConnection(); // GH-90000
@@ -88,9 +88,9 @@ class JdbcHumanApprovalServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("requestApproval still succeeds when JDBC insert fails (resilient) [GH-90000]")
+    @DisplayName("requestApproval still succeeds when JDBC insert fails (resilient)")
     void requestApprovalResilientOnJdbcFailure() throws Exception { // GH-90000
-        when(dataSource.getConnection()).thenThrow(new java.sql.SQLException("DB unavailable [GH-90000]"));
+        when(dataSource.getConnection()).thenThrow(new java.sql.SQLException("DB unavailable"));
 
         // Should NOT throw — just log warning
         ApprovalRequest result = runPromise(() -> // GH-90000
@@ -102,7 +102,7 @@ class JdbcHumanApprovalServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("approve updates in-memory state and attempts JDBC update [GH-90000]")
+    @DisplayName("approve updates in-memory state and attempts JDBC update")
     void approveUpdatesJdbc() throws Exception { // GH-90000
         // First, add a request to the in-memory store
         when(dataSource.getConnection()).thenReturn(connection); // GH-90000
@@ -119,11 +119,11 @@ class JdbcHumanApprovalServiceTest extends EventloopTestBase {
                 service.approve("tenant-1", created.id(), "reviewer-1")); // GH-90000
 
         assertThat(approved.status()).isEqualTo(ApprovalRequest.ApprovalStatus.APPROVED); // GH-90000
-        assertThat(approved.decidedBy()).isEqualTo("reviewer-1 [GH-90000]");
+        assertThat(approved.decidedBy()).isEqualTo("reviewer-1");
     }
 
     @Test
-    @DisplayName("reject updates in-memory state and attempts JDBC update [GH-90000]")
+    @DisplayName("reject updates in-memory state and attempts JDBC update")
     void rejectUpdatesJdbc() throws Exception { // GH-90000
         when(dataSource.getConnection()).thenReturn(connection); // GH-90000
         when(connection.prepareStatement(anyString())).thenReturn(preparedStatement); // GH-90000
@@ -137,16 +137,16 @@ class JdbcHumanApprovalServiceTest extends EventloopTestBase {
                 service.reject("tenant-1", created.id(), "security-reviewer")); // GH-90000
 
         assertThat(rejected.status()).isEqualTo(ApprovalRequest.ApprovalStatus.REJECTED); // GH-90000
-        assertThat(rejected.decidedBy()).isEqualTo("security-reviewer [GH-90000]");
+        assertThat(rejected.decidedBy()).isEqualTo("security-reviewer");
     }
 
     @Test
-    @DisplayName("pendingFor falls back to in-memory when DB query throws [GH-90000]")
+    @DisplayName("pendingFor falls back to in-memory when DB query throws")
     void pendingForFallsBackToInMemoryOnJdbcError() throws Exception { // GH-90000
         // Prime in-memory store via requestApproval
         when(dataSource.getConnection()) // GH-90000
                 .thenReturn(connection)     // first call: insert succeeds // GH-90000
-                .thenThrow(new java.sql.SQLException("DB unavailable [GH-90000]"));  // second call: query fails
+                .thenThrow(new java.sql.SQLException("DB unavailable"));  // second call: query fails
 
         when(connection.prepareStatement(anyString())).thenReturn(preparedStatement); // GH-90000
         when(preparedStatement.executeUpdate()).thenReturn(1); // GH-90000
@@ -159,15 +159,15 @@ class JdbcHumanApprovalServiceTest extends EventloopTestBase {
         List<ApprovalRequest> pending = service.pendingFor("tenant-1", "proj-1"); // GH-90000
 
         assertThat(pending).hasSize(1); // GH-90000
-        assertThat(pending.get(0).projectId()).isEqualTo("proj-1 [GH-90000]");
+        assertThat(pending.get(0).projectId()).isEqualTo("proj-1");
     }
 
     @Test
-    @DisplayName("findById falls back to in-memory on JDBC error [GH-90000]")
+    @DisplayName("findById falls back to in-memory on JDBC error")
     void findByIdFallsBackToInMemoryOnJdbcError() throws Exception { // GH-90000
         when(dataSource.getConnection()) // GH-90000
                 .thenReturn(connection)     // insert // GH-90000
-                .thenThrow(new java.sql.SQLException("DB down [GH-90000]"));  // findById query
+                .thenThrow(new java.sql.SQLException("DB down"));  // findById query
 
         when(connection.prepareStatement(anyString())).thenReturn(preparedStatement); // GH-90000
         when(preparedStatement.executeUpdate()).thenReturn(1); // GH-90000

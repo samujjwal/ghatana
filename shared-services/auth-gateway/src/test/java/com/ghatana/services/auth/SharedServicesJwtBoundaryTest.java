@@ -19,13 +19,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern ValidationTest
  */
-@DisplayName("Shared Services JWT Boundary Tests [GH-90000]")
+@DisplayName("Shared Services JWT Boundary Tests")
 class SharedServicesJwtBoundaryTest {
 
     private static final String FORBIDDEN_CONCRETE_REFERENCE = "com.ghatana.platform.security.jwt.JwtTokenProvider";
 
     @Test
-    @DisplayName("shared services should rely on JWT port factories instead of concrete provider construction [GH-90000]")
+    @DisplayName("shared services should rely on JWT port factories instead of concrete provider construction")
     void sharedServicesShouldUseJwtPortFactories() throws IOException { // GH-90000
         Path repoRoot = findRepoRoot(); // GH-90000
         Map<String, String> violations = new LinkedHashMap<>(); // GH-90000
@@ -47,44 +47,44 @@ class SharedServicesJwtBoundaryTest {
         }
 
         assertThat(violations) // GH-90000
-                .as("shared-service source should not reference the concrete JWT provider class directly [GH-90000]")
+                .as("shared-service source should not reference the concrete JWT provider class directly")
                 .isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("non-local deployments should reject missing platform JWT secrets [GH-90000]")
+    @DisplayName("non-local deployments should reject missing platform JWT secrets")
     void nonLocalDeploymentsShouldRejectMissingPlatformJwtSecret() { // GH-90000
         assertThatThrownBy(() -> AuthGatewayLauncher.resolvePlatformJwtSecret("production", null)) // GH-90000
                 .isInstanceOf(IllegalStateException.class) // GH-90000
-                .hasMessageContaining("PLATFORM_JWT_SECRET [GH-90000]");
+                .hasMessageContaining("PLATFORM_JWT_SECRET");
     }
 
     @Test
-    @DisplayName("non-local deployments should reject the development fallback platform JWT secret [GH-90000]")
+    @DisplayName("non-local deployments should reject the development fallback platform JWT secret")
     void nonLocalDeploymentsShouldRejectDefaultPlatformJwtSecret() { // GH-90000
         assertThatThrownBy(() -> AuthGatewayLauncher.resolvePlatformJwtSecret( // GH-90000
                 "staging",
                 "dev-platform-jwt-secret-change-me-in-prod!"
         ))
                 .isInstanceOf(IllegalStateException.class) // GH-90000
-                .hasMessageContaining("minimum 32 characters and not the development fallback [GH-90000]");
+                .hasMessageContaining("minimum 32 characters and not the development fallback");
     }
 
     @Test
-    @DisplayName("local development may still use the fallback platform JWT secret [GH-90000]")
+    @DisplayName("local development may still use the fallback platform JWT secret")
     void localDevelopmentMayUseFallbackPlatformJwtSecret() { // GH-90000
         assertThat(AuthGatewayLauncher.resolvePlatformJwtSecret("development", null)) // GH-90000
-                .isEqualTo("dev-platform-jwt-secret-change-me-in-prod! [GH-90000]");
+                .isEqualTo("dev-platform-jwt-secret-change-me-in-prod!");
     }
 
     private static Path findRepoRoot() { // GH-90000
-        Path current = Path.of(" [GH-90000]").toAbsolutePath();
+        Path current = Path.of("").toAbsolutePath();
         while (current != null) { // GH-90000
-            if (Files.exists(current.resolve("settings.gradle.kts [GH-90000]"))) {
+            if (Files.exists(current.resolve("settings.gradle.kts"))) {
                 return current;
             }
             current = current.getParent(); // GH-90000
         }
-        throw new IllegalStateException("Could not locate repository root [GH-90000]");
+        throw new IllegalStateException("Could not locate repository root");
     }
 }

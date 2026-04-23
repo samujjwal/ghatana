@@ -19,7 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Ops CanaryStep Tests [GH-90000]")
+@DisplayName("Ops CanaryStep Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles canary step test operations
@@ -40,7 +40,7 @@ class CanaryStepTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should perform canary deployment with traffic shifting [GH-90000]")
+  @DisplayName("Should perform canary deployment with traffic shifting")
   void shouldPerformCanaryDeployment() { // GH-90000
     // GIVEN
     WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
@@ -72,12 +72,12 @@ class CanaryStepTest extends EventloopTestBase {
 
     // THEN
     assertThat(result).isNotNull(); // GH-90000
-    assertThat(result.get("status [GH-90000]")).isEqualTo("COMPLETED [GH-90000]");
-    assertThat(result.get("canaryId [GH-90000]")).isNotNull();
+    assertThat(result.get("status")).isEqualTo("COMPLETED");
+    assertThat(result.get("canaryId")).isNotNull();
   }
 
   @Test
-  @DisplayName("Should fail when deployment is not validated [GH-90000]")
+  @DisplayName("Should fail when deployment is not validated")
   void shouldFailWhenDeploymentNotValidated() { // GH-90000
     // GIVEN
     WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
@@ -88,6 +88,6 @@ class CanaryStepTest extends EventloopTestBase {
     // WHEN/THEN
     assertThatThrownBy(() -> runPromise(() -> step.execute(context))) // GH-90000
         .isInstanceOf(IllegalStateException.class) // GH-90000
-        .hasMessageContaining("not validated [GH-90000]");
+        .hasMessageContaining("not validated");
   }
 }

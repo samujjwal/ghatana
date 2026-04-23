@@ -20,18 +20,18 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Connector Failure Handling Tests [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("Connector Failure Handling Tests")
+@Tag("integration")
 class ConnectorFailureHandlingTest extends EventloopTestBase {
 
     // ── Retry on transient errors ─────────────────────────────────────────────
 
     @Nested
-    @DisplayName("retry on transient errors [GH-90000]")
+    @DisplayName("retry on transient errors")
     class RetryOnTransientErrors {
 
         @Test
-        @DisplayName("transient failure retried until success within max attempts [GH-90000]")
+        @DisplayName("transient failure retried until success within max attempts")
         void transientFailure_retriedUntilSuccess() { // GH-90000
             AtomicInteger attempts = new AtomicInteger(0); // GH-90000
             AtomicBoolean success = new AtomicBoolean(false); // GH-90000
@@ -49,7 +49,7 @@ class ConnectorFailureHandlingTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("non-transient error does not trigger retry [GH-90000]")
+        @DisplayName("non-transient error does not trigger retry")
         void nonTransientError_doesNotTriggerRetry() { // GH-90000
             AtomicInteger attempts = new AtomicInteger(0); // GH-90000
             boolean isRetryable = false;
@@ -64,7 +64,7 @@ class ConnectorFailureHandlingTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("max retries exhausted surfaces permanent failure [GH-90000]")
+        @DisplayName("max retries exhausted surfaces permanent failure")
         void maxRetriesExhausted_surfacesPermanentFailure() { // GH-90000
             AtomicInteger attempts = new AtomicInteger(0); // GH-90000
             int maxAttempts = 5;
@@ -77,14 +77,14 @@ class ConnectorFailureHandlingTest extends EventloopTestBase {
 
             assertThat(attempts.get()).isEqualTo(maxAttempts); // GH-90000
             assertThat(lastError).isNotNull(); // GH-90000
-            assertThat(lastError.getMessage()).contains("attempt 5 [GH-90000]");
+            assertThat(lastError.getMessage()).contains("attempt 5");
         }
     }
 
     // ── Circuit breaker ───────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("circuit breaker [GH-90000]")
+    @DisplayName("circuit breaker")
     class CircuitBreaker {
 
         enum CircuitState { CLOSED, OPEN, HALF_OPEN }
@@ -134,7 +134,7 @@ class ConnectorFailureHandlingTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("circuit opens after threshold consecutive failures [GH-90000]")
+        @DisplayName("circuit opens after threshold consecutive failures")
         void circuitOpens_afterThresholdConsecutiveFailures() { // GH-90000
             SimpleCircuitBreaker cb = new SimpleCircuitBreaker(3, 60_000L); // GH-90000
             long now = 1_000L;
@@ -148,7 +148,7 @@ class ConnectorFailureHandlingTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("circuit transitions to HALF_OPEN after reset timeout [GH-90000]")
+        @DisplayName("circuit transitions to HALF_OPEN after reset timeout")
         void circuit_transitionsToHalfOpen_afterResetTimeout() { // GH-90000
             SimpleCircuitBreaker cb = new SimpleCircuitBreaker(2, 5_000L); // GH-90000
             long now = 1_000L;
@@ -164,7 +164,7 @@ class ConnectorFailureHandlingTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("success in HALF_OPEN closes the circuit [GH-90000]")
+        @DisplayName("success in HALF_OPEN closes the circuit")
         void successInHalfOpen_closesCircuit() { // GH-90000
             SimpleCircuitBreaker cb = new SimpleCircuitBreaker(2, 5_000L); // GH-90000
             long now = 1_000L;
@@ -182,11 +182,11 @@ class ConnectorFailureHandlingTest extends EventloopTestBase {
     // ── Dead letter routing ───────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("dead letter queue routing [GH-90000]")
+    @DisplayName("dead letter queue routing")
     class DeadLetterRouting {
 
         @Test
-        @DisplayName("max-retry-exceeded message is routed to dead letter queue [GH-90000]")
+        @DisplayName("max-retry-exceeded message is routed to dead letter queue")
         void maxRetryExceeded_messageRoutedToDeadLetterQueue() { // GH-90000
             java.util.List<String> dlq = new java.util.ArrayList<>(); // GH-90000
             java.util.List<String> processing = new java.util.ArrayList<>(); // GH-90000
@@ -215,11 +215,11 @@ class ConnectorFailureHandlingTest extends EventloopTestBase {
     // ── Reconnection ──────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("reconnection behavior [GH-90000]")
+    @DisplayName("reconnection behavior")
     class ReconnectionBehavior {
 
         @Test
-        @DisplayName("connector reconnects after connection drop [GH-90000]")
+        @DisplayName("connector reconnects after connection drop")
         void connector_reconnects_afterConnectionDrop() { // GH-90000
             AtomicBoolean connected = new AtomicBoolean(true); // GH-90000
             AtomicInteger reconnectAttempts = new AtomicInteger(0); // GH-90000
@@ -238,7 +238,7 @@ class ConnectorFailureHandlingTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("exponential backoff increases wait between reconnects [GH-90000]")
+        @DisplayName("exponential backoff increases wait between reconnects")
         void exponentialBackoff_increasesWaitBetweenReconnects() { // GH-90000
             long baseDelayMs = 100L;
             int maxAttempts = 5;

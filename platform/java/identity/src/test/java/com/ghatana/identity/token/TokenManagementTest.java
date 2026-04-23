@@ -28,8 +28,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Token Management Tests [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("Token Management Tests")
+@Tag("integration")
 class TokenManagementTest extends EventloopTestBase {
 
     private InMemoryIdentityResolver resolver;
@@ -44,7 +44,7 @@ class TokenManagementTest extends EventloopTestBase {
     }
 
     private AgentIdentity registerAgent(String tenantId, String agentId) { // GH-90000
-        AgentIdentity identity = new AgentIdentity(agentId, tenantId, agentId + "-type", Set.of("read [GH-90000]"), Instant.now());
+        AgentIdentity identity = new AgentIdentity(agentId, tenantId, agentId + "-type", Set.of("read"), Instant.now());
         resolver.register(identity); // GH-90000
         return identity;
     }
@@ -52,11 +52,11 @@ class TokenManagementTest extends EventloopTestBase {
     // ── Credential revocation ─────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("credential revocation [GH-90000]")
+    @DisplayName("credential revocation")
     class CredentialRevocation {
 
         @Test
-        @DisplayName("revoked token is no longer valid [GH-90000]")
+        @DisplayName("revoked token is no longer valid")
         void revokedToken_isNoLongerValid() { // GH-90000
             registerAgent("tenant-a", "agent-rev"); // GH-90000
             CredentialToken token = runPromise( // GH-90000
@@ -69,7 +69,7 @@ class TokenManagementTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("non-revoked token is valid [GH-90000]")
+        @DisplayName("non-revoked token is valid")
         void nonRevokedToken_isValid() { // GH-90000
             registerAgent("tenant-a", "agent-valid"); // GH-90000
             CredentialToken token = runPromise( // GH-90000
@@ -80,7 +80,7 @@ class TokenManagementTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("revoking same token twice is idempotent [GH-90000]")
+        @DisplayName("revoking same token twice is idempotent")
         void revokingSameTokenTwice_isIdempotent() { // GH-90000
             registerAgent("tenant-a", "agent-double-rev"); // GH-90000
             CredentialToken token = runPromise( // GH-90000
@@ -97,50 +97,50 @@ class TokenManagementTest extends EventloopTestBase {
     // ── Delegation token ──────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("delegation token [GH-90000]")
+    @DisplayName("delegation token")
     class DelegationTokenTests {
 
         @Test
-        @DisplayName("delegation token records delegator, delegatee, and scopes [GH-90000]")
+        @DisplayName("delegation token records delegator, delegatee, and scopes")
         void delegationToken_recordsDelegatorDelegateeAndScopes() { // GH-90000
             DelegationToken token = runPromise( // GH-90000
                     () -> delegationService.delegate( // GH-90000
                             "tenant-a", "agent-a", "agent-b",
                             Set.of("read", "write"), Duration.ofHours(1))); // GH-90000
 
-            assertThat(token.delegator()).isEqualTo("agent-a [GH-90000]");
-            assertThat(token.delegatee()).isEqualTo("agent-b [GH-90000]");
+            assertThat(token.delegator()).isEqualTo("agent-a");
+            assertThat(token.delegatee()).isEqualTo("agent-b");
             assertThat(token.scopes()).containsExactlyInAnyOrder("read", "write"); // GH-90000
-            assertThat(token.tenantId()).isEqualTo("tenant-a [GH-90000]");
+            assertThat(token.tenantId()).isEqualTo("tenant-a");
         }
 
         @Test
-        @DisplayName("delegation chain includes both delegator and delegatee [GH-90000]")
+        @DisplayName("delegation chain includes both delegator and delegatee")
         void delegationChain_includesBothDelegatorAndDelegatee() { // GH-90000
             DelegationToken token = runPromise( // GH-90000
                     () -> delegationService.delegate( // GH-90000
                             "tenant-a", "root-agent", "child-agent",
-                            Set.of("read [GH-90000]"), Duration.ofMinutes(30)));
+                            Set.of("read"), Duration.ofMinutes(30)));
 
             assertThat(token.chain()).containsExactly("root-agent", "child-agent"); // GH-90000
         }
 
         @Test
-        @DisplayName("freshly issued delegation token is not expired [GH-90000]")
+        @DisplayName("freshly issued delegation token is not expired")
         void freshlyIssuedDelegationToken_isNotExpired() { // GH-90000
             DelegationToken token = runPromise( // GH-90000
                     () -> delegationService.delegate( // GH-90000
-                            "tenant-a", "a", "b", Set.of("read [GH-90000]"), Duration.ofMinutes(10)));
+                            "tenant-a", "a", "b", Set.of("read"), Duration.ofMinutes(10)));
 
             assertThat(token.isExpired()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("delegation TTL beyond 8 hours is capped at 8 hours [GH-90000]")
+        @DisplayName("delegation TTL beyond 8 hours is capped at 8 hours")
         void delegationTtlBeyond8Hours_isCappedAt8Hours() { // GH-90000
             DelegationToken token = runPromise( // GH-90000
                     () -> delegationService.delegate( // GH-90000
-                            "tenant-a", "a", "b", Set.of("read [GH-90000]"), Duration.ofHours(24)));
+                            "tenant-a", "a", "b", Set.of("read"), Duration.ofHours(24)));
 
             Duration actualTtl = Duration.between(token.issuedAt(), token.expiresAt()); // GH-90000
             assertThat(actualTtl).isLessThanOrEqualTo(Duration.ofHours(8)); // GH-90000
@@ -150,20 +150,20 @@ class TokenManagementTest extends EventloopTestBase {
     // ── Scope enforcement ─────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("scope enforcement [GH-90000]")
+    @DisplayName("scope enforcement")
     class ScopeEnforcement {
 
         @Test
-        @DisplayName("delegation token scopes are immutable after creation [GH-90000]")
+        @DisplayName("delegation token scopes are immutable after creation")
         void delegationTokenScopes_areImmutableAfterCreation() { // GH-90000
             DelegationToken token = runPromise( // GH-90000
                     () -> delegationService.delegate( // GH-90000
-                            "tenant-a", "a", "b", Set.of("read [GH-90000]"), Duration.ofMinutes(60)));
+                            "tenant-a", "a", "b", Set.of("read"), Duration.ofMinutes(60)));
 
             // Attempt to modify — should throw
             UnsupportedOperationException exception = null;
             try {
-                token.scopes().add("write [GH-90000]");
+                token.scopes().add("write");
             } catch (UnsupportedOperationException e) { // GH-90000
                 exception = e;
             }
@@ -172,7 +172,7 @@ class TokenManagementTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("delegation token scopes are an exact copy of the input set [GH-90000]")
+        @DisplayName("delegation token scopes are an exact copy of the input set")
         void delegationTokenScopes_areExactCopyOfInputSet() { // GH-90000
             Set<String> inputScopes = Set.of("read", "metrics"); // GH-90000
             DelegationToken token = runPromise( // GH-90000

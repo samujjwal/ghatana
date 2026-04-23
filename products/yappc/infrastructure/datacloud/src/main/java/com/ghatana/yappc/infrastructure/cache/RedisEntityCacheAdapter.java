@@ -13,7 +13,8 @@ import java.util.Optional;
  * @doc.type class
  * @doc.purpose Stub cache adapter (caching disabled)
  * @doc.layer infrastructure
- */
+  * @doc.pattern Adapter
+*/
 public class RedisEntityCacheAdapter<T> {
 
     private static final Logger LOG = LoggerFactory.getLogger(RedisEntityCacheAdapter.class);

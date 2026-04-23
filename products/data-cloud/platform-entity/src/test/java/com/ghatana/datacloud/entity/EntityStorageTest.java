@@ -25,26 +25,26 @@ import static org.mockito.ArgumentMatchers.any;
  *
  * Test entity storage, retrieval, and persistence.
  */
-@DisplayName("Entity Storage Tests [GH-90000]")
+@DisplayName("Entity Storage Tests")
 class EntityStorageTest {
 
     @Test
-    @DisplayName("Should store entities [GH-90000]")
+    @DisplayName("Should store entities")
     void shouldStoreEntities() { // GH-90000
         EntityRepository repository = mock(EntityRepository.class); // GH-90000
 
         Entity entity = Entity.builder() // GH-90000
-            .tenantId("tenant-123 [GH-90000]")
-            .collectionName("test-collection [GH-90000]")
+            .tenantId("tenant-123")
+            .collectionName("test-collection")
             .data(new HashMap<>()) // GH-90000
             .build(); // GH-90000
 
-        assertThat(entity.getTenantId()).isEqualTo("tenant-123 [GH-90000]");
-        assertThat(entity.getCollectionName()).isEqualTo("test-collection [GH-90000]");
+        assertThat(entity.getTenantId()).isEqualTo("tenant-123");
+        assertThat(entity.getCollectionName()).isEqualTo("test-collection");
     }
 
     @Test
-    @DisplayName("Should retrieve entities [GH-90000]")
+    @DisplayName("Should retrieve entities")
     void shouldRetrieveEntities() { // GH-90000
         UUID entityId = UUID.randomUUID(); // GH-90000
         String tenantId = "tenant-123";
@@ -56,11 +56,11 @@ class EntityStorageTest {
     }
 
     @Test
-    @DisplayName("Should update entities [GH-90000]")
+    @DisplayName("Should update entities")
     void shouldUpdateEntities() { // GH-90000
         Entity entity = Entity.builder() // GH-90000
-            .tenantId("tenant-123 [GH-90000]")
-            .collectionName("test-collection [GH-90000]")
+            .tenantId("tenant-123")
+            .collectionName("test-collection")
             .data(new HashMap<>()) // GH-90000
             .build(); // GH-90000
 
@@ -68,12 +68,12 @@ class EntityStorageTest {
         newData.put("name", "updated"); // GH-90000
         entity.setData(newData); // GH-90000
 
-        assertThat(entity.getData()).containsKey("name [GH-90000]");
-        assertThat(entity.getData().get("name [GH-90000]")).isEqualTo("updated [GH-90000]");
+        assertThat(entity.getData()).containsKey("name");
+        assertThat(entity.getData().get("name")).isEqualTo("updated");
     }
 
     @Test
-    @DisplayName("Should delete entities [GH-90000]")
+    @DisplayName("Should delete entities")
     void shouldDeleteEntities() { // GH-90000
         UUID entityId = UUID.randomUUID(); // GH-90000
 
@@ -81,13 +81,13 @@ class EntityStorageTest {
     }
 
     @Test
-    @DisplayName("Should handle storage failures [GH-90000]")
+    @DisplayName("Should handle storage failures")
     void shouldHandleStorageFailures() { // GH-90000
         EntityRepository repository = mock(EntityRepository.class); // GH-90000
 
         Entity entity = Entity.builder() // GH-90000
-            .tenantId("tenant-123 [GH-90000]")
-            .collectionName("test-collection [GH-90000]")
+            .tenantId("tenant-123")
+            .collectionName("test-collection")
             .data(new HashMap<>()) // GH-90000
             .build(); // GH-90000
 
@@ -101,11 +101,11 @@ class EntityStorageTest {
     }
 
     @Test
-    @DisplayName("Should handle persistence [GH-90000]")
+    @DisplayName("Should handle persistence")
     void shouldHandlePersistence() { // GH-90000
         MetaCollection collection = MetaCollection.builder() // GH-90000
-            .tenantId("tenant-123 [GH-90000]")
-            .name("test-collection [GH-90000]")
+            .tenantId("tenant-123")
+            .name("test-collection")
             .build(); // GH-90000
 
         collection.setVersion(1); // GH-90000

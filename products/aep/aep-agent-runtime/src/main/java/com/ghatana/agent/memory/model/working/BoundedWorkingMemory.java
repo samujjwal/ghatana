@@ -20,7 +20,8 @@ import java.util.function.BiConsumer;
  * @doc.type class
  * @doc.purpose Bounded, thread-safe working memory
  * @doc.layer agent-memory
- */
+  * @doc.pattern Component
+*/
 public class BoundedWorkingMemory implements WorkingMemory {
 
     private final WorkingMemoryConfig config;

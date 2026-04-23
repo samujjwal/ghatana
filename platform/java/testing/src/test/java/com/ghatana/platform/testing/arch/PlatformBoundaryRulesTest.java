@@ -59,7 +59,7 @@ class PlatformBoundaryRulesTest {
     @ArchTest
     static final ArchRule products_must_use_agent_spi =
             noClasses() // GH-90000
-                    .that().resideInAPackage("com.ghatana.platform.agent.impl.. [GH-90000]")
+                    .that().resideInAPackage("com.ghatana.platform.agent.impl..")
                     .should().accessClassesThat().resideInAnyPackage( // GH-90000
                             "com.ghatana.yappc..",
                             "com.ghatana.aep..",
@@ -77,8 +77,8 @@ class PlatformBoundaryRulesTest {
     @ArchTest
     static final ArchRule domain_must_not_import_core_exceptions =
             noClasses() // GH-90000
-                    .that().resideInAPackage("com.ghatana.platform.domain.. [GH-90000]")
-                    .should().dependOnClassesThat().resideInAPackage("com.ghatana.platform.core.exception [GH-90000]")
+                    .that().resideInAPackage("com.ghatana.platform.domain..")
+                    .should().dependOnClassesThat().resideInAPackage("com.ghatana.platform.core.exception")
                     .as("Domain classes must not import core.exception — use com.ghatana.platform.domain.exception or com.ghatana.platform.core.exception.BaseException. " // GH-90000
                        + "DOM-1 fixed this on 2026-01-19.")
                     .allowEmptyShould(true); // GH-90000
@@ -92,7 +92,7 @@ class PlatformBoundaryRulesTest {
     void no_retired_module_packages_exist() { // GH-90000
         JavaClasses allClasses = new ClassFileImporter() // GH-90000
                 .withImportOption(new ImportOption.DoNotIncludeTests()) // GH-90000
-                .importPackages("com.ghatana [GH-90000]");
+                .importPackages("com.ghatana");
 
         // These packages should not have any classes — they were retired in Phase 1
         String[] retiredPackages = {
@@ -118,7 +118,7 @@ class PlatformBoundaryRulesTest {
     @ArchTest
     static final ArchRule no_ai_experimental_imports =
             noClasses() // GH-90000
-                    .should().dependOnClassesThat().resideInAPackage("com.ghatana.platform.ai.experimental.. [GH-90000]")
+                    .should().dependOnClassesThat().resideInAPackage("com.ghatana.platform.ai.experimental..")
                     .because("The ai-experimental module was retired in AI-1 (2026-01). " // GH-90000
                             + "Use com.ghatana.ai.* from the ai-integration module.");
 
@@ -130,7 +130,7 @@ class PlatformBoundaryRulesTest {
     @ArchTest
     static final ArchRule security_must_not_import_products =
             noClasses() // GH-90000
-                    .that().resideInAPackage("com.ghatana.platform.security.. [GH-90000]")
+                    .that().resideInAPackage("com.ghatana.platform.security..")
                     .should().dependOnClassesThat().resideInAnyPackage( // GH-90000
                             "com.ghatana.aep..",
                             "com.ghatana.yappc..",
@@ -195,9 +195,9 @@ class PlatformBoundaryRulesTest {
     @ArchTest
     static final ArchRule handlers_must_reside_in_handler_packages =
             classes() // GH-90000
-                    .that().haveSimpleNameEndingWith("Handler [GH-90000]")
+                    .that().haveSimpleNameEndingWith("Handler")
                     .and().areNotInterfaces() // GH-90000
-                    .and().resideInAPackage("com.ghatana.. [GH-90000]")
+                    .and().resideInAPackage("com.ghatana..")
                     .should().resideInAnyPackage( // GH-90000
                             "..handler..",
                             "..handlers..",
@@ -227,9 +227,9 @@ class PlatformBoundaryRulesTest {
     @ArchTest
     static final ArchRule repositories_must_reside_in_repository_packages =
             classes() // GH-90000
-                    .that().haveSimpleNameEndingWith("Repository [GH-90000]")
+                    .that().haveSimpleNameEndingWith("Repository")
                     .and().areNotInterfaces() // GH-90000
-                    .and().resideInAPackage("com.ghatana.. [GH-90000]")
+                    .and().resideInAPackage("com.ghatana..")
                     .should().resideInAnyPackage( // GH-90000
                             "..repository..",
                             "..repositories..",
@@ -259,8 +259,8 @@ class PlatformBoundaryRulesTest {
     @ArchTest
     static final ArchRule agent_memory_accessible_through_agent_core =
             noClasses() // GH-90000
-                    .that().resideInAPackage("com.ghatana.platform.. [GH-90000]")
-                    .should().dependOnClassesThat().resideInAPackage("com.ghatana.agent.memory.. [GH-90000]")
+                    .that().resideInAPackage("com.ghatana.platform..")
+                    .should().dependOnClassesThat().resideInAPackage("com.ghatana.agent.memory..")
                     .as("Platform code should not depend on com.ghatana.agent.memory directly — " // GH-90000
                             + "agent-memory was merged into agent-core (2026-04). " // GH-90000
                             + "Use platform:java:agent-core as the dependency.")
@@ -281,7 +281,7 @@ class PlatformBoundaryRulesTest {
             noClasses() // GH-90000
                     .that().resideInAnyPackage("com.ghatana.datacloud..", "com.ghatana.finance..", // GH-90000
                             "com.ghatana.phr..", "com.ghatana.yappc..")
-                    .should().dependOnClassesThat().resideInAPackage("com.ghatana.platform.cache.DistributedCacheFactory [GH-90000]")
+                    .should().dependOnClassesThat().resideInAPackage("com.ghatana.platform.cache.DistributedCacheFactory")
                     .as("Products must not instantiate DistributedCacheFactory directly in production code. " // GH-90000
                             + "Use platform:java:database for cache access — distributed-cache merged into database (2026-04).") // GH-90000
                     .allowEmptyShould(true); // GH-90000
@@ -299,7 +299,7 @@ class PlatformBoundaryRulesTest {
     @ArchTest
     static final ArchRule security_analytics_accessible_through_security =
             noClasses() // GH-90000
-                    .that().resideInAPackage("com.ghatana.platform.security.. [GH-90000]")
+                    .that().resideInAPackage("com.ghatana.platform.security..")
                     .should().dependOnClassesThat().resideInAnyPackage( // GH-90000
                             "com.ghatana.aep..",
                             "com.ghatana.yappc..",

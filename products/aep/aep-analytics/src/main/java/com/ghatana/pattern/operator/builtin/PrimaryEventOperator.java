@@ -102,7 +102,10 @@ import java.util.Map;
  *                 <p>
  *                 Catalog validation is optional and depends on ValidationContext providing EventTypeRegistry.
  *                 If registry is unavailable, only format validation is performed.
- */
+  * @doc.type class
+ * @doc.purpose Provides primary event operator functionality.
+ * @doc.layer product
+*/
 public class PrimaryEventOperator implements Operator {
 
     private static final String TYPE = "PRIMARY_EVENT";

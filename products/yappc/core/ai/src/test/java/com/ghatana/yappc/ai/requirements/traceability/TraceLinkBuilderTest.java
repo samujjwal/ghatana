@@ -32,7 +32,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("TraceLinkBuilder Tests [GH-90000]")
+@DisplayName("TraceLinkBuilder Tests")
 class TraceLinkBuilderTest extends EventloopTestBase {
 
   @Mock
@@ -50,10 +50,10 @@ class TraceLinkBuilderTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("linkRequirement creates IMPLEMENTS and TESTS links from semantic candidates [GH-90000]")
+  @DisplayName("linkRequirement creates IMPLEMENTS and TESTS links from semantic candidates")
   void linkRequirementCreatesExpectedLinks() { // GH-90000
     Requirement requirement = requirement(); // GH-90000
-    when(graphPort.semanticSearch(anyString(), eq("tenant-1 [GH-90000]"), anyInt(), anyDouble()))
+    when(graphPort.semanticSearch(anyString(), eq("tenant-1"), anyInt(), anyDouble()))
         .thenReturn(Promise.of(List.of( // GH-90000
             new RequirementTraceabilityGraphPort.TraceabilityCandidate( // GH-90000
                 "svc-1", "SERVICE", "BillingService", 0.93, Map.of()), // GH-90000
@@ -62,8 +62,8 @@ class TraceLinkBuilderTest extends EventloopTestBase {
 
     TraceLinkBuilder.TraceLinkSummary result = runPromise(() -> builder.linkRequirement(requirement, "tenant-1")); // GH-90000
 
-    assertThat(result.implementationNodeIds()).containsExactly("svc-1 [GH-90000]");
-    assertThat(result.testNodeIds()).containsExactly("test-1 [GH-90000]");
+    assertThat(result.implementationNodeIds()).containsExactly("svc-1");
+    assertThat(result.testNodeIds()).containsExactly("test-1");
 
     verify(graphPort).upsertRequirementNode(requirement, "tenant-1"); // GH-90000
     verify(graphPort).createRelationship( // GH-90000
@@ -81,17 +81,17 @@ class TraceLinkBuilderTest extends EventloopTestBase {
 
   private Requirement requirement() { // GH-90000
     return Requirement.builder() // GH-90000
-        .requirementId("req-1 [GH-90000]")
-        .projectId("proj-1 [GH-90000]")
-        .title("Secure billing access [GH-90000]")
-        .description("Users must authenticate with MFA before opening billing settings. [GH-90000]")
+        .requirementId("req-1")
+        .projectId("proj-1")
+        .title("Secure billing access")
+        .description("Users must authenticate with MFA before opening billing settings.")
         .type(RequirementType.FUNCTIONAL) // GH-90000
         .priority(RequirementPriority.MUST_HAVE) // GH-90000
         .status(RequirementStatus.DRAFT) // GH-90000
-        .createdBy("tester [GH-90000]")
+        .createdBy("tester")
         .metadata(RequirementMetadata.empty()) // GH-90000
-        .createdAt(Instant.parse("2026-04-06T00:00:00Z [GH-90000]"))
-        .updatedAt(Instant.parse("2026-04-06T00:00:00Z [GH-90000]"))
+        .createdAt(Instant.parse("2026-04-06T00:00:00Z"))
+        .updatedAt(Instant.parse("2026-04-06T00:00:00Z"))
         .build(); // GH-90000
   }
 

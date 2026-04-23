@@ -26,7 +26,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("CircuitBreakerOperator [GH-90000]")
+@DisplayName("CircuitBreakerOperator")
 class CircuitBreakerOperatorTest extends EventloopTestBase {
 
     private static final String CB_NAME = "test-circuit";
@@ -48,11 +48,11 @@ class CircuitBreakerOperatorTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("CLOSED state — normal operation [GH-90000]")
+    @DisplayName("CLOSED state — normal operation")
     class ClosedStateTests {
 
         @Test
-        @DisplayName("forwards event to delegate and returns success result [GH-90000]")
+        @DisplayName("forwards event to delegate and returns success result")
         void shouldForwardToDelegate() { // GH-90000
             UnifiedOperator delegate = mockDelegate(); // GH-90000
             Event event = mockEvent(); // GH-90000
@@ -73,12 +73,12 @@ class CircuitBreakerOperatorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("opens circuit after failureThreshold consecutive delegate failures [GH-90000]")
+        @DisplayName("opens circuit after failureThreshold consecutive delegate failures")
         void shouldOpenAfterThreshold() { // GH-90000
             UnifiedOperator delegate = mockDelegate(); // GH-90000
             Event event = mockEvent(); // GH-90000
             when(delegate.process(event)) // GH-90000
-                .thenReturn(Promise.ofException(new RuntimeException("downstream-down [GH-90000]")));
+                .thenReturn(Promise.ofException(new RuntimeException("downstream-down")));
 
             CircuitBreakerOperator cb = CircuitBreakerOperator.builder() // GH-90000
                 .name(CB_NAME + "-open") // GH-90000
@@ -100,18 +100,18 @@ class CircuitBreakerOperatorTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("OPEN state — fast-fail behaviour [GH-90000]")
+    @DisplayName("OPEN state — fast-fail behaviour")
     class OpenStateTests {
 
         @Test
-        @DisplayName("returns circuit-open failure without calling delegate when circuit is OPEN [GH-90000]")
+        @DisplayName("returns circuit-open failure without calling delegate when circuit is OPEN")
         void shouldFailFastWhenOpen() { // GH-90000
             UnifiedOperator delegate = mockDelegate(); // GH-90000
             Event event = mockEvent(); // GH-90000
             AtomicInteger delegateCalls = new AtomicInteger(); // GH-90000
             when(delegate.process(event)).thenAnswer(inv -> { // GH-90000
                 delegateCalls.incrementAndGet(); // GH-90000
-                return Promise.ofException(new RuntimeException("boom [GH-90000]"));
+                return Promise.ofException(new RuntimeException("boom"));
             });
 
             CircuitBreakerOperator cb = CircuitBreakerOperator.builder() // GH-90000
@@ -134,22 +134,22 @@ class CircuitBreakerOperatorTest extends EventloopTestBase {
             // Now fast-fail — delegate must NOT be called
             OperatorResult fastFail = runPromise(() -> cb.process(event)); // GH-90000
             assertThat(fastFail.isSuccess()).isFalse(); // GH-90000
-            assertThat(fastFail.getErrorMessage()).contains("circuit-open [GH-90000]");
+            assertThat(fastFail.getErrorMessage()).contains("circuit-open");
             assertThat(delegateCalls.get()).isZero(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("isHealthy() [GH-90000]")
+    @DisplayName("isHealthy()")
     class HealthTests {
 
         @Test
-        @DisplayName("returns false when circuit is OPEN [GH-90000]")
+        @DisplayName("returns false when circuit is OPEN")
         void shouldBeUnhealthyWhenOpen() { // GH-90000
             UnifiedOperator delegate = mockDelegate(); // GH-90000
             Event event = mockEvent(); // GH-90000
             when(delegate.process(event)).thenReturn( // GH-90000
-                Promise.ofException(new RuntimeException("fail [GH-90000]")));
+                Promise.ofException(new RuntimeException("fail")));
 
             CircuitBreakerOperator cb = CircuitBreakerOperator.builder() // GH-90000
                 .name(CB_NAME + "-health") // GH-90000
@@ -164,7 +164,7 @@ class CircuitBreakerOperatorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("returns true when circuit is CLOSED and delegate is healthy [GH-90000]")
+        @DisplayName("returns true when circuit is CLOSED and delegate is healthy")
         void shouldBeHealthyWhenClosed() { // GH-90000
             UnifiedOperator delegate = mockDelegate(); // GH-90000
             Event event = mockEvent(); // GH-90000
@@ -182,7 +182,7 @@ class CircuitBreakerOperatorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("getInternalState() includes circuit metrics [GH-90000]")
+    @DisplayName("getInternalState() includes circuit metrics")
     void shouldExposeInternalState() { // GH-90000
         UnifiedOperator delegate = mockDelegate(); // GH-90000
         Event event = mockEvent(); // GH-90000
@@ -197,24 +197,24 @@ class CircuitBreakerOperatorTest extends EventloopTestBase {
         runPromise(() -> cb.process(event)); // GH-90000
 
         var state = cb.getInternalState(); // GH-90000
-        assertThat(state).containsKey("circuit_state [GH-90000]");
-        assertThat(state).containsKey("circuit_metrics [GH-90000]");
-        assertThat((String) state.get("circuit_state [GH-90000]")).isEqualTo("CLOSED [GH-90000]");
+        assertThat(state).containsKey("circuit_state");
+        assertThat(state).containsKey("circuit_metrics");
+        assertThat((String) state.get("circuit_state")).isEqualTo("CLOSED");
     }
 
     @Test
-    @DisplayName("profile(STRICT) applies strict settings [GH-90000]")
+    @DisplayName("profile(STRICT) applies strict settings")
     void shouldApplyStrictProfile() { // GH-90000
         UnifiedOperator delegate = mockDelegate(); // GH-90000
         Event event = mockEvent(); // GH-90000
         when(delegate.process(event)).thenReturn( // GH-90000
-            Promise.ofException(new RuntimeException("fail [GH-90000]")));
+            Promise.ofException(new RuntimeException("fail")));
 
         CircuitBreakerOperator cb = CircuitBreakerOperator.builder() // GH-90000
             .name(CB_NAME + "-strict") // GH-90000
             .operator(delegate) // GH-90000
             .eventloop(eventloop()) // GH-90000
-            .profile("STRICT [GH-90000]")   // failureThreshold=3
+            .profile("STRICT")   // failureThreshold=3
             .resetTimeout(Duration.ofMinutes(10)) // GH-90000
             .build(); // GH-90000
 

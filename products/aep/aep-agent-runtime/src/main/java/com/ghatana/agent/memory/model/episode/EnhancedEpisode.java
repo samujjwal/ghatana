@@ -23,7 +23,8 @@ import java.util.Map;
  * @doc.type value-object
  * @doc.purpose Enhanced episodic memory item
  * @doc.layer agent-memory
- */
+  * @doc.pattern Component
+*/
 @Value
 @Builder
 @Jacksonized

@@ -53,6 +53,7 @@ export * from "./molecules/Accordion";
 export * from "./molecules/FormField";
 export * from "./molecules/Alert";
 export * from "./molecules/Card";
+export * from "./molecules/EmptyState";
 export * from "./molecules/Modal";
 export * from "./molecules/Dialog";
 export * from "./molecules/Table";

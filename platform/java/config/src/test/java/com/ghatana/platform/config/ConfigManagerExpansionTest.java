@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("ConfigManager - Phase 3 Expansion [GH-90000]")
+@DisplayName("ConfigManager - Phase 3 Expansion")
 class ConfigManagerExpansionTest {
 
     // ============================================
@@ -32,13 +32,13 @@ class ConfigManagerExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Multi-Source Configuration [GH-90000]")
+    @DisplayName("Multi-Source Configuration")
     class MultiSourceTests {
 
         @Test
-        @DisplayName("Sources are queried in order (first match wins) [GH-90000]")
+        @DisplayName("Sources are queried in order (first match wins)")
         void sourceOrdering() { // GH-90000
-            ConfigManager manager = new ConfigManager("test [GH-90000]");
+            ConfigManager manager = new ConfigManager("test");
 
             ConfigSource source1 = createMockSource(Map.of("key1", "value-from-1")); // GH-90000
             ConfigSource source2 = createMockSource(Map.of("key1", "value-from-2", "key2", "value-2")); // GH-90000
@@ -46,17 +46,17 @@ class ConfigManagerExpansionTest {
             manager.addSource(source1); // GH-90000
             manager.addSource(source2); // GH-90000
 
-            Optional<String> value = manager.getString("key1 [GH-90000]");
-            assertThat(value).hasValue("value-from-1 [GH-90000]"); // First source wins
+            Optional<String> value = manager.getString("key1");
+            assertThat(value).hasValue("value-from-1"); // First source wins
 
-            Optional<String> value2 = manager.getString("key2 [GH-90000]");
-            assertThat(value2).hasValue("value-2 [GH-90000]"); // Falls through to second source
+            Optional<String> value2 = manager.getString("key2");
+            assertThat(value2).hasValue("value-2"); // Falls through to second source
         }
 
         @Test
-        @DisplayName("Many sources coexist in configuration chain [GH-90000]")
+        @DisplayName("Many sources coexist in configuration chain")
         void manySourcesChain() { // GH-90000
-            ConfigManager manager = new ConfigManager("multi-source [GH-90000]");
+            ConfigManager manager = new ConfigManager("multi-source");
 
             for (int i = 0; i < 10; i++) { // GH-90000
                 final int idx = i;
@@ -74,36 +74,36 @@ class ConfigManagerExpansionTest {
         }
 
         @Test
-        @DisplayName("Adding sources via builder chainable API [GH-90000]")
+        @DisplayName("Adding sources via builder chainable API")
         void chainableSourceAddition() { // GH-90000
-            ConfigManager manager = new ConfigManager("chained [GH-90000]")
+            ConfigManager manager = new ConfigManager("chained")
                     .addSource(createMockSource(Map.of("a", "1"))) // GH-90000
                     .addSource(createMockSource(Map.of("b", "2"))) // GH-90000
                     .addSource(createMockSource(Map.of("c", "3"))); // GH-90000
 
             assertThat(manager.getSources()).hasSize(3); // GH-90000
-            assertThat(manager.getString("a [GH-90000]")).hasValue("1 [GH-90000]");
-            assertThat(manager.getString("b [GH-90000]")).hasValue("2 [GH-90000]");
-            assertThat(manager.getString("c [GH-90000]")).hasValue("3 [GH-90000]");
+            assertThat(manager.getString("a")).hasValue("1");
+            assertThat(manager.getString("b")).hasValue("2");
+            assertThat(manager.getString("c")).hasValue("3");
         }
 
         @Test
-        @DisplayName("Remove source invalidates future lookups [GH-90000]")
+        @DisplayName("Remove source invalidates future lookups")
         void removeSourceImpact() { // GH-90000
-            ConfigManager manager = new ConfigManager("test [GH-90000]");
+            ConfigManager manager = new ConfigManager("test");
             ConfigSource source = createMockSource(Map.of("key", "value")); // GH-90000
 
             manager.addSource(source); // GH-90000
-            assertThat(manager.getString("key [GH-90000]")).hasValue("value [GH-90000]");
+            assertThat(manager.getString("key")).hasValue("value");
 
             manager.removeSource(source); // GH-90000
-            assertThat(manager.getString("key [GH-90000]")).isEmpty();
+            assertThat(manager.getString("key")).isEmpty();
         }
 
         @Test
-        @DisplayName("Clear sources removes all configuration [GH-90000]")
+        @DisplayName("Clear sources removes all configuration")
         void clearAllSources() { // GH-90000
-            ConfigManager manager = new ConfigManager("test [GH-90000]");
+            ConfigManager manager = new ConfigManager("test");
 
             for (int i = 0; i < 5; i++) { // GH-90000
                 manager.addSource(createMockSource(Map.of("key-" + i, "value"))); // GH-90000
@@ -114,7 +114,7 @@ class ConfigManagerExpansionTest {
             manager.clearSources(); // GH-90000
 
             assertThat(manager.getSources()).isEmpty(); // GH-90000
-            assertThat(manager.getString("key-0 [GH-90000]")).isEmpty();
+            assertThat(manager.getString("key-0")).isEmpty();
         }
     }
 
@@ -123,55 +123,55 @@ class ConfigManagerExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Type Conversion [GH-90000]")
+    @DisplayName("Type Conversion")
     class TypeConversionTests {
 
         @Test
-        @DisplayName("Integer configuration values converted correctly [GH-90000]")
+        @DisplayName("Integer configuration values converted correctly")
         void integerConversion() { // GH-90000
-            ConfigManager manager = new ConfigManager("types [GH-90000]")
+            ConfigManager manager = new ConfigManager("types")
                     .addSource(createMockSourceWithTypes( // GH-90000
                         Map.of("port", 8080), // GH-90000
                         Map.of("timeout", 5000))); // GH-90000
 
-            Optional<Integer> port = manager.getInt("port [GH-90000]");
+            Optional<Integer> port = manager.getInt("port");
             assertThat(port).hasValue(8080); // GH-90000
         }
 
         @Test
-        @DisplayName("Boolean configuration values converted correctly [GH-90000]")
+        @DisplayName("Boolean configuration values converted correctly")
         void booleanConversion() { // GH-90000
-            ConfigManager manager = new ConfigManager("types [GH-90000]")
+            ConfigManager manager = new ConfigManager("types")
                     .addSource(createMockSourceWithBoolean(Map.of( // GH-90000
                         "enabled", true,
                         "debug", false)));
 
-            Optional<Boolean> enabled = manager.getBoolean("enabled [GH-90000]");
+            Optional<Boolean> enabled = manager.getBoolean("enabled");
             assertThat(enabled).hasValue(true); // GH-90000
 
-            Optional<Boolean> debug = manager.getBoolean("debug [GH-90000]");
+            Optional<Boolean> debug = manager.getBoolean("debug");
             assertThat(debug).hasValue(false); // GH-90000
         }
 
         @Test
-        @DisplayName("Long configuration values converted correctly [GH-90000]")
+        @DisplayName("Long configuration values converted correctly")
         void longConversion() { // GH-90000
-            ConfigManager manager = new ConfigManager("types [GH-90000]")
+            ConfigManager manager = new ConfigManager("types")
                     .addSource(createMockSourceWithLong(Map.of( // GH-90000
                         "largeNumber", 9223372036854775L)));
 
-            Optional<Long> large = manager.getLong("largeNumber [GH-90000]");
+            Optional<Long> large = manager.getLong("largeNumber");
             assertThat(large).hasValue(9223372036854775L); // GH-90000
         }
 
         @Test
-        @DisplayName("Double configuration values converted correctly [GH-90000]")
+        @DisplayName("Double configuration values converted correctly")
         void doubleConversion() { // GH-90000
-            ConfigManager manager = new ConfigManager("types [GH-90000]")
+            ConfigManager manager = new ConfigManager("types")
                     .addSource(createMockSourceWithDouble(Map.of( // GH-90000
                         "pi", 3.14159)));
 
-            Optional<Double> pi = manager.getDouble("pi [GH-90000]");
+            Optional<Double> pi = manager.getDouble("pi");
             assertThat(pi).hasValue(3.14159); // GH-90000
         }
     }
@@ -181,29 +181,29 @@ class ConfigManagerExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Key Detection & Lookups [GH-90000]")
+    @DisplayName("Key Detection & Lookups")
     class KeyDetectionTests {
 
         @Test
-        @DisplayName("hasKey detects existing keys across sources [GH-90000]")
+        @DisplayName("hasKey detects existing keys across sources")
         void hasKeyDetection() { // GH-90000
-            ConfigManager manager = new ConfigManager("test [GH-90000]")
+            ConfigManager manager = new ConfigManager("test")
                     .addSource(createMockSource(Map.of( // GH-90000
                         "exists-1", "value",
                         "exists-2", "value")))
                     .addSource(createMockSource(Map.of( // GH-90000
                         "exists-3", "value")));
 
-            assertThat(manager.hasKey("exists-1 [GH-90000]")).isTrue();
-            assertThat(manager.hasKey("exists-2 [GH-90000]")).isTrue();
-            assertThat(manager.hasKey("exists-3 [GH-90000]")).isTrue();
-            assertThat(manager.hasKey("does-not-exist [GH-90000]")).isFalse();
+            assertThat(manager.hasKey("exists-1")).isTrue();
+            assertThat(manager.hasKey("exists-2")).isTrue();
+            assertThat(manager.hasKey("exists-3")).isTrue();
+            assertThat(manager.hasKey("does-not-exist")).isFalse();
         }
 
         @Test
-        @DisplayName("getAll returns merged configuration map [GH-90000]")
+        @DisplayName("getAll returns merged configuration map")
         void getAllMerged() { // GH-90000
-            ConfigManager manager = new ConfigManager("merged [GH-90000]")
+            ConfigManager manager = new ConfigManager("merged")
                     .addSource(createMockSource(Map.of( // GH-90000
                         "key1", "value1",
                         "key2", "value2")))
@@ -216,28 +216,28 @@ class ConfigManagerExpansionTest {
         }
 
         @Test
-        @DisplayName("Missing keys return empty Optional [GH-90000]")
+        @DisplayName("Missing keys return empty Optional")
         void missingKeyHandling() { // GH-90000
-            ConfigManager manager = new ConfigManager("test [GH-90000]")
+            ConfigManager manager = new ConfigManager("test")
                     .addSource(createMockSource(Map.of("exists", "value"))); // GH-90000
 
-            Optional<String> missing = manager.getString("nonexistent [GH-90000]");
+            Optional<String> missing = manager.getString("nonexistent");
             assertThat(missing).isEmpty(); // GH-90000
 
-            Optional<Integer> missingInt = manager.getInt("nonexistent [GH-90000]");
+            Optional<Integer> missingInt = manager.getInt("nonexistent");
             assertThat(missingInt).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("Overlapping keys in sources prioritized by order [GH-90000]")
+        @DisplayName("Overlapping keys in sources prioritized by order")
         void keyPriority() { // GH-90000
-            ConfigManager manager = new ConfigManager("priority [GH-90000]")
+            ConfigManager manager = new ConfigManager("priority")
                     .addSource(createMockSource(Map.of("shared", "first"))) // GH-90000
                     .addSource(createMockSource(Map.of("shared", "second"))) // GH-90000
                     .addSource(createMockSource(Map.of("shared", "third"))); // GH-90000
 
-            Optional<String> value = manager.getString("shared [GH-90000]");
-            assertThat(value).hasValue("first [GH-90000]"); // First source wins
+            Optional<String> value = manager.getString("shared");
+            assertThat(value).hasValue("first"); // First source wins
         }
     }
 
@@ -246,40 +246,40 @@ class ConfigManagerExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Arrays & Complex Types [GH-90000]")
+    @DisplayName("Arrays & Complex Types")
     class ComplexTypeTests {
 
         @Test
-        @DisplayName("String array configuration retrieved correctly [GH-90000]")
+        @DisplayName("String array configuration retrieved correctly")
         void stringArrayRetrieval() { // GH-90000
-            ConfigManager manager = new ConfigManager("arrays [GH-90000]")
+            ConfigManager manager = new ConfigManager("arrays")
                     .addSource(createMockSourceWithArray(Map.of( // GH-90000
                         "servers", new String[]{"server1", "server2", "server3"})));
 
-            Optional<String[]> servers = manager.getStringArray("servers [GH-90000]");
+            Optional<String[]> servers = manager.getStringArray("servers");
             assertThat(servers).hasValue(new String[]{"server1", "server2", "server3"}); // GH-90000
         }
 
         @Test
-        @DisplayName("Configuration map nested retrieval [GH-90000]")
+        @DisplayName("Configuration map nested retrieval")
         void mapRetrieval() { // GH-90000
-            ConfigManager manager = new ConfigManager("maps [GH-90000]")
+            ConfigManager manager = new ConfigManager("maps")
                     .addSource(createMockSourceWithMap(Map.of( // GH-90000
                         "database", Map.of("host", "localhost", "port", "5432", "name", "config_db")))); // GH-90000
 
-            Optional<Map<String, String>> dbConfig = manager.getMap("database [GH-90000]");
+            Optional<Map<String, String>> dbConfig = manager.getMap("database");
             assertThat(dbConfig).isPresent(); // GH-90000
             assertThat(dbConfig.get()).containsEntry("host", "localhost"); // GH-90000
         }
 
         @Test
-        @DisplayName("Nested configuration objects accessed hierarchically [GH-90000]")
+        @DisplayName("Nested configuration objects accessed hierarchically")
         void nestedConfig() { // GH-90000
-            ConfigManager manager = new ConfigManager("nested [GH-90000]")
+            ConfigManager manager = new ConfigManager("nested")
                     .addSource(createMockSourceWithNested(Map.of( // GH-90000
                         "app.settings", createMockSource(Map.of("threads", "10"))))); // GH-90000
 
-            Optional<ConfigSource> nested = manager.getConfig("app.settings [GH-90000]");
+            Optional<ConfigSource> nested = manager.getConfig("app.settings");
             assertThat(nested).isPresent(); // GH-90000
         }
     }
@@ -289,13 +289,13 @@ class ConfigManagerExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Concurrency & Thread Safety [GH-90000]")
+    @DisplayName("Concurrency & Thread Safety")
     class ConcurrencyTests {
 
         @Test
-        @DisplayName("Many threads reading config simultaneously [GH-90000]")
+        @DisplayName("Many threads reading config simultaneously")
         void concurrentReads() throws Exception { // GH-90000
-            ConfigManager manager = new ConfigManager("concurrent [GH-90000]")
+            ConfigManager manager = new ConfigManager("concurrent")
                     .addSource(createMockSource(Map.of( // GH-90000
                         "key1", "value1",
                         "key2", "value2",
@@ -330,9 +330,9 @@ class ConfigManagerExpansionTest {
         }
 
         @Test
-        @DisplayName("Concurrent source addition and reading [GH-90000]")
+        @DisplayName("Concurrent source addition and reading")
         void concurrentModificationSafety() throws Exception { // GH-90000
-            ConfigManager manager = new ConfigManager("concurrent-mod [GH-90000]");
+            ConfigManager manager = new ConfigManager("concurrent-mod");
 
             int readThreads = 10;
             int writeThreads = 5;
@@ -346,7 +346,7 @@ class ConfigManagerExpansionTest {
                     executor.submit(() -> { // GH-90000
                         try {
                             for (int j = 0; j < 10; j++) { // GH-90000
-                                manager.getString("some-key [GH-90000]");
+                                manager.getString("some-key");
                                 operations.incrementAndGet(); // GH-90000
                             }
                         } finally {
@@ -377,9 +377,9 @@ class ConfigManagerExpansionTest {
         }
 
         @Test
-        @DisplayName("Rapid source add/remove cycles [GH-90000]")
+        @DisplayName("Rapid source add/remove cycles")
         void rapidModification() { // GH-90000
-            ConfigManager manager = new ConfigManager("rapid [GH-90000]");
+            ConfigManager manager = new ConfigManager("rapid");
 
             for (int cycle = 0; cycle < 100; cycle++) { // GH-90000
                 ConfigSource source = createMockSource(Map.of("cycle-" + cycle, "value")); // GH-90000
@@ -396,32 +396,32 @@ class ConfigManagerExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Manager Instances [GH-90000]")
+    @DisplayName("Manager Instances")
     class InstanceTests {
 
         @Test
-        @DisplayName("Multiple manager instances are independent [GH-90000]")
+        @DisplayName("Multiple manager instances are independent")
         void multipleManagerInstances() { // GH-90000
-            ConfigManager manager1 = new ConfigManager("app1 [GH-90000]")
+            ConfigManager manager1 = new ConfigManager("app1")
                     .addSource(createMockSource(Map.of("name", "app1"))); // GH-90000
 
-            ConfigManager manager2 = new ConfigManager("app2 [GH-90000]")
+            ConfigManager manager2 = new ConfigManager("app2")
                     .addSource(createMockSource(Map.of("name", "app2"))); // GH-90000
 
-            assertThat(manager1.getString("name [GH-90000]")).hasValue("app1 [GH-90000]");
-            assertThat(manager2.getString("name [GH-90000]")).hasValue("app2 [GH-90000]");
+            assertThat(manager1.getString("name")).hasValue("app1");
+            assertThat(manager2.getString("name")).hasValue("app2");
             assertThat(manager1.getSources()).hasSize(1); // GH-90000
             assertThat(manager2.getSources()).hasSize(1); // GH-90000
         }
 
         @Test
-        @DisplayName("Manager with no sources returns empty for all lookups [GH-90000]")
+        @DisplayName("Manager with no sources returns empty for all lookups")
         void emptyManager() { // GH-90000
-            ConfigManager manager = new ConfigManager("empty [GH-90000]");
+            ConfigManager manager = new ConfigManager("empty");
 
-            assertThat(manager.getString("any-key [GH-90000]")).isEmpty();
-            assertThat(manager.getInt("any-key [GH-90000]")).isEmpty();
-            assertThat(manager.getBoolean("any-key [GH-90000]")).isEmpty();
+            assertThat(manager.getString("any-key")).isEmpty();
+            assertThat(manager.getInt("any-key")).isEmpty();
+            assertThat(manager.getBoolean("any-key")).isEmpty();
             assertThat(manager.getSources()).isEmpty(); // GH-90000
             assertThat(manager.getAll()).isEmpty(); // GH-90000
         }
@@ -432,13 +432,13 @@ class ConfigManagerExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Edge Cases [GH-90000]")
+    @DisplayName("Edge Cases")
     class EdgeCaseTests {
 
         @Test
-        @DisplayName("Same source added multiple times [GH-90000]")
+        @DisplayName("Same source added multiple times")
         void sameSourceMultipleAdditions() { // GH-90000
-            ConfigManager manager = new ConfigManager("test [GH-90000]");
+            ConfigManager manager = new ConfigManager("test");
             ConfigSource source = createMockSource(Map.of("key", "value")); // GH-90000
 
             manager.addSource(source); // GH-90000
@@ -446,13 +446,13 @@ class ConfigManagerExpansionTest {
             manager.addSource(source); // GH-90000
 
             // Behavior depends on implementation - either duplicates or deduplicated
-            assertThatNoException().isThrownBy(() -> manager.getString("key [GH-90000]"));
+            assertThatNoException().isThrownBy(() -> manager.getString("key"));
         }
 
         @Test
-        @DisplayName("Remove non-existent source has no effect [GH-90000]")
+        @DisplayName("Remove non-existent source has no effect")
         void removeNonExistentSource() { // GH-90000
-            ConfigManager manager = new ConfigManager("test [GH-90000]")
+            ConfigManager manager = new ConfigManager("test")
                     .addSource(createMockSource(Map.of("key", "value"))); // GH-90000
 
             ConfigSource nonExistent = createMockSource(Map.of()); // GH-90000
@@ -462,18 +462,18 @@ class ConfigManagerExpansionTest {
         }
 
         @Test
-        @DisplayName("Very large configuration sources handled [GH-90000]")
+        @DisplayName("Very large configuration sources handled")
         void largeConfigurationSource() { // GH-90000
             Map<String, String> largeConfig = new java.util.HashMap<>(); // GH-90000
             for (int i = 0; i < 10000; i++) { // GH-90000
                 largeConfig.put("key-" + i, "value-" + i); // GH-90000
             }
 
-            ConfigManager manager = new ConfigManager("large [GH-90000]")
+            ConfigManager manager = new ConfigManager("large")
                     .addSource(createMockSource(largeConfig)); // GH-90000
 
-            assertThat(manager.getString("key-5000 [GH-90000]")).hasValue("value-5000 [GH-90000]");
-            assertThat(manager.getString("key-9999 [GH-90000]")).hasValue("value-9999 [GH-90000]");
+            assertThat(manager.getString("key-5000")).hasValue("value-5000");
+            assertThat(manager.getString("key-9999")).hasValue("value-9999");
         }
     }
 

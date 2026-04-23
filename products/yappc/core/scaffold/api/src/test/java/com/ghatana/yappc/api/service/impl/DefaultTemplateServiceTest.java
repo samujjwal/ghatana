@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Unit tests for DefaultTemplateService.
  */
-@DisplayName("DefaultTemplateService Tests [GH-90000]")
+@DisplayName("DefaultTemplateService Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles default template service test operations
@@ -49,29 +49,29 @@ class DefaultTemplateServiceTest {
     @BeforeEach
     void setUp() { // GH-90000
         YappcConfig config = YappcConfig.builder() // GH-90000
-                .packsPath(tempDir.resolve("packs [GH-90000]"))
+                .packsPath(tempDir.resolve("packs"))
                 .workspacePath(tempDir) // GH-90000
                 .build(); // GH-90000
         templateService = new DefaultTemplateService(config); // GH-90000
     }
 
     @Nested
-    @DisplayName("Variable Substitution [GH-90000]")
+    @DisplayName("Variable Substitution")
     class VariableSubstitution {
 
         @Test
-        @DisplayName("Should substitute simple variables [GH-90000]")
+        @DisplayName("Should substitute simple variables")
         void shouldSubstituteSimpleVariables() { // GH-90000
             String template = "Hello, {{name}}!";
             Map<String, Object> variables = Map.of("name", "World"); // GH-90000
 
             String result = templateService.render(template, variables); // GH-90000
 
-            assertThat(result).isEqualTo("Hello, World! [GH-90000]");
+            assertThat(result).isEqualTo("Hello, World!");
         }
 
         @Test
-        @DisplayName("Should substitute multiple variables [GH-90000]")
+        @DisplayName("Should substitute multiple variables")
         void shouldSubstituteMultipleVariables() { // GH-90000
             String template = "package {{packageName}};\n\npublic class {{className}} {}";
             Map<String, Object> variables = Map.of( // GH-90000
@@ -81,23 +81,23 @@ class DefaultTemplateServiceTest {
 
             String result = templateService.render(template, variables); // GH-90000
 
-            assertThat(result).contains("package com.example; [GH-90000]");
-            assertThat(result).contains("public class MyService {} [GH-90000]");
+            assertThat(result).contains("package com.example;");
+            assertThat(result).contains("public class MyService {}");
         }
 
         @Test
-        @DisplayName("Should handle missing variables as empty string [GH-90000]")
+        @DisplayName("Should handle missing variables as empty string")
         void shouldHandleMissingVariablesAsEmptyString() { // GH-90000
             String template = "Hello, {{name}}!";
             Map<String, Object> variables = Map.of(); // GH-90000
 
             String result = templateService.render(template, variables); // GH-90000
 
-            assertThat(result).isEqualTo("Hello, ! [GH-90000]");
+            assertThat(result).isEqualTo("Hello, !");
         }
 
         @Test
-        @DisplayName("Should handle null template [GH-90000]")
+        @DisplayName("Should handle null template")
         void shouldHandleNullTemplate() { // GH-90000
             String result = templateService.render(null, Map.of()); // GH-90000
 
@@ -105,7 +105,7 @@ class DefaultTemplateServiceTest {
         }
 
         @Test
-        @DisplayName("Should handle empty template [GH-90000]")
+        @DisplayName("Should handle empty template")
         void shouldHandleEmptyTemplate() { // GH-90000
             String result = templateService.render("", Map.of()); // GH-90000
 
@@ -114,115 +114,115 @@ class DefaultTemplateServiceTest {
     }
 
     @Nested
-    @DisplayName("Template Helpers [GH-90000]")
+    @DisplayName("Template Helpers")
     class TemplateHelpers {
 
         @Test
-        @DisplayName("Should apply lowercase helper [GH-90000]")
+        @DisplayName("Should apply lowercase helper")
         void shouldApplyLowercaseHelper() { // GH-90000
             String template = "{{lowercase name}}";
             Map<String, Object> variables = Map.of("name", "HELLO"); // GH-90000
 
             String result = templateService.render(template, variables); // GH-90000
 
-            assertThat(result).isEqualTo("hello [GH-90000]");
+            assertThat(result).isEqualTo("hello");
         }
 
         @Test
-        @DisplayName("Should apply uppercase helper [GH-90000]")
+        @DisplayName("Should apply uppercase helper")
         void shouldApplyUppercaseHelper() { // GH-90000
             String template = "{{uppercase name}}";
             Map<String, Object> variables = Map.of("name", "hello"); // GH-90000
 
             String result = templateService.render(template, variables); // GH-90000
 
-            assertThat(result).isEqualTo("HELLO [GH-90000]");
+            assertThat(result).isEqualTo("HELLO");
         }
 
         @Test
-        @DisplayName("Should apply capitalize helper [GH-90000]")
+        @DisplayName("Should apply capitalize helper")
         void shouldApplyCapitalizeHelper() { // GH-90000
             String template = "{{capitalize name}}";
             Map<String, Object> variables = Map.of("name", "hello"); // GH-90000
 
             String result = templateService.render(template, variables); // GH-90000
 
-            assertThat(result).isEqualTo("Hello [GH-90000]");
+            assertThat(result).isEqualTo("Hello");
         }
 
         @Test
-        @DisplayName("Should apply camelCase helper [GH-90000]")
+        @DisplayName("Should apply camelCase helper")
         void shouldApplyCamelCaseHelper() { // GH-90000
             String template = "{{camelCase name}}";
             Map<String, Object> variables = Map.of("name", "my-service-name"); // GH-90000
 
             String result = templateService.render(template, variables); // GH-90000
 
-            assertThat(result).isEqualTo("myServiceName [GH-90000]");
+            assertThat(result).isEqualTo("myServiceName");
         }
 
         @Test
-        @DisplayName("Should apply pascalCase helper [GH-90000]")
+        @DisplayName("Should apply pascalCase helper")
         void shouldApplyPascalCaseHelper() { // GH-90000
             String template = "{{pascalCase name}}";
             Map<String, Object> variables = Map.of("name", "my-service-name"); // GH-90000
 
             String result = templateService.render(template, variables); // GH-90000
 
-            assertThat(result).isEqualTo("MyServiceName [GH-90000]");
+            assertThat(result).isEqualTo("MyServiceName");
         }
 
         @Test
-        @DisplayName("Should apply snakeCase helper [GH-90000]")
+        @DisplayName("Should apply snakeCase helper")
         void shouldApplySnakeCaseHelper() { // GH-90000
             String template = "{{snakeCase name}}";
             Map<String, Object> variables = Map.of("name", "MyServiceName"); // GH-90000
 
             String result = templateService.render(template, variables); // GH-90000
 
-            assertThat(result).isEqualTo("my_service_name [GH-90000]");
+            assertThat(result).isEqualTo("my_service_name");
         }
 
         @Test
-        @DisplayName("Should apply kebabCase helper [GH-90000]")
+        @DisplayName("Should apply kebabCase helper")
         void shouldApplyKebabCaseHelper() { // GH-90000
             String template = "{{kebabCase name}}";
             Map<String, Object> variables = Map.of("name", "MyServiceName"); // GH-90000
 
             String result = templateService.render(template, variables); // GH-90000
 
-            assertThat(result).isEqualTo("my-service-name [GH-90000]");
+            assertThat(result).isEqualTo("my-service-name");
         }
 
         @Test
-        @DisplayName("Should generate uuid [GH-90000]")
+        @DisplayName("Should generate uuid")
         void shouldGenerateUuid() { // GH-90000
             String template = "id: {{uuid}}";
 
             String result = templateService.render(template, Map.of()); // GH-90000
 
-            assertThat(result).startsWith("id:  [GH-90000]");
-            assertThat(result.substring(4)).matches("[a-f0-9-]{36} [GH-90000]");
+            assertThat(result).startsWith("id: ");
+            assertThat(result.substring(4)).matches("[a-f0-9-]{36}");
         }
 
         @Test
-        @DisplayName("Should generate date [GH-90000]")
+        @DisplayName("Should generate date")
         void shouldGenerateDate() { // GH-90000
             String template = "date: {{date}}";
 
             String result = templateService.render(template, Map.of()); // GH-90000
 
-            assertThat(result).startsWith("date:  [GH-90000]");
-            assertThat(result.substring(6)).matches("\\d{4}-\\d{2}-\\d{2} [GH-90000]");
+            assertThat(result).startsWith("date: ");
+            assertThat(result.substring(6)).matches("\\d{4}-\\d{2}-\\d{2}");
         }
     }
 
     @Nested
-    @DisplayName("Custom Helpers [GH-90000]")
+    @DisplayName("Custom Helpers")
     class CustomHelpers {
 
         @Test
-        @DisplayName("Should register and use custom helper [GH-90000]")
+        @DisplayName("Should register and use custom helper")
         void shouldRegisterAndUseCustomHelper() { // GH-90000
             templateService.registerHelper("reverse", input -> // GH-90000
                     new StringBuilder(input).reverse().toString()); // GH-90000
@@ -232,16 +232,16 @@ class DefaultTemplateServiceTest {
 
             String result = templateService.render(template, variables); // GH-90000
 
-            assertThat(result).isEqualTo("olleh [GH-90000]");
+            assertThat(result).isEqualTo("olleh");
         }
     }
 
     @Nested
-    @DisplayName("Available Helpers [GH-90000]")
+    @DisplayName("Available Helpers")
     class AvailableHelpers {
 
         @Test
-        @DisplayName("Should list all built-in helpers [GH-90000]")
+        @DisplayName("Should list all built-in helpers")
         void shouldListAllBuiltInHelpers() { // GH-90000
             var helpers = templateService.getAvailableHelpers(); // GH-90000
 
@@ -254,11 +254,11 @@ class DefaultTemplateServiceTest {
     }
 
     @Nested
-    @DisplayName("Syntax Validation [GH-90000]")
+    @DisplayName("Syntax Validation")
     class SyntaxValidation {
 
         @Test
-        @DisplayName("Should validate correct syntax [GH-90000]")
+        @DisplayName("Should validate correct syntax")
         void shouldValidateCorrectSyntax() { // GH-90000
             String template = "Hello, {{name}}! Today is {{date}}.";
 
@@ -268,7 +268,7 @@ class DefaultTemplateServiceTest {
         }
 
         @Test
-        @DisplayName("Should validate helper syntax [GH-90000]")
+        @DisplayName("Should validate helper syntax")
         void shouldValidateHelperSyntax() { // GH-90000
             String template = "Hello, {{uppercase name}}!";
 

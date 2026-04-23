@@ -62,7 +62,10 @@ import java.util.Map;
  * @doc.limitation Compile-Time Only - This implementation validates pattern structure at compile time.
  *                 Runtime execution logic (XOR tracking, priority-based evaluation) is handled by the
  *                 pattern engine's execution layer. Does not provide runtime matching logic.
- */
+  * @doc.type class
+ * @doc.purpose Provides or operator functionality.
+ * @doc.layer product
+*/
 public class OrOperator implements Operator {
 
     private static final String TYPE = "OR";

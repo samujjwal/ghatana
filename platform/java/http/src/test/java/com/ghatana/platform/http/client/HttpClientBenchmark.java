@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer test
  * @doc.pattern Performance testing
  */
-@DisplayName("HTTP Client Performance Benchmarks [GH-90000]")
+@DisplayName("HTTP Client Performance Benchmarks")
 class HttpClientBenchmark {
 
     private static final int WARMUP_ITERATIONS = 5;
@@ -31,7 +31,7 @@ class HttpClientBenchmark {
      * Benchmark HTTP client factory creation performance.
      */
     @Test
-    @DisplayName("Benchmark: HttpClientFactory adapter creation [GH-90000]")
+    @DisplayName("Benchmark: HttpClientFactory adapter creation")
     void benchmarkAdapterCreation() { // GH-90000
         // Warmup
         for (int i = 0; i < WARMUP_ITERATIONS; i++) { // GH-90000
@@ -60,7 +60,7 @@ class HttpClientBenchmark {
      * Benchmark HTTP client config creation performance.
      */
     @Test
-    @DisplayName("Benchmark: HttpClientConfig builder [GH-90000]")
+    @DisplayName("Benchmark: HttpClientConfig builder")
     void benchmarkConfigCreation() { // GH-90000
         // Warmup
         for (int i = 0; i < WARMUP_ITERATIONS; i++) { // GH-90000
@@ -94,7 +94,7 @@ class HttpClientBenchmark {
      * Benchmark rate limiter cache performance.
      */
     @Test
-    @DisplayName("Benchmark: Rate limiter cache operations [GH-90000]")
+    @DisplayName("Benchmark: Rate limiter cache operations")
     void benchmarkRateLimiterCache() { // GH-90000
         // Warmup
         for (int i = 0; i < WARMUP_ITERATIONS; i++) { // GH-90000

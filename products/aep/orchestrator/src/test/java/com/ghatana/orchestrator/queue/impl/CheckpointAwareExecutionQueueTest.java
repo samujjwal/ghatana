@@ -40,7 +40,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("CheckpointAwareExecutionQueue [GH-90000]")
+@DisplayName("CheckpointAwareExecutionQueue")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class CheckpointAwareExecutionQueueTest extends EventloopTestBase {
 
@@ -57,7 +57,7 @@ class CheckpointAwareExecutionQueueTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("enqueue() stores job and tracks it [GH-90000]")
+    @DisplayName("enqueue() stores job and tracks it")
     void shouldEnqueueNewExecution() { // GH-90000
         String tenantId = TENANT_ID;
         String pipelineId = "test-pipeline";
@@ -78,7 +78,7 @@ class CheckpointAwareExecutionQueueTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("enqueue() is idempotent for duplicate idempotency keys [GH-90000]")
+    @DisplayName("enqueue() is idempotent for duplicate idempotency keys")
     void shouldPreventDuplicateEnqueue() { // GH-90000
         String tenantId = TENANT_ID;
         String pipelineId = "test-pipeline";
@@ -97,7 +97,7 @@ class CheckpointAwareExecutionQueueTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("poll() returns job when execution is allowed [GH-90000]")
+    @DisplayName("poll() returns job when execution is allowed")
     void shouldPollValidJob() { // GH-90000
         String tenantId = TENANT_ID;
         String pipelineId = "test-pipeline";
@@ -124,7 +124,7 @@ class CheckpointAwareExecutionQueueTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("poll() skips job when checkpoint does not allow execution [GH-90000]")
+    @DisplayName("poll() skips job when checkpoint does not allow execution")
     void shouldSkipJobWithInvalidCheckpoint() { // GH-90000
         String tenantId = TENANT_ID;
         String pipelineId = "test-pipeline";
@@ -144,7 +144,7 @@ class CheckpointAwareExecutionQueueTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("poll() skips job when checkpoint is already completed [GH-90000]")
+    @DisplayName("poll() skips job when checkpoint is already completed")
     void shouldSkipJobWithCompletedCheckpoint() { // GH-90000
         String tenantId = TENANT_ID;
         String pipelineId = "test-pipeline";
@@ -164,7 +164,7 @@ class CheckpointAwareExecutionQueueTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("clear() empties the queue [GH-90000]")
+    @DisplayName("clear() empties the queue")
     void shouldClearQueue() { // GH-90000
         when(checkpointStore.isDuplicate(anyString(), anyString())).thenReturn(false); // GH-90000
         when(checkpointStore.createExecution(anyString(), anyString(), anyString(), anyString(), any())) // GH-90000
@@ -181,7 +181,7 @@ class CheckpointAwareExecutionQueueTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("poll() after enqueue returns correct job fields [GH-90000]")
+    @DisplayName("poll() after enqueue returns correct job fields")
     void shouldPeekAtNextJob() { // GH-90000
         String tenantId = TENANT_ID;
         String pipelineId = "peek-pipeline";
@@ -205,7 +205,7 @@ class CheckpointAwareExecutionQueueTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("getStatistics() reflects current queue state [GH-90000]")
+    @DisplayName("getStatistics() reflects current queue state")
     void shouldProvideQueueStatistics() { // GH-90000
         when(checkpointStore.isDuplicate(anyString(), anyString())).thenReturn(false); // GH-90000
         when(checkpointStore.createExecution(anyString(), anyString(), anyString(), anyString(), any())) // GH-90000
@@ -222,7 +222,7 @@ class CheckpointAwareExecutionQueueTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("polled job contains non-null jobId and instanceId [GH-90000]")
+    @DisplayName("polled job contains non-null jobId and instanceId")
     void shouldCalculateQueuedDuration() { // GH-90000
         String tenantId = TENANT_ID;
         String pipelineId = "duration-pipeline";
@@ -243,7 +243,7 @@ class CheckpointAwareExecutionQueueTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("enqueue() propagates CheckpointStore exceptions [GH-90000]")
+    @DisplayName("enqueue() propagates CheckpointStore exceptions")
     void shouldHandleCheckpointStoreException() { // GH-90000
         String tenantId = TENANT_ID;
         String pipelineId = "error-pipeline";
@@ -251,12 +251,12 @@ class CheckpointAwareExecutionQueueTest extends EventloopTestBase {
 
         when(checkpointStore.isDuplicate(tenantId, idempotencyKey)).thenReturn(false); // GH-90000
         when(checkpointStore.createExecution(eq(tenantId), eq(pipelineId), anyString(), eq(idempotencyKey), any())) // GH-90000
-                .thenThrow(new RuntimeException("Checkpoint store error [GH-90000]"));
+                .thenThrow(new RuntimeException("Checkpoint store error"));
 
         assertThatThrownBy(() -> runPromise( // GH-90000
                         () -> executionQueue.enqueue(tenantId, pipelineId, Map.of("data", "error"), idempotencyKey))) // GH-90000
                 .isInstanceOf(RuntimeException.class) // GH-90000
-                .hasMessageContaining("Checkpoint store error [GH-90000]");
+                .hasMessageContaining("Checkpoint store error");
 
         clearFatalError(); // GH-90000
         assertThat(executionQueue.size()).isEqualTo(0); // GH-90000

@@ -29,17 +29,17 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer   product
  * @doc.pattern IntegrationTest
  */
-@Tag("integration [GH-90000]")
+@Tag("integration")
 @Testcontainers
-@DisplayName("User-Profile-Service — PostgreSQL integration tests [GH-90000]")
+@DisplayName("User-Profile-Service — PostgreSQL integration tests")
 class PostgreSQLIntegrationTest {
 
     @Container
     private static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>("postgres:15-alpine [GH-90000]")
-                    .withDatabaseName("profile_integration_test [GH-90000]")
-                    .withUsername("profile_test [GH-90000]")
-                    .withPassword("profile_test_pw [GH-90000]");
+            new PostgreSQLContainer<>("postgres:15-alpine")
+                    .withDatabaseName("profile_integration_test")
+                    .withUsername("profile_test")
+                    .withPassword("profile_test_pw");
 
     private HikariDataSource dataSource;
 
@@ -60,7 +60,7 @@ class PostgreSQLIntegrationTest {
     void tearDown() throws Exception { // GH-90000
         try (Connection conn = dataSource.getConnection(); // GH-90000
              Statement stmt = conn.createStatement()) { // GH-90000
-            stmt.execute("DROP TABLE IF EXISTS user_profiles CASCADE [GH-90000]");
+            stmt.execute("DROP TABLE IF EXISTS user_profiles CASCADE");
         }
         dataSource.close(); // GH-90000
     }
@@ -68,7 +68,7 @@ class PostgreSQLIntegrationTest {
     // ── Profile persistence ───────────────────────────────────────────────────
 
     @Test
-    @DisplayName("profile is persisted and readable by user_id [GH-90000]")
+    @DisplayName("profile is persisted and readable by user_id")
     void profilePersistAndRead() throws Exception { // GH-90000
         String userId = uid(); // GH-90000
         insertProfile(userId, "Alice Smith", "alice@example.com", "tenant-1"); // GH-90000
@@ -79,19 +79,19 @@ class PostgreSQLIntegrationTest {
             ps.setString(1, userId); // GH-90000
             ResultSet rs = ps.executeQuery(); // GH-90000
             assertThat(rs.next()).isTrue(); // GH-90000
-            assertThat(rs.getString("display_name [GH-90000]")).isEqualTo("Alice Smith [GH-90000]");
-            assertThat(rs.getString("email [GH-90000]")).isEqualTo("alice@example.com [GH-90000]");
+            assertThat(rs.getString("display_name")).isEqualTo("Alice Smith");
+            assertThat(rs.getString("email")).isEqualTo("alice@example.com");
         }
     }
 
     @Test
-    @DisplayName("profile with all optional fields is persisted correctly [GH-90000]")
+    @DisplayName("profile with all optional fields is persisted correctly")
     void profileWithAllFieldsPersisted() throws Exception { // GH-90000
         String userId = uid(); // GH-90000
         try (Connection conn = dataSource.getConnection(); // GH-90000
              PreparedStatement ps = conn.prepareStatement("""
                 INSERT INTO user_profiles
-                    (user_id, display_name, email, phone, avatar_url, bio, locale, timezone, tenant_id, created_at, updated_at) // GH-90000
+                    (user_id, display_name, email, phone, avatar_url, bio, locale, timezone, tenant_id, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""")) { // GH-90000
             ps.setString(1, userId); // GH-90000
             ps.setString(2, "Bob Jones"); // GH-90000
@@ -113,16 +113,16 @@ class PostgreSQLIntegrationTest {
             ps.setString(1, userId); // GH-90000
             ResultSet rs = ps.executeQuery(); // GH-90000
             assertThat(rs.next()).isTrue(); // GH-90000
-            assertThat(rs.getString("phone [GH-90000]")).isEqualTo("+1-555-0100 [GH-90000]");
-            assertThat(rs.getString("locale [GH-90000]")).isEqualTo("en-US [GH-90000]");
-            assertThat(rs.getString("timezone [GH-90000]")).isEqualTo("America/New_York [GH-90000]");
+            assertThat(rs.getString("phone")).isEqualTo("+1-555-0100");
+            assertThat(rs.getString("locale")).isEqualTo("en-US");
+            assertThat(rs.getString("timezone")).isEqualTo("America/New_York");
         }
     }
 
     // ── Profile query ─────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("profiles are queryable by tenant_id [GH-90000]")
+    @DisplayName("profiles are queryable by tenant_id")
     void queryByTenantId() throws Exception { // GH-90000
         String tenant = "tenant_" + uid(); // GH-90000
         insertProfile(uid(), "User A", "a@example.com", tenant); // GH-90000
@@ -140,7 +140,7 @@ class PostgreSQLIntegrationTest {
     }
 
     @Test
-    @DisplayName("profile is queryable by email [GH-90000]")
+    @DisplayName("profile is queryable by email")
     void queryByEmail() throws Exception { // GH-90000
         String email = "unique_" + uid() + "@example.com"; // GH-90000
         insertProfile(uid(), "Email User", email, "tenant-1"); // GH-90000
@@ -155,7 +155,7 @@ class PostgreSQLIntegrationTest {
     }
 
     @Test
-    @DisplayName("profile search by partial display_name returns matches [GH-90000]")
+    @DisplayName("profile search by partial display_name returns matches")
     void searchByDisplayName() throws Exception { // GH-90000
         insertProfile(uid(), "Alice Wonder", "alice_wonder@example.com", "tenant-1"); // GH-90000
         insertProfile(uid(), "Bob Marley", "bob_marley@example.com", "tenant-1"); // GH-90000
@@ -173,7 +173,7 @@ class PostgreSQLIntegrationTest {
     // ── Profile update ────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("profile update reflects new display_name [GH-90000]")
+    @DisplayName("profile update reflects new display_name")
     void profileUpdateDisplayName() throws Exception { // GH-90000
         String userId = uid(); // GH-90000
         insertProfile(userId, "Original Name", "u@example.com", "tenant-1"); // GH-90000
@@ -193,12 +193,12 @@ class PostgreSQLIntegrationTest {
             ps.setString(1, userId); // GH-90000
             ResultSet rs = ps.executeQuery(); // GH-90000
             rs.next(); // GH-90000
-            assertThat(rs.getString("display_name [GH-90000]")).isEqualTo("Updated Name [GH-90000]");
+            assertThat(rs.getString("display_name")).isEqualTo("Updated Name");
         }
     }
 
     @Test
-    @DisplayName("updating non-existent user_id affects zero rows [GH-90000]")
+    @DisplayName("updating non-existent user_id affects zero rows")
     void updateNonExistentProfile() throws Exception { // GH-90000
         try (Connection conn = dataSource.getConnection(); // GH-90000
              PreparedStatement ps = conn.prepareStatement( // GH-90000
@@ -211,7 +211,7 @@ class PostgreSQLIntegrationTest {
     // ── Profile deletion ──────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("profile deletion removes the row [GH-90000]")
+    @DisplayName("profile deletion removes the row")
     void profileDelete() throws Exception { // GH-90000
         String userId = uid(); // GH-90000
         insertProfile(userId, "Delete Me", "delete@example.com", "tenant-1"); // GH-90000
@@ -234,7 +234,7 @@ class PostgreSQLIntegrationTest {
     }
 
     @Test
-    @DisplayName("duplicate email violates unique constraint [GH-90000]")
+    @DisplayName("duplicate email violates unique constraint")
     void duplicateEmailViolatesConstraint() throws Exception { // GH-90000
         String email = "dup_" + uid() + "@example.com"; // GH-90000
         insertProfile(uid(), "First", email, "tenant-1"); // GH-90000
@@ -245,7 +245,7 @@ class PostgreSQLIntegrationTest {
     // ── Transaction behavior ──────────────────────────────────────────────────
 
     @Test
-    @DisplayName("committed transaction is visible to subsequent reads [GH-90000]")
+    @DisplayName("committed transaction is visible to subsequent reads")
     void committedTransactionVisible() throws Exception { // GH-90000
         String userId = "txn_" + uid(); // GH-90000
         try (Connection conn = dataSource.getConnection()) { // GH-90000
@@ -269,7 +269,7 @@ class PostgreSQLIntegrationTest {
     }
 
     @Test
-    @DisplayName("rolled-back transaction is not visible to subsequent reads [GH-90000]")
+    @DisplayName("rolled-back transaction is not visible to subsequent reads")
     void rolledBackTransactionNotVisible() throws Exception { // GH-90000
         String userId = "rollback_" + uid(); // GH-90000
         try (Connection conn = dataSource.getConnection()) { // GH-90000
@@ -295,7 +295,7 @@ class PostgreSQLIntegrationTest {
 
     @ParameterizedTest(name = "concurrent={0}") // GH-90000
     @ValueSource(ints = {2, 5, 8}) // GH-90000
-    @DisplayName("concurrent connections to user_profiles do not deadlock [GH-90000]")
+    @DisplayName("concurrent connections to user_profiles do not deadlock")
     void concurrentConnectionsNoDeadlock(int threads) throws Exception { // GH-90000
         CountDownLatch latch = new CountDownLatch(1); // GH-90000
         AtomicInteger successes = new AtomicInteger(0); // GH-90000
@@ -305,7 +305,7 @@ class PostgreSQLIntegrationTest {
                 try {
                     latch.await(); // GH-90000
                     try (Connection conn = dataSource.getConnection(); // GH-90000
-                         ResultSet rs = conn.createStatement().executeQuery("SELECT 1 [GH-90000]")) {
+                         ResultSet rs = conn.createStatement().executeQuery("SELECT 1")) {
                         if (rs.next()) successes.incrementAndGet(); // GH-90000
                     }
                 } catch (Exception ignored) {} // GH-90000
@@ -323,7 +323,7 @@ class PostgreSQLIntegrationTest {
         try (Connection conn = dataSource.getConnection(); // GH-90000
              Statement stmt = conn.createStatement()) { // GH-90000
             stmt.execute("""
-                    CREATE TABLE IF NOT EXISTS user_profiles ( // GH-90000
+                    CREATE TABLE IF NOT EXISTS user_profiles (
                         user_id      TEXT PRIMARY KEY,
                         display_name TEXT NOT NULL,
                         email        TEXT NOT NULL UNIQUE,
@@ -333,8 +333,8 @@ class PostgreSQLIntegrationTest {
                         locale       TEXT,
                         timezone     TEXT,
                         tenant_id    TEXT NOT NULL,
-                        created_at   BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM now()) * 1000)::BIGINT, // GH-90000
-                        updated_at   BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM now()) * 1000)::BIGINT // GH-90000
+                        created_at   BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM now()) * 1000)::BIGINT,
+                        updated_at   BIGINT NOT NULL DEFAULT (EXTRACT(EPOCH FROM now()) * 1000)::BIGINT
                     )""");
         }
     }

@@ -18,24 +18,24 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern UnitTest
  */
-@DisplayName("Performance Baseline Tests [GH-90000]")
+@DisplayName("Performance Baseline Tests")
 public class PerformanceBaselineTests {
 
     private byte[] transientAllocation;
 
     @Nested
-    @DisplayName("HTTPLatencySLATests [GH-90000]")
+    @DisplayName("HTTPLatencySLATests")
     class HTTPLatencySLATests {
 
         @Test
-        @DisplayName("GET collection: response time < 50ms (p50) [GH-90000]")
+        @DisplayName("GET collection: response time < 50ms (p50)")
         void shouldMeetGetCollectionP50SLA() { // GH-90000
             long duration = measureGetCollectionLatency(); // GH-90000
             assertThat(duration).isLessThan(50); // GH-90000
         }
 
         @Test
-        @DisplayName("GET collection: response time < 200ms (p99) [GH-90000]")
+        @DisplayName("GET collection: response time < 200ms (p99)")
         void shouldMeetGetCollectionP99SLA() { // GH-90000
             long maxDuration = 0;
             for (int i = 0; i < 100; i++) { // GH-90000
@@ -45,35 +45,35 @@ public class PerformanceBaselineTests {
         }
 
         @Test
-        @DisplayName("POST collection: response time < 100ms (p50) [GH-90000]")
+        @DisplayName("POST collection: response time < 100ms (p50)")
         void shouldMeetPostCollectionP50SLA() { // GH-90000
             long duration = measurePostCollectionLatency(); // GH-90000
             assertThat(duration).isLessThan(100); // GH-90000
         }
 
         @Test
-        @DisplayName("POST dataset upload: response time < 500ms (p50) [GH-90000]")
+        @DisplayName("POST dataset upload: response time < 500ms (p50)")
         void shouldMeetUploadP50SLA() { // GH-90000
             long duration = measureUploadLatency(10_000_000); // 10MB // GH-90000
             assertThat(duration).isLessThan(500); // GH-90000
         }
 
         @Test
-        @DisplayName("DELETE resource: response time < 50ms (p50) [GH-90000]")
+        @DisplayName("DELETE resource: response time < 50ms (p50)")
         void shouldMeetDeleteP50SLA() { // GH-90000
             long duration = measureDeleteLatency(); // GH-90000
             assertThat(duration).isLessThan(50); // GH-90000
         }
 
         @Test
-        @DisplayName("Query execution: P50 latency under 1s [GH-90000]")
+        @DisplayName("Query execution: P50 latency under 1s")
         void shouldMeetQueryP50SLA() { // GH-90000
             long duration = measureQueryLatency(100_000); // 100K rows // GH-90000
             assertThat(duration).isLessThan(1000); // GH-90000
         }
 
         @Test
-        @DisplayName("Query execution: P99 latency under 5s [GH-90000]")
+        @DisplayName("Query execution: P99 latency under 5s")
         void shouldMeetQueryP99SLA() { // GH-90000
             long maxDuration = 0;
             for (int i = 0; i < 20; i++) { // GH-90000
@@ -83,7 +83,7 @@ public class PerformanceBaselineTests {
         }
 
         @Test
-        @DisplayName("Bulk operation: create 1000 collections < 5s [GH-90000]")
+        @DisplayName("Bulk operation: create 1000 collections < 5s")
         void shouldMeetBulkCreateSLA() { // GH-90000
             long start = System.currentTimeMillis(); // GH-90000
             for (int i = 0; i < 1000; i++) { // GH-90000
@@ -95,39 +95,39 @@ public class PerformanceBaselineTests {
     }
 
     @Nested
-    @DisplayName("ThroughputTests [GH-90000]")
+    @DisplayName("ThroughputTests")
     class ThroughputTests {
 
         @Test
-        @DisplayName("throughput: 1000 requests per second (RPS) [GH-90000]")
+        @DisplayName("throughput: 1000 requests per second (RPS)")
         void shouldHandle1000RPS() { // GH-90000
             int requestsPerSecond = simulateLoadForDuration(1000, 1); // 1000 RPS for 1 second // GH-90000
             assertThat(requestsPerSecond).isGreaterThanOrEqualTo(900); // GH-90000
         }
 
         @Test
-        @DisplayName("throughput: 500 concurrent queries [GH-90000]")
+        @DisplayName("throughput: 500 concurrent queries")
         void shouldHandle500ConcurrentQueries() { // GH-90000
             int successful = simulateConcurrentLoad(500); // GH-90000
             assertThat(successful).isGreaterThanOrEqualTo(495); // 99% success rate // GH-90000
         }
 
         @Test
-        @DisplayName("throughput: 10Gbps data transfer for bulk upload [GH-90000]")
+        @DisplayName("throughput: 10Gbps data transfer for bulk upload")
         void shouldHandle10GbpsTransfer() { // GH-90000
             long bytesTransferred = simulateBulkUpload(10 * 1024 * 1024 * 1024L); // 10GB // GH-90000
             assertThat(bytesTransferred).isGreaterThan(0); // GH-90000
         }
 
         @Test
-        @DisplayName("throughput: 100K events per second ingest [GH-90000]")
+        @DisplayName("throughput: 100K events per second ingest")
         void shouldIngest100KEventsPerSecond() { // GH-90000
             int eventsIngested = simulateEventIngest(100_000); // GH-90000
             assertThat(eventsIngested).isGreaterThanOrEqualTo(99_000); // GH-90000
         }
 
         @Test
-        @DisplayName("throughput: export 1M rows in 30 seconds [GH-90000]")
+        @DisplayName("throughput: export 1M rows in 30 seconds")
         void shouldExport1MRowsIn30Seconds() { // GH-90000
             long start = System.currentTimeMillis(); // GH-90000
             int rows = simulateExport(1_000_000); // GH-90000
@@ -139,46 +139,46 @@ public class PerformanceBaselineTests {
     }
 
     @Nested
-    @DisplayName("QueryPerformanceTests [GH-90000]")
+    @DisplayName("QueryPerformanceTests")
     class QueryPerformanceTests {
 
         @Test
-        @DisplayName("simple query: COUNT(*) on 10M rows < 500ms [GH-90000]")
+        @DisplayName("simple query: COUNT(*) on 10M rows < 500ms")
         void shouldCountFast() { // GH-90000
             long duration = measureQueryLatency(10_000_000); // GH-90000
             assertThat(duration).isLessThan(500); // GH-90000
         }
 
         @Test
-        @DisplayName("aggregation query: GROUP BY on 1M rows < 2s [GH-90000]")
+        @DisplayName("aggregation query: GROUP BY on 1M rows < 2s")
         void shouldAggregateInTime() { // GH-90000
             long duration = measureAggregationLatency(1_000_000); // GH-90000
             assertThat(duration).isLessThan(2000); // GH-90000
         }
 
         @Test
-        @DisplayName("join query: 2 tables (100K rows each) < 3s [GH-90000]")
+        @DisplayName("join query: 2 tables (100K rows each) < 3s")
         void shouldJoinInTime() { // GH-90000
             long duration = measureJoinLatency(100_000, 100_000); // GH-90000
             assertThat(duration).isLessThan(3000); // GH-90000
         }
 
         @Test
-        @DisplayName("full-text search: index lookup < 50ms [GH-90000]")
+        @DisplayName("full-text search: index lookup < 50ms")
         void shouldSearchIndexFast() { // GH-90000
             long duration = measureFullTextSearchLatency(); // GH-90000
             assertThat(duration).isLessThan(50); // GH-90000
         }
 
         @Test
-        @DisplayName("query plan analysis: < 10ms [GH-90000]")
+        @DisplayName("query plan analysis: < 10ms")
         void shouldAnalyzePlanQuickly() { // GH-90000
             long duration = measureQueryPlanAnalysis(); // GH-90000
             assertThat(duration).isLessThan(10); // GH-90000
         }
 
         @Test
-        @DisplayName("prepared statement reuse: 2x faster than fresh parse [GH-90000]")
+        @DisplayName("prepared statement reuse: 2x faster than fresh parse")
         void shouldBenefitFromPreparedStatements() { // GH-90000
             long freshParse = measureFreshQueryTime(); // GH-90000
             long prepared = measurePreparedQueryTime(); // GH-90000
@@ -188,18 +188,18 @@ public class PerformanceBaselineTests {
     }
 
     @Nested
-    @DisplayName("MemoryAndResourceTests [GH-90000]")
+    @DisplayName("MemoryAndResourceTests")
     class MemoryAndResourceTests {
 
         @Test
-        @DisplayName("memory baseline: 500MB heap sufficient for typical operations [GH-90000]")
+        @DisplayName("memory baseline: 500MB heap sufficient for typical operations")
         void shouldNotExceedMemoryBaseline() { // GH-90000
             long memoryUsed = simulateTypicalLoad(); // GH-90000
             assertThat(memoryUsed).isLessThan(500 * 1024 * 1024); // 500MB // GH-90000
         }
 
         @Test
-        @DisplayName("memory leak detection: stable memory after GC [GH-90000]")
+        @DisplayName("memory leak detection: stable memory after GC")
         void shouldNotHaveMemoryLeak() { // GH-90000
             long before = getHeapUsed(); // GH-90000
             simulateWorkloadAndGC(); // GH-90000
@@ -211,28 +211,28 @@ public class PerformanceBaselineTests {
         }
 
         @Test
-        @DisplayName("connection pool: maintains < 100 idle connections [GH-90000]")
+        @DisplayName("connection pool: maintains < 100 idle connections")
         void shouldManageConnectionPool() { // GH-90000
             int idleConnections = getIdleConnections(); // GH-90000
             assertThat(idleConnections).isLessThan(100); // GH-90000
         }
 
         @Test
-        @DisplayName("thread pool: < 50 threads for standard load [GH-90000]")
+        @DisplayName("thread pool: < 50 threads for standard load")
         void shouldManageThreadPool() { // GH-90000
             int activeThreads = getActiveThreadCount(); // GH-90000
             assertThat(activeThreads).isLessThan(50); // GH-90000
         }
 
         @Test
-        @DisplayName("disk I/O: 1000 IOPS sustained [GH-90000]")
+        @DisplayName("disk I/O: 1000 IOPS sustained")
         void shouldSustainDiskIOPS() { // GH-90000
             int iops = measureDiskIOPS(); // GH-90000
             assertThat(iops).isGreaterThanOrEqualTo(1000); // GH-90000
         }
 
         @Test
-        @DisplayName("cache hit ratio: > 80% for repeated queries [GH-90000]")
+        @DisplayName("cache hit ratio: > 80% for repeated queries")
         void shouldMaintainHighCacheHitRatio() { // GH-90000
             double hitRatio = measureCacheHitRatio(); // GH-90000
             assertThat(hitRatio).isGreaterThan(0.80); // GH-90000
@@ -240,11 +240,11 @@ public class PerformanceBaselineTests {
     }
 
     @Nested
-    @DisplayName("ScalabilityTests [GH-90000]")
+    @DisplayName("ScalabilityTests")
     class ScalabilityTests {
 
         @Test
-        @DisplayName("linear scaling: 2x load = 2x resources [GH-90000]")
+        @DisplayName("linear scaling: 2x load = 2x resources")
         void shouldScaleLinearly() { // GH-90000
             long resource1 = measureResourceUsageForLoad(1000); // GH-90000
             long resource2 = measureResourceUsageForLoad(2000); // GH-90000
@@ -253,7 +253,7 @@ public class PerformanceBaselineTests {
         }
 
         @Test
-        @DisplayName("dataset growth: query time grows logarithmically [GH-90000]")
+        @DisplayName("dataset growth: query time grows logarithmically")
         void shouldScaleLogarithmically() { // GH-90000
             long time100K = measureQueryLatency(100_000); // GH-90000
             long time10M = measureQueryLatency(10_000_000); // GH-90000
@@ -263,19 +263,19 @@ public class PerformanceBaselineTests {
         }
 
         @Test
-        @DisplayName("concurrent users: 1000 concurrent users handled [GH-90000]")
+        @DisplayName("concurrent users: 1000 concurrent users handled")
         void shouldHandle1000ConcurrentUsers() { // GH-90000
             Map<String, Object> result = simulateConcurrentUsers(1000); // GH-90000
-            int successful = ((Number) result.get("successful [GH-90000]")).intValue();
+            int successful = ((Number) result.get("successful")).intValue();
 
             assertThat(successful).isGreaterThanOrEqualTo(990); // 99% success rate // GH-90000
         }
 
         @Test
-        @DisplayName("multi-tenant isolation: no cross-tenant performance impact [GH-90000]")
+        @DisplayName("multi-tenant isolation: no cross-tenant performance impact")
         void shouldMaintainTenantIsolation() { // GH-90000
             // Single tenant baseline
-            long singleTenantTime = measureQueryLatencyForTenant("tenant-1 [GH-90000]");
+            long singleTenantTime = measureQueryLatencyForTenant("tenant-1");
 
             // 100 tenants
             long multiTenantTime = measureQueryLatencyAcrossTenants(100); // GH-90000
@@ -286,36 +286,36 @@ public class PerformanceBaselineTests {
     }
 
     @Nested
-    @DisplayName("ReliabilityAndStabilityTests [GH-90000]")
+    @DisplayName("ReliabilityAndStabilityTests")
     class ReliabilityAndStabilityTests {
 
         @Test
-        @DisplayName("error rate: < 0.1% in sustained load [GH-90000]")
+        @DisplayName("error rate: < 0.1% in sustained load")
         void shouldMaintainLowErrorRate() { // GH-90000
             Map<String, Integer> stats = simulateSustainedLoad(10_000); // GH-90000
-            int errors = stats.get("errors [GH-90000]");
-            int total = stats.get("total [GH-90000]");
+            int errors = stats.get("errors");
+            int total = stats.get("total");
 
             double errorRate = (double) errors / total; // GH-90000
             assertThat(errorRate).isLessThan(0.001); // GH-90000
         }
 
         @Test
-        @DisplayName("availability: 99.95% uptime SLA [GH-90000]")
+        @DisplayName("availability: 99.95% uptime SLA")
         void shouldMaintainAvailabilitySLA() { // GH-90000
             double availability = simulateAvailability(3600); // 1 hour // GH-90000
             assertThat(availability).isGreaterThan(0.9995); // GH-90000
         }
 
         @Test
-        @DisplayName("recovery time: < 30s after failure [GH-90000]")
+        @DisplayName("recovery time: < 30s after failure")
         void shouldRecoverQuickly() { // GH-90000
             long recoveryTime = simulateFailureAndRecovery(); // GH-90000
             assertThat(recoveryTime).isLessThan(30_000); // GH-90000
         }
 
         @Test
-        @DisplayName("consistency: no data loss in 100K operations [GH-90000]")
+        @DisplayName("consistency: no data loss in 100K operations")
         void shouldMaintainDataConsistency() { // GH-90000
             int written = 100_000;
             int read = verifyDataConsistency(written); // GH-90000
@@ -336,7 +336,7 @@ public class PerformanceBaselineTests {
 
     private long measurePostCollectionLatency() { // GH-90000
         long start = System.nanoTime(); // GH-90000
-        createCollectionSync("Test Collection [GH-90000]");
+        createCollectionSync("Test Collection");
         return (System.nanoTime() - start) / 1_000_000; // GH-90000
     }
 
@@ -405,13 +405,13 @@ public class PerformanceBaselineTests {
 
     private long measureFullTextSearchLatency() { // GH-90000
         long start = System.nanoTime(); // GH-90000
-        fullTextSearch("keyword [GH-90000]");
+        fullTextSearch("keyword");
         return (System.nanoTime() - start) / 1_000_000; // GH-90000
     }
 
     private long measureQueryPlanAnalysis() { // GH-90000
         long start = System.nanoTime(); // GH-90000
-        analyzeQueryPlan("SELECT * FROM data [GH-90000]");
+        analyzeQueryPlan("SELECT * FROM data");
         return (System.nanoTime() - start) / 1_000_000; // GH-90000
     }
 

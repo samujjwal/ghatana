@@ -39,7 +39,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern LoadTest
  */
-@DisplayName("Event Ingestion – Load Tests [GH-90000]")
+@DisplayName("Event Ingestion – Load Tests")
 class EventIngestionLoadTest extends EventloopTestBase {
 
     private AepEngine engine;
@@ -60,11 +60,11 @@ class EventIngestionLoadTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Baseline Performance [GH-90000]")
+    @DisplayName("Baseline Performance")
     class BaselineTests {
 
         @Test
-        @DisplayName("single-threaded ingestion baseline [GH-90000]")
+        @DisplayName("single-threaded ingestion baseline")
         void singleThreadedIngestionBaseline() { // GH-90000
             String tenantId = "tenant-baseline";
             
@@ -108,11 +108,11 @@ class EventIngestionLoadTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Concurrent Ingestion [GH-90000]")
+    @DisplayName("Concurrent Ingestion")
     class ConcurrentTests {
 
         @Test
-        @DisplayName("concurrent ingestion maintains throughput [GH-90000]")
+        @DisplayName("concurrent ingestion maintains throughput")
         void concurrentIngestionMaintainsThroughput() { // GH-90000
             String tenantId = "tenant-concurrent-load";
             
@@ -184,7 +184,7 @@ class EventIngestionLoadTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("concurrent ingestion with different event types [GH-90000]")
+        @DisplayName("concurrent ingestion with different event types")
         void concurrentIngestionWithDifferentEventTypes() { // GH-90000
             String tenantId = "tenant-mixed-types";
             
@@ -248,11 +248,11 @@ class EventIngestionLoadTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Sustained Load [GH-90000]")
+    @DisplayName("Sustained Load")
     class SustainedLoadTests {
 
         @Test
-        @DisplayName("sustained load over time [GH-90000]")
+        @DisplayName("sustained load over time")
         void sustainedLoadOverTime() { // GH-90000
             String tenantId = "tenant-sustained";
             
@@ -338,11 +338,11 @@ class EventIngestionLoadTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Memory Under Load [GH-90000]")
+    @DisplayName("Memory Under Load")
     class MemoryTests {
 
         @Test
-        @DisplayName("memory usage remains stable under load [GH-90000]")
+        @DisplayName("memory usage remains stable under load")
         void memoryUsageRemainsStableUnderLoad() { // GH-90000
             String tenantId = "tenant-memory";
             
@@ -390,11 +390,11 @@ class EventIngestionLoadTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Latency Percentiles [GH-90000]")
+    @DisplayName("Latency Percentiles")
     class LatencyTests {
 
         @Test
-        @DisplayName("measures latency percentiles under load [GH-90000]")
+        @DisplayName("measures latency percentiles under load")
         void measuresLatencyPercentilesUnderLoad() { // GH-90000
             String tenantId = "tenant-latency";
             

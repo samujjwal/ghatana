@@ -17,7 +17,7 @@ import static org.assertj.core.data.Offset.offset;
 /**
  * Unit tests for {@link AepCapacityPlanningService} (AEP-011.4). // GH-90000
  */
-@DisplayName("AepCapacityPlanningService — AEP-011.4 [GH-90000]")
+@DisplayName("AepCapacityPlanningService — AEP-011.4")
 class AepCapacityPlanningServiceTest {
 
     private AepCapacityPlanningService service;
@@ -31,7 +31,7 @@ class AepCapacityPlanningServiceTest {
     }
 
     @Test
-    @DisplayName("Safe resource plan is returned when usage is low [GH-90000]")
+    @DisplayName("Safe resource plan is returned when usage is low")
     void safePlan() { // GH-90000
         // Usage at 20/100 = 20%
         List<Double> history = List.of(18.0, 19.0, 20.0); // GH-90000
@@ -39,11 +39,11 @@ class AepCapacityPlanningServiceTest {
 
         assertThat(plan.usageRatio()).isCloseTo(0.20, offset(0.01)); // GH-90000
         assertThat(plan.isSafe()).isTrue(); // GH-90000
-        assertThat(plan.recommendation()).containsIgnoringCase("OK [GH-90000]");
+        assertThat(plan.recommendation()).containsIgnoringCase("OK");
     }
 
     @Test
-    @DisplayName("Imminent exhaustion is flagged with WARNING [GH-90000]")
+    @DisplayName("Imminent exhaustion is flagged with WARNING")
     void imminentExhaustionWarning() { // GH-90000
         // Rapid growth: 60, 65, 70, 75, 80 — hitting safe capacity (85) in ~1 step // GH-90000
         List<Double> history = List.of(60.0, 65.0, 70.0, 75.0, 80.0); // GH-90000
@@ -51,23 +51,23 @@ class AepCapacityPlanningServiceTest {
 
         assertThat(plan.stepsToExhaustion()).isGreaterThanOrEqualTo(1); // GH-90000
         assertThat(plan.recommendation()) // GH-90000
-                .matches(r -> r.toLowerCase().contains("warning [GH-90000]") || r.toLowerCase().contains("critical [GH-90000]"),
+                .matches(r -> r.toLowerCase().contains("warning") || r.toLowerCase().contains("critical"),
                         "recommendation should contain WARNING or CRITICAL");
     }
 
     @Test
-    @DisplayName("CRITICAL recommendation when current usage >= 90% [GH-90000]")
+    @DisplayName("CRITICAL recommendation when current usage >= 90%")
     void criticalWhenUsageVeryHigh() { // GH-90000
         List<Double> history = List.of(88.0, 90.0, 91.0); // GH-90000
         AepCapacityPlanningService.CapacityPlan plan = service.analyze("t", "heap_mb", history, 100.0); // GH-90000
 
         assertThat(plan.usageRatio()).isGreaterThanOrEqualTo(0.90); // GH-90000
-        assertThat(plan.recommendation()).containsIgnoringCase("CRITICAL [GH-90000]");
+        assertThat(plan.recommendation()).containsIgnoringCase("CRITICAL");
         assertThat(plan.isSafe()).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("Forecast values are populated for forecastHorizonSteps [GH-90000]")
+    @DisplayName("Forecast values are populated for forecastHorizonSteps")
     void forecastValueCount() { // GH-90000
         List<Double> history = List.of(10.0, 11.0, 12.0); // GH-90000
         AepCapacityPlanningService.CapacityPlan plan = service.analyze("t", "metric", history, 1000.0); // GH-90000
@@ -76,7 +76,7 @@ class AepCapacityPlanningServiceTest {
     }
 
     @Test
-    @DisplayName("stepsToExhaustion is -1 when usage is far below capacity [GH-90000]")
+    @DisplayName("stepsToExhaustion is -1 when usage is far below capacity")
     void stepsToExhaustionNegativeWhenFarFromCapacity() { // GH-90000
         List<Double> history = List.of(10.0, 10.5, 11.0); // GH-90000
         AepCapacityPlanningService.CapacityPlan plan = service.analyze("t", "m", history, 10_000.0); // GH-90000
@@ -85,21 +85,21 @@ class AepCapacityPlanningServiceTest {
     }
 
     @Test
-    @DisplayName("analyze rejects non-positive capacity [GH-90000]")
+    @DisplayName("analyze rejects non-positive capacity")
     void rejectsNonPositiveCapacity() { // GH-90000
         assertThatThrownBy(() -> service.analyze("t", "m", List.of(10.0, 12.0), 0.0)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("analyze rejects fewer than 2 history points [GH-90000]")
+    @DisplayName("analyze rejects fewer than 2 history points")
     void rejectsTooFewHistoryPoints() { // GH-90000
         assertThatThrownBy(() -> service.analyze("t", "m", List.of(10.0), 100.0)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("Builder rejects safety margin >= 1 [GH-90000]")
+    @DisplayName("Builder rejects safety margin >= 1")
     void builderRejectsMarginGe1() { // GH-90000
         assertThatThrownBy(() -> AepCapacityPlanningService.builder().safetyMargin(1.0)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class); // GH-90000

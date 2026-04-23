@@ -27,8 +27,8 @@ public final class SecurityMockFactory {
      */
     public static SecurityContext adminContext() { // GH-90000
         return SecurityTestFixture.securityContext() // GH-90000
-            .userId("admin-1 [GH-90000]")
-            .roles("ADMIN [GH-90000]")
+            .userId("admin-1")
+            .roles("ADMIN")
             .permissions("read", "write", "delete", "admin") // GH-90000
             .build(); // GH-90000
     }
@@ -38,9 +38,9 @@ public final class SecurityMockFactory {
      */
     public static SecurityContext userContext() { // GH-90000
         return SecurityTestFixture.securityContext() // GH-90000
-            .userId("user-1 [GH-90000]")
-            .roles("USER [GH-90000]")
-            .permissions("read [GH-90000]")
+            .userId("user-1")
+            .roles("USER")
+            .permissions("read")
             .build(); // GH-90000
     }
 

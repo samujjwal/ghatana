@@ -10,11 +10,11 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("KGConflictResolver Tests [GH-90000]")
+@DisplayName("KGConflictResolver Tests")
 class KGConflictResolverTest extends EventloopTestBase {
 
   @Test
-  @DisplayName("resolve returns empty list for null and empty inputs [GH-90000]")
+  @DisplayName("resolve returns empty list for null and empty inputs")
   void resolveReturnsEmptyListForNullAndEmptyInputs() { // GH-90000
     KGConflictResolver resolver = new KGConflictResolver(); // GH-90000
 
@@ -23,7 +23,7 @@ class KGConflictResolverTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("resolve deduplicates by type and normalized name while merging detail [GH-90000]")
+  @DisplayName("resolve deduplicates by type and normalized name while merging detail")
   void resolveDeduplicatesByTypeAndNormalizedNameWhileMergingDetail() { // GH-90000
     KGConflictResolver resolver = new KGConflictResolver(); // GH-90000
 
@@ -45,17 +45,17 @@ class KGConflictResolverTest extends EventloopTestBase {
                     "tenant-a"));
 
     assertThat(entities).singleElement().satisfies(entity -> { // GH-90000
-      assertThat(entity.description()).isEqualTo("Longer description for the billing service [GH-90000]");
+      assertThat(entity.description()).isEqualTo("Longer description for the billing service");
       assertThat(entity.relations()) // GH-90000
           .containsExactlyInAnyOrder( // GH-90000
               new ExtractedRelation("Invoice Requirement", "IMPLEMENTS"), // GH-90000
               new ExtractedRelation("Payment Gateway", "USES")); // GH-90000
-      assertThat(entity.tenantId()).isEqualTo("tenant-a [GH-90000]");
+      assertThat(entity.tenantId()).isEqualTo("tenant-a");
     });
   }
 
   @Test
-  @DisplayName("resolve keeps the existing description when the incoming one is shorter [GH-90000]")
+  @DisplayName("resolve keeps the existing description when the incoming one is shorter")
   void resolveKeepsExistingDescriptionWhenIncomingOneIsShorter() { // GH-90000
     KGConflictResolver resolver = new KGConflictResolver(); // GH-90000
 
@@ -76,19 +76,19 @@ class KGConflictResolverTest extends EventloopTestBase {
                             List.of())), // GH-90000
                     "tenant-a"));
 
-    assertThat(entities).singleElement().satisfies(entity -> assertThat(entity.description()).isEqualTo("Long description [GH-90000]"));
+    assertThat(entities).singleElement().satisfies(entity -> assertThat(entity.description()).isEqualTo("Long description"));
   }
 
   @Test
-  @DisplayName("resolved entity normalizes null values [GH-90000]")
+  @DisplayName("resolved entity normalizes null values")
   void resolvedEntityNormalizesNullValues() { // GH-90000
     KGConflictResolver.ResolvedEntity entity =
         new KGConflictResolver.ResolvedEntity(null, null, null, null, null); // GH-90000
 
-    assertThat(entity.name()).isEqualTo("Unnamed entity [GH-90000]");
+    assertThat(entity.name()).isEqualTo("Unnamed entity");
     assertThat(entity.type()).isEqualTo(EntityType.CONCEPT); // GH-90000
-    assertThat(entity.description()).isEqualTo("Unnamed entity [GH-90000]");
+    assertThat(entity.description()).isEqualTo("Unnamed entity");
     assertThat(entity.relations()).isEmpty(); // GH-90000
-    assertThat(entity.tenantId()).isEqualTo("unknown-tenant [GH-90000]");
+    assertThat(entity.tenantId()).isEqualTo("unknown-tenant");
   }
 }

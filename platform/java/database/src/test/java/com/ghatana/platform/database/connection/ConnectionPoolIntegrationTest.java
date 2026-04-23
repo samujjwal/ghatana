@@ -20,12 +20,12 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Connection Pool Integration Tests [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("Connection Pool Integration Tests")
+@Tag("integration")
 class ConnectionPoolIntegrationTest extends EventloopTestBase {
 
     @Test
-    @DisplayName("should create connection pool with configured size [GH-90000]")
+    @DisplayName("should create connection pool with configured size")
     void shouldCreateConnectionPoolWithConfiguredSize() { // GH-90000
         int poolSize = 10;
         AtomicInteger activeConnections = new AtomicInteger(0); // GH-90000
@@ -39,7 +39,7 @@ class ConnectionPoolIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should acquire connection from pool [GH-90000]")
+    @DisplayName("should acquire connection from pool")
     void shouldAcquireConnectionFromPool() { // GH-90000
         AtomicInteger availableConnections = new AtomicInteger(10); // GH-90000
 
@@ -52,7 +52,7 @@ class ConnectionPoolIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should release connection back to pool [GH-90000]")
+    @DisplayName("should release connection back to pool")
     void shouldReleaseConnectionBackToPool() { // GH-90000
         AtomicInteger availableConnections = new AtomicInteger(9); // GH-90000
 
@@ -63,7 +63,7 @@ class ConnectionPoolIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should handle pool exhaustion gracefully [GH-90000]")
+    @DisplayName("should handle pool exhaustion gracefully")
     void shouldHandlePoolExhaustionGracefully() { // GH-90000
         int poolSize = 5;
         AtomicInteger activeConnections = new AtomicInteger(poolSize); // GH-90000
@@ -78,7 +78,7 @@ class ConnectionPoolIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should wait for available connection with timeout [GH-90000]")
+    @DisplayName("should wait for available connection with timeout")
     void shouldWaitForAvailableConnectionWithTimeout() { // GH-90000
         AtomicBoolean timeoutOccurred = new AtomicBoolean(false); // GH-90000
 
@@ -88,14 +88,14 @@ class ConnectionPoolIntegrationTest extends EventloopTestBase {
             // Timeout after 100ms
             timeoutOccurred.set(true); // GH-90000
         } catch (InterruptedException e) { // GH-90000
-            fail("Should not be interrupted [GH-90000]");
+            fail("Should not be interrupted");
         }
 
         assertThat(timeoutOccurred.get()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("should validate connections before use [GH-90000]")
+    @DisplayName("should validate connections before use")
     void shouldValidateConnectionsBeforeUse() { // GH-90000
         AtomicBoolean connectionValid = new AtomicBoolean(true); // GH-90000
 
@@ -107,7 +107,7 @@ class ConnectionPoolIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should remove invalid connections from pool [GH-90000]")
+    @DisplayName("should remove invalid connections from pool")
     void shouldRemoveInvalidConnectionsFromPool() { // GH-90000
         AtomicInteger poolSize = new AtomicInteger(10); // GH-90000
 
@@ -125,7 +125,7 @@ class ConnectionPoolIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should handle connection leaks with timeout [GH-90000]")
+    @DisplayName("should handle connection leaks with timeout")
     void shouldHandleConnectionLeaksWithTimeout() { // GH-90000
         AtomicInteger leakedConnections = new AtomicInteger(0); // GH-90000
 
@@ -140,7 +140,7 @@ class ConnectionPoolIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should maintain minimum pool size [GH-90000]")
+    @DisplayName("should maintain minimum pool size")
     void shouldMaintainMinimumPoolSize() { // GH-90000
         int minPoolSize = 5;
         AtomicInteger currentSize = new AtomicInteger(minPoolSize); // GH-90000
@@ -157,7 +157,7 @@ class ConnectionPoolIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should expand pool up to maximum size [GH-90000]")
+    @DisplayName("should expand pool up to maximum size")
     void shouldExpandPoolUpToMaximumSize() { // GH-90000
         int maxPoolSize = 20;
         AtomicInteger currentSize = new AtomicInteger(10); // GH-90000
@@ -171,7 +171,7 @@ class ConnectionPoolIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should shrink pool during idle periods [GH-90000]")
+    @DisplayName("should shrink pool during idle periods")
     void shouldShrinkPoolDuringIdlePeriods() { // GH-90000
         int minPoolSize = 5;
         AtomicInteger currentSize = new AtomicInteger(15); // GH-90000
@@ -185,7 +185,7 @@ class ConnectionPoolIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should track connection usage statistics [GH-90000]")
+    @DisplayName("should track connection usage statistics")
     void shouldTrackConnectionUsageStatistics() { // GH-90000
         AtomicInteger totalAcquired = new AtomicInteger(0); // GH-90000
         AtomicInteger totalReleased = new AtomicInteger(0); // GH-90000
@@ -205,7 +205,7 @@ class ConnectionPoolIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should handle concurrent connection requests [GH-90000]")
+    @DisplayName("should handle concurrent connection requests")
     void shouldHandleConcurrentConnectionRequests() { // GH-90000
         AtomicInteger successfulAcquisitions = new AtomicInteger(0); // GH-90000
         int poolSize = 10;
@@ -219,7 +219,7 @@ class ConnectionPoolIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should close all connections on pool shutdown [GH-90000]")
+    @DisplayName("should close all connections on pool shutdown")
     void shouldCloseAllConnectionsOnPoolShutdown() { // GH-90000
         AtomicInteger openConnections = new AtomicInteger(10); // GH-90000
 
@@ -232,20 +232,20 @@ class ConnectionPoolIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should prevent connection use after pool shutdown [GH-90000]")
+    @DisplayName("should prevent connection use after pool shutdown")
     void shouldPreventConnectionUseAfterPoolShutdown() { // GH-90000
         AtomicBoolean poolShutdown = new AtomicBoolean(true); // GH-90000
 
         assertThatThrownBy(() -> { // GH-90000
             if (poolShutdown.get()) { // GH-90000
-                throw new IllegalStateException("Pool is shutdown [GH-90000]");
+                throw new IllegalStateException("Pool is shutdown");
             }
         }).isInstanceOf(IllegalStateException.class) // GH-90000
-          .hasMessageContaining("shutdown [GH-90000]");
+          .hasMessageContaining("shutdown");
     }
 
     @Test
-    @DisplayName("should implement fair connection distribution [GH-90000]")
+    @DisplayName("should implement fair connection distribution")
     void shouldImplementFairConnectionDistribution() { // GH-90000
         List<Integer> acquisitionOrder = new ArrayList<>(); // GH-90000
 
@@ -259,13 +259,13 @@ class ConnectionPoolIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should handle connection creation failures [GH-90000]")
+    @DisplayName("should handle connection creation failures")
     void shouldHandleConnectionCreationFailures() { // GH-90000
         AtomicBoolean failureHandled = new AtomicBoolean(false); // GH-90000
 
         try {
             // Simulate connection creation failure
-            throw new RuntimeException("Connection failed [GH-90000]");
+            throw new RuntimeException("Connection failed");
         } catch (Exception e) { // GH-90000
             // Retry or fallback
             failureHandled.set(true); // GH-90000
@@ -275,7 +275,7 @@ class ConnectionPoolIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should monitor connection health periodically [GH-90000]")
+    @DisplayName("should monitor connection health periodically")
     void shouldMonitorConnectionHealthPeriodically() { // GH-90000
         AtomicInteger healthyConnections = new AtomicInteger(10); // GH-90000
 
@@ -287,7 +287,7 @@ class ConnectionPoolIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should support connection pool metrics [GH-90000]")
+    @DisplayName("should support connection pool metrics")
     void shouldSupportConnectionPoolMetrics() { // GH-90000
         AtomicInteger activeCount = new AtomicInteger(5); // GH-90000
         AtomicInteger idleCount = new AtomicInteger(5); // GH-90000
@@ -302,13 +302,13 @@ class ConnectionPoolIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should handle database failover scenarios [GH-90000]")
+    @DisplayName("should handle database failover scenarios")
     void shouldHandleDatabaseFailoverScenarios() { // GH-90000
         AtomicBoolean failoverSuccessful = new AtomicBoolean(false); // GH-90000
 
         try {
             // Primary database fails
-            throw new RuntimeException("Primary database down [GH-90000]");
+            throw new RuntimeException("Primary database down");
         } catch (Exception e) { // GH-90000
             // Failover to secondary
             failoverSuccessful.set(true); // GH-90000
@@ -318,7 +318,7 @@ class ConnectionPoolIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should implement connection retry with backoff [GH-90000]")
+    @DisplayName("should implement connection retry with backoff")
     void shouldImplementConnectionRetryWithBackoff() { // GH-90000
         AtomicInteger retryCount = new AtomicInteger(0); // GH-90000
         int maxRetries = 3;
@@ -328,7 +328,7 @@ class ConnectionPoolIntegrationTest extends EventloopTestBase {
                 // Attempt connection
                 if (retryCount.get() < 2) { // GH-90000
                     retryCount.incrementAndGet(); // GH-90000
-                    throw new RuntimeException("Connection failed [GH-90000]");
+                    throw new RuntimeException("Connection failed");
                 }
                 break;
             } catch (Exception e) { // GH-90000

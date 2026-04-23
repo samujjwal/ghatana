@@ -31,7 +31,7 @@ import org.junit.jupiter.api.Test;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("YappcAgentRegistryAdapter Tests [GH-90000]")
+@DisplayName("YappcAgentRegistryAdapter Tests")
 class YappcAgentRegistryAdapterTest extends EventloopTestBase {
 
   private YappcAgentRegistryAdapter registry;
@@ -48,22 +48,22 @@ class YappcAgentRegistryAdapterTest extends EventloopTestBase {
   // ===== Registration Tests =====
 
   @Nested
-  @DisplayName("Registration [GH-90000]")
+  @DisplayName("Registration")
   class Registration {
 
     @Test
-    @DisplayName("Should register agent and increment count [GH-90000]")
+    @DisplayName("Should register agent and increment count")
     void shouldRegisterAgent() { // GH-90000
       StubAgent agent = createAgent("arch-intake", "architecture.intake"); // GH-90000
 
       runPromise(() -> registry.register(agent)); // GH-90000
 
       assertThat(registry.getAgentCount()).isEqualTo(1); // GH-90000
-      assertThat(registry.hasAgent("architecture.intake [GH-90000]")).isTrue();
+      assertThat(registry.hasAgent("architecture.intake")).isTrue();
     }
 
     @Test
-    @DisplayName("Should support method chaining on register [GH-90000]")
+    @DisplayName("Should support method chaining on register")
     void shouldSupportChaining() { // GH-90000
       StubAgent agent1 = createAgent("arch-intake", "architecture.intake"); // GH-90000
       StubAgent agent2 = createAgent("impl-scaffold", "implementation.scaffold"); // GH-90000
@@ -75,13 +75,13 @@ class YappcAgentRegistryAdapterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should register multiple agents for the same phase [GH-90000]")
+    @DisplayName("Should register multiple agents for the same phase")
     void shouldRegisterMultipleAgentsForSamePhase() { // GH-90000
       runPromise(() -> registry.register(createAgent("arch-intake", "architecture.intake"))); // GH-90000
       runPromise(() -> registry.register(createAgent("arch-derive", "architecture.derive"))); // GH-90000
       runPromise(() -> registry.register(createAgent("arch-validate", "architecture.validate"))); // GH-90000
 
-      List<YAPPCAgentBase<?, ?>> phaseAgents = registry.getAgentsByPhase("architecture [GH-90000]");
+      List<YAPPCAgentBase<?, ?>> phaseAgents = registry.getAgentsByPhase("architecture");
 
       assertThat(phaseAgents).hasSize(3); // GH-90000
     }
@@ -90,7 +90,7 @@ class YappcAgentRegistryAdapterTest extends EventloopTestBase {
   // ===== Lookup Tests =====
 
   @Nested
-  @DisplayName("Lookup [GH-90000]")
+  @DisplayName("Lookup")
   class Lookup {
 
     @BeforeEach
@@ -101,48 +101,48 @@ class YappcAgentRegistryAdapterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should find agent by step name [GH-90000]")
+    @DisplayName("Should find agent by step name")
     void shouldFindByStepName() { // GH-90000
-      WorkflowStep<?, ?> agent = registry.getAgent("architecture.intake [GH-90000]");
+      WorkflowStep<?, ?> agent = registry.getAgent("architecture.intake");
 
       assertThat(agent).isNotNull(); // GH-90000
-      assertThat(agent.stepName()).isEqualTo("architecture.intake [GH-90000]");
+      assertThat(agent.stepName()).isEqualTo("architecture.intake");
     }
 
     @Test
-    @DisplayName("Should find agent by agent ID [GH-90000]")
+    @DisplayName("Should find agent by agent ID")
     void shouldFindByAgentId() { // GH-90000
-      WorkflowStep<?, ?> agent = registry.getAgentById("arch-intake [GH-90000]");
+      WorkflowStep<?, ?> agent = registry.getAgentById("arch-intake");
 
       assertThat(agent).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should return null for unknown step name [GH-90000]")
+    @DisplayName("Should return null for unknown step name")
     void shouldReturnNullForUnknownStep() { // GH-90000
-      WorkflowStep<?, ?> agent = registry.getAgent("nonexistent.step [GH-90000]");
+      WorkflowStep<?, ?> agent = registry.getAgent("nonexistent.step");
 
       assertThat(agent).isNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should return null for unknown agent ID [GH-90000]")
+    @DisplayName("Should return null for unknown agent ID")
     void shouldReturnNullForUnknownId() { // GH-90000
-      WorkflowStep<?, ?> agent = registry.getAgentById("nonexistent-id [GH-90000]");
+      WorkflowStep<?, ?> agent = registry.getAgentById("nonexistent-id");
 
       assertThat(agent).isNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should return empty list for unknown phase [GH-90000]")
+    @DisplayName("Should return empty list for unknown phase")
     void shouldReturnEmptyForUnknownPhase() { // GH-90000
-      List<YAPPCAgentBase<?, ?>> agents = registry.getAgentsByPhase("unknown [GH-90000]");
+      List<YAPPCAgentBase<?, ?>> agents = registry.getAgentsByPhase("unknown");
 
       assertThat(agents).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should return all registered step names [GH-90000]")
+    @DisplayName("Should return all registered step names")
     void shouldReturnAllStepNames() { // GH-90000
       Set<String> stepNames = registry.getAllStepNames(); // GH-90000
 
@@ -151,7 +151,7 @@ class YappcAgentRegistryAdapterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should return all registered phases [GH-90000]")
+    @DisplayName("Should return all registered phases")
     void shouldReturnAllPhases() { // GH-90000
       Set<String> phases = registry.getAllPhases(); // GH-90000
 
@@ -160,20 +160,20 @@ class YappcAgentRegistryAdapterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should report false for unregistered step [GH-90000]")
+    @DisplayName("Should report false for unregistered step")
     void shouldReturnFalseForUnregisteredStep() { // GH-90000
-      assertThat(registry.hasAgent("ops.deploy [GH-90000]")).isFalse();
+      assertThat(registry.hasAgent("ops.deploy")).isFalse();
     }
   }
 
   // ===== Lifecycle Tests =====
 
   @Nested
-  @DisplayName("Lifecycle Management [GH-90000]")
+  @DisplayName("Lifecycle Management")
   class LifecycleManagement {
 
     @Test
-    @DisplayName("Should initialize all agents and set status to READY [GH-90000]")
+    @DisplayName("Should initialize all agents and set status to READY")
     void shouldInitializeAllAgents() { // GH-90000
       runPromise(() -> registry.register(createAgent("agent-1", "phase1.step1"))); // GH-90000
       runPromise(() -> registry.register(createAgent("agent-2", "phase2.step2"))); // GH-90000
@@ -186,7 +186,7 @@ class YappcAgentRegistryAdapterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should shutdown all agents and set status to STOPPED [GH-90000]")
+    @DisplayName("Should shutdown all agents and set status to STOPPED")
     void shouldShutdownAllAgents() { // GH-90000
       runPromise(() -> registry.register(createAgent("agent-1", "phase1.step1"))); // GH-90000
       runPromise(() -> registry.register(createAgent("agent-2", "phase2.step2"))); // GH-90000
@@ -200,12 +200,12 @@ class YappcAgentRegistryAdapterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should report REGISTERED status before initialization [GH-90000]")
+    @DisplayName("Should report REGISTERED status before initialization")
     void shouldReportRegisteredBeforeInit() { // GH-90000
       runPromise(() -> registry.register(createAgent("agent-1", "phase1.step1"))); // GH-90000
 
         Map<String, AgentLifecycleStatus> health = registry.getHealthStatus(); // GH-90000
-      assertThat(health.get("agent-1 [GH-90000]"))
+      assertThat(health.get("agent-1"))
           .isEqualTo(AgentLifecycleStatus.REGISTERED); // GH-90000
     }
   }
@@ -213,40 +213,40 @@ class YappcAgentRegistryAdapterTest extends EventloopTestBase {
   // ===== Phase Extraction Tests =====
 
   @Nested
-  @DisplayName("Phase Extraction [GH-90000]")
+  @DisplayName("Phase Extraction")
   class PhaseExtraction {
 
     @Test
-    @DisplayName("Should extract phase from dotted step name [GH-90000]")
+    @DisplayName("Should extract phase from dotted step name")
     void shouldExtractPhaseFromDottedName() { // GH-90000
       runPromise(() -> registry.register(createAgent("agent-1", "architecture.intake"))); // GH-90000
 
-      assertThat(registry.getAllPhases()).contains("architecture [GH-90000]");
+      assertThat(registry.getAllPhases()).contains("architecture");
     }
 
     @Test
-    @DisplayName("Should use full step name when no dot separator [GH-90000]")
+    @DisplayName("Should use full step name when no dot separator")
     void shouldUseFullNameWhenNoDot() { // GH-90000
       runPromise(() -> registry.register(createAgent("agent-1", "coordinator"))); // GH-90000
 
-      assertThat(registry.getAllPhases()).contains("coordinator [GH-90000]");
+      assertThat(registry.getAllPhases()).contains("coordinator");
     }
   }
 
   // ===== Empty Registry Edge Cases =====
 
   @Nested
-  @DisplayName("Empty Registry [GH-90000]")
+  @DisplayName("Empty Registry")
   class EmptyRegistry {
 
     @Test
-    @DisplayName("Should report zero count when empty [GH-90000]")
+    @DisplayName("Should report zero count when empty")
     void shouldReportZeroCount() { // GH-90000
       assertThat(registry.getAgentCount()).isEqualTo(0); // GH-90000
     }
 
     @Test
-    @DisplayName("Should initialize empty registry without error [GH-90000]")
+    @DisplayName("Should initialize empty registry without error")
     void shouldInitializeEmptyRegistry() { // GH-90000
       runPromise(registry::initializeAll); // GH-90000
 
@@ -254,7 +254,7 @@ class YappcAgentRegistryAdapterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should return empty sets for queries [GH-90000]")
+    @DisplayName("Should return empty sets for queries")
     void shouldReturnEmptySets() { // GH-90000
       assertThat(registry.getAllStepNames()).isEmpty(); // GH-90000
       assertThat(registry.getAllPhases()).isEmpty(); // GH-90000
@@ -274,7 +274,7 @@ class YappcAgentRegistryAdapterTest extends EventloopTestBase {
         OutputGenerator<StepRequest<StubInput>, StepResult<StubOutput>> generator) {
       super(agentId, stepName, // GH-90000
           new StepContract(stepName, "#/definitions/StubInput", // GH-90000
-              "#/definitions/StubOutput", List.of("stub [GH-90000]"),
+              "#/definitions/StubOutput", List.of("stub"),
               Map.of("description", "Stub agent", "version", "1.0.0")), // GH-90000
           generator,
         defaultEventPublisher()); // GH-90000
@@ -317,8 +317,8 @@ class YappcAgentRegistryAdapterTest extends EventloopTestBase {
     @Override
     public @NotNull GeneratorMetadata getMetadata() { // GH-90000
       return GeneratorMetadata.builder() // GH-90000
-          .name("StubGenerator [GH-90000]").type("rule-based [GH-90000]")
-          .description("Stub [GH-90000]").version("1.0.0 [GH-90000]").build();
+          .name("StubGenerator").type("rule-based")
+          .description("Stub").version("1.0.0").build();
     }
   }
 }

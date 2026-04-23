@@ -23,13 +23,13 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AepSecurityFilter [GH-90000]")
+@DisplayName("AepSecurityFilter")
 class AepSecurityFilterTest extends EventloopTestBase {
 
     private static final String EVENTS_URL = "http://localhost/api/v1/events";
 
     @Test
-    @DisplayName("trusted proxy accepts X-Forwarded-For and records acceptance metric [GH-90000]")
+    @DisplayName("trusted proxy accepts X-Forwarded-For and records acceptance metric")
     void trustedProxyAcceptsForwardedClientIp() throws Exception { // GH-90000
         AsyncServlet nextServlet = mock(AsyncServlet.class); // GH-90000
         MetricsCollector metricsCollector = mock(MetricsCollector.class); // GH-90000
@@ -44,7 +44,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
         );
 
         HttpRequest request = HttpRequest.post(EVENTS_URL) // GH-90000
-            .withHeader(HttpHeaders.of("X-Forwarded-For [GH-90000]"), "203.0.113.7")
+            .withHeader(HttpHeaders.of("X-Forwarded-For"), "203.0.113.7")
             .build(); // GH-90000
 
         HttpResponse response = serve(filter, request); // GH-90000
@@ -56,7 +56,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("untrusted proxy rejects X-Forwarded-For and records rejection reason [GH-90000]")
+    @DisplayName("untrusted proxy rejects X-Forwarded-For and records rejection reason")
     void untrustedProxyRejectsForwardedClientIp() throws Exception { // GH-90000
         AsyncServlet nextServlet = mock(AsyncServlet.class); // GH-90000
         MetricsCollector metricsCollector = mock(MetricsCollector.class); // GH-90000
@@ -71,7 +71,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
         );
 
         HttpRequest request = HttpRequest.post(EVENTS_URL) // GH-90000
-            .withHeader(HttpHeaders.of("X-Forwarded-For [GH-90000]"), "203.0.113.7")
+            .withHeader(HttpHeaders.of("X-Forwarded-For"), "203.0.113.7")
             .build(); // GH-90000
 
         HttpResponse response = serve(filter, request); // GH-90000
@@ -83,7 +83,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("trusted proxy records malformed X-Forwarded-For as invalid [GH-90000]")
+    @DisplayName("trusted proxy records malformed X-Forwarded-For as invalid")
     void malformedForwardedHeaderRecordsInvalidReason() throws Exception { // GH-90000
         AsyncServlet nextServlet = mock(AsyncServlet.class); // GH-90000
         MetricsCollector metricsCollector = mock(MetricsCollector.class); // GH-90000
@@ -98,7 +98,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
         );
 
         HttpRequest request = HttpRequest.post(EVENTS_URL) // GH-90000
-            .withHeader(HttpHeaders.of("X-Forwarded-For [GH-90000]"), "   ")
+            .withHeader(HttpHeaders.of("X-Forwarded-For"), "   ")
             .build(); // GH-90000
 
         HttpResponse response = serve(filter, request); // GH-90000
@@ -110,7 +110,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("trusted proxy rejects syntactically invalid forwarded address [GH-90000]")
+    @DisplayName("trusted proxy rejects syntactically invalid forwarded address")
     void invalidForwardedAddressIsRejected() throws Exception { // GH-90000
         AsyncServlet nextServlet = mock(AsyncServlet.class); // GH-90000
         MetricsCollector metricsCollector = mock(MetricsCollector.class); // GH-90000
@@ -125,7 +125,7 @@ class AepSecurityFilterTest extends EventloopTestBase {
         );
 
         HttpRequest request = HttpRequest.post(EVENTS_URL) // GH-90000
-            .withHeader(HttpHeaders.of("X-Forwarded-For [GH-90000]"), "[]")
+            .withHeader(HttpHeaders.of("X-Forwarded-For"), "[]")
             .build(); // GH-90000
 
         HttpResponse response = serve(filter, request); // GH-90000

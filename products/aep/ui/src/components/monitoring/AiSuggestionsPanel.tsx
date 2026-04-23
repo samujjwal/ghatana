@@ -16,6 +16,7 @@ import { AlertTriangle, TrendingUp, Zap, X, CheckCircle } from 'lucide-react';
 import { isFeatureEnabled } from '@/lib/feature-flags';
 import { RBACGuard } from '../security/RBACGuard';
 import { Button } from '@ghatana/design-system';
+import { apiClient } from '@/lib/http-client';
 
 /**
  * AI suggestion type
@@ -65,15 +66,11 @@ export const AiSuggestionsPanel: React.FC<AiSuggestionsPanelProps> = ({
   const { data: suggestions, isLoading, error } = useQuery({
     queryKey: ['aep', 'ai-suggestions', tenantId],
     queryFn: async (): Promise<AiSuggestion[]> => {
-      const response = await fetch(`/api/v1/ai/suggestions?tenantId=${encodeURIComponent(tenantId)}`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch AI suggestions: ${response.statusText}`);
-      }
-      const body: unknown = await response.json();
-      if (body !== null && typeof body === 'object' && 'suggestions' in body && Array.isArray((body as Record<string, unknown>).suggestions)) {
-        return (body as { suggestions: AiSuggestion[] }).suggestions;
-      }
-      return Array.isArray(body) ? (body as AiSuggestion[]) : [];
+      const { data } = await apiClient.get<{ suggestions?: AiSuggestion[]; data?: AiSuggestion[] }>(
+        '/api/v1/ai/suggestions',
+        { params: { tenantId } }
+      );
+      return data.suggestions ?? data.data ?? [];
     },
     enabled: isFeatureEnabled('AI_SUGGESTIONS'),
     staleTime: 60_000,
@@ -207,15 +204,11 @@ export function useAiSuggestions(tenantId: string) {
   const { data: suggestions, isLoading, error, refetch } = useQuery({
     queryKey: ['aep', 'ai-suggestions', tenantId],
     queryFn: async (): Promise<AiSuggestion[]> => {
-      const response = await fetch(`/api/v1/ai/suggestions?tenantId=${encodeURIComponent(tenantId)}`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch AI suggestions: ${response.statusText}`);
-      }
-      const body: unknown = await response.json();
-      if (body !== null && typeof body === 'object' && 'suggestions' in body && Array.isArray((body as Record<string, unknown>).suggestions)) {
-        return (body as { suggestions: AiSuggestion[] }).suggestions;
-      }
-      return Array.isArray(body) ? (body as AiSuggestion[]) : [];
+      const { data } = await apiClient.get<{ suggestions?: AiSuggestion[]; data?: AiSuggestion[] }>(
+        '/api/v1/ai/suggestions',
+        { params: { tenantId } }
+      );
+      return data.suggestions ?? data.data ?? [];
     },
     enabled: isFeatureEnabled('AI_SUGGESTIONS'),
     staleTime: 60_000,

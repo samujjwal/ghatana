@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * Unit tests for {@link PipelinePerformancePredictor} (AEP-011.2). // GH-90000
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("PipelinePerformancePredictor — AEP-011.2 [GH-90000]")
+@DisplayName("PipelinePerformancePredictor — AEP-011.2")
 class PipelinePerformancePredictorTest extends EventloopTestBase {
 
     private PipelinePerformancePredictor predictor;
@@ -36,7 +36,7 @@ class PipelinePerformancePredictorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("predict returns a result with correct horizon length [GH-90000]")
+    @DisplayName("predict returns a result with correct horizon length")
     void predictReturnsCorrectHorizon() { // GH-90000
         List<Double> series = List.of(100.0, 105.0, 110.0, 115.0, 120.0); // GH-90000
         PipelinePerformancePredictor.PredictionResult result = runPromise( // GH-90000
@@ -46,12 +46,12 @@ class PipelinePerformancePredictorTest extends EventloopTestBase {
         assertThat(result).isNotNull(); // GH-90000
         assertThat(result.forecastValues()).hasSize(5); // GH-90000
         assertThat(result.trainingPoints()).isEqualTo(5); // GH-90000
-        assertThat(result.tenantId()).isEqualTo("tenant-1 [GH-90000]");
-        assertThat(result.metricName()).isEqualTo("throughput [GH-90000]");
+        assertThat(result.tenantId()).isEqualTo("tenant-1");
+        assertThat(result.metricName()).isEqualTo("throughput");
     }
 
     @Test
-    @DisplayName("confidence is in [0.5, 0.99] [GH-90000]")
+    @DisplayName("confidence is in [0.5, 0.99]")
     void confidenceInRange() { // GH-90000
         List<Double> series = List.of(10.0, 12.0, 14.0, 16.0, 18.0); // GH-90000
         PipelinePerformancePredictor.PredictionResult result = runPromise( // GH-90000
@@ -62,7 +62,7 @@ class PipelinePerformancePredictorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("nextStepForecast returns the first forecast value [GH-90000]")
+    @DisplayName("nextStepForecast returns the first forecast value")
     void nextStepForecastMatchesFirstElement() { // GH-90000
         List<Double> series = List.of(10.0, 11.0, 12.0, 13.0, 14.0); // GH-90000
         PipelinePerformancePredictor.PredictionResult result = runPromise( // GH-90000
@@ -73,20 +73,20 @@ class PipelinePerformancePredictorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("predict throws for fewer than 2 data points [GH-90000]")
+    @DisplayName("predict throws for fewer than 2 data points")
     void predictThrowsForFewerThan2Points() { // GH-90000
         // Promise.ofException — runPromise re-throws
         try {
             runPromise(() -> predictor.predict("t", "m", List.of(10.0), 1)); // GH-90000
         } catch (Exception e) { // GH-90000
-            assertThat(e.getMessage()).containsIgnoringCase("2 data points [GH-90000]");
+            assertThat(e.getMessage()).containsIgnoringCase("2 data points");
             return;
         }
-        throw new AssertionError("Expected an exception [GH-90000]");
+        throw new AssertionError("Expected an exception");
     }
 
     @Test
-    @DisplayName("predict throws for non-positive horizon [GH-90000]")
+    @DisplayName("predict throws for non-positive horizon")
     void predictThrowsForNonPositiveHorizon() { // GH-90000
         // horizon <= 0 throws synchronously before a promise is created
         assertThatThrownBy(() -> // GH-90000
@@ -95,7 +95,7 @@ class PipelinePerformancePredictorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Builder rejects alpha out of (0, 1) [GH-90000]")
+    @DisplayName("Builder rejects alpha out of (0, 1)")
     void builderRejectsInvalidAlpha() { // GH-90000
         assertThatThrownBy(() -> PipelinePerformancePredictor.builder().alpha(0.0)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class); // GH-90000
@@ -104,7 +104,7 @@ class PipelinePerformancePredictorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("growing series forecasts higher future values [GH-90000]")
+    @DisplayName("growing series forecasts higher future values")
     void growingSeriesForecasesHigher() { // GH-90000
         List<Double> series = List.of(100.0, 110.0, 120.0, 130.0, 140.0); // GH-90000
         PipelinePerformancePredictor.PredictionResult result = runPromise( // GH-90000

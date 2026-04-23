@@ -7,6 +7,14 @@ import javax.sql.DataSource;
 import java.sql.*;
 import java.util.*;
 
+/**
+ * JDBC-based implementation of {@link PolicyRepository} backed by a relational database.
+ *
+ * @doc.type class
+ * @doc.purpose Persists and retrieves RBAC policies using JDBC SQL operations
+ * @doc.layer platform
+ * @doc.pattern Repository
+ */
 public class JdbcPolicyRepository implements PolicyRepository {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JdbcPolicyRepository.class);
@@ -139,7 +147,6 @@ public class JdbcPolicyRepository implements PolicyRepository {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <S extends Policy> S save(S policy) {
         Objects.requireNonNull(policy, "policy must not be null");
 
@@ -147,10 +154,11 @@ public class JdbcPolicyRepository implements PolicyRepository {
             conn.setAutoCommit(false);
 
             try {
+                Policy policyToPersist = policy;
                 String policyId = policy.getId();
                 if (policyId == null || policyId.isBlank()) {
                     policyId = UUID.randomUUID().toString();
-                    policy = Policy.builder()
+                    policyToPersist = Policy.builder()
                             .id(policyId)
                             .name(policy.getName())
                             .description(policy.getDescription())
@@ -165,10 +173,10 @@ public class JdbcPolicyRepository implements PolicyRepository {
 
                 try (PreparedStatement stmt = conn.prepareStatement(INSERT_POLICY)) {
                     stmt.setString(1, policyId);
-                    stmt.setString(2, policy.getName());
-                    stmt.setString(3, policy.getDescription());
-                    stmt.setString(4, policy.getRole());
-                    stmt.setString(5, policy.getResource());
+                    stmt.setString(2, policyToPersist.getName());
+                    stmt.setString(3, policyToPersist.getDescription());
+                    stmt.setString(4, policyToPersist.getRole());
+                    stmt.setString(5, policyToPersist.getResource());
                     stmt.setTimestamp(6, now);
                     stmt.setTimestamp(7, now);
                     stmt.executeUpdate();
@@ -179,9 +187,9 @@ public class JdbcPolicyRepository implements PolicyRepository {
                     stmt.executeUpdate();
                 }
 
-                if (policy.getPermissions() != null && !policy.getPermissions().isEmpty()) {
+                if (policyToPersist.getPermissions() != null && !policyToPersist.getPermissions().isEmpty()) {
                     try (PreparedStatement stmt = conn.prepareStatement(INSERT_PERMISSION)) {
-                        for (String permission : policy.getPermissions()) {
+                        for (String permission : policyToPersist.getPermissions()) {
                             stmt.setString(1, policyId);
                             stmt.setString(2, permission);
                             stmt.addBatch();
@@ -192,7 +200,13 @@ public class JdbcPolicyRepository implements PolicyRepository {
 
                 conn.commit();
                 LOGGER.debug("Saved policy: {}", policyId);
-                return policy;
+                if (policyToPersist == policy) {
+                    return policy;
+                }
+
+                @SuppressWarnings("unchecked")
+                S savedPolicy = (S) policyToPersist;
+                return savedPolicy;
 
             } catch (SQLException e) {
                 conn.rollback();

@@ -31,18 +31,18 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("DataFabricConnection – Connector Tests (PF002) [GH-90000]")
+@DisplayName("DataFabricConnection – Connector Tests (PF002)")
 class DataFabricConnectionTest extends EventloopTestBase {
 
     @Mock
     private DataFabricConnector connector;
 
     @Nested
-    @DisplayName("Connection Management [GH-90000]")
+    @DisplayName("Connection Management")
     class ConnectionManagementTests {
 
         @Test
-        @DisplayName("[PF002]: test_connection_returns_success_for_valid_config [GH-90000]")
+        @DisplayName("[PF002]: test_connection_returns_success_for_valid_config")
         void testConnectionReturnsSuccessForValidConfig() { // GH-90000
             String connectionId = "valid-connection";
 
@@ -62,7 +62,7 @@ class DataFabricConnectionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[PF002]: test_connection_returns_failure_for_invalid_config [GH-90000]")
+        @DisplayName("[PF002]: test_connection_returns_failure_for_invalid_config")
         void testConnectionReturnsFailureForInvalidConfig() { // GH-90000
             String connectionId = "invalid-connection";
 
@@ -78,16 +78,16 @@ class DataFabricConnectionTest extends EventloopTestBase {
             );
 
             assertThat(testResult.success()).isFalse(); // GH-90000
-            assertThat(testResult.message()).contains("failed [GH-90000]");
+            assertThat(testResult.message()).contains("failed");
         }
 
         @Test
-        @DisplayName("[PF002]: connect_establishes_connection [GH-90000]")
+        @DisplayName("[PF002]: connect_establishes_connection")
         void connectEstablishesConnection() { // GH-90000
             DataFabricConnector.ConnectionConfig config = DataFabricConnector.ConnectionConfig.builder() // GH-90000
-                .id("new-conn [GH-90000]")
-                .name("Production DB [GH-90000]")
-                .tenantId("tenant-alpha [GH-90000]")
+                .id("new-conn")
+                .name("Production DB")
+                .tenantId("tenant-alpha")
                 .type(DataFabricConnector.ConnectionType.POSTGRESQL) // GH-90000
                 .properties(Map.of("host", "db.example.com", "port", 5432)) // GH-90000
                 .credentials(Map.of("username", "admin", "password", "secret")) // GH-90000
@@ -108,7 +108,7 @@ class DataFabricConnectionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[PF002]: disconnect_closes_connection [GH-90000]")
+        @DisplayName("[PF002]: disconnect_closes_connection")
         void disconnectClosesConnection() { // GH-90000
             String connectionId = "connected-conn";
 
@@ -122,11 +122,11 @@ class DataFabricConnectionTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Connection Queries [GH-90000]")
+    @DisplayName("Connection Queries")
     class ConnectionQueriesTests {
 
         @Test
-        @DisplayName("[PF002]: get_connection_returns_existing [GH-90000]")
+        @DisplayName("[PF002]: get_connection_returns_existing")
         void getConnectionReturnsExisting() { // GH-90000
             String connectionId = "existing-conn";
 
@@ -147,7 +147,7 @@ class DataFabricConnectionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[PF002]: list_connections_returns_tenant_connections [GH-90000]")
+        @DisplayName("[PF002]: list_connections_returns_tenant_connections")
         void listConnectionsReturnsTenantConnections() { // GH-90000
             String tenantId = "tenant-alpha";
 
@@ -171,11 +171,11 @@ class DataFabricConnectionTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Query Execution [GH-90000]")
+    @DisplayName("Query Execution")
     class QueryExecutionTests {
 
         @Test
-        @DisplayName("[PF002]: execute_query_returns_results [GH-90000]")
+        @DisplayName("[PF002]: execute_query_returns_results")
         void executeQueryReturnsResults() { // GH-90000
             String connectionId = "conn-with-data";
             String query = "SELECT * FROM users";
@@ -205,7 +205,7 @@ class DataFabricConnectionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[PF002]: execute_query_returns_error_on_failure [GH-90000]")
+        @DisplayName("[PF002]: execute_query_returns_error_on_failure")
         void executeQueryReturnsErrorOnFailure() { // GH-90000
             String connectionId = "conn-with-error";
             String query = "INVALID SQL";
@@ -227,11 +227,11 @@ class DataFabricConnectionTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Schema Operations [GH-90000]")
+    @DisplayName("Schema Operations")
     class SchemaOperationsTests {
 
         @Test
-        @DisplayName("[PF002]: get_schema_returns_database_schema [GH-90000]")
+        @DisplayName("[PF002]: get_schema_returns_database_schema")
         void getSchemaReturnsDatabaseSchema() { // GH-90000
             String connectionId = "conn-with-schema";
 
@@ -245,7 +245,7 @@ class DataFabricConnectionTest extends EventloopTestBase {
                             new DataFabricConnector.ColumnSchema("name", "VARCHAR", true, false), // GH-90000
                             new DataFabricConnector.ColumnSchema("email", "VARCHAR", false, false) // GH-90000
                         ),
-                        List.of("id [GH-90000]")
+                        List.of("id")
                     )
                 ),
                 Instant.now() // GH-90000
@@ -257,22 +257,22 @@ class DataFabricConnectionTest extends EventloopTestBase {
             DataFabricConnector.DataSchema result = runPromise(() -> connector.getSchema(connectionId)); // GH-90000
 
             assertThat(result.tables()).hasSize(1); // GH-90000
-            assertThat(result.tables().get(0).name()).isEqualTo("users [GH-90000]");
+            assertThat(result.tables().get(0).name()).isEqualTo("users");
             assertThat(result.tables().get(0).columns()).hasSize(3); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Configuration Builder [GH-90000]")
+    @DisplayName("Configuration Builder")
     class ConfigurationBuilderTests {
 
         @Test
-        @DisplayName("[PF002]: connection_config_builder_creates_config [GH-90000]")
+        @DisplayName("[PF002]: connection_config_builder_creates_config")
         void connectionConfigBuilderCreatesConfig() { // GH-90000
             DataFabricConnector.ConnectionConfig config = DataFabricConnector.ConnectionConfig.builder() // GH-90000
-                .id("test-conn [GH-90000]")
-                .name("Test Connection [GH-90000]")
-                .tenantId("tenant-alpha [GH-90000]")
+                .id("test-conn")
+                .name("Test Connection")
+                .tenantId("tenant-alpha")
                 .type(DataFabricConnector.ConnectionType.S3) // GH-90000
                 .properties(Map.of("bucket", "my-bucket", "region", "us-east-1")) // GH-90000
                 .credentials(Map.of("accessKey", "AKIA...", "secretKey", "secret...")) // GH-90000
@@ -281,7 +281,7 @@ class DataFabricConnectionTest extends EventloopTestBase {
                 .maxConnections(20) // GH-90000
                 .build(); // GH-90000
 
-            assertThat(config.id()).isEqualTo("test-conn [GH-90000]");
+            assertThat(config.id()).isEqualTo("test-conn");
             assertThat(config.type()).isEqualTo(DataFabricConnector.ConnectionType.S3); // GH-90000
             assertThat(config.encrypted()).isTrue(); // GH-90000
             assertThat(config.connectionTimeoutSeconds()).isEqualTo(60); // GH-90000

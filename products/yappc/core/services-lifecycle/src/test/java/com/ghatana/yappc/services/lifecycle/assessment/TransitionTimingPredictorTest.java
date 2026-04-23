@@ -13,13 +13,13 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("TransitionTimingPredictor Tests [GH-90000]")
+@DisplayName("TransitionTimingPredictor Tests")
 class TransitionTimingPredictorTest {
 
     private final TransitionTimingPredictor predictor = new TransitionTimingPredictor(); // GH-90000
 
     @Test
-    @DisplayName("returns ready now when gates already pass [GH-90000]")
+    @DisplayName("returns ready now when gates already pass")
     void returnsReadyNowWhenTransitionAlreadyReady() { // GH-90000
         TransitionTimingPredictor.Prediction prediction = predictor.predict( // GH-90000
                 "intent",
@@ -28,12 +28,12 @@ class TransitionTimingPredictorTest {
                 ReadinessReport.ready("intent", "shape", 0.9, "Ready")); // GH-90000
 
         assertThat(prediction.estimatedHours()).isZero(); // GH-90000
-        assertThat(prediction.estimatedReadyIn()).isEqualTo("Ready now [GH-90000]");
+        assertThat(prediction.estimatedReadyIn()).isEqualTo("Ready now");
         assertThat(prediction.confidence()).isEqualTo(0.95); // GH-90000
     }
 
     @Test
-    @DisplayName("predicts additional time when clarity is below threshold [GH-90000]")
+    @DisplayName("predicts additional time when clarity is below threshold")
     void predictsAdditionalTimeForLowClarity() { // GH-90000
         TransitionTimingPredictor.Prediction prediction = predictor.predict( // GH-90000
                 "shape",
@@ -43,17 +43,17 @@ class TransitionTimingPredictorTest {
                         "shape",
                         "generate",
                         0.5,
-                        List.of("Requirements clarity is below the transition threshold. [GH-90000]"),
-                        List.of("Clarify requirements [GH-90000]"),
+                        List.of("Requirements clarity is below the transition threshold."),
+                        List.of("Clarify requirements"),
                         "Blocked by low clarity"));
 
         assertThat(prediction.estimatedHours()).isEqualTo(29); // GH-90000
-        assertThat(prediction.estimatedReadyIn()).isEqualTo("~1 day [GH-90000]");
-        assertThat(prediction.rationale()).contains("blocker [GH-90000]");
+        assertThat(prediction.estimatedReadyIn()).isEqualTo("~1 day");
+        assertThat(prediction.rationale()).contains("blocker");
     }
 
     @Test
-    @DisplayName("adds larger penalty for failing build and low coverage [GH-90000]")
+    @DisplayName("adds larger penalty for failing build and low coverage")
     void addsPenaltyForBuildAndCoverageDeficits() { // GH-90000
         TransitionTimingPredictor.Prediction prediction = predictor.predict( // GH-90000
                 "run",
@@ -68,12 +68,12 @@ class TransitionTimingPredictorTest {
                         "Blocked by quality gates"));
 
         assertThat(prediction.estimatedHours()).isEqualTo(42); // GH-90000
-        assertThat(prediction.estimatedReadyIn()).isEqualTo("~2 days [GH-90000]");
+        assertThat(prediction.estimatedReadyIn()).isEqualTo("~2 days");
         assertThat(prediction.confidence()).isEqualTo(0.93); // GH-90000
     }
 
     @Test
-    @DisplayName("reduces confidence as blocker count increases [GH-90000]")
+    @DisplayName("reduces confidence as blocker count increases")
     void reducesConfidenceAsBlockersIncrease() { // GH-90000
         ProjectContext context = context("review", 5, 0.85, 8, 82, true, 0, 2); // GH-90000
 
@@ -85,8 +85,8 @@ class TransitionTimingPredictorTest {
                         "review",
                         "deploy",
                         0.85,
-                        List.of("Decision log missing. [GH-90000]"),
-                        List.of("Record a decision [GH-90000]"),
+                        List.of("Decision log missing."),
+                        List.of("Record a decision"),
                         "One blocker"));
 
         TransitionTimingPredictor.Prediction moreBlockers = predictor.predict( // GH-90000

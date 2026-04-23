@@ -55,25 +55,25 @@ public class AgentProcessingBenchmark {
     @Setup(Level.Trial) // GH-90000
     public void setup() { // GH-90000
         ctx = AgentContext.builder() // GH-90000
-                .turnId("bench-turn [GH-90000]")
-                .agentId("bench-agent [GH-90000]")
-                .tenantId("bench-tenant [GH-90000]")
+                .turnId("bench-turn")
+                .agentId("bench-agent")
+                .tenantId("bench-tenant")
                 .memoryStore(mock(MemoryStore.class)) // GH-90000
                 .build(); // GH-90000
 
         // Deterministic agent with rule-based evaluation
-        deterministicAgent = new DeterministicAgent("bench-det [GH-90000]");
+        deterministicAgent = new DeterministicAgent("bench-det");
         DeterministicAgentConfig detConfig = DeterministicAgentConfig.builder() // GH-90000
-                .agentId("bench-det [GH-90000]")
+                .agentId("bench-det")
                 .type(AgentType.DETERMINISTIC) // GH-90000
                 .subtype(DeterministicSubtype.RULE_BASED) // GH-90000
                 .rule(Rule.builder() // GH-90000
-                        .id("high-temp [GH-90000]").name("High Temp [GH-90000]")
+                        .id("high-temp").name("High Temp")
                         .condition(RuleCondition.gt("temperature", 100)) // GH-90000
                         .action("alert", "high") // GH-90000
                         .build()) // GH-90000
                 .rule(Rule.builder() // GH-90000
-                        .id("low-temp [GH-90000]").name("Low Temp [GH-90000]")
+                        .id("low-temp").name("Low Temp")
                         .condition(RuleCondition.lt("temperature", 0)) // GH-90000
                         .action("alert", "low") // GH-90000
                         .build()) // GH-90000
@@ -81,21 +81,21 @@ public class AgentProcessingBenchmark {
         runOnEventloop(() -> deterministicAgent.initialize(detConfig)); // GH-90000
 
         // Probabilistic agent with confidence threshold
-        probabilisticAgent = new ProbabilisticAgent("bench-prob [GH-90000]");
+        probabilisticAgent = new ProbabilisticAgent("bench-prob");
         ProbabilisticAgentConfig probConfig = ProbabilisticAgentConfig.builder() // GH-90000
-                .agentId("bench-prob [GH-90000]")
+                .agentId("bench-prob")
                 .type(AgentType.PROBABILISTIC) // GH-90000
                 .confidenceThreshold(0.5) // GH-90000
                 .build(); // GH-90000
         runOnEventloop(() -> probabilisticAgent.initialize(probConfig)); // GH-90000
 
         // Adaptive agent with epsilon-greedy
-        adaptiveAgent = new AdaptiveAgent("bench-adaptive [GH-90000]");
+        adaptiveAgent = new AdaptiveAgent("bench-adaptive");
         AdaptiveAgentConfig adaptConfig = AdaptiveAgentConfig.builder() // GH-90000
-                .agentId("bench-adaptive [GH-90000]")
+                .agentId("bench-adaptive")
                 .type(AgentType.ADAPTIVE) // GH-90000
                 .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.EPSILON_GREEDY) // GH-90000
-                .tunedParameter("threshold [GH-90000]")
+                .tunedParameter("threshold")
                 .parameterMin(0.0) // GH-90000
                 .parameterMax(1.0) // GH-90000
                 .armCount(5) // GH-90000

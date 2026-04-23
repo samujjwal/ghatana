@@ -19,7 +19,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * @doc.type class
  * @doc.purpose Skill version management
  * @doc.layer agent-learning
- */
+  * @doc.pattern Manager
+*/
 public class SkillVersionManager {
 
     private static final Logger log = LoggerFactory.getLogger(SkillVersionManager.class);

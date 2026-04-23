@@ -43,7 +43,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("DataCloudAnalyticsStore [GH-90000]")
+@DisplayName("DataCloudAnalyticsStore")
 class DataCloudAnalyticsStoreTest {
 
     private static final String TENANT = "tenant-analytics";
@@ -63,11 +63,11 @@ class DataCloudAnalyticsStoreTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("KPI Snapshots [GH-90000]")
+    @DisplayName("KPI Snapshots")
     class KpiSnapshotTests {
 
         @Test
-        @DisplayName("saveKpiSnapshot: writes to KPI_COLLECTION and returns hydrated snapshot [GH-90000]")
+        @DisplayName("saveKpiSnapshot: writes to KPI_COLLECTION and returns hydrated snapshot")
         void saveKpiSnapshot_writeToKpiCollection() { // GH-90000
             KpiSnapshot input = KpiSnapshot.of("cpu.usage", 72.3, "%"); // GH-90000
             String assignedId = UUID.randomUUID().toString(); // GH-90000
@@ -86,13 +86,13 @@ class DataCloudAnalyticsStoreTest {
             KpiSnapshot result = store.saveKpiSnapshot(TENANT, input).getResult(); // GH-90000
 
             assertThat(result).isNotNull(); // GH-90000
-            assertThat(result.kpiName()).isEqualTo("cpu.usage [GH-90000]");
+            assertThat(result.kpiName()).isEqualTo("cpu.usage");
             assertThat(result.value()).isEqualTo(72.3); // GH-90000
-            assertThat(result.unit()).isEqualTo("% [GH-90000]");
+            assertThat(result.unit()).isEqualTo("%");
         }
 
         @Test
-        @DisplayName("saveKpiSnapshot: assigns ID before persisting [GH-90000]")
+        @DisplayName("saveKpiSnapshot: assigns ID before persisting")
         void saveKpiSnapshot_assignsId() { // GH-90000
             KpiSnapshot input = KpiSnapshot.of("event.latency", 45.0, "ms"); // GH-90000
             when(client.save(anyString(), anyString(), anyMap())) // GH-90000
@@ -106,11 +106,11 @@ class DataCloudAnalyticsStoreTest {
 
             ArgumentCaptor<Map<String, Object>> captor = mapCaptor(); // GH-90000
             verify(client).save(eq(TENANT), eq(DataCloudAnalyticsStore.KPI_COLLECTION), captor.capture()); // GH-90000
-            assertThat(captor.getValue().get("id [GH-90000]")).isNotNull().asString().isNotBlank();
+            assertThat(captor.getValue().get("id")).isNotNull().asString().isNotBlank();
         }
 
         @Test
-        @DisplayName("queryKpiSnapshots: queries KPI collection and maps all results [GH-90000]")
+        @DisplayName("queryKpiSnapshots: queries KPI collection and maps all results")
         void queryKpiSnapshots_mapsAllEntities() { // GH-90000
             String kpiName = "throughput";
             List<Entity> stubList = List.of( // GH-90000
@@ -128,7 +128,7 @@ class DataCloudAnalyticsStoreTest {
         }
 
         @Test
-        @DisplayName("getLatestKpi: returns present Optional when entity found [GH-90000]")
+        @DisplayName("getLatestKpi: returns present Optional when entity found")
         void getLatestKpi_whenEntityFound_returnsPresent() { // GH-90000
             String kpiName = "error.rate";
             Entity stub = entity("e1", kpiData("e1", kpiName, 0.02)); // GH-90000
@@ -142,7 +142,7 @@ class DataCloudAnalyticsStoreTest {
         }
 
         @Test
-        @DisplayName("getLatestKpi: returns empty Optional when no entities found [GH-90000]")
+        @DisplayName("getLatestKpi: returns empty Optional when no entities found")
         void getLatestKpi_whenNotFound_returnsEmpty() { // GH-90000
             when(client.query(eq(TENANT), eq(DataCloudAnalyticsStore.KPI_COLLECTION), any(Query.class))) // GH-90000
                     .thenReturn(Promise.of(List.of())); // GH-90000
@@ -153,7 +153,7 @@ class DataCloudAnalyticsStoreTest {
         }
 
         @Test
-        @DisplayName("purgeOldKpiSnapshots: queries then deletes each entity individually [GH-90000]")
+        @DisplayName("purgeOldKpiSnapshots: queries then deletes each entity individually")
         void purgeOldKpiSnapshots_deletesEachEntity() { // GH-90000
             List<Entity> stale = List.of( // GH-90000
                     entity("old1", kpiData("old1", "cpu", 50.0)), // GH-90000
@@ -172,11 +172,11 @@ class DataCloudAnalyticsStoreTest {
         }
 
         @Test
-        @DisplayName("saveKpiSnapshot: returns failed promise when client fails [GH-90000]")
+        @DisplayName("saveKpiSnapshot: returns failed promise when client fails")
         void saveKpiSnapshot_whenClientFails_propagatesException() { // GH-90000
             KpiSnapshot input = KpiSnapshot.of("cpu", 50.0, "%"); // GH-90000
             when(client.save(anyString(), anyString(), anyMap())) // GH-90000
-                    .thenReturn(Promise.ofException(new RuntimeException("storage down [GH-90000]")));
+                    .thenReturn(Promise.ofException(new RuntimeException("storage down")));
 
             Promise<KpiSnapshot> result = store.saveKpiSnapshot(TENANT, input); // GH-90000
 
@@ -189,11 +189,11 @@ class DataCloudAnalyticsStoreTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Anomaly Records [GH-90000]")
+    @DisplayName("Anomaly Records")
     class AnomalyRecordTests {
 
         @Test
-        @DisplayName("saveAnomaly: writes to ANOMALY_COLLECTION with resolved=false [GH-90000]")
+        @DisplayName("saveAnomaly: writes to ANOMALY_COLLECTION with resolved=false")
         void saveAnomaly_writesToAnomalyCollection() { // GH-90000
             AnomalyRecord input = AnomalyRecord.of("FREQUENCY_SPIKE", "HIGH", 0.92, "Detected spike"); // GH-90000
             String assignedId = UUID.randomUUID().toString(); // GH-90000
@@ -204,13 +204,13 @@ class DataCloudAnalyticsStoreTest {
             AnomalyRecord result = store.saveAnomaly(TENANT, input).getResult(); // GH-90000
 
             assertThat(result).isNotNull(); // GH-90000
-            assertThat(result.anomalyType()).isEqualTo("FREQUENCY_SPIKE [GH-90000]");
-            assertThat(result.severity()).isEqualTo("HIGH [GH-90000]");
+            assertThat(result.anomalyType()).isEqualTo("FREQUENCY_SPIKE");
+            assertThat(result.severity()).isEqualTo("HIGH");
             assertThat(result.resolved()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("saveAnomaly: persisted data has resolved=false by default [GH-90000]")
+        @DisplayName("saveAnomaly: persisted data has resolved=false by default")
         void saveAnomaly_capturedDataHasResolvedFalse() { // GH-90000
             AnomalyRecord input = AnomalyRecord.of("PATTERN_DRIFT", "CRITICAL", 0.99, "Drift detected"); // GH-90000
             when(client.save(anyString(), anyString(), anyMap())) // GH-90000
@@ -220,11 +220,11 @@ class DataCloudAnalyticsStoreTest {
 
             ArgumentCaptor<Map<String, Object>> cap = mapCaptor(); // GH-90000
             verify(client).save(eq(TENANT), eq(DataCloudAnalyticsStore.ANOMALY_COLLECTION), cap.capture()); // GH-90000
-            assertThat(cap.getValue().get("resolved [GH-90000]")).isEqualTo(false);
+            assertThat(cap.getValue().get("resolved")).isEqualTo(false);
         }
 
         @Test
-        @DisplayName("queryAnomalies: queries and maps all anomaly entities [GH-90000]")
+        @DisplayName("queryAnomalies: queries and maps all anomaly entities")
         void queryAnomalies_mapsEntities() { // GH-90000
             when(client.query(eq(TENANT), eq(DataCloudAnalyticsStore.ANOMALY_COLLECTION), any(Query.class))) // GH-90000
                     .thenReturn(Promise.of(List.of( // GH-90000
@@ -238,7 +238,7 @@ class DataCloudAnalyticsStoreTest {
         }
 
         @Test
-        @DisplayName("countUnresolvedAnomalies: returns count from query results [GH-90000]")
+        @DisplayName("countUnresolvedAnomalies: returns count from query results")
         void countUnresolvedAnomalies_returnsCount() { // GH-90000
             when(client.query(eq(TENANT), eq(DataCloudAnalyticsStore.ANOMALY_COLLECTION), any(Query.class))) // GH-90000
                     .thenReturn(Promise.of(List.of( // GH-90000
@@ -252,7 +252,7 @@ class DataCloudAnalyticsStoreTest {
         }
 
         @Test
-        @DisplayName("resolveAnomaly: updates entity resolved=true and resolvedBy fields [GH-90000]")
+        @DisplayName("resolveAnomaly: updates entity resolved=true and resolvedBy fields")
         void resolveAnomaly_marksResolved() { // GH-90000
             String anomalyId = "anomaly-42";
             when(client.findById(TENANT, DataCloudAnalyticsStore.ANOMALY_COLLECTION, anomalyId)) // GH-90000
@@ -266,12 +266,12 @@ class DataCloudAnalyticsStoreTest {
 
             ArgumentCaptor<Map<String, Object>> cap = mapCaptor(); // GH-90000
             verify(client).save(eq(TENANT), eq(DataCloudAnalyticsStore.ANOMALY_COLLECTION), cap.capture()); // GH-90000
-            assertThat(cap.getValue().get("resolved [GH-90000]")).isEqualTo(true);
-            assertThat(cap.getValue().get("resolvedBy [GH-90000]")).isEqualTo("ops-team [GH-90000]");
+            assertThat(cap.getValue().get("resolved")).isEqualTo(true);
+            assertThat(cap.getValue().get("resolvedBy")).isEqualTo("ops-team");
         }
 
         @Test
-        @DisplayName("resolveAnomaly: is no-op when anomaly not found [GH-90000]")
+        @DisplayName("resolveAnomaly: is no-op when anomaly not found")
         void resolveAnomaly_whenNotFound_noSave() { // GH-90000
             String anomalyId = "ghost-anomaly";
             when(client.findById(TENANT, DataCloudAnalyticsStore.ANOMALY_COLLECTION, anomalyId)) // GH-90000
@@ -288,11 +288,11 @@ class DataCloudAnalyticsStoreTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Metric Data Points [GH-90000]")
+    @DisplayName("Metric Data Points")
     class MetricDataPointTests {
 
         @Test
-        @DisplayName("saveMetricDataPoint: writes to METRICS_COLLECTION [GH-90000]")
+        @DisplayName("saveMetricDataPoint: writes to METRICS_COLLECTION")
         void saveMetricDataPoint_writesToMetricsCollection() { // GH-90000
             MetricDataPoint input = MetricDataPoint.of("event.latency.p99", 120.0, "ms"); // GH-90000
             String id = UUID.randomUUID().toString(); // GH-90000
@@ -303,12 +303,12 @@ class DataCloudAnalyticsStoreTest {
             MetricDataPoint result = store.saveMetricDataPoint(TENANT, input).getResult(); // GH-90000
 
             assertThat(result).isNotNull(); // GH-90000
-            assertThat(result.metricName()).isEqualTo("event.latency.p99 [GH-90000]");
+            assertThat(result.metricName()).isEqualTo("event.latency.p99");
             assertThat(result.value()).isEqualTo(120.0); // GH-90000
         }
 
         @Test
-        @DisplayName("queryMetrics: queries METRICS_COLLECTION and maps results [GH-90000]")
+        @DisplayName("queryMetrics: queries METRICS_COLLECTION and maps results")
         void queryMetrics_mapsAllEntities() { // GH-90000
             when(client.query(eq(TENANT), eq(DataCloudAnalyticsStore.METRICS_COLLECTION), any(Query.class))) // GH-90000
                     .thenReturn(Promise.of(List.of( // GH-90000
@@ -319,11 +319,11 @@ class DataCloudAnalyticsStoreTest {
             List<MetricDataPoint> results = store.queryMetrics(TENANT, null, "cpu.usage", null, null, 50).getResult(); // GH-90000
 
             assertThat(results).hasSize(2); // GH-90000
-            assertThat(results).extracting(MetricDataPoint::metricName).containsOnly("cpu.usage [GH-90000]");
+            assertThat(results).extracting(MetricDataPoint::metricName).containsOnly("cpu.usage");
         }
 
         @Test
-        @DisplayName("saveMetricsBatch: saves each data point and returns successfully saved ones [GH-90000]")
+        @DisplayName("saveMetricsBatch: saves each data point and returns successfully saved ones")
         void saveMetricsBatch_savesAll() { // GH-90000
             List<MetricDataPoint> batch = List.of( // GH-90000
                     MetricDataPoint.of("mem.usage", 60.0, "%"), // GH-90000
@@ -339,7 +339,7 @@ class DataCloudAnalyticsStoreTest {
         }
 
         @Test
-        @DisplayName("saveMetricsBatch: partial failure — returns only successfully saved points [GH-90000]")
+        @DisplayName("saveMetricsBatch: partial failure — returns only successfully saved points")
         void saveMetricsBatch_partialFailure_returnsSuccessfulOnes() { // GH-90000
             List<MetricDataPoint> batch = List.of( // GH-90000
                     MetricDataPoint.of("good.metric", 1.0, ""), // GH-90000
@@ -347,7 +347,7 @@ class DataCloudAnalyticsStoreTest {
             );
             when(client.save(eq(TENANT), eq(DataCloudAnalyticsStore.METRICS_COLLECTION), anyMap())) // GH-90000
                     .thenReturn(Promise.of(entity("m1", metricData("m1", "good.metric", 1.0)))) // GH-90000
-                    .thenReturn(Promise.ofException(new RuntimeException("partition full [GH-90000]")));
+                    .thenReturn(Promise.ofException(new RuntimeException("partition full")));
 
             List<MetricDataPoint> saved = store.saveMetricsBatch(TENANT, batch).getResult(); // GH-90000
 

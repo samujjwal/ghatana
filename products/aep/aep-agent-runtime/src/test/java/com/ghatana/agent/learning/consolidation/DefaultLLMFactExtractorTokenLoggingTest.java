@@ -27,7 +27,7 @@ class DefaultLLMFactExtractorTokenLoggingTest {
     void shouldCreateCompletionResultWithTokenCounts() { // GH-90000
         // Verify CompletionResult can be created with token counts using builder
         CompletionResult result = CompletionResult.builder() // GH-90000
-            .text("Test completion [GH-90000]")
+            .text("Test completion")
             .tokensUsed(100) // GH-90000
             .promptTokens(50) // GH-90000
             .completionTokens(50) // GH-90000

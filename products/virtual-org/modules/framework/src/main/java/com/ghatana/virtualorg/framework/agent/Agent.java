@@ -19,7 +19,11 @@ import java.util.Set;
  * interface. Provides backward-compatible builder API while satisfying the core
  * contract.
  *
- */
+  * @doc.type interface
+ * @doc.purpose Provides agent functionality.
+ * @doc.layer product
+ * @doc.pattern Agent
+*/
 public class Agent implements OrganizationalAgent {
 
     private final String id;

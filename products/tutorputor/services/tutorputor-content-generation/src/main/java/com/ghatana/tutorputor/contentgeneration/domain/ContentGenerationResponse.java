@@ -1,5 +1,11 @@
 package com.ghatana.tutorputor.contentgeneration.domain;
 
+/**
+ * @doc.type class
+ * @doc.purpose Provides content generation response functionality.
+ * @doc.layer product
+ * @doc.pattern ValueObject
+ */
 public class ContentGenerationResponse {
     private final String content;
     private final String domain;

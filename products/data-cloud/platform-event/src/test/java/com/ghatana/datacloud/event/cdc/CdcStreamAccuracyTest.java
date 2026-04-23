@@ -26,8 +26,8 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer   product
  * @doc.pattern IntegrationTest
  */
-@DisplayName("CdcStreamAccuracyTest [GH-90000]")
-@Tag("cdc [GH-90000]")
+@DisplayName("CdcStreamAccuracyTest")
+@Tag("cdc")
 class CdcStreamAccuracyTest {
 
     private CdcStream stream;
@@ -40,7 +40,7 @@ class CdcStreamAccuracyTest {
     // ── Event ordering ────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("events are delivered in offset order [GH-90000]")
+    @DisplayName("events are delivered in offset order")
     void eventsAreDeliveredInOffsetOrder() { // GH-90000
         stream.publish(CdcEvent.insert("table-a", 3L, Map.of("id", "3"))); // GH-90000
         stream.publish(CdcEvent.insert("table-a", 1L, Map.of("id", "1"))); // GH-90000
@@ -53,7 +53,7 @@ class CdcStreamAccuracyTest {
     }
 
     @Test
-    @DisplayName("all INSERT events are captured [GH-90000]")
+    @DisplayName("all INSERT events are captured")
     void allInsertEventsCaptured() { // GH-90000
         int count = 50;
         for (int i = 1; i <= count; i++) { // GH-90000
@@ -65,7 +65,7 @@ class CdcStreamAccuracyTest {
     // ── Event type coverage ───────────────────────────────────────────────────
 
     @Test
-    @DisplayName("INSERT event has correct operation type [GH-90000]")
+    @DisplayName("INSERT event has correct operation type")
     void insertEventType() { // GH-90000
         stream.publish(CdcEvent.insert("users", 1L, Map.of("id", "u1"))); // GH-90000
         CdcEvent event = stream.consume("users", 0L).get(0); // GH-90000
@@ -73,7 +73,7 @@ class CdcStreamAccuracyTest {
     }
 
     @Test
-    @DisplayName("UPDATE event carries both before and after payload [GH-90000]")
+    @DisplayName("UPDATE event carries both before and after payload")
     void updateEventCarriesBeforeAndAfter() { // GH-90000
         Map<String, String> before = Map.of("status", "PENDING"); // GH-90000
         Map<String, String> after = Map.of("status", "ACTIVE"); // GH-90000
@@ -85,7 +85,7 @@ class CdcStreamAccuracyTest {
     }
 
     @Test
-    @DisplayName("DELETE event captures the deleted row as before payload [GH-90000]")
+    @DisplayName("DELETE event captures the deleted row as before payload")
     void deleteEventCapturesDeletedRow() { // GH-90000
         Map<String, String> row = Map.of("id", "u7", "name", "Alice"); // GH-90000
         stream.publish(CdcEvent.delete("users", 9L, row)); // GH-90000
@@ -98,7 +98,7 @@ class CdcStreamAccuracyTest {
     // ── Deduplication ─────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("duplicate offset from same table is deduplicated [GH-90000]")
+    @DisplayName("duplicate offset from same table is deduplicated")
     void duplicateOffsetIsIgnored() { // GH-90000
         stream.publish(CdcEvent.insert("products", 10L, Map.of("id", "p1"))); // GH-90000
         stream.publish(CdcEvent.insert("products", 10L, Map.of("id", "p1-dup"))); // GH-90000
@@ -108,7 +108,7 @@ class CdcStreamAccuracyTest {
     // ── Offset-based resumption ───────────────────────────────────────────────
 
     @Test
-    @DisplayName("consuming from a checkpoint skips already-processed events [GH-90000]")
+    @DisplayName("consuming from a checkpoint skips already-processed events")
     void consumeFromCheckpointSkipsProcessedEvents() { // GH-90000
         for (int i = 1; i <= 10; i++) { // GH-90000
             stream.publish(CdcEvent.insert("logs", (long) i, Map.of("seq", String.valueOf(i)))); // GH-90000
@@ -121,7 +121,7 @@ class CdcStreamAccuracyTest {
     }
 
     @Test
-    @DisplayName("consuming from offset 0 delivers all events [GH-90000]")
+    @DisplayName("consuming from offset 0 delivers all events")
     void consumeFromZeroDeliversAll() { // GH-90000
         IntStream.rangeClosed(1, 20).forEach(i -> // GH-90000
                 stream.publish(CdcEvent.insert("metrics", (long) i, Map.of("val", String.valueOf(i))))); // GH-90000
@@ -131,7 +131,7 @@ class CdcStreamAccuracyTest {
     // ── Table isolation ───────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("events are partitioned by table — different tables do not share streams [GH-90000]")
+    @DisplayName("events are partitioned by table — different tables do not share streams")
     void eventsArePartitionedByTable() { // GH-90000
         stream.publish(CdcEvent.insert("table-alpha", 1L, Map.of("k", "v"))); // GH-90000
         stream.publish(CdcEvent.insert("table-beta", 1L, Map.of("k", "v"))); // GH-90000
@@ -140,7 +140,7 @@ class CdcStreamAccuracyTest {
     }
 
     @Test
-    @DisplayName("consuming from unknown table returns empty list [GH-90000]")
+    @DisplayName("consuming from unknown table returns empty list")
     void unknownTableReturnsEmpty() { // GH-90000
         assertThat(stream.consume("nonexistent-table", 0L)).isEmpty(); // GH-90000
     }
@@ -149,7 +149,7 @@ class CdcStreamAccuracyTest {
 
     @ParameterizedTest
     @ValueSource(ints = {100, 500, 1000}) // GH-90000
-    @DisplayName("stream handles bulk event injection accurately [GH-90000]")
+    @DisplayName("stream handles bulk event injection accurately")
     void bulkEventInjection(int count) { // GH-90000
         for (int i = 1; i <= count; i++) { // GH-90000
             stream.publish(CdcEvent.insert("bulk", (long) i, Map.of("i", String.valueOf(i)))); // GH-90000

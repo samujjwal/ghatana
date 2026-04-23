@@ -28,11 +28,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("FilterChain - Phase 3 Expansion [GH-90000]")
+@DisplayName("FilterChain - Phase 3 Expansion")
 class FilterChainExpansionTest extends EventloopTestBase {
 
     private static HttpRequest getRequest() { // GH-90000
-        return HttpRequest.get("http://localhost/test [GH-90000]").build();
+        return HttpRequest.get("http://localhost/test").build();
     }
 
     private static AsyncServlet okServlet() { // GH-90000
@@ -44,11 +44,11 @@ class FilterChainExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Large Filter Chains [GH-90000]")
+    @DisplayName("Large Filter Chains")
     class LargeChainTests {
 
         @Test
-        @DisplayName("Builds and executes chain with 50 filters [GH-90000]")
+        @DisplayName("Builds and executes chain with 50 filters")
         void largeFilterChain() { // GH-90000
             FilterChain chain = FilterChain.create(); // GH-90000
 
@@ -70,7 +70,7 @@ class FilterChainExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Maintains filter order through large chain [GH-90000]")
+        @DisplayName("Maintains filter order through large chain")
         void filterOrderPreservation() { // GH-90000
             AtomicInteger executionOrder = new AtomicInteger(0); // GH-90000
             List<Integer> executionSequence = new ArrayList<>(); // GH-90000
@@ -99,11 +99,11 @@ class FilterChainExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Filter Exception Handling [GH-90000]")
+    @DisplayName("Filter Exception Handling")
     class ExceptionHandlingTests {
 
         @Test
-        @DisplayName("Chain with error-handling filter catches exceptions [GH-90000]")
+        @DisplayName("Chain with error-handling filter catches exceptions")
         void errorHandlingFilter() { // GH-90000
             FilterChain chain = FilterChain.create(); // GH-90000
 
@@ -123,7 +123,7 @@ class FilterChainExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Multiple exception handlers layer correctly [GH-90000]")
+        @DisplayName("Multiple exception handlers layer correctly")
         void layeredErrorHandling() { // GH-90000
             FilterChain chain = FilterChain.create(); // GH-90000
 
@@ -148,11 +148,11 @@ class FilterChainExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Filter Short-Circuiting [GH-90000]")
+    @DisplayName("Filter Short-Circuiting")
     class ShortCircuitTests {
 
         @Test
-        @DisplayName("Filter can short-circuit chain and return early [GH-90000]")
+        @DisplayName("Filter can short-circuit chain and return early")
         void shortCircuitResponse() { // GH-90000
             FilterChain chain = FilterChain.create(); // GH-90000
 
@@ -170,7 +170,7 @@ class FilterChainExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Rate limiting filter can reject requests [GH-90000]")
+        @DisplayName("Rate limiting filter can reject requests")
         void rateLimitingShortCircuit() { // GH-90000
             FilterChain chain = FilterChain.create(); // GH-90000
             AtomicInteger requestCount = new AtomicInteger(0); // GH-90000

@@ -86,7 +86,10 @@ import java.util.Map;
  *     <td>Binary temporal</td>
  *   </tr>
  * </table>
- */
+  * @doc.type class
+ * @doc.purpose Provides operator metadata functionality.
+ * @doc.layer product
+*/
 public class OperatorMetadata {
 
     private final String type;

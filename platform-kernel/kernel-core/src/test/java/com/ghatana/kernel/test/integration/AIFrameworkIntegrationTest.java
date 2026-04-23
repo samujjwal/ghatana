@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Ghatana Kernel Team
  * @since 1.0.0
  */
-@DisplayName("AI Framework Integration Tests [GH-90000]")
+@DisplayName("AI Framework Integration Tests")
 class AIFrameworkIntegrationTest {
 
     private MockAgentOrchestrator orchestrator;
@@ -35,9 +35,9 @@ class AIFrameworkIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should register and execute agent [GH-90000]")
+    @DisplayName("Should register and execute agent")
     void testRegisterAndExecuteAgent() { // GH-90000
-        MockAgent agent = new MockAgent("test-agent [GH-90000]");
+        MockAgent agent = new MockAgent("test-agent");
         orchestrator.registerAgent(agent); // GH-90000
 
         AgentOrchestrator.AgentRequest request = new AgentOrchestrator.AgentRequest( // GH-90000
@@ -51,11 +51,11 @@ class AIFrameworkIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should execute agent workflow [GH-90000]")
+    @DisplayName("Should execute agent workflow")
     void testExecuteAgentWorkflow() { // GH-90000
         List<AgentOrchestrator.KernelAgent> agents = List.of( // GH-90000
-            new MockAgent("agent-1 [GH-90000]"),
-            new MockAgent("agent-2 [GH-90000]")
+            new MockAgent("agent-1"),
+            new MockAgent("agent-2")
         );
 
         AgentOrchestrator.AgentRequest request = new AgentOrchestrator.AgentRequest( // GH-90000
@@ -70,16 +70,16 @@ class AIFrameworkIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should validate model approval [GH-90000]")
+    @DisplayName("Should validate model approval")
     void testModelApproval() { // GH-90000
-        ModelGovernanceService.ModelApproval approval = governance.getModelApproval("model-1 [GH-90000]");
+        ModelGovernanceService.ModelApproval approval = governance.getModelApproval("model-1");
 
         assertNotNull(approval); // GH-90000
         assertTrue(approval.isApproved()); // GH-90000
     }
 
     @Test
-    @DisplayName("Should validate model usage [GH-90000]")
+    @DisplayName("Should validate model usage")
     void testValidateModelUsage() { // GH-90000
         AgentOrchestrator.AgentRequest request = new AgentOrchestrator.AgentRequest( // GH-90000
             "req-1", "classify", Map.of(), Map.of() // GH-90000
@@ -89,7 +89,7 @@ class AIFrameworkIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should record model performance [GH-90000]")
+    @DisplayName("Should record model performance")
     void testRecordModelPerformance() { // GH-90000
         ModelGovernanceService.ModelPerformanceMetrics metrics =
             new ModelGovernanceService.ModelPerformanceMetrics(0.95, 0.92); // GH-90000
@@ -98,20 +98,20 @@ class AIFrameworkIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should configure autonomy level [GH-90000]")
+    @DisplayName("Should configure autonomy level")
     void testConfigureAutonomyLevel() { // GH-90000
         assertDoesNotThrow(() -> // GH-90000
             autonomyManager.configureAutonomyLevel("agent-1", AutonomyManager.AutonomyLevel.MEDIUM) // GH-90000
         );
 
-        AutonomyManager.AutonomyLevel level = autonomyManager.getAutonomyLevel("agent-1 [GH-90000]");
+        AutonomyManager.AutonomyLevel level = autonomyManager.getAutonomyLevel("agent-1");
         assertEquals(AutonomyManager.AutonomyLevel.MEDIUM, level); // GH-90000
     }
 
     @Test
-    @DisplayName("Should determine human review requirement [GH-90000]")
+    @DisplayName("Should determine human review requirement")
     void testRequiresHumanReview() { // GH-90000
-        MockAgent agent = new MockAgent("test-agent [GH-90000]");
+        MockAgent agent = new MockAgent("test-agent");
         AgentOrchestrator.AgentRequest request = new AgentOrchestrator.AgentRequest( // GH-90000
             "req-1", "critical-decision", Map.of(), Map.of() // GH-90000
         );
@@ -122,9 +122,9 @@ class AIFrameworkIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should record autonomous decision [GH-90000]")
+    @DisplayName("Should record autonomous decision")
     void testRecordAutonomousDecision() { // GH-90000
-        MockAgent agent = new MockAgent("test-agent [GH-90000]");
+        MockAgent agent = new MockAgent("test-agent");
         AgentOrchestrator.AgentRequest request = new AgentOrchestrator.AgentRequest( // GH-90000
             "req-1", "classify", Map.of(), Map.of() // GH-90000
         );
@@ -137,9 +137,9 @@ class AIFrameworkIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should evaluate agent performance [GH-90000]")
+    @DisplayName("Should evaluate agent performance")
     void testEvaluateAgent() { // GH-90000
-        MockAgent agent = new MockAgent("test-agent [GH-90000]");
+        MockAgent agent = new MockAgent("test-agent");
         AIEvaluationFramework.EvaluationCriteria criteria =
             AIEvaluationFramework.EvaluationCriteria.builder() // GH-90000
                 .withAccuracyThreshold(0.9) // GH-90000
@@ -154,7 +154,7 @@ class AIFrameworkIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should compare multiple agents [GH-90000]")
+    @DisplayName("Should compare multiple agents")
     void testCompareAgents() { // GH-90000
         List<String> agentIds = List.of("agent-1", "agent-2", "agent-3"); // GH-90000
         MockComparisonCriteria criteria = new MockComparisonCriteria(); // GH-90000
@@ -276,8 +276,8 @@ class AIFrameworkIntegrationTest {
             return ModelApproval.builder() // GH-90000
                 .modelId(modelId) // GH-90000
                 .approved(true) // GH-90000
-                .approver("admin [GH-90000]")
-                .version("1.0 [GH-90000]")
+                .approver("admin")
+                .version("1.0")
                 .build(); // GH-90000
         }
 

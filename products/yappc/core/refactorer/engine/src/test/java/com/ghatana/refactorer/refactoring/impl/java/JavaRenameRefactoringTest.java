@@ -43,7 +43,7 @@ class JavaRenameRefactoringTest {
     @BeforeEach
     void setUp() throws Exception { // GH-90000
         refactoring = new JavaRenameRefactoring(); // GH-90000
-        testFile = tempDir.resolve("TestClass.java [GH-90000]");
+        testFile = tempDir.resolve("TestClass.java");
         executor = Executors.newSingleThreadExecutor(); // GH-90000
         projectContext = new PolyfixProjectContext(tempDir, null, List.of(), executor, null); // GH-90000
 
@@ -77,8 +77,8 @@ class JavaRenameRefactoringTest {
         assertTrue(result.getChangeCount() > 0, SHOULD_HAVE_AT_LEAST_ONE_CHANGE); // GH-90000
 
         String content = readFile(); // GH-90000
-        assertTrue(content.contains("class RenamedClass [GH-90000]"), "Class should be renamed");
-        assertFalse(content.contains("class TestClass [GH-90000]"), "Old class name should not be present");
+        assertTrue(content.contains("class RenamedClass"), "Class should be renamed");
+        assertFalse(content.contains("class TestClass"), "Old class name should not be present");
     }
 
     @Test
@@ -93,8 +93,8 @@ class JavaRenameRefactoringTest {
         assertTrue(result.getChangeCount() > 0, SHOULD_HAVE_AT_LEAST_ONE_CHANGE); // GH-90000
 
         String content = readFile(); // GH-90000
-        assertTrue(content.contains("void newMethod() [GH-90000]"), "Method should be renamed");
-        assertFalse(content.contains("void oldMethod() [GH-90000]"), "Old method name should not be present");
+        assertTrue(content.contains("void newMethod()"), "Method should be renamed");
+        assertFalse(content.contains("void oldMethod()"), "Old method name should not be present");
     }
 
     @Test
@@ -109,8 +109,8 @@ class JavaRenameRefactoringTest {
         assertTrue(result.getChangeCount() > 0, SHOULD_HAVE_AT_LEAST_ONE_CHANGE); // GH-90000
 
         String content = readFile(); // GH-90000
-        assertTrue(content.contains("String newField; [GH-90000]"), "Field should be renamed");
-        assertFalse(content.contains("String oldField; [GH-90000]"), "Old field name should not be present");
+        assertTrue(content.contains("String newField;"), "Field should be renamed");
+        assertFalse(content.contains("String oldField;"), "Old field name should not be present");
     }
 
     @Test
@@ -127,19 +127,19 @@ class JavaRenameRefactoringTest {
 
         // Check if the variable was renamed in the declaration
         boolean declarationRenamed =
-                content.contains("int newVar = 42 [GH-90000]")
-                        || content.contains("int newVar= 42 [GH-90000]")
-                        || content.contains("int newVar =42 [GH-90000]")
-                        || content.contains("int newVar=42 [GH-90000]");
+                content.contains("int newVar = 42")
+                        || content.contains("int newVar= 42")
+                        || content.contains("int newVar =42")
+                        || content.contains("int newVar=42");
 
         // Check if the variable was renamed in the usage
         boolean usageRenamed =
-                content.contains("System.out.println(newVar) [GH-90000]")
-                        || content.contains("System.out.println( newVar ) [GH-90000]")
-                        || content.contains("System.out.println( newVar); [GH-90000]")
-                        || content.contains("System.out.println(newVar ); [GH-90000]")
-                        || content.contains("System.out.println( newVar ); [GH-90000]")
-                        || content.contains("System.out.println( newVar )  [GH-90000]");
+                content.contains("System.out.println(newVar)")
+                        || content.contains("System.out.println( newVar )")
+                        || content.contains("System.out.println( newVar);")
+                        || content.contains("System.out.println(newVar );")
+                        || content.contains("System.out.println( newVar );")
+                        || content.contains("System.out.println( newVar ) ");
 
         // At least one of the renames should have happened
         assertTrue( // GH-90000
@@ -149,10 +149,10 @@ class JavaRenameRefactoringTest {
 
         // Log what was actually found for debugging
         if (!declarationRenamed) { // GH-90000
-            System.out.println("Variable declaration was not renamed as expected [GH-90000]");
+            System.out.println("Variable declaration was not renamed as expected");
         }
         if (!usageRenamed) { // GH-90000
-            System.out.println("Variable usage was not renamed as expected [GH-90000]");
+            System.out.println("Variable usage was not renamed as expected");
         }
     }
 
@@ -184,17 +184,17 @@ class JavaRenameRefactoringTest {
 
     @Test
     void shouldValidateNewName() { // GH-90000
-        assertTrue(refactoring.isNewNameValid("validName [GH-90000]"));
-        assertTrue(refactoring.isNewNameValid("validName123 [GH-90000]"));
-        assertTrue(refactoring.isNewNameValid("_validName [GH-90000]"));
-        assertTrue(refactoring.isNewNameValid("$validName [GH-90000]"));
+        assertTrue(refactoring.isNewNameValid("validName"));
+        assertTrue(refactoring.isNewNameValid("validName123"));
+        assertTrue(refactoring.isNewNameValid("_validName"));
+        assertTrue(refactoring.isNewNameValid("$validName"));
 
-        assertFalse(refactoring.isNewNameValid("123invalid [GH-90000]"));
-        assertFalse(refactoring.isNewNameValid("invalid-name [GH-90000]"));
-        assertFalse(refactoring.isNewNameValid("invalid name [GH-90000]"));
-        assertFalse(refactoring.isNewNameValid("invalid.name [GH-90000]"));
-        assertFalse(refactoring.isNewNameValid(" [GH-90000]"));
-        assertFalse(refactoring.isNewNameValid("     [GH-90000]"));
+        assertFalse(refactoring.isNewNameValid("123invalid"));
+        assertFalse(refactoring.isNewNameValid("invalid-name"));
+        assertFalse(refactoring.isNewNameValid("invalid name"));
+        assertFalse(refactoring.isNewNameValid("invalid.name"));
+        assertFalse(refactoring.isNewNameValid(""));
+        assertFalse(refactoring.isNewNameValid("    "));
         assertFalse(refactoring.isNewNameValid(null)); // GH-90000
     }
 

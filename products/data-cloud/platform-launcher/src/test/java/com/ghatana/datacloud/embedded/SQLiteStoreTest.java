@@ -30,7 +30,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer core
  * @doc.pattern Unit Test, Integration Test
  */
-@DisplayName("SQLite Store Tests [GH-90000]")
+@DisplayName("SQLite Store Tests")
 class SQLiteStoreTest extends EventloopTestBase {
 
     @TempDir
@@ -42,7 +42,7 @@ class SQLiteStoreTest extends EventloopTestBase {
     @BeforeEach
     void setup() { // GH-90000
         mockEventStream = mock(EmbeddableDataCloud.EmbeddedEventStream.class); // GH-90000
-        Path dbFile = tempDir.resolve("test.db [GH-90000]");
+        Path dbFile = tempDir.resolve("test.db");
         store = new SQLiteStore(dbFile, mockEventStream, SQLiteStore.SQLiteConfig.defaults()); // GH-90000
     }
 
@@ -62,10 +62,10 @@ class SQLiteStoreTest extends EventloopTestBase {
     // ========================================================================
 
     @Test
-    @DisplayName("Should create SQLiteStore with valid parameters [GH-90000]")
+    @DisplayName("Should create SQLiteStore with valid parameters")
     void shouldCreateWithValidParameters() { // GH-90000
         // GIVEN: Valid parameters
-        Path dbFile = tempDir.resolve("new-test.db [GH-90000]");
+        Path dbFile = tempDir.resolve("new-test.db");
 
         // WHEN: Creating store
         SQLiteStore newStore = new SQLiteStore(dbFile, mockEventStream, SQLiteStore.SQLiteConfig.defaults()); // GH-90000
@@ -78,10 +78,10 @@ class SQLiteStoreTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should create SQLiteStore with null config (uses defaults) [GH-90000]")
+    @DisplayName("Should create SQLiteStore with null config (uses defaults)")
     void shouldCreateWithNullConfig() { // GH-90000
         // GIVEN: Null config
-        Path dbFile = tempDir.resolve("null-config.db [GH-90000]");
+        Path dbFile = tempDir.resolve("null-config.db");
 
         // WHEN: Creating store with null config
         SQLiteStore newStore = new SQLiteStore(dbFile, mockEventStream, null); // GH-90000
@@ -94,26 +94,26 @@ class SQLiteStoreTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should reject null database file [GH-90000]")
+    @DisplayName("Should reject null database file")
     void shouldRejectNullDatabaseFile() { // GH-90000
         // WHEN/THEN: Throws exception for null file
         assertThatThrownBy(() -> // GH-90000
             new SQLiteStore(null, mockEventStream, SQLiteStore.SQLiteConfig.defaults()) // GH-90000
         ).isInstanceOf(NullPointerException.class) // GH-90000
-         .hasMessageContaining("databaseFile [GH-90000]");
+         .hasMessageContaining("databaseFile");
     }
 
     @Test
-    @DisplayName("Should reject null event stream [GH-90000]")
+    @DisplayName("Should reject null event stream")
     void shouldRejectNullEventStream() { // GH-90000
         // GIVEN: Valid file
-        Path dbFile = tempDir.resolve("test.db [GH-90000]");
+        Path dbFile = tempDir.resolve("test.db");
 
         // WHEN/THEN: Throws exception for null event stream
         assertThatThrownBy(() -> // GH-90000
             new SQLiteStore(dbFile, null, SQLiteStore.SQLiteConfig.defaults()) // GH-90000
         ).isInstanceOf(NullPointerException.class) // GH-90000
-         .hasMessageContaining("events [GH-90000]");
+         .hasMessageContaining("events");
     }
 
     // ========================================================================
@@ -121,57 +121,57 @@ class SQLiteStoreTest extends EventloopTestBase {
     // ========================================================================
 
     @Test
-    @DisplayName("Should put record successfully [GH-90000]")
+    @DisplayName("Should put record successfully")
     void shouldPutRecord() { // GH-90000
         // GIVEN: Valid record
-        TestRecord record = createTestRecord("record-1 [GH-90000]");
+        TestRecord record = createTestRecord("record-1");
 
         // WHEN: Putting record
         runPromise(() -> store.put("key-1", record)); // GH-90000
 
         // THEN: Record is stored (verify by getting it back) // GH-90000
-        Optional<Record> retrieved = runPromise(() -> store.get("key-1 [GH-90000]"));
+        Optional<Record> retrieved = runPromise(() -> store.get("key-1"));
         assertThat(retrieved).isPresent(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should update existing record with put [GH-90000]")
+    @DisplayName("Should update existing record with put")
     void shouldUpdateExistingRecord() { // GH-90000
         // GIVEN: Existing record
-        TestRecord original = createTestRecord("original [GH-90000]");
+        TestRecord original = createTestRecord("original");
         runPromise(() -> store.put("key-1", original)); // GH-90000
 
         // WHEN: Putting new record with same key
-        TestRecord updated = createTestRecord("updated [GH-90000]");
+        TestRecord updated = createTestRecord("updated");
         runPromise(() -> store.put("key-1", updated)); // GH-90000
 
         // THEN: Record is updated
-        Optional<Record> retrieved = runPromise(() -> store.get("key-1 [GH-90000]"));
+        Optional<Record> retrieved = runPromise(() -> store.get("key-1"));
         assertThat(retrieved).isPresent(); // GH-90000
-        assertThat(retrieved.get().collectionName()).isEqualTo("updated [GH-90000]");
+        assertThat(retrieved.get().collectionName()).isEqualTo("updated");
     }
 
     @Test
-    @DisplayName("Should reject null key in put [GH-90000]")
+    @DisplayName("Should reject null key in put")
     void shouldRejectNullKeyInPut() { // GH-90000
         // GIVEN: Valid record
-        TestRecord record = createTestRecord("test [GH-90000]");
+        TestRecord record = createTestRecord("test");
 
         // WHEN/THEN: Throws exception for null key
         assertThatThrownBy(() -> // GH-90000
             runPromise(() -> store.put(null, record)) // GH-90000
         ).isInstanceOf(NullPointerException.class) // GH-90000
-         .hasMessageContaining("key [GH-90000]");
+         .hasMessageContaining("key");
     }
 
     @Test
-    @DisplayName("Should reject null record in put [GH-90000]")
+    @DisplayName("Should reject null record in put")
     void shouldRejectNullRecordInPut() { // GH-90000
         // WHEN/THEN: Throws exception for null record
         assertThatThrownBy(() -> // GH-90000
             runPromise(() -> store.put("key-1", null)) // GH-90000
         ).isInstanceOf(NullPointerException.class) // GH-90000
-         .hasMessageContaining("record [GH-90000]");
+         .hasMessageContaining("record");
     }
 
     // ========================================================================
@@ -179,40 +179,40 @@ class SQLiteStoreTest extends EventloopTestBase {
     // ========================================================================
 
     @Test
-    @DisplayName("Should get existing record [GH-90000]")
+    @DisplayName("Should get existing record")
     void shouldGetExistingRecord() { // GH-90000
         // GIVEN: Stored record
-        TestRecord record = createTestRecord("test-collection [GH-90000]");
+        TestRecord record = createTestRecord("test-collection");
         runPromise(() -> store.put("key-1", record)); // GH-90000
 
         // WHEN: Getting record
-        Optional<Record> retrieved = runPromise(() -> store.get("key-1 [GH-90000]"));
+        Optional<Record> retrieved = runPromise(() -> store.get("key-1"));
 
         // THEN: Record is returned
         assertThat(retrieved).isPresent(); // GH-90000
         assertThat(retrieved.get().id()).isEqualTo(record.id()); // GH-90000
         assertThat(retrieved.get().tenantId()).isEqualTo(record.tenantId()); // GH-90000
-        assertThat(retrieved.get().collectionName()).isEqualTo("test-collection [GH-90000]");
+        assertThat(retrieved.get().collectionName()).isEqualTo("test-collection");
     }
 
     @Test
-    @DisplayName("Should return empty for non-existent key [GH-90000]")
+    @DisplayName("Should return empty for non-existent key")
     void shouldReturnEmptyForNonExistent() { // GH-90000
         // WHEN: Getting non-existent record
-        Optional<Record> retrieved = runPromise(() -> store.get("non-existent [GH-90000]"));
+        Optional<Record> retrieved = runPromise(() -> store.get("non-existent"));
 
         // THEN: Returns empty
         assertThat(retrieved).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should reject null key in get [GH-90000]")
+    @DisplayName("Should reject null key in get")
     void shouldRejectNullKeyInGet() { // GH-90000
         // WHEN/THEN: Throws exception for null key
         assertThatThrownBy(() -> // GH-90000
             runPromise(() -> store.get(null)) // GH-90000
         ).isInstanceOf(NullPointerException.class) // GH-90000
-         .hasMessageContaining("key [GH-90000]");
+         .hasMessageContaining("key");
     }
 
     // ========================================================================
@@ -220,41 +220,41 @@ class SQLiteStoreTest extends EventloopTestBase {
     // ========================================================================
 
     @Test
-    @DisplayName("Should delete existing record [GH-90000]")
+    @DisplayName("Should delete existing record")
     void shouldDeleteExistingRecord() { // GH-90000
         // GIVEN: Stored record
-        TestRecord record = createTestRecord("test [GH-90000]");
+        TestRecord record = createTestRecord("test");
         runPromise(() -> store.put("key-1", record)); // GH-90000
 
         // WHEN: Deleting record
-        Boolean deleted = runPromise(() -> store.delete("key-1 [GH-90000]"));
+        Boolean deleted = runPromise(() -> store.delete("key-1"));
 
         // THEN: Record is deleted
         assertThat(deleted).isTrue(); // GH-90000
 
         // AND: Record no longer exists
-        Optional<Record> retrieved = runPromise(() -> store.get("key-1 [GH-90000]"));
+        Optional<Record> retrieved = runPromise(() -> store.get("key-1"));
         assertThat(retrieved).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should return false when deleting non-existent record [GH-90000]")
+    @DisplayName("Should return false when deleting non-existent record")
     void shouldReturnFalseForNonExistentDelete() { // GH-90000
         // WHEN: Deleting non-existent record
-        Boolean deleted = runPromise(() -> store.delete("non-existent [GH-90000]"));
+        Boolean deleted = runPromise(() -> store.delete("non-existent"));
 
         // THEN: Returns false
         assertThat(deleted).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should reject null key in delete [GH-90000]")
+    @DisplayName("Should reject null key in delete")
     void shouldRejectNullKeyInDelete() { // GH-90000
         // WHEN/THEN: Throws exception for null key
         assertThatThrownBy(() -> // GH-90000
             runPromise(() -> store.delete(null)) // GH-90000
         ).isInstanceOf(NullPointerException.class) // GH-90000
-         .hasMessageContaining("key [GH-90000]");
+         .hasMessageContaining("key");
     }
 
     // ========================================================================
@@ -262,37 +262,37 @@ class SQLiteStoreTest extends EventloopTestBase {
     // ========================================================================
 
     @Test
-    @DisplayName("Should return true for existing key [GH-90000]")
+    @DisplayName("Should return true for existing key")
     void shouldReturnTrueForExistingKey() { // GH-90000
         // GIVEN: Stored record
-        TestRecord record = createTestRecord("test [GH-90000]");
+        TestRecord record = createTestRecord("test");
         runPromise(() -> store.put("key-1", record)); // GH-90000
 
         // WHEN: Checking existence
-        Boolean exists = runPromise(() -> store.exists("key-1 [GH-90000]"));
+        Boolean exists = runPromise(() -> store.exists("key-1"));
 
         // THEN: Returns true
         assertThat(exists).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should return false for non-existent key [GH-90000]")
+    @DisplayName("Should return false for non-existent key")
     void shouldReturnFalseForNonExistentKey() { // GH-90000
         // WHEN: Checking existence of non-existent key
-        Boolean exists = runPromise(() -> store.exists("non-existent [GH-90000]"));
+        Boolean exists = runPromise(() -> store.exists("non-existent"));
 
         // THEN: Returns false
         assertThat(exists).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should reject null key in exists [GH-90000]")
+    @DisplayName("Should reject null key in exists")
     void shouldRejectNullKeyInExists() { // GH-90000
         // WHEN/THEN: Throws exception for null key
         assertThatThrownBy(() -> // GH-90000
             runPromise(() -> store.exists(null)) // GH-90000
         ).isInstanceOf(NullPointerException.class) // GH-90000
-         .hasMessageContaining("key [GH-90000]");
+         .hasMessageContaining("key");
     }
 
     // ========================================================================
@@ -300,7 +300,7 @@ class SQLiteStoreTest extends EventloopTestBase {
     // ========================================================================
 
     @Test
-    @DisplayName("Should return zero for empty store [GH-90000]")
+    @DisplayName("Should return zero for empty store")
     void shouldReturnZeroForEmptyStore() { // GH-90000
         // WHEN: Counting empty store
         Long count = runPromise(() -> store.count()); // GH-90000
@@ -310,7 +310,7 @@ class SQLiteStoreTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should return correct count after puts [GH-90000]")
+    @DisplayName("Should return correct count after puts")
     void shouldReturnCorrectCount() { // GH-90000
         // GIVEN: Multiple records
         for (int i = 0; i < 5; i++) { // GH-90000
@@ -327,7 +327,7 @@ class SQLiteStoreTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should update count after delete [GH-90000]")
+    @DisplayName("Should update count after delete")
     void shouldUpdateCountAfterDelete() { // GH-90000
         // GIVEN: Multiple records
         for (int i = 0; i < 3; i++) { // GH-90000
@@ -337,7 +337,7 @@ class SQLiteStoreTest extends EventloopTestBase {
         }
 
         // WHEN: Deleting one record
-        runPromise(() -> store.delete("key-1 [GH-90000]"));
+        runPromise(() -> store.delete("key-1"));
 
         // THEN: Count is updated
         Long count = runPromise(() -> store.count()); // GH-90000
@@ -349,7 +349,7 @@ class SQLiteStoreTest extends EventloopTestBase {
     // ========================================================================
 
     @Test
-    @DisplayName("Should clear all records [GH-90000]")
+    @DisplayName("Should clear all records")
     void shouldClearAllRecords() { // GH-90000
         // GIVEN: Multiple records
         for (int i = 0; i < 5; i++) { // GH-90000
@@ -367,7 +367,7 @@ class SQLiteStoreTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle clear on empty store [GH-90000]")
+    @DisplayName("Should handle clear on empty store")
     void shouldHandleClearOnEmptyStore() { // GH-90000
         // WHEN: Clearing empty store
         runPromise(() -> store.clear()); // GH-90000
@@ -382,7 +382,7 @@ class SQLiteStoreTest extends EventloopTestBase {
     // ========================================================================
 
     @Test
-    @DisplayName("Should create store with default config [GH-90000]")
+    @DisplayName("Should create store with default config")
     void shouldCreateWithDefaultConfig() { // GH-90000
         // GIVEN: Default config
         SQLiteStore.SQLiteConfig config = SQLiteStore.SQLiteConfig.defaults(); // GH-90000
@@ -395,11 +395,11 @@ class SQLiteStoreTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should create store with high performance config [GH-90000]")
+    @DisplayName("Should create store with high performance config")
     void shouldCreateWithHighPerformanceConfig() { // GH-90000
         // GIVEN: High performance config
         SQLiteStore.SQLiteConfig config = SQLiteStore.SQLiteConfig.highPerformance(); // GH-90000
-        Path dbFile = tempDir.resolve("high-perf.db [GH-90000]");
+        Path dbFile = tempDir.resolve("high-perf.db");
 
         // WHEN: Creating store
         SQLiteStore highPerfStore = new SQLiteStore(dbFile, mockEventStream, config); // GH-90000
@@ -414,11 +414,11 @@ class SQLiteStoreTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should create store with low memory config [GH-90000]")
+    @DisplayName("Should create store with low memory config")
     void shouldCreateWithLowMemoryConfig() { // GH-90000
         // GIVEN: Low memory config
         SQLiteStore.SQLiteConfig config = SQLiteStore.SQLiteConfig.lowMemory(); // GH-90000
-        Path dbFile = tempDir.resolve("low-mem.db [GH-90000]");
+        Path dbFile = tempDir.resolve("low-mem.db");
 
         // WHEN: Creating store
         SQLiteStore lowMemStore = new SQLiteStore(dbFile, mockEventStream, config); // GH-90000
@@ -437,10 +437,10 @@ class SQLiteStoreTest extends EventloopTestBase {
     // ========================================================================
 
     @Test
-    @DisplayName("Should close store gracefully [GH-90000]")
+    @DisplayName("Should close store gracefully")
     void shouldCloseGracefully() { // GH-90000
         // GIVEN: Store with data
-        TestRecord record = createTestRecord("test [GH-90000]");
+        TestRecord record = createTestRecord("test");
         runPromise(() -> store.put("key-1", record)); // GH-90000
 
         // WHEN: Closing store
@@ -455,13 +455,13 @@ class SQLiteStoreTest extends EventloopTestBase {
     // ========================================================================
 
     @Test
-    @DisplayName("Should persist data across store instances [GH-90000]")
+    @DisplayName("Should persist data across store instances")
     void shouldPersistDataAcrossInstances() { // GH-90000
         // GIVEN: Store with data
-        Path dbFile = tempDir.resolve("persist-test.db [GH-90000]");
+        Path dbFile = tempDir.resolve("persist-test.db");
         SQLiteStore store1 = new SQLiteStore(dbFile, mockEventStream, SQLiteStore.SQLiteConfig.defaults()); // GH-90000
 
-        TestRecord record = createTestRecord("persistent [GH-90000]");
+        TestRecord record = createTestRecord("persistent");
         runPromise(() -> store1.put("persist-key", record)); // GH-90000
         runPromise(() -> store1.close()); // GH-90000
 
@@ -469,9 +469,9 @@ class SQLiteStoreTest extends EventloopTestBase {
         SQLiteStore store2 = new SQLiteStore(dbFile, mockEventStream, SQLiteStore.SQLiteConfig.defaults()); // GH-90000
 
         // THEN: Data is persisted
-        Optional<Record> retrieved = runPromise(() -> store2.get("persist-key [GH-90000]"));
+        Optional<Record> retrieved = runPromise(() -> store2.get("persist-key"));
         assertThat(retrieved).isPresent(); // GH-90000
-        assertThat(retrieved.get().collectionName()).isEqualTo("persistent [GH-90000]");
+        assertThat(retrieved.get().collectionName()).isEqualTo("persistent");
 
         // Cleanup
         runPromise(() -> store2.close()); // GH-90000
@@ -482,7 +482,7 @@ class SQLiteStoreTest extends EventloopTestBase {
     // ========================================================================
 
     @Test
-    @DisplayName("Should handle multiple sequential operations [GH-90000]")
+    @DisplayName("Should handle multiple sequential operations")
     void shouldHandleSequentialOperations() { // GH-90000
         // GIVEN: Multiple operations
         for (int i = 0; i < 10; i++) { // GH-90000
@@ -492,16 +492,16 @@ class SQLiteStoreTest extends EventloopTestBase {
         }
 
         // WHEN: Performing mixed operations
-        runPromise(() -> store.delete("key-5 [GH-90000]"));
-        runPromise(() -> store.put("key-5", createTestRecord("replaced [GH-90000]")));
+        runPromise(() -> store.delete("key-5"));
+        runPromise(() -> store.put("key-5", createTestRecord("replaced")));
 
         // THEN: All operations complete successfully
         Long count = runPromise(() -> store.count()); // GH-90000
         assertThat(count).isEqualTo(10L); // GH-90000
 
-        Optional<Record> retrieved = runPromise(() -> store.get("key-5 [GH-90000]"));
+        Optional<Record> retrieved = runPromise(() -> store.get("key-5"));
         assertThat(retrieved).isPresent(); // GH-90000
-        assertThat(retrieved.get().collectionName()).isEqualTo("replaced [GH-90000]");
+        assertThat(retrieved.get().collectionName()).isEqualTo("replaced");
     }
 
     // ========================================================================

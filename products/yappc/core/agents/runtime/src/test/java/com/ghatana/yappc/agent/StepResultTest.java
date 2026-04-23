@@ -17,11 +17,11 @@ import org.junit.jupiter.api.Test;
  * @doc.layer test
  * @doc.pattern Unit Test
  */
-@DisplayName("StepResult Tests [GH-90000]")
+@DisplayName("StepResult Tests")
 class StepResultTest {
 
   @Test
-  @DisplayName("success factory should create successful result [GH-90000]")
+  @DisplayName("success factory should create successful result")
   void successFactoryShouldCreateSuccessfulResult() { // GH-90000
     String output = "result";
     Map<String, Object> metadata = Map.of("key", "value"); // GH-90000
@@ -39,7 +39,7 @@ class StepResultTest {
   }
 
   @Test
-  @DisplayName("failed factory should create failed result [GH-90000]")
+  @DisplayName("failed factory should create failed result")
   void failedFactoryShouldCreateFailedResult() { // GH-90000
     List<String> errors = List.of("error1", "error2"); // GH-90000
     Map<String, Object> metadata = Map.of(); // GH-90000
@@ -56,7 +56,7 @@ class StepResultTest {
   }
 
   @Test
-  @DisplayName("waitingReview factory should create waiting result [GH-90000]")
+  @DisplayName("waitingReview factory should create waiting result")
   void waitingReviewFactoryShouldCreateWaitingResult() { // GH-90000
     String output = "partial result";
     Map<String, Object> metadata = Map.of(); // GH-90000
@@ -72,7 +72,7 @@ class StepResultTest {
   }
 
   @Test
-  @DisplayName("metrics should return metadata or empty map [GH-90000]")
+  @DisplayName("metrics should return metadata or empty map")
   void metricsShouldReturnMetadata() { // GH-90000
     Map<String, Object> metadata = Map.of("key", "value"); // GH-90000
     Instant now = Instant.now(); // GH-90000
@@ -83,7 +83,7 @@ class StepResultTest {
   }
 
   @Test
-  @DisplayName("metrics should return empty map when metadata is null [GH-90000]")
+  @DisplayName("metrics should return empty map when metadata is null")
   void metricsShouldReturnEmptyMapWhenNull() { // GH-90000
     Instant now = Instant.now(); // GH-90000
     StepResult<String> result = new StepResult<>( // GH-90000
@@ -93,7 +93,7 @@ class StepResultTest {
   }
 
   @Test
-  @DisplayName("durationMs should calculate correct duration [GH-90000]")
+  @DisplayName("durationMs should calculate correct duration")
   void durationMsShouldCalculateCorrectDuration() { // GH-90000
     Instant start = Instant.now(); // GH-90000
     Instant end = start.plusMillis(150); // GH-90000
@@ -103,7 +103,7 @@ class StepResultTest {
   }
 
   @Test
-  @DisplayName("durationMs should return zero when timestamps are null [GH-90000]")
+  @DisplayName("durationMs should return zero when timestamps are null")
   void durationMsShouldReturnZeroWhenNull() { // GH-90000
     StepResult<String> result = StepResult.success("output", Map.of(), null, null); // GH-90000
 
@@ -111,7 +111,7 @@ class StepResultTest {
   }
 
   @Test
-  @DisplayName("durationMs should return zero when start is null [GH-90000]")
+  @DisplayName("durationMs should return zero when start is null")
   void durationMsShouldReturnZeroWhenStartNull() { // GH-90000
     Instant end = Instant.now(); // GH-90000
     StepResult<String> result = StepResult.success("output", Map.of(), null, end); // GH-90000
@@ -120,7 +120,7 @@ class StepResultTest {
   }
 
   @Test
-  @DisplayName("durationMs should return zero when end is null [GH-90000]")
+  @DisplayName("durationMs should return zero when end is null")
   void durationMsShouldReturnZeroWhenEndNull() { // GH-90000
     Instant start = Instant.now(); // GH-90000
     StepResult<String> result = StepResult.success("output", Map.of(), start, null); // GH-90000
@@ -129,7 +129,7 @@ class StepResultTest {
   }
 
   @Test
-  @DisplayName("status enum should have all required values [GH-90000]")
+  @DisplayName("status enum should have all required values")
   void statusEnumShouldHaveAllValues() { // GH-90000
     assertThat(StepResult.Status.values()) // GH-90000
         .containsExactly(StepResult.Status.SUCCESS, StepResult.Status.FAILED, StepResult.Status.WAITING_REVIEW); // GH-90000

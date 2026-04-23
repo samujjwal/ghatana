@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
  * @doc.layer product
  * @doc.pattern TestCase
  */
-@DisplayName("MediaProcessingMetrics [GH-90000]")
+@DisplayName("MediaProcessingMetrics")
 class MediaProcessingMetricsTest {
 
     private MediaProcessingMetrics metrics;
@@ -30,100 +30,100 @@ class MediaProcessingMetricsTest {
     }
 
     @Test
-    @DisplayName("recordStarted increments started counter for operation [GH-90000]")
+    @DisplayName("recordStarted increments started counter for operation")
     void recordStarted_incrementsCounter() { // GH-90000
-        metrics.recordStarted("vision.detect [GH-90000]");
-        metrics.recordStarted("vision.detect [GH-90000]");
+        metrics.recordStarted("vision.detect");
+        metrics.recordStarted("vision.detect");
 
-        assertThat(metrics.startedCount("vision.detect [GH-90000]")).isEqualTo(2);
+        assertThat(metrics.startedCount("vision.detect")).isEqualTo(2);
     }
 
     @Test
-    @DisplayName("recordSucceeded increments succeeded counter and accumulates latency [GH-90000]")
+    @DisplayName("recordSucceeded increments succeeded counter and accumulates latency")
     void recordSucceeded_incrementsSucceededAndLatency() { // GH-90000
         metrics.recordSucceeded("vision.detect", 25L); // GH-90000
         metrics.recordSucceeded("vision.detect", 35L); // GH-90000
 
-        assertThat(metrics.succeededCount("vision.detect [GH-90000]")).isEqualTo(2);
-        assertThat(metrics.latencyMsTotal("vision.detect [GH-90000]")).isEqualTo(60L);
+        assertThat(metrics.succeededCount("vision.detect")).isEqualTo(2);
+        assertThat(metrics.latencyMsTotal("vision.detect")).isEqualTo(60L);
     }
 
     @Test
-    @DisplayName("recordFailed increments failed counter without affecting succeeded [GH-90000]")
+    @DisplayName("recordFailed increments failed counter without affecting succeeded")
     void recordFailed_incrementsFailedOnly() { // GH-90000
-        metrics.recordFailed("multimodal.analyse [GH-90000]");
+        metrics.recordFailed("multimodal.analyse");
 
-        assertThat(metrics.failedCount("multimodal.analyse [GH-90000]")).isEqualTo(1);
-        assertThat(metrics.succeededCount("multimodal.analyse [GH-90000]")).isEqualTo(0);
+        assertThat(metrics.failedCount("multimodal.analyse")).isEqualTo(1);
+        assertThat(metrics.succeededCount("multimodal.analyse")).isEqualTo(0);
     }
 
     @Test
-    @DisplayName("operations are tracked independently [GH-90000]")
+    @DisplayName("operations are tracked independently")
     void operationsAreIsolated() { // GH-90000
-        metrics.recordStarted("vision.detect [GH-90000]");
-        metrics.recordStarted("vision.analyze [GH-90000]");
+        metrics.recordStarted("vision.detect");
+        metrics.recordStarted("vision.analyze");
         metrics.recordSucceeded("vision.detect", 10L); // GH-90000
 
-        assertThat(metrics.startedCount("vision.detect [GH-90000]")).isEqualTo(1);
-        assertThat(metrics.startedCount("vision.analyze [GH-90000]")).isEqualTo(1);
-        assertThat(metrics.succeededCount("vision.detect [GH-90000]")).isEqualTo(1);
-        assertThat(metrics.succeededCount("vision.analyze [GH-90000]")).isEqualTo(0);
+        assertThat(metrics.startedCount("vision.detect")).isEqualTo(1);
+        assertThat(metrics.startedCount("vision.analyze")).isEqualTo(1);
+        assertThat(metrics.succeededCount("vision.detect")).isEqualTo(1);
+        assertThat(metrics.succeededCount("vision.analyze")).isEqualTo(0);
     }
 
     @Test
-    @DisplayName("noop instance never increments any counter [GH-90000]")
+    @DisplayName("noop instance never increments any counter")
     void noop_neverRecordsAnything() { // GH-90000
         MediaProcessingMetrics noop = MediaProcessingMetrics.noop(); // GH-90000
 
-        noop.recordStarted("vision.detect [GH-90000]");
+        noop.recordStarted("vision.detect");
         noop.recordSucceeded("vision.detect", 100L); // GH-90000
-        noop.recordFailed("vision.detect [GH-90000]");
+        noop.recordFailed("vision.detect");
 
-        assertThat(noop.startedCount("vision.detect [GH-90000]")).isEqualTo(0);
-        assertThat(noop.succeededCount("vision.detect [GH-90000]")).isEqualTo(0);
-        assertThat(noop.failedCount("vision.detect [GH-90000]")).isEqualTo(0);
-        assertThat(noop.latencyMsTotal("vision.detect [GH-90000]")).isEqualTo(0);
+        assertThat(noop.startedCount("vision.detect")).isEqualTo(0);
+        assertThat(noop.succeededCount("vision.detect")).isEqualTo(0);
+        assertThat(noop.failedCount("vision.detect")).isEqualTo(0);
+        assertThat(noop.latencyMsTotal("vision.detect")).isEqualTo(0);
     }
 
     @Test
-    @DisplayName("recordStarted with null operation does not throw [GH-90000]")
+    @DisplayName("recordStarted with null operation does not throw")
     void recordStarted_nullOperation_doesNotThrow() { // GH-90000
         assertThatCode(() -> metrics.recordStarted(null)).doesNotThrowAnyException(); // GH-90000
     }
 
     @Test
-    @DisplayName("recordSucceeded with null operation does not throw [GH-90000]")
+    @DisplayName("recordSucceeded with null operation does not throw")
     void recordSucceeded_nullOperation_doesNotThrow() { // GH-90000
         assertThatCode(() -> metrics.recordSucceeded(null, 50L)).doesNotThrowAnyException(); // GH-90000
     }
 
     @Test
-    @DisplayName("recordFailed with null operation does not throw [GH-90000]")
+    @DisplayName("recordFailed with null operation does not throw")
     void recordFailed_nullOperation_doesNotThrow() { // GH-90000
         assertThatCode(() -> metrics.recordFailed(null)).doesNotThrowAnyException(); // GH-90000
     }
 
     @Test
-    @DisplayName("scrape returns prometheus-format text for all recorded operations [GH-90000]")
+    @DisplayName("scrape returns prometheus-format text for all recorded operations")
     void scrape_containsAllOperations() { // GH-90000
-        metrics.recordStarted("vision.detect [GH-90000]");
+        metrics.recordStarted("vision.detect");
         metrics.recordSucceeded("vision.detect", 20L); // GH-90000
-        metrics.recordFailed("multimodal.analyse [GH-90000]");
+        metrics.recordFailed("multimodal.analyse");
 
         String output = metrics.scrape(); // GH-90000
 
-        assertThat(output).contains("media_processing_started_total [GH-90000]");
-        assertThat(output).contains("vision.detect [GH-90000]");
-        assertThat(output).contains("media_processing_failed_total [GH-90000]");
-        assertThat(output).contains("multimodal.analyse [GH-90000]");
+        assertThat(output).contains("media_processing_started_total");
+        assertThat(output).contains("vision.detect");
+        assertThat(output).contains("media_processing_failed_total");
+        assertThat(output).contains("multimodal.analyse");
     }
 
     @Test
-    @DisplayName("unrecorded operation returns zero for all accessors [GH-90000]")
+    @DisplayName("unrecorded operation returns zero for all accessors")
     void unknownOperation_returnsZero() { // GH-90000
-        assertThat(metrics.startedCount("unknown.op [GH-90000]")).isEqualTo(0);
-        assertThat(metrics.succeededCount("unknown.op [GH-90000]")).isEqualTo(0);
-        assertThat(metrics.failedCount("unknown.op [GH-90000]")).isEqualTo(0);
-        assertThat(metrics.latencyMsTotal("unknown.op [GH-90000]")).isEqualTo(0);
+        assertThat(metrics.startedCount("unknown.op")).isEqualTo(0);
+        assertThat(metrics.succeededCount("unknown.op")).isEqualTo(0);
+        assertThat(metrics.failedCount("unknown.op")).isEqualTo(0);
+        assertThat(metrics.latencyMsTotal("unknown.op")).isEqualTo(0);
     }
 }

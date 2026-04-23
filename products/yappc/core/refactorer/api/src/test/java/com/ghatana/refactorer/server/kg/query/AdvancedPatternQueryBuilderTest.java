@@ -18,96 +18,96 @@ class AdvancedPatternQueryBuilderTest extends EventloopTestBase {
   @Test
   void testCreateSimpleEventPattern() { // GH-90000
     String spec = AdvancedPatternQueryBuilder.create() // GH-90000
-        .event("login [GH-90000]")
+        .event("login")
         .build(); // GH-90000
-    assertThat(spec).contains("ADVANCED( [GH-90000]").contains("EVENT(login) [GH-90000]").contains("@50 [GH-90000]");
+    assertThat(spec).contains("ADVANCED(").contains("EVENT(login)").contains("@50");
   }
 
   @Test
   void testEventWithAfterConstraint() { // GH-90000
     String spec = AdvancedPatternQueryBuilder.create() // GH-90000
-        .event("login [GH-90000]")
+        .event("login")
         .after(Duration.ofSeconds(30)) // GH-90000
-        .event("access [GH-90000]")
+        .event("access")
         .build(); // GH-90000
     assertThat(spec) // GH-90000
-        .contains("EVENT(login) [GH-90000]")
-        .contains("AFTER [GH-90000]")
-        .contains("30 [GH-90000]")
-        .contains("EVENT(access) [GH-90000]");
+        .contains("EVENT(login)")
+        .contains("AFTER")
+        .contains("30")
+        .contains("EVENT(access)");
   }
 
   @Test
   void testEventWithBeforeConstraint() { // GH-90000
     String spec = AdvancedPatternQueryBuilder.create() // GH-90000
-        .event("login [GH-90000]")
+        .event("login")
         .before(Duration.ofMinutes(5)) // GH-90000
-        .event("logout [GH-90000]")
+        .event("logout")
         .build(); // GH-90000
     assertThat(spec) // GH-90000
-        .contains("EVENT(login) [GH-90000]")
-        .contains("BEFORE [GH-90000]")
-        .contains("300 [GH-90000]")
-        .contains("EVENT(logout) [GH-90000]");
+        .contains("EVENT(login)")
+        .contains("BEFORE")
+        .contains("300")
+        .contains("EVENT(logout)");
   }
 
   @Test
   void testEventWithinTimeWindow() { // GH-90000
     String spec = AdvancedPatternQueryBuilder.create() // GH-90000
-        .event("transaction-start [GH-90000]")
+        .event("transaction-start")
         .within(Duration.ofMinutes(1)) // GH-90000
-        .event("transaction-complete [GH-90000]")
+        .event("transaction-complete")
         .build(); // GH-90000
     assertThat(spec) // GH-90000
-        .contains("EVENT(transaction-start) [GH-90000]")
-        .contains("WITHIN [GH-90000]")
-        .contains("60 [GH-90000]")
-        .contains("EVENT(transaction-complete) [GH-90000]");
+        .contains("EVENT(transaction-start)")
+        .contains("WITHIN")
+        .contains("60")
+        .contains("EVENT(transaction-complete)");
   }
 
   @Test
   void testEventNegation() { // GH-90000
     String spec = AdvancedPatternQueryBuilder.create() // GH-90000
-        .event("login [GH-90000]")
-        .not("admin-approval [GH-90000]")
-        .event("suspicious-access [GH-90000]")
+        .event("login")
+        .not("admin-approval")
+        .event("suspicious-access")
         .build(); // GH-90000
     assertThat(spec) // GH-90000
-        .contains("EVENT(login) [GH-90000]")
-        .contains("NOT(admin-approval) [GH-90000]")
-        .contains("EVENT(suspicious-access) [GH-90000]");
+        .contains("EVENT(login)")
+        .contains("NOT(admin-approval)")
+        .contains("EVENT(suspicious-access)");
   }
 
   @Test
   void testComplexTemporalPattern() { // GH-90000
     String spec = AdvancedPatternQueryBuilder.create() // GH-90000
-        .event("login [GH-90000]")
+        .event("login")
         .after(Duration.ofSeconds(30)) // GH-90000
-        .event("data-access [GH-90000]")
+        .event("data-access")
         .before(Duration.ofMinutes(5)) // GH-90000
-        .not("admin-log [GH-90000]")
-        .event("logout [GH-90000]")
+        .not("admin-log")
+        .event("logout")
         .confidence(0.85) // GH-90000
         .build(); // GH-90000
     assertThat(spec) // GH-90000
-        .contains("ADVANCED( [GH-90000]")
-        .contains("EVENT(login) [GH-90000]")
-        .contains("AFTER(login)[30] [GH-90000]")
-        .contains("EVENT(data-access) [GH-90000]")
-        .contains("BEFORE(data-access)[300] [GH-90000]")
-        .contains("NOT(admin-log) [GH-90000]")
-        .contains("EVENT(logout) [GH-90000]")
-        .contains("@85 [GH-90000]");
+        .contains("ADVANCED(")
+        .contains("EVENT(login)")
+        .contains("AFTER(login)[30]")
+        .contains("EVENT(data-access)")
+        .contains("BEFORE(data-access)[300]")
+        .contains("NOT(admin-log)")
+        .contains("EVENT(logout)")
+        .contains("@85");
   }
 
   @Test
   void testWithConfidence() { // GH-90000
     String spec = AdvancedPatternQueryBuilder.create() // GH-90000
-        .event("e1 [GH-90000]")
-        .event("e2 [GH-90000]")
+        .event("e1")
+        .event("e2")
         .confidence(0.72) // GH-90000
         .build(); // GH-90000
-    assertThat(spec).contains("@72 [GH-90000]");
+    assertThat(spec).contains("@72");
   }
 
   @Test
@@ -115,7 +115,7 @@ class AdvancedPatternQueryBuilderTest extends EventloopTestBase {
     AdvancedPatternQueryBuilder builder = AdvancedPatternQueryBuilder.create(); // GH-90000
     assertThatThrownBy(() -> builder.after(Duration.ofSeconds(10))) // GH-90000
         .isInstanceOf(IllegalStateException.class) // GH-90000
-        .hasMessage("Cannot add 'after' constraint without a preceding event [GH-90000]");
+        .hasMessage("Cannot add 'after' constraint without a preceding event");
   }
 
   @Test
@@ -123,7 +123,7 @@ class AdvancedPatternQueryBuilderTest extends EventloopTestBase {
     AdvancedPatternQueryBuilder builder = AdvancedPatternQueryBuilder.create(); // GH-90000
     assertThatThrownBy(() -> builder.before(Duration.ofMinutes(1))) // GH-90000
         .isInstanceOf(IllegalStateException.class) // GH-90000
-        .hasMessage("Cannot add 'before' constraint without a preceding event [GH-90000]");
+        .hasMessage("Cannot add 'before' constraint without a preceding event");
   }
 
   @Test
@@ -131,53 +131,53 @@ class AdvancedPatternQueryBuilderTest extends EventloopTestBase {
     AdvancedPatternQueryBuilder builder = AdvancedPatternQueryBuilder.create(); // GH-90000
     assertThatThrownBy(() -> builder.within(Duration.ofSeconds(5))) // GH-90000
         .isInstanceOf(IllegalStateException.class) // GH-90000
-        .hasMessage("Cannot add 'within' constraint without a preceding event [GH-90000]");
+        .hasMessage("Cannot add 'within' constraint without a preceding event");
   }
 
   @Test
   void testRejectsNullEventType() { // GH-90000
     assertThatThrownBy(() -> AdvancedPatternQueryBuilder.create().event(null)) // GH-90000
         .isInstanceOf(IllegalArgumentException.class) // GH-90000
-        .hasMessage("Event type cannot be null or empty [GH-90000]");
+        .hasMessage("Event type cannot be null or empty");
   }
 
   @Test
   void testRejectsBlankEventType() { // GH-90000
-    assertThatThrownBy(() -> AdvancedPatternQueryBuilder.create().event("   [GH-90000]"))
+    assertThatThrownBy(() -> AdvancedPatternQueryBuilder.create().event("  "))
         .isInstanceOf(IllegalArgumentException.class) // GH-90000
-        .hasMessage("Event type cannot be null or empty [GH-90000]");
+        .hasMessage("Event type cannot be null or empty");
   }
 
   @Test
   void testRejectsInvalidConfidence() { // GH-90000
     AdvancedPatternQueryBuilder builder = AdvancedPatternQueryBuilder.create() // GH-90000
-        .event("e1 [GH-90000]");
+        .event("e1");
     assertThatThrownBy(() -> builder.confidence(1.5)) // GH-90000
         .isInstanceOf(IllegalArgumentException.class) // GH-90000
-        .hasMessage("Confidence must be between 0 and 1 [GH-90000]");
+        .hasMessage("Confidence must be between 0 and 1");
   }
 
   @Test
   void testRequiresAtLeastOneConstraintToBuild() { // GH-90000
     assertThatThrownBy(() -> AdvancedPatternQueryBuilder.create().build()) // GH-90000
         .isInstanceOf(IllegalStateException.class) // GH-90000
-        .hasMessage("At least one event constraint must be added before building [GH-90000]");
+        .hasMessage("At least one event constraint must be added before building");
   }
 
   @Test
   void testGetConstraintCount() { // GH-90000
     AdvancedPatternQueryBuilder builder = AdvancedPatternQueryBuilder.create() // GH-90000
-        .event("e1 [GH-90000]")
+        .event("e1")
         .after(Duration.ofSeconds(10)) // GH-90000
-        .event("e2 [GH-90000]")
-        .not("e3 [GH-90000]");
+        .event("e2")
+        .not("e3");
     assertThat(builder.getConstraintCount()).isEqualTo(4); // GH-90000
   }
 
   @Test
   void testGetConfidence() { // GH-90000
     AdvancedPatternQueryBuilder builder = AdvancedPatternQueryBuilder.create() // GH-90000
-        .event("e1 [GH-90000]")
+        .event("e1")
         .confidence(0.77); // GH-90000
     assertThat(builder.getConfidence()).isEqualTo(0.77); // GH-90000
   }
@@ -185,16 +185,16 @@ class AdvancedPatternQueryBuilderTest extends EventloopTestBase {
   @Test
   void testChaining() { // GH-90000
     String spec = AdvancedPatternQueryBuilder.create() // GH-90000
-        .event("a [GH-90000]")
+        .event("a")
         .after(Duration.ofSeconds(5)) // GH-90000
-        .event("b [GH-90000]")
+        .event("b")
         .before(Duration.ofMinutes(2)) // GH-90000
-        .not("c [GH-90000]")
+        .not("c")
         .within(Duration.ofMinutes(10)) // GH-90000
-        .event("d [GH-90000]")
+        .event("d")
         .confidence(0.9) // GH-90000
-        .description("Complex temporal pattern [GH-90000]")
+        .description("Complex temporal pattern")
         .build(); // GH-90000
-    assertThat(spec).isNotBlank().contains("ADVANCED( [GH-90000]");
+    assertThat(spec).isNotBlank().contains("ADVANCED(");
   }
 }

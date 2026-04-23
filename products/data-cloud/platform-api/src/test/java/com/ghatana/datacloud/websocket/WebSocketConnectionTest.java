@@ -29,18 +29,18 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("WebSocketConnection – Connection Lifecycle (F003) [GH-90000]")
+@DisplayName("WebSocketConnection – Connection Lifecycle (F003)")
 class WebSocketConnectionTest extends EventloopTestBase {
 
     @Mock
     private WebSocketConnectionManager connectionManager;
 
     @Nested
-    @DisplayName("Connection Registration [GH-90000]")
+    @DisplayName("Connection Registration")
     class ConnectionRegistrationTests {
 
         @Test
-        @DisplayName("[F003]: register_connection_adds_connection [GH-90000]")
+        @DisplayName("[F003]: register_connection_adds_connection")
         void registerConnectionAddsConnection() { // GH-90000
             String connectionId = "conn-001";
             String tenantId = "tenant-alpha";
@@ -56,7 +56,7 @@ class WebSocketConnectionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[F003]: unregister_connection_removes_connection [GH-90000]")
+        @DisplayName("[F003]: unregister_connection_removes_connection")
         void unregisterConnectionRemovesConnection() { // GH-90000
             String connectionId = "conn-001";
 
@@ -69,7 +69,7 @@ class WebSocketConnectionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[F003]: get_connection_info_returns_connection_details [GH-90000]")
+        @DisplayName("[F003]: get_connection_info_returns_connection_details")
         void getConnectionInfoReturnsConnectionDetails() { // GH-90000
             String connectionId = "conn-001";
 
@@ -91,17 +91,17 @@ class WebSocketConnectionTest extends EventloopTestBase {
             );
 
             assertThat(result.connectionId()).isEqualTo(connectionId); // GH-90000
-            assertThat(result.tenantId()).isEqualTo("tenant-alpha [GH-90000]");
+            assertThat(result.tenantId()).isEqualTo("tenant-alpha");
             assertThat(result.subscriptions()).contains("updates", "notifications"); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Connection Queries [GH-90000]")
+    @DisplayName("Connection Queries")
     class ConnectionQueriesTests {
 
         @Test
-        @DisplayName("[F003]: list_connections_returns_tenant_connections [GH-90000]")
+        @DisplayName("[F003]: list_connections_returns_tenant_connections")
         void listConnectionsReturnsTenantConnections() { // GH-90000
             String tenantId = "tenant-alpha";
 
@@ -123,7 +123,7 @@ class WebSocketConnectionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[F003]: get_stats_returns_connection_statistics [GH-90000]")
+        @DisplayName("[F003]: get_stats_returns_connection_statistics")
         void getStatsReturnsConnectionStatistics() { // GH-90000
             String tenantId = "tenant-alpha";
 
@@ -146,11 +146,11 @@ class WebSocketConnectionTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Topic Subscription [GH-90000]")
+    @DisplayName("Topic Subscription")
     class TopicSubscriptionTests {
 
         @Test
-        @DisplayName("[F003]: subscribe_adds_topic_subscription [GH-90000]")
+        @DisplayName("[F003]: subscribe_adds_topic_subscription")
         void subscribeAddsTopicSubscription() { // GH-90000
             String connectionId = "conn-001";
             String topic = "updates";
@@ -164,7 +164,7 @@ class WebSocketConnectionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[F003]: unsubscribe_removes_topic_subscription [GH-90000]")
+        @DisplayName("[F003]: unsubscribe_removes_topic_subscription")
         void unsubscribeRemovesTopicSubscription() { // GH-90000
             String connectionId = "conn-001";
             String topic = "updates";
@@ -178,7 +178,7 @@ class WebSocketConnectionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[F003]: connection_tracks_multiple_subscriptions [GH-90000]")
+        @DisplayName("[F003]: connection_tracks_multiple_subscriptions")
         void connectionTracksMultipleSubscriptions() { // GH-90000
             String connectionId = "conn-001";
 
@@ -205,11 +205,11 @@ class WebSocketConnectionTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Connection Timeout [GH-90000]")
+    @DisplayName("Connection Timeout")
     class ConnectionTimeoutTests {
 
         @Test
-        @DisplayName("[F003]: inactive_connection_marked_stale [GH-90000]")
+        @DisplayName("[F003]: inactive_connection_marked_stale")
         void inactiveConnectionMarkedStale() { // GH-90000
             long now = System.currentTimeMillis(); // GH-90000
             long oldActivity = now - 3600000; // 1 hour ago
@@ -224,11 +224,11 @@ class WebSocketConnectionTest extends EventloopTestBase {
                 Map.of() // GH-90000
             );
 
-            when(connectionManager.getConnectionInfo("conn-001 [GH-90000]"))
+            when(connectionManager.getConnectionInfo("conn-001"))
                 .thenReturn(Promise.of(stale)); // GH-90000
 
             WebSocketConnectionManager.ConnectionInfo result = runPromise(() -> // GH-90000
-                connectionManager.getConnectionInfo("conn-001 [GH-90000]")
+                connectionManager.getConnectionInfo("conn-001")
             );
 
             long inactiveDuration = now - result.lastActivityAt(); // GH-90000

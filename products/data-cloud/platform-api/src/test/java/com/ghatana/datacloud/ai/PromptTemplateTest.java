@@ -30,18 +30,18 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("PromptTemplate – Template Rendering (AI003) [GH-90000]")
+@DisplayName("PromptTemplate – Template Rendering (AI003)")
 class PromptTemplateTest extends EventloopTestBase {
 
     @Mock
     private PromptTemplateManager templateManager;
 
     @Nested
-    @DisplayName("Template Registration [GH-90000]")
+    @DisplayName("Template Registration")
     class TemplateRegistrationTests {
 
         @Test
-        @DisplayName("[AI003]: register_template_creates_template [GH-90000]")
+        @DisplayName("[AI003]: register_template_creates_template")
         void registerTemplateCreatesTemplate() { // GH-90000
             PromptTemplateManager.PromptTemplate template = new PromptTemplateManager.PromptTemplate( // GH-90000
                 "sql-gen", "SQL Generator", "Generate SQL queries",
@@ -57,13 +57,13 @@ class PromptTemplateTest extends EventloopTestBase {
                 templateManager.registerTemplate(template) // GH-90000
             );
 
-            assertThat(result.id()).isEqualTo("sql-gen [GH-90000]");
+            assertThat(result.id()).isEqualTo("sql-gen");
             assertThat(result.variables()).contains("table", "filters"); // GH-90000
-            assertThat(result.hasVariable("table [GH-90000]")).isTrue();
+            assertThat(result.hasVariable("table")).isTrue();
         }
 
         @Test
-        @DisplayName("[AI003]: get_template_returns_existing [GH-90000]")
+        @DisplayName("[AI003]: get_template_returns_existing")
         void getTemplateReturnsExisting() { // GH-90000
             String templateId = "existing-template";
             PromptTemplateManager.PromptTemplate template = createTemplate(templateId, "Query Template"); // GH-90000
@@ -80,7 +80,7 @@ class PromptTemplateTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[AI003]: list_templates_returns_tenant_templates [GH-90000]")
+        @DisplayName("[AI003]: list_templates_returns_tenant_templates")
         void listTemplatesReturnsTenantTemplates() { // GH-90000
             String tenantId = "tenant-alpha";
 
@@ -100,7 +100,7 @@ class PromptTemplateTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[AI003]: list_templates_filters_by_category [GH-90000]")
+        @DisplayName("[AI003]: list_templates_filters_by_category")
         void listTemplatesFiltersByCategory() { // GH-90000
             String tenantId = "tenant-alpha";
             String category = "sql";
@@ -122,11 +122,11 @@ class PromptTemplateTest extends EventloopTestBase {
             );
 
             assertThat(result).hasSize(2); // GH-90000
-            assertThat(result.get(0).category()).isEqualTo("sql [GH-90000]");
+            assertThat(result.get(0).category()).isEqualTo("sql");
         }
 
         @Test
-        @DisplayName("[AI003]: delete_template_removes_template [GH-90000]")
+        @DisplayName("[AI003]: delete_template_removes_template")
         void deleteTemplateRemovesTemplate() { // GH-90000
             String templateId = "obsolete-template";
 
@@ -140,11 +140,11 @@ class PromptTemplateTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Template Rendering [GH-90000]")
+    @DisplayName("Template Rendering")
     class TemplateRenderingTests {
 
         @Test
-        @DisplayName("[AI003]: render_substitutes_variables [GH-90000]")
+        @DisplayName("[AI003]: render_substitutes_variables")
         void renderSubstitutesVariables() { // GH-90000
             String templateId = "greeting";
             Map<String, Object> variables = Map.of( // GH-90000
@@ -159,12 +159,12 @@ class PromptTemplateTest extends EventloopTestBase {
 
             String result = runPromise(() -> templateManager.render(templateId, variables)); // GH-90000
 
-            assertThat(result).contains("Alice [GH-90000]");
-            assertThat(result).contains("Monday [GH-90000]");
+            assertThat(result).contains("Alice");
+            assertThat(result).contains("Monday");
         }
 
         @Test
-        @DisplayName("[AI003]: render_handles_missing_variables [GH-90000]")
+        @DisplayName("[AI003]: render_handles_missing_variables")
         void renderHandlesMissingVariables() { // GH-90000
             String templateId = "incomplete";
             Map<String, Object> variables = Map.of("provided", "value"); // GH-90000
@@ -176,11 +176,11 @@ class PromptTemplateTest extends EventloopTestBase {
 
             String result = runPromise(() -> templateManager.render(templateId, variables)); // GH-90000
 
-            assertThat(result).contains("value [GH-90000]");
+            assertThat(result).contains("value");
         }
 
         @Test
-        @DisplayName("[AI003]: render_with_complex_variables [GH-90000]")
+        @DisplayName("[AI003]: render_with_complex_variables")
         void renderWithComplexVariables() { // GH-90000
             String templateId = "data-template";
             Map<String, Object> variables = Map.of( // GH-90000
@@ -196,21 +196,21 @@ class PromptTemplateTest extends EventloopTestBase {
 
             String result = runPromise(() -> templateManager.render(templateId, variables)); // GH-90000
 
-            assertThat(result).contains("users [GH-90000]");
-            assertThat(result).contains("id, name, email [GH-90000]");
+            assertThat(result).contains("users");
+            assertThat(result).contains("id, name, email");
         }
     }
 
     @Nested
-    @DisplayName("Template Validation [GH-90000]")
+    @DisplayName("Template Validation")
     class TemplateValidationTests {
 
         @Test
-        @DisplayName("[AI003]: validate_returns_valid_for_good_template [GH-90000]")
+        @DisplayName("[AI003]: validate_returns_valid_for_good_template")
         void validateReturnsValidForGoodTemplate() { // GH-90000
             PromptTemplateManager.PromptTemplate template = new PromptTemplateManager.PromptTemplate( // GH-90000
                 "valid", "Valid", "", "tenant-alpha", "test",
-                "Hello {{name}}!", List.of("name [GH-90000]"), null, Map.of(), 1, true
+                "Hello {{name}}!", List.of("name"), null, Map.of(), 1, true
             );
 
             PromptTemplateManager.ValidationResult validation = new PromptTemplateManager.ValidationResult( // GH-90000
@@ -229,18 +229,18 @@ class PromptTemplateTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[AI003]: validate_reports_undefined_variables [GH-90000]")
+        @DisplayName("[AI003]: validate_reports_undefined_variables")
         void validateReportsUndefinedVariables() { // GH-90000
             PromptTemplateManager.PromptTemplate template = new PromptTemplateManager.PromptTemplate( // GH-90000
                 "bad", "Bad", "", "tenant-alpha", "test",
-                "Hello {{name}} and {{extra}}!", List.of("name [GH-90000]"), null, Map.of(), 1, true
+                "Hello {{name}} and {{extra}}!", List.of("name"), null, Map.of(), 1, true
             );
 
             PromptTemplateManager.ValidationResult validation = new PromptTemplateManager.ValidationResult( // GH-90000
                 false,
-                List.of("Variable 'extra' used but not defined [GH-90000]"),
+                List.of("Variable 'extra' used but not defined"),
                 List.of(), // GH-90000
-                List.of("extra [GH-90000]"),
+                List.of("extra"),
                 List.of() // GH-90000
             );
 
@@ -252,11 +252,11 @@ class PromptTemplateTest extends EventloopTestBase {
             );
 
             assertThat(result.valid()).isFalse(); // GH-90000
-            assertThat(result.undefinedVariables()).contains("extra [GH-90000]");
+            assertThat(result.undefinedVariables()).contains("extra");
         }
 
         @Test
-        @DisplayName("[AI003]: validate_reports_unused_variables [GH-90000]")
+        @DisplayName("[AI003]: validate_reports_unused_variables")
         void validateReportsUnusedVariables() { // GH-90000
             PromptTemplateManager.PromptTemplate template = new PromptTemplateManager.PromptTemplate( // GH-90000
                 "unused", "Unused", "", "tenant-alpha", "test",
@@ -264,7 +264,7 @@ class PromptTemplateTest extends EventloopTestBase {
             );
 
             PromptTemplateManager.ValidationResult validation = new PromptTemplateManager.ValidationResult( // GH-90000
-                true, List.of(), List.of("Variable 'name' defined but not used [GH-90000]"), List.of(), List.of("name [GH-90000]")
+                true, List.of(), List.of("Variable 'name' defined but not used"), List.of(), List.of("name")
             );
 
             when(templateManager.validate(template)) // GH-90000
@@ -274,16 +274,16 @@ class PromptTemplateTest extends EventloopTestBase {
                 templateManager.validate(template) // GH-90000
             );
 
-            assertThat(result.unusedVariables()).contains("name [GH-90000]");
+            assertThat(result.unusedVariables()).contains("name");
         }
     }
 
     @Nested
-    @DisplayName("Template Cloning [GH-90000]")
+    @DisplayName("Template Cloning")
     class TemplateCloningTests {
 
         @Test
-        @DisplayName("[AI003]: clone_template_creates_copy [GH-90000]")
+        @DisplayName("[AI003]: clone_template_creates_copy")
         void cloneTemplateCreatesCopy() { // GH-90000
             String sourceId = "source-template";
             String newId = "cloned-template";
@@ -305,11 +305,11 @@ class PromptTemplateTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Categories [GH-90000]")
+    @DisplayName("Categories")
     class CategoriesTests {
 
         @Test
-        @DisplayName("[AI003]: get_categories_returns_categories [GH-90000]")
+        @DisplayName("[AI003]: get_categories_returns_categories")
         void getCategoriesReturnsCategories() { // GH-90000
             String tenantId = "tenant-alpha";
 

@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("SecurityAnalytics - Phase 3 Expansion [GH-90000]")
+@DisplayName("SecurityAnalytics - Phase 3 Expansion")
 class SecurityAnalyticsExpansionTest extends EventloopTestBase {
 
     // ============================================
@@ -35,7 +35,7 @@ class SecurityAnalyticsExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Egress Monitoring [GH-90000]")
+    @DisplayName("Egress Monitoring")
     class EgressMonitoringTests {
 
         private DefaultEgressMonitor monitor;
@@ -46,7 +46,7 @@ class SecurityAnalyticsExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Record single egress event [GH-90000]")
+        @DisplayName("Record single egress event")
         void recordSingleEvent() { // GH-90000
             runBlocking(() -> monitor.record("tenant-1", "agent-1", "search", 100)); // GH-90000
 
@@ -55,7 +55,7 @@ class SecurityAnalyticsExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Accumulate many egress events [GH-90000]")
+        @DisplayName("Accumulate many egress events")
         void accumulateManyEvents() { // GH-90000
             for (int i = 0; i < 100; i++) { // GH-90000
                 final int idx = i;
@@ -67,7 +67,7 @@ class SecurityAnalyticsExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Reject egress exceeding limit [GH-90000]")
+        @DisplayName("Reject egress exceeding limit")
         void rejectExceedsLimit() { // GH-90000
             assertThatThrownBy(() -> // GH-90000
                 runPromise(() -> monitor.record("t1", "a1", "large-op", 20000)) // GH-90000
@@ -75,7 +75,7 @@ class SecurityAnalyticsExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Tenant-specific egress limits [GH-90000]")
+        @DisplayName("Tenant-specific egress limits")
         void tenantSpecificLimits() { // GH-90000
             monitor.setTenantLimit("premium-tenant", 1_000_000); // GH-90000
             monitor.setTenantLimit("standard-tenant", 10_000); // GH-90000
@@ -99,7 +99,7 @@ class SecurityAnalyticsExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Multi-Tenant Egress Isolation [GH-90000]")
+    @DisplayName("Multi-Tenant Egress Isolation")
     class MultiTenantEgressTests {
 
         private DefaultEgressMonitor monitor;
@@ -110,7 +110,7 @@ class SecurityAnalyticsExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Tenant egress isolated from each other [GH-90000]")
+        @DisplayName("Tenant egress isolated from each other")
         void tenantIsolation() { // GH-90000
             runBlocking(() -> monitor.record("tenant-a", "agent-1", "query", 1000)); // GH-90000
             runBlocking(() -> monitor.record("tenant-b", "agent-1", "query", 2000)); // GH-90000
@@ -126,7 +126,7 @@ class SecurityAnalyticsExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Agent egress isolated within same tenant [GH-90000]")
+        @DisplayName("Agent egress isolated within same tenant")
         void agentIsolation() { // GH-90000
             runBlocking(() -> monitor.record("tenant-1", "agent-a", "op", 1000)); // GH-90000
             runBlocking(() -> monitor.record("tenant-1", "agent-b", "op", 2000)); // GH-90000
@@ -142,7 +142,7 @@ class SecurityAnalyticsExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Many tenants and agents concurrent tracking [GH-90000]")
+        @DisplayName("Many tenants and agents concurrent tracking")
         void manyConcurrentTenants() { // GH-90000
             for (int t = 0; t < 50; t++) { // GH-90000
                 final int tenantIdx = t;
@@ -168,7 +168,7 @@ class SecurityAnalyticsExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Prompt Injection Detection [GH-90000]")
+    @DisplayName("Prompt Injection Detection")
     class InjectionDetectionTests {
 
         private RegexPromptInjectionDetector detector;
@@ -179,7 +179,7 @@ class SecurityAnalyticsExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Detect SQL injection patterns [GH-90000]")
+        @DisplayName("Detect SQL injection patterns")
         void detectSQLInjection() { // GH-90000
             boolean detected = detector.isSuspiciousPrompt( // GH-90000
                 "'; DROP TABLE users; --");
@@ -188,7 +188,7 @@ class SecurityAnalyticsExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Allow benign prompts [GH-90000]")
+        @DisplayName("Allow benign prompts")
         void allowBenignPrompts() { // GH-90000
             boolean detected = detector.isSuspiciousPrompt( // GH-90000
                 "Please summarize the following document");
@@ -197,7 +197,7 @@ class SecurityAnalyticsExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Detect multiple injection patterns [GH-90000]")
+        @DisplayName("Detect multiple injection patterns")
         void detectMultiplePatterns() { // GH-90000
             String[] suspiciousPrompts = {
                 "'; DROP TABLE --",
@@ -214,11 +214,11 @@ class SecurityAnalyticsExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Case-insensitive detection [GH-90000]")
+        @DisplayName("Case-insensitive detection")
         void caseInsensitiveDetection() { // GH-90000
-            boolean lowercase = detector.isSuspiciousPrompt("select * from [GH-90000]");
-            boolean uppercase = detector.isSuspiciousPrompt("SELECT * FROM [GH-90000]");
-            boolean mixed = detector.isSuspiciousPrompt("SeLeCt * FrOm [GH-90000]");
+            boolean lowercase = detector.isSuspiciousPrompt("select * from");
+            boolean uppercase = detector.isSuspiciousPrompt("SELECT * FROM");
+            boolean mixed = detector.isSuspiciousPrompt("SeLeCt * FrOm");
 
             assertThat(lowercase).isTrue(); // GH-90000
             assertThat(uppercase).isTrue(); // GH-90000
@@ -231,7 +231,7 @@ class SecurityAnalyticsExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Concurrent Egress Tracking [GH-90000]")
+    @DisplayName("Concurrent Egress Tracking")
     class ConcurrentEgressTests {
 
         private DefaultEgressMonitor monitor;
@@ -242,7 +242,7 @@ class SecurityAnalyticsExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Many concurrent egress records [GH-90000]")
+        @DisplayName("Many concurrent egress records")
         void concurrentEgressRecords() throws Exception { // GH-90000
             int threadCount = 30;
             CountDownLatch latch = new CountDownLatch(threadCount); // GH-90000
@@ -274,7 +274,7 @@ class SecurityAnalyticsExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Concurrent detection of injection patterns [GH-90000]")
+        @DisplayName("Concurrent detection of injection patterns")
         void concurrentInjectionDetection() throws Exception { // GH-90000
             RegexPromptInjectionDetector detector = new RegexPromptInjectionDetector(); // GH-90000
 
@@ -318,7 +318,7 @@ class SecurityAnalyticsExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Mixed egress recording and injection detection [GH-90000]")
+        @DisplayName("Mixed egress recording and injection detection")
         void mixedOperations() throws Exception { // GH-90000
             int threadCount = 20;
             CountDownLatch latch = new CountDownLatch(threadCount); // GH-90000
@@ -365,11 +365,11 @@ class SecurityAnalyticsExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Edge Cases [GH-90000]")
+    @DisplayName("Edge Cases")
     class EdgeCaseTests {
 
         @Test
-        @DisplayName("Very large egress amounts at limit boundary [GH-90000]")
+        @DisplayName("Very large egress amounts at limit boundary")
         void largeEgressAtBoundary() { // GH-90000
             DefaultEgressMonitor monitor = new DefaultEgressMonitor(10_000); // GH-90000
 
@@ -387,7 +387,7 @@ class SecurityAnalyticsExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Very long prompts for injection detection [GH-90000]")
+        @DisplayName("Very long prompts for injection detection")
         void veryLongPromptDetection() { // GH-90000
             RegexPromptInjectionDetector detector = new RegexPromptInjectionDetector(); // GH-90000
 

@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test real-time audio streaming, buffering, and latency.
  */
-@DisplayName("Real-Time Audio Tests [GH-90000]")
+@DisplayName("Real-Time Audio Tests")
 class RealTimeAudioTest {
 
     private final AudioStreamSession session = new AudioStreamSession();

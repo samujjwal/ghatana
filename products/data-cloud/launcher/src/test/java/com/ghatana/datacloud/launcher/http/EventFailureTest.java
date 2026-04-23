@@ -50,7 +50,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataCloudHttpServer – Event System Failure Paths [GH-90000]")
+@DisplayName("DataCloudHttpServer – Event System Failure Paths")
 class EventFailureTest {
 
     private DataCloudClient mockClient;
@@ -75,14 +75,14 @@ class EventFailureTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Broker / partition failure scenarios [GH-90000]")
+    @DisplayName("Broker / partition failure scenarios")
     class PartitionFailureTests {
 
         @Test
-        @DisplayName("Event append when broker is down must return 5xx, not hang [GH-90000]")
+        @DisplayName("Event append when broker is down must return 5xx, not hang")
         void appendEvent_brokerDown_returns5xx() throws Exception { // GH-90000
             when(mockClient.appendEvent(anyString(), any())) // GH-90000
-                .thenReturn(Promise.ofException(new IOException("Connection refused: broker unavailable [GH-90000]")));
+                .thenReturn(Promise.ofException(new IOException("Connection refused: broker unavailable")));
 
             startServer(); // GH-90000
             HttpResponse<String> resp = postJson("/api/v1/events", // GH-90000
@@ -92,10 +92,10 @@ class EventFailureTest {
         }
 
         @Test
-        @DisplayName("Event append timeout must return 503 or 504, not hang indefinitely [GH-90000]")
+        @DisplayName("Event append timeout must return 503 or 504, not hang indefinitely")
         void appendEvent_timeout_returns503or504() throws Exception { // GH-90000
             when(mockClient.appendEvent(anyString(), any())) // GH-90000
-                .thenReturn(Promise.ofException(new TimeoutException("Broker write timed out [GH-90000]")));
+                .thenReturn(Promise.ofException(new TimeoutException("Broker write timed out")));
 
             startServer(); // GH-90000
             HttpResponse<String> resp = postJson("/api/v1/events", // GH-90000
@@ -105,7 +105,7 @@ class EventFailureTest {
         }
 
         @Test
-        @DisplayName("Partial partition failure: some appends succeed, some fail [GH-90000]")
+        @DisplayName("Partial partition failure: some appends succeed, some fail")
         void partialPartitionFailure_mixedResults() throws Exception { // GH-90000
             AtomicInteger callCount = new AtomicInteger(0); // GH-90000
 
@@ -139,11 +139,11 @@ class EventFailureTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Duplicate event handling [GH-90000]")
+    @DisplayName("Duplicate event handling")
     class DuplicateEventTests {
 
         @Test
-        @DisplayName("Appending same event twice returns consistent result (idempotent) [GH-90000]")
+        @DisplayName("Appending same event twice returns consistent result (idempotent)")
         void appendSameEventTwice_idempotent() throws Exception { // GH-90000
             when(mockClient.appendEvent(anyString(), any())) // GH-90000
                 .thenReturn(Promise.of(DataCloudClient.Offset.of(42))); // GH-90000
@@ -160,7 +160,7 @@ class EventFailureTest {
         }
 
         @Test
-        @DisplayName("Events with same payload but different times create distinct offsets [GH-90000]")
+        @DisplayName("Events with same payload but different times create distinct offsets")
         void eventsWithDifferentTimestamps_createDistinctOffsets() throws Exception { // GH-90000
             AtomicInteger counter = new AtomicInteger(0); // GH-90000
             when(mockClient.appendEvent(anyString(), any())) // GH-90000
@@ -183,11 +183,11 @@ class EventFailureTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Event payload validation failures [GH-90000]")
+    @DisplayName("Event payload validation failures")
     class PayloadValidationFailureTests {
 
         @Test
-        @DisplayName("Event with missing type field returns 400 [GH-90000]")
+        @DisplayName("Event with missing type field returns 400")
         void eventMissingTypeField_returns400() throws Exception { // GH-90000
             startServer(); // GH-90000
             HttpResponse<String> resp = postJson("/api/v1/events", // GH-90000
@@ -197,7 +197,7 @@ class EventFailureTest {
         }
 
         @Test
-        @DisplayName("Event with empty body returns 400 [GH-90000]")
+        @DisplayName("Event with empty body returns 400")
         void eventEmptyBody_returns400() throws Exception { // GH-90000
             startServer(); // GH-90000
             HttpResponse<String> resp = postRaw("/api/v1/events", "{}"); // GH-90000
@@ -206,7 +206,7 @@ class EventFailureTest {
         }
 
         @Test
-        @DisplayName("Event with malformed JSON returns 400 [GH-90000]")
+        @DisplayName("Event with malformed JSON returns 400")
         void eventMalformedJson_returns400() throws Exception { // GH-90000
             startServer(); // GH-90000
             HttpResponse<String> resp = postRaw("/api/v1/events", "{not valid json}"); // GH-90000
@@ -222,7 +222,7 @@ class EventFailureTest {
             "<script>alert(1)</script>", // GH-90000
             "type; DROP TABLE events;--",
         })
-        @DisplayName("Event with invalid type value returns 400 or 422 [GH-90000]")
+        @DisplayName("Event with invalid type value returns 400 or 422")
         void eventWithInvalidType_returns400(String invalidType) throws Exception { // GH-90000
             startServer(); // GH-90000
             HttpResponse<String> resp = postJson("/api/v1/events", // GH-90000
@@ -232,7 +232,7 @@ class EventFailureTest {
         }
 
         @Test
-        @DisplayName("Event with null payload is rejected or treated as empty payload [GH-90000]")
+        @DisplayName("Event with null payload is rejected or treated as empty payload")
         void eventWithNullPayload_handledSafely() throws Exception { // GH-90000
             when(mockClient.appendEvent(anyString(), any())) // GH-90000
                 .thenReturn(Promise.of(DataCloudClient.Offset.of(1))); // GH-90000
@@ -250,62 +250,62 @@ class EventFailureTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Event query failure paths [GH-90000]")
+    @DisplayName("Event query failure paths")
     class EventQueryFailureTests {
 
         @Test
-        @DisplayName("Event query with invalid limit parameter returns 400 [GH-90000]")
+        @DisplayName("Event query with invalid limit parameter returns 400")
         void eventQueryInvalidLimit_returns400() throws Exception { // GH-90000
             startServer(); // GH-90000
-            HttpResponse<String> resp = get("/api/v1/events?limit=-1 [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/events?limit=-1");
 
             assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
         }
 
         @Test
-        @DisplayName("Event query with extremely large limit is clamped or rejected [GH-90000]")
+        @DisplayName("Event query with extremely large limit is clamped or rejected")
         void eventQueryExtremeLargeLimit_clampedOrRejected() throws Exception { // GH-90000
             when(mockClient.queryEvents(anyString(), any())) // GH-90000
                 .thenReturn(Promise.of(List.of())); // GH-90000
 
             startServer(); // GH-90000
-            HttpResponse<String> resp = get("/api/v1/events?limit=1000000 [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/events?limit=1000000");
 
             assertThat(resp.statusCode()).isIn(200, 400, 422); // GH-90000
         }
 
         @Test
-        @DisplayName("Event query with non-numeric limit returns 400 [GH-90000]")
+        @DisplayName("Event query with non-numeric limit returns 400")
         void eventQueryNonNumericLimit_returns400() throws Exception { // GH-90000
             startServer(); // GH-90000
-            HttpResponse<String> resp = get("/api/v1/events?limit=abc [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/events?limit=abc");
 
             assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
         }
 
         @Test
-        @DisplayName("Event query when store throws exception returns 5xx [GH-90000]")
+        @DisplayName("Event query when store throws exception returns 5xx")
         void eventQueryStoreException_returns5xx() throws Exception { // GH-90000
             when(mockClient.queryEvents(anyString(), any())) // GH-90000
-                .thenReturn(Promise.ofException(new RuntimeException("Store corruption detected [GH-90000]")));
+                .thenReturn(Promise.ofException(new RuntimeException("Store corruption detected")));
 
             startServer(); // GH-90000
-            HttpResponse<String> resp = get("/api/v1/events?limit=10 [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/events?limit=10");
 
             assertThat(resp.statusCode()).isIn(500, 503); // GH-90000
         }
 
         @Test
-        @DisplayName("Event query by type filter with unknown type returns empty list [GH-90000]")
+        @DisplayName("Event query by type filter with unknown type returns empty list")
         void eventQueryByUnknownType_returnsEmpty() throws Exception { // GH-90000
             when(mockClient.queryEvents(anyString(), any())) // GH-90000
                 .thenReturn(Promise.of(List.of())); // GH-90000
 
             startServer(); // GH-90000
-            HttpResponse<String> resp = get("/api/v1/events?type=UNKNOWN_EVENT_TYPE_XYZ&limit=10 [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/events?type=UNKNOWN_EVENT_TYPE_XYZ&limit=10");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            assertThat(resp.body()).contains("[] [GH-90000]");
+            assertThat(resp.body()).contains("[]");
         }
     }
 
@@ -314,11 +314,11 @@ class EventFailureTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Concurrent event append parallelism [GH-90000]")
+    @DisplayName("Concurrent event append parallelism")
     class ConcurrentAppendTests {
 
         @Test
-        @DisplayName("Multiple concurrent appends must all succeed without data corruption [GH-90000]")
+        @DisplayName("Multiple concurrent appends must all succeed without data corruption")
         void concurrentAppends_allSucceed() throws Exception { // GH-90000
             AtomicInteger counter = new AtomicInteger(0); // GH-90000
             when(mockClient.appendEvent(anyString(), any())) // GH-90000

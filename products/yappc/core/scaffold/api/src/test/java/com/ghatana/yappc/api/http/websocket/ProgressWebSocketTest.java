@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("ProgressWebSocket Tests [GH-90000]")
+@DisplayName("ProgressWebSocket Tests")
 class ProgressWebSocketTest {
 
     private ProgressWebSocket webSocket;
@@ -41,19 +41,19 @@ class ProgressWebSocketTest {
     }
 
     @Test
-    @DisplayName("should start with zero connections [GH-90000]")
+    @DisplayName("should start with zero connections")
     void shouldStartWithZeroConnections() { // GH-90000
         assertThat(webSocket.getConnectionCount()).isZero(); // GH-90000
     }
 
     @Test
-    @DisplayName("should report disconnected for unknown session [GH-90000]")
+    @DisplayName("should report disconnected for unknown session")
     void shouldReportDisconnectedForUnknownSession() { // GH-90000
-        assertThat(webSocket.isConnected("unknown-session [GH-90000]")).isFalse();
+        assertThat(webSocket.isConnected("unknown-session")).isFalse();
     }
 
     @Test
-    @DisplayName("should handle broadcast to non-existent session gracefully [GH-90000]")
+    @DisplayName("should handle broadcast to non-existent session gracefully")
     void shouldHandleBroadcastToNonExistentSessionGracefully() { // GH-90000
         // Should not throw
         webSocket.broadcast("non-existent", "test message"); // GH-90000
@@ -62,9 +62,9 @@ class ProgressWebSocketTest {
     }
 
     @Test
-    @DisplayName("should handle broadcast to all with no connections [GH-90000]")
+    @DisplayName("should handle broadcast to all with no connections")
     void shouldHandleBroadcastToAllWithNoConnections() { // GH-90000
         // Should not throw
-        webSocket.broadcastToAll("test message [GH-90000]");
+        webSocket.broadcastToAll("test message");
     }
 }

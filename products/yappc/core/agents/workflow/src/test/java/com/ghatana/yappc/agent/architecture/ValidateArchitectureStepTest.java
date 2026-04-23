@@ -18,7 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Architecture ValidateArchitectureStep Tests [GH-90000]")
+@DisplayName("Architecture ValidateArchitectureStep Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles validate architecture step test operations
@@ -39,13 +39,13 @@ class ValidateArchitectureStepTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should return correct step ID [GH-90000]")
+  @DisplayName("Should return correct step ID")
   void shouldReturnCorrectStepId() { // GH-90000
-    assertThat(step.getStepId()).isEqualTo("architecture.validate [GH-90000]");
+    assertThat(step.getStepId()).isEqualTo("architecture.validate");
   }
 
   @Test
-  @DisplayName("Should validate architecture design [GH-90000]")
+  @DisplayName("Should validate architecture design")
   void shouldValidateArchitecture() { // GH-90000
     // GIVEN
     WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
@@ -73,6 +73,6 @@ class ValidateArchitectureStepTest extends EventloopTestBase {
 
     // THEN
     assertThat(result).isNotNull(); // GH-90000
-    assertThat(result.get("architectureId [GH-90000]")).isEqualTo("arch-001 [GH-90000]");
+    assertThat(result.get("architectureId")).isEqualTo("arch-001");
   }
 }

@@ -65,7 +65,7 @@ class UnifiedTelemetryProviderTest extends EventloopTestBase {
 
     @Test
     void testSimpleTelemetryProvider() { // GH-90000
-        telemetryProvider = UnifiedTelemetryProvider.createSimple("test-service [GH-90000]");
+        telemetryProvider = UnifiedTelemetryProvider.createSimple("test-service");
 
         assertNotNull(telemetryProvider); // GH-90000
         assertEquals("test-service", telemetryProvider.getServiceName()); // GH-90000
@@ -76,10 +76,10 @@ class UnifiedTelemetryProviderTest extends EventloopTestBase {
         OpenTelemetry otel = telemetryProvider.getOpenTelemetry(); // GH-90000
         assertNotNull(otel); // GH-90000
 
-        Tracer tracer = telemetryProvider.getTracer("test [GH-90000]");
+        Tracer tracer = telemetryProvider.getTracer("test");
         assertNotNull(tracer); // GH-90000
 
-        Meter meter = telemetryProvider.getMeter("test [GH-90000]");
+        Meter meter = telemetryProvider.getMeter("test");
         assertNotNull(meter); // GH-90000
     }
 
@@ -97,16 +97,16 @@ class UnifiedTelemetryProviderTest extends EventloopTestBase {
         OpenTelemetry otel = telemetryProvider.getOpenTelemetry(); // GH-90000
         assertNotNull(otel); // GH-90000
 
-        Tracer tracer = telemetryProvider.getTracer("test-instrumentation [GH-90000]");
+        Tracer tracer = telemetryProvider.getTracer("test-instrumentation");
         assertNotNull(tracer); // GH-90000
 
-        Meter meter = telemetryProvider.getMeter("test-instrumentation [GH-90000]");
+        Meter meter = telemetryProvider.getMeter("test-instrumentation");
         assertNotNull(meter); // GH-90000
     }
 
     @Test
     void testNoOpTelemetryProvider() { // GH-90000
-        telemetryProvider = UnifiedTelemetryProvider.createNoop("test-service [GH-90000]");
+        telemetryProvider = UnifiedTelemetryProvider.createNoop("test-service");
 
         assertNotNull(telemetryProvider); // GH-90000
         assertEquals("test-service", telemetryProvider.getServiceName()); // GH-90000
@@ -118,8 +118,8 @@ class UnifiedTelemetryProviderTest extends EventloopTestBase {
     void testBuilderConfiguration() { // GH-90000
         telemetryProvider =
                 UnifiedTelemetryProvider.builder() // GH-90000
-                        .serviceName("custom-service [GH-90000]")
-                        .otlpEndpoint("http://custom:4317 [GH-90000]")
+                        .serviceName("custom-service")
+                        .otlpEndpoint("http://custom:4317")
                         .tracingEnabled(true) // GH-90000
                         .metricsEnabled(false) // GH-90000
                         .usageCollectionEnabled(true) // GH-90000
@@ -134,7 +134,7 @@ class UnifiedTelemetryProviderTest extends EventloopTestBase {
 
     @Test
     void testUsageEventRecording() { // GH-90000
-        telemetryProvider = UnifiedTelemetryProvider.createSimple("test-service [GH-90000]");
+        telemetryProvider = UnifiedTelemetryProvider.createSimple("test-service");
 
         // Enable usage collection
         telemetryProvider.setUsageCollectionEnabled(true); // GH-90000
@@ -143,8 +143,8 @@ class UnifiedTelemetryProviderTest extends EventloopTestBase {
         // Record a test event
         TelemetryEvent event =
                 TelemetryEvent.builder() // GH-90000
-                        .eventType("test.event [GH-90000]")
-                        .command("test-command [GH-90000]")
+                        .eventType("test.event")
+                        .command("test-command")
                         .success(true) // GH-90000
                         .durationMs(123L) // GH-90000
                         .build(); // GH-90000
@@ -171,11 +171,11 @@ class UnifiedTelemetryProviderTest extends EventloopTestBase {
 
         // Test instrumentation
         TelemetryInstrumentation instrumentation =
-                TelemetryManager.getInstrumentation("test-component [GH-90000]");
+                TelemetryManager.getInstrumentation("test-component");
         assertNotNull(instrumentation); // GH-90000
 
         // Test service initialization
-        TelemetryManager.initializeForService("test-service [GH-90000]");
+        TelemetryManager.initializeForService("test-service");
         provider = TelemetryManager.getInstance(); // GH-90000
         assertEquals("test-service", provider.getServiceName()); // GH-90000
 
@@ -194,11 +194,11 @@ class UnifiedTelemetryProviderTest extends EventloopTestBase {
         assertTrue(cliConfig.isUsageCollectionEnabled()); // GH-90000
 
         // Test service config
-        TelemetryConfig serviceConfig = TelemetryConfig.forService("test-service [GH-90000]");
+        TelemetryConfig serviceConfig = TelemetryConfig.forService("test-service");
         assertEquals("test-service", serviceConfig.getServiceName()); // GH-90000
 
         // Test build tool config
-        TelemetryConfig buildConfig = TelemetryConfig.forBuildTool("maven [GH-90000]");
+        TelemetryConfig buildConfig = TelemetryConfig.forBuildTool("maven");
         assertEquals("yappc-maven", buildConfig.getServiceName()); // GH-90000
         assertTrue(buildConfig.isTracingEnabled()); // GH-90000
         assertTrue(buildConfig.isMetricsEnabled()); // GH-90000
@@ -253,11 +253,11 @@ class UnifiedTelemetryProviderTest extends EventloopTestBase {
                     instrumentation.recordMetric( // GH-90000
                             "test.metric",
                             123L,
-                            Attributes.of(AttributeKey.stringKey("test [GH-90000]"), "value"));
+                            Attributes.of(AttributeKey.stringKey("test"), "value"));
                     instrumentation.recordDuration( // GH-90000
                             "test.duration",
                             456L,
-                            Attributes.of(AttributeKey.stringKey("operation [GH-90000]"), "test"));
+                            Attributes.of(AttributeKey.stringKey("operation"), "test"));
                 });
     }
 
@@ -269,7 +269,7 @@ class UnifiedTelemetryProviderTest extends EventloopTestBase {
                 new TelemetryInstrumentation(telemetryProvider, "test"); // GH-90000
 
         // Test command instrumentation with exception
-        RuntimeException testException = new RuntimeException("Test error [GH-90000]");
+        RuntimeException testException = new RuntimeException("Test error");
 
         RuntimeException thrown =
                 assertThrows( // GH-90000

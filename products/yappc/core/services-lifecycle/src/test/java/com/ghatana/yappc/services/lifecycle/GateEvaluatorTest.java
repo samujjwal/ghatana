@@ -36,7 +36,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("GateEvaluator Tests (3.3.5) [GH-90000]")
+@DisplayName("GateEvaluator Tests (3.3.5)")
 class GateEvaluatorTest {
 
     private static final ObjectMapper YAML = new ObjectMapper(new YAMLFactory()); // GH-90000
@@ -61,19 +61,19 @@ class GateEvaluatorTest {
             List<String> artifacts) {
         try {
             StringBuilder yaml = new StringBuilder(); // GH-90000
-            yaml.append("id:  [GH-90000]").append(id).append('\n');
-            yaml.append("name: Test Stage\n [GH-90000]");
+            yaml.append("id: ").append(id).append('\n');
+            yaml.append("name: Test Stage\n");
             if (!entryCriteria.isEmpty()) { // GH-90000
-                yaml.append("entry_criteria:\n [GH-90000]");
+                yaml.append("entry_criteria:\n");
                 entryCriteria.forEach(c -> yaml.append("  - \"").append(c).append("\"\n")); // GH-90000
             }
             if (!exitCriteria.isEmpty()) { // GH-90000
-                yaml.append("exit_criteria:\n [GH-90000]");
+                yaml.append("exit_criteria:\n");
                 exitCriteria.forEach(c -> yaml.append("  - \"").append(c).append("\"\n")); // GH-90000
             }
             if (!artifacts.isEmpty()) { // GH-90000
-                yaml.append("artifacts:\n [GH-90000]");
-                artifacts.forEach(a -> yaml.append("  -  [GH-90000]").append(a).append('\n'));
+                yaml.append("artifacts:\n");
+                artifacts.forEach(a -> yaml.append("  - ").append(a).append('\n'));
             }
             return YAML.readValue(yaml.toString(), StageSpec.class); // GH-90000
         } catch (IOException e) { // GH-90000
@@ -86,11 +86,11 @@ class GateEvaluatorTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Entry criteria evaluation [GH-90000]")
+    @DisplayName("Entry criteria evaluation")
     class EntryCriteriaTests {
 
         @Test
-        @DisplayName("all criteria met → gate is open [GH-90000]")
+        @DisplayName("all criteria met → gate is open")
         void allCriteriaMetGateIsOpen() { // GH-90000
             StageSpec s = stage("intent", List.of( // GH-90000
                     "Business problem is clearly articulated",
@@ -111,7 +111,7 @@ class GateEvaluatorTest {
         }
 
         @Test
-        @DisplayName("one criterion not met → gate is closed with unmet list [GH-90000]")
+        @DisplayName("one criterion not met → gate is closed with unmet list")
         void oneCriterionNotMetGateIsClosed() { // GH-90000
             StageSpec s = stage("plan", List.of( // GH-90000
                     "Requirements document approved",
@@ -129,11 +129,11 @@ class GateEvaluatorTest {
             assertThat(result.satisfiedCount()).isEqualTo(1); // GH-90000
             assertThat(result.totalCount()).isEqualTo(2); // GH-90000
             assertThat(result.unmetCriteria()).hasSize(1); // GH-90000
-            assertThat(result.unmetCriteria().get(0)).contains("Architecture [GH-90000]");
+            assertThat(result.unmetCriteria().get(0)).contains("Architecture");
         }
 
         @Test
-        @DisplayName("criterion with verdict=false is not satisfied [GH-90000]")
+        @DisplayName("criterion with verdict=false is not satisfied")
         void criterionWithFalseVerdictIsNotSatisfied() { // GH-90000
             StageSpec s = stage("design", List.of( // GH-90000
                     "Security review passed"
@@ -148,7 +148,7 @@ class GateEvaluatorTest {
         }
 
         @Test
-        @DisplayName("empty criteria list → gate trivially open [GH-90000]")
+        @DisplayName("empty criteria list → gate trivially open")
         void emptyCriteriaListGateTriviallyOpen() { // GH-90000
             StageSpec s = stage("onboard", List.of(), List.of(), List.of()); // GH-90000
 
@@ -160,7 +160,7 @@ class GateEvaluatorTest {
         }
 
         @Test
-        @DisplayName("verdict matching is case-insensitive [GH-90000]")
+        @DisplayName("verdict matching is case-insensitive")
         void verdictMatchingIsCaseInsensitive() { // GH-90000
             StageSpec s = stage("build", List.of( // GH-90000
                     "Unit tests passing with >= 80% coverage"
@@ -175,7 +175,7 @@ class GateEvaluatorTest {
         }
 
         @Test
-        @DisplayName("empty verdicts map → no criteria satisfied [GH-90000]")
+        @DisplayName("empty verdicts map → no criteria satisfied")
         void emptyVerdictsNoCriteriaSatisfied() { // GH-90000
             StageSpec s = stage("review", List.of( // GH-90000
                     "Peer code review completed",
@@ -190,7 +190,7 @@ class GateEvaluatorTest {
         }
 
         @Test
-        @DisplayName("null verdicts throws NullPointerException [GH-90000]")
+        @DisplayName("null verdicts throws NullPointerException")
         void nullVerdictsThrows() { // GH-90000
             StageSpec s = stage("any", List.of(), List.of(), List.of()); // GH-90000
             assertThatThrownBy(() -> evaluator.evaluateEntry(s, null)) // GH-90000
@@ -203,11 +203,11 @@ class GateEvaluatorTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Exit criteria evaluation [GH-90000]")
+    @DisplayName("Exit criteria evaluation")
     class ExitCriteriaTests {
 
         @Test
-        @DisplayName("all exit criteria met → gate is open [GH-90000]")
+        @DisplayName("all exit criteria met → gate is open")
         void allExitCriteriaMetGateOpen() { // GH-90000
             StageSpec s = stage("impl", List.of(), List.of( // GH-90000
                     "All acceptance tests green",
@@ -226,7 +226,7 @@ class GateEvaluatorTest {
         }
 
         @Test
-        @DisplayName("exit criterion not met → gate closed with reason [GH-90000]")
+        @DisplayName("exit criterion not met → gate closed with reason")
         void exitCriterionNotMetGateClosed() { // GH-90000
             StageSpec s = stage("launch", List.of(), List.of( // GH-90000
                     "Rollback plan documented",
@@ -238,7 +238,7 @@ class GateEvaluatorTest {
             GateEvaluator.GateResult result = evaluator.evaluateExit(s, verdicts); // GH-90000
 
             assertThat(result.open()).isFalse(); // GH-90000
-            assertThat(result.unmetCriteria()).anyMatch(c -> c.toLowerCase().contains("monitoring [GH-90000]"));
+            assertThat(result.unmetCriteria()).anyMatch(c -> c.toLowerCase().contains("monitoring"));
         }
     }
 
@@ -247,11 +247,11 @@ class GateEvaluatorTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Artifact gate evaluation [GH-90000]")
+    @DisplayName("Artifact gate evaluation")
     class ArtifactGateTests {
 
         @Test
-        @DisplayName("all required artifacts present → gate open [GH-90000]")
+        @DisplayName("all required artifacts present → gate open")
         void allArtifactsPresent() { // GH-90000
             StageSpec s = stage("release", List.of(), List.of(), List.of( // GH-90000
                     "release-notes.md",
@@ -271,24 +271,24 @@ class GateEvaluatorTest {
         }
 
         @Test
-        @DisplayName("missing required artifact → gate closed listing missing ID [GH-90000]")
+        @DisplayName("missing required artifact → gate closed listing missing ID")
         void missingArtifactGateClosed() { // GH-90000
             StageSpec s = stage("deploy", List.of(), List.of(), List.of( // GH-90000
                     "deployment-config.yaml",
                     "security-scan-report.json"
             ));
 
-            Set<String> available = Set.of("deployment-config.yaml [GH-90000]");
+            Set<String> available = Set.of("deployment-config.yaml");
 
             GateEvaluator.GateResult result = evaluator.evaluateArtifacts(s, available); // GH-90000
 
             assertThat(result.open()).isFalse(); // GH-90000
             assertThat(result.satisfiedCount()).isEqualTo(1); // GH-90000
-            assertThat(result.unmetCriteria()).containsExactly("security-scan-report.json [GH-90000]");
+            assertThat(result.unmetCriteria()).containsExactly("security-scan-report.json");
         }
 
         @Test
-        @DisplayName("no required artifacts → gate trivially open [GH-90000]")
+        @DisplayName("no required artifacts → gate trivially open")
         void noRequiredArtifactsGateTriviallyOpen() { // GH-90000
             StageSpec s = stage("learn", List.of(), List.of(), List.of()); // GH-90000
 
@@ -299,7 +299,7 @@ class GateEvaluatorTest {
         }
 
         @Test
-        @DisplayName("null available artifacts throws NullPointerException [GH-90000]")
+        @DisplayName("null available artifacts throws NullPointerException")
         void nullAvailableArtifactsThrows() { // GH-90000
             StageSpec s = stage("any", List.of(), List.of(), List.of()); // GH-90000
             assertThatThrownBy(() -> evaluator.evaluateArtifacts(s, null)) // GH-90000
@@ -312,13 +312,13 @@ class GateEvaluatorTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("GateResult utilities [GH-90000]")
+    @DisplayName("GateResult utilities")
     class GateResultUtilityTests {
 
         @Test
-        @DisplayName("isFullySatisfied() delegates to open flag [GH-90000]")
+        @DisplayName("isFullySatisfied() delegates to open flag")
         void isFullySatisfiedMatchesOpenFlag() { // GH-90000
-            StageSpec s = stage("x", List.of("All done [GH-90000]"), List.of(), List.of());
+            StageSpec s = stage("x", List.of("All done"), List.of(), List.of());
             Map<String, Boolean> met = Map.of("done", true); // GH-90000
             Map<String, Boolean> unmet = Map.of(); // GH-90000
 
@@ -330,7 +330,7 @@ class GateEvaluatorTest {
         }
 
         @Test
-        @DisplayName("satisfactionRatio() is 1.0 for empty criteria [GH-90000]")
+        @DisplayName("satisfactionRatio() is 1.0 for empty criteria")
         void satisfactionRatioIsOneForEmptyCriteria() { // GH-90000
             StageSpec s = stage("empty", List.of(), List.of(), List.of()); // GH-90000
             GateEvaluator.GateResult result = evaluator.evaluateEntry(s, Map.of()); // GH-90000
@@ -338,7 +338,7 @@ class GateEvaluatorTest {
         }
 
         @Test
-        @DisplayName("satisfactionRatio() is 0.5 for half satisfied [GH-90000]")
+        @DisplayName("satisfactionRatio() is 0.5 for half satisfied")
         void satisfactionRatioIsHalfForHalfSatisfied() { // GH-90000
             StageSpec s = stage("half", List.of("First criterion", "Second criterion"), List.of(), List.of()); // GH-90000
             Map<String, Boolean> verdicts = Map.of("First", true); // GH-90000
@@ -349,12 +349,12 @@ class GateEvaluatorTest {
         }
 
         @Test
-        @DisplayName("toString() includes open flag and count summary [GH-90000]")
+        @DisplayName("toString() includes open flag and count summary")
         void toStringIncludesKeyInfo() { // GH-90000
-            StageSpec s = stage("log", List.of("Login required [GH-90000]"), List.of(), List.of());
+            StageSpec s = stage("log", List.of("Login required"), List.of(), List.of());
             GateEvaluator.GateResult result = evaluator.evaluateEntry(s, Map.of()); // GH-90000
             String str = result.toString(); // GH-90000
-            assertThat(str).contains("open=false [GH-90000]").contains("0/1 [GH-90000]");
+            assertThat(str).contains("open=false").contains("0/1");
         }
     }
 }

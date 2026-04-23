@@ -23,7 +23,7 @@ class MfaServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should enroll user and generate secret, QR URI, and backup codes [GH-90000]")
+    @DisplayName("Should enroll user and generate secret, QR URI, and backup codes")
     void testEnrollUser() throws Exception { // GH-90000
         String userId = "test-user";
         String issuer = "Ghatana";
@@ -32,19 +32,19 @@ class MfaServiceTest extends EventloopTestBase {
 
         assertThat(data).isNotNull(); // GH-90000
         assertThat(data.secret()).isNotBlank(); // GH-90000
-        assertThat(data.qrCodeUri()).startsWith("otpauth://totp/ [GH-90000]");
+        assertThat(data.qrCodeUri()).startsWith("otpauth://totp/");
         assertThat(data.qrCodeUri()).contains(issuer); // GH-90000
         assertThat(data.qrCodeUri()).contains(userId); // GH-90000
         assertThat(data.backupCodes()).hasSize(10); // GH-90000
 
         for (String code : data.backupCodes()) { // GH-90000
             assertThat(code).hasSize(8); // GH-90000
-            assertThat(code).matches("[A-Z0-9]+ [GH-90000]");
+            assertThat(code).matches("[A-Z0-9]+");
         }
     }
 
     @Test
-    @DisplayName("Should verify enrollment with valid TOTP code [GH-90000]")
+    @DisplayName("Should verify enrollment with valid TOTP code")
     void testVerifyEnrollmentSuccess() throws Exception { // GH-90000
         String userId = "test-user";
 
@@ -61,7 +61,7 @@ class MfaServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should reject enrollment verification when user not enrolled [GH-90000]")
+    @DisplayName("Should reject enrollment verification when user not enrolled")
     void testVerifyEnrollmentNotEnrolled() throws Exception { // GH-90000
         Boolean result = runPromise(() -> mfaService.verifyEnrollment("unknown-user", "123456")); // GH-90000
 
@@ -69,7 +69,7 @@ class MfaServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should validate backup code successfully [GH-90000]")
+    @DisplayName("Should validate backup code successfully")
     void testValidateBackupCode() throws Exception { // GH-90000
         String userId = "test-user";
 
@@ -84,7 +84,7 @@ class MfaServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should reject invalid backup code [GH-90000]")
+    @DisplayName("Should reject invalid backup code")
     void testValidateInvalidBackupCode() throws Exception { // GH-90000
         String userId = "test-user";
 
@@ -96,7 +96,7 @@ class MfaServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should disable MFA successfully [GH-90000]")
+    @DisplayName("Should disable MFA successfully")
     void testDisableMfa() throws Exception { // GH-90000
         String userId = "test-user";
 
@@ -109,15 +109,15 @@ class MfaServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should return false when disabling MFA for non-enrolled user [GH-90000]")
+    @DisplayName("Should return false when disabling MFA for non-enrolled user")
     void testDisableMfaNotEnrolled() throws Exception { // GH-90000
-        Boolean result = runPromise(() -> mfaService.disableMfa("unknown-user [GH-90000]"));
+        Boolean result = runPromise(() -> mfaService.disableMfa("unknown-user"));
 
         assertThat(result).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should check MFA enabled status correctly [GH-90000]")
+    @DisplayName("Should check MFA enabled status correctly")
     void testIsMfaEnabled() throws Exception { // GH-90000
         String userId = "test-user";
 
@@ -130,7 +130,7 @@ class MfaServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should reject TOTP code with wrong length [GH-90000]")
+    @DisplayName("Should reject TOTP code with wrong length")
     void testValidateCodeWrongLength() throws Exception { // GH-90000
         String userId = "test-user";
 
@@ -142,7 +142,7 @@ class MfaServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should rate limit after multiple failed attempts [GH-90000]")
+    @DisplayName("Should rate limit after multiple failed attempts")
     void testRateLimiting() throws Exception { // GH-90000
         String userId = "test-user";
 

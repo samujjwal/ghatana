@@ -28,7 +28,7 @@ import static org.mockito.Mockito.*;
  * Focus: Goal decomposition, multi-step execution, step sequencing,
  * error recovery, replanning, and workflow coordination.
  */
-@DisplayName("PlanningAgent Behavioral Tests [GH-90000]")
+@DisplayName("PlanningAgent Behavioral Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class PlanningAgentBehavioralTest {
 
@@ -41,13 +41,13 @@ class PlanningAgentBehavioralTest {
     @BeforeEach
     void setUp() { // GH-90000
         agentContext = AgentContext.builder() // GH-90000
-                .turnId("turn-1 [GH-90000]")
-                .agentId("planning-agent [GH-90000]")
-                .tenantId("tenant-1 [GH-90000]")
+                .turnId("turn-1")
+                .agentId("planning-agent")
+                .tenantId("tenant-1")
                 .memoryStore(memoryStore) // GH-90000
                 .build(); // GH-90000
 
-        agent = new TestPlanningAgent("planning-agent [GH-90000]");
+        agent = new TestPlanningAgent("planning-agent");
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -55,13 +55,13 @@ class PlanningAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Plan Decomposition [GH-90000]")
+    @DisplayName("Plan Decomposition")
     class DecompositionTests {
 
         @Test
-        @DisplayName("Agent decomposes goal into steps [GH-90000]")
+        @DisplayName("Agent decomposes goal into steps")
         void goalDecomposition() { // GH-90000
-            TestPlanningAgent testAgent = new TestPlanningAgent("test-agent [GH-90000]");
+            TestPlanningAgent testAgent = new TestPlanningAgent("test-agent");
             runPromise(() -> testAgent.initialize(AgentConfig.builder().build())); // GH-90000
 
             Map<String, Object> goal = Map.of("task", "build-app", "features", 3); // GH-90000
@@ -72,9 +72,9 @@ class PlanningAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Plan contains ordered sequence of steps [GH-90000]")
+        @DisplayName("Plan contains ordered sequence of steps")
         void stepSequencing() { // GH-90000
-            TestPlanningAgent testAgent = new TestPlanningAgent("sequential-agent [GH-90000]");
+            TestPlanningAgent testAgent = new TestPlanningAgent("sequential-agent");
             runPromise(() -> testAgent.initialize(AgentConfig.builder().build())); // GH-90000
 
             Map<String, Object> goal = Map.of( // GH-90000
@@ -87,9 +87,9 @@ class PlanningAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Plan depends on goal complexity [GH-90000]")
+        @DisplayName("Plan depends on goal complexity")
         void complexityDependence() { // GH-90000
-            TestPlanningAgent testAgent = new TestPlanningAgent("complex-agent [GH-90000]");
+            TestPlanningAgent testAgent = new TestPlanningAgent("complex-agent");
             runPromise(() -> testAgent.initialize(AgentConfig.builder().build())); // GH-90000
 
             // Simple goal
@@ -109,13 +109,13 @@ class PlanningAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Step Execution [GH-90000]")
+    @DisplayName("Step Execution")
     class ExecutionTests {
 
         @Test
-        @DisplayName("Steps execute in sequence [GH-90000]")
+        @DisplayName("Steps execute in sequence")
         void sequentialExecution() { // GH-90000
-            TestPlanningAgent testAgent = new TestPlanningAgent("sequential-exec [GH-90000]");
+            TestPlanningAgent testAgent = new TestPlanningAgent("sequential-exec");
             runPromise(() -> testAgent.initialize(AgentConfig.builder().build())); // GH-90000
 
             Map<String, Object> goal = Map.of("goal", "execute-steps", "count", 5); // GH-90000
@@ -125,9 +125,9 @@ class PlanningAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Step success produces expected output [GH-90000]")
+        @DisplayName("Step success produces expected output")
         void stepSuccessOutput() { // GH-90000
-            TestPlanningAgent testAgent = new TestPlanningAgent("success-agent [GH-90000]");
+            TestPlanningAgent testAgent = new TestPlanningAgent("success-agent");
             runPromise(() -> testAgent.initialize(AgentConfig.builder().build())); // GH-90000
 
             Map<String, Object> goal = Map.of( // GH-90000
@@ -141,9 +141,9 @@ class PlanningAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Step failure captures error context [GH-90000]")
+        @DisplayName("Step failure captures error context")
         void stepFailureHandling() { // GH-90000
-            TestPlanningAgent testAgent = new TestPlanningAgent("failure-agent [GH-90000]");
+            TestPlanningAgent testAgent = new TestPlanningAgent("failure-agent");
             runPromise(() -> testAgent.initialize(AgentConfig.builder().build())); // GH-90000
 
             Map<String, Object> goal = Map.of("objective", "test-failure"); // GH-90000
@@ -154,9 +154,9 @@ class PlanningAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Agent accumulates results across steps [GH-90000]")
+        @DisplayName("Agent accumulates results across steps")
         void resultAccumulation() { // GH-90000
-            TestPlanningAgent testAgent = new TestPlanningAgent("accumulator [GH-90000]");
+            TestPlanningAgent testAgent = new TestPlanningAgent("accumulator");
             runPromise(() -> testAgent.initialize(AgentConfig.builder().build())); // GH-90000
 
             Map<String, Object> goal = Map.of( // GH-90000
@@ -175,13 +175,13 @@ class PlanningAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Replanning [GH-90000]")
+    @DisplayName("Replanning")
     class ReplanningTests {
 
         @Test
-        @DisplayName("Agent replans when step fails [GH-90000]")
+        @DisplayName("Agent replans when step fails")
         void replanOnStepFailure() { // GH-90000
-            TestPlanningAgent testAgent = new TestPlanningAgent("replan-agent [GH-90000]");
+            TestPlanningAgent testAgent = new TestPlanningAgent("replan-agent");
             AgentConfig config = AgentConfig.builder() // GH-90000
                     .properties(Map.of("enableReplanning", Boolean.TRUE)) // GH-90000
                     .build(); // GH-90000
@@ -194,9 +194,9 @@ class PlanningAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Replan respects maximum attempt limit [GH-90000]")
+        @DisplayName("Replan respects maximum attempt limit")
         void replanAttemptLimit() { // GH-90000
-            TestPlanningAgent testAgent = new TestPlanningAgent("limited-replan [GH-90000]");
+            TestPlanningAgent testAgent = new TestPlanningAgent("limited-replan");
             AgentConfig config = AgentConfig.builder() // GH-90000
                     .properties(Map.of("enableReplanning", Boolean.TRUE)) // GH-90000
                     .build(); // GH-90000
@@ -209,9 +209,9 @@ class PlanningAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Revised plan incorporates feedback [GH-90000]")
+        @DisplayName("Revised plan incorporates feedback")
         void revisedPlanFeedback() { // GH-90000
-            TestPlanningAgent testAgent = new TestPlanningAgent("feedback-agent [GH-90000]");
+            TestPlanningAgent testAgent = new TestPlanningAgent("feedback-agent");
             AgentConfig config = AgentConfig.builder() // GH-90000
                     .properties(Map.of("enableReplanning", Boolean.TRUE)) // GH-90000
                     .build(); // GH-90000
@@ -232,13 +232,13 @@ class PlanningAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("State Management [GH-90000]")
+    @DisplayName("State Management")
     class StateManagementTests {
 
         @Test
-        @DisplayName("Agent tracks planning state [GH-90000]")
+        @DisplayName("Agent tracks planning state")
         void planningStateTracking() { // GH-90000
-            TestPlanningAgent testAgent = new TestPlanningAgent("state-tracker [GH-90000]");
+            TestPlanningAgent testAgent = new TestPlanningAgent("state-tracker");
             runPromise(() -> testAgent.initialize(AgentConfig.builder().build())); // GH-90000
 
             Map<String, Object> goal = Map.of("objective", "track-state"); // GH-90000
@@ -249,9 +249,9 @@ class PlanningAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Current step is tracked during execution [GH-90000]")
+        @DisplayName("Current step is tracked during execution")
         void currentStepTracking() { // GH-90000
-            TestPlanningAgent testAgent = new TestPlanningAgent("step-tracker [GH-90000]");
+            TestPlanningAgent testAgent = new TestPlanningAgent("step-tracker");
             runPromise(() -> testAgent.initialize(AgentConfig.builder().build())); // GH-90000
 
             Map<String, Object> goal = Map.of("objective", "track-steps", "total", 5); // GH-90000
@@ -261,9 +261,9 @@ class PlanningAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Plan history is maintained [GH-90000]")
+        @DisplayName("Plan history is maintained")
         void planHistory() { // GH-90000
-            TestPlanningAgent testAgent = new TestPlanningAgent("history-agent [GH-90000]");
+            TestPlanningAgent testAgent = new TestPlanningAgent("history-agent");
             runPromise(() -> testAgent.initialize(AgentConfig.builder().build())); // GH-90000
 
             Map<String, Object> goal = Map.of("objective", "maintain-history"); // GH-90000
@@ -278,13 +278,13 @@ class PlanningAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Latency & Performance [GH-90000]")
+    @DisplayName("Latency & Performance")
     class LatencyTests {
 
         @Test
-        @DisplayName("Multi-step execution completes in reasonable time [GH-90000]")
+        @DisplayName("Multi-step execution completes in reasonable time")
         void executionLatency() { // GH-90000
-            TestPlanningAgent testAgent = new TestPlanningAgent("latency-agent [GH-90000]");
+            TestPlanningAgent testAgent = new TestPlanningAgent("latency-agent");
             runPromise(() -> testAgent.initialize(AgentConfig.builder().build())); // GH-90000
 
             Map<String, Object> goal = Map.of("objective", "measure-latency", "steps", 10); // GH-90000
@@ -301,9 +301,9 @@ class PlanningAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Long-horizon plans execute persistently [GH-90000]")
+        @DisplayName("Long-horizon plans execute persistently")
         void longHorizonExecution() { // GH-90000
-            TestPlanningAgent testAgent = new TestPlanningAgent("long-horizon [GH-90000]");
+            TestPlanningAgent testAgent = new TestPlanningAgent("long-horizon");
             runPromise(() -> testAgent.initialize(AgentConfig.builder().build())); // GH-90000
 
             Map<String, Object> goal = Map.of( // GH-90000
@@ -322,13 +322,13 @@ class PlanningAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Explanation Generation [GH-90000]")
+    @DisplayName("Explanation Generation")
     class ExplanationTests {
 
         @Test
-        @DisplayName("Plan explanation describes decomposed goals [GH-90000]")
+        @DisplayName("Plan explanation describes decomposed goals")
         void planExplanation() { // GH-90000
-            TestPlanningAgent testAgent = new TestPlanningAgent("explain-agent [GH-90000]");
+            TestPlanningAgent testAgent = new TestPlanningAgent("explain-agent");
             runPromise(() -> testAgent.initialize(AgentConfig.builder().build())); // GH-90000
 
             Map<String, Object> goal = Map.of("objective", "explain-plan"); // GH-90000
@@ -341,9 +341,9 @@ class PlanningAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Explanation includes step sequence [GH-90000]")
+        @DisplayName("Explanation includes step sequence")
         void stepSequenceExplanation() { // GH-90000
-            TestPlanningAgent testAgent = new TestPlanningAgent("sequence-explain [GH-90000]");
+            TestPlanningAgent testAgent = new TestPlanningAgent("sequence-explain");
             runPromise(() -> testAgent.initialize(AgentConfig.builder().build())); // GH-90000
 
             Map<String, Object> goal = Map.of("objective", "show-sequence", "steps", 3); // GH-90000
@@ -356,9 +356,9 @@ class PlanningAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Failure explanation includes recovery attempt [GH-90000]")
+        @DisplayName("Failure explanation includes recovery attempt")
         void failureExplanation() { // GH-90000
-            TestPlanningAgent testAgent = new TestPlanningAgent("failure-explain [GH-90000]");
+            TestPlanningAgent testAgent = new TestPlanningAgent("failure-explain");
             runPromise(() -> testAgent.initialize(AgentConfig.builder().build())); // GH-90000
 
             Map<String, Object> goal = Map.of("objective", "show-failure"); // GH-90000
@@ -373,13 +373,13 @@ class PlanningAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Confidence & Metrics [GH-90000]")
+    @DisplayName("Confidence & Metrics")
     class ConfidenceMetricsTests {
 
         @Test
-        @DisplayName("Confidence reflects plan quality [GH-90000]")
+        @DisplayName("Confidence reflects plan quality")
         void planQualityConfidence() { // GH-90000
-            TestPlanningAgent testAgent = new TestPlanningAgent("confidence-agent [GH-90000]");
+            TestPlanningAgent testAgent = new TestPlanningAgent("confidence-agent");
             runPromise(() -> testAgent.initialize(AgentConfig.builder().build())); // GH-90000
 
             Map<String, Object> goal = Map.of("objective", "assess-confidence"); // GH-90000
@@ -391,9 +391,9 @@ class PlanningAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Metrics include plan statistics [GH-90000]")
+        @DisplayName("Metrics include plan statistics")
         void planMetrics() { // GH-90000
-            TestPlanningAgent testAgent = new TestPlanningAgent("metrics-agent [GH-90000]");
+            TestPlanningAgent testAgent = new TestPlanningAgent("metrics-agent");
             runPromise(() -> testAgent.initialize(AgentConfig.builder().build())); // GH-90000
 
             Map<String, Object> goal = Map.of("objective", "collect-metrics", "steps", 5); // GH-90000
@@ -404,9 +404,9 @@ class PlanningAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Processing time reflects multi-step work [GH-90000]")
+        @DisplayName("Processing time reflects multi-step work")
         void processingTime() { // GH-90000
-            TestPlanningAgent testAgent = new TestPlanningAgent("time-agent [GH-90000]");
+            TestPlanningAgent testAgent = new TestPlanningAgent("time-agent");
             runPromise(() -> testAgent.initialize(AgentConfig.builder().build())); // GH-90000
 
             Map<String, Object> goal = Map.of("objective", "measure-time", "steps", 10); // GH-90000

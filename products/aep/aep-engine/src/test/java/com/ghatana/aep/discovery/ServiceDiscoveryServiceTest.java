@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern UnitTest
  */
-@DisplayName("ServiceDiscoveryService [GH-90000]")
+@DisplayName("ServiceDiscoveryService")
 class ServiceDiscoveryServiceTest {
 
     private static final String PAYMENT_SERVICE_URL = "PAYMENT_SERVICE_URL";
@@ -43,11 +43,11 @@ class ServiceDiscoveryServiceTest {
     }
 
     @Nested
-    @DisplayName("discoverServices() [GH-90000]")
+    @DisplayName("discoverServices()")
     class DiscoverServicesTests {
 
         @Test
-        @DisplayName("discovers services from environment [GH-90000]")
+        @DisplayName("discovers services from environment")
         void discoversServicesFromEnvironment() { // GH-90000
             System.setProperty(PAYMENT_SERVICE_URL, "http://localhost:8080"); // GH-90000
             
@@ -55,11 +55,11 @@ class ServiceDiscoveryServiceTest {
             
             assertThat(services) // GH-90000
                 .extracting(DiscoveredService::endpoint) // GH-90000
-                .contains("http://localhost:8080 [GH-90000]");
+                .contains("http://localhost:8080");
         }
 
         @Test
-        @DisplayName("returns empty list when no services found [GH-90000]")
+        @DisplayName("returns empty list when no services found")
         void returnsEmptyListWhenNoServicesFound() { // GH-90000
             List<DiscoveredService> services = service.discoverServices("all", Map.of()); // GH-90000
             
@@ -68,11 +68,11 @@ class ServiceDiscoveryServiceTest {
     }
 
     @Nested
-    @DisplayName("registerService() [GH-90000]")
+    @DisplayName("registerService()")
     class RegisterServiceTests {
 
         @Test
-        @DisplayName("registers service when auto-register is true [GH-90000]")
+        @DisplayName("registers service when auto-register is true")
         void registersServiceWhenAutoRegisterIsTrue() { // GH-90000
             DiscoveredService discoveredService = new DiscoveredService( // GH-90000
                 "service-1",
@@ -87,11 +87,11 @@ class ServiceDiscoveryServiceTest {
 
             assertThat(result.registered()).isTrue(); // GH-90000
             assertThat(result.agentId()).isNotNull(); // GH-90000
-            assertThat(result.agentId()).startsWith("agent- [GH-90000]");
+            assertThat(result.agentId()).startsWith("agent-");
         }
 
         @Test
-        @DisplayName("skips registration when auto-register is false [GH-90000]")
+        @DisplayName("skips registration when auto-register is false")
         void skipsRegistrationWhenAutoRegisterIsFalse() { // GH-90000
             DiscoveredService discoveredService = new DiscoveredService( // GH-90000
                 "service-1",
@@ -105,11 +105,11 @@ class ServiceDiscoveryServiceTest {
             ServiceDiscoveryService.RegistrationResult result = service.registerService(discoveredService, false); // GH-90000
 
             assertThat(result.registered()).isFalse(); // GH-90000
-            assertThat(result.reason()).isEqualTo("Auto-registration disabled [GH-90000]");
+            assertThat(result.reason()).isEqualTo("Auto-registration disabled");
         }
 
         @Test
-        @DisplayName("rejects unhealthy services [GH-90000]")
+        @DisplayName("rejects unhealthy services")
         void rejectsUnhealthyServices() { // GH-90000
             DiscoveredService discoveredService = new DiscoveredService( // GH-90000
                 "service-1",
@@ -123,11 +123,11 @@ class ServiceDiscoveryServiceTest {
             ServiceDiscoveryService.RegistrationResult result = service.registerService(discoveredService, true); // GH-90000
 
             assertThat(result.registered()).isFalse(); // GH-90000
-            assertThat(result.reason()).isEqualTo("Service is unhealthy [GH-90000]");
+            assertThat(result.reason()).isEqualTo("Service is unhealthy");
         }
 
         @Test
-        @DisplayName("adds warning for missing endpoint [GH-90000]")
+        @DisplayName("adds warning for missing endpoint")
         void addsWarningForMissingEndpoint() { // GH-90000
             DiscoveredService discoveredService = new DiscoveredService( // GH-90000
                 "service-1",
@@ -141,16 +141,16 @@ class ServiceDiscoveryServiceTest {
             ServiceDiscoveryService.RegistrationResult result = service.registerService(discoveredService, true); // GH-90000
 
             assertThat(result.registered()).isTrue(); // GH-90000
-            assertThat(result.warnings()).anyMatch(w -> w.contains("No endpoint [GH-90000]"));
+            assertThat(result.warnings()).anyMatch(w -> w.contains("No endpoint"));
         }
     }
 
     @Nested
-    @DisplayName("getStats() [GH-90000]")
+    @DisplayName("getStats()")
     class GetStatsTests {
 
         @Test
-        @DisplayName("returns discovery statistics [GH-90000]")
+        @DisplayName("returns discovery statistics")
         void returnsDiscoveryStatistics() { // GH-90000
             System.setProperty(PAYMENT_SERVICE_URL, "http://localhost:8080"); // GH-90000
 
@@ -172,7 +172,7 @@ class ServiceDiscoveryServiceTest {
         }
 
         @Test
-        @DisplayName("calculates registration rate [GH-90000]")
+        @DisplayName("calculates registration rate")
         void calculatesRegistrationRate() { // GH-90000
             ServiceDiscoveryService.DiscoveryStats stats = service.getStats(); // GH-90000
             
@@ -180,7 +180,7 @@ class ServiceDiscoveryServiceTest {
         }
 
         @Test
-        @DisplayName("returns zero stats when no discovery [GH-90000]")
+        @DisplayName("returns zero stats when no discovery")
         void returnsZeroStatsWhenNoDiscovery() { // GH-90000
             ServiceDiscoveryService.DiscoveryStats stats = service.getStats(); // GH-90000
             
@@ -192,11 +192,11 @@ class ServiceDiscoveryServiceTest {
     }
 
     @Nested
-    @DisplayName("DiscoveredService [GH-90000]")
+    @DisplayName("DiscoveredService")
     class DiscoveredServiceTests {
 
         @Test
-        @DisplayName("service has required fields [GH-90000]")
+        @DisplayName("service has required fields")
         void serviceHasRequiredFields() { // GH-90000
             DiscoveredService service = new DiscoveredService( // GH-90000
                 "service-1",

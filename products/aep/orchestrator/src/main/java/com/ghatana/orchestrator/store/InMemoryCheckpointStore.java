@@ -11,7 +11,11 @@ import java.util.stream.Collectors;
 /**
  * In-memory implementation of {@link CheckpointStore} for integration testing.
  * Thread-safe via ConcurrentHashMap.
- */
+  * @doc.type class
+ * @doc.purpose Provides in memory checkpoint store functionality.
+ * @doc.layer product
+ * @doc.pattern Repository
+*/
 public class InMemoryCheckpointStore implements CheckpointStore {
 
     private final ConcurrentHashMap<String, PipelineCheckpoint> checkpoints = new ConcurrentHashMap<>();

@@ -31,7 +31,11 @@ import java.util.concurrent.atomic.AtomicLong;
  * @see FilterOperator
  * @see MapOperator
  * @see StreamOperator
- */
+  * @doc.type class
+ * @doc.purpose Provides base operator functionality.
+ * @doc.layer product
+ * @doc.pattern Operator
+*/
 public abstract class BaseOperator extends AbstractOperator {
 
     private final Set<String> acceptedEventTypes;

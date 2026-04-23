@@ -20,15 +20,15 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern UnitTest
  */
-@DisplayName("Datasets UI Contract Tests [GH-90000]")
+@DisplayName("Datasets UI Contract Tests")
 public class DatasetsUiContractTest {
 
     @Nested
-    @DisplayName("DatasetsListPageTests [GH-90000]")
+    @DisplayName("DatasetsListPageTests")
     class DatasetsListPageTests {
 
         @Test
-        @DisplayName("GET /datasets: returns 200 with datasets list [GH-90000]")
+        @DisplayName("GET /datasets: returns 200 with datasets list")
         void shouldReturnDatasetsList() { // GH-90000
             Map<String, Object> response = getDatasetsList(); // GH-90000
 
@@ -36,10 +36,10 @@ public class DatasetsUiContractTest {
         }
 
         @Test
-        @DisplayName("dataset items: schema validation [GH-90000]")
+        @DisplayName("dataset items: schema validation")
         void shouldHaveDatasetSchema() { // GH-90000
             Map<String, Object> response = getDatasetsList(); // GH-90000
-            List<?> items = (List<?>) response.get("items [GH-90000]");
+            List<?> items = (List<?>) response.get("items");
 
             if (!items.isEmpty()) { // GH-90000
                 Map<String, ?> dataset = (Map<String, ?>) items.get(0); // GH-90000
@@ -48,60 +48,60 @@ public class DatasetsUiContractTest {
         }
 
         @Test
-        @DisplayName("dataset pagination: working correctly [GH-90000]")
+        @DisplayName("dataset pagination: working correctly")
         void shouldPaginate() { // GH-90000
             Map<String, Object> page1 = getDatasetPageWithLimit(10); // GH-90000
-            assertThat(page1.get("limit [GH-90000]")).isEqualTo(10);
+            assertThat(page1.get("limit")).isEqualTo(10);
         }
 
         @Test
-        @DisplayName("dataset filtering: by collection, status [GH-90000]")
+        @DisplayName("dataset filtering: by collection, status")
         void shouldFilter() { // GH-90000
-            Map<String, Object> response = getFilteredDatasets("coll-123 [GH-90000]");
-            assertThat(response).containsKey("filter [GH-90000]");
+            Map<String, Object> response = getFilteredDatasets("coll-123");
+            assertThat(response).containsKey("filter");
         }
 
         @Test
-        @DisplayName("dataset sorting: by name, size, date [GH-90000]")
+        @DisplayName("dataset sorting: by name, size, date")
         void shouldSort() { // GH-90000
             Map<String, Object> response = getSortedDatasets("size", "desc"); // GH-90000
-            assertThat(response).containsKey("sortBy [GH-90000]");
+            assertThat(response).containsKey("sortBy");
         }
 
         @Test
-        @DisplayName("dataset tenant isolation: only own datasets [GH-90000]")
+        @DisplayName("dataset tenant isolation: only own datasets")
         void shouldIsolateTenant() { // GH-90000
-            Map<String, Object> t1 = getDatasetListForTenant("tenant-1 [GH-90000]");
-            Map<String, Object> t2 = getDatasetListForTenant("tenant-2 [GH-90000]");
+            Map<String, Object> t1 = getDatasetListForTenant("tenant-1");
+            Map<String, Object> t2 = getDatasetListForTenant("tenant-2");
 
-            assertThat(t1.get("tenantId [GH-90000]")).isNotEqualTo(t2.get("tenantId [GH-90000]"));
+            assertThat(t1.get("tenantId")).isNotEqualTo(t2.get("tenantId"));
         }
 
         @Test
-        @DisplayName("dataset empty list: handles gracefully [GH-90000]")
+        @DisplayName("dataset empty list: handles gracefully")
         void shouldHandleEmpty() { // GH-90000
             Map<String, Object> response = getEmptyDatasetsList(); // GH-90000
-            assertThat(response.get("total [GH-90000]")).isEqualTo(0);
+            assertThat(response.get("total")).isEqualTo(0);
         }
 
         @Test
-        @DisplayName("dataset row count: non-negative integer [GH-90000]")
+        @DisplayName("dataset row count: non-negative integer")
         void shouldHaveValidCounts() { // GH-90000
             Map<String, Object> response = getDatasetsList(); // GH-90000
-            List<?> items = (List<?>) response.get("items [GH-90000]");
+            List<?> items = (List<?>) response.get("items");
 
             if (!items.isEmpty()) { // GH-90000
                 Map<String, ?> dataset = (Map<String, ?>) items.get(0); // GH-90000
-                long rowCount = ((Number) dataset.get("rowCount [GH-90000]")).longValue();
+                long rowCount = ((Number) dataset.get("rowCount")).longValue();
                 assertThat(rowCount).isGreaterThanOrEqualTo(0); // GH-90000
             }
         }
 
         @Test
-        @DisplayName("dataset metadata: size, last updated present [GH-90000]")
+        @DisplayName("dataset metadata: size, last updated present")
         void shouldIncludeMetadata() { // GH-90000
             Map<String, Object> response = getDatasetsList(); // GH-90000
-            List<?> items = (List<?>) response.get("items [GH-90000]");
+            List<?> items = (List<?>) response.get("items");
 
             if (!items.isEmpty()) { // GH-90000
                 Map<String, ?> dataset = (Map<String, ?>) items.get(0); // GH-90000
@@ -111,22 +111,22 @@ public class DatasetsUiContractTest {
     }
 
     @Nested
-    @DisplayName("DatasetDetailPageTests [GH-90000]")
+    @DisplayName("DatasetDetailPageTests")
     class DatasetDetailPageTests {
 
         @Test
-        @DisplayName("GET /datasets/{id}: returns detail with schema [GH-90000]")
+        @DisplayName("GET /datasets/{id}: returns detail with schema")
         void shouldReturnDetail() { // GH-90000
-            Map<String, Object> response = getDatasetDetail("dataset-1 [GH-90000]");
+            Map<String, Object> response = getDatasetDetail("dataset-1");
 
             assertThat(response).containsKeys("id", "name", "columns", "rowCount", "preview"); // GH-90000
         }
 
         @Test
-        @DisplayName("dataset columns: array with field info [GH-90000]")
+        @DisplayName("dataset columns: array with field info")
         void shouldHaveColumns() { // GH-90000
-            Map<String, Object> response = getDatasetDetail("dataset-1 [GH-90000]");
-            List<?> columns = (List<?>) response.get("columns [GH-90000]");
+            Map<String, Object> response = getDatasetDetail("dataset-1");
+            List<?> columns = (List<?>) response.get("columns");
 
             if (!columns.isEmpty()) { // GH-90000
                 Map<String, ?> col = (Map<String, ?>) columns.get(0); // GH-90000
@@ -135,50 +135,50 @@ public class DatasetsUiContractTest {
         }
 
         @Test
-        @DisplayName("dataset preview: sample rows returned [GH-90000]")
+        @DisplayName("dataset preview: sample rows returned")
         void shouldIncludePreview() { // GH-90000
-            Map<String, Object> response = getDatasetDetail("dataset-1 [GH-90000]");
-            List<?> preview = (List<?>) response.get("preview [GH-90000]");
+            Map<String, Object> response = getDatasetDetail("dataset-1");
+            List<?> preview = (List<?>) response.get("preview");
 
             assertThat(preview).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("dataset statistics: cardinality, null count [GH-90000]")
+        @DisplayName("dataset statistics: cardinality, null count")
         void shouldIncludeStats() { // GH-90000
-            Map<String, Object> response = getDatasetDetail("dataset-1 [GH-90000]");
+            Map<String, Object> response = getDatasetDetail("dataset-1");
 
-            assertThat(response).containsKey("statistics [GH-90000]");
+            assertThat(response).containsKey("statistics");
         }
 
         @Test
-        @DisplayName("dataset compression: format, ratio info [GH-90000]")
+        @DisplayName("dataset compression: format, ratio info")
         void shouldIncludeCompressionInfo() { // GH-90000
-            Map<String, Object> response = getDatasetDetail("dataset-1 [GH-90000]");
+            Map<String, Object> response = getDatasetDetail("dataset-1");
 
-            assertThat(response).containsKey("compression [GH-90000]");
+            assertThat(response).containsKey("compression");
         }
 
         @Test
-        @DisplayName("dataset permissions: inherited from collection [GH-90000]")
+        @DisplayName("dataset permissions: inherited from collection")
         void shouldHavePermissions() { // GH-90000
-            Map<String, Object> response = getDatasetDetail("dataset-1 [GH-90000]");
+            Map<String, Object> response = getDatasetDetail("dataset-1");
 
-            assertThat(response).containsKey("permissions [GH-90000]");
+            assertThat(response).containsKey("permissions");
         }
 
         @Test
-        @DisplayName("dataset query history: recent queries listed [GH-90000]")
+        @DisplayName("dataset query history: recent queries listed")
         void shouldShowQueryHistory() { // GH-90000
-            Map<String, Object> response = getDatasetDetail("dataset-1 [GH-90000]");
+            Map<String, Object> response = getDatasetDetail("dataset-1");
 
-            assertThat(response).containsKey("recentQueries [GH-90000]");
+            assertThat(response).containsKey("recentQueries");
         }
 
         @Test
-        @DisplayName("missing dataset: returns null gracefully [GH-90000]")
+        @DisplayName("missing dataset: returns null gracefully")
         void shouldHandle404() { // GH-90000
-            Map<String, Object> response = getDatasetDetailOrNull("missing [GH-90000]");
+            Map<String, Object> response = getDatasetDetailOrNull("missing");
 
             assertThat(response).isNull(); // GH-90000
         }
@@ -189,7 +189,7 @@ public class DatasetsUiContractTest {
     // ─────────────────────────────────────────────────────────────────────
 
     private Map<String, Object> getDatasetsList() { // GH-90000
-        return getDatasetListForTenant("tenant-default [GH-90000]");
+        return getDatasetListForTenant("tenant-default");
     }
 
     private Map<String, Object> getDatasetListForTenant(String tenantId) { // GH-90000
@@ -276,7 +276,7 @@ public class DatasetsUiContractTest {
     }
 
     private Map<String, Object> getDatasetDetailOrNull(String datasetId) { // GH-90000
-        if (datasetId.equals("missing [GH-90000]")) {
+        if (datasetId.equals("missing")) {
             return null;
         }
         return getDatasetDetail(datasetId); // GH-90000

@@ -36,7 +36,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("Entity History Tests [GH-90000]")
+@DisplayName("Entity History Tests")
 class EntityHistoryTest extends EventloopTestBase {
 
     @Mock
@@ -50,11 +50,11 @@ class EntityHistoryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("EntityVersion creation [GH-90000]")
+    @DisplayName("EntityVersion creation")
     class EntityVersionCreation {
 
         @Test
-        @DisplayName("should create EntityVersion with all required fields [GH-90000]")
+        @DisplayName("should create EntityVersion with all required fields")
         void shouldCreateEntityVersionWithRequiredFields() { // GH-90000
             UUID versionId = UUID.randomUUID(); // GH-90000
             String tenantId = "tenant-123";
@@ -83,7 +83,7 @@ class EntityHistoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should reject null ID [GH-90000]")
+        @DisplayName("should reject null ID")
         void shouldRejectNullId() { // GH-90000
             assertThatThrownBy(() -> new EntityVersion( // GH-90000
                 null,
@@ -94,11 +94,11 @@ class EntityHistoryTest extends EventloopTestBase {
                 new VersionMetadata("user-456", Instant.now(), "test"), // GH-90000
                 Instant.now() // GH-90000
             )).isInstanceOf(NullPointerException.class) // GH-90000
-              .hasMessageContaining("ID must not be null [GH-90000]");
+              .hasMessageContaining("ID must not be null");
         }
 
         @Test
-        @DisplayName("should reject null tenant ID [GH-90000]")
+        @DisplayName("should reject null tenant ID")
         void shouldRejectNullTenantId() { // GH-90000
             assertThatThrownBy(() -> new EntityVersion( // GH-90000
                 UUID.randomUUID(), // GH-90000
@@ -109,11 +109,11 @@ class EntityHistoryTest extends EventloopTestBase {
                 new VersionMetadata("user-456", Instant.now(), "test"), // GH-90000
                 Instant.now() // GH-90000
             )).isInstanceOf(NullPointerException.class) // GH-90000
-              .hasMessageContaining("Tenant ID must not be null [GH-90000]");
+              .hasMessageContaining("Tenant ID must not be null");
         }
 
         @Test
-        @DisplayName("should reject null entity ID [GH-90000]")
+        @DisplayName("should reject null entity ID")
         void shouldRejectNullEntityId() { // GH-90000
             assertThatThrownBy(() -> new EntityVersion( // GH-90000
                 UUID.randomUUID(), // GH-90000
@@ -124,11 +124,11 @@ class EntityHistoryTest extends EventloopTestBase {
                 new VersionMetadata("user-456", Instant.now(), "test"), // GH-90000
                 Instant.now() // GH-90000
             )).isInstanceOf(NullPointerException.class) // GH-90000
-              .hasMessageContaining("Entity ID must not be null [GH-90000]");
+              .hasMessageContaining("Entity ID must not be null");
         }
 
         @Test
-        @DisplayName("should reject null entity snapshot [GH-90000]")
+        @DisplayName("should reject null entity snapshot")
         void shouldRejectNullEntitySnapshot() { // GH-90000
             assertThatThrownBy(() -> new EntityVersion( // GH-90000
                 UUID.randomUUID(), // GH-90000
@@ -139,11 +139,11 @@ class EntityHistoryTest extends EventloopTestBase {
                 new VersionMetadata("user-456", Instant.now(), "test"), // GH-90000
                 Instant.now() // GH-90000
             )).isInstanceOf(NullPointerException.class) // GH-90000
-              .hasMessageContaining("Entity snapshot must not be null [GH-90000]");
+              .hasMessageContaining("Entity snapshot must not be null");
         }
 
         @Test
-        @DisplayName("should reject null version number [GH-90000]")
+        @DisplayName("should reject null version number")
         void shouldRejectNullVersionNumber() { // GH-90000
             assertThatThrownBy(() -> new EntityVersion( // GH-90000
                 UUID.randomUUID(), // GH-90000
@@ -154,11 +154,11 @@ class EntityHistoryTest extends EventloopTestBase {
                 new VersionMetadata("user-456", Instant.now(), "test"), // GH-90000
                 Instant.now() // GH-90000
             )).isInstanceOf(NullPointerException.class) // GH-90000
-              .hasMessageContaining("Version number must not be null [GH-90000]");
+              .hasMessageContaining("Version number must not be null");
         }
 
         @Test
-        @DisplayName("should reject version number less than 1 [GH-90000]")
+        @DisplayName("should reject version number less than 1")
         void shouldRejectVersionNumberLessThan1() { // GH-90000
             assertThatThrownBy(() -> new EntityVersion( // GH-90000
                 UUID.randomUUID(), // GH-90000
@@ -169,11 +169,11 @@ class EntityHistoryTest extends EventloopTestBase {
                 new VersionMetadata("user-456", Instant.now(), "test"), // GH-90000
                 Instant.now() // GH-90000
             )).isInstanceOf(IllegalArgumentException.class) // GH-90000
-              .hasMessageContaining("Version number must be >= 1 [GH-90000]");
+              .hasMessageContaining("Version number must be >= 1");
         }
 
         @Test
-        @DisplayName("should reject null metadata [GH-90000]")
+        @DisplayName("should reject null metadata")
         void shouldRejectNullMetadata() { // GH-90000
             assertThatThrownBy(() -> new EntityVersion( // GH-90000
                 UUID.randomUUID(), // GH-90000
@@ -184,11 +184,11 @@ class EntityHistoryTest extends EventloopTestBase {
                 null,
                 Instant.now() // GH-90000
             )).isInstanceOf(NullPointerException.class) // GH-90000
-              .hasMessageContaining("Metadata must not be null [GH-90000]");
+              .hasMessageContaining("Metadata must not be null");
         }
 
         @Test
-        @DisplayName("should reject null createdAt [GH-90000]")
+        @DisplayName("should reject null createdAt")
         void shouldRejectNullCreatedAt() { // GH-90000
             assertThatThrownBy(() -> new EntityVersion( // GH-90000
                 UUID.randomUUID(), // GH-90000
@@ -199,17 +199,17 @@ class EntityHistoryTest extends EventloopTestBase {
                 new VersionMetadata("user-456", Instant.now(), "test"), // GH-90000
                 null
             )).isInstanceOf(NullPointerException.class) // GH-90000
-              .hasMessageContaining("Created at must not be null [GH-90000]");
+              .hasMessageContaining("Created at must not be null");
         }
 
         @Test
-        @DisplayName("should create EntityVersion using builder [GH-90000]")
+        @DisplayName("should create EntityVersion using builder")
         void shouldCreateEntityVersionUsingBuilder() { // GH-90000
             UUID entityId = UUID.randomUUID(); // GH-90000
             Instant createdAt = Instant.now(); // GH-90000
 
             EntityVersion version = EntityVersion.builder() // GH-90000
-                .tenantId("tenant-123 [GH-90000]")
+                .tenantId("tenant-123")
                 .entityId(entityId) // GH-90000
                 .entitySnapshot(entity) // GH-90000
                 .versionNumber(1) // GH-90000
@@ -217,16 +217,16 @@ class EntityHistoryTest extends EventloopTestBase {
                 .createdAt(createdAt) // GH-90000
                 .build(); // GH-90000
 
-            assertThat(version.getTenantId()).isEqualTo("tenant-123 [GH-90000]");
+            assertThat(version.getTenantId()).isEqualTo("tenant-123");
             assertThat(version.getEntityId()).isEqualTo(entityId); // GH-90000
             assertThat(version.getVersionNumber()).isEqualTo(1); // GH-90000
         }
 
         @Test
-        @DisplayName("builder should auto-generate ID if not provided [GH-90000]")
+        @DisplayName("builder should auto-generate ID if not provided")
         void builderShouldAutoGenerateIdIfNotProvided() { // GH-90000
             EntityVersion version = EntityVersion.builder() // GH-90000
-                .tenantId("tenant-123 [GH-90000]")
+                .tenantId("tenant-123")
                 .entityId(UUID.randomUUID()) // GH-90000
                 .entitySnapshot(entity) // GH-90000
                 .versionNumber(1) // GH-90000
@@ -237,10 +237,10 @@ class EntityHistoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("builder should auto-generate createdAt if not provided [GH-90000]")
+        @DisplayName("builder should auto-generate createdAt if not provided")
         void builderShouldAutoGenerateCreatedAtIfNotProvided() { // GH-90000
             EntityVersion version = EntityVersion.builder() // GH-90000
-                .tenantId("tenant-123 [GH-90000]")
+                .tenantId("tenant-123")
                 .entityId(UUID.randomUUID()) // GH-90000
                 .entitySnapshot(entity) // GH-90000
                 .versionNumber(1) // GH-90000
@@ -257,45 +257,45 @@ class EntityHistoryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("EntityVersion accessors [GH-90000]")
+    @DisplayName("EntityVersion accessors")
     class EntityVersionAccessors {
 
         @Test
-        @DisplayName("should get author from metadata [GH-90000]")
+        @DisplayName("should get author from metadata")
         void shouldGetAuthorFromMetadata() { // GH-90000
             VersionMetadata metadata = new VersionMetadata("user-456", Instant.now(), "test"); // GH-90000
             EntityVersion version = EntityVersion.builder() // GH-90000
-                .tenantId("tenant-123 [GH-90000]")
+                .tenantId("tenant-123")
                 .entityId(UUID.randomUUID()) // GH-90000
                 .entitySnapshot(entity) // GH-90000
                 .versionNumber(1) // GH-90000
                 .metadata(metadata) // GH-90000
                 .build(); // GH-90000
 
-            assertThat(version.getAuthor()).isEqualTo("user-456 [GH-90000]");
+            assertThat(version.getAuthor()).isEqualTo("user-456");
         }
 
         @Test
-        @DisplayName("should get reason from metadata [GH-90000]")
+        @DisplayName("should get reason from metadata")
         void shouldGetReasonFromMetadata() { // GH-90000
             VersionMetadata metadata = new VersionMetadata("user-456", Instant.now(), "Updated contact info"); // GH-90000
             EntityVersion version = EntityVersion.builder() // GH-90000
-                .tenantId("tenant-123 [GH-90000]")
+                .tenantId("tenant-123")
                 .entityId(UUID.randomUUID()) // GH-90000
                 .entitySnapshot(entity) // GH-90000
                 .versionNumber(1) // GH-90000
                 .metadata(metadata) // GH-90000
                 .build(); // GH-90000
 
-            assertThat(version.getReason()).isEqualTo("Updated contact info [GH-90000]");
+            assertThat(version.getReason()).isEqualTo("Updated contact info");
         }
 
         @Test
-        @DisplayName("should return null reason if metadata reason is null [GH-90000]")
+        @DisplayName("should return null reason if metadata reason is null")
         void shouldReturnNullReasonIfMetadataReasonIsNull() { // GH-90000
             VersionMetadata metadata = new VersionMetadata("user-456", Instant.now(), null); // GH-90000
             EntityVersion version = EntityVersion.builder() // GH-90000
-                .tenantId("tenant-123 [GH-90000]")
+                .tenantId("tenant-123")
                 .entityId(UUID.randomUUID()) // GH-90000
                 .entitySnapshot(entity) // GH-90000
                 .versionNumber(1) // GH-90000
@@ -311,11 +311,11 @@ class EntityHistoryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("EntityVersion equality [GH-90000]")
+    @DisplayName("EntityVersion equality")
     class EntityVersionEquality {
 
         @Test
-        @DisplayName("should be equal when IDs match [GH-90000]")
+        @DisplayName("should be equal when IDs match")
         void shouldBeEqualWhenIdsMatch() { // GH-90000
             UUID id = UUID.randomUUID(); // GH-90000
             UUID entityId = UUID.randomUUID(); // GH-90000
@@ -330,7 +330,7 @@ class EntityHistoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should not be equal when IDs differ [GH-90000]")
+        @DisplayName("should not be equal when IDs differ")
         void shouldNotBeEqualWhenIdsDiffer() { // GH-90000
             UUID entityId = UUID.randomUUID(); // GH-90000
             Instant createdAt = Instant.now(); // GH-90000
@@ -343,7 +343,7 @@ class EntityHistoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("toString should include key fields [GH-90000]")
+        @DisplayName("toString should include key fields")
         void toStringShouldIncludeKeyFields() { // GH-90000
             UUID entityId = UUID.randomUUID(); // GH-90000
             Instant createdAt = Instant.now(); // GH-90000
@@ -352,9 +352,9 @@ class EntityHistoryTest extends EventloopTestBase {
             EntityVersion version = new EntityVersion(UUID.randomUUID(), "tenant-123", entityId, entity, 1, metadata, createdAt); // GH-90000
 
             assertThat(version.toString()) // GH-90000
-                .contains("entityId= [GH-90000]")
-                .contains("versionNumber=1 [GH-90000]")
-                .contains("author='user-456' [GH-90000]");
+                .contains("entityId=")
+                .contains("versionNumber=1")
+                .contains("author='user-456'");
         }
     }
 
@@ -363,11 +363,11 @@ class EntityHistoryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("VersionMetadata [GH-90000]")
+    @DisplayName("VersionMetadata")
     class VersionMetadataTests {
 
         @Test
-        @DisplayName("should create VersionMetadata with required fields [GH-90000]")
+        @DisplayName("should create VersionMetadata with required fields")
         void shouldCreateVersionMetadataWithRequiredFields() { // GH-90000
             String author = "user-456";
             Instant timestamp = Instant.now(); // GH-90000
@@ -381,7 +381,7 @@ class EntityHistoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should create VersionMetadata with null reason [GH-90000]")
+        @DisplayName("should create VersionMetadata with null reason")
         void shouldCreateVersionMetadataWithNullReason() { // GH-90000
             String author = "user-456";
             Instant timestamp = Instant.now(); // GH-90000
@@ -394,55 +394,55 @@ class EntityHistoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should reject null author [GH-90000]")
+        @DisplayName("should reject null author")
         void shouldRejectNullAuthor() { // GH-90000
             assertThatThrownBy(() -> new VersionMetadata(null, Instant.now(), "test")) // GH-90000
                 .isInstanceOf(NullPointerException.class) // GH-90000
-                .hasMessageContaining("Author must not be null [GH-90000]");
+                .hasMessageContaining("Author must not be null");
         }
 
         @Test
-        @DisplayName("should reject null timestamp [GH-90000]")
+        @DisplayName("should reject null timestamp")
         void shouldRejectNullTimestamp() { // GH-90000
             assertThatThrownBy(() -> new VersionMetadata("user-456", null, "test")) // GH-90000
                 .isInstanceOf(NullPointerException.class) // GH-90000
-                .hasMessageContaining("Timestamp must not be null [GH-90000]");
+                .hasMessageContaining("Timestamp must not be null");
         }
 
         @Test
-        @DisplayName("should generate summary with reason [GH-90000]")
+        @DisplayName("should generate summary with reason")
         void shouldGenerateSummaryWithReason() { // GH-90000
             Instant timestamp = Instant.now(); // GH-90000
             VersionMetadata metadata = new VersionMetadata("user-456", timestamp, "Updated contact info"); // GH-90000
 
             String summary = metadata.getSummary(); // GH-90000
 
-            assertThat(summary).contains("Updated contact info [GH-90000]");
-            assertThat(summary).contains("user-456 [GH-90000]");
+            assertThat(summary).contains("Updated contact info");
+            assertThat(summary).contains("user-456");
             assertThat(summary).contains(timestamp.toString()); // GH-90000
         }
 
         @Test
-        @DisplayName("should generate summary without reason [GH-90000]")
+        @DisplayName("should generate summary without reason")
         void shouldGenerateSummaryWithoutReason() { // GH-90000
             Instant timestamp = Instant.now(); // GH-90000
             VersionMetadata metadata = new VersionMetadata("user-456", timestamp, null); // GH-90000
 
             String summary = metadata.getSummary(); // GH-90000
 
-            assertThat(summary).contains("Modified by user-456 [GH-90000]");
+            assertThat(summary).contains("Modified by user-456");
             assertThat(summary).contains(timestamp.toString()); // GH-90000
         }
 
         @Test
-        @DisplayName("should generate summary with empty reason [GH-90000]")
+        @DisplayName("should generate summary with empty reason")
         void shouldGenerateSummaryWithEmptyReason() { // GH-90000
             Instant timestamp = Instant.now(); // GH-90000
             VersionMetadata metadata = new VersionMetadata("user-456", timestamp, ""); // GH-90000
 
             String summary = metadata.getSummary(); // GH-90000
 
-            assertThat(summary).contains("Modified by user-456 [GH-90000]");
+            assertThat(summary).contains("Modified by user-456");
             assertThat(summary).contains(timestamp.toString()); // GH-90000
         }
     }
@@ -452,11 +452,11 @@ class EntityHistoryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("VersionRecord operations [GH-90000]")
+    @DisplayName("VersionRecord operations")
     class VersionRecordOperations {
 
         @Test
-        @DisplayName("should save version [GH-90000]")
+        @DisplayName("should save version")
         void shouldSaveVersion() { // GH-90000
             String tenantId = "tenant-123";
             UUID entityId = UUID.randomUUID(); // GH-90000
@@ -481,7 +481,7 @@ class EntityHistoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should get version history [GH-90000]")
+        @DisplayName("should get version history")
         void shouldGetVersionHistory() { // GH-90000
             String tenantId = "tenant-123";
             UUID entityId = UUID.randomUUID(); // GH-90000
@@ -513,7 +513,7 @@ class EntityHistoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should get specific version by number [GH-90000]")
+        @DisplayName("should get specific version by number")
         void shouldGetSpecificVersionByNumber() { // GH-90000
             String tenantId = "tenant-123";
             UUID entityId = UUID.randomUUID(); // GH-90000
@@ -534,7 +534,7 @@ class EntityHistoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should get latest version [GH-90000]")
+        @DisplayName("should get latest version")
         void shouldGetLatestVersion() { // GH-90000
             String tenantId = "tenant-123";
             UUID entityId = UUID.randomUUID(); // GH-90000
@@ -555,7 +555,7 @@ class EntityHistoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should count versions [GH-90000]")
+        @DisplayName("should count versions")
         void shouldCountVersions() { // GH-90000
             String tenantId = "tenant-123";
             UUID entityId = UUID.randomUUID(); // GH-90000
@@ -569,14 +569,14 @@ class EntityHistoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should compute diff between versions [GH-90000]")
+        @DisplayName("should compute diff between versions")
         void shouldComputeDiffBetweenVersions() { // GH-90000
             String tenantId = "tenant-123";
             UUID entityId = UUID.randomUUID(); // GH-90000
             VersionDiff diff = new VersionDiff( // GH-90000
                 Map.of("name", new VersionDiff.FieldChange("Old", "New")), // GH-90000
-                Set.of("email [GH-90000]"),
-                Set.of("phone [GH-90000]")
+                Set.of("email"),
+                Set.of("phone")
             );
 
             when(versionRecord.computeDiff(tenantId, entityId, 1, 2)) // GH-90000
@@ -586,12 +586,12 @@ class EntityHistoryTest extends EventloopTestBase {
 
             assertThat(result.hasChanges()).isTrue(); // GH-90000
             assertThat(result.getChanged()).hasSize(1); // GH-90000
-            assertThat(result.getAdded()).contains("email [GH-90000]");
-            assertThat(result.getRemoved()).contains("phone [GH-90000]");
+            assertThat(result.getAdded()).contains("email");
+            assertThat(result.getRemoved()).contains("phone");
         }
 
         @Test
-        @DisplayName("should delete version history [GH-90000]")
+        @DisplayName("should delete version history")
         void shouldDeleteVersionHistory() { // GH-90000
             String tenantId = "tenant-123";
             UUID entityId = UUID.randomUUID(); // GH-90000
@@ -611,11 +611,11 @@ class EntityHistoryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Version sequence validation [GH-90000]")
+    @DisplayName("Version sequence validation")
     class VersionSequenceValidation {
 
         @Test
-        @DisplayName("should maintain sequential version numbers [GH-90000]")
+        @DisplayName("should maintain sequential version numbers")
         void shouldMaintainSequentialVersionNumbers() { // GH-90000
             String tenantId = "tenant-123";
             UUID entityId = UUID.randomUUID(); // GH-90000
@@ -653,11 +653,11 @@ class EntityHistoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("versions should be ordered chronologically [GH-90000]")
+        @DisplayName("versions should be ordered chronologically")
         void versionsShouldBeOrderedChronologically() { // GH-90000
             Instant now = Instant.now(); // GH-90000
             EntityVersion v1 = EntityVersion.builder() // GH-90000
-                .tenantId("tenant-123 [GH-90000]")
+                .tenantId("tenant-123")
                 .entityId(UUID.randomUUID()) // GH-90000
                 .entitySnapshot(entity) // GH-90000
                 .versionNumber(1) // GH-90000
@@ -666,7 +666,7 @@ class EntityHistoryTest extends EventloopTestBase {
                 .build(); // GH-90000
 
             EntityVersion v2 = EntityVersion.builder() // GH-90000
-                .tenantId("tenant-123 [GH-90000]")
+                .tenantId("tenant-123")
                 .entityId(UUID.randomUUID()) // GH-90000
                 .entitySnapshot(entity) // GH-90000
                 .versionNumber(2) // GH-90000
@@ -675,7 +675,7 @@ class EntityHistoryTest extends EventloopTestBase {
                 .build(); // GH-90000
 
             EntityVersion v3 = EntityVersion.builder() // GH-90000
-                .tenantId("tenant-123 [GH-90000]")
+                .tenantId("tenant-123")
                 .entityId(UUID.randomUUID()) // GH-90000
                 .entitySnapshot(entity) // GH-90000
                 .versionNumber(3) // GH-90000
@@ -695,11 +695,11 @@ class EntityHistoryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Tenant isolation [GH-90000]")
+    @DisplayName("Tenant isolation")
     class TenantIsolation {
 
         @Test
-        @DisplayName("should not return versions from different tenant [GH-90000]")
+        @DisplayName("should not return versions from different tenant")
         void shouldNotReturnVersionsFromDifferentTenant() { // GH-90000
             String tenantB = "tenant-b";
             UUID entityId = UUID.randomUUID(); // GH-90000
@@ -713,7 +713,7 @@ class EntityHistoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should save version with correct tenant ID [GH-90000]")
+        @DisplayName("should save version with correct tenant ID")
         void shouldSaveVersionWithCorrectTenantId() { // GH-90000
             String tenantId = "tenant-123";
             VersionMetadata metadata = new VersionMetadata("user-456", Instant.now(), "test"); // GH-90000

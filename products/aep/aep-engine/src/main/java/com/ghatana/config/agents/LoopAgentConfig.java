@@ -1,5 +1,11 @@
 package com.ghatana.config.agents;
 
+/**
+ * @doc.type class
+ * @doc.purpose Provides loop agent config functionality.
+ * @doc.layer product
+ * @doc.pattern Configuration
+ */
 public class LoopAgentConfig extends AgentConfig {
 
     private Integer maxIterations;

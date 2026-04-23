@@ -64,9 +64,9 @@ class RelationTypeTest {
 
     @Test
     void valueOfShouldReturnCorrectEnum() { // GH-90000
-        assertThat(RelationType.valueOf("SIMILAR [GH-90000]")).isEqualTo(RelationType.SIMILAR);
-        assertThat(RelationType.valueOf("REFERENCED [GH-90000]")).isEqualTo(RelationType.REFERENCED);
-        assertThat(RelationType.valueOf("RELATED [GH-90000]")).isEqualTo(RelationType.RELATED);
-        assertThat(RelationType.valueOf("HIERARCHICAL [GH-90000]")).isEqualTo(RelationType.HIERARCHICAL);
+        assertThat(RelationType.valueOf("SIMILAR")).isEqualTo(RelationType.SIMILAR);
+        assertThat(RelationType.valueOf("REFERENCED")).isEqualTo(RelationType.REFERENCED);
+        assertThat(RelationType.valueOf("RELATED")).isEqualTo(RelationType.RELATED);
+        assertThat(RelationType.valueOf("HIERARCHICAL")).isEqualTo(RelationType.HIERARCHICAL);
     }
 }

@@ -24,7 +24,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@DisplayName("DataCloudHumanReviewQueue [GH-90000]")
+@DisplayName("DataCloudHumanReviewQueue")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class DataCloudHumanReviewQueueTest extends EventloopTestBase {
 
@@ -45,16 +45,16 @@ class DataCloudHumanReviewQueueTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("enqueue persists review items in the shared collection [GH-90000]")
+    @DisplayName("enqueue persists review items in the shared collection")
     void enqueuePersistsReviewItem() { // GH-90000
         ReviewItem item = ReviewItem.builder() // GH-90000
-            .reviewId("review-1 [GH-90000]")
-            .tenantId("tenant-a [GH-90000]")
-            .skillId("skill-1 [GH-90000]")
-            .proposedVersion("v2 [GH-90000]")
+            .reviewId("review-1")
+            .tenantId("tenant-a")
+            .skillId("skill-1")
+            .proposedVersion("v2")
             .itemType(ReviewItemType.POLICY) // GH-90000
             .confidenceScore(0.42) // GH-90000
-            .evaluationSummary("Needs review [GH-90000]")
+            .evaluationSummary("Needs review")
             .context(Map.of("reason", "low-confidence")) // GH-90000
             .build(); // GH-90000
 
@@ -64,7 +64,7 @@ class DataCloudHumanReviewQueueTest extends EventloopTestBase {
 
         ReviewItem persisted = runPromise(() -> queue.enqueue(item)); // GH-90000
 
-        assertThat(persisted.getReviewId()).isEqualTo("review-1 [GH-90000]");
+        assertThat(persisted.getReviewId()).isEqualTo("review-1");
         verify(dataCloudClient).save(eq(DataCloudHumanReviewQueue.STORAGE_TENANT), // GH-90000
             eq(DataCloudHumanReviewQueue.COLLECTION), recordCaptor.capture()); // GH-90000
         assertThat(recordCaptor.getValue()).containsEntry("tenantId", "tenant-a"); // GH-90000
@@ -73,27 +73,27 @@ class DataCloudHumanReviewQueueTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("getPending filters by tenant and confidence [GH-90000]")
+    @DisplayName("getPending filters by tenant and confidence")
     void getPendingFiltersByTenantAndConfidence() { // GH-90000
         ReviewItem pending = ReviewItem.builder() // GH-90000
-            .reviewId("review-pending [GH-90000]")
-            .tenantId("tenant-a [GH-90000]")
-            .skillId("skill-1 [GH-90000]")
-            .proposedVersion("v2 [GH-90000]")
+            .reviewId("review-pending")
+            .tenantId("tenant-a")
+            .skillId("skill-1")
+            .proposedVersion("v2")
             .confidenceScore(0.30) // GH-90000
             .build(); // GH-90000
         ReviewItem wrongTenant = ReviewItem.builder() // GH-90000
-            .reviewId("review-other [GH-90000]")
-            .tenantId("tenant-b [GH-90000]")
-            .skillId("skill-2 [GH-90000]")
-            .proposedVersion("v3 [GH-90000]")
+            .reviewId("review-other")
+            .tenantId("tenant-b")
+            .skillId("skill-2")
+            .proposedVersion("v3")
             .confidenceScore(0.20) // GH-90000
             .build(); // GH-90000
         ReviewItem approved = ReviewItem.builder() // GH-90000
-            .reviewId("review-approved [GH-90000]")
-            .tenantId("tenant-a [GH-90000]")
-            .skillId("skill-3 [GH-90000]")
-            .proposedVersion("v4 [GH-90000]")
+            .reviewId("review-approved")
+            .tenantId("tenant-a")
+            .skillId("skill-3")
+            .proposedVersion("v4")
             .confidenceScore(0.25) // GH-90000
             .status(ReviewStatus.APPROVED) // GH-90000
             .decision(ReviewDecision.approve("alice", "looks good")) // GH-90000
@@ -112,23 +112,23 @@ class DataCloudHumanReviewQueueTest extends EventloopTestBase {
             new ReviewFilter("tenant-a", ReviewItemType.POLICY, 0.35, null, 10))); // GH-90000
 
         assertThat(items).singleElement().extracting(ReviewItem::getReviewId) // GH-90000
-            .isEqualTo("review-pending [GH-90000]");
+            .isEqualTo("review-pending");
     }
 
     @Test
-    @DisplayName("approve persists the decision and notifies reviewers [GH-90000]")
+    @DisplayName("approve persists the decision and notifies reviewers")
     void approvePersistsDecision() { // GH-90000
         ReviewItem item = ReviewItem.builder() // GH-90000
-            .reviewId("review-approve [GH-90000]")
-            .tenantId("tenant-a [GH-90000]")
-            .skillId("skill-1 [GH-90000]")
-            .proposedVersion("v2 [GH-90000]")
+            .reviewId("review-approve")
+            .tenantId("tenant-a")
+            .skillId("skill-1")
+            .proposedVersion("v2")
             .confidenceScore(0.55) // GH-90000
             .build(); // GH-90000
         ReviewDecision decision = new ReviewDecision("alice", "approved", Instant.now(), "ship it"); // GH-90000
 
         when(dataCloudClient.findById(eq(DataCloudHumanReviewQueue.STORAGE_TENANT), // GH-90000
-                eq(DataCloudHumanReviewQueue.COLLECTION), eq("review-approve [GH-90000]")))
+                eq(DataCloudHumanReviewQueue.COLLECTION), eq("review-approve")))
             .thenReturn(Promise.of(Optional.of(entityFrom(item, ReviewStatus.PENDING, null, null)))); // GH-90000
         when(dataCloudClient.save(eq(DataCloudHumanReviewQueue.STORAGE_TENANT), // GH-90000
                 eq(DataCloudHumanReviewQueue.COLLECTION), any())) // GH-90000
@@ -142,30 +142,30 @@ class DataCloudHumanReviewQueueTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("findOverdue only returns active items older than the cutoff [GH-90000]")
+    @DisplayName("findOverdue only returns active items older than the cutoff")
     void findOverdueReturnsOnlyActiveExpiredItems() { // GH-90000
         Instant oldTimestamp = Instant.now().minusSeconds(7200); // GH-90000
         Instant recentTimestamp = Instant.now().minusSeconds(60); // GH-90000
 
         ReviewItem overdue = ReviewItem.builder() // GH-90000
-            .reviewId("review-overdue [GH-90000]")
-            .tenantId("tenant-a [GH-90000]")
-            .skillId("skill-1 [GH-90000]")
-            .proposedVersion("v2 [GH-90000]")
+            .reviewId("review-overdue")
+            .tenantId("tenant-a")
+            .skillId("skill-1")
+            .proposedVersion("v2")
             .createdAt(oldTimestamp) // GH-90000
             .build(); // GH-90000
         ReviewItem fresh = ReviewItem.builder() // GH-90000
-            .reviewId("review-fresh [GH-90000]")
-            .tenantId("tenant-a [GH-90000]")
-            .skillId("skill-2 [GH-90000]")
-            .proposedVersion("v3 [GH-90000]")
+            .reviewId("review-fresh")
+            .tenantId("tenant-a")
+            .skillId("skill-2")
+            .proposedVersion("v3")
             .createdAt(recentTimestamp) // GH-90000
             .build(); // GH-90000
         ReviewItem rejected = ReviewItem.builder() // GH-90000
-            .reviewId("review-rejected [GH-90000]")
-            .tenantId("tenant-a [GH-90000]")
-            .skillId("skill-3 [GH-90000]")
-            .proposedVersion("v4 [GH-90000]")
+            .reviewId("review-rejected")
+            .tenantId("tenant-a")
+            .skillId("skill-3")
+            .proposedVersion("v4")
             .createdAt(oldTimestamp) // GH-90000
             .status(ReviewStatus.REJECTED) // GH-90000
             .build(); // GH-90000
@@ -181,43 +181,43 @@ class DataCloudHumanReviewQueueTest extends EventloopTestBase {
         List<ReviewItem> overdueItems = runPromise(() -> queue.findOverdue(1800, "tenant-a")); // GH-90000
 
         assertThat(overdueItems).singleElement().extracting(ReviewItem::getReviewId) // GH-90000
-            .isEqualTo("review-overdue [GH-90000]");
+            .isEqualTo("review-overdue");
     }
 
     @Test
-    @DisplayName("escalate persists the updated status and notifies listeners [GH-90000]")
+    @DisplayName("escalate persists the updated status and notifies listeners")
     void escalatePersistsUpdatedStatus() { // GH-90000
         ReviewItem item = ReviewItem.builder() // GH-90000
-            .reviewId("review-escalate [GH-90000]")
-            .tenantId("tenant-a [GH-90000]")
-            .skillId("skill-1 [GH-90000]")
-            .proposedVersion("v2 [GH-90000]")
+            .reviewId("review-escalate")
+            .tenantId("tenant-a")
+            .skillId("skill-1")
+            .proposedVersion("v2")
             .confidenceScore(0.55) // GH-90000
             .build(); // GH-90000
 
         when(dataCloudClient.findById(eq(DataCloudHumanReviewQueue.STORAGE_TENANT), // GH-90000
-                eq(DataCloudHumanReviewQueue.COLLECTION), eq("review-escalate [GH-90000]")))
+                eq(DataCloudHumanReviewQueue.COLLECTION), eq("review-escalate")))
             .thenReturn(Promise.of(Optional.of(entityFrom(item, ReviewStatus.PENDING, null, null)))); // GH-90000
         when(dataCloudClient.save(eq(DataCloudHumanReviewQueue.STORAGE_TENANT), // GH-90000
                 eq(DataCloudHumanReviewQueue.COLLECTION), any())) // GH-90000
             .thenReturn(Promise.of(entityFrom(item, ReviewStatus.ESCALATED, null, Instant.now()))); // GH-90000
 
-        ReviewItem escalated = runPromise(() -> queue.escalate("review-escalate [GH-90000]"));
+        ReviewItem escalated = runPromise(() -> queue.escalate("review-escalate"));
 
         assertThat(escalated.getStatus()).isEqualTo(ReviewStatus.ESCALATED); // GH-90000
         verify(notificationSpi).onItemEscalated(escalated); // GH-90000
     }
 
     @Test
-    @DisplayName("getPending marks explicitly expired items as EXPIRED and excludes them [GH-90000]")
+    @DisplayName("getPending marks explicitly expired items as EXPIRED and excludes them")
     void getPendingExpiresElapsedItems() { // GH-90000
         Instant createdAt = Instant.now().minusSeconds(3600); // GH-90000
         Instant expiresAt = Instant.now().minusSeconds(60); // GH-90000
         ReviewItem expired = ReviewItem.builder() // GH-90000
-            .reviewId("review-expired [GH-90000]")
-            .tenantId("tenant-a [GH-90000]")
-            .skillId("skill-1 [GH-90000]")
-            .proposedVersion("v2 [GH-90000]")
+            .reviewId("review-expired")
+            .tenantId("tenant-a")
+            .skillId("skill-1")
+            .proposedVersion("v2")
             .createdAt(createdAt) // GH-90000
             .expiresAt(expiresAt) // GH-90000
             .build(); // GH-90000
@@ -229,7 +229,7 @@ class DataCloudHumanReviewQueueTest extends EventloopTestBase {
                 eq(DataCloudHumanReviewQueue.COLLECTION), any())) // GH-90000
             .thenReturn(Promise.of(entityFrom(expired, ReviewStatus.EXPIRED, null, Instant.now()))); // GH-90000
 
-        List<ReviewItem> pending = runPromise(() -> queue.getPending(ReviewFilter.forTenant("tenant-a [GH-90000]")));
+        List<ReviewItem> pending = runPromise(() -> queue.getPending(ReviewFilter.forTenant("tenant-a")));
 
         assertThat(pending).isEmpty(); // GH-90000
         verify(dataCloudClient).save(eq(DataCloudHumanReviewQueue.STORAGE_TENANT), // GH-90000

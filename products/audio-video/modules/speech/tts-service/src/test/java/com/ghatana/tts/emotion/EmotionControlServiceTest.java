@@ -11,7 +11,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * Unit tests for {@link EmotionControlService} (AV-008.2). // GH-90000
  */
-@DisplayName("EmotionControlService — AV-008.2 [GH-90000]")
+@DisplayName("EmotionControlService — AV-008.2")
 class EmotionControlServiceTest {
 
     private final EmotionControlService service = EmotionControlService.INSTANCE;
@@ -23,7 +23,7 @@ class EmotionControlServiceTest {
     }
 
     @Test
-    @DisplayName("NEUTRAL produces identity prosody (rate=1.0, pitch=0.0) [GH-90000]")
+    @DisplayName("NEUTRAL produces identity prosody (rate=1.0, pitch=0.0)")
     void neutralIsIdentity() { // GH-90000
         EmotionControlService.ProsodyParameters p = service.prosodyFor(EmotionControlService.EmotionType.NEUTRAL); // GH-90000
         assertThat(p.speakingRateMul()).isEqualTo(1.0f); // GH-90000
@@ -32,7 +32,7 @@ class EmotionControlServiceTest {
     }
 
     @Test
-    @DisplayName("HAPPY produces faster speech and higher pitch [GH-90000]")
+    @DisplayName("HAPPY produces faster speech and higher pitch")
     void happyProsody() { // GH-90000
         EmotionControlService.ProsodyParameters p = service.prosodyFor(EmotionControlService.EmotionType.HAPPY); // GH-90000
         assertThat(p.speakingRateMul()).isGreaterThan(1.0f); // GH-90000
@@ -41,7 +41,7 @@ class EmotionControlServiceTest {
     }
 
     @Test
-    @DisplayName("SAD produces slower speech and lower pitch [GH-90000]")
+    @DisplayName("SAD produces slower speech and lower pitch")
     void sadProsody() { // GH-90000
         EmotionControlService.ProsodyParameters p = service.prosodyFor(EmotionControlService.EmotionType.SAD); // GH-90000
         assertThat(p.speakingRateMul()).isLessThan(1.0f); // GH-90000
@@ -50,7 +50,7 @@ class EmotionControlServiceTest {
     }
 
     @Test
-    @DisplayName("EXCITED produces the fastest speech rate [GH-90000]")
+    @DisplayName("EXCITED produces the fastest speech rate")
     void excitedFastest() { // GH-90000
         float excitedRate = service.prosodyFor(EmotionControlService.EmotionType.EXCITED).speakingRateMul(); // GH-90000
         float happyRate   = service.prosodyFor(EmotionControlService.EmotionType.HAPPY).speakingRateMul(); // GH-90000
@@ -58,62 +58,62 @@ class EmotionControlServiceTest {
     }
 
     @Test
-    @DisplayName("applyEmotionSsml wraps text with SSML tags for HAPPY [GH-90000]")
+    @DisplayName("applyEmotionSsml wraps text with SSML tags for HAPPY")
     void applyEmotionSsmlWrapsText() { // GH-90000
         String result = service.applyEmotionSsml("Hello world", EmotionControlService.EmotionType.HAPPY); // GH-90000
-        assertThat(result).contains("Hello world [GH-90000]");
-        assertThat(result).contains("<prosody [GH-90000]");
-        assertThat(result).contains("</prosody> [GH-90000]");
+        assertThat(result).contains("Hello world");
+        assertThat(result).contains("<prosody");
+        assertThat(result).contains("</prosody>");
     }
 
     @Test
-    @DisplayName("applyEmotionSsml returns plain text for NEUTRAL [GH-90000]")
+    @DisplayName("applyEmotionSsml returns plain text for NEUTRAL")
     void applyEmotionSsmlNeutralNoTags() { // GH-90000
         String result = service.applyEmotionSsml("Hello", EmotionControlService.EmotionType.NEUTRAL); // GH-90000
-        assertThat(result).isEqualTo("Hello [GH-90000]");
+        assertThat(result).isEqualTo("Hello");
     }
 
     @Test
-    @DisplayName("applyEmotionSsml throws for blank text [GH-90000]")
+    @DisplayName("applyEmotionSsml throws for blank text")
     void applyEmotionSsmlThrowsBlankText() { // GH-90000
         assertThatThrownBy(() -> service.applyEmotionSsml("  ", EmotionControlService.EmotionType.HAPPY)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("prosodyFor throws NullPointerException for null emotion [GH-90000]")
+    @DisplayName("prosodyFor throws NullPointerException for null emotion")
     void prosodyForNullThrows() { // GH-90000
         assertThatThrownBy(() -> service.prosodyFor(null)) // GH-90000
                 .isInstanceOf(NullPointerException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("parseEmotion handles case-insensitive input [GH-90000]")
+    @DisplayName("parseEmotion handles case-insensitive input")
     void parseEmotionCaseInsensitive() { // GH-90000
-        assertThat(EmotionControlService.parseEmotion("happy [GH-90000]")).isEqualTo(EmotionControlService.EmotionType.HAPPY);
-        assertThat(EmotionControlService.parseEmotion("EXCITED [GH-90000]")).isEqualTo(EmotionControlService.EmotionType.EXCITED);
-        assertThat(EmotionControlService.parseEmotion("Sad [GH-90000]")).isEqualTo(EmotionControlService.EmotionType.SAD);
+        assertThat(EmotionControlService.parseEmotion("happy")).isEqualTo(EmotionControlService.EmotionType.HAPPY);
+        assertThat(EmotionControlService.parseEmotion("EXCITED")).isEqualTo(EmotionControlService.EmotionType.EXCITED);
+        assertThat(EmotionControlService.parseEmotion("Sad")).isEqualTo(EmotionControlService.EmotionType.SAD);
     }
 
     @Test
-    @DisplayName("parseEmotion throws for unknown emotion [GH-90000]")
+    @DisplayName("parseEmotion throws for unknown emotion")
     void parseEmotionThrowsForUnknown() { // GH-90000
-        assertThatThrownBy(() -> EmotionControlService.parseEmotion("ANGRY [GH-90000]"))
+        assertThatThrownBy(() -> EmotionControlService.parseEmotion("ANGRY"))
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("Unknown emotion [GH-90000]");
+                .hasMessageContaining("Unknown emotion");
     }
 
     @Test
-    @DisplayName("EmotionType.isValid returns true for valid emotions [GH-90000]")
+    @DisplayName("EmotionType.isValid returns true for valid emotions")
     void isValidReturnsTrue() { // GH-90000
-        assertThat(EmotionControlService.EmotionType.isValid("happy [GH-90000]")).isTrue();
-        assertThat(EmotionControlService.EmotionType.isValid("NEUTRAL [GH-90000]")).isTrue();
+        assertThat(EmotionControlService.EmotionType.isValid("happy")).isTrue();
+        assertThat(EmotionControlService.EmotionType.isValid("NEUTRAL")).isTrue();
     }
 
     @Test
-    @DisplayName("EmotionType.isValid returns false for invalid emotions [GH-90000]")
+    @DisplayName("EmotionType.isValid returns false for invalid emotions")
     void isValidReturnsFalse() { // GH-90000
-        assertThat(EmotionControlService.EmotionType.isValid("angry [GH-90000]")).isFalse();
+        assertThat(EmotionControlService.EmotionType.isValid("angry")).isFalse();
         assertThat(EmotionControlService.EmotionType.isValid(null)).isFalse(); // GH-90000
     }
 }

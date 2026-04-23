@@ -83,10 +83,10 @@ class DataTypeTest {
 
     @Test
     void valueOfShouldReturnCorrectEnum() { // GH-90000
-        assertThat(DataType.valueOf("STRING [GH-90000]")).isEqualTo(DataType.STRING);
-        assertThat(DataType.valueOf("NUMBER [GH-90000]")).isEqualTo(DataType.NUMBER);
-        assertThat(DataType.valueOf("REFERENCE [GH-90000]")).isEqualTo(DataType.REFERENCE);
-        assertThat(DataType.valueOf("JSON [GH-90000]")).isEqualTo(DataType.JSON);
+        assertThat(DataType.valueOf("STRING")).isEqualTo(DataType.STRING);
+        assertThat(DataType.valueOf("NUMBER")).isEqualTo(DataType.NUMBER);
+        assertThat(DataType.valueOf("REFERENCE")).isEqualTo(DataType.REFERENCE);
+        assertThat(DataType.valueOf("JSON")).isEqualTo(DataType.JSON);
     }
 
     @Test

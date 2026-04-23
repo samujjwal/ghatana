@@ -23,7 +23,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AgentOrchestrator [GH-90000]")
+@DisplayName("AgentOrchestrator")
 class AgentOrchestratorTest extends EventloopTestBase {
 
     private MetricsCollector metrics;
@@ -37,11 +37,11 @@ class AgentOrchestratorTest extends EventloopTestBase {
 
     private AIAgentContext context() { // GH-90000
         return AIAgentContext.builder() // GH-90000
-                .userId("test-user [GH-90000]")
-                .workspaceId("test-workspace [GH-90000]")
+                .userId("test-user")
+                .workspaceId("test-workspace")
                 .requestId("test-request-" + System.nanoTime()) // GH-90000
-                .tenantId("test-tenant [GH-90000]")
-                .organizationId("test-org [GH-90000]")
+                .tenantId("test-tenant")
+                .organizationId("test-org")
                 .permissions(Set.of()) // GH-90000
                 .timeout(AIAgentContext.DEFAULT_TIMEOUT) // GH-90000
                 .metadata(Map.of()) // GH-90000
@@ -52,7 +52,7 @@ class AgentOrchestratorTest extends EventloopTestBase {
         return AgentResult.success( // GH-90000
                 Map.of("output", "value"), // GH-90000
                 AgentResult.AgentMetrics.builder() // GH-90000
-                        .latencyMs(50L).tokensUsed(100).modelVersion("gpt-4 [GH-90000]").build(),
+                        .latencyMs(50L).tokensUsed(100).modelVersion("gpt-4").build(),
                 AgentResult.AgentTrace.of("TestAgent", "req-1")); // GH-90000
     }
 
@@ -60,17 +60,17 @@ class AgentOrchestratorTest extends EventloopTestBase {
         return AgentResult.failure( // GH-90000
                 AgentResult.AgentError.of("ERR", "something went wrong", "TestAgent"), // GH-90000
                 AgentResult.AgentMetrics.builder() // GH-90000
-                        .latencyMs(10L).tokensUsed(0).modelVersion("gpt-4 [GH-90000]").build(),
+                        .latencyMs(10L).tokensUsed(0).modelVersion("gpt-4").build(),
                 AgentResult.AgentTrace.of("TestAgent", "req-fail")); // GH-90000
     }
 
-    @SuppressWarnings("unchecked [GH-90000]")
+    @SuppressWarnings("unchecked")
     private AIAgent<Map<String, Object>, Map<String, Object>> mockAgent(AgentName name, // GH-90000
                                                                         AgentResult<Map<String, Object>> result) {
         AIAgent<Map<String, Object>, Map<String, Object>> agent = mock(AIAgent.class); // GH-90000
         AgentMetadata metadata = AgentMetadata.builder() // GH-90000
-                .name(name).version("1.0 [GH-90000]").description("test agent [GH-90000]")
-                .capabilities(List.of("test [GH-90000]")).supportedModels(List.of("gpt-4 [GH-90000]"))
+                .name(name).version("1.0").description("test agent")
+                .capabilities(List.of("test")).supportedModels(List.of("gpt-4"))
                 .latencySLA(1000L).build(); // GH-90000
         when(agent.getMetadata()).thenReturn(metadata); // GH-90000
         when(agent.execute(any(), any())).thenReturn(Promise.of(result)); // GH-90000
@@ -86,11 +86,11 @@ class AgentOrchestratorTest extends EventloopTestBase {
     // ──────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Agent registration [GH-90000]")
+    @DisplayName("Agent registration")
     class RegistrationTests {
 
         @Test
-        @DisplayName("getAgent returns registered agent [GH-90000]")
+        @DisplayName("getAgent returns registered agent")
         void shouldReturnRegisteredAgent() { // GH-90000
             AIAgent<?, ?> agent = mockAgent(AgentName.SENTIMENT_AGENT, successResult()); // GH-90000
 
@@ -100,13 +100,13 @@ class AgentOrchestratorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("getAgent returns null for unregistered agent [GH-90000]")
+        @DisplayName("getAgent returns null for unregistered agent")
         void shouldReturnNullForUnregisteredAgent() { // GH-90000
             assertThat(orchestrator.getAgent(AgentName.COPILOT_AGENT)).isNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("unregisterAgent removes the agent [GH-90000]")
+        @DisplayName("unregisterAgent removes the agent")
         void shouldUnregisterAgent() { // GH-90000
             AIAgent<?, ?> agent = mockAgent(AgentName.SEARCH_AGENT, successResult()); // GH-90000
             orchestrator.registerAgent(agent); // GH-90000
@@ -117,7 +117,7 @@ class AgentOrchestratorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("registering the same agent name replaces the previous registration [GH-90000]")
+        @DisplayName("registering the same agent name replaces the previous registration")
         void shouldReplaceAgentOnReRegister() { // GH-90000
             AIAgent<?, ?> first = mockAgent(AgentName.RECOMMENDATION_AGENT, successResult()); // GH-90000
             AIAgent<?, ?> second = mockAgent(AgentName.RECOMMENDATION_AGENT, successResult()); // GH-90000
@@ -133,11 +133,11 @@ class AgentOrchestratorTest extends EventloopTestBase {
     // ──────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("executeWorkflow() — success [GH-90000]")
+    @DisplayName("executeWorkflow() — success")
     class SuccessWorkflowTests {
 
         @Test
-        @DisplayName("single-step workflow with registered agent returns success result [GH-90000]")
+        @DisplayName("single-step workflow with registered agent returns success result")
         void shouldExecuteSingleStepWorkflow() { // GH-90000
             AIAgent<Map<String, Object>, Map<String, Object>> agent =
                     mockAgent(AgentName.SENTIMENT_AGENT, successResult()); // GH-90000
@@ -157,7 +157,7 @@ class AgentOrchestratorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("increments started and success counters for successful workflow [GH-90000]")
+        @DisplayName("increments started and success counters for successful workflow")
         void shouldIncrementMetricsCountersOnSuccess() { // GH-90000
             AIAgent<Map<String, Object>, Map<String, Object>> agent =
                     mockAgent(AgentName.QUERY_PARSER_AGENT, successResult()); // GH-90000
@@ -170,13 +170,13 @@ class AgentOrchestratorTest extends EventloopTestBase {
 
             runPromise(() -> orchestrator.executeWorkflow(workflow, context())); // GH-90000
 
-            verify(metrics).incrementCounter(eq("orchestrator.workflows.started [GH-90000]"), eq("workflow [GH-90000]"), eq("qp-wf [GH-90000]"));
-            verify(metrics).incrementCounter(eq("orchestrator.workflows.success [GH-90000]"), eq("workflow [GH-90000]"), eq("qp-wf [GH-90000]"));
-            verify(metrics).recordTimer(eq("orchestrator.workflows.duration [GH-90000]"), anyLong(), eq("workflow [GH-90000]"), eq("qp-wf [GH-90000]"));
+            verify(metrics).incrementCounter(eq("orchestrator.workflows.started"), eq("workflow"), eq("qp-wf"));
+            verify(metrics).incrementCounter(eq("orchestrator.workflows.success"), eq("workflow"), eq("qp-wf"));
+            verify(metrics).recordTimer(eq("orchestrator.workflows.duration"), anyLong(), eq("workflow"), eq("qp-wf"));
         }
 
         @Test
-        @DisplayName("two independent steps run in same stage, both succeed [GH-90000]")
+        @DisplayName("two independent steps run in same stage, both succeed")
         void shouldExecuteParallelSteps() { // GH-90000
             AIAgent<Map<String, Object>, Map<String, Object>> a1 =
                     mockAgent(AgentName.SENTIMENT_AGENT, successResult()); // GH-90000
@@ -205,11 +205,11 @@ class AgentOrchestratorTest extends EventloopTestBase {
     // ──────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("executeWorkflow() — failures [GH-90000]")
+    @DisplayName("executeWorkflow() — failures")
     class FailureWorkflowTests {
 
         @Test
-        @DisplayName("step for unregistered agent causes error counter to be incremented [GH-90000]")
+        @DisplayName("step for unregistered agent causes error counter to be incremented")
         void shouldHandleMissingAgent() { // GH-90000
             // no agent registered
 
@@ -221,11 +221,11 @@ class AgentOrchestratorTest extends EventloopTestBase {
             assertThatThrownBy(() -> runPromise(() -> orchestrator.executeWorkflow(workflow, context()))) // GH-90000
                     .isInstanceOf(Exception.class); // GH-90000
 
-            verify(metrics).incrementCounter(eq("orchestrator.workflows.error [GH-90000]"), eq("workflow [GH-90000]"), eq("missing-agent-wf [GH-90000]"));
+            verify(metrics).incrementCounter(eq("orchestrator.workflows.error"), eq("workflow"), eq("missing-agent-wf"));
         }
 
         @Test
-        @DisplayName("stopOnError=true aborts workflow and increments failed counter [GH-90000]")
+        @DisplayName("stopOnError=true aborts workflow and increments failed counter")
         void shouldAbortOnFailureWhenStopOnErrorTrue() { // GH-90000
             AIAgent<Map<String, Object>, Map<String, Object>> agent =
                     mockAgent(AgentName.ANOMALY_DETECTOR_AGENT, failureResult()); // GH-90000
@@ -239,11 +239,11 @@ class AgentOrchestratorTest extends EventloopTestBase {
             assertThatThrownBy(() -> runPromise(() -> orchestrator.executeWorkflow(workflow, context()))) // GH-90000
                     .isInstanceOf(Exception.class); // GH-90000
 
-            verify(metrics).incrementCounter(eq("orchestrator.workflows.error [GH-90000]"), eq("workflow [GH-90000]"), eq("fail-wf [GH-90000]"));
+            verify(metrics).incrementCounter(eq("orchestrator.workflows.error"), eq("workflow"), eq("fail-wf"));
         }
 
         @Test
-        @DisplayName("stopOnError=false allows workflow to complete with mixed results [GH-90000]")
+        @DisplayName("stopOnError=false allows workflow to complete with mixed results")
         void shouldContinueOnFailureWhenStopOnErrorFalse() { // GH-90000
             AIAgent<Map<String, Object>, Map<String, Object>> agent =
                     mockAgent(AgentName.ANOMALY_DETECTOR_AGENT, failureResult()); // GH-90000
@@ -260,7 +260,7 @@ class AgentOrchestratorTest extends EventloopTestBase {
             assertThat(result.success()).isFalse(); // GH-90000
             assertThat(result.results()).hasSize(1); // GH-90000
             assertThat(result.results().getFirst().success()).isFalse(); // GH-90000
-            verify(metrics).incrementCounter(eq("orchestrator.workflows.failed [GH-90000]"), eq("workflow [GH-90000]"), eq("resilient-wf [GH-90000]"));
+            verify(metrics).incrementCounter(eq("orchestrator.workflows.failed"), eq("workflow"), eq("resilient-wf"));
         }
     }
 
@@ -269,22 +269,22 @@ class AgentOrchestratorTest extends EventloopTestBase {
     // ──────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Dependency resolution [GH-90000]")
+    @DisplayName("Dependency resolution")
     class DependencyTests {
 
         @Test
-        @DisplayName("circular dependency throws IllegalArgumentException [GH-90000]")
+        @DisplayName("circular dependency throws IllegalArgumentException")
         void shouldDetectCircularDependency() { // GH-90000
             AgentOrchestrator.AgentWorkflow workflow = new AgentOrchestrator.AgentWorkflow( // GH-90000
                     "circular-wf", "Circular deps",
                     List.of( // GH-90000
-                            step("A", AgentName.SENTIMENT_AGENT, List.of("B [GH-90000]")),
-                            step("B", AgentName.SEARCH_AGENT, List.of("A [GH-90000]"))),
+                            step("A", AgentName.SENTIMENT_AGENT, List.of("B")),
+                            step("B", AgentName.SEARCH_AGENT, List.of("A"))),
                     true);
 
             assertThatThrownBy(() -> runPromise(() -> orchestrator.executeWorkflow(workflow, context()))) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("Circular dependency [GH-90000]");
+                    .hasMessageContaining("Circular dependency");
         }
     }
 }

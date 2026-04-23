@@ -32,7 +32,7 @@ import static org.mockito.Mockito.*;
  * Focus: Fast-path vs fallback routing, result composition, confidence-based escalation,
  * and intelligent agent coordination.
  */
-@DisplayName("HybridAgent Behavioral Tests [GH-90000]")
+@DisplayName("HybridAgent Behavioral Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class HybridAgentBehavioralTest {
 
@@ -51,13 +51,13 @@ class HybridAgentBehavioralTest {
     @BeforeEach
     void setUp() { // GH-90000
         agentContext = AgentContext.builder() // GH-90000
-                .turnId("turn-1 [GH-90000]")
-                .agentId("hybrid-agent [GH-90000]")
-                .tenantId("tenant-1 [GH-90000]")
+                .turnId("turn-1")
+                .agentId("hybrid-agent")
+                .tenantId("tenant-1")
                 .memoryStore(memoryStore) // GH-90000
                 .build(); // GH-90000
 
-        agent = new HybridAgent("hybrid-agent [GH-90000]");
+        agent = new HybridAgent("hybrid-agent");
         agent.setDeterministicAgent(deterministicAgent); // GH-90000
         agent.setProbabilisticAgent(probabilisticAgent); // GH-90000
     }
@@ -67,18 +67,18 @@ class HybridAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Routing Strategies [GH-90000]")
+    @DisplayName("Routing Strategies")
     class RoutingTests {
 
         @Test
-        @DisplayName("DETERMINISTIC_FIRST routes to deterministic agent first [GH-90000]")
+        @DisplayName("DETERMINISTIC_FIRST routes to deterministic agent first")
         void deterministicFirstStrategy() { // GH-90000
             AgentResult<Map<String, Object>> detResult = AgentResult.<Map<String, Object>>builder() // GH-90000
                     .output(Map.of("decision", "matched")) // GH-90000
                     .confidence(1.0) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .explanation("Rule matched [GH-90000]")
-                    .agentId("det-agent [GH-90000]")
+                    .explanation("Rule matched")
+                    .agentId("det-agent")
                     .processingTime(Duration.ofMillis(1)) // GH-90000
                     .build(); // GH-90000
 
@@ -99,13 +99,13 @@ class HybridAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("DETERMINISTIC_FIRST escalates to probabilistic on no match [GH-90000]")
+        @DisplayName("DETERMINISTIC_FIRST escalates to probabilistic on no match")
         void deterministicFirstEscalation() { // GH-90000
             // Deterministic agent returns no match
             AgentResult<Map<String, Object>> detNoMatch = AgentResult.<Map<String, Object>>builder() // GH-90000
                     .status(AgentResultStatus.SKIPPED) // GH-90000
-                    .explanation("No rules matched [GH-90000]")
-                    .agentId("det-agent [GH-90000]")
+                    .explanation("No rules matched")
+                    .agentId("det-agent")
                     .processingTime(Duration.ofMillis(1)) // GH-90000
                     .build(); // GH-90000
 
@@ -114,8 +114,8 @@ class HybridAgentBehavioralTest {
                     .output(Map.of("prediction", "class-A")) // GH-90000
                     .confidence(0.82) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .explanation("Model inference [GH-90000]")
-                    .agentId("prob-agent [GH-90000]")
+                    .explanation("Model inference")
+                    .agentId("prob-agent")
                     .processingTime(Duration.ofMillis(50)) // GH-90000
                     .build(); // GH-90000
 
@@ -139,14 +139,14 @@ class HybridAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("PROBABILISTIC_FIRST routes to probabilistic agent first [GH-90000]")
+        @DisplayName("PROBABILISTIC_FIRST routes to probabilistic agent first")
         void probabilisticFirstStrategy() { // GH-90000
             AgentResult<Map<String, Object>> probResult = AgentResult.<Map<String, Object>>builder() // GH-90000
                     .output(Map.of("prediction", "positive")) // GH-90000
                     .confidence(0.88) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .explanation("Model prediction [GH-90000]")
-                    .agentId("prob-agent [GH-90000]")
+                    .explanation("Model prediction")
+                    .agentId("prob-agent")
                     .processingTime(Duration.ofMillis(30)) // GH-90000
                     .build(); // GH-90000
 
@@ -167,13 +167,13 @@ class HybridAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("PARALLEL runs both deterministic and probabilistic agents [GH-90000]")
+        @DisplayName("PARALLEL runs both deterministic and probabilistic agents")
         void parallelStrategy() { // GH-90000
             AgentResult<Map<String, Object>> detResult = AgentResult.<Map<String, Object>>builder() // GH-90000
                     .output(Map.of("det", "value")) // GH-90000
                     .confidence(1.0) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("det-agent [GH-90000]")
+                    .agentId("det-agent")
                     .processingTime(Duration.ofMillis(1)) // GH-90000
                     .build(); // GH-90000
 
@@ -181,7 +181,7 @@ class HybridAgentBehavioralTest {
                     .output(Map.of("prob", "value")) // GH-90000
                     .confidence(0.85) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("prob-agent [GH-90000]")
+                    .agentId("prob-agent")
                     .processingTime(Duration.ofMillis(30)) // GH-90000
                     .build(); // GH-90000
 
@@ -210,17 +210,17 @@ class HybridAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Confidence-Based Escalation [GH-90000]")
+    @DisplayName("Confidence-Based Escalation")
     class ConfidenceEscalationTests {
 
         @Test
-        @DisplayName("High-confidence deterministic result bypasses probabilistic [GH-90000]")
+        @DisplayName("High-confidence deterministic result bypasses probabilistic")
         void highConfidenceDeterministic() { // GH-90000
             AgentResult<Map<String, Object>> detResult = AgentResult.<Map<String, Object>>builder() // GH-90000
                     .output(Map.of("action", "approved")) // GH-90000
                     .confidence(1.0) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("det-agent [GH-90000]")
+                    .agentId("det-agent")
                     .processingTime(Duration.ofMillis(1)) // GH-90000
                     .build(); // GH-90000
 
@@ -243,13 +243,13 @@ class HybridAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Low-confidence result escalates to other agent [GH-90000]")
+        @DisplayName("Low-confidence result escalates to other agent")
         void lowConfidenceEscalation() { // GH-90000
             AgentResult<Map<String, Object>> lowConfResult = AgentResult.<Map<String, Object>>builder() // GH-90000
                     .output(Map.of("uncertain", "value")) // GH-90000
                     .confidence(0.45) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("prob-agent [GH-90000]")
+                    .agentId("prob-agent")
                     .processingTime(Duration.ofMillis(40)) // GH-90000
                     .build(); // GH-90000
 
@@ -257,7 +257,7 @@ class HybridAgentBehavioralTest {
                     .output(Map.of("refined", "value")) // GH-90000
                     .confidence(0.92) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("det-agent [GH-90000]")
+                    .agentId("det-agent")
                     .processingTime(Duration.ofMillis(2)) // GH-90000
                     .build(); // GH-90000
 
@@ -285,17 +285,17 @@ class HybridAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Result Composition [GH-90000]")
+    @DisplayName("Result Composition")
     class ResultCompositionTests {
 
         @Test
-        @DisplayName("Parallel results are merged intelligently [GH-90000]")
+        @DisplayName("Parallel results are merged intelligently")
         void parallelResultsMerge() { // GH-90000
             AgentResult<Map<String, Object>> detResult = AgentResult.<Map<String, Object>>builder() // GH-90000
                     .output(Map.of("status", "verified", "action", "proceed")) // GH-90000
                     .confidence(1.0) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("det-agent [GH-90000]")
+                    .agentId("det-agent")
                     .processingTime(Duration.ofMillis(1)) // GH-90000
                     .build(); // GH-90000
 
@@ -303,7 +303,7 @@ class HybridAgentBehavioralTest {
                     .output(Map.of("likelihood", 0.88, "category", "prime")) // GH-90000
                     .confidence(0.88) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("prob-agent [GH-90000]")
+                    .agentId("prob-agent")
                     .processingTime(Duration.ofMillis(35)) // GH-90000
                     .build(); // GH-90000
 
@@ -326,16 +326,16 @@ class HybridAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Deterministic takes precedence when both succeed in PARALLEL [GH-90000]")
+        @DisplayName("Deterministic takes precedence when both succeed in PARALLEL")
         void deterministicPrecedenceInParallel() { // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, Object> sharedOutput = Map.of("decision", "det"); // GH-90000
 
             AgentResult<Map<String, Object>> detResult = AgentResult.<Map<String, Object>>builder() // GH-90000
                     .output(sharedOutput) // GH-90000
                     .confidence(1.0) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("det-agent [GH-90000]")
+                    .agentId("det-agent")
                     .processingTime(Duration.ofMillis(1)) // GH-90000
                     .build(); // GH-90000
 
@@ -343,7 +343,7 @@ class HybridAgentBehavioralTest {
                     .output(Map.of("decision", "prob")) // GH-90000
                     .confidence(0.80) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("prob-agent [GH-90000]")
+                    .agentId("prob-agent")
                     .processingTime(Duration.ofMillis(40)) // GH-90000
                     .build(); // GH-90000
 
@@ -371,20 +371,20 @@ class HybridAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Error Handling [GH-90000]")
+    @DisplayName("Error Handling")
     class ErrorHandlingTests {
 
         @Test
-        @DisplayName("Deterministic failure falls back to probabilistic [GH-90000]")
+        @DisplayName("Deterministic failure falls back to probabilistic")
         void deterministicFailureFallback() { // GH-90000
             when(deterministicAgent.process(any(), any())) // GH-90000
-                    .thenReturn(Promise.ofException(new RuntimeException("Det error [GH-90000]")));
+                    .thenReturn(Promise.ofException(new RuntimeException("Det error")));
 
             AgentResult<Map<String, Object>> probResult = AgentResult.<Map<String, Object>>builder() // GH-90000
                     .output(Map.of("result", "from_fallback")) // GH-90000
                     .confidence(0.75) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("prob-agent [GH-90000]")
+                    .agentId("prob-agent")
                     .processingTime(Duration.ofMillis(40)) // GH-90000
                     .build(); // GH-90000
 
@@ -405,12 +405,12 @@ class HybridAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Both agents fail produces error result [GH-90000]")
+        @DisplayName("Both agents fail produces error result")
         void bothAgentsFail() { // GH-90000
             when(deterministicAgent.process(any(), any())) // GH-90000
-                    .thenReturn(Promise.ofException(new RuntimeException("Det error [GH-90000]")));
+                    .thenReturn(Promise.ofException(new RuntimeException("Det error")));
             when(probabilisticAgent.process(any(), any())) // GH-90000
-                    .thenReturn(Promise.ofException(new RuntimeException("Prob error [GH-90000]")));
+                    .thenReturn(Promise.ofException(new RuntimeException("Prob error")));
 
             HybridAgentConfig config = HybridAgentConfig.builder() // GH-90000
                     .strategy(HybridAgentConfig.RoutingStrategy.DETERMINISTIC_FIRST) // GH-90000
@@ -425,16 +425,16 @@ class HybridAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Timeout is handled gracefully [GH-90000]")
+        @DisplayName("Timeout is handled gracefully")
         void timeoutHandling() { // GH-90000
             when(deterministicAgent.process(any(), any())) // GH-90000
-                    .thenReturn(Promise.ofException(new TimeoutException("Timeout [GH-90000]")));
+                    .thenReturn(Promise.ofException(new TimeoutException("Timeout")));
 
             AgentResult<Map<String, Object>> fallbackResult = AgentResult.<Map<String, Object>>builder() // GH-90000
                     .output(Map.of("result", "timeout_fallback")) // GH-90000
                     .confidence(0.60) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("prob-agent [GH-90000]")
+                    .agentId("prob-agent")
                     .processingTime(Duration.ofMillis(30)) // GH-90000
                     .build(); // GH-90000
 
@@ -459,18 +459,18 @@ class HybridAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Explanation Composition [GH-90000]")
+    @DisplayName("Explanation Composition")
     class ExplanationCompositionTests {
 
         @Test
-        @DisplayName("Hybrid explanation mentions both agent contributions [GH-90000]")
+        @DisplayName("Hybrid explanation mentions both agent contributions")
         void hybridExplanationComposes() { // GH-90000
             AgentResult<Map<String, Object>> detResult = AgentResult.<Map<String, Object>>builder() // GH-90000
                     .output(Map.of("det", "value")) // GH-90000
                     .confidence(1.0) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .explanation("Deterministic rule matched [GH-90000]")
-                    .agentId("det-agent [GH-90000]")
+                    .explanation("Deterministic rule matched")
+                    .agentId("det-agent")
                     .processingTime(Duration.ofMillis(1)) // GH-90000
                     .build(); // GH-90000
 
@@ -478,8 +478,8 @@ class HybridAgentBehavioralTest {
                     .output(Map.of("prob", "value")) // GH-90000
                     .confidence(0.85) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .explanation("Model inference: 85% confidence [GH-90000]")
-                    .agentId("prob-agent [GH-90000]")
+                    .explanation("Model inference: 85% confidence")
+                    .agentId("prob-agent")
                     .processingTime(Duration.ofMillis(35)) // GH-90000
                     .build(); // GH-90000
 
@@ -509,17 +509,17 @@ class HybridAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Performance [GH-90000]")
+    @DisplayName("Performance")
     class PerformanceTests {
 
         @Test
-        @DisplayName("Deterministic-first is faster than probabilistic fallback [GH-90000]")
+        @DisplayName("Deterministic-first is faster than probabilistic fallback")
         void deterministicFastPath() { // GH-90000
             AgentResult<Map<String, Object>> detResult = AgentResult.<Map<String, Object>>builder() // GH-90000
                     .output(Map.of("action", "approved")) // GH-90000
                     .confidence(1.0) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("det-agent [GH-90000]")
+                    .agentId("det-agent")
                     .processingTime(Duration.ofMillis(1)) // GH-90000
                     .build(); // GH-90000
 

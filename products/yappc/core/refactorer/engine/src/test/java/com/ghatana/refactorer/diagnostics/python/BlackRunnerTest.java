@@ -84,8 +84,8 @@ class BlackRunnerTest extends EventloopTestBase {
         // Check the file was actually formatted
         String formattedCode = Files.readString(pythonFile); // GH-90000
         assertNotEquals(originalCode, formattedCode, "File should be reformatted"); // GH-90000
-        assertTrue(formattedCode.contains("x = 1 [GH-90000]"), "Should have proper spacing");
-        assertTrue(formattedCode.contains("if x < 2: [GH-90000]"), "Should have proper spacing");
+        assertTrue(formattedCode.contains("x = 1"), "Should have proper spacing");
+        assertTrue(formattedCode.contains("if x < 2:"), "Should have proper spacing");
 
         // Running check again should pass now
         BlackRunner checkRunner2 = new BlackRunner(context, processRunner) // GH-90000
@@ -104,7 +104,7 @@ class BlackRunnerTest extends EventloopTestBase {
                 FakeProcessRunner.response(new ProcessResult(0, "", ""))); // GH-90000
 
         // Should not throw, just return success
-        boolean success = runPromise(() -> blackRunner.withIncludePatterns(List.of("nonexistent.py [GH-90000]")).run());
+        boolean success = runPromise(() -> blackRunner.withIncludePatterns(List.of("nonexistent.py")).run());
 
         assertTrue(success, "Should return true for nonexistent file"); // GH-90000
     }
@@ -132,17 +132,17 @@ class BlackRunnerTest extends EventloopTestBase {
 
         // Check the line was wrapped
         String formattedCode = Files.readString(pythonFile); // GH-90000
-        assertTrue(formattedCode.contains("\n [GH-90000]"), "Long line should be wrapped");
+        assertTrue(formattedCode.contains("\n"), "Long line should be wrapped");
     }
 
     @Test
     void testFindPythonFiles() throws Exception { // GH-90000
         // Create Python files in a directory structure
-        Files.createDirectories(tempDir.resolve("src [GH-90000]"));
-        Path file1 = tempDir.resolve("main.py [GH-90000]");
-        Path file2 = tempDir.resolve("src/__init__.py [GH-90000]");
-        Path file3 = tempDir.resolve("src/utils.py [GH-90000]");
-        Path notPython = tempDir.resolve("notes.txt [GH-90000]");
+        Files.createDirectories(tempDir.resolve("src"));
+        Path file1 = tempDir.resolve("main.py");
+        Path file2 = tempDir.resolve("src/__init__.py");
+        Path file3 = tempDir.resolve("src/utils.py");
+        Path notPython = tempDir.resolve("notes.txt");
 
         Files.writeString(file1, "print('main')\n"); // GH-90000
         Files.writeString(file2, "# Package\n"); // GH-90000
@@ -154,35 +154,35 @@ class BlackRunnerTest extends EventloopTestBase {
 
         assertEquals(3, pythonFiles.size(), "Should find all Python files"); // GH-90000
         assertTrue( // GH-90000
-                pythonFiles.stream().anyMatch(p -> p.endsWith("main.py [GH-90000]")), "Should find main.py");
+                pythonFiles.stream().anyMatch(p -> p.endsWith("main.py")), "Should find main.py");
         assertTrue( // GH-90000
-                pythonFiles.stream().anyMatch(p -> p.endsWith("__init__.py [GH-90000]")),
+                pythonFiles.stream().anyMatch(p -> p.endsWith("__init__.py")),
                 "Should find __init__.py");
         assertTrue( // GH-90000
-                pythonFiles.stream().anyMatch(p -> p.endsWith("utils.py [GH-90000]")), "Should find utils.py");
+                pythonFiles.stream().anyMatch(p -> p.endsWith("utils.py")), "Should find utils.py");
 
         // Test with include pattern
-        blackRunner.withIncludePatterns(List.of("src/*.py [GH-90000]"));
+        blackRunner.withIncludePatterns(List.of("src/*.py"));
         pythonFiles = blackRunner.findPythonFiles(); // GH-90000
         assertEquals(2, pythonFiles.size(), "Should find Python files in src/"); // GH-90000
         assertTrue( // GH-90000
-                pythonFiles.stream().noneMatch(p -> p.endsWith("main.py [GH-90000]")),
+                pythonFiles.stream().noneMatch(p -> p.endsWith("main.py")),
                 "Should not find main.py with pattern");
     }
 
     private static List<String> blackArgs(boolean checkOnly, int lineLength, String... include) { // GH-90000
         List<String> args = new ArrayList<>(); // GH-90000
         if (checkOnly) { // GH-90000
-            args.add("--check [GH-90000]");
+            args.add("--check");
         }
-        args.add("--quiet [GH-90000]");
-        args.add("--line-length [GH-90000]");
+        args.add("--quiet");
+        args.add("--line-length");
         args.add(String.valueOf(lineLength)); // GH-90000
         for (String entry : include) { // GH-90000
             args.add(entry); // GH-90000
         }
         if (!DEFAULT_IGNORE_PATTERNS.isEmpty()) { // GH-90000
-            args.add("--exclude [GH-90000]");
+            args.add("--exclude");
             args.add(String.join("|", DEFAULT_IGNORE_PATTERNS)); // GH-90000
         }
         return args;

@@ -14,11 +14,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * Tests for {@link PartitionId}.
  */
-@DisplayName("PartitionId [GH-90000]")
+@DisplayName("PartitionId")
 class PartitionIdTest {
 
     @Nested
-    @DisplayName("factory method of() [GH-90000]")
+    @DisplayName("factory method of()")
     class FactoryOf {
 
         @Test
@@ -41,12 +41,12 @@ class PartitionIdTest {
         void rejectsValueBelowMinusOneViaConstructor() { // GH-90000
             assertThatThrownBy(() -> new PartitionId(-2)) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("-2 [GH-90000]");
+                    .hasMessageContaining("-2");
         }
     }
 
     @Nested
-    @DisplayName("constants [GH-90000]")
+    @DisplayName("constants")
     class Constants {
 
         @Test
@@ -61,7 +61,7 @@ class PartitionIdTest {
     }
 
     @Nested
-    @DisplayName("isBroadcast() [GH-90000]")
+    @DisplayName("isBroadcast()")
     class IsBroadcast {
 
         @Test
@@ -81,7 +81,7 @@ class PartitionIdTest {
     }
 
     @Nested
-    @DisplayName("isValidFor(partitionCount) [GH-90000]")
+    @DisplayName("isValidFor(partitionCount)")
     class IsValidFor {
 
         @Test
@@ -109,7 +109,7 @@ class PartitionIdTest {
     }
 
     @Nested
-    @DisplayName("compareTo() [GH-90000]")
+    @DisplayName("compareTo()")
     class CompareToTest {
 
         @Test
@@ -121,27 +121,27 @@ class PartitionIdTest {
     }
 
     @Nested
-    @DisplayName("toString() [GH-90000]")
+    @DisplayName("toString()")
     class ToStringTest {
 
         @Test
         void allRepresentation() { // GH-90000
-            assertThat(PartitionId.ALL.toString()).isEqualTo("PartitionId[ALL] [GH-90000]");
+            assertThat(PartitionId.ALL.toString()).isEqualTo("PartitionId[ALL]");
         }
 
         @Test
         void regularRepresentation() { // GH-90000
-            assertThat(PartitionId.of(5).toString()).isEqualTo("PartitionId[5] [GH-90000]");
+            assertThat(PartitionId.of(5).toString()).isEqualTo("PartitionId[5]");
         }
 
         @Test
         void firstRepresentation() { // GH-90000
-            assertThat(PartitionId.FIRST.toString()).isEqualTo("PartitionId[0] [GH-90000]");
+            assertThat(PartitionId.FIRST.toString()).isEqualTo("PartitionId[0]");
         }
     }
 
     @Test
-    @DisplayName("record equality [GH-90000]")
+    @DisplayName("record equality")
     void recordEquality() { // GH-90000
         assertThat(PartitionId.of(4)).isEqualTo(new PartitionId(4)); // GH-90000
         assertThat(PartitionId.of(4)).isNotEqualTo(PartitionId.of(5)); // GH-90000

@@ -253,10 +253,10 @@ describe('InsightsPage', () => {
     expect(screen.getByText(INSIGHTS_REGISTRY_REQUEST_NOTE)).toBeInTheDocument();
   });
 
-  it('renders AI truth telemetry for operator review', async () => {
+  it('renders model telemetry for operator review', async () => {
     render(<InsightsPage />, { wrapper: TestWrapper });
 
-    expect(await screen.findByText('AI Truth Snapshot')).toBeInTheDocument();
+    expect(await screen.findByText('Model Telemetry')).toBeInTheDocument();
     expect(screen.getByText('2/6 fallbacks')).toBeInTheDocument();
     expect(within(screen.getByTestId('insights-ai-type-analytics_suggest')).getByText('3 requests')).toBeInTheDocument();
     expect(screen.getByText('Workflow draft generation')).toBeInTheDocument();

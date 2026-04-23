@@ -36,7 +36,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer product
  * @doc.pattern Unit Test
  */
-@DisplayName("Data-Cloud SDK — Contract Validation (DC-003) [GH-90000]")
+@DisplayName("Data-Cloud SDK — Contract Validation (DC-003)")
 class DataCloudSdkValidationTest extends EventloopTestBase {
 
     private static final String TENANT = "sdk-test-tenant";
@@ -54,23 +54,23 @@ class DataCloudSdkValidationTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Entity — input boundaries [GH-90000]")
+    @DisplayName("Entity — input boundaries")
     class EntityInputBoundaries {
 
         @Test
-        @DisplayName("save with minimal required fields succeeds [GH-90000]")
+        @DisplayName("save with minimal required fields succeeds")
         void saveWithMinimalFields() { // GH-90000
             Entity entity = runPromise(() -> client.save( // GH-90000
                     TENANT, COLLECTION,
                     Map.<String, Object>of("id", "min-1"))); // GH-90000
 
             assertThat(entity).isNotNull(); // GH-90000
-            assertThat(entity.id()).isEqualTo("min-1 [GH-90000]");
+            assertThat(entity.id()).isEqualTo("min-1");
             assertThat(entity.collection()).isEqualTo(COLLECTION); // GH-90000
         }
 
         @Test
-        @DisplayName("save with rich nested payload is preserved faithfully [GH-90000]")
+        @DisplayName("save with rich nested payload is preserved faithfully")
         void saveWithNestedPayloadPreservesStructure() { // GH-90000
             Map<String, Object> data = Map.of( // GH-90000
                     "id", "rich-1",
@@ -79,12 +79,12 @@ class DataCloudSdkValidationTest extends EventloopTestBase {
 
             Entity entity = runPromise(() -> client.save(TENANT, COLLECTION, data)); // GH-90000
 
-            assertThat(entity.data()).containsKey("tags [GH-90000]");
-            assertThat(entity.data()).containsKey("meta [GH-90000]");
+            assertThat(entity.data()).containsKey("tags");
+            assertThat(entity.data()).containsKey("meta");
         }
 
         @Test
-        @DisplayName("findById returns empty for unknown id [GH-90000]")
+        @DisplayName("findById returns empty for unknown id")
         void findByIdReturnEmptyForMissing() { // GH-90000
             Optional<Entity> result = runPromise( // GH-90000
                     () -> client.findById(TENANT, COLLECTION, "does-not-exist")); // GH-90000
@@ -93,7 +93,7 @@ class DataCloudSdkValidationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("overwrite an entity retains the latest data [GH-90000]")
+        @DisplayName("overwrite an entity retains the latest data")
         void overwriteEntityRetainsLatestData() { // GH-90000
             runPromise(() -> client.save(TENANT, COLLECTION, // GH-90000
                     Map.<String, Object>of("id", "ow-1", "v", "first"))); // GH-90000
@@ -107,7 +107,7 @@ class DataCloudSdkValidationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("delete removes the entity and subsequent find returns empty [GH-90000]")
+        @DisplayName("delete removes the entity and subsequent find returns empty")
         void deleteRemovesEntity() { // GH-90000
             runPromise(() -> client.save(TENANT, COLLECTION, // GH-90000
                     Map.<String, Object>of("id", "del-1", "status", "alive"))); // GH-90000
@@ -119,14 +119,14 @@ class DataCloudSdkValidationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("delete of non-existent entity does not throw [GH-90000]")
+        @DisplayName("delete of non-existent entity does not throw")
         void deleteNonExistentIsIdempotent() { // GH-90000
             assertThatCode(() -> runPromise(() -> client.delete(TENANT, COLLECTION, "ghost-id"))) // GH-90000
                     .doesNotThrowAnyException(); // GH-90000
         }
 
         @Test
-        @DisplayName("query returns only entities in the requested collection [GH-90000]")
+        @DisplayName("query returns only entities in the requested collection")
         void queryIsScopedToCollection() { // GH-90000
             runPromise(() -> client.save(TENANT, COLLECTION, // GH-90000
                     Map.<String, Object>of("id", "qc-1", "x", "1"))); // GH-90000
@@ -140,7 +140,7 @@ class DataCloudSdkValidationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("entity created time is set and not null [GH-90000]")
+        @DisplayName("entity created time is set and not null")
         void entityCreatedTimeIsSet() { // GH-90000
             Entity entity = runPromise(() -> client.save(TENANT, COLLECTION, // GH-90000
                     Map.<String, Object>of("id", "time-1"))); // GH-90000
@@ -149,7 +149,7 @@ class DataCloudSdkValidationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("large batch of entities is stored and queryable in full [GH-90000]")
+        @DisplayName("large batch of entities is stored and queryable in full")
         void largeBatchIsStoredAndQueryable() { // GH-90000
             int batchSize = 100;
             for (int i = 0; i < batchSize; i++) { // GH-90000
@@ -168,11 +168,11 @@ class DataCloudSdkValidationTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Entity — tenant isolation (SDK boundary) [GH-90000]")
+    @DisplayName("Entity — tenant isolation (SDK boundary)")
     class EntityTenantIsolation {
 
         @Test
-        @DisplayName("entity saved by tenant-A is invisible to tenant-B [GH-90000]")
+        @DisplayName("entity saved by tenant-A is invisible to tenant-B")
         void tenantAEntityHiddenFromTenantB() { // GH-90000
             runPromise(() -> client.save("tenant-alpha", COLLECTION, // GH-90000
                     Map.<String, Object>of("id", "iso-1", "owner", "alpha"))); // GH-90000
@@ -184,7 +184,7 @@ class DataCloudSdkValidationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("query by tenant-B returns no entities saved by tenant-A [GH-90000]")
+        @DisplayName("query by tenant-B returns no entities saved by tenant-A")
         void queryIsScopedToTenant() { // GH-90000
             runPromise(() -> client.save("tenant-alpha", COLLECTION, // GH-90000
                     Map.<String, Object>of("id", "iso-q1"))); // GH-90000
@@ -201,11 +201,11 @@ class DataCloudSdkValidationTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Event — input boundaries and ordering [GH-90000]")
+    @DisplayName("Event — input boundaries and ordering")
     class EventInputBoundaries {
 
         @Test
-        @DisplayName("appended event is retrievable via queryEvents [GH-90000]")
+        @DisplayName("appended event is retrievable via queryEvents")
         void appendedEventIsRetrievable() { // GH-90000
             runPromise(() -> client.appendEvent(TENANT, // GH-90000
                     DataCloudClient.Event.of("item.created", // GH-90000
@@ -213,14 +213,14 @@ class DataCloudSdkValidationTest extends EventloopTestBase {
 
             List<DataCloudClient.Event> events = runPromise( // GH-90000
                     () -> client.queryEvents(TENANT, // GH-90000
-                            DataCloudClient.EventQuery.byType("item.created [GH-90000]")));
+                            DataCloudClient.EventQuery.byType("item.created")));
 
             assertThat(events).isNotEmpty(); // GH-90000
-            assertThat(events.get(0).type()).isEqualTo("item.created [GH-90000]");
+            assertThat(events.get(0).type()).isEqualTo("item.created");
         }
 
         @Test
-        @DisplayName("multiple events share the same type and are all returned [GH-90000]")
+        @DisplayName("multiple events share the same type and are all returned")
         void multipleEventsOfSameTypeAreAllReturned() { // GH-90000
             int count = 5;
             for (int i = 0; i < count; i++) { // GH-90000
@@ -232,13 +232,13 @@ class DataCloudSdkValidationTest extends EventloopTestBase {
 
             List<DataCloudClient.Event> events = runPromise( // GH-90000
                     () -> client.queryEvents(TENANT, // GH-90000
-                            DataCloudClient.EventQuery.byType("metric.reported [GH-90000]")));
+                            DataCloudClient.EventQuery.byType("metric.reported")));
 
             assertThat(events).hasSize(count); // GH-90000
         }
 
         @Test
-        @DisplayName("events from other tenants are not returned [GH-90000]")
+        @DisplayName("events from other tenants are not returned")
         void eventsAreTenantScoped() { // GH-90000
             runPromise(() -> client.appendEvent("other-tenant", // GH-90000
                     DataCloudClient.Event.of("secret.event", // GH-90000
@@ -246,7 +246,7 @@ class DataCloudSdkValidationTest extends EventloopTestBase {
 
             List<DataCloudClient.Event> events = runPromise( // GH-90000
                     () -> client.queryEvents(TENANT, // GH-90000
-                            DataCloudClient.EventQuery.byType("secret.event [GH-90000]")));
+                            DataCloudClient.EventQuery.byType("secret.event")));
 
             assertThat(events).isEmpty(); // GH-90000
         }
@@ -257,11 +257,11 @@ class DataCloudSdkValidationTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Client lifecycle [GH-90000]")
+    @DisplayName("Client lifecycle")
     class ClientLifecycle {
 
         @Test
-        @DisplayName("two independent in-memory clients do not share state [GH-90000]")
+        @DisplayName("two independent in-memory clients do not share state")
         void twoClientsShareNoState() { // GH-90000
             DataCloudClient clientA = DataCloud.forTesting(); // GH-90000
             DataCloudClient clientB = DataCloud.forTesting(); // GH-90000
@@ -279,7 +279,7 @@ class DataCloudSdkValidationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("client may be closed without exception [GH-90000]")
+        @DisplayName("client may be closed without exception")
         void closeIsIdempotent() { // GH-90000
             DataCloudClient c = DataCloud.forTesting(); // GH-90000
             assertThatCode(c::close).doesNotThrowAnyException(); // GH-90000

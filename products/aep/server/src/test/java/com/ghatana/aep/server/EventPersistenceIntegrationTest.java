@@ -44,7 +44,7 @@ import static org.mockito.ArgumentMatchers.any;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@DisplayName("Event Persistence Integration Test [GH-90000]")
+@DisplayName("Event Persistence Integration Test")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class EventPersistenceIntegrationTest extends EventloopTestBase {
 
@@ -94,7 +94,7 @@ class EventPersistenceIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Events processed by AEP are persisted to EventLogStore [GH-90000]")
+    @DisplayName("Events processed by AEP are persisted to EventLogStore")
     void eventsArePersistedToEventLogStore() { // GH-90000
         // GIVEN
         String tenantId = "tenant-test";
@@ -112,7 +112,7 @@ class EventPersistenceIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Multiple events are persisted sequentially [GH-90000]")
+    @DisplayName("Multiple events are persisted sequentially")
     void multipleEventsArePersisted() { // GH-90000
         // GIVEN
         String tenantId = "tenant-multi";
@@ -138,7 +138,7 @@ class EventPersistenceIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Event payload is correctly serialized and persisted [GH-90000]")
+    @DisplayName("Event payload is correctly serialized and persisted")
     void eventPayloadIsCorrectlySerialized() { // GH-90000
         // GIVEN
         String tenantId = "tenant-payload";
@@ -158,7 +158,7 @@ class EventPersistenceIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Event headers are preserved during persistence [GH-90000]")
+    @DisplayName("Event headers are preserved during persistence")
     void eventHeadersArePreserved() { // GH-90000
         // GIVEN
         String tenantId = "tenant-headers";
@@ -179,7 +179,7 @@ class EventPersistenceIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Failed events are still persisted with error metadata [GH-90000]")
+    @DisplayName("Failed events are still persisted with error metadata")
     void failedEventsArePersistedWithErrors() { // GH-90000
         // This test verifies that even when pattern detection or other processing fails,
         // the event is still persisted to EventLogStore for audit and debugging purposes.

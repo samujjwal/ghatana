@@ -31,18 +31,18 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Integration Test
  */
-@DisplayName("OidcIdentityProviderIT [GH-90000]")
+@DisplayName("OidcIdentityProviderIT")
 class OidcIdentityProviderIT extends EventloopTestBase {
 
     @Test
-    @DisplayName("resolve calls the configured introspection endpoint and returns a federated identity [GH-90000]")
+    @DisplayName("resolve calls the configured introspection endpoint and returns a federated identity")
     void resolveCallsMockIntrospectionEndpoint() throws Exception { // GH-90000
         AtomicReference<String> authorizationHeader = new AtomicReference<>(); // GH-90000
         AtomicReference<String> requestBody = new AtomicReference<>(); // GH-90000
 
         HttpServer server = HttpServer.create(new InetSocketAddress(0), 0); // GH-90000
         server.createContext("/oauth2/introspect", new StaticJsonHandler(exchange -> { // GH-90000
-            authorizationHeader.set(exchange.getRequestHeaders().getFirst("Authorization [GH-90000]"));
+            authorizationHeader.set(exchange.getRequestHeaders().getFirst("Authorization"));
             requestBody.set(readBody(exchange)); // GH-90000
             return "{" +
                 "\"active\":true," +
@@ -55,12 +55,12 @@ class OidcIdentityProviderIT extends EventloopTestBase {
         try {
             int port = server.getAddress().getPort(); // GH-90000
             OAuth2Config config = OAuth2Config.builder() // GH-90000
-                .clientId("aep-client [GH-90000]")
-                .clientSecret("aep-secret [GH-90000]")
+                .clientId("aep-client")
+                .clientSecret("aep-secret")
                 .tokenEndpoint(URI.create("http://127.0.0.1:" + port + "/oauth2/introspect")) // GH-90000
                 .authorizationEndpoint(URI.create("http://127.0.0.1:" + port + "/oauth2/authorize")) // GH-90000
-                .redirectUri(URI.create("http://localhost/internal/aep/oidc/callback [GH-90000]"))
-                .issuerUri(URI.create("https://issuer.example.com [GH-90000]"))
+                .redirectUri(URI.create("http://localhost/internal/aep/oidc/callback"))
+                .issuerUri(URI.create("https://issuer.example.com"))
                 .build(); // GH-90000
 
             OidcIdentityProvider provider = new OidcIdentityProvider( // GH-90000
@@ -70,18 +70,18 @@ class OidcIdentityProviderIT extends EventloopTestBase {
                     "agent-1",
                     "oidc-subject-1",
                     "opaque-access-token",
-                    Set.of("aep:capability:routing [GH-90000]"))));
+                    Set.of("aep:capability:routing"))));
 
             Optional<AgentIdentity> identity = runPromise(() -> provider.resolve("tenant-a", "agent-1")); // GH-90000
 
             assertThat(identity).isPresent(); // GH-90000
             assertThat(identity.orElseThrow().spiffeId()) // GH-90000
-                .isEqualTo("https://issuer.example.com/subject/oidc-subject-1 [GH-90000]");
+                .isEqualTo("https://issuer.example.com/subject/oidc-subject-1");
             assertThat(identity.orElseThrow().scopes()) // GH-90000
                 .contains("aep:execute", "aep:capability:routing"); // GH-90000
             assertThat(authorizationHeader.get()) // GH-90000
                 .isEqualTo("Basic " + Base64.getEncoder().encodeToString("aep-client:aep-secret".getBytes(StandardCharsets.UTF_8))); // GH-90000
-            assertThat(requestBody.get()).contains("token=opaque-access-token [GH-90000]");
+            assertThat(requestBody.get()).contains("token=opaque-access-token");
         } finally {
             server.stop(0); // GH-90000
         }

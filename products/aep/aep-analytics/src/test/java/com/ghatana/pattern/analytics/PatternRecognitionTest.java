@@ -18,11 +18,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test pattern recognition, anomaly detection, and classification.
  */
-@DisplayName("Pattern Recognition Tests [GH-90000]")
+@DisplayName("Pattern Recognition Tests")
 class PatternRecognitionTest {
 
     @Test
-    @DisplayName("Should recognize patterns [GH-90000]")
+    @DisplayName("Should recognize patterns")
     void shouldRecognizePatterns() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 
@@ -30,7 +30,7 @@ class PatternRecognitionTest {
     }
 
     @Test
-    @DisplayName("Should detect anomalies [GH-90000]")
+    @DisplayName("Should detect anomalies")
     void shouldDetectAnomalies() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 
@@ -38,7 +38,7 @@ class PatternRecognitionTest {
     }
 
     @Test
-    @DisplayName("Should classify patterns [GH-90000]")
+    @DisplayName("Should classify patterns")
     void shouldClassifyPatterns() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 
@@ -46,7 +46,7 @@ class PatternRecognitionTest {
     }
 
     @Test
-    @DisplayName("Should handle pattern updates [GH-90000]")
+    @DisplayName("Should handle pattern updates")
     void shouldHandlePatternUpdates() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 
@@ -54,7 +54,7 @@ class PatternRecognitionTest {
     }
 
     @Test
-    @DisplayName("Should handle pattern deletion [GH-90000]")
+    @DisplayName("Should handle pattern deletion")
     void shouldHandlePatternDeletion() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 
@@ -62,7 +62,7 @@ class PatternRecognitionTest {
     }
 
     @Test
-    @DisplayName("Should handle pattern queries [GH-90000]")
+    @DisplayName("Should handle pattern queries")
     void shouldHandlePatternQueries() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 

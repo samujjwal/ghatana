@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.within;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Histogram Accuracy Tests [GH-90000]")
+@DisplayName("Histogram Accuracy Tests")
 class HistogramAccuracyTest extends EventloopTestBase {
 
     private SimpleMeterRegistry meterRegistry;
@@ -36,14 +36,14 @@ class HistogramAccuracyTest extends EventloopTestBase {
     // ── Bucket distribution ───────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("bucket distribution [GH-90000]")
+    @DisplayName("bucket distribution")
     class BucketDistribution {
 
         @Test
-        @DisplayName("single recorded value increments count to 1 [GH-90000]")
+        @DisplayName("single recorded value increments count to 1")
         void singleRecordedValue_incrementsCountTo1() { // GH-90000
             DistributionSummary summary = DistributionSummary
-                    .builder("test.latency [GH-90000]")
+                    .builder("test.latency")
                     .register(meterRegistry); // GH-90000
 
             summary.record(100.0); // GH-90000
@@ -53,10 +53,10 @@ class HistogramAccuracyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("multiple values produce correct count and sum [GH-90000]")
+        @DisplayName("multiple values produce correct count and sum")
         void multipleValues_produceCorrectCountAndSum() { // GH-90000
             DistributionSummary summary = DistributionSummary
-                    .builder("test.latency.multi [GH-90000]")
+                    .builder("test.latency.multi")
                     .register(meterRegistry); // GH-90000
 
             List<Double> values = List.of(10.0, 20.0, 30.0, 40.0, 50.0); // GH-90000
@@ -67,10 +67,10 @@ class HistogramAccuracyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("average (mean) computed correctly from recorded values [GH-90000]")
+        @DisplayName("average (mean) computed correctly from recorded values")
         void average_computedCorrectly() { // GH-90000
             DistributionSummary summary = DistributionSummary
-                    .builder("test.latency.mean [GH-90000]")
+                    .builder("test.latency.mean")
                     .register(meterRegistry); // GH-90000
 
             summary.record(10.0); // GH-90000
@@ -85,11 +85,11 @@ class HistogramAccuracyTest extends EventloopTestBase {
     // ── Percentile calculation (manual) ────────────────────────────────────── // GH-90000
 
     @Nested
-    @DisplayName("percentile calculation [GH-90000]")
+    @DisplayName("percentile calculation")
     class PercentileCalculation {
 
         @Test
-        @DisplayName("P50 (median) is correctly computed for odd-count dataset [GH-90000]")
+        @DisplayName("P50 (median) is correctly computed for odd-count dataset")
         void p50_correctForOddCountDataset() { // GH-90000
             double[] data = {10, 20, 30, 40, 50};
             Arrays.sort(data); // GH-90000
@@ -99,7 +99,7 @@ class HistogramAccuracyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("P95 is correctly computed for 100-element dataset [GH-90000]")
+        @DisplayName("P95 is correctly computed for 100-element dataset")
         void p95_correctFor100ElementDataset() { // GH-90000
             double[] data = new double[100];
             for (int i = 0; i < 100; i++) { // GH-90000
@@ -112,7 +112,7 @@ class HistogramAccuracyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("P99 is correctly computed for 100-element dataset [GH-90000]")
+        @DisplayName("P99 is correctly computed for 100-element dataset")
         void p99_correctFor100ElementDataset() { // GH-90000
             double[] data = new double[100];
             for (int i = 0; i < 100; i++) { // GH-90000
@@ -125,7 +125,7 @@ class HistogramAccuracyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("P100 equals maximum value [GH-90000]")
+        @DisplayName("P100 equals maximum value")
         void p100_equalsMaximumValue() { // GH-90000
             double[] data = {5, 15, 25, 50, 100, 200};
             Arrays.sort(data); // GH-90000
@@ -148,14 +148,14 @@ class HistogramAccuracyTest extends EventloopTestBase {
     // ── Histogram aggregation ─────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("histogram aggregation [GH-90000]")
+    @DisplayName("histogram aggregation")
     class HistogramAggregation {
 
         @Test
-        @DisplayName("two histograms can be merged by summing counts and totals [GH-90000]")
+        @DisplayName("two histograms can be merged by summing counts and totals")
         void twoHistograms_canBeMergedBySummingCountsAndTotals() { // GH-90000
-            DistributionSummary h1 = DistributionSummary.builder("hist.a [GH-90000]").register(meterRegistry);
-            DistributionSummary h2 = DistributionSummary.builder("hist.b [GH-90000]").register(meterRegistry);
+            DistributionSummary h1 = DistributionSummary.builder("hist.a").register(meterRegistry);
+            DistributionSummary h2 = DistributionSummary.builder("hist.b").register(meterRegistry);
 
             h1.record(10.0); // GH-90000
             h1.record(20.0); // GH-90000
@@ -173,14 +173,14 @@ class HistogramAccuracyTest extends EventloopTestBase {
     // ── Boundary values ───────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("boundary values [GH-90000]")
+    @DisplayName("boundary values")
     class BoundaryValues {
 
         @Test
-        @DisplayName("recording zero is accepted and reflected in count [GH-90000]")
+        @DisplayName("recording zero is accepted and reflected in count")
         void recordingZero_isAccepted() { // GH-90000
             DistributionSummary summary = DistributionSummary
-                    .builder("test.boundary.zero [GH-90000]")
+                    .builder("test.boundary.zero")
                     .register(meterRegistry); // GH-90000
 
             summary.record(0.0); // GH-90000
@@ -190,10 +190,10 @@ class HistogramAccuracyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("recording very large value does not overflow [GH-90000]")
+        @DisplayName("recording very large value does not overflow")
         void recordingVeryLargeValue_doesNotOverflow() { // GH-90000
             DistributionSummary summary = DistributionSummary
-                    .builder("test.boundary.large [GH-90000]")
+                    .builder("test.boundary.large")
                     .register(meterRegistry); // GH-90000
 
             double largeValue = Double.MAX_VALUE / 2;
@@ -204,10 +204,10 @@ class HistogramAccuracyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("empty histogram has count 0 and total 0 [GH-90000]")
+        @DisplayName("empty histogram has count 0 and total 0")
         void emptyHistogram_hasCountZeroAndTotalZero() { // GH-90000
             DistributionSummary summary = DistributionSummary
-                    .builder("test.boundary.empty [GH-90000]")
+                    .builder("test.boundary.empty")
                     .register(meterRegistry); // GH-90000
 
             assertThat(summary.count()).isEqualTo(0); // GH-90000
@@ -215,10 +215,10 @@ class HistogramAccuracyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("single-element histogram mean equals that element [GH-90000]")
+        @DisplayName("single-element histogram mean equals that element")
         void singleElementHistogram_meanEqualsThatElement() { // GH-90000
             DistributionSummary summary = DistributionSummary
-                    .builder("test.boundary.single [GH-90000]")
+                    .builder("test.boundary.single")
                     .register(meterRegistry); // GH-90000
 
             summary.record(42.0); // GH-90000

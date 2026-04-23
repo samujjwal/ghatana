@@ -34,7 +34,7 @@ import static org.mockito.Mockito.when;
 /**
  * Tests for {@link EventCloudAgentStore}.
  */
-@DisplayName("EventCloudAgentStore [GH-90000]")
+@DisplayName("EventCloudAgentStore")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class EventCloudAgentStoreTest extends EventloopTestBase {
 
@@ -79,11 +79,11 @@ class EventCloudAgentStoreTest extends EventloopTestBase {
         assertThat(result).isNotNull(); // GH-90000
         verify(entityStore).save(any(TenantContext.class), entityCaptor.capture()); // GH-90000
         Entity captured = entityCaptor.getValue(); // GH-90000
-        assertThat(captured.collection()).isEqualTo("aep_agents [GH-90000]");
-        assertThat(captured.data().get("id [GH-90000]")).isEqualTo(AGENT_ID);
-        assertThat(captured.data().get("name [GH-90000]")).isEqualTo("TestAgent [GH-90000]");
-        assertThat(captured.data().get("type [GH-90000]")).isEqualTo("REACTIVE [GH-90000]");
-        assertThat(captured.data().get("status [GH-90000]")).isEqualTo("ACTIVE [GH-90000]");
+        assertThat(captured.collection()).isEqualTo("aep_agents");
+        assertThat(captured.data().get("id")).isEqualTo(AGENT_ID);
+        assertThat(captured.data().get("name")).isEqualTo("TestAgent");
+        assertThat(captured.data().get("type")).isEqualTo("REACTIVE");
+        assertThat(captured.data().get("status")).isEqualTo("ACTIVE");
     }
 
     @Test
@@ -100,13 +100,13 @@ class EventCloudAgentStoreTest extends EventloopTestBase {
 
         // THEN
         assertThat(result).isPresent(); // GH-90000
-        assertThat(result.get().data().get("name [GH-90000]")).isEqualTo("TestAgent [GH-90000]");
+        assertThat(result.get().data().get("name")).isEqualTo("TestAgent");
     }
 
     @Test
     void shouldReturnEmptyWhenAgentNotFound() { // GH-90000
         // GIVEN
-        when(entityStore.findById(any(TenantContext.class), eq(EntityId.of("nonexistent [GH-90000]"))))
+        when(entityStore.findById(any(TenantContext.class), eq(EntityId.of("nonexistent"))))
             .thenReturn(Promise.of(Optional.empty())); // GH-90000
 
         // WHEN
@@ -120,9 +120,9 @@ class EventCloudAgentStoreTest extends EventloopTestBase {
     void shouldListAgents() { // GH-90000
         // GIVEN
         var entities = List.of( // GH-90000
-            new Entity(EntityId.of("a1 [GH-90000]"), EventCloudAgentStore.COLLECTION,
+            new Entity(EntityId.of("a1"), EventCloudAgentStore.COLLECTION,
                 Map.of("name", "Agent1"), null), // GH-90000
-            new Entity(EntityId.of("a2 [GH-90000]"), EventCloudAgentStore.COLLECTION,
+            new Entity(EntityId.of("a2"), EventCloudAgentStore.COLLECTION,
                 Map.of("name", "Agent2"), null)); // GH-90000
         QueryResult queryResult = new QueryResult(entities, 2L, false); // GH-90000
         when(entityStore.query(any(TenantContext.class), any(QuerySpec.class))) // GH-90000
@@ -134,18 +134,18 @@ class EventCloudAgentStoreTest extends EventloopTestBase {
         // THEN
         assertThat(result).hasSize(2); // GH-90000
         verify(entityStore).query(any(TenantContext.class), queryCaptor.capture()); // GH-90000
-        assertThat(queryCaptor.getValue().collection()).isEqualTo("aep_agents [GH-90000]");
+        assertThat(queryCaptor.getValue().collection()).isEqualTo("aep_agents");
     }
 
     @Test
     void shouldListByType() { // GH-90000
         // GIVEN
         var entities = List.of( // GH-90000
-            new Entity(EntityId.of("a1 [GH-90000]"), EventCloudAgentStore.COLLECTION,
+            new Entity(EntityId.of("a1"), EventCloudAgentStore.COLLECTION,
                 Map.of("type", "REACTIVE"), null), // GH-90000
-            new Entity(EntityId.of("a2 [GH-90000]"), EventCloudAgentStore.COLLECTION,
+            new Entity(EntityId.of("a2"), EventCloudAgentStore.COLLECTION,
                 Map.of("type", "DELIBERATIVE"), null), // GH-90000
-            new Entity(EntityId.of("a3 [GH-90000]"), EventCloudAgentStore.COLLECTION,
+            new Entity(EntityId.of("a3"), EventCloudAgentStore.COLLECTION,
                 Map.of("type", "REACTIVE"), null)); // GH-90000
         QueryResult queryResult = new QueryResult(entities, 3L, false); // GH-90000
         when(entityStore.query(any(TenantContext.class), any(QuerySpec.class))) // GH-90000
@@ -157,7 +157,7 @@ class EventCloudAgentStoreTest extends EventloopTestBase {
 
         // THEN
         assertThat(result).hasSize(2) // GH-90000
-            .allSatisfy(e -> assertThat(e.data().get("type [GH-90000]")).isEqualTo("REACTIVE [GH-90000]"));
+            .allSatisfy(e -> assertThat(e.data().get("type")).isEqualTo("REACTIVE"));
     }
 
     @Test
@@ -210,7 +210,7 @@ class EventCloudAgentStoreTest extends EventloopTestBase {
 
         // THEN
         verify(entityStore).save(any(), entityCaptor.capture()); // GH-90000
-        assertThat(entityCaptor.getValue().data().get("status [GH-90000]")).isEqualTo("ACTIVE [GH-90000]");
+        assertThat(entityCaptor.getValue().data().get("status")).isEqualTo("ACTIVE");
     }
 
     @Test
@@ -225,6 +225,6 @@ class EventCloudAgentStoreTest extends EventloopTestBase {
 
         // THEN
         verify(entityStore).save(any(), entityCaptor.capture()); // GH-90000
-        assertThat(entityCaptor.getValue().data().get("status [GH-90000]")).isEqualTo("PAUSED [GH-90000]");
+        assertThat(entityCaptor.getValue().data().get("status")).isEqualTo("PAUSED");
     }
 }

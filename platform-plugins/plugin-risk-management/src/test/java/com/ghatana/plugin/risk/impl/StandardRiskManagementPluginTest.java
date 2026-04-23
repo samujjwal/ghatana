@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("StandardRiskManagementPlugin Tests [GH-90000]")
+@DisplayName("StandardRiskManagementPlugin Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class StandardRiskManagementPluginTest extends EventloopTestBase {
 
@@ -40,7 +40,7 @@ class StandardRiskManagementPluginTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should initialize risk management plugin [GH-90000]")
+    @DisplayName("Should initialize risk management plugin")
     void testInitialize() { // GH-90000
         assertThat(riskPlugin.getState()).isEqualTo(PluginState.UNLOADED); // GH-90000
         Promise<Void> result = riskPlugin.initialize(mockContext); // GH-90000
@@ -49,7 +49,7 @@ class StandardRiskManagementPluginTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should start risk management plugin [GH-90000]")
+    @DisplayName("Should start risk management plugin")
     void testStart() { // GH-90000
         runPromise(() -> riskPlugin.initialize(mockContext)); // GH-90000
         Promise<Void> result = riskPlugin.start(); // GH-90000
@@ -58,15 +58,15 @@ class StandardRiskManagementPluginTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should return correct metadata [GH-90000]")
+    @DisplayName("Should return correct metadata")
     void testMetadata() { // GH-90000
         var metadata = riskPlugin.metadata(); // GH-90000
-        assertThat(metadata.name()).isEqualTo("Risk Management Plugin [GH-90000]");
-        assertThat(metadata.version()).isEqualTo("1.0.0 [GH-90000]");
+        assertThat(metadata.name()).isEqualTo("Risk Management Plugin");
+        assertThat(metadata.version()).isEqualTo("1.0.0");
     }
 
     @Test
-    @DisplayName("Should calculate market risk [GH-90000]")
+    @DisplayName("Should calculate market risk")
     void testCalculateRisk_Market() { // GH-90000
         runPromise(() -> riskPlugin.initialize(mockContext) // GH-90000
                 .then(v -> riskPlugin.start())); // GH-90000
@@ -82,14 +82,14 @@ class StandardRiskManagementPluginTest extends EventloopTestBase {
                 riskPlugin.calculateRisk("portfolio1", RiskManagementPlugin.RiskType.MARKET, factors); // GH-90000
         RiskManagementPlugin.RiskScore score = runPromise(() -> result); // GH-90000
 
-        assertThat(score.entityId()).isEqualTo("portfolio1 [GH-90000]");
+        assertThat(score.entityId()).isEqualTo("portfolio1");
         assertThat(score.type()).isEqualTo(RiskManagementPlugin.RiskType.MARKET); // GH-90000
         assertThat(score.score()).isBetween(0.0, 1.0); // GH-90000
         assertThat(score.componentScores()).isNotEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should calculate credit risk [GH-90000]")
+    @DisplayName("Should calculate credit risk")
     void testCalculateRisk_Credit() { // GH-90000
         runPromise(() -> riskPlugin.initialize(mockContext) // GH-90000
                 .then(v -> riskPlugin.start())); // GH-90000
@@ -109,17 +109,17 @@ class StandardRiskManagementPluginTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should set risk limits [GH-90000]")
+    @DisplayName("Should set risk limits")
     void testSetRiskLimits() { // GH-90000
         runPromise(() -> riskPlugin.initialize(mockContext) // GH-90000
                 .then(v -> riskPlugin.start())); // GH-90000
 
         RiskManagementPlugin.RiskLimits limits = new RiskManagementPlugin.RiskLimits( // GH-90000
-            new BigDecimal("10000000.00 [GH-90000]"),
-            new BigDecimal("50000000.00 [GH-90000]"),
-            new BigDecimal("1000000.00 [GH-90000]"),
-            new BigDecimal("1000000.00 [GH-90000]"),
-            new BigDecimal("500000.00 [GH-90000]")
+            new BigDecimal("10000000.00"),
+            new BigDecimal("50000000.00"),
+            new BigDecimal("1000000.00"),
+            new BigDecimal("1000000.00"),
+            new BigDecimal("500000.00")
         );
 
         Promise<Void> result = riskPlugin.setRiskLimits("trader123", limits); // GH-90000
@@ -130,20 +130,20 @@ class StandardRiskManagementPluginTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should get active risk alerts [GH-90000]")
+    @DisplayName("Should get active risk alerts")
     void testGetActiveAlerts() { // GH-90000
         runPromise(() -> riskPlugin.initialize(mockContext) // GH-90000
                 .then(v -> riskPlugin.start())); // GH-90000
 
         Promise<List<RiskManagementPlugin.RiskAlert>> result =
-                riskPlugin.getActiveAlerts("entity123 [GH-90000]");
+                riskPlugin.getActiveAlerts("entity123");
         List<RiskManagementPlugin.RiskAlert> alerts = runPromise(() -> result); // GH-90000
 
         assertThat(alerts).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should generate risk report [GH-90000]")
+    @DisplayName("Should generate risk report")
     void testGenerateReport() { // GH-90000
         runPromise(() -> riskPlugin.initialize(mockContext) // GH-90000
                 .then(v -> riskPlugin.start()) // GH-90000
@@ -161,13 +161,13 @@ class StandardRiskManagementPluginTest extends EventloopTestBase {
                 riskPlugin.generateReport("entity456", range); // GH-90000
         RiskManagementPlugin.RiskReport report = runPromise(() -> result); // GH-90000
 
-        assertThat(report.entityId()).isEqualTo("entity456 [GH-90000]");
+        assertThat(report.entityId()).isEqualTo("entity456");
         assertThat(report.range()).isEqualTo(range); // GH-90000
         assertThat(report.generatedAt()).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should shutdown risk management plugin [GH-90000]")
+    @DisplayName("Should shutdown risk management plugin")
     void testShutdown() { // GH-90000
         runPromise(() -> riskPlugin.initialize(mockContext) // GH-90000
                 .then(v -> riskPlugin.start())); // GH-90000

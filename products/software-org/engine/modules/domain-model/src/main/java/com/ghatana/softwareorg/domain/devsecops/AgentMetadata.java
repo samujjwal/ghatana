@@ -10,7 +10,11 @@ import java.util.Map;
 /**
  * AgentMetadata holds DevSecOps-specific metadata that sits alongside the
  * structural AgentSpec configuration.
- */
+  * @doc.type class
+ * @doc.purpose Provides agent metadata functionality.
+ * @doc.layer product
+ * @doc.pattern Agent
+*/
 @Value
 @Builder
 public class AgentMetadata {

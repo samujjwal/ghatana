@@ -42,15 +42,15 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer core
  * @doc.pattern Integration Test
  */
-@Tag("integration [GH-90000]")
+@Tag("integration")
 @Testcontainers
-@DisplayName("KafkaConnector Integration Tests [GH-90000]")
+@DisplayName("KafkaConnector Integration Tests")
 class KafkaConnectorIT {
 
     @Container
-    @SuppressWarnings("resource [GH-90000]")
+    @SuppressWarnings("resource")
     static final KafkaContainer KAFKA =
-            new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.6.1 [GH-90000]"));
+            new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.6.1"));
 
     private static final String TEST_TOPIC = "integration-test-topic";
 
@@ -59,7 +59,7 @@ class KafkaConnectorIT {
 
     @BeforeEach
     void setUp() { // GH-90000
-        connector = new KafkaConnector("test-kafka-connector [GH-90000]");
+        connector = new KafkaConnector("test-kafka-connector");
         eventloop = EventloopTestUtil.newRunnerBuilder().build(); // GH-90000
     }
 
@@ -82,14 +82,14 @@ class KafkaConnectorIT {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Lifecycle [GH-90000]")
+    @DisplayName("Lifecycle")
     class Lifecycle {
 
         @Test
-        @DisplayName("should initialize and start sink connector successfully [GH-90000]")
+        @DisplayName("should initialize and start sink connector successfully")
         void shouldInitializeAndStartSinkConnector() { // GH-90000
             KafkaConnector.KafkaConnectorConfig config = KafkaConnector.KafkaConnectorConfig.builder() // GH-90000
-                    .name("test-sink [GH-90000]")
+                    .name("test-sink")
                     .bootstrapServers(KAFKA.getBootstrapServers()) // GH-90000
                     .topic(TEST_TOPIC) // GH-90000
                     .sinkEnabled(true) // GH-90000
@@ -104,10 +104,10 @@ class KafkaConnectorIT {
         }
 
         @Test
-        @DisplayName("should initialize and start source connector successfully [GH-90000]")
+        @DisplayName("should initialize and start source connector successfully")
         void shouldInitializeAndStartSourceConnector() { // GH-90000
             KafkaConnector.KafkaConnectorConfig config = KafkaConnector.KafkaConnectorConfig.builder() // GH-90000
-                    .name("test-source [GH-90000]")
+                    .name("test-source")
                     .bootstrapServers(KAFKA.getBootstrapServers()) // GH-90000
                     .topic(TEST_TOPIC) // GH-90000
                     .sourceEnabled(true) // GH-90000
@@ -122,10 +122,10 @@ class KafkaConnectorIT {
         }
 
         @Test
-        @DisplayName("should transition from started to stopped cleanly [GH-90000]")
+        @DisplayName("should transition from started to stopped cleanly")
         void shouldStopCleanly() { // GH-90000
             KafkaConnector.KafkaConnectorConfig config = KafkaConnector.KafkaConnectorConfig.builder() // GH-90000
-                    .name("test-lifecycle [GH-90000]")
+                    .name("test-lifecycle")
                     .bootstrapServers(KAFKA.getBootstrapServers()) // GH-90000
                     .topic(TEST_TOPIC) // GH-90000
                     .sinkEnabled(true) // GH-90000
@@ -147,16 +147,16 @@ class KafkaConnectorIT {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Producer publish [GH-90000]")
+    @DisplayName("Producer publish")
     class ProducerPublish {
 
         @Test
-        @DisplayName("should send message to Kafka topic [GH-90000]")
+        @DisplayName("should send message to Kafka topic")
         void shouldSendMessageToTopic() throws Exception { // GH-90000
             String uniqueTopic = "producer-test-" + System.nanoTime(); // GH-90000
 
             KafkaConnector.KafkaConnectorConfig config = KafkaConnector.KafkaConnectorConfig.builder() // GH-90000
-                    .name("producer-sink [GH-90000]")
+                    .name("producer-sink")
                     .bootstrapServers(KAFKA.getBootstrapServers()) // GH-90000
                     .topic(uniqueTopic) // GH-90000
                     .sinkEnabled(true) // GH-90000
@@ -173,16 +173,16 @@ class KafkaConnectorIT {
 
             // Verify by consuming the message
             List<String> received = consumeMessages(uniqueTopic, 1, Duration.ofSeconds(10)); // GH-90000
-            assertThat(received).containsExactly("value-1 [GH-90000]");
+            assertThat(received).containsExactly("value-1");
         }
 
         @Test
-        @DisplayName("should send multiple messages in sequence [GH-90000]")
+        @DisplayName("should send multiple messages in sequence")
         void shouldSendMultipleMessages() throws Exception { // GH-90000
             String uniqueTopic = "multi-send-test-" + System.nanoTime(); // GH-90000
 
             KafkaConnector.KafkaConnectorConfig config = KafkaConnector.KafkaConnectorConfig.builder() // GH-90000
-                    .name("multi-producer-sink [GH-90000]")
+                    .name("multi-producer-sink")
                     .bootstrapServers(KAFKA.getBootstrapServers()) // GH-90000
                     .topic(uniqueTopic) // GH-90000
                     .sinkEnabled(true) // GH-90000
@@ -208,11 +208,11 @@ class KafkaConnectorIT {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Consumer subscribe [GH-90000]")
+    @DisplayName("Consumer subscribe")
     class ConsumerSubscribe {
 
         @Test
-        @DisplayName("should consume message from Kafka topic [GH-90000]")
+        @DisplayName("should consume message from Kafka topic")
         void shouldConsumeMessageFromTopic() throws Exception { // GH-90000
             String uniqueTopic = "consumer-test-" + System.nanoTime(); // GH-90000
             String groupId = "consumer-group-" + System.nanoTime(); // GH-90000
@@ -221,7 +221,7 @@ class KafkaConnectorIT {
             publishMessage(uniqueTopic, "test-key", "test-value"); // GH-90000
 
             KafkaConnector.KafkaConnectorConfig config = KafkaConnector.KafkaConnectorConfig.builder() // GH-90000
-                    .name("consumer-source [GH-90000]")
+                    .name("consumer-source")
                     .bootstrapServers(KAFKA.getBootstrapServers()) // GH-90000
                     .topic(uniqueTopic) // GH-90000
                     .sourceEnabled(true) // GH-90000
@@ -244,7 +244,7 @@ class KafkaConnectorIT {
                 }
             }
 
-            assertThat(messages).containsExactly("test-value [GH-90000]");
+            assertThat(messages).containsExactly("test-value");
         }
     }
 
@@ -253,14 +253,14 @@ class KafkaConnectorIT {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Health check [GH-90000]")
+    @DisplayName("Health check")
     class HealthCheckTests {
 
         @Test
-        @DisplayName("started sink connector should report healthy [GH-90000]")
+        @DisplayName("started sink connector should report healthy")
         void startedSinkConnectorShouldBeHealthy() { // GH-90000
             KafkaConnector.KafkaConnectorConfig config = KafkaConnector.KafkaConnectorConfig.builder() // GH-90000
-                    .name("health-sink [GH-90000]")
+                    .name("health-sink")
                     .bootstrapServers(KAFKA.getBootstrapServers()) // GH-90000
                     .topic(TEST_TOPIC) // GH-90000
                     .sinkEnabled(true) // GH-90000
@@ -276,7 +276,7 @@ class KafkaConnectorIT {
         }
 
         @Test
-        @DisplayName("uninitialized connector should report unhealthy [GH-90000]")
+        @DisplayName("uninitialized connector should report unhealthy")
         void uninitializedConnectorShouldBeUnhealthy() { // GH-90000
             // Connector not initialized — health check should not throw, just report unhealthy
             HealthCheck.HealthCheckResult result =

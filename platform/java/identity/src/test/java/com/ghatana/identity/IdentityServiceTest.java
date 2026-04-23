@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("DefaultIdentityService [GH-90000]")
+@DisplayName("DefaultIdentityService")
 class IdentityServiceTest extends EventloopTestBase {
 
     private InMemoryIdentityResolver resolver;
@@ -39,18 +39,18 @@ class IdentityServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("resolve() [GH-90000]")
+    @DisplayName("resolve()")
     class ResolveTests {
 
         @Test
-        @DisplayName("Returns empty when agent not registered [GH-90000]")
+        @DisplayName("Returns empty when agent not registered")
         void returnsEmptyForUnknownAgent() { // GH-90000
             Optional<AgentIdentity> result = runPromise(() -> service.resolve("t1", "unknown-agent")); // GH-90000
             assertThat(result).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("Returns registered identity [GH-90000]")
+        @DisplayName("Returns registered identity")
         void returnsRegisteredIdentity() { // GH-90000
             AgentIdentity identity = new AgentIdentity("t1", "agent-1", // GH-90000
                 "spiffe://ghatana.io/t1/agent-1", Set.of("read", "write"), Instant.now()); // GH-90000
@@ -58,15 +58,15 @@ class IdentityServiceTest extends EventloopTestBase {
 
             Optional<AgentIdentity> result = runPromise(() -> service.resolve("t1", "agent-1")); // GH-90000
             assertThat(result).isPresent(); // GH-90000
-            assertThat(result.get().agentId()).isEqualTo("agent-1 [GH-90000]");
-            assertThat(result.get().tenantId()).isEqualTo("t1 [GH-90000]");
+            assertThat(result.get().agentId()).isEqualTo("agent-1");
+            assertThat(result.get().tenantId()).isEqualTo("t1");
         }
 
         @Test
-        @DisplayName("Tenant isolation: agent registered in t1 not visible in t2 [GH-90000]")
+        @DisplayName("Tenant isolation: agent registered in t1 not visible in t2")
         void tenantIsolation() { // GH-90000
             AgentIdentity identity = new AgentIdentity("t1", "agent-1", null, // GH-90000
-                Set.of("read [GH-90000]"), Instant.now());
+                Set.of("read"), Instant.now());
             resolver.register(identity); // GH-90000
 
             Optional<AgentIdentity> result = runPromise(() -> service.resolve("t2", "agent-1")); // GH-90000
@@ -74,33 +74,33 @@ class IdentityServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("AgentIdentity.hasScope returns correct result [GH-90000]")
+        @DisplayName("AgentIdentity.hasScope returns correct result")
         void hasScopeCheck() { // GH-90000
-            AgentIdentity identity = new AgentIdentity("t1", "a1", null, Set.of("read [GH-90000]"), Instant.now());
-            assertThat(identity.hasScope("read [GH-90000]")).isTrue();
-            assertThat(identity.hasScope("write [GH-90000]")).isFalse();
+            AgentIdentity identity = new AgentIdentity("t1", "a1", null, Set.of("read"), Instant.now());
+            assertThat(identity.hasScope("read")).isTrue();
+            assertThat(identity.hasScope("write")).isFalse();
         }
     }
 
     @Nested
-    @DisplayName("issueCredential() [GH-90000]")
+    @DisplayName("issueCredential()")
     class IssueCredentialTests {
 
         @Test
-        @DisplayName("Issues credential with correct fields [GH-90000]")
+        @DisplayName("Issues credential with correct fields")
         void issuesCredential() { // GH-90000
             CredentialToken token = runPromise(() -> // GH-90000
                 service.issueCredential("t1", "agent-1", Duration.ofMinutes(10))); // GH-90000
 
             assertThat(token).isNotNull(); // GH-90000
-            assertThat(token.agentId()).isEqualTo("agent-1 [GH-90000]");
-            assertThat(token.tenantId()).isEqualTo("t1 [GH-90000]");
+            assertThat(token.agentId()).isEqualTo("agent-1");
+            assertThat(token.tenantId()).isEqualTo("t1");
             assertThat(token.tokenId()).isNotBlank(); // GH-90000
             assertThat(token.isExpired()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("Caps TTL at 1 hour [GH-90000]")
+        @DisplayName("Caps TTL at 1 hour")
         void capsTtlAtOneHour() { // GH-90000
             CredentialToken token = runPromise(() -> // GH-90000
                 service.issueCredential("t1", "agent-1", Duration.ofHours(24))); // GH-90000
@@ -111,7 +111,7 @@ class IdentityServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Issued credential is valid immediately [GH-90000]")
+        @DisplayName("Issued credential is valid immediately")
         void issuedCredentialIsValid() { // GH-90000
             CredentialToken token = runPromise(() -> // GH-90000
                 service.issueCredential("t1", "agent-1", Duration.ofMinutes(5))); // GH-90000
@@ -122,11 +122,11 @@ class IdentityServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("revokeCredential() [GH-90000]")
+    @DisplayName("revokeCredential()")
     class RevokeTests {
 
         @Test
-        @DisplayName("Revoked token is no longer valid [GH-90000]")
+        @DisplayName("Revoked token is no longer valid")
         void revokedTokenIsInvalid() { // GH-90000
             CredentialToken token = runPromise(() -> // GH-90000
                 service.issueCredential("t1", "agent-1", Duration.ofMinutes(5))); // GH-90000
@@ -137,21 +137,21 @@ class IdentityServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Revoking unknown token is a no-op [GH-90000]")
+        @DisplayName("Revoking unknown token is a no-op")
         void revokingUnknownTokenIsNoOp() { // GH-90000
             // Must not throw
-            runPromise(() -> service.revokeCredential("nonexistent [GH-90000]").map(v -> v));
+            runPromise(() -> service.revokeCredential("nonexistent").map(v -> v));
         }
     }
 
     @Nested
-    @DisplayName("isCredentialValid() [GH-90000]")
+    @DisplayName("isCredentialValid()")
     class ValidityTests {
 
         @Test
-        @DisplayName("Unknown token is invalid [GH-90000]")
+        @DisplayName("Unknown token is invalid")
         void unknownTokenIsInvalid() { // GH-90000
-            Boolean valid = runPromise(() -> service.isCredentialValid("made-up-id [GH-90000]"));
+            Boolean valid = runPromise(() -> service.isCredentialValid("made-up-id"));
             assertThat(valid).isFalse(); // GH-90000
         }
     }

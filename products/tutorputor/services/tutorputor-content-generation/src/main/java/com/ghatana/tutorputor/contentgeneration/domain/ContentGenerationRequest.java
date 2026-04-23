@@ -8,7 +8,8 @@ import lombok.Getter;
  * @doc.type class
  * @doc.purpose Model for content generation request
  * @doc.layer product
- */
+  * @doc.pattern Component
+*/
 @Builder
 @Getter
 public class ContentGenerationRequest {

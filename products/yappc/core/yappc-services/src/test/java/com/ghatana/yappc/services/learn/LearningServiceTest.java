@@ -35,8 +35,8 @@ class LearningServiceTest extends EventloopTestBase {
 
         when(aiService.complete(any(CompletionRequest.class))) // GH-90000
                 .thenReturn(Promise.of(CompletionResult.builder() // GH-90000
-                        .text("Pattern detected: High latency during peak hours [GH-90000]")
-                        .modelUsed("gpt-4 [GH-90000]")
+                        .text("Pattern detected: High latency during peak hours")
+                        .modelUsed("gpt-4")
                         .build())); // GH-90000
 
         when(auditLogger.log(any(Map.class))) // GH-90000
@@ -44,8 +44,8 @@ class LearningServiceTest extends EventloopTestBase {
 
         LearningService service = new LearningServiceImpl(aiService, auditLogger, metrics); // GH-90000
         Observation observation = Observation.builder() // GH-90000
-                .id("obs-123 [GH-90000]")
-                .runRef("run-123 [GH-90000]")
+                .id("obs-123")
+                .runRef("run-123")
                 .metrics(List.of()) // GH-90000
                 .logs(List.of()) // GH-90000
                 .traces(List.of()) // GH-90000
@@ -75,8 +75,8 @@ class LearningServiceTest extends EventloopTestBase {
 
         when(aiService.complete(any(CompletionRequest.class))) // GH-90000
                 .thenReturn(Promise.of(CompletionResult.builder() // GH-90000
-                        .text("Recurring pattern: Memory leak in service X [GH-90000]")
-                        .modelUsed("gpt-4 [GH-90000]")
+                        .text("Recurring pattern: Memory leak in service X")
+                        .modelUsed("gpt-4")
                         .build())); // GH-90000
 
         when(auditLogger.log(any(Map.class))) // GH-90000
@@ -84,8 +84,8 @@ class LearningServiceTest extends EventloopTestBase {
 
         LearningService service = new LearningServiceImpl(aiService, auditLogger, metrics); // GH-90000
         Observation observation = Observation.builder() // GH-90000
-                .id("obs-123 [GH-90000]")
-                .runRef("run-123 [GH-90000]")
+                .id("obs-123")
+                .runRef("run-123")
                 .metrics(List.of()) // GH-90000
                 .logs(List.of()) // GH-90000
                 .traces(List.of()) // GH-90000
@@ -107,15 +107,15 @@ class LearningServiceTest extends EventloopTestBase {
         MetricsCollector metrics = mock(MetricsCollector.class); // GH-90000
 
         when(aiService.complete(any(CompletionRequest.class))) // GH-90000
-                .thenReturn(Promise.ofException(new RuntimeException("Analysis failed [GH-90000]")));
+                .thenReturn(Promise.ofException(new RuntimeException("Analysis failed")));
 
         when(auditLogger.log(any(Map.class))) // GH-90000
                 .thenReturn(Promise.complete()); // GH-90000
 
         LearningService service = new LearningServiceImpl(aiService, auditLogger, metrics); // GH-90000
         Observation observation = Observation.builder() // GH-90000
-                .id("obs-123 [GH-90000]")
-                .runRef("run-123 [GH-90000]")
+                .id("obs-123")
+                .runRef("run-123")
                 .build(); // GH-90000
 
                 // WHEN
@@ -125,6 +125,6 @@ class LearningServiceTest extends EventloopTestBase {
                 assertNotNull(result); // GH-90000
                 assertEquals("obs-123", result.observationRef()); // GH-90000
 
-                verify(metrics, times(1)).incrementCounter(eq("yappc.ai.learn.analyze.fallback [GH-90000]"), any(Map.class));
+                verify(metrics, times(1)).incrementCounter(eq("yappc.ai.learn.analyze.fallback"), any(Map.class));
     }
 }

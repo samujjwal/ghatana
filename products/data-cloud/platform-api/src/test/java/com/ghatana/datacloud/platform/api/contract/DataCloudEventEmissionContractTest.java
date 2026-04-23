@@ -40,7 +40,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test, Contract
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("Data Cloud Event Emission Contract Tests [GH-90000]")
+@DisplayName("Data Cloud Event Emission Contract Tests")
 class DataCloudEventEmissionContractTest extends EventloopTestBase {
 
     @Mock
@@ -72,11 +72,11 @@ class DataCloudEventEmissionContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Event Emission on Entity Creation [GH-90000]")
+    @DisplayName("Event Emission on Entity Creation")
     class EntityCreationEventContract {
 
         @Test
-        @DisplayName("entity.created event must be emitted on successful create [GH-90000]")
+        @DisplayName("entity.created event must be emitted on successful create")
         void createMustEmitEvent() { // GH-90000
             DomainEvent event = new DomainEvent(); // GH-90000
             event.eventType = "entity.created";
@@ -92,18 +92,18 @@ class DataCloudEventEmissionContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("created event must include entity data in payload [GH-90000]")
+        @DisplayName("created event must include entity data in payload")
         void createdEventMustIncludeData() { // GH-90000
             DomainEvent event = new DomainEvent(); // GH-90000
             event.eventType = "entity.created";
             event.payload = Map.of("name", "Bob", "email", "bob@example.com"); // GH-90000
 
             assertThat(event.payload).containsKeys("name", "email"); // GH-90000
-            assertThat(event.payload.get("name [GH-90000]")).isEqualTo("Bob [GH-90000]");
+            assertThat(event.payload.get("name")).isEqualTo("Bob");
         }
 
         @Test
-        @DisplayName("created event must include audit information (userId, timestamp) [GH-90000]")
+        @DisplayName("created event must include audit information (userId, timestamp)")
         void createdEventMustIncludeAudit() { // GH-90000
             DomainEvent event = new DomainEvent(); // GH-90000
             event.eventType = "entity.created";
@@ -115,13 +115,13 @@ class DataCloudEventEmissionContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("failed create must NOT emit event [GH-90000]")
+        @DisplayName("failed create must NOT emit event")
         void failedCreateMustNotEmit() { // GH-90000
             // If create fails validation, event is never emitted
             DomainEvent event = new DomainEvent(); // GH-90000
             event.eventType = "entity.created";
             lenient().when(eventService.emitEvent(event)) // GH-90000
-                    .thenReturn(Promise.ofException(new Exception("Create failed [GH-90000]")));
+                    .thenReturn(Promise.ofException(new Exception("Create failed")));
 
             // Event emission would never happen if creation failed
             // Contract: only emit on successful operations
@@ -137,11 +137,11 @@ class DataCloudEventEmissionContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Event Emission on Entity Update [GH-90000]")
+    @DisplayName("Event Emission on Entity Update")
     class EntityUpdateEventContract {
 
         @Test
-        @DisplayName("entity.updated event must be emitted on successful update [GH-90000]")
+        @DisplayName("entity.updated event must be emitted on successful update")
         void updateMustEmitEvent() { // GH-90000
             DomainEvent event = new DomainEvent(); // GH-90000
             event.eventType = "entity.updated";
@@ -156,19 +156,19 @@ class DataCloudEventEmissionContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("updated event must include both new and previous values [GH-90000]")
+        @DisplayName("updated event must include both new and previous values")
         void updatedEventMustIncludeDelta() { // GH-90000
             DomainEvent event = new DomainEvent(); // GH-90000
             event.eventType = "entity.updated";
             event.payload = Map.of("age", 29);  // New value // GH-90000
             event.previous = Map.of("age", 28);  // Previous value // GH-90000
 
-            assertThat(event.payload.get("age [GH-90000]")).isEqualTo(29);
-            assertThat(event.previous.get("age [GH-90000]")).isEqualTo(28);
+            assertThat(event.payload.get("age")).isEqualTo(29);
+            assertThat(event.previous.get("age")).isEqualTo(28);
         }
 
         @Test
-        @DisplayName("updated event must identify which fields changed [GH-90000]")
+        @DisplayName("updated event must identify which fields changed")
         void updatedEventMustIdentifyChanges() { // GH-90000
             // Only changed fields should be in payload
             DomainEvent event = new DomainEvent(); // GH-90000
@@ -181,7 +181,7 @@ class DataCloudEventEmissionContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("no-op update must still be recorded [GH-90000]")
+        @DisplayName("no-op update must still be recorded")
         void noOpUpdateMustEmitEvent() { // GH-90000
             // Even if same values as before, event should emit
             // Contract: allow tracking of all update attempts
@@ -203,11 +203,11 @@ class DataCloudEventEmissionContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Event Emission on Entity Deletion [GH-90000]")
+    @DisplayName("Event Emission on Entity Deletion")
     class EntityDeleteionEventContract {
 
         @Test
-        @DisplayName("entity.deleted event must be emitted on successful delete [GH-90000]")
+        @DisplayName("entity.deleted event must be emitted on successful delete")
         void deleteMustEmitEvent() { // GH-90000
             DomainEvent event = new DomainEvent(); // GH-90000
             event.eventType = "entity.deleted";
@@ -221,7 +221,7 @@ class DataCloudEventEmissionContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("deleted event must include entity ID and deletion timestamp [GH-90000]")
+        @DisplayName("deleted event must include entity ID and deletion timestamp")
         void deletedEventMustHaveIdentifiers() { // GH-90000
             DomainEvent event = new DomainEvent(); // GH-90000
             event.eventType = "entity.deleted";
@@ -233,14 +233,14 @@ class DataCloudEventEmissionContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("deleted event should include soft-delete flag if applicable [GH-90000]")
+        @DisplayName("deleted event should include soft-delete flag if applicable")
         void deletedEventMayIncludeSoftDeleteFlag() { // GH-90000
             DomainEvent event = new DomainEvent(); // GH-90000
             event.eventType = "entity.deleted";
             event.payload = Map.of("hard_delete", false);  // Soft delete (archived) // GH-90000
 
             // Contract: deleted events should clarify soft vs hard delete
-            boolean isSoftDelete = event.payload.containsKey("hard_delete [GH-90000]");
+            boolean isSoftDelete = event.payload.containsKey("hard_delete");
             assertThat(isSoftDelete).isTrue(); // GH-90000
         }
     }
@@ -250,11 +250,11 @@ class DataCloudEventEmissionContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Event Ordering and Idempotence [GH-90000]")
+    @DisplayName("Event Ordering and Idempotence")
     class EventOrderingContract {
 
         @Test
-        @DisplayName("events for same entity must be ordered by timestamp [GH-90000]")
+        @DisplayName("events for same entity must be ordered by timestamp")
         void eventsMustBeOrdered() { // GH-90000
             DomainEvent create = new DomainEvent(); // GH-90000
             create.eventType = "entity.created";
@@ -276,7 +276,7 @@ class DataCloudEventEmissionContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("same event emitted twice must be deduplicated by ID [GH-90000]")
+        @DisplayName("same event emitted twice must be deduplicated by ID")
         void eventsMustBeIdempotent() { // GH-90000
             DomainEvent event1 = new DomainEvent(); // GH-90000
             event1.id = "evt-123";
@@ -293,7 +293,7 @@ class DataCloudEventEmissionContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("event ID must be unique per operation [GH-90000]")
+        @DisplayName("event ID must be unique per operation")
         void eventIdMustBeUnique() { // GH-90000
             DomainEvent event1 = new DomainEvent(); // GH-90000
             event1.id = "evt-created-001";
@@ -305,7 +305,7 @@ class DataCloudEventEmissionContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("events must maintain causal ordering within collection [GH-90000]")
+        @DisplayName("events must maintain causal ordering within collection")
         void eventsMustMaintainCausality() { // GH-90000
             // Entity state transitions must be ordered:
             // create → update → update → delete
@@ -319,9 +319,9 @@ class DataCloudEventEmissionContractTest extends EventloopTestBase {
             );
 
             // First event must be create
-            assertThat(validSequence.get(0)).isEqualTo("entity.created [GH-90000]");
+            assertThat(validSequence.get(0)).isEqualTo("entity.created");
             // Last event can be deleted
-            assertThat(validSequence.get(validSequence.size() - 1)).isEqualTo("entity.deleted [GH-90000]");
+            assertThat(validSequence.get(validSequence.size() - 1)).isEqualTo("entity.deleted");
         }
     }
 
@@ -330,11 +330,11 @@ class DataCloudEventEmissionContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Event Payload Validation [GH-90000]")
+    @DisplayName("Event Payload Validation")
     class EventPayloadContract {
 
         @Test
-        @DisplayName("event must include required metadata fields [GH-90000]")
+        @DisplayName("event must include required metadata fields")
         void eventMustHaveMetadata() { // GH-90000
             DomainEvent event = new DomainEvent(); // GH-90000
             event.id = "evt-123";
@@ -354,7 +354,7 @@ class DataCloudEventEmissionContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("event payload must contain only schema-defined fields [GH-90000]")
+        @DisplayName("event payload must contain only schema-defined fields")
         void payloadMustRespectSchema() { // GH-90000
             // Collection schema: name (string), age (int) // GH-90000
             DomainEvent event = new DomainEvent(); // GH-90000
@@ -368,7 +368,7 @@ class DataCloudEventEmissionContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("event must include correlation ID for tracing [GH-90000]")
+        @DisplayName("event must include correlation ID for tracing")
         void eventMustIncludeTracing() { // GH-90000
             DomainEvent event = new DomainEvent(); // GH-90000
             event.correlationId = "trace-abc-123";
@@ -383,11 +383,11 @@ class DataCloudEventEmissionContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Event Publishing Guarantees [GH-90000]")
+    @DisplayName("Event Publishing Guarantees")
     class EventPublishingGuaranteeContract {
 
         @Test
-        @DisplayName("at-least-once delivery guarantee for events [GH-90000]")
+        @DisplayName("at-least-once delivery guarantee for events")
         void eventsMustBeDelivered() { // GH-90000
             // Contract: if operation succeeds, event must be published
             // Event may be published multiple times (exactly-once is hard) // GH-90000
@@ -403,17 +403,17 @@ class DataCloudEventEmissionContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("failed operation must not publish event [GH-90000]")
+        @DisplayName("failed operation must not publish event")
         void failedOperationMustNotPublish() { // GH-90000
             // If entity creation fails (validation error, etc) // GH-90000
             // entity.created event must NOT be published
 
             // Contract: events only for successful operations
-            assertThat("validation error [GH-90000]").isNotBlank();
+            assertThat("validation error").isNotBlank();
         }
 
         @Test
-        @DisplayName("event publishing must be atomic with operation [GH-90000]")
+        @DisplayName("event publishing must be atomic with operation")
         void publishingMustBeAtomic() { // GH-90000
             // Either:
             // 1. Operation succeeds AND event is published, OR
@@ -436,11 +436,11 @@ class DataCloudEventEmissionContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Event Retention and History [GH-90000]")
+    @DisplayName("Event Retention and History")
     class EventRetentionContract {
 
         @Test
-        @DisplayName("entity events must be retrievable for audit trail [GH-90000]")
+        @DisplayName("entity events must be retrievable for audit trail")
         void eventsMustBeAudit() { // GH-90000
             String tenantId = "tenant-1";
             String collectionId = "coll-users";
@@ -457,11 +457,11 @@ class DataCloudEventEmissionContractTest extends EventloopTestBase {
                     eventService.getEventsByEntity(tenantId, collectionId, entityId)); // GH-90000
 
             assertThat(events).hasSize(3); // GH-90000
-            assertThat(events.get(0).eventType).isEqualTo("entity.created [GH-90000]");
+            assertThat(events.get(0).eventType).isEqualTo("entity.created");
         }
 
         @Test
-        @DisplayName("events must be retained per tenant's data retention policy [GH-90000]")
+        @DisplayName("events must be retained per tenant's data retention policy")
         void eventRetentionMustRespectPolicy() { // GH-90000
             // Contract: events deleted after configured retention period
             // (e.g., 90 days, 1 year, or indefinite per tenant policy) // GH-90000
@@ -474,7 +474,7 @@ class DataCloudEventEmissionContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("events must not be deleted while litigation hold is active [GH-90000]")
+        @DisplayName("events must not be deleted while litigation hold is active")
         void eventsMustRespectLitigationHold() { // GH-90000
             // Contract: if tenant is under litigation hold, events cannot be deleted
             // Must be retained until hold is released

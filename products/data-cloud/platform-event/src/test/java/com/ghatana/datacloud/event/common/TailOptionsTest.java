@@ -17,11 +17,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * Tests for {@link TailOptions} and its builder.
  */
-@DisplayName("TailOptions [GH-90000]")
+@DisplayName("TailOptions")
 class TailOptionsTest {
 
     @Nested
-    @DisplayName("StartMode enum [GH-90000]")
+    @DisplayName("StartMode enum")
     class StartModeEnum {
 
         @Test
@@ -38,13 +38,13 @@ class TailOptionsTest {
 
         @Test
         void valueOfByName() { // GH-90000
-            assertThat(TailOptions.StartMode.valueOf("FROM_OFFSET [GH-90000]"))
+            assertThat(TailOptions.StartMode.valueOf("FROM_OFFSET"))
                     .isSameAs(TailOptions.StartMode.FROM_OFFSET); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("factory methods [GH-90000]")
+    @DisplayName("factory methods")
     class FactoryMethods {
 
         @Test
@@ -71,7 +71,7 @@ class TailOptionsTest {
     }
 
     @Nested
-    @DisplayName("builder [GH-90000]")
+    @DisplayName("builder")
     class BuilderTest {
 
         @Test
@@ -129,17 +129,17 @@ class TailOptionsTest {
         void fromCommittedWithGroup() { // GH-90000
             TailOptions opts = TailOptions.builder() // GH-90000
                     .fromCommitted() // GH-90000
-                    .consumerGroup("my-group [GH-90000]")
+                    .consumerGroup("my-group")
                     .build(); // GH-90000
             assertThat(opts.startMode()).isEqualTo(TailOptions.StartMode.FROM_COMMITTED); // GH-90000
-            assertThat(opts.consumerGroup()).contains("my-group [GH-90000]");
+            assertThat(opts.consumerGroup()).contains("my-group");
         }
 
         @Test
         void fromCommittedWithoutGroupThrows() { // GH-90000
             assertThatThrownBy(() -> TailOptions.builder().fromCommitted().build()) // GH-90000
                     .isInstanceOf(IllegalStateException.class) // GH-90000
-                    .hasMessageContaining("consumerGroup [GH-90000]");
+                    .hasMessageContaining("consumerGroup");
         }
 
         @Test
@@ -147,7 +147,7 @@ class TailOptionsTest {
             // Setting consumerGroup when in FROM_LATEST switches mode to FROM_COMMITTED
             TailOptions opts = TailOptions.builder() // GH-90000
                     .fromLatest() // GH-90000
-                    .consumerGroup("grp [GH-90000]")
+                    .consumerGroup("grp")
                     .build(); // GH-90000
             assertThat(opts.startMode()).isEqualTo(TailOptions.StartMode.FROM_COMMITTED); // GH-90000
         }
@@ -204,10 +204,10 @@ class TailOptionsTest {
     }
 
     @Test
-    @DisplayName("toString() includes key fields [GH-90000]")
+    @DisplayName("toString() includes key fields")
     void toStringContainsFields() { // GH-90000
         TailOptions opts = TailOptions.builder().batchSize(50).build(); // GH-90000
         String s = opts.toString(); // GH-90000
-        assertThat(s).contains("FROM_LATEST [GH-90000]").contains("50 [GH-90000]");
+        assertThat(s).contains("FROM_LATEST").contains("50");
     }
 }

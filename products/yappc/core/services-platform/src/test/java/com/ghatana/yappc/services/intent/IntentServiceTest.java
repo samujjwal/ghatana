@@ -24,20 +24,20 @@ class IntentServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should capture intent from user input [GH-90000]")
+    @DisplayName("Should capture intent from user input")
     void testCaptureIntent() throws Exception { // GH-90000
-        IntentInput input = new IntentInput("Create a REST API for user management [GH-90000]");
+        IntentInput input = new IntentInput("Create a REST API for user management");
 
         Promise<IntentSpec> promise = intentService.capture(input); // GH-90000
         IntentSpec spec = runPromise(() -> promise); // GH-90000
 
         assertThat(spec).isNotNull(); // GH-90000
-        assertThat(spec.description()).isEqualTo("Create a REST API for user management [GH-90000]");
-        assertThat(spec.intentType()).isEqualTo("API_CREATION [GH-90000]");
+        assertThat(spec.description()).isEqualTo("Create a REST API for user management");
+        assertThat(spec.intentType()).isEqualTo("API_CREATION");
     }
 
     @Test
-    @DisplayName("Should analyze captured intent [GH-90000]")
+    @DisplayName("Should analyze captured intent")
     void testAnalyzeIntent() throws Exception { // GH-90000
         IntentSpec spec = new IntentSpec( // GH-90000
             "Create a REST API for user management",
@@ -50,11 +50,11 @@ class IntentServiceTest extends EventloopTestBase {
 
         assertThat(analysis).isNotNull(); // GH-90000
         assertThat(analysis.feasible()).isTrue(); // GH-90000
-        assertThat(analysis.estimatedComplexity()).isEqualTo("MEDIUM [GH-90000]");
+        assertThat(analysis.estimatedComplexity()).isEqualTo("MEDIUM");
     }
 
     @Test
-    @DisplayName("Should count intents [GH-90000]")
+    @DisplayName("Should count intents")
     void testCountIntents() throws Exception { // GH-90000
         Promise<Long> promise = intentService.count(); // GH-90000
         Long count = runPromise(() -> promise); // GH-90000
@@ -63,7 +63,7 @@ class IntentServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle complex intent with multiple requirements [GH-90000]")
+    @DisplayName("Should handle complex intent with multiple requirements")
     void testComplexIntent() throws Exception { // GH-90000
         IntentInput input = new IntentInput( // GH-90000
             "Build a microservices architecture with authentication, database, and API gateway"
@@ -72,21 +72,21 @@ class IntentServiceTest extends EventloopTestBase {
         IntentSpec spec = runPromise(() -> intentService.capture(input)); // GH-90000
         IntentAnalysis analysis = runPromise(() -> intentService.analyze(spec)); // GH-90000
 
-        assertThat(spec.intentType()).isEqualTo("ARCHITECTURE_DESIGN [GH-90000]");
-        assertThat(analysis.estimatedComplexity()).isEqualTo("HIGH [GH-90000]");
+        assertThat(spec.intentType()).isEqualTo("ARCHITECTURE_DESIGN");
+        assertThat(analysis.estimatedComplexity()).isEqualTo("HIGH");
         assertThat(analysis.requiredPhases()).contains("PLANNING", "DESIGN", "IMPLEMENTATION"); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle simple intent [GH-90000]")
+    @DisplayName("Should handle simple intent")
     void testSimpleIntent() throws Exception { // GH-90000
-        IntentInput input = new IntentInput("Add a new field to User model [GH-90000]");
+        IntentInput input = new IntentInput("Add a new field to User model");
 
         IntentSpec spec = runPromise(() -> intentService.capture(input)); // GH-90000
         IntentAnalysis analysis = runPromise(() -> intentService.analyze(spec)); // GH-90000
 
-        assertThat(spec.intentType()).isEqualTo("MODEL_MODIFICATION [GH-90000]");
-        assertThat(analysis.estimatedComplexity()).isEqualTo("LOW [GH-90000]");
+        assertThat(spec.intentType()).isEqualTo("MODEL_MODIFICATION");
+        assertThat(analysis.estimatedComplexity()).isEqualTo("LOW");
     }
 
     // Mock implementations for testing
@@ -123,11 +123,11 @@ class IntentServiceTest extends EventloopTestBase {
 
         private String determineIntentType(String description) { // GH-90000
             String lower = description.toLowerCase(); // GH-90000
-            if (lower.contains("microservices [GH-90000]") || lower.contains("architecture [GH-90000]")) {
+            if (lower.contains("microservices") || lower.contains("architecture")) {
                 return "ARCHITECTURE_DESIGN";
-            } else if (lower.contains("rest api [GH-90000]") || lower.contains("api [GH-90000]")) {
+            } else if (lower.contains("rest api") || lower.contains("api")) {
                 return "API_CREATION";
-            } else if (lower.contains("field [GH-90000]") || lower.contains("model [GH-90000]")) {
+            } else if (lower.contains("field") || lower.contains("model")) {
                 return "MODEL_MODIFICATION";
             }
             return "GENERAL";
@@ -135,9 +135,9 @@ class IntentServiceTest extends EventloopTestBase {
 
         private String estimateComplexity(String description) { // GH-90000
             String lower = description.toLowerCase(); // GH-90000
-            if (lower.contains("microservices [GH-90000]") || lower.contains("architecture [GH-90000]")) {
+            if (lower.contains("microservices") || lower.contains("architecture")) {
                 return "HIGH";
-            } else if (lower.contains("rest api [GH-90000]") || lower.contains("service [GH-90000]")) {
+            } else if (lower.contains("rest api") || lower.contains("service")) {
                 return "MEDIUM";
             }
             return "LOW";
@@ -148,7 +148,7 @@ class IntentServiceTest extends EventloopTestBase {
                 case "ARCHITECTURE_DESIGN" -> java.util.List.of("PLANNING", "DESIGN", "IMPLEMENTATION", "TESTING"); // GH-90000
                 case "API_CREATION" -> java.util.List.of("DESIGN", "IMPLEMENTATION", "TESTING"); // GH-90000
                 case "MODEL_MODIFICATION" -> java.util.List.of("IMPLEMENTATION", "TESTING"); // GH-90000
-                default -> java.util.List.of("IMPLEMENTATION [GH-90000]");
+                default -> java.util.List.of("IMPLEMENTATION");
             };
         }
     }

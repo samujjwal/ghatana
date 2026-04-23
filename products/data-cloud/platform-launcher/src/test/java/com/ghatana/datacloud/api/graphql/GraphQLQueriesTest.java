@@ -39,7 +39,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("GraphQL Queries – Service Delegation Tests [GH-90000]")
+@DisplayName("GraphQL Queries – Service Delegation Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class GraphQLQueriesTest extends EventloopTestBase {
 
@@ -57,8 +57,8 @@ class GraphQLQueriesTest extends EventloopTestBase {
     private static final String TENANT_ID      = "tenant-123";
     private static final String USER_ID        = "user-456";
     private static final String COLLECTION_NAME = "orders";
-    private static final UUID   ENTITY_ID      = UUID.fromString("550e8400-e29b-41d4-a716-446655440000 [GH-90000]");
-    private static final UUID   COLLECTION_ID  = UUID.fromString("661f9511-f40c-52e5-b827-557766551111 [GH-90000]");
+    private static final UUID   ENTITY_ID      = UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
+    private static final UUID   COLLECTION_ID  = UUID.fromString("661f9511-f40c-52e5-b827-557766551111");
 
     @BeforeEach
     void setUp() { // GH-90000
@@ -70,14 +70,14 @@ class GraphQLQueriesTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("CollectionService – query delegation [GH-90000]")
+    @DisplayName("CollectionService – query delegation")
     class CollectionQueryTests {
 
         @Test
-        @DisplayName("listCollections delegates to collectionRepository.findAll [GH-90000]")
+        @DisplayName("listCollections delegates to collectionRepository.findAll")
         void listCollections_delegatesToRepository() throws Exception { // GH-90000
-            MetaCollection c1 = buildCollection("products [GH-90000]");
-            MetaCollection c2 = buildCollection("orders [GH-90000]");
+            MetaCollection c1 = buildCollection("products");
+            MetaCollection c2 = buildCollection("orders");
             when(collectionRepository.findAll(TENANT_ID)) // GH-90000
                 .thenReturn(Promise.of(List.of(c1, c2))); // GH-90000
 
@@ -90,7 +90,7 @@ class GraphQLQueriesTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("getCollection by name returns present optional when collection exists [GH-90000]")
+        @DisplayName("getCollection by name returns present optional when collection exists")
         void getCollectionByName_returnsPresent() throws Exception { // GH-90000
             MetaCollection collection = buildCollection(COLLECTION_NAME); // GH-90000
             when(collectionRepository.findByName(TENANT_ID, COLLECTION_NAME)) // GH-90000
@@ -104,7 +104,7 @@ class GraphQLQueriesTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("getCollection by name returns empty optional when not found [GH-90000]")
+        @DisplayName("getCollection by name returns empty optional when not found")
         void getCollectionByName_returnsEmpty() throws Exception { // GH-90000
             when(collectionRepository.findByName(TENANT_ID, "nonexistent")) // GH-90000
                 .thenReturn(Promise.of(Optional.empty())); // GH-90000
@@ -116,7 +116,7 @@ class GraphQLQueriesTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("getCollection by ID returns present optional when collection exists [GH-90000]")
+        @DisplayName("getCollection by ID returns present optional when collection exists")
         void getCollectionById_returnsPresent() throws Exception { // GH-90000
             MetaCollection collection = buildCollection(COLLECTION_NAME); // GH-90000
             collection.setId(COLLECTION_ID); // GH-90000
@@ -131,7 +131,7 @@ class GraphQLQueriesTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("countCollections returns correct count from repository [GH-90000]")
+        @DisplayName("countCollections returns correct count from repository")
         void countCollections_returnsCount() throws Exception { // GH-90000
             when(collectionRepository.count(TENANT_ID)).thenReturn(Promise.of(7L)); // GH-90000
 
@@ -141,7 +141,7 @@ class GraphQLQueriesTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("listCollections returns empty list when no collections exist [GH-90000]")
+        @DisplayName("listCollections returns empty list when no collections exist")
         void listCollections_emptyTenant_returnsEmptyList() throws Exception { // GH-90000
             when(collectionRepository.findAll(TENANT_ID)) // GH-90000
                 .thenReturn(Promise.of(List.of())); // GH-90000
@@ -153,20 +153,20 @@ class GraphQLQueriesTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("listCollections propagates exception when repository fails [GH-90000]")
+        @DisplayName("listCollections propagates exception when repository fails")
         void listCollections_repositoryFailure_propagatesException() { // GH-90000
             when(collectionRepository.findAll(TENANT_ID)) // GH-90000
-                .thenReturn(Promise.ofException(new RuntimeException("DB unavailable [GH-90000]")));
+                .thenReturn(Promise.ofException(new RuntimeException("DB unavailable")));
 
             assertThatThrownBy(() -> runPromise(() -> // GH-90000
                 collectionRepository.findAll(TENANT_ID))) // GH-90000
-                .hasMessageContaining("DB unavailable [GH-90000]");
+                .hasMessageContaining("DB unavailable");
         }
 
         @Test
-        @DisplayName("findAllByTenant alias returns same result as findAll [GH-90000]")
+        @DisplayName("findAllByTenant alias returns same result as findAll")
         void findAllByTenant_aliasMatchesFindAll() throws Exception { // GH-90000
-            MetaCollection collection = buildCollection("events [GH-90000]");
+            MetaCollection collection = buildCollection("events");
             // Stub findAllByTenant directly: Mockito mock does not auto-delegate default methods
             when(collectionRepository.findAllByTenant(TENANT_ID)) // GH-90000
                 .thenReturn(Promise.of(List.of(collection))); // GH-90000
@@ -175,7 +175,7 @@ class GraphQLQueriesTest extends EventloopTestBase {
                 collectionRepository.findAllByTenant(TENANT_ID)); // GH-90000
 
             assertThat(result).hasSize(1); // GH-90000
-            assertThat(result.get(0).getName()).isEqualTo("events [GH-90000]");
+            assertThat(result.get(0).getName()).isEqualTo("events");
         }
     }
 
@@ -184,11 +184,11 @@ class GraphQLQueriesTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("EntityService – query delegation [GH-90000]")
+    @DisplayName("EntityService – query delegation")
     class EntityQueryTests {
 
         @Test
-        @DisplayName("getEntity with valid ID delegates to entityService and returns entity [GH-90000]")
+        @DisplayName("getEntity with valid ID delegates to entityService and returns entity")
         void getEntity_validId_returnsEntity() throws Exception { // GH-90000
             Entity entity = buildEntity(ENTITY_ID, Map.of("orderId", "ORD-100", "status", "PENDING")); // GH-90000
             when(entityService.getEntity(TENANT_ID, COLLECTION_NAME, ENTITY_ID)) // GH-90000
@@ -202,7 +202,7 @@ class GraphQLQueriesTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("getEntity with wrong UUID propagates exception [GH-90000]")
+        @DisplayName("getEntity with wrong UUID propagates exception")
         void getEntity_notFound_propagatesException() { // GH-90000
             UUID nonExistent = UUID.randomUUID(); // GH-90000
             when(entityService.getEntity(TENANT_ID, COLLECTION_NAME, nonExistent)) // GH-90000
@@ -211,11 +211,11 @@ class GraphQLQueriesTest extends EventloopTestBase {
             assertThatThrownBy(() -> runPromise(() -> // GH-90000
                 entityService.getEntity(TENANT_ID, COLLECTION_NAME, nonExistent))) // GH-90000
                 .isInstanceOf(NoSuchElementException.class) // GH-90000
-                .hasMessageContaining("Entity not found [GH-90000]");
+                .hasMessageContaining("Entity not found");
         }
 
         @Test
-        @DisplayName("getEntity returned map contains id, tenantId, collectionName, and data fields [GH-90000]")
+        @DisplayName("getEntity returned map contains id, tenantId, collectionName, and data fields")
         void getEntity_resultContainsAllRequiredFields() throws Exception { // GH-90000
             Map<String, Object> data = Map.of("name", "Product A", "price", 29.99); // GH-90000
             Entity entity = buildEntity(ENTITY_ID, data); // GH-90000
@@ -232,7 +232,7 @@ class GraphQLQueriesTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("getEntity does not call mutation services [GH-90000]")
+        @DisplayName("getEntity does not call mutation services")
         void getEntity_doesNotTouchMutationServices() throws Exception { // GH-90000
             Entity entity = buildEntity(ENTITY_ID, Map.of("k", "v")); // GH-90000
             when(entityService.getEntity(TENANT_ID, COLLECTION_NAME, ENTITY_ID)) // GH-90000
@@ -249,11 +249,11 @@ class GraphQLQueriesTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Mutation then Query – write-read consistency [GH-90000]")
+    @DisplayName("Mutation then Query – write-read consistency")
     class MutationThenQueryTests {
 
         @Test
-        @DisplayName("createEntity result ID can be used to query entity immediately after [GH-90000]")
+        @DisplayName("createEntity result ID can be used to query entity immediately after")
         void createThenQuery_entityAvailableAfterCreate() throws Exception { // GH-90000
             Map<String, Object> data = Map.of("item", "Widget", "qty", 100); // GH-90000
             Entity created = buildEntity(ENTITY_ID, data); // GH-90000
@@ -267,7 +267,7 @@ class GraphQLQueriesTest extends EventloopTestBase {
             Map<String, Object> mutResult = runPromise(() -> // GH-90000
                 mutations.createEntity(TENANT_ID, COLLECTION_NAME, data, USER_ID)); // GH-90000
 
-            UUID returnedId = UUID.fromString((String) mutResult.get("id [GH-90000]"));
+            UUID returnedId = UUID.fromString((String) mutResult.get("id"));
 
             // Query by returned ID
             Entity queried = runPromise(() -> // GH-90000
@@ -277,7 +277,7 @@ class GraphQLQueriesTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("createCollection result can be queried by name [GH-90000]")
+        @DisplayName("createCollection result can be queried by name")
         void createThenListCollections_newCollectionAppears() throws Exception { // GH-90000
             String newName = "invoices";
             MetaCollection created = buildCollection(newName); // GH-90000
@@ -293,7 +293,7 @@ class GraphQLQueriesTest extends EventloopTestBase {
             Map<String, Object> createResult = runPromise(() -> // GH-90000
                 mutations.createCollection(TENANT_ID, newName, "Invoices Collection", USER_ID)); // GH-90000
 
-            assertThat(createResult).containsKey("id [GH-90000]");
+            assertThat(createResult).containsKey("id");
 
             // Query — new collection is findable
             Optional<MetaCollection> found = runPromise(() -> // GH-90000
@@ -303,13 +303,13 @@ class GraphQLQueriesTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("deleteEntity removes entity from further queries [GH-90000]")
+        @DisplayName("deleteEntity removes entity from further queries")
         void deleteThenQuery_entityNotFoundAfterDelete() throws Exception { // GH-90000
             // Stub the underlying service (mutations delegates to entityService) // GH-90000
             when(entityService.deleteEntity(TENANT_ID, COLLECTION_NAME, ENTITY_ID, USER_ID)) // GH-90000
                 .thenReturn(Promise.of((Void) null)); // GH-90000
             when(entityService.getEntity(TENANT_ID, COLLECTION_NAME, ENTITY_ID)) // GH-90000
-                .thenReturn(Promise.ofException(new NoSuchElementException("Entity deleted [GH-90000]")));
+                .thenReturn(Promise.ofException(new NoSuchElementException("Entity deleted")));
 
             // Execute delete
             runPromise(() -> entityService.deleteEntity(TENANT_ID, COLLECTION_NAME, ENTITY_ID, USER_ID)); // GH-90000
@@ -326,11 +326,11 @@ class GraphQLQueriesTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Input validation – query parameters [GH-90000]")
+    @DisplayName("Input validation – query parameters")
     class QueryInputValidationTests {
 
         @Test
-        @DisplayName("getEntity with null tenantId throws IllegalArgumentException [GH-90000]")
+        @DisplayName("getEntity with null tenantId throws IllegalArgumentException")
         void getEntity_nullTenantId_throwsException() { // GH-90000
             assertThatThrownBy(() -> // GH-90000
                 runPromise(() -> entityService.getEntity(null, COLLECTION_NAME, ENTITY_ID))) // GH-90000
@@ -339,24 +339,24 @@ class GraphQLQueriesTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("getEntity with blank collection name throws IllegalArgumentException [GH-90000]")
+        @DisplayName("getEntity with blank collection name throws IllegalArgumentException")
         void getEntity_blankCollectionName_throwsException() { // GH-90000
             when(entityService.getEntity(TENANT_ID, "", ENTITY_ID)) // GH-90000
                 .thenReturn(Promise.ofException( // GH-90000
-                    new IllegalArgumentException("collectionName must not be blank [GH-90000]")));
+                    new IllegalArgumentException("collectionName must not be blank")));
 
             assertThatThrownBy(() -> // GH-90000
                 runPromise(() -> entityService.getEntity(TENANT_ID, "", ENTITY_ID))) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("collectionName [GH-90000]");
+                .hasMessageContaining("collectionName");
         }
 
         @Test
-        @DisplayName("listCollections with null tenantId must not return cross-tenant data [GH-90000]")
+        @DisplayName("listCollections with null tenantId must not return cross-tenant data")
         void listCollections_nullTenantId_doesNotReturnCrossTenantData() { // GH-90000
             when(collectionRepository.findAll(null)) // GH-90000
                 .thenReturn(Promise.ofException( // GH-90000
-                    new IllegalArgumentException("tenantId must not be null [GH-90000]")));
+                    new IllegalArgumentException("tenantId must not be null")));
 
             assertThatThrownBy(() -> // GH-90000
                 runPromise(() -> collectionRepository.findAll(null))) // GH-90000
@@ -369,37 +369,37 @@ class GraphQLQueriesTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Multi-tenant query isolation [GH-90000]")
+    @DisplayName("Multi-tenant query isolation")
     class MultiTenantQueryTests {
 
         @Test
-        @DisplayName("listCollections for different tenants returns tenant-scoped results [GH-90000]")
+        @DisplayName("listCollections for different tenants returns tenant-scoped results")
         void listCollections_differentTenants_isolatedResults() throws Exception { // GH-90000
-            MetaCollection tenantACollection = buildCollection("tenant-a-data [GH-90000]");
-            MetaCollection tenantBCollection = buildCollection("tenant-b-data [GH-90000]");
+            MetaCollection tenantACollection = buildCollection("tenant-a-data");
+            MetaCollection tenantBCollection = buildCollection("tenant-b-data");
 
-            when(collectionRepository.findAll("tenant-a [GH-90000]")).thenReturn(Promise.of(List.of(tenantACollection)));
-            when(collectionRepository.findAll("tenant-b [GH-90000]")).thenReturn(Promise.of(List.of(tenantBCollection)));
+            when(collectionRepository.findAll("tenant-a")).thenReturn(Promise.of(List.of(tenantACollection)));
+            when(collectionRepository.findAll("tenant-b")).thenReturn(Promise.of(List.of(tenantBCollection)));
 
-            List<MetaCollection> resultA = runPromise(() -> collectionRepository.findAll("tenant-a [GH-90000]"));
-            List<MetaCollection> resultB = runPromise(() -> collectionRepository.findAll("tenant-b [GH-90000]"));
+            List<MetaCollection> resultA = runPromise(() -> collectionRepository.findAll("tenant-a"));
+            List<MetaCollection> resultB = runPromise(() -> collectionRepository.findAll("tenant-b"));
 
             assertThat(resultA).hasSize(1); // GH-90000
-            assertThat(resultA.get(0).getName()).isEqualTo("tenant-a-data [GH-90000]");
+            assertThat(resultA.get(0).getName()).isEqualTo("tenant-a-data");
 
             assertThat(resultB).hasSize(1); // GH-90000
-            assertThat(resultB.get(0).getName()).isEqualTo("tenant-b-data [GH-90000]");
+            assertThat(resultB.get(0).getName()).isEqualTo("tenant-b-data");
 
             // Cross-tenant isolation: tenant-a cannot see tenant-b data
             assertThat(resultA.stream().map(MetaCollection::getName).toList()) // GH-90000
-                .doesNotContain("tenant-b-data [GH-90000]");
+                .doesNotContain("tenant-b-data");
         }
 
         @Test
-        @DisplayName("getEntity for wrong tenant does not expose entity [GH-90000]")
+        @DisplayName("getEntity for wrong tenant does not expose entity")
         void getEntity_wrongTenant_doesNotExposeEntity() { // GH-90000
             when(entityService.getEntity("wrong-tenant", COLLECTION_NAME, ENTITY_ID)) // GH-90000
-                .thenReturn(Promise.ofException(new NoSuchElementException("Access denied or not found [GH-90000]")));
+                .thenReturn(Promise.ofException(new NoSuchElementException("Access denied or not found")));
 
             assertThatThrownBy(() -> // GH-90000
                 runPromise(() -> entityService.getEntity("wrong-tenant", COLLECTION_NAME, ENTITY_ID))) // GH-90000

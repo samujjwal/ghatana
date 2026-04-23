@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>The auth-gateway module is validated here against its published contract instead of
  * relying on a Spring Boot test harness that is not wired into this ActiveJ-oriented module.</p>
  */
-@DisplayName("Auth Gateway Contract Tests [GH-90000]")
+@DisplayName("Auth Gateway Contract Tests")
 public class AuthGatewayContractTest {
 
     private static final Path SPEC_PATH = Path.of( // GH-90000
@@ -47,7 +47,7 @@ public class AuthGatewayContractTest {
     private static final String API_VERSION = "2.0.0";
 
     @Test
-    @DisplayName("OpenAPI contract file exists and is readable [GH-90000]")
+    @DisplayName("OpenAPI contract file exists and is readable")
     void openApiContractFileExists() { // GH-90000
         assertThat(SPEC_PATH) // GH-90000
                 .as("Auth Gateway OpenAPI contract should exist at %s", SPEC_PATH) // GH-90000
@@ -56,53 +56,53 @@ public class AuthGatewayContractTest {
     }
 
     @Test
-    @DisplayName("OpenAPI metadata matches expected auth gateway contract [GH-90000]")
+    @DisplayName("OpenAPI metadata matches expected auth gateway contract")
     void openApiMetadataIsConsistent() throws Exception { // GH-90000
         JsonNode root = readSpec(); // GH-90000
 
-        assertThat(root.path("openapi [GH-90000]").asText()).isEqualTo("3.1.0 [GH-90000]");
-        assertThat(root.path("info [GH-90000]").path("title [GH-90000]").asText()).isEqualTo("Ghatana Auth Gateway API [GH-90000]");
-        assertThat(root.path("info [GH-90000]").path("version [GH-90000]").asText()).isEqualTo(API_VERSION);
+        assertThat(root.path("openapi").asText()).isEqualTo("3.1.0");
+        assertThat(root.path("info").path("title").asText()).isEqualTo("Ghatana Auth Gateway API");
+        assertThat(root.path("info").path("version").asText()).isEqualTo(API_VERSION);
     }
 
     @Test
-    @DisplayName("OpenAPI exposes the expected auth flow endpoints [GH-90000]")
+    @DisplayName("OpenAPI exposes the expected auth flow endpoints")
     void openApiContainsExpectedPaths() throws Exception { // GH-90000
-        JsonNode paths = readSpec().path("paths [GH-90000]");
+        JsonNode paths = readSpec().path("paths");
 
-        assertThat(paths.has("/auth/login [GH-90000]")).isTrue();
-        assertThat(paths.has("/auth/validate [GH-90000]")).isTrue();
-        assertThat(paths.has("/auth/refresh [GH-90000]")).isTrue();
-        assertThat(paths.has("/auth/exchange [GH-90000]")).isTrue();
-        assertThat(paths.has("/auth/tenant [GH-90000]")).isTrue();
-        assertThat(paths.has("/health [GH-90000]")).isTrue();
+        assertThat(paths.has("/auth/login")).isTrue();
+        assertThat(paths.has("/auth/validate")).isTrue();
+        assertThat(paths.has("/auth/refresh")).isTrue();
+        assertThat(paths.has("/auth/exchange")).isTrue();
+        assertThat(paths.has("/auth/tenant")).isTrue();
+        assertThat(paths.has("/health")).isTrue();
     }
 
     @Test
-    @DisplayName("OpenAPI defines expected schemas for requests and responses [GH-90000]")
+    @DisplayName("OpenAPI defines expected schemas for requests and responses")
     void openApiContainsExpectedSchemas() throws Exception { // GH-90000
-        JsonNode schemas = readSpec().path("components [GH-90000]").path("schemas [GH-90000]");
+        JsonNode schemas = readSpec().path("components").path("schemas");
 
-        assertThat(schemas.has("LoginRequest [GH-90000]")).isTrue();
-        assertThat(schemas.has("LoginResponse [GH-90000]")).isTrue();
-        assertThat(schemas.has("ValidateResponse [GH-90000]")).isTrue();
-        assertThat(schemas.has("ValidateErrorResponse [GH-90000]")).isTrue();
-        assertThat(schemas.has("RefreshResponse [GH-90000]")).isTrue();
-        assertThat(schemas.has("ExchangeResponse [GH-90000]")).isTrue();
-        assertThat(schemas.has("TenantResponse [GH-90000]")).isTrue();
-        assertThat(schemas.has("ErrorResponse [GH-90000]")).isTrue();
-        assertThat(schemas.has("HealthResponse [GH-90000]")).isTrue();
+        assertThat(schemas.has("LoginRequest")).isTrue();
+        assertThat(schemas.has("LoginResponse")).isTrue();
+        assertThat(schemas.has("ValidateResponse")).isTrue();
+        assertThat(schemas.has("ValidateErrorResponse")).isTrue();
+        assertThat(schemas.has("RefreshResponse")).isTrue();
+        assertThat(schemas.has("ExchangeResponse")).isTrue();
+        assertThat(schemas.has("TenantResponse")).isTrue();
+        assertThat(schemas.has("ErrorResponse")).isTrue();
+        assertThat(schemas.has("HealthResponse")).isTrue();
     }
 
     @Test
-    @DisplayName("OpenAPI exposes bearer authentication and auth gateway health example [GH-90000]")
+    @DisplayName("OpenAPI exposes bearer authentication and auth gateway health example")
     void openApiDefinesSecurityAndHealthMetadata() throws Exception { // GH-90000
         JsonNode root = readSpec(); // GH-90000
-        JsonNode components = root.path("components [GH-90000]");
+        JsonNode components = root.path("components");
 
-        assertThat(components.path("securitySchemes [GH-90000]").has("bearerAuth [GH-90000]")).isTrue();
-        assertThat(components.path("schemas [GH-90000]").path("HealthResponse [GH-90000]").path("properties [GH-90000]")
-                .path("service [GH-90000]").path("example [GH-90000]").asText()).isEqualTo("auth-gateway [GH-90000]");
+        assertThat(components.path("securitySchemes").has("bearerAuth")).isTrue();
+        assertThat(components.path("schemas").path("HealthResponse").path("properties")
+                .path("service").path("example").asText()).isEqualTo("auth-gateway");
     }
 
     private JsonNode readSpec() throws IOException { // GH-90000

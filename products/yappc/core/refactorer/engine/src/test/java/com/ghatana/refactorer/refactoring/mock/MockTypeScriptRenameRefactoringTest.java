@@ -47,7 +47,7 @@ class MockTypeScriptRenameRefactoringTest {
     @BeforeEach
     void setUp() throws IOException { // GH-90000
         refactoring = new MockTypeScriptRenameRefactoring(); // GH-90000
-        testFile = tempDir.resolve("test_rename.ts [GH-90000]");
+        testFile = tempDir.resolve("test_rename.ts");
         executor = Executors.newSingleThreadExecutor(); // GH-90000
 
         // Create a minimal PolyfixConfig for testing
@@ -107,9 +107,9 @@ class MockTypeScriptRenameRefactoringTest {
     void shouldRenameMethod() { // GH-90000
         // Given
         String originalContent = readFileContent(testFile); // GH-90000
-        System.out.println("=== Original file content === [GH-90000]");
+        System.out.println("=== Original file content ===");
         System.out.println(originalContent); // GH-90000
-        System.out.println("=============================\n [GH-90000]");
+        System.out.println("=============================\n");
 
         var context = createContext(testFile, "METHOD", "oldMethod", "newMethod"); // GH-90000
 
@@ -117,51 +117,51 @@ class MockTypeScriptRenameRefactoringTest {
         var result = refactoring.apply(context); // GH-90000
 
         // Debug output
-        System.out.println("=== Refactoring result === [GH-90000]");
+        System.out.println("=== Refactoring result ===");
         System.out.println("Success: " + result.isSuccess()); // GH-90000
         System.out.println("Message: " + result.getErrorMessage()); // GH-90000
         System.out.println("Modified files: " + result.getModifiedFiles()); // GH-90000
-        System.out.println("==========================\n [GH-90000]");
+        System.out.println("==========================\n");
 
         // Then
-        assertThat(result.isSuccess()).as("Refactoring should be successful [GH-90000]").isTrue();
+        assertThat(result.isSuccess()).as("Refactoring should be successful").isTrue();
 
         assertThat(result.getModifiedFiles()) // GH-90000
-                .as("Test file should be in modified files [GH-90000]")
+                .as("Test file should be in modified files")
                 .contains(testFile); // GH-90000
 
         // Verify the content was actually changed
         String content = readFileContent(testFile); // GH-90000
-        System.out.println("=== File content after refactoring === [GH-90000]");
+        System.out.println("=== File content after refactoring ===");
         System.out.println(content); // GH-90000
-        System.out.println("=====================================\n [GH-90000]");
+        System.out.println("=====================================\n");
 
         // Check method definition
         assertThat(content) // GH-90000
-                .as("Method definition should be renamed [GH-90000]")
-                .contains("newMethod(): string [GH-90000]");
+                .as("Method definition should be renamed")
+                .contains("newMethod(): string");
 
         // Check method call in class
         assertThat(content) // GH-90000
-                .as("Method call in class should be renamed [GH-90000]")
-                .contains("return this.newMethod() [GH-90000]");
+                .as("Method call in class should be renamed")
+                .contains("return this.newMethod()");
 
         // Check method call on instance
         assertThat(content) // GH-90000
-                .as("Method call on instance should be renamed [GH-90000]")
-                .contains("console.log(instance.newMethod()) [GH-90000]");
+                .as("Method call on instance should be renamed")
+                .contains("console.log(instance.newMethod())");
 
         // Additional debug output
-        System.out.println("=== Debug Info === [GH-90000]");
+        System.out.println("=== Debug Info ===");
         System.out.println( // GH-90000
-                "Contains 'newMethod(): string': " + content.contains("newMethod(): string [GH-90000]"));
+                "Contains 'newMethod(): string': " + content.contains("newMethod(): string"));
         System.out.println( // GH-90000
                 "Contains 'return this.newMethod()': " // GH-90000
-                        + content.contains("return this.newMethod() [GH-90000]"));
+                        + content.contains("return this.newMethod()"));
         System.out.println( // GH-90000
                 "Contains 'console.log(instance.newMethod())': " // GH-90000
-                        + content.contains("console.log(instance.newMethod()) [GH-90000]"));
-        System.out.println("=================\n [GH-90000]");
+                        + content.contains("console.log(instance.newMethod())"));
+        System.out.println("=================\n");
     }
 
     @Test
@@ -178,8 +178,8 @@ class MockTypeScriptRenameRefactoringTest {
 
         // Verify the content was actually changed
         String content = readFileContent(testFile); // GH-90000
-        assertThat(content).contains("class NewClass [GH-90000]");
-        assertThat(content).contains("new NewClass() [GH-90000]");
+        assertThat(content).contains("class NewClass");
+        assertThat(content).contains("new NewClass()");
     }
 
     @Test
@@ -195,8 +195,8 @@ class MockTypeScriptRenameRefactoringTest {
 
         // Verify the content was actually changed
         String content = readFileContent(testFile); // GH-90000
-        assertThat(content).contains("function renamedFunction() [GH-90000]");
-        assertThat(content).contains("console.log(renamedFunction()) [GH-90000]");
+        assertThat(content).contains("function renamedFunction()");
+        assertThat(content).contains("console.log(renamedFunction())");
     }
 
     @Test
@@ -212,7 +212,7 @@ class MockTypeScriptRenameRefactoringTest {
 
         // Verify the content was actually changed
         String content = readFileContent(testFile); // GH-90000
-        assertThat(content).contains("interface NewInterface [GH-90000]");
+        assertThat(content).contains("interface NewInterface");
     }
 
     @Test
@@ -229,7 +229,7 @@ class MockTypeScriptRenameRefactoringTest {
         // Verify the content was actually changed
         String content = readFileContent(testFile); // GH-90000
         assertThat(content).contains("const newVariable = \"test\""); // GH-90000
-        assertThat(content).contains("console.log(newVariable) [GH-90000]");
+        assertThat(content).contains("console.log(newVariable)");
     }
 
     @Test
@@ -252,7 +252,7 @@ class MockTypeScriptRenameRefactoringTest {
         assertThat(refactoring.canApply(validContext)).isTrue(); // GH-90000
 
         // Valid TSX file
-        var tsxFile = tempDir.resolve("component.tsx [GH-90000]");
+        var tsxFile = tempDir.resolve("component.tsx");
         try {
             Files.writeString(tsxFile, "const Component = () => <div>Hello</div>;"); // GH-90000
             var tsxContext = createContext(tsxFile, FUNCTION, SOME_NAME, NEW_NAME); // GH-90000
@@ -263,11 +263,11 @@ class MockTypeScriptRenameRefactoringTest {
 
         // Non-existent file
         var invalidFileContext =
-                createContext(Path.of("non_existent.ts [GH-90000]"), FUNCTION, SOME_NAME, NEW_NAME);
+                createContext(Path.of("non_existent.ts"), FUNCTION, SOME_NAME, NEW_NAME);
         assertThat(refactoring.canApply(invalidFileContext)).isFalse(); // GH-90000
 
         // Non-TypeScript file
-        var nonTsFile = tempDir.resolve("not_typescript.txt [GH-90000]");
+        var nonTsFile = tempDir.resolve("not_typescript.txt");
         try {
             Files.writeString(nonTsFile, "Not a TypeScript file"); // GH-90000
             var nonTsContext = createContext(nonTsFile, FUNCTION, SOME_NAME, NEW_NAME); // GH-90000
@@ -281,13 +281,13 @@ class MockTypeScriptRenameRefactoringTest {
     void shouldHandleIOExceptionWhenReadingFile() throws IOException { // GH-90000
         // Create a mock file that will throw an IOException when read
         Path mockFile = mock(Path.class); // GH-90000
-        when(mockFile.toString()).thenReturn("/non/existent/file.ts [GH-90000]");
+        when(mockFile.toString()).thenReturn("/non/existent/file.ts");
 
         // Mock Files.readString to throw IOException
         try (var mockedFiles = mockStatic(Files.class)) { // GH-90000
             mockedFiles
                     .when(() -> Files.readString(mockFile)) // GH-90000
-                    .thenThrow(new IOException("Failed to read file [GH-90000]"));
+                    .thenThrow(new IOException("Failed to read file"));
 
             // Create a context with the mock file
             var context = createContext(mockFile, FUNCTION, "someFunction", "newFunction"); // GH-90000
@@ -298,8 +298,8 @@ class MockTypeScriptRenameRefactoringTest {
             // Then
             assertThat(result.isSuccess()).isFalse(); // GH-90000
             assertThat(result.getErrorMessage()) // GH-90000
-                    .as("Error message should indicate file read failure [GH-90000]")
-                    .contains("Source file does not exist [GH-90000]");
+                    .as("Error message should indicate file read failure")
+                    .contains("Source file does not exist");
         }
     }
 
@@ -320,7 +320,7 @@ class MockTypeScriptRenameRefactoringTest {
     @Test
     void shouldHandleEmptyFile() throws IOException { // GH-90000
         // Create an empty file
-        Path emptyFile = tempDir.resolve("empty.ts [GH-90000]");
+        Path emptyFile = tempDir.resolve("empty.ts");
         Files.writeString(emptyFile, ""); // GH-90000
 
         // Given
@@ -400,13 +400,13 @@ class MockTypeScriptRenameRefactoringTest {
 
         // Then
         assertThat(result.isSuccess()).isFalse(); // GH-90000
-        assertThat(result.getErrorMessage()).contains("New name cannot be null [GH-90000]");
+        assertThat(result.getErrorMessage()).contains("New name cannot be null");
     }
 
     @Test
     void shouldHandleSpecialCharactersInNames() throws IOException { // GH-90000
         // Create a file with special characters
-        Path specialFile = tempDir.resolve("special.ts [GH-90000]");
+        Path specialFile = tempDir.resolve("special.ts");
         String specialCode =
                 """
             function special$Function() { // GH-90000
@@ -435,10 +435,10 @@ class MockTypeScriptRenameRefactoringTest {
 
         // Verify the content was actually changed
         String content = readFileContent(specialFile); // GH-90000
-        assertThat(content).contains("function normalFunction() [GH-90000]");
-        assertThat(content).contains("normalFunction: function() [GH-90000]");
-        assertThat(content).contains("console.log(normalFunction()) [GH-90000]");
-        assertThat(content).contains("console.log(obj.normalFunction()) [GH-90000]");
+        assertThat(content).contains("function normalFunction()");
+        assertThat(content).contains("normalFunction: function()");
+        assertThat(content).contains("console.log(normalFunction())");
+        assertThat(content).contains("console.log(obj.normalFunction())");
     }
 
     private String readFileContent(Path file) { // GH-90000

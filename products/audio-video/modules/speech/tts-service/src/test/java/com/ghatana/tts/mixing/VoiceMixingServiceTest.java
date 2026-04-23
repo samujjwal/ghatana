@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatNullPointerException;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("VoiceMixingService [GH-90000]")
+@DisplayName("VoiceMixingService")
 class VoiceMixingServiceTest {
 
     /** Stub mixer: concatenates all track bytes. */
@@ -41,7 +41,7 @@ class VoiceMixingServiceTest {
     // ─── of() ───────────────────────────────────────────────────────────────── // GH-90000
 
     @Test
-    @DisplayName("of(null) throws NullPointerException [GH-90000]")
+    @DisplayName("of(null) throws NullPointerException")
     void of_null_throwsNPE() { // GH-90000
         assertThatNullPointerException() // GH-90000
                 .isThrownBy(() -> VoiceMixingService.of(null)); // GH-90000
@@ -50,11 +50,11 @@ class VoiceMixingServiceTest {
     // ─── mix() ──────────────────────────────────────────────────────────────── // GH-90000
 
     @Nested
-    @DisplayName("mix() [GH-90000]")
+    @DisplayName("mix()")
     class Mix {
 
         @Test
-        @DisplayName("single track produces output bytes matching track bytes [GH-90000]")
+        @DisplayName("single track produces output bytes matching track bytes")
         void mix_singleTrack_correctOutput() { // GH-90000
             VoiceMixingService service = buildService(); // GH-90000
             var track = VoiceMixingService.AudioTrack.of(new byte[]{1, 2, 3}, 500L, "alice"); // GH-90000
@@ -66,7 +66,7 @@ class VoiceMixingServiceTest {
         }
 
         @Test
-        @DisplayName("multiple tracks produce concatenated bytes (stub behaviour) [GH-90000]")
+        @DisplayName("multiple tracks produce concatenated bytes (stub behaviour)")
         void mix_multipleTracks_concatenated() { // GH-90000
             VoiceMixingService service = buildService(); // GH-90000
             var track1 = VoiceMixingService.AudioTrack.of(new byte[]{1, 2}, 300L, "alice"); // GH-90000
@@ -80,14 +80,14 @@ class VoiceMixingServiceTest {
         }
 
         @Test
-        @DisplayName("null tracks throws NullPointerException [GH-90000]")
+        @DisplayName("null tracks throws NullPointerException")
         void mix_null_throwsNPE() { // GH-90000
             VoiceMixingService service = buildService(); // GH-90000
             assertThatNullPointerException().isThrownBy(() -> service.mix(null)); // GH-90000
         }
 
         @Test
-        @DisplayName("empty tracks throws IllegalArgumentException [GH-90000]")
+        @DisplayName("empty tracks throws IllegalArgumentException")
         void mix_empty_throwsIAE() { // GH-90000
             VoiceMixingService service = buildService(); // GH-90000
             assertThatIllegalArgumentException() // GH-90000
@@ -95,7 +95,7 @@ class VoiceMixingServiceTest {
         }
 
         @Test
-        @DisplayName("hasAudio is true when output is non-empty [GH-90000]")
+        @DisplayName("hasAudio is true when output is non-empty")
         void mix_hasAudio_true() { // GH-90000
             VoiceMixingService service = buildService(); // GH-90000
             var track = VoiceMixingService.AudioTrack.of(new byte[]{1}, 100L, "v"); // GH-90000
@@ -106,11 +106,11 @@ class VoiceMixingServiceTest {
     // ─── session ──────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("session() [GH-90000]")
+    @DisplayName("session()")
     class Session {
 
         @Test
-        @DisplayName("session mixes all added tracks correctly [GH-90000]")
+        @DisplayName("session mixes all added tracks correctly")
         void session_mixesAllTracks() { // GH-90000
             VoiceMixingService service = buildService(); // GH-90000
             var track1 = VoiceMixingService.AudioTrack.of(new byte[]{10, 20}, 200L, "a"); // GH-90000
@@ -125,7 +125,7 @@ class VoiceMixingServiceTest {
         }
 
         @Test
-        @DisplayName("adding null track to session throws NullPointerException [GH-90000]")
+        @DisplayName("adding null track to session throws NullPointerException")
         void session_addNullTrack_throwsNPE() { // GH-90000
             VoiceMixingService service = buildService(); // GH-90000
             assertThatNullPointerException() // GH-90000
@@ -136,11 +136,11 @@ class VoiceMixingServiceTest {
     // ─── AudioTrack validation ────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("AudioTrack [GH-90000]")
+    @DisplayName("AudioTrack")
     class AudioTrackTests {
 
         @Test
-        @DisplayName("volume > 1.0 throws IllegalArgumentException [GH-90000]")
+        @DisplayName("volume > 1.0 throws IllegalArgumentException")
         void audioTrack_invalidVolume_throwsIAE() { // GH-90000
             assertThatIllegalArgumentException() // GH-90000
                     .isThrownBy(() -> new VoiceMixingService.AudioTrack( // GH-90000
@@ -148,7 +148,7 @@ class VoiceMixingServiceTest {
         }
 
         @Test
-        @DisplayName("pan < -1.0 throws IllegalArgumentException [GH-90000]")
+        @DisplayName("pan < -1.0 throws IllegalArgumentException")
         void audioTrack_invalidPan_throwsIAE() { // GH-90000
             assertThatIllegalArgumentException() // GH-90000
                     .isThrownBy(() -> new VoiceMixingService.AudioTrack( // GH-90000
@@ -156,7 +156,7 @@ class VoiceMixingServiceTest {
         }
 
         @Test
-        @DisplayName("negative offsetMs throws IllegalArgumentException [GH-90000]")
+        @DisplayName("negative offsetMs throws IllegalArgumentException")
         void audioTrack_negativeOffset_throwsIAE() { // GH-90000
             assertThatIllegalArgumentException() // GH-90000
                     .isThrownBy(() -> new VoiceMixingService.AudioTrack( // GH-90000
@@ -164,7 +164,7 @@ class VoiceMixingServiceTest {
         }
 
         @Test
-        @DisplayName("AudioTrack.of: creates track at full volume, centred, zero offset [GH-90000]")
+        @DisplayName("AudioTrack.of: creates track at full volume, centred, zero offset")
         void audioTrack_of_defaults() { // GH-90000
             var track = VoiceMixingService.AudioTrack.of(new byte[]{1}, 500L, "voice"); // GH-90000
             assertThat(track.volume()).isEqualTo(1.0); // GH-90000
@@ -173,7 +173,7 @@ class VoiceMixingServiceTest {
         }
 
         @Test
-        @DisplayName("null audioBytes throws NullPointerException [GH-90000]")
+        @DisplayName("null audioBytes throws NullPointerException")
         void audioTrack_nullBytes_throwsNPE() { // GH-90000
             assertThatNullPointerException() // GH-90000
                     .isThrownBy(() -> VoiceMixingService.AudioTrack.of(null, 100L, "x")); // GH-90000

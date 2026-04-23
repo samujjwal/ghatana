@@ -48,7 +48,8 @@ import java.util.concurrent.Executors;
  * @doc.type class
  * @doc.purpose Production PostgreSQL+pgvector memory plane
  * @doc.layer agent-memory
- */
+  * @doc.pattern Component
+*/
 public class PersistentMemoryPlane implements MemoryPlane {
 
     private static final Logger log = LoggerFactory.getLogger(PersistentMemoryPlane.class);

@@ -39,7 +39,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("GraphQLMutations Tests [GH-90000]")
+@DisplayName("GraphQLMutations Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class GraphQLMutationsTest extends EventloopTestBase {
 
@@ -57,8 +57,8 @@ class GraphQLMutationsTest extends EventloopTestBase {
     private static final String TENANT_ID = "tenant-123";
     private static final String USER_ID = "user-456";
     private static final String COLLECTION_NAME = "orders";
-    private static final UUID ENTITY_ID = UUID.fromString("550e8400-e29b-41d4-a716-446655440000 [GH-90000]");
-    private static final UUID COLLECTION_ID = UUID.fromString("661f9511-f40c-52e5-b827-557766551111 [GH-90000]");
+    private static final UUID ENTITY_ID = UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
+    private static final UUID COLLECTION_ID = UUID.fromString("661f9511-f40c-52e5-b827-557766551111");
 
     @BeforeEach
     void setup() { // GH-90000
@@ -68,11 +68,11 @@ class GraphQLMutationsTest extends EventloopTestBase {
     // ==================== Entity CRUD Tests ====================
 
     @Nested
-    @DisplayName("createEntity Tests [GH-90000]")
+    @DisplayName("createEntity Tests")
     class CreateEntityTests {
 
         @Test
-        @DisplayName("should create entity with valid inputs [GH-90000]")
+        @DisplayName("should create entity with valid inputs")
         void shouldCreateEntity() { // GH-90000
             // GIVEN
             Map<String, Object> inputData = Map.of( // GH-90000
@@ -109,7 +109,7 @@ class GraphQLMutationsTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should reject null tenantId [GH-90000]")
+        @DisplayName("should reject null tenantId")
         void shouldRejectNullTenantId() { // GH-90000
             // GIVEN
             Map<String, Object> data = Map.of("key", "value"); // GH-90000
@@ -118,11 +118,11 @@ class GraphQLMutationsTest extends EventloopTestBase {
             assertThatThrownBy(() -> // GH-90000
                 runPromise(() -> mutations.createEntity(null, COLLECTION_NAME, data, USER_ID)) // GH-90000
             ).isInstanceOf(NullPointerException.class) // GH-90000
-             .hasMessageContaining("tenantId is required [GH-90000]");
+             .hasMessageContaining("tenantId is required");
         }
 
         @Test
-        @DisplayName("should reject empty tenantId [GH-90000]")
+        @DisplayName("should reject empty tenantId")
         void shouldRejectEmptyTenantId() { // GH-90000
             // GIVEN
             Map<String, Object> data = Map.of("key", "value"); // GH-90000
@@ -130,11 +130,11 @@ class GraphQLMutationsTest extends EventloopTestBase {
             // WHEN/THEN
             assertThatThrownBy(() -> // GH-90000
                 runPromise(() -> mutations.createEntity("  ", COLLECTION_NAME, data, USER_ID)) // GH-90000
-            ).hasMessageContaining("tenantId cannot be empty [GH-90000]");
+            ).hasMessageContaining("tenantId cannot be empty");
         }
 
         @Test
-        @DisplayName("should reject null collectionName [GH-90000]")
+        @DisplayName("should reject null collectionName")
         void shouldRejectNullCollectionName() { // GH-90000
             // GIVEN
             Map<String, Object> data = Map.of("key", "value"); // GH-90000
@@ -143,20 +143,20 @@ class GraphQLMutationsTest extends EventloopTestBase {
             assertThatThrownBy(() -> // GH-90000
                 runPromise(() -> mutations.createEntity(TENANT_ID, null, data, USER_ID)) // GH-90000
             ).isInstanceOf(NullPointerException.class) // GH-90000
-             .hasMessageContaining("collectionName is required [GH-90000]");
+             .hasMessageContaining("collectionName is required");
         }
 
         @Test
-        @DisplayName("should reject empty data [GH-90000]")
+        @DisplayName("should reject empty data")
         void shouldRejectEmptyData() { // GH-90000
             // WHEN/THEN
             assertThatThrownBy(() -> // GH-90000
                 runPromise(() -> mutations.createEntity(TENANT_ID, COLLECTION_NAME, Collections.emptyMap(), USER_ID)) // GH-90000
-            ).hasMessageContaining("data cannot be empty [GH-90000]");
+            ).hasMessageContaining("data cannot be empty");
         }
 
         @Test
-        @DisplayName("should reject null userId [GH-90000]")
+        @DisplayName("should reject null userId")
         void shouldRejectNullUserId() { // GH-90000
             // GIVEN
             Map<String, Object> data = Map.of("key", "value"); // GH-90000
@@ -165,16 +165,16 @@ class GraphQLMutationsTest extends EventloopTestBase {
             assertThatThrownBy(() -> // GH-90000
                 runPromise(() -> mutations.createEntity(TENANT_ID, COLLECTION_NAME, data, null)) // GH-90000
             ).isInstanceOf(NullPointerException.class) // GH-90000
-             .hasMessageContaining("userId is required [GH-90000]");
+             .hasMessageContaining("userId is required");
         }
     }
 
     @Nested
-    @DisplayName("updateEntity Tests [GH-90000]")
+    @DisplayName("updateEntity Tests")
     class UpdateEntityTests {
 
         @Test
-        @DisplayName("should update entity with valid inputs [GH-90000]")
+        @DisplayName("should update entity with valid inputs")
         void shouldUpdateEntity() { // GH-90000
             // GIVEN
             Map<String, Object> updateData = Map.of("status", "completed", "completedAt", Instant.now().toString()); // GH-90000
@@ -205,7 +205,7 @@ class GraphQLMutationsTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should reject invalid UUID format [GH-90000]")
+        @DisplayName("should reject invalid UUID format")
         void shouldRejectInvalidUuid() { // GH-90000
             // GIVEN
             Map<String, Object> data = Map.of("key", "value"); // GH-90000
@@ -213,16 +213,16 @@ class GraphQLMutationsTest extends EventloopTestBase {
             // WHEN/THEN
             assertThatThrownBy(() -> // GH-90000
                 runPromise(() -> mutations.updateEntity(TENANT_ID, COLLECTION_NAME, "invalid-uuid", data, USER_ID)) // GH-90000
-            ).hasMessageContaining("Invalid entity ID format [GH-90000]");
+            ).hasMessageContaining("Invalid entity ID format");
         }
     }
 
     @Nested
-    @DisplayName("deleteEntity Tests [GH-90000]")
+    @DisplayName("deleteEntity Tests")
     class DeleteEntityTests {
 
         @Test
-        @DisplayName("should delete entity with valid UUID [GH-90000]")
+        @DisplayName("should delete entity with valid UUID")
         void shouldDeleteEntity() { // GH-90000
             // GIVEN
             when(entityService.deleteEntity(TENANT_ID, COLLECTION_NAME, ENTITY_ID, USER_ID)) // GH-90000
@@ -238,23 +238,23 @@ class GraphQLMutationsTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should reject invalid UUID [GH-90000]")
+        @DisplayName("should reject invalid UUID")
         void shouldRejectInvalidUuid() { // GH-90000
             // WHEN/THEN
             assertThatThrownBy(() -> // GH-90000
                 runPromise(() -> mutations.deleteEntity(TENANT_ID, COLLECTION_NAME, "bad-uuid", USER_ID)) // GH-90000
-            ).hasMessageContaining("Invalid entity ID format [GH-90000]");
+            ).hasMessageContaining("Invalid entity ID format");
         }
     }
 
     // ==================== Collection CRUD Tests ====================
 
     @Nested
-    @DisplayName("createCollection Tests [GH-90000]")
+    @DisplayName("createCollection Tests")
     class CreateCollectionTests {
 
         @Test
-        @DisplayName("should create collection with valid inputs [GH-90000]")
+        @DisplayName("should create collection with valid inputs")
         void shouldCreateCollection() { // GH-90000
             // GIVEN
             String name = "products";
@@ -288,31 +288,31 @@ class GraphQLMutationsTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should reject null name [GH-90000]")
+        @DisplayName("should reject null name")
         void shouldRejectNullName() { // GH-90000
             // WHEN/THEN
             assertThatThrownBy(() -> // GH-90000
                 runPromise(() -> mutations.createCollection(TENANT_ID, null, "desc", USER_ID)) // GH-90000
             ).isInstanceOf(NullPointerException.class) // GH-90000
-             .hasMessageContaining("name is required [GH-90000]");
+             .hasMessageContaining("name is required");
         }
 
         @Test
-        @DisplayName("should reject empty name [GH-90000]")
+        @DisplayName("should reject empty name")
         void shouldRejectEmptyName() { // GH-90000
             // WHEN/THEN
             assertThatThrownBy(() -> // GH-90000
                 runPromise(() -> mutations.createCollection(TENANT_ID, "  ", "desc", USER_ID)) // GH-90000
-            ).hasMessageContaining("name cannot be empty [GH-90000]");
+            ).hasMessageContaining("name cannot be empty");
         }
     }
 
     @Nested
-    @DisplayName("updateCollection Tests [GH-90000]")
+    @DisplayName("updateCollection Tests")
     class UpdateCollectionTests {
 
         @Test
-        @DisplayName("should update collection description [GH-90000]")
+        @DisplayName("should update collection description")
         void shouldUpdateCollection() { // GH-90000
             // GIVEN
             String name = "products";
@@ -322,7 +322,7 @@ class GraphQLMutationsTest extends EventloopTestBase {
                 .id(COLLECTION_ID) // GH-90000
                 .tenantId(TENANT_ID) // GH-90000
                 .name(name) // GH-90000
-                .description("Old description [GH-90000]")
+                .description("Old description")
                 .fields(Collections.emptyList()) // GH-90000
                 .build(); // GH-90000
 
@@ -353,7 +353,7 @@ class GraphQLMutationsTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should reject update for non-existent collection [GH-90000]")
+        @DisplayName("should reject update for non-existent collection")
         void shouldRejectNonExistentCollection() { // GH-90000
             // GIVEN
             when(collectionRepository.findByName(TENANT_ID, "nonexistent")) // GH-90000
@@ -363,18 +363,18 @@ class GraphQLMutationsTest extends EventloopTestBase {
             assertThatThrownBy(() -> // GH-90000
                 runPromise(() -> mutations.updateCollection(TENANT_ID, "nonexistent", "desc", USER_ID)) // GH-90000
             ).isInstanceOf(IllegalStateException.class) // GH-90000
-             .hasMessageContaining("Collection not found [GH-90000]");
+             .hasMessageContaining("Collection not found");
 
             clearFatalError(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("deleteCollection Tests [GH-90000]")
+    @DisplayName("deleteCollection Tests")
     class DeleteCollectionTests {
 
         @Test
-        @DisplayName("should delete collection by name [GH-90000]")
+        @DisplayName("should delete collection by name")
         void shouldDeleteCollection() { // GH-90000
             // GIVEN
             String name = "old-collection";
@@ -401,7 +401,7 @@ class GraphQLMutationsTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should reject delete for non-existent collection [GH-90000]")
+        @DisplayName("should reject delete for non-existent collection")
         void shouldRejectNonExistentCollection() { // GH-90000
             // GIVEN
             when(collectionRepository.findByName(TENANT_ID, "nonexistent")) // GH-90000
@@ -411,7 +411,7 @@ class GraphQLMutationsTest extends EventloopTestBase {
             assertThatThrownBy(() -> // GH-90000
                 runPromise(() -> mutations.deleteCollection(TENANT_ID, "nonexistent", USER_ID)) // GH-90000
             ).isInstanceOf(IllegalStateException.class) // GH-90000
-             .hasMessageContaining("Collection not found [GH-90000]");
+             .hasMessageContaining("Collection not found");
 
             clearFatalError(); // GH-90000
         }

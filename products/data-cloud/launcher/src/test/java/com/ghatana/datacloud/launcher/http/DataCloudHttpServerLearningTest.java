@@ -35,7 +35,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataCloudHttpServer – Learning Endpoints (DC-8) [GH-90000]")
+@DisplayName("DataCloudHttpServer – Learning Endpoints (DC-8)")
 class DataCloudHttpServerLearningTest {
 
     private DataCloudClient mockClient;
@@ -61,37 +61,37 @@ class DataCloudHttpServerLearningTest {
     // ==================== No bridge (null) ==================== // GH-90000
 
     @Nested
-    @DisplayName("Learning bridge not wired (null) [GH-90000]")
+    @DisplayName("Learning bridge not wired (null)")
     class NoBridgeTests {
 
         @Test
-        @DisplayName("POST /trigger → 503 when bridge is null [GH-90000]")
+        @DisplayName("POST /trigger → 503 when bridge is null")
         void trigger_noBridge_returns503() throws Exception { // GH-90000
             startWithoutBridge(); // GH-90000
             HttpResponse<String> resp = post("/api/v1/learning/trigger", "{}"); // GH-90000
             assertThat(resp.statusCode()).isEqualTo(503); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("message [GH-90000]").toString()).containsIgnoringCase("not available [GH-90000]");
+            assertThat(body.get("message").toString()).containsIgnoringCase("not available");
         }
 
         @Test
-        @DisplayName("GET /status → 503 when bridge is null [GH-90000]")
+        @DisplayName("GET /status → 503 when bridge is null")
         void status_noBridge_returns503() throws Exception { // GH-90000
             startWithoutBridge(); // GH-90000
-            HttpResponse<String> resp = get("/api/v1/learning/status [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/learning/status");
             assertThat(resp.statusCode()).isEqualTo(503); // GH-90000
         }
 
         @Test
-        @DisplayName("GET /review → 503 when bridge is null [GH-90000]")
+        @DisplayName("GET /review → 503 when bridge is null")
         void review_noBridge_returns503() throws Exception { // GH-90000
             startWithoutBridge(); // GH-90000
-            HttpResponse<String> resp = get("/api/v1/learning/review [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/learning/review");
             assertThat(resp.statusCode()).isEqualTo(503); // GH-90000
         }
 
         @Test
-        @DisplayName("POST /review/:id/approve → 503 when bridge is null [GH-90000]")
+        @DisplayName("POST /review/:id/approve → 503 when bridge is null")
         void approve_noBridge_returns503() throws Exception { // GH-90000
             startWithoutBridge(); // GH-90000
             HttpResponse<String> resp = post("/api/v1/learning/review/rev-1/approve", ""); // GH-90000
@@ -99,7 +99,7 @@ class DataCloudHttpServerLearningTest {
         }
 
         @Test
-        @DisplayName("POST /review/:id/reject → 503 when bridge is null [GH-90000]")
+        @DisplayName("POST /review/:id/reject → 503 when bridge is null")
         void reject_noBridge_returns503() throws Exception { // GH-90000
             startWithoutBridge(); // GH-90000
             HttpResponse<String> resp = post("/api/v1/learning/review/rev-1/reject", ""); // GH-90000
@@ -110,11 +110,11 @@ class DataCloudHttpServerLearningTest {
     // ==================== POST /api/v1/learning/trigger ====================
 
     @Nested
-    @DisplayName("POST /api/v1/learning/trigger [GH-90000]")
+    @DisplayName("POST /api/v1/learning/trigger")
     class TriggerTests {
 
         @Test
-        @DisplayName("successful trigger → 200 with COMPLETED result [GH-90000]")
+        @DisplayName("successful trigger → 200 with COMPLETED result")
         void trigger_success_returns200() throws Exception { // GH-90000
             Map<String, Object> result = Map.of( // GH-90000
                 "status", "COMPLETED",
@@ -134,13 +134,13 @@ class DataCloudHttpServerLearningTest {
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("status [GH-90000]")).isEqualTo("COMPLETED [GH-90000]");
-            assertThat(((Number) body.get("patternsDiscovered [GH-90000]")).intValue()).isEqualTo(3);
-            assertThat(body.get("timestamp [GH-90000]")).isNotNull();
+            assertThat(body.get("status")).isEqualTo("COMPLETED");
+            assertThat(((Number) body.get("patternsDiscovered")).intValue()).isEqualTo(3);
+            assertThat(body.get("timestamp")).isNotNull();
         }
 
         @Test
-        @DisplayName("SKIPPED result → still 200 [GH-90000]")
+        @DisplayName("SKIPPED result → still 200")
         void trigger_skipped_returns200() throws Exception { // GH-90000
             when(mockBridge.runLearning(anyString(), org.mockito.ArgumentMatchers.eq(true))) // GH-90000
                 .thenReturn(Map.of("status", "SKIPPED", "reason", "already running")); // GH-90000
@@ -150,18 +150,18 @@ class DataCloudHttpServerLearningTest {
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("status [GH-90000]")).isEqualTo("SKIPPED [GH-90000]");
+            assertThat(body.get("status")).isEqualTo("SKIPPED");
         }
     }
 
     // ==================== GET /api/v1/learning/status ====================
 
     @Nested
-    @DisplayName("GET /api/v1/learning/status [GH-90000]")
+    @DisplayName("GET /api/v1/learning/status")
     class StatusTests {
 
         @Test
-        @DisplayName("returns 200 with all required status fields [GH-90000]")
+        @DisplayName("returns 200 with all required status fields")
         void status_wiredBridge_returns200WithFields() throws Exception { // GH-90000
             when(mockBridge.getStatus()).thenReturn(Map.of( // GH-90000
                 "running",          false,
@@ -173,26 +173,26 @@ class DataCloudHttpServerLearningTest {
             ));
 
             startWithBridge(); // GH-90000
-            HttpResponse<String> resp = get("/api/v1/learning/status [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/learning/status");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("running [GH-90000]")).isEqualTo(false);
-            assertThat(body.get("lastRunTime [GH-90000]")).isEqualTo("2026-01-24T09:00:00Z [GH-90000]");
-            assertThat(body.get("intervalMinutes [GH-90000]")).isNotNull();
-            assertThat(body.get("pendingReviews [GH-90000]")).isNotNull();
-            assertThat(body.get("timestamp [GH-90000]")).isNotNull();
+            assertThat(body.get("running")).isEqualTo(false);
+            assertThat(body.get("lastRunTime")).isEqualTo("2026-01-24T09:00:00Z");
+            assertThat(body.get("intervalMinutes")).isNotNull();
+            assertThat(body.get("pendingReviews")).isNotNull();
+            assertThat(body.get("timestamp")).isNotNull();
         }
     }
 
     // ==================== GET /api/v1/learning/review ====================
 
     @Nested
-    @DisplayName("GET /api/v1/learning/review [GH-90000]")
+    @DisplayName("GET /api/v1/learning/review")
     class ReviewQueueTests {
 
         @Test
-        @DisplayName("returns 200 with items and count [GH-90000]")
+        @DisplayName("returns 200 with items and count")
         void reviewQueue_returns200WithItemsAndCount() throws Exception { // GH-90000
             Map<String, Map<String, Object>> items = Map.of( // GH-90000
                 "rev-1", Map.of("reviewId", "rev-1", "status", "PENDING", "confidence", 0.3f), // GH-90000
@@ -201,53 +201,53 @@ class DataCloudHttpServerLearningTest {
             when(mockBridge.getReviewQueue()).thenReturn(items); // GH-90000
 
             startWithBridge(); // GH-90000
-            HttpResponse<String> resp = get("/api/v1/learning/review [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/learning/review");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(((Number) body.get("count [GH-90000]")).intValue()).isEqualTo(2);
-            assertThat(body.get("items [GH-90000]")).isNotNull();
-            assertThat(body.get("timestamp [GH-90000]")).isNotNull();
+            assertThat(((Number) body.get("count")).intValue()).isEqualTo(2);
+            assertThat(body.get("items")).isNotNull();
+            assertThat(body.get("timestamp")).isNotNull();
         }
 
         @Test
-        @DisplayName("empty review queue → 200 with count=0 [GH-90000]")
+        @DisplayName("empty review queue → 200 with count=0")
         void reviewQueue_empty_returnsZeroCount() throws Exception { // GH-90000
             when(mockBridge.getReviewQueue()).thenReturn(Map.of()); // GH-90000
 
             startWithBridge(); // GH-90000
-            HttpResponse<String> resp = get("/api/v1/learning/review [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/learning/review");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(((Number) body.get("count [GH-90000]")).intValue()).isEqualTo(0);
+            assertThat(((Number) body.get("count")).intValue()).isEqualTo(0);
         }
     }
 
     // ==================== POST /api/v1/learning/review/:id/approve ====================
 
     @Nested
-    @DisplayName("POST /api/v1/learning/review/:id/approve [GH-90000]")
+    @DisplayName("POST /api/v1/learning/review/:id/approve")
     class ApproveTests {
 
         @Test
-        @DisplayName("known review ID → 200 with APPROVED decision [GH-90000]")
+        @DisplayName("known review ID → 200 with APPROVED decision")
         void approve_knownItem_returns200() throws Exception { // GH-90000
-            when(mockBridge.approveReview("rev-abc [GH-90000]")).thenReturn(true);
+            when(mockBridge.approveReview("rev-abc")).thenReturn(true);
 
             startWithBridge(); // GH-90000
             HttpResponse<String> resp = post("/api/v1/learning/review/rev-abc/approve", ""); // GH-90000
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("reviewId [GH-90000]")).isEqualTo("rev-abc [GH-90000]");
-            assertThat(body.get("decision [GH-90000]")).isEqualTo("APPROVED [GH-90000]");
+            assertThat(body.get("reviewId")).isEqualTo("rev-abc");
+            assertThat(body.get("decision")).isEqualTo("APPROVED");
         }
 
         @Test
-        @DisplayName("unknown review ID → 404 [GH-90000]")
+        @DisplayName("unknown review ID → 404")
         void approve_unknownItem_returns404() throws Exception { // GH-90000
-            when(mockBridge.approveReview("no-such [GH-90000]")).thenReturn(false);
+            when(mockBridge.approveReview("no-such")).thenReturn(false);
 
             startWithBridge(); // GH-90000
             HttpResponse<String> resp = post("/api/v1/learning/review/no-such/approve", ""); // GH-90000
@@ -259,27 +259,27 @@ class DataCloudHttpServerLearningTest {
     // ==================== POST /api/v1/learning/review/:id/reject ====================
 
     @Nested
-    @DisplayName("POST /api/v1/learning/review/:id/reject [GH-90000]")
+    @DisplayName("POST /api/v1/learning/review/:id/reject")
     class RejectTests {
 
         @Test
-        @DisplayName("known review ID → 200 with REJECTED decision [GH-90000]")
+        @DisplayName("known review ID → 200 with REJECTED decision")
         void reject_knownItem_returns200() throws Exception { // GH-90000
-            when(mockBridge.rejectReview("rev-xyz [GH-90000]")).thenReturn(true);
+            when(mockBridge.rejectReview("rev-xyz")).thenReturn(true);
 
             startWithBridge(); // GH-90000
             HttpResponse<String> resp = post("/api/v1/learning/review/rev-xyz/reject", ""); // GH-90000
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("reviewId [GH-90000]")).isEqualTo("rev-xyz [GH-90000]");
-            assertThat(body.get("decision [GH-90000]")).isEqualTo("REJECTED [GH-90000]");
+            assertThat(body.get("reviewId")).isEqualTo("rev-xyz");
+            assertThat(body.get("decision")).isEqualTo("REJECTED");
         }
 
         @Test
-        @DisplayName("unknown review ID → 404 [GH-90000]")
+        @DisplayName("unknown review ID → 404")
         void reject_unknownItem_returns404() throws Exception { // GH-90000
-            when(mockBridge.rejectReview("ghost [GH-90000]")).thenReturn(false);
+            when(mockBridge.rejectReview("ghost")).thenReturn(false);
 
             startWithBridge(); // GH-90000
             HttpResponse<String> resp = post("/api/v1/learning/review/ghost/reject", ""); // GH-90000

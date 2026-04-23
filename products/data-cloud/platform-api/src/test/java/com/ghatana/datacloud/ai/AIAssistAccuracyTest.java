@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test, Accuracy Validation
  */
-@DisplayName("AI Assist Accuracy Tests [GH-90000]")
+@DisplayName("AI Assist Accuracy Tests")
 class AIAssistAccuracyTest extends EventloopTestBase {
 
     /**
@@ -40,7 +40,7 @@ class AIAssistAccuracyTest extends EventloopTestBase {
      * Verifies that natural language descriptions are correctly converted to SQL.
      */
     @Test
-    @DisplayName("SQL generation should produce accurate queries [GH-90000]")
+    @DisplayName("SQL generation should produce accurate queries")
     void shouldGenerateAccurateSQL() { // GH-90000
         AIAssistService.DatabaseSchema schema = new AIAssistService.DatabaseSchema( // GH-90000
             "test_db",
@@ -67,7 +67,7 @@ class AIAssistAccuracyTest extends EventloopTestBase {
         
         assertThat(sql).isNotNull(); // GH-90000
         assertThat(sql.sql()).isNotEmpty(); // GH-90000
-        assertThat(sql.tablesUsed()).contains("users [GH-90000]");
+        assertThat(sql.tablesUsed()).contains("users");
         assertThat(sql.isReadOnly()).isTrue(); // GH-90000
         assertThat(sql.isSafe()).isTrue(); // GH-90000
     }
@@ -77,7 +77,7 @@ class AIAssistAccuracyTest extends EventloopTestBase {
      * Verifies that natural language queries are correctly interpreted.
      */
     @Test
-    @DisplayName("Query processing should correctly interpret intent [GH-90000]")
+    @DisplayName("Query processing should correctly interpret intent")
     void shouldProcessQueryAccurately() { // GH-90000
         AIAssistService.QueryContext context = new AIAssistService.QueryContext( // GH-90000
             "tenant-1",
@@ -109,7 +109,7 @@ class AIAssistAccuracyTest extends EventloopTestBase {
      * Verifies that query results are explained clearly.
      */
     @Test
-    @DisplayName("Explanation should provide clear insights [GH-90000]")
+    @DisplayName("Explanation should provide clear insights")
     void shouldProvideQualityExplanations() { // GH-90000
         List<Map<String, Object>> results = List.of( // GH-90000
             Map.of("id", 1, "name", "Alice", "total", 1000), // GH-90000
@@ -146,7 +146,7 @@ class AIAssistAccuracyTest extends EventloopTestBase {
      * Verifies that query suggestions are contextually relevant.
      */
     @Test
-    @DisplayName("Suggestions should be contextually relevant [GH-90000]")
+    @DisplayName("Suggestions should be contextually relevant")
     void shouldProvideRelevantSuggestions() { // GH-90000
         AIAssistService.QueryContext context = new AIAssistService.QueryContext( // GH-90000
             "tenant-1",
@@ -179,7 +179,7 @@ class AIAssistAccuracyTest extends EventloopTestBase {
      * Verifies that conversations are correctly created and managed.
      */
     @Test
-    @DisplayName("Conversation management should be accurate [GH-90000]")
+    @DisplayName("Conversation management should be accurate")
     void shouldManageConversationsAccurately() { // GH-90000
         MockAIAssistService service = new MockAIAssistService(); // GH-90000
         
@@ -189,8 +189,8 @@ class AIAssistAccuracyTest extends EventloopTestBase {
         
         assertThat(conversation).isNotNull(); // GH-90000
         assertThat(conversation.id()).isNotEmpty(); // GH-90000
-        assertThat(conversation.tenantId()).isEqualTo("tenant-1 [GH-90000]");
-        assertThat(conversation.userId()).isEqualTo("user-1 [GH-90000]");
+        assertThat(conversation.tenantId()).isEqualTo("tenant-1");
+        assertThat(conversation.userId()).isEqualTo("user-1");
         assertThat(conversation.messageCount()).isEqualTo(0); // GH-90000
 
         // Add message
@@ -214,7 +214,7 @@ class AIAssistAccuracyTest extends EventloopTestBase {
      * Verifies that service status is correctly reported.
      */
     @Test
-    @DisplayName("Service status should be accurately reported [GH-90000]")
+    @DisplayName("Service status should be accurately reported")
     void shouldReportAccurateStatus() { // GH-90000
         MockAIAssistService service = new MockAIAssistService(); // GH-90000
         
@@ -242,7 +242,7 @@ class AIAssistAccuracyTest extends EventloopTestBase {
                 new GeneratedSQL( // GH-90000
                     "SELECT * FROM users",
                     "Selects all users",
-                    List.of("users [GH-90000]"),
+                    List.of("users"),
                     List.of(), // GH-90000
                     true
                 ),
@@ -250,7 +250,7 @@ class AIAssistAccuracyTest extends EventloopTestBase {
                 new Explanation( // GH-90000
                     "Summary of results",
                     List.of("Key point 1", "Key point 2"), // GH-90000
-                    List.of("Recommendation 1 [GH-90000]"),
+                    List.of("Recommendation 1"),
                     "bar-chart"
                 ),
                 100,
@@ -275,7 +275,7 @@ class AIAssistAccuracyTest extends EventloopTestBase {
             return Promise.of(new Explanation( // GH-90000
                 "Query returned " + results.size() + " results", // GH-90000
                 List.of("Found data for multiple users", "Total aggregation shows variance"), // GH-90000
-                List.of("Consider filtering by date [GH-90000]"),
+                List.of("Consider filtering by date"),
                 "table-view"
             ));
         }
@@ -347,7 +347,7 @@ class AIAssistAccuracyTest extends EventloopTestBase {
 
         @Override
         public Promise<AIEvaluationMetrics> getEvaluationMetrics(TimeRange timeRange) { // GH-90000
-            throw new UnsupportedOperationException("Evaluation metrics not implemented in mock [GH-90000]");
+            throw new UnsupportedOperationException("Evaluation metrics not implemented in mock");
         }
 
         @Override

@@ -41,7 +41,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataCloudHttpServer – Storage Cost Endpoints (B11) [GH-90000]")
+@DisplayName("DataCloudHttpServer – Storage Cost Endpoints (B11)")
 class DataCloudHttpServerStorageCostTest {
 
     private DataCloudClient mockClient;
@@ -118,20 +118,20 @@ class DataCloudHttpServerStorageCostTest {
                 .queryId(queryId) // GH-90000
                 .estimatedCost(cost) // GH-90000
                 .optimized(true) // GH-90000
-                .dataSources(List.of("events [GH-90000]"))
+                .dataSources(List.of("events"))
                 .build(); // GH-90000
     }
 
     // ─── tests ───────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("GET /api/v1/queries/estimate [GH-90000]")
+    @DisplayName("GET /api/v1/queries/estimate")
     class EstimateQueryTests {
 
         @Test
-        @DisplayName("returns 200 with cost estimate for a valid sql query [GH-90000]")
+        @DisplayName("returns 200 with cost estimate for a valid sql query")
         void estimateQuery_validSql_returns200WithCostFields() throws Exception { // GH-90000
-            QueryResult fakeResult = buildQueryResult("q-est-1 [GH-90000]");
+            QueryResult fakeResult = buildQueryResult("q-est-1");
             QueryPlan fakePlan = buildQueryPlan("q-est-1", 5.0); // GH-90000
 
             when(mockEngine.submitQuery(anyString(), anyString(), anyMap())) // GH-90000
@@ -141,37 +141,37 @@ class DataCloudHttpServerStorageCostTest {
 
             startServer(); // GH-90000
 
-            HttpResponse<String> response = get("/api/v1/queries/estimate?sql=SELECT+1 [GH-90000]");
+            HttpResponse<String> response = get("/api/v1/queries/estimate?sql=SELECT+1");
 
             assertThat(response.statusCode()).isEqualTo(200); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, Object> body = mapper.readValue(response.body(), Map.class); // GH-90000
             assertThat(body).containsKeys("queryId", "estimatedCostDcc", "currency", "breakdown"); // GH-90000
-            assertThat(body.get("currency [GH-90000]")).isEqualTo("DCC [GH-90000]");
+            assertThat(body.get("currency")).isEqualTo("DCC");
         }
 
         @Test
-        @DisplayName("returns 400 when sql query parameter is missing [GH-90000]")
+        @DisplayName("returns 400 when sql query parameter is missing")
         void estimateQuery_missingSql_returns400() throws Exception { // GH-90000
             startServer(); // GH-90000
 
-            HttpResponse<String> response = get("/api/v1/queries/estimate [GH-90000]");
+            HttpResponse<String> response = get("/api/v1/queries/estimate");
 
             assertThat(response.statusCode()).isEqualTo(400); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, Object> body = mapper.readValue(response.body(), Map.class); // GH-90000
-            assertThat(body).containsKey("error [GH-90000]");
+            assertThat(body).containsKey("error");
         }
     }
 
     @Nested
-    @DisplayName("GET /api/v1/collections/:id/cost-report [GH-90000]")
+    @DisplayName("GET /api/v1/collections/:id/cost-report")
     class CollectionCostReportTests {
 
         @Test
-        @DisplayName("returns 200 with HOT/WARM/COLD tier breakdown [GH-90000]")
+        @DisplayName("returns 200 with HOT/WARM/COLD tier breakdown")
         void costReport_returns200WithTierBreakdown() throws Exception { // GH-90000
-            QueryResult fakeResult = buildQueryResult("q-cost-1 [GH-90000]");
+            QueryResult fakeResult = buildQueryResult("q-cost-1");
             QueryPlan fakePlan = buildQueryPlan("q-cost-1", 10.0); // GH-90000
 
             when(mockEngine.submitQuery(anyString(), anyString(), anyMap())) // GH-90000
@@ -181,20 +181,20 @@ class DataCloudHttpServerStorageCostTest {
 
             startServer(); // GH-90000
 
-            HttpResponse<String> response = get("/api/v1/collections/my-collection/cost-report [GH-90000]");
+            HttpResponse<String> response = get("/api/v1/collections/my-collection/cost-report");
 
             assertThat(response.statusCode()).isEqualTo(200); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, Object> body = mapper.readValue(response.body(), Map.class); // GH-90000
             assertThat(body).containsKeys("collectionId", "totalSizeGb", "totalCostDccPerDay", "tiers", "currency"); // GH-90000
-            assertThat(body.get("collectionId [GH-90000]")).isEqualTo("my-collection [GH-90000]");
-            assertThat(body.get("currency [GH-90000]")).isEqualTo("DCC [GH-90000]");
+            assertThat(body.get("collectionId")).isEqualTo("my-collection");
+            assertThat(body.get("currency")).isEqualTo("DCC");
 
-            @SuppressWarnings("unchecked [GH-90000]")
-            List<Map<String, Object>> tiers = (List<Map<String, Object>>) body.get("tiers [GH-90000]");
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> tiers = (List<Map<String, Object>>) body.get("tiers");
             assertThat(tiers).hasSize(3); // GH-90000
             List<String> tierNames = tiers.stream() // GH-90000
-                    .map(t -> (String) t.get("tier [GH-90000]"))
+                    .map(t -> (String) t.get("tier"))
                     .toList(); // GH-90000
             assertThat(tierNames).containsExactlyInAnyOrder("HOT", "WARM", "COLD"); // GH-90000
         }

@@ -30,7 +30,7 @@ import static org.mockito.Mockito.*;
  * Focus: Agent composition, result aggregation strategies (voting, averaging), // GH-90000
  * ensemble logic, and error isolation.
  */
-@DisplayName("CompositeAgent Behavioral Tests [GH-90000]")
+@DisplayName("CompositeAgent Behavioral Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class CompositeAgentBehavioralTest {
 
@@ -52,9 +52,9 @@ class CompositeAgentBehavioralTest {
     @BeforeEach
     void setUp() { // GH-90000
         agentContext = AgentContext.builder() // GH-90000
-                .turnId("turn-1 [GH-90000]")
-                .agentId("composite-agent [GH-90000]")
-                .tenantId("tenant-1 [GH-90000]")
+                .turnId("turn-1")
+                .agentId("composite-agent")
+                .tenantId("tenant-1")
                 .memoryStore(memoryStore) // GH-90000
                 .build(); // GH-90000
 
@@ -62,13 +62,13 @@ class CompositeAgentBehavioralTest {
         // (sub.descriptor().getAgentId()) does not produce a secondary NPE when a // GH-90000
         // sub-agent fails during processing.
         lenient().when(subAgent1.descriptor()).thenReturn( // GH-90000
-                AgentDescriptor.builder().agentId("agent1 [GH-90000]").type(AgentType.COMPOSITE).build());
+                AgentDescriptor.builder().agentId("agent1").type(AgentType.COMPOSITE).build());
         lenient().when(subAgent2.descriptor()).thenReturn( // GH-90000
-                AgentDescriptor.builder().agentId("agent2 [GH-90000]").type(AgentType.COMPOSITE).build());
+                AgentDescriptor.builder().agentId("agent2").type(AgentType.COMPOSITE).build());
         lenient().when(subAgent3.descriptor()).thenReturn( // GH-90000
-                AgentDescriptor.builder().agentId("agent3 [GH-90000]").type(AgentType.COMPOSITE).build());
+                AgentDescriptor.builder().agentId("agent3").type(AgentType.COMPOSITE).build());
 
-        agent = new CompositeAgent("composite-agent [GH-90000]");
+        agent = new CompositeAgent("composite-agent");
         agent.setSubAgents(List.of(subAgent1, subAgent2, subAgent3)); // GH-90000
     }
 
@@ -77,17 +77,17 @@ class CompositeAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Processing & Aggregation [GH-90000]")
+    @DisplayName("Processing & Aggregation")
     class ProcessingTests {
 
         @Test
-        @DisplayName("Composite agent fans out to all sub-agents [GH-90000]")
+        @DisplayName("Composite agent fans out to all sub-agents")
         void fanOutToSubAgents() { // GH-90000
             AgentResult<Map<String, Object>> result1 = AgentResult.<Map<String, Object>>builder() // GH-90000
                     .output(Map.of("vote", "A")) // GH-90000
                     .confidence(0.85) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("agent1 [GH-90000]")
+                    .agentId("agent1")
                     .processingTime(Duration.ofMillis(10)) // GH-90000
                     .build(); // GH-90000
 
@@ -95,7 +95,7 @@ class CompositeAgentBehavioralTest {
                     .output(Map.of("vote", "A")) // GH-90000
                     .confidence(0.90) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("agent2 [GH-90000]")
+                    .agentId("agent2")
                     .processingTime(Duration.ofMillis(12)) // GH-90000
                     .build(); // GH-90000
 
@@ -103,7 +103,7 @@ class CompositeAgentBehavioralTest {
                     .output(Map.of("vote", "B")) // GH-90000
                     .confidence(0.70) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("agent3 [GH-90000]")
+                    .agentId("agent3")
                     .processingTime(Duration.ofMillis(15)) // GH-90000
                     .build(); // GH-90000
 
@@ -113,7 +113,7 @@ class CompositeAgentBehavioralTest {
 
             CompositeAgentConfig config = CompositeAgentConfig.builder() // GH-90000
                     .aggregationStrategy(CompositeAgentConfig.AggregationStrategy.MAJORITY_VOTE) // GH-90000
-                    .votingField("vote [GH-90000]")
+                    .votingField("vote")
                     .build(); // GH-90000
 
             runPromise(() -> agent.initialize(config)); // GH-90000
@@ -128,13 +128,13 @@ class CompositeAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("WEIGHTED_AVERAGE aggregates numeric scores [GH-90000]")
+        @DisplayName("WEIGHTED_AVERAGE aggregates numeric scores")
         void weightedAverageAggregation() { // GH-90000
             AgentResult<Map<String, Object>> result1 = AgentResult.<Map<String, Object>>builder() // GH-90000
                     .output(Map.of("score", 80.0)) // GH-90000
                     .confidence(0.95) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("agent1 [GH-90000]")
+                    .agentId("agent1")
                     .processingTime(Duration.ofMillis(10)) // GH-90000
                     .build(); // GH-90000
 
@@ -142,7 +142,7 @@ class CompositeAgentBehavioralTest {
                     .output(Map.of("score", 75.0)) // GH-90000
                     .confidence(0.88) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("agent2 [GH-90000]")
+                    .agentId("agent2")
                     .processingTime(Duration.ofMillis(12)) // GH-90000
                     .build(); // GH-90000
 
@@ -150,7 +150,7 @@ class CompositeAgentBehavioralTest {
                     .output(Map.of("score", 85.0)) // GH-90000
                     .confidence(0.92) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("agent3 [GH-90000]")
+                    .agentId("agent3")
                     .processingTime(Duration.ofMillis(11)) // GH-90000
                     .build(); // GH-90000
 
@@ -160,7 +160,7 @@ class CompositeAgentBehavioralTest {
 
             CompositeAgentConfig config = CompositeAgentConfig.builder() // GH-90000
                     .aggregationStrategy(CompositeAgentConfig.AggregationStrategy.WEIGHTED_AVERAGE) // GH-90000
-                    .numericField("score [GH-90000]")
+                    .numericField("score")
                     .build(); // GH-90000
 
             runPromise(() -> agent.initialize(config)); // GH-90000
@@ -174,13 +174,13 @@ class CompositeAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("MAJORITY_VOTE selects consensus decision [GH-90000]")
+        @DisplayName("MAJORITY_VOTE selects consensus decision")
         void majorityVote() { // GH-90000
             AgentResult<Map<String, Object>> result1 = AgentResult.<Map<String, Object>>builder() // GH-90000
                     .output(Map.of("decision", "APPROVE")) // GH-90000
                     .confidence(0.92) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("agent1 [GH-90000]")
+                    .agentId("agent1")
                     .processingTime(Duration.ofMillis(10)) // GH-90000
                     .build(); // GH-90000
 
@@ -188,7 +188,7 @@ class CompositeAgentBehavioralTest {
                     .output(Map.of("decision", "APPROVE")) // GH-90000
                     .confidence(0.88) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("agent2 [GH-90000]")
+                    .agentId("agent2")
                     .processingTime(Duration.ofMillis(11)) // GH-90000
                     .build(); // GH-90000
 
@@ -196,7 +196,7 @@ class CompositeAgentBehavioralTest {
                     .output(Map.of("decision", "REJECT")) // GH-90000
                     .confidence(0.75) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("agent3 [GH-90000]")
+                    .agentId("agent3")
                     .processingTime(Duration.ofMillis(12)) // GH-90000
                     .build(); // GH-90000
 
@@ -206,7 +206,7 @@ class CompositeAgentBehavioralTest {
 
             CompositeAgentConfig config = CompositeAgentConfig.builder() // GH-90000
                     .aggregationStrategy(CompositeAgentConfig.AggregationStrategy.MAJORITY_VOTE) // GH-90000
-                    .votingField("decision [GH-90000]")
+                    .votingField("decision")
                     .build(); // GH-90000
 
             runPromise(() -> agent.initialize(config)); // GH-90000
@@ -220,13 +220,13 @@ class CompositeAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("FIRST_MATCH returns first successful sub-agent result [GH-90000]")
+        @DisplayName("FIRST_MATCH returns first successful sub-agent result")
         void firstMatchStrategy() { // GH-90000
             AgentResult<Map<String, Object>> result1 = AgentResult.<Map<String, Object>>builder() // GH-90000
                     .output(Map.of("result", "from_agent1")) // GH-90000
                     .confidence(0.85) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("agent1 [GH-90000]")
+                    .agentId("agent1")
                     .processingTime(Duration.ofMillis(10)) // GH-90000
                     .build(); // GH-90000
 
@@ -234,7 +234,7 @@ class CompositeAgentBehavioralTest {
                     .output(Map.of("result", "from_agent2")) // GH-90000
                     .confidence(0.90) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("agent2 [GH-90000]")
+                    .agentId("agent2")
                     .processingTime(Duration.ofMillis(5))  // Faster // GH-90000
                     .build(); // GH-90000
 
@@ -242,7 +242,7 @@ class CompositeAgentBehavioralTest {
                     .output(Map.of("result", "from_agent3")) // GH-90000
                     .confidence(0.70) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("agent3 [GH-90000]")
+                    .agentId("agent3")
                     .processingTime(Duration.ofMillis(20)) // GH-90000
                     .build(); // GH-90000
 
@@ -263,13 +263,13 @@ class CompositeAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("UNANIMOUS requires all sub-agents to agree [GH-90000]")
+        @DisplayName("UNANIMOUS requires all sub-agents to agree")
         void unanimousAgreement() { // GH-90000
             AgentResult<Map<String, Object>> result1 = AgentResult.<Map<String, Object>>builder() // GH-90000
                     .output(Map.of("agree", true)) // GH-90000
                     .confidence(0.95) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("agent1 [GH-90000]")
+                    .agentId("agent1")
                     .processingTime(Duration.ofMillis(10)) // GH-90000
                     .build(); // GH-90000
 
@@ -277,7 +277,7 @@ class CompositeAgentBehavioralTest {
                     .output(Map.of("agree", true)) // GH-90000
                     .confidence(0.92) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("agent2 [GH-90000]")
+                    .agentId("agent2")
                     .processingTime(Duration.ofMillis(11)) // GH-90000
                     .build(); // GH-90000
 
@@ -285,7 +285,7 @@ class CompositeAgentBehavioralTest {
                     .output(Map.of("agree", true)) // GH-90000
                     .confidence(0.90) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("agent3 [GH-90000]")
+                    .agentId("agent3")
                     .processingTime(Duration.ofMillis(12)) // GH-90000
                     .build(); // GH-90000
 
@@ -311,17 +311,17 @@ class CompositeAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Confidence Composition [GH-90000]")
+    @DisplayName("Confidence Composition")
     class ConfidenceCompositionTests {
 
         @Test
-        @DisplayName("Composite confidence is average of sub-agent confidences [GH-90000]")
+        @DisplayName("Composite confidence is average of sub-agent confidences")
         void confidenceAverage() { // GH-90000
             AgentResult<Map<String, Object>> result1 = AgentResult.<Map<String, Object>>builder() // GH-90000
                     .output(Map.of("x", 1)) // GH-90000
                     .confidence(0.90) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("agent1 [GH-90000]")
+                    .agentId("agent1")
                     .processingTime(Duration.ofMillis(10)) // GH-90000
                     .build(); // GH-90000
 
@@ -329,7 +329,7 @@ class CompositeAgentBehavioralTest {
                     .output(Map.of("x", 1)) // GH-90000
                     .confidence(0.80) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("agent2 [GH-90000]")
+                    .agentId("agent2")
                     .processingTime(Duration.ofMillis(11)) // GH-90000
                     .build(); // GH-90000
 
@@ -337,7 +337,7 @@ class CompositeAgentBehavioralTest {
                     .output(Map.of("x", 1)) // GH-90000
                     .confidence(0.85) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("agent3 [GH-90000]")
+                    .agentId("agent3")
                     .processingTime(Duration.ofMillis(12)) // GH-90000
                     .build(); // GH-90000
 
@@ -361,14 +361,14 @@ class CompositeAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("High agreement increases composite confidence [GH-90000]")
+        @DisplayName("High agreement increases composite confidence")
         void highAgreementConfidence() { // GH-90000
             // All agents agree with high confidence
             AgentResult<Map<String, Object>> result1 = AgentResult.<Map<String, Object>>builder() // GH-90000
                     .output(Map.of("decision", "A")) // GH-90000
                     .confidence(0.95) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("agent1 [GH-90000]")
+                    .agentId("agent1")
                     .processingTime(Duration.ofMillis(10)) // GH-90000
                     .build(); // GH-90000
 
@@ -376,7 +376,7 @@ class CompositeAgentBehavioralTest {
                     .output(Map.of("decision", "A")) // GH-90000
                     .confidence(0.94) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("agent2 [GH-90000]")
+                    .agentId("agent2")
                     .processingTime(Duration.ofMillis(11)) // GH-90000
                     .build(); // GH-90000
 
@@ -384,7 +384,7 @@ class CompositeAgentBehavioralTest {
                     .output(Map.of("decision", "A")) // GH-90000
                     .confidence(0.96) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("agent3 [GH-90000]")
+                    .agentId("agent3")
                     .processingTime(Duration.ofMillis(12)) // GH-90000
                     .build(); // GH-90000
 
@@ -406,14 +406,14 @@ class CompositeAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Low agreement decreases composite confidence [GH-90000]")
+        @DisplayName("Low agreement decreases composite confidence")
         void lowAgreementConfidence() { // GH-90000
             // Agents disagree
             AgentResult<Map<String, Object>> result1 = AgentResult.<Map<String, Object>>builder() // GH-90000
                     .output(Map.of("decision", "A")) // GH-90000
                     .confidence(0.60) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("agent1 [GH-90000]")
+                    .agentId("agent1")
                     .processingTime(Duration.ofMillis(10)) // GH-90000
                     .build(); // GH-90000
 
@@ -421,7 +421,7 @@ class CompositeAgentBehavioralTest {
                     .output(Map.of("decision", "B")) // GH-90000
                     .confidence(0.55) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("agent2 [GH-90000]")
+                    .agentId("agent2")
                     .processingTime(Duration.ofMillis(11)) // GH-90000
                     .build(); // GH-90000
 
@@ -429,7 +429,7 @@ class CompositeAgentBehavioralTest {
                     .output(Map.of("decision", "C")) // GH-90000
                     .confidence(0.58) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("agent3 [GH-90000]")
+                    .agentId("agent3")
                     .processingTime(Duration.ofMillis(12)) // GH-90000
                     .build(); // GH-90000
 
@@ -456,29 +456,29 @@ class CompositeAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Error Isolation [GH-90000]")
+    @DisplayName("Error Isolation")
     class ErrorIsolationTests {
 
         @Test
-        @DisplayName("Single sub-agent failure does not fail composite [GH-90000]")
+        @DisplayName("Single sub-agent failure does not fail composite")
         void singleAgentFailureIsolation() { // GH-90000
             AgentResult<Map<String, Object>> result1 = AgentResult.<Map<String, Object>>builder() // GH-90000
                     .output(Map.of("vote", "A")) // GH-90000
                     .confidence(0.90) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("agent1 [GH-90000]")
+                    .agentId("agent1")
                     .processingTime(Duration.ofMillis(10)) // GH-90000
                     .build(); // GH-90000
 
             // Agent 2 fails
             when(subAgent2.process(any(), any())) // GH-90000
-                    .thenReturn(Promise.ofException(new RuntimeException("Agent 2 failed [GH-90000]")));
+                    .thenReturn(Promise.ofException(new RuntimeException("Agent 2 failed")));
 
             AgentResult<Map<String, Object>> result3 = AgentResult.<Map<String, Object>>builder() // GH-90000
                     .output(Map.of("vote", "A")) // GH-90000
                     .confidence(0.85) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("agent3 [GH-90000]")
+                    .agentId("agent3")
                     .processingTime(Duration.ofMillis(12)) // GH-90000
                     .build(); // GH-90000
 
@@ -499,21 +499,21 @@ class CompositeAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Partial failures are handled gracefully [GH-90000]")
+        @DisplayName("Partial failures are handled gracefully")
         void partialFailureHandling() { // GH-90000
             AgentResult<Map<String, Object>> result1 = AgentResult.<Map<String, Object>>builder() // GH-90000
                     .output(Map.of("result", "ok")) // GH-90000
                     .confidence(0.90) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("agent1 [GH-90000]")
+                    .agentId("agent1")
                     .processingTime(Duration.ofMillis(10)) // GH-90000
                     .build(); // GH-90000
 
             when(subAgent1.process(any(), any())).thenReturn(Promise.of(result1)); // GH-90000
             when(subAgent2.process(any(), any())) // GH-90000
-                    .thenReturn(Promise.ofException(new TimeoutException("Timeout [GH-90000]")));
+                    .thenReturn(Promise.ofException(new TimeoutException("Timeout")));
             when(subAgent3.process(any(), any())) // GH-90000
-                    .thenReturn(Promise.ofException(new RuntimeException("Error [GH-90000]")));
+                    .thenReturn(Promise.ofException(new RuntimeException("Error")));
 
             CompositeAgentConfig config = CompositeAgentConfig.builder() // GH-90000
                     .aggregationStrategy(CompositeAgentConfig.AggregationStrategy.FIRST_MATCH) // GH-90000
@@ -528,14 +528,14 @@ class CompositeAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("All sub-agents fail produces meaningful error [GH-90000]")
+        @DisplayName("All sub-agents fail produces meaningful error")
         void allSubAgentsFail() { // GH-90000
             when(subAgent1.process(any(), any())) // GH-90000
-                    .thenReturn(Promise.ofException(new RuntimeException("Agent 1 failed [GH-90000]")));
+                    .thenReturn(Promise.ofException(new RuntimeException("Agent 1 failed")));
             when(subAgent2.process(any(), any())) // GH-90000
-                    .thenReturn(Promise.ofException(new RuntimeException("Agent 2 failed [GH-90000]")));
+                    .thenReturn(Promise.ofException(new RuntimeException("Agent 2 failed")));
             when(subAgent3.process(any(), any())) // GH-90000
-                    .thenReturn(Promise.ofException(new RuntimeException("Agent 3 failed [GH-90000]")));
+                    .thenReturn(Promise.ofException(new RuntimeException("Agent 3 failed")));
 
             CompositeAgentConfig config = CompositeAgentConfig.builder() // GH-90000
                     .aggregationStrategy(CompositeAgentConfig.AggregationStrategy.MAJORITY_VOTE) // GH-90000
@@ -558,18 +558,18 @@ class CompositeAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Explanation Composition [GH-90000]")
+    @DisplayName("Explanation Composition")
     class ExplanationCompositionTests {
 
         @Test
-        @DisplayName("Composite explanation mentions sub-agent contributions [GH-90000]")
+        @DisplayName("Composite explanation mentions sub-agent contributions")
         void compositeExplanation() { // GH-90000
             AgentResult<Map<String, Object>> result1 = AgentResult.<Map<String, Object>>builder() // GH-90000
                     .output(Map.of("vote", "A")) // GH-90000
                     .confidence(0.90) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .explanation("Agent1 reasoning [GH-90000]")
-                    .agentId("agent1 [GH-90000]")
+                    .explanation("Agent1 reasoning")
+                    .agentId("agent1")
                     .processingTime(Duration.ofMillis(10)) // GH-90000
                     .build(); // GH-90000
 
@@ -577,8 +577,8 @@ class CompositeAgentBehavioralTest {
                     .output(Map.of("vote", "A")) // GH-90000
                     .confidence(0.88) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .explanation("Agent2 reasoning [GH-90000]")
-                    .agentId("agent2 [GH-90000]")
+                    .explanation("Agent2 reasoning")
+                    .agentId("agent2")
                     .processingTime(Duration.ofMillis(11)) // GH-90000
                     .build(); // GH-90000
 
@@ -586,8 +586,8 @@ class CompositeAgentBehavioralTest {
                     .output(Map.of("vote", "B")) // GH-90000
                     .confidence(0.75) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .explanation("Agent3 reasoning [GH-90000]")
-                    .agentId("agent3 [GH-90000]")
+                    .explanation("Agent3 reasoning")
+                    .agentId("agent3")
                     .processingTime(Duration.ofMillis(12)) // GH-90000
                     .build(); // GH-90000
 
@@ -616,17 +616,17 @@ class CompositeAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Latency & Performance [GH-90000]")
+    @DisplayName("Latency & Performance")
     class LatencyTests {
 
         @Test
-        @DisplayName("Composite latency is sum of sub-agent latencies [GH-90000]")
+        @DisplayName("Composite latency is sum of sub-agent latencies")
         void compositeLatency() { // GH-90000
             AgentResult<Map<String, Object>> result1 = AgentResult.<Map<String, Object>>builder() // GH-90000
                     .output(Map.of("x", 1)) // GH-90000
                     .confidence(0.90) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("agent1 [GH-90000]")
+                    .agentId("agent1")
                     .processingTime(Duration.ofMillis(10)) // GH-90000
                     .build(); // GH-90000
 
@@ -634,7 +634,7 @@ class CompositeAgentBehavioralTest {
                     .output(Map.of("x", 1)) // GH-90000
                     .confidence(0.85) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("agent2 [GH-90000]")
+                    .agentId("agent2")
                     .processingTime(Duration.ofMillis(20)) // GH-90000
                     .build(); // GH-90000
 
@@ -642,7 +642,7 @@ class CompositeAgentBehavioralTest {
                     .output(Map.of("x", 1)) // GH-90000
                     .confidence(0.88) // GH-90000
                     .status(AgentResultStatus.SUCCESS) // GH-90000
-                    .agentId("agent3 [GH-90000]")
+                    .agentId("agent3")
                     .processingTime(Duration.ofMillis(15)) // GH-90000
                     .build(); // GH-90000
 

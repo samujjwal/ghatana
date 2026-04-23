@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("CapabilityMatcher Tests [GH-90000]")
+@DisplayName("CapabilityMatcher Tests")
 class CapabilityMatcherTest {
 
   private CapabilityMatcher matcher;
@@ -29,18 +29,18 @@ class CapabilityMatcherTest {
   }
 
   @Nested
-  @DisplayName("Agent Matching [GH-90000]")
+  @DisplayName("Agent Matching")
   class AgentMatching {
 
     @Test
-    @DisplayName("Should find agents with all required capabilities [GH-90000]")
+    @DisplayName("Should find agents with all required capabilities")
     void shouldFindFullMatch() { // GH-90000
       AgentMetadata agent = AgentMetadata.builder() // GH-90000
           .name(AgentName.CODE_GENERATOR_AGENT) // GH-90000
-          .version("1.0 [GH-90000]")
-          .description("Code gen [GH-90000]")
+          .version("1.0")
+          .description("Code gen")
           .capabilities(List.of("java", "code-generation", "refactoring")) // GH-90000
-          .supportedModels(List.of("gpt-4 [GH-90000]"))
+          .supportedModels(List.of("gpt-4"))
           .latencySLA(5000) // GH-90000
           .build(); // GH-90000
 
@@ -53,14 +53,14 @@ class CapabilityMatcherTest {
     }
 
     @Test
-    @DisplayName("Should exclude agents missing required capabilities [GH-90000]")
+    @DisplayName("Should exclude agents missing required capabilities")
     void shouldExcludePartialMatch() { // GH-90000
       AgentMetadata agent = AgentMetadata.builder() // GH-90000
           .name(AgentName.SENTIMENT_AGENT) // GH-90000
-          .version("1.0 [GH-90000]")
-          .description("Sentiment [GH-90000]")
+          .version("1.0")
+          .description("Sentiment")
           .capabilities(List.of("sentiment", "nlp")) // GH-90000
-          .supportedModels(List.of("gpt-4 [GH-90000]"))
+          .supportedModels(List.of("gpt-4"))
           .latencySLA(3000) // GH-90000
           .build(); // GH-90000
 
@@ -72,33 +72,33 @@ class CapabilityMatcherTest {
     }
 
     @Test
-    @DisplayName("Should return empty for no available agents [GH-90000]")
+    @DisplayName("Should return empty for no available agents")
     void shouldReturnEmptyForNoAgents() { // GH-90000
       List<AgentMetadata> results = matcher.findCapableAgents( // GH-90000
-          List.of("java [GH-90000]"), List.of());
+          List.of("java"), List.of());
       assertThat(results).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should sort agents by composite score [GH-90000]")
+    @DisplayName("Should sort agents by composite score")
     void shouldSortByScore() { // GH-90000
       // Low-latency specialist
       AgentMetadata specialist = AgentMetadata.builder() // GH-90000
           .name(AgentName.CODE_GENERATOR_AGENT) // GH-90000
-          .version("1.0 [GH-90000]")
-          .description("Specialist [GH-90000]")
+          .version("1.0")
+          .description("Specialist")
           .capabilities(List.of("java", "code-generation")) // GH-90000
-          .supportedModels(List.of("gpt-4 [GH-90000]"))
+          .supportedModels(List.of("gpt-4"))
           .latencySLA(1000) // GH-90000
           .build(); // GH-90000
 
       // High-latency generalist
       AgentMetadata generalist = AgentMetadata.builder() // GH-90000
           .name(AgentName.COPILOT_AGENT) // GH-90000
-          .version("1.0 [GH-90000]")
-          .description("Generalist [GH-90000]")
+          .version("1.0")
+          .description("Generalist")
           .capabilities(List.of("java", "code-generation", "python", "typescript", "review")) // GH-90000
-          .supportedModels(List.of("gpt-4 [GH-90000]"))
+          .supportedModels(List.of("gpt-4"))
           .latencySLA(10000) // GH-90000
           .build(); // GH-90000
 

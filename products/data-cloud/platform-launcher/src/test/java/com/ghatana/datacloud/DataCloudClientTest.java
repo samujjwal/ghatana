@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer product
  * @doc.pattern Unit Test
  */
-@DisplayName("DataCloud Client Tests [GH-90000]")
+@DisplayName("DataCloud Client Tests")
 class DataCloudClientTest extends EventloopTestBase {
 
     private static final String TENANT = "test-tenant";
@@ -38,15 +38,15 @@ class DataCloudClientTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Entity Operations [GH-90000]")
+    @DisplayName("Entity Operations")
     class EntityOperations {
 
         @Test
-        @DisplayName("should save and retrieve an entity [GH-90000]")
+        @DisplayName("should save and retrieve an entity")
         void shouldSaveAndRetrieve() { // GH-90000
             Entity saved = runPromise(() -> client.save(TENANT, USERS, // GH-90000
                     Map.<String, Object>of("id", "ent-1", "name", "Alice", "role", "admin"))); // GH-90000
-            assertThat(saved.id()).isEqualTo("ent-1 [GH-90000]");
+            assertThat(saved.id()).isEqualTo("ent-1");
 
             Optional<Entity> found = runPromise(() -> client.findById(TENANT, USERS, "ent-1")); // GH-90000
             assertThat(found).isPresent(); // GH-90000
@@ -55,14 +55,14 @@ class DataCloudClientTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should return empty for non-existent entity [GH-90000]")
+        @DisplayName("should return empty for non-existent entity")
         void shouldReturnEmptyForMissing() { // GH-90000
             Optional<Entity> found = runPromise(() -> client.findById(TENANT, USERS, "non-existent")); // GH-90000
             assertThat(found).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("should update an existing entity [GH-90000]")
+        @DisplayName("should update an existing entity")
         void shouldUpdateEntity() { // GH-90000
             runPromise(() -> client.save(TENANT, "config", // GH-90000
                     Map.<String, Object>of("id", "ent-upd", "version", "1.0"))); // GH-90000
@@ -76,7 +76,7 @@ class DataCloudClientTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should delete an entity [GH-90000]")
+        @DisplayName("should delete an entity")
         void shouldDeleteEntity() { // GH-90000
             runPromise(() -> client.save(TENANT, "temp", // GH-90000
                     Map.<String, Object>of("id", "ent-del"))); // GH-90000
@@ -88,7 +88,7 @@ class DataCloudClientTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should query entities by collection [GH-90000]")
+        @DisplayName("should query entities by collection")
         void shouldQueryByCollection() { // GH-90000
             runPromise(() -> client.save(TENANT, USERS, // GH-90000
                     Map.<String, Object>of("id", "u1", "name", "A"))); // GH-90000
@@ -103,7 +103,7 @@ class DataCloudClientTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should handle batch save of multiple entities [GH-90000]")
+        @DisplayName("should handle batch save of multiple entities")
         void shouldBatchSave() { // GH-90000
             for (int i = 0; i < 50; i++) { // GH-90000
                 int idx = i;
@@ -117,24 +117,24 @@ class DataCloudClientTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Event Operations [GH-90000]")
+    @DisplayName("Event Operations")
     class EventOperations {
 
         @Test
-        @DisplayName("should append and query events [GH-90000]")
+        @DisplayName("should append and query events")
         void shouldAppendAndQueryEvents() { // GH-90000
             Event event = Event.of("user.created", Map.of("userId", "u1", "name", "Alice")); // GH-90000
 
             runPromise(() -> client.appendEvent(TENANT, event)); // GH-90000
 
             List<Event> events = runPromise( // GH-90000
-                    () -> client.queryEvents(TENANT, EventQuery.byType("user.created [GH-90000]")));
+                    () -> client.queryEvents(TENANT, EventQuery.byType("user.created")));
             assertThat(events).isNotEmpty(); // GH-90000
-            assertThat(events.get(0).type()).isEqualTo("user.created [GH-90000]");
+            assertThat(events.get(0).type()).isEqualTo("user.created");
         }
 
         @Test
-        @DisplayName("should append multiple events and query by type [GH-90000]")
+        @DisplayName("should append multiple events and query by type")
         void shouldQueryByType() { // GH-90000
             for (int i = 0; i < 10; i++) { // GH-90000
                 int idx = i;
@@ -143,12 +143,12 @@ class DataCloudClientTest extends EventloopTestBase {
             }
 
             List<Event> events = runPromise( // GH-90000
-                    () -> client.queryEvents(TENANT, EventQuery.byType("sensor.reading [GH-90000]")));
+                    () -> client.queryEvents(TENANT, EventQuery.byType("sensor.reading")));
             assertThat(events).isNotEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("should support event tailing [GH-90000]")
+        @DisplayName("should support event tailing")
         void shouldSupportTailing() { // GH-90000
             runPromise(() -> client.appendEvent(TENANT, // GH-90000
                     Event.of("log.entry", Map.of("msg", "first")))); // GH-90000
@@ -157,7 +157,7 @@ class DataCloudClientTest extends EventloopTestBase {
 
             Subscription subscription = client.tailEvents( // GH-90000
                     TENANT,
-                    new TailRequest(Offset.zero(), List.of("log.entry [GH-90000]")),
+                    new TailRequest(Offset.zero(), List.of("log.entry")),
                     received::set);
 
             assertThat(subscription).isNotNull(); // GH-90000
@@ -166,11 +166,11 @@ class DataCloudClientTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Lifecycle [GH-90000]")
+    @DisplayName("Lifecycle")
     class Lifecycle {
 
         @Test
-        @DisplayName("should support close and re-creation [GH-90000]")
+        @DisplayName("should support close and re-creation")
         void shouldSupportCloseAndRecreate() { // GH-90000
             runPromise(() -> client.save(TENANT, "test", // GH-90000
                     Map.<String, Object>of("id", "e1"))); // GH-90000

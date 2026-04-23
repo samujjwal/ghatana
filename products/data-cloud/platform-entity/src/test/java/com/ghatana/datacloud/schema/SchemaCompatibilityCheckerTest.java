@@ -9,13 +9,13 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
-@DisplayName("SchemaCompatibilityChecker [GH-90000]")
+@DisplayName("SchemaCompatibilityChecker")
 class SchemaCompatibilityCheckerTest {
 
     private final SchemaCompatibilityChecker checker = new SchemaCompatibilityChecker(); // GH-90000
 
     @Test
-    @DisplayName("NONE mode accepts all changes [GH-90000]")
+    @DisplayName("NONE mode accepts all changes")
     void noneModeAcceptsAllChanges() { // GH-90000
         EventSchema oldSchema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of( // GH-90000
                 EventSchema.SchemaField.required("id", "string") // GH-90000
@@ -31,7 +31,7 @@ class SchemaCompatibilityCheckerTest {
     }
 
     @Test
-    @DisplayName("format change is incompatible for enforced modes [GH-90000]")
+    @DisplayName("format change is incompatible for enforced modes")
     void formatChangeIsIncompatible() { // GH-90000
         EventSchema oldSchema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of()); // GH-90000
         EventSchema newSchema = schema("subject-a", SchemaFormat.AVRO, List.of()); // GH-90000
@@ -39,11 +39,11 @@ class SchemaCompatibilityCheckerTest {
         SchemaCompatibilityChecker.CompatibilityResult result = checker.check(oldSchema, newSchema, CompatibilityMode.BACKWARD); // GH-90000
 
         assertThat(result.compatible()).isFalse(); // GH-90000
-        assertThat(result.violations()).singleElement().asString().contains("Schema format changed [GH-90000]");
+        assertThat(result.violations()).singleElement().asString().contains("Schema format changed");
     }
 
     @Test
-    @DisplayName("BACKWARD mode rejects new required field without default and type changes [GH-90000]")
+    @DisplayName("BACKWARD mode rejects new required field without default and type changes")
     void backwardModeRejectsUnsafeChanges() { // GH-90000
         EventSchema oldSchema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of( // GH-90000
                 EventSchema.SchemaField.required("id", "string"), // GH-90000
@@ -58,12 +58,12 @@ class SchemaCompatibilityCheckerTest {
         SchemaCompatibilityChecker.CompatibilityResult result = checker.check(oldSchema, newSchema, CompatibilityMode.BACKWARD); // GH-90000
 
         assertThat(result.compatible()).isFalse(); // GH-90000
-        assertThat(result.violations()).anyMatch(v -> v.contains("New required field 'tenant' [GH-90000]"));
-        assertThat(result.violations()).anyMatch(v -> v.contains("Field 'id' type changed [GH-90000]"));
+        assertThat(result.violations()).anyMatch(v -> v.contains("New required field 'tenant'"));
+        assertThat(result.violations()).anyMatch(v -> v.contains("Field 'id' type changed"));
     }
 
     @Test
-    @DisplayName("BACKWARD mode allows new required field with default [GH-90000]")
+    @DisplayName("BACKWARD mode allows new required field with default")
     void backwardModeAllowsRequiredFieldWithDefault() { // GH-90000
         EventSchema oldSchema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of( // GH-90000
                 EventSchema.SchemaField.required("id", "string") // GH-90000
@@ -79,7 +79,7 @@ class SchemaCompatibilityCheckerTest {
     }
 
     @Test
-    @DisplayName("FORWARD mode rejects removed fields and type changes [GH-90000]")
+    @DisplayName("FORWARD mode rejects removed fields and type changes")
     void forwardModeRejectsRemovedFieldsAndTypeChanges() { // GH-90000
         EventSchema oldSchema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of( // GH-90000
                 EventSchema.SchemaField.required("id", "string"), // GH-90000
@@ -92,12 +92,12 @@ class SchemaCompatibilityCheckerTest {
         SchemaCompatibilityChecker.CompatibilityResult result = checker.check(oldSchema, newSchema, CompatibilityMode.FORWARD); // GH-90000
 
         assertThat(result.compatible()).isFalse(); // GH-90000
-        assertThat(result.violations()).anyMatch(v -> v.contains("Field 'status' removed [GH-90000]"));
-        assertThat(result.violations()).anyMatch(v -> v.contains("Field 'id' type changed [GH-90000]"));
+        assertThat(result.violations()).anyMatch(v -> v.contains("Field 'status' removed"));
+        assertThat(result.violations()).anyMatch(v -> v.contains("Field 'id' type changed"));
     }
 
     @Test
-    @DisplayName("FULL mode rejects removed fields and new required fields [GH-90000]")
+    @DisplayName("FULL mode rejects removed fields and new required fields")
     void fullModeRejectsRemovedAndNewRequiredFields() { // GH-90000
         EventSchema oldSchema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of( // GH-90000
                 EventSchema.SchemaField.required("id", "string"), // GH-90000
@@ -111,12 +111,12 @@ class SchemaCompatibilityCheckerTest {
         SchemaCompatibilityChecker.CompatibilityResult result = checker.check(oldSchema, newSchema, CompatibilityMode.FULL); // GH-90000
 
         assertThat(result.compatible()).isFalse(); // GH-90000
-        assertThat(result.violations()).anyMatch(v -> v.contains("Field 'status' removed [GH-90000]"));
-        assertThat(result.violations()).anyMatch(v -> v.contains("New required field 'tenant' [GH-90000]"));
+        assertThat(result.violations()).anyMatch(v -> v.contains("Field 'status' removed"));
+        assertThat(result.violations()).anyMatch(v -> v.contains("New required field 'tenant'"));
     }
 
     @Test
-    @DisplayName("compatible schemas return ok result [GH-90000]")
+    @DisplayName("compatible schemas return ok result")
     void compatibleSchemasReturnOk() { // GH-90000
         EventSchema oldSchema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of( // GH-90000
                 EventSchema.SchemaField.required("id", "string") // GH-90000
@@ -133,7 +133,7 @@ class SchemaCompatibilityCheckerTest {
     }
 
     @Test
-    @DisplayName("check rejects null arguments [GH-90000]")
+    @DisplayName("check rejects null arguments")
     void checkRejectsNullArguments() { // GH-90000
         EventSchema schema = schema("subject-a", SchemaFormat.JSON_SCHEMA, List.of()); // GH-90000
 
@@ -151,7 +151,7 @@ class SchemaCompatibilityCheckerTest {
                 "{}",
                 fields,
                 java.util.Map.of(), // GH-90000
-                Instant.parse("2026-04-02T00:00:00Z [GH-90000]")
+                Instant.parse("2026-04-02T00:00:00Z")
         );
     }
 }

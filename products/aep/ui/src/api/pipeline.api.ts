@@ -210,6 +210,32 @@ export async function listTransforms(): Promise<
   return data.transforms;
 }
 
+// ─── AI Stage Suggestion ─────────────────────────────────────────────
+
+export interface AiSuggestStagesRequest {
+  description: string;
+  existingStages?: PipelineStage[];
+  goal?: string;
+}
+
+export interface AiSuggestStagesResponse {
+  suggestedStages: PipelineStage[];
+  confidence: number;
+  explanation: string;
+}
+
+export async function suggestPipelineStages(
+  request: AiSuggestStagesRequest,
+  tenantId = "default",
+): Promise<AiSuggestStagesResponse> {
+  const { data } = await client.post<AiSuggestStagesResponse>(
+    "/api/v1/aep/pipelines/ai-suggest-stages",
+    request,
+    { params: { tenantId } },
+  );
+  return data;
+}
+
 // ─── Run pipeline (trigger test event) ───────────────────────────────
 
 export interface PipelineRunResult {

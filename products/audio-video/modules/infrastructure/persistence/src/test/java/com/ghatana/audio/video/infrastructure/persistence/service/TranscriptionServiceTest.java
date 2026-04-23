@@ -27,7 +27,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer test
  * @doc.pattern Test
  */
-@DisplayName("TranscriptionService Tests [GH-90000]")
+@DisplayName("TranscriptionService Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class TranscriptionServiceTest extends EventloopTestBase {
 
@@ -43,7 +43,7 @@ class TranscriptionServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("GIVEN valid entity WHEN save THEN returns saved entity async [GH-90000]")
+    @DisplayName("GIVEN valid entity WHEN save THEN returns saved entity async")
     void testSave() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -60,7 +60,7 @@ class TranscriptionServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("GIVEN existing entity WHEN findById THEN returns entity async [GH-90000]")
+    @DisplayName("GIVEN existing entity WHEN findById THEN returns entity async")
     void testFindById() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -76,7 +76,7 @@ class TranscriptionServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("GIVEN existing transcription WHEN findByAudioFileId THEN returns entity async [GH-90000]")
+    @DisplayName("GIVEN existing transcription WHEN findByAudioFileId THEN returns entity async")
     void testFindByAudioFileId() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -94,7 +94,7 @@ class TranscriptionServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("GIVEN multiple entities WHEN findByTenantId THEN returns list async [GH-90000]")
+    @DisplayName("GIVEN multiple entities WHEN findByTenantId THEN returns list async")
     void testFindByTenantId() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -110,7 +110,7 @@ class TranscriptionServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("GIVEN entities with status WHEN findByStatus THEN returns filtered list async [GH-90000]")
+    @DisplayName("GIVEN entities with status WHEN findByStatus THEN returns filtered list async")
     void testFindByStatus() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -128,7 +128,7 @@ class TranscriptionServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("GIVEN entity WHEN softDelete THEN returns true async [GH-90000]")
+    @DisplayName("GIVEN entity WHEN softDelete THEN returns true async")
     void testSoftDelete() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -144,7 +144,7 @@ class TranscriptionServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("GIVEN entity WHEN hardDelete THEN returns true async [GH-90000]")
+    @DisplayName("GIVEN entity WHEN hardDelete THEN returns true async")
     void testHardDelete() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -160,7 +160,7 @@ class TranscriptionServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("GIVEN existing transcription WHEN existsByAudioFileId THEN returns true async [GH-90000]")
+    @DisplayName("GIVEN existing transcription WHEN existsByAudioFileId THEN returns true async")
     void testExistsByAudioFileId() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -175,7 +175,7 @@ class TranscriptionServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("GIVEN entities WHEN countByTenantId THEN returns count async [GH-90000]")
+    @DisplayName("GIVEN entities WHEN countByTenantId THEN returns count async")
     void testCountByTenantId() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";

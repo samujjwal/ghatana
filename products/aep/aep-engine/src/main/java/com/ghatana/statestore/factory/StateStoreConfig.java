@@ -20,7 +20,11 @@ import redis.clients.jedis.JedisPool;
  *     .syncIntervalMs(1000)
  *     .build();
  * </pre>
- */
+  * @doc.type class
+ * @doc.purpose Provides state store config functionality.
+ * @doc.layer product
+ * @doc.pattern Repository
+*/
 public class StateStoreConfig {
 
     // Primary type

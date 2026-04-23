@@ -16,7 +16,11 @@ import java.util.Map;
 
 /**
  * Models for distributed processing and pattern distribution.
- */
+  * @doc.type enum
+ * @doc.purpose Provides distributed models functionality.
+ * @doc.layer product
+ * @doc.pattern Enum
+*/
 public final class DistributedModels {
 
     private DistributedModels() {

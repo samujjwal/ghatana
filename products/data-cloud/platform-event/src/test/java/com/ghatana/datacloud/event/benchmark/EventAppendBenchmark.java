@@ -47,7 +47,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern Benchmark Test
  */
 @Timeout(value = 120, unit = TimeUnit.SECONDS) // GH-90000
-@DisplayName("EventAppendBenchmark – platform-event Performance [GH-90000]")
+@DisplayName("EventAppendBenchmark – platform-event Performance")
 class EventAppendBenchmark extends EventloopTestBase {
 
     private static final int WARMUP_ITERATIONS = 100;
@@ -57,7 +57,7 @@ class EventAppendBenchmark extends EventloopTestBase {
     private static final long SPILL_P99_THRESHOLD_MS = 100;
 
     @Test
-    @DisplayName("single event offer p99 under 1ms [GH-90000]")
+    @DisplayName("single event offer p99 under 1ms")
     void singleEventOfferP99Under1ms() { // GH-90000
         EventBuffer buffer = new EventBuffer(new InMemoryEventLogStore(), "benchmark-buffer"); // GH-90000
 
@@ -90,7 +90,7 @@ class EventAppendBenchmark extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("batch drain (100 events) p99 under 10ms [GH-90000]")
+    @DisplayName("batch drain (100 events) p99 under 10ms")
     void batchDrainP99Under10ms() { // GH-90000
         EventBuffer buffer = new EventBuffer(new InMemoryEventLogStore(), "benchmark-buffer"); // GH-90000
         int batchSize = 100;
@@ -124,7 +124,7 @@ class EventAppendBenchmark extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("buffer spill (1000 events) p99 under 100ms [GH-90000]")
+    @DisplayName("buffer spill (1000 events) p99 under 100ms")
     void bufferSpillP99Under100ms() { // GH-90000
         int capacity = 5000;
         int highWaterMark = 4000;
@@ -141,7 +141,7 @@ class EventAppendBenchmark extends EventloopTestBase {
         // Warmup
         for (int i = 0; i < 10; i++) { // GH-90000
             fillBuffer(buffer, highWaterMark + spillCount); // GH-90000
-            runPromise(() -> buffer.spillExcess("tenant-123 [GH-90000]"));
+            runPromise(() -> buffer.spillExcess("tenant-123"));
         }
 
         // Benchmark
@@ -150,7 +150,7 @@ class EventAppendBenchmark extends EventloopTestBase {
         for (int i = 0; i < 100; i++) { // GH-90000
             fillBuffer(buffer, highWaterMark + spillCount); // GH-90000
             long start = System.nanoTime(); // GH-90000
-            int spilled = runPromise(() -> buffer.spillExcess("tenant-123 [GH-90000]"));
+            int spilled = runPromise(() -> buffer.spillExcess("tenant-123"));
             long end = System.nanoTime(); // GH-90000
             
             assertThat(spilled).isGreaterThanOrEqualTo(spillCount); // GH-90000
@@ -167,7 +167,7 @@ class EventAppendBenchmark extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("concurrent event offer throughput [GH-90000]")
+    @DisplayName("concurrent event offer throughput")
     void concurrentEventOfferThroughput() { // GH-90000
         EventBuffer buffer = new EventBuffer( // GH-90000
             new InMemoryEventLogStore(), // GH-90000

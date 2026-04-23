@@ -43,7 +43,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataCloudHttpServer – Checkpoint Endpoints (DC-3) [GH-90000]")
+@DisplayName("DataCloudHttpServer – Checkpoint Endpoints (DC-3)")
 class DataCloudHttpServerCheckpointTest {
 
     private DataCloudClient mockClient;
@@ -67,11 +67,11 @@ class DataCloudHttpServerCheckpointTest {
     // ==================== GET /api/v1/checkpoints ====================
 
     @Nested
-    @DisplayName("GET /api/v1/checkpoints – list checkpoints [GH-90000]")
+    @DisplayName("GET /api/v1/checkpoints – list checkpoints")
     class ListCheckpointTests {
 
         @Test
-        @DisplayName("returns 200 with checkpoint list and count [GH-90000]")
+        @DisplayName("returns 200 with checkpoint list and count")
         void listCheckpoints_withData_returns200() throws Exception { // GH-90000
             List<DataCloudClient.Entity> checkpoints = List.of( // GH-90000
                 DataCloudClient.Entity.of("cp-1", "dc_checkpoints", // GH-90000
@@ -79,87 +79,87 @@ class DataCloudHttpServerCheckpointTest {
                 DataCloudClient.Entity.of("cp-2", "dc_checkpoints", // GH-90000
                     Map.of("pipelineId", "pipe-b", "step", 7)) // GH-90000
             );
-            when(mockClient.query(anyString(), eq("dc_checkpoints [GH-90000]"), any(DataCloudClient.Query.class)))
+            when(mockClient.query(anyString(), eq("dc_checkpoints"), any(DataCloudClient.Query.class)))
                 .thenReturn(Promise.of(checkpoints)); // GH-90000
 
             startServer(); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/checkpoints [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/checkpoints");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(((List<?>) body.get("checkpoints [GH-90000]"))).hasSize(2);
-            assertThat(((Number) body.get("count [GH-90000]")).intValue()).isEqualTo(2);
+            assertThat(((List<?>) body.get("checkpoints"))).hasSize(2);
+            assertThat(((Number) body.get("count")).intValue()).isEqualTo(2);
         }
 
         @Test
-        @DisplayName("empty collection → 200 with empty list [GH-90000]")
+        @DisplayName("empty collection → 200 with empty list")
         void listCheckpoints_empty_returns200WithEmptyList() throws Exception { // GH-90000
-            when(mockClient.query(anyString(), eq("dc_checkpoints [GH-90000]"), any(DataCloudClient.Query.class)))
+            when(mockClient.query(anyString(), eq("dc_checkpoints"), any(DataCloudClient.Query.class)))
                 .thenReturn(Promise.of(List.of())); // GH-90000
 
             startServer(); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/checkpoints [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/checkpoints");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(((List<?>) body.get("checkpoints [GH-90000]"))).isEmpty();
-            assertThat(((Number) body.get("count [GH-90000]")).intValue()).isEqualTo(0);
+            assertThat(((List<?>) body.get("checkpoints"))).isEmpty();
+            assertThat(((Number) body.get("count")).intValue()).isEqualTo(0);
         }
 
         @Test
-        @DisplayName("response always contains tenantId and timestamp [GH-90000]")
+        @DisplayName("response always contains tenantId and timestamp")
         void listCheckpoints_always_includesMetadata() throws Exception { // GH-90000
-            when(mockClient.query(anyString(), eq("dc_checkpoints [GH-90000]"), any(DataCloudClient.Query.class)))
+            when(mockClient.query(anyString(), eq("dc_checkpoints"), any(DataCloudClient.Query.class)))
                 .thenReturn(Promise.of(List.of())); // GH-90000
 
             startServer(); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/checkpoints [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/checkpoints");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("tenantId [GH-90000]")).isNotNull();
-            assertThat(body.get("timestamp [GH-90000]")).isNotNull();
+            assertThat(body.get("tenantId")).isNotNull();
+            assertThat(body.get("timestamp")).isNotNull();
         }
 
         @Test
-        @DisplayName("limit query param is passed through [GH-90000]")
+        @DisplayName("limit query param is passed through")
         void listCheckpoints_withLimit_queriesWithLimit() throws Exception { // GH-90000
-            when(mockClient.query(anyString(), eq("dc_checkpoints [GH-90000]"), any(DataCloudClient.Query.class)))
+            when(mockClient.query(anyString(), eq("dc_checkpoints"), any(DataCloudClient.Query.class)))
                 .thenReturn(Promise.of(List.of())); // GH-90000
 
             startServer(); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/checkpoints?limit=50 [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/checkpoints?limit=50");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             // No exception thrown — limit param was accepted
-            verify(mockClient).query(anyString(), eq("dc_checkpoints [GH-90000]"), any());
+            verify(mockClient).query(anyString(), eq("dc_checkpoints"), any());
         }
 
         @Test
-        @DisplayName("missing tenant returns 400 [GH-90000]")
+        @DisplayName("missing tenant returns 400")
         void listCheckpoints_missingTenant_returns400() throws Exception { // GH-90000
             startServer(); // GH-90000
 
-            HttpResponse<String> resp = getWithoutTenant("/api/v1/checkpoints [GH-90000]");
+            HttpResponse<String> resp = getWithoutTenant("/api/v1/checkpoints");
 
             assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("error [GH-90000]")).isEqualTo("MISSING_TENANT [GH-90000]");
+            assertThat(body.get("error")).isEqualTo("MISSING_TENANT");
         }
     }
 
     // ==================== POST /api/v1/checkpoints ====================
 
     @Nested
-    @DisplayName("POST /api/v1/checkpoints – save checkpoint [GH-90000]")
+    @DisplayName("POST /api/v1/checkpoints – save checkpoint")
     class SaveCheckpointTests {
 
         @Test
-        @DisplayName("valid checkpoint body → 200 with id and savedAt [GH-90000]")
+        @DisplayName("valid checkpoint body → 200 with id and savedAt")
         void saveCheckpoint_validBody_returns200() throws Exception { // GH-90000
             Map<String, Object> cpData = Map.of( // GH-90000
                 "id", "cp-new",
@@ -168,7 +168,7 @@ class DataCloudHttpServerCheckpointTest {
                 "state", "RUNNING"
             );
             DataCloudClient.Entity saved = DataCloudClient.Entity.of("cp-new", "dc_checkpoints", cpData); // GH-90000
-            when(mockClient.save(anyString(), eq("dc_checkpoints [GH-90000]"), any()))
+            when(mockClient.save(anyString(), eq("dc_checkpoints"), any()))
                 .thenReturn(Promise.of(saved)); // GH-90000
 
             startServer(); // GH-90000
@@ -177,13 +177,13 @@ class DataCloudHttpServerCheckpointTest {
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("id [GH-90000]")).isEqualTo("cp-new [GH-90000]");
-            assertThat(body.get("savedAt [GH-90000]")).isNotNull();
-            assertThat(body.get("tenantId [GH-90000]")).isNotNull();
+            assertThat(body.get("id")).isEqualTo("cp-new");
+            assertThat(body.get("savedAt")).isNotNull();
+            assertThat(body.get("tenantId")).isNotNull();
         }
 
         @Test
-        @DisplayName("invalid JSON → 400 with error message [GH-90000]")
+        @DisplayName("invalid JSON → 400 with error message")
         void saveCheckpoint_invalidJson_returns400() throws Exception { // GH-90000
             startServer(); // GH-90000
 
@@ -191,26 +191,26 @@ class DataCloudHttpServerCheckpointTest {
 
             assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("message [GH-90000]")).isNotNull();
+            assertThat(body.get("message")).isNotNull();
         }
 
         @Test
-        @DisplayName("saved to dc_checkpoints collection [GH-90000]")
+        @DisplayName("saved to dc_checkpoints collection")
         void saveCheckpoint_savesTo_dcCheckpointsCollection() throws Exception { // GH-90000
             Map<String, Object> cpData = Map.of("id", "cp-c", "step", 1); // GH-90000
             DataCloudClient.Entity saved = DataCloudClient.Entity.of("cp-c", "dc_checkpoints", cpData); // GH-90000
-            when(mockClient.save(anyString(), eq("dc_checkpoints [GH-90000]"), any()))
+            when(mockClient.save(anyString(), eq("dc_checkpoints"), any()))
                 .thenReturn(Promise.of(saved)); // GH-90000
 
             startServer(); // GH-90000
 
             post("/api/v1/checkpoints", cpData); // GH-90000
 
-            verify(mockClient).save(anyString(), eq("dc_checkpoints [GH-90000]"), any());
+            verify(mockClient).save(anyString(), eq("dc_checkpoints"), any());
         }
 
         @Test
-        @DisplayName("missing tenant returns 400 [GH-90000]")
+        @DisplayName("missing tenant returns 400")
         void saveCheckpoint_missingTenant_returns400() throws Exception { // GH-90000
             startServer(); // GH-90000
 
@@ -218,91 +218,91 @@ class DataCloudHttpServerCheckpointTest {
 
             assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("error [GH-90000]")).isEqualTo("MISSING_TENANT [GH-90000]");
+            assertThat(body.get("error")).isEqualTo("MISSING_TENANT");
         }
     }
 
     // ==================== GET /api/v1/checkpoints/:checkpointId ====================
 
     @Nested
-    @DisplayName("GET /api/v1/checkpoints/:checkpointId – get checkpoint [GH-90000]")
+    @DisplayName("GET /api/v1/checkpoints/:checkpointId – get checkpoint")
     class GetCheckpointTests {
 
         @Test
-        @DisplayName("existing checkpoint → 200 with data [GH-90000]")
+        @DisplayName("existing checkpoint → 200 with data")
         void getCheckpoint_found_returns200() throws Exception { // GH-90000
             DataCloudClient.Entity entity = DataCloudClient.Entity.of( // GH-90000
                 "cp-99", "dc_checkpoints", Map.of("step", 10, "status", "COMPLETE")); // GH-90000
-            when(mockClient.findById(anyString(), eq("dc_checkpoints [GH-90000]"), eq("cp-99 [GH-90000]")))
+            when(mockClient.findById(anyString(), eq("dc_checkpoints"), eq("cp-99")))
                 .thenReturn(Promise.of(Optional.of(entity))); // GH-90000
 
             startServer(); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/checkpoints/cp-99 [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/checkpoints/cp-99");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("id [GH-90000]")).isEqualTo("cp-99 [GH-90000]");
-            assertThat(body.get("data [GH-90000]")).isNotNull();
-            assertThat(body.get("tenantId [GH-90000]")).isNotNull();
+            assertThat(body.get("id")).isEqualTo("cp-99");
+            assertThat(body.get("data")).isNotNull();
+            assertThat(body.get("tenantId")).isNotNull();
         }
 
         @Test
-        @DisplayName("non-existent checkpoint → 404 [GH-90000]")
+        @DisplayName("non-existent checkpoint → 404")
         void getCheckpoint_notFound_returns404() throws Exception { // GH-90000
-            when(mockClient.findById(anyString(), eq("dc_checkpoints [GH-90000]"), eq("missing-cp [GH-90000]")))
+            when(mockClient.findById(anyString(), eq("dc_checkpoints"), eq("missing-cp")))
                 .thenReturn(Promise.of(Optional.empty())); // GH-90000
 
             startServer(); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/checkpoints/missing-cp [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/checkpoints/missing-cp");
 
             assertThat(resp.statusCode()).isEqualTo(404); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("message [GH-90000]").toString()).contains("missing-cp [GH-90000]");
+            assertThat(body.get("message").toString()).contains("missing-cp");
         }
     }
 
     // ==================== DELETE /api/v1/checkpoints/:checkpointId ====================
 
     @Nested
-    @DisplayName("DELETE /api/v1/checkpoints/:checkpointId – delete checkpoint [GH-90000]")
+    @DisplayName("DELETE /api/v1/checkpoints/:checkpointId – delete checkpoint")
     class DeleteCheckpointTests {
 
         @Test
-        @DisplayName("delete returns 200 with deleted=true and checkpointId [GH-90000]")
+        @DisplayName("delete returns 200 with deleted=true and checkpointId")
         void deleteCheckpoint_returns200() throws Exception { // GH-90000
-            when(mockClient.delete(anyString(), eq("dc_checkpoints [GH-90000]"), eq("cp-del [GH-90000]")))
+            when(mockClient.delete(anyString(), eq("dc_checkpoints"), eq("cp-del")))
                 .thenReturn(Promise.of(null)); // GH-90000
 
             startServer(); // GH-90000
 
-            HttpResponse<String> resp = delete("/api/v1/checkpoints/cp-del [GH-90000]");
+            HttpResponse<String> resp = delete("/api/v1/checkpoints/cp-del");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat((Boolean) body.get("deleted [GH-90000]")).isTrue();
-            assertThat(body.get("checkpointId [GH-90000]")).isEqualTo("cp-del [GH-90000]");
-            assertThat(body.get("timestamp [GH-90000]")).isNotNull();
+            assertThat((Boolean) body.get("deleted")).isTrue();
+            assertThat(body.get("checkpointId")).isEqualTo("cp-del");
+            assertThat(body.get("timestamp")).isNotNull();
         }
 
         @Test
-        @DisplayName("delete propagates checkpoint ID to client [GH-90000]")
+        @DisplayName("delete propagates checkpoint ID to client")
         void deleteCheckpoint_propagatesIdToClient() throws Exception { // GH-90000
-            when(mockClient.delete(anyString(), eq("dc_checkpoints [GH-90000]"), eq("cp-prop [GH-90000]")))
+            when(mockClient.delete(anyString(), eq("dc_checkpoints"), eq("cp-prop")))
                 .thenReturn(Promise.of(null)); // GH-90000
 
             startServer(); // GH-90000
 
-            delete("/api/v1/checkpoints/cp-prop [GH-90000]");
+            delete("/api/v1/checkpoints/cp-prop");
 
-            verify(mockClient).delete(anyString(), eq("dc_checkpoints [GH-90000]"), eq("cp-prop [GH-90000]"));
+            verify(mockClient).delete(anyString(), eq("dc_checkpoints"), eq("cp-prop"));
         }
 
         @Test
-        @DisplayName("response includes tenantId from request header [GH-90000]")
+        @DisplayName("response includes tenantId from request header")
         void deleteCheckpoint_responseIncludesTenantId() throws Exception { // GH-90000
-            when(mockClient.delete(anyString(), eq("dc_checkpoints [GH-90000]"), eq("cp-t [GH-90000]")))
+            when(mockClient.delete(anyString(), eq("dc_checkpoints"), eq("cp-t")))
                 .thenReturn(Promise.of(null)); // GH-90000
 
             startServer(); // GH-90000
@@ -311,7 +311,7 @@ class DataCloudHttpServerCheckpointTest {
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("tenantId [GH-90000]")).isEqualTo("my-tenant [GH-90000]");
+            assertThat(body.get("tenantId")).isEqualTo("my-tenant");
         }
     }
 

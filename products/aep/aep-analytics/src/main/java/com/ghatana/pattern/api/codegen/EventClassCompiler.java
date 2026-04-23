@@ -9,7 +9,11 @@ import java.util.Optional;
 
 /**
  * Public entry point for runtime event class generation.
- */
+  * @doc.type interface
+ * @doc.purpose Provides event class compiler functionality.
+ * @doc.layer product
+ * @doc.pattern Event
+*/
 public interface EventClassCompiler {
 
     /**

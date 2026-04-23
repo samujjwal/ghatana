@@ -29,7 +29,7 @@ import org.junit.jupiter.api.Test;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("HotReloadPluginRegistry Tests (10.3) [GH-90000]")
+@DisplayName("HotReloadPluginRegistry Tests (10.3)")
 class HotReloadPluginRegistryTest {
 
     /** Minimal test plugin contract. */
@@ -52,7 +52,7 @@ class HotReloadPluginRegistryTest {
 
     @BeforeEach
     void setUp() { // GH-90000
-        IsolatingPluginSandbox sandbox = new IsolatingPluginSandbox("2.0.0 [GH-90000]");
+        IsolatingPluginSandbox sandbox = new IsolatingPluginSandbox("2.0.0");
         registry = new HotReloadPluginRegistry(sandbox); // GH-90000
 
         // We test with a non-existent class to verify the version-gate path.
@@ -66,27 +66,27 @@ class HotReloadPluginRegistryTest {
     }
 
     @Test
-    @DisplayName("10.3.4.1 — reload() throws IllegalArgumentException for unregistered plugin [GH-90000]")
+    @DisplayName("10.3.4.1 — reload() throws IllegalArgumentException for unregistered plugin")
     void reloadUnregisteredPluginThrows() { // GH-90000
-        assertThatThrownBy(() -> registry.reload("unknown-plugin [GH-90000]"))
+        assertThatThrownBy(() -> registry.reload("unknown-plugin"))
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("unknown-plugin [GH-90000]");
+                .hasMessageContaining("unknown-plugin");
     }
 
     @Test
-    @DisplayName("10.3.4.2 — isRegistered() returns false before register, true after [GH-90000]")
+    @DisplayName("10.3.4.2 — isRegistered() returns false before register, true after")
     void isRegisteredLifecycle() { // GH-90000
-        assertThat(registry.isRegistered("counter-plugin [GH-90000]")).isFalse();
+        assertThat(registry.isRegistered("counter-plugin")).isFalse();
     }
 
     @Test
-    @DisplayName("10.3.4.3 — get() returns empty for unregistered plugin [GH-90000]")
+    @DisplayName("10.3.4.3 — get() returns empty for unregistered plugin")
     void getUnregisteredReturnsEmpty() { // GH-90000
         assertThat(registry.get("counter-plugin", Counter.class)).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("10.3.4.4 — size() reflects registered plugin count [GH-90000]")
+    @DisplayName("10.3.4.4 — size() reflects registered plugin count")
     void sizeReflectsRegistrations() { // GH-90000
         assertThat(registry.size()).isEqualTo(0); // GH-90000
     }
@@ -96,7 +96,7 @@ class HotReloadPluginRegistryTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("10.3.5 — concurrent reads during reload do not throw or return null [GH-90000]")
+    @DisplayName("10.3.5 — concurrent reads during reload do not throw or return null")
     void concurrentReadsDuringReloadAreGraceful() throws InterruptedException { // GH-90000
         // Use a simple in-process registry with a manually inserted entry
         // (bypassing sandbox loading) to validate the locking mechanism. // GH-90000
@@ -137,7 +137,7 @@ class HotReloadPluginRegistryTest {
         doneLatch.await(10, TimeUnit.SECONDS); // GH-90000
         pool.shutdownNow(); // GH-90000
 
-        assertThat(errors).as("No exceptions during concurrent reads [GH-90000]").isEmpty();
+        assertThat(errors).as("No exceptions during concurrent reads").isEmpty();
     }
 
     /**

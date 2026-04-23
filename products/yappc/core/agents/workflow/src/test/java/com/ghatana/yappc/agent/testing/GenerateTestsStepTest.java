@@ -20,7 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Testing GenerateTestsStep Tests [GH-90000]")
+@DisplayName("Testing GenerateTestsStep Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles generate tests step test operations
@@ -41,7 +41,7 @@ class GenerateTestsStepTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should generate test cases from test plan [GH-90000]")
+  @DisplayName("Should generate test cases from test plan")
   void shouldGenerateTestCases() { // GH-90000
     // GIVEN
     WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
@@ -64,9 +64,9 @@ class GenerateTestsStepTest extends EventloopTestBase {
                 List.of( // GH-90000
                     Map.of("id", "req1", "category", "FUNCTIONAL", "description", "User login")))); // GH-90000
 
-    when(dbClient.query(eq("test_plans [GH-90000]"), any(), anyInt()))
+    when(dbClient.query(eq("test_plans"), any(), anyInt()))
         .thenReturn(Promise.of(List.of(mockTestPlan))); // GH-90000
-    when(dbClient.query(eq("requirements_published [GH-90000]"), any(), anyInt()))
+    when(dbClient.query(eq("requirements_published"), any(), anyInt()))
         .thenReturn(Promise.of(List.of(mockReqBaseline))); // GH-90000
     when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
     when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
@@ -77,11 +77,11 @@ class GenerateTestsStepTest extends EventloopTestBase {
 
     // THEN
     assertThat(result).isNotNull(); // GH-90000
-    assertThat(result.get("status [GH-90000]")).isEqualTo("COMPLETED [GH-90000]");
+    assertThat(result.get("status")).isEqualTo("COMPLETED");
   }
 
   @Test
-  @DisplayName("Should fail when testPlanId is missing [GH-90000]")
+  @DisplayName("Should fail when testPlanId is missing")
   void shouldFailWhenTestPlanIdMissing() { // GH-90000
     // GIVEN
     WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
@@ -91,6 +91,6 @@ class GenerateTestsStepTest extends EventloopTestBase {
     // WHEN/THEN
     assertThatThrownBy(() -> runPromise(() -> step.execute(context))) // GH-90000
         .isInstanceOf(IllegalArgumentException.class) // GH-90000
-        .hasMessageContaining("testPlan [GH-90000]");
+        .hasMessageContaining("testPlan");
   }
 }

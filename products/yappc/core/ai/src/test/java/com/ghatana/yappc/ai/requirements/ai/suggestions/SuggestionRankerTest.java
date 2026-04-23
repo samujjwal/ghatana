@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
  * - Statistics calculation
  * - Persona distribution analysis
  */
-@DisplayName("SuggestionRanker Tests [GH-90000]")
+@DisplayName("SuggestionRanker Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles suggestion ranker test operations
@@ -62,7 +62,7 @@ class SuggestionRankerTest {
   }
 
   @Test
-  @DisplayName("Should rank by relevance in descending order [GH-90000]")
+  @DisplayName("Should rank by relevance in descending order")
   void shouldRankByRelevance() { // GH-90000
     List<AISuggestion> suggestions = createTestSuggestions(); // GH-90000
 
@@ -74,7 +74,7 @@ class SuggestionRankerTest {
   }
 
   @Test
-  @DisplayName("Should rank by priority in descending order [GH-90000]")
+  @DisplayName("Should rank by priority in descending order")
   void shouldRankByPriority() { // GH-90000
     List<AISuggestion> suggestions = createTestSuggestions(); // GH-90000
 
@@ -86,7 +86,7 @@ class SuggestionRankerTest {
   }
 
   @Test
-  @DisplayName("Should rank by combined rank score [GH-90000]")
+  @DisplayName("Should rank by combined rank score")
   void shouldRankByRankScore() { // GH-90000
     List<AISuggestion> suggestions = createTestSuggestions(); // GH-90000
 
@@ -101,7 +101,7 @@ class SuggestionRankerTest {
   }
 
   @Test
-  @DisplayName("Should get top N suggestions [GH-90000]")
+  @DisplayName("Should get top N suggestions")
   void shouldGetTopN() { // GH-90000
     List<AISuggestion> suggestions = createTestSuggestions(); // GH-90000
 
@@ -111,7 +111,7 @@ class SuggestionRankerTest {
   }
 
   @Test
-  @DisplayName("Should handle topN larger than list size [GH-90000]")
+  @DisplayName("Should handle topN larger than list size")
   void shouldHandleTopNLargerThanSize() { // GH-90000
     List<AISuggestion> suggestions = createTestSuggestions(); // GH-90000
 
@@ -121,7 +121,7 @@ class SuggestionRankerTest {
   }
 
   @Test
-  @DisplayName("Should filter by minimum rank score [GH-90000]")
+  @DisplayName("Should filter by minimum rank score")
   void shouldFilterByRankScore() { // GH-90000
     List<AISuggestion> suggestions = createTestSuggestions(); // GH-90000
 
@@ -131,7 +131,7 @@ class SuggestionRankerTest {
   }
 
   @Test
-  @DisplayName("Should filter by status [GH-90000]")
+  @DisplayName("Should filter by status")
   void shouldFilterByStatus() { // GH-90000
     List<AISuggestion> suggestions = new ArrayList<>(); // GH-90000
     suggestions.add( // GH-90000
@@ -172,7 +172,7 @@ class SuggestionRankerTest {
   }
 
   @Test
-  @DisplayName("Should calculate average rank score [GH-90000]")
+  @DisplayName("Should calculate average rank score")
   void shouldCalculateAverageRankScore() { // GH-90000
     List<AISuggestion> suggestions = createTestSuggestions(); // GH-90000
 
@@ -183,7 +183,7 @@ class SuggestionRankerTest {
   }
 
   @Test
-  @DisplayName("Should return 0 for average of empty list [GH-90000]")
+  @DisplayName("Should return 0 for average of empty list")
   void shouldReturnZeroForEmpty() { // GH-90000
     float avg = SuggestionRanker.averageRankScore(new ArrayList<>()); // GH-90000
 
@@ -191,7 +191,7 @@ class SuggestionRankerTest {
   }
 
   @Test
-  @DisplayName("Should calculate persona distribution [GH-90000]")
+  @DisplayName("Should calculate persona distribution")
   void shouldCalculatePersonaDistribution() { // GH-90000
     List<AISuggestion> suggestions = createTestSuggestions(); // GH-90000
 
@@ -204,7 +204,7 @@ class SuggestionRankerTest {
   }
 
   @Test
-  @DisplayName("Should handle multiple suggestions from same persona [GH-90000]")
+  @DisplayName("Should handle multiple suggestions from same persona")
   void shouldHandleMultipleSamePersona() { // GH-90000
     List<AISuggestion> suggestions = new ArrayList<>(); // GH-90000
     suggestions.add( // GH-90000

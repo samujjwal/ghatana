@@ -57,9 +57,9 @@ class JavaLanguageServiceTest extends AbstractLanguageTest {
 
     @Test
     void testDoesNotSupportNonJavaFiles() { // GH-90000
-        assertFalse(javaService.supports(Path.of("test.py [GH-90000]")));
-        assertFalse(javaService.supports(Path.of("pom.xml [GH-90000]")));
-        assertFalse(javaService.supports(Path.of("src/main/resources/application.properties [GH-90000]")));
+        assertFalse(javaService.supports(Path.of("test.py")));
+        assertFalse(javaService.supports(Path.of("pom.xml")));
+        assertFalse(javaService.supports(Path.of("src/main/resources/application.properties")));
     }
 
     @Test

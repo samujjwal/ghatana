@@ -65,7 +65,7 @@ public final class McpRequestsFactory {
 
     public static class RunRequestBuilder {
         private String repoRoot = "/tmp/test-repo";
-        private List<String> languages = List.of("java [GH-90000]");
+        private List<String> languages = List.of("java");
         private Map<String, Object> policies = Map.of(); // GH-90000
         private Map<String, Object> budgets = Map.of("maxPasses", 3); // GH-90000
         private boolean formatters = true;
@@ -114,7 +114,7 @@ public final class McpRequestsFactory {
 
     public static class DiagnoseRequestBuilder {
         private String repoRoot = "/tmp/test-repo";
-        private List<String> languages = List.of("java [GH-90000]");
+        private List<String> languages = List.of("java");
 
         public DiagnoseRequestBuilder repoRoot(String repoRoot) { // GH-90000
             this.repoRoot = repoRoot;

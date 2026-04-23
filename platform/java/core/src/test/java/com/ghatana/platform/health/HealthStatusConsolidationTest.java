@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test;
  * @doc.layer platform
  * @doc.pattern ArchUnit Test
  */
-@DisplayName("HealthStatus Consolidation Tests [GH-90000]")
+@DisplayName("HealthStatus Consolidation Tests")
 class HealthStatusConsolidationTest {
 
     private static final String CANONICAL_CLASS = "com.ghatana.platform.health.HealthStatus";
@@ -36,12 +36,12 @@ class HealthStatusConsolidationTest {
     private static final String AGENT_PACKAGES = "com.ghatana.agent";
 
     @Test
-    @DisplayName("Only one HealthStatus definition should exist in platform [GH-90000]")
+    @DisplayName("Only one HealthStatus definition should exist in platform")
     void shouldHaveOnlyOneCanonicalHealthStatusDefinition() { // GH-90000
         JavaClasses classes = new ClassFileImporter().importPackages(PLATFORM_PACKAGES); // GH-90000
 
         long healthStatusCount = classes.stream() // GH-90000
-            .filter(c -> c.getSimpleName().equals("HealthStatus [GH-90000]") && !c.isInnerClass())
+            .filter(c -> c.getSimpleName().equals("HealthStatus") && !c.isInnerClass())
             .count(); // GH-90000
 
         assertThat(healthStatusCount) // GH-90000
@@ -50,12 +50,12 @@ class HealthStatusConsolidationTest {
     }
 
     @Test
-    @DisplayName("Canonical HealthStatus must be in platform.health package [GH-90000]")
+    @DisplayName("Canonical HealthStatus must be in platform.health package")
     void shouldHaveHealthStatusInCanonicalLocation() { // GH-90000
         JavaClasses classes = new ClassFileImporter().importPackages(PLATFORM_PACKAGES); // GH-90000
 
         boolean found = classes.stream() // GH-90000
-            .filter(c -> c.getSimpleName().equals("HealthStatus [GH-90000]"))
+            .filter(c -> c.getSimpleName().equals("HealthStatus"))
             .anyMatch(c -> c.getPackageName().equals(CANONICAL_PACKAGE)); // GH-90000
 
         assertThat(found) // GH-90000
@@ -64,38 +64,38 @@ class HealthStatusConsolidationTest {
     }
 
     @Test
-    @DisplayName("Platform modules importing HealthStatus should use canonical location [GH-90000]")
+    @DisplayName("Platform modules importing HealthStatus should use canonical location")
     void shouldImportHealthStatusFromCanonical() { // GH-90000
         // This test is enforced via ArchUnit rule in separate governance test
         // See GovernanceBoundaryArchTest for import validation rules
     }
 
     @Test
-    @DisplayName("Agent-core should not have its own HealthStatus - use canonical platform HealthStatus [GH-90000]")
+    @DisplayName("Agent-core should not have its own HealthStatus - use canonical platform HealthStatus")
     void agentHealthStatusShouldNotExist() { // GH-90000
         JavaClasses classes = new ClassFileImporter() // GH-90000
             .importPackages(AGENT_PACKAGES); // GH-90000
 
         // Agent-core HealthStatus enum was removed - all code should use platform HealthStatus
         boolean agentHealthStatusExists = classes.stream() // GH-90000
-            .anyMatch(c -> c.getFullName().equals("com.ghatana.agent.HealthStatus [GH-90000]"));
+            .anyMatch(c -> c.getFullName().equals("com.ghatana.agent.HealthStatus"));
 
         assertThat(agentHealthStatusExists) // GH-90000
-            .as("Agent-core HealthStatus should not exist (removed - use platform HealthStatus) [GH-90000]")
+            .as("Agent-core HealthStatus should not exist (removed - use platform HealthStatus)")
             .isFalse(); // GH-90000
 
         // No agent package should define its own HealthStatus
         long agentHealthStatusCount = classes.stream() // GH-90000
-            .filter(c -> c.getSimpleName().equals("HealthStatus [GH-90000]"))
+            .filter(c -> c.getSimpleName().equals("HealthStatus"))
             .count(); // GH-90000
 
         assertThat(agentHealthStatusCount) // GH-90000
-            .as("Agent packages should not define HealthStatus (use platform.health) [GH-90000]")
+            .as("Agent packages should not define HealthStatus (use platform.health)")
             .isEqualTo(0L); // GH-90000
     }
 
     @Test
-    @DisplayName("Database health should use canonical HealthStatus, not local HealthStatus [GH-90000]")
+    @DisplayName("Database health should use canonical HealthStatus, not local HealthStatus")
     void databaseShouldNotHaveOwnHealthStatus() { // GH-90000
         JavaClasses classes = new ClassFileImporter() // GH-90000
             .importPackages("com.ghatana.platform.database", "com.ghatana.core.database"); // GH-90000
@@ -103,56 +103,56 @@ class HealthStatusConsolidationTest {
         // Allow deprecated HealthStatus classes that have converter methods
         // Exclude the deprecated database HealthStatus and all its inner classes
         long databaseHealthStatus = classes.stream() // GH-90000
-            .filter(c -> c.getFullName().contains("database [GH-90000]") && c.getFullName().contains("HealthStatus [GH-90000]"))
-            .filter(c -> !c.getFullName().equals("com.ghatana.platform.health.HealthStatus [GH-90000]"))
-            .filter(c -> !c.getFullName().equals("com.ghatana.core.database.health.HealthStatus [GH-90000]")) // Deprecated with converter
-            .filter(c -> !c.getFullName().startsWith("com.ghatana.core.database.health.HealthStatus$ [GH-90000]")) // Exclude inner classes
+            .filter(c -> c.getFullName().contains("database") && c.getFullName().contains("HealthStatus"))
+            .filter(c -> !c.getFullName().equals("com.ghatana.platform.health.HealthStatus"))
+            .filter(c -> !c.getFullName().equals("com.ghatana.core.database.health.HealthStatus")) // Deprecated with converter
+            .filter(c -> !c.getFullName().startsWith("com.ghatana.core.database.health.HealthStatus$")) // Exclude inner classes
             .count(); // GH-90000
 
         assertThat(databaseHealthStatus) // GH-90000
-            .as("Database package should not define its own HealthStatus (use canonical) [GH-90000]")
+            .as("Database package should not define its own HealthStatus (use canonical)")
             .isEqualTo(0L); // GH-90000
     }
 
     @Test
-    @DisplayName("Agent-core uses canonical platform HealthStatus directly [GH-90000]")
+    @DisplayName("Agent-core uses canonical platform HealthStatus directly")
     void agentCoreUsesCanonicalHealthStatus() { // GH-90000
         // All agent code now imports HealthStatus from com.ghatana.platform.health
         // The deprecated agent HealthStatus enum was removed as part of deprecation cleanup
     }
 
     @Test
-    @DisplayName("No domain packages should define HealthStatus [GH-90000]")
+    @DisplayName("No domain packages should define HealthStatus")
     void noDomainPackagesShouldDefineHealthStatus() { // GH-90000
         JavaClasses classes = new ClassFileImporter() // GH-90000
-            .importPackages("com.ghatana.platform.domain [GH-90000]");
+            .importPackages("com.ghatana.platform.domain");
 
         long domainHealthStatus = classes.stream() // GH-90000
-            .filter(c -> c.getSimpleName().equals("HealthStatus [GH-90000]"))
+            .filter(c -> c.getSimpleName().equals("HealthStatus"))
             .count(); // GH-90000
 
         assertThat(domainHealthStatus) // GH-90000
-            .as("Domain packages should not define HealthStatus (import from platform.health) [GH-90000]")
+            .as("Domain packages should not define HealthStatus (import from platform.health)")
             .isEqualTo(0L); // GH-90000
     }
 
     @Test
-    @DisplayName("No product packages should define HealthStatus [GH-90000]")
+    @DisplayName("No product packages should define HealthStatus")
     void noProductPackagesShouldDefineHealthStatus() { // GH-90000
         JavaClasses classes = new ClassFileImporter() // GH-90000
-            .importPackages("com.ghatana.products [GH-90000]");
+            .importPackages("com.ghatana.products");
 
         long productHealthStatus = classes.stream() // GH-90000
-            .filter(c -> c.getSimpleName().equals("HealthStatus [GH-90000]"))
+            .filter(c -> c.getSimpleName().equals("HealthStatus"))
             .count(); // GH-90000
 
         assertThat(productHealthStatus) // GH-90000
-            .as("Product packages should not define HealthStatus (import from platform.health) [GH-90000]")
+            .as("Product packages should not define HealthStatus (import from platform.health)")
             .isEqualTo(0L); // GH-90000
     }
 
     @Test
-    @DisplayName("All HealthStatus usages (except agent-core enum) should reference canonical class [GH-90000]")
+    @DisplayName("All HealthStatus usages (except agent-core enum) should reference canonical class")
     void allHealthStatusUsagesPointToCanonical() { // GH-90000
         // Import validation is enforced via compilation and code review
         // The deprecation annotations on agent-core and database HealthStatus
@@ -160,7 +160,7 @@ class HealthStatusConsolidationTest {
     }
 
     @Test
-    @DisplayName("Health status representations should be immutable [GH-90000]")
+    @DisplayName("Health status representations should be immutable")
     void canonicalHealthStatusShouldBeImmutable() { // GH-90000
         JavaClasses classes = new ClassFileImporter().importPackages(CANONICAL_PACKAGE); // GH-90000
 
@@ -168,14 +168,14 @@ class HealthStatusConsolidationTest {
             .filter(c -> c.getFullName().equals(CANONICAL_CLASS)) // GH-90000
             .filter(c -> !c.isInnerClass()) // Ensure we get the main class, not inner classes // GH-90000
             .findFirst() // GH-90000
-            .orElseThrow(() -> new AssertionError("Canonical HealthStatus not found [GH-90000]"));
+            .orElseThrow(() -> new AssertionError("Canonical HealthStatus not found"));
 
         // Check if the class is final by examining the source code
         // Since ArchUnit's modifier detection has issues, we'll verify through reflection
         try {
             Class<?> clazz = Class.forName(CANONICAL_CLASS); // GH-90000
             assertThat(java.lang.reflect.Modifier.isFinal(clazz.getModifiers())) // GH-90000
-                .as("HealthStatus should be final class [GH-90000]")
+                .as("HealthStatus should be final class")
                 .isTrue(); // GH-90000
         } catch (ClassNotFoundException e) { // GH-90000
             throw new AssertionError("Canonical HealthStatus class not found", e); // GH-90000

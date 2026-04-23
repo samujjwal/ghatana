@@ -33,7 +33,7 @@ class BashCodemodsTest {
     void setUp() { // GH-90000
         PolyfixProjectContext context = mock(PolyfixProjectContext.class); // GH-90000
         bashCodemods = new BashCodemods(context); // GH-90000
-        testScript = tempDir.resolve("test.sh [GH-90000]");
+        testScript = tempDir.resolve("test.sh");
     }
 
     @Test
@@ -112,7 +112,7 @@ class BashCodemodsTest {
         return UnifiedDiagnostic.builder() // GH-90000
                 .file(testScript) // GH-90000
                 .code(ruleId) // GH-90000
-                .message("Test diagnostic [GH-90000]")
+                .message("Test diagnostic")
                 .startLine(startLine) // GH-90000
                 .startColumn(startCol) // GH-90000
                 .endLine(endLine) // GH-90000

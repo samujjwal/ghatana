@@ -18,11 +18,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test rate limiting, throttling, and DoS protection mechanisms.
  */
-@DisplayName("Rate Limiting Tests [GH-90000]")
+@DisplayName("Rate Limiting Tests")
 class RateLimitingTest extends EventloopTestBase {
 
     @Test
-    @DisplayName("Should enforce rate limits per user [GH-90000]")
+    @DisplayName("Should enforce rate limits per user")
     void shouldEnforceRateLimitsPerUser() { // GH-90000
         MfaService mfaService = new MfaService(); // GH-90000
         String userId = "user-123";
@@ -39,7 +39,7 @@ class RateLimitingTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should enforce rate limits per IP [GH-90000]")
+    @DisplayName("Should enforce rate limits per IP")
     void shouldEnforceRateLimitsPerIp() { // GH-90000
         MfaService mfaService = new MfaService(); // GH-90000
         String userId = "user-456";
@@ -50,7 +50,7 @@ class RateLimitingTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle rate limit window sliding [GH-90000]")
+    @DisplayName("Should handle rate limit window sliding")
     void shouldHandleRateLimitWindowSliding() { // GH-90000
         MfaService mfaService = new MfaService(); // GH-90000
         String userId = "user-789";
@@ -61,7 +61,7 @@ class RateLimitingTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle distributed rate limiting [GH-90000]")
+    @DisplayName("Should handle distributed rate limiting")
     void shouldHandleDistributedRateLimiting() { // GH-90000
         MfaService mfaService = new MfaService(); // GH-90000
         String userId1 = "user-1";
@@ -75,7 +75,7 @@ class RateLimitingTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should protect against DoS attacks [GH-90000]")
+    @DisplayName("Should protect against DoS attacks")
     void shouldProtectAgainstDosAttacks() { // GH-90000
         MfaService mfaService = new MfaService(); // GH-90000
         String userId = "user-999";
@@ -86,7 +86,7 @@ class RateLimitingTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle rate limit bypass prevention [GH-90000]")
+    @DisplayName("Should handle rate limit bypass prevention")
     void shouldHandleRateLimitBypassPrevention() { // GH-90000
         MfaService mfaService = new MfaService(); // GH-90000
         String userId = "user-888";

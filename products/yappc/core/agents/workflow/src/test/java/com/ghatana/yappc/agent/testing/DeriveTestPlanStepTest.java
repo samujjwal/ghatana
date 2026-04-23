@@ -19,7 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Testing DeriveTestPlanStep Tests [GH-90000]")
+@DisplayName("Testing DeriveTestPlanStep Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles derive test plan step test operations
@@ -40,13 +40,13 @@ class DeriveTestPlanStepTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should return correct step ID [GH-90000]")
+  @DisplayName("Should return correct step ID")
   void shouldReturnCorrectStepId() { // GH-90000
-    assertThat(step.getStepId()).isEqualTo("testing.derive_test_plan [GH-90000]");
+    assertThat(step.getStepId()).isEqualTo("testing.derive_test_plan");
   }
 
   @Test
-  @DisplayName("Should derive test plan from implementation [GH-90000]")
+  @DisplayName("Should derive test plan from implementation")
   void shouldDeriveTestPlan() { // GH-90000
     // GIVEN
     WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
@@ -80,9 +80,9 @@ class DeriveTestPlanStepTest extends EventloopTestBase {
             "units",
             List.of(Map.of("unitId", "u1", "name", "AuthService"))); // GH-90000
 
-    when(dbClient.query(eq("requirements_published [GH-90000]"), any(), anyInt()))
+    when(dbClient.query(eq("requirements_published"), any(), anyInt()))
         .thenReturn(Promise.of(List.of(reqBaseline))); // GH-90000
-    when(dbClient.query(eq("implementation_published [GH-90000]"), any(), anyInt()))
+    when(dbClient.query(eq("implementation_published"), any(), anyInt()))
         .thenReturn(Promise.of(List.of(implBaseline))); // GH-90000
     when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
     when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
@@ -93,6 +93,6 @@ class DeriveTestPlanStepTest extends EventloopTestBase {
 
     // THEN
     assertThat(result).isNotNull(); // GH-90000
-    assertThat(result.get("implementationBaselineId [GH-90000]")).isEqualTo("impl-001 [GH-90000]");
+    assertThat(result.get("implementationBaselineId")).isEqualTo("impl-001");
   }
 }

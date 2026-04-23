@@ -10,7 +10,11 @@ import java.util.UUID;
  *
  * <p>Standalone task implementation that is independent of deprecated
  * platform domain types. Uses the framework's own Agent and TaskPriority types.
- */
+  * @doc.type class
+ * @doc.purpose Provides task functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 public class Task {
 
     private final String id;

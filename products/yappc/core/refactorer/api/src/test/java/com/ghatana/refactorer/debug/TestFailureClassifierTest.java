@@ -43,13 +43,13 @@ class TestFailureClassifierTest {
         var suggestions = classifier.classify(frames, raw); // GH-90000
         assertFalse(suggestions.isEmpty(), "No suggestions for NPE"); // GH-90000
         assertTrue( // GH-90000
-                suggestions.stream().anyMatch(s -> s.category().startsWith("java:npe [GH-90000]")),
+                suggestions.stream().anyMatch(s -> s.category().startsWith("java:npe")),
                 "Expected NPE suggestion");
 
         // Verify the suggestion has the correct file/line info
         var npeSuggestion =
                 suggestions.stream() // GH-90000
-                        .filter(s -> s.category().startsWith("java:npe [GH-90000]"))
+                        .filter(s -> s.category().startsWith("java:npe"))
                         .findFirst() // GH-90000
                         .orElseThrow(); // GH-90000
 
@@ -61,10 +61,10 @@ class TestFailureClassifierTest {
     void usesCustomPatternManagerWhenProvided() { // GH-90000
         // Setup mock pattern
         var mockErrorPattern = mock(ErrorPatternManager.ErrorPattern.class); // GH-90000
-        when(mockErrorPattern.getName()).thenReturn("test-pattern [GH-90000]");
-        when(mockErrorPattern.getCategory()).thenReturn("test:category [GH-90000]");
+        when(mockErrorPattern.getName()).thenReturn("test-pattern");
+        when(mockErrorPattern.getCategory()).thenReturn("test:category");
         when(mockErrorPattern.getSeverity()).thenReturn(ErrorPatternManager.Severity.MEDIUM); // GH-90000
-        when(mockErrorPattern.getSuggestion()).thenReturn("Test suggestion [GH-90000]");
+        when(mockErrorPattern.getSuggestion()).thenReturn("Test suggestion");
 
         var mockMatch = new ErrorPatternManager.MatchedPattern(mockErrorPattern, "test error"); // GH-90000
 
@@ -94,7 +94,7 @@ class TestFailureClassifierTest {
         var suggestions = classifier.classify(frames, raw); // GH-90000
         assertFalse(suggestions.isEmpty(), "No suggestions for ImportError"); // GH-90000
         assertTrue( // GH-90000
-                suggestions.stream().anyMatch(s -> s.category().startsWith("python:import [GH-90000]")),
+                suggestions.stream().anyMatch(s -> s.category().startsWith("python:import")),
                 "Expected import error suggestion");
     }
 
@@ -108,7 +108,7 @@ class TestFailureClassifierTest {
         var suggestions = classifier.classify(frames, raw); // GH-90000
         assertFalse(suggestions.isEmpty(), "No suggestions for AttributeError"); // GH-90000
         assertTrue( // GH-90000
-                suggestions.stream().anyMatch(s -> s.category().startsWith("python:attribute [GH-90000]")),
+                suggestions.stream().anyMatch(s -> s.category().startsWith("python:attribute")),
                 "Expected attribute error suggestion");
     }
 
@@ -120,7 +120,7 @@ class TestFailureClassifierTest {
         var suggestions = classifier.classify(frames, raw); // GH-90000
         assertFalse(suggestions.isEmpty(), "No suggestions for TypeError"); // GH-90000
         assertTrue( // GH-90000
-                suggestions.stream().anyMatch(s -> s.category().startsWith("node:type [GH-90000]")),
+                suggestions.stream().anyMatch(s -> s.category().startsWith("node:type")),
                 "Expected type error suggestion");
     }
 
@@ -141,7 +141,7 @@ class TestFailureClassifierTest {
         var suggestions = classifier.classify(frames, raw); // GH-90000
         assertFalse(suggestions.isEmpty(), "No suggestions for Go panic"); // GH-90000
         assertTrue( // GH-90000
-                suggestions.stream().anyMatch(s -> s.category().startsWith("go:panic [GH-90000]")),
+                suggestions.stream().anyMatch(s -> s.category().startsWith("go:panic")),
                 "Expected Go panic suggestion");
     }
 
@@ -157,7 +157,7 @@ class TestFailureClassifierTest {
         var suggestions = classifier.classify(frames, raw); // GH-90000
         assertFalse(suggestions.isEmpty(), "No suggestions for Rust panic"); // GH-90000
         assertTrue( // GH-90000
-                suggestions.stream().anyMatch(s -> s.category().startsWith("rust:panic [GH-90000]")),
+                suggestions.stream().anyMatch(s -> s.category().startsWith("rust:panic")),
                 "Expected Rust panic suggestion");
     }
 
@@ -181,7 +181,7 @@ class TestFailureClassifierTest {
         var suggestions = classifier.classify(frames, raw); // GH-90000
         assertFalse(suggestions.isEmpty(), "Expected at least a generic suggestion"); // GH-90000
         assertTrue( // GH-90000
-                suggestions.stream().anyMatch(s -> s.category().equals("generic [GH-90000]")),
+                suggestions.stream().anyMatch(s -> s.category().equals("generic")),
                 "Expected generic error suggestion");
     }
 }

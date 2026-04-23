@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class EmbeddedDataCloudClientBuilderTest {
 
     @Test
-    @DisplayName("memory mode builds without reflective storage plugin loading [GH-90000]")
+    @DisplayName("memory mode builds without reflective storage plugin loading")
     void memoryModeBuilds() { // GH-90000
         EmbeddedDataCloudClient client = EmbeddedDataCloudClient.builder() // GH-90000
                 .withMemoryStorage() // GH-90000
@@ -29,27 +29,27 @@ class EmbeddedDataCloudClientBuilderTest {
     }
 
     @Test
-    @DisplayName("postgres mode fails fast without an explicit storage adapter [GH-90000]")
+    @DisplayName("postgres mode fails fast without an explicit storage adapter")
     void postgresModeRequiresExplicitAdapter() { // GH-90000
         assertThatThrownBy(() -> EmbeddedDataCloudClient.builder() // GH-90000
                 .withPostgreSQLStorage(Map.of("jdbcUrl", "jdbc:postgresql://localhost/test")) // GH-90000
                 .build()) // GH-90000
                 .isInstanceOf(IllegalStateException.class) // GH-90000
-                .hasMessageContaining("requires an explicit DataStorageOperations implementation [GH-90000]");
+                .hasMessageContaining("requires an explicit DataStorageOperations implementation");
     }
 
     @Test
-    @DisplayName("redis mode fails fast without an explicit storage adapter [GH-90000]")
+    @DisplayName("redis mode fails fast without an explicit storage adapter")
     void redisModeRequiresExplicitAdapter() { // GH-90000
         assertThatThrownBy(() -> EmbeddedDataCloudClient.builder() // GH-90000
                 .withRedisStorage(Map.of("host", "localhost")) // GH-90000
                 .build()) // GH-90000
                 .isInstanceOf(IllegalStateException.class) // GH-90000
-                .hasMessageContaining("requires an explicit DataStorageOperations implementation [GH-90000]");
+                .hasMessageContaining("requires an explicit DataStorageOperations implementation");
     }
 
     @Test
-    @DisplayName("non-memory modes build when a real storage adapter is supplied explicitly [GH-90000]")
+    @DisplayName("non-memory modes build when a real storage adapter is supplied explicitly")
     void explicitStorageAdapterEnablesNonMemoryMode() { // GH-90000
         EmbeddedDataCloudClient client = EmbeddedDataCloudClient.builder() // GH-90000
                 .withPostgreSQLStorage(Map.of("jdbcUrl", "jdbc:postgresql://localhost/test")) // GH-90000
@@ -63,7 +63,7 @@ class EmbeddedDataCloudClientBuilderTest {
     private static final class NoopDataStorageOperations implements DataStorageOperations {
         @Override
         public Promise<EntityInterface> create(String tenantId, String collectionName, Map<String, Object> data) { // GH-90000
-            return Promise.ofException(new UnsupportedOperationException("not used in builder test [GH-90000]"));
+            return Promise.ofException(new UnsupportedOperationException("not used in builder test"));
         }
 
         @Override
@@ -77,7 +77,7 @@ class EmbeddedDataCloudClientBuilderTest {
                 String collectionName,
                 UUID entityId,
                 Map<String, Object> updates) {
-            return Promise.ofException(new UnsupportedOperationException("not used in builder test [GH-90000]"));
+            return Promise.ofException(new UnsupportedOperationException("not used in builder test"));
         }
 
         @Override

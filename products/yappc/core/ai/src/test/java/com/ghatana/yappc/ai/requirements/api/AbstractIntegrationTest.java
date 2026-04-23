@@ -61,7 +61,7 @@ import java.util.concurrent.ExecutionException;
  * @doc.pattern Test Fixture
  */
 @Testcontainers(disabledWithoutDocker = true) // GH-90000
-@Tag("integration [GH-90000]")
+@Tag("integration")
 public abstract class AbstractIntegrationTest extends EventloopTestBase {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractIntegrationTest.class); // GH-90000
@@ -80,7 +80,7 @@ public abstract class AbstractIntegrationTest extends EventloopTestBase {
 
     /** PostgreSQL test container. Managed by Testcontainers. */
     @Container
-    protected static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine [GH-90000]")
+    protected static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
         .withUsername(TEST_DB_USER) // GH-90000
         .withPassword(TEST_DB_PASSWORD) // GH-90000
         .withDatabaseName(TEST_DB_NAME) // GH-90000
@@ -88,7 +88,7 @@ public abstract class AbstractIntegrationTest extends EventloopTestBase {
 
     /** Redis test container. Managed by Testcontainers. */
     @Container
-    protected static final GenericContainer<?> redis = new GenericContainer<>("redis:7-alpine [GH-90000]")
+    protected static final GenericContainer<?> redis = new GenericContainer<>("redis:7-alpine")
         .withExposedPorts(6379) // GH-90000
         .waitingFor(Wait.forListeningPort()); // GH-90000
 
@@ -140,7 +140,7 @@ public abstract class AbstractIntegrationTest extends EventloopTestBase {
 
         // Skip HTTP server startup for now - tests will fail until properly configured
         // Note: HTTP server setup with proper dependency injection not yet implemented
-        logger.info("HTTP server startup skipped - tests will be implemented with proper mocks [GH-90000]");
+        logger.info("HTTP server startup skipped - tests will be implemented with proper mocks");
 
         // Run database migrations
         runDatabaseMigrations(); // GH-90000
@@ -153,7 +153,7 @@ public abstract class AbstractIntegrationTest extends EventloopTestBase {
      */
     @AfterAll
     public static void tearDownAll() throws Exception { // GH-90000
-        logger.info("Test cleanup completed - HTTP server was not started [GH-90000]");
+        logger.info("Test cleanup completed - HTTP server was not started");
     }
 
     /**
@@ -183,13 +183,13 @@ public abstract class AbstractIntegrationTest extends EventloopTestBase {
     protected static void runDatabaseMigrations() { // GH-90000
         // This would typically call a migration framework like Flyway or Liquibase
         // For now, we'll just create the basic schema
-        try (var connection = postgres.createConnection(" [GH-90000]")) {
+        try (var connection = postgres.createConnection("")) {
             var statement = connection.createStatement(); // GH-90000
             // Execute DDL statements to create test tables
-            statement.execute("CREATE TABLE IF NOT EXISTS users (id UUID PRIMARY KEY, email VARCHAR(255) NOT NULL) [GH-90000]");
-            statement.execute("CREATE TABLE IF NOT EXISTS workspaces (id UUID PRIMARY KEY, name VARCHAR(255) NOT NULL) [GH-90000]");
-            statement.execute("CREATE TABLE IF NOT EXISTS projects (id UUID PRIMARY KEY, workspace_id UUID NOT NULL, name VARCHAR(255) NOT NULL) [GH-90000]");
-            statement.execute("CREATE TABLE IF NOT EXISTS requirements (id UUID PRIMARY KEY, project_id UUID NOT NULL, title VARCHAR(255) NOT NULL) [GH-90000]");
+            statement.execute("CREATE TABLE IF NOT EXISTS users (id UUID PRIMARY KEY, email VARCHAR(255) NOT NULL)");
+            statement.execute("CREATE TABLE IF NOT EXISTS workspaces (id UUID PRIMARY KEY, name VARCHAR(255) NOT NULL)");
+            statement.execute("CREATE TABLE IF NOT EXISTS projects (id UUID PRIMARY KEY, workspace_id UUID NOT NULL, name VARCHAR(255) NOT NULL)");
+            statement.execute("CREATE TABLE IF NOT EXISTS requirements (id UUID PRIMARY KEY, project_id UUID NOT NULL, title VARCHAR(255) NOT NULL)");
         } catch (Exception e) { // GH-90000
             throw new RuntimeException("Failed to run migrations", e); // GH-90000
         }
@@ -207,12 +207,12 @@ public abstract class AbstractIntegrationTest extends EventloopTestBase {
         if (!dockerAvailable) { // GH-90000
             return;
         }
-        try (var connection = postgres.createConnection(" [GH-90000]")) {
+        try (var connection = postgres.createConnection("")) {
             var statement = connection.createStatement(); // GH-90000
-            statement.execute("TRUNCATE TABLE requirements CASCADE [GH-90000]");
-            statement.execute("TRUNCATE TABLE projects CASCADE [GH-90000]");
-            statement.execute("TRUNCATE TABLE workspaces CASCADE [GH-90000]");
-            statement.execute("TRUNCATE TABLE users CASCADE [GH-90000]");
+            statement.execute("TRUNCATE TABLE requirements CASCADE");
+            statement.execute("TRUNCATE TABLE projects CASCADE");
+            statement.execute("TRUNCATE TABLE workspaces CASCADE");
+            statement.execute("TRUNCATE TABLE users CASCADE");
         }
     }
 

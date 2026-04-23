@@ -9,11 +9,11 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@DisplayName("AudioData contract [GH-90000]")
+@DisplayName("AudioData contract")
 class AudioDataContractTest {
 
     @Test
-    @DisplayName("computes duration when omitted [GH-90000]")
+    @DisplayName("computes duration when omitted")
     void computesDurationWhenOmitted() { // GH-90000
         AudioData audio = AudioData.builder() // GH-90000
             .data(new byte[32_000]) // GH-90000
@@ -28,7 +28,7 @@ class AudioDataContractTest {
     }
 
     @Test
-    @DisplayName("defensively copies byte content [GH-90000]")
+    @DisplayName("defensively copies byte content")
     void defensivelyCopiesByteContent() { // GH-90000
         byte[] raw = new byte[] {1, 2, 3, 4};
         AudioData audio = new AudioData(raw, 16_000, 1, 16); // GH-90000
@@ -41,7 +41,7 @@ class AudioDataContractTest {
     }
 
     @Test
-    @DisplayName("exposes canonical format descriptor [GH-90000]")
+    @DisplayName("exposes canonical format descriptor")
     void exposesCanonicalFormatDescriptor() { // GH-90000
         AudioData audio = new AudioData(new byte[8_000], 8_000, 1, 16, Duration.ofSeconds(1), AudioFormat.WAV); // GH-90000
 

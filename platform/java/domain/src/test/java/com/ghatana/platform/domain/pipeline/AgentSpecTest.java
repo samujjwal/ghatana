@@ -12,18 +12,18 @@ class AgentSpecTest {
     @Test
     void shouldSerializeAndDeserializeFromYaml() throws Exception { // GH-90000
         AgentSpec original = AgentSpec.builder() // GH-90000
-                .id("test-agent [GH-90000]")
-                .agent("test-agent-type [GH-90000]")
-                .role("test-role [GH-90000]")
+                .id("test-agent")
+                .agent("test-agent-type")
+                .role("test-role")
                 .build(); // GH-90000
 
         String yaml = yamlMapper.writeValueAsString(original); // GH-90000
         AgentSpec deserialized = yamlMapper.readValue(yaml, AgentSpec.class); // GH-90000
 
         assertThat(deserialized).isEqualTo(original); // GH-90000
-        assertThat(deserialized.getId()).isEqualTo("test-agent [GH-90000]");
-        assertThat(deserialized.getAgent()).isEqualTo("test-agent-type [GH-90000]");
-        assertThat(deserialized.getRole()).isEqualTo("test-role [GH-90000]");
+        assertThat(deserialized.getId()).isEqualTo("test-agent");
+        assertThat(deserialized.getAgent()).isEqualTo("test-agent-type");
+        assertThat(deserialized.getRole()).isEqualTo("test-role");
     }
 
     @Test
@@ -38,18 +38,18 @@ class AgentSpecTest {
     @Test
     void shouldImplementEqualsAndHashCode() { // GH-90000
         AgentSpec spec1 = AgentSpec.builder() // GH-90000
-                .id("test-1 [GH-90000]")
-                .agent("test-agent [GH-90000]")
+                .id("test-1")
+                .agent("test-agent")
                 .build(); // GH-90000
 
         AgentSpec spec2 = AgentSpec.builder() // GH-90000
-                .id("test-1 [GH-90000]")
-                .agent("test-agent [GH-90000]")
+                .id("test-1")
+                .agent("test-agent")
                 .build(); // GH-90000
 
         AgentSpec spec3 = AgentSpec.builder() // GH-90000
-                .id("test-2 [GH-90000]")
-                .agent("test-agent [GH-90000]")
+                .id("test-2")
+                .agent("test-agent")
                 .build(); // GH-90000
 
         assertThat(spec1).isEqualTo(spec2); // GH-90000

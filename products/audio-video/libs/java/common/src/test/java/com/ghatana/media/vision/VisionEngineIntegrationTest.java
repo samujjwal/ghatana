@@ -39,8 +39,8 @@ public class VisionEngineIntegrationTest {
     static void setUp() { // GH-90000
         // Try to load real model, fall back to stub for testing
         VisionConfig config = VisionConfig.builder() // GH-90000
-            .modelPath(Paths.get("/models/yolov8n.onnx [GH-90000]"))
-            .modelId("yolov8n [GH-90000]")
+            .modelPath(Paths.get("/models/yolov8n.onnx"))
+            .modelId("yolov8n")
             .useGpu(false) // Use CPU for tests // GH-90000
             .defaultConfidenceThreshold(0.5) // GH-90000
             .defaultMaxDetections(100) // GH-90000
@@ -63,7 +63,7 @@ public class VisionEngineIntegrationTest {
 
     @Test
     @Order(1) // GH-90000
-    @DisplayName("Engine initializes successfully [GH-90000]")
+    @DisplayName("Engine initializes successfully")
     void testEngineInitialization() { // GH-90000
         EngineStatus status = engine.getStatus(); // GH-90000
 
@@ -75,7 +75,7 @@ public class VisionEngineIntegrationTest {
 
     @Test
     @Order(2) // GH-90000
-    @DisplayName("Detect objects in test image [GH-90000]")
+    @DisplayName("Detect objects in test image")
     void testDetectObjects() { // GH-90000
         // Create a simple test image (red square on blue background) // GH-90000
         ImageData testImage = createTestImage(640, 480); // GH-90000
@@ -97,7 +97,7 @@ public class VisionEngineIntegrationTest {
 
     @Test
     @Order(3) // GH-90000
-    @DisplayName("Detection respects confidence threshold [GH-90000]")
+    @DisplayName("Detection respects confidence threshold")
     void testConfidenceThreshold() { // GH-90000
         ImageData testImage = createTestImage(640, 480); // GH-90000
 
@@ -120,7 +120,7 @@ public class VisionEngineIntegrationTest {
 
     @Test
     @Order(4) // GH-90000
-    @DisplayName("Streaming detection session works [GH-90000]")
+    @DisplayName("Streaming detection session works")
     void testStreamingDetection() throws InterruptedException { // GH-90000
         List<DetectionResult> results = new java.util.ArrayList<>(); // GH-90000
 
@@ -147,7 +147,7 @@ public class VisionEngineIntegrationTest {
 
     @Test
     @Order(5) // GH-90000
-    @DisplayName("Available models listed correctly [GH-90000]")
+    @DisplayName("Available models listed correctly")
     void testGetAvailableModels() { // GH-90000
         List<DetectionModelInfo> models = engine.getAvailableModels(); // GH-90000
 
@@ -163,7 +163,7 @@ public class VisionEngineIntegrationTest {
 
     @Test
     @Order(6) // GH-90000
-    @DisplayName("Engine metrics collected [GH-90000]")
+    @DisplayName("Engine metrics collected")
     void testEngineMetrics() { // GH-90000
         // Perform some operations first
         ImageData testImage = createTestImage(640, 480); // GH-90000
@@ -178,7 +178,7 @@ public class VisionEngineIntegrationTest {
 
     @Test
     @Order(7) // GH-90000
-    @DisplayName("Handles multiple image formats [GH-90000]")
+    @DisplayName("Handles multiple image formats")
     void testMultipleFormats() { // GH-90000
         int[] widths = {320, 640, 1280};
         int[] heights = {240, 480, 720};
@@ -194,7 +194,7 @@ public class VisionEngineIntegrationTest {
 
     @Test
     @Order(8) // GH-90000
-    @DisplayName("Error handling for invalid input [GH-90000]")
+    @DisplayName("Error handling for invalid input")
     void testErrorHandling() { // GH-90000
         // Null image should throw ValidationError
         assertThrows(ValidationError.class, () -> { // GH-90000
@@ -212,14 +212,14 @@ public class VisionEngineIntegrationTest {
 
     @Test
     @Order(9) // GH-90000
-    @DisplayName("Warmup completes without error [GH-90000]")
+    @DisplayName("Warmup completes without error")
     void testWarmup() { // GH-90000
         assertDoesNotThrow(() -> engine.warmup()); // GH-90000
     }
 
     @Test
     @Order(10) // GH-90000
-    @DisplayName("Concurrent detection operations [GH-90000]")
+    @DisplayName("Concurrent detection operations")
     void testConcurrentDetection() throws InterruptedException { // GH-90000
         int threadCount = 4;
         java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(threadCount); // GH-90000

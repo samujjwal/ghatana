@@ -9,7 +9,11 @@ import java.time.Duration;
 /**
  * Day 40: Configuration for agent step execution policies.
  * Defines timeout, retry, and backoff strategies for reliable agent execution.
- */
+  * @doc.type class
+ * @doc.purpose Provides agent execution policy functionality.
+ * @doc.layer product
+ * @doc.pattern Agent
+*/
 public class AgentExecutionPolicy {
 
     private final Duration stepTimeout;

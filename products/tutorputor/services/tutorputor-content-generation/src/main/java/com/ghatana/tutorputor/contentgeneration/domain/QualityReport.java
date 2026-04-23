@@ -2,6 +2,12 @@ package com.ghatana.tutorputor.contentgeneration.domain;
 
 import java.util.List;
 
+/**
+ * @doc.type class
+ * @doc.purpose Provides quality report functionality.
+ * @doc.layer product
+ * @doc.pattern Repository
+ */
 public class QualityReport {
     private final boolean passed;
     private final double overallScore;

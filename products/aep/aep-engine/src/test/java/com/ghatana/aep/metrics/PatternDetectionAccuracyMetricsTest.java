@@ -21,7 +21,7 @@ import static org.mockito.Mockito.mock;
  * @doc.layer product
  * @doc.pattern UnitTest
  */
-@DisplayName("PatternDetectionAccuracyMetrics [GH-90000]")
+@DisplayName("PatternDetectionAccuracyMetrics")
 class PatternDetectionAccuracyMetricsTest {
 
     private PatternDetectionAccuracyMetrics collector;
@@ -34,15 +34,15 @@ class PatternDetectionAccuracyMetricsTest {
     }
 
     @Nested
-    @DisplayName("Detection Recording [GH-90000]")
+    @DisplayName("Detection Recording")
     class DetectionRecordingTests {
 
         @Test
-        @DisplayName("records true positive [GH-90000]")
+        @DisplayName("records true positive")
         void recordsTruePositive() { // GH-90000
             collector.recordTruePositive("THRESHOLD", "pattern-1"); // GH-90000
             
-            PatternDetectionAccuracyMetrics.PatternAccuracyStats stats = collector.getStats("THRESHOLD [GH-90000]");
+            PatternDetectionAccuracyMetrics.PatternAccuracyStats stats = collector.getStats("THRESHOLD");
             assertThat(stats.truePositives()).isEqualTo(1); // GH-90000
             assertThat(stats.falsePositives()).isEqualTo(0); // GH-90000
             assertThat(stats.falseNegatives()).isEqualTo(0); // GH-90000
@@ -50,113 +50,113 @@ class PatternDetectionAccuracyMetricsTest {
         }
 
         @Test
-        @DisplayName("records false positive [GH-90000]")
+        @DisplayName("records false positive")
         void recordsFalsePositive() { // GH-90000
             collector.recordFalsePositive("ANOMALY", "pattern-1"); // GH-90000
             
-            PatternDetectionAccuracyMetrics.PatternAccuracyStats stats = collector.getStats("ANOMALY [GH-90000]");
+            PatternDetectionAccuracyMetrics.PatternAccuracyStats stats = collector.getStats("ANOMALY");
             assertThat(stats.falsePositives()).isEqualTo(1); // GH-90000
         }
 
         @Test
-        @DisplayName("records false negative [GH-90000]")
+        @DisplayName("records false negative")
         void recordsFalseNegative() { // GH-90000
             collector.recordFalseNegative("SEQUENCE", "pattern-1"); // GH-90000
             
-            PatternDetectionAccuracyMetrics.PatternAccuracyStats stats = collector.getStats("SEQUENCE [GH-90000]");
+            PatternDetectionAccuracyMetrics.PatternAccuracyStats stats = collector.getStats("SEQUENCE");
             assertThat(stats.falseNegatives()).isEqualTo(1); // GH-90000
         }
 
         @Test
-        @DisplayName("records true negative [GH-90000]")
+        @DisplayName("records true negative")
         void recordsTrueNegative() { // GH-90000
             collector.recordTrueNegative("CUSTOM", "pattern-1"); // GH-90000
             
-            PatternDetectionAccuracyMetrics.PatternAccuracyStats stats = collector.getStats("CUSTOM [GH-90000]");
+            PatternDetectionAccuracyMetrics.PatternAccuracyStats stats = collector.getStats("CUSTOM");
             assertThat(stats.trueNegatives()).isEqualTo(1); // GH-90000
         }
 
         @Test
-        @DisplayName("increments counters correctly [GH-90000]")
+        @DisplayName("increments counters correctly")
         void incrementsCountersCorrectly() { // GH-90000
             collector.recordTruePositive("THRESHOLD", "p1"); // GH-90000
             collector.recordTruePositive("THRESHOLD", "p2"); // GH-90000
             collector.recordFalsePositive("THRESHOLD", "p1"); // GH-90000
             
-            PatternDetectionAccuracyMetrics.PatternAccuracyStats stats = collector.getStats("THRESHOLD [GH-90000]");
+            PatternDetectionAccuracyMetrics.PatternAccuracyStats stats = collector.getStats("THRESHOLD");
             assertThat(stats.truePositives()).isEqualTo(2); // GH-90000
             assertThat(stats.falsePositives()).isEqualTo(1); // GH-90000
         }
 
         @Test
-        @DisplayName("tracks multiple pattern types separately [GH-90000]")
+        @DisplayName("tracks multiple pattern types separately")
         void tracksMultiplePatternTypesSeparately() { // GH-90000
             collector.recordTruePositive("THRESHOLD", "p1"); // GH-90000
             collector.recordTruePositive("ANOMALY", "p1"); // GH-90000
             
-            assertThat(collector.getStats("THRESHOLD [GH-90000]").truePositives()).isEqualTo(1);
-            assertThat(collector.getStats("ANOMALY [GH-90000]").truePositives()).isEqualTo(1);
+            assertThat(collector.getStats("THRESHOLD").truePositives()).isEqualTo(1);
+            assertThat(collector.getStats("ANOMALY").truePositives()).isEqualTo(1);
         }
     }
 
     @Nested
-    @DisplayName("Metric Calculations [GH-90000]")
+    @DisplayName("Metric Calculations")
     class MetricCalculationTests {
 
         @Test
-        @DisplayName("calculates precision [GH-90000]")
+        @DisplayName("calculates precision")
         void calculatesPrecision() { // GH-90000
             collector.recordTruePositive("THRESHOLD", "p1"); // GH-90000
             collector.recordTruePositive("THRESHOLD", "p2"); // GH-90000
             collector.recordFalsePositive("THRESHOLD", "p1"); // GH-90000
             
-            double precision = collector.getPrecision("THRESHOLD [GH-90000]");
+            double precision = collector.getPrecision("THRESHOLD");
             assertThat(precision).isEqualTo(0.6666666666666666); // GH-90000
         }
 
         @Test
-        @DisplayName("returns 0 precision when no positive predictions [GH-90000]")
+        @DisplayName("returns 0 precision when no positive predictions")
         void returns0PrecisionWhenNoPositivePredictions() { // GH-90000
             collector.recordFalsePositive("THRESHOLD", "p1"); // GH-90000
             
-            double precision = collector.getPrecision("THRESHOLD [GH-90000]");
+            double precision = collector.getPrecision("THRESHOLD");
             assertThat(precision).isEqualTo(0.0); // GH-90000
         }
 
         @Test
-        @DisplayName("calculates recall [GH-90000]")
+        @DisplayName("calculates recall")
         void calculatesRecall() { // GH-90000
             collector.recordTruePositive("THRESHOLD", "p1"); // GH-90000
             collector.recordTruePositive("THRESHOLD", "p2"); // GH-90000
             collector.recordFalseNegative("THRESHOLD", "p1"); // GH-90000
             
-            double recall = collector.getRecall("THRESHOLD [GH-90000]");
+            double recall = collector.getRecall("THRESHOLD");
             assertThat(recall).isEqualTo(0.6666666666666666); // GH-90000
         }
 
         @Test
-        @DisplayName("returns 0 recall when no actual positives [GH-90000]")
+        @DisplayName("returns 0 recall when no actual positives")
         void returns0RecallWhenNoActualPositives() { // GH-90000
             collector.recordFalseNegative("THRESHOLD", "p1"); // GH-90000
             
-            double recall = collector.getRecall("THRESHOLD [GH-90000]");
+            double recall = collector.getRecall("THRESHOLD");
             assertThat(recall).isEqualTo(0.0); // GH-90000
         }
 
         @Test
-        @DisplayName("calculates F1 score [GH-90000]")
+        @DisplayName("calculates F1 score")
         void calculatesF1Score() { // GH-90000
             collector.recordTruePositive("THRESHOLD", "p1"); // GH-90000
             collector.recordTruePositive("THRESHOLD", "p2"); // GH-90000
             collector.recordFalsePositive("THRESHOLD", "p1"); // GH-90000
             collector.recordFalseNegative("THRESHOLD", "p1"); // GH-90000
             
-            double f1 = collector.getF1Score("THRESHOLD [GH-90000]");
+            double f1 = collector.getF1Score("THRESHOLD");
             assertThat(f1).isEqualTo(0.6666666666666666); // GH-90000
         }
 
         @Test
-        @DisplayName("calculates accuracy [GH-90000]")
+        @DisplayName("calculates accuracy")
         void calculatesAccuracy() { // GH-90000
             collector.recordTruePositive("THRESHOLD", "p1"); // GH-90000
             collector.recordTruePositive("THRESHOLD", "p2"); // GH-90000
@@ -165,17 +165,17 @@ class PatternDetectionAccuracyMetricsTest {
             collector.recordFalsePositive("THRESHOLD", "p1"); // GH-90000
             collector.recordFalseNegative("THRESHOLD", "p1"); // GH-90000
             
-            PatternDetectionAccuracyMetrics.PatternAccuracyStats stats = collector.getStats("THRESHOLD [GH-90000]");
+            PatternDetectionAccuracyMetrics.PatternAccuracyStats stats = collector.getStats("THRESHOLD");
             assertThat(stats.accuracy()).isEqualTo(0.6666666666666666); // GH-90000
         }
 
         @Test
-        @DisplayName("perfect detection has 1.0 metrics [GH-90000]")
+        @DisplayName("perfect detection has 1.0 metrics")
         void perfectDetectionHas10Metrics() { // GH-90000
             collector.recordTruePositive("THRESHOLD", "p1"); // GH-90000
             collector.recordTrueNegative("THRESHOLD", "p1"); // GH-90000
             
-            PatternDetectionAccuracyMetrics.PatternAccuracyStats stats = collector.getStats("THRESHOLD [GH-90000]");
+            PatternDetectionAccuracyMetrics.PatternAccuracyStats stats = collector.getStats("THRESHOLD");
             assertThat(stats.precision()).isEqualTo(1.0); // GH-90000
             assertThat(stats.recall()).isEqualTo(1.0); // GH-90000
             assertThat(stats.f1Score()).isEqualTo(1.0); // GH-90000
@@ -183,11 +183,11 @@ class PatternDetectionAccuracyMetricsTest {
         }
 
         @Test
-        @DisplayName("no detection has 0.0 metrics [GH-90000]")
+        @DisplayName("no detection has 0.0 metrics")
         void noDetectionHas00Metrics() { // GH-90000
-            double precision = collector.getPrecision("THRESHOLD [GH-90000]");
-            double recall = collector.getRecall("THRESHOLD [GH-90000]");
-            double f1 = collector.getF1Score("THRESHOLD [GH-90000]");
+            double precision = collector.getPrecision("THRESHOLD");
+            double recall = collector.getRecall("THRESHOLD");
+            double f1 = collector.getF1Score("THRESHOLD");
             
             assertThat(precision).isEqualTo(0.0); // GH-90000
             assertThat(recall).isEqualTo(0.0); // GH-90000
@@ -196,11 +196,11 @@ class PatternDetectionAccuracyMetricsTest {
     }
 
     @Nested
-    @DisplayName("PatternAccuracyStats [GH-90000]")
+    @DisplayName("PatternAccuracyStats")
     class PatternAccuracyStatsTests {
 
         @Test
-        @DisplayName("stats start at zero [GH-90000]")
+        @DisplayName("stats start at zero")
         void statsStartAtZero() { // GH-90000
             PatternDetectionAccuracyMetrics.PatternAccuracyStats stats = 
                 new PatternDetectionAccuracyMetrics.PatternAccuracyStats(); // GH-90000
@@ -212,7 +212,7 @@ class PatternDetectionAccuracyMetricsTest {
         }
 
         @Test
-        @DisplayName("increment operations are thread-safe [GH-90000]")
+        @DisplayName("increment operations are thread-safe")
         void incrementOperationsAreThreadSafe() throws InterruptedException { // GH-90000
             PatternDetectionAccuracyMetrics.PatternAccuracyStats stats = 
                 new PatternDetectionAccuracyMetrics.PatternAccuracyStats(); // GH-90000
@@ -235,25 +235,25 @@ class PatternDetectionAccuracyMetricsTest {
     }
 
     @Nested
-    @DisplayName("Get Stats [GH-90000]")
+    @DisplayName("Get Stats")
     class GetStatsTests {
 
         @Test
-        @DisplayName("returns empty stats for unknown pattern type [GH-90000]")
+        @DisplayName("returns empty stats for unknown pattern type")
         void returnsEmptyStatsForUnknownPatternType() { // GH-90000
             PatternDetectionAccuracyMetrics.PatternAccuracyStats stats = 
-                collector.getStats("UNKNOWN [GH-90000]");
+                collector.getStats("UNKNOWN");
             
             assertThat(stats.truePositives()).isEqualTo(0); // GH-90000
             assertThat(stats.falsePositives()).isEqualTo(0); // GH-90000
         }
 
         @Test
-        @DisplayName("returns stats for known pattern type [GH-90000]")
+        @DisplayName("returns stats for known pattern type")
         void returnsStatsForKnownPatternType() { // GH-90000
             collector.recordTruePositive("THRESHOLD", "p1"); // GH-90000
             
-            PatternDetectionAccuracyMetrics.PatternAccuracyStats stats = collector.getStats("THRESHOLD [GH-90000]");
+            PatternDetectionAccuracyMetrics.PatternAccuracyStats stats = collector.getStats("THRESHOLD");
             assertThat(stats.truePositives()).isEqualTo(1); // GH-90000
         }
     }

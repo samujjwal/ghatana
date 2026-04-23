@@ -8,35 +8,35 @@ import java.util.concurrent.Future;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("TenantContext Async Propagation [GH-90000]")
+@DisplayName("TenantContext Async Propagation")
 class TenantContextAsyncPropagationTest {
 
     @Test
-    @DisplayName("wrapped callable propagates tenant context across executor threads [GH-90000]")
+    @DisplayName("wrapped callable propagates tenant context across executor threads")
     void shouldPropagateTenantContextAcrossExecutor() throws Exception { // GH-90000
-        Principal principal = new Principal("alice", List.of("admin [GH-90000]"), "tenant-propagated");
+        Principal principal = new Principal("alice", List.of("admin"), "tenant-propagated");
 
         try (TenantContext.Scope ignored = TenantContext.scope(principal); // GH-90000
                 var executor = Executors.newSingleThreadExecutor()) { // GH-90000
             Future<String> result = executor.submit(TenantContext.wrapWithCurrentContext(TenantContext::getCurrentTenantId)); // GH-90000
 
-            assertThat(result.get()).isEqualTo("tenant-propagated [GH-90000]");
-            assertThat(TenantContext.getCurrentTenantId()).isEqualTo("tenant-propagated [GH-90000]");
+            assertThat(result.get()).isEqualTo("tenant-propagated");
+            assertThat(TenantContext.getCurrentTenantId()).isEqualTo("tenant-propagated");
         }
 
-        assertThat(TenantContext.getCurrentTenantId()).isEqualTo("default-tenant [GH-90000]");
+        assertThat(TenantContext.getCurrentTenantId()).isEqualTo("default-tenant");
     }
 
     @Test
-    @DisplayName("wrapped callable restores worker thread previous context [GH-90000]")
+    @DisplayName("wrapped callable restores worker thread previous context")
     void shouldRestoreWorkerThreadContextAfterWrappedCall() throws Exception { // GH-90000
-        Principal principal = new Principal("bob", List.of("editor [GH-90000]"), "tenant-main");
+        Principal principal = new Principal("bob", List.of("editor"), "tenant-main");
 
         try (TenantContext.Scope ignored = TenantContext.scope(principal); // GH-90000
                 var executor = Executors.newSingleThreadExecutor()) { // GH-90000
             var wrapped = TenantContext.wrapWithCurrentContext(TenantContext::getCurrentTenantId); // GH-90000
             Future<String> result = executor.submit(() -> { // GH-90000
-                TenantContext.setCurrentTenantId("tenant-worker [GH-90000]");
+                TenantContext.setCurrentTenantId("tenant-worker");
                 try {
                     String inside = wrapped.call(); // GH-90000
                     String restored = TenantContext.getCurrentTenantId(); // GH-90000
@@ -46,7 +46,7 @@ class TenantContextAsyncPropagationTest {
                 }
             });
 
-            assertThat(result.get()).isEqualTo("tenant-main|tenant-worker [GH-90000]");
+            assertThat(result.get()).isEqualTo("tenant-main|tenant-worker");
         }
     }
 }

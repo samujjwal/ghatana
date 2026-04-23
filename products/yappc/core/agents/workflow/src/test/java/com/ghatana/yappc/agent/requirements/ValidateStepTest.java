@@ -18,7 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Requirements ValidateStep Tests [GH-90000]")
+@DisplayName("Requirements ValidateStep Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles validate step test operations
@@ -39,13 +39,13 @@ class ValidateStepTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should return correct step ID [GH-90000]")
+  @DisplayName("Should return correct step ID")
   void shouldReturnCorrectStepId() { // GH-90000
-    assertThat(step.getStepId()).isEqualTo("requirements.validate [GH-90000]");
+    assertThat(step.getStepId()).isEqualTo("requirements.validate");
   }
 
   @Test
-  @DisplayName("Should validate normalized requirements [GH-90000]")
+  @DisplayName("Should validate normalized requirements")
   void shouldValidateRequirements() { // GH-90000
     // GIVEN
     WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
@@ -81,11 +81,11 @@ class ValidateStepTest extends EventloopTestBase {
 
     // THEN
     assertThat(result).isNotNull(); // GH-90000
-    assertThat(result.get("requirementId [GH-90000]")).isEqualTo("req-001 [GH-90000]");
+    assertThat(result.get("requirementId")).isEqualTo("req-001");
   }
 
   @Test
-  @DisplayName("Should fail when normalized requirements are missing [GH-90000]")
+  @DisplayName("Should fail when normalized requirements are missing")
   void shouldFailWhenNormalizedRequirementsMissing() { // GH-90000
     // GIVEN
     WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
@@ -94,6 +94,6 @@ class ValidateStepTest extends EventloopTestBase {
     // WHEN/THEN
     assertThatThrownBy(() -> runPromise(() -> step.execute(context))) // GH-90000
         .isInstanceOf(IllegalArgumentException.class) // GH-90000
-        .hasMessageContaining("Input data is required [GH-90000]");
+        .hasMessageContaining("Input data is required");
   }
 }

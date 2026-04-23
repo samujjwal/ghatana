@@ -27,11 +27,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@DisplayName("AutoScalingEngineIntegrationTest [GH-90000]")
+@DisplayName("AutoScalingEngineIntegrationTest")
 class AutoScalingEngineIntegrationTest extends EventloopTestBase {
 
     @Test
-    @DisplayName("high-confidence prediction drives a scale-up recommendation [GH-90000]")
+    @DisplayName("high-confidence prediction drives a scale-up recommendation")
     void highConfidencePredictionDrivesScaleUpRecommendation() { // GH-90000
         AutoScalingEngine engine = new AutoScalingEngine( // GH-90000
             metricsCollector(0.25, 2), // GH-90000
@@ -42,23 +42,23 @@ class AutoScalingEngineIntegrationTest extends EventloopTestBase {
             costOptimizer(new CostOptimizationResult( // GH-90000
                 new ScalingAction(ScalingAction.Type.SCALE_UP, 3, "prediction chosen"), // GH-90000
                 0.0,
-                List.of("prediction chosen [GH-90000]"),
+                List.of("prediction chosen"),
                 2L,
                 false,
                 java.util.Map.of())), // GH-90000
             eventloop()); // GH-90000
 
         ScalingEvaluationResult result = runPromise(() -> // GH-90000
-            engine.evaluateScaling(new ScalingEvaluationRequest("cluster-a [GH-90000]")));
+            engine.evaluateScaling(new ScalingEvaluationRequest("cluster-a")));
 
         assertThat(result.isSuccess()).isTrue(); // GH-90000
         assertThat(result.getDecision().getAction().getType()).isEqualTo(ScalingAction.Type.SCALE_UP); // GH-90000
         assertThat(result.getDecision().getAction().getNodeCount()).isEqualTo(3); // GH-90000
-        assertThat(result.getAppliedPolicies()).containsExactly("scale-policy [GH-90000]");
+        assertThat(result.getAppliedPolicies()).containsExactly("scale-policy");
     }
 
     @Test
-    @DisplayName("policy thresholds drive scale-down when prediction confidence is low [GH-90000]")
+    @DisplayName("policy thresholds drive scale-down when prediction confidence is low")
     void policyThresholdsDriveScaleDownWhenPredictionConfidenceIsLow() { // GH-90000
         AutoScalingEngine engine = new AutoScalingEngine( // GH-90000
             metricsCollector(0.10, 4), // GH-90000
@@ -69,14 +69,14 @@ class AutoScalingEngineIntegrationTest extends EventloopTestBase {
             costOptimizer(new CostOptimizationResult( // GH-90000
                 new ScalingAction(ScalingAction.Type.SCALE_DOWN, 1, "scale down reduces idle cost"), // GH-90000
                 42.0,
-                List.of("scale down reduces idle cost [GH-90000]"),
+                List.of("scale down reduces idle cost"),
                 4L,
                 true,
                 java.util.Map.of())), // GH-90000
             eventloop()); // GH-90000
 
         ScalingEvaluationResult result = runPromise(() -> // GH-90000
-            engine.evaluateScaling(new ScalingEvaluationRequest("cluster-b [GH-90000]")));
+            engine.evaluateScaling(new ScalingEvaluationRequest("cluster-b")));
 
         assertThat(result.isSuccess()).isTrue(); // GH-90000
         assertThat(result.getDecision().getAction().getType()).isEqualTo(ScalingAction.Type.SCALE_DOWN); // GH-90000

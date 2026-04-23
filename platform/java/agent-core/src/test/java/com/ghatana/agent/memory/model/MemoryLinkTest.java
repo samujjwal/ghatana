@@ -18,28 +18,28 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer agent-memory
  * @doc.pattern Test
  */
-@DisplayName("MemoryLink - directed relationship between memory items [GH-90000]")
+@DisplayName("MemoryLink - directed relationship between memory items")
 class MemoryLinkTest {
 
     @Nested
-    @DisplayName("Builder defaults [GH-90000]")
+    @DisplayName("Builder defaults")
     class BuilderDefaultsTests {
 
         @Test
-        @DisplayName("Default strength is 1.0 (full relationship strength) [GH-90000]")
+        @DisplayName("Default strength is 1.0 (full relationship strength)")
         void defaultStrength_isOne() { // GH-90000
             MemoryLink link = MemoryLink.builder() // GH-90000
-                    .targetItemId("item-A [GH-90000]")
+                    .targetItemId("item-A")
                     .linkType(LinkType.RELATED) // GH-90000
                     .build(); // GH-90000
             assertThat(link.getStrength()).isEqualTo(1.0); // GH-90000
         }
 
         @Test
-        @DisplayName("Default description is null [GH-90000]")
+        @DisplayName("Default description is null")
         void defaultDescription_isNull() { // GH-90000
             MemoryLink link = MemoryLink.builder() // GH-90000
-                    .targetItemId("item-A [GH-90000]")
+                    .targetItemId("item-A")
                     .linkType(LinkType.RELATED) // GH-90000
                     .build(); // GH-90000
             assertThat(link.getDescription()).isNull(); // GH-90000
@@ -47,24 +47,24 @@ class MemoryLinkTest {
     }
 
     @Nested
-    @DisplayName("Custom builder values [GH-90000]")
+    @DisplayName("Custom builder values")
     class CustomBuilderTests {
 
         @Test
-        @DisplayName("TargetItemId is stored correctly [GH-90000]")
+        @DisplayName("TargetItemId is stored correctly")
         void targetItemId_storedCorrectly() { // GH-90000
             MemoryLink link = MemoryLink.builder() // GH-90000
-                    .targetItemId("target-123 [GH-90000]")
+                    .targetItemId("target-123")
                     .linkType(LinkType.SUPPORTS) // GH-90000
                     .build(); // GH-90000
-            assertThat(link.getTargetItemId()).isEqualTo("target-123 [GH-90000]");
+            assertThat(link.getTargetItemId()).isEqualTo("target-123");
         }
 
         @Test
-        @DisplayName("Custom strength in [0,1] is stored correctly [GH-90000]")
+        @DisplayName("Custom strength in [0,1] is stored correctly")
         void customStrength_storedCorrectly() { // GH-90000
             MemoryLink link = MemoryLink.builder() // GH-90000
-                    .targetItemId("item-B [GH-90000]")
+                    .targetItemId("item-B")
                     .linkType(LinkType.DERIVED_FROM) // GH-90000
                     .strength(0.75) // GH-90000
                     .build(); // GH-90000
@@ -72,23 +72,23 @@ class MemoryLinkTest {
         }
 
         @Test
-        @DisplayName("Description is stored when provided [GH-90000]")
+        @DisplayName("Description is stored when provided")
         void description_storedWhenProvided() { // GH-90000
             MemoryLink link = MemoryLink.builder() // GH-90000
-                    .targetItemId("item-C [GH-90000]")
+                    .targetItemId("item-C")
                     .linkType(LinkType.CONTRADICTS) // GH-90000
-                    .description("Directly contradicts the previous fact [GH-90000]")
+                    .description("Directly contradicts the previous fact")
                     .build(); // GH-90000
-            assertThat(link.getDescription()).isEqualTo("Directly contradicts the previous fact [GH-90000]");
+            assertThat(link.getDescription()).isEqualTo("Directly contradicts the previous fact");
         }
     }
 
     @Nested
-    @DisplayName("LinkType enum values [GH-90000]")
+    @DisplayName("LinkType enum values")
     class LinkTypeEnumTests {
 
         @Test
-        @DisplayName("All five LinkType values are present [GH-90000]")
+        @DisplayName("All five LinkType values are present")
         void allLinkTypeValues_present() { // GH-90000
             assertThat(LinkType.values()).containsExactlyInAnyOrder( // GH-90000
                     LinkType.SUPPORTS,
@@ -99,10 +99,10 @@ class MemoryLinkTest {
         }
 
         @Test
-        @DisplayName("SUPERSEDES link type can be set [GH-90000]")
+        @DisplayName("SUPERSEDES link type can be set")
         void supersedesLinkType_settable() { // GH-90000
             MemoryLink link = MemoryLink.builder() // GH-90000
-                    .targetItemId("old-item [GH-90000]")
+                    .targetItemId("old-item")
                     .linkType(LinkType.SUPERSEDES) // GH-90000
                     .build(); // GH-90000
             assertThat(link.getLinkType()).isEqualTo(LinkType.SUPERSEDES); // GH-90000

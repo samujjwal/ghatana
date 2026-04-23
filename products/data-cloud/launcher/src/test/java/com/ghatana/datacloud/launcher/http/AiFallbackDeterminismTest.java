@@ -59,7 +59,7 @@ import static org.mockito.Mockito.when;
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
 @Timeout(value = 15, unit = TimeUnit.SECONDS) // GH-90000
-@DisplayName("AI Assist – Fallback Determinism [GH-90000]")
+@DisplayName("AI Assist – Fallback Determinism")
 class AiFallbackDeterminismTest {
 
     private DataCloudClient mockClient;
@@ -86,11 +86,11 @@ class AiFallbackDeterminismTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("No completion service configured [GH-90000]")
+    @DisplayName("No completion service configured")
     class NullCompletionServiceTests {
 
         @Test
-        @DisplayName("entity/suggest → fallback=true, confidence<0.5, data.suggestions present [GH-90000]")
+        @DisplayName("entity/suggest → fallback=true, confidence<0.5, data.suggestions present")
         void entitySuggest_noLlm_returnsHeuristicFallback() throws Exception { // GH-90000
             startServerWithoutLlm(); // GH-90000
 
@@ -101,15 +101,15 @@ class AiFallbackDeterminismTest {
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<String, Object> ai = extractAiBlock(resp); // GH-90000
             assertThat(ai).containsEntry("fallback", true); // GH-90000
-            assertThat((Double) ai.get("confidence [GH-90000]")).isLessThan(0.5);
-            assertThat(ai).containsKey("model [GH-90000]");
+            assertThat((Double) ai.get("confidence")).isLessThan(0.5);
+            assertThat(ai).containsKey("model");
 
             Map<String, Object> body = parseBody(resp); // GH-90000
-            assertThat(body).containsKey("data [GH-90000]");
+            assertThat(body).containsKey("data");
         }
 
         @Test
-        @DisplayName("analytics/suggest → fallback=true, consistent response on repeated calls [GH-90000]")
+        @DisplayName("analytics/suggest → fallback=true, consistent response on repeated calls")
         void analyticsSuggest_noLlm_isDeterministic() throws Exception { // GH-90000
             startServerWithoutLlm(); // GH-90000
 
@@ -127,12 +127,12 @@ class AiFallbackDeterminismTest {
             Map<String, Object> ai2 = extractAiBlock(resp2); // GH-90000
 
             // Same fallback flag on repeated identical calls
-            assertThat(ai1.get("fallback [GH-90000]")).isEqualTo(ai2.get("fallback [GH-90000]"));
+            assertThat(ai1.get("fallback")).isEqualTo(ai2.get("fallback"));
             assertThat(ai1).containsEntry("fallback", true); // GH-90000
         }
 
         @Test
-        @DisplayName("pipelines/optimise-hint → fallback=true, hint present in data [GH-90000]")
+        @DisplayName("pipelines/optimise-hint → fallback=true, hint present in data")
         void pipelineOptimiseHint_noLlm_returnsHeuristicHint() throws Exception { // GH-90000
             startServerWithoutLlm(); // GH-90000
 
@@ -142,13 +142,13 @@ class AiFallbackDeterminismTest {
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<String, Object> body = parseBody(resp); // GH-90000
-            assertThat(body).containsKey("data [GH-90000]");
+            assertThat(body).containsKey("data");
             Map<String, Object> ai = extractAiBlock(resp); // GH-90000
             assertThat(ai).containsEntry("fallback", true); // GH-90000
         }
 
         @Test
-        @DisplayName("brain/explain → fallback=true, explanation present in data [GH-90000]")
+        @DisplayName("brain/explain → fallback=true, explanation present in data")
         void brainExplain_noLlm_returnsHeuristicExplanation() throws Exception { // GH-90000
             startServerWithoutLlm(); // GH-90000
 
@@ -158,8 +158,8 @@ class AiFallbackDeterminismTest {
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<String, Object> body = parseBody(resp); // GH-90000
-            assertThat(body).containsKey("data [GH-90000]");
-            assertThat(body).containsKey("ai [GH-90000]");
+            assertThat(body).containsKey("data");
+            assertThat(body).containsKey("ai");
         }
 
         private void startServerWithoutLlm() throws Exception { // GH-90000
@@ -174,14 +174,14 @@ class AiFallbackDeterminismTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("LLM returns an error [GH-90000]")
+    @DisplayName("LLM returns an error")
     class LlmErrorTests {
 
         @Test
-        @DisplayName("exception from completion → returns 200 with fallback, not 500 [GH-90000]")
+        @DisplayName("exception from completion → returns 200 with fallback, not 500")
         void llmThrowsException_returns200WithFallback() throws Exception { // GH-90000
             when(mockCompletion.complete(any())) // GH-90000
-                .thenReturn(Promise.ofException(new RuntimeException("connection refused [GH-90000]")));
+                .thenReturn(Promise.ofException(new RuntimeException("connection refused")));
 
             startServerWithLlm(); // GH-90000
 
@@ -195,7 +195,7 @@ class AiFallbackDeterminismTest {
         }
 
         @Test
-        @DisplayName("null result from completion → returns 200 with fallback [GH-90000]")
+        @DisplayName("null result from completion → returns 200 with fallback")
         void llmReturnsNullResult_returns200WithFallback() throws Exception { // GH-90000
             when(mockCompletion.complete(any())).thenReturn(Promise.of(null)); // GH-90000
 
@@ -211,10 +211,10 @@ class AiFallbackDeterminismTest {
         }
 
         @Test
-        @DisplayName("consecutive LLM failures → fallback applied on each call independently [GH-90000]")
+        @DisplayName("consecutive LLM failures → fallback applied on each call independently")
         void consecutiveLlmFailures_eachCallFallsBack() throws Exception { // GH-90000
             when(mockCompletion.complete(any())) // GH-90000
-                .thenReturn(Promise.ofException(new RuntimeException("timeout [GH-90000]")));
+                .thenReturn(Promise.ofException(new RuntimeException("timeout")));
 
             startServerWithLlm(); // GH-90000
 
@@ -243,17 +243,17 @@ class AiFallbackDeterminismTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Confidence threshold boundary [GH-90000]")
+    @DisplayName("Confidence threshold boundary")
     class ConfidenceBoundaryTests {
 
         @Test
-        @DisplayName("LLM confidence=0.0 → treated as fallback (below threshold) [GH-90000]")
-        @SuppressWarnings("unchecked [GH-90000]")
+        @DisplayName("LLM confidence=0.0 → treated as fallback (below threshold)")
+        @SuppressWarnings("unchecked")
         void zeroConfidence_treatedAsFallback() throws Exception { // GH-90000
             CompletionResult lowResult = mock(CompletionResult.class); // GH-90000
-            when(lowResult.getText()).thenReturn("minimal suggestion [GH-90000]");
-            when(lowResult.getFinishReason()).thenReturn("stop [GH-90000]");
-            when(lowResult.getModelUsed()).thenReturn("gpt-4o-mini [GH-90000]");
+            when(lowResult.getText()).thenReturn("minimal suggestion");
+            when(lowResult.getFinishReason()).thenReturn("stop");
+            when(lowResult.getModelUsed()).thenReturn("gpt-4o-mini");
             when(mockCompletion.complete(any())).thenReturn(Promise.of(lowResult)); // GH-90000
 
             server = new DataCloudHttpServer(mockClient, port) // GH-90000
@@ -267,18 +267,18 @@ class AiFallbackDeterminismTest {
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             // Response must always contain the ai block regardless of confidence
-            assertThat(parseBody(resp)).containsKey("ai [GH-90000]");
+            assertThat(parseBody(resp)).containsKey("ai");
         }
 
         @ParameterizedTest(name = "empty text=''{0}''") // GH-90000
         @ValueSource(strings = {"", "   "}) // GH-90000
-        @DisplayName("LLM returns blank text → treated as fallback [GH-90000]")
-        @SuppressWarnings("unchecked [GH-90000]")
+        @DisplayName("LLM returns blank text → treated as fallback")
+        @SuppressWarnings("unchecked")
         void blankLlmText_treatedAsFallback(String blankText) throws Exception { // GH-90000
             CompletionResult blankResult = mock(CompletionResult.class); // GH-90000
             when(blankResult.getText()).thenReturn(blankText); // GH-90000
-            when(blankResult.getFinishReason()).thenReturn("length [GH-90000]");
-            when(blankResult.getModelUsed()).thenReturn("gpt-4o-mini [GH-90000]");
+            when(blankResult.getFinishReason()).thenReturn("length");
+            when(blankResult.getModelUsed()).thenReturn("gpt-4o-mini");
             when(mockCompletion.complete(any())).thenReturn(Promise.of(blankResult)); // GH-90000
 
             server = new DataCloudHttpServer(mockClient, port) // GH-90000
@@ -291,7 +291,7 @@ class AiFallbackDeterminismTest {
                 "{\"collections\":[\"events\"],\"goal\":\"count per day\"}");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            assertThat(parseBody(resp)).containsKey("data [GH-90000]");
+            assertThat(parseBody(resp)).containsKey("data");
         }
     }
 
@@ -300,11 +300,11 @@ class AiFallbackDeterminismTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("AI block response contract [GH-90000]")
+    @DisplayName("AI block response contract")
     class AiBlockContractTests {
 
         @Test
-        @DisplayName("all fallback responses include: fallback, confidence, model keys [GH-90000]")
+        @DisplayName("all fallback responses include: fallback, confidence, model keys")
         void fallbackResponse_containsAllRequiredAiKeys() throws Exception { // GH-90000
             server = new DataCloudHttpServer(mockClient, port); // no LLM // GH-90000
             server.start(); // GH-90000
@@ -317,9 +317,9 @@ class AiFallbackDeterminismTest {
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<String, Object> ai = extractAiBlock(resp); // GH-90000
             assertThat(ai).containsKeys("fallback", "confidence", "model"); // GH-90000
-            assertThat(ai.get("fallback [GH-90000]")).isInstanceOf(Boolean.class);
-            assertThat(ai.get("confidence [GH-90000]")).isInstanceOf(Double.class);
-            assertThat(ai.get("model [GH-90000]")).isInstanceOf(String.class);
+            assertThat(ai.get("fallback")).isInstanceOf(Boolean.class);
+            assertThat(ai.get("confidence")).isInstanceOf(Double.class);
+            assertThat(ai.get("model")).isInstanceOf(String.class);
         }
     }
 
@@ -327,16 +327,16 @@ class AiFallbackDeterminismTest {
     // Helpers
     // ─────────────────────────────────────────────────────────────────────────
 
-    @SuppressWarnings("unchecked [GH-90000]")
+    @SuppressWarnings("unchecked")
     private Map<String, Object> parseBody(HttpResponse<String> resp) throws Exception { // GH-90000
         return mapper.readValue(resp.body(), Map.class); // GH-90000
     }
 
-    @SuppressWarnings("unchecked [GH-90000]")
+    @SuppressWarnings("unchecked")
     private Map<String, Object> extractAiBlock(HttpResponse<String> resp) throws Exception { // GH-90000
         Map<String, Object> body = parseBody(resp); // GH-90000
-        assertThat(body).containsKey("ai [GH-90000]");
-        return (Map<String, Object>) body.get("ai [GH-90000]");
+        assertThat(body).containsKey("ai");
+        return (Map<String, Object>) body.get("ai");
     }
 
     private HttpResponse<String> post(String path, String jsonBody) throws Exception { // GH-90000

@@ -2,6 +2,12 @@ package com.ghatana.orchestrator.models;
 
 import java.time.Instant;
 
+/**
+ * @doc.type class
+ * @doc.purpose Provides orchestrator pipeline state functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+ */
 public class OrchestratorPipelineState {
     public String pipelineId;
     public String executionId;

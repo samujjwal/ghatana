@@ -20,25 +20,25 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern UnitTest
  */
-@DisplayName("Queries UI Contract Tests [GH-90000]")
+@DisplayName("Queries UI Contract Tests")
 public class QueriesUiContractTest {
 
     @Nested
-    @DisplayName("QueriesListPageTests [GH-90000]")
+    @DisplayName("QueriesListPageTests")
     class QueriesListPageTests {
 
         @Test
-        @DisplayName("GET /queries: returns list with schema [GH-90000]")
+        @DisplayName("GET /queries: returns list with schema")
         void shouldReturnList() { // GH-90000
             Map<String, Object> response = getQueriesList(); // GH-90000
             assertThat(response).containsKeys("items", "total", "limit"); // GH-90000
         }
 
         @Test
-        @DisplayName("query items: typed with SQL, status, results [GH-90000]")
+        @DisplayName("query items: typed with SQL, status, results")
         void shouldHaveSchema() { // GH-90000
             Map<String, Object> response = getQueriesList(); // GH-90000
-            List<?> items = (List<?>) response.get("items [GH-90000]");
+            List<?> items = (List<?>) response.get("items");
 
             if (!items.isEmpty()) { // GH-90000
                 Map<String, ?> query = (Map<String, ?>) items.get(0); // GH-90000
@@ -47,102 +47,102 @@ public class QueriesUiContractTest {
         }
 
         @Test
-        @DisplayName("query pagination: limit/offset [GH-90000]")
+        @DisplayName("query pagination: limit/offset")
         void shouldPaginate() { // GH-90000
             Map<String, Object> response = getQueriesList(); // GH-90000
-            assertThat(response.get("limit [GH-90000]")).isEqualTo(20);
+            assertThat(response.get("limit")).isEqualTo(20);
         }
 
         @Test
-        @DisplayName("query filters: by status, owner, date [GH-90000]")
+        @DisplayName("query filters: by status, owner, date")
         void shouldFilter() { // GH-90000
-            Map<String, Object> response = getFilteredQueries("COMPLETED [GH-90000]");
-            assertThat(response).containsKey("filter [GH-90000]");
+            Map<String, Object> response = getFilteredQueries("COMPLETED");
+            assertThat(response).containsKey("filter");
         }
 
         @Test
-        @DisplayName("query sorting: by date, execution time [GH-90000]")
+        @DisplayName("query sorting: by date, execution time")
         void shouldSort() { // GH-90000
             Map<String, Object> response = getSortedQueries("executionTime", "desc"); // GH-90000
-            assertThat(response).containsKey("sortBy [GH-90000]");
+            assertThat(response).containsKey("sortBy");
         }
 
         @Test
-        @DisplayName("query tenant isolation [GH-90000]")
+        @DisplayName("query tenant isolation")
         void shouldIsolateTenant() { // GH-90000
-            Map<String, Object> t1 = getQueriesForTenant("tenant-1 [GH-90000]");
-            assertThat(t1.get("tenantId [GH-90000]")).isEqualTo("tenant-1 [GH-90000]");
+            Map<String, Object> t1 = getQueriesForTenant("tenant-1");
+            assertThat(t1.get("tenantId")).isEqualTo("tenant-1");
         }
 
         @Test
-        @DisplayName("query status values: valid enumeration [GH-90000]")
+        @DisplayName("query status values: valid enumeration")
         void shouldHaveValidStatus() { // GH-90000
             Map<String, Object> response = getQueriesList(); // GH-90000
-            List<?> items = (List<?>) response.get("items [GH-90000]");
+            List<?> items = (List<?>) response.get("items");
 
             if (!items.isEmpty()) { // GH-90000
                 Map<String, ?> query = (Map<String, ?>) items.get(0); // GH-90000
-                String status = query.get("status [GH-90000]").toString();
+                String status = query.get("status").toString();
                 assertThat(status).isIn("PENDING", "RUNNING", "COMPLETED", "FAILED", "CANCELLED"); // GH-90000
             }
         }
     }
 
     @Nested
-    @DisplayName("QueryDetailPageTests [GH-90000]")
+    @DisplayName("QueryDetailPageTests")
     class QueryDetailPageTests {
 
         @Test
-        @DisplayName("GET /queries/{id}: returns detail [GH-90000]")
+        @DisplayName("GET /queries/{id}: returns detail")
         void shouldReturnDetail() { // GH-90000
-            Map<String, Object> response = getQueryDetail("query-1 [GH-90000]");
+            Map<String, Object> response = getQueryDetail("query-1");
             assertThat(response).containsKeys("id", "sql", "results", "executionStats"); // GH-90000
         }
 
         @Test
-        @DisplayName("query result set: rows and columns [GH-90000]")
+        @DisplayName("query result set: rows and columns")
         void shouldHaveResults() { // GH-90000
-            Map<String, Object> response = getQueryDetail("query-1 [GH-90000]");
-            Map<String, ?> results = (Map<String, ?>) response.get("results [GH-90000]");
+            Map<String, Object> response = getQueryDetail("query-1");
+            Map<String, ?> results = (Map<String, ?>) response.get("results");
 
             assertThat(results).containsKeys("rows", "columns", "rowCount"); // GH-90000
         }
 
         @Test
-        @DisplayName("query execution stats: duration, rows scanned [GH-90000]")
+        @DisplayName("query execution stats: duration, rows scanned")
         void shouldHaveStats() { // GH-90000
-            Map<String, Object> response = getQueryDetail("query-1 [GH-90000]");
-            Map<String, ?> stats = (Map<String, ?>) response.get("executionStats [GH-90000]");
+            Map<String, Object> response = getQueryDetail("query-1");
+            Map<String, ?> stats = (Map<String, ?>) response.get("executionStats");
 
             assertThat(stats).containsKeys("durationMs", "rowsScanned", "rowsReturned"); // GH-90000
         }
 
         @Test
-        @DisplayName("query history: previous executions [GH-90000]")
+        @DisplayName("query history: previous executions")
         void shouldHaveHistory() { // GH-90000
-            Map<String, Object> response = getQueryDetail("query-1 [GH-90000]");
-            assertThat(response).containsKey("executionHistory [GH-90000]");
+            Map<String, Object> response = getQueryDetail("query-1");
+            assertThat(response).containsKey("executionHistory");
         }
 
         @Test
-        @DisplayName("query permissions: owner can modify [GH-90000]")
+        @DisplayName("query permissions: owner can modify")
         void shouldHavePermissions() { // GH-90000
-            Map<String, Object> response = getQueryDetail("query-1 [GH-90000]");
-            assertThat(response).containsKey("permissions [GH-90000]");
+            Map<String, Object> response = getQueryDetail("query-1");
+            assertThat(response).containsKey("permissions");
         }
 
         @Test
-        @DisplayName("missing query: returns null [GH-90000]")
+        @DisplayName("missing query: returns null")
         void shouldHandle404() { // GH-90000
-            Map<String, Object> response = getQueryDetailOrNull("missing [GH-90000]");
+            Map<String, Object> response = getQueryDetailOrNull("missing");
             assertThat(response).isNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("query timeout: handled gracefully [GH-90000]")
+        @DisplayName("query timeout: handled gracefully")
         void shouldHandleTimeout() { // GH-90000
-            Map<String, Object> response = getQueryDetail("query-1 [GH-90000]");
-            assertThat(response).containsKey("status [GH-90000]");
+            Map<String, Object> response = getQueryDetail("query-1");
+            assertThat(response).containsKey("status");
         }
     }
 
@@ -151,7 +151,7 @@ public class QueriesUiContractTest {
     // ─────────────────────────────────────────────────────────────────────
 
     private Map<String, Object> getQueriesList() { // GH-90000
-        return getQueriesForTenant("tenant-default [GH-90000]");
+        return getQueriesForTenant("tenant-default");
     }
 
     private Map<String, Object> getQueriesForTenant(String tenantId) { // GH-90000
@@ -223,7 +223,7 @@ public class QueriesUiContractTest {
     }
 
     private Map<String, Object> getQueryDetailOrNull(String queryId) { // GH-90000
-        if (queryId.equals("missing [GH-90000]")) {
+        if (queryId.equals("missing")) {
             return null;
         }
         return getQueryDetail(queryId); // GH-90000

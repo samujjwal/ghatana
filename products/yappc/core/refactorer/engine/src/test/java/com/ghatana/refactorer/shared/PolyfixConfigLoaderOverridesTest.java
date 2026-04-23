@@ -234,7 +234,7 @@ class PolyfixConfigLoaderOverridesTest {
                 assertThrows( // GH-90000
                         IllegalArgumentException.class,
                         () -> PolyfixConfigLoader.applyOverrides(config, overrides)); // GH-90000
-        assertTrue(exception.getMessage().contains("Invalid configuration path [GH-90000]"));
+        assertTrue(exception.getMessage().contains("Invalid configuration path"));
     }
 
     @Test

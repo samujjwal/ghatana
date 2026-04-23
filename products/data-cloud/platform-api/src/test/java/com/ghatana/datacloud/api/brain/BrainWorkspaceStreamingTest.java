@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("Brain Workspace Streaming Tests [GH-90000]")
+@DisplayName("Brain Workspace Streaming Tests")
 class BrainWorkspaceStreamingTest extends EventloopTestBase {
 
     // ── Streaming model ───────────────────────────────────────────────────────
@@ -45,30 +45,30 @@ class BrainWorkspaceStreamingTest extends EventloopTestBase {
     // ── Event ingestion ───────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("ingested events are accepted without error [GH-90000]")
+    @DisplayName("ingested events are accepted without error")
     void ingestedEventsAreAccepted() { // GH-90000
         stream.emit(new StreamEvent("ws-1", "cpu_usage", 42.5, System.currentTimeMillis())); // GH-90000
         stream.emit(new StreamEvent("ws-1", "cpu_usage", 55.0, System.currentTimeMillis())); // GH-90000
         stream.emit(new StreamEvent("ws-1", "memory_usage", 70.0, System.currentTimeMillis())); // GH-90000
 
-        assertThat(stream.eventCount("ws-1 [GH-90000]")).isEqualTo(3);
+        assertThat(stream.eventCount("ws-1")).isEqualTo(3);
     }
 
     @Test
-    @DisplayName("events from different workspaces are tracked independently [GH-90000]")
+    @DisplayName("events from different workspaces are tracked independently")
     void eventsFromDifferentWorkspacesTrackedIndependently() { // GH-90000
         stream.emit(new StreamEvent("ws-A", "latency_ms", 100.0, System.currentTimeMillis())); // GH-90000
         stream.emit(new StreamEvent("ws-B", "latency_ms", 200.0, System.currentTimeMillis())); // GH-90000
         stream.emit(new StreamEvent("ws-B", "latency_ms", 250.0, System.currentTimeMillis())); // GH-90000
 
-        assertThat(stream.eventCount("ws-A [GH-90000]")).isEqualTo(1);
-        assertThat(stream.eventCount("ws-B [GH-90000]")).isEqualTo(2);
+        assertThat(stream.eventCount("ws-A")).isEqualTo(1);
+        assertThat(stream.eventCount("ws-B")).isEqualTo(2);
     }
 
     // ── Aggregation ───────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("aggregate computes correct sum, avg, max, min, and count [GH-90000]")
+    @DisplayName("aggregate computes correct sum, avg, max, min, and count")
     void aggregateComputesCorrectStats() { // GH-90000
         String ws = "ws-agg";
         String metric = "throughput_rps";
@@ -88,7 +88,7 @@ class BrainWorkspaceStreamingTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("aggregate on empty metric returns zero-value aggregate [GH-90000]")
+    @DisplayName("aggregate on empty metric returns zero-value aggregate")
     void aggregateOnEmptyMetricReturnsZeros() { // GH-90000
         WindowAggregate agg = stream.aggregate("ws-empty", "nonexistent_metric"); // GH-90000
 
@@ -97,7 +97,7 @@ class BrainWorkspaceStreamingTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("aggregate is isolated per workspace and metric combination [GH-90000]")
+    @DisplayName("aggregate is isolated per workspace and metric combination")
     void aggregateIsIsolatedPerWorkspaceAndMetric() { // GH-90000
         stream.emit(new StreamEvent("ws-X", "metric-1", 10.0, System.currentTimeMillis())); // GH-90000
         stream.emit(new StreamEvent("ws-X", "metric-2", 20.0, System.currentTimeMillis())); // GH-90000
@@ -111,19 +111,19 @@ class BrainWorkspaceStreamingTest extends EventloopTestBase {
     // ── Threshold alerting ────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("alert is triggered when event value exceeds the configured threshold [GH-90000]")
+    @DisplayName("alert is triggered when event value exceeds the configured threshold")
     void alertTriggeredWhenValueExceedsThreshold() { // GH-90000
         stream.setThreshold("ws-alert", "cpu_usage", 80.0); // GH-90000
         stream.emit(new StreamEvent("ws-alert", "cpu_usage", 95.0, System.currentTimeMillis())); // GH-90000
 
         List<Alert> alerts = stream.drainAlerts(); // GH-90000
         assertThat(alerts).hasSize(1); // GH-90000
-        assertThat(alerts.get(0).metricName()).isEqualTo("cpu_usage [GH-90000]");
+        assertThat(alerts.get(0).metricName()).isEqualTo("cpu_usage");
         assertThat(alerts.get(0).actualValue()).isCloseTo(95.0, org.assertj.core.data.Offset.offset(0.001)); // GH-90000
     }
 
     @Test
-    @DisplayName("no alert is triggered when event value is below the configured threshold [GH-90000]")
+    @DisplayName("no alert is triggered when event value is below the configured threshold")
     void noAlertWhenValueBelowThreshold() { // GH-90000
         stream.setThreshold("ws-ok", "cpu_usage", 80.0); // GH-90000
         stream.emit(new StreamEvent("ws-ok", "cpu_usage", 50.0, System.currentTimeMillis())); // GH-90000
@@ -132,7 +132,7 @@ class BrainWorkspaceStreamingTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("multiple threshold violations produce separate alerts [GH-90000]")
+    @DisplayName("multiple threshold violations produce separate alerts")
     void multipleViolationsProduceSeparateAlerts() { // GH-90000
         stream.setThreshold("ws-multi", "latency", 100.0); // GH-90000
         stream.emit(new StreamEvent("ws-multi", "latency", 150.0, System.currentTimeMillis())); // GH-90000
@@ -144,7 +144,7 @@ class BrainWorkspaceStreamingTest extends EventloopTestBase {
     // ── Error handling ────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("emitting null workspace ID records an error and does not crash [GH-90000]")
+    @DisplayName("emitting null workspace ID records an error and does not crash")
     void emittingNullWorkspaceIdRecordsError() { // GH-90000
         try {
             stream.emit(new StreamEvent(null, "metric", 1.0, System.currentTimeMillis())); // GH-90000
@@ -153,7 +153,7 @@ class BrainWorkspaceStreamingTest extends EventloopTestBase {
         }
         // Stream is still operational after the invalid event
         stream.emit(new StreamEvent("ws-ok2", "metric", 1.0, System.currentTimeMillis())); // GH-90000
-        assertThat(stream.eventCount("ws-ok2 [GH-90000]")).isEqualTo(1);
+        assertThat(stream.eventCount("ws-ok2")).isEqualTo(1);
     }
 
     // ── Brain workspace stream implementation (for tests) ───────────────────── // GH-90000

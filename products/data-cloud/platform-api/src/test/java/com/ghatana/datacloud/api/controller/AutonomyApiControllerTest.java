@@ -11,18 +11,18 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("AutonomyApiController [GH-90000]")
+@DisplayName("AutonomyApiController")
 class AutonomyApiControllerTest {
 
     @Test
-    @DisplayName("returns real autonomy logs and statistics [GH-90000]")
+    @DisplayName("returns real autonomy logs and statistics")
     void returnsRealAutonomyLogsAndStatistics() { // GH-90000
         DefaultAutonomyController autonomyController = new DefaultAutonomyController(); // GH-90000
         AutonomyApiController controller = new AutonomyApiController(autonomyController); // GH-90000
 
         AutonomyPolicy policy = AutonomyPolicy.builder() // GH-90000
-                .id("policy-1 [GH-90000]")
-                .name("Production Default [GH-90000]")
+                .id("policy-1")
+                .name("Production Default")
                 .defaultLevel(AutonomyLevel.NOTIFY) // GH-90000
                 .maxLevel(AutonomyLevel.AUTONOMOUS) // GH-90000
                 .minLevel(AutonomyLevel.SUGGEST) // GH-90000
@@ -33,11 +33,11 @@ class AutonomyApiControllerTest {
         Map<String, Object> response = controller.getLogs().getResult(); // GH-90000
 
         assertThat(response).containsKeys("logs", "statistics", "count"); // GH-90000
-        assertThat(response.get("count [GH-90000]")).isEqualTo(1);
-        assertThat(response.get("statistics [GH-90000]"))
+        assertThat(response.get("count")).isEqualTo(1);
+        assertThat(response.get("statistics"))
                 .isInstanceOf(com.ghatana.datacloud.client.autonomy.AutonomyController.ControllerStatistics.class); // GH-90000
-        assertThat(response.get("logs [GH-90000]")).isInstanceOf(List.class);
-        assertThat((List<?>) response.get("logs [GH-90000]")).hasSize(1);
-        assertThat(controller.getPolicy().getResult().getName()).isEqualTo("Production Default [GH-90000]");
+        assertThat(response.get("logs")).isInstanceOf(List.class);
+        assertThat((List<?>) response.get("logs")).hasSize(1);
+        assertThat(controller.getPolicy().getResult().getName()).isEqualTo("Production Default");
     }
 }

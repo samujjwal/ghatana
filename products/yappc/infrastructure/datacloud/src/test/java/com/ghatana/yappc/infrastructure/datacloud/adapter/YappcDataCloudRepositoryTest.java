@@ -32,7 +32,7 @@ import static org.mockito.Mockito.*;
 /**
  * Tests for YappcDataCloudRepository.
  */
-@DisplayName("YappcDataCloudRepository Tests [GH-90000]")
+@DisplayName("YappcDataCloudRepository Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles yappc data cloud repository test operations
@@ -70,7 +70,7 @@ class YappcDataCloudRepositoryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should save entity through data-cloud [GH-90000]")
+    @DisplayName("Should save entity through data-cloud")
     void shouldSaveEntity() { // GH-90000
         UUID id = UUID.randomUUID(); // GH-90000
         TestEntity entity = new TestEntity(id, "Test", 42); // GH-90000
@@ -88,7 +88,7 @@ class YappcDataCloudRepositoryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should find entity by ID [GH-90000]")
+    @DisplayName("Should find entity by ID")
     void shouldFindById() { // GH-90000
         UUID id = UUID.randomUUID(); // GH-90000
         DataCloudClient.Entity entity = DataCloudClient.Entity.of( // GH-90000
@@ -104,7 +104,7 @@ class YappcDataCloudRepositoryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should find all entities [GH-90000]")
+    @DisplayName("Should find all entities")
     void shouldFindAll() { // GH-90000
         when(client.query(anyString(), anyString(), any(DataCloudClient.Query.class))) // GH-90000
             .thenReturn(Promise.of(List.of())); // GH-90000
@@ -115,7 +115,7 @@ class YappcDataCloudRepositoryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should delete entity by ID [GH-90000]")
+    @DisplayName("Should delete entity by ID")
     void shouldDeleteById() { // GH-90000
         UUID id = UUID.randomUUID(); // GH-90000
 
@@ -128,7 +128,7 @@ class YappcDataCloudRepositoryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should encrypt project environment variables before saving [GH-90000]")
+    @DisplayName("Should encrypt project environment variables before saving")
     void shouldEncryptProjectEnvironmentVariablesBeforeSaving() { // GH-90000
         ObjectMapper objectMapper = new ObjectMapper(); // GH-90000
         objectMapper.registerModule(new JavaTimeModule()); // GH-90000
@@ -143,11 +143,11 @@ class YappcDataCloudRepositoryTest extends EventloopTestBase {
             ProjectEntity.class
         );
         ProjectEntity project = new ProjectEntity("Secure Project", "Desc", "user-1"); // GH-90000
-        project.setTenantId("tenant-alpha [GH-90000]");
+        project.setTenantId("tenant-alpha");
         project.setEnvironmentVariables(Map.of("OPENAI_API_KEY", "sk-live-secret")); // GH-90000
 
-        TenantContext.setCurrentTenantId("tenant-alpha [GH-90000]");
-        runBlocking(() -> TenantContext.setCurrentTenantId("tenant-alpha [GH-90000]"));
+        TenantContext.setCurrentTenantId("tenant-alpha");
+        runBlocking(() -> TenantContext.setCurrentTenantId("tenant-alpha"));
 
         AtomicReference<Map<String, Object>> savedPayloadRef = new AtomicReference<>(); // GH-90000
         when(client.save(anyString(), anyString(), any())) // GH-90000
@@ -163,15 +163,15 @@ class YappcDataCloudRepositoryTest extends EventloopTestBase {
 
         ProjectEntity saved = runPromise(() -> projectRepository.save(project)); // GH-90000
 
-        verify(client).save(eq("tenant-alpha [GH-90000]"), eq(ProjectEntity.getCollectionName()), any());
+        verify(client).save(eq("tenant-alpha"), eq(ProjectEntity.getCollectionName()), any());
         Map<String, Object> savedPayload = savedPayloadRef.get(); // GH-90000
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         Map<String, String> persistedEnvironmentVariables =
-            (Map<String, String>) savedPayload.get("environmentVariables [GH-90000]");
+            (Map<String, String>) savedPayload.get("environmentVariables");
 
-        assertThat(persistedEnvironmentVariables.get("OPENAI_API_KEY [GH-90000]"))
-            .startsWith("enc:: [GH-90000]")
-            .isNotEqualTo("sk-live-secret [GH-90000]");
+        assertThat(persistedEnvironmentVariables.get("OPENAI_API_KEY"))
+            .startsWith("enc::")
+            .isNotEqualTo("sk-live-secret");
         assertThat(saved.getEnvironmentVariables()) // GH-90000
             .containsEntry("OPENAI_API_KEY", "sk-live-secret"); // GH-90000
     }

@@ -20,31 +20,31 @@ class StringUtilsTest {
 
     @Test
     void testIsBlankWithEmpty() { // GH-90000
-        assertTrue(StringUtils.isBlank(" [GH-90000]"));
+        assertTrue(StringUtils.isBlank(""));
     }
 
     @Test
     void testIsBlankWithWhitespace() { // GH-90000
-        assertTrue(StringUtils.isBlank("    [GH-90000]"));
-        assertTrue(StringUtils.isBlank("\t [GH-90000]"));
-        assertTrue(StringUtils.isBlank("\n [GH-90000]"));
-        assertTrue(StringUtils.isBlank(" \t\n  [GH-90000]"));
+        assertTrue(StringUtils.isBlank("   "));
+        assertTrue(StringUtils.isBlank("\t"));
+        assertTrue(StringUtils.isBlank("\n"));
+        assertTrue(StringUtils.isBlank(" \t\n "));
     }
 
     @Test
     void testIsBlankWithContent() { // GH-90000
-        assertFalse(StringUtils.isBlank("test [GH-90000]"));
-        assertFalse(StringUtils.isBlank(" test  [GH-90000]"));
-        assertFalse(StringUtils.isBlank("a [GH-90000]"));
+        assertFalse(StringUtils.isBlank("test"));
+        assertFalse(StringUtils.isBlank(" test "));
+        assertFalse(StringUtils.isBlank("a"));
     }
 
     @Test
     void testIsNotBlank() { // GH-90000
-        assertTrue(StringUtils.isNotBlank("test [GH-90000]"));
-        assertTrue(StringUtils.isNotBlank(" test  [GH-90000]"));
+        assertTrue(StringUtils.isNotBlank("test"));
+        assertTrue(StringUtils.isNotBlank(" test "));
         assertFalse(StringUtils.isNotBlank(null)); // GH-90000
-        assertFalse(StringUtils.isNotBlank(" [GH-90000]"));
-        assertFalse(StringUtils.isNotBlank("    [GH-90000]"));
+        assertFalse(StringUtils.isNotBlank(""));
+        assertFalse(StringUtils.isNotBlank("   "));
     }
 
     @Test
@@ -89,39 +89,39 @@ class StringUtilsTest {
         List<String> items = Arrays.asList("a", null, "c"); // GH-90000
         String result = StringUtils.join(items, ","); // GH-90000
         // Null elements are filtered out
-        assertTrue(result.contains("a [GH-90000]"));
-        assertTrue(result.contains("c [GH-90000]"));
+        assertTrue(result.contains("a"));
+        assertTrue(result.contains("c"));
     }
 
     @Test
     void testToSnakeCase() { // GH-90000
-        assertEquals("hello_world", StringUtils.toSnakeCase("HelloWorld [GH-90000]"));
-        assertEquals("hello_world", StringUtils.toSnakeCase("helloWorld [GH-90000]"));
-        assertEquals("test_case", StringUtils.toSnakeCase("testCase [GH-90000]"));
+        assertEquals("hello_world", StringUtils.toSnakeCase("HelloWorld"));
+        assertEquals("hello_world", StringUtils.toSnakeCase("helloWorld"));
+        assertEquals("test_case", StringUtils.toSnakeCase("testCase"));
         assertNull(StringUtils.toSnakeCase(null)); // GH-90000
     }
 
     @Test
     void testToKebabCase() { // GH-90000
-        assertEquals("-hello-world", StringUtils.toKebabCase("HelloWorld [GH-90000]")); // Has leading hyphen
-        assertEquals("hello-world", StringUtils.toKebabCase("helloWorld [GH-90000]"));
-        assertEquals("test-case", StringUtils.toKebabCase("testCase [GH-90000]"));
+        assertEquals("-hello-world", StringUtils.toKebabCase("HelloWorld")); // Has leading hyphen
+        assertEquals("hello-world", StringUtils.toKebabCase("helloWorld"));
+        assertEquals("test-case", StringUtils.toKebabCase("testCase"));
         assertNull(StringUtils.toKebabCase(null)); // Returns null for null input // GH-90000
     }
 
     @Test
     void testToCamelCase() { // GH-90000
-        assertEquals("helloWorld", StringUtils.toCamelCase("hello_world [GH-90000]"));
-        assertEquals("helloWorld", StringUtils.toCamelCase("hello-world [GH-90000]"));
-        assertEquals("testCase", StringUtils.toCamelCase("test_case [GH-90000]"));
+        assertEquals("helloWorld", StringUtils.toCamelCase("hello_world"));
+        assertEquals("helloWorld", StringUtils.toCamelCase("hello-world"));
+        assertEquals("testCase", StringUtils.toCamelCase("test_case"));
         assertNull(StringUtils.toCamelCase(null)); // GH-90000
     }
 
     @Test
     void testToPascalCase() { // GH-90000
-        assertEquals("HelloWorld", StringUtils.toPascalCase("hello_world [GH-90000]"));
-        assertEquals("HelloWorld", StringUtils.toPascalCase("hello-world [GH-90000]"));
-        assertEquals("TestCase", StringUtils.toPascalCase("test_case [GH-90000]"));
+        assertEquals("HelloWorld", StringUtils.toPascalCase("hello_world"));
+        assertEquals("HelloWorld", StringUtils.toPascalCase("hello-world"));
+        assertEquals("TestCase", StringUtils.toPascalCase("test_case"));
         assertNull(StringUtils.toPascalCase(null)); // GH-90000
     }
 
@@ -156,7 +156,7 @@ class StringUtilsTest {
         String random = StringUtils.randomAlphanumeric(10); // GH-90000
         assertNotNull(random); // GH-90000
         assertEquals(10, random.length()); // GH-90000
-        assertTrue(random.matches("[a-zA-Z0-9]+ [GH-90000]"));
+        assertTrue(random.matches("[a-zA-Z0-9]+"));
     }
 
     @Test
@@ -164,7 +164,7 @@ class StringUtilsTest {
         String uuid = StringUtils.generateUuid(); // GH-90000
         assertNotNull(uuid); // GH-90000
         assertEquals(36, uuid.length()); // GH-90000
-        assertTrue(uuid.contains("- [GH-90000]"));
+        assertTrue(uuid.contains("-"));
     }
 
     @Test

@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("DataSourceFactory - Phase 3 Expansion [GH-90000]")
+@DisplayName("DataSourceFactory - Phase 3 Expansion")
 class DataSourceFactoryExpansionTest {
 
     @AfterEach
@@ -38,20 +38,20 @@ class DataSourceFactoryExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Concurrent Pool Creation [GH-90000]")
+    @DisplayName("Concurrent Pool Creation")
     class ConcurrentCreationTests {
 
         @Test
-        @DisplayName("Creates multiple pools concurrently without conflicts [GH-90000]")
+        @DisplayName("Creates multiple pools concurrently without conflicts")
         void multipleConcurrentPools() { // GH-90000
             List<DataSource> dataSources = new ArrayList<>(); // GH-90000
 
             for (int i = 0; i < 10; i++) { // GH-90000
                 DataSourceConfig config = DataSourceConfig.builder() // GH-90000
                         .jdbcUrl("jdbc:h2:mem:concurrent-" + i + ";DB_CLOSE_DELAY=-1") // GH-90000
-                        .username("sa [GH-90000]")
-                        .password(" [GH-90000]")
-                        .driverClassName("org.h2.Driver [GH-90000]")
+                        .username("sa")
+                        .password("")
+                        .driverClassName("org.h2.Driver")
                         .poolName("concurrent-pool-" + i) // GH-90000
                         .build(); // GH-90000
 
@@ -64,14 +64,14 @@ class DataSourceFactoryExpansionTest {
         }
 
         @Test
-        @DisplayName("Handles rapid sequential pool creation [GH-90000]")
+        @DisplayName("Handles rapid sequential pool creation")
         void rapidSequentialCreation() { // GH-90000
             for (int i = 0; i < 5; i++) { // GH-90000
                 DataSourceConfig config = DataSourceConfig.builder() // GH-90000
                         .jdbcUrl("jdbc:h2:mem:rapid-" + i + ";DB_CLOSE_DELAY=-1") // GH-90000
-                        .username("sa [GH-90000]")
-                        .password(" [GH-90000]")
-                        .driverClassName("org.h2.Driver [GH-90000]")
+                        .username("sa")
+                        .password("")
+                        .driverClassName("org.h2.Driver")
                         .poolName("rapid-" + i) // GH-90000
                         .build(); // GH-90000
 
@@ -82,24 +82,24 @@ class DataSourceFactoryExpansionTest {
         }
 
         @Test
-        @DisplayName("Maintains separate pools with unique configurations [GH-90000]")
+        @DisplayName("Maintains separate pools with unique configurations")
         void separatePoolConfigurations() { // GH-90000
             DataSourceConfig config1 = DataSourceConfig.builder() // GH-90000
-                    .jdbcUrl("jdbc:h2:mem:separate1;DB_CLOSE_DELAY=-1 [GH-90000]")
-                    .username("sa [GH-90000]")
-                    .password(" [GH-90000]")
-                    .driverClassName("org.h2.Driver [GH-90000]")
-                    .poolName("separate-1 [GH-90000]")
+                    .jdbcUrl("jdbc:h2:mem:separate1;DB_CLOSE_DELAY=-1")
+                    .username("sa")
+                    .password("")
+                    .driverClassName("org.h2.Driver")
+                    .poolName("separate-1")
                     .minimumIdle(2) // GH-90000
                     .maximumPoolSize(5) // GH-90000
                     .build(); // GH-90000
 
             DataSourceConfig config2 = DataSourceConfig.builder() // GH-90000
-                    .jdbcUrl("jdbc:h2:mem:separate2;DB_CLOSE_DELAY=-1 [GH-90000]")
-                    .username("sa [GH-90000]")
-                    .password(" [GH-90000]")
-                    .driverClassName("org.h2.Driver [GH-90000]")
-                    .poolName("separate-2 [GH-90000]")
+                    .jdbcUrl("jdbc:h2:mem:separate2;DB_CLOSE_DELAY=-1")
+                    .username("sa")
+                    .password("")
+                    .driverClassName("org.h2.Driver")
+                    .poolName("separate-2")
                     .minimumIdle(4) // GH-90000
                     .maximumPoolSize(20) // GH-90000
                     .build(); // GH-90000
@@ -116,18 +116,18 @@ class DataSourceFactoryExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Pool Lifecycle Management [GH-90000]")
+    @DisplayName("Pool Lifecycle Management")
     class LifecycleTests {
 
         @Test
-        @DisplayName("Resets pool count after closeAll invocation [GH-90000]")
+        @DisplayName("Resets pool count after closeAll invocation")
         void poolCountResetAfterClose() { // GH-90000
             for (int i = 0; i < 3; i++) { // GH-90000
                 DataSourceConfig config = DataSourceConfig.builder() // GH-90000
                         .jdbcUrl("jdbc:h2:mem:reset-" + i + ";DB_CLOSE_DELAY=-1") // GH-90000
-                        .username("sa [GH-90000]")
-                        .password(" [GH-90000]")
-                        .driverClassName("org.h2.Driver [GH-90000]")
+                        .username("sa")
+                        .password("")
+                        .driverClassName("org.h2.Driver")
                         .poolName("reset-" + i) // GH-90000
                         .build(); // GH-90000
 
@@ -142,14 +142,14 @@ class DataSourceFactoryExpansionTest {
         }
 
         @Test
-        @DisplayName("Allows pool recreation after full closure [GH-90000]")
+        @DisplayName("Allows pool recreation after full closure")
         void recreateAfterClosure() { // GH-90000
             DataSourceConfig config = DataSourceConfig.builder() // GH-90000
-                    .jdbcUrl("jdbc:h2:mem:recreate;DB_CLOSE_DELAY=-1 [GH-90000]")
-                    .username("sa [GH-90000]")
-                    .password(" [GH-90000]")
-                    .driverClassName("org.h2.Driver [GH-90000]")
-                    .poolName("recreate-pool [GH-90000]")
+                    .jdbcUrl("jdbc:h2:mem:recreate;DB_CLOSE_DELAY=-1")
+                    .username("sa")
+                    .password("")
+                    .driverClassName("org.h2.Driver")
+                    .poolName("recreate-pool")
                     .build(); // GH-90000
 
             DataSourceFactory.create(config); // GH-90000
@@ -169,26 +169,26 @@ class DataSourceFactoryExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Error Handling [GH-90000]")
+    @DisplayName("Error Handling")
     class ErrorHandlingTests {
 
         @Test
-        @DisplayName("Rejects null configuration [GH-90000]")
+        @DisplayName("Rejects null configuration")
         void rejectNullConfig() { // GH-90000
             assertThatThrownBy(() -> DataSourceFactory.create(null)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("Handles invalid JDBC URL configuration [GH-90000]")
+        @DisplayName("Handles invalid JDBC URL configuration")
         void rejectInvalidJdbcUrl() { // GH-90000
             assertThatThrownBy(() -> { // GH-90000
                 DataSourceConfig.builder() // GH-90000
                         .jdbcUrl(null) // GH-90000
-                        .username("sa [GH-90000]")
-                        .password(" [GH-90000]")
-                        .driverClassName("org.h2.Driver [GH-90000]")
-                        .poolName("bad-url [GH-90000]")
+                        .username("sa")
+                        .password("")
+                        .driverClassName("org.h2.Driver")
+                        .poolName("bad-url")
                         .build(); // GH-90000
             }).isInstanceOf(Exception.class); // GH-90000
         }

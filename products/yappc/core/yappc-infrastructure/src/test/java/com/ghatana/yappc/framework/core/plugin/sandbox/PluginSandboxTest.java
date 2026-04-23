@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("Plugin Sandbox Tests (10.1.6) [GH-90000]")
+@DisplayName("Plugin Sandbox Tests (10.1.6)")
 class PluginSandboxTest {
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -69,37 +69,37 @@ class PluginSandboxTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Version compatibility [GH-90000]")
+    @DisplayName("Version compatibility")
     class VersionCompatibility {
 
         @Test
-        @DisplayName("compatible platform version allows loading [GH-90000]")
+        @DisplayName("compatible platform version allows loading")
         void compatibleVersionPasses() { // GH-90000
             assertThat(IsolatingPluginSandbox.isCompatible("2.3.0", "2.1.0")).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("equal versions are compatible [GH-90000]")
+        @DisplayName("equal versions are compatible")
         void equalVersionPasses() { // GH-90000
             assertThat(IsolatingPluginSandbox.isCompatible("2.3.0", "2.3.0")).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("older platform rejects plugin requiring newer version [GH-90000]")
+        @DisplayName("older platform rejects plugin requiring newer version")
         void incompatibleVersionRejected() { // GH-90000
             assertThat(IsolatingPluginSandbox.isCompatible("1.9.9", "2.0.0")).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("blank minPlatformVersion is always compatible [GH-90000]")
+        @DisplayName("blank minPlatformVersion is always compatible")
         void blankMinVersionPasses() { // GH-90000
             assertThat(IsolatingPluginSandbox.isCompatible("1.0.0", "")).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("sandbox throws PluginIncompatibleException for older platform [GH-90000]")
+        @DisplayName("sandbox throws PluginIncompatibleException for older platform")
         void sandboxThrowsOnIncompatibleVersion() { // GH-90000
-            IsolatingPluginSandbox sandbox = new IsolatingPluginSandbox("1.0.0 [GH-90000]");
+            IsolatingPluginSandbox sandbox = new IsolatingPluginSandbox("1.0.0");
             PluginDescriptor descriptor = new PluginDescriptor( // GH-90000
                     "test-plugin", "1.0.0", "2.0.0", null,
                     "com.example.TestPlugin",
@@ -108,8 +108,8 @@ class PluginSandboxTest {
 
             assertThatThrownBy(() -> sandbox.loadPlugin(descriptor, Greeter.class)) // GH-90000
                     .isInstanceOf(PluginIncompatibleException.class) // GH-90000
-                    .hasMessageContaining("test-plugin [GH-90000]")
-                    .hasMessageContaining("2.0.0 [GH-90000]");
+                    .hasMessageContaining("test-plugin")
+                    .hasMessageContaining("2.0.0");
         }
     }
 
@@ -118,52 +118,52 @@ class PluginSandboxTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("PermissionProxy enforcement [GH-90000]")
+    @DisplayName("PermissionProxy enforcement")
     class PermissionProxyEnforcement {
 
         @Test
-        @DisplayName("10.1.6.b.1 — compliant plugin with unrestricted permissions runs successfully [GH-90000]")
+        @DisplayName("10.1.6.b.1 — compliant plugin with unrestricted permissions runs successfully")
         void compliantPluginRunsSuccessfully() { // GH-90000
             Greeter proxy = PermissionProxy.wrap(new TrustworthyGreeter(), Greeter.class, PermissionSet.unrestricted()); // GH-90000
-            assertThat(proxy.greet("world [GH-90000]")).isEqualTo("Hello, world! [GH-90000]");
+            assertThat(proxy.greet("world")).isEqualTo("Hello, world!");
         }
 
         @Test
-        @DisplayName("10.1.6.b.2 — plugin accessing unauthorized network host → SecurityException [GH-90000]")
+        @DisplayName("10.1.6.b.2 — plugin accessing unauthorized network host → SecurityException")
         void unauthorizedNetworkHostRejected() { // GH-90000
             Greeter proxy = PermissionProxy.wrap(new TrustworthyGreeter(), Greeter.class, PermissionSet.empty()); // GH-90000
 
-            assertThatThrownBy(() -> proxy.callHost("api.external-service.com [GH-90000]"))
+            assertThatThrownBy(() -> proxy.callHost("api.external-service.com"))
                     .isInstanceOf(SecurityException.class) // GH-90000
-                    .hasMessageContaining("api.external-service.com [GH-90000]");
+                    .hasMessageContaining("api.external-service.com");
         }
 
         @Test
-        @DisplayName("10.1.6.b.3 — explicitly allowed network host passes through without exception [GH-90000]")
+        @DisplayName("10.1.6.b.3 — explicitly allowed network host passes through without exception")
         void allowedNetworkHostPassesThrough() { // GH-90000
             PermissionSet permissions = new PermissionSet( // GH-90000
-                    List.of("api.trusted-partner.com [GH-90000]"), List.of(), List.of());
+                    List.of("api.trusted-partner.com"), List.of(), List.of());
             Greeter proxy = PermissionProxy.wrap(new TrustworthyGreeter(), Greeter.class, permissions); // GH-90000
 
-            assertThat(proxy.callHost("api.trusted-partner.com [GH-90000]")).isEqualTo("called:api.trusted-partner.com [GH-90000]");
+            assertThat(proxy.callHost("api.trusted-partner.com")).isEqualTo("called:api.trusted-partner.com");
         }
 
         @Test
-        @DisplayName("10.1.6.b.4 — plugin accessing disallowed file path → SecurityException [GH-90000]")
+        @DisplayName("10.1.6.b.4 — plugin accessing disallowed file path → SecurityException")
         void unauthorizedFilePathRejected() { // GH-90000
             FileReader proxy = PermissionProxy.wrap(new PassthroughFileReader(), FileReader.class, PermissionSet.empty()); // GH-90000
 
-            assertThatThrownBy(() -> proxy.read("/etc/passwd [GH-90000]"))
+            assertThatThrownBy(() -> proxy.read("/etc/passwd"))
                     .isInstanceOf(SecurityException.class) // GH-90000
-                    .hasMessageContaining("/etc/passwd [GH-90000]");
+                    .hasMessageContaining("/etc/passwd");
         }
 
         @Test
-        @DisplayName("10.1.6.b.5 — non-interface contract throws IllegalArgumentException [GH-90000]")
+        @DisplayName("10.1.6.b.5 — non-interface contract throws IllegalArgumentException")
         void nonInterfaceContractThrows() { // GH-90000
             assertThatThrownBy(() -> PermissionProxy.wrap("instance", String.class, PermissionSet.empty())) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("interface [GH-90000]");
+                    .hasMessageContaining("interface");
         }
     }
 
@@ -172,19 +172,19 @@ class PluginSandboxTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("ResourceBudget timeout enforcement [GH-90000]")
+    @DisplayName("ResourceBudget timeout enforcement")
     class ResourceBudgetTimeoutEnforcement {
 
         @Test
-        @DisplayName("10.1.6.c.1 — fast callable completes within budget [GH-90000]")
+        @DisplayName("10.1.6.c.1 — fast callable completes within budget")
         void fastCallableCompletesSuccessfully() throws Exception { // GH-90000
             ResourceBudget budget = new ResourceBudget("fast-plugin", 2000, ResourceBudget.UNLIMITED); // GH-90000
             String result = budget.execute(() -> "fast-result"); // GH-90000
-            assertThat(result).isEqualTo("fast-result [GH-90000]");
+            assertThat(result).isEqualTo("fast-result");
         }
 
         @Test
-        @DisplayName("10.1.6.c.2 — slow callable exceeds time budget → PluginTimeoutException [GH-90000]")
+        @DisplayName("10.1.6.c.2 — slow callable exceeds time budget → PluginTimeoutException")
         void slowCallableTimesOut() { // GH-90000
             ResourceBudget budget = new ResourceBudget("slow-plugin", 100, ResourceBudget.UNLIMITED); // GH-90000
 
@@ -193,28 +193,28 @@ class PluginSandboxTest {
                 return "should-never-return";
             }))
                     .isInstanceOf(PluginTimeoutException.class) // GH-90000
-                    .hasMessageContaining("slow-plugin [GH-90000]")
-                    .hasMessageContaining("100 [GH-90000]");
+                    .hasMessageContaining("slow-plugin")
+                    .hasMessageContaining("100");
         }
 
         @Test
-        @DisplayName("10.1.6.c.3 — unlimited budget never times out for fast call [GH-90000]")
+        @DisplayName("10.1.6.c.3 — unlimited budget never times out for fast call")
         void unlimitedBudgetNeverTimesOut() throws Exception { // GH-90000
-            ResourceBudget budget = ResourceBudget.unlimited("any-plugin [GH-90000]");
+            ResourceBudget budget = ResourceBudget.unlimited("any-plugin");
             Integer result = budget.execute(() -> 42); // GH-90000
             assertThat(result).isEqualTo(42); // GH-90000
         }
 
         @Test
-        @DisplayName("10.1.6.c.4 — callable exception propagates through budget [GH-90000]")
+        @DisplayName("10.1.6.c.4 — callable exception propagates through budget")
         void callableExceptionPropagates() { // GH-90000
             ResourceBudget budget = new ResourceBudget("error-plugin", 5000, ResourceBudget.UNLIMITED); // GH-90000
 
             assertThatThrownBy(() -> budget.execute(() -> { // GH-90000
-                throw new IllegalStateException("plugin-error [GH-90000]");
+                throw new IllegalStateException("plugin-error");
             }))
                     .isInstanceOf(IllegalStateException.class) // GH-90000
-                    .hasMessage("plugin-error [GH-90000]");
+                    .hasMessage("plugin-error");
         }
     }
 
@@ -223,11 +223,11 @@ class PluginSandboxTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("PluginDescriptor and PermissionSet [GH-90000]")
+    @DisplayName("PluginDescriptor and PermissionSet")
     class ModelTests {
 
         @Test
-        @DisplayName("PluginDescriptor.restrictedOf creates empty PermissionSet [GH-90000]")
+        @DisplayName("PluginDescriptor.restrictedOf creates empty PermissionSet")
         void restrictedOfHasEmptyPermissions() { // GH-90000
             PluginDescriptor descriptor = PluginDescriptor.restrictedOf( // GH-90000
                     "my-plugin", "1.0.0", "1.0.0", "com.example.Plugin", List.of()); // GH-90000
@@ -238,33 +238,33 @@ class PluginSandboxTest {
         }
 
         @Test
-        @DisplayName("PermissionSet.unrestricted allows any host [GH-90000]")
+        @DisplayName("PermissionSet.unrestricted allows any host")
         void unrestrictedAllowsAnyHost() { // GH-90000
-            assertThat(PermissionSet.unrestricted().isNetworkHostAllowed("anything.com [GH-90000]")).isTrue();
+            assertThat(PermissionSet.unrestricted().isNetworkHostAllowed("anything.com")).isTrue();
         }
 
         @Test
-        @DisplayName("PermissionSet.empty denies all access [GH-90000]")
+        @DisplayName("PermissionSet.empty denies all access")
         void emptyDeniesAll() { // GH-90000
             PermissionSet empty = PermissionSet.empty(); // GH-90000
-            assertThat(empty.isNetworkHostAllowed("example.com [GH-90000]")).isFalse();
-            assertThat(empty.isFilePathAllowed("/tmp/data [GH-90000]")).isFalse();
-            assertThat(empty.isJavaPackageAllowed("java.nio.file [GH-90000]")).isFalse();
+            assertThat(empty.isNetworkHostAllowed("example.com")).isFalse();
+            assertThat(empty.isFilePathAllowed("/tmp/data")).isFalse();
+            assertThat(empty.isJavaPackageAllowed("java.nio.file")).isFalse();
         }
 
         @Test
-        @DisplayName("PermissionSet.isFilePathAllowed uses prefix matching [GH-90000]")
+        @DisplayName("PermissionSet.isFilePathAllowed uses prefix matching")
         void filePathPrefixMatching() { // GH-90000
-            PermissionSet perm = new PermissionSet(List.of(), List.of("/var/data/ [GH-90000]"), List.of());
-            assertThat(perm.isFilePathAllowed("/var/data/output.json [GH-90000]")).isTrue();
-            assertThat(perm.isFilePathAllowed("/etc/secret [GH-90000]")).isFalse();
+            PermissionSet perm = new PermissionSet(List.of(), List.of("/var/data/"), List.of());
+            assertThat(perm.isFilePathAllowed("/var/data/output.json")).isTrue();
+            assertThat(perm.isFilePathAllowed("/etc/secret")).isFalse();
         }
 
         @Test
-        @DisplayName("PluginDescriptor.logId includes id and version [GH-90000]")
+        @DisplayName("PluginDescriptor.logId includes id and version")
         void logIdContainsIdAndVersion() { // GH-90000
             PluginDescriptor d = PluginDescriptor.restrictedOf("my-plugin", "3.2.1", "1.0.0", "X", List.of()); // GH-90000
-            assertThat(d.logId()).isEqualTo("my-plugin@3.2.1 [GH-90000]");
+            assertThat(d.logId()).isEqualTo("my-plugin@3.2.1");
         }
     }
 

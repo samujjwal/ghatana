@@ -8,7 +8,11 @@ import io.activej.promise.Promise;
 
 /**
  * Interface for connector operators in the pipeline registry.
- */
+  * @doc.type interface
+ * @doc.purpose Provides connector operator functionality.
+ * @doc.layer product
+ * @doc.pattern Operator
+*/
 public interface ConnectorOperator {
 
     /**

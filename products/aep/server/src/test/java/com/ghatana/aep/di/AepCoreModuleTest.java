@@ -32,7 +32,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AepCoreModule [GH-90000]")
+@DisplayName("AepCoreModule")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class AepCoreModuleTest extends EventloopTestBase {
 
@@ -42,21 +42,21 @@ class AepCoreModuleTest extends EventloopTestBase {
     private final AepCoreModule module = new AepCoreModule(); // GH-90000
 
     @Test
-    @DisplayName("tool sandbox fails closed after an allowed policy decision [GH-90000]")
+    @DisplayName("tool sandbox fails closed after an allowed policy decision")
     void toolSandboxFailsClosedWithoutConcreteExecutionSandbox() { // GH-90000
-        when(policyEngine.evaluate(eq("tenant-1 [GH-90000]"), eq("tool_execution_policy [GH-90000]"), any()))
-            .thenReturn(io.activej.promise.Promise.of(PolicyEvalResult.allow("tool_execution_policy [GH-90000]")));
+        when(policyEngine.evaluate(eq("tenant-1"), eq("tool_execution_policy"), any()))
+            .thenReturn(io.activej.promise.Promise.of(PolicyEvalResult.allow("tool_execution_policy")));
 
         ToolSandbox toolSandbox = module.toolSandbox(policyEngine); // GH-90000
 
         IllegalStateException thrown = assertThrows(IllegalStateException.class, // GH-90000
             () -> runPromise(() -> toolSandbox.execute("tenant-1", "agent-1", "delete-file", Map.of()))); // GH-90000
 
-        assertThat(thrown.getMessage()).contains("no concrete execution sandbox is configured [GH-90000]");
+        assertThat(thrown.getMessage()).contains("no concrete execution sandbox is configured");
     }
 
     @Test
-    @DisplayName("core module prepends OIDC federation resolver ahead of the in-memory fallback when configured [GH-90000]")
+    @DisplayName("core module prepends OIDC federation resolver ahead of the in-memory fallback when configured")
     void identityResolversPreferOidcWhenConfigured() { // GH-90000
         TestAepCoreModule testModule = new TestAepCoreModule(Map.of( // GH-90000
             "AEP_OIDC_CLIENT_ID", "aep-client",
@@ -74,7 +74,7 @@ class AepCoreModuleTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("core module prepends SAML federation resolver ahead of the in-memory fallback when configured [GH-90000]")
+    @DisplayName("core module prepends SAML federation resolver ahead of the in-memory fallback when configured")
     void identityResolversPreferSamlWhenConfigured() { // GH-90000
         TestAepCoreModule testModule = new TestAepCoreModule(Map.of( // GH-90000
             "AEP_SAML_IDP_ENTITY_ID", "https://idp.example.com/metadata",

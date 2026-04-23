@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@DisplayName("RetryExecutor [GH-90000]")
+@DisplayName("RetryExecutor")
 class RetryExecutorTest {
 
     private static final RetryConfig FAST_RETRY = RetryConfig.builder() // GH-90000
@@ -22,7 +22,7 @@ class RetryExecutorTest {
         .build(); // GH-90000
 
     @Test
-    @DisplayName("retries retryable false results until success [GH-90000]")
+    @DisplayName("retries retryable false results until success")
     void retriesRetryableResultsUntilSuccess() throws Exception { // GH-90000
         AtomicInteger attempts = new AtomicInteger(); // GH-90000
 
@@ -39,7 +39,7 @@ class RetryExecutorTest {
     }
 
     @Test
-    @DisplayName("rethrows the terminal exception after max attempts [GH-90000]")
+    @DisplayName("rethrows the terminal exception after max attempts")
     void rethrowsTerminalExceptionAfterMaxAttempts() { // GH-90000
         AtomicInteger attempts = new AtomicInteger(); // GH-90000
 
@@ -49,11 +49,11 @@ class RetryExecutorTest {
             "hard-failure",
             () -> { // GH-90000
                 attempts.incrementAndGet(); // GH-90000
-                throw new IllegalStateException("boom [GH-90000]");
+                throw new IllegalStateException("boom");
             },
             ignored -> true
         )).isInstanceOf(IllegalStateException.class) // GH-90000
-            .hasMessageContaining("boom [GH-90000]");
+            .hasMessageContaining("boom");
 
         assertThat(attempts.get()).isEqualTo(3); // GH-90000
     }

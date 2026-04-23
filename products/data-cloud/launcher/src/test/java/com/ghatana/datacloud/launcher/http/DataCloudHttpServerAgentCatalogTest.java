@@ -34,7 +34,7 @@ import static org.mockito.Mockito.lenient;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataCloudHttpServer – Agent Catalog Endpoints (B3) [GH-90000]")
+@DisplayName("DataCloudHttpServer – Agent Catalog Endpoints (B3)")
 class DataCloudHttpServerAgentCatalogTest {
 
     private DataCloudClient mockClient;
@@ -96,41 +96,41 @@ class DataCloudHttpServerAgentCatalogTest {
     // ─── tests ───────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("GET /api/v1/agents/catalog [GH-90000]")
+    @DisplayName("GET /api/v1/agents/catalog")
     class ListCatalogTests {
 
         @Test
-        @DisplayName("returns 200 with agent array [GH-90000]")
+        @DisplayName("returns 200 with agent array")
         void listCatalog_returns200WithAgentArray() throws Exception { // GH-90000
             startServer(); // GH-90000
 
-            HttpResponse<String> response = get("/api/v1/agents/catalog [GH-90000]");
+            HttpResponse<String> response = get("/api/v1/agents/catalog");
 
             assertThat(response.statusCode()).isEqualTo(200); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, Object> body = mapper.readValue(response.body(), Map.class); // GH-90000
-            assertThat(body).containsKey("agents [GH-90000]");
-            assertThat(body).containsKey("total [GH-90000]");
-            assertThat(((java.util.List<?>) body.get("agents [GH-90000]")).size())
-                    .isEqualTo(((Number) body.get("total [GH-90000]")).intValue());
+            assertThat(body).containsKey("agents");
+            assertThat(body).containsKey("total");
+            assertThat(((java.util.List<?>) body.get("agents")).size())
+                    .isEqualTo(((Number) body.get("total")).intValue());
         }
     }
 
     @Nested
-    @DisplayName("GET /api/v1/agents/catalog/:id [GH-90000]")
+    @DisplayName("GET /api/v1/agents/catalog/:id")
     class GetCatalogEntryTests {
 
         @Test
-        @DisplayName("returns 404 for unknown agent id [GH-90000]")
+        @DisplayName("returns 404 for unknown agent id")
         void getCatalogEntry_returns404ForUnknown() throws Exception { // GH-90000
             startServer(); // GH-90000
 
-            HttpResponse<String> response = get("/api/v1/agents/catalog/definitely-not-exist-xyz [GH-90000]");
+            HttpResponse<String> response = get("/api/v1/agents/catalog/definitely-not-exist-xyz");
 
             assertThat(response.statusCode()).isEqualTo(404); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, Object> body = mapper.readValue(response.body(), Map.class); // GH-90000
-            assertThat(body).containsKey("error [GH-90000]");
+            assertThat(body).containsKey("error");
         }
     }
 }

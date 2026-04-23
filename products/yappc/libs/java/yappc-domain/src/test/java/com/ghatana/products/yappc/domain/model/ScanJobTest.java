@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern UnitTest
  */
-@DisplayName("ScanJob Domain Model Tests [GH-90000]")
+@DisplayName("ScanJob Domain Model Tests")
 class ScanJobTest {
 
     private static final UUID WORKSPACE_ID = UUID.randomUUID(); // GH-90000
@@ -28,11 +28,11 @@ class ScanJobTest {
     private static final ScanType SCAN_TYPE = ScanType.FULL;
 
     @Nested
-    @DisplayName("Factory Method Tests [GH-90000]")
+    @DisplayName("Factory Method Tests")
     class FactoryMethodTests {
 
         @Test
-        @DisplayName("pending() creates job with PENDING status and defaults [GH-90000]")
+        @DisplayName("pending() creates job with PENDING status and defaults")
         void pendingCreatesJobWithPendingStatusAndDefaults() { // GH-90000
             // WHEN
             ScanJob job = ScanJob.pending(WORKSPACE_ID, PROJECT_ID, SCAN_TYPE); // GH-90000
@@ -54,36 +54,36 @@ class ScanJobTest {
         }
 
         @Test
-        @DisplayName("pending() throws NullPointerException when workspaceId is null [GH-90000]")
+        @DisplayName("pending() throws NullPointerException when workspaceId is null")
         void pendingThrowsWhenWorkspaceIdNull() { // GH-90000
             assertThatThrownBy(() -> ScanJob.pending(null, PROJECT_ID, SCAN_TYPE)) // GH-90000
                     .isInstanceOf(NullPointerException.class) // GH-90000
-                    .hasMessageContaining("workspaceId must not be null [GH-90000]");
+                    .hasMessageContaining("workspaceId must not be null");
         }
 
         @Test
-        @DisplayName("pending() throws NullPointerException when projectId is null [GH-90000]")
+        @DisplayName("pending() throws NullPointerException when projectId is null")
         void pendingThrowsWhenProjectIdNull() { // GH-90000
             assertThatThrownBy(() -> ScanJob.pending(WORKSPACE_ID, null, SCAN_TYPE)) // GH-90000
                     .isInstanceOf(NullPointerException.class) // GH-90000
-                    .hasMessageContaining("projectId must not be null [GH-90000]");
+                    .hasMessageContaining("projectId must not be null");
         }
 
         @Test
-        @DisplayName("pending() throws NullPointerException when scanType is null [GH-90000]")
+        @DisplayName("pending() throws NullPointerException when scanType is null")
         void pendingThrowsWhenScanTypeNull() { // GH-90000
             assertThatThrownBy(() -> ScanJob.pending(WORKSPACE_ID, PROJECT_ID, null)) // GH-90000
                     .isInstanceOf(NullPointerException.class) // GH-90000
-                    .hasMessageContaining("scanType must not be null [GH-90000]");
+                    .hasMessageContaining("scanType must not be null");
         }
     }
 
     @Nested
-    @DisplayName("State Transition Tests [GH-90000]")
+    @DisplayName("State Transition Tests")
     class StateTransitionTests {
 
         @Test
-        @DisplayName("start() transitions to RUNNING and sets startedAt [GH-90000]")
+        @DisplayName("start() transitions to RUNNING and sets startedAt")
         void startTransitionsToRunning() { // GH-90000
             // GIVEN
             ScanJob job = ScanJob.pending(WORKSPACE_ID, PROJECT_ID, SCAN_TYPE); // GH-90000
@@ -101,7 +101,7 @@ class ScanJobTest {
         }
 
         @Test
-        @DisplayName("complete() transitions to COMPLETED and sets completedAt [GH-90000]")
+        @DisplayName("complete() transitions to COMPLETED and sets completedAt")
         void completeTransitionsToCompleted() { // GH-90000
             // GIVEN
             ScanJob job = ScanJob.pending(WORKSPACE_ID, PROJECT_ID, SCAN_TYPE); // GH-90000
@@ -119,7 +119,7 @@ class ScanJobTest {
         }
 
         @Test
-        @DisplayName("fail() transitions to FAILED with error message [GH-90000]")
+        @DisplayName("fail() transitions to FAILED with error message")
         void failTransitionsToFailed() { // GH-90000
             // GIVEN
             ScanJob job = ScanJob.pending(WORKSPACE_ID, PROJECT_ID, SCAN_TYPE); // GH-90000
@@ -137,7 +137,7 @@ class ScanJobTest {
         }
 
         @Test
-        @DisplayName("full lifecycle from PENDING to COMPLETED [GH-90000]")
+        @DisplayName("full lifecycle from PENDING to COMPLETED")
         void fullLifecycle() { // GH-90000
             // GIVEN
             ScanJob job = ScanJob.pending(WORKSPACE_ID, PROJECT_ID, SCAN_TYPE); // GH-90000
@@ -154,18 +154,18 @@ class ScanJobTest {
     }
 
     @Nested
-    @DisplayName("Duration Calculation Tests [GH-90000]")
+    @DisplayName("Duration Calculation Tests")
     class DurationTests {
 
         @Test
-        @DisplayName("getDurationMs() returns -1 before start [GH-90000]")
+        @DisplayName("getDurationMs() returns -1 before start")
         void getDurationMsReturnsNegativeBeforeStart() { // GH-90000
             ScanJob job = ScanJob.pending(WORKSPACE_ID, PROJECT_ID, SCAN_TYPE); // GH-90000
             assertThat(job.getDurationMs()).isEqualTo(-1); // GH-90000
         }
 
         @Test
-        @DisplayName("getDurationMs() returns -1 while running [GH-90000]")
+        @DisplayName("getDurationMs() returns -1 while running")
         void getDurationMsReturnsNegativeWhileRunning() { // GH-90000
             ScanJob job = ScanJob.pending(WORKSPACE_ID, PROJECT_ID, SCAN_TYPE); // GH-90000
             job.start(); // GH-90000
@@ -173,7 +173,7 @@ class ScanJobTest {
         }
 
         @Test
-        @DisplayName("getDurationMs() returns positive value after completion [GH-90000]")
+        @DisplayName("getDurationMs() returns positive value after completion")
         void getDurationMsReturnsPositiveAfterCompletion() throws InterruptedException { // GH-90000
             // GIVEN
             ScanJob job = ScanJob.pending(WORKSPACE_ID, PROJECT_ID, SCAN_TYPE); // GH-90000
@@ -186,13 +186,13 @@ class ScanJobTest {
         }
 
         @Test
-        @DisplayName("getDurationMs() returns positive value after failure [GH-90000]")
+        @DisplayName("getDurationMs() returns positive value after failure")
         void getDurationMsReturnsPositiveAfterFailure() throws InterruptedException { // GH-90000
             // GIVEN
             ScanJob job = ScanJob.pending(WORKSPACE_ID, PROJECT_ID, SCAN_TYPE); // GH-90000
             job.start(); // GH-90000
             Thread.sleep(10); // GH-90000
-            job.fail("Error [GH-90000]");
+            job.fail("Error");
 
             // THEN
             assertThat(job.getDurationMs()).isGreaterThan(0); // GH-90000
@@ -200,11 +200,11 @@ class ScanJobTest {
     }
 
     @Nested
-    @DisplayName("Findings Count Tests [GH-90000]")
+    @DisplayName("Findings Count Tests")
     class FindingsCountTests {
 
         @Test
-        @DisplayName("builder defaults all counts to zero [GH-90000]")
+        @DisplayName("builder defaults all counts to zero")
         void builderDefaultsCountsToZero() { // GH-90000
             ScanJob job = ScanJob.builder() // GH-90000
                     .workspaceId(WORKSPACE_ID) // GH-90000
@@ -220,7 +220,7 @@ class ScanJobTest {
         }
 
         @Test
-        @DisplayName("can set finding counts via builder [GH-90000]")
+        @DisplayName("can set finding counts via builder")
         void canSetFindingCountsViaBuilder() { // GH-90000
             ScanJob job = ScanJob.builder() // GH-90000
                     .workspaceId(WORKSPACE_ID) // GH-90000
@@ -241,7 +241,7 @@ class ScanJobTest {
         }
 
         @Test
-        @DisplayName("finding counts can be updated via setters [GH-90000]")
+        @DisplayName("finding counts can be updated via setters")
         void findingCountsCanBeUpdatedViaSetters() { // GH-90000
             // GIVEN
             ScanJob job = ScanJob.pending(WORKSPACE_ID, PROJECT_ID, SCAN_TYPE); // GH-90000
@@ -263,11 +263,11 @@ class ScanJobTest {
     }
 
     @Nested
-    @DisplayName("Scan Type Tests [GH-90000]")
+    @DisplayName("Scan Type Tests")
     class ScanTypeTests {
 
         @Test
-        @DisplayName("can create job for each scan type [GH-90000]")
+        @DisplayName("can create job for each scan type")
         void canCreateJobForEachScanType() { // GH-90000
             for (ScanType type : ScanType.values()) { // GH-90000
                 ScanJob job = ScanJob.pending(WORKSPACE_ID, PROJECT_ID, type); // GH-90000
@@ -277,11 +277,11 @@ class ScanJobTest {
     }
 
     @Nested
-    @DisplayName("Equality Tests [GH-90000]")
+    @DisplayName("Equality Tests")
     class EqualityTests {
 
         @Test
-        @DisplayName("equals returns true for same id [GH-90000]")
+        @DisplayName("equals returns true for same id")
         void equalsReturnsTrueForSameId() { // GH-90000
             UUID id = UUID.randomUUID(); // GH-90000
             ScanJob job1 = ScanJob.builder().id(id).scanType(ScanType.FULL).build(); // GH-90000
@@ -292,7 +292,7 @@ class ScanJobTest {
         }
 
         @Test
-        @DisplayName("equals returns false for different ids [GH-90000]")
+        @DisplayName("equals returns false for different ids")
         void equalsReturnsFalseForDifferentIds() { // GH-90000
             ScanJob job1 = ScanJob.builder().id(UUID.randomUUID()).build(); // GH-90000
             ScanJob job2 = ScanJob.builder().id(UUID.randomUUID()).build(); // GH-90000
@@ -302,11 +302,11 @@ class ScanJobTest {
     }
 
     @Nested
-    @DisplayName("Configuration Tests [GH-90000]")
+    @DisplayName("Configuration Tests")
     class ConfigurationTests {
 
         @Test
-        @DisplayName("can store JSON configuration [GH-90000]")
+        @DisplayName("can store JSON configuration")
         void canStoreJsonConfiguration() { // GH-90000
             String config = """
                     {
@@ -327,16 +327,16 @@ class ScanJobTest {
         }
 
         @Test
-        @DisplayName("can store description [GH-90000]")
+        @DisplayName("can store description")
         void canStoreDescription() { // GH-90000
             ScanJob job = ScanJob.builder() // GH-90000
                     .workspaceId(WORKSPACE_ID) // GH-90000
                     .projectId(PROJECT_ID) // GH-90000
                     .scanType(SCAN_TYPE) // GH-90000
-                    .description("Nightly security scan for production deployment [GH-90000]")
+                    .description("Nightly security scan for production deployment")
                     .build(); // GH-90000
 
-            assertThat(job.getDescription()).isEqualTo("Nightly security scan for production deployment [GH-90000]");
+            assertThat(job.getDescription()).isEqualTo("Nightly security scan for production deployment");
         }
     }
 }

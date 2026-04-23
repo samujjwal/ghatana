@@ -40,12 +40,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@DisplayName("Comprehensive Error Path Tests [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("Comprehensive Error Path Tests")
+@Tag("integration")
 class ComprehensiveErrorPathTest {
 
     @Test
-    @DisplayName("Should handle network failures with exponential backoff retry [GH-90000]")
+    @DisplayName("Should handle network failures with exponential backoff retry")
     void shouldHandleNetworkFailuresWithExponentialBackoffRetry() throws Exception { // GH-90000
         AtomicInteger attemptCount = new AtomicInteger(0); // GH-90000
         List<Long> attemptTimestamps = new ArrayList<>(); // GH-90000
@@ -70,7 +70,7 @@ class ComprehensiveErrorPathTest {
 
         String result = retry.execute(networkOperation); // GH-90000
 
-        assertThat(result).isEqualTo("success [GH-90000]");
+        assertThat(result).isEqualTo("success");
         assertThat(attemptCount.get()).isEqualTo(4); // GH-90000
         assertThat(attemptTimestamps).hasSize(4); // GH-90000
         
@@ -83,13 +83,13 @@ class ComprehensiveErrorPathTest {
     }
 
     @Test
-    @DisplayName("Should fail after max retries exhausted [GH-90000]")
+    @DisplayName("Should fail after max retries exhausted")
     void shouldFailAfterMaxRetriesExhausted() { // GH-90000
         AtomicInteger attemptCount = new AtomicInteger(0); // GH-90000
         
         Supplier<String> failingOperation = () -> { // GH-90000
             attemptCount.incrementAndGet(); // GH-90000
-            throw new RuntimeException("Persistent failure [GH-90000]");
+            throw new RuntimeException("Persistent failure");
         };
 
         ExponentialBackoffRetry retry = new ExponentialBackoffRetry.Builder() // GH-90000
@@ -101,21 +101,21 @@ class ComprehensiveErrorPathTest {
 
         try {
             retry.execute(failingOperation); // GH-90000
-            throw new AssertionError("Should have thrown exception after max retries [GH-90000]");
+            throw new AssertionError("Should have thrown exception after max retries");
         } catch (RuntimeException e) { // GH-90000
-            assertThat(e.getMessage()).isEqualTo("Persistent failure [GH-90000]");
+            assertThat(e.getMessage()).isEqualTo("Persistent failure");
             assertThat(attemptCount.get()).isEqualTo(4); // Initial attempt + 3 retries // GH-90000
         }
     }
 
     @Test
-    @DisplayName("Should not retry non-retryable errors [GH-90000]")
+    @DisplayName("Should not retry non-retryable errors")
     void shouldNotRetryNonRetryableErrors() { // GH-90000
         AtomicInteger attemptCount = new AtomicInteger(0); // GH-90000
         
         Supplier<String> nonRetryableOperation = () -> { // GH-90000
             attemptCount.incrementAndGet(); // GH-90000
-            throw new IllegalArgumentException("Invalid argument - not retryable [GH-90000]");
+            throw new IllegalArgumentException("Invalid argument - not retryable");
         };
 
         ExponentialBackoffRetry retry = new ExponentialBackoffRetry.Builder() // GH-90000
@@ -127,15 +127,15 @@ class ComprehensiveErrorPathTest {
 
         try {
             retry.execute(nonRetryableOperation); // GH-90000
-            throw new AssertionError("Should have thrown exception [GH-90000]");
+            throw new AssertionError("Should have thrown exception");
         } catch (IllegalArgumentException e) { // GH-90000
-            assertThat(e.getMessage()).isEqualTo("Invalid argument - not retryable [GH-90000]");
+            assertThat(e.getMessage()).isEqualTo("Invalid argument - not retryable");
             assertThat(attemptCount.get()).isEqualTo(1); // Should not retry // GH-90000
         }
     }
 
     @Test
-    @DisplayName("Should handle connection timeouts gracefully [GH-90000]")
+    @DisplayName("Should handle connection timeouts gracefully")
     void shouldHandleConnectionTimeoutsGracefully() throws Exception { // GH-90000
         Supplier<String> slowOperation = () -> { // GH-90000
             try {
@@ -151,14 +151,14 @@ class ComprehensiveErrorPathTest {
 
         try {
             executor.execute(slowOperation); // GH-90000
-            throw new AssertionError("Should have timed out [GH-90000]");
+            throw new AssertionError("Should have timed out");
         } catch (TimeoutException | InterruptedException e) { // GH-90000
-            assertThat(e.getMessage()).contains("Operation timed out [GH-90000]");
+            assertThat(e.getMessage()).contains("Operation timed out");
         }
     }
 
     @Test
-    @DisplayName("Should handle read timeouts during streaming [GH-90000]")
+    @DisplayName("Should handle read timeouts during streaming")
     void shouldHandleReadTimeoutsDuringStreaming() throws Exception { // GH-90000
         AtomicInteger dataChunks = new AtomicInteger(0); // GH-90000
         
@@ -181,7 +181,7 @@ class ComprehensiveErrorPathTest {
 
         try {
             executor.execute(streamingOperation); // GH-90000
-            throw new AssertionError("Should have timed out during streaming [GH-90000]");
+            throw new AssertionError("Should have timed out during streaming");
         } catch (TimeoutException | InterruptedException e) { // GH-90000
             assertThat(dataChunks.get()).isLessThan(10); // Should have timed out before completion // GH-90000
             assertThat(dataChunks.get()).isGreaterThan(0); // Should have processed some data // GH-90000
@@ -189,7 +189,7 @@ class ComprehensiveErrorPathTest {
     }
 
     @Test
-    @DisplayName("Circuit breaker should open after consecutive failures [GH-90000]")
+    @DisplayName("Circuit breaker should open after consecutive failures")
     void circuitBreakerShouldOpenAfterConsecutiveFailures() { // GH-90000
         CircuitBreaker breaker = new CircuitBreaker.Builder() // GH-90000
             .failureThreshold(5) // GH-90000
@@ -202,7 +202,7 @@ class ComprehensiveErrorPathTest {
             try {
                 breaker.execute(() -> { // GH-90000
                     failureCount.incrementAndGet(); // GH-90000
-                    throw new RuntimeException("Simulated failure [GH-90000]");
+                    throw new RuntimeException("Simulated failure");
                 });
             } catch (Exception e) { // GH-90000
                 // Expected failures
@@ -214,7 +214,7 @@ class ComprehensiveErrorPathTest {
     }
 
     @Test
-    @DisplayName("Circuit breaker should transition to half-open after timeout [GH-90000]")
+    @DisplayName("Circuit breaker should transition to half-open after timeout")
     void circuitBreakerShouldTransitionToHalfOpenAfterTimeout() throws Exception { // GH-90000
         CircuitBreaker breaker = new CircuitBreaker.Builder() // GH-90000
             .failureThreshold(3) // GH-90000
@@ -225,7 +225,7 @@ class ComprehensiveErrorPathTest {
         for (int i = 0; i < 3; i++) { // GH-90000
             try {
                 breaker.execute(() -> { // GH-90000
-                    throw new RuntimeException("Failure [GH-90000]");
+                    throw new RuntimeException("Failure");
                 });
             } catch (Exception e) { // GH-90000
                 // Expected
@@ -242,7 +242,7 @@ class ComprehensiveErrorPathTest {
     }
 
     @Test
-    @DisplayName("Circuit breaker should close after successful request in half-open state [GH-90000]")
+    @DisplayName("Circuit breaker should close after successful request in half-open state")
     void circuitBreakerShouldCloseAfterSuccessfulRequestInHalfOpenState() { // GH-90000
         CircuitBreaker breaker = new CircuitBreaker.Builder() // GH-90000
             .failureThreshold(3) // GH-90000
@@ -255,12 +255,12 @@ class ComprehensiveErrorPathTest {
         // Execute successful request
         String result = breaker.execute(() -> "success"); // GH-90000
 
-        assertThat(result).isEqualTo("success [GH-90000]");
+        assertThat(result).isEqualTo("success");
         assertThat(breaker.getState()).isEqualTo(CircuitState.CLOSED); // GH-90000
     }
 
     @Test
-    @DisplayName("Circuit breaker should fail fast when open [GH-90000]")
+    @DisplayName("Circuit breaker should fail fast when open")
     void circuitBreakerShouldFailFastWhenOpen() { // GH-90000
         CircuitBreaker breaker = new CircuitBreaker.Builder() // GH-90000
             .failureThreshold(3) // GH-90000
@@ -282,7 +282,7 @@ class ComprehensiveErrorPathTest {
                 }
                 return "should not reach here";
             });
-            throw new AssertionError("Should have thrown CircuitOpenException [GH-90000]");
+            throw new AssertionError("Should have thrown CircuitOpenException");
         } catch (CircuitOpenException e) { // GH-90000
             long duration = System.nanoTime() - startTime; // GH-90000
             assertThat(duration).isLessThan(TimeUnit.MILLISECONDS.toNanos(100)); // Should fail fast // GH-90000
@@ -290,7 +290,7 @@ class ComprehensiveErrorPathTest {
     }
 
     @Test
-    @DisplayName("Should handle rate limiting with backpressure [GH-90000]")
+    @DisplayName("Should handle rate limiting with backpressure")
     void shouldHandleRateLimitingWithBackpressure() throws Exception { // GH-90000
         RateLimiter rateLimiter = new RateLimiter(10, Duration.ofSeconds(1)); // 10 requests per second // GH-90000
         AtomicInteger rejectedCount = new AtomicInteger(0); // GH-90000
@@ -321,14 +321,14 @@ class ComprehensiveErrorPathTest {
     }
 
     @Test
-    @DisplayName("Should handle cascading failures with fallback [GH-90000]")
+    @DisplayName("Should handle cascading failures with fallback")
     void shouldHandleCascadingFailuresWithFallback() { // GH-90000
         AtomicInteger primaryFailureCount = new AtomicInteger(0); // GH-90000
         AtomicInteger fallbackSuccessCount = new AtomicInteger(0); // GH-90000
         
         Supplier<String> primaryService = () -> { // GH-90000
             primaryFailureCount.incrementAndGet(); // GH-90000
-            throw new RuntimeException("Primary service unavailable [GH-90000]");
+            throw new RuntimeException("Primary service unavailable");
         };
 
         Supplier<String> fallbackService = () -> { // GH-90000
@@ -344,21 +344,21 @@ class ComprehensiveErrorPathTest {
 
         String chainResult = chain.execute(); // GH-90000
 
-        assertThat(chainResult).isEqualTo("fallback response [GH-90000]");
+        assertThat(chainResult).isEqualTo("fallback response");
         assertThat(primaryFailureCount.get()).isEqualTo(3); // Initial + 2 retries // GH-90000
         assertThat(fallbackSuccessCount.get()).isEqualTo(1); // GH-90000
     }
 
     @Test
-    @DisplayName("Should track error metrics for observability [GH-90000]")
+    @DisplayName("Should track error metrics for observability")
     void shouldTrackErrorMetricsForObservability() { // GH-90000
         ErrorMetrics metrics = new ErrorMetrics(); // GH-90000
         
         Supplier<String> operation = () -> { // GH-90000
             metrics.recordAttempt(); // GH-90000
             if (Math.random() < 0.3) { // GH-90000
-                metrics.recordFailure("random_failure [GH-90000]");
-                throw new RuntimeException("Random failure [GH-90000]");
+                metrics.recordFailure("random_failure");
+                throw new RuntimeException("Random failure");
             }
             metrics.recordSuccess(); // GH-90000
             return "success";
@@ -378,11 +378,11 @@ class ComprehensiveErrorPathTest {
         assertThat(metrics.getFailureRate()).isBetween(0.1, 0.5); // GH-90000
         
         Map<String, Long> errorBreakdown = metrics.getErrorBreakdown(); // GH-90000
-        assertThat(errorBreakdown).containsKey("random_failure [GH-90000]");
+        assertThat(errorBreakdown).containsKey("random_failure");
     }
 
     @Test
-    @DisplayName("Should handle dependency failures gracefully [GH-90000]")
+    @DisplayName("Should handle dependency failures gracefully")
     void shouldHandleDependencyFailuresGracefully() { // GH-90000
         AtomicInteger dependencyFailureCount = new AtomicInteger(0); // GH-90000
         AtomicInteger cachedResponseCount = new AtomicInteger(0); // GH-90000
@@ -392,7 +392,7 @@ class ComprehensiveErrorPathTest {
         // Set up a failing dependency
         dependencyManager.registerDependency("critical-service", () -> { // GH-90000
             dependencyFailureCount.incrementAndGet(); // GH-90000
-            throw new RuntimeException("Critical service unavailable [GH-90000]");
+            throw new RuntimeException("Critical service unavailable");
         });
 
         // Set up cached response as fallback
@@ -401,13 +401,13 @@ class ComprehensiveErrorPathTest {
         // Execute with dependency and fallback
         String result = dependencyManager.executeWithFallback("critical-service", "default_value"); // GH-90000
 
-        assertThat(result).isEqualTo("cached_data [GH-90000]");
+        assertThat(result).isEqualTo("cached_data");
         assertThat(dependencyFailureCount.get()).isEqualTo(1); // GH-90000
         assertThat(cachedResponseCount.get()).isEqualTo(1); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle concurrent error scenarios correctly [GH-90000]")
+    @DisplayName("Should handle concurrent error scenarios correctly")
     void shouldHandleConcurrentErrorScenariosCorrectly() throws Exception { // GH-90000
         AtomicInteger successCount = new AtomicInteger(0); // GH-90000
         AtomicInteger failureCount = new AtomicInteger(0); // GH-90000
@@ -425,7 +425,7 @@ class ComprehensiveErrorPathTest {
                 try {
                     String result = breaker.execute(() -> { // GH-90000
                         if (index % 3 == 0) { // GH-90000
-                            throw new RuntimeException("Simulated failure [GH-90000]");
+                            throw new RuntimeException("Simulated failure");
                         }
                         return "success_" + index;
                     });
@@ -586,7 +586,7 @@ class ComprehensiveErrorPathTest {
             CircuitState currentState = getState(); // GH-90000
             
             if (currentState == CircuitState.OPEN) { // GH-90000
-                throw new CircuitOpenException("Circuit breaker is OPEN [GH-90000]");
+                throw new CircuitOpenException("Circuit breaker is OPEN");
             }
 
             try {

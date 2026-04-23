@@ -134,7 +134,7 @@ class AepHttpServerBuilderTest {
                     .build() // GH-90000
             );
 
-            assertTrue(exception.getMessage().contains("EventLogStore [GH-90000]"));
+            assertTrue(exception.getMessage().contains("EventLogStore"));
         } finally {
             restoreSystemProperty(AEP_PROFILE, previousProfile); // GH-90000
             restoreSystemProperty(ALLOW_IN_MEMORY_RUN_HISTORY, previousAllowInMemory); // GH-90000

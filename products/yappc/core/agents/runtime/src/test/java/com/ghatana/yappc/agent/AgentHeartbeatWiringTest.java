@@ -35,7 +35,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  * @doc.pattern Test, Integration
  */
-@DisplayName("Agent Heartbeat Wiring Tests [GH-90000]")
+@DisplayName("Agent Heartbeat Wiring Tests")
 class AgentHeartbeatWiringTest {
 
     // ─────────────────────────────────────────────────────────────────────────────
@@ -83,11 +83,11 @@ class AgentHeartbeatWiringTest {
     // ─────────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Service Instantiation & Lifecycle [GH-90000]")
+    @DisplayName("Service Instantiation & Lifecycle")
     class ServiceInstantiationTests {
 
         @Test
-        @DisplayName("Service instantiates via @Provides pattern [GH-90000]")
+        @DisplayName("Service instantiates via @Provides pattern")
         void shouldInstantiateViaProvides() { // GH-90000
             // GIVEN
             Eventloop eventloop = Eventloop.builder().build(); // GH-90000
@@ -102,7 +102,7 @@ class AgentHeartbeatWiringTest {
         }
 
         @Test
-        @DisplayName("Service accepts custom interval [GH-90000]")
+        @DisplayName("Service accepts custom interval")
         void shouldAcceptCustomInterval() { // GH-90000
             // GIVEN
             Eventloop eventloop = Eventloop.builder().build(); // GH-90000
@@ -118,7 +118,7 @@ class AgentHeartbeatWiringTest {
         }
 
         @Test
-        @DisplayName("Service rejects non-positive interval [GH-90000]")
+        @DisplayName("Service rejects non-positive interval")
         void shouldRejectInvalidInterval() { // GH-90000
             // GIVEN
             Eventloop eventloop = Eventloop.builder().build(); // GH-90000
@@ -128,7 +128,7 @@ class AgentHeartbeatWiringTest {
             assertThatThrownBy(() -> // GH-90000
                     new AgentHeartbeatService(registry, eventloop, 0)) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("heartbeatIntervalMs must be positive [GH-90000]");
+                    .hasMessageContaining("heartbeatIntervalMs must be positive");
         }
     }
 
@@ -137,11 +137,11 @@ class AgentHeartbeatWiringTest {
     // ─────────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Heartbeat Tick Execution [GH-90000]")
+    @DisplayName("Heartbeat Tick Execution")
     class HeartbeatTickTests {
 
         @Test
-        @DisplayName("Start transitions service to running state [GH-90000]")
+        @DisplayName("Start transitions service to running state")
         void shouldTransitionToRunningOnStart() { // GH-90000
             // GIVEN
             Eventloop eventloop = Eventloop.builder().build(); // GH-90000
@@ -156,7 +156,7 @@ class AgentHeartbeatWiringTest {
         }
 
         @Test
-        @DisplayName("Stop transitions service to stopped state [GH-90000]")
+        @DisplayName("Stop transitions service to stopped state")
         void shouldTransitionToStoppedOnStop() { // GH-90000
             // GIVEN
             Eventloop eventloop = Eventloop.builder().build(); // GH-90000
@@ -172,7 +172,7 @@ class AgentHeartbeatWiringTest {
         }
 
         @Test
-        @DisplayName("Registry reports initial agent statuses [GH-90000]")
+        @DisplayName("Registry reports initial agent statuses")
         void shouldReportInitialAgentStatuses() { // GH-90000
             // GIVEN
             MapAgentHealthProvider registry = new MapAgentHealthProvider(); // GH-90000
@@ -188,7 +188,7 @@ class AgentHeartbeatWiringTest {
         }
 
         @Test
-        @DisplayName("Registry records heartbeat timestamps [GH-90000]")
+        @DisplayName("Registry records heartbeat timestamps")
         void shouldRecordHeartbeatTimestamps() { // GH-90000
             // GIVEN
             MapAgentHealthProvider registry = new MapAgentHealthProvider(); // GH-90000
@@ -198,7 +198,7 @@ class AgentHeartbeatWiringTest {
             registry.recordHeartbeat("agent-1", now); // GH-90000
 
             // THEN
-            assertThat(registry.getLastHeartbeat("agent-1 [GH-90000]")).isEqualTo(now);
+            assertThat(registry.getLastHeartbeat("agent-1")).isEqualTo(now);
         }
     }
 
@@ -207,11 +207,11 @@ class AgentHeartbeatWiringTest {
     // ─────────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Health Status Tracking [GH-90000]")
+    @DisplayName("Health Status Tracking")
     class HealthStatusTrackingTests {
 
         @Test
-        @DisplayName("Service tracks consecutive failure cycles per agent [GH-90000]")
+        @DisplayName("Service tracks consecutive failure cycles per agent")
         void shouldTrackConsecutiveFailures() { // GH-90000
             // GIVEN
             MapAgentHealthProvider registry = new MapAgentHealthProvider(); // GH-90000
@@ -228,7 +228,7 @@ class AgentHeartbeatWiringTest {
         }
 
         @Test
-        @DisplayName("Registry reports agent count [GH-90000]")
+        @DisplayName("Registry reports agent count")
         void shouldReportAgentCount() { // GH-90000
             // GIVEN
             MapAgentHealthProvider registry = new MapAgentHealthProvider(); // GH-90000
@@ -241,20 +241,20 @@ class AgentHeartbeatWiringTest {
         }
 
         @Test
-        @DisplayName("Multiple agents tracked independently [GH-90000]")
+        @DisplayName("Multiple agents tracked independently")
         void shouldTrackMultipleAgentsIndependently() { // GH-90000
             // GIVEN
             MapAgentHealthProvider registry = new MapAgentHealthProvider(); // GH-90000
-            Instant time1 = Instant.parse("2026-03-15T10:00:00Z [GH-90000]");
-            Instant time2 = Instant.parse("2026-03-15T10:00:01Z [GH-90000]");
+            Instant time1 = Instant.parse("2026-03-15T10:00:00Z");
+            Instant time2 = Instant.parse("2026-03-15T10:00:01Z");
 
             // WHEN
             registry.recordHeartbeat("agent-1", time1); // GH-90000
             registry.recordHeartbeat("agent-2", time2); // GH-90000
 
             // THEN
-            assertThat(registry.getLastHeartbeat("agent-1 [GH-90000]")).isEqualTo(time1);
-            assertThat(registry.getLastHeartbeat("agent-2 [GH-90000]")).isEqualTo(time2);
+            assertThat(registry.getLastHeartbeat("agent-1")).isEqualTo(time1);
+            assertThat(registry.getLastHeartbeat("agent-2")).isEqualTo(time2);
         }
     }
 
@@ -263,11 +263,11 @@ class AgentHeartbeatWiringTest {
     // ─────────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("DI Module Integration [GH-90000]")
+    @DisplayName("DI Module Integration")
     class DIModuleIntegrationTests {
 
         @Test
-        @DisplayName("@Provides method can be invoked with real dependencies [GH-90000]")
+        @DisplayName("@Provides method can be invoked with real dependencies")
         void shouldProvideable() { // GH-90000
             // GIVEN
             Eventloop eventloop = Eventloop.builder().build(); // GH-90000
@@ -283,11 +283,11 @@ class AgentHeartbeatWiringTest {
             // THEN
             assertThat(service).isNotNull(); // GH-90000
             // lastHeartbeat is intentionally null until start() is called // GH-90000
-            assertThat(service).hasNoNullFieldsOrPropertiesExcept("lastHeartbeat [GH-90000]");
+            assertThat(service).hasNoNullFieldsOrPropertiesExcept("lastHeartbeat");
         }
 
         @Test
-        @DisplayName("Service integrates with LifecycleServiceModule bindings [GH-90000]")
+        @DisplayName("Service integrates with LifecycleServiceModule bindings")
         void shouldIntegrateWithModuleBindings() { // GH-90000
             // GIVEN
             Eventloop eventloop = Eventloop.builder().build(); // GH-90000
@@ -309,11 +309,11 @@ class AgentHeartbeatWiringTest {
     // ─────────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Reliability & Edge Cases [GH-90000]")
+    @DisplayName("Reliability & Edge Cases")
     class ReliabilityTests {
 
         @Test
-        @DisplayName("Service handles empty registry [GH-90000]")
+        @DisplayName("Service handles empty registry")
         void shouldHandleEmptyRegistry() { // GH-90000
             // GIVEN
             Eventloop eventloop = Eventloop.builder().build(); // GH-90000
@@ -339,7 +339,7 @@ class AgentHeartbeatWiringTest {
         }
 
         @Test
-        @DisplayName("Service allows multiple start/stop cycles [GH-90000]")
+        @DisplayName("Service allows multiple start/stop cycles")
         void shouldAllowMultipleLifecycles() { // GH-90000
             // GIVEN
             Eventloop eventloop = Eventloop.builder().build(); // GH-90000
@@ -356,7 +356,7 @@ class AgentHeartbeatWiringTest {
         }
 
         @Test
-        @DisplayName("Service handles concurrent registry updates [GH-90000]")
+        @DisplayName("Service handles concurrent registry updates")
         void shouldHandleConcurrentUpdates() { // GH-90000
             // GIVEN
             Eventloop eventloop = Eventloop.builder().build(); // GH-90000

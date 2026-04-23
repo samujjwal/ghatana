@@ -42,8 +42,8 @@ class PolyfixConfigTest {
 
         // Test toString() // GH-90000
         assertNotNull(budgets.toString()); // GH-90000
-        assertTrue(budgets.toString().contains("maxPasses=5 [GH-90000]"));
-        assertTrue(budgets.toString().contains("maxEditsPerFile=10 [GH-90000]"));
+        assertTrue(budgets.toString().contains("maxPasses=5"));
+        assertTrue(budgets.toString().contains("maxEditsPerFile=10"));
 
         // Test equals() and hashCode() // GH-90000
         PolyfixConfig.Budgets sameBudgets = new PolyfixConfig.Budgets(5, 10); // GH-90000
@@ -65,8 +65,8 @@ class PolyfixConfigTest {
 
         // Test toString() // GH-90000
         assertNotNull(policies.toString()); // GH-90000
-        assertTrue(policies.toString().contains("tsAllowTemporaryAny=true [GH-90000]"));
-        assertTrue(policies.toString().contains("pythonAddMissingImports=false [GH-90000]"));
+        assertTrue(policies.toString().contains("tsAllowTemporaryAny=true"));
+        assertTrue(policies.toString().contains("pythonAddMissingImports=false"));
 
         // Test equals() and hashCode() // GH-90000
         PolyfixConfig.Policies samePolicies = new PolyfixConfig.Policies(true, false, true, false); // GH-90000
@@ -102,8 +102,8 @@ class PolyfixConfigTest {
 
         // Test toString() // GH-90000
         assertNotNull(tools.toString()); // GH-90000
-        assertTrue(tools.toString().contains("node=node [GH-90000]"));
-        assertTrue(tools.toString().contains("eslint=eslint [GH-90000]"));
+        assertTrue(tools.toString().contains("node=node"));
+        assertTrue(tools.toString().contains("eslint=eslint"));
 
         // Test equals() and hashCode() // GH-90000
         PolyfixConfig.Tools sameTools =
@@ -145,7 +145,7 @@ class PolyfixConfigTest {
     @Test
     void testMainRecord() { // GH-90000
         List<String> languages = List.of("java", "typescript"); // GH-90000
-        List<String> schemaPaths = List.of("schemas [GH-90000]");
+        List<String> schemaPaths = List.of("schemas");
         PolyfixConfig.Budgets budgets = new PolyfixConfig.Budgets(5, 10); // GH-90000
         PolyfixConfig.Policies policies = new PolyfixConfig.Policies(true, true, true, false); // GH-90000
         PolyfixConfig.Tools tools =
@@ -173,14 +173,14 @@ class PolyfixConfigTest {
 
         // Test toString() // GH-90000
         assertNotNull(config.toString()); // GH-90000
-        assertTrue(config.toString().contains("languages=[java, typescript] [GH-90000]"));
-        assertTrue(config.toString().contains("schemaPaths=[schemas] [GH-90000]"));
+        assertTrue(config.toString().contains("languages=[java, typescript]"));
+        assertTrue(config.toString().contains("schemaPaths=[schemas]"));
 
         // Test equals() and hashCode() // GH-90000
         PolyfixConfig sameConfig =
                 new PolyfixConfig( // GH-90000
                         List.of("java", "typescript"), // GH-90000
-                        List.of("schemas [GH-90000]"),
+                        List.of("schemas"),
                         new PolyfixConfig.Budgets(5, 10), // GH-90000
                         new PolyfixConfig.Policies(true, true, true, false), // GH-90000
                         new PolyfixConfig.Tools( // GH-90000
@@ -199,8 +199,8 @@ class PolyfixConfigTest {
 
         PolyfixConfig differentConfig =
                 new PolyfixConfig( // GH-90000
-                        List.of("python [GH-90000]"),
-                        List.of("schemas [GH-90000]"),
+                        List.of("python"),
+                        List.of("schemas"),
                         new PolyfixConfig.Budgets(1, 1), // GH-90000
                         new PolyfixConfig.Policies(false, false, false, true), // GH-90000
                         new PolyfixConfig.Tools( // GH-90000

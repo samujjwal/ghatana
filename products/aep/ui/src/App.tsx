@@ -52,9 +52,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ProtectedRoute } from '@/components/security/ProtectedRoute';
 import { NavBar } from '@/components/shared/NavBar';
 import { Breadcrumbs } from '@/components/core/Breadcrumbs';
-import { FuzzyFinder, DEFAULT_FINDER_ITEMS } from '@/components/core/FuzzyFinder';
+import { FuzzyFinder } from '@/components/core/FuzzyFinder';
 import { AuthProvider } from '@/context/AuthContext';
 import { useLocation, useNavigate } from 'react-router';
+import { isFeatureEnabled } from '@/lib/feature-flags';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -62,7 +63,7 @@ const queryClient = new QueryClient({
   },
 });
 
-// P2-14: AEP-specific finder items for command palette
+// P2-14: AEP-specific finder items for command palette — only canonical routes
 const getAEPFinderItems = (navigate: (path: string) => void) => [
   {
     id: 'monitoring',
@@ -172,9 +173,8 @@ const PipelineBuilderPage = lazy(() =>
 const PatternStudioPage = lazy(() =>
   import('@/pages/PatternStudioPage').then((m) => ({ default: m.PatternStudioPage })),
 );
-const LearningPage = lazy(() =>
-  import('@/pages/LearningPage').then((m) => ({ default: m.LearningPage })),
-);
+// NOTE: LearningPage consolidated into PatternStudioPage (TASK-S1)
+// /learn/episodes now renders PatternStudioPage with ?tab=learning
 const MemoryExplorerPage = lazy(() =>
   import('@/pages/MemoryExplorerPage').then((m) => ({ default: m.MemoryExplorerPage })),
 );
@@ -184,9 +184,8 @@ const GovernancePage = lazy(() =>
 const AgentRegistryPage = lazy(() =>
   import('@/pages/AgentRegistryPage').then((m) => ({ default: m.AgentRegistryPage })),
 );
-const AgentDetailPage = lazy(() =>
-  import('@/pages/AgentDetailPage').then((m) => ({ default: m.AgentDetailPage })),
-);
+// NOTE: AgentDetailPage consolidated into AgentRegistryPage inline drawer (TASK-S2)
+// /catalog/agents/:agentId now redirects to /catalog/agents
 const WorkflowCatalogPage = lazy(() =>
   import('@/pages/WorkflowCatalogPage').then((m) => ({ default: m.WorkflowCatalogPage })),
 );
@@ -195,6 +194,9 @@ const AgentMarketplacePage = lazy(() =>
 );
 const LoginPage = lazy(() =>
   import('@/pages/LoginPage').then((m) => ({ default: m.LoginPage })),
+);
+const SsoCallbackPage = lazy(() =>
+  import('@/pages/SsoCallbackPage').then((m) => ({ default: m.SsoCallbackPage })),
 );
 
 // ─── Redirect helpers ──────────────────────────────────────────────────
@@ -210,21 +212,60 @@ function AgentDetailRedirect() {
 function PageShell({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
-  
-  // P2-14: Generate breadcrumbs from current route
+  const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
+
+  // P2-14: Generate breadcrumbs from current route (only when feature flag enabled)
   const breadcrumbItems = generateBreadcrumbs(location.pathname);
-  
-  // P2-14: Get finder items with navigation actions
+
+  // P2-14: Get finder items with navigation actions (only when feature flag enabled)
   const finderItems = getAEPFinderItems(navigate);
+
+  const showBreadcrumbs = isFeatureEnabled('BREADCRUMBS');
+  const showCommandPalette = isFeatureEnabled('COMMAND_PALETTE');
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-950">
-      <NavBar />
-      <main className="flex-1 overflow-auto">
-        <div className="px-6 py-4 flex items-center justify-between">
-          <Breadcrumbs items={breadcrumbItems} />
-          <FuzzyFinder items={finderItems} enableShortcut={true} />
+      {/* Desktop sidebar — always visible on md+ */}
+      <div className="hidden md:block">
+        <NavBar />
+      </div>
+
+      {/* Mobile nav overlay */}
+      {mobileNavOpen && (
+        <div className="fixed inset-0 z-50 flex md:hidden">
+          <div
+            className="flex-1 bg-black/50"
+            onClick={() => setMobileNavOpen(false)}
+            aria-hidden="true"
+          />
+          <div className="w-52 bg-white dark:bg-gray-950 shadow-xl">
+            <NavBar />
+          </div>
         </div>
+      )}
+
+      <main className="flex-1 overflow-auto min-w-0">
+        {/* Mobile header with hamburger */}
+        <div className="md:hidden flex items-center px-4 py-2 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
+          <button
+            type="button"
+            onClick={() => setMobileNavOpen(true)}
+            className="p-2 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            aria-label="Open navigation menu"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <span className="ml-2 text-sm font-semibold text-gray-900 dark:text-gray-100">AEP</span>
+        </div>
+
+        {(showBreadcrumbs || showCommandPalette) && (
+          <div className="px-4 md:px-6 py-3 md:py-4 flex items-center justify-between">
+            {showBreadcrumbs && <Breadcrumbs items={breadcrumbItems} />}
+            {showCommandPalette && <FuzzyFinder items={finderItems} enableShortcut={true} />}
+          </div>
+        )}
         <Suspense
           fallback={
             <div className="flex h-full items-center justify-center text-gray-400">
@@ -251,7 +292,7 @@ function generateBreadcrumbs(pathname: string) {
   for (let i = 0; i < parts.length; i++) {
     currentPath += '/' + parts[i];
     const label = formatBreadcrumbLabel(parts[i]);
-    
+
     // Don't make the last item clickable
     if (i === parts.length - 1) {
       items.push({ label });
@@ -322,6 +363,7 @@ export function App() {
           >
             <Routes>
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/auth/callback" element={<SsoCallbackPage />} />
 
               <Route element={<ProtectedShell />}>
                 {/* ── Canonical routes ─────────────────────────── */}
@@ -334,13 +376,13 @@ export function App() {
                 <Route path="/build/pipelines/new" element={<PipelineBuilderPage />} />
                 <Route path="/build/patterns" element={<PatternStudioPage />} />
 
-                <Route path="/learn/episodes" element={<LearningPage />} />
+                <Route path="/learn/episodes" element={<Navigate to="/build/patterns?tab=learning" replace />} />
                 <Route path="/learn/memory" element={<MemoryExplorerPage />} />
 
                 <Route path="/govern" element={<GovernancePage />} />
 
                 <Route path="/catalog/agents" element={<AgentRegistryPage />} />
-                <Route path="/catalog/agents/:agentId" element={<AgentDetailPage />} />
+                <Route path="/catalog/agents/:agentId" element={<Navigate to="/catalog/agents" replace />} />
                 <Route path="/catalog/marketplace" element={<AgentMarketplacePage />} />
                 <Route path="/catalog/workflows" element={<WorkflowCatalogPage />} />
 
@@ -356,7 +398,18 @@ export function App() {
                 <Route path="/learning" element={<Navigate to="/learn/episodes" replace />} />
                 <Route path="/workflows" element={<Navigate to="/catalog/workflows" replace />} />
                 <Route path="/memory" element={<Navigate to="/learn/memory" replace />} />
-                <Route path="*" element={<Navigate to="/operate" replace />} />
+                <Route
+                  path="*"
+                  element={
+                    <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                      <h1 className="text-2xl font-semibold mb-2">Page not found</h1>
+                      <p className="text-sm mb-4">The requested page does not exist.</p>
+                      <a href="/operate" className="text-indigo-600 hover:underline text-sm">
+                        Go to Monitoring Dashboard
+                      </a>
+                    </div>
+                  }
+                />
               </Route>
             </Routes>
           </Suspense>

@@ -19,18 +19,18 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("LanguageDetectionService [GH-90000]")
+@DisplayName("LanguageDetectionService")
 class LanguageDetectionServiceTest {
 
     /** Stub model: returns "en" at 0.97 confidence for any text containing "hello",
      *  "fr" at 0.95 for "bonjour", else "de" at 0.60. */
     private static final LanguageDetectionService.LanguageDetectionModel STUB_MODEL = textSample -> {
-        if (textSample.toLowerCase().contains("hello [GH-90000]")) {
+        if (textSample.toLowerCase().contains("hello")) {
             return List.of( // GH-90000
                     LanguageDetectionService.LanguageCandidate.of("en", 0.97), // GH-90000
                     LanguageDetectionService.LanguageCandidate.of("en-US", 0.90)); // GH-90000
         }
-        if (textSample.toLowerCase().contains("bonjour [GH-90000]")) {
+        if (textSample.toLowerCase().contains("bonjour")) {
             return List.of( // GH-90000
                     LanguageDetectionService.LanguageCandidate.of("fr", 0.95), // GH-90000
                     LanguageDetectionService.LanguageCandidate.of("fr-FR", 0.85)); // GH-90000
@@ -41,14 +41,14 @@ class LanguageDetectionServiceTest {
     // ─── of() factories ─────────────────────────────────────────────────────── // GH-90000
 
     @Test
-    @DisplayName("of(model): null model throws NullPointerException [GH-90000]")
+    @DisplayName("of(model): null model throws NullPointerException")
     void of_nullModel_throwsNPE() { // GH-90000
         assertThatNullPointerException() // GH-90000
                 .isThrownBy(() -> LanguageDetectionService.of(null)); // GH-90000
     }
 
     @Test
-    @DisplayName("of(model, threshold): threshold > 1 throws IllegalArgumentException [GH-90000]")
+    @DisplayName("of(model, threshold): threshold > 1 throws IllegalArgumentException")
     void of_invalidThreshold_throwsIAE() { // GH-90000
         assertThatIllegalArgumentException() // GH-90000
                 .isThrownBy(() -> LanguageDetectionService.of(STUB_MODEL, 1.5)); // GH-90000
@@ -57,41 +57,41 @@ class LanguageDetectionServiceTest {
     // ─── detect() ───────────────────────────────────────────────────────────── // GH-90000
 
     @Nested
-    @DisplayName("detect(text) [GH-90000]")
+    @DisplayName("detect(text)")
     class Detect {
 
         @Test
-        @DisplayName("detects English for 'hello world' with high confidence [GH-90000]")
+        @DisplayName("detects English for 'hello world' with high confidence")
         void detect_english_highConfidence() { // GH-90000
             LanguageDetectionService service = LanguageDetectionService.of(STUB_MODEL); // GH-90000
-            LanguageDetectionService.DetectionResult result = service.detect("hello world [GH-90000]");
+            LanguageDetectionService.DetectionResult result = service.detect("hello world");
 
-            assertThat(result.topLanguageTag()).contains("en [GH-90000]");
+            assertThat(result.topLanguageTag()).contains("en");
             assertThat(result.isReliable()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("detects French for 'bonjour monde' [GH-90000]")
+        @DisplayName("detects French for 'bonjour monde'")
         void detect_french_detected() { // GH-90000
             LanguageDetectionService service = LanguageDetectionService.of(STUB_MODEL); // GH-90000
-            LanguageDetectionService.DetectionResult result = service.detect("bonjour monde [GH-90000]");
+            LanguageDetectionService.DetectionResult result = service.detect("bonjour monde");
 
-            assertThat(result.topLanguageTag()).contains("fr [GH-90000]");
+            assertThat(result.topLanguageTag()).contains("fr");
         }
 
         @Test
-        @DisplayName("below-threshold result returns empty topLanguageTag [GH-90000]")
+        @DisplayName("below-threshold result returns empty topLanguageTag")
         void detect_belowThreshold_emptyTop() { // GH-90000
             // 0.60 < 0.80 threshold
             LanguageDetectionService service = LanguageDetectionService.of(STUB_MODEL, 0.80); // GH-90000
-            LanguageDetectionService.DetectionResult result = service.detect("xyz123 [GH-90000]");
+            LanguageDetectionService.DetectionResult result = service.detect("xyz123");
 
             assertThat(result.topLanguageTag()).isEmpty(); // GH-90000
             assertThat(result.isReliable()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("null textSample throws NullPointerException [GH-90000]")
+        @DisplayName("null textSample throws NullPointerException")
         void detect_null_throwsNPE() { // GH-90000
             LanguageDetectionService service = LanguageDetectionService.of(STUB_MODEL); // GH-90000
             assertThatNullPointerException() // GH-90000
@@ -99,18 +99,18 @@ class LanguageDetectionServiceTest {
         }
 
         @Test
-        @DisplayName("blank textSample throws IllegalArgumentException [GH-90000]")
+        @DisplayName("blank textSample throws IllegalArgumentException")
         void detect_blank_throwsIAE() { // GH-90000
             LanguageDetectionService service = LanguageDetectionService.of(STUB_MODEL); // GH-90000
             assertThatIllegalArgumentException() // GH-90000
-                    .isThrownBy(() -> service.detect("    [GH-90000]"));
+                    .isThrownBy(() -> service.detect("   "));
         }
 
         @Test
-        @DisplayName("result.candidates() is unmodifiable [GH-90000]")
+        @DisplayName("result.candidates() is unmodifiable")
         void detect_candidatesUnmodifiable() { // GH-90000
             LanguageDetectionService service = LanguageDetectionService.of(STUB_MODEL); // GH-90000
-            LanguageDetectionService.DetectionResult result = service.detect("hello world [GH-90000]");
+            LanguageDetectionService.DetectionResult result = service.detect("hello world");
             assertThatThrownBy(() -> result.candidates().add( // GH-90000
                     LanguageDetectionService.LanguageCandidate.of("de", 0.1))) // GH-90000
                     .isInstanceOf(UnsupportedOperationException.class); // GH-90000
@@ -120,11 +120,11 @@ class LanguageDetectionServiceTest {
     // ─── detectFromAudio() ──────────────────────────────────────────────────── // GH-90000
 
     @Nested
-    @DisplayName("detectFromAudio() [GH-90000]")
+    @DisplayName("detectFromAudio()")
     class DetectFromAudio {
 
         @Test
-        @DisplayName("non-empty audio returns at least one candidate [GH-90000]")
+        @DisplayName("non-empty audio returns at least one candidate")
         void detectFromAudio_returnsCandidate() { // GH-90000
             LanguageDetectionService service = LanguageDetectionService.of(STUB_MODEL); // GH-90000
             LanguageDetectionService.DetectionResult result =
@@ -134,7 +134,7 @@ class LanguageDetectionServiceTest {
         }
 
         @Test
-        @DisplayName("null audioBytes throws NullPointerException [GH-90000]")
+        @DisplayName("null audioBytes throws NullPointerException")
         void detectFromAudio_null_throwsNPE() { // GH-90000
             LanguageDetectionService service = LanguageDetectionService.of(STUB_MODEL); // GH-90000
             assertThatNullPointerException() // GH-90000
@@ -142,7 +142,7 @@ class LanguageDetectionServiceTest {
         }
 
         @Test
-        @DisplayName("empty audioBytes throws IllegalArgumentException [GH-90000]")
+        @DisplayName("empty audioBytes throws IllegalArgumentException")
         void detectFromAudio_empty_throwsIAE() { // GH-90000
             LanguageDetectionService service = LanguageDetectionService.of(STUB_MODEL); // GH-90000
             assertThatIllegalArgumentException() // GH-90000
@@ -153,26 +153,26 @@ class LanguageDetectionServiceTest {
     // ─── LanguageCandidate ────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("LanguageCandidate [GH-90000]")
+    @DisplayName("LanguageCandidate")
     class LanguageCandidateTests {
 
         @Test
-        @DisplayName("of() resolves locale from language tag [GH-90000]")
+        @DisplayName("of() resolves locale from language tag")
         void candidate_localeResolved() { // GH-90000
             var candidate = LanguageDetectionService.LanguageCandidate.of("fr-CA", 0.90); // GH-90000
-            assertThat(candidate.locale().getLanguage()).isEqualTo("fr [GH-90000]");
-            assertThat(candidate.locale().getCountry()).isEqualTo("CA [GH-90000]");
+            assertThat(candidate.locale().getLanguage()).isEqualTo("fr");
+            assertThat(candidate.locale().getCountry()).isEqualTo("CA");
         }
 
         @Test
-        @DisplayName("confidence > 1 throws IllegalArgumentException [GH-90000]")
+        @DisplayName("confidence > 1 throws IllegalArgumentException")
         void candidate_invalidConfidence_throwsIAE() { // GH-90000
             assertThatIllegalArgumentException() // GH-90000
                     .isThrownBy(() -> LanguageDetectionService.LanguageCandidate.of("en", 1.1)); // GH-90000
         }
 
         @Test
-        @DisplayName("null languageTag throws NullPointerException [GH-90000]")
+        @DisplayName("null languageTag throws NullPointerException")
         void candidate_nullTag_throwsNPE() { // GH-90000
             assertThatNullPointerException() // GH-90000
                     .isThrownBy(() -> LanguageDetectionService.LanguageCandidate.of(null, 0.9)); // GH-90000

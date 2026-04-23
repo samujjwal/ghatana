@@ -19,7 +19,8 @@ import java.util.Map;
  * @doc.type value-object
  * @doc.purpose Task state for multi-session workflows
  * @doc.layer agent-memory
- */
+  * @doc.pattern Component
+*/
 @Value
 @Builder
 @Jacksonized

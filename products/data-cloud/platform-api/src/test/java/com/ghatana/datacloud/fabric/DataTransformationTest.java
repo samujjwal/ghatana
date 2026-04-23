@@ -30,18 +30,18 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("DataTransformation – Pipeline Tests (PF003) [GH-90000]")
+@DisplayName("DataTransformation – Pipeline Tests (PF003)")
 class DataTransformationTest extends EventloopTestBase {
 
     @Mock
     private DataTransformationPipeline pipeline;
 
     @Nested
-    @DisplayName("Pipeline Creation [GH-90000]")
+    @DisplayName("Pipeline Creation")
     class PipelineCreationTests {
 
         @Test
-        @DisplayName("[PF003]: create_pipeline_creates_definition [GH-90000]")
+        @DisplayName("[PF003]: create_pipeline_creates_definition")
         void createPipelineCreatesDefinition() { // GH-90000
             DataTransformationPipeline.PipelineDefinition definition = createPipelineDefinition( // GH-90000
                 "new-pipeline", "Transform Pipeline", List.of() // GH-90000
@@ -54,12 +54,12 @@ class DataTransformationTest extends EventloopTestBase {
                 pipeline.createPipeline(definition) // GH-90000
             );
 
-            assertThat(result.id()).isEqualTo("new-pipeline [GH-90000]");
+            assertThat(result.id()).isEqualTo("new-pipeline");
             assertThat(result.enabled()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("[PF003]: get_pipeline_returns_existing [GH-90000]")
+        @DisplayName("[PF003]: get_pipeline_returns_existing")
         void getPipelineReturnsExisting() { // GH-90000
             String pipelineId = "existing-pipeline";
             DataTransformationPipeline.PipelineDefinition definition = createPipelineDefinition( // GH-90000
@@ -78,7 +78,7 @@ class DataTransformationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[PF003]: list_pipelines_returns_tenant_pipelines [GH-90000]")
+        @DisplayName("[PF003]: list_pipelines_returns_tenant_pipelines")
         void listPipelinesReturnsTenantPipelines() { // GH-90000
             String tenantId = "tenant-alpha";
 
@@ -100,7 +100,7 @@ class DataTransformationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[PF003]: delete_pipeline_removes_pipeline [GH-90000]")
+        @DisplayName("[PF003]: delete_pipeline_removes_pipeline")
         void deletePipelineRemovesPipeline() { // GH-90000
             String pipelineId = "pipeline-to-delete";
 
@@ -114,11 +114,11 @@ class DataTransformationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Pipeline Execution [GH-90000]")
+    @DisplayName("Pipeline Execution")
     class PipelineExecutionTests {
 
         @Test
-        @DisplayName("[PF003]: execute_pipeline_transforms_data [GH-90000]")
+        @DisplayName("[PF003]: execute_pipeline_transforms_data")
         void executePipelineTransformsData() { // GH-90000
             String pipelineId = "transform-pipeline";
 
@@ -150,7 +150,7 @@ class DataTransformationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[PF003]: execute_pipeline_reports_errors [GH-90000]")
+        @DisplayName("[PF003]: execute_pipeline_reports_errors")
         void executePipelineReportsErrors() { // GH-90000
             String pipelineId = "failing-pipeline";
 
@@ -158,7 +158,7 @@ class DataTransformationTest extends EventloopTestBase {
 
             DataTransformationPipeline.ExecutionResult result = new DataTransformationPipeline.ExecutionResult( // GH-90000
                 pipelineId, "exec-001", false, List.of(), 1, 0, 100, // GH-90000
-                List.of("Transformation failed: invalid data [GH-90000]"), List.of()
+                List.of("Transformation failed: invalid data"), List.of()
             );
 
             when(pipeline.execute(pipelineId, input)) // GH-90000
@@ -174,15 +174,15 @@ class DataTransformationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Step Types [GH-90000]")
+    @DisplayName("Step Types")
     class StepTypesTests {
 
         @Test
-        @DisplayName("[PF003]: filter_step_filters_data [GH-90000]")
+        @DisplayName("[PF003]: filter_step_filters_data")
         void filterStepFiltersData() { // GH-90000
             DataTransformationPipeline.TransformationStep filterStep = new DataTransformationPipeline.TransformationStep( // GH-90000
                 "step-1", "Filter Adults", DataTransformationPipeline.StepType.FILTER,
-                Map.of("condition", "age >= 18"), null, List.of("age [GH-90000]"), List.of()
+                Map.of("condition", "age >= 18"), null, List.of("age"), List.of()
             );
 
             assertThat(filterStep.type()).isEqualTo(DataTransformationPipeline.StepType.FILTER); // GH-90000
@@ -190,26 +190,26 @@ class DataTransformationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[PF003]: map_step_transforms_fields [GH-90000]")
+        @DisplayName("[PF003]: map_step_transforms_fields")
         void mapStepTransformsFields() { // GH-90000
             DataTransformationPipeline.TransformationStep mapStep = new DataTransformationPipeline.TransformationStep( // GH-90000
                 "step-1", "Uppercase Names", DataTransformationPipeline.StepType.MAP,
                 Map.of("expression", "name.toUpperCase()"), null, // GH-90000
-                List.of("name [GH-90000]"), List.of("upperName [GH-90000]")
+                List.of("name"), List.of("upperName")
             );
 
             assertThat(mapStep.type()).isEqualTo(DataTransformationPipeline.StepType.MAP); // GH-90000
-            assertThat(mapStep.inputColumns()).contains("name [GH-90000]");
-            assertThat(mapStep.outputColumns()).contains("upperName [GH-90000]");
+            assertThat(mapStep.inputColumns()).contains("name");
+            assertThat(mapStep.outputColumns()).contains("upperName");
         }
 
         @Test
-        @DisplayName("[PF003]: aggregate_step_groups_data [GH-90000]")
+        @DisplayName("[PF003]: aggregate_step_groups_data")
         void aggregateStepGroupsData() { // GH-90000
             DataTransformationPipeline.TransformationStep aggStep = new DataTransformationPipeline.TransformationStep( // GH-90000
                 "step-1", "Sum by Category", DataTransformationPipeline.StepType.AGGREGATE,
                 Map.of("groupBy", "category", "operation", "sum", "field", "amount"), // GH-90000
-                null, List.of("category", "amount"), List.of("total [GH-90000]")
+                null, List.of("category", "amount"), List.of("total")
             );
 
             assertThat(aggStep.type()).isEqualTo(DataTransformationPipeline.StepType.AGGREGATE); // GH-90000
@@ -217,11 +217,11 @@ class DataTransformationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Validation [GH-90000]")
+    @DisplayName("Validation")
     class ValidationTests {
 
         @Test
-        @DisplayName("[PF003]: validate_returns_valid_for_good_pipeline [GH-90000]")
+        @DisplayName("[PF003]: validate_returns_valid_for_good_pipeline")
         void validateReturnsValidForGoodPipeline() { // GH-90000
             DataTransformationPipeline.PipelineDefinition definition = createPipelineDefinition( // GH-90000
                 "valid-pipeline", "Valid", List.of( // GH-90000
@@ -249,7 +249,7 @@ class DataTransformationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[PF003]: validate_returns_errors_for_invalid_pipeline [GH-90000]")
+        @DisplayName("[PF003]: validate_returns_errors_for_invalid_pipeline")
         void validateReturnsErrorsForInvalidPipeline() { // GH-90000
             DataTransformationPipeline.PipelineDefinition definition = createPipelineDefinition( // GH-90000
                 "invalid-pipeline", "Invalid", List.of() // GH-90000
@@ -257,7 +257,7 @@ class DataTransformationTest extends EventloopTestBase {
 
             DataTransformationPipeline.ValidationResult validation = new DataTransformationPipeline.ValidationResult( // GH-90000
                 false,
-                List.of("Pipeline must have at least one step [GH-90000]"),
+                List.of("Pipeline must have at least one step"),
                 List.of(), // GH-90000
                 List.of() // GH-90000
             );
@@ -275,11 +275,11 @@ class DataTransformationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Execution History [GH-90000]")
+    @DisplayName("Execution History")
     class ExecutionHistoryTests {
 
         @Test
-        @DisplayName("[PF003]: get_execution_history_returns_records [GH-90000]")
+        @DisplayName("[PF003]: get_execution_history_returns_records")
         void getExecutionHistoryReturnsRecords() { // GH-90000
             String pipelineId = "pipeline-with-history";
 

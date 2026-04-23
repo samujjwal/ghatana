@@ -30,7 +30,7 @@ public class NativeDependencySupport {
     static class NativeDependencyCondition implements ExecutionCondition {
         @Override
         public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) { // GH-90000
-            return ConditionEvaluationResult.disabled("Native dependencies not available in test environment [GH-90000]");
+            return ConditionEvaluationResult.disabled("Native dependencies not available in test environment");
         }
     }
 }

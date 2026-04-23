@@ -30,16 +30,16 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern ChaosTest
  */
-@DisplayName("YAPPC Domain Chaos Tests [GH-90000]")
+@DisplayName("YAPPC Domain Chaos Tests")
 class DomainChaosTest {
 
     @Nested
-    @DisplayName("Dashboard Chaos Tests [GH-90000]")
+    @DisplayName("Dashboard Chaos Tests")
     class DashboardChaosTests {
 
         @Test
         @ChaosTest(value = ChaosType.CONCURRENCY, failureProbability = 0.3) // GH-90000
-        @DisplayName("Dashboard creation is thread-safe under concurrent access [GH-90000]")
+        @DisplayName("Dashboard creation is thread-safe under concurrent access")
         void dashboardCreationIsThreadSafe() { // GH-90000
             AtomicInteger successCount = new AtomicInteger(0); // GH-90000
             UUID workspaceId = UUID.randomUUID(); // GH-90000
@@ -67,7 +67,7 @@ class DomainChaosTest {
 
         @Test
         @ChaosTest(value = ChaosType.LATENCY, failureProbability = 0.5) // GH-90000
-        @DisplayName("Dashboard handles high latency gracefully [GH-90000]")
+        @DisplayName("Dashboard handles high latency gracefully")
         void dashboardHandlesLatency() throws InterruptedException { // GH-90000
             ChaosScenario.ChaosExecutionResult<Dashboard> result = ChaosScenario.builder() // GH-90000
                     .withChaosType(ChaosType.LATENCY) // GH-90000
@@ -90,12 +90,12 @@ class DomainChaosTest {
     }
 
     @Nested
-    @DisplayName("ScanJob Chaos Tests [GH-90000]")
+    @DisplayName("ScanJob Chaos Tests")
     class ScanJobChaosTests {
 
         @Test
         @ChaosTest(value = ChaosType.CONCURRENCY, failureProbability = 0.2) // GH-90000
-        @DisplayName("ScanJob state transitions are atomic under concurrent access [GH-90000]")
+        @DisplayName("ScanJob state transitions are atomic under concurrent access")
         void scanJobStateTransitionsAreAtomic() { // GH-90000
             // Create a single ScanJob instance
             ScanJob scanJob = ScanJob.pending(UUID.randomUUID(), UUID.randomUUID(), ScanType.SAST); // GH-90000
@@ -131,7 +131,7 @@ class DomainChaosTest {
 
         @Test
         @ChaosTest(value = ChaosType.PARTIAL_FAILURE, failureProbability = 0.3) // GH-90000
-        @DisplayName("ScanJob handles partial failures during processing [GH-90000]")
+        @DisplayName("ScanJob handles partial failures during processing")
         void scanJobHandlesPartialFailures() { // GH-90000
             AtomicInteger processedCount = new AtomicInteger(0); // GH-90000
 
@@ -146,8 +146,8 @@ class DomainChaosTest {
 
                         // Simulate processing with potential failure
                         if (Math.random() < 0.3) { // GH-90000
-                            job.fail("Simulated partial failure [GH-90000]");
-                            throw new RuntimeException("Processing failed [GH-90000]");
+                            job.fail("Simulated partial failure");
+                            throw new RuntimeException("Processing failed");
                         }
 
                         job.complete(); // GH-90000
@@ -162,12 +162,12 @@ class DomainChaosTest {
     }
 
     @Nested
-    @DisplayName("Incident Chaos Tests [GH-90000]")
+    @DisplayName("Incident Chaos Tests")
     class IncidentChaosTests {
 
         @Test
         @ChaosTest(value = ChaosType.CONCURRENCY, failureProbability = 0.2) // GH-90000
-        @DisplayName("Incident lifecycle is consistent under concurrent updates [GH-90000]")
+        @DisplayName("Incident lifecycle is consistent under concurrent updates")
         void incidentLifecycleConsistentUnderConcurrency() { // GH-90000
             Incident incident = Incident.of( // GH-90000
                     UUID.randomUUID(), // GH-90000
@@ -211,7 +211,7 @@ class DomainChaosTest {
 
         @Test
         @ChaosTest(value = ChaosType.RANDOM, failureProbability = 0.4) // GH-90000
-        @DisplayName("Incident creation degrades gracefully under random chaos [GH-90000]")
+        @DisplayName("Incident creation degrades gracefully under random chaos")
         void incidentCreationDegrades() { // GH-90000
             ChaosScenario.ChaosExecutionResult<Incident> result = ChaosScenario.builder() // GH-90000
                     .withChaosType(ChaosType.RANDOM) // GH-90000
@@ -236,12 +236,12 @@ class DomainChaosTest {
     }
 
     @Nested
-    @DisplayName("High Load Chaos Tests [GH-90000]")
+    @DisplayName("High Load Chaos Tests")
     class HighLoadChaosTests {
 
         @Test
         @ChaosTest(value = ChaosType.RESOURCE_EXHAUSTION, failureProbability = 0.1) // GH-90000
-        @DisplayName("Domain models handle high volume creation [GH-90000]")
+        @DisplayName("Domain models handle high volume creation")
         void domainModelsHandleHighVolume() { // GH-90000
             ChaosScenario.ChaosExecutionResult<Void> result = ChaosScenario.builder() // GH-90000
                     .withChaosType(ChaosType.RESOURCE_EXHAUSTION) // GH-90000
@@ -258,7 +258,7 @@ class DomainChaosTest {
                         // Verify all objects are valid
                         assertThat(dashboard.getCreatedAt()).isNotNull(); // GH-90000
                         assertThat(scanJob.getStatus()).isEqualTo(ScanStatus.PENDING); // GH-90000
-                        assertThat(incident.getStatus()).isEqualTo("OPEN [GH-90000]");
+                        assertThat(incident.getStatus()).isEqualTo("OPEN");
                     });
 
             result.assertAllSucceeded(); // GH-90000

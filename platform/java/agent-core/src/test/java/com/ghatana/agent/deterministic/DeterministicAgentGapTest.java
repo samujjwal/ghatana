@@ -32,7 +32,7 @@ import static org.mockito.Mockito.mock;
  *   <li>Wrong config type rejection</li>
  * </ul>
  */
-@DisplayName("Deterministic Agent — Gap Tests [GH-90000]")
+@DisplayName("Deterministic Agent — Gap Tests")
 class DeterministicAgentGapTest {
 
     private AgentContext ctx;
@@ -40,9 +40,9 @@ class DeterministicAgentGapTest {
     @BeforeEach
     void setUp() { // GH-90000
         ctx = AgentContext.builder() // GH-90000
-                .turnId("turn-1 [GH-90000]")
-                .agentId("det-gap-test [GH-90000]")
-                .tenantId("test-tenant [GH-90000]")
+                .turnId("turn-1")
+                .agentId("det-gap-test")
+                .tenantId("test-tenant")
                 .memoryStore(mock(MemoryStore.class)) // GH-90000
                 .build(); // GH-90000
     }
@@ -59,19 +59,26 @@ class DeterministicAgentGapTest {
         return result.get(); // GH-90000
     }
 
+    private static List<String> outputStringList(Map<String, Object> output, String key) {
+        assertThat(output.get(key)).isInstanceOf(List.class);
+        List<?> values = (List<?>) output.get(key);
+        assertThat(values).allMatch(String.class::isInstance);
+        return values.stream().map(String.class::cast).toList();
+    }
+
     // ═══════════════════════════════════════════════════════════════════════════
     // PATTERN subtype
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("PATTERN subtype [GH-90000]")
+    @DisplayName("PATTERN subtype")
     class PatternSubtypeTests {
 
         @Test
         void patternSubtypeReturnsDegradedBeforeNfaWiring() { // GH-90000
-            DeterministicAgent agent = new DeterministicAgent("pattern-test [GH-90000]");
+            DeterministicAgent agent = new DeterministicAgent("pattern-test");
             DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
-                    .agentId("pattern-test [GH-90000]")
+                    .agentId("pattern-test")
                     .type(AgentType.DETERMINISTIC) // GH-90000
                     .subtype(DeterministicSubtype.PATTERN) // GH-90000
                     .build(); // GH-90000
@@ -86,9 +93,9 @@ class DeterministicAgentGapTest {
 
         @Test
         void patternSubtypePreservesInputKeys() { // GH-90000
-            DeterministicAgent agent = new DeterministicAgent("pattern-preserve [GH-90000]");
+            DeterministicAgent agent = new DeterministicAgent("pattern-preserve");
             DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
-                    .agentId("pattern-preserve [GH-90000]")
+                    .agentId("pattern-preserve")
                     .type(AgentType.DETERMINISTIC) // GH-90000
                     .subtype(DeterministicSubtype.PATTERN) // GH-90000
                     .build(); // GH-90000
@@ -106,21 +113,21 @@ class DeterministicAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Multi-rule ALL-match mode [GH-90000]")
+    @DisplayName("Multi-rule ALL-match mode")
     class MultiRuleAllMatchTests {
 
         @Test
         void allMatchMergesActionsFromMultipleRules() { // GH-90000
-            DeterministicAgent agent = new DeterministicAgent("multi-rule [GH-90000]");
+            DeterministicAgent agent = new DeterministicAgent("multi-rule");
             DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
-                    .agentId("multi-rule [GH-90000]")
+                    .agentId("multi-rule")
                     .type(AgentType.DETERMINISTIC) // GH-90000
                     .subtype(DeterministicSubtype.RULE_BASED) // GH-90000
                     .evaluateAllRules(true) // GH-90000
-                    .rule(Rule.builder().id("r1 [GH-90000]").name("Flag [GH-90000]").priority(10).terminal(false)
+                    .rule(Rule.builder().id("r1").name("Flag").priority(10).terminal(false)
                             .condition(RuleCondition.gt("amount", 0)) // GH-90000
                             .action("flagged", true).build()) // GH-90000
-                    .rule(Rule.builder().id("r2 [GH-90000]").name("Source [GH-90000]").priority(20).terminal(false)
+                    .rule(Rule.builder().id("r2").name("Source").priority(20).terminal(false)
                             .condition(RuleCondition.eq("source", "api")) // GH-90000
                             .action("channel", "API").build()) // GH-90000
                     .build(); // GH-90000
@@ -132,8 +139,7 @@ class DeterministicAgentGapTest {
             assertThat(result.isSuccess()).isTrue(); // GH-90000
             assertThat(result.getOutput()).containsEntry("flagged", true); // GH-90000
             assertThat(result.getOutput()).containsEntry("channel", "API"); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
-            List<String> matched = (List<String>) result.getOutput().get("_matchedRules [GH-90000]");
+            List<String> matched = outputStringList(result.getOutput(), "_matchedRules");
             assertThat(matched).containsExactlyInAnyOrder("r1", "r2"); // GH-90000
         }
     }
@@ -143,29 +149,29 @@ class DeterministicAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("FSM final-state boundary [GH-90000]")
+    @DisplayName("FSM final-state boundary")
     class FSMFinalStateBoundaryTests {
 
         @Test
         void noTransitionFromFinalState() { // GH-90000
             FiniteStateMachine.FSMDefinition def = FiniteStateMachine.FSMDefinition.builder() // GH-90000
-                    .id("two-step [GH-90000]").name("TwoStep [GH-90000]")
-                    .state("START [GH-90000]").state("END [GH-90000]")
-                    .initialState("START [GH-90000]").finalState("END [GH-90000]")
+                    .id("two-step").name("TwoStep")
+                    .state("START").state("END")
+                    .initialState("START").finalState("END")
                     .transition(FiniteStateMachine.FSMDefinition.Transition.builder() // GH-90000
-                            .name("finish [GH-90000]").fromState("START [GH-90000]").toState("END [GH-90000]")
+                            .name("finish").fromState("START").toState("END")
                             .guard(List.of(RuleCondition.eq("action", "finish"))) // GH-90000
                             .actions(Map.of("done", true)) // GH-90000
                             .build()) // GH-90000
                     .build(); // GH-90000
 
-            DeterministicAgent agent = new DeterministicAgent("fsm-final [GH-90000]");
+            DeterministicAgent agent = new DeterministicAgent("fsm-final");
             DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
-                    .agentId("fsm-final [GH-90000]")
+                    .agentId("fsm-final")
                     .type(AgentType.DETERMINISTIC) // GH-90000
                     .subtype(DeterministicSubtype.FSM) // GH-90000
                     .fsmDefinition(def) // GH-90000
-                    .fsmEntityKeyField("id [GH-90000]")
+                    .fsmEntityKeyField("id")
                     .build(); // GH-90000
 
             runOnEventloop(() -> agent.initialize(config)); // GH-90000
@@ -177,8 +183,8 @@ class DeterministicAgentGapTest {
             var result = runOnEventloop(() -> agent.process(ctx, // GH-90000
                     Map.of("id", "e1", "action", "finish"))); // GH-90000
 
-            assertThat(result.getOutput().get("_fsm.currentState [GH-90000]")).isEqualTo("END [GH-90000]");
-            assertThat(result.getOutput().get("_fsm.transitioned [GH-90000]")).isEqualTo(false);
+            assertThat(result.getOutput().get("_fsm.currentState")).isEqualTo("END");
+            assertThat(result.getOutput().get("_fsm.transitioned")).isEqualTo(false);
         }
     }
 
@@ -187,21 +193,21 @@ class DeterministicAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Threshold — multiple evaluators [GH-90000]")
+    @DisplayName("Threshold — multiple evaluators")
     class MultiThresholdTests {
 
         @Test
         void multipleThresholdsEvaluateIndependently() { // GH-90000
-            DeterministicAgent agent = new DeterministicAgent("multi-thresh [GH-90000]");
+            DeterministicAgent agent = new DeterministicAgent("multi-thresh");
             DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
-                    .agentId("multi-thresh [GH-90000]")
+                    .agentId("multi-thresh")
                     .type(AgentType.DETERMINISTIC) // GH-90000
                     .subtype(DeterministicSubtype.THRESHOLD) // GH-90000
                     .threshold(ThresholdEvaluator.builder() // GH-90000
-                            .id("cpu [GH-90000]").field("cpu [GH-90000]").activationThreshold(80.0)
+                            .id("cpu").field("cpu").activationThreshold(80.0)
                             .upperBound(true).build()) // GH-90000
                     .threshold(ThresholdEvaluator.builder() // GH-90000
-                            .id("mem [GH-90000]").field("memory [GH-90000]").activationThreshold(20.0)
+                            .id("mem").field("memory").activationThreshold(20.0)
                             .upperBound(false).build()) // GH-90000
                     .build(); // GH-90000
 
@@ -210,23 +216,22 @@ class DeterministicAgentGapTest {
                     Map.of("cpu", 95.0, "memory", 10.0))); // GH-90000
 
             assertThat(result.isSuccess()).isTrue(); // GH-90000
-            assertThat(result.getOutput().get("threshold.cpu.active [GH-90000]")).isEqualTo(true);
-            assertThat(result.getOutput().get("threshold.mem.active [GH-90000]")).isEqualTo(true);
+            assertThat(result.getOutput().get("threshold.cpu.active")).isEqualTo(true);
+            assertThat(result.getOutput().get("threshold.mem.active")).isEqualTo(true);
 
-            @SuppressWarnings("unchecked [GH-90000]")
-            List<String> active = (List<String>) result.getOutput().get("_activeThresholds [GH-90000]");
+            List<String> active = outputStringList(result.getOutput(), "_activeThresholds");
             assertThat(active).containsExactlyInAnyOrder("cpu", "mem"); // GH-90000
         }
 
         @Test
         void thresholdStateChangesTracked() { // GH-90000
-            DeterministicAgent agent = new DeterministicAgent("state-changes [GH-90000]");
+            DeterministicAgent agent = new DeterministicAgent("state-changes");
             DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
-                    .agentId("state-changes [GH-90000]")
+                    .agentId("state-changes")
                     .type(AgentType.DETERMINISTIC) // GH-90000
                     .subtype(DeterministicSubtype.THRESHOLD) // GH-90000
                     .threshold(ThresholdEvaluator.builder() // GH-90000
-                            .id("temp [GH-90000]").field("temperature [GH-90000]")
+                            .id("temp").field("temperature")
                             .activationThreshold(100.0).upperBound(true).build()) // GH-90000
                     .build(); // GH-90000
 
@@ -234,15 +239,13 @@ class DeterministicAgentGapTest {
 
             // First eval: below threshold — inactive, no state change (INACTIVE→INACTIVE) // GH-90000
             var r1 = runOnEventloop(() -> agent.process(ctx, Map.of("temperature", 50.0))); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
-            List<String> sc1 = (List<String>) r1.getOutput().get("_stateChanges [GH-90000]");
+            List<String> sc1 = outputStringList(r1.getOutput(), "_stateChanges");
             assertThat(sc1).isEmpty(); // GH-90000
 
             // Second eval: above threshold — active, state change (INACTIVE→ACTIVE) // GH-90000
             var r2 = runOnEventloop(() -> agent.process(ctx, Map.of("temperature", 110.0))); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
-            List<String> sc2 = (List<String>) r2.getOutput().get("_stateChanges [GH-90000]");
-            assertThat(sc2).contains("temp [GH-90000]");
+            List<String> sc2 = outputStringList(r2.getOutput(), "_stateChanges");
+            assertThat(sc2).contains("temp");
         }
     }
 
@@ -251,17 +254,17 @@ class DeterministicAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("ExactMatch — edge cases [GH-90000]")
+    @DisplayName("ExactMatch — edge cases")
     class ExactMatchEdgeCaseTests {
 
         @Test
         void nullFieldValueReturnsDefaultAction() { // GH-90000
-            DeterministicAgent agent = new DeterministicAgent("exact-null [GH-90000]");
+            DeterministicAgent agent = new DeterministicAgent("exact-null");
             DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
-                    .agentId("exact-null [GH-90000]")
+                    .agentId("exact-null")
                     .type(AgentType.DETERMINISTIC) // GH-90000
                     .subtype(DeterministicSubtype.EXACT_MATCH) // GH-90000
-                    .exactMatchField("country [GH-90000]")
+                    .exactMatchField("country")
                     .exactMatchEntry("US", Map.of("region", "NA")) // GH-90000
                     .defaultAction("region", "UNKNOWN") // GH-90000
                     .build(); // GH-90000
@@ -276,12 +279,12 @@ class DeterministicAgentGapTest {
 
         @Test
         void exactMatchHitIncludesMetadata() { // GH-90000
-            DeterministicAgent agent = new DeterministicAgent("exact-meta [GH-90000]");
+            DeterministicAgent agent = new DeterministicAgent("exact-meta");
             DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
-                    .agentId("exact-meta [GH-90000]")
+                    .agentId("exact-meta")
                     .type(AgentType.DETERMINISTIC) // GH-90000
                     .subtype(DeterministicSubtype.EXACT_MATCH) // GH-90000
-                    .exactMatchField("status [GH-90000]")
+                    .exactMatchField("status")
                     .exactMatchEntry("ACTIVE", Map.of("allowed", true)) // GH-90000
                     .build(); // GH-90000
 
@@ -299,12 +302,12 @@ class DeterministicAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Error paths [GH-90000]")
+    @DisplayName("Error paths")
     class ErrorPathTests {
 
         @Test
         void processBeforeConfigureReturnsFailed() { // GH-90000
-            DeterministicAgent agent = new DeterministicAgent("unconfigured [GH-90000]");
+            DeterministicAgent agent = new DeterministicAgent("unconfigured");
             // Do NOT call initialize
 
             var result = runOnEventloop(() -> agent.process(ctx, Map.of("x", 1))); // GH-90000
@@ -315,21 +318,21 @@ class DeterministicAgentGapTest {
         @Test
         void fsmMissingEntityKeyReturnsFailed() { // GH-90000
             FiniteStateMachine.FSMDefinition def = FiniteStateMachine.FSMDefinition.builder() // GH-90000
-                    .id("key-test [GH-90000]").name("KeyTest [GH-90000]")
-                    .state("A [GH-90000]").state("B [GH-90000]").initialState("A [GH-90000]").finalState("B [GH-90000]")
+                    .id("key-test").name("KeyTest")
+                    .state("A").state("B").initialState("A").finalState("B")
                     .transition(FiniteStateMachine.FSMDefinition.Transition.builder() // GH-90000
-                            .name("go [GH-90000]").fromState("A [GH-90000]").toState("B [GH-90000]")
+                            .name("go").fromState("A").toState("B")
                             .guard(List.of(RuleCondition.eq("action", "go"))) // GH-90000
                             .actions(Map.of("ok", true)).build()) // GH-90000
                     .build(); // GH-90000
 
-            DeterministicAgent agent = new DeterministicAgent("fsm-nokey [GH-90000]");
+            DeterministicAgent agent = new DeterministicAgent("fsm-nokey");
             DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
-                    .agentId("fsm-nokey [GH-90000]")
+                    .agentId("fsm-nokey")
                     .type(AgentType.DETERMINISTIC) // GH-90000
                     .subtype(DeterministicSubtype.FSM) // GH-90000
                     .fsmDefinition(def) // GH-90000
-                    .fsmEntityKeyField("entityId [GH-90000]")
+                    .fsmEntityKeyField("entityId")
                     .build(); // GH-90000
 
             runOnEventloop(() -> agent.initialize(config)); // GH-90000
@@ -341,12 +344,12 @@ class DeterministicAgentGapTest {
 
         @Test
         void ruleBasedNoMatchAndNoDefaultReturnsSkipped() { // GH-90000
-            DeterministicAgent agent = new DeterministicAgent("no-default [GH-90000]");
+            DeterministicAgent agent = new DeterministicAgent("no-default");
             DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
-                    .agentId("no-default [GH-90000]")
+                    .agentId("no-default")
                     .type(AgentType.DETERMINISTIC) // GH-90000
                     .subtype(DeterministicSubtype.RULE_BASED) // GH-90000
-                    .rule(Rule.builder().id("r1 [GH-90000]").name("Never [GH-90000]")
+                    .rule(Rule.builder().id("r1").name("Never")
                             .condition(RuleCondition.eq("x", "impossible")) // GH-90000
                             .action("a", true).build()) // GH-90000
                     .build(); // GH-90000

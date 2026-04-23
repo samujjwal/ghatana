@@ -20,7 +20,7 @@ import java.util.Set;
  * - Download attachments
  * - Authorization checks
  */
-@DisplayName("ExportController Integration Tests [GH-90000]")
+@DisplayName("ExportController Integration Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles export controller integration test operations
@@ -39,20 +39,20 @@ class ExportControllerIntegrationTest extends EventloopTestBase {
     @BeforeEach
     void setUp() { // GH-90000
         testUser = User.builder() // GH-90000
-            .userId("user-123 [GH-90000]")
-            .email("test@example.com [GH-90000]")
-            .username("Test User [GH-90000]")
-            .roles(Set.of("USER [GH-90000]"))
+            .userId("user-123")
+            .email("test@example.com")
+            .username("Test User")
+            .roles(Set.of("USER"))
             .permissions(Set.of("PROJECT_READ", "EXPORT")) // GH-90000
             .build(); // GH-90000
     }
 
     @Nested
-    @DisplayName("Markdown Export [GH-90000]")
+    @DisplayName("Markdown Export")
     class MarkdownExport {
 
         @Test
-        @DisplayName("Should export project as Markdown [GH-90000]")
+        @DisplayName("Should export project as Markdown")
         void shouldExportAsMarkdown() { // GH-90000
             // Given
             String projectId = "proj-123";
@@ -67,7 +67,7 @@ class ExportControllerIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should include project details in Markdown [GH-90000]")
+        @DisplayName("Should include project details in Markdown")
         void shouldIncludeDetailsInMarkdown() { // GH-90000
             // Given
             String projectId = "proj-123";
@@ -82,11 +82,11 @@ class ExportControllerIntegrationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("JSON Export [GH-90000]")
+    @DisplayName("JSON Export")
     class JsonExport {
 
         @Test
-        @DisplayName("Should export project as JSON [GH-90000]")
+        @DisplayName("Should export project as JSON")
         void shouldExportAsJson() { // GH-90000
             // Given
             String projectId = "proj-123";
@@ -102,7 +102,7 @@ class ExportControllerIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should include all project fields in JSON [GH-90000]")
+        @DisplayName("Should include all project fields in JSON")
         void shouldIncludeAllFieldsInJson() { // GH-90000
             // Given
             String projectId = "proj-123";
@@ -116,11 +116,11 @@ class ExportControllerIntegrationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("YAML Export [GH-90000]")
+    @DisplayName("YAML Export")
     class YamlExport {
 
         @Test
-        @DisplayName("Should export project as YAML [GH-90000]")
+        @DisplayName("Should export project as YAML")
         void shouldExportAsYaml() { // GH-90000
             // Given
             String projectId = "proj-123";
@@ -135,7 +135,7 @@ class ExportControllerIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should produce valid YAML structure [GH-90000]")
+        @DisplayName("Should produce valid YAML structure")
         void shouldProduceValidYaml() { // GH-90000
             // Given
             String projectId = "proj-123";
@@ -148,11 +148,11 @@ class ExportControllerIntegrationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("PDF Export [GH-90000]")
+    @DisplayName("PDF Export")
     class PdfExport {
 
         @Test
-        @DisplayName("Should export project as PDF [GH-90000]")
+        @DisplayName("Should export project as PDF")
         void shouldExportAsPdf() { // GH-90000
             // Given
             String projectId = "proj-123";
@@ -167,7 +167,7 @@ class ExportControllerIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should generate formatted PDF document [GH-90000]")
+        @DisplayName("Should generate formatted PDF document")
         void shouldGenerateFormattedPdf() { // GH-90000
             // Given
             String projectId = "proj-123";
@@ -183,11 +183,11 @@ class ExportControllerIntegrationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Export Authorization [GH-90000]")
+    @DisplayName("Export Authorization")
     class ExportAuthorization {
 
         @Test
-        @DisplayName("Should require authentication [GH-90000]")
+        @DisplayName("Should require authentication")
         void shouldRequireAuth() { // GH-90000
             // Given
             String projectId = "proj-123";
@@ -201,19 +201,19 @@ class ExportControllerIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should enforce project access permissions [GH-90000]")
+        @DisplayName("Should enforce project access permissions")
         void shouldEnforcePermissions() { // GH-90000
             // Given
             User unauthorized = User.builder() // GH-90000
-                .userId("user-999 [GH-90000]")
-                .email("unauthorized@example.com [GH-90000]")
-                .username("Unauthorized [GH-90000]")
-                .roles(Set.of("USER [GH-90000]"))
+                .userId("user-999")
+                .email("unauthorized@example.com")
+                .username("Unauthorized")
+                .roles(Set.of("USER"))
                 .permissions(Set.of())  // No EXPORT permission // GH-90000
                 .build(); // GH-90000
 
             HttpRequest httpRequest = HttpRequest.get( // GH-90000
-                url("/api/v1/projects/proj-123/export/json [GH-90000]")
+                url("/api/v1/projects/proj-123/export/json")
             ).build(); // GH-90000
             httpRequest.attach("userPrincipal", unauthorized); // GH-90000
 
@@ -223,11 +223,11 @@ class ExportControllerIntegrationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Export Error Handling [GH-90000]")
+    @DisplayName("Export Error Handling")
     class ExportErrorHandling {
 
         @Test
-        @DisplayName("Should return 400 for unsupported format [GH-90000]")
+        @DisplayName("Should return 400 for unsupported format")
         void shouldRejectUnsupportedFormat() { // GH-90000
             // Given
             String projectId = "proj-123";
@@ -241,7 +241,7 @@ class ExportControllerIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should return 404 for non-existent project [GH-90000]")
+        @DisplayName("Should return 404 for non-existent project")
         void shouldReturn404ForInvalidProject() { // GH-90000
             // Given
             String projectId = "invalid-proj";
@@ -256,11 +256,11 @@ class ExportControllerIntegrationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Content-Disposition Headers [GH-90000]")
+    @DisplayName("Content-Disposition Headers")
     class ContentDisposition {
 
         @Test
-        @DisplayName("Should set attachment filename for downloads [GH-90000]")
+        @DisplayName("Should set attachment filename for downloads")
         void shouldSetAttachmentFilename() { // GH-90000
             // Given/When/Then
             // All export formats should include:
@@ -268,7 +268,7 @@ class ExportControllerIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should sanitize project name in filename [GH-90000]")
+        @DisplayName("Should sanitize project name in filename")
         void shouldSanitizeFilename() { // GH-90000
             // Given - project with special characters in name
             // When - export requested

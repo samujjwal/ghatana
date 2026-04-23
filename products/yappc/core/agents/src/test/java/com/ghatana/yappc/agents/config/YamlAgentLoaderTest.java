@@ -37,7 +37,7 @@ class YamlAgentLoaderTest {
     }
 
     @Test
-    @DisplayName("Should load YAML from string [GH-90000]")
+    @DisplayName("Should load YAML from string")
     void shouldLoadFromString() throws IOException { // GH-90000
         // Given
         String yaml = """
@@ -61,23 +61,23 @@ class YamlAgentLoaderTest {
         YamlAgentConfig config = loader.loadFromString(yaml); // GH-90000
 
         // Then
-        assertThat(config.getId()).isEqualTo("expert.java [GH-90000]");
-        assertThat(config.getName()).isEqualTo("Java Expert [GH-90000]");
-        assertThat(config.getDescription()).isEqualTo("Expert Java engineer [GH-90000]");
+        assertThat(config.getId()).isEqualTo("expert.java");
+        assertThat(config.getName()).isEqualTo("Java Expert");
+        assertThat(config.getDescription()).isEqualTo("Expert Java engineer");
         assertThat(config.getTags()).contains("java", "code-review"); // GH-90000
         assertThat(config.getCapabilities()).contains("analysis", "review"); // GH-90000
 
         assertThat(config.getGenerator()).isNotNull(); // GH-90000
-        assertThat(config.getGenerator().getType()).isEqualTo("llm [GH-90000]");
-        assertThat(config.getGenerator().getModel()).isEqualTo("gpt-4 [GH-90000]");
+        assertThat(config.getGenerator().getType()).isEqualTo("llm");
+        assertThat(config.getGenerator().getModel()).isEqualTo("gpt-4");
         assertThat(config.getGenerator().getTemperature()).isEqualTo(0.7); // GH-90000
     }
 
     @Test
-    @DisplayName("Should load YAML from file [GH-90000]")
+    @DisplayName("Should load YAML from file")
     void shouldLoadFromFile() throws IOException { // GH-90000
         // Given
-        Path yamlFile = tempDir.resolve("test-agent.yaml [GH-90000]");
+        Path yamlFile = tempDir.resolve("test-agent.yaml");
         Files.writeString(yamlFile, """
             agent:
               id: test.agent
@@ -90,19 +90,19 @@ class YamlAgentLoaderTest {
         YamlAgentConfig config = loader.loadFromFile(yamlFile); // GH-90000
 
         // Then
-        assertThat(config.getId()).isEqualTo("test.agent [GH-90000]");
-        assertThat(config.getName()).isEqualTo("Test Agent [GH-90000]");
-        assertThat(config.getGenerator().getType()).isEqualTo("rule_based [GH-90000]");
+        assertThat(config.getId()).isEqualTo("test.agent");
+        assertThat(config.getName()).isEqualTo("Test Agent");
+        assertThat(config.getGenerator().getType()).isEqualTo("rule_based");
     }
 
     @Test
-    @DisplayName("Should load all agents from directory [GH-90000]")
+    @DisplayName("Should load all agents from directory")
     void shouldLoadFromDirectory() throws IOException { // GH-90000
         // Given
-        Path agentsDir = tempDir.resolve("agents [GH-90000]");
+        Path agentsDir = tempDir.resolve("agents");
         Files.createDirectories(agentsDir); // GH-90000
 
-        Files.writeString(agentsDir.resolve("agent1.yaml [GH-90000]"), """
+        Files.writeString(agentsDir.resolve("agent1.yaml"), """
             agent:
               id: agent.one
               name: "Agent One"
@@ -110,7 +110,7 @@ class YamlAgentLoaderTest {
                 type: llm
             """);
 
-        Files.writeString(agentsDir.resolve("agent2.yaml [GH-90000]"), """
+        Files.writeString(agentsDir.resolve("agent2.yaml"), """
             agent:
               id: agent.two
               name: "Agent Two"
@@ -128,7 +128,7 @@ class YamlAgentLoaderTest {
     }
 
     @Test
-    @DisplayName("Should parse validation configuration [GH-90000]")
+    @DisplayName("Should parse validation configuration")
     void shouldParseValidationConfig() throws IOException { // GH-90000
         // Given
         String yaml = """
@@ -145,13 +145,13 @@ class YamlAgentLoaderTest {
 
         // Then
         assertThat(config.getValidation()).isNotNull(); // GH-90000
-        assertThat(config.getValidation().getInputSchema()).isEqualTo("schemas/input.json [GH-90000]");
-        assertThat(config.getValidation().getOutputSchema()).isEqualTo("schemas/output.json [GH-90000]");
+        assertThat(config.getValidation().getInputSchema()).isEqualTo("schemas/input.json");
+        assertThat(config.getValidation().getOutputSchema()).isEqualTo("schemas/output.json");
         assertThat(config.getValidation().isStrict()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should parse cache configuration [GH-90000]")
+    @DisplayName("Should parse cache configuration")
     void shouldParseCacheConfig() throws IOException { // GH-90000
         // Given
         String yaml = """
@@ -174,7 +174,7 @@ class YamlAgentLoaderTest {
     }
 
     @Test
-    @DisplayName("Should parse generator properties [GH-90000]")
+    @DisplayName("Should parse generator properties")
     void shouldParseGeneratorProperties() throws IOException { // GH-90000
         // Given
         String yaml = """
@@ -194,15 +194,15 @@ class YamlAgentLoaderTest {
 
         // Then
         assertThat(config.getGenerator().getProperty("custom_field", "")) // GH-90000
-            .isEqualTo("custom_value [GH-90000]");
+            .isEqualTo("custom_value");
         assertThat(config.getGenerator().getProperty("timeout", 0)) // GH-90000
             .isEqualTo(30); // GH-90000
         assertThat(config.getGenerator().getProperty("retry_policy", "")) // GH-90000
-            .isEqualTo("exponential [GH-90000]");
+            .isEqualTo("exponential");
     }
 
     @Test
-    @DisplayName("Should parse metadata [GH-90000]")
+    @DisplayName("Should parse metadata")
     void shouldParseMetadata() throws IOException { // GH-90000
         // Given
         String yaml = """
@@ -224,10 +224,10 @@ class YamlAgentLoaderTest {
     }
 
     @Test
-    @DisplayName("Should handle empty directory gracefully [GH-90000]")
+    @DisplayName("Should handle empty directory gracefully")
     void shouldHandleEmptyDirectory() { // GH-90000
         // Given
-        Path emptyDir = tempDir.resolve("empty [GH-90000]");
+        Path emptyDir = tempDir.resolve("empty");
 
         // When
         List<YamlAgentConfig> configs = loader.loadFromDirectory(emptyDir); // GH-90000
@@ -237,30 +237,30 @@ class YamlAgentLoaderTest {
     }
 
     @Test
-    @DisplayName("Should skip non-YAML files [GH-90000]")
+    @DisplayName("Should skip non-YAML files")
     void shouldSkipNonYamlFiles() throws IOException { // GH-90000
         // Given
-        Path agentsDir = tempDir.resolve("agents [GH-90000]");
+        Path agentsDir = tempDir.resolve("agents");
         Files.createDirectories(agentsDir); // GH-90000
 
-        Files.writeString(agentsDir.resolve("agent.yaml [GH-90000]"), """
+        Files.writeString(agentsDir.resolve("agent.yaml"), """
             agent:
               id: valid.agent
             """);
 
-        Files.writeString(agentsDir.resolve("readme.txt [GH-90000]"), "Not a YAML file");
-        Files.writeString(agentsDir.resolve("config.json [GH-90000]"), "{\"not\": \"yaml\"}");
+        Files.writeString(agentsDir.resolve("readme.txt"), "Not a YAML file");
+        Files.writeString(agentsDir.resolve("config.json"), "{\"not\": \"yaml\"}");
 
         // When
         List<YamlAgentConfig> configs = loader.loadFromDirectory(agentsDir); // GH-90000
 
         // Then
         assertThat(configs).hasSize(1); // GH-90000
-        assertThat(configs.get(0).getId()).isEqualTo("valid.agent [GH-90000]");
+        assertThat(configs.get(0).getId()).isEqualTo("valid.agent");
     }
 
     @Test
-    @DisplayName("Should use defaults for optional fields [GH-90000]")
+    @DisplayName("Should use defaults for optional fields")
     void shouldUseDefaults() throws IOException { // GH-90000
         // Given - minimal YAML
         String yaml = """
@@ -272,7 +272,7 @@ class YamlAgentLoaderTest {
         YamlAgentConfig config = loader.loadFromString(yaml); // GH-90000
 
         // Then
-        assertThat(config.getVersion()).isEqualTo("1.0.0 [GH-90000]");
+        assertThat(config.getVersion()).isEqualTo("1.0.0");
         assertThat(config.getTags()).isEmpty(); // GH-90000
         assertThat(config.getCapabilities()).isEmpty(); // GH-90000
         assertThat(config.getGenerator()).isNull(); // GH-90000
@@ -281,7 +281,7 @@ class YamlAgentLoaderTest {
     }
 
     @Test
-    @DisplayName("Should handle complex nested structures [GH-90000]")
+    @DisplayName("Should handle complex nested structures")
     void shouldHandleComplexStructures() throws IOException { // GH-90000
         // Given
         String yaml = """
@@ -309,8 +309,8 @@ class YamlAgentLoaderTest {
         YamlAgentConfig config = loader.loadFromString(yaml); // GH-90000
 
         // Then - should parse without error
-        assertThat(config.getId()).isEqualTo("complex.agent [GH-90000]");
-        assertThat(config.getGenerator().getType()).isEqualTo("composed [GH-90000]");
-        assertThat(config.getMetadata()).containsKey("nested [GH-90000]");
+        assertThat(config.getId()).isEqualTo("complex.agent");
+        assertThat(config.getGenerator().getType()).isEqualTo("composed");
+        assertThat(config.getMetadata()).containsKey("nested");
     }
 }

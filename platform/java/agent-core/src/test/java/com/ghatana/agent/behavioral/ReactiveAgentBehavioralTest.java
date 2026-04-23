@@ -28,7 +28,7 @@ import static org.mockito.Mockito.*;
  * Focus: Trigger evaluation, cooldown/debounce behavior, sliding window counters,
  * priority-based rule evaluation, and sub-millisecond latency.
  */
-@DisplayName("ReactiveAgent Behavioral Tests [GH-90000]")
+@DisplayName("ReactiveAgent Behavioral Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class ReactiveAgentBehavioralTest {
 
@@ -41,13 +41,13 @@ class ReactiveAgentBehavioralTest {
     @BeforeEach
     void setUp() { // GH-90000
         agentContext = AgentContext.builder() // GH-90000
-                .turnId("turn-1 [GH-90000]")
-                .agentId("reactive-agent [GH-90000]")
-                .tenantId("tenant-1 [GH-90000]")
+                .turnId("turn-1")
+                .agentId("reactive-agent")
+                .tenantId("tenant-1")
                 .memoryStore(memoryStore) // GH-90000
                 .build(); // GH-90000
 
-        agent = new ReactiveAgent("reactive-agent [GH-90000]");
+        agent = new ReactiveAgent("reactive-agent");
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -55,18 +55,18 @@ class ReactiveAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Trigger Evaluation [GH-90000]")
+    @DisplayName("Trigger Evaluation")
     class TriggerEvaluationTests {
 
         @Test
-        @DisplayName("Trigger evaluates input against condition [GH-90000]")
+        @DisplayName("Trigger evaluates input against condition")
         void triggerEvaluation() { // GH-90000
             ReactiveAgentConfig.TriggerDefinition trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("High Temperature Alert [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("sensor [GH-90000]")
-                    .conditionField("temperature [GH-90000]")
-                    .conditionOperator("> [GH-90000]")
+                    .name("High Temperature Alert")
+                    .eventTypeField("type")
+                    .eventTypeValue("sensor")
+                    .conditionField("temperature")
+                    .conditionOperator(">")
                     .conditionValue(100.0) // GH-90000
                     .action("alert", "critical") // GH-90000
                     .build(); // GH-90000
@@ -85,14 +85,14 @@ class ReactiveAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Trigger does not fire when condition is false [GH-90000]")
+        @DisplayName("Trigger does not fire when condition is false")
         void triggerNoFire() { // GH-90000
             ReactiveAgentConfig.TriggerDefinition trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("High Temperature Alert [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("sensor [GH-90000]")
-                    .conditionField("temperature [GH-90000]")
-                    .conditionOperator("> [GH-90000]")
+                    .name("High Temperature Alert")
+                    .eventTypeField("type")
+                    .eventTypeValue("sensor")
+                    .conditionField("temperature")
+                    .conditionOperator(">")
                     .conditionValue(100.0) // GH-90000
                     .action("alert", "critical") // GH-90000
                     .build(); // GH-90000
@@ -111,25 +111,25 @@ class ReactiveAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Multiple triggers evaluate independently [GH-90000]")
+        @DisplayName("Multiple triggers evaluate independently")
         void multipleTriggers() { // GH-90000
             // Both triggers share the same event type so both are evaluated on the same input
             ReactiveAgentConfig.TriggerDefinition trigger1 = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("High CPU [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("metrics [GH-90000]")
-                    .conditionField("cpu [GH-90000]")
-                    .conditionOperator("> [GH-90000]")
+                    .name("High CPU")
+                    .eventTypeField("type")
+                    .eventTypeValue("metrics")
+                    .conditionField("cpu")
+                    .conditionOperator(">")
                     .conditionValue(90) // GH-90000
                     .action("action", "scale-up") // GH-90000
                     .build(); // GH-90000
 
             ReactiveAgentConfig.TriggerDefinition trigger2 = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("Low Memory [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("metrics [GH-90000]")
-                    .conditionField("memory [GH-90000]")
-                    .conditionOperator("< [GH-90000]")
+                    .name("Low Memory")
+                    .eventTypeField("type")
+                    .eventTypeValue("metrics")
+                    .conditionField("memory")
+                    .conditionOperator("<")
                     .conditionValue(10) // GH-90000
                     .action("action", "restart") // GH-90000
                     .build(); // GH-90000
@@ -152,14 +152,14 @@ class ReactiveAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Trigger with additional condition [GH-90000]")
+        @DisplayName("Trigger with additional condition")
         void complexTriggerCondition() { // GH-90000
             ReactiveAgentConfig.TriggerDefinition trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("Service Degradation [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("metrics [GH-90000]")
-                    .conditionField("latency [GH-90000]")
-                    .conditionOperator("> [GH-90000]")
+                    .name("Service Degradation")
+                    .eventTypeField("type")
+                    .eventTypeValue("metrics")
+                    .conditionField("latency")
+                    .conditionOperator(">")
                     .conditionValue(1000.0) // GH-90000
                     .action("alert", "performance") // GH-90000
                     .build(); // GH-90000
@@ -182,18 +182,18 @@ class ReactiveAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Cooldown Behavior [GH-90000]")
+    @DisplayName("Cooldown Behavior")
     class CooldownTests {
 
         @Test
-        @DisplayName("Trigger respects cooldown period [GH-90000]")
+        @DisplayName("Trigger respects cooldown period")
         void cooldownRespected() throws InterruptedException { // GH-90000
             ReactiveAgentConfig.TriggerDefinition trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("Cooldown Test [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("event [GH-90000]")
-                    .conditionField("value [GH-90000]")
-                    .conditionOperator("> [GH-90000]")
+                    .name("Cooldown Test")
+                    .eventTypeField("type")
+                    .eventTypeValue("event")
+                    .conditionField("value")
+                    .conditionOperator(">")
                     .conditionValue(50) // GH-90000
                     .cooldown(Duration.ofMillis(100)) // GH-90000
                     .action("fired", true) // GH-90000
@@ -224,14 +224,14 @@ class ReactiveAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Zero cooldown allows repeated firing [GH-90000]")
+        @DisplayName("Zero cooldown allows repeated firing")
         void zeroCooldown() { // GH-90000
             ReactiveAgentConfig.TriggerDefinition trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("Rapid Fire [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("event [GH-90000]")
-                    .conditionField("x [GH-90000]")
-                    .conditionOperator("> [GH-90000]")
+                    .name("Rapid Fire")
+                    .eventTypeField("type")
+                    .eventTypeValue("event")
+                    .conditionField("x")
+                    .conditionOperator(">")
                     .conditionValue(0) // GH-90000
                     .cooldown(Duration.ZERO) // GH-90000
                     .action("fired", true) // GH-90000
@@ -257,17 +257,17 @@ class ReactiveAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Sliding Window Counters [GH-90000]")
+    @DisplayName("Sliding Window Counters")
     class SlidingWindowTests {
 
         @Test
-        @DisplayName("Sliding window counts events in time period [GH-90000]")
+        @DisplayName("Sliding window counts events in time period")
         void slidingWindowCountingBasic() { // GH-90000
             // threshold=5 means fire after 5 matching events within the counting window
             ReactiveAgentConfig.TriggerDefinition trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("Error Threshold [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("error [GH-90000]")
+                    .name("Error Threshold")
+                    .eventTypeField("type")
+                    .eventTypeValue("error")
                     .threshold(5) // GH-90000
                     .countingWindow(Duration.ofSeconds(1)) // GH-90000
                     .action("escalate", true) // GH-90000
@@ -288,13 +288,13 @@ class ReactiveAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Window resets after expiration [GH-90000]")
+        @DisplayName("Window resets after expiration")
         void windowExpiration() throws InterruptedException { // GH-90000
             // threshold=3 within a 200ms window
             ReactiveAgentConfig.TriggerDefinition trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("Rate Limit [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("request [GH-90000]")
+                    .name("Rate Limit")
+                    .eventTypeField("type")
+                    .eventTypeValue("request")
                     .threshold(3) // GH-90000
                     .countingWindow(Duration.ofMillis(200)) // GH-90000
                     .action("blocked", true) // GH-90000
@@ -328,30 +328,30 @@ class ReactiveAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Priority-Based Evaluation [GH-90000]")
+    @DisplayName("Priority-Based Evaluation")
     class PriorityTests {
 
         @Test
-        @DisplayName("Higher priority triggers evaluated first [GH-90000]")
+        @DisplayName("Higher priority triggers evaluated first")
         void priorityOrder() { // GH-90000
             ReactiveAgentConfig.TriggerDefinition highPriority = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("Critical Alert [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("alert [GH-90000]")
-                    .conditionField("severity [GH-90000]")
-                    .conditionOperator("== [GH-90000]")
-                    .conditionValue("critical [GH-90000]")
+                    .name("Critical Alert")
+                    .eventTypeField("type")
+                    .eventTypeValue("alert")
+                    .conditionField("severity")
+                    .conditionOperator("==")
+                    .conditionValue("critical")
                     .priority(1) // GH-90000
                     .action("response", "immediate") // GH-90000
                     .build(); // GH-90000
 
             ReactiveAgentConfig.TriggerDefinition lowPriority = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("Normal Alert [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("alert [GH-90000]")
-                    .conditionField("severity [GH-90000]")
-                    .conditionOperator("== [GH-90000]")
-                    .conditionValue("normal [GH-90000]")
+                    .name("Normal Alert")
+                    .eventTypeField("type")
+                    .eventTypeValue("alert")
+                    .conditionField("severity")
+                    .conditionOperator("==")
+                    .conditionValue("normal")
                     .priority(10) // GH-90000
                     .action("response", "standard") // GH-90000
                     .build(); // GH-90000
@@ -371,29 +371,29 @@ class ReactiveAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Multiple triggers fire in priority order [GH-90000]")
+        @DisplayName("Multiple triggers fire in priority order")
         void multiplePrioritizedTriggers() { // GH-90000
             // All three triggers match the same event type with no extra condition
             ReactiveAgentConfig.TriggerDefinition t1 = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("Priority 1 [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("event [GH-90000]")
+                    .name("Priority 1")
+                    .eventTypeField("type")
+                    .eventTypeValue("event")
                     .priority(1) // GH-90000
                     .action("order", "1") // GH-90000
                     .build(); // GH-90000
 
             ReactiveAgentConfig.TriggerDefinition t2 = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("Priority 2 [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("event [GH-90000]")
+                    .name("Priority 2")
+                    .eventTypeField("type")
+                    .eventTypeValue("event")
                     .priority(2) // GH-90000
                     .action("order", "2") // GH-90000
                     .build(); // GH-90000
 
             ReactiveAgentConfig.TriggerDefinition t3 = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("Priority 3 [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("event [GH-90000]")
+                    .name("Priority 3")
+                    .eventTypeField("type")
+                    .eventTypeValue("event")
                     .priority(3) // GH-90000
                     .action("order", "3") // GH-90000
                     .build(); // GH-90000
@@ -419,18 +419,18 @@ class ReactiveAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Latency [GH-90000]")
+    @DisplayName("Latency")
     class LatencyTests {
 
         @Test
-        @DisplayName("Processing completes in sub-millisecond time [GH-90000]")
+        @DisplayName("Processing completes in sub-millisecond time")
         void subMillisecondLatency() { // GH-90000
             ReactiveAgentConfig.TriggerDefinition trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("Latency Test [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("event [GH-90000]")
-                    .conditionField("value [GH-90000]")
-                    .conditionOperator("> [GH-90000]")
+                    .name("Latency Test")
+                    .eventTypeField("type")
+                    .eventTypeValue("event")
+                    .conditionField("value")
+                    .conditionOperator(">")
                     .conditionValue(50) // GH-90000
                     .action("fired", true) // GH-90000
                     .build(); // GH-90000
@@ -455,14 +455,14 @@ class ReactiveAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("High throughput trigger evaluation [GH-90000]")
+        @DisplayName("High throughput trigger evaluation")
         void highThroughput() { // GH-90000
             ReactiveAgentConfig.TriggerDefinition trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("Rapid [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("event [GH-90000]")
-                    .conditionField("x [GH-90000]")
-                    .conditionOperator("> [GH-90000]")
+                    .name("Rapid")
+                    .eventTypeField("type")
+                    .eventTypeValue("event")
+                    .conditionField("x")
+                    .conditionOperator(">")
                     .conditionValue(0) // GH-90000
                     .action("fired", true) // GH-90000
                     .build(); // GH-90000
@@ -496,18 +496,18 @@ class ReactiveAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Action Execution [GH-90000]")
+    @DisplayName("Action Execution")
     class ActionExecutionTests {
 
         @Test
-        @DisplayName("Trigger action is included in output [GH-90000]")
+        @DisplayName("Trigger action is included in output")
         void actionInOutput() { // GH-90000
             ReactiveAgentConfig.TriggerDefinition trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("Send Alert [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("alarm [GH-90000]")
-                    .conditionField("level [GH-90000]")
-                    .conditionOperator("> [GH-90000]")
+                    .name("Send Alert")
+                    .eventTypeField("type")
+                    .eventTypeValue("alarm")
+                    .conditionField("level")
+                    .conditionOperator(">")
                     .conditionValue(1) // GH-90000
                     .action("alert_level", "critical") // GH-90000
                     .action("notification", "email") // GH-90000
@@ -527,13 +527,13 @@ class ReactiveAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("No action when trigger doesn't match [GH-90000]")
+        @DisplayName("No action when trigger doesn't match")
         void noActionOnNoMatch() { // GH-90000
             // Trigger expects eventTypeValue="special" but input has type="event"
             ReactiveAgentConfig.TriggerDefinition trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("Never Fires [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("special [GH-90000]")
+                    .name("Never Fires")
+                    .eventTypeField("type")
+                    .eventTypeValue("special")
                     .action("fired", true) // GH-90000
                     .build(); // GH-90000
 
@@ -556,18 +556,18 @@ class ReactiveAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Concurrent Safety [GH-90000]")
+    @DisplayName("Concurrent Safety")
     class ConcurrencyTests {
 
         @Test
-        @DisplayName("Concurrent trigger invocations are safe [GH-90000]")
+        @DisplayName("Concurrent trigger invocations are safe")
         void concurrentTriggerEvaluation() throws InterruptedException { // GH-90000
             ReactiveAgentConfig.TriggerDefinition trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("Concurrent Test [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("event [GH-90000]")
-                    .conditionField("value [GH-90000]")
-                    .conditionOperator("> [GH-90000]")
+                    .name("Concurrent Test")
+                    .eventTypeField("type")
+                    .eventTypeValue("event")
+                    .conditionField("value")
+                    .conditionOperator(">")
                     .conditionValue(0) // GH-90000
                     .action("fired", true) // GH-90000
                     .build(); // GH-90000
@@ -605,18 +605,18 @@ class ReactiveAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Explanation Generation [GH-90000]")
+    @DisplayName("Explanation Generation")
     class ExplanationTests {
 
         @Test
-        @DisplayName("Trigger explanation mentions which trigger fired [GH-90000]")
+        @DisplayName("Trigger explanation mentions which trigger fired")
         void triggerExplanation() { // GH-90000
             ReactiveAgentConfig.TriggerDefinition trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("Overheat Alert [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("sensor [GH-90000]")
-                    .conditionField("temperature [GH-90000]")
-                    .conditionOperator("> [GH-90000]")
+                    .name("Overheat Alert")
+                    .eventTypeField("type")
+                    .eventTypeValue("sensor")
+                    .conditionField("temperature")
+                    .conditionOperator(">")
                     .conditionValue(100) // GH-90000
                     .action("action", "shutdown") // GH-90000
                     .build(); // GH-90000

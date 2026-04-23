@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.*;
  * - Aggregation operations
  * - Result streaming support
  */
-@DisplayName("Data Cloud Query API OpenAPI Specification Tests [GH-90000]")
+@DisplayName("Data Cloud Query API OpenAPI Specification Tests")
 class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
 
     private ObjectMapper objectMapper;
@@ -44,11 +44,11 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
     }
 
     @Nested
-    @DisplayName("GET /datasets - Dataset Listing [GH-90000]")
+    @DisplayName("GET /datasets - Dataset Listing")
     class DatasetListingTests {
 
         @Test
-        @DisplayName("should list datasets with pagination [GH-90000]")
+        @DisplayName("should list datasets with pagination")
         void shouldListDatasets() { // GH-90000
             ApiResponse<DatasetListResponse> response = apiClient.get( // GH-90000
                 "/datasets?limit=20&offset=0",
@@ -63,7 +63,7 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
         }
 
         @Test
-        @DisplayName("should enforce maximum limit of 100 [GH-90000]")
+        @DisplayName("should enforce maximum limit of 100")
         void shouldEnforceMaximumLimit() { // GH-90000
             ApiResponse<ErrorPayload> response = apiClient.get( // GH-90000
                 "/datasets?limit=101",
@@ -75,7 +75,7 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
         }
 
         @Test
-        @DisplayName("should search datasets by name [GH-90000]")
+        @DisplayName("should search datasets by name")
         void shouldSearchDatasets() { // GH-90000
             ApiResponse<DatasetListResponse> response = apiClient.get( // GH-90000
                 "/datasets?search=sales",
@@ -86,12 +86,12 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
             assertThat(response.statusCode).isEqualTo(200); // GH-90000
             // All returned items should contain "sales" in name
             response.body.items.forEach(ds -> // GH-90000
-                assertThat(ds.name.toLowerCase()).contains("sales [GH-90000]")
+                assertThat(ds.name.toLowerCase()).contains("sales")
             );
         }
 
         @Test
-        @DisplayName("should require authentication [GH-90000]")
+        @DisplayName("should require authentication")
         void shouldRequireAuth() { // GH-90000
             ApiResponse<ErrorPayload> response = apiClient.get( // GH-90000
                 "/datasets",
@@ -100,16 +100,16 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
             );
 
             assertThat(response.statusCode).isEqualTo(401); // GH-90000
-            assertThat(response.body.code).isEqualTo("UNAUTHORIZED [GH-90000]");
+            assertThat(response.body.code).isEqualTo("UNAUTHORIZED");
         }
     }
 
     @Nested
-    @DisplayName("GET /datasets/{datasetId} - Dataset Metadata [GH-90000]")
+    @DisplayName("GET /datasets/{datasetId} - Dataset Metadata")
     class DatasetMetadataTests {
 
         @Test
-        @DisplayName("should retrieve dataset metadata [GH-90000]")
+        @DisplayName("should retrieve dataset metadata")
         void shouldGetDatasetMetadata() { // GH-90000
             ApiResponse<DatasetMetadata> response = apiClient.get( // GH-90000
                 "/datasets/dataset-123",
@@ -118,13 +118,13 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
             );
 
             assertThat(response.statusCode).isEqualTo(200); // GH-90000
-            assertThat(response.body.datasetId).isEqualTo("dataset-123 [GH-90000]");
+            assertThat(response.body.datasetId).isEqualTo("dataset-123");
             assertThat(response.body.recordCount).isGreaterThanOrEqualTo(0); // GH-90000
             assertThat(response.body.columns).isNotEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("should include column schemas with types [GH-90000]")
+        @DisplayName("should include column schemas with types")
         void shouldIncludeColumnSchemas() { // GH-90000
             ApiResponse<DatasetMetadata> response = apiClient.get( // GH-90000
                 "/datasets/dataset-123",
@@ -143,7 +143,7 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
         }
 
         @Test
-        @DisplayName("should return 404 for non-existent dataset [GH-90000]")
+        @DisplayName("should return 404 for non-existent dataset")
         void shouldReturn404ForMissingDataset() { // GH-90000
             ApiResponse<ErrorPayload> response = apiClient.get( // GH-90000
                 "/datasets/nonexistent",
@@ -156,11 +156,11 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
     }
 
     @Nested
-    @DisplayName("POST /queries - Query Execution [GH-90000]")
+    @DisplayName("POST /queries - Query Execution")
     class QueryExecutionTests {
 
         @Test
-        @DisplayName("should accept query and return 202 Accepted [GH-90000]")
+        @DisplayName("should accept query and return 202 Accepted")
         void shouldAcceptQuery() { // GH-90000
             Map<String, Object> request = Map.of( // GH-90000
                 "datasetId", "dataset-123",
@@ -176,12 +176,12 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
 
             assertThat(response.statusCode).isEqualTo(202); // GH-90000
             assertThat(response.body.operationId).isNotBlank(); // GH-90000
-            assertThat(response.body.status).isEqualTo("QUEUED [GH-90000]");
-            assertThat(response.headers.get("Location [GH-90000]")).containsPattern("/queries/.* [GH-90000]");
+            assertThat(response.body.status).isEqualTo("QUEUED");
+            assertThat(response.headers.get("Location")).containsPattern("/queries/.*");
         }
 
         @Test
-        @DisplayName("should validate query syntax [GH-90000]")
+        @DisplayName("should validate query syntax")
         void shouldValidateQuerySyntax() { // GH-90000
             Map<String, Object> request = Map.of( // GH-90000
                 "datasetId", "dataset-123",
@@ -196,11 +196,11 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
             );
 
             assertThat(response.statusCode).isEqualTo(400); // GH-90000
-            assertThat(response.body.code).isEqualTo("SYNTAX_ERROR [GH-90000]");
+            assertThat(response.body.code).isEqualTo("SYNTAX_ERROR");
         }
 
         @Test
-        @DisplayName("should reject INSERT/UPDATE queries (SELECT only) [GH-90000]")
+        @DisplayName("should reject INSERT/UPDATE queries (SELECT only)")
         void shouldRejectNonSelectQueries() { // GH-90000
             Map<String, Object> request = Map.of( // GH-90000
                 "datasetId", "dataset-123",
@@ -219,7 +219,7 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
         }
 
         @Test
-        @DisplayName("should support custom timeout (max 3600s) [GH-90000]")
+        @DisplayName("should support custom timeout (max 3600s)")
         void shouldSupportCustomTimeout() { // GH-90000
             Map<String, Object> request = Map.of( // GH-90000
                 "datasetId", "dataset-123",
@@ -238,7 +238,7 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
         }
 
         @Test
-        @DisplayName("should reject timeout > 3600 seconds [GH-90000]")
+        @DisplayName("should reject timeout > 3600 seconds")
         void shouldRejectExcessiveTimeout() { // GH-90000
             Map<String, Object> request = Map.of( // GH-90000
                 "datasetId", "dataset-123",
@@ -258,11 +258,11 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
     }
 
     @Nested
-    @DisplayName("GET /queries/{operationId} - Query Status [GH-90000]")
+    @DisplayName("GET /queries/{operationId} - Query Status")
     class QueryStatusTests {
 
         @Test
-        @DisplayName("should retrieve query operation status [GH-90000]")
+        @DisplayName("should retrieve query operation status")
         void shouldGetQueryStatus() { // GH-90000
             String operationId = UUID.randomUUID().toString(); // GH-90000
 
@@ -278,7 +278,7 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
         }
 
         @Test
-        @DisplayName("should return 404 for non-existent operation [GH-90000]")
+        @DisplayName("should return 404 for non-existent operation")
         void shouldReturn404ForMissingOperation() { // GH-90000
             ApiResponse<QueryError> response = apiClient.get( // GH-90000
                 "/queries/nonexistent-operation",
@@ -291,11 +291,11 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
     }
 
     @Nested
-    @DisplayName("GET /queries/{operationId}/results - Query Results [GH-90000]")
+    @DisplayName("GET /queries/{operationId}/results - Query Results")
     class QueryResultsTests {
 
         @Test
-        @DisplayName("should retrieve completed query results [GH-90000]")
+        @DisplayName("should retrieve completed query results")
         void shouldGetResults() { // GH-90000
             String operationId = UUID.randomUUID().toString(); // GH-90000
 
@@ -309,12 +309,12 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
             assertThat(response.body.operationId).isEqualTo(operationId); // GH-90000
             assertThat(response.body.columnNames).isNotEmpty(); // GH-90000
             assertThat(response.body.rows).isNotNull(); // GH-90000
-            assertThat(response.headers.get("X-Total-Rows [GH-90000]")).matches("\\d+ [GH-90000]");
-            assertThat(response.headers.get("X-Returned-Rows [GH-90000]")).matches("\\d+ [GH-90000]");
+            assertThat(response.headers.get("X-Total-Rows")).matches("\\d+");
+            assertThat(response.headers.get("X-Returned-Rows")).matches("\\d+");
         }
 
         @Test
-        @DisplayName("should support pagination with limit and offset [GH-90000]")
+        @DisplayName("should support pagination with limit and offset")
         void shouldSupportPagination() { // GH-90000
             String operationId = UUID.randomUUID().toString(); // GH-90000
 
@@ -329,7 +329,7 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
         }
 
         @Test
-        @DisplayName("should return 202 if query still executing [GH-90000]")
+        @DisplayName("should return 202 if query still executing")
         void shouldReturn202IfStillRunning() { // GH-90000
             String operationId = UUID.randomUUID().toString(); // GH-90000
 
@@ -344,7 +344,7 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
         }
 
         @Test
-        @DisplayName("should enforce maximum limit of 10000 [GH-90000]")
+        @DisplayName("should enforce maximum limit of 10000")
         void shouldEnforceMaximumResultLimit() { // GH-90000
             String operationId = UUID.randomUUID().toString(); // GH-90000
 
@@ -359,11 +359,11 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
     }
 
     @Nested
-    @DisplayName("POST /analytics/aggregate - Aggregations [GH-90000]")
+    @DisplayName("POST /analytics/aggregate - Aggregations")
     class AggregationTests {
 
         @Test
-        @DisplayName("should compute SUM aggregation [GH-90000]")
+        @DisplayName("should compute SUM aggregation")
         void shouldComputeSum() { // GH-90000
             Map<String, Object> request = Map.of( // GH-90000
                 "datasetId", "sales",
@@ -380,12 +380,12 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
             );
 
             assertThat(response.statusCode).isEqualTo(200); // GH-90000
-            assertThat(response.body.aggregationType).isEqualTo("SUM [GH-90000]");
+            assertThat(response.body.aggregationType).isEqualTo("SUM");
             assertThat(response.body.result).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("should compute COUNT aggregation [GH-90000]")
+        @DisplayName("should compute COUNT aggregation")
         void shouldComputeCount() { // GH-90000
             Map<String, Object> request = Map.of( // GH-90000
                 "datasetId", "users",
@@ -405,7 +405,7 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
         }
 
         @Test
-        @DisplayName("should support WHERE clause filters [GH-90000]")
+        @DisplayName("should support WHERE clause filters")
         void shouldSupportWhereClause() { // GH-90000
             Map<String, Object> request = Map.of( // GH-90000
                 "datasetId", "transactions",
@@ -425,7 +425,7 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
         }
 
         @Test
-        @DisplayName("should support all aggregation types [GH-90000]")
+        @DisplayName("should support all aggregation types")
         void shouldSupportAllTypes() { // GH-90000
             String[] types = {
                 "COUNT", "SUM", "AVG", "MIN", "MAX", "STDDEV",
@@ -452,11 +452,11 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
     }
 
     @Nested
-    @DisplayName("Authentication - Bearer Token vs API Key [GH-90000]")
+    @DisplayName("Authentication - Bearer Token vs API Key")
     class AuthenticationTests {
 
         @Test
-        @DisplayName("should accept Bearer token authentication [GH-90000]")
+        @DisplayName("should accept Bearer token authentication")
         void shouldAcceptBearerToken() { // GH-90000
             ApiResponse<DatasetListResponse> response = apiClient.get( // GH-90000
                 "/datasets",
@@ -468,9 +468,9 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
         }
 
         @Test
-        @DisplayName("should accept API Key authentication [GH-90000]")
+        @DisplayName("should accept API Key authentication")
         void shouldAcceptApiKey() { // GH-90000
-            apiClient.setApiKey("secret-api-key-123 [GH-90000]");
+            apiClient.setApiKey("secret-api-key-123");
             ApiResponse<DatasetListResponse> response = apiClient.get( // GH-90000
                 "/datasets",
                 DatasetListResponse.class,
@@ -481,7 +481,7 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
         }
 
         @Test
-        @DisplayName("should require either Bearer or API Key [GH-90000]")
+        @DisplayName("should require either Bearer or API Key")
         void shouldRequireAuth() { // GH-90000
             apiClient.setApiKey(null); // GH-90000
             ApiResponse<ErrorPayload> response = apiClient.get( // GH-90000

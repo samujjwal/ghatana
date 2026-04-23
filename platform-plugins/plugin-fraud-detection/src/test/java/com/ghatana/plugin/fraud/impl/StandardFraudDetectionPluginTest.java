@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("StandardFraudDetectionPlugin Tests [GH-90000]")
+@DisplayName("StandardFraudDetectionPlugin Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class StandardFraudDetectionPluginTest extends EventloopTestBase {
 
@@ -39,7 +39,7 @@ class StandardFraudDetectionPluginTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should initialize fraud detection plugin [GH-90000]")
+    @DisplayName("Should initialize fraud detection plugin")
     void testInitialize() { // GH-90000
         assertThat(fraudPlugin.getState()).isEqualTo(PluginState.UNLOADED); // GH-90000
         Promise<Void> result = fraudPlugin.initialize(mockContext); // GH-90000
@@ -48,7 +48,7 @@ class StandardFraudDetectionPluginTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should start fraud detection plugin [GH-90000]")
+    @DisplayName("Should start fraud detection plugin")
     void testStart() { // GH-90000
         runPromise(() -> fraudPlugin.initialize(mockContext)); // GH-90000
         Promise<Void> result = fraudPlugin.start(); // GH-90000
@@ -57,15 +57,15 @@ class StandardFraudDetectionPluginTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should return correct metadata [GH-90000]")
+    @DisplayName("Should return correct metadata")
     void testMetadata() { // GH-90000
         var metadata = fraudPlugin.metadata(); // GH-90000
-        assertThat(metadata.name()).isEqualTo("Fraud Detection Plugin [GH-90000]");
-        assertThat(metadata.version()).isEqualTo("1.0.0 [GH-90000]");
+        assertThat(metadata.name()).isEqualTo("Fraud Detection Plugin");
+        assertThat(metadata.version()).isEqualTo("1.0.0");
     }
 
     @Test
-    @DisplayName("Should assess transaction for fraud [GH-90000]")
+    @DisplayName("Should assess transaction for fraud")
     void testAssessTransaction() { // GH-90000
         runPromise(() -> fraudPlugin.initialize(mockContext) // GH-90000
                 .then(v -> fraudPlugin.start())); // GH-90000
@@ -79,13 +79,13 @@ class StandardFraudDetectionPluginTest extends EventloopTestBase {
                 fraudPlugin.assessTransaction("txn123", request); // GH-90000
         FraudDetectionPlugin.FraudAssessment assessment = runPromise(() -> result); // GH-90000
 
-        assertThat(assessment.transactionId()).isEqualTo("txn123 [GH-90000]");
+        assertThat(assessment.transactionId()).isEqualTo("txn123");
         assertThat(assessment.riskScore()).isBetween(0.0, 1.0); // GH-90000
         assertThat(assessment.assessedAt()).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should register fraud rule [GH-90000]")
+    @DisplayName("Should register fraud rule")
     void testRegisterRule() { // GH-90000
         runPromise(() -> fraudPlugin.initialize(mockContext) // GH-90000
                 .then(v -> fraudPlugin.start())); // GH-90000
@@ -109,7 +109,7 @@ class StandardFraudDetectionPluginTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should detect fraud patterns [GH-90000]")
+    @DisplayName("Should detect fraud patterns")
     void testDetectPatterns() { // GH-90000
         runPromise(() -> fraudPlugin.initialize(mockContext) // GH-90000
                 .then(v -> fraudPlugin.start())); // GH-90000
@@ -124,7 +124,7 @@ class StandardFraudDetectionPluginTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should train fraud model [GH-90000]")
+    @DisplayName("Should train fraud model")
     void testTrainModel() { // GH-90000
         runPromise(() -> fraudPlugin.initialize(mockContext) // GH-90000
                 .then(v -> fraudPlugin.start())); // GH-90000
@@ -144,7 +144,7 @@ class StandardFraudDetectionPluginTest extends EventloopTestBase {
 
         // Verify model was trained
         Promise<FraudDetectionPlugin.ModelMetrics> metricsResult =
-                fraudPlugin.getModelMetrics("model_v2 [GH-90000]");
+                fraudPlugin.getModelMetrics("model_v2");
         FraudDetectionPlugin.ModelMetrics metrics = runPromise(() -> metricsResult); // GH-90000
 
         assertThat(metrics).isNotNull(); // GH-90000
@@ -152,7 +152,7 @@ class StandardFraudDetectionPluginTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should shutdown fraud detection plugin [GH-90000]")
+    @DisplayName("Should shutdown fraud detection plugin")
     void testShutdown() { // GH-90000
         runPromise(() -> fraudPlugin.initialize(mockContext) // GH-90000
                 .then(v -> fraudPlugin.start())); // GH-90000

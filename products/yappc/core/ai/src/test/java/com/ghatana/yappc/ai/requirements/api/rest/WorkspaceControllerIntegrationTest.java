@@ -31,8 +31,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * - Error handling scenarios
  * - Request validation
  */
-@DisplayName("WorkspaceController Integration Tests [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("WorkspaceController Integration Tests")
+@Tag("integration")
 /**
  * @doc.type class
  * @doc.purpose Handles workspace controller integration test operations
@@ -56,28 +56,28 @@ class WorkspaceControllerIntegrationTest extends EventloopTestBase {
         objectMapper = new ObjectMapper(); // GH-90000
 
         testUser = User.builder() // GH-90000
-            .userId("user-123 [GH-90000]")
-            .email("test@example.com [GH-90000]")
-            .username("Test User [GH-90000]")
-            .roles(Set.of("USER [GH-90000]"))
+            .userId("user-123")
+            .email("test@example.com")
+            .username("Test User")
+            .roles(Set.of("USER"))
             .permissions(Set.of("WORKSPACE_CREATE", "WORKSPACE_READ")) // GH-90000
             .build(); // GH-90000
 
         adminUser = User.builder() // GH-90000
-            .userId("admin-456 [GH-90000]")
-            .email("admin@example.com [GH-90000]")
-            .username("Admin User [GH-90000]")
-            .roles(Set.of("ADMIN [GH-90000]"))
+            .userId("admin-456")
+            .email("admin@example.com")
+            .username("Admin User")
+            .roles(Set.of("ADMIN"))
             .permissions(Set.of("WORKSPACE_CREATE", "WORKSPACE_READ", "WORKSPACE_DELETE")) // GH-90000
             .build(); // GH-90000
     }
 
     @Nested
-    @DisplayName("Workspace Creation [GH-90000]")
+    @DisplayName("Workspace Creation")
     class WorkspaceCreation {
 
         @Test
-        @DisplayName("Should create workspace with valid data [GH-90000]")
+        @DisplayName("Should create workspace with valid data")
         void shouldCreateWorkspaceWithValidData() throws Exception { // GH-90000
             // Given
             CreateWorkspaceRequest request = new CreateWorkspaceRequest( // GH-90000
@@ -85,7 +85,7 @@ class WorkspaceControllerIntegrationTest extends EventloopTestBase {
                 "Main engineering workspace"
             );
 
-            HttpRequest httpRequest = HttpRequest.post(url("/api/v1/workspaces [GH-90000]"))
+            HttpRequest httpRequest = HttpRequest.post(url("/api/v1/workspaces"))
                 .withBody(objectMapper.writeValueAsBytes(request)) // GH-90000
                 .build(); // GH-90000
             httpRequest.attach("userPrincipal", testUser); // GH-90000
@@ -97,17 +97,17 @@ class WorkspaceControllerIntegrationTest extends EventloopTestBase {
             assertThat(response.getCode()).isEqualTo(201); // GH-90000
 
             String body = response.getBody().asString(java.nio.charset.StandardCharsets.UTF_8); // GH-90000
-            assertThat(body).contains("Engineering Team [GH-90000]");
-            assertThat(body).contains("workspaceId [GH-90000]");
+            assertThat(body).contains("Engineering Team");
+            assertThat(body).contains("workspaceId");
         }
 
         @Test
-        @DisplayName("Should reject creation with empty name [GH-90000]")
+        @DisplayName("Should reject creation with empty name")
         void shouldRejectCreationWithEmptyName() throws Exception { // GH-90000
             // Given
             CreateWorkspaceRequest request = new CreateWorkspaceRequest("", "Description"); // GH-90000
 
-            HttpRequest httpRequest = HttpRequest.post(url("/api/v1/workspaces [GH-90000]"))
+            HttpRequest httpRequest = HttpRequest.post(url("/api/v1/workspaces"))
                 .withBody(objectMapper.writeValueAsBytes(request)) // GH-90000
                 .build(); // GH-90000
             httpRequest.attach("userPrincipal", testUser); // GH-90000
@@ -117,16 +117,16 @@ class WorkspaceControllerIntegrationTest extends EventloopTestBase {
 
             // Then
             assertThat(response.getCode()).isEqualTo(400); // GH-90000
-            assertThat(response.getBody().asString(java.nio.charset.StandardCharsets.UTF_8)).contains("error [GH-90000]");
+            assertThat(response.getBody().asString(java.nio.charset.StandardCharsets.UTF_8)).contains("error");
         }
 
         @Test
-        @DisplayName("Should reject creation without authentication [GH-90000]")
+        @DisplayName("Should reject creation without authentication")
         void shouldRejectCreationWithoutAuth() throws Exception { // GH-90000
             // Given
             CreateWorkspaceRequest request = new CreateWorkspaceRequest("Test", "Desc"); // GH-90000
 
-            HttpRequest httpRequest = HttpRequest.post(url("/api/v1/workspaces [GH-90000]"))
+            HttpRequest httpRequest = HttpRequest.post(url("/api/v1/workspaces"))
                 .withBody(objectMapper.writeValueAsBytes(request)) // GH-90000
                 .build(); // GH-90000
             // No userPrincipal attached
@@ -140,11 +140,11 @@ class WorkspaceControllerIntegrationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Workspace Retrieval [GH-90000]")
+    @DisplayName("Workspace Retrieval")
     class WorkspaceRetrieval {
 
         @Test
-        @DisplayName("Should get workspace by ID when authorized [GH-90000]")
+        @DisplayName("Should get workspace by ID when authorized")
         void shouldGetWorkspaceWhenAuthorized() { // GH-90000
             // Given
             String workspaceId = "ws-123";
@@ -159,7 +159,7 @@ class WorkspaceControllerIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should return 400 when workspace not found [GH-90000]")
+        @DisplayName("Should return 400 when workspace not found")
         void shouldReturn400WhenNotFound() { // GH-90000
             // Given
             String workspaceId = "invalid-id";
@@ -175,11 +175,11 @@ class WorkspaceControllerIntegrationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Workspace Updates [GH-90000]")
+    @DisplayName("Workspace Updates")
     class WorkspaceUpdates {
 
         @Test
-        @DisplayName("Should update workspace name [GH-90000]")
+        @DisplayName("Should update workspace name")
         void shouldUpdateWorkspaceName() throws Exception { // GH-90000
             // Given
             String workspaceId = "ws-123";
@@ -202,11 +202,11 @@ class WorkspaceControllerIntegrationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Member Management [GH-90000]")
+    @DisplayName("Member Management")
     class MemberManagement {
 
         @Test
-        @DisplayName("Should list workspace members [GH-90000]")
+        @DisplayName("Should list workspace members")
         void shouldListMembers() { // GH-90000
             // Given
             String workspaceId = "ws-123";
@@ -221,7 +221,7 @@ class WorkspaceControllerIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should add member to workspace [GH-90000]")
+        @DisplayName("Should add member to workspace")
         void shouldAddMember() throws Exception { // GH-90000
             // Given
             String workspaceId = "ws-123";
@@ -240,7 +240,7 @@ class WorkspaceControllerIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should remove member from workspace [GH-90000]")
+        @DisplayName("Should remove member from workspace")
         void shouldRemoveMember() { // GH-90000
             // Given
             String workspaceId = "ws-123";
@@ -260,11 +260,11 @@ class WorkspaceControllerIntegrationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Workspace Deletion [GH-90000]")
+    @DisplayName("Workspace Deletion")
     class WorkspaceDeletion {
 
         @Test
-        @DisplayName("Should delete workspace when authorized [GH-90000]")
+        @DisplayName("Should delete workspace when authorized")
         void shouldDeleteWhenAuthorized() { // GH-90000
             // Given
             String workspaceId = "ws-123";

@@ -40,18 +40,18 @@ import static org.mockito.Mockito.when;
  * @doc.layer shared-service
  * @doc.pattern Test
  */
-@Tag("integration [GH-90000]")
+@Tag("integration")
 @Testcontainers
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("RedisGracefulDegradationManager — integration tests [GH-90000]")
+@DisplayName("RedisGracefulDegradationManager — integration tests")
 class RedisGracefulDegradationManagerTest extends EventloopTestBase {
 
     @Container
     private static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>("postgres:15-alpine [GH-90000]")
-                    .withDatabaseName("aep_degradation_test [GH-90000]")
-                    .withUsername("aep_test [GH-90000]")
-                    .withPassword("aep_test [GH-90000]");
+            new PostgreSQLContainer<>("postgres:15-alpine")
+                    .withDatabaseName("aep_degradation_test")
+                    .withUsername("aep_test")
+                    .withPassword("aep_test");
 
     @Mock
     private JedisPool jedisPool;
@@ -74,10 +74,10 @@ class RedisGracefulDegradationManagerTest extends EventloopTestBase {
         try (Connection conn = dataSource.getConnection(); // GH-90000
              Statement stmt = conn.createStatement()) { // GH-90000
             stmt.execute("""
-                    CREATE TABLE IF NOT EXISTS degradation_modes ( // GH-90000
-                        tenant_id  VARCHAR(255) PRIMARY KEY, // GH-90000
-                        mode       VARCHAR(50)  NOT NULL DEFAULT 'FULL', // GH-90000
-                        updated_at TIMESTAMPTZ  NOT NULL DEFAULT NOW() // GH-90000
+                    CREATE TABLE IF NOT EXISTS degradation_modes (
+                        tenant_id  VARCHAR(255) PRIMARY KEY,
+                        mode       VARCHAR(50)  NOT NULL DEFAULT 'FULL',
+                        updated_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
                     )
                     """);
         }
@@ -93,38 +93,38 @@ class RedisGracefulDegradationManagerTest extends EventloopTestBase {
     void tearDown() throws Exception { // GH-90000
         try (Connection conn = dataSource.getConnection(); // GH-90000
              Statement stmt = conn.createStatement()) { // GH-90000
-            stmt.execute("DROP TABLE IF EXISTS degradation_modes [GH-90000]");
+            stmt.execute("DROP TABLE IF EXISTS degradation_modes");
         }
         dataSource.close(); // GH-90000
     }
 
     @Test
-    @DisplayName("getMode returns FULL by default for a tenant with no record [GH-90000]")
+    @DisplayName("getMode returns FULL by default for a tenant with no record")
     void getMode_unknownTenant_returnsFull() { // GH-90000
-        DegradationMode mode = runPromise(() -> manager.getMode("tenant-new [GH-90000]"));
+        DegradationMode mode = runPromise(() -> manager.getMode("tenant-new"));
         assertThat(mode).isEqualTo(DegradationMode.FULL); // GH-90000
     }
 
     @Test
-    @DisplayName("setMode then getMode returns the stored mode via Postgres fallback [GH-90000]")
+    @DisplayName("setMode then getMode returns the stored mode via Postgres fallback")
     void setMode_thenGetMode_returnsPersistedMode() { // GH-90000
         runPromise(() -> manager.setMode("tenant-1", DegradationMode.READ_ONLY)); // GH-90000
         // Redis returns null → falls back to Postgres
-        DegradationMode mode = runPromise(() -> manager.getMode("tenant-1 [GH-90000]"));
+        DegradationMode mode = runPromise(() -> manager.getMode("tenant-1"));
         assertThat(mode).isEqualTo(DegradationMode.READ_ONLY); // GH-90000
     }
 
     @Test
-    @DisplayName("getMode returns mode from Redis cache when available [GH-90000]")
+    @DisplayName("getMode returns mode from Redis cache when available")
     void getMode_redisHit_returnsCachedMode() { // GH-90000
-        when(jedis.get("aep:degradation:tenant-cached [GH-90000]")).thenReturn(DegradationMode.NOTIFICATIONS_ONLY.name());
+        when(jedis.get("aep:degradation:tenant-cached")).thenReturn(DegradationMode.NOTIFICATIONS_ONLY.name());
 
-        DegradationMode mode = runPromise(() -> manager.getMode("tenant-cached [GH-90000]"));
+        DegradationMode mode = runPromise(() -> manager.getMode("tenant-cached"));
         assertThat(mode).isEqualTo(DegradationMode.NOTIFICATIONS_ONLY); // GH-90000
     }
 
     @Test
-    @DisplayName("isActionAllowed returns false in OFFLINE mode for any action [GH-90000]")
+    @DisplayName("isActionAllowed returns false in OFFLINE mode for any action")
     void isActionAllowed_offlineMode_returnsFalse() { // GH-90000
         runPromise(() -> manager.setMode("tenant-offline", DegradationMode.OFFLINE)); // GH-90000
         boolean allowed = runPromise(() -> manager.isActionAllowed("tenant-offline", "WRITE")); // GH-90000
@@ -132,7 +132,7 @@ class RedisGracefulDegradationManagerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("isActionAllowed returns true for READ in READ_ONLY mode [GH-90000]")
+    @DisplayName("isActionAllowed returns true for READ in READ_ONLY mode")
     void isActionAllowed_readOnlyMode_allowsRead() { // GH-90000
         runPromise(() -> manager.setMode("tenant-readonly", DegradationMode.READ_ONLY)); // GH-90000
         boolean allowed = runPromise(() -> manager.isActionAllowed("tenant-readonly", "READ")); // GH-90000
@@ -140,7 +140,7 @@ class RedisGracefulDegradationManagerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("isActionAllowed returns false for WRITE in READ_ONLY mode [GH-90000]")
+    @DisplayName("isActionAllowed returns false for WRITE in READ_ONLY mode")
     void isActionAllowed_readOnlyMode_blocksWrite() { // GH-90000
         runPromise(() -> manager.setMode("tenant-readonly2", DegradationMode.READ_ONLY)); // GH-90000
         boolean allowed = runPromise(() -> manager.isActionAllowed("tenant-readonly2", "WRITE")); // GH-90000

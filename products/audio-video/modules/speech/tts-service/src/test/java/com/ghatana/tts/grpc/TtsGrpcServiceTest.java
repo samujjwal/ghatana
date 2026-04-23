@@ -40,7 +40,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern TestCase
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("TtsGrpcService [GH-90000]")
+@DisplayName("TtsGrpcService")
 class TtsGrpcServiceTest {
 
     @Mock
@@ -62,13 +62,13 @@ class TtsGrpcServiceTest {
     // ─────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("synthesize: valid text → audio returned [GH-90000]")
+    @DisplayName("synthesize: valid text → audio returned")
     void synthesize_validText_returnsAudio() throws Exception { // GH-90000
         AudioData audio = new AudioData(new byte[44100], 22050, 1, 16, // GH-90000
                 Duration.ofSeconds(1), AudioFormat.PCM); // GH-90000
         when(mockEngine.synthesize(anyString(), any())).thenReturn(audio); // GH-90000
 
-        SynthesizeRequest request = SynthesizeRequest.newBuilder().setText("Hello world [GH-90000]").build();
+        SynthesizeRequest request = SynthesizeRequest.newBuilder().setText("Hello world").build();
         CapturingObserver<SynthesizeResponse> observer = new CapturingObserver<>(); // GH-90000
         service.synthesize(request, observer); // GH-90000
 
@@ -78,9 +78,9 @@ class TtsGrpcServiceTest {
     }
 
     @Test
-    @DisplayName("synthesize: empty text → INVALID_ARGUMENT [GH-90000]")
+    @DisplayName("synthesize: empty text → INVALID_ARGUMENT")
     void synthesize_emptyText_returnsInvalidArgument() { // GH-90000
-        SynthesizeRequest request = SynthesizeRequest.newBuilder().setText(" [GH-90000]").build();
+        SynthesizeRequest request = SynthesizeRequest.newBuilder().setText("").build();
         CapturingObserver<SynthesizeResponse> observer = new CapturingObserver<>(); // GH-90000
         service.synthesize(request, observer); // GH-90000
 
@@ -90,7 +90,7 @@ class TtsGrpcServiceTest {
     }
 
     @Test
-    @DisplayName("synthesize: text > 5000 chars → INVALID_ARGUMENT [GH-90000]")
+    @DisplayName("synthesize: text > 5000 chars → INVALID_ARGUMENT")
     void synthesize_textTooLong_returnsInvalidArgument() { // GH-90000
         SynthesizeRequest request = SynthesizeRequest.newBuilder() // GH-90000
                 .setText("a".repeat(5001)).build(); // GH-90000
@@ -107,7 +107,7 @@ class TtsGrpcServiceTest {
     // ─────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("createProfile: valid displayName → profile created and returned [GH-90000]")
+    @DisplayName("createProfile: valid displayName → profile created and returned")
     void createProfile_validName_createsProfile() throws Exception { // GH-90000
         TtsProfile created = new TtsProfile("p1", "Alice", "piper-en", // GH-90000
                 ProfileSettings.builder().build(), List.of()); // GH-90000
@@ -115,16 +115,16 @@ class TtsGrpcServiceTest {
 
         CapturingObserver<ProfileResponse> observer = new CapturingObserver<>(); // GH-90000
         service.createProfile( // GH-90000
-                CreateProfileRequest.newBuilder().setDisplayName("Alice [GH-90000]").build(),
+                CreateProfileRequest.newBuilder().setDisplayName("Alice").build(),
                 observer);
 
         assertThat(observer.hasError()).isFalse(); // GH-90000
-        assertThat(observer.getValue().getDisplayName()).isEqualTo("Alice [GH-90000]");
+        assertThat(observer.getValue().getDisplayName()).isEqualTo("Alice");
         assertThat(observer.getValue().getProfileId()).isNotBlank(); // GH-90000
     }
 
     @Test
-    @DisplayName("createProfile: blank displayName → INVALID_ARGUMENT [GH-90000]")
+    @DisplayName("createProfile: blank displayName → INVALID_ARGUMENT")
     void createProfile_blankName_returnsInvalidArgument() { // GH-90000
         CapturingObserver<ProfileResponse> observer = new CapturingObserver<>(); // GH-90000
         service.createProfile(CreateProfileRequest.getDefaultInstance(), observer); // GH-90000
@@ -135,14 +135,14 @@ class TtsGrpcServiceTest {
     }
 
     @Test
-    @DisplayName("createProfile: engine throws → INTERNAL [GH-90000]")
+    @DisplayName("createProfile: engine throws → INTERNAL")
     void createProfile_engineThrows_returnsInternal() throws Exception { // GH-90000
         when(mockEngine.createProfile(anyString(), anyString(), any())) // GH-90000
-                .thenThrow(new RuntimeException("engine failure [GH-90000]"));
+                .thenThrow(new RuntimeException("engine failure"));
 
         CapturingObserver<ProfileResponse> observer = new CapturingObserver<>(); // GH-90000
         service.createProfile( // GH-90000
-                CreateProfileRequest.newBuilder().setDisplayName("Alice [GH-90000]").build(),
+                CreateProfileRequest.newBuilder().setDisplayName("Alice").build(),
                 observer);
 
         assertThat(observer.hasError()).isTrue(); // GH-90000
@@ -155,27 +155,27 @@ class TtsGrpcServiceTest {
     // ─────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("getProfile: existing profile → returned [GH-90000]")
+    @DisplayName("getProfile: existing profile → returned")
     void getProfile_existing_returnsProfile() throws Exception { // GH-90000
         TtsProfile profile = new TtsProfile("p1", "Bob", "piper-en", // GH-90000
                 ProfileSettings.builder().build(), List.of("Hello", "World")); // GH-90000
-        when(mockEngine.loadProfile("p1 [GH-90000]")).thenReturn(Optional.of(profile));
+        when(mockEngine.loadProfile("p1")).thenReturn(Optional.of(profile));
 
         CapturingObserver<ProfileResponse> observer = new CapturingObserver<>(); // GH-90000
-        service.getProfile(GetProfileRequest.newBuilder().setProfileId("p1 [GH-90000]").build(), observer);
+        service.getProfile(GetProfileRequest.newBuilder().setProfileId("p1").build(), observer);
 
         assertThat(observer.hasError()).isFalse(); // GH-90000
-        assertThat(observer.getValue().getProfileId()).isEqualTo("p1 [GH-90000]");
-        assertThat(observer.getValue().getDisplayName()).isEqualTo("Bob [GH-90000]");
+        assertThat(observer.getValue().getProfileId()).isEqualTo("p1");
+        assertThat(observer.getValue().getDisplayName()).isEqualTo("Bob");
     }
 
     @Test
-    @DisplayName("getProfile: unknown profileId → NOT_FOUND [GH-90000]")
+    @DisplayName("getProfile: unknown profileId → NOT_FOUND")
     void getProfile_unknown_returnsNotFound() throws Exception { // GH-90000
-        when(mockEngine.loadProfile("ghost [GH-90000]")).thenReturn(Optional.empty());
+        when(mockEngine.loadProfile("ghost")).thenReturn(Optional.empty());
 
         CapturingObserver<ProfileResponse> observer = new CapturingObserver<>(); // GH-90000
-        service.getProfile(GetProfileRequest.newBuilder().setProfileId("ghost [GH-90000]").build(), observer);
+        service.getProfile(GetProfileRequest.newBuilder().setProfileId("ghost").build(), observer);
 
         assertThat(observer.hasError()).isTrue(); // GH-90000
         assertThat(((StatusRuntimeException) observer.getError()).getStatus().getCode()) // GH-90000
@@ -183,7 +183,7 @@ class TtsGrpcServiceTest {
     }
 
     @Test
-    @DisplayName("getProfile: blank profileId → INVALID_ARGUMENT [GH-90000]")
+    @DisplayName("getProfile: blank profileId → INVALID_ARGUMENT")
     void getProfile_blank_returnsInvalidArgument() { // GH-90000
         CapturingObserver<ProfileResponse> observer = new CapturingObserver<>(); // GH-90000
         service.getProfile(GetProfileRequest.getDefaultInstance(), observer); // GH-90000
@@ -198,34 +198,34 @@ class TtsGrpcServiceTest {
     // ─────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("updateProfile: existing profile → updated and returned [GH-90000]")
+    @DisplayName("updateProfile: existing profile → updated and returned")
     void updateProfile_existing_updatesProfile() throws Exception { // GH-90000
         TtsProfile existing = new TtsProfile("p1", "Carol", "piper-en", // GH-90000
                 ProfileSettings.builder().build(), List.of()); // GH-90000
-        when(mockEngine.loadProfile("p1 [GH-90000]")).thenReturn(Optional.of(existing));
+        when(mockEngine.loadProfile("p1")).thenReturn(Optional.of(existing));
         doNothing().when(mockEngine).saveProfile(any()); // GH-90000
 
         UpdateProfileRequest request = UpdateProfileRequest.newBuilder() // GH-90000
-                .setProfileId("p1 [GH-90000]")
+                .setProfileId("p1")
                 .setSettings(com.ghatana.tts.core.grpc.proto.ProfileSettings.newBuilder() // GH-90000
-                        .setDefaultVoiceId("piper-fr [GH-90000]").build())
+                        .setDefaultVoiceId("piper-fr").build())
                 .build(); // GH-90000
         CapturingObserver<ProfileResponse> observer = new CapturingObserver<>(); // GH-90000
         service.updateProfile(request, observer); // GH-90000
 
         assertThat(observer.hasError()).isFalse(); // GH-90000
-        assertThat(observer.getValue().getProfileId()).isEqualTo("p1 [GH-90000]");
+        assertThat(observer.getValue().getProfileId()).isEqualTo("p1");
         verify(mockEngine).saveProfile(any()); // GH-90000
     }
 
     @Test
-    @DisplayName("updateProfile: unknown profileId → NOT_FOUND [GH-90000]")
+    @DisplayName("updateProfile: unknown profileId → NOT_FOUND")
     void updateProfile_unknown_returnsNotFound() throws Exception { // GH-90000
-        when(mockEngine.loadProfile("ghost [GH-90000]")).thenReturn(Optional.empty());
+        when(mockEngine.loadProfile("ghost")).thenReturn(Optional.empty());
 
         CapturingObserver<ProfileResponse> observer = new CapturingObserver<>(); // GH-90000
         service.updateProfile( // GH-90000
-                UpdateProfileRequest.newBuilder().setProfileId("ghost [GH-90000]").build(),
+                UpdateProfileRequest.newBuilder().setProfileId("ghost").build(),
                 observer);
 
         assertThat(observer.hasError()).isTrue(); // GH-90000
@@ -234,7 +234,7 @@ class TtsGrpcServiceTest {
     }
 
     @Test
-    @DisplayName("updateProfile: blank profileId → INVALID_ARGUMENT [GH-90000]")
+    @DisplayName("updateProfile: blank profileId → INVALID_ARGUMENT")
     void updateProfile_blank_returnsInvalidArgument() { // GH-90000
         CapturingObserver<ProfileResponse> observer = new CapturingObserver<>(); // GH-90000
         service.updateProfile(UpdateProfileRequest.getDefaultInstance(), observer); // GH-90000
@@ -249,14 +249,14 @@ class TtsGrpcServiceTest {
     // ─────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("cloneVoice: valid name + samples → cloned voice returned [GH-90000]")
+    @DisplayName("cloneVoice: valid name + samples → cloned voice returned")
     void cloneVoice_validRequest_returnsClonedVoice() throws Exception { // GH-90000
         VoiceInfo cloned = new VoiceInfo("cloned-1", "MyVoice", "Custom cloned voice", // GH-90000
                 Locale.ENGLISH, VoiceInfo.Gender.NEUTRAL, 22050, true, 5_000_000L);
         when(mockEngine.cloneVoice(anyString(), any(), any())).thenReturn(cloned); // GH-90000
 
         CloneVoiceRequest request = CloneVoiceRequest.newBuilder() // GH-90000
-                .setVoiceName("MyVoice [GH-90000]")
+                .setVoiceName("MyVoice")
                 .addAudioSamples(ByteString.copyFrom(new byte[44100])) // GH-90000
                 .build(); // GH-90000
         CapturingObserver<CloneVoiceResponse> observer = new CapturingObserver<>(); // GH-90000
@@ -265,16 +265,16 @@ class TtsGrpcServiceTest {
         assertThat(observer.hasError()).isFalse(); // GH-90000
         CloneVoiceResponse response = observer.getValue(); // GH-90000
         assertThat(response.getSuccess()).isTrue(); // GH-90000
-        assertThat(response.getVoiceId()).isEqualTo("cloned-1 [GH-90000]");
+        assertThat(response.getVoiceId()).isEqualTo("cloned-1");
         assertThat(response.getVoice().getIsCloned()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("cloneVoice: blank voiceName → INVALID_ARGUMENT [GH-90000]")
+    @DisplayName("cloneVoice: blank voiceName → INVALID_ARGUMENT")
     void cloneVoice_blankName_returnsInvalidArgument() { // GH-90000
         CapturingObserver<CloneVoiceResponse> observer = new CapturingObserver<>(); // GH-90000
         service.cloneVoice( // GH-90000
-                CloneVoiceRequest.newBuilder().setVoiceName(" [GH-90000]").build(),
+                CloneVoiceRequest.newBuilder().setVoiceName("").build(),
                 observer);
 
         assertThat(observer.hasError()).isTrue(); // GH-90000
@@ -283,11 +283,11 @@ class TtsGrpcServiceTest {
     }
 
     @Test
-    @DisplayName("cloneVoice: no audio samples → INVALID_ARGUMENT [GH-90000]")
+    @DisplayName("cloneVoice: no audio samples → INVALID_ARGUMENT")
     void cloneVoice_noSamples_returnsInvalidArgument() { // GH-90000
         CapturingObserver<CloneVoiceResponse> observer = new CapturingObserver<>(); // GH-90000
         service.cloneVoice( // GH-90000
-                CloneVoiceRequest.newBuilder().setVoiceName("Test [GH-90000]").build(),
+                CloneVoiceRequest.newBuilder().setVoiceName("Test").build(),
                 observer);
 
         assertThat(observer.hasError()).isTrue(); // GH-90000
@@ -296,13 +296,13 @@ class TtsGrpcServiceTest {
     }
 
     @Test
-    @DisplayName("cloneVoice: ValidationError from engine → INVALID_ARGUMENT [GH-90000]")
+    @DisplayName("cloneVoice: ValidationError from engine → INVALID_ARGUMENT")
     void cloneVoice_validationError_returnsInvalidArgument() throws Exception { // GH-90000
         when(mockEngine.cloneVoice(anyString(), any(), any())) // GH-90000
-                .thenThrow(new ValidationError("insufficient audio samples [GH-90000]"));
+                .thenThrow(new ValidationError("insufficient audio samples"));
 
         CloneVoiceRequest request = CloneVoiceRequest.newBuilder() // GH-90000
-                .setVoiceName("Test [GH-90000]")
+                .setVoiceName("Test")
                 .addAudioSamples(ByteString.copyFrom(new byte[100])) // GH-90000
                 .build(); // GH-90000
         CapturingObserver<CloneVoiceResponse> observer = new CapturingObserver<>(); // GH-90000
@@ -314,13 +314,13 @@ class TtsGrpcServiceTest {
     }
 
     @Test
-    @DisplayName("cloneVoice: engine throws generic exception → INTERNAL [GH-90000]")
+    @DisplayName("cloneVoice: engine throws generic exception → INTERNAL")
     void cloneVoice_engineError_returnsInternal() throws Exception { // GH-90000
         when(mockEngine.cloneVoice(anyString(), any(), any())) // GH-90000
-                .thenThrow(new RuntimeException("engine crash [GH-90000]"));
+                .thenThrow(new RuntimeException("engine crash"));
 
         CloneVoiceRequest request = CloneVoiceRequest.newBuilder() // GH-90000
-                .setVoiceName("Test [GH-90000]")
+                .setVoiceName("Test")
                 .addAudioSamples(ByteString.copyFrom(new byte[44100])) // GH-90000
                 .build(); // GH-90000
         CapturingObserver<CloneVoiceResponse> observer = new CapturingObserver<>(); // GH-90000

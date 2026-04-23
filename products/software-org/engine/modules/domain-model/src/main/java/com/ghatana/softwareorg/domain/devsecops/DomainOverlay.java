@@ -10,7 +10,11 @@ import java.util.List;
  * DomainOverlay captures domain-specific overlays (e.g., PCI-DSS, HIPAA) that
  * add stricter acceptance criteria or references on top of a base DevSecOps
  * agent definition.
- */
+  * @doc.type class
+ * @doc.purpose Provides domain overlay functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 @Value
 @Builder
 public class DomainOverlay {

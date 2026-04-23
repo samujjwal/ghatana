@@ -21,8 +21,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer test
  * @doc.pattern Performance testing
  */
-@DisplayName("Crypto Operation Performance Benchmarks [GH-90000]")
-@Tag("performance [GH-90000]")
+@DisplayName("Crypto Operation Performance Benchmarks")
+@Tag("performance")
 class PasswordHasherBenchmark {
 
     private static final int WARMUP_ITERATIONS = 5;
@@ -32,7 +32,7 @@ class PasswordHasherBenchmark {
      * Benchmark password hashing performance.
      */
     @Test
-    @DisplayName("Benchmark: Password hashing [GH-90000]")
+    @DisplayName("Benchmark: Password hashing")
     void benchmarkPasswordHashing() { // GH-90000
         PasswordHasher hasher = new PasswordHasher(); // GH-90000
         String password = "test-password-12345";
@@ -66,7 +66,7 @@ class PasswordHasherBenchmark {
      * Benchmark password verification performance.
      */
     @Test
-    @DisplayName("Benchmark: Password verification [GH-90000]")
+    @DisplayName("Benchmark: Password verification")
     void benchmarkPasswordVerification() { // GH-90000
         PasswordHasher hasher = new PasswordHasher(); // GH-90000
         String password = "test-password-12345";
@@ -99,7 +99,7 @@ class PasswordHasherBenchmark {
      * Benchmark hash and verify combined operation.
      */
     @Test
-    @DisplayName("Benchmark: Hash and verify combined [GH-90000]")
+    @DisplayName("Benchmark: Hash and verify combined")
     void benchmarkHashAndVerifyCombined() { // GH-90000
         PasswordHasher hasher = new PasswordHasher(); // GH-90000
         String password = "test-password-12345";
@@ -132,7 +132,7 @@ class PasswordHasherBenchmark {
      * Benchmark verification failure performance.
      */
     @Test
-    @DisplayName("Benchmark: Verification with wrong password [GH-90000]")
+    @DisplayName("Benchmark: Verification with wrong password")
     void benchmarkVerificationFailure() { // GH-90000
         PasswordHasher hasher = new PasswordHasher(); // GH-90000
         String correctPassword = "test-password-12345";

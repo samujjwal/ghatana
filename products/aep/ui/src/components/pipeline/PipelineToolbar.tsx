@@ -132,6 +132,8 @@ export function PipelineToolbar({
           variant="ghost"
           className="p-1.5"
           data-testid="btn-undo"
+          aria-label="Undo last change"
+          aria-keyshortcuts="Control+z"
         >
           ↩
         </Button>
@@ -143,6 +145,8 @@ export function PipelineToolbar({
           variant="ghost"
           className="p-1.5"
           data-testid="btn-redo"
+          aria-label="Redo last change"
+          aria-keyshortcuts="Control+y"
         >
           ↪
         </Button>

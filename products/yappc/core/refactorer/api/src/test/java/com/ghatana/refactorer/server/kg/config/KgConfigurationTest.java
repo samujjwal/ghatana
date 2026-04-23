@@ -54,7 +54,7 @@ class KgConfigurationTest extends EventloopTestBase {
             () -> new KgConfiguration.MiningConfig( // GH-90000
                 -0.1, 0.5, 300000, 100, true))
         .isInstanceOf(IllegalArgumentException.class) // GH-90000
-        .hasMessage("minSupport must be between 0 and 1 [GH-90000]");
+        .hasMessage("minSupport must be between 0 and 1");
   }
 
   @Test
@@ -63,7 +63,7 @@ class KgConfigurationTest extends EventloopTestBase {
             () -> new KgConfiguration.MiningConfig( // GH-90000
                 0.3, 0.5, -1, 100, true))
         .isInstanceOf(IllegalArgumentException.class) // GH-90000
-        .hasMessage("correlationWindowMs must be positive [GH-90000]");
+        .hasMessage("correlationWindowMs must be positive");
   }
 
   @Test
@@ -87,7 +87,7 @@ class KgConfigurationTest extends EventloopTestBase {
   void testConfigurationToString() { // GH-90000
     KgConfiguration config = KgConfiguration.createDefault(); // GH-90000
     String str = config.toString(); // GH-90000
-    assertThat(str).contains("KgConfiguration [GH-90000]").contains("mining [GH-90000]");
+    assertThat(str).contains("KgConfiguration").contains("mining");
   }
 
   @Test
@@ -109,7 +109,7 @@ class KgConfigurationTest extends EventloopTestBase {
   void testCacheConfiguration() { // GH-90000
     KgConfiguration config = KgConfiguration.createDefault(); // GH-90000
     assertThat(config.cache().enabled()).isTrue(); // GH-90000
-    assertThat(config.cache().evictionPolicy()).isEqualTo("LRU [GH-90000]");
+    assertThat(config.cache().evictionPolicy()).isEqualTo("LRU");
     assertThat(config.cache().maxPatterns()).isEqualTo(10000); // GH-90000
   }
 

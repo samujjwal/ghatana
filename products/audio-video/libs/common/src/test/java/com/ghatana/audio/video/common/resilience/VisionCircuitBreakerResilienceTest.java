@@ -42,7 +42,7 @@ import static org.mockito.Mockito.when;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("Vision Engine Circuit Breaker Resilience Tests (AV-P2-02) [GH-90000]")
+@DisplayName("Vision Engine Circuit Breaker Resilience Tests (AV-P2-02)")
 class VisionCircuitBreakerResilienceTest {
 
     @Mock
@@ -59,7 +59,7 @@ class VisionCircuitBreakerResilienceTest {
     void setUp() { // GH-90000
         eventloop = Eventloop.create(); // GH-90000
 
-        circuitBreaker = CircuitBreaker.builder("vision-test-circuit [GH-90000]")
+        circuitBreaker = CircuitBreaker.builder("vision-test-circuit")
                 .failureThreshold(3) // GH-90000
                 .successThreshold(1) // GH-90000
                 .resetTimeout(java.time.Duration.ofMillis(200)) // fast for tests // GH-90000
@@ -75,7 +75,7 @@ class VisionCircuitBreakerResilienceTest {
     }
 
     @Test
-    @DisplayName("Circuit stays CLOSED and delegates to engine on success [GH-90000]")
+    @DisplayName("Circuit stays CLOSED and delegates to engine on success")
     void shouldDelegateToEngineWhenCircuitClosed() { // GH-90000
         var emptyResult = new DetectionResult(List.of(), 0, 0, 0L, "ok"); // GH-90000
         when(mockEngine.detect(any(), any())).thenReturn(emptyResult); // GH-90000
@@ -83,16 +83,16 @@ class VisionCircuitBreakerResilienceTest {
         var result = protectedEngine.detect(DUMMY_IMAGE, DetectionOptions.defaults()); // GH-90000
 
         assertThat(protectedEngine.getCircuitBreakerState()).isEqualTo(CircuitBreaker.State.CLOSED); // GH-90000
-        assertThat(result.modelId()).isEqualTo("ok [GH-90000]");
+        assertThat(result.modelId()).isEqualTo("ok");
     }
 
     @Test
-    @DisplayName("Circuit opens after reaching failure threshold [GH-90000]")
+    @DisplayName("Circuit opens after reaching failure threshold")
     void shouldOpenAfterFailureThreshold() { // GH-90000
         when(mockEngine.detect(any(), any())) // GH-90000
-                .thenThrow(new RuntimeException("upstream failure #1 [GH-90000]"))
-                .thenThrow(new RuntimeException("upstream failure #2 [GH-90000]"))
-                .thenThrow(new RuntimeException("upstream failure #3 [GH-90000]"));
+                .thenThrow(new RuntimeException("upstream failure #1"))
+                .thenThrow(new RuntimeException("upstream failure #2"))
+                .thenThrow(new RuntimeException("upstream failure #3"));
 
         for (int i = 0; i < 3; i++) { // GH-90000
             try {
@@ -106,10 +106,10 @@ class VisionCircuitBreakerResilienceTest {
     }
 
     @Test
-    @DisplayName("Returns degraded empty result when circuit is OPEN (cascade prevention) [GH-90000]")
+    @DisplayName("Returns degraded empty result when circuit is OPEN (cascade prevention)")
     void shouldReturnDegradedResultWhenCircuitOpen() { // GH-90000
         when(mockEngine.detect(any(), any())) // GH-90000
-                .thenThrow(new RuntimeException("service down [GH-90000]"));
+                .thenThrow(new RuntimeException("service down"));
 
         // Trip the circuit
         for (int i = 0; i < 3; i++) { // GH-90000
@@ -124,16 +124,16 @@ class VisionCircuitBreakerResilienceTest {
 
         assertThat(result).isNotNull(); // GH-90000
         assertThat(result.objects()).isEmpty(); // GH-90000
-        assertThat(result.modelId()).isEqualTo("degraded [GH-90000]");
+        assertThat(result.modelId()).isEqualTo("degraded");
     }
 
     @Test
-    @DisplayName("Circuit transitions to CLOSED after successful probe in HALF_OPEN [GH-90000]")
+    @DisplayName("Circuit transitions to CLOSED after successful probe in HALF_OPEN")
     void shouldRecoverAfterHalfOpenProbeSucceeds() throws InterruptedException { // GH-90000
         when(mockEngine.detect(any(), any())) // GH-90000
-                .thenThrow(new RuntimeException("down [GH-90000]"))
-                .thenThrow(new RuntimeException("down [GH-90000]"))
-                .thenThrow(new RuntimeException("down [GH-90000]"))
+                .thenThrow(new RuntimeException("down"))
+                .thenThrow(new RuntimeException("down"))
+                .thenThrow(new RuntimeException("down"))
                 // Recovery call succeeds
                 .thenReturn(new DetectionResult(List.of(), 0, 0, 0L, "recovered")); // GH-90000
 
@@ -150,19 +150,19 @@ class VisionCircuitBreakerResilienceTest {
         // Single probe call succeeds → circuit closes
         var result = protectedEngine.detect(DUMMY_IMAGE, DetectionOptions.defaults()); // GH-90000
 
-        assertThat(result.modelId()).isEqualTo("recovered [GH-90000]");
+        assertThat(result.modelId()).isEqualTo("recovered");
         assertThat(protectedEngine.getCircuitBreakerState()).isEqualTo(CircuitBreaker.State.CLOSED); // GH-90000
     }
 
     @Test
-    @DisplayName("getMetrics merges circuit breaker rejections into engine metrics [GH-90000]")
+    @DisplayName("getMetrics merges circuit breaker rejections into engine metrics")
     void shouldMergeCircuitBreakerRejectionsIntoMetrics() { // GH-90000
         when(mockEngine.getMetrics()).thenReturn( // GH-90000
                 new EngineMetrics(10, 0, 50.0, 1, 0)); // GH-90000
         when(mockEngine.detect(any(), any())) // GH-90000
-                .thenThrow(new RuntimeException("down [GH-90000]"))
-                .thenThrow(new RuntimeException("down [GH-90000]"))
-                .thenThrow(new RuntimeException("down [GH-90000]"));
+                .thenThrow(new RuntimeException("down"))
+                .thenThrow(new RuntimeException("down"))
+                .thenThrow(new RuntimeException("down"));
 
         for (int i = 0; i < 3; i++) { // GH-90000
             try {

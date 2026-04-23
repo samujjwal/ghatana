@@ -15,7 +15,8 @@ import java.util.Map;
  * @doc.type class
  * @doc.purpose Evaluation gate aggregate result
  * @doc.layer agent-learning
- */
+  * @doc.pattern ValueObject
+*/
 @Value
 @Builder
 public class EvaluationGateResult {

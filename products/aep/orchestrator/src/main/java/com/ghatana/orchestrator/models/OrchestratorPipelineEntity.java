@@ -2,6 +2,12 @@ package com.ghatana.orchestrator.models;
 
 import java.time.Instant;
 
+/**
+ * @doc.type class
+ * @doc.purpose Provides orchestrator pipeline entity functionality.
+ * @doc.layer product
+ * @doc.pattern Entity
+ */
 public class OrchestratorPipelineEntity {
     public String id;
     public String name;

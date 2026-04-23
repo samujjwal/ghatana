@@ -45,7 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("ApiKeyAuthFilter Integration Tests (4.3.5–4.3.7) [GH-90000]")
+@DisplayName("ApiKeyAuthFilter Integration Tests (4.3.5–4.3.7)")
 class ApiKeyAuthFilterIntegrationTest extends EventloopTestBase {
 
     private static final String TENANT_ALPHA  = "tenant-alpha";
@@ -56,7 +56,7 @@ class ApiKeyAuthFilterIntegrationTest extends EventloopTestBase {
     /** Resolver that maps VALID_KEY → tenant-alpha Principal; everything else → empty. */
     private final ApiKeyResolver RESOLVER = key ->
             VALID_KEY.equals(key) // GH-90000
-                    ? Optional.of(new Principal("svc-account", List.of("agent [GH-90000]"), TENANT_ALPHA))
+                    ? Optional.of(new Principal("svc-account", List.of("agent"), TENANT_ALPHA))
                     : Optional.empty(); // GH-90000
 
     @AfterEach
@@ -69,11 +69,11 @@ class ApiKeyAuthFilterIntegrationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("4.3.5 — Missing API key [GH-90000]")
+    @DisplayName("4.3.5 — Missing API key")
     class MissingApiKey {
 
         @Test
-        @DisplayName("request without X-API-Key header → 401 Unauthorized [GH-90000]")
+        @DisplayName("request without X-API-Key header → 401 Unauthorized")
         void shouldReturn401WhenApiKeyHeaderMissing() { // GH-90000
             // GIVEN
             ApiKeyAuthFilter filter = new ApiKeyAuthFilter(Set.of(VALID_KEY)); // GH-90000
@@ -85,12 +85,12 @@ class ApiKeyAuthFilterIntegrationTest extends EventloopTestBase {
 
             // THEN
             assertThat(response.getCode()) // GH-90000
-                    .as("Missing API key must yield 401 [GH-90000]")
+                    .as("Missing API key must yield 401")
                     .isEqualTo(401); // GH-90000
         }
 
         @Test
-        @DisplayName("request with wrong API key → 401 Unauthorized [GH-90000]")
+        @DisplayName("request with wrong API key → 401 Unauthorized")
         void shouldReturn401WhenApiKeyIsInvalid() { // GH-90000
             // GIVEN
             ApiKeyAuthFilter filter = new ApiKeyAuthFilter(Set.of(VALID_KEY)); // GH-90000
@@ -102,7 +102,7 @@ class ApiKeyAuthFilterIntegrationTest extends EventloopTestBase {
 
             // THEN
             assertThat(response.getCode()) // GH-90000
-                    .as("Invalid API key must yield 401 [GH-90000]")
+                    .as("Invalid API key must yield 401")
                     .isEqualTo(401); // GH-90000
         }
     }
@@ -112,11 +112,11 @@ class ApiKeyAuthFilterIntegrationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("4.3.6 — Valid API key with tenant scope [GH-90000]")
+    @DisplayName("4.3.6 — Valid API key with tenant scope")
     class ValidApiKeyWithTenantScope {
 
         @Test
-        @DisplayName("valid key resolved to tenant-alpha → delegate receives 200, TenantContext = tenant-alpha [GH-90000]")
+        @DisplayName("valid key resolved to tenant-alpha → delegate receives 200, TenantContext = tenant-alpha")
         void shouldPopulateTenantContextForValidApiKey() { // GH-90000
             // GIVEN
             ApiKeyAuthFilter filter = new ApiKeyAuthFilter(RESOLVER); // GH-90000
@@ -131,14 +131,14 @@ class ApiKeyAuthFilterIntegrationTest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> filter.secure(delegate).serve(request)); // GH-90000
 
             // THEN — 200 returned and TenantContext carried the correct tenant
-            assertThat(response.getCode()).as("Valid key must pass through to delegate [GH-90000]").isEqualTo(200);
+            assertThat(response.getCode()).as("Valid key must pass through to delegate").isEqualTo(200);
             assertThat(capturedTenant.get()) // GH-90000
-                    .as("TenantContext must contain the tenant from the resolved Principal [GH-90000]")
+                    .as("TenantContext must contain the tenant from the resolved Principal")
                     .isEqualTo(TENANT_ALPHA); // GH-90000
         }
 
         @Test
-        @DisplayName("valid resolver-based key attaches Principal to request for downstream RBAC [GH-90000]")
+        @DisplayName("valid resolver-based key attaches Principal to request for downstream RBAC")
         void shouldAttachPrincipalForDownstreamAuthorization() { // GH-90000
             // GIVEN
             ApiKeyAuthFilter filter = new ApiKeyAuthFilter(RESOLVER); // GH-90000
@@ -156,11 +156,11 @@ class ApiKeyAuthFilterIntegrationTest extends EventloopTestBase {
             assertThat(response.getCode()).isEqualTo(200); // GH-90000
             assertThat(capturedPrincipal.get()).isNotNull(); // GH-90000
             assertThat(capturedPrincipal.get().getTenantId()).isEqualTo(TENANT_ALPHA); // GH-90000
-            assertThat(capturedPrincipal.get().getRoles()).contains("agent [GH-90000]");
+            assertThat(capturedPrincipal.get().getRoles()).contains("agent");
         }
 
         @Test
-        @DisplayName("TenantContext is cleared after the request scope, preventing context leakage [GH-90000]")
+        @DisplayName("TenantContext is cleared after the request scope, preventing context leakage")
         void tenantContextIsClearedAfterRequest() { // GH-90000
             // GIVEN
             ApiKeyAuthFilter filter = new ApiKeyAuthFilter(RESOLVER); // GH-90000
@@ -173,12 +173,12 @@ class ApiKeyAuthFilterIntegrationTest extends EventloopTestBase {
 
             // THEN — TenantContext.scope(principal) auto-closed; falls back to "default-tenant" // GH-90000
             assertThat(tenantAfterRequest) // GH-90000
-                    .as("TenantContext must not leak across request boundaries [GH-90000]")
-                    .isEqualTo("default-tenant [GH-90000]");
+                    .as("TenantContext must not leak across request boundaries")
+                    .isEqualTo("default-tenant");
         }
 
         @Test
-        @DisplayName("allowlist-based filter does NOT populate TenantContext (no resolver) [GH-90000]")
+        @DisplayName("allowlist-based filter does NOT populate TenantContext (no resolver)")
         void allowlistFilterDoesNotSetTenantContext() { // GH-90000
             // GIVEN — allowlist mode (no ApiKeyResolver); TenantContext stays at default // GH-90000
             ApiKeyAuthFilter filter = new ApiKeyAuthFilter(Set.of(VALID_KEY)); // GH-90000
@@ -194,25 +194,25 @@ class ApiKeyAuthFilterIntegrationTest extends EventloopTestBase {
 
             // THEN — context not populated by filter alone; stays at TenantContext default
             assertThat(capturedTenant.get()) // GH-90000
-                    .as("Allowlist filter (no resolver) does not set TenantContext [GH-90000]")
-                    .isEqualTo("default-tenant [GH-90000]");
+                    .as("Allowlist filter (no resolver) does not set TenantContext")
+                    .isEqualTo("default-tenant");
         }
     }
 
     @Nested
-    @DisplayName("RBAC enforcement with resolver principals [GH-90000]")
+    @DisplayName("RBAC enforcement with resolver principals")
     class RbacEnforcement {
 
         @Test
-        @DisplayName("viewer role can read but cannot write [GH-90000]")
+        @DisplayName("viewer role can read but cannot write")
         void viewerRoleReadOnly() { // GH-90000
             ApiKeyResolver viewerResolver = key ->
                     "viewer-key".equals(key) // GH-90000
-                            ? Optional.of(new Principal("viewer-user", List.of("viewer [GH-90000]"), TENANT_ALPHA))
+                            ? Optional.of(new Principal("viewer-user", List.of("viewer"), TENANT_ALPHA))
                             : Optional.empty(); // GH-90000
 
             PolicyService policyService = new PolicyService(new InMemoryPolicyRepository()); // GH-90000
-            policyService.createPolicy("viewer-read", "viewer read policy", "viewer", "yappc:lifecycle-api", Set.of("read [GH-90000]"));
+            policyService.createPolicy("viewer-read", "viewer read policy", "viewer", "yappc:lifecycle-api", Set.of("read"));
 
             ApiKeyAuthFilter authFilter = new ApiKeyAuthFilter(viewerResolver); // GH-90000
             RBACFilter readFilter = new RBACFilter(policyService, "read", "yappc:lifecycle-api"); // GH-90000
@@ -230,11 +230,11 @@ class ApiKeyAuthFilterIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("read-only endpoint chain protects metrics-like endpoint [GH-90000]")
+        @DisplayName("read-only endpoint chain protects metrics-like endpoint")
         void readOnlyChainProtectsMetricsEndpoint() { // GH-90000
             ApiKeyResolver resolver = key ->
                 "metrics-viewer-key".equals(key) // GH-90000
-                    ? Optional.of(new Principal("metrics-viewer", List.of("viewer [GH-90000]"), TENANT_ALPHA))
+                    ? Optional.of(new Principal("metrics-viewer", List.of("viewer"), TENANT_ALPHA))
                     : Optional.empty(); // GH-90000
 
             PolicyService policyService = new PolicyService(new InMemoryPolicyRepository()); // GH-90000
@@ -243,25 +243,25 @@ class ApiKeyAuthFilterIntegrationTest extends EventloopTestBase {
                 "viewer read metrics policy",
                 "viewer",
                     "yappc:lifecycle-api",
-                Set.of("read [GH-90000]"));
+                Set.of("read"));
 
             ApiKeyAuthFilter authFilter = new ApiKeyAuthFilter(resolver); // GH-90000
                 RBACFilter readFilter = new RBACFilter(policyService, "read", "yappc:lifecycle-api"); // GH-90000
             RateLimitFilter rateLimitFilter = new RateLimitFilter(100, 60); // GH-90000
 
-            AsyncServlet metricsDelegate = req -> HttpResponse.ok200().withPlainText("metrics [GH-90000]").toPromise();
+            AsyncServlet metricsDelegate = req -> HttpResponse.ok200().withPlainText("metrics").toPromise();
             AsyncServlet securedMetrics = authFilter.secure(readFilter.secure(rateLimitFilter.wrap(metricsDelegate))); // GH-90000
 
             HttpRequest missingKeyRequest = HttpRequest.builder(HttpMethod.GET, "http://localhost/metrics") // GH-90000
-                    .withHeader(HttpHeaders.of("X-Forwarded-For [GH-90000]"), "127.0.0.1")
+                    .withHeader(HttpHeaders.of("X-Forwarded-For"), "127.0.0.1")
                     .build(); // GH-90000
             HttpResponse missingKey = runPromise(() -> // GH-90000
                     securedMetrics.serve(missingKeyRequest)); // GH-90000
             assertThat(missingKey.getCode()).isEqualTo(401); // GH-90000
 
             HttpRequest validKeyRequest = HttpRequest.builder(HttpMethod.GET, "http://localhost/metrics") // GH-90000
-                    .withHeader(HttpHeaders.of("X-Forwarded-For [GH-90000]"), "127.0.0.1")
-                    .withHeader(HttpHeaders.of("X-API-Key [GH-90000]"), "metrics-viewer-key")
+                    .withHeader(HttpHeaders.of("X-Forwarded-For"), "127.0.0.1")
+                    .withHeader(HttpHeaders.of("X-API-Key"), "metrics-viewer-key")
                     .build(); // GH-90000
             HttpResponse validKey = runPromise(() -> securedMetrics.serve(validKeyRequest)); // GH-90000
             assertThat(validKey.getCode()).isEqualTo(200); // GH-90000
@@ -273,7 +273,7 @@ class ApiKeyAuthFilterIntegrationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("4.3.7 — Cross-tenant resource access denied [GH-90000]")
+    @DisplayName("4.3.7 — Cross-tenant resource access denied")
     class CrossTenantResourceAccessDenied {
 
         /**
@@ -283,7 +283,7 @@ class ApiKeyAuthFilterIntegrationTest extends EventloopTestBase {
          */
         private static final AsyncServlet TENANT_ENFORCING_DELEGATE = req -> {
             String activeTenant  = TenantContext.getCurrentTenantId(); // GH-90000
-            String resourceTenant = req.getHeader(HttpHeaders.of("X-Resource-Tenant [GH-90000]"));
+            String resourceTenant = req.getHeader(HttpHeaders.of("X-Resource-Tenant"));
             if (resourceTenant != null && !activeTenant.equals(resourceTenant)) { // GH-90000
                 return HttpResponse.ofCode(403) // GH-90000
                         .withJson("{\"error\":{\"code\":\"FORBIDDEN\"," // GH-90000
@@ -294,13 +294,13 @@ class ApiKeyAuthFilterIntegrationTest extends EventloopTestBase {
         };
 
         @Test
-        @DisplayName("API key for tenant-alpha accessing tenant-beta's resource → 403 Forbidden [GH-90000]")
+        @DisplayName("API key for tenant-alpha accessing tenant-beta's resource → 403 Forbidden")
         void shouldReturn403WhenResourceBelongsToDifferentTenant() { // GH-90000
             // GIVEN — key resolves to tenant-alpha, but the resource belongs to tenant-beta
             ApiKeyAuthFilter filter = new ApiKeyAuthFilter(RESOLVER); // GH-90000
             HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/workspaces/W1") // GH-90000
-                    .withHeader(HttpHeaders.of("X-API-Key [GH-90000]"), VALID_KEY)
-                    .withHeader(HttpHeaders.of("X-Resource-Tenant [GH-90000]"), TENANT_BETA) // different owner
+                    .withHeader(HttpHeaders.of("X-API-Key"), VALID_KEY)
+                    .withHeader(HttpHeaders.of("X-Resource-Tenant"), TENANT_BETA) // different owner
                     .build(); // GH-90000
 
             // WHEN
@@ -308,18 +308,18 @@ class ApiKeyAuthFilterIntegrationTest extends EventloopTestBase {
 
             // THEN
             assertThat(response.getCode()) // GH-90000
-                    .as("Cross-tenant resource access must be rejected with 403 [GH-90000]")
+                    .as("Cross-tenant resource access must be rejected with 403")
                     .isEqualTo(403); // GH-90000
         }
 
         @Test
-        @DisplayName("API key for tenant-alpha accessing tenant-alpha's resource → 200 OK [GH-90000]")
+        @DisplayName("API key for tenant-alpha accessing tenant-alpha's resource → 200 OK")
         void shouldReturn200WhenResourceBelongsToSameTenant() { // GH-90000
             // GIVEN — same tenant owns both the key and the resource
             ApiKeyAuthFilter filter = new ApiKeyAuthFilter(RESOLVER); // GH-90000
             HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/workspaces/W1") // GH-90000
-                    .withHeader(HttpHeaders.of("X-API-Key [GH-90000]"), VALID_KEY)
-                    .withHeader(HttpHeaders.of("X-Resource-Tenant [GH-90000]"), TENANT_ALPHA) // same owner
+                    .withHeader(HttpHeaders.of("X-API-Key"), VALID_KEY)
+                    .withHeader(HttpHeaders.of("X-Resource-Tenant"), TENANT_ALPHA) // same owner
                     .build(); // GH-90000
 
             // WHEN
@@ -330,7 +330,7 @@ class ApiKeyAuthFilterIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("TenantIsolationHttpFilter in strict mode without X-Tenant-ID header → 403 [GH-90000]")
+        @DisplayName("TenantIsolationHttpFilter in strict mode without X-Tenant-ID header → 403")
         void strictTenantIsolationFilterRejectsMissingTenantHeader() { // GH-90000
             // GIVEN — strict mode requires X-Tenant-ID; missing header → 403
             AsyncServlet strictFilter = TenantIsolationHttpFilter.strict( // GH-90000
@@ -342,12 +342,12 @@ class ApiKeyAuthFilterIntegrationTest extends EventloopTestBase {
 
             // THEN
             assertThat(response.getCode()) // GH-90000
-                    .as("Strict isolation filter must reject requests without X-Tenant-ID [GH-90000]")
+                    .as("Strict isolation filter must reject requests without X-Tenant-ID")
                     .isEqualTo(403); // GH-90000
         }
 
         @Test
-        @DisplayName("TenantIsolationHttpFilter in lenient mode without X-Tenant-ID → 200 (default-tenant) [GH-90000]")
+        @DisplayName("TenantIsolationHttpFilter in lenient mode without X-Tenant-ID → 200 (default-tenant)")
         void lenientTenantIsolationFilterAllowsMissingTenantHeader() { // GH-90000
             // GIVEN — lenient mode falls back to "default-tenant" when header is absent
             AtomicReference<String> capturedTenant = new AtomicReference<>(); // GH-90000
@@ -362,7 +362,7 @@ class ApiKeyAuthFilterIntegrationTest extends EventloopTestBase {
 
             // THEN — request passes; default-tenant is used
             assertThat(response.getCode()).isEqualTo(200); // GH-90000
-            assertThat(capturedTenant.get()).isEqualTo("default-tenant [GH-90000]");
+            assertThat(capturedTenant.get()).isEqualTo("default-tenant");
         }
     }
 
@@ -376,7 +376,7 @@ class ApiKeyAuthFilterIntegrationTest extends EventloopTestBase {
 
     private static HttpRequest requestWithApiKey(HttpMethod method, String path, String apiKey) { // GH-90000
         return HttpRequest.builder(method, "http://localhost" + path) // GH-90000
-                .withHeader(HttpHeaders.of("X-API-Key [GH-90000]"), apiKey)
+                .withHeader(HttpHeaders.of("X-API-Key"), apiKey)
                 .build(); // GH-90000
     }
 }

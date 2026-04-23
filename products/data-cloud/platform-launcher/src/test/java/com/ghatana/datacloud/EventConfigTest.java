@@ -11,13 +11,13 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Tests for {@link EventConfig} factory methods, fluent API, and builder defaults.
  */
-@DisplayName("EventConfig [GH-90000]")
+@DisplayName("EventConfig")
 class EventConfigTest {
 
     // ── factory methods ──────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("hashPartitioned() [GH-90000]")
+    @DisplayName("hashPartitioned()")
     class HashPartitioned {
 
         @Test
@@ -25,7 +25,7 @@ class EventConfigTest {
             EventConfig cfg = EventConfig.hashPartitioned("orderId", 16); // GH-90000
 
             assertThat(cfg.getPartitionStrategy()).isEqualTo(EventConfig.PartitionStrategy.HASH); // GH-90000
-            assertThat(cfg.getPartitionKeyField()).isEqualTo("orderId [GH-90000]");
+            assertThat(cfg.getPartitionKeyField()).isEqualTo("orderId");
             assertThat(cfg.getPartitionCount()).isEqualTo(16); // GH-90000
         }
 
@@ -38,7 +38,7 @@ class EventConfigTest {
     }
 
     @Nested
-    @DisplayName("timePartitioned() [GH-90000]")
+    @DisplayName("timePartitioned()")
     class TimePartitioned {
 
         @Test
@@ -59,7 +59,7 @@ class EventConfigTest {
     }
 
     @Nested
-    @DisplayName("singlePartition() [GH-90000]")
+    @DisplayName("singlePartition()")
     class SinglePartition {
 
         @Test
@@ -73,7 +73,7 @@ class EventConfigTest {
     }
 
     @Nested
-    @DisplayName("highThroughput() [GH-90000]")
+    @DisplayName("highThroughput()")
     class HighThroughput {
 
         @Test
@@ -98,7 +98,7 @@ class EventConfigTest {
     // ── fluent builder ───────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("withDeduplication() [GH-90000]")
+    @DisplayName("withDeduplication()")
     class WithDeduplication {
 
         @Test
@@ -107,13 +107,13 @@ class EventConfigTest {
             EventConfig cfg = EventConfig.singlePartition().withDeduplication(window); // GH-90000
 
             assertThat(cfg.getDeduplicationEnabled()).isTrue(); // GH-90000
-            assertThat(cfg.getDeduplicationKeyField()).isEqualTo("idempotencyKey [GH-90000]");
+            assertThat(cfg.getDeduplicationKeyField()).isEqualTo("idempotencyKey");
             assertThat(cfg.getDeduplicationWindow()).isEqualTo(window); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("withIdempotency() [GH-90000]")
+    @DisplayName("withIdempotency()")
     class WithIdempotency {
 
         @Test
@@ -122,7 +122,7 @@ class EventConfigTest {
                     .withIdempotency("eventId", Duration.ofHours(1)); // GH-90000
 
             assertThat(cfg.getDeduplicationEnabled()).isTrue(); // GH-90000
-            assertThat(cfg.getDeduplicationKeyField()).isEqualTo("eventId [GH-90000]");
+            assertThat(cfg.getDeduplicationKeyField()).isEqualTo("eventId");
             assertThat(cfg.getDeduplicationWindow()).isEqualTo(Duration.ofHours(1)); // GH-90000
         }
 
@@ -136,7 +136,7 @@ class EventConfigTest {
     }
 
     @Nested
-    @DisplayName("withStrictOrdering() [GH-90000]")
+    @DisplayName("withStrictOrdering()")
     class WithStrictOrdering {
 
         @Test
@@ -149,7 +149,7 @@ class EventConfigTest {
     }
 
     @Nested
-    @DisplayName("withGlobalOrdering() [GH-90000]")
+    @DisplayName("withGlobalOrdering()")
     class WithGlobalOrdering {
 
         @Test
@@ -163,7 +163,7 @@ class EventConfigTest {
     }
 
     @Nested
-    @DisplayName("withCompression() [GH-90000]")
+    @DisplayName("withCompression()")
     class WithCompression {
 
         @Test
@@ -171,22 +171,22 @@ class EventConfigTest {
             EventConfig cfg = EventConfig.singlePartition().withCompression(); // GH-90000
 
             assertThat(cfg.getCompressPayload()).isTrue(); // GH-90000
-            assertThat(cfg.getCompressionCodec()).isEqualTo("lz4 [GH-90000]");
+            assertThat(cfg.getCompressionCodec()).isEqualTo("lz4");
         }
 
         @Test
         void enablesCompressionWithCustomCodec() { // GH-90000
-            EventConfig cfg = EventConfig.singlePartition().withCompression("snappy [GH-90000]");
+            EventConfig cfg = EventConfig.singlePartition().withCompression("snappy");
 
             assertThat(cfg.getCompressPayload()).isTrue(); // GH-90000
-            assertThat(cfg.getCompressionCodec()).isEqualTo("snappy [GH-90000]");
+            assertThat(cfg.getCompressionCodec()).isEqualTo("snappy");
         }
     }
 
     // ── builder defaults ─────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("builder defaults [GH-90000]")
+    @DisplayName("builder defaults")
     class BuilderDefaults {
 
         @Test
@@ -198,7 +198,7 @@ class EventConfigTest {
             assertThat(cfg.getOrdering()).isEqualTo(EventConfig.OrderingGuarantee.PER_PARTITION); // GH-90000
             assertThat(cfg.getDeduplicationEnabled()).isFalse(); // GH-90000
             assertThat(cfg.getCompressPayload()).isFalse(); // GH-90000
-            assertThat(cfg.getCompressionCodec()).isEqualTo("lz4 [GH-90000]");
+            assertThat(cfg.getCompressionCodec()).isEqualTo("lz4");
             assertThat(cfg.getBatchSize()).isEqualTo(100); // GH-90000
             assertThat(cfg.getBatchLingerTime()).isEqualTo(Duration.ofMillis(10)); // GH-90000
             assertThat(cfg.getTailingEnabled()).isTrue(); // GH-90000
@@ -210,7 +210,7 @@ class EventConfigTest {
     // ── enums ────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("PartitionStrategy enum [GH-90000]")
+    @DisplayName("PartitionStrategy enum")
     class PartitionStrategyEnum {
 
         @Test
@@ -226,7 +226,7 @@ class EventConfigTest {
     }
 
     @Nested
-    @DisplayName("OrderingGuarantee enum [GH-90000]")
+    @DisplayName("OrderingGuarantee enum")
     class OrderingGuaranteeEnum {
 
         @Test

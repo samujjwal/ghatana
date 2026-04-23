@@ -31,7 +31,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("ModelSchemaValidation – Input/Output Schema (D012) [GH-90000]")
+@DisplayName("ModelSchemaValidation – Input/Output Schema (D012)")
 class ModelSchemaValidationTest extends EventloopTestBase {
 
     @Mock
@@ -42,11 +42,11 @@ class ModelSchemaValidationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Input Schema [GH-90000]")
+    @DisplayName("Input Schema")
     class InputSchemaTests {
 
         @Test
-        @DisplayName("[D012]: valid_input_passes_validation [GH-90000]")
+        @DisplayName("[D012]: valid_input_passes_validation")
         void validInputPassesValidation() { // GH-90000
             String modelId = "model-001";
             Map<String, Object> validInput = Map.of( // GH-90000
@@ -72,7 +72,7 @@ class ModelSchemaValidationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D012]: missing_required_field_fails_validation [GH-90000]")
+        @DisplayName("[D012]: missing_required_field_fails_validation")
         void missingRequiredFieldFailsValidation() { // GH-90000
             String modelId = "model-001";
             Map<String, Object> invalidInput = Map.of( // GH-90000
@@ -99,11 +99,11 @@ class ModelSchemaValidationTest extends EventloopTestBase {
 
             assertThat(validation.isValid()).isFalse(); // GH-90000
             assertThat(validation.errors()).hasSize(1); // GH-90000
-            assertThat(validation.errors().get(0).field()).isEqualTo("text [GH-90000]");
+            assertThat(validation.errors().get(0).field()).isEqualTo("text");
         }
 
         @Test
-        @DisplayName("[D012]: wrong_type_fails_validation [GH-90000]")
+        @DisplayName("[D012]: wrong_type_fails_validation")
         void wrongTypeFailsValidation() { // GH-90000
             String modelId = "model-001";
             Map<String, Object> wrongTypeInput = Map.of( // GH-90000
@@ -129,12 +129,12 @@ class ModelSchemaValidationTest extends EventloopTestBase {
             );
 
             assertThat(validation.isValid()).isFalse(); // GH-90000
-            assertThat(validation.errors().get(0).expectedType()).isEqualTo("number [GH-90000]");
-            assertThat(validation.errors().get(0).actualType()).isEqualTo("string [GH-90000]");
+            assertThat(validation.errors().get(0).expectedType()).isEqualTo("number");
+            assertThat(validation.errors().get(0).actualType()).isEqualTo("string");
         }
 
         @Test
-        @DisplayName("[D012]: extra_fields_produce_warning [GH-90000]")
+        @DisplayName("[D012]: extra_fields_produce_warning")
         void extraFieldsProduceWarning() { // GH-90000
             String modelId = "model-001";
             Map<String, Object> inputWithExtra = Map.of( // GH-90000
@@ -147,7 +147,7 @@ class ModelSchemaValidationTest extends EventloopTestBase {
                 new ModelEvaluationService.SchemaValidationResult( // GH-90000
                     true,  // Still valid
                     List.of(), // GH-90000
-                    List.of("Unexpected field 'extra_field' will be ignored [GH-90000]")
+                    List.of("Unexpected field 'extra_field' will be ignored")
                 );
 
             when(evaluationService.validateInputSchema(modelId, inputWithExtra)) // GH-90000
@@ -167,11 +167,11 @@ class ModelSchemaValidationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Output Schema [GH-90000]")
+    @DisplayName("Output Schema")
     class OutputSchemaTests {
 
         @Test
-        @DisplayName("[D012]: valid_output_passes_validation [GH-90000]")
+        @DisplayName("[D012]: valid_output_passes_validation")
         void validOutputPassesValidation() { // GH-90000
             String modelId = "model-001";
             Map<String, Object> validOutput = Map.of( // GH-90000
@@ -194,7 +194,7 @@ class ModelSchemaValidationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D012]: missing_output_field_fails_validation [GH-90000]")
+        @DisplayName("[D012]: missing_output_field_fails_validation")
         void missingOutputFieldFailsValidation() { // GH-90000
             String modelId = "model-001";
             Map<String, Object> incompleteOutput = Map.of( // GH-90000
@@ -220,11 +220,11 @@ class ModelSchemaValidationTest extends EventloopTestBase {
             );
 
             assertThat(validation.isValid()).isFalse(); // GH-90000
-            assertThat(validation.errors().get(0).field()).isEqualTo("text [GH-90000]");
+            assertThat(validation.errors().get(0).field()).isEqualTo("text");
         }
 
         @Test
-        @DisplayName("[D012]: output_type_mismatch_fails [GH-90000]")
+        @DisplayName("[D012]: output_type_mismatch_fails")
         void outputTypeMismatchFails() { // GH-90000
             String modelId = "model-001";
             Map<String, Object> wrongTypeOutput = Map.of( // GH-90000
@@ -250,7 +250,7 @@ class ModelSchemaValidationTest extends EventloopTestBase {
             );
 
             assertThat(validation.isValid()).isFalse(); // GH-90000
-            assertThat(validation.errors().get(0).expectedType()).isEqualTo("integer [GH-90000]");
+            assertThat(validation.errors().get(0).expectedType()).isEqualTo("integer");
         }
     }
 
@@ -259,11 +259,11 @@ class ModelSchemaValidationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Nested Schema [GH-90000]")
+    @DisplayName("Nested Schema")
     class NestedSchemaTests {
 
         @Test
-        @DisplayName("[D012]: nested_object_validated_recursively [GH-90000]")
+        @DisplayName("[D012]: nested_object_validated_recursively")
         void nestedObjectValidatedRecursively() { // GH-90000
             String modelId = "model-001";
             Map<String, Object> nestedInput = Map.of( // GH-90000
@@ -290,7 +290,7 @@ class ModelSchemaValidationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D012]: nested_field_error_reports_path [GH-90000]")
+        @DisplayName("[D012]: nested_field_error_reports_path")
         void nestedFieldErrorReportsPath() { // GH-90000
             String modelId = "model-001";
             Map<String, Object> invalidNested = Map.of( // GH-90000
@@ -316,7 +316,7 @@ class ModelSchemaValidationTest extends EventloopTestBase {
                 evaluationService.validateInputSchema(modelId, invalidNested) // GH-90000
             );
 
-            assertThat(validation.errors().get(0).field()).contains("config.temperature [GH-90000]");
+            assertThat(validation.errors().get(0).field()).contains("config.temperature");
         }
     }
 
@@ -325,11 +325,11 @@ class ModelSchemaValidationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Array Schema [GH-90000]")
+    @DisplayName("Array Schema")
     class ArraySchemaTests {
 
         @Test
-        @DisplayName("[D012]: array_elements_validated [GH-90000]")
+        @DisplayName("[D012]: array_elements_validated")
         void arrayElementsValidated() { // GH-90000
             String modelId = "model-001";
             Map<String, Object> arrayInput = Map.of( // GH-90000
@@ -350,7 +350,7 @@ class ModelSchemaValidationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D012]: array_element_type_mismatch_fails [GH-90000]")
+        @DisplayName("[D012]: array_element_type_mismatch_fails")
         void arrayElementTypeMismatchFails() { // GH-90000
             String modelId = "model-001";
             Map<String, Object> mixedArray = Map.of( // GH-90000
@@ -375,7 +375,7 @@ class ModelSchemaValidationTest extends EventloopTestBase {
             );
 
             assertThat(validation.isValid()).isFalse(); // GH-90000
-            assertThat(validation.errors().get(0).field()).contains("numbers [GH-90000]");
+            assertThat(validation.errors().get(0).field()).contains("numbers");
         }
     }
 
@@ -384,24 +384,24 @@ class ModelSchemaValidationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Schema Errors [GH-90000]")
+    @DisplayName("Schema Errors")
     class SchemaErrorTests {
 
         @Test
-        @DisplayName("[D012]: schema_error_contains_expected_type [GH-90000]")
+        @DisplayName("[D012]: schema_error_contains_expected_type")
         void schemaErrorContainsExpectedType() { // GH-90000
             ModelEvaluationService.SchemaError error =
                 new ModelEvaluationService.SchemaError( // GH-90000
                     "field", "number", "string", "Type mismatch"
                 );
 
-            assertThat(error.expectedType()).isEqualTo("number [GH-90000]");
-            assertThat(error.actualType()).isEqualTo("string [GH-90000]");
-            assertThat(error.message()).contains("mismatch [GH-90000]");
+            assertThat(error.expectedType()).isEqualTo("number");
+            assertThat(error.actualType()).isEqualTo("string");
+            assertThat(error.message()).contains("mismatch");
         }
 
         @Test
-        @DisplayName("[D012]: multiple_errors_collected [GH-90000]")
+        @DisplayName("[D012]: multiple_errors_collected")
         void multipleErrorsCollected() { // GH-90000
             List<ModelEvaluationService.SchemaError> errors = List.of( // GH-90000
                 new ModelEvaluationService.SchemaError("field1", "string", "null", "Missing"), // GH-90000
@@ -422,11 +422,11 @@ class ModelSchemaValidationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Schema Compatibility [GH-90000]")
+    @DisplayName("Schema Compatibility")
     class SchemaCompatibilityTests {
 
         @Test
-        @DisplayName("[D012]: backward_compatible_changes_accepted [GH-90000]")
+        @DisplayName("[D012]: backward_compatible_changes_accepted")
         void backwardCompatibleChangesAccepted() { // GH-90000
             // Adding optional fields is backward compatible
             Map<String, Object> inputWithOptional = Map.of( // GH-90000
@@ -439,7 +439,7 @@ class ModelSchemaValidationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D012]: breaking_changes_rejected [GH-90000]")
+        @DisplayName("[D012]: breaking_changes_rejected")
         void breakingChangesRejected() { // GH-90000
             // Removing required fields is breaking
             Map<String, Object> missingRequired = Map.of( // GH-90000
@@ -447,11 +447,11 @@ class ModelSchemaValidationTest extends EventloopTestBase {
                 "other_field", "value"
             );
 
-            assertThat(missingRequired).doesNotContainKey("required_field [GH-90000]");
+            assertThat(missingRequired).doesNotContainKey("required_field");
         }
 
         @Test
-        @DisplayName("[D012]: null_values_handled_correctly [GH-90000]")
+        @DisplayName("[D012]: null_values_handled_correctly")
         void nullValuesHandledCorrectly() { // GH-90000
             Map<String, Object> withNull = new java.util.HashMap<>(); // GH-90000
             withNull.put("field", null); // GH-90000

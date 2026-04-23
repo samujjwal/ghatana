@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 class StreamingRetryHandlerTest {
 
     @Test
-    @DisplayName("Should succeed on first attempt without retry [GH-90000]")
+    @DisplayName("Should succeed on first attempt without retry")
     void testNoRetryOnSuccess() { // GH-90000
         StreamingRetryHandler handler = StreamingRetryHandler.defaults(); // GH-90000
         AtomicInteger calls = new AtomicInteger(0); // GH-90000
@@ -34,7 +34,7 @@ class StreamingRetryHandlerTest {
     }
 
     @Test
-    @DisplayName("Should retry on retryable exception [GH-90000]")
+    @DisplayName("Should retry on retryable exception")
     void testRetryOnRetryableException() { // GH-90000
         StreamingRetryHandler handler = StreamingRetryHandler.builder() // GH-90000
             .maxRetries(3) // GH-90000
@@ -46,7 +46,7 @@ class StreamingRetryHandlerTest {
         String result = handler.executeWithRetry(() -> { // GH-90000
             int call = calls.incrementAndGet(); // GH-90000
             if (call < 3) { // GH-90000
-                throw new RuntimeException("try again failure [GH-90000]");
+                throw new RuntimeException("try again failure");
             }
             return "success";
         }, "test operation");
@@ -56,7 +56,7 @@ class StreamingRetryHandlerTest {
     }
 
     @Test
-    @DisplayName("Should throw after max retries exhausted [GH-90000]")
+    @DisplayName("Should throw after max retries exhausted")
     void testThrowsAfterMaxRetries() { // GH-90000
         StreamingRetryHandler handler = StreamingRetryHandler.builder() // GH-90000
             .maxRetries(2) // GH-90000
@@ -65,13 +65,13 @@ class StreamingRetryHandlerTest {
 
         assertThrows(StreamingRetryHandler.StreamingRetryExhaustedException.class, () -> { // GH-90000
             handler.executeWithRetry(() -> { // GH-90000
-                throw new RuntimeException("try again [GH-90000]");
+                throw new RuntimeException("try again");
             }, "failing operation");
         });
     }
 
     @Test
-    @DisplayName("Should use fallback when retries exhausted [GH-90000]")
+    @DisplayName("Should use fallback when retries exhausted")
     void testFallbackOnExhaustion() { // GH-90000
         StreamingRetryHandler handler = StreamingRetryHandler.builder() // GH-90000
             .maxRetries(2) // GH-90000
@@ -79,14 +79,14 @@ class StreamingRetryHandlerTest {
             .build(); // GH-90000
 
         String result = handler.executeWithFallback(() -> { // GH-90000
-            throw new RuntimeException("try again [GH-90000]");
+            throw new RuntimeException("try again");
         }, "fallback", "failing operation");
 
         assertEquals("fallback", result); // GH-90000
     }
 
     @Test
-    @DisplayName("Should retry on socket timeout [GH-90000]")
+    @DisplayName("Should retry on socket timeout")
     void testRetryOnSocketTimeout() { // GH-90000
         StreamingRetryHandler handler = StreamingRetryHandler.builder() // GH-90000
             .maxRetries(2) // GH-90000
@@ -98,7 +98,7 @@ class StreamingRetryHandlerTest {
         String result = handler.executeWithRetry(() -> { // GH-90000
             int call = calls.incrementAndGet(); // GH-90000
             if (call == 1) { // GH-90000
-                throw new RuntimeException("try again [GH-90000]");
+                throw new RuntimeException("try again");
             }
             return "success";
         }, "test operation");
@@ -108,7 +108,7 @@ class StreamingRetryHandlerTest {
     }
 
     @Test
-    @DisplayName("Should not retry on non-retryable exception [GH-90000]")
+    @DisplayName("Should not retry on non-retryable exception")
     void testNoRetryOnNonRetryable() { // GH-90000
         StreamingRetryHandler handler = StreamingRetryHandler.defaults(); // GH-90000
         AtomicInteger calls = new AtomicInteger(0); // GH-90000
@@ -116,7 +116,7 @@ class StreamingRetryHandlerTest {
         assertThrows(StreamingRetryHandler.StreamingRetryExhaustedException.class, () -> { // GH-90000
             handler.executeWithRetry(() -> { // GH-90000
                 calls.incrementAndGet(); // GH-90000
-                throw new IllegalArgumentException("Invalid argument [GH-90000]"); // Non-retryable
+                throw new IllegalArgumentException("Invalid argument"); // Non-retryable
             }, "test operation");
         });
 
@@ -124,7 +124,7 @@ class StreamingRetryHandlerTest {
     }
 
     @Test
-    @DisplayName("Should apply exponential backoff [GH-90000]")
+    @DisplayName("Should apply exponential backoff")
     void testExponentialBackoff() { // GH-90000
         long[] delays = new long[3];
 
@@ -140,7 +140,7 @@ class StreamingRetryHandlerTest {
         assertThrows(StreamingRetryHandler.StreamingRetryExhaustedException.class, () -> { // GH-90000
             handler.executeWithRetry(() -> { // GH-90000
                 calls.incrementAndGet(); // GH-90000
-                throw new RuntimeException("try again [GH-90000]");
+                throw new RuntimeException("try again");
             }, "test");
         });
 
@@ -149,7 +149,7 @@ class StreamingRetryHandlerTest {
     }
 
     @Test
-    @DisplayName("Should cap delay at max delay [GH-90000]")
+    @DisplayName("Should cap delay at max delay")
     void testMaxDelayCap() { // GH-90000
         StreamingRetryHandler handler = StreamingRetryHandler.builder() // GH-90000
             .maxRetries(10) // GH-90000
@@ -164,7 +164,7 @@ class StreamingRetryHandlerTest {
     }
 
     @Test
-    @DisplayName("Should respect timeout limit [GH-90000]")
+    @DisplayName("Should respect timeout limit")
     void testTimeoutRespected() { // GH-90000
         TimeoutConfig timeoutConfig = TimeoutConfig.builder() // GH-90000
             .streamingTimeout(Duration.ofMillis(100)) // Very short timeout // GH-90000
@@ -178,13 +178,13 @@ class StreamingRetryHandlerTest {
 
         assertThrows(StreamingRetryHandler.StreamingRetryExhaustedException.class, () -> { // GH-90000
             handler.executeWithRetry(() -> { // GH-90000
-                throw new RuntimeException("try again [GH-90000]");
+                throw new RuntimeException("try again");
             }, "test");
         });
     }
 
     @Test
-    @DisplayName("Should create aggressive retry handler [GH-90000]")
+    @DisplayName("Should create aggressive retry handler")
     void testAggressiveHandler() { // GH-90000
         StreamingRetryHandler handler = StreamingRetryHandler.aggressive(); // GH-90000
 
@@ -194,7 +194,7 @@ class StreamingRetryHandlerTest {
     }
 
     @Test
-    @DisplayName("Should create conservative retry handler [GH-90000]")
+    @DisplayName("Should create conservative retry handler")
     void testConservativeHandler() { // GH-90000
         StreamingRetryHandler handler = StreamingRetryHandler.conservative(); // GH-90000
 
@@ -204,7 +204,7 @@ class StreamingRetryHandlerTest {
     }
 
     @Test
-    @DisplayName("Should track attempt count in exception [GH-90000]")
+    @DisplayName("Should track attempt count in exception")
     void testExceptionAttemptCount() { // GH-90000
         StreamingRetryHandler handler = StreamingRetryHandler.builder() // GH-90000
             .maxRetries(2) // GH-90000
@@ -214,7 +214,7 @@ class StreamingRetryHandlerTest {
         StreamingRetryHandler.StreamingRetryExhaustedException exception =
             assertThrows(StreamingRetryHandler.StreamingRetryExhaustedException.class, () -> { // GH-90000
                 handler.executeWithRetry(() -> { // GH-90000
-                    throw new RuntimeException("try again [GH-90000]");
+                    throw new RuntimeException("try again");
                 }, "test");
             });
 

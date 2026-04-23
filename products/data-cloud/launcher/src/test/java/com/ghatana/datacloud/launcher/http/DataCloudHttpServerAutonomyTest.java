@@ -37,7 +37,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataCloudHttpServer – Autonomy Endpoints (B9) [GH-90000]")
+@DisplayName("DataCloudHttpServer – Autonomy Endpoints (B9)")
 class DataCloudHttpServerAutonomyTest {
 
     private DataCloudClient mockClient;
@@ -119,11 +119,11 @@ class DataCloudHttpServerAutonomyTest {
     // ─── tests ───────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("PUT /api/v1/autonomy/level [GH-90000]")
+    @DisplayName("PUT /api/v1/autonomy/level")
     class SetGlobalLevelTests {
 
         @Test
-        @DisplayName("returns 200 with globalLevel when controller has no active domains [GH-90000]")
+        @DisplayName("returns 200 with globalLevel when controller has no active domains")
         void setGlobalLevel_noDomains_returns200() throws Exception { // GH-90000
             when(mockController.listAllStates(anyString())) // GH-90000
                     .thenReturn(Promise.of(Map.of())); // GH-90000
@@ -135,15 +135,15 @@ class DataCloudHttpServerAutonomyTest {
                     "{\"level\":\"SUGGEST\",\"reason\":\"operator-test\"}");
 
             assertThat(response.statusCode()).isEqualTo(200); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, Object> body = mapper.readValue(response.body(), Map.class); // GH-90000
-            assertThat(body.get("globalLevel [GH-90000]")).isEqualTo("SUGGEST [GH-90000]");
-            assertThat(body).containsKey("affectedDomains [GH-90000]");
-            assertThat(((Number) body.get("affectedDomains [GH-90000]")).intValue()).isEqualTo(0);
+            assertThat(body.get("globalLevel")).isEqualTo("SUGGEST");
+            assertThat(body).containsKey("affectedDomains");
+            assertThat(((Number) body.get("affectedDomains")).intValue()).isEqualTo(0);
         }
 
         @Test
-        @DisplayName("returns 400 when level field is missing [GH-90000]")
+        @DisplayName("returns 400 when level field is missing")
         void setGlobalLevel_missingLevel_returns400() throws Exception { // GH-90000
             startServerWithController(); // GH-90000
 
@@ -155,7 +155,7 @@ class DataCloudHttpServerAutonomyTest {
         }
 
         @Test
-        @DisplayName("returns 400 for unknown level value [GH-90000]")
+        @DisplayName("returns 400 for unknown level value")
         void setGlobalLevel_unknownLevel_returns400() throws Exception { // GH-90000
             startServerWithController(); // GH-90000
 
@@ -167,7 +167,7 @@ class DataCloudHttpServerAutonomyTest {
         }
 
         @Test
-        @DisplayName("returns 503 when autonomy controller is not wired [GH-90000]")
+        @DisplayName("returns 503 when autonomy controller is not wired")
         void setGlobalLevel_noController_returns503() throws Exception { // GH-90000
             startServerWithoutController(); // GH-90000
 
@@ -180,32 +180,32 @@ class DataCloudHttpServerAutonomyTest {
     }
 
     @Nested
-    @DisplayName("GET /api/v1/autonomy/level [GH-90000]")
+    @DisplayName("GET /api/v1/autonomy/level")
     class GetGlobalLevelTests {
 
         @Test
-        @DisplayName("returns 200 with current level info when controller is wired [GH-90000]")
+        @DisplayName("returns 200 with current level info when controller is wired")
         void getGlobalLevel_controllerWired_returns200() throws Exception { // GH-90000
             when(mockController.listAllStates(anyString())) // GH-90000
                     .thenReturn(Promise.of(Map.of())); // GH-90000
 
             startServerWithController(); // GH-90000
 
-            HttpResponse<String> response = get("/api/v1/autonomy/level [GH-90000]");
+            HttpResponse<String> response = get("/api/v1/autonomy/level");
 
             assertThat(response.statusCode()).isEqualTo(200); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, Object> body = mapper.readValue(response.body(), Map.class); // GH-90000
-            assertThat(body).containsKey("globalLevel [GH-90000]");
-            assertThat(body).containsKey("shutoffActive [GH-90000]");
+            assertThat(body).containsKey("globalLevel");
+            assertThat(body).containsKey("shutoffActive");
         }
 
         @Test
-        @DisplayName("returns 503 when autonomy controller is not wired [GH-90000]")
+        @DisplayName("returns 503 when autonomy controller is not wired")
         void getGlobalLevel_noController_returns503() throws Exception { // GH-90000
             startServerWithoutController(); // GH-90000
 
-            HttpResponse<String> response = get("/api/v1/autonomy/level [GH-90000]");
+            HttpResponse<String> response = get("/api/v1/autonomy/level");
 
             assertThat(response.statusCode()).isEqualTo(503); // GH-90000
         }

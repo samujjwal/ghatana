@@ -33,7 +33,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("FederatedQueryHandler – query timeout, tenant catalog isolation (P3.2.1) [GH-90000]")
+@DisplayName("FederatedQueryHandler – query timeout, tenant catalog isolation (P3.2.1)")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class FederatedQueryHandlerEnhancementTest {
 
@@ -52,17 +52,17 @@ class FederatedQueryHandlerEnhancementTest {
     // ── Default timeout constant ──────────────────────────────────────────────
 
     @Nested
-    @DisplayName("default timeout and constructor [GH-90000]")
+    @DisplayName("default timeout and constructor")
     class DefaultTimeoutTests {
 
         @Test
-        @DisplayName("DEFAULT_QUERY_TIMEOUT_SECONDS is 30 [GH-90000]")
+        @DisplayName("DEFAULT_QUERY_TIMEOUT_SECONDS is 30")
         void defaultTimeoutConstantIs30() { // GH-90000
             assertThat(FederatedQueryHandler.DEFAULT_QUERY_TIMEOUT_SECONDS).isEqualTo(30); // GH-90000
         }
 
         @Test
-        @DisplayName("4-arg constructor defaults to 30s timeout [GH-90000]")
+        @DisplayName("4-arg constructor defaults to 30s timeout")
         void fourArgConstructor_defaultsTo30s() { // GH-90000
             FederatedQueryHandler handler = new FederatedQueryHandler( // GH-90000
                     http, analyticsEngine, metrics, null);
@@ -71,7 +71,7 @@ class FederatedQueryHandlerEnhancementTest {
         }
 
         @Test
-        @DisplayName("5-arg constructor accepts custom positive timeout [GH-90000]")
+        @DisplayName("5-arg constructor accepts custom positive timeout")
         void fiveArgConstructor_acceptsCustomTimeout() { // GH-90000
             FederatedQueryHandler handler = new FederatedQueryHandler( // GH-90000
                     http, analyticsEngine, metrics, null, 60);
@@ -79,66 +79,66 @@ class FederatedQueryHandlerEnhancementTest {
         }
 
         @Test
-        @DisplayName("5-arg constructor rejects non-positive timeout [GH-90000]")
+        @DisplayName("5-arg constructor rejects non-positive timeout")
         void fiveArgConstructor_rejectsZeroTimeout() { // GH-90000
             assertThatThrownBy(() -> new FederatedQueryHandler( // GH-90000
                             http, analyticsEngine, metrics, null, 0))
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("queryTimeoutSeconds must be positive [GH-90000]");
+                    .hasMessageContaining("queryTimeoutSeconds must be positive");
         }
 
         @Test
-        @DisplayName("5-arg constructor rejects negative timeout [GH-90000]")
+        @DisplayName("5-arg constructor rejects negative timeout")
         void fiveArgConstructor_rejectsNegativeTimeout() { // GH-90000
             assertThatThrownBy(() -> new FederatedQueryHandler( // GH-90000
                             http, analyticsEngine, metrics, null, -5))
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("queryTimeoutSeconds must be positive [GH-90000]");
+                    .hasMessageContaining("queryTimeoutSeconds must be positive");
         }
     }
 
     // ── Tenant catalog URL building ───────────────────────────────────────────
 
     @Nested
-    @DisplayName("buildTenantUrl() — tenant catalog isolation [GH-90000]")
+    @DisplayName("buildTenantUrl() — tenant catalog isolation")
     class TenantUrlTests {
 
         @Test
-        @DisplayName("replaces trailing catalog segment with tenant catalog [GH-90000]")
+        @DisplayName("replaces trailing catalog segment with tenant catalog")
         void replacesExistingCatalog() { // GH-90000
             String result = FederatedQueryHandler.buildTenantUrl( // GH-90000
                     "jdbc:trino://host:8080/eventcloud", "eventcloud_acme");
-            assertThat(result).isEqualTo("jdbc:trino://host:8080/eventcloud_acme [GH-90000]");
+            assertThat(result).isEqualTo("jdbc:trino://host:8080/eventcloud_acme");
         }
 
         @Test
-        @DisplayName("appends tenant catalog when no segment present [GH-90000]")
+        @DisplayName("appends tenant catalog when no segment present")
         void appendsCatalogWhenMissing() { // GH-90000
             String result = FederatedQueryHandler.buildTenantUrl( // GH-90000
                     "jdbc:trino://host:8080", "eventcloud_acme");
-            assertThat(result).isEqualTo("jdbc:trino://host:8080/eventcloud_acme [GH-90000]");
+            assertThat(result).isEqualTo("jdbc:trino://host:8080/eventcloud_acme");
         }
 
         @Test
-        @DisplayName("different tenants produce different catalog URLs [GH-90000]")
+        @DisplayName("different tenants produce different catalog URLs")
         void differentTenantsProduceDifferentUrls() { // GH-90000
             String urlA = FederatedQueryHandler.buildTenantUrl( // GH-90000
                     "jdbc:trino://host:8080/eventcloud", "eventcloud_tenantA");
             String urlB = FederatedQueryHandler.buildTenantUrl( // GH-90000
                     "jdbc:trino://host:8080/eventcloud", "eventcloud_tenantB");
             assertThat(urlA).isNotEqualTo(urlB); // GH-90000
-            assertThat(urlA).contains("tenantA [GH-90000]");
-            assertThat(urlB).contains("tenantB [GH-90000]");
+            assertThat(urlA).contains("tenantA");
+            assertThat(urlB).contains("tenantB");
         }
 
         @Test
-        @DisplayName("null base URL returns null gracefully [GH-90000]")
+        @DisplayName("null base URL returns null gracefully")
         void nullBaseUrl_returnsNull() { // GH-90000
             assertThat(FederatedQueryHandler.buildTenantUrl(null, "eventcloud_x")).isNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("tenant catalog follows eventcloud_<tenantId> pattern [GH-90000]")
+        @DisplayName("tenant catalog follows eventcloud_<tenantId> pattern")
         void tenantCatalogPattern() { // GH-90000
             String tenantId = "my-company-123";
             String expectedCatalog = "eventcloud_" + tenantId;
@@ -149,11 +149,11 @@ class FederatedQueryHandlerEnhancementTest {
     }
 
     @Nested
-    @DisplayName("handleFederatedQuery() tenant enforcement [GH-90000]")
+    @DisplayName("handleFederatedQuery() tenant enforcement")
     class TenantEnforcementTests {
 
         @Test
-        @DisplayName("returns 400 when tenant header is missing [GH-90000]")
+        @DisplayName("returns 400 when tenant header is missing")
         void returns400WhenTenantMissing() { // GH-90000
             FederatedQueryHandler handler = new FederatedQueryHandler( // GH-90000
                     http, analyticsEngine, metrics, null);

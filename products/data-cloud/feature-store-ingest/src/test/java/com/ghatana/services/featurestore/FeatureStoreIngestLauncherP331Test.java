@@ -45,10 +45,10 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test, Mockito
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("P3.3.1 — FeatureTransformSpec and lag metric [GH-90000]")
+@DisplayName("P3.3.1 — FeatureTransformSpec and lag metric")
 class FeatureStoreIngestLauncherP331Test {
 
-    private static final TenantId TENANT = TenantId.of("t1 [GH-90000]");
+    private static final TenantId TENANT = TenantId.of("t1");
 
     @Mock private FeatureStoreService featureStore;
     @Mock private MetricsCollector metrics;
@@ -63,7 +63,7 @@ class FeatureStoreIngestLauncherP331Test {
             .ttl(Duration.ofMinutes(1)) // GH-90000
             .enableReplay(false) // GH-90000
             .build(); // GH-90000
-        CircuitBreaker cb = CircuitBreaker.builder("p331-cb [GH-90000]")
+        CircuitBreaker cb = CircuitBreaker.builder("p331-cb")
             .failureThreshold(10) // GH-90000
             .resetTimeout(Duration.ofSeconds(30)) // GH-90000
             .successThreshold(2) // GH-90000
@@ -79,31 +79,31 @@ class FeatureStoreIngestLauncherP331Test {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("FeatureTransformSpec — passThrough() [GH-90000]")
+    @DisplayName("FeatureTransformSpec — passThrough()")
     class PassThroughTests {
 
         @Test
-        @DisplayName("passThrough accepts any event type [GH-90000]")
+        @DisplayName("passThrough accepts any event type")
         void passThroughAcceptsAnyEventType() { // GH-90000
             FeatureTransformSpec spec = FeatureTransformSpec.passThrough(); // GH-90000
 
-            assertThat(spec.acceptsEventType("user.created [GH-90000]")).isTrue();
-            assertThat(spec.acceptsEventType("payment.processed [GH-90000]")).isTrue();
-            assertThat(spec.acceptsEventType(" [GH-90000]")).isTrue();
+            assertThat(spec.acceptsEventType("user.created")).isTrue();
+            assertThat(spec.acceptsEventType("payment.processed")).isTrue();
+            assertThat(spec.acceptsEventType("")).isTrue();
         }
 
         @Test
-        @DisplayName("passThrough accepts any field name [GH-90000]")
+        @DisplayName("passThrough accepts any field name")
         void passThroughAcceptsAnyField() { // GH-90000
             FeatureTransformSpec spec = FeatureTransformSpec.passThrough(); // GH-90000
 
-            assertThat(spec.acceptsField("amount [GH-90000]")).isTrue();
-            assertThat(spec.acceptsField("internal_secret [GH-90000]")).isTrue();
-            assertThat(spec.acceptsField("ignored_field [GH-90000]")).isTrue();
+            assertThat(spec.acceptsField("amount")).isTrue();
+            assertThat(spec.acceptsField("internal_secret")).isTrue();
+            assertThat(spec.acceptsField("ignored_field")).isTrue();
         }
 
         @Test
-        @DisplayName("passThrough enables derived time features by default [GH-90000]")
+        @DisplayName("passThrough enables derived time features by default")
         void passThroughEnablesDerivedTimeFeatures() { // GH-90000
             FeatureTransformSpec spec = FeatureTransformSpec.passThrough(); // GH-90000
 
@@ -112,62 +112,62 @@ class FeatureStoreIngestLauncherP331Test {
     }
 
     @Nested
-    @DisplayName("FeatureTransformSpec — event-type filter [GH-90000]")
+    @DisplayName("FeatureTransformSpec — event-type filter")
     class EventTypeFilterTests {
 
         @Test
-        @DisplayName("eventType filter rejects unlisted event types [GH-90000]")
+        @DisplayName("eventType filter rejects unlisted event types")
         void rejectsUnlistedEventType() { // GH-90000
             FeatureTransformSpec spec = FeatureTransformSpec.builder() // GH-90000
-                .eventType("user.created [GH-90000]")
+                .eventType("user.created")
                 .build(); // GH-90000
 
-            assertThat(spec.acceptsEventType("user.created [GH-90000]")).isTrue();
-            assertThat(spec.acceptsEventType("payment.processed [GH-90000]")).isFalse();
+            assertThat(spec.acceptsEventType("user.created")).isTrue();
+            assertThat(spec.acceptsEventType("payment.processed")).isFalse();
         }
 
         @Test
-        @DisplayName("eventType filter accepts multiple configured types [GH-90000]")
+        @DisplayName("eventType filter accepts multiple configured types")
         void acceptsMultipleConfiguredTypes() { // GH-90000
             FeatureTransformSpec spec = FeatureTransformSpec.builder() // GH-90000
-                .eventType("user.created [GH-90000]")
-                .eventType("payment.processed [GH-90000]")
+                .eventType("user.created")
+                .eventType("payment.processed")
                 .build(); // GH-90000
 
-            assertThat(spec.acceptsEventType("user.created [GH-90000]")).isTrue();
-            assertThat(spec.acceptsEventType("payment.processed [GH-90000]")).isTrue();
-            assertThat(spec.acceptsEventType("order.placed [GH-90000]")).isFalse();
+            assertThat(spec.acceptsEventType("user.created")).isTrue();
+            assertThat(spec.acceptsEventType("payment.processed")).isTrue();
+            assertThat(spec.acceptsEventType("order.placed")).isFalse();
         }
     }
 
     @Nested
-    @DisplayName("FeatureTransformSpec — field filter [GH-90000]")
+    @DisplayName("FeatureTransformSpec — field filter")
     class FieldFilterTests {
 
         @Test
-        @DisplayName("includeFields allows only listed fields [GH-90000]")
+        @DisplayName("includeFields allows only listed fields")
         void includeFieldsAllowsOnlyListed() { // GH-90000
             FeatureTransformSpec spec = FeatureTransformSpec.builder() // GH-90000
-                .includeField("amount [GH-90000]")
-                .includeField("score [GH-90000]")
+                .includeField("amount")
+                .includeField("score")
                 .build(); // GH-90000
 
-            assertThat(spec.acceptsField("amount [GH-90000]")).isTrue();
-            assertThat(spec.acceptsField("score [GH-90000]")).isTrue();
-            assertThat(spec.acceptsField("internal_id [GH-90000]")).isFalse();
+            assertThat(spec.acceptsField("amount")).isTrue();
+            assertThat(spec.acceptsField("score")).isTrue();
+            assertThat(spec.acceptsField("internal_id")).isFalse();
         }
 
         @Test
-        @DisplayName("excludeFields drops listed fields [GH-90000]")
+        @DisplayName("excludeFields drops listed fields")
         void excludeFieldsDropsListedFields() { // GH-90000
             FeatureTransformSpec spec = FeatureTransformSpec.builder() // GH-90000
-                .excludeField("internal_id [GH-90000]")
-                .excludeField("raw_password [GH-90000]")
+                .excludeField("internal_id")
+                .excludeField("raw_password")
                 .build(); // GH-90000
 
-            assertThat(spec.acceptsField("amount [GH-90000]")).isTrue();
-            assertThat(spec.acceptsField("internal_id [GH-90000]")).isFalse();
-            assertThat(spec.acceptsField("raw_password [GH-90000]")).isFalse();
+            assertThat(spec.acceptsField("amount")).isTrue();
+            assertThat(spec.acceptsField("internal_id")).isFalse();
+            assertThat(spec.acceptsField("raw_password")).isFalse();
         }
     }
 
@@ -176,47 +176,47 @@ class FeatureStoreIngestLauncherP331Test {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("extractFeatures — spec overload [GH-90000]")
+    @DisplayName("extractFeatures — spec overload")
     class ExtractFeaturesWithSpecTests {
 
         @Test
-        @DisplayName("spec with includeField produces only allowed fields [GH-90000]")
+        @DisplayName("spec with includeField produces only allowed fields")
         void includeFieldsFilterApplied() { // GH-90000
             Map<String, Object> payload = Map.of("amount", 99.0, "score", 5.0, "secret", 42.0); // GH-90000
             Instant ts = Instant.now(); // GH-90000
 
             FeatureTransformSpec spec = FeatureTransformSpec.builder() // GH-90000
-                .includeField("amount [GH-90000]")
+                .includeField("amount")
                 .derivedTimeFeatures(false) // GH-90000
                 .build(); // GH-90000
 
             List<MLFeature> features = FeatureStoreIngestLauncher.extractFeatures("e1", payload, ts, spec); // GH-90000
 
             assertThat(features).extracting(MLFeature::getName) // GH-90000
-                .containsExactly("amount [GH-90000]")
+                .containsExactly("amount")
                 .doesNotContain("score", "secret"); // GH-90000
         }
 
         @Test
-        @DisplayName("spec with excludeField removes that field [GH-90000]")
+        @DisplayName("spec with excludeField removes that field")
         void excludeFieldsFilterApplied() { // GH-90000
             Map<String, Object> payload = Map.of("amount", 99.0, "internal_id", 1.0); // GH-90000
             Instant ts = Instant.now(); // GH-90000
 
             FeatureTransformSpec spec = FeatureTransformSpec.builder() // GH-90000
-                .excludeField("internal_id [GH-90000]")
+                .excludeField("internal_id")
                 .derivedTimeFeatures(false) // GH-90000
                 .build(); // GH-90000
 
             List<MLFeature> features = FeatureStoreIngestLauncher.extractFeatures("e1", payload, ts, spec); // GH-90000
 
             assertThat(features).extracting(MLFeature::getName) // GH-90000
-                .contains("amount [GH-90000]")
-                .doesNotContain("internal_id [GH-90000]");
+                .contains("amount")
+                .doesNotContain("internal_id");
         }
 
         @Test
-        @DisplayName("derivedTimeFeatures=false suppresses hour_of_day and day_of_week [GH-90000]")
+        @DisplayName("derivedTimeFeatures=false suppresses hour_of_day and day_of_week")
         void derivedTimeFeaturesDisabled() { // GH-90000
             Map<String, Object> payload = Map.of("value", 1.0); // GH-90000
             Instant ts = Instant.now(); // GH-90000
@@ -232,7 +232,7 @@ class FeatureStoreIngestLauncherP331Test {
         }
 
         @Test
-        @DisplayName("derivedTimeFeatures=true (default) appends hour_of_day and day_of_week [GH-90000]")
+        @DisplayName("derivedTimeFeatures=true (default) appends hour_of_day and day_of_week")
         void derivedTimeFeaturesEnabled() { // GH-90000
             Map<String, Object> payload = Map.of("value", 1.0); // GH-90000
             Instant ts = Instant.now(); // GH-90000
@@ -251,19 +251,19 @@ class FeatureStoreIngestLauncherP331Test {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("withTransformSpec — validation [GH-90000]")
+    @DisplayName("withTransformSpec — validation")
     class WithTransformSpecTests {
 
         @Test
-        @DisplayName("withTransformSpec rejects null [GH-90000]")
+        @DisplayName("withTransformSpec rejects null")
         void rejectsNull() { // GH-90000
             assertThatThrownBy(() -> launcher.withTransformSpec(null)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("transformSpec must not be null [GH-90000]");
+                .hasMessageContaining("transformSpec must not be null");
         }
 
         @Test
-        @DisplayName("withTransformSpec returns launcher for chaining [GH-90000]")
+        @DisplayName("withTransformSpec returns launcher for chaining")
         void returnsLauncher() { // GH-90000
             FeatureTransformSpec spec = FeatureTransformSpec.passThrough(); // GH-90000
 
@@ -278,14 +278,14 @@ class FeatureStoreIngestLauncherP331Test {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("processEntry — event-type filtering increments counter [GH-90000]")
+    @DisplayName("processEntry — event-type filtering increments counter")
     class ProcessEntryFilterTests {
 
         @Test
-        @DisplayName("filtered event type increments filtered counter and skips feature write [GH-90000]")
+        @DisplayName("filtered event type increments filtered counter and skips feature write")
         void filteredEventTypeSkipsIngestion() throws Exception { // GH-90000
             FeatureTransformSpec spec = FeatureTransformSpec.builder() // GH-90000
-                .eventType("user.created [GH-90000]")
+                .eventType("user.created")
                 .build(); // GH-90000
             launcher.withTransformSpec(spec); // GH-90000
 
@@ -294,17 +294,17 @@ class FeatureStoreIngestLauncherP331Test {
             invokeProcessEntry(entry); // GH-90000
 
             verify(metrics).incrementCounter( // GH-90000
-                eq("feature.ingest.events.filtered [GH-90000]"),
-                eq("tenant [GH-90000]"), eq("t1 [GH-90000]"),
-                eq("event_type [GH-90000]"), eq("payment.processed [GH-90000]"));
+                eq("feature.ingest.events.filtered"),
+                eq("tenant"), eq("t1"),
+                eq("event_type"), eq("payment.processed"));
             verify(featureStore, never()).ingest(anyString(), any()); // GH-90000
         }
 
         @Test
-        @DisplayName("accepted event type proceeds to feature ingestion [GH-90000]")
+        @DisplayName("accepted event type proceeds to feature ingestion")
         void acceptedEventTypeProceedsToIngestion() throws Exception { // GH-90000
             FeatureTransformSpec spec = FeatureTransformSpec.builder() // GH-90000
-                .eventType("user.created [GH-90000]")
+                .eventType("user.created")
                 .derivedTimeFeatures(false) // GH-90000
                 .build(); // GH-90000
             launcher.withTransformSpec(spec); // GH-90000
@@ -314,7 +314,7 @@ class FeatureStoreIngestLauncherP331Test {
 
             invokeProcessEntry(entry); // GH-90000
 
-            verify(featureStore, atLeastOnce()).ingest(eq("t1 [GH-90000]"), any());
+            verify(featureStore, atLeastOnce()).ingest(eq("t1"), any());
         }
     }
 
@@ -323,11 +323,11 @@ class FeatureStoreIngestLauncherP331Test {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("processEntry — lag metric [GH-90000]")
+    @DisplayName("processEntry — lag metric")
     class LagMetricTests {
 
         @Test
-        @DisplayName("processEntry emits feature.ingest.lag_ms timer [GH-90000]")
+        @DisplayName("processEntry emits feature.ingest.lag_ms timer")
         void processEntryEmitsLagMetric() throws Exception { // GH-90000
             lenient().doNothing().when(featureStore).ingest(anyString(), any()); // GH-90000
 
@@ -336,9 +336,9 @@ class FeatureStoreIngestLauncherP331Test {
             invokeProcessEntry(entry); // GH-90000
 
             verify(metrics).recordTimer( // GH-90000
-                eq("feature.ingest.lag_ms [GH-90000]"),
+                eq("feature.ingest.lag_ms"),
                 any(Long.class), // GH-90000
-                eq("tenant [GH-90000]"), eq("t1 [GH-90000]"));
+                eq("tenant"), eq("t1"));
         }
     }
 

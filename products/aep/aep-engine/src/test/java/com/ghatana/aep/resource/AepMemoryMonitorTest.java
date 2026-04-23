@@ -19,7 +19,7 @@ import static org.mockito.Mockito.when;
 /**
  * Unit tests for {@link AepMemoryMonitor} (AEP-005.1). // GH-90000
  */
-@DisplayName("AepMemoryMonitor — AEP-005.1 [GH-90000]")
+@DisplayName("AepMemoryMonitor — AEP-005.1")
 class AepMemoryMonitorTest {
 
     private MemoryMXBean mockBean;
@@ -42,14 +42,14 @@ class AepMemoryMonitorTest {
     }
 
     @Test
-    @DisplayName("Initial snapshot is empty sentinel [GH-90000]")
+    @DisplayName("Initial snapshot is empty sentinel")
     void initialSnapshotIsEmpty() { // GH-90000
         assertThat(monitor.currentSnapshot().isEmpty()).isTrue(); // GH-90000
         assertThat(monitor.sampleCount()).isEqualTo(0); // GH-90000
     }
 
     @Test
-    @DisplayName("sample() updates snapshot with correct values [GH-90000]")
+    @DisplayName("sample() updates snapshot with correct values")
     void sampleUpdatesSnapshot() { // GH-90000
         monitor.sample(); // GH-90000
 
@@ -62,7 +62,7 @@ class AepMemoryMonitorTest {
     }
 
     @Test
-    @DisplayName("heapUsedMb and heapMaxMb helpers work correctly [GH-90000]")
+    @DisplayName("heapUsedMb and heapMaxMb helpers work correctly")
     void heapMbHelpers() { // GH-90000
         monitor.sample(); // GH-90000
         AepMemoryMonitor.MemorySnapshot snap = monitor.currentSnapshot(); // GH-90000
@@ -71,7 +71,7 @@ class AepMemoryMonitorTest {
     }
 
     @Test
-    @DisplayName("sample() at >80% heap logs warning (no exception) [GH-90000]")
+    @DisplayName("sample() at >80% heap logs warning (no exception)")
     void highHeapRatioDoesNotThrow() { // GH-90000
         // heap ratio = 800/1024 ≈ 78% → just below 80% threshold; use max=900MB to trigger warning
         when(mockBean.getHeapMemoryUsage()) // GH-90000
@@ -83,14 +83,14 @@ class AepMemoryMonitorTest {
     }
 
     @Test
-    @DisplayName("Builder rejects samplingIntervalMs <= 0 [GH-90000]")
+    @DisplayName("Builder rejects samplingIntervalMs <= 0")
     void builderRejectsNonPositiveInterval() { // GH-90000
         assertThatThrownBy(() -> AepMemoryMonitor.builder().samplingIntervalMs(0)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("Builder rejects heapWarningThreshold out of range [GH-90000]")
+    @DisplayName("Builder rejects heapWarningThreshold out of range")
     void builderRejectsInvalidThreshold() { // GH-90000
         assertThatThrownBy(() -> AepMemoryMonitor.builder().heapWarningThreshold(1.5)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class); // GH-90000

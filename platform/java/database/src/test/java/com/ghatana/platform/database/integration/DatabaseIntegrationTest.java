@@ -28,11 +28,11 @@ import static org.mockito.Mockito.*;
  * Real database interaction tests with transaction management,
  * connection pooling, and failure scenarios.
  */
-@DisplayName("Database Integration Tests [GH-90000]")
+@DisplayName("Database Integration Tests")
 class DatabaseIntegrationTest {
 
     @Test
-    @DisplayName("Should handle database connection pooling [GH-90000]")
+    @DisplayName("Should handle database connection pooling")
     void shouldHandleDatabaseConnectionPooling() { // GH-90000
         DataSource mockDataSource = mock(DataSource.class); // GH-90000
         JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
@@ -41,7 +41,7 @@ class DatabaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should handle transaction commit and rollback [GH-90000]")
+    @DisplayName("Should handle transaction commit and rollback")
     void shouldHandleTransactionCommitAndRollback() { // GH-90000
         DataSource mockDataSource = mock(DataSource.class); // GH-90000
         Connection mockConnection = mock(Connection.class); // GH-90000
@@ -67,12 +67,12 @@ class DatabaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should handle database connection failures gracefully [GH-90000]")
+    @DisplayName("Should handle database connection failures gracefully")
     void shouldHandleDatabaseConnectionFailuresGracefully() { // GH-90000
         DataSource mockDataSource = mock(DataSource.class); // GH-90000
 
         try {
-            when(mockDataSource.getConnection()).thenThrow(new java.sql.SQLException("Connection failed [GH-90000]"));
+            when(mockDataSource.getConnection()).thenThrow(new java.sql.SQLException("Connection failed"));
 
             JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
 
@@ -86,7 +86,7 @@ class DatabaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should handle concurrent database operations [GH-90000]")
+    @DisplayName("Should handle concurrent database operations")
     void shouldHandleConcurrentDatabaseOperations() { // GH-90000
         DatabaseClient mockClient = mock(DatabaseClient.class); // GH-90000
 
@@ -99,7 +99,7 @@ class DatabaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should handle database query timeouts [GH-90000]")
+    @DisplayName("Should handle database query timeouts")
     void shouldHandleDatabaseQueryTimeouts() { // GH-90000
         DataSource mockDataSource = mock(DataSource.class); // GH-90000
         JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
@@ -108,7 +108,7 @@ class DatabaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should handle database schema validation [GH-90000]")
+    @DisplayName("Should handle database schema validation")
     void shouldHandleDatabaseSchemaValidation() { // GH-90000
         DataSource mockDataSource = mock(DataSource.class); // GH-90000
         JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000

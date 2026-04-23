@@ -14,11 +14,11 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("MemoryController [GH-90000]")
+@DisplayName("MemoryController")
 class MemoryControllerTest {
 
     @Test
-    @DisplayName("returns routed entries ordered by tier priority [GH-90000]")
+    @DisplayName("returns routed entries ordered by tier priority")
     void returnsRoutedEntriesOrderedByTierPriority() { // GH-90000
         DefaultMemoryTierRouter<EntityRecord> router = new DefaultMemoryTierRouter<>(); // GH-90000
         MemoryController controller = new MemoryController(router); // GH-90000
@@ -39,9 +39,9 @@ class MemoryControllerTest {
         return EntityRecord.builder() // GH-90000
                 .id(UUID.nameUUIDFromBytes(recordId.getBytes())) // GH-90000
                 .tenantId(tenantId) // GH-90000
-                .collectionName("memory-test [GH-90000]")
+                .collectionName("memory-test")
                 .metadata(Map.of("tenantId", tenantId + "-metadata")) // GH-90000
-                .createdBy("test [GH-90000]")
+                .createdBy("test")
                 .build(); // GH-90000
     }
 }

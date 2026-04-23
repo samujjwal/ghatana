@@ -18,11 +18,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test audio transcoding, format conversion, and quality validation.
  */
-@DisplayName("Audio Processing Logic Tests [GH-90000]")
+@DisplayName("Audio Processing Logic Tests")
 class AudioProcessingTest {
 
     @Test
-    @DisplayName("Should handle audio transcoding [GH-90000]")
+    @DisplayName("Should handle audio transcoding")
     void shouldHandleAudioTranscoding() { // GH-90000
         String sourceFormat = "WAV";
         String targetFormat = "MP3";
@@ -34,7 +34,7 @@ class AudioProcessingTest {
     }
 
     @Test
-    @DisplayName("Should handle format conversion [GH-90000]")
+    @DisplayName("Should handle format conversion")
     void shouldHandleFormatConversion() { // GH-90000
         String from = "FLAC";
         String to = "AAC";
@@ -46,7 +46,7 @@ class AudioProcessingTest {
     }
 
     @Test
-    @DisplayName("Should handle quality validation [GH-90000]")
+    @DisplayName("Should handle quality validation")
     void shouldHandleQualityValidation() { // GH-90000
         int bitrate = 320;
         int sampleRate = 44100;
@@ -58,7 +58,7 @@ class AudioProcessingTest {
     }
 
     @Test
-    @DisplayName("Should handle normalization [GH-90000]")
+    @DisplayName("Should handle normalization")
     void shouldHandleNormalization() { // GH-90000
         double targetDb = -3.0;
         double currentDb = -1.5;
@@ -69,7 +69,7 @@ class AudioProcessingTest {
     }
 
     @Test
-    @DisplayName("Should handle filtering [GH-90000]")
+    @DisplayName("Should handle filtering")
     void shouldHandleFiltering() { // GH-90000
         String filterType = "low-pass";
         double cutoffFrequency = 20000.0;
@@ -79,7 +79,7 @@ class AudioProcessingTest {
     }
 
     @Test
-    @DisplayName("Should handle failure handling [GH-90000]")
+    @DisplayName("Should handle failure handling")
     void shouldHandleFailureHandling() { // GH-90000
         boolean failed = false;
         String error = null;

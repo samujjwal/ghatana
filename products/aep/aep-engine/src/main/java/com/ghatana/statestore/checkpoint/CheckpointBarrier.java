@@ -6,7 +6,11 @@ import java.util.Objects;
 /**
  * Checkpoint barrier injected into event streams to delimit checkpoint boundaries.
  * When an operator receives a barrier, it snapshots its state and acknowledges the checkpoint.
- */
+  * @doc.type enum
+ * @doc.purpose Provides checkpoint barrier functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 public final class CheckpointBarrier {
 
     private final CheckpointId checkpointId;

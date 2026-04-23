@@ -23,7 +23,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@DisplayName("ConnectorBackedEventCloud [GH-90000]")
+@DisplayName("ConnectorBackedEventCloud")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class ConnectorBackedEventCloudTest extends EventloopTestBase {
 
@@ -43,7 +43,7 @@ class ConnectorBackedEventCloudTest extends EventloopTestBase {
     @Test
     void appendReturnsGeneratedEventIdImmediately() { // GH-90000
         SettablePromise<String> publishPromise = new SettablePromise<>(); // GH-90000
-        when(connector.publish(eq("order.created [GH-90000]"), any(byte[].class))).thenReturn(publishPromise);
+        when(connector.publish(eq("order.created"), any(byte[].class))).thenReturn(publishPromise);
 
         String eventId = eventCloud.append( // GH-90000
             "tenant-1",
@@ -52,9 +52,9 @@ class ConnectorBackedEventCloudTest extends EventloopTestBase {
 
         assertThat(eventId).matches( // GH-90000
             "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");
-        verify(connector).publish(eq("order.created [GH-90000]"), any(byte[].class));
+        verify(connector).publish(eq("order.created"), any(byte[].class));
 
-        publishPromise.set("remote-42 [GH-90000]");
+        publishPromise.set("remote-42");
     }
 
     @Test
@@ -63,7 +63,7 @@ class ConnectorBackedEventCloudTest extends EventloopTestBase {
         AtomicReference<String> topicRef = new AtomicReference<>(); // GH-90000
         AtomicReference<byte[]> payloadRef = new AtomicReference<>(); // GH-90000
 
-        when(connector.subscribe(eq("order.created [GH-90000]"), eq("aep-default [GH-90000]"), handlerCaptor.capture()))
+        when(connector.subscribe(eq("order.created"), eq("aep-default"), handlerCaptor.capture()))
             .thenReturn(Promise.of(new EventCloudConnector.ConnectorSubscription() { // GH-90000
                 @Override
                 public void cancel() { // GH-90000
@@ -83,16 +83,16 @@ class ConnectorBackedEventCloudTest extends EventloopTestBase {
 
         handlerCaptor.getValue().onEvent("evt-1", "order.created", "payload".getBytes(StandardCharsets.UTF_8)); // GH-90000
 
-        assertThat(eventIdRef.get()).isEqualTo("evt-1 [GH-90000]");
-        assertThat(topicRef.get()).isEqualTo("order.created [GH-90000]");
-        assertThat(new String(payloadRef.get(), StandardCharsets.UTF_8)).isEqualTo("payload [GH-90000]");
+        assertThat(eventIdRef.get()).isEqualTo("evt-1");
+        assertThat(topicRef.get()).isEqualTo("order.created");
+        assertThat(new String(payloadRef.get(), StandardCharsets.UTF_8)).isEqualTo("payload");
     }
 
     @Test
     void cancelBeforeAsyncSubscriptionResolvesCancelsDelegateLater() { // GH-90000
         SettablePromise<EventCloudConnector.ConnectorSubscription> subscribePromise = new SettablePromise<>(); // GH-90000
         EventCloudConnector.ConnectorSubscription delegate = mock(EventCloudConnector.ConnectorSubscription.class); // GH-90000
-        when(connector.subscribe(eq("order.created [GH-90000]"), eq("aep-default [GH-90000]"), any()))
+        when(connector.subscribe(eq("order.created"), eq("aep-default"), any()))
             .thenReturn(subscribePromise); // GH-90000
 
         EventCloud.Subscription subscription = eventCloud.subscribe( // GH-90000

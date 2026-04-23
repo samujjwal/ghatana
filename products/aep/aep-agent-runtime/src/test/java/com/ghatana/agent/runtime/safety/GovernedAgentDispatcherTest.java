@@ -53,7 +53,7 @@ import static org.mockito.Mockito.when;
  * Tests for GovernedAgentDispatcher: release-awareness, invariant checks,
  * trace recording, and backward-compat 3-arg constructor.
  */
-@DisplayName("GovernedAgentDispatcher [GH-90000]")
+@DisplayName("GovernedAgentDispatcher")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class GovernedAgentDispatcherTest extends EventloopTestBase {
 
@@ -78,9 +78,9 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
     void setUp() { // GH-90000
         invariantMonitor = new DefaultInvariantMonitor(); // GH-90000
         ctx = AgentContext.builder() // GH-90000
-                .turnId("turn-1 [GH-90000]")
-                .agentId("test-agent [GH-90000]")
-                .tenantId("tenant-x [GH-90000]")
+                .turnId("turn-1")
+                .agentId("test-agent")
+                .tenantId("tenant-x")
                 .memoryStore(mock(MemoryStore.class)) // GH-90000
                 .build(); // GH-90000
 
@@ -89,7 +89,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         lenient().when(delegate.dispatch(anyString(), any(), any())) // GH-90000
                 .thenReturn(Promise.of(AgentResult.builder() // GH-90000
                         .status(AgentResultStatus.SUCCESS) // GH-90000
-                        .agentId("test-agent [GH-90000]")
+                        .agentId("test-agent")
                         .confidence(1.0) // GH-90000
                         .processingTime(Duration.ofMillis(10)) // GH-90000
                         .build())); // GH-90000
@@ -101,11 +101,11 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("without release repository (backward-compat) [GH-90000]")
+    @DisplayName("without release repository (backward-compat)")
     class WithoutReleaseRepository {
 
         @Test
-        @DisplayName("3-arg constructor dispatches without release check [GH-90000]")
+        @DisplayName("3-arg constructor dispatches without release check")
         void threeArgConstructorDispatchesWithoutReleaseCheck() { // GH-90000
             GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( // GH-90000
                     delegate, invariantMonitor, traceLedger);
@@ -117,15 +117,15 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("resolve delegates to inner dispatcher [GH-90000]")
+        @DisplayName("resolve delegates to inner dispatcher")
         void resolveDelegatesToInnerDispatcher() { // GH-90000
             GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( // GH-90000
                     delegate, invariantMonitor, traceLedger);
 
-            ExecutionTier tier = dispatcher.resolve("test-agent [GH-90000]");
+            ExecutionTier tier = dispatcher.resolve("test-agent");
 
             assertThat(tier).isEqualTo(ExecutionTier.JAVA_IMPLEMENTED); // GH-90000
-            verify(delegate).resolve("test-agent [GH-90000]");
+            verify(delegate).resolve("test-agent");
         }
     }
 
@@ -137,17 +137,17 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
     private static AgentRelease release(String agentId, AgentReleaseState state) { // GH-90000
         return new AgentReleaseBuilder() // GH-90000
                 .agentId(agentId) // GH-90000
-                .releaseVersion("1.0.0 [GH-90000]")
+                .releaseVersion("1.0.0")
                 .state(state) // GH-90000
-                .redactionProfileId("rp-test [GH-90000]")
-                .threatModelId("tm-test [GH-90000]")
-                .addPermittedPurpose("agent.inference [GH-90000]")
-                .capabilityMaturityProfile("L1 [GH-90000]")
+                .redactionProfileId("rp-test")
+                .threatModelId("tm-test")
+                .addPermittedPurpose("agent.inference")
+                .capabilityMaturityProfile("L1")
                 .build(); // GH-90000
     }
 
     @Nested
-    @DisplayName("with release repository [GH-90000]")
+    @DisplayName("with release repository")
     class WithReleaseRepository {
 
         private GovernedAgentDispatcher dispatcher;
@@ -159,7 +159,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("dispatches when active release is dispatchable [GH-90000]")
+        @DisplayName("dispatches when active release is dispatchable")
         void dispatchesWhenReleaseIsDispatchable() { // GH-90000
             AgentRelease activeRelease = release("test-agent", AgentReleaseState.ACTIVE); // GH-90000
 
@@ -172,7 +172,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("dispatches when no governing release found [GH-90000]")
+        @DisplayName("dispatches when no governing release found")
         void dispatchesWhenNoGoverningReleaseFound() { // GH-90000
             when(releaseRepository.findGoverningRelease("test-agent", "tenant-x")) // GH-90000
                     .thenReturn(Promise.of(Optional.empty())); // GH-90000
@@ -183,7 +183,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("denies dispatch when release state is BLOCKED [GH-90000]")
+        @DisplayName("denies dispatch when release state is BLOCKED")
         void deniesDispatchWhenReleaseIsBlocked() { // GH-90000
             AgentRelease blockedRelease = release("test-agent", AgentReleaseState.BLOCKED); // GH-90000
 
@@ -193,11 +193,11 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
             AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); // GH-90000
 
             assertThat(result.getStatus()).isEqualTo(AgentResultStatus.DENIED); // GH-90000
-            assertThat(result.getExplanation()).contains("BLOCKED [GH-90000]");
+            assertThat(result.getExplanation()).contains("BLOCKED");
         }
 
         @Test
-        @DisplayName("denies dispatch when release state is RETIRED [GH-90000]")
+        @DisplayName("denies dispatch when release state is RETIRED")
         void deniesDispatchWhenReleaseIsRetired() { // GH-90000
             AgentRelease retiredRelease = release("test-agent", AgentReleaseState.RETIRED); // GH-90000
 
@@ -207,11 +207,11 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
             AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); // GH-90000
 
             assertThat(result.getStatus()).isEqualTo(AgentResultStatus.DENIED); // GH-90000
-            assertThat(result.getExplanation()).contains("RETIRED [GH-90000]");
+            assertThat(result.getExplanation()).contains("RETIRED");
         }
 
         @Test
-        @DisplayName("denies dispatch when release state is DEPRECATED [GH-90000]")
+        @DisplayName("denies dispatch when release state is DEPRECATED")
         void deniesDispatchWhenReleaseIsDeprecated() { // GH-90000
             AgentRelease deprecatedRelease = release("test-agent", AgentReleaseState.DEPRECATED); // GH-90000
 
@@ -224,8 +224,8 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("enriches context with agentReleaseId when release is found [GH-90000]")
-        @SuppressWarnings("unchecked [GH-90000]")
+        @DisplayName("enriches context with agentReleaseId when release is found")
+        @SuppressWarnings("unchecked")
         void enrichesContextWithAgentReleaseId() { // GH-90000
             AgentRelease activeRelease = release("test-agent", AgentReleaseState.ACTIVE); // GH-90000
 
@@ -237,11 +237,11 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
                     .thenAnswer(invocation -> { // GH-90000
                         AgentContext capturedCtx = invocation.getArgument(2); // GH-90000
                         // Verify that the context was enriched with the release ID
-                        assertThat(capturedCtx.getConfig("agentReleaseId [GH-90000]"))
+                        assertThat(capturedCtx.getConfig("agentReleaseId"))
                                 .isEqualTo(activeRelease.agentReleaseId()); // GH-90000
                         return Promise.of(AgentResult.builder() // GH-90000
                                 .status(AgentResultStatus.SUCCESS) // GH-90000
-                                .agentId("test-agent [GH-90000]")
+                                .agentId("test-agent")
                                 .confidence(1.0) // GH-90000
                                 .processingTime(Duration.ofMillis(5)) // GH-90000
                                 .build()); // GH-90000
@@ -251,8 +251,8 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("does not add agentReleaseId to context when no release found [GH-90000]")
-        @SuppressWarnings("unchecked [GH-90000]")
+        @DisplayName("does not add agentReleaseId to context when no release found")
+        @SuppressWarnings("unchecked")
         void doesNotAddReleaseIdWhenNoReleaseFound() { // GH-90000
             when(releaseRepository.findGoverningRelease("test-agent", "tenant-x")) // GH-90000
                     .thenReturn(Promise.of(Optional.empty())); // GH-90000
@@ -260,10 +260,10 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
             when(delegate.dispatch(anyString(), any(), any())) // GH-90000
                     .thenAnswer(invocation -> { // GH-90000
                         AgentContext capturedCtx = invocation.getArgument(2); // GH-90000
-                        assertThat(capturedCtx.getConfig("agentReleaseId [GH-90000]")).isNull();
+                        assertThat(capturedCtx.getConfig("agentReleaseId")).isNull();
                         return Promise.of(AgentResult.builder() // GH-90000
                                 .status(AgentResultStatus.SUCCESS) // GH-90000
-                                .agentId("test-agent [GH-90000]")
+                                .agentId("test-agent")
                                 .confidence(1.0) // GH-90000
                                 .processingTime(Duration.ofMillis(5)) // GH-90000
                                 .build()); // GH-90000
@@ -273,9 +273,9 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("delegates resolve to inner dispatcher [GH-90000]")
+        @DisplayName("delegates resolve to inner dispatcher")
         void delegatesResolve() { // GH-90000
-            ExecutionTier tier = dispatcher.resolve("test-agent [GH-90000]");
+            ExecutionTier tier = dispatcher.resolve("test-agent");
             assertThat(tier).isEqualTo(ExecutionTier.JAVA_IMPLEMENTED); // GH-90000
         }
     }
@@ -285,11 +285,11 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("with InMemoryAgentReleaseRepository [GH-90000]")
+    @DisplayName("with InMemoryAgentReleaseRepository")
     class WithInMemoryReleaseRepository {
 
         @Test
-        @DisplayName("dispatches active release end-to-end [GH-90000]")
+        @DisplayName("dispatches active release end-to-end")
         void dispatchesActiveReleaseEndToEnd() { // GH-90000
             InMemoryAgentReleaseRepository repo = new InMemoryAgentReleaseRepository(); // GH-90000
             AgentRelease release = release("test-agent", AgentReleaseState.ACTIVE); // GH-90000
@@ -304,7 +304,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("uses real trace ledger end-to-end with release guard [GH-90000]")
+        @DisplayName("uses real trace ledger end-to-end with release guard")
         void usesRealTraceLedgerEndToEnd() { // GH-90000
             HashChainedTraceAppender ledger = new HashChainedTraceAppender(); // GH-90000
             InMemoryAgentReleaseRepository repo = new InMemoryAgentReleaseRepository(); // GH-90000
@@ -320,7 +320,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("blocks dispatch on BLOCKED state end-to-end with real ledger [GH-90000]")
+        @DisplayName("blocks dispatch on BLOCKED state end-to-end with real ledger")
         void blocksDispatchWithRealLedger() { // GH-90000
             HashChainedTraceAppender ledger = new HashChainedTraceAppender(); // GH-90000
             InMemoryAgentReleaseRepository repo = new InMemoryAgentReleaseRepository(); // GH-90000
@@ -333,7 +333,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
             AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "payload", ctx)); // GH-90000
 
             assertThat(result.getStatus()).isEqualTo(AgentResultStatus.DENIED); // GH-90000
-            assertThat(result.getExplanation()).containsIgnoringCase("BLOCKED [GH-90000]");
+            assertThat(result.getExplanation()).containsIgnoringCase("BLOCKED");
         }
     }
 
@@ -342,7 +342,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("TX-4 explainability trace events [GH-90000]")
+    @DisplayName("TX-4 explainability trace events")
     class ExplainabilityTraceEvents {
 
         private final List<TraceEvent> capturedEvents = new ArrayList<>(); // GH-90000
@@ -357,7 +357,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("emits TURN_STARTED event before dispatch [GH-90000]")
+        @DisplayName("emits TURN_STARTED event before dispatch")
         void emitsTurnStarted() { // GH-90000
             GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( // GH-90000
                     delegate, invariantMonitor, traceLedger);
@@ -370,7 +370,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("TURN_STARTED event payload includes agentId [GH-90000]")
+        @DisplayName("TURN_STARTED event payload includes agentId")
         void turnStartedPayloadHasAgentId() { // GH-90000
             GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( // GH-90000
                     delegate, invariantMonitor, traceLedger);
@@ -385,17 +385,17 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("TURN_STARTED includes release metadata when release present [GH-90000]")
+        @DisplayName("TURN_STARTED includes release metadata when release present")
         void turnStartedIncludesReleaseMetadata() { // GH-90000
             AgentRelease rel = new AgentReleaseBuilder() // GH-90000
-                    .agentId("test-agent [GH-90000]")
-                    .releaseVersion("2.0.0 [GH-90000]")
+                    .agentId("test-agent")
+                    .releaseVersion("2.0.0")
                     .state(AgentReleaseState.ACTIVE) // GH-90000
-                    .redactionProfileId("rp-prod [GH-90000]")
-                    .threatModelId("tm-prod [GH-90000]")
-                    .addPermittedPurpose("agent.inference [GH-90000]")
-                    .capabilityMaturityProfile("L2 [GH-90000]")
-                    .policyPackId("pp-123 [GH-90000]")
+                    .redactionProfileId("rp-prod")
+                    .threatModelId("tm-prod")
+                    .addPermittedPurpose("agent.inference")
+                    .capabilityMaturityProfile("L2")
+                    .policyPackId("pp-123")
                     .build(); // GH-90000
 
             when(releaseRepository.findGoverningRelease("test-agent", "tenant-x")) // GH-90000
@@ -420,7 +420,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("emits POLICY_EVALUATED (ALLOW) when invariants pass [GH-90000]")
+        @DisplayName("emits POLICY_EVALUATED (ALLOW) when invariants pass")
         void emitsPolicyEvaluatedAllowWhenInvariantsPass() { // GH-90000
             GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( // GH-90000
                     delegate, invariantMonitor, traceLedger);
@@ -436,13 +436,13 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("emits POLICY_EVALUATED (DENY) and ACTION_DENIED when invariants fail [GH-90000]")
+        @DisplayName("emits POLICY_EVALUATED (DENY) and ACTION_DENIED when invariants fail")
         void emitsPolicyEvaluatedDenyThenActionDenied() { // GH-90000
             // Inject a breached cost cap invariant by setting metrics that violate
             AgentContext overBudgetCtx = AgentContext.builder() // GH-90000
-                    .turnId("turn-over [GH-90000]")
-                    .agentId("test-agent [GH-90000]")
-                    .tenantId("tenant-x [GH-90000]")
+                    .turnId("turn-over")
+                    .agentId("test-agent")
+                    .tenantId("tenant-x")
                     .memoryStore(mock(MemoryStore.class)) // GH-90000
                     .addConfig("__accumulatedCostUsd", 999.0) // GH-90000
                     .addConfig("__costCapUsd", 1.0) // GH-90000
@@ -471,7 +471,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("TURN_STARTED is emitted before POLICY_EVALUATED in sequence [GH-90000]")
+        @DisplayName("TURN_STARTED is emitted before POLICY_EVALUATED in sequence")
         void turnStartedBeforePolicyEvaluated() { // GH-90000
             GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( // GH-90000
                     delegate, invariantMonitor, traceLedger);
@@ -488,17 +488,17 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("POLICY_EVALUATED (ALLOW) payload includes policyPackId when release is present [GH-90000]")
+        @DisplayName("POLICY_EVALUATED (ALLOW) payload includes policyPackId when release is present")
         void policyEvaluatedAllowIncludesPolicyPackId() { // GH-90000
             AgentRelease rel = new AgentReleaseBuilder() // GH-90000
-                    .agentId("test-agent [GH-90000]")
-                    .releaseVersion("1.0 [GH-90000]")
+                    .agentId("test-agent")
+                    .releaseVersion("1.0")
                     .state(AgentReleaseState.ACTIVE) // GH-90000
-                    .redactionProfileId("rp-t [GH-90000]")
-                    .threatModelId("tm-t [GH-90000]")
-                    .addPermittedPurpose("agent.inference [GH-90000]")
-                    .capabilityMaturityProfile("L1 [GH-90000]")
-                    .policyPackId("pp-456 [GH-90000]")
+                    .redactionProfileId("rp-t")
+                    .threatModelId("tm-t")
+                    .addPermittedPurpose("agent.inference")
+                    .capabilityMaturityProfile("L1")
+                    .policyPackId("pp-456")
                     .build(); // GH-90000
 
             when(releaseRepository.findGoverningRelease("test-agent", "tenant-x")) // GH-90000
@@ -519,17 +519,17 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("ACTION_EXECUTED payload includes policyPackId when release is present [GH-90000]")
+        @DisplayName("ACTION_EXECUTED payload includes policyPackId when release is present")
         void actionExecutedIncludesPolicyPackId() { // GH-90000
             AgentRelease rel = new AgentReleaseBuilder() // GH-90000
-                    .agentId("test-agent [GH-90000]")
-                    .releaseVersion("1.0 [GH-90000]")
+                    .agentId("test-agent")
+                    .releaseVersion("1.0")
                     .state(AgentReleaseState.ACTIVE) // GH-90000
-                    .redactionProfileId("rp-t [GH-90000]")
-                    .threatModelId("tm-t [GH-90000]")
-                    .addPermittedPurpose("agent.inference [GH-90000]")
-                    .capabilityMaturityProfile("L1 [GH-90000]")
-                    .policyPackId("pp-789 [GH-90000]")
+                    .redactionProfileId("rp-t")
+                    .threatModelId("tm-t")
+                    .addPermittedPurpose("agent.inference")
+                    .capabilityMaturityProfile("L1")
+                    .policyPackId("pp-789")
                     .build(); // GH-90000
 
             when(releaseRepository.findGoverningRelease("test-agent", "tenant-x")) // GH-90000
@@ -548,7 +548,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("full happy-path event sequence is correct with real ledger [GH-90000]")
+        @DisplayName("full happy-path event sequence is correct with real ledger")
         void fullHappyPathSequenceWithRealLedger() { // GH-90000
             HashChainedTraceAppender ledger = new HashChainedTraceAppender(); // GH-90000
             InMemoryAgentReleaseRepository repo = new InMemoryAgentReleaseRepository(); // GH-90000
@@ -560,8 +560,8 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
 
             runPromise(() -> dispatcher.dispatch("test-agent", "payload", ctx)); // GH-90000
 
-            String traceId = ctx.getConfig("__traceId [GH-90000]") != null
-                    ? ctx.getConfig("__traceId [GH-90000]").toString()
+            String traceId = ctx.getConfig("__traceId") != null
+                    ? ctx.getConfig("__traceId").toString()
                     : null;
             // Fetch all events from ledger
             List<TraceEvent> events = runPromise(() -> // GH-90000
@@ -581,7 +581,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("manifest capability guard (P8-T12) [GH-90000]")
+    @DisplayName("manifest capability guard (P8-T12)")
     class ManifestGuardTests {
 
         private com.ghatana.agent.pluggability.AgentCapabilityManifest supervisedOnlyManifest() { // GH-90000
@@ -599,7 +599,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("AUTONOMOUS manifest allows dispatch without supervisor context [GH-90000]")
+        @DisplayName("AUTONOMOUS manifest allows dispatch without supervisor context")
         void autonomousManifestAllowsDispatch() { // GH-90000
             GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( // GH-90000
                     delegate, invariantMonitor, traceLedger, null, null, autonomousManifest()); // GH-90000
@@ -608,7 +608,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("null manifest skips manifest check [GH-90000]")
+        @DisplayName("null manifest skips manifest check")
         void nullManifestSkipsCheck() { // GH-90000
             GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( // GH-90000
                     delegate, invariantMonitor, traceLedger, null, null, null);
@@ -617,7 +617,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("SUPERVISED-only manifest with no supervisorAgentId in context → DENIED [GH-90000]")
+        @DisplayName("SUPERVISED-only manifest with no supervisorAgentId in context → DENIED")
         void supervisedOnlyManifestWithoutSupervisorIsDenied() { // GH-90000
             GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( // GH-90000
                     delegate, invariantMonitor, traceLedger, null, null, supervisedOnlyManifest()); // GH-90000
@@ -626,7 +626,7 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("SUPERVISED-only manifest with supervisorAgentId in context → allowed [GH-90000]")
+        @DisplayName("SUPERVISED-only manifest with supervisorAgentId in context → allowed")
         void supervisedManifestWithSupervisorContextIsAllowed() { // GH-90000
             AgentContext supervisedCtx = ctx.toBuilder() // GH-90000
                     .addConfig("supervisorAgentId", "supervisor-001") // GH-90000

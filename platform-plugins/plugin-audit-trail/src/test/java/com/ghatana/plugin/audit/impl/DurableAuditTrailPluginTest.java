@@ -34,7 +34,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("DurableAuditTrailPlugin contract tests [GH-90000]")
+@DisplayName("DurableAuditTrailPlugin contract tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class DurableAuditTrailPluginTest extends EventloopTestBase {
 
@@ -65,7 +65,7 @@ class DurableAuditTrailPluginTest extends EventloopTestBase {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("Plugin should transition through UNLOADED → INITIALIZED → STARTED → STOPPED → UNLOADED [GH-90000]")
+    @DisplayName("Plugin should transition through UNLOADED → INITIALIZED → STARTED → STOPPED → UNLOADED")
     void testLifecycleTransitions() { // GH-90000
         // Already started in setUp — verify terminal state after stop+shutdown
         runPromise(() -> plugin.stop()); // GH-90000
@@ -79,7 +79,7 @@ class DurableAuditTrailPluginTest extends EventloopTestBase {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("KP-010 — entity A events must not appear in entity B trail [GH-90000]")
+    @DisplayName("KP-010 — entity A events must not appear in entity B trail")
     void testCrossTenantIsolation() { // GH-90000
         Map<String, Object> detailsA = Map.of("actorId", "user-a", "action-context", "tenant-a"); // GH-90000
         Map<String, Object> detailsB = Map.of("actorId", "user-b", "action-context", "tenant-b"); // GH-90000
@@ -88,8 +88,8 @@ class DurableAuditTrailPluginTest extends EventloopTestBase {
         runPromise(() -> plugin.logEvent("entity-A", "UPDATE", detailsA)); // GH-90000
         runPromise(() -> plugin.logEvent("entity-B", "CREATE", detailsB)); // GH-90000
 
-        List<AuditTrailPlugin.AuditEntry> trailA = runPromise(() -> plugin.getTrail("entity-A [GH-90000]"));
-        List<AuditTrailPlugin.AuditEntry> trailB = runPromise(() -> plugin.getTrail("entity-B [GH-90000]"));
+        List<AuditTrailPlugin.AuditEntry> trailA = runPromise(() -> plugin.getTrail("entity-A"));
+        List<AuditTrailPlugin.AuditEntry> trailB = runPromise(() -> plugin.getTrail("entity-B"));
 
         // entity-A trail should have exactly 2 entries
         assertThat(trailA).hasSize(2); // GH-90000
@@ -105,9 +105,9 @@ class DurableAuditTrailPluginTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("KP-010 — getTrail for unknown entity must return empty list [GH-90000]")
+    @DisplayName("KP-010 — getTrail for unknown entity must return empty list")
     void testUnknownEntityReturnsEmptyTrail() { // GH-90000
-        List<AuditTrailPlugin.AuditEntry> trail = runPromise(() -> plugin.getTrail("nonexistent-entity [GH-90000]"));
+        List<AuditTrailPlugin.AuditEntry> trail = runPromise(() -> plugin.getTrail("nonexistent-entity"));
         assertThat(trail).isEmpty(); // GH-90000
     }
 
@@ -116,14 +116,14 @@ class DurableAuditTrailPluginTest extends EventloopTestBase {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("KP-011 — intact chain must pass verifyIntegrity [GH-90000]")
+    @DisplayName("KP-011 — intact chain must pass verifyIntegrity")
     void testVerifyIntegrityOnIntactChain() { // GH-90000
         runPromise(() -> plugin.logEvent("entity-chain", "STEP1", Map.of("actorId", "u1"))); // GH-90000
         runPromise(() -> plugin.logEvent("entity-chain", "STEP2", Map.of("actorId", "u1"))); // GH-90000
         runPromise(() -> plugin.logEvent("entity-chain", "STEP3", Map.of("actorId", "u1"))); // GH-90000
 
         AuditTrailPlugin.VerificationResult result =
-                runPromise(() -> plugin.verifyIntegrity("entity-chain [GH-90000]"));
+                runPromise(() -> plugin.verifyIntegrity("entity-chain"));
 
         assertThat(result.valid()).isTrue(); // GH-90000
         assertThat(result.entryCount()).isEqualTo(3); // GH-90000
@@ -131,11 +131,11 @@ class DurableAuditTrailPluginTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("KP-011 — first entry in chain must have null previousHash [GH-90000]")
+    @DisplayName("KP-011 — first entry in chain must have null previousHash")
     void testFirstEntryHasNullPreviousHash() { // GH-90000
         runPromise(() -> plugin.logEvent("entity-first", "INIT", Map.of("actorId", "system"))); // GH-90000
 
-        List<AuditTrailPlugin.AuditEntry> trail = runPromise(() -> plugin.getTrail("entity-first [GH-90000]"));
+        List<AuditTrailPlugin.AuditEntry> trail = runPromise(() -> plugin.getTrail("entity-first"));
 
         assertThat(trail).hasSize(1); // GH-90000
         assertThat(trail.get(0).previousHash()).isNull(); // GH-90000
@@ -143,13 +143,13 @@ class DurableAuditTrailPluginTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("KP-011 — each entry must link previousHash to the preceding entry hash [GH-90000]")
+    @DisplayName("KP-011 — each entry must link previousHash to the preceding entry hash")
     void testHashChainLinkage() { // GH-90000
         runPromise(() -> plugin.logEvent("entity-link", "A", Map.of("actorId", "u1"))); // GH-90000
         runPromise(() -> plugin.logEvent("entity-link", "B", Map.of("actorId", "u1"))); // GH-90000
         runPromise(() -> plugin.logEvent("entity-link", "C", Map.of("actorId", "u1"))); // GH-90000
 
-        List<AuditTrailPlugin.AuditEntry> trail = runPromise(() -> plugin.getTrail("entity-link [GH-90000]"));
+        List<AuditTrailPlugin.AuditEntry> trail = runPromise(() -> plugin.getTrail("entity-link"));
 
         assertThat(trail).hasSize(3); // GH-90000
         assertThat(trail.get(1).previousHash()).isEqualTo(trail.get(0).hash()); // GH-90000
@@ -157,10 +157,10 @@ class DurableAuditTrailPluginTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("KP-011 — verifyIntegrity on empty trail must report valid=true with 0 entries [GH-90000]")
+    @DisplayName("KP-011 — verifyIntegrity on empty trail must report valid=true with 0 entries")
     void testVerifyIntegrityEmptyTrail() { // GH-90000
         AuditTrailPlugin.VerificationResult result =
-                runPromise(() -> plugin.verifyIntegrity("entity-empty [GH-90000]"));
+                runPromise(() -> plugin.verifyIntegrity("entity-empty"));
 
         assertThat(result.valid()).isTrue(); // GH-90000
         assertThat(result.entryCount()).isEqualTo(0); // GH-90000
@@ -172,7 +172,7 @@ class DurableAuditTrailPluginTest extends EventloopTestBase {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("exportTrail as JSON must produce valid JSON array string [GH-90000]")
+    @DisplayName("exportTrail as JSON must produce valid JSON array string")
     void testExportJson() throws Exception { // GH-90000
         runPromise(() -> plugin.logEvent("entity-export", "EV1", Map.of("actorId", "u1"))); // GH-90000
         runPromise(() -> plugin.logEvent("entity-export", "EV2", Map.of("actorId", "u2"))); // GH-90000
@@ -180,28 +180,28 @@ class DurableAuditTrailPluginTest extends EventloopTestBase {
         ByteArrayOutputStream out = new ByteArrayOutputStream(); // GH-90000
         runPromise(() -> plugin.exportTrail("entity-export", AuditTrailPlugin.ExportFormat.JSON, out)); // GH-90000
 
-        String json = out.toString("UTF-8 [GH-90000]");
-        assertThat(json).startsWith("[ [GH-90000]").endsWith("] [GH-90000]");
+        String json = out.toString("UTF-8");
+        assertThat(json).startsWith("[").endsWith("]");
         assertThat(json).contains("\"entityId\":\"entity-export\""); // GH-90000
         assertThat(json).contains("\"action\":\"EV1\""); // GH-90000
         assertThat(json).contains("\"action\":\"EV2\""); // GH-90000
     }
 
     @Test
-    @DisplayName("exportTrail as CSV must include header and data rows [GH-90000]")
+    @DisplayName("exportTrail as CSV must include header and data rows")
     void testExportCsv() throws Exception { // GH-90000
         runPromise(() -> plugin.logEvent("entity-csv", "EV_CSV", Map.of("actorId", "u1"))); // GH-90000
 
         ByteArrayOutputStream out = new ByteArrayOutputStream(); // GH-90000
         runPromise(() -> plugin.exportTrail("entity-csv", AuditTrailPlugin.ExportFormat.CSV, out)); // GH-90000
 
-        String csv = out.toString("UTF-8 [GH-90000]");
-        assertThat(csv).contains("entryId,entityId,action,actorId,hash,previousHash,timestamp [GH-90000]");
-        assertThat(csv).contains("EV_CSV [GH-90000]");
+        String csv = out.toString("UTF-8");
+        assertThat(csv).contains("entryId,entityId,action,actorId,hash,previousHash,timestamp");
+        assertThat(csv).contains("EV_CSV");
     }
 
     @Test
-    @DisplayName("exportTrail as PDF must return UnsupportedOperationException [GH-90000]")
+    @DisplayName("exportTrail as PDF must return UnsupportedOperationException")
     void testExportPdfThrows() { // GH-90000
         ByteArrayOutputStream out = new ByteArrayOutputStream(); // GH-90000
         assertThatThrownBy(() -> // GH-90000

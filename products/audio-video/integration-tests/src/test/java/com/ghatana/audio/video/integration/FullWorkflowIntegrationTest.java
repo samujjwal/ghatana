@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer integration
  */
 @Testcontainers
-@DisplayName("Full Workflow Integration Tests [GH-90000]")
+@DisplayName("Full Workflow Integration Tests")
 class FullWorkflowIntegrationTest {
 
     private static final String STT_IMAGE = System.getenv().getOrDefault("STT_IMAGE", "ghatana/stt-service:latest"); // GH-90000
@@ -46,7 +46,7 @@ class FullWorkflowIntegrationTest {
             .withEnv("LOG_LEVEL", "info") // GH-90000
             .withEnv("STT_USE_GPU", "false") // GH-90000
             .withNetwork(Network.newNetwork()) // GH-90000
-            .withNetworkAliases("stt-service [GH-90000]")
+            .withNetworkAliases("stt-service")
             .waitingFor(Wait.forHealthcheck()) // GH-90000
             .withStartupTimeoutSeconds(180); // GH-90000
 
@@ -58,7 +58,7 @@ class FullWorkflowIntegrationTest {
             .withEnv("LOG_LEVEL", "info") // GH-90000
             .withEnv("TTS_USE_GPU", "false") // GH-90000
             .withNetwork(sttService.getNetwork()) // GH-90000
-            .withNetworkAliases("tts-service [GH-90000]")
+            .withNetworkAliases("tts-service")
             .waitingFor(Wait.forHealthcheck()) // GH-90000
             .withStartupTimeoutSeconds(180); // GH-90000
 
@@ -99,7 +99,7 @@ class FullWorkflowIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should perform complete speech-to-text workflow [GH-90000]")
+    @DisplayName("Should perform complete speech-to-text workflow")
     void shouldPerformSTTWorkflow() { // GH-90000
         // Create test audio data (simplified for integration test) // GH-90000
         byte[] testAudio = createTestAudioData(); // GH-90000
@@ -107,8 +107,8 @@ class FullWorkflowIntegrationTest {
         // Build transcription request
         TranscribeRequest request = TranscribeRequest.newBuilder() // GH-90000
                 .setAudio(com.google.protobuf.ByteString.copyFrom(testAudio)) // GH-90000
-                .setModel("whisper-tiny [GH-90000]")
-                .setLanguage("en [GH-90000]")
+                .setModel("whisper-tiny")
+                .setLanguage("en")
                 .build(); // GH-90000
 
         try {
@@ -133,14 +133,14 @@ class FullWorkflowIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should perform complete text-to-speech workflow [GH-90000]")
+    @DisplayName("Should perform complete text-to-speech workflow")
     void shouldPerformTTSWorkflow() { // GH-90000
         String testText = "Hello, this is a test of the text-to-speech system.";
         
         // Build synthesis request
         SynthesizeRequest request = SynthesizeRequest.newBuilder() // GH-90000
                 .setText(testText) // GH-90000
-                .setVoiceId("en-US-default [GH-90000]")
+                .setVoiceId("en-US-default")
                 .setSampleRate(22050) // GH-90000
                 .build(); // GH-90000
 
@@ -168,7 +168,7 @@ class FullWorkflowIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should handle bidirectional workflow [GH-90000]")
+    @DisplayName("Should handle bidirectional workflow")
     void shouldHandleBidirectionalWorkflow() { // GH-90000
         // This test would verify the complete cycle:
         // 1. Audio -> Text (STT) // GH-90000
@@ -182,11 +182,11 @@ class FullWorkflowIntegrationTest {
         // 2. Use the transcribed text for TTS synthesis
         // 3. Verify the round-trip works correctly
         
-        System.out.println("Both services are ready for bidirectional workflow testing [GH-90000]");
+        System.out.println("Both services are ready for bidirectional workflow testing");
     }
 
     @Test
-    @DisplayName("Should maintain service health under concurrent load [GH-90000]")
+    @DisplayName("Should maintain service health under concurrent load")
     void shouldMaintainHealthUnderLoad() { // GH-90000
         // Simulate concurrent access patterns
         assertThat(sttService.isRunning()).isTrue(); // GH-90000
@@ -203,18 +203,18 @@ class FullWorkflowIntegrationTest {
         assertThat(sttService.isRunning()).isTrue(); // GH-90000
         assertThat(ttsService.isRunning()).isTrue(); // GH-90000
         
-        System.out.println("Services maintained health under load test [GH-90000]");
+        System.out.println("Services maintained health under load test");
     }
 
     @Test
-    @DisplayName("Should handle network communication between services [GH-90000]")
+    @DisplayName("Should handle network communication between services")
     void shouldHandleNetworkCommunication() { // GH-90000
         // Verify network connectivity between services
         String sttNetworkAlias = sttService.getNetworkAliases().get(0); // GH-90000
         String ttsNetworkAlias = ttsService.getNetworkAliases().get(0); // GH-90000
         
-        assertThat(sttNetworkAlias).isEqualTo("stt-service [GH-90000]");
-        assertThat(ttsNetworkAlias).isEqualTo("tts-service [GH-90000]");
+        assertThat(sttNetworkAlias).isEqualTo("stt-service");
+        assertThat(ttsNetworkAlias).isEqualTo("tts-service");
         
         // Verify they're on the same network
         assertThat(sttService.getNetwork()).isEqualTo(ttsService.getNetwork()); // GH-90000

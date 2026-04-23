@@ -23,7 +23,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("TierMigrationHandler [GH-90000]")
+@DisplayName("TierMigrationHandler")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class TierMigrationHandlerTest extends EventloopTestBase {
 
@@ -51,7 +51,7 @@ class TierMigrationHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("migration rejects missing tenant before scheduler access [GH-90000]")
+    @DisplayName("migration rejects missing tenant before scheduler access")
     void migrationRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 

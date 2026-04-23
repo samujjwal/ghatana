@@ -25,7 +25,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer core
  * @doc.pattern Test
  */
-@DisplayName("ConnectorRegistry Tests [GH-90000]")
+@DisplayName("ConnectorRegistry Tests")
 class ConnectorRegistryTest extends EventloopTestBase {
 
     private ConnectorRegistry registry;
@@ -51,31 +51,31 @@ class ConnectorRegistryTest extends EventloopTestBase {
     // --- Registration ---
 
     @Nested
-    @DisplayName("Registration [GH-90000]")
+    @DisplayName("Registration")
     class Registration {
 
         @Test
-        @DisplayName("should register a connector successfully [GH-90000]")
+        @DisplayName("should register a connector successfully")
         void shouldRegisterConnector() { // GH-90000
             Connector connector = mockConnector("kafka-source", "kafka"); // GH-90000
 
             registry.register(connector); // GH-90000
 
-            Optional<Connector> found = registry.getConnector("kafka-source [GH-90000]");
+            Optional<Connector> found = registry.getConnector("kafka-source");
             assertThat(found).isPresent(); // GH-90000
-            assertThat(found.get().getName()).isEqualTo("kafka-source [GH-90000]");
+            assertThat(found.get().getName()).isEqualTo("kafka-source");
         }
 
         @Test
-        @DisplayName("should reject null connector [GH-90000]")
+        @DisplayName("should reject null connector")
         void shouldRejectNullConnector() { // GH-90000
             assertThatThrownBy(() -> registry.register(null)) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("null [GH-90000]");
+                    .hasMessageContaining("null");
         }
 
         @Test
-        @DisplayName("should reject duplicate connector name [GH-90000]")
+        @DisplayName("should reject duplicate connector name")
         void shouldRejectDuplicateName() { // GH-90000
             Connector first = mockConnector("dup-name", "kafka"); // GH-90000
             Connector second = mockConnector("dup-name", "file"); // GH-90000
@@ -84,11 +84,11 @@ class ConnectorRegistryTest extends EventloopTestBase {
 
             assertThatThrownBy(() -> registry.register(second)) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("dup-name [GH-90000]");
+                    .hasMessageContaining("dup-name");
         }
 
         @Test
-        @DisplayName("should allow multiple connectors with different names [GH-90000]")
+        @DisplayName("should allow multiple connectors with different names")
         void shouldAllowMultipleConnectors() { // GH-90000
             Connector c1 = mockConnector("source-1", "kafka"); // GH-90000
             Connector c2 = mockConnector("source-2", "file"); // GH-90000
@@ -105,28 +105,28 @@ class ConnectorRegistryTest extends EventloopTestBase {
     // --- Lookup ---
 
     @Nested
-    @DisplayName("Lookup [GH-90000]")
+    @DisplayName("Lookup")
     class Lookup {
 
         @Test
-        @DisplayName("should return empty optional for unknown name [GH-90000]")
+        @DisplayName("should return empty optional for unknown name")
         void shouldReturnEmptyForUnknownName() { // GH-90000
-            assertThat(registry.getConnector("nonexistent [GH-90000]")).isEmpty();
+            assertThat(registry.getConnector("nonexistent")).isEmpty();
         }
 
         @Test
-        @DisplayName("should find connector by name [GH-90000]")
+        @DisplayName("should find connector by name")
         void shouldFindByName() { // GH-90000
             Connector c = mockConnector("my-conn", "kafka"); // GH-90000
             registry.register(c); // GH-90000
 
-            Optional<Connector> found = registry.getConnector("my-conn [GH-90000]");
+            Optional<Connector> found = registry.getConnector("my-conn");
             assertThat(found).isPresent(); // GH-90000
             assertThat(found.get()).isSameAs(c); // GH-90000
         }
 
         @Test
-        @DisplayName("should find connectors by type [GH-90000]")
+        @DisplayName("should find connectors by type")
         void shouldFindByType() { // GH-90000
             Connector k1 = mockConnector("kafka-1", "kafka"); // GH-90000
             Connector k2 = mockConnector("kafka-2", "kafka"); // GH-90000
@@ -136,20 +136,20 @@ class ConnectorRegistryTest extends EventloopTestBase {
             registry.register(k2); // GH-90000
             registry.register(f1); // GH-90000
 
-            Set<Connector> kafkaConnectors = registry.getConnectorsByType("kafka [GH-90000]");
+            Set<Connector> kafkaConnectors = registry.getConnectorsByType("kafka");
             assertThat(kafkaConnectors).hasSize(2); // GH-90000
             assertThat(kafkaConnectors).extracting(Connector::getName) // GH-90000
                     .containsExactlyInAnyOrder("kafka-1", "kafka-2"); // GH-90000
         }
 
         @Test
-        @DisplayName("should return empty set for unknown type [GH-90000]")
+        @DisplayName("should return empty set for unknown type")
         void shouldReturnEmptySetForUnknownType() { // GH-90000
-            assertThat(registry.getConnectorsByType("unknown [GH-90000]")).isEmpty();
+            assertThat(registry.getConnectorsByType("unknown")).isEmpty();
         }
 
         @Test
-        @DisplayName("should return all registered connectors [GH-90000]")
+        @DisplayName("should return all registered connectors")
         void shouldReturnAllConnectors() { // GH-90000
             Connector c1 = mockConnector("a", "kafka"); // GH-90000
             Connector c2 = mockConnector("b", "file"); // GH-90000
@@ -165,30 +165,30 @@ class ConnectorRegistryTest extends EventloopTestBase {
     // --- Unregister ---
 
     @Nested
-    @DisplayName("Unregister [GH-90000]")
+    @DisplayName("Unregister")
     class Unregister {
 
         @Test
-        @DisplayName("should unregister a connector and stop it [GH-90000]")
+        @DisplayName("should unregister a connector and stop it")
         void shouldUnregisterAndStop() { // GH-90000
             Connector c = mockConnector("to-remove", "kafka"); // GH-90000
             registry.register(c); // GH-90000
 
-            runPromise(() -> registry.unregister("to-remove [GH-90000]"));
+            runPromise(() -> registry.unregister("to-remove"));
 
-            assertThat(registry.getConnector("to-remove [GH-90000]")).isEmpty();
+            assertThat(registry.getConnector("to-remove")).isEmpty();
             verify(c).stop(); // GH-90000
         }
 
         @Test
-        @DisplayName("should complete successfully when unregistering unknown name [GH-90000]")
+        @DisplayName("should complete successfully when unregistering unknown name")
         void shouldCompleteForUnknownName() { // GH-90000
             // Should not throw — just completes
-            runPromise(() -> registry.unregister("nonexistent [GH-90000]"));
+            runPromise(() -> registry.unregister("nonexistent"));
         }
 
         @Test
-        @DisplayName("should not affect other connectors when one is unregistered [GH-90000]")
+        @DisplayName("should not affect other connectors when one is unregistered")
         void shouldNotAffectOtherConnectors() { // GH-90000
             Connector c1 = mockConnector("keep", "kafka"); // GH-90000
             Connector c2 = mockConnector("remove", "file"); // GH-90000
@@ -196,10 +196,10 @@ class ConnectorRegistryTest extends EventloopTestBase {
             registry.register(c1); // GH-90000
             registry.register(c2); // GH-90000
 
-            runPromise(() -> registry.unregister("remove [GH-90000]"));
+            runPromise(() -> registry.unregister("remove"));
 
-            assertThat(registry.getConnector("keep [GH-90000]")).isPresent();
-            assertThat(registry.getConnector("remove [GH-90000]")).isEmpty();
+            assertThat(registry.getConnector("keep")).isPresent();
+            assertThat(registry.getConnector("remove")).isEmpty();
             assertThat(registry.getConnectors()).hasSize(1); // GH-90000
         }
     }
@@ -207,11 +207,11 @@ class ConnectorRegistryTest extends EventloopTestBase {
     // --- Batch Lifecycle ---
 
     @Nested
-    @DisplayName("Batch Lifecycle [GH-90000]")
+    @DisplayName("Batch Lifecycle")
     class BatchLifecycle {
 
         @Test
-        @DisplayName("should start all registered connectors [GH-90000]")
+        @DisplayName("should start all registered connectors")
         void shouldStartAll() { // GH-90000
             Connector c1 = mockConnector("a", "kafka"); // GH-90000
             Connector c2 = mockConnector("b", "file"); // GH-90000
@@ -226,7 +226,7 @@ class ConnectorRegistryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should stop all registered connectors [GH-90000]")
+        @DisplayName("should stop all registered connectors")
         void shouldStopAll() { // GH-90000
             Connector c1 = mockConnector("a", "kafka"); // GH-90000
             Connector c2 = mockConnector("b", "file"); // GH-90000
@@ -241,7 +241,7 @@ class ConnectorRegistryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should complete start/stop on empty registry [GH-90000]")
+        @DisplayName("should complete start/stop on empty registry")
         void shouldCompleteOnEmptyRegistry() { // GH-90000
             runPromise(registry::startAll); // GH-90000
             runPromise(registry::stopAll); // GH-90000
@@ -252,11 +252,11 @@ class ConnectorRegistryTest extends EventloopTestBase {
     // --- Singleton / getInstance ---
 
     @Nested
-    @DisplayName("Singleton [GH-90000]")
+    @DisplayName("Singleton")
     class Singleton {
 
         @Test
-        @DisplayName("should return the initialized instance via getInstance() [GH-90000]")
+        @DisplayName("should return the initialized instance via getInstance()")
         void shouldReturnInstance() { // GH-90000
             ConnectorRegistry instance = ConnectorRegistry.getInstance(); // GH-90000
             assertThat(instance).isSameAs(registry); // GH-90000
@@ -266,11 +266,11 @@ class ConnectorRegistryTest extends EventloopTestBase {
     // --- Metrics ---
 
     @Nested
-    @DisplayName("Metrics [GH-90000]")
+    @DisplayName("Metrics")
     class Metrics {
 
         @Test
-        @DisplayName("should return metrics for all connectors [GH-90000]")
+        @DisplayName("should return metrics for all connectors")
         void shouldReturnMetrics() { // GH-90000
             Connector c1 = mockConnector("a", "kafka"); // GH-90000
             Connector c2 = mockConnector("b", "file"); // GH-90000

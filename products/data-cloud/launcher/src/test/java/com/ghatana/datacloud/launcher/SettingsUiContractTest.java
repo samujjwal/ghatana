@@ -20,86 +20,86 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern UnitTest
  */
-@DisplayName("Settings UI Contract Tests [GH-90000]")
+@DisplayName("Settings UI Contract Tests")
 public class SettingsUiContractTest {
 
     @Nested
-    @DisplayName("SettingsGeneralPageTests [GH-90000]")
+    @DisplayName("SettingsGeneralPageTests")
     class SettingsGeneralPageTests {
 
         @Test
-        @DisplayName("GET /settings: general settings schema [GH-90000]")
+        @DisplayName("GET /settings: general settings schema")
         void shouldReturnSettings() { // GH-90000
             Map<String, Object> response = getGeneralSettings(); // GH-90000
             assertThat(response).containsKeys("language", "timezone", "dateFormat", "theme"); // GH-90000
         }
 
         @Test
-        @DisplayName("language support: list of available languages [GH-90000]")
+        @DisplayName("language support: list of available languages")
         void shouldListLanguages() { // GH-90000
             Map<String, Object> response = getGeneralSettings(); // GH-90000
-            List<?> languages = (List<?>) response.get("availableLanguages [GH-90000]");
+            List<?> languages = (List<?>) response.get("availableLanguages");
 
             assertThat(languages).isNotEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("timezone support: list of timezones [GH-90000]")
+        @DisplayName("timezone support: list of timezones")
         void shouldListTimezones() { // GH-90000
             Map<String, Object> response = getGeneralSettings(); // GH-90000
-            List<?> timezones = (List<?>) response.get("availableTimezones [GH-90000]");
+            List<?> timezones = (List<?>) response.get("availableTimezones");
 
             assertThat(timezones).isNotEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("theme options: light, dark, auto [GH-90000]")
+        @DisplayName("theme options: light, dark, auto")
         void shouldHaveThemeOptions() { // GH-90000
             Map<String, Object> response = getGeneralSettings(); // GH-90000
-            String theme = response.get("theme [GH-90000]").toString();
+            String theme = response.get("theme").toString();
 
             assertThat(theme).isIn("light", "dark", "auto"); // GH-90000
         }
 
         @Test
-        @DisplayName("notification preferences: email, in-app, SMS [GH-90000]")
+        @DisplayName("notification preferences: email, in-app, SMS")
         void shouldHaveNotifications() { // GH-90000
             Map<String, Object> response = getGeneralSettings(); // GH-90000
-            assertThat(response).containsKey("notifications [GH-90000]");
+            assertThat(response).containsKey("notifications");
         }
 
         @Test
-        @DisplayName("privacy settings: data retention, analytics [GH-90000]")
+        @DisplayName("privacy settings: data retention, analytics")
         void shouldHavePrivacy() { // GH-90000
             Map<String, Object> response = getGeneralSettings(); // GH-90000
-            assertThat(response).containsKey("privacy [GH-90000]");
+            assertThat(response).containsKey("privacy");
         }
 
         @Test
-        @DisplayName("two-factor authentication: enabled status [GH-90000]")
+        @DisplayName("two-factor authentication: enabled status")
         void shouldHaveTwoFactor() { // GH-90000
             Map<String, Object> response = getGeneralSettings(); // GH-90000
-            assertThat(response).containsKey("twoFactorEnabled [GH-90000]");
+            assertThat(response).containsKey("twoFactorEnabled");
         }
 
         @Test
-        @DisplayName("API key management: list and create [GH-90000]")
+        @DisplayName("API key management: list and create")
         void shouldHaveApiKeys() { // GH-90000
             Map<String, Object> response = getGeneralSettings(); // GH-90000
-            assertThat(response).containsKey("apiKeys [GH-90000]");
+            assertThat(response).containsKey("apiKeys");
         }
 
         @Test
-        @DisplayName("settings persistence: save confirmed [GH-90000]")
+        @DisplayName("settings persistence: save confirmed")
         void shouldSaveSettings() { // GH-90000
             Map<String, Object> currentSettings = getGeneralSettings(); // GH-90000
             Map<String, Object> updated = updateSettings(currentSettings, "theme", "dark"); // GH-90000
 
-            assertThat(updated.get("theme [GH-90000]")).isEqualTo("dark [GH-90000]");
+            assertThat(updated.get("theme")).isEqualTo("dark");
         }
 
         @Test
-        @DisplayName("settings validation: only valid values accepted [GH-90000]")
+        @DisplayName("settings validation: only valid values accepted")
         void shouldValidateSettings() { // GH-90000
             Map<String, Object> invalid = new HashMap<>(); // GH-90000
             invalid.put("theme", "invalid-theme"); // GH-90000
@@ -111,55 +111,55 @@ public class SettingsUiContractTest {
     }
 
     @Nested
-    @DisplayName("SettingsSecurityPageTests [GH-90000]")
+    @DisplayName("SettingsSecurityPageTests")
     class SettingsSecurityPageTests {
 
         @Test
-        @DisplayName("GET /settings/security: security configuration [GH-90000]")
+        @DisplayName("GET /settings/security: security configuration")
         void shouldReturnSecuritySettings() { // GH-90000
             Map<String, Object> response = getSecuritySettings(); // GH-90000
             assertThat(response).containsKeys("passwordPolicy", "sessionTimeout", "twoFactorRequired", "loginHistory"); // GH-90000
         }
 
         @Test
-        @DisplayName("password policy: minimum length, complexity [GH-90000]")
+        @DisplayName("password policy: minimum length, complexity")
         void shouldHavePasswordPolicy() { // GH-90000
             Map<String, Object> response = getSecuritySettings(); // GH-90000
-            Map<String, ?> policy = (Map<String, ?>) response.get("passwordPolicy [GH-90000]");
+            Map<String, ?> policy = (Map<String, ?>) response.get("passwordPolicy");
 
             assertThat(policy).containsKeys("minLength", "requireUppercase", "requireNumbers", "requireSpecialChars"); // GH-90000
         }
 
         @Test
-        @DisplayName("session timeout: configurable in minutes [GH-90000]")
+        @DisplayName("session timeout: configurable in minutes")
         void shouldHaveTimeout() { // GH-90000
             Map<String, Object> response = getSecuritySettings(); // GH-90000
-            int timeout = ((Number) response.get("sessionTimeout [GH-90000]")).intValue();
+            int timeout = ((Number) response.get("sessionTimeout")).intValue();
 
             assertThat(timeout).isGreaterThan(0); // GH-90000
         }
 
         @Test
-        @DisplayName("login history: recent login attempts [GH-90000]")
+        @DisplayName("login history: recent login attempts")
         void shouldHaveLoginHistory() { // GH-90000
             Map<String, Object> response = getSecuritySettings(); // GH-90000
-            List<?> history = (List<?>) response.get("loginHistory [GH-90000]");
+            List<?> history = (List<?>) response.get("loginHistory");
 
             assertThat(history).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("active sessions: current sessions list [GH-90000]")
+        @DisplayName("active sessions: current sessions list")
         void shouldListActiveSessions() { // GH-90000
             Map<String, Object> response = getSecuritySettings(); // GH-90000
-            assertThat(response).containsKey("activeSessions [GH-90000]");
+            assertThat(response).containsKey("activeSessions");
         }
 
         @Test
-        @DisplayName("security events: audit trail [GH-90000]")
+        @DisplayName("security events: audit trail")
         void shouldHaveAuditTrail() { // GH-90000
             Map<String, Object> response = getSecuritySettings(); // GH-90000
-            assertThat(response).containsKey("auditTrail [GH-90000]");
+            assertThat(response).containsKey("auditTrail");
         }
     }
 
@@ -201,9 +201,9 @@ public class SettingsUiContractTest {
     }
 
     private boolean validateSettings(Map<String, Object> settings) { // GH-90000
-        if (settings.containsKey("theme [GH-90000]")) {
-            String theme = settings.get("theme [GH-90000]").toString();
-            return theme.matches("^(light|dark|auto)$ [GH-90000]");
+        if (settings.containsKey("theme")) {
+            String theme = settings.get("theme").toString();
+            return theme.matches("^(light|dark|auto)$");
         }
         return true;
     }

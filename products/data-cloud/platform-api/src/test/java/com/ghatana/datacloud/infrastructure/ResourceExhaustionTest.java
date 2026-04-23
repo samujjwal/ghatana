@@ -29,47 +29,47 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Infrastructure Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("ResourceExhaustion – Resource Limits (IE003) [GH-90000]")
+@DisplayName("ResourceExhaustion – Resource Limits (IE003)")
 class ResourceExhaustionTest extends EventloopTestBase {
 
     @Mock
     private ResourcePool resourcePool;
 
     @Nested
-    @DisplayName("Thread Pool Exhaustion [GH-90000]")
+    @DisplayName("Thread Pool Exhaustion")
     class ThreadPoolExhaustionTests {
 
         @Test
-        @DisplayName("[IE003]: thread_pool_rejects_when_full [GH-90000]")
+        @DisplayName("[IE003]: thread_pool_rejects_when_full")
         void threadPoolRejectsWhenFull() { // GH-90000
             when(resourcePool.acquireThread()) // GH-90000
-                .thenReturn(Promise.ofException(new IllegalStateException("Thread pool exhausted [GH-90000]")));
+                .thenReturn(Promise.ofException(new IllegalStateException("Thread pool exhausted")));
 
             try {
                 runPromise(() -> resourcePool.acquireThread()); // GH-90000
             } catch (Exception e) { // GH-90000
-                assertThat(e).hasMessageContaining("exhausted [GH-90000]");
+                assertThat(e).hasMessageContaining("exhausted");
             }
         }
 
         @Test
-        @DisplayName("[IE003]: queued_tasks_processed_when_threads_available [GH-90000]")
+        @DisplayName("[IE003]: queued_tasks_processed_when_threads_available")
         void queuedTasksProcessedWhenThreadsAvailable() { // GH-90000
             when(resourcePool.submitTask(any())) // GH-90000
-                .thenReturn(Promise.of("completed [GH-90000]"));
+                .thenReturn(Promise.of("completed"));
 
             String result = runPromise(() -> resourcePool.submitTask(() -> "work")); // GH-90000
 
-            assertThat(result).isEqualTo("completed [GH-90000]");
+            assertThat(result).isEqualTo("completed");
         }
     }
 
     @Nested
-    @DisplayName("Memory Exhaustion [GH-90000]")
+    @DisplayName("Memory Exhaustion")
     class MemoryExhaustionTests {
 
         @Test
-        @DisplayName("[IE003]: memory_limit_enforced [GH-90000]")
+        @DisplayName("[IE003]: memory_limit_enforced")
         void memoryLimitEnforced() { // GH-90000
             long maxMemory = 1024L * 1024 * 1024; // 1GB
             long currentMemory = 900L * 1024 * 1024; // 900MB
@@ -81,7 +81,7 @@ class ResourceExhaustionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[IE003]: large_payload_rejected [GH-90000]")
+        @DisplayName("[IE003]: large_payload_rejected")
         void largePayloadRejected() { // GH-90000
             int maxPayloadSize = 10 * 1024 * 1024; // 10MB
             int payloadSize = 15 * 1024 * 1024; // 15MB
@@ -93,11 +93,11 @@ class ResourceExhaustionTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Connection Pool Exhaustion [GH-90000]")
+    @DisplayName("Connection Pool Exhaustion")
     class ConnectionPoolExhaustionTests {
 
         @Test
-        @DisplayName("[IE003]: connection_pool_limits_connections [GH-90000]")
+        @DisplayName("[IE003]: connection_pool_limits_connections")
         void connectionPoolLimitsConnections() { // GH-90000
             int maxConnections = 100;
             int currentConnections = 100;
@@ -108,11 +108,11 @@ class ResourceExhaustionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[IE003]: connection_wait_timeout [GH-90000]")
+        @DisplayName("[IE003]: connection_wait_timeout")
         void connectionWaitTimeout() { // GH-90000
             // Waiting for connection should timeout
             when(resourcePool.acquireConnection()) // GH-90000
-                .thenReturn(Promise.ofException(new java.util.concurrent.TimeoutException("Connection wait timeout [GH-90000]")));
+                .thenReturn(Promise.ofException(new java.util.concurrent.TimeoutException("Connection wait timeout")));
 
             assertThatThrownBy(() -> // GH-90000
                 runPromise(() -> resourcePool.acquireConnection()) // GH-90000
@@ -121,11 +121,11 @@ class ResourceExhaustionTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("File Handle Exhaustion [GH-90000]")
+    @DisplayName("File Handle Exhaustion")
     class FileHandleExhaustionTests {
 
         @Test
-        @DisplayName("[IE003]: file_handles_limited [GH-90000]")
+        @DisplayName("[IE003]: file_handles_limited")
         void fileHandlesLimited() { // GH-90000
             int maxFileHandles = 1024;
 
@@ -134,7 +134,7 @@ class ResourceExhaustionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[IE003]: file_handle_leak_prevention [GH-90000]")
+        @DisplayName("[IE003]: file_handle_leak_prevention")
         void fileHandleLeakPrevention() { // GH-90000
             // File handles should be released properly
             boolean leakDetected = false;
@@ -143,11 +143,11 @@ class ResourceExhaustionTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Rate Limiting [GH-90000]")
+    @DisplayName("Rate Limiting")
     class RateLimitingTests {
 
         @Test
-        @DisplayName("[IE003]: rate_limit_enforced [GH-90000]")
+        @DisplayName("[IE003]: rate_limit_enforced")
         void rateLimitEnforced() { // GH-90000
             int maxRequestsPerSecond = 1000;
             int currentRequests = 1200;
@@ -158,7 +158,7 @@ class ResourceExhaustionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[IE003]: rate_limit_per_tenant [GH-90000]")
+        @DisplayName("[IE003]: rate_limit_per_tenant")
         void rateLimitPerTenant() { // GH-90000
             // Each tenant should have own rate limit
             Map<String, Integer> tenantLimits = Map.of( // GH-90000

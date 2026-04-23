@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatNullPointerException;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("SpeakerDiarizationService [GH-90000]")
+@DisplayName("SpeakerDiarizationService")
 class SpeakerDiarizationServiceTest {
 
     /**
@@ -45,18 +45,18 @@ class SpeakerDiarizationServiceTest {
     // ─── diarize ──────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("diarize() [GH-90000]")
+    @DisplayName("diarize()")
     class Diarize {
 
         @Test
-        @DisplayName("empty segment list returns empty list [GH-90000]")
+        @DisplayName("empty segment list returns empty list")
         void diarize_empty_returnsEmpty() { // GH-90000
             SpeakerDiarizationService service = buildService(); // GH-90000
             assertThat(service.diarize(Collections.emptyList())).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("single segment returns one turn labeled SPEAKER_0 [GH-90000]")
+        @DisplayName("single segment returns one turn labeled SPEAKER_0")
         void diarize_singleSegment_labeledSpeaker0() { // GH-90000
             SpeakerDiarizationService service = buildService(); // GH-90000
             var segment = new SpeakerDiarizationService.AudioSegment( // GH-90000
@@ -65,12 +65,12 @@ class SpeakerDiarizationServiceTest {
                     service.diarize(List.of(segment)); // GH-90000
 
             assertThat(turns).hasSize(1); // GH-90000
-            assertThat(turns.get(0).speakerId()).isEqualTo("SPEAKER_0 [GH-90000]");
-            assertThat(turns.get(0).text()).isEqualTo("Hello [GH-90000]");
+            assertThat(turns.get(0).speakerId()).isEqualTo("SPEAKER_0");
+            assertThat(turns.get(0).text()).isEqualTo("Hello");
         }
 
         @Test
-        @DisplayName("two acoustically distinct segments → two different speaker labels [GH-90000]")
+        @DisplayName("two acoustically distinct segments → two different speaker labels")
         void diarize_twoSpeakers_distinctLabels() { // GH-90000
             SpeakerDiarizationService service = buildService(); // GH-90000
 
@@ -87,7 +87,7 @@ class SpeakerDiarizationServiceTest {
         }
 
         @Test
-        @DisplayName("acoustically similar segments → same speaker label [GH-90000]")
+        @DisplayName("acoustically similar segments → same speaker label")
         void diarize_sameSpeaker_sameLabel() { // GH-90000
             SpeakerDiarizationService service = buildService(); // GH-90000
 
@@ -101,7 +101,7 @@ class SpeakerDiarizationServiceTest {
         }
 
         @Test
-        @DisplayName("turns preserve start/end times from input segments [GH-90000]")
+        @DisplayName("turns preserve start/end times from input segments")
         void diarize_timesPreserved() { // GH-90000
             SpeakerDiarizationService service = buildService(); // GH-90000
             var segment = new SpeakerDiarizationService.AudioSegment( // GH-90000
@@ -113,7 +113,7 @@ class SpeakerDiarizationServiceTest {
         }
 
         @Test
-        @DisplayName("null segments list throws NullPointerException [GH-90000]")
+        @DisplayName("null segments list throws NullPointerException")
         void diarize_null_throwsNPE() { // GH-90000
             SpeakerDiarizationService service = buildService(); // GH-90000
             assertThatNullPointerException() // GH-90000
@@ -121,7 +121,7 @@ class SpeakerDiarizationServiceTest {
         }
 
         @Test
-        @DisplayName("max speakers cap is respected [GH-90000]")
+        @DisplayName("max speakers cap is respected")
         void diarize_maxSpeakersCap() { // GH-90000
             // Allow only 2 speakers but send 3 distinct acoustic buckets
             SpeakerDiarizationService service = SpeakerDiarizationService.builder() // GH-90000
@@ -146,11 +146,11 @@ class SpeakerDiarizationServiceTest {
     // ─── builder validation ───────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Builder validation [GH-90000]")
+    @DisplayName("Builder validation")
     class BuilderValidation {
 
         @Test
-        @DisplayName("null extractor throws NullPointerException [GH-90000]")
+        @DisplayName("null extractor throws NullPointerException")
         void builder_nullExtractor_throwsNPE() { // GH-90000
             assertThatNullPointerException() // GH-90000
                     .isThrownBy(() -> SpeakerDiarizationService.builder() // GH-90000
@@ -158,14 +158,14 @@ class SpeakerDiarizationServiceTest {
         }
 
         @Test
-        @DisplayName("maxSpeakers < 1 throws IllegalArgumentException [GH-90000]")
+        @DisplayName("maxSpeakers < 1 throws IllegalArgumentException")
         void builder_invalidMaxSpeakers_throwsIAE() { // GH-90000
             assertThatIllegalArgumentException() // GH-90000
                     .isThrownBy(() -> SpeakerDiarizationService.builder().maxSpeakers(0)); // GH-90000
         }
 
         @Test
-        @DisplayName("similarityThreshold > 1 throws IllegalArgumentException [GH-90000]")
+        @DisplayName("similarityThreshold > 1 throws IllegalArgumentException")
         void builder_invalidThreshold_throwsIAE() { // GH-90000
             assertThatIllegalArgumentException() // GH-90000
                     .isThrownBy(() -> SpeakerDiarizationService.builder().similarityThreshold(1.1)); // GH-90000
@@ -175,25 +175,25 @@ class SpeakerDiarizationServiceTest {
     // ─── AudioSegment validation ──────────────────────────────────────────────
 
     @Nested
-    @DisplayName("AudioSegment [GH-90000]")
+    @DisplayName("AudioSegment")
     class AudioSegmentTests {
 
         @Test
-        @DisplayName("null audioBytes throws NullPointerException [GH-90000]")
+        @DisplayName("null audioBytes throws NullPointerException")
         void audioSegment_nullBytes_throwsNPE() { // GH-90000
             assertThatNullPointerException() // GH-90000
                     .isThrownBy(() -> new SpeakerDiarizationService.AudioSegment(null, 0, 100, "t")); // GH-90000
         }
 
         @Test
-        @DisplayName("negative startMs throws IllegalArgumentException [GH-90000]")
+        @DisplayName("negative startMs throws IllegalArgumentException")
         void audioSegment_negativeStart_throwsIAE() { // GH-90000
             assertThatIllegalArgumentException() // GH-90000
                     .isThrownBy(() -> new SpeakerDiarizationService.AudioSegment(new byte[1], -1, 100, "t")); // GH-90000
         }
 
         @Test
-        @DisplayName("endMs < startMs throws IllegalArgumentException [GH-90000]")
+        @DisplayName("endMs < startMs throws IllegalArgumentException")
         void audioSegment_endBeforeStart_throwsIAE() { // GH-90000
             assertThatIllegalArgumentException() // GH-90000
                     .isThrownBy(() -> new SpeakerDiarizationService.AudioSegment(new byte[1], 500, 100, "t")); // GH-90000

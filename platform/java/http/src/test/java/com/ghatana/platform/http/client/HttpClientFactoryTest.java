@@ -18,20 +18,20 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("HttpClientFactory — OkHttpAdapter creation and tenant scoping [GH-90000]")
+@DisplayName("HttpClientFactory — OkHttpAdapter creation and tenant scoping")
 class HttpClientFactoryTest {
 
     // ── createDefaultAdapter ───────────────────────────────────────────────────
 
     @Test
-    @DisplayName("createDefaultAdapter with null metrics returns a non-null adapter [GH-90000]")
+    @DisplayName("createDefaultAdapter with null metrics returns a non-null adapter")
     void createDefaultAdapterWithNullMetricsReturnsNonNull() { // GH-90000
         OkHttpAdapter adapter = HttpClientFactory.createDefaultAdapter(null); // GH-90000
         assertThat(adapter).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("createDefaultAdapter is callable multiple times without error [GH-90000]")
+    @DisplayName("createDefaultAdapter is callable multiple times without error")
     void createDefaultAdapterIsCallableMultipleTimes() { // GH-90000
         OkHttpAdapter first = HttpClientFactory.createDefaultAdapter(null); // GH-90000
         OkHttpAdapter second = HttpClientFactory.createDefaultAdapter(null); // GH-90000
@@ -43,7 +43,7 @@ class HttpClientFactoryTest {
     // ── createAdapter with HttpClientConfig ─────────────────────────────────────
 
     @Test
-    @DisplayName("createAdapter with custom HttpClientConfig returns a non-null adapter [GH-90000]")
+    @DisplayName("createAdapter with custom HttpClientConfig returns a non-null adapter")
     void createAdapterWithCustomConfigReturnsNonNull() { // GH-90000
         HttpClientConfig config = HttpClientConfig.builder() // GH-90000
                 .maxConnections(20) // GH-90000
@@ -54,15 +54,15 @@ class HttpClientFactoryTest {
     }
 
     @Test
-    @DisplayName("createAdapter throws NullPointerException for null config [GH-90000]")
+    @DisplayName("createAdapter throws NullPointerException for null config")
     void createAdapterThrowsForNullConfig() { // GH-90000
         assertThatThrownBy(() -> HttpClientFactory.createAdapter(null, null)) // GH-90000
                 .isInstanceOf(NullPointerException.class) // GH-90000
-                .hasMessageContaining("config [GH-90000]");
+                .hasMessageContaining("config");
     }
 
     @Test
-    @DisplayName("createAdapter with null metrics uses NoopMetricsCollector internally [GH-90000]")
+    @DisplayName("createAdapter with null metrics uses NoopMetricsCollector internally")
     void createAdapterWithNullMetricsReturnsNonNull() { // GH-90000
         HttpClientConfig config = HttpClientConfig.builder().build(); // GH-90000
         OkHttpAdapter adapter = HttpClientFactory.createAdapter(config, null); // GH-90000
@@ -70,7 +70,7 @@ class HttpClientFactoryTest {
     }
 
     @Test
-    @DisplayName("createAdapter with custom maxConnections uses configured value [GH-90000]")
+    @DisplayName("createAdapter with custom maxConnections uses configured value")
     void createAdapterUsesCustomMaxConnections() { // GH-90000
         HttpClientConfig config = HttpClientConfig.builder() // GH-90000
                 .maxConnections(50) // GH-90000
@@ -80,7 +80,7 @@ class HttpClientFactoryTest {
     }
 
     @Test
-    @DisplayName("createAdapter with custom timeouts uses configured values [GH-90000]")
+    @DisplayName("createAdapter with custom timeouts uses configured values")
     void createAdapterUsesCustomTimeouts() { // GH-90000
         HttpClientConfig config = HttpClientConfig.builder() // GH-90000
                 .connectTimeout(Duration.ofSeconds(5)) // GH-90000
@@ -92,7 +92,7 @@ class HttpClientFactoryTest {
     }
 
     @Test
-    @DisplayName("createAdapter with custom keepAliveDuration uses configured value [GH-90000]")
+    @DisplayName("createAdapter with custom keepAliveDuration uses configured value")
     void createAdapterUsesCustomKeepAliveDuration() { // GH-90000
         HttpClientConfig config = HttpClientConfig.builder() // GH-90000
                 .keepAliveDuration(Duration.ofMinutes(10)) // GH-90000
@@ -104,29 +104,29 @@ class HttpClientFactoryTest {
     // ── createTenantAdapter ────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("createTenantAdapter returns a non-null adapter for a valid tenant [GH-90000]")
+    @DisplayName("createTenantAdapter returns a non-null adapter for a valid tenant")
     void createTenantAdapterReturnsNonNull() { // GH-90000
         OkHttpAdapter adapter = HttpClientFactory.createTenantAdapter("tenant-1", null, 5.0); // GH-90000
         assertThat(adapter).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("createTenantAdapter throws NullPointerException for null tenantId [GH-90000]")
+    @DisplayName("createTenantAdapter throws NullPointerException for null tenantId")
     void createTenantAdapterThrowsForNullTenantId() { // GH-90000
         assertThatThrownBy(() -> HttpClientFactory.createTenantAdapter(null, null, 5.0)) // GH-90000
                 .isInstanceOf(NullPointerException.class) // GH-90000
-                .hasMessageContaining("tenantId [GH-90000]");
+                .hasMessageContaining("tenantId");
     }
 
     @Test
-    @DisplayName("createTenantAdapter with null metrics uses NoopMetricsCollector internally [GH-90000]")
+    @DisplayName("createTenantAdapter with null metrics uses NoopMetricsCollector internally")
     void createTenantAdapterWithNullMetricsReturnsNonNull() { // GH-90000
         OkHttpAdapter adapter = HttpClientFactory.createTenantAdapter("tenant-metrics-null", null, 3.0); // GH-90000
         assertThat(adapter).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("createTenantAdapter with zero requestsPerSecond uses default 5 rps [GH-90000]")
+    @DisplayName("createTenantAdapter with zero requestsPerSecond uses default 5 rps")
     void createTenantAdapterWithZeroRpsUsesDefault() { // GH-90000
         // Should not throw; zero or negative rps falls back to default 5.0
         OkHttpAdapter adapter = HttpClientFactory.createTenantAdapter("tenant-zero-rps", null, 0.0); // GH-90000
@@ -134,14 +134,14 @@ class HttpClientFactoryTest {
     }
 
     @Test
-    @DisplayName("createTenantAdapter with negative requestsPerSecond uses default 5 rps [GH-90000]")
+    @DisplayName("createTenantAdapter with negative requestsPerSecond uses default 5 rps")
     void createTenantAdapterWithNegativeRpsUsesDefault() { // GH-90000
         OkHttpAdapter adapter = HttpClientFactory.createTenantAdapter("tenant-neg-rps", null, -1.0); // GH-90000
         assertThat(adapter).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("different tenant IDs produce independent adapter instances [GH-90000]")
+    @DisplayName("different tenant IDs produce independent adapter instances")
     void differentTenantIdsProduceIndependentAdapters() { // GH-90000
         OkHttpAdapter adapterA = HttpClientFactory.createTenantAdapter("tenant-alpha", null, 5.0); // GH-90000
         OkHttpAdapter adapterB = HttpClientFactory.createTenantAdapter("tenant-beta", null, 5.0); // GH-90000
@@ -152,7 +152,7 @@ class HttpClientFactoryTest {
     }
 
     @Test
-    @DisplayName("same tenant ID can be called multiple times without error [GH-90000]")
+    @DisplayName("same tenant ID can be called multiple times without error")
     void sameTenantIdIsRepeatablyCallable() { // GH-90000
         OkHttpAdapter first = HttpClientFactory.createTenantAdapter("tenant-cached", null, 10.0); // GH-90000
         OkHttpAdapter second = HttpClientFactory.createTenantAdapter("tenant-cached", null, 10.0); // GH-90000

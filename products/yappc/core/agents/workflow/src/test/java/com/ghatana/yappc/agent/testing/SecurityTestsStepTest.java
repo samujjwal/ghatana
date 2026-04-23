@@ -11,7 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Testing SecurityTestsStep Tests [GH-90000]")
+@DisplayName("Testing SecurityTestsStep Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles security tests step test operations
@@ -32,8 +32,8 @@ class SecurityTestsStepTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should return correct step ID [GH-90000]")
+  @DisplayName("Should return correct step ID")
   void shouldReturnCorrectStepId() { // GH-90000
-    assertThat(step.getStepId()).isEqualTo("testing.securitytests [GH-90000]");
+    assertThat(step.getStepId()).isEqualTo("testing.securitytests");
   }
 }

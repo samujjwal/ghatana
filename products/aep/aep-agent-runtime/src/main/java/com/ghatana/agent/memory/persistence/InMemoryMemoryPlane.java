@@ -28,7 +28,8 @@ import java.util.stream.Collectors;
  * @doc.type class
  * @doc.purpose In-memory testing implementation
  * @doc.layer agent-memory
- */
+  * @doc.pattern Component
+*/
 public class InMemoryMemoryPlane implements MemoryPlane {
 
     private static final Logger log = LoggerFactory.getLogger(InMemoryMemoryPlane.class);

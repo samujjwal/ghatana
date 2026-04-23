@@ -23,8 +23,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Policy Evaluation Tests [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("Policy Evaluation Tests")
+@Tag("integration")
 class PolicyEvaluationTest extends EventloopTestBase {
 
     private InMemoryPolicyEngine engine;
@@ -35,19 +35,19 @@ class PolicyEvaluationTest extends EventloopTestBase {
 
         // Register test policies
         engine.register("age-gate", input -> { // GH-90000
-            Object age = input.get("age [GH-90000]");
+            Object age = input.get("age");
             if (age instanceof Integer a && a >= 18) { // GH-90000
-                return PolicyEvalResult.allow("age-gate [GH-90000]");
+                return PolicyEvalResult.allow("age-gate");
             }
-            return PolicyEvalResult.deny("age-gate", List.of("must be 18 or older [GH-90000]"), 70);
+            return PolicyEvalResult.deny("age-gate", List.of("must be 18 or older"), 70);
         });
 
         engine.register("ip-allowlist", input -> { // GH-90000
-            Object ip = input.get("clientIp [GH-90000]");
+            Object ip = input.get("clientIp");
             if ("192.168.1.1".equals(ip) || "10.0.0.1".equals(ip)) { // GH-90000
-                return PolicyEvalResult.allow("ip-allowlist [GH-90000]");
+                return PolicyEvalResult.allow("ip-allowlist");
             }
-            return PolicyEvalResult.deny("ip-allowlist", List.of("IP not in allowlist [GH-90000]"), 90);
+            return PolicyEvalResult.deny("ip-allowlist", List.of("IP not in allowlist"), 90);
         });
 
         engine.register("low-risk-allow", input -> { // GH-90000
@@ -58,11 +58,11 @@ class PolicyEvaluationTest extends EventloopTestBase {
     // ── Evaluation with inputs ────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("evaluation with different input conditions [GH-90000]")
+    @DisplayName("evaluation with different input conditions")
     class EvaluationWithInputs {
 
         @Test
-        @DisplayName("age-gate allows input with age >= 18 [GH-90000]")
+        @DisplayName("age-gate allows input with age >= 18")
         void ageGate_allowsInput_withAgeGreaterOrEqual18() { // GH-90000
             PolicyEvalResult result = runPromise( // GH-90000
                     () -> engine.evaluate("tenant-a", "age-gate", Map.of("age", 25))); // GH-90000
@@ -72,18 +72,18 @@ class PolicyEvaluationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("age-gate denies input with age < 18 [GH-90000]")
+        @DisplayName("age-gate denies input with age < 18")
         void ageGate_deniesInput_withAgeLessThan18() { // GH-90000
             PolicyEvalResult result = runPromise( // GH-90000
                     () -> engine.evaluate("tenant-a", "age-gate", Map.of("age", 16))); // GH-90000
 
             assertThat(result.allowed()).isFalse(); // GH-90000
-            assertThat(result.reasons()).containsExactly("must be 18 or older [GH-90000]");
+            assertThat(result.reasons()).containsExactly("must be 18 or older");
             assertThat(result.riskScore()).isEqualTo(70); // GH-90000
         }
 
         @Test
-        @DisplayName("age-gate denies when age input is absent [GH-90000]")
+        @DisplayName("age-gate denies when age input is absent")
         void ageGate_denies_whenAgeInputIsAbsent() { // GH-90000
             PolicyEvalResult result = runPromise( // GH-90000
                     () -> engine.evaluate("tenant-a", "age-gate", Map.of())); // GH-90000
@@ -92,7 +92,7 @@ class PolicyEvaluationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("ip-allowlist allows whitelisted IP [GH-90000]")
+        @DisplayName("ip-allowlist allows whitelisted IP")
         void ipAllowlist_allowsWhitelistedIp() { // GH-90000
             PolicyEvalResult result = runPromise( // GH-90000
                     () -> engine.evaluate("tenant-a", "ip-allowlist", // GH-90000
@@ -102,7 +102,7 @@ class PolicyEvaluationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("ip-allowlist denies IP not on whitelist [GH-90000]")
+        @DisplayName("ip-allowlist denies IP not on whitelist")
         void ipAllowlist_deniesIpNotOnWhitelist() { // GH-90000
             PolicyEvalResult result = runPromise( // GH-90000
                     () -> engine.evaluate("tenant-a", "ip-allowlist", // GH-90000
@@ -116,11 +116,11 @@ class PolicyEvaluationTest extends EventloopTestBase {
     // ── Risk score ────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("risk score ranges [GH-90000]")
+    @DisplayName("risk score ranges")
     class RiskScoreRanges {
 
         @Test
-        @DisplayName("allow result has risk score 0 [GH-90000]")
+        @DisplayName("allow result has risk score 0")
         void allowResult_hasRiskScore0() { // GH-90000
             PolicyEvalResult result = runPromise( // GH-90000
                     () -> engine.evaluate("tenant-a", "age-gate", Map.of("age", 30))); // GH-90000
@@ -129,7 +129,7 @@ class PolicyEvaluationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("allowed result with non-zero risk score is valid [GH-90000]")
+        @DisplayName("allowed result with non-zero risk score is valid")
         void allowedResultWithNonZeroRiskScore_isValid() { // GH-90000
             PolicyEvalResult result = runPromise( // GH-90000
                     () -> engine.evaluate("tenant-a", "low-risk-allow", Map.of())); // GH-90000
@@ -139,7 +139,7 @@ class PolicyEvaluationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("deny result risk score of 90 indicates high risk [GH-90000]")
+        @DisplayName("deny result risk score of 90 indicates high risk")
         void denyResult_riskScore90_indicatesHighRisk() { // GH-90000
             PolicyEvalResult result = runPromise( // GH-90000
                     () -> engine.evaluate("tenant-a", "ip-allowlist", // GH-90000
@@ -152,11 +152,11 @@ class PolicyEvaluationTest extends EventloopTestBase {
     // ── Tenant scoping ────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("tenant scoping [GH-90000]")
+    @DisplayName("tenant scoping")
     class TenantScoping {
 
         @Test
-        @DisplayName("same policy evaluates consistently regardless of tenant ID [GH-90000]")
+        @DisplayName("same policy evaluates consistently regardless of tenant ID")
         void samePolicy_evaluatesConsistently_regardlessOfTenantId() { // GH-90000
             PolicyEvalResult tenantA = runPromise( // GH-90000
                     () -> engine.evaluate("tenant-a", "age-gate", Map.of("age", 21))); // GH-90000
@@ -170,14 +170,14 @@ class PolicyEvaluationTest extends EventloopTestBase {
     // ── Exception in rule function ────────────────────────────────────────────
 
     @Nested
-    @DisplayName("exception in rule function [GH-90000]")
+    @DisplayName("exception in rule function")
     class ExceptionInRuleFunction {
 
         @Test
-        @DisplayName("exception thrown by rule function propagates as Promise exception [GH-90000]")
+        @DisplayName("exception thrown by rule function propagates as Promise exception")
         void exceptionThrownByRuleFunction_propagatesAsPromiseException() { // GH-90000
             engine.register("buggy-policy", input -> { // GH-90000
-                throw new RuntimeException("simulated rule bug [GH-90000]");
+                throw new RuntimeException("simulated rule bug");
             });
 
             RuntimeException caught = null;
@@ -188,7 +188,7 @@ class PolicyEvaluationTest extends EventloopTestBase {
             }
 
             assertThat(caught).isNotNull(); // GH-90000
-            assertThat(caught.getMessage()).contains("simulated rule bug [GH-90000]");
+            assertThat(caught.getMessage()).contains("simulated rule bug");
         }
     }
 }

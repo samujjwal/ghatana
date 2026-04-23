@@ -29,11 +29,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Test failure recovery mechanisms in feature ingestion pipeline including
  * retry logic, circuit breaking, graceful degradation, and data consistency.
  */
-@DisplayName("Failure Recovery Tests [GH-90000]")
+@DisplayName("Failure Recovery Tests")
 class FailureRecoveryTest {
 
     @Test
-    @DisplayName("Should retry failed ingestion attempts [GH-90000]")
+    @DisplayName("Should retry failed ingestion attempts")
     void shouldRetryFailedIngestionAttempts() { // GH-90000
         AtomicInteger attemptCount = new AtomicInteger(0); // GH-90000
         AtomicInteger successCount = new AtomicInteger(0); // GH-90000
@@ -41,7 +41,7 @@ class FailureRecoveryTest {
         Consumer<Map<String, Object>> failingConsumer = feature -> {
             int attempt = attemptCount.incrementAndGet(); // GH-90000
             if (attempt < 3) { // GH-90000
-                throw new RuntimeException("Simulated failure [GH-90000]");
+                throw new RuntimeException("Simulated failure");
             }
             successCount.incrementAndGet(); // GH-90000
         };
@@ -66,7 +66,7 @@ class FailureRecoveryTest {
     }
 
     @Test
-    @DisplayName("Should handle transient network failures with exponential backoff [GH-90000]")
+    @DisplayName("Should handle transient network failures with exponential backoff")
     void shouldHandleTransientNetworkFailuresWithExponentialBackoff() { // GH-90000
         AtomicInteger attemptCount = new AtomicInteger(0); // GH-90000
         List<Long> attemptTimestamps = new ArrayList<>(); // GH-90000
@@ -75,7 +75,7 @@ class FailureRecoveryTest {
             attemptTimestamps.add(System.currentTimeMillis()); // GH-90000
             int attempt = attemptCount.incrementAndGet(); // GH-90000
             if (attempt < 4) { // GH-90000
-                throw new RuntimeException("Network timeout [GH-90000]");
+                throw new RuntimeException("Network timeout");
             }
         };
 
@@ -112,7 +112,7 @@ class FailureRecoveryTest {
     }
 
     @Test
-    @DisplayName("Should trigger circuit breaker after consecutive failures [GH-90000]")
+    @DisplayName("Should trigger circuit breaker after consecutive failures")
     void shouldTriggerCircuitBreakerAfterConsecutiveFailures() { // GH-90000
         AtomicInteger failureCount = new AtomicInteger(0); // GH-90000
         AtomicInteger successCount = new AtomicInteger(0); // GH-90000
@@ -122,19 +122,19 @@ class FailureRecoveryTest {
 
         Consumer<Map<String, Object>> circuitBreakerConsumer = feature -> {
             if (circuitOpen.get()) { // GH-90000
-                throw new RuntimeException("Circuit breaker is open [GH-90000]");
+                throw new RuntimeException("Circuit breaker is open");
             }
             
             if (failureCount.get() >= failureThreshold) { // GH-90000
                 circuitOpen.set(true); // GH-90000
-                throw new RuntimeException("Circuit breaker triggered [GH-90000]");
+                throw new RuntimeException("Circuit breaker triggered");
             }
             
             // Simulate random failures
             if (Math.random() < 0.7) { // GH-90000
                 failureCount.incrementAndGet(); // GH-90000
                 successCount.set(0); // Reset consecutive success count // GH-90000
-                throw new RuntimeException("Random failure [GH-90000]");
+                throw new RuntimeException("Random failure");
             }
             
             successCount.incrementAndGet(); // GH-90000
@@ -153,7 +153,7 @@ class FailureRecoveryTest {
             try {
                 circuitBreakerConsumer.accept(feature); // GH-90000
             } catch (Exception e) { // GH-90000
-                if (e.getMessage().equals("Circuit breaker is open [GH-90000]")) {
+                if (e.getMessage().equals("Circuit breaker is open")) {
                     openCircuitAttempts++;
                 }
             }
@@ -165,7 +165,7 @@ class FailureRecoveryTest {
     }
 
     @Test
-    @DisplayName("Should degrade gracefully when storage is unavailable [GH-90000]")
+    @DisplayName("Should degrade gracefully when storage is unavailable")
     void shouldDegradeGracefullyWhenStorageIsUnavailable() { // GH-90000
         List<Map<String, Object>> fallbackBuffer = new ArrayList<>(); // GH-90000
         AtomicBoolean storageAvailable = new AtomicBoolean(false); // GH-90000
@@ -205,18 +205,18 @@ class FailureRecoveryTest {
     }
 
     @Test
-    @DisplayName("Should maintain data consistency during partial failures [GH-90000]")
+    @DisplayName("Should maintain data consistency during partial failures")
     void shouldMaintainDataConsistencyDuringPartialFailures() { // GH-90000
         Map<String, Map<String, Object>> dataStore = new HashMap<>(); // GH-90000
         AtomicInteger failureCount = new AtomicInteger(0); // GH-90000
         
         Consumer<Map<String, Object>> consistentConsumer = feature -> {
-            String featureName = (String) feature.get("feature_name [GH-90000]");
+            String featureName = (String) feature.get("feature_name");
             
             // Simulate partial failure (every 3rd feature fails) // GH-90000
             int attempt = failureCount.incrementAndGet(); // GH-90000
             if (attempt % 3 == 0) { // GH-90000
-                throw new RuntimeException("Partial failure [GH-90000]");
+                throw new RuntimeException("Partial failure");
             }
             
             dataStore.put(featureName, feature); // GH-90000
@@ -233,20 +233,20 @@ class FailureRecoveryTest {
                 consistentConsumer.accept(feature); // GH-90000
             } catch (Exception e) { // GH-90000
                 // Failed features should not be in data store
-                String featureName = (String) feature.get("feature_name [GH-90000]");
+                String featureName = (String) feature.get("feature_name");
                 assertThat(dataStore).doesNotContainKey(featureName); // GH-90000
             }
         }
 
         // Verify only successful features are stored
         assertThat(dataStore).hasSize(6); // 9 - 3 failures // GH-90000
-        assertThat(dataStore).containsKey("consistent_feature_0 [GH-90000]");
-        assertThat(dataStore).containsKey("consistent_feature_1 [GH-90000]");
-        assertThat(dataStore).doesNotContainKey("consistent_feature_2 [GH-90000]");
+        assertThat(dataStore).containsKey("consistent_feature_0");
+        assertThat(dataStore).containsKey("consistent_feature_1");
+        assertThat(dataStore).doesNotContainKey("consistent_feature_2");
     }
 
     @Test
-    @DisplayName("Should recover from deadlock scenarios [GH-90000]")
+    @DisplayName("Should recover from deadlock scenarios")
     void shouldRecoverFromDeadlockScenarios() { // GH-90000
         ExecutorService executor = Executors.newFixedThreadPool(4); // GH-90000
         AtomicInteger deadlockCount = new AtomicInteger(0); // GH-90000
@@ -258,7 +258,7 @@ class FailureRecoveryTest {
                 Thread.sleep(10); // GH-90000
                 if (Math.random() < 0.3) { // GH-90000
                     deadlockCount.incrementAndGet(); // GH-90000
-                    throw new RuntimeException("Deadlock detected [GH-90000]");
+                    throw new RuntimeException("Deadlock detected");
                 }
             } catch (InterruptedException e) { // GH-90000
                 Thread.currentThread().interrupt(); // GH-90000
@@ -294,17 +294,17 @@ class FailureRecoveryTest {
     }
 
     @Test
-    @DisplayName("Should handle timeout and continue with remaining work [GH-90000]")
+    @DisplayName("Should handle timeout and continue with remaining work")
     void shouldHandleTimeoutAndContinueWithRemainingWork() { // GH-90000
         AtomicInteger timeoutCount = new AtomicInteger(0); // GH-90000
         AtomicInteger successCount = new AtomicInteger(0); // GH-90000
         List<String> processedFeatures = new ArrayList<>(); // GH-90000
         
         Consumer<Map<String, Object>> timeoutAwareConsumer = feature -> {
-            String featureName = (String) feature.get("feature_name [GH-90000]");
+            String featureName = (String) feature.get("feature_name");
             
             // Simulate timeout for specific features
-            if (featureName.contains("slow [GH-90000]")) {
+            if (featureName.contains("slow")) {
                 timeoutCount.incrementAndGet(); // GH-90000
                 try {
                     Thread.sleep(200); // Simulate slow operation // GH-90000
@@ -331,7 +331,7 @@ class FailureRecoveryTest {
                     .get(100, TimeUnit.MILLISECONDS); // 100ms timeout // GH-90000
             } catch (Exception e) { // GH-90000
                 // Feature timed out, continue with next
-                String featureName = (String) feature.get("feature_name [GH-90000]");
+                String featureName = (String) feature.get("feature_name");
                 processedFeatures.add(featureName + "_TIMEOUT"); // GH-90000
             }
         }
@@ -341,14 +341,14 @@ class FailureRecoveryTest {
     }
 
     @Test
-    @DisplayName("Should validate data integrity after recovery [GH-90000]")
+    @DisplayName("Should validate data integrity after recovery")
     void shouldValidateDataIntegrityAfterRecovery() { // GH-90000
         Map<String, Map<String, Object>> primaryStore = new HashMap<>(); // GH-90000
         Map<String, Map<String, Object>> backupStore = new HashMap<>(); // GH-90000
         AtomicBoolean primaryFailed = new AtomicBoolean(false); // GH-90000
         
         Consumer<Map<String, Object>> replicatedConsumer = feature -> {
-            String featureName = (String) feature.get("feature_name [GH-90000]");
+            String featureName = (String) feature.get("feature_name");
             
             if (!primaryFailed.get()) { // GH-90000
                 primaryStore.put(featureName, feature); // GH-90000
@@ -357,7 +357,7 @@ class FailureRecoveryTest {
             } else {
                 // Primary failed, use backup
                 if (!backupStore.containsKey(featureName)) { // GH-90000
-                    throw new RuntimeException("Data missing from backup [GH-90000]");
+                    throw new RuntimeException("Data missing from backup");
                 }
             }
         };
@@ -380,20 +380,20 @@ class FailureRecoveryTest {
         for (int i = 0; i < 5; i++) { // GH-90000
             String featureName = "integrity_feature_" + i;
             assertThat(backupStore).containsKey(featureName); // GH-90000
-            assertThat(backupStore.get(featureName).get("checksum [GH-90000]")).isEqualTo(i * 100);
+            assertThat(backupStore.get(featureName).get("checksum")).isEqualTo(i * 100);
         }
 
         // Verify data integrity
         for (Map.Entry<String, Map<String, Object>> entry : backupStore.entrySet()) { // GH-90000
             Map<String, Object> feature = entry.getValue(); // GH-90000
-            int value = (Integer) feature.get("value [GH-90000]");
-            int checksum = (Integer) feature.get("checksum [GH-90000]");
+            int value = (Integer) feature.get("value");
+            int checksum = (Integer) feature.get("checksum");
             assertThat(checksum).isEqualTo(value * 100); // GH-90000
         }
     }
 
     @Test
-    @DisplayName("Should recover from corrupted batch and continue [GH-90000]")
+    @DisplayName("Should recover from corrupted batch and continue")
     void shouldRecoverFromCorruptedBatchAndContinue() { // GH-90000
         List<Map<String, Object>> validBatches = new ArrayList<>(); // GH-90000
         List<Map<String, Object>> corruptedBatches = new ArrayList<>(); // GH-90000
@@ -401,9 +401,9 @@ class FailureRecoveryTest {
         Consumer<List<Map<String, Object>>> batchProcessor = batch -> {
             // Detect corruption
             for (Map<String, Object> feature : batch) { // GH-90000
-                if (feature.containsKey("corrupted [GH-90000]")) {
+                if (feature.containsKey("corrupted")) {
                     corruptedBatches.addAll(batch); // GH-90000
-                    throw new RuntimeException("Corrupted batch detected [GH-90000]");
+                    throw new RuntimeException("Corrupted batch detected");
                 }
             }
             validBatches.addAll(batch); // GH-90000
@@ -444,7 +444,7 @@ class FailureRecoveryTest {
     }
 
     @Test
-    @DisplayName("Should handle resource exhaustion gracefully [GH-90000]")
+    @DisplayName("Should handle resource exhaustion gracefully")
     void shouldHandleResourceExhaustionGracefully() { // GH-90000
         AtomicInteger memoryPressureCount = new AtomicInteger(0); // GH-90000
         List<Map<String, Object>> lowMemoryBuffer = new ArrayList<>(); // GH-90000
@@ -454,8 +454,8 @@ class FailureRecoveryTest {
             if (underMemoryPressure.get()) { // GH-90000
                 // Use low-memory buffer instead of full processing
                 lowMemoryBuffer.add(Map.of( // GH-90000
-                    "feature_name", feature.get("feature_name [GH-90000]"),
-                    "value", feature.get("value [GH-90000]"),
+                    "feature_name", feature.get("feature_name"),
+                    "value", feature.get("value"),
                     "buffered", true
                 ));
                 memoryPressureCount.incrementAndGet(); // GH-90000
@@ -483,20 +483,20 @@ class FailureRecoveryTest {
         
         // Verify buffered data is preserved
         for (int i = 5; i < 10; i++) { // GH-90000
-            assertThat(lowMemoryBuffer.get(i - 5).get("feature_name [GH-90000]")).isEqualTo("resource_feature_" + i);
-            assertThat(lowMemoryBuffer.get(i - 5).get("buffered [GH-90000]")).isEqualTo(true);
+            assertThat(lowMemoryBuffer.get(i - 5).get("feature_name")).isEqualTo("resource_feature_" + i);
+            assertThat(lowMemoryBuffer.get(i - 5).get("buffered")).isEqualTo(true);
         }
     }
 
     @Test
-    @DisplayName("Should recover from partition loss and resync [GH-90000]")
+    @DisplayName("Should recover from partition loss and resync")
     void shouldRecoverFromPartitionLossAndResync() { // GH-90000
         Map<String, Map<String, Object>> partitionA = new HashMap<>(); // GH-90000
         Map<String, Map<String, Object>> partitionB = new HashMap<>(); // GH-90000
         AtomicBoolean partitionALost = new AtomicBoolean(false); // GH-90000
         
         Consumer<Map<String, Object>> partitionAwareConsumer = feature -> {
-            String featureName = (String) feature.get("feature_name [GH-90000]");
+            String featureName = (String) feature.get("feature_name");
             int partitionIndex = Math.abs(featureName.hashCode() % 2); // GH-90000
             
             if (partitionIndex == 0) { // GH-90000

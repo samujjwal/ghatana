@@ -39,7 +39,7 @@ import static org.mockito.Mockito.mock;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("PlatformDeliveryCoordinator Tests [GH-90000]")
+@DisplayName("PlatformDeliveryCoordinator Tests")
 class PlatformDeliveryCoordinatorTest extends EventloopTestBase {
 
   private YappcAgentRegistryAdapter agentRegistry;
@@ -65,11 +65,11 @@ class PlatformDeliveryCoordinatorTest extends EventloopTestBase {
   // ===== Validation Tests =====
 
   @Nested
-  @DisplayName("Input Validation [GH-90000]")
+  @DisplayName("Input Validation")
   class InputValidation {
 
     @Test
-    @DisplayName("Should accept valid delivery request [GH-90000]")
+    @DisplayName("Should accept valid delivery request")
     void shouldAcceptValidRequest() { // GH-90000
       DeliveryRequest request = new DeliveryRequest( // GH-90000
           "Build feature X",
@@ -83,17 +83,17 @@ class PlatformDeliveryCoordinatorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should reject request with empty description [GH-90000]")
+    @DisplayName("Should reject request with empty description")
     void shouldRejectEmptyDescription() { // GH-90000
       // DeliveryRequest constructor validates eagerly — empty string throws
       assertThatThrownBy(() -> // GH-90000
-          new DeliveryRequest("", List.of("architecture [GH-90000]"),
+          new DeliveryRequest("", List.of("architecture"),
               DeliveryRequest.Priority.NORMAL, Map.of())) // GH-90000
           .isInstanceOf(IllegalArgumentException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("Should reject request with null target phases [GH-90000]")
+    @DisplayName("Should reject request with null target phases")
     void shouldRejectNullPhases() { // GH-90000
       assertThatThrownBy(() -> // GH-90000
           new DeliveryRequest("Build X", null, // GH-90000
@@ -102,10 +102,10 @@ class PlatformDeliveryCoordinatorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should reject request with null priority [GH-90000]")
+    @DisplayName("Should reject request with null priority")
     void shouldRejectNullPriority() { // GH-90000
       assertThatThrownBy(() -> // GH-90000
-          new DeliveryRequest("Build X", List.of("architecture [GH-90000]"),
+          new DeliveryRequest("Build X", List.of("architecture"),
               null, Map.of())) // GH-90000
           .isInstanceOf(IllegalArgumentException.class); // GH-90000
     }
@@ -114,21 +114,21 @@ class PlatformDeliveryCoordinatorTest extends EventloopTestBase {
   // ===== Contract Tests =====
 
   @Nested
-  @DisplayName("Step Contract [GH-90000]")
+  @DisplayName("Step Contract")
   class StepContract {
 
     @Test
-    @DisplayName("Should expose correct step name [GH-90000]")
+    @DisplayName("Should expose correct step name")
     void shouldExposeStepName() { // GH-90000
-      assertThat(coordinator.stepName()).isEqualTo("platform.coordinate [GH-90000]");
+      assertThat(coordinator.stepName()).isEqualTo("platform.coordinate");
     }
 
     @Test
-    @DisplayName("Should expose contract with coordination capabilities [GH-90000]")
+    @DisplayName("Should expose contract with coordination capabilities")
     void shouldExposeContract() { // GH-90000
       var contract = coordinator.contract(); // GH-90000
 
-      assertThat(contract.name()).isEqualTo("platform.coordinate [GH-90000]");
+      assertThat(contract.name()).isEqualTo("platform.coordinate");
       assertThat(contract.requiredCapabilities()) // GH-90000
           .contains("orchestration", "delegation", "coordination"); // GH-90000
     }
@@ -137,11 +137,11 @@ class PlatformDeliveryCoordinatorTest extends EventloopTestBase {
   // ===== Full Lifecycle Tests =====
 
   @Nested
-  @DisplayName("Full Lifecycle Execution [GH-90000]")
+  @DisplayName("Full Lifecycle Execution")
   class FullLifecycle {
 
     @Test
-    @DisplayName("Should execute full delivery lifecycle [GH-90000]")
+    @DisplayName("Should execute full delivery lifecycle")
     void shouldExecuteFullLifecycle() { // GH-90000
       // Register agents so phases can be "executed"
       agentRegistry.register(createStubPhaseAgent("arch-agent", "architecture.intake")); // GH-90000
@@ -166,7 +166,7 @@ class PlatformDeliveryCoordinatorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should reject invalid input during perceive phase [GH-90000]")
+    @DisplayName("Should reject invalid input during perceive phase")
     void shouldRejectInvalidInputDuringPerceive() { // GH-90000
       // Create DeliveryRequest with valid constructor, but we test via the
       // coordinator's validation by creating a request with empty phases
@@ -189,7 +189,7 @@ class PlatformDeliveryCoordinatorTest extends EventloopTestBase {
     StubPhaseAgent(String agentId, String stepName, MemoryStore memoryStore) { // GH-90000
       super(agentId, stepName, // GH-90000
           new com.ghatana.yappc.agent.StepContract(stepName, "#/definitions/Object", // GH-90000
-              "#/definitions/Object", List.of("phase-lead [GH-90000]"),
+              "#/definitions/Object", List.of("phase-lead"),
               Map.of("version", "1.0.0")), // GH-90000
           new StubGenerator(), // GH-90000
         defaultEventPublisher()); // GH-90000
@@ -226,8 +226,8 @@ class PlatformDeliveryCoordinatorTest extends EventloopTestBase {
     @Override
     public @NotNull GeneratorMetadata getMetadata() { // GH-90000
       return GeneratorMetadata.builder() // GH-90000
-          .name("StubGenerator [GH-90000]").type("rule-based [GH-90000]")
-          .description("Stub [GH-90000]").version("1.0.0 [GH-90000]").build();
+          .name("StubGenerator").type("rule-based")
+          .description("Stub").version("1.0.0").build();
     }
   }
 }

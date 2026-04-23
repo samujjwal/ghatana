@@ -96,18 +96,18 @@ class PythonDiagnosticsServiceTest extends EventloopTestBase {
 
         assertTrue(runPromise(() -> service.withIncludePatterns(List.of(FORMAT_ME_PY)).formatFiles())); // GH-90000
         String formatted = Files.readString(pythonFile); // GH-90000
-        assertTrue(formatted.contains("x = 1 [GH-90000]"));
+        assertTrue(formatted.contains("x = 1"));
     }
 
     @Test
     void testIsAvailable() { // GH-90000
         processRunner.when( // GH-90000
                 "ruff",
-                List.of("--version [GH-90000]"),
+                List.of("--version"),
                 FakeProcessRunner.response(new ProcessResult(0, "ruff 0.4.0", ""))); // GH-90000
         processRunner.when( // GH-90000
                 "black",
-                List.of("--version [GH-90000]"),
+                List.of("--version"),
                 FakeProcessRunner.response(new ProcessResult(0, "black 24.0", ""))); // GH-90000
         assertTrue(service.isAvailable()); // GH-90000
     }
@@ -133,16 +133,16 @@ class PythonDiagnosticsServiceTest extends EventloopTestBase {
 
     private static List<String> ruffArgs(boolean fix, String... files) { // GH-90000
         List<String> args = new ArrayList<>(); // GH-90000
-        args.add("check [GH-90000]");
-        args.add("--format=json [GH-90000]");
+        args.add("check");
+        args.add("--format=json");
         if (fix) { // GH-90000
-            args.add("--fix [GH-90000]");
+            args.add("--fix");
         }
         for (String file : files) { // GH-90000
             args.add(file); // GH-90000
         }
         if (!DEFAULT_IGNORE_PATTERNS.isEmpty()) { // GH-90000
-            args.add("--exclude [GH-90000]");
+            args.add("--exclude");
             args.add(String.join(",", DEFAULT_IGNORE_PATTERNS)); // GH-90000
         }
         return args;
@@ -151,14 +151,14 @@ class PythonDiagnosticsServiceTest extends EventloopTestBase {
     private static List<String> blackArgs(boolean checkOnly, int lineLength, String file) { // GH-90000
         List<String> args = new ArrayList<>(); // GH-90000
         if (checkOnly) { // GH-90000
-            args.add("--check [GH-90000]");
+            args.add("--check");
         }
-        args.add("--quiet [GH-90000]");
-        args.add("--line-length [GH-90000]");
+        args.add("--quiet");
+        args.add("--line-length");
         args.add(String.valueOf(lineLength)); // GH-90000
         args.add(file); // GH-90000
         if (!DEFAULT_IGNORE_PATTERNS.isEmpty()) { // GH-90000
-            args.add("--exclude [GH-90000]");
+            args.add("--exclude");
             args.add(String.join("|", DEFAULT_IGNORE_PATTERNS)); // GH-90000
         }
         return args;
@@ -195,7 +195,7 @@ class PythonDiagnosticsServiceTest extends EventloopTestBase {
     }
 
     private static String diagnosticsJson(RuffFinding... findings) { // GH-90000
-        StringBuilder sb = new StringBuilder("[ [GH-90000]");
+        StringBuilder sb = new StringBuilder("[");
         for (int i = 0; i < findings.length; i++) { // GH-90000
             RuffFinding f = findings[i];
             sb.append( // GH-90000

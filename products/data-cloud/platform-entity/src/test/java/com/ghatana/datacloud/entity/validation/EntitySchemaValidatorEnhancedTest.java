@@ -36,7 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("EntitySchemaValidator Enhanced Features [GH-90000]")
+@DisplayName("EntitySchemaValidator Enhanced Features")
 class EntitySchemaValidatorEnhancedTest {
 
     private EntitySchemaValidator validator;
@@ -51,17 +51,17 @@ class EntitySchemaValidatorEnhancedTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Date range validation [GH-90000]")
+    @DisplayName("Date range validation")
     class DateRangeValidation {
 
         @Test
-        @DisplayName("should reject date before minDate [GH-90000]")
+        @DisplayName("should reject date before minDate")
         void shouldRejectDateBeforeMinDate() { // GH-90000
             MetaField dateField = MetaField.builder() // GH-90000
-                .name("createdDate [GH-90000]")
+                .name("createdDate")
                 .type(DataType.DATETIME) // GH-90000
                 .validation(FieldValidation.builder() // GH-90000
-                    .minDate("2026-01-01T00:00:00Z [GH-90000]")
+                    .minDate("2026-01-01T00:00:00Z")
                     .build()) // GH-90000
                 .build(); // GH-90000
 
@@ -74,17 +74,17 @@ class EntitySchemaValidatorEnhancedTest {
             ValidationResult result = validator.validate("tenant-1", "test", data); // GH-90000
 
             assertThat(result.valid()).isFalse(); // GH-90000
-            assertThat(result.violations()).anyMatch(v -> v.contains("before minimum date [GH-90000]"));
+            assertThat(result.violations()).anyMatch(v -> v.contains("before minimum date"));
         }
 
         @Test
-        @DisplayName("should accept date on minDate boundary [GH-90000]")
+        @DisplayName("should accept date on minDate boundary")
         void shouldAcceptDateOnMinDateBoundary() { // GH-90000
             MetaField dateField = MetaField.builder() // GH-90000
-                .name("createdDate [GH-90000]")
+                .name("createdDate")
                 .type(DataType.DATETIME) // GH-90000
                 .validation(FieldValidation.builder() // GH-90000
-                    .minDate("2026-01-01T00:00:00Z [GH-90000]")
+                    .minDate("2026-01-01T00:00:00Z")
                     .build()) // GH-90000
                 .build(); // GH-90000
 
@@ -100,13 +100,13 @@ class EntitySchemaValidatorEnhancedTest {
         }
 
         @Test
-        @DisplayName("should reject date after maxDate [GH-90000]")
+        @DisplayName("should reject date after maxDate")
         void shouldRejectDateAfterMaxDate() { // GH-90000
             MetaField dateField = MetaField.builder() // GH-90000
-                .name("expiryDate [GH-90000]")
+                .name("expiryDate")
                 .type(DataType.DATETIME) // GH-90000
                 .validation(FieldValidation.builder() // GH-90000
-                    .maxDate("2026-12-31T23:59:59Z [GH-90000]")
+                    .maxDate("2026-12-31T23:59:59Z")
                     .build()) // GH-90000
                 .build(); // GH-90000
 
@@ -119,18 +119,18 @@ class EntitySchemaValidatorEnhancedTest {
             ValidationResult result = validator.validate("tenant-1", "test", data); // GH-90000
 
             assertThat(result.valid()).isFalse(); // GH-90000
-            assertThat(result.violations()).anyMatch(v -> v.contains("after maximum date [GH-90000]"));
+            assertThat(result.violations()).anyMatch(v -> v.contains("after maximum date"));
         }
 
         @Test
-        @DisplayName("should accept date within range [GH-90000]")
+        @DisplayName("should accept date within range")
         void shouldAcceptDateWithinRange() { // GH-90000
             MetaField dateField = MetaField.builder() // GH-90000
-                .name("eventDate [GH-90000]")
+                .name("eventDate")
                 .type(DataType.DATETIME) // GH-90000
                 .validation(FieldValidation.builder() // GH-90000
-                    .minDate("2026-01-01T00:00:00Z [GH-90000]")
-                    .maxDate("2026-12-31T23:59:59Z [GH-90000]")
+                    .minDate("2026-01-01T00:00:00Z")
+                    .maxDate("2026-12-31T23:59:59Z")
                     .build()) // GH-90000
                 .build(); // GH-90000
 
@@ -146,13 +146,13 @@ class EntitySchemaValidatorEnhancedTest {
         }
 
         @Test
-        @DisplayName("should handle invalid minDate format gracefully [GH-90000]")
+        @DisplayName("should handle invalid minDate format gracefully")
         void shouldHandleInvalidMinDateFormat() { // GH-90000
             MetaField dateField = MetaField.builder() // GH-90000
-                .name("createdDate [GH-90000]")
+                .name("createdDate")
                 .type(DataType.DATETIME) // GH-90000
                 .validation(FieldValidation.builder() // GH-90000
-                    .minDate("invalid-date [GH-90000]")
+                    .minDate("invalid-date")
                     .build()) // GH-90000
                 .build(); // GH-90000
 
@@ -174,17 +174,17 @@ class EntitySchemaValidatorEnhancedTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Pattern caching [GH-90000]")
+    @DisplayName("Pattern caching")
     class PatternCaching {
 
         @Test
-        @DisplayName("should cache compiled regex patterns [GH-90000]")
+        @DisplayName("should cache compiled regex patterns")
         void shouldCacheCompiledRegexPatterns() { // GH-90000
             MetaField emailField = MetaField.builder() // GH-90000
-                .name("email [GH-90000]")
+                .name("email")
                 .type(DataType.STRING) // GH-90000
                 .validation(FieldValidation.builder() // GH-90000
-                    .pattern("^[A-Za-z0-9+_.-]+@(.+)$ [GH-90000]")
+                    .pattern("^[A-Za-z0-9+_.-]+@(.+)$")
                     .build()) // GH-90000
                 .build(); // GH-90000
 
@@ -208,17 +208,17 @@ class EntitySchemaValidatorEnhancedTest {
             );
             ValidationResult result3 = validator.validate("tenant-1", "test", invalidData); // GH-90000
             assertThat(result3.valid()).isFalse(); // GH-90000
-            assertThat(result3.violations()).anyMatch(v -> v.contains("does not match pattern [GH-90000]"));
+            assertThat(result3.violations()).anyMatch(v -> v.contains("does not match pattern"));
         }
 
         @Test
-        @DisplayName("should handle invalid regex pattern gracefully [GH-90000]")
+        @DisplayName("should handle invalid regex pattern gracefully")
         void shouldHandleInvalidRegexPattern() { // GH-90000
             MetaField field = MetaField.builder() // GH-90000
-                .name("code [GH-90000]")
+                .name("code")
                 .type(DataType.STRING) // GH-90000
                 .validation(FieldValidation.builder() // GH-90000
-                    .pattern("[invalid( [GH-90000]") // Invalid regex
+                    .pattern("[invalid(") // Invalid regex
                     .build()) // GH-90000
                 .build(); // GH-90000
 
@@ -240,14 +240,14 @@ class EntitySchemaValidatorEnhancedTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Custom validators [GH-90000]")
+    @DisplayName("Custom validators")
     class CustomValidators {
 
         @Test
-        @DisplayName("should invoke custom validator after standard validation [GH-90000]")
+        @DisplayName("should invoke custom validator after standard validation")
         void shouldInvokeCustomValidatorAfterStandardValidation() { // GH-90000
             MetaField priceField = MetaField.builder() // GH-90000
-                .name("price [GH-90000]")
+                .name("price")
                 .type(DataType.NUMBER) // GH-90000
                 .validation(FieldValidation.builder() // GH-90000
                     .min(0.0) // GH-90000
@@ -261,7 +261,7 @@ class EntitySchemaValidatorEnhancedTest {
             validator.registerCustomValidator("tenant-1", "products", "price", // GH-90000
                 (fieldName, value, allData) -> { // GH-90000
                     if (value instanceof Double price && price > 500.0) { // GH-90000
-                        return Optional.of("Price cannot exceed $500 for standard products [GH-90000]");
+                        return Optional.of("Price cannot exceed $500 for standard products");
                     }
                     return Optional.empty(); // GH-90000
                 });
@@ -273,14 +273,14 @@ class EntitySchemaValidatorEnhancedTest {
             ValidationResult result = validator.validate("tenant-1", "products", data); // GH-90000
 
             assertThat(result.valid()).isFalse(); // GH-90000
-            assertThat(result.violations()).contains("Price cannot exceed $500 for standard products [GH-90000]");
+            assertThat(result.violations()).contains("Price cannot exceed $500 for standard products");
         }
 
         @Test
-        @DisplayName("should allow custom validator to pass [GH-90000]")
+        @DisplayName("should allow custom validator to pass")
         void shouldAllowCustomValidatorToPass() { // GH-90000
             MetaField quantityField = MetaField.builder() // GH-90000
-                .name("quantity [GH-90000]")
+                .name("quantity")
                 .type(DataType.NUMBER) // GH-90000
                 .validation(FieldValidation.builder() // GH-90000
                     .min(1.0) // GH-90000
@@ -303,15 +303,15 @@ class EntitySchemaValidatorEnhancedTest {
         }
 
         @Test
-        @DisplayName("should support cross-field validation [GH-90000]")
+        @DisplayName("should support cross-field validation")
         void shouldSupportCrossFieldValidation() { // GH-90000
             MetaField startField = MetaField.builder() // GH-90000
-                .name("startDate [GH-90000]")
+                .name("startDate")
                 .type(DataType.DATETIME) // GH-90000
                 .build(); // GH-90000
 
             MetaField endField = MetaField.builder() // GH-90000
-                .name("endDate [GH-90000]")
+                .name("endDate")
                 .type(DataType.DATETIME) // GH-90000
                 .build(); // GH-90000
 
@@ -320,13 +320,13 @@ class EntitySchemaValidatorEnhancedTest {
             // Register custom validator for cross-field check
             validator.registerCustomValidator("tenant-1", "events", "endDate", // GH-90000
                 (fieldName, value, allData) -> { // GH-90000
-                    Object startDate = allData.get("startDate [GH-90000]");
+                    Object startDate = allData.get("startDate");
                     if (startDate instanceof String startStr && value instanceof String endStr) { // GH-90000
                         try {
                             Instant start = Instant.parse(startStr); // GH-90000
                             Instant end = Instant.parse(endStr); // GH-90000
                             if (end.isBefore(start)) { // GH-90000
-                                return Optional.of("End date must be after start date [GH-90000]");
+                                return Optional.of("End date must be after start date");
                             }
                         } catch (Exception e) { // GH-90000
                             // Invalid format, type check will catch it
@@ -343,14 +343,14 @@ class EntitySchemaValidatorEnhancedTest {
             ValidationResult result = validator.validate("tenant-1", "events", data); // GH-90000
 
             assertThat(result.valid()).isFalse(); // GH-90000
-            assertThat(result.violations()).contains("End date must be after start date [GH-90000]");
+            assertThat(result.violations()).contains("End date must be after start date");
         }
 
         @Test
-        @DisplayName("should not invoke custom validators if standard validation fails [GH-90000]")
+        @DisplayName("should not invoke custom validators if standard validation fails")
         void shouldNotInvokeCustomValidatorsIfStandardValidationFails() { // GH-90000
             MetaField priceField = MetaField.builder() // GH-90000
-                .name("price [GH-90000]")
+                .name("price")
                 .type(DataType.NUMBER) // GH-90000
                 .validation(FieldValidation.builder() // GH-90000
                     .min(0.0) // GH-90000
@@ -361,7 +361,7 @@ class EntitySchemaValidatorEnhancedTest {
 
             // Register custom validator that would fail
             validator.registerCustomValidator("tenant-1", "products", "price", // GH-90000
-                (fieldName, value, allData) -> Optional.of("Custom validator violation [GH-90000]"));
+                (fieldName, value, allData) -> Optional.of("Custom validator violation"));
 
             Map<String, Object> data = Map.of( // GH-90000
                 "price", -10.0 // Fails standard validation
@@ -372,7 +372,7 @@ class EntitySchemaValidatorEnhancedTest {
             assertThat(result.valid()).isFalse(); // GH-90000
             // Only standard validation violation, not custom validator
             assertThat(result.violations()).hasSize(1); // GH-90000
-            assertThat(result.violations().get(0)).contains("below minimum [GH-90000]");
+            assertThat(result.violations().get(0)).contains("below minimum");
         }
     }
 
@@ -381,11 +381,11 @@ class EntitySchemaValidatorEnhancedTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Reference checker infrastructure [GH-90000]")
+    @DisplayName("Reference checker infrastructure")
     class ReferenceCheckerInfrastructure {
 
         @Test
-        @DisplayName("should accept reference checker [GH-90000]")
+        @DisplayName("should accept reference checker")
         void shouldAcceptReferenceChecker() { // GH-90000
             ReferenceChecker checker = (tenantId, collection, field, value) -> // GH-90000
                 CompletableFuture.completedFuture(true); // GH-90000
@@ -393,11 +393,11 @@ class EntitySchemaValidatorEnhancedTest {
             validator.setReferenceChecker(checker); // GH-90000
 
             MetaField refField = MetaField.builder() // GH-90000
-                .name("categoryId [GH-90000]")
+                .name("categoryId")
                 .type(DataType.STRING) // GH-90000
                 .validation(FieldValidation.builder() // GH-90000
-                    .referenceCollection("categories [GH-90000]")
-                    .referenceField("id [GH-90000]")
+                    .referenceCollection("categories")
+                    .referenceField("id")
                     .build()) // GH-90000
                 .build(); // GH-90000
 
@@ -414,14 +414,14 @@ class EntitySchemaValidatorEnhancedTest {
         }
 
         @Test
-        @DisplayName("should not fail when reference checker is not set [GH-90000]")
+        @DisplayName("should not fail when reference checker is not set")
         void shouldNotFailWhenReferenceCheckerIsNotSet() { // GH-90000
             MetaField refField = MetaField.builder() // GH-90000
-                .name("categoryId [GH-90000]")
+                .name("categoryId")
                 .type(DataType.STRING) // GH-90000
                 .validation(FieldValidation.builder() // GH-90000
-                    .referenceCollection("categories [GH-90000]")
-                    .referenceField("id [GH-90000]")
+                    .referenceCollection("categories")
+                    .referenceField("id")
                     .build()) // GH-90000
                 .build(); // GH-90000
 

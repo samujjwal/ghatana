@@ -42,12 +42,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern IntegrationTest
  */
 @Testcontainers
-@DisplayName("Transcription Cache Integration Tests (AV-P1-02) [GH-90000]")
+@DisplayName("Transcription Cache Integration Tests (AV-P1-02)")
 class TranscriptionCacheIT extends EventloopTestBase {
 
     @Container
     static final RedisContainer REDIS = new RedisContainer( // GH-90000
-            DockerImageName.parse("redis:7.2-alpine [GH-90000]"));
+            DockerImageName.parse("redis:7.2-alpine"));
 
     private JedisPool jedisPool;
     private ExecutorService ioExecutor;
@@ -83,7 +83,7 @@ class TranscriptionCacheIT extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should store and retrieve transcription within TTL [GH-90000]")
+    @DisplayName("Should store and retrieve transcription within TTL")
     void shouldStoreAndRetrieveTranscription() { // GH-90000
         String tenantId = "tenant-cache-1";
         TranscriptionEntity entity = buildEntity(tenantId); // GH-90000
@@ -99,7 +99,7 @@ class TranscriptionCacheIT extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should return empty for cache miss [GH-90000]")
+    @DisplayName("Should return empty for cache miss")
     void shouldReturnEmptyForCacheMiss() { // GH-90000
         Optional<TranscriptionEntity> result =
                 runPromise(() -> cacheService.getTranscription("tenant-miss", UUID.randomUUID())); // GH-90000
@@ -108,7 +108,7 @@ class TranscriptionCacheIT extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should isolate keys between tenants (tenant isolation) [GH-90000]")
+    @DisplayName("Should isolate keys between tenants (tenant isolation)")
     void shouldIsolateCacheKeysBetweenTenants() { // GH-90000
         String tenant1 = "tenant-iso-1";
         String tenant2 = "tenant-iso-2";
@@ -126,12 +126,12 @@ class TranscriptionCacheIT extends EventloopTestBase {
 
         assertThat(t1Result).isPresent(); // GH-90000
         assertThat(t2Result).isPresent(); // GH-90000
-        assertThat(t1Result.get().getText()).isEqualTo("Transcript for tenant-1 [GH-90000]");
-        assertThat(t2Result.get().getText()).isEqualTo("Transcript for tenant-2 [GH-90000]");
+        assertThat(t1Result.get().getText()).isEqualTo("Transcript for tenant-1");
+        assertThat(t2Result.get().getText()).isEqualTo("Transcript for tenant-2");
     }
 
     @Test
-    @DisplayName("Should evict entry after short TTL [GH-90000]")
+    @DisplayName("Should evict entry after short TTL")
     void shouldEvictAfterTtl() throws InterruptedException { // GH-90000
         String tenantId = "tenant-ttl";
         TranscriptionEntity entity = buildEntity(tenantId); // GH-90000
@@ -151,7 +151,7 @@ class TranscriptionCacheIT extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should remove entry on explicit invalidation [GH-90000]")
+    @DisplayName("Should remove entry on explicit invalidation")
     void shouldRemoveEntryOnInvalidation() { // GH-90000
         String tenantId = "tenant-inval";
         TranscriptionEntity entity = buildEntity(tenantId); // GH-90000
@@ -166,7 +166,7 @@ class TranscriptionCacheIT extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should load and cache from loader on cache miss (getOrLoad) [GH-90000]")
+    @DisplayName("Should load and cache from loader on cache miss (getOrLoad)")
     void shouldLoadAndCacheOnMiss() { // GH-90000
         String tenantId = "tenant-load";
         UUID transcriptionId = UUID.randomUUID(); // GH-90000
@@ -178,12 +178,12 @@ class TranscriptionCacheIT extends EventloopTestBase {
         ));
 
         assertThat(result).isNotNull(); // GH-90000
-        assertThat(result.getText()).isEqualTo("Loaded from source [GH-90000]");
+        assertThat(result.getText()).isEqualTo("Loaded from source");
 
         // Second call should hit cache (no loader call needed) // GH-90000
         TranscriptionEntity cachedResult = runPromise(() -> cacheService.getOrLoadTranscription( // GH-90000
                 tenantId, transcriptionId,
-                id -> Promise.ofException(new RuntimeException("loader should not be called [GH-90000]"))
+                id -> Promise.ofException(new RuntimeException("loader should not be called"))
         ));
 
         assertThat(cachedResult).isNotNull(); // GH-90000

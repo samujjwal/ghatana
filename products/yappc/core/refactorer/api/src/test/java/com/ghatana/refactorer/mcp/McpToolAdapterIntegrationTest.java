@@ -51,8 +51,8 @@ class McpToolAdapterIntegrationTest {
                                 "mcp-run-123"));
 
         assertThat(runResult.success()).isTrue(); // GH-90000
-        assertThat(runResult.data()).containsKey("jobId [GH-90000]");
-        String jobId = (String) runResult.data().get("jobId [GH-90000]");
+        assertThat(runResult.data()).containsKey("jobId");
+        String jobId = (String) runResult.data().get("jobId");
 
         McpToolResult statusResult = adapter.handleStatus(Map.of("jobId", jobId)); // GH-90000
         assertThat(statusResult.success()).isTrue(); // GH-90000
@@ -61,7 +61,7 @@ class McpToolAdapterIntegrationTest {
 
         McpToolResult reportResult = adapter.handleReport(Map.of("jobId", jobId)); // GH-90000
         assertThat(reportResult.success()).isTrue(); // GH-90000
-        assertThat(reportResult.data()).containsKey("summaryJson [GH-90000]");
+        assertThat(reportResult.data()).containsKey("summaryJson");
 
         McpToolResult diagnoseResult =
                 adapter.handleDiagnose( // GH-90000
@@ -71,6 +71,6 @@ class McpToolAdapterIntegrationTest {
                                 "languages",
                                 List.of("java", "typescript"))); // GH-90000
         assertThat(diagnoseResult.success()).isTrue(); // GH-90000
-        assertThat(diagnoseResult.data()).containsKey("diagnostics [GH-90000]");
+        assertThat(diagnoseResult.data()).containsKey("diagnostics");
     }
 }

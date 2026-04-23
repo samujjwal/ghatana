@@ -21,7 +21,7 @@ import static org.mockito.Mockito.mock;
 /**
  * Comprehensive tests for ReactiveAgent — triggers, cooldowns, sliding windows.
  */
-@DisplayName("Reactive Agent [GH-90000]")
+@DisplayName("Reactive Agent")
 class ReactiveAgentTest {
 
     private AgentContext ctx;
@@ -29,9 +29,9 @@ class ReactiveAgentTest {
     @BeforeEach
     void setUp() { // GH-90000
         ctx = AgentContext.builder() // GH-90000
-                .turnId("turn-1 [GH-90000]")
-                .agentId("reactive-test [GH-90000]")
-                .tenantId("test-tenant [GH-90000]")
+                .turnId("turn-1")
+                .agentId("reactive-test")
+                .tenantId("test-tenant")
                 .memoryStore(mock(MemoryStore.class)) // GH-90000
                 .build(); // GH-90000
     }
@@ -64,14 +64,14 @@ class ReactiveAgentTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Trigger Matching [GH-90000]")
+    @DisplayName("Trigger Matching")
     class TriggerMatchingTests {
 
         @Test void matchesByEventType() { // GH-90000
             var trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("error-trigger [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("ERROR [GH-90000]")
+                    .name("error-trigger")
+                    .eventTypeField("type")
+                    .eventTypeValue("ERROR")
                     .action("alert", "CRITICAL") // GH-90000
                     .build(); // GH-90000
 
@@ -84,9 +84,9 @@ class ReactiveAgentTest {
 
         @Test void noMatchReturnsSkipped() { // GH-90000
             var trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("error-trigger [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("ERROR [GH-90000]")
+                    .name("error-trigger")
+                    .eventTypeField("type")
+                    .eventTypeValue("ERROR")
                     .action("alert", "CRITICAL") // GH-90000
                     .build(); // GH-90000
 
@@ -98,12 +98,12 @@ class ReactiveAgentTest {
 
         @Test void matchesWithAdditionalCondition() { // GH-90000
             var trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("high-cpu [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("METRIC [GH-90000]")
-                    .conditionField("cpu [GH-90000]")
-                    .conditionOperator("> [GH-90000]")
-                    .conditionValue("90 [GH-90000]")
+                    .name("high-cpu")
+                    .eventTypeField("type")
+                    .eventTypeValue("METRIC")
+                    .conditionField("cpu")
+                    .conditionOperator(">")
+                    .conditionValue("90")
                     .action("action", "SCALE_UP") // GH-90000
                     .build(); // GH-90000
 
@@ -126,14 +126,14 @@ class ReactiveAgentTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Cooldown [GH-90000]")
+    @DisplayName("Cooldown")
     class CooldownTests {
 
         @Test void respectsCooldownPeriod() { // GH-90000
             var trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("cooldown-trigger [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("ALERT [GH-90000]")
+                    .name("cooldown-trigger")
+                    .eventTypeField("type")
+                    .eventTypeValue("ALERT")
                     .cooldown(Duration.ofHours(1)) // 1 hour cooldown // GH-90000
                     .action("notify", true) // GH-90000
                     .build(); // GH-90000
@@ -151,9 +151,9 @@ class ReactiveAgentTest {
 
         @Test void zeroCooldownAllowsImmediateRefire() { // GH-90000
             var trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("no-cooldown [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("PING [GH-90000]")
+                    .name("no-cooldown")
+                    .eventTypeField("type")
+                    .eventTypeValue("PING")
                     .cooldown(Duration.ZERO) // GH-90000
                     .action("pong", true) // GH-90000
                     .build(); // GH-90000
@@ -173,14 +173,14 @@ class ReactiveAgentTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Sliding Window Threshold [GH-90000]")
+    @DisplayName("Sliding Window Threshold")
     class WindowTests {
 
         @Test void firesOnlyAfterThreshold() { // GH-90000
             var trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("threshold-trigger [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("ERROR [GH-90000]")
+                    .name("threshold-trigger")
+                    .eventTypeField("type")
+                    .eventTypeValue("ERROR")
                     .threshold(3) // GH-90000
                     .countingWindow(Duration.ofMinutes(5)) // GH-90000
                     .action("escalate", true) // GH-90000
@@ -201,9 +201,9 @@ class ReactiveAgentTest {
 
         @Test void windowCountTracked() { // GH-90000
             var trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("counted [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("TICK [GH-90000]")
+                    .name("counted")
+                    .eventTypeField("type")
+                    .eventTypeValue("TICK")
                     .threshold(10) // GH-90000
                     .countingWindow(Duration.ofMinutes(5)) // GH-90000
                     .action("x", true) // GH-90000
@@ -224,7 +224,7 @@ class ReactiveAgentTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Priority [GH-90000]")
+    @DisplayName("Priority")
     class PriorityTests {
 
         @Test void higherPriorityWins() { // GH-90000
@@ -232,17 +232,17 @@ class ReactiveAgentTest {
             // Triggers sorted ascending by priority: high(10) fires first, low(200) second. // GH-90000
             // Only the high-priority trigger should match.
             var highPriority = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("high [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("EVENT [GH-90000]")
+                    .name("high")
+                    .eventTypeField("type")
+                    .eventTypeValue("EVENT")
                     .priority(10) // GH-90000
                     .action("source", "high") // GH-90000
                     .build(); // GH-90000
 
             var lowPriority = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("low [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("OTHER [GH-90000]")  // different event type — won't match
+                    .name("low")
+                    .eventTypeField("type")
+                    .eventTypeValue("OTHER")  // different event type — won't match
                     .priority(200) // GH-90000
                     .action("source", "low") // GH-90000
                     .build(); // GH-90000
@@ -260,21 +260,21 @@ class ReactiveAgentTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Multiple Triggers [GH-90000]")
+    @DisplayName("Multiple Triggers")
     class MultiTriggerTests {
 
         @Test void onlyMatchingTriggersFire() { // GH-90000
             var errorTrigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("error [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("ERROR [GH-90000]")
+                    .name("error")
+                    .eventTypeField("type")
+                    .eventTypeValue("ERROR")
                     .action("action", "LOG_ERROR") // GH-90000
                     .build(); // GH-90000
 
             var warnTrigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("warn [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("WARN [GH-90000]")
+                    .name("warn")
+                    .eventTypeField("type")
+                    .eventTypeValue("WARN")
                     .action("action", "LOG_WARN") // GH-90000
                     .build(); // GH-90000
 
@@ -294,14 +294,14 @@ class ReactiveAgentTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("State Management [GH-90000]")
+    @DisplayName("State Management")
     class StateTests {
 
         @Test void resetClearsAll() { // GH-90000
             var trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("resettable [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("X [GH-90000]")
+                    .name("resettable")
+                    .eventTypeField("type")
+                    .eventTypeValue("X")
                     .cooldown(Duration.ofHours(1)) // GH-90000
                     .action("ok", true) // GH-90000
                     .build(); // GH-90000
@@ -318,9 +318,9 @@ class ReactiveAgentTest {
 
         @Test void metricsTracked() { // GH-90000
             var trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("tracked [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("A [GH-90000]")
+                    .name("tracked")
+                    .eventTypeField("type")
+                    .eventTypeValue("A")
                     .action("ok", true) // GH-90000
                     .build(); // GH-90000
 
@@ -337,15 +337,15 @@ class ReactiveAgentTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Condition Operators [GH-90000]")
+    @DisplayName("Condition Operators")
     class ConditionOperatorTests {
 
         private ReactiveAgent agentWithCondition(String op, String value) { // GH-90000
             var trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
-                    .name("cond [GH-90000]")
-                    .eventTypeField("type [GH-90000]")
-                    .eventTypeValue("E [GH-90000]")
-                    .conditionField("x [GH-90000]")
+                    .name("cond")
+                    .eventTypeField("type")
+                    .eventTypeValue("E")
+                    .conditionField("x")
                     .conditionOperator(op) // GH-90000
                     .conditionValue(value) // GH-90000
                     .action("matched", true) // GH-90000

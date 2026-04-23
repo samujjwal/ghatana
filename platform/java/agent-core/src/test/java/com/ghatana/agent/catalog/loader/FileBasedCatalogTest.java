@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Unit tests for {@link FileBasedCatalog}.
  */
-@DisplayName("FileBasedCatalog [GH-90000]")
+@DisplayName("FileBasedCatalog")
 class FileBasedCatalogTest {
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -27,24 +27,24 @@ class FileBasedCatalogTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Builder [GH-90000]")
+    @DisplayName("Builder")
     class BuilderTests {
 
         @Test
-        @DisplayName("should build minimal catalog [GH-90000]")
+        @DisplayName("should build minimal catalog")
         void shouldBuildMinimal() { // GH-90000
             FileBasedCatalog catalog = FileBasedCatalog.builder() // GH-90000
-                    .catalogId("platform [GH-90000]")
-                    .displayName("Platform Catalog [GH-90000]")
+                    .catalogId("platform")
+                    .displayName("Platform Catalog")
                     .build(); // GH-90000
 
-            assertThat(catalog.getCatalogId()).isEqualTo("platform [GH-90000]");
-            assertThat(catalog.getDisplayName()).isEqualTo("Platform Catalog [GH-90000]");
+            assertThat(catalog.getCatalogId()).isEqualTo("platform");
+            assertThat(catalog.getDisplayName()).isEqualTo("Platform Catalog");
             assertThat(catalog.getDefinitions()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("should build with definitions [GH-90000]")
+        @DisplayName("should build with definitions")
         void shouldBuildWithDefinitions() { // GH-90000
             List<CatalogAgentEntry> entries = List.of( // GH-90000
                     makeEntry("agent-a", "cap-a"), // GH-90000
@@ -52,8 +52,8 @@ class FileBasedCatalogTest {
             );
 
             FileBasedCatalog catalog = FileBasedCatalog.builder() // GH-90000
-                    .catalogId("platform [GH-90000]")
-                    .displayName("Platform [GH-90000]")
+                    .catalogId("platform")
+                    .displayName("Platform")
                     .definitions(entries) // GH-90000
                     .build(); // GH-90000
 
@@ -66,27 +66,27 @@ class FileBasedCatalogTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("findById() [GH-90000]")
+    @DisplayName("findById()")
     class FindByIdTests {
 
         @Test
-        @DisplayName("should find existing agent by id [GH-90000]")
+        @DisplayName("should find existing agent by id")
         void shouldFindById() { // GH-90000
             FileBasedCatalog catalog = catalogWithEntries( // GH-90000
                     makeEntry("sentinel", "monitoring"), // GH-90000
                     makeEntry("data-ingestor", "ingestion") // GH-90000
             );
 
-            Optional<CatalogAgentEntry> result = catalog.findById("sentinel [GH-90000]");
+            Optional<CatalogAgentEntry> result = catalog.findById("sentinel");
             assertThat(result).isPresent(); // GH-90000
-            assertThat(result.get().getId()).isEqualTo("sentinel [GH-90000]");
+            assertThat(result.get().getId()).isEqualTo("sentinel");
         }
 
         @Test
-        @DisplayName("should return empty for unknown id [GH-90000]")
+        @DisplayName("should return empty for unknown id")
         void shouldReturnEmptyForUnknownId() { // GH-90000
             FileBasedCatalog catalog = catalogWithEntries(makeEntry("sentinel", "monitoring")); // GH-90000
-            assertThat(catalog.findById("unknown-agent [GH-90000]")).isEmpty();
+            assertThat(catalog.findById("unknown-agent")).isEmpty();
         }
     }
 
@@ -95,43 +95,43 @@ class FileBasedCatalogTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("findByCapability() [GH-90000]")
+    @DisplayName("findByCapability()")
     class FindByCapabilityTests {
 
         @Test
-        @DisplayName("should find agents with matching capability [GH-90000]")
+        @DisplayName("should find agents with matching capability")
         void shouldFindByCapability() { // GH-90000
             CatalogAgentEntry monitoringAgent = CatalogAgentEntry.builder() // GH-90000
-                    .id("monitor [GH-90000]")
+                    .id("monitor")
                     .capabilities(Set.of("monitoring", "alerting")) // GH-90000
-                    .catalogId("platform [GH-90000]")
+                    .catalogId("platform")
                     .build(); // GH-90000
             CatalogAgentEntry dataAgent = CatalogAgentEntry.builder() // GH-90000
-                    .id("data-agent [GH-90000]")
-                    .capabilities(Set.of("data-transformation [GH-90000]"))
-                    .catalogId("platform [GH-90000]")
+                    .id("data-agent")
+                    .capabilities(Set.of("data-transformation"))
+                    .catalogId("platform")
                     .build(); // GH-90000
 
             FileBasedCatalog catalog = FileBasedCatalog.builder() // GH-90000
-                    .catalogId("platform [GH-90000]")
-                    .displayName("Platform [GH-90000]")
+                    .catalogId("platform")
+                    .displayName("Platform")
                     .definitions(List.of(monitoringAgent, dataAgent)) // GH-90000
                     .build(); // GH-90000
 
-            List<CatalogAgentEntry> results = catalog.findByCapability("monitoring [GH-90000]");
+            List<CatalogAgentEntry> results = catalog.findByCapability("monitoring");
             assertThat(results).hasSize(1); // GH-90000
-            assertThat(results.get(0).getId()).isEqualTo("monitor [GH-90000]");
+            assertThat(results.get(0).getId()).isEqualTo("monitor");
         }
 
         @Test
-        @DisplayName("should return empty list when no agents have capability [GH-90000]")
+        @DisplayName("should return empty list when no agents have capability")
         void shouldReturnEmptyListWhenNoMatches() { // GH-90000
             FileBasedCatalog catalog = catalogWithEntries(makeEntry("agent", "cap-a")); // GH-90000
-            assertThat(catalog.findByCapability("cap-unknown [GH-90000]")).isEmpty();
+            assertThat(catalog.findByCapability("cap-unknown")).isEmpty();
         }
 
         @Test
-        @DisplayName("getDefinitions returns unmodifiable view [GH-90000]")
+        @DisplayName("getDefinitions returns unmodifiable view")
         void getDefinitionsShouldBeUnmodifiable() { // GH-90000
             FileBasedCatalog catalog = catalogWithEntries(makeEntry("agent", "cap")); // GH-90000
             assertThat(catalog.getDefinitions()).isUnmodifiable(); // GH-90000
@@ -143,39 +143,39 @@ class FileBasedCatalogTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("findByLevel() [GH-90000]")
+    @DisplayName("findByLevel()")
     class FindByLevelTests {
 
         @Test
-        @DisplayName("should find agents at matching level [GH-90000]")
+        @DisplayName("should find agents at matching level")
         void shouldFindByLevel() { // GH-90000
             CatalogAgentEntry strategic = CatalogAgentEntry.builder() // GH-90000
-                    .id("strategic-agent [GH-90000]")
+                    .id("strategic-agent")
                     .metadata(Map.of("level", "strategic")) // GH-90000
-                    .catalogId("platform [GH-90000]")
+                    .catalogId("platform")
                     .build(); // GH-90000
             CatalogAgentEntry worker = CatalogAgentEntry.builder() // GH-90000
-                    .id("worker-agent [GH-90000]")
+                    .id("worker-agent")
                     .metadata(Map.of("level", "worker")) // GH-90000
-                    .catalogId("platform [GH-90000]")
+                    .catalogId("platform")
                     .build(); // GH-90000
 
             FileBasedCatalog catalog = FileBasedCatalog.builder() // GH-90000
-                    .catalogId("platform [GH-90000]")
-                    .displayName("Platform [GH-90000]")
+                    .catalogId("platform")
+                    .displayName("Platform")
                     .definitions(List.of(strategic, worker)) // GH-90000
                     .build(); // GH-90000
 
-            assertThat(catalog.findByLevel("strategic [GH-90000]")).hasSize(1);
-            assertThat(catalog.findByLevel("strategic [GH-90000]").get(0).getId()).isEqualTo("strategic-agent [GH-90000]");
-            assertThat(catalog.findByLevel("worker [GH-90000]")).hasSize(1);
+            assertThat(catalog.findByLevel("strategic")).hasSize(1);
+            assertThat(catalog.findByLevel("strategic").get(0).getId()).isEqualTo("strategic-agent");
+            assertThat(catalog.findByLevel("worker")).hasSize(1);
         }
 
         @Test
-        @DisplayName("should return empty when no agents at given level [GH-90000]")
+        @DisplayName("should return empty when no agents at given level")
         void shouldReturnEmptyWhenNoLevel() { // GH-90000
             FileBasedCatalog catalog = catalogWithEntries(makeEntry("agent", "cap")); // GH-90000
-            assertThat(catalog.findByLevel("expert [GH-90000]")).isEmpty();
+            assertThat(catalog.findByLevel("expert")).isEmpty();
         }
     }
 
@@ -184,32 +184,32 @@ class FileBasedCatalogTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("findByDomain() [GH-90000]")
+    @DisplayName("findByDomain()")
     class FindByDomainTests {
 
         @Test
-        @DisplayName("should find agents in matching domain [GH-90000]")
+        @DisplayName("should find agents in matching domain")
         void shouldFindByDomain() { // GH-90000
             CatalogAgentEntry dataAgent = CatalogAgentEntry.builder() // GH-90000
-                    .id("data-agent [GH-90000]")
+                    .id("data-agent")
                     .metadata(Map.of("domain", "data-processing")) // GH-90000
-                    .catalogId("platform [GH-90000]")
+                    .catalogId("platform")
                     .build(); // GH-90000
             CatalogAgentEntry secAgent = CatalogAgentEntry.builder() // GH-90000
-                    .id("security-agent [GH-90000]")
+                    .id("security-agent")
                     .metadata(Map.of("domain", "security")) // GH-90000
-                    .catalogId("platform [GH-90000]")
+                    .catalogId("platform")
                     .build(); // GH-90000
 
             FileBasedCatalog catalog = FileBasedCatalog.builder() // GH-90000
-                    .catalogId("platform [GH-90000]")
-                    .displayName("Platform [GH-90000]")
+                    .catalogId("platform")
+                    .displayName("Platform")
                     .definitions(List.of(dataAgent, secAgent)) // GH-90000
                     .build(); // GH-90000
 
-            assertThat(catalog.findByDomain("data-processing [GH-90000]")).hasSize(1);
-            assertThat(catalog.findByDomain("security [GH-90000]")).hasSize(1);
-            assertThat(catalog.findByDomain("unknown [GH-90000]")).isEmpty();
+            assertThat(catalog.findByDomain("data-processing")).hasSize(1);
+            assertThat(catalog.findByDomain("security")).hasSize(1);
+            assertThat(catalog.findByDomain("unknown")).isEmpty();
         }
     }
 
@@ -218,26 +218,26 @@ class FileBasedCatalogTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("getAllCapabilities() [GH-90000]")
+    @DisplayName("getAllCapabilities()")
     class GetAllCapabilitiesTests {
 
         @Test
-        @DisplayName("should aggregate capabilities across all definitions [GH-90000]")
+        @DisplayName("should aggregate capabilities across all definitions")
         void shouldAggregateCapabilities() { // GH-90000
             CatalogAgentEntry a = CatalogAgentEntry.builder() // GH-90000
-                    .id("agent-a [GH-90000]")
+                    .id("agent-a")
                     .capabilities(Set.of("cap-1", "cap-2")) // GH-90000
-                    .catalogId("platform [GH-90000]")
+                    .catalogId("platform")
                     .build(); // GH-90000
             CatalogAgentEntry b = CatalogAgentEntry.builder() // GH-90000
-                    .id("agent-b [GH-90000]")
+                    .id("agent-b")
                     .capabilities(Set.of("cap-2", "cap-3")) // GH-90000
-                    .catalogId("platform [GH-90000]")
+                    .catalogId("platform")
                     .build(); // GH-90000
 
             FileBasedCatalog catalog = FileBasedCatalog.builder() // GH-90000
-                    .catalogId("platform [GH-90000]")
-                    .displayName("Platform [GH-90000]")
+                    .catalogId("platform")
+                    .displayName("Platform")
                     .definitions(List.of(a, b)) // GH-90000
                     .build(); // GH-90000
 
@@ -246,11 +246,11 @@ class FileBasedCatalogTest {
         }
 
         @Test
-        @DisplayName("should return empty set for empty catalog [GH-90000]")
+        @DisplayName("should return empty set for empty catalog")
         void shouldReturnEmptySetForEmptyCatalog() { // GH-90000
             FileBasedCatalog catalog = FileBasedCatalog.builder() // GH-90000
-                    .catalogId("empty [GH-90000]")
-                    .displayName("Empty [GH-90000]")
+                    .catalogId("empty")
+                    .displayName("Empty")
                     .build(); // GH-90000
 
             assertThat(catalog.getAllCapabilities()).isEmpty(); // GH-90000
@@ -262,15 +262,15 @@ class FileBasedCatalogTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("priority() [GH-90000]")
+    @DisplayName("priority()")
     class PriorityTests {
 
         @Test
-        @DisplayName("should use priority from metadata [GH-90000]")
+        @DisplayName("should use priority from metadata")
         void shouldUsePriorityFromMetadata() { // GH-90000
             FileBasedCatalog catalog = FileBasedCatalog.builder() // GH-90000
-                    .catalogId("platform [GH-90000]")
-                    .displayName("Platform [GH-90000]")
+                    .catalogId("platform")
+                    .displayName("Platform")
                     .metadata(Map.of("priority", 100)) // GH-90000
                     .build(); // GH-90000
 
@@ -278,22 +278,22 @@ class FileBasedCatalogTest {
         }
 
         @Test
-        @DisplayName("should default to 1000 when metadata has no priority [GH-90000]")
+        @DisplayName("should default to 1000 when metadata has no priority")
         void shouldDefaultPriorityTo1000() { // GH-90000
             FileBasedCatalog catalog = FileBasedCatalog.builder() // GH-90000
-                    .catalogId("platform [GH-90000]")
-                    .displayName("Platform [GH-90000]")
+                    .catalogId("platform")
+                    .displayName("Platform")
                     .build(); // GH-90000
 
             assertThat(catalog.priority()).isEqualTo(1000); // GH-90000
         }
 
         @Test
-        @DisplayName("should handle integer metadata priority [GH-90000]")
+        @DisplayName("should handle integer metadata priority")
         void shouldHandleIntegerPriority() { // GH-90000
             FileBasedCatalog catalog = FileBasedCatalog.builder() // GH-90000
-                    .catalogId("platform [GH-90000]")
-                    .displayName("Platform [GH-90000]")
+                    .catalogId("platform")
+                    .displayName("Platform")
                     .metadata(Map.of("priority", 50)) // GH-90000
                     .build(); // GH-90000
 
@@ -306,26 +306,26 @@ class FileBasedCatalogTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("extendsCatalogs [GH-90000]")
+    @DisplayName("extendsCatalogs")
     class ExtendsTests {
 
         @Test
-        @DisplayName("should default to empty extends list [GH-90000]")
+        @DisplayName("should default to empty extends list")
         void shouldDefaultToEmpty() { // GH-90000
             FileBasedCatalog catalog = FileBasedCatalog.builder() // GH-90000
-                    .catalogId("platform [GH-90000]")
-                    .displayName("Platform [GH-90000]")
+                    .catalogId("platform")
+                    .displayName("Platform")
                     .build(); // GH-90000
 
             assertThat(catalog.getExtendsCatalogs()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("should store extends list [GH-90000]")
+        @DisplayName("should store extends list")
         void shouldStoreExtendsList() { // GH-90000
             FileBasedCatalog catalog = FileBasedCatalog.builder() // GH-90000
-                    .catalogId("yappc [GH-90000]")
-                    .displayName("YAPPC [GH-90000]")
+                    .catalogId("yappc")
+                    .displayName("YAPPC")
                     .extendsCatalogs(List.of("platform", "domain-base")) // GH-90000
                     .build(); // GH-90000
 
@@ -343,14 +343,14 @@ class FileBasedCatalogTest {
                 .id(id) // GH-90000
                 .name(id) // GH-90000
                 .capabilities(Set.of(capability)) // GH-90000
-                .catalogId("platform [GH-90000]")
+                .catalogId("platform")
                 .build(); // GH-90000
     }
 
     private FileBasedCatalog catalogWithEntries(CatalogAgentEntry... entries) { // GH-90000
         return FileBasedCatalog.builder() // GH-90000
-                .catalogId("platform [GH-90000]")
-                .displayName("Platform Catalog [GH-90000]")
+                .catalogId("platform")
+                .displayName("Platform Catalog")
                 .definitions(List.of(entries)) // GH-90000
                 .build(); // GH-90000
     }

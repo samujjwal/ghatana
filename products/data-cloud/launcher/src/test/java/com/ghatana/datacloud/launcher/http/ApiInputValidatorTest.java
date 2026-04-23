@@ -25,21 +25,21 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Validator
  */
-@DisplayName("ApiInputValidator [GH-90000]")
+@DisplayName("ApiInputValidator")
 class ApiInputValidatorTest {
 
     // -----------------------------------------------------------------------
     // tenantId
     // -----------------------------------------------------------------------
     @Nested
-    @DisplayName("validateTenantId [GH-90000]")
+    @DisplayName("validateTenantId")
     class TenantIdTests {
 
         @Test
         void acceptsValidTenantId() { // GH-90000
-            assertThat(ApiInputValidator.validateTenantId("acme-corp [GH-90000]")).isEmpty();
-            assertThat(ApiInputValidator.validateTenantId("tenant_123 [GH-90000]")).isEmpty();
-            assertThat(ApiInputValidator.validateTenantId("my.tenant:1 [GH-90000]")).isEmpty();
+            assertThat(ApiInputValidator.validateTenantId("acme-corp")).isEmpty();
+            assertThat(ApiInputValidator.validateTenantId("tenant_123")).isEmpty();
+            assertThat(ApiInputValidator.validateTenantId("my.tenant:1")).isEmpty();
         }
 
         @Test
@@ -49,8 +49,8 @@ class ApiInputValidatorTest {
 
         @Test
         void rejectsBlank() { // GH-90000
-            assertThat(ApiInputValidator.validateTenantId(" [GH-90000]")).isPresent();
-            assertThat(ApiInputValidator.validateTenantId("    [GH-90000]")).isPresent();
+            assertThat(ApiInputValidator.validateTenantId("")).isPresent();
+            assertThat(ApiInputValidator.validateTenantId("   ")).isPresent();
         }
 
         @Test
@@ -73,7 +73,7 @@ class ApiInputValidatorTest {
 
         @Test
         void rejectsXssAttempt() { // GH-90000
-            assertThat(ApiInputValidator.validateTenantId("<script>alert(1)</script> [GH-90000]")).isPresent();
+            assertThat(ApiInputValidator.validateTenantId("<script>alert(1)</script>")).isPresent();
         }
     }
 
@@ -81,13 +81,13 @@ class ApiInputValidatorTest {
     // collection
     // -----------------------------------------------------------------------
     @Nested
-    @DisplayName("validateCollection [GH-90000]")
+    @DisplayName("validateCollection")
     class CollectionTests {
 
         @Test
         void acceptsValidCollection() { // GH-90000
-            assertThat(ApiInputValidator.validateCollection("users [GH-90000]")).isEmpty();
-            assertThat(ApiInputValidator.validateCollection("my-collection.v2 [GH-90000]")).isEmpty();
+            assertThat(ApiInputValidator.validateCollection("users")).isEmpty();
+            assertThat(ApiInputValidator.validateCollection("my-collection.v2")).isEmpty();
         }
 
         @Test
@@ -97,7 +97,7 @@ class ApiInputValidatorTest {
 
         @Test
         void rejectsBlank() { // GH-90000
-            assertThat(ApiInputValidator.validateCollection(" [GH-90000]")).isPresent();
+            assertThat(ApiInputValidator.validateCollection("")).isPresent();
         }
 
         @Test
@@ -117,13 +117,13 @@ class ApiInputValidatorTest {
     // entity id
     // -----------------------------------------------------------------------
     @Nested
-    @DisplayName("validateId [GH-90000]")
+    @DisplayName("validateId")
     class IdTests {
 
         @Test
         void acceptsValidId() { // GH-90000
-            assertThat(ApiInputValidator.validateId("entity-123 [GH-90000]")).isEmpty();
-            assertThat(ApiInputValidator.validateId("UUID-style-11111111-2 [GH-90000]")).isEmpty();
+            assertThat(ApiInputValidator.validateId("entity-123")).isEmpty();
+            assertThat(ApiInputValidator.validateId("UUID-style-11111111-2")).isEmpty();
         }
 
         @Test
@@ -148,7 +148,7 @@ class ApiInputValidatorTest {
     // limit
     // -----------------------------------------------------------------------
     @Nested
-    @DisplayName("validateLimit [GH-90000]")
+    @DisplayName("validateLimit")
     class LimitTests {
 
         @Test
@@ -202,7 +202,7 @@ class ApiInputValidatorTest {
         void rejectsNonNumeric() { // GH-90000
             ApiInputValidator.LimitResult lr = ApiInputValidator.validateLimit("abc", 10); // GH-90000
             assertThat(lr.isValid()).isFalse(); // GH-90000
-            assertThat(lr.getError().orElseThrow()).contains("valid integer [GH-90000]");
+            assertThat(lr.getError().orElseThrow()).contains("valid integer");
         }
 
         @Test
@@ -216,12 +216,12 @@ class ApiInputValidatorTest {
     // search query
     // -----------------------------------------------------------------------
     @Nested
-    @DisplayName("validateSearchQuery [GH-90000]")
+    @DisplayName("validateSearchQuery")
     class SearchQueryTests {
 
         @Test
         void acceptsSimpleQuery() { // GH-90000
-            assertThat(ApiInputValidator.validateSearchQuery("hello world [GH-90000]")).isEmpty();
+            assertThat(ApiInputValidator.validateSearchQuery("hello world")).isEmpty();
         }
 
         @Test
@@ -236,7 +236,7 @@ class ApiInputValidatorTest {
 
         @Test
         void rejectsBlank() { // GH-90000
-            assertThat(ApiInputValidator.validateSearchQuery(" [GH-90000]")).isPresent();
+            assertThat(ApiInputValidator.validateSearchQuery("")).isPresent();
         }
 
         @Test
@@ -247,8 +247,8 @@ class ApiInputValidatorTest {
 
         @Test
         void rejectsControlCharacters() { // GH-90000
-            assertThat(ApiInputValidator.validateSearchQuery("ok\u0007bell [GH-90000]")).isPresent();
-            assertThat(ApiInputValidator.validateSearchQuery("ok\u0000null [GH-90000]")).isPresent();
+            assertThat(ApiInputValidator.validateSearchQuery("ok\u0007bell")).isPresent();
+            assertThat(ApiInputValidator.validateSearchQuery("ok\u0000null")).isPresent();
         }
     }
 
@@ -256,7 +256,7 @@ class ApiInputValidatorTest {
     // batch size
     // -----------------------------------------------------------------------
     @Nested
-    @DisplayName("validateBatchSize [GH-90000]")
+    @DisplayName("validateBatchSize")
     class BatchSizeTests {
 
         @Test
@@ -295,7 +295,7 @@ class ApiInputValidatorTest {
     // delete batch (ids) // GH-90000
     // -----------------------------------------------------------------------
     @Nested
-    @DisplayName("validateDeleteBatch [GH-90000]")
+    @DisplayName("validateDeleteBatch")
     class DeleteBatchTests {
 
         @Test
@@ -316,10 +316,10 @@ class ApiInputValidatorTest {
         @Test
         void rejectsInvalidIdInList() { // GH-90000
             List<String> ids = new ArrayList<>(); // GH-90000
-            ids.add("valid-id [GH-90000]");
-            ids.add("invalid/path/../traversal [GH-90000]");
+            ids.add("valid-id");
+            ids.add("invalid/path/../traversal");
             assertThat(ApiInputValidator.validateDeleteBatch(ids)).isPresent() // GH-90000
-                .get().asString().contains("ids[1] [GH-90000]");
+                .get().asString().contains("ids[1]");
         }
     }
 
@@ -327,7 +327,7 @@ class ApiInputValidatorTest {
     // entity payload
     // -----------------------------------------------------------------------
     @Nested
-    @DisplayName("validateEntityPayload [GH-90000]")
+    @DisplayName("validateEntityPayload")
     class EntityPayloadTests {
 
         @Test
@@ -382,13 +382,13 @@ class ApiInputValidatorTest {
     // sanitizeForMessage — security: no log injection
     // -----------------------------------------------------------------------
     @Nested
-    @DisplayName("sanitizeForMessage [GH-90000]")
+    @DisplayName("sanitizeForMessage")
     class SanitizeForMessageTests {
 
         @Test
         void stripsControlChars() { // GH-90000
-            String result = ApiInputValidator.sanitizeForMessage("ok\u0007\r\nval [GH-90000]");
-            assertThat(result).doesNotContain("\u0007 [GH-90000]").doesNotContain("\r [GH-90000]").doesNotContain("\n [GH-90000]");
+            String result = ApiInputValidator.sanitizeForMessage("ok\u0007\r\nval");
+            assertThat(result).doesNotContain("\u0007").doesNotContain("\r").doesNotContain("\n");
         }
 
         @Test
@@ -400,7 +400,7 @@ class ApiInputValidatorTest {
 
         @Test
         void handlesNull() { // GH-90000
-            assertThat(ApiInputValidator.sanitizeForMessage(null)).isEqualTo("<null> [GH-90000]");
+            assertThat(ApiInputValidator.sanitizeForMessage(null)).isEqualTo("<null>");
         }
     }
 
@@ -408,7 +408,7 @@ class ApiInputValidatorTest {
     // validateAll — accumulates violations
     // -----------------------------------------------------------------------
     @Nested
-    @DisplayName("validateAll [GH-90000]")
+    @DisplayName("validateAll")
     class ValidateAllTests {
 
         @Test
@@ -422,7 +422,7 @@ class ApiInputValidatorTest {
             Optional<String> result = ApiInputValidator.validateAll(null, null, null); // GH-90000
             assertThat(result).isPresent(); // GH-90000
             // error message contains separator
-            assertThat(result.get()).contains("; [GH-90000]");
+            assertThat(result.get()).contains(";");
         }
     }
 }

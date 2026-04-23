@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("CircuitBreaker - Phase 3 Expansion [GH-90000]")
+@DisplayName("CircuitBreaker - Phase 3 Expansion")
 class CircuitBreakerExpansionTest extends EventloopTestBase {
 
     // ============================================
@@ -33,41 +33,41 @@ class CircuitBreakerExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("State Transition Edge Cases [GH-90000]")
+    @DisplayName("State Transition Edge Cases")
     class StateTransitionTests {
 
         @Test
-        @DisplayName("Multiple rapid failures transition circuit smoothly [GH-90000]")
+        @DisplayName("Multiple rapid failures transition circuit smoothly")
         void rapidFailureTransition() { // GH-90000
-            CircuitBreaker cb = CircuitBreaker.builder("rapid-fail [GH-90000]")
+            CircuitBreaker cb = CircuitBreaker.builder("rapid-fail")
                     .failureThreshold(2) // GH-90000
                     .resetTimeout(Duration.ofSeconds(10)) // GH-90000
                     .build(); // GH-90000
 
             runBlocking(() -> { // GH-90000
                 // Call 1: fail
-                cb.execute(eventloop(), () -> Promise.ofException(new RuntimeException("fail-1 [GH-90000]")));
+                cb.execute(eventloop(), () -> Promise.ofException(new RuntimeException("fail-1")));
                 assertThat(cb.getState()).isEqualTo(CircuitBreaker.State.CLOSED); // GH-90000
                 assertThat(cb.getFailureCount()).isEqualTo(1); // GH-90000
 
                 // Call 2: fail again
-                cb.execute(eventloop(), () -> Promise.ofException(new RuntimeException("fail-2 [GH-90000]")));
+                cb.execute(eventloop(), () -> Promise.ofException(new RuntimeException("fail-2")));
                 assertThat(cb.getState()).isEqualTo(CircuitBreaker.State.OPEN); // GH-90000
                 assertThat(cb.getFailureCount()).isEqualTo(2); // GH-90000
             });
         }
 
         @Test
-        @DisplayName("Reset timeout advances circuit to HALF_OPEN [GH-90000]")
+        @DisplayName("Reset timeout advances circuit to HALF_OPEN")
         void resetTimeoutTransition() { // GH-90000
-            CircuitBreaker cb = CircuitBreaker.builder("timeout-reset [GH-90000]")
+            CircuitBreaker cb = CircuitBreaker.builder("timeout-reset")
                     .failureThreshold(1) // GH-90000
                     .resetTimeout(Duration.ofMillis(100)) // GH-90000
                     .build(); // GH-90000
 
             runBlocking(() -> { // GH-90000
                 // Trip the circuit
-                cb.execute(eventloop(), () -> Promise.ofException(new RuntimeException("fail [GH-90000]")));
+                cb.execute(eventloop(), () -> Promise.ofException(new RuntimeException("fail")));
                 assertThat(cb.getState()).isEqualTo(CircuitBreaker.State.OPEN); // GH-90000
 
                 // Wait for timeout to approach (not exact timing, just verify state tracking) // GH-90000
@@ -82,13 +82,13 @@ class CircuitBreakerExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Concurrent Execution Under Load [GH-90000]")
+    @DisplayName("Concurrent Execution Under Load")
     class ConcurrentLoadTests {
 
         @Test
-        @DisplayName("Multiple threads call circuit simultaneously in CLOSED state [GH-90000]")
+        @DisplayName("Multiple threads call circuit simultaneously in CLOSED state")
         void concurrentCallsClosed() throws InterruptedException { // GH-90000
-            CircuitBreaker cb = CircuitBreaker.builder("concurrent-closed [GH-90000]")
+            CircuitBreaker cb = CircuitBreaker.builder("concurrent-closed")
                     .failureThreshold(5) // GH-90000
                     .build(); // GH-90000
 
@@ -120,16 +120,16 @@ class CircuitBreakerExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Rejection behavior under load when OPEN [GH-90000]")
+        @DisplayName("Rejection behavior under load when OPEN")
         void rejectionBehaviorWhenOpen() { // GH-90000
-            CircuitBreaker cb = CircuitBreaker.builder("overload-open [GH-90000]")
+            CircuitBreaker cb = CircuitBreaker.builder("overload-open")
                     .failureThreshold(2) // GH-90000
                     .build(); // GH-90000
 
             runBlocking(() -> { // GH-90000
                 // Trip the circuit
                 for (int i = 0; i < 2; i++) { // GH-90000
-                    cb.execute(eventloop(), () -> Promise.ofException(new RuntimeException("fail [GH-90000]")));
+                    cb.execute(eventloop(), () -> Promise.ofException(new RuntimeException("fail")));
                 }
 
                 // Verify circuit is open
@@ -137,7 +137,7 @@ class CircuitBreakerExpansionTest extends EventloopTestBase {
 
                 // Subsequent calls should be rejected
                 for (int i = 0; i < 5; i++) { // GH-90000
-                    cb.execute(eventloop(), () -> Promise.of("should-reject [GH-90000]"));
+                    cb.execute(eventloop(), () -> Promise.of("should-reject"));
                 }
 
                 // Failure count stays at threshold
@@ -151,25 +151,25 @@ class CircuitBreakerExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Metrics and State Tracking [GH-90000]")
+    @DisplayName("Metrics and State Tracking")
     class MetricsTests {
 
         @Test
-        @DisplayName("Success and failure counts aggregated correctly [GH-90000]")
+        @DisplayName("Success and failure counts aggregated correctly")
         void metricsAggregation() { // GH-90000
-            CircuitBreaker cb = CircuitBreaker.builder("metrics [GH-90000]")
+            CircuitBreaker cb = CircuitBreaker.builder("metrics")
                     .failureThreshold(5) // GH-90000
                     .build(); // GH-90000
 
             runBlocking(() -> { // GH-90000
                 // 3 successful calls
                 for (int i = 0; i < 3; i++) { // GH-90000
-                    cb.execute(eventloop(), () -> Promise.of("ok [GH-90000]"));
+                    cb.execute(eventloop(), () -> Promise.of("ok"));
                 }
 
                 // 2 failed calls
                 for (int i = 0; i < 2; i++) { // GH-90000
-                    cb.execute(eventloop(), () -> Promise.ofException(new RuntimeException("fail [GH-90000]")));
+                    cb.execute(eventloop(), () -> Promise.ofException(new RuntimeException("fail")));
                 }
             });
 
@@ -179,7 +179,7 @@ class CircuitBreakerExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Circuit name is tracked and retrievable [GH-90000]")
+        @DisplayName("Circuit name is tracked and retrievable")
         void circuitNameTracking() { // GH-90000
             String[] names = {"api-downstream", "db-connection", "cache-service"};
 

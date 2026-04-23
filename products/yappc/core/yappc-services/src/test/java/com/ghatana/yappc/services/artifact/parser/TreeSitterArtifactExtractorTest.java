@@ -16,12 +16,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * the native tree-sitter JNI library by feeding synthetic AST maps directly
  * to the internal walk logic.
  */
-@DisplayName("TreeSitterArtifactExtractor AST-walk tests [GH-90000]")
-@Tag("native [GH-90000]")
+@DisplayName("TreeSitterArtifactExtractor AST-walk tests")
+@Tag("native")
 class TreeSitterArtifactExtractorTest {
 
     @Test
-    @DisplayName("Should extract class declaration node and child method nodes [GH-90000]")
+    @DisplayName("Should extract class declaration node and child method nodes")
     void shouldExtractClassAndMethodDeclarations() { // GH-90000
         TreeSitterArtifactExtractor extractor = new TreeSitterArtifactExtractor(); // GH-90000
 
@@ -68,27 +68,27 @@ class TreeSitterArtifactExtractorTest {
 
         Map<String, Object> result = extractor.extract("java", "public class Greeter { void greet() {} }", "src/Greeter.java"); // GH-90000
 
-        @SuppressWarnings("unchecked [GH-90000]")
-        List<Map<String, Object>> nodes = (List<Map<String, Object>>) result.get("nodes [GH-90000]");
-        @SuppressWarnings("unchecked [GH-90000]")
-        List<Map<String, Object>> edges = (List<Map<String, Object>>) result.get("edges [GH-90000]");
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> nodes = (List<Map<String, Object>>) result.get("nodes");
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> edges = (List<Map<String, Object>>) result.get("edges");
 
         assertThat(nodes).isNotNull(); // GH-90000
         assertThat(nodes).hasSizeGreaterThanOrEqualTo(1); // GH-90000
 
         // Should contain a source_file node
-        assertThat(nodes).anyMatch(n -> "source_file".equals(n.get("type [GH-90000]")));
+        assertThat(nodes).anyMatch(n -> "source_file".equals(n.get("type")));
 
         // Should contain class and method artifact nodes
-        assertThat(nodes).anyMatch(n -> "class".equals(n.get("type [GH-90000]")));
-        assertThat(nodes).anyMatch(n -> "function".equals(n.get("type [GH-90000]")));
+        assertThat(nodes).anyMatch(n -> "class".equals(n.get("type")));
+        assertThat(nodes).anyMatch(n -> "function".equals(n.get("type")));
 
         // Edges should link declarations to their parent file or container
         assertThat(edges).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should detect and extract import statement nodes [GH-90000]")
+    @DisplayName("Should detect and extract import statement nodes")
     void shouldExtractImportStatements() { // GH-90000
         TreeSitterArtifactExtractor extractor = new TreeSitterArtifactExtractor(); // GH-90000
 
@@ -125,14 +125,14 @@ class TreeSitterArtifactExtractorTest {
 
         Map<String, Object> result = extractor.extract("java", "import java.util.List;", "src/App.java"); // GH-90000
 
-        @SuppressWarnings("unchecked [GH-90000]")
-        List<Map<String, Object>> nodes = (List<Map<String, Object>>) result.get("nodes [GH-90000]");
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> nodes = (List<Map<String, Object>>) result.get("nodes");
 
-        assertThat(nodes).anyMatch(n -> "import".equals(n.get("type [GH-90000]")));
+        assertThat(nodes).anyMatch(n -> "import".equals(n.get("type")));
     }
 
     @Test
-    @DisplayName("Should return empty nodes and edges for unknown file extension without tree-sitter [GH-90000]")
+    @DisplayName("Should return empty nodes and edges for unknown file extension without tree-sitter")
     void shouldReturnEmptyForUnknownExtension() { // GH-90000
         TreeSitterArtifactExtractor extractor = new TreeSitterArtifactExtractor(); // GH-90000
 
@@ -140,10 +140,10 @@ class TreeSitterArtifactExtractorTest {
         // but extract() catches the error and returns a fallback stub. // GH-90000
         Map<String, Object> result = extractor.extract("fortran", "program hello\nend", "legacy/hello.f90"); // GH-90000
 
-        @SuppressWarnings("unchecked [GH-90000]")
-        List<Map<String, Object>> nodes = (List<Map<String, Object>>) result.get("nodes [GH-90000]");
-        @SuppressWarnings("unchecked [GH-90000]")
-        List<Map<String, Object>> edges = (List<Map<String, Object>>) result.get("edges [GH-90000]");
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> nodes = (List<Map<String, Object>>) result.get("nodes");
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> edges = (List<Map<String, Object>>) result.get("edges");
 
         assertThat(nodes).isNotNull(); // GH-90000
         assertThat(edges).isNotNull(); // GH-90000

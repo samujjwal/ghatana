@@ -45,7 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * </ol>
  *
  * <p><strong>Note</strong>: For production latency SLAs against real backends
- * (PostgreSQL, ClickHouse, etc.) see the {@code @Tag("integration [GH-90000]")} tests in
+ * (PostgreSQL, ClickHouse, etc.) see the {@code @Tag("integration")} tests in
  * {@code src/integrationTest/}.
  *
  * @doc.type class
@@ -53,8 +53,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Benchmark, EventloopTestBase
  */
-@Tag("performance [GH-90000]")
-@DisplayName("Data-Cloud Storage: In-Memory Performance Baselines [GH-90000]")
+@Tag("performance")
+@DisplayName("Data-Cloud Storage: In-Memory Performance Baselines")
 class StoragePerformanceBaselineTest extends EventloopTestBase {
 
     // ── Benchmark configuration ───────────────────────────────────────────────
@@ -117,7 +117,7 @@ class StoragePerformanceBaselineTest extends EventloopTestBase {
     // =========================================================================
 
     @Test
-    @DisplayName("save() P99 must stay within in-memory SLA [GH-90000]")
+    @DisplayName("save() P99 must stay within in-memory SLA")
     void saveShouldMeetP99LatencySla() { // GH-90000
         // ── Warmup ────────────────────────────────────────────────────────────
         for (int i = 0; i < WARMUP_OPS; i++) { // GH-90000
@@ -153,7 +153,7 @@ class StoragePerformanceBaselineTest extends EventloopTestBase {
     // =========================================================================
 
     @Test
-    @DisplayName("findById() P99 must stay within in-memory SLA [GH-90000]")
+    @DisplayName("findById() P99 must stay within in-memory SLA")
     void findByIdShouldMeetP99LatencySla() { // GH-90000
         // Pre-populate 200 entities so findById has something to scan over
         String[] savedIds = new String[200];
@@ -200,7 +200,7 @@ class StoragePerformanceBaselineTest extends EventloopTestBase {
     // =========================================================================
 
     @Test
-    @DisplayName("query() P99 must stay within in-memory SLA [GH-90000]")
+    @DisplayName("query() P99 must stay within in-memory SLA")
     void queryShouldMeetP99LatencySla() { // GH-90000
         // Pre-populate 500 entities of two types for the query to scan
         for (int i = 0; i < 500; i++) { // GH-90000
@@ -249,7 +249,7 @@ class StoragePerformanceBaselineTest extends EventloopTestBase {
     // =========================================================================
 
     @Test
-    @DisplayName("save() throughput must exceed 500 ops/s on in-memory store [GH-90000]")
+    @DisplayName("save() throughput must exceed 500 ops/s on in-memory store")
     void saveThroughputShouldExceedMinimum() { // GH-90000
         // Warmup
         for (int i = 0; i < WARMUP_OPS; i++) { // GH-90000

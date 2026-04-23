@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer test
  * @doc.pattern Test
  */
-@DisplayName("LazyKernelModule Tests [GH-90000]")
+@DisplayName("LazyKernelModule Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class LazyKernelModuleTest extends EventloopTestBase {
 
@@ -43,16 +43,16 @@ class LazyKernelModuleTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Identity is available before initialization [GH-90000]")
+    @DisplayName("Identity is available before initialization")
     void identityAvailableBeforeInit() { // GH-90000
-        assertThat(lazy.getModuleId()).isEqualTo("lazy-test [GH-90000]");
-        assertThat(lazy.getVersion()).isEqualTo("1.0.0 [GH-90000]");
+        assertThat(lazy.getModuleId()).isEqualTo("lazy-test");
+        assertThat(lazy.getVersion()).isEqualTo("1.0.0");
         assertThat(lazy.getCapabilities()).isEmpty(); // GH-90000
         assertThat(lazy.getDependencies()).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("Delegate is NOT initialized after initialize() is called [GH-90000]")
+    @DisplayName("Delegate is NOT initialized after initialize() is called")
     void delegateNotInitializedOnInitializeCall() { // GH-90000
         lazy.initialize(context); // GH-90000
 
@@ -61,7 +61,7 @@ class LazyKernelModuleTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Delegate IS initialized just before first start() [GH-90000]")
+    @DisplayName("Delegate IS initialized just before first start()")
     void delegateInitializedOnFirstStart() { // GH-90000
         lazy.initialize(context); // GH-90000
 
@@ -73,7 +73,7 @@ class LazyKernelModuleTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Delegate is initialized exactly once across multiple start calls [GH-90000]")
+    @DisplayName("Delegate is initialized exactly once across multiple start calls")
     void initializationHappensOnlyOnce() { // GH-90000
         lazy.initialize(context); // GH-90000
 
@@ -86,7 +86,7 @@ class LazyKernelModuleTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("stop() is a no-op when module was never started [GH-90000]")
+    @DisplayName("stop() is a no-op when module was never started")
     void stopBeforeStartIsNoOp() { // GH-90000
         lazy.initialize(context); // GH-90000
 
@@ -98,14 +98,14 @@ class LazyKernelModuleTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Health status is UNHEALTHY before initialization [GH-90000]")
+    @DisplayName("Health status is UNHEALTHY before initialization")
     void healthStatusUnhealthyBeforeInit() { // GH-90000
         HealthStatus status = lazy.getHealthStatus(); // GH-90000
         assertThat(status.isHealthy()).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("Health status delegates to wrapped module after initialization [GH-90000]")
+    @DisplayName("Health status delegates to wrapped module after initialization")
     void healthStatusDelegatesAfterInit() { // GH-90000
         lazy.initialize(context); // GH-90000
         runPromise(lazy::start); // GH-90000
@@ -114,23 +114,23 @@ class LazyKernelModuleTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("start() without prior initialize() throws IllegalStateException [GH-90000]")
+    @DisplayName("start() without prior initialize() throws IllegalStateException")
     void startWithoutInitializeThrows() { // GH-90000
         // No initialize() call // GH-90000
         assertThatThrownBy(() -> runPromise(lazy::start)) // GH-90000
             .isInstanceOf(IllegalStateException.class) // GH-90000
-            .hasMessageContaining("KernelContext [GH-90000]");
+            .hasMessageContaining("KernelContext");
     }
 
     @Test
-    @DisplayName("wrap() rejects null delegate [GH-90000]")
+    @DisplayName("wrap() rejects null delegate")
     void wrapRejectsNull() { // GH-90000
         assertThatThrownBy(() -> LazyKernelModule.wrap(null)) // GH-90000
             .isInstanceOf(NullPointerException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("getDelegate() returns the wrapped module [GH-90000]")
+    @DisplayName("getDelegate() returns the wrapped module")
     void getDelegateReturnsWrapped() { // GH-90000
         assertThat(lazy.getDelegate()).isSameAs(delegate); // GH-90000
     }

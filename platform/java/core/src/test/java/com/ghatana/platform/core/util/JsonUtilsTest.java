@@ -21,9 +21,9 @@ class JsonUtilsTest {
         String json = JsonUtils.toJson(data); // GH-90000
 
         assertNotNull(json); // GH-90000
-        assertTrue(json.contains("name [GH-90000]"));
-        assertTrue(json.contains("test [GH-90000]"));
-        assertTrue(json.contains("42 [GH-90000]"));
+        assertTrue(json.contains("name"));
+        assertTrue(json.contains("test"));
+        assertTrue(json.contains("42"));
     }
 
     @Test
@@ -37,8 +37,8 @@ class JsonUtilsTest {
         String json = JsonUtils.toPrettyJson(data); // GH-90000
 
         assertNotNull(json); // GH-90000
-        assertTrue(json.contains("\n [GH-90000]")); // Pretty print has newlines
-        assertTrue(json.contains("name [GH-90000]"));
+        assertTrue(json.contains("\n")); // Pretty print has newlines
+        assertTrue(json.contains("name"));
     }
 
     @Test
@@ -47,8 +47,8 @@ class JsonUtilsTest {
         Map<String, Object> data = JsonUtils.fromJson(json, new TypeReference<Map<String, Object>>() {}); // GH-90000
 
         assertNotNull(data); // GH-90000
-        assertEquals("test", data.get("name [GH-90000]"));
-        assertEquals(42, ((Number) data.get("value [GH-90000]")).intValue());
+        assertEquals("test", data.get("name"));
+        assertEquals(42, ((Number) data.get("value")).intValue());
     }
 
     @Test
@@ -103,7 +103,7 @@ class JsonUtilsTest {
         String json = JsonUtils.toJsonSafe(data); // GH-90000
 
         assertNotNull(json); // GH-90000
-        assertTrue(json.contains("name [GH-90000]"));
+        assertTrue(json.contains("name"));
     }
 
     @Test
@@ -149,7 +149,7 @@ class JsonUtilsTest {
         Map<String, Object> restored = JsonUtils.fromJson(json, new TypeReference<Map<String, Object>>() {}); // GH-90000
 
         assertNotNull(restored); // GH-90000
-        assertTrue(restored.containsKey("outer [GH-90000]"));
+        assertTrue(restored.containsKey("outer"));
     }
 
     @Test
@@ -159,7 +159,7 @@ class JsonUtilsTest {
 
         String json = JsonUtils.toJson(wrapper); // GH-90000
         assertNotNull(json); // GH-90000
-        assertTrue(json.contains("2025-01-05T14:30:00Z [GH-90000]"));
+        assertTrue(json.contains("2025-01-05T14:30:00Z"));
 
         DateTimeWrapper restored = JsonUtils.fromJson(json, DateTimeWrapper.class); // GH-90000
         assertNotNull(restored); // GH-90000
@@ -184,8 +184,8 @@ class JsonUtilsTest {
         String json = JsonUtils.toJson(data); // GH-90000
 
         assertNotNull(json); // GH-90000
-        assertTrue(json.contains("name [GH-90000]"));
-        assertFalse(json.contains("value [GH-90000]")); // Null fields should be excluded
+        assertTrue(json.contains("name"));
+        assertFalse(json.contains("value")); // Null fields should be excluded
     }
 
     @Test
@@ -194,8 +194,8 @@ class JsonUtilsTest {
         Map<String, Object> map = JsonUtils.toMap(data); // GH-90000
 
         assertNotNull(map); // GH-90000
-        assertEquals("test", map.get("name [GH-90000]"));
-        assertEquals(42, ((Number) map.get("value [GH-90000]")).intValue());
+        assertEquals("test", map.get("name"));
+        assertEquals(42, ((Number) map.get("value")).intValue());
     }
 
     @Test

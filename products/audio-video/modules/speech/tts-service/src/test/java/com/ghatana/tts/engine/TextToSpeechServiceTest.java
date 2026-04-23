@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("TextToSpeechServiceTest [GH-90000]")
+@DisplayName("TextToSpeechServiceTest")
 class TextToSpeechServiceTest {
 
     private static final Set<String> SUPPORTED_VOICES = Set.of( // GH-90000
@@ -59,49 +59,49 @@ class TextToSpeechServiceTest {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("input validation [GH-90000]")
+    @DisplayName("input validation")
     class InputValidation {
 
         @Test
-        @DisplayName("null text throws SynthesisException [GH-90000]")
+        @DisplayName("null text throws SynthesisException")
         void nullText_throwsSynthesisException() { // GH-90000
             assertThatThrownBy(() -> engine.synthesize(null, defaultVoice, AudioEncoding.MP3)) // GH-90000
                     .isInstanceOf(SynthesisException.class) // GH-90000
-                    .hasMessageContaining("blank [GH-90000]");
+                    .hasMessageContaining("blank");
         }
 
         @Test
-        @DisplayName("empty text throws SynthesisException [GH-90000]")
+        @DisplayName("empty text throws SynthesisException")
         void emptyText_throwsSynthesisException() { // GH-90000
             assertThatThrownBy(() -> engine.synthesize(EMPTY_TEXT, defaultVoice, AudioEncoding.MP3)) // GH-90000
                     .isInstanceOf(SynthesisException.class) // GH-90000
-                    .hasMessageContaining("blank [GH-90000]");
+                    .hasMessageContaining("blank");
         }
 
         @Test
-        @DisplayName("whitespace-only text throws SynthesisException [GH-90000]")
+        @DisplayName("whitespace-only text throws SynthesisException")
         void whitespaceOnlyText_throwsSynthesisException() { // GH-90000
             assertThatThrownBy(() -> engine.synthesize(WHITESPACE_TEXT, defaultVoice, AudioEncoding.MP3)) // GH-90000
                     .isInstanceOf(SynthesisException.class) // GH-90000
-                    .hasMessageContaining("blank [GH-90000]");
+                    .hasMessageContaining("blank");
         }
 
         @Test
-        @DisplayName("null voice config throws NullPointerException [GH-90000]")
+        @DisplayName("null voice config throws NullPointerException")
         void nullVoiceConfig_throwsNullPointerException() { // GH-90000
             assertThatThrownBy(() -> engine.synthesize(SIMPLE_TEXT, null, AudioEncoding.MP3)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("null audio encoding throws NullPointerException [GH-90000]")
+        @DisplayName("null audio encoding throws NullPointerException")
         void nullAudioEncoding_throwsNullPointerException() { // GH-90000
             assertThatThrownBy(() -> engine.synthesize(SIMPLE_TEXT, defaultVoice, null)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("unsupported voice ID throws SynthesisException [GH-90000]")
+        @DisplayName("unsupported voice ID throws SynthesisException")
         void unsupportedVoiceId_throwsSynthesisException() { // GH-90000
             VoiceConfig unsupportedVoice = new VoiceConfig( // GH-90000
                     "unsupported-voice-xyz",
@@ -110,11 +110,11 @@ class TextToSpeechServiceTest {
 
             assertThatThrownBy(() -> engine.synthesize(SIMPLE_TEXT, unsupportedVoice, AudioEncoding.MP3)) // GH-90000
                     .isInstanceOf(SynthesisException.class) // GH-90000
-                    .hasMessageContaining("Unsupported voice [GH-90000]");
+                    .hasMessageContaining("Unsupported voice");
         }
 
         @Test
-        @DisplayName("single character text is accepted [GH-90000]")
+        @DisplayName("single character text is accepted")
         void singleCharacterText_isAccepted() { // GH-90000
             SynthesisResult result = engine.synthesize("A", defaultVoice, AudioEncoding.MP3); // GH-90000
 
@@ -128,12 +128,12 @@ class TextToSpeechServiceTest {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("audio encoding [GH-90000]")
+    @DisplayName("audio encoding")
     class AudioEncodingTests {
 
         @ParameterizedTest
         @EnumSource(TtsSynthesisEngine.AudioEncoding.class) // GH-90000
-        @DisplayName("synthesis succeeds for all supported encodings [GH-90000]")
+        @DisplayName("synthesis succeeds for all supported encodings")
         void synthesisSucceedsForAllEncodings(TtsSynthesisEngine.AudioEncoding encoding) { // GH-90000
             SynthesisResult result = engine.synthesize(SIMPLE_TEXT, defaultVoice, encoding); // GH-90000
 
@@ -143,7 +143,7 @@ class TextToSpeechServiceTest {
         }
 
         @Test
-        @DisplayName("PCM_16BIT encoding produces valid output [GH-90000]")
+        @DisplayName("PCM_16BIT encoding produces valid output")
         void pcm16BitEncodingProducesValidOutput() { // GH-90000
             SynthesisResult result = engine.synthesize(SIMPLE_TEXT, defaultVoice, AudioEncoding.PCM_16BIT); // GH-90000
 
@@ -153,7 +153,7 @@ class TextToSpeechServiceTest {
         }
 
         @Test
-        @DisplayName("MP3 encoding produces valid output [GH-90000]")
+        @DisplayName("MP3 encoding produces valid output")
         void mp3EncodingProducesValidOutput() { // GH-90000
             SynthesisResult result = engine.synthesize(SIMPLE_TEXT, defaultVoice, AudioEncoding.MP3); // GH-90000
 
@@ -162,7 +162,7 @@ class TextToSpeechServiceTest {
         }
 
         @Test
-        @DisplayName("OPUS encoding produces valid output [GH-90000]")
+        @DisplayName("OPUS encoding produces valid output")
         void opusEncodingProducesValidOutput() { // GH-90000
             SynthesisResult result = engine.synthesize(SIMPLE_TEXT, defaultVoice, AudioEncoding.OPUS); // GH-90000
 
@@ -171,7 +171,7 @@ class TextToSpeechServiceTest {
         }
 
         @Test
-        @DisplayName("PCM_32BIT encoding produces valid output [GH-90000]")
+        @DisplayName("PCM_32BIT encoding produces valid output")
         void pcm32BitEncodingProducesValidOutput() { // GH-90000
             SynthesisResult result = engine.synthesize(SIMPLE_TEXT, defaultVoice, AudioEncoding.PCM_32BIT); // GH-90000
 
@@ -180,14 +180,14 @@ class TextToSpeechServiceTest {
         }
 
         @Test
-        @DisplayName("different encodings produce different byte content for same text [GH-90000]")
+        @DisplayName("different encodings produce different byte content for same text")
         void differentEncodingsProduceDifferentOutput() { // GH-90000
             SynthesisResult r1 = engine.synthesize(SIMPLE_TEXT, defaultVoice, AudioEncoding.MP3); // GH-90000
             SynthesisResult r2 = engine.synthesize(SIMPLE_TEXT, defaultVoice, AudioEncoding.PCM_16BIT); // GH-90000
 
             // Different encodings should produce different byte sequences
-            assertThat(r1.audioContent()).as("MP3 content [GH-90000]").isNotEmpty();
-            assertThat(r2.audioContent()).as("PCM content [GH-90000]").isNotEmpty();
+            assertThat(r1.audioContent()).as("MP3 content").isNotEmpty();
+            assertThat(r2.audioContent()).as("PCM content").isNotEmpty();
         }
     }
 
@@ -196,11 +196,11 @@ class TextToSpeechServiceTest {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("voice selection [GH-90000]")
+    @DisplayName("voice selection")
     class VoiceSelection {
 
         @Test
-        @DisplayName("default voice is used when provided [GH-90000]")
+        @DisplayName("default voice is used when provided")
         void defaultVoiceIsUsed() { // GH-90000
             VoiceConfig voice = VoiceConfig.defaults(); // GH-90000
             SynthesisResult result = engine.synthesize(SIMPLE_TEXT, voice, AudioEncoding.MP3); // GH-90000
@@ -209,7 +209,7 @@ class TextToSpeechServiceTest {
         }
 
         @Test
-        @DisplayName("all supported voices are accepted [GH-90000]")
+        @DisplayName("all supported voices are accepted")
         void allSupportedVoicesAreAccepted() { // GH-90000
             for (String voiceId : SUPPORTED_VOICES) { // GH-90000
                 VoiceConfig voice = new VoiceConfig(voiceId, "en-US", "NEUTRAL", 1.0f, 0.0f, 0.0f); // GH-90000
@@ -221,7 +221,7 @@ class TextToSpeechServiceTest {
         }
 
         @Test
-        @DisplayName("different voices may produce different audio characteristics [GH-90000]")
+        @DisplayName("different voices may produce different audio characteristics")
         void differentVoicesMayProduceDifferentAudio() { // GH-90000
             VoiceConfig voice1 = new VoiceConfig("en-US-standard-a", "en-US", "NEUTRAL", 1.0f, 0.0f, 0.0f); // GH-90000
             VoiceConfig voice2 = new VoiceConfig("en-US-standard-b", "en-US", "NEUTRAL", 1.0f, 0.0f, 0.0f); // GH-90000
@@ -233,7 +233,7 @@ class TextToSpeechServiceTest {
         }
 
         @Test
-        @DisplayName("voice configuration parameters are preserved in result [GH-90000]")
+        @DisplayName("voice configuration parameters are preserved in result")
         void voiceConfigParametersArePreserved() { // GH-90000
             VoiceConfig voice = new VoiceConfig("en-US-standard-a", "en-US", "MALE", 1.5f, 2.0f, 5.0f); // GH-90000
             SynthesisResult result = engine.synthesize(SIMPLE_TEXT, voice, AudioEncoding.MP3); // GH-90000
@@ -247,11 +247,11 @@ class TextToSpeechServiceTest {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("prosody control [GH-90000]")
+    @DisplayName("prosody control")
     class ProsodyControl {
 
         @Test
-        @DisplayName("speaking rate can be increased (1.5x) [GH-90000]")
+        @DisplayName("speaking rate can be increased (1.5x)")
         void speakingRateCanBeIncreased() { // GH-90000
             VoiceConfig fasterVoice = new VoiceConfig( // GH-90000
                     "en-US-standard-a", "en-US", "NEUTRAL", 1.5f, 0.0f, 0.0f
@@ -263,7 +263,7 @@ class TextToSpeechServiceTest {
         }
 
         @Test
-        @DisplayName("speaking rate can be decreased (0.8x) [GH-90000]")
+        @DisplayName("speaking rate can be decreased (0.8x)")
         void speakingRateCanBeDecreased() { // GH-90000
             VoiceConfig slowerVoice = new VoiceConfig( // GH-90000
                     "en-US-standard-a", "en-US", "NEUTRAL", 0.8f, 0.0f, 0.0f
@@ -274,7 +274,7 @@ class TextToSpeechServiceTest {
         }
 
         @Test
-        @DisplayName("pitch can be raised (positive value) [GH-90000]")
+        @DisplayName("pitch can be raised (positive value)")
         void pitchCanBeRaised() { // GH-90000
             VoiceConfig higherPitch = new VoiceConfig( // GH-90000
                     "en-US-standard-a", "en-US", "NEUTRAL", 1.0f, 5.0f, 0.0f
@@ -285,7 +285,7 @@ class TextToSpeechServiceTest {
         }
 
         @Test
-        @DisplayName("pitch can be lowered (negative value) [GH-90000]")
+        @DisplayName("pitch can be lowered (negative value)")
         void pitchCanBeLowered() { // GH-90000
             VoiceConfig lowerPitch = new VoiceConfig( // GH-90000
                     "en-US-standard-a", "en-US", "NEUTRAL", 1.0f, -5.0f, 0.0f
@@ -296,7 +296,7 @@ class TextToSpeechServiceTest {
         }
 
         @Test
-        @DisplayName("volume gain can be increased (positive dB) [GH-90000]")
+        @DisplayName("volume gain can be increased (positive dB)")
         void volumeGainCanBeIncreased() { // GH-90000
             VoiceConfig louderVoice = new VoiceConfig( // GH-90000
                     "en-US-standard-a", "en-US", "NEUTRAL", 1.0f, 0.0f, 6.0f
@@ -307,7 +307,7 @@ class TextToSpeechServiceTest {
         }
 
         @Test
-        @DisplayName("volume gain can be decreased (negative dB) [GH-90000]")
+        @DisplayName("volume gain can be decreased (negative dB)")
         void volumeGainCanBeDecreased() { // GH-90000
             VoiceConfig quieterVoice = new VoiceConfig( // GH-90000
                     "en-US-standard-a", "en-US", "NEUTRAL", 1.0f, 0.0f, -6.0f
@@ -318,7 +318,7 @@ class TextToSpeechServiceTest {
         }
 
         @Test
-        @DisplayName("all prosody parameters can be combined [GH-90000]")
+        @DisplayName("all prosody parameters can be combined")
         void allProsodyParametersCanBeCombined() { // GH-90000
             VoiceConfig customVoice = new VoiceConfig( // GH-90000
                     "en-US-standard-a", "en-US", "NEUTRAL",
@@ -337,11 +337,11 @@ class TextToSpeechServiceTest {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("special characters and punctuation [GH-90000]")
+    @DisplayName("special characters and punctuation")
     class SpecialCharactersAndPunctuation {
 
         @Test
-        @DisplayName("simple punctuation is handled correctly [GH-90000]")
+        @DisplayName("simple punctuation is handled correctly")
         void simplePunctuationIsHandled() { // GH-90000
             SynthesisResult result = engine.synthesize(PUNCTUATION_TEXT, defaultVoice, AudioEncoding.MP3); // GH-90000
 
@@ -349,7 +349,7 @@ class TextToSpeechServiceTest {
         }
 
         @Test
-        @DisplayName("special characters are handled without error [GH-90000]")
+        @DisplayName("special characters are handled without error")
         void specialCharactersAreHandled() { // GH-90000
             SynthesisResult result = engine.synthesize(SPECIAL_CHARS_TEXT, defaultVoice, AudioEncoding.MP3); // GH-90000
 
@@ -357,7 +357,7 @@ class TextToSpeechServiceTest {
         }
 
         @Test
-        @DisplayName("numbers are synthesized correctly [GH-90000]")
+        @DisplayName("numbers are synthesized correctly")
         void numbersAreSynthesized() { // GH-90000
             String numberText = "The number is 42. Call 555-1234 for more info.";
             SynthesisResult result = engine.synthesize(numberText, defaultVoice, AudioEncoding.MP3); // GH-90000
@@ -366,7 +366,7 @@ class TextToSpeechServiceTest {
         }
 
         @Test
-        @DisplayName("email addresses are handled without error [GH-90000]")
+        @DisplayName("email addresses are handled without error")
         void emailAddressesAreHandled() { // GH-90000
             String emailText = "Contact us at support@example.com for assistance.";
             SynthesisResult result = engine.synthesize(emailText, defaultVoice, AudioEncoding.MP3); // GH-90000
@@ -375,7 +375,7 @@ class TextToSpeechServiceTest {
         }
 
         @Test
-        @DisplayName("URLs are handled without error [GH-90000]")
+        @DisplayName("URLs are handled without error")
         void urlsAreHandled() { // GH-90000
             String urlText = "Visit https://www.example.com for more information.";
             SynthesisResult result = engine.synthesize(urlText, defaultVoice, AudioEncoding.MP3); // GH-90000
@@ -384,7 +384,7 @@ class TextToSpeechServiceTest {
         }
 
         @Test
-        @DisplayName("SSML content is processed [GH-90000]")
+        @DisplayName("SSML content is processed")
         void ssmlContentIsProcessed() { // GH-90000
             SynthesisResult result = engine.synthesize(SSML_TEXT, defaultVoice, AudioEncoding.MP3); // GH-90000
 
@@ -392,7 +392,7 @@ class TextToSpeechServiceTest {
         }
 
         @Test
-        @DisplayName("quotes are handled correctly [GH-90000]")
+        @DisplayName("quotes are handled correctly")
         void quotesAreHandled() { // GH-90000
             String quoteText = "He said, \"Hello, world!\" with emphasis.";
             SynthesisResult result = engine.synthesize(quoteText, defaultVoice, AudioEncoding.MP3); // GH-90000
@@ -401,7 +401,7 @@ class TextToSpeechServiceTest {
         }
 
         @Test
-        @DisplayName("apostrophes are handled correctly [GH-90000]")
+        @DisplayName("apostrophes are handled correctly")
         void apostrophesAreHandled() { // GH-90000
             String apostropheText = "It's what you're looking for, isn't it?";
             SynthesisResult result = engine.synthesize(apostropheText, defaultVoice, AudioEncoding.MP3); // GH-90000
@@ -415,11 +415,11 @@ class TextToSpeechServiceTest {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("output quality and validation [GH-90000]")
+    @DisplayName("output quality and validation")
     class OutputQualityAndValidation {
 
         @Test
-        @DisplayName("result contains non-empty audio content [GH-90000]")
+        @DisplayName("result contains non-empty audio content")
         void resultContainsNonEmptyAudio() { // GH-90000
             SynthesisResult result = engine.synthesize(SIMPLE_TEXT, defaultVoice, AudioEncoding.MP3); // GH-90000
 
@@ -428,7 +428,7 @@ class TextToSpeechServiceTest {
         }
 
         @Test
-        @DisplayName("sample rate is valid (within typical range) [GH-90000]")
+        @DisplayName("sample rate is valid (within typical range)")
         void sampleRateIsValid() { // GH-90000
             SynthesisResult result = engine.synthesize(SIMPLE_TEXT, defaultVoice, AudioEncoding.MP3); // GH-90000
 
@@ -437,7 +437,7 @@ class TextToSpeechServiceTest {
         }
 
         @Test
-        @DisplayName("duration is non-negative and reasonable [GH-90000]")
+        @DisplayName("duration is non-negative and reasonable")
         void durationIsReasonable() { // GH-90000
             SynthesisResult result = engine.synthesize(LONG_TEXT, defaultVoice, AudioEncoding.MP3); // GH-90000
 
@@ -447,7 +447,7 @@ class TextToSpeechServiceTest {
         }
 
         @Test
-        @DisplayName("processing time is recorded and non-negative [GH-90000]")
+        @DisplayName("processing time is recorded and non-negative")
         void processingTimeIsRecorded() { // GH-90000
             SynthesisResult result = engine.synthesize(SIMPLE_TEXT, defaultVoice, AudioEncoding.MP3); // GH-90000
 
@@ -455,7 +455,7 @@ class TextToSpeechServiceTest {
         }
 
         @Test
-        @DisplayName("audio duration increases with longer text [GH-90000]")
+        @DisplayName("audio duration increases with longer text")
         void audioDurationIncreasesWithText() { // GH-90000
             SynthesisResult short_ = engine.synthesize("Hello", defaultVoice, AudioEncoding.MP3); // GH-90000
             SynthesisResult long_ = engine.synthesize(LONG_TEXT, defaultVoice, AudioEncoding.MP3); // GH-90000
@@ -465,7 +465,7 @@ class TextToSpeechServiceTest {
         }
 
         @Test
-        @DisplayName("isEmpty() reflects actual audio content [GH-90000]")
+        @DisplayName("isEmpty() reflects actual audio content")
         void isEmptyReflectsContent() { // GH-90000
             SynthesisResult result = engine.synthesize(SIMPLE_TEXT, defaultVoice, AudioEncoding.MP3); // GH-90000
 
@@ -479,11 +479,11 @@ class TextToSpeechServiceTest {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("consistency [GH-90000]")
+    @DisplayName("consistency")
     class Consistency {
 
         @Test
-        @DisplayName("same input produces deterministic output [GH-90000]")
+        @DisplayName("same input produces deterministic output")
         void sameInputProducesDeterministicOutput() { // GH-90000
             SynthesisResult r1 = engine.synthesize(SIMPLE_TEXT, defaultVoice, AudioEncoding.MP3); // GH-90000
             SynthesisResult r2 = engine.synthesize(SIMPLE_TEXT, defaultVoice, AudioEncoding.MP3); // GH-90000
@@ -493,7 +493,7 @@ class TextToSpeechServiceTest {
         }
 
         @Test
-        @DisplayName("same text with different voices produces different audio [GH-90000]")
+        @DisplayName("same text with different voices produces different audio")
         void sameTextDifferentVoicesProducesDifferentAudio() { // GH-90000
             VoiceConfig v1 = new VoiceConfig("en-US-standard-a", "en-US", "NEUTRAL", 1.0f, 0.0f, 0.0f); // GH-90000
             VoiceConfig v2 = new VoiceConfig("en-US-standard-b", "en-US", "NEUTRAL", 1.0f, 0.0f, 0.0f); // GH-90000
@@ -511,17 +511,17 @@ class TextToSpeechServiceTest {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("engine properties [GH-90000]")
+    @DisplayName("engine properties")
     class EngineProperties {
 
         @Test
-        @DisplayName("engine returns configured model ID [GH-90000]")
+        @DisplayName("engine returns configured model ID")
         void engineReturnsConfiguredModelId() { // GH-90000
-            assertThat(engine.getModelId()).isEqualTo("tts-standard-v1 [GH-90000]");
+            assertThat(engine.getModelId()).isEqualTo("tts-standard-v1");
         }
 
         @Test
-        @DisplayName("engine returns all supported voices [GH-90000]")
+        @DisplayName("engine returns all supported voices")
         void engineReturnsSupportedVoices() { // GH-90000
             Set<String> voices = engine.getSupportedVoiceIds(); // GH-90000
 
@@ -530,14 +530,14 @@ class TextToSpeechServiceTest {
         }
 
         @Test
-        @DisplayName("supported voices are immutable [GH-90000]")
+        @DisplayName("supported voices are immutable")
         void supportedVoicesAreImmutable() { // GH-90000
             Set<String> voices = engine.getSupportedVoiceIds(); // GH-90000
 
             assertThat(voices).isNotEmpty(); // GH-90000
             assertThat(voices).containsAll(SUPPORTED_VOICES); // GH-90000
             // Verify it's unmodifiable
-            assertThatThrownBy(() -> voices.add("new-voice [GH-90000]"))
+            assertThatThrownBy(() -> voices.add("new-voice"))
                     .isInstanceOf(UnsupportedOperationException.class); // GH-90000
         }
     }
@@ -547,11 +547,11 @@ class TextToSpeechServiceTest {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("voice config defaults [GH-90000]")
+    @DisplayName("voice config defaults")
     class VoiceConfigDefaults {
 
         @Test
-        @DisplayName("default voice config can be used for synthesis [GH-90000]")
+        @DisplayName("default voice config can be used for synthesis")
         void defaultVoiceConfigCanBeUsed() { // GH-90000
             VoiceConfig defaults = VoiceConfig.defaults(); // GH-90000
             SynthesisResult result = engine.synthesize(SIMPLE_TEXT, defaults, AudioEncoding.MP3); // GH-90000
@@ -561,7 +561,7 @@ class TextToSpeechServiceTest {
         }
 
         @Test
-        @DisplayName("default voice has reasonable prosody values [GH-90000]")
+        @DisplayName("default voice has reasonable prosody values")
         void defaultVoiceHasReasonableProsody() { // GH-90000
             VoiceConfig defaults = VoiceConfig.defaults(); // GH-90000
 

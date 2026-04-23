@@ -23,15 +23,15 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("VoiceGatewayHandler Execution [GH-90000]")
+@DisplayName("VoiceGatewayHandler Execution")
 class VoiceGatewayHandlerExecutionTest extends EventloopTestBase {
 
     @Mock
     private DataCloudClient client;
 
     @Test
-    @DisplayName("query_entities executes against data cloud and includes TTS audio for the voice response [GH-90000]")
-    @SuppressWarnings("unchecked [GH-90000]")
+    @DisplayName("query_entities executes against data cloud and includes TTS audio for the voice response")
+    @SuppressWarnings("unchecked")
     void queryEntitiesExecutesAgainstDataCloudAndIncludesTtsAudio() { // GH-90000
         VoiceTtsPort ttsPort = new VoiceTtsPort() { // GH-90000
             @Override
@@ -57,22 +57,22 @@ class VoiceGatewayHandlerExecutionTest extends EventloopTestBase {
             null
         );
 
-        when(client.query(eq("tenant-a [GH-90000]"), eq("orders [GH-90000]"), any()))
+        when(client.query(eq("tenant-a"), eq("orders"), any()))
             .thenReturn(Promise.of(List.of( // GH-90000
                 new DataCloudClient.Entity( // GH-90000
                     "order-1",
                     "orders",
                     Map.of("status", "open", "amount", 10), // GH-90000
-                    Instant.parse("2026-04-17T00:00:00Z [GH-90000]"),
-                    Instant.parse("2026-04-17T00:00:00Z [GH-90000]"),
+                    Instant.parse("2026-04-17T00:00:00Z"),
+                    Instant.parse("2026-04-17T00:00:00Z"),
                     1L
                 ),
                 new DataCloudClient.Entity( // GH-90000
                     "order-2",
                     "orders",
                     Map.of("status", "closed", "amount", 20), // GH-90000
-                    Instant.parse("2026-04-17T00:00:00Z [GH-90000]"),
-                    Instant.parse("2026-04-17T00:00:00Z [GH-90000]"),
+                    Instant.parse("2026-04-17T00:00:00Z"),
+                    Instant.parse("2026-04-17T00:00:00Z"),
                     1L
                 )
             )));
@@ -82,8 +82,8 @@ class VoiceGatewayHandlerExecutionTest extends EventloopTestBase {
             "GET",
             "/api/v1/entities/:collection",
             "List or filter entities in a collection",
-            List.of("collection [GH-90000]"),
-            List.of("limit [GH-90000]"),
+            List.of("collection"),
+            List.of("limit"),
             EndpointSensitivity.INTERNAL
         );
 
@@ -93,11 +93,11 @@ class VoiceGatewayHandlerExecutionTest extends EventloopTestBase {
             "tenant-a",
             "en-US"));
 
-        assertThat(payload.get("executed [GH-90000]")).isEqualTo(true);
-        assertThat(payload.get("audioBase64 [GH-90000]")).isNotNull();
-        assertThat(payload.get("speechSummary [GH-90000]")).isEqualTo("Found 2 entities in orders. [GH-90000]");
-        Map<String, Object> result = (Map<String, Object>) payload.get("result [GH-90000]");
-        assertThat(result.get("entityCount [GH-90000]")).isEqualTo(2);
-        assertThat((List<Map<String, Object>>) result.get("entities [GH-90000]")).hasSize(2);
+        assertThat(payload.get("executed")).isEqualTo(true);
+        assertThat(payload.get("audioBase64")).isNotNull();
+        assertThat(payload.get("speechSummary")).isEqualTo("Found 2 entities in orders.");
+        Map<String, Object> result = (Map<String, Object>) payload.get("result");
+        assertThat(result.get("entityCount")).isEqualTo(2);
+        assertThat((List<Map<String, Object>>) result.get("entities")).hasSize(2);
     }
 }

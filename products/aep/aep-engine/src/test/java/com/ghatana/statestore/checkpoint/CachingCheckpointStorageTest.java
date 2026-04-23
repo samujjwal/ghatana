@@ -26,7 +26,7 @@ import static org.mockito.Mockito.*;
  * Unit tests for {@link CachingCheckpointStorage} (AEP-004.3). // GH-90000
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("CachingCheckpointStorage — AEP-004.3 [GH-90000]")
+@DisplayName("CachingCheckpointStorage — AEP-004.3")
 class CachingCheckpointStorageTest {
 
     @Mock
@@ -40,7 +40,7 @@ class CachingCheckpointStorageTest {
 
     @BeforeEach
     void setUp() { // GH-90000
-        clock = new MutableClock(Instant.parse("2026-01-01T00:00:00Z [GH-90000]"));
+        clock = new MutableClock(Instant.parse("2026-01-01T00:00:00Z"));
         storage = CachingCheckpointStorage.builder(delegate) // GH-90000
                 .ttl(Duration.ofMinutes(5)) // GH-90000
                 .maxEntries(100) // GH-90000
@@ -50,7 +50,7 @@ class CachingCheckpointStorageTest {
         id = CheckpointId.of("ckpt-001", CheckpointType.CHECKPOINT); // GH-90000
         metadata = CheckpointMetadata.builder(id) // GH-90000
                 .status(CheckpointStatus.COMPLETED) // GH-90000
-                .startTime(Instant.parse("2026-01-01T00:00:00Z [GH-90000]"))
+                .startTime(Instant.parse("2026-01-01T00:00:00Z"))
                 .build(); // GH-90000
 
         lenient().when(delegate.loadCheckpoint(any())).thenReturn(Promise.of(metadata)); // GH-90000
@@ -60,7 +60,7 @@ class CachingCheckpointStorageTest {
     }
 
     @Test
-    @DisplayName("First load is a cache miss and delegates [GH-90000]")
+    @DisplayName("First load is a cache miss and delegates")
     void firstLoadIsCacheMiss() { // GH-90000
         storage.loadCheckpoint(id).getResult(); // GH-90000
 
@@ -70,7 +70,7 @@ class CachingCheckpointStorageTest {
     }
 
     @Test
-    @DisplayName("Subsequent load within TTL is a cache hit and does not delegate [GH-90000]")
+    @DisplayName("Subsequent load within TTL is a cache hit and does not delegate")
     void secondLoadIsHit() { // GH-90000
         storage.loadCheckpoint(id).getResult(); // GH-90000
         storage.loadCheckpoint(id).getResult(); // GH-90000
@@ -81,7 +81,7 @@ class CachingCheckpointStorageTest {
     }
 
     @Test
-    @DisplayName("Load after TTL expires re-delegates [GH-90000]")
+    @DisplayName("Load after TTL expires re-delegates")
     void loadAfterTtlExpiry() { // GH-90000
         storage.loadCheckpoint(id).getResult(); // GH-90000
         clock.advance(Duration.ofMinutes(6)); // GH-90000
@@ -92,7 +92,7 @@ class CachingCheckpointStorageTest {
     }
 
     @Test
-    @DisplayName("saveCheckpoint writes through to delegate and warms cache [GH-90000]")
+    @DisplayName("saveCheckpoint writes through to delegate and warms cache")
     void saveCheckpointWarmsCacheAndDelegates() { // GH-90000
         storage.saveCheckpoint(metadata).getResult(); // GH-90000
 
@@ -105,7 +105,7 @@ class CachingCheckpointStorageTest {
     }
 
     @Test
-    @DisplayName("deleteCheckpoint invalidates cache and delegates [GH-90000]")
+    @DisplayName("deleteCheckpoint invalidates cache and delegates")
     void deleteInvalidatesCache() { // GH-90000
         storage.saveCheckpoint(metadata).getResult(); // GH-90000
         storage.deleteCheckpoint(id).getResult(); // GH-90000
@@ -119,7 +119,7 @@ class CachingCheckpointStorageTest {
     }
 
     @Test
-    @DisplayName("clear empties the cache [GH-90000]")
+    @DisplayName("clear empties the cache")
     void clearEmptiesCache() { // GH-90000
         storage.saveCheckpoint(metadata).getResult(); // GH-90000
         storage.clear(); // GH-90000
@@ -128,14 +128,14 @@ class CachingCheckpointStorageTest {
     }
 
     @Test
-    @DisplayName("Builder rejects null delegate [GH-90000]")
+    @DisplayName("Builder rejects null delegate")
     void builderRejectsNullDelegate() { // GH-90000
         assertThatThrownBy(() -> CachingCheckpointStorage.builder(null)) // GH-90000
                 .isInstanceOf(NullPointerException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("Builder rejects non-positive TTL [GH-90000]")
+    @DisplayName("Builder rejects non-positive TTL")
     void builderRejectsNonPositiveTtl() { // GH-90000
         assertThatThrownBy(() -> CachingCheckpointStorage.builder(delegate) // GH-90000
                 .ttl(Duration.ZERO)) // GH-90000

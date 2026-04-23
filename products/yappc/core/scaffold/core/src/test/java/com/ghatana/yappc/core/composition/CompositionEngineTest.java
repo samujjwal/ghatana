@@ -56,7 +56,7 @@ class CompositionEngineTest {
     }
 
     @Test
-    @DisplayName("Empty condition should evaluate to true [GH-90000]")
+    @DisplayName("Empty condition should evaluate to true")
     void testEmptyCondition() throws Exception { // GH-90000
         assertTrue((Boolean) evaluateConditionMethod.invoke(engine, "", Map.of())); // GH-90000
         assertTrue((Boolean) evaluateConditionMethod.invoke(engine, null, Map.of())); // GH-90000
@@ -64,62 +64,62 @@ class CompositionEngineTest {
     }
 
     @Test
-    @DisplayName("Simple variable check - boolean true [GH-90000]")
+    @DisplayName("Simple variable check - boolean true")
     void testSimpleVariableTrue() throws Exception { // GH-90000
         Map<String, Object> vars = Map.of("enabled", true); // GH-90000
         assertTrue((Boolean) evaluateConditionMethod.invoke(engine, "enabled", vars)); // GH-90000
     }
 
     @Test
-    @DisplayName("Simple variable check - boolean false [GH-90000]")
+    @DisplayName("Simple variable check - boolean false")
     void testSimpleVariableFalse() throws Exception { // GH-90000
         Map<String, Object> vars = Map.of("enabled", false); // GH-90000
         assertFalse((Boolean) evaluateConditionMethod.invoke(engine, "enabled", vars)); // GH-90000
     }
 
     @Test
-    @DisplayName("Simple variable check - string non-empty [GH-90000]")
+    @DisplayName("Simple variable check - string non-empty")
     void testSimpleVariableStringNonEmpty() throws Exception { // GH-90000
         Map<String, Object> vars = Map.of("name", "test"); // GH-90000
         assertTrue((Boolean) evaluateConditionMethod.invoke(engine, "name", vars)); // GH-90000
     }
 
     @Test
-    @DisplayName("Simple variable check - string empty [GH-90000]")
+    @DisplayName("Simple variable check - string empty")
     void testSimpleVariableStringEmpty() throws Exception { // GH-90000
         Map<String, Object> vars = Map.of("name", ""); // GH-90000
         assertFalse((Boolean) evaluateConditionMethod.invoke(engine, "name", vars)); // GH-90000
     }
 
     @Test
-    @DisplayName("Simple variable check - string 'false' [GH-90000]")
+    @DisplayName("Simple variable check - string 'false'")
     void testSimpleVariableStringFalse() throws Exception { // GH-90000
         Map<String, Object> vars = Map.of("flag", "false"); // GH-90000
         assertFalse((Boolean) evaluateConditionMethod.invoke(engine, "flag", vars)); // GH-90000
     }
 
     @Test
-    @DisplayName("Simple variable check - missing variable [GH-90000]")
+    @DisplayName("Simple variable check - missing variable")
     void testSimpleVariableMissing() throws Exception { // GH-90000
         assertFalse((Boolean) evaluateConditionMethod.invoke(engine, "missing", Map.of())); // GH-90000
     }
 
     @Test
-    @DisplayName("Negation - negate true [GH-90000]")
+    @DisplayName("Negation - negate true")
     void testNegationTrue() throws Exception { // GH-90000
         Map<String, Object> vars = Map.of("enabled", true); // GH-90000
         assertFalse((Boolean) evaluateConditionMethod.invoke(engine, "!enabled", vars)); // GH-90000
     }
 
     @Test
-    @DisplayName("Negation - negate false [GH-90000]")
+    @DisplayName("Negation - negate false")
     void testNegationFalse() throws Exception { // GH-90000
         Map<String, Object> vars = Map.of("disabled", false); // GH-90000
         assertTrue((Boolean) evaluateConditionMethod.invoke(engine, "!disabled", vars)); // GH-90000
     }
 
     @Test
-    @DisplayName("Equality check - strings equal [GH-90000]")
+    @DisplayName("Equality check - strings equal")
     void testEqualityStringsEqual() throws Exception { // GH-90000
         Map<String, Object> vars = Map.of("env", "prod"); // GH-90000
         assertTrue((Boolean) evaluateConditionMethod.invoke(engine, "env == 'prod'", vars)); // GH-90000
@@ -127,42 +127,42 @@ class CompositionEngineTest {
     }
 
     @Test
-    @DisplayName("Equality check - strings not equal [GH-90000]")
+    @DisplayName("Equality check - strings not equal")
     void testEqualityStringsNotEqual() throws Exception { // GH-90000
         Map<String, Object> vars = Map.of("env", "dev"); // GH-90000
         assertFalse((Boolean) evaluateConditionMethod.invoke(engine, "env == 'prod'", vars)); // GH-90000
     }
 
     @Test
-    @DisplayName("Inequality check - strings not equal [GH-90000]")
+    @DisplayName("Inequality check - strings not equal")
     void testInequalityStringsNotEqual() throws Exception { // GH-90000
         Map<String, Object> vars = Map.of("env", "dev"); // GH-90000
         assertTrue((Boolean) evaluateConditionMethod.invoke(engine, "env != 'prod'", vars)); // GH-90000
     }
 
     @Test
-    @DisplayName("Inequality check - strings equal [GH-90000]")
+    @DisplayName("Inequality check - strings equal")
     void testInequalityStringsEqual() throws Exception { // GH-90000
         Map<String, Object> vars = Map.of("env", "prod"); // GH-90000
         assertFalse((Boolean) evaluateConditionMethod.invoke(engine, "env != 'prod'", vars)); // GH-90000
     }
 
     @Test
-    @DisplayName("Equality with whitespace [GH-90000]")
+    @DisplayName("Equality with whitespace")
     void testEqualityWithWhitespace() throws Exception { // GH-90000
         Map<String, Object> vars = Map.of("env", "prod"); // GH-90000
         assertTrue((Boolean) evaluateConditionMethod.invoke(engine, "  env  ==  'prod'  ", vars)); // GH-90000
     }
 
     @Test
-    @DisplayName("Complex condition - number as string [GH-90000]")
+    @DisplayName("Complex condition - number as string")
     void testNumberAsString() throws Exception { // GH-90000
         Map<String, Object> vars = Map.of("count", 5); // GH-90000
         assertTrue((Boolean) evaluateConditionMethod.invoke(engine, "count == '5'", vars)); // GH-90000
     }
 
     @Test
-    @DisplayName("Null variable in equality check [GH-90000]")
+    @DisplayName("Null variable in equality check")
     void testNullVariableEquality() throws Exception { // GH-90000
         assertFalse((Boolean) evaluateConditionMethod.invoke(engine, "missing == 'value'", Map.of())); // GH-90000
     }

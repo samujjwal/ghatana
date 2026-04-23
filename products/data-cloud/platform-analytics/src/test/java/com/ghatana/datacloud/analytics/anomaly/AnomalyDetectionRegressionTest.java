@@ -27,9 +27,9 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("AnomalyDetectionRegressionTest [GH-90000]")
-@Tag("analytics [GH-90000]")
-@Tag("regression [GH-90000]")
+@DisplayName("AnomalyDetectionRegressionTest")
+@Tag("analytics")
+@Tag("regression")
 class AnomalyDetectionRegressionTest {
 
     // ── Z-score detector ──────────────────────────────────────────────────────
@@ -41,14 +41,14 @@ class AnomalyDetectionRegressionTest {
     private final ZScoreDetector zScore = new ZScoreDetector(2.0); // GH-90000
 
     @Test
-    @DisplayName("z-score: no anomaly in flat series [GH-90000]")
+    @DisplayName("z-score: no anomaly in flat series")
     void zScoreFlatSeriesHasNoAnomalies() { // GH-90000
         double[] series = {10.0, 10.0, 10.0, 10.0, 10.0};
         assertThat(zScore.detectIndices(series)).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("z-score: single extreme outlier is detected [GH-90000]")
+    @DisplayName("z-score: single extreme outlier is detected")
     void zScoreSingleOutlier() { // GH-90000
         double[] series = {10, 10, 10, 10, 100};
         List<Integer> anomalies = zScore.detectIndices(series); // GH-90000
@@ -56,7 +56,7 @@ class AnomalyDetectionRegressionTest {
     }
 
     @Test
-    @DisplayName("z-score: symmetric outliers at both ends [GH-90000]")
+    @DisplayName("z-score: symmetric outliers at both ends")
     void zScoreSymmetricOutliers() { // GH-90000
         double[] series = {100, 10, 10, 10, 10, 100};
         List<Integer> anomalies = zScore.detectIndices(series); // GH-90000
@@ -64,7 +64,7 @@ class AnomalyDetectionRegressionTest {
     }
 
     @Test
-    @DisplayName("z-score: all values identical returns zero score [GH-90000]")
+    @DisplayName("z-score: all values identical returns zero score")
     void zScoreAllIdentical() { // GH-90000
         double[] series = {5, 5, 5, 5};
         assertThat(zScore.detectIndices(series)).isEmpty(); // GH-90000
@@ -75,9 +75,9 @@ class AnomalyDetectionRegressionTest {
         "10.0 10.0 10.0 10.0 50.0, 4",  // index 4 is the anomaly
         "50.0 10.0 10.0 10.0 10.0, 0"   // index 0 is the anomaly
     })
-    @DisplayName("z-score: parameterized regression cases [GH-90000]")
+    @DisplayName("z-score: parameterized regression cases")
     void zScoreParameterized(String seriesStr, int expectedAnomalyIndex) { // GH-90000
-        double[] series = Arrays.stream(seriesStr.split("  [GH-90000]"))
+        double[] series = Arrays.stream(seriesStr.split(" "))
                 .mapToDouble(Double::parseDouble).toArray(); // GH-90000
         assertThat(zScore.detectIndices(series)).contains(expectedAnomalyIndex); // GH-90000
     }
@@ -87,7 +87,7 @@ class AnomalyDetectionRegressionTest {
     private final IqrDetector iqr = new IqrDetector(1.5); // GH-90000
 
     @Test
-    @DisplayName("IQR: detects outlier above upper fence [GH-90000]")
+    @DisplayName("IQR: detects outlier above upper fence")
     void iqrDetectsHighOutlier() { // GH-90000
         double[] series = {1, 2, 3, 4, 5, 6, 7, 100};
         List<Integer> anomalies = iqr.detectIndices(series); // GH-90000
@@ -95,7 +95,7 @@ class AnomalyDetectionRegressionTest {
     }
 
     @Test
-    @DisplayName("IQR: detects outlier below lower fence [GH-90000]")
+    @DisplayName("IQR: detects outlier below lower fence")
     void iqrDetectsLowOutlier() { // GH-90000
         double[] series = {-100, 10, 11, 12, 13, 14};
         List<Integer> anomalies = iqr.detectIndices(series); // GH-90000
@@ -103,7 +103,7 @@ class AnomalyDetectionRegressionTest {
     }
 
     @Test
-    @DisplayName("IQR: normally distributed values have no anomalies [GH-90000]")
+    @DisplayName("IQR: normally distributed values have no anomalies")
     void iqrNormalDistributionNoAnomalies() { // GH-90000
         // Tight range — nothing outside 1.5*IQR fence
         double[] series = {5, 6, 7, 7, 8, 8, 8, 9, 9, 10};
@@ -115,7 +115,7 @@ class AnomalyDetectionRegressionTest {
     private final MovingAverageDetector maDetector = new MovingAverageDetector(3, 2.0); // GH-90000
 
     @Test
-    @DisplayName("moving-average: spike in otherwise flat series is detected [GH-90000]")
+    @DisplayName("moving-average: spike in otherwise flat series is detected")
     void movingAverageDetectsSpike() { // GH-90000
         double[] series = {10, 10, 10, 50, 10, 10, 10};
         List<Integer> anomalies = maDetector.detectIndices(series); // GH-90000
@@ -123,14 +123,14 @@ class AnomalyDetectionRegressionTest {
     }
 
     @Test
-    @DisplayName("moving-average: series shorter than window size returns no anomalies [GH-90000]")
+    @DisplayName("moving-average: series shorter than window size returns no anomalies")
     void movingAverageShortSeries() { // GH-90000
         double[] series = {5, 8};
         assertThat(maDetector.detectIndices(series)).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("moving-average: flat series with no deviation returns no anomalies [GH-90000]")
+    @DisplayName("moving-average: flat series with no deviation returns no anomalies")
     void movingAverageFlatSeries() { // GH-90000
         double[] series = {7, 7, 7, 7, 7, 7, 7};
         assertThat(maDetector.detectIndices(series)).isEmpty(); // GH-90000
@@ -139,19 +139,19 @@ class AnomalyDetectionRegressionTest {
     // ── Severity classification ───────────────────────────────────────────────
 
     @Test
-    @DisplayName("score 2.5 → LOW severity [GH-90000]")
+    @DisplayName("score 2.5 → LOW severity")
     void severity25IsLow() { // GH-90000
         assertThat(Severity.from(2.5)).isEqualTo(Severity.LOW); // GH-90000
     }
 
     @Test
-    @DisplayName("score 3.5 → MEDIUM severity [GH-90000]")
+    @DisplayName("score 3.5 → MEDIUM severity")
     void severity35IsMedium() { // GH-90000
         assertThat(Severity.from(3.5)).isEqualTo(Severity.MEDIUM); // GH-90000
     }
 
     @Test
-    @DisplayName("score 5.0 → HIGH severity [GH-90000]")
+    @DisplayName("score 5.0 → HIGH severity")
     void severity50IsHigh() { // GH-90000
         assertThat(Severity.from(5.0)).isEqualTo(Severity.HIGH); // GH-90000
     }

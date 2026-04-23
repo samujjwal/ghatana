@@ -28,18 +28,18 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer test
  * @doc.pattern Integration Test
  */
-@DisplayName("Persistence Integration Tests [GH-90000]")
+@DisplayName("Persistence Integration Tests")
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS) // GH-90000
 class PersistenceIntegrationTest {
 
     @Container
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>( // GH-90000
-        DockerImageName.parse("postgres:16-alpine [GH-90000]")
+        DockerImageName.parse("postgres:16-alpine")
     )
-    .withDatabaseName("audio_video_test [GH-90000]")
-    .withUsername("test [GH-90000]")
-    .withPassword("test [GH-90000]");
+    .withDatabaseName("audio_video_test")
+    .withUsername("test")
+    .withPassword("test");
 
     private EntityManagerFactory emf;
     private EntityManager entityManager;
@@ -51,7 +51,7 @@ class PersistenceIntegrationTest {
         try (var connection = DriverManager.getConnection( // GH-90000
             postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword()); // GH-90000
              var statement = connection.createStatement()) { // GH-90000
-            statement.execute("CREATE SCHEMA IF NOT EXISTS audio_video [GH-90000]");
+            statement.execute("CREATE SCHEMA IF NOT EXISTS audio_video");
         } catch (Exception e) { // GH-90000
             throw new RuntimeException("Failed to create test schema audio_video", e); // GH-90000
         }
@@ -92,7 +92,7 @@ class PersistenceIntegrationTest {
     }
 
     @Test
-    @DisplayName("GIVEN audio file WHEN saved THEN can be retrieved from PostgreSQL [GH-90000]")
+    @DisplayName("GIVEN audio file WHEN saved THEN can be retrieved from PostgreSQL")
     void testAudioFilePersistence() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -114,12 +114,12 @@ class PersistenceIntegrationTest {
         // THEN
         var retrieved = audioFileRepository.findById(tenantId, saved.getId()); // GH-90000
         assertThat(retrieved).isPresent(); // GH-90000
-        assertThat(retrieved.get().getFileName()).isEqualTo("test-recording.wav [GH-90000]");
+        assertThat(retrieved.get().getFileName()).isEqualTo("test-recording.wav");
         assertThat(retrieved.get().getDurationSeconds()).isEqualTo(120); // GH-90000
     }
 
     @Test
-    @DisplayName("GIVEN transcription linked to audio file WHEN saved THEN relationship is persisted [GH-90000]")
+    @DisplayName("GIVEN transcription linked to audio file WHEN saved THEN relationship is persisted")
     void testTranscriptionRelationship() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -155,12 +155,12 @@ class PersistenceIntegrationTest {
         var retrieved = transcriptionRepository.findById(tenantId, saved.getId()); // GH-90000
         assertThat(retrieved).isPresent(); // GH-90000
         assertThat(retrieved.get().getAudioFileId()).isEqualTo(audioFile.getId()); // GH-90000
-        assertThat(retrieved.get().getText()).contains("test transcription [GH-90000]");
+        assertThat(retrieved.get().getText()).contains("test transcription");
         assertThat(retrieved.get().getConfidence()).isEqualTo(0.95f); // GH-90000
     }
 
     @Test
-    @DisplayName("GIVEN soft deleted audio file WHEN queried THEN not returned in results [GH-90000]")
+    @DisplayName("GIVEN soft deleted audio file WHEN queried THEN not returned in results")
     void testSoftDeleteExclusion() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -188,11 +188,11 @@ class PersistenceIntegrationTest {
         // findByTenantId should exclude deleted
         var allFiles = audioFileRepository.findByTenantId(tenantId); // GH-90000
         assertThat(allFiles).hasSize(1); // GH-90000
-        assertThat(allFiles.get(0).getFileName()).isEqualTo("file2.mp3 [GH-90000]");
+        assertThat(allFiles.get(0).getFileName()).isEqualTo("file2.mp3");
     }
 
     @Test
-    @DisplayName("GIVEN soft deleted file WHEN hard deleted THEN permanently removed [GH-90000]")
+    @DisplayName("GIVEN soft deleted file WHEN hard deleted THEN permanently removed")
     void testHardDeleteAfterSoftDelete() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -214,7 +214,7 @@ class PersistenceIntegrationTest {
     }
 
     @Test
-    @DisplayName("GIVEN multiple tenants WHEN data saved THEN tenant isolation enforced [GH-90000]")
+    @DisplayName("GIVEN multiple tenants WHEN data saved THEN tenant isolation enforced")
     void testTenantIsolation() { // GH-90000
         // GIVEN
         String tenant1 = "tenant-alpha";
@@ -230,12 +230,12 @@ class PersistenceIntegrationTest {
         // Tenant 1 should only see their file
         var tenant1Files = audioFileRepository.findByTenantId(tenant1); // GH-90000
         assertThat(tenant1Files).hasSize(1); // GH-90000
-        assertThat(tenant1Files.get(0).getFileName()).isEqualTo("alpha-file.mp3 [GH-90000]");
+        assertThat(tenant1Files.get(0).getFileName()).isEqualTo("alpha-file.mp3");
 
         // Tenant 2 should only see their file
         var tenant2Files = audioFileRepository.findByTenantId(tenant2); // GH-90000
         assertThat(tenant2Files).hasSize(1); // GH-90000
-        assertThat(tenant2Files.get(0).getFileName()).isEqualTo("beta-file.mp3 [GH-90000]");
+        assertThat(tenant2Files.get(0).getFileName()).isEqualTo("beta-file.mp3");
 
         // Cross-tenant access should fail
         var crossAccess = audioFileRepository.findById(tenant1, file2.getId()); // GH-90000
@@ -243,7 +243,7 @@ class PersistenceIntegrationTest {
     }
 
     @Test
-    @DisplayName("GIVEN transcription with status WHEN findByStatus THEN returns matching [GH-90000]")
+    @DisplayName("GIVEN transcription with status WHEN findByStatus THEN returns matching")
     void testFindByStatus() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -271,7 +271,7 @@ class PersistenceIntegrationTest {
     }
 
     @Test
-    @DisplayName("GIVEN concurrent updates WHEN committing stale entity THEN optimistic lock prevents overwrite [GH-90000]")
+    @DisplayName("GIVEN concurrent updates WHEN committing stale entity THEN optimistic lock prevents overwrite")
     void testOptimisticLockingOnConcurrentUpdate() { // GH-90000
         String tenantId = "tenant-lock";
         AudioFileEntity base = createAudioFile(tenantId, "lock.mp3"); // GH-90000
@@ -284,11 +284,11 @@ class PersistenceIntegrationTest {
             AudioFileEntity tx2Entity = em2.find(AudioFileEntity.class, saved.getId()); // GH-90000
 
             em1.getTransaction().begin(); // GH-90000
-            tx1Entity.setFileName("lock-v1.mp3 [GH-90000]");
+            tx1Entity.setFileName("lock-v1.mp3");
             em1.getTransaction().commit(); // GH-90000
 
             em2.getTransaction().begin(); // GH-90000
-            tx2Entity.setFileName("lock-v2.mp3 [GH-90000]");
+            tx2Entity.setFileName("lock-v2.mp3");
             assertThatThrownBy(() -> em2.getTransaction().commit()) // GH-90000
                 .isInstanceOf(RollbackException.class); // GH-90000
         } finally {
@@ -300,7 +300,7 @@ class PersistenceIntegrationTest {
     }
 
     @Test
-    @DisplayName("GIVEN invalid entity WHEN save fails THEN transaction is rolled back [GH-90000]")
+    @DisplayName("GIVEN invalid entity WHEN save fails THEN transaction is rolled back")
     void testSaveRollbackOnConstraintViolation() { // GH-90000
         String tenantId = "tenant-rollback";
         long before = audioFileRepository.countByTenantId(tenantId); // GH-90000
@@ -310,7 +310,7 @@ class PersistenceIntegrationTest {
 
         assertThatThrownBy(() -> audioFileRepository.save(tenantId, invalid)) // GH-90000
             .isInstanceOf(RuntimeException.class) // GH-90000
-            .hasMessageContaining("Failed to save AudioFile [GH-90000]");
+            .hasMessageContaining("Failed to save AudioFile");
 
         long after = audioFileRepository.countByTenantId(tenantId); // GH-90000
         assertThat(after).isEqualTo(before); // GH-90000

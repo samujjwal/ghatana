@@ -18,7 +18,8 @@ import java.util.concurrent.TimeUnit;
  * @doc.type class
  * @doc.purpose Retention scheduling
  * @doc.layer agent-learning
- */
+  * @doc.pattern Scheduler
+*/
 public class RetentionScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(RetentionScheduler.class);

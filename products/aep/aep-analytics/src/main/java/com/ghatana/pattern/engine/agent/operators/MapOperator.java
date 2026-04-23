@@ -36,7 +36,11 @@ import java.util.function.UnaryOperator;
  *           .build())
  *       .build();
  * }</pre>
- */
+  * @doc.type class
+ * @doc.purpose Provides map operator functionality.
+ * @doc.layer product
+ * @doc.pattern Operator
+*/
 public class MapOperator extends BaseOperator {
 
     private static final String CAPABILITY_MAP = "event-mapping";

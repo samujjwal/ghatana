@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer   service
  * @doc.pattern Test
  */
-@DisplayName("Comprehensive UserProfile CRUD Tests [GH-90000]")
+@DisplayName("Comprehensive UserProfile CRUD Tests")
 class ComprehensiveCrudTest extends EventloopTestBase {
 
     private UserProfileStore store;
@@ -57,51 +57,51 @@ class ComprehensiveCrudTest extends EventloopTestBase {
     // ── Create ────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("upsert creates a new profile and returns it with updatedAt set [GH-90000]")
+    @DisplayName("upsert creates a new profile and returns it with updatedAt set")
     void upsertCreatesProfileWithUpdatedAt() { // GH-90000
         UserProfile profile = UserProfile.builder() // GH-90000
-                .userId("user-crud-001 [GH-90000]")
-                .tenantId("tenant-crud [GH-90000]")
-                .email("crud@example.com [GH-90000]")
+                .userId("user-crud-001")
+                .tenantId("tenant-crud")
+                .email("crud@example.com")
                 .build(); // GH-90000
 
         UserProfile saved = runPromise(() -> store.upsert(profile)); // GH-90000
 
-        assertThat(saved.userId()).isEqualTo("user-crud-001 [GH-90000]");
-        assertThat(saved.tenantId()).isEqualTo("tenant-crud [GH-90000]");
-        assertThat(saved.email()).isEqualTo("crud@example.com [GH-90000]");
+        assertThat(saved.userId()).isEqualTo("user-crud-001");
+        assertThat(saved.tenantId()).isEqualTo("tenant-crud");
+        assertThat(saved.email()).isEqualTo("crud@example.com");
         assertThat(saved.updatedAt()).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("upsert stores all optional fields correctly [GH-90000]")
+    @DisplayName("upsert stores all optional fields correctly")
     void upsertStoresAllOptionalFields() { // GH-90000
         UserProfile profile = UserProfile.builder() // GH-90000
-                .userId("user-full-001 [GH-90000]")
-                .tenantId("tenant-full [GH-90000]")
-                .email("full@example.com [GH-90000]")
-                .displayName("Alice Smith [GH-90000]")
-                .avatarUrl("https://cdn.example.com/alice.png [GH-90000]")
-                .preferredLanguage("fr-FR [GH-90000]")
-                .timezone("Europe/Paris [GH-90000]")
-                .theme("dark [GH-90000]")
+                .userId("user-full-001")
+                .tenantId("tenant-full")
+                .email("full@example.com")
+                .displayName("Alice Smith")
+                .avatarUrl("https://cdn.example.com/alice.png")
+                .preferredLanguage("fr-FR")
+                .timezone("Europe/Paris")
+                .theme("dark")
                 .notificationsEnabled(false) // GH-90000
                 .build(); // GH-90000
 
         UserProfile saved = runPromise(() -> store.upsert(profile)); // GH-90000
 
-        assertThat(saved.displayName()).isEqualTo("Alice Smith [GH-90000]");
-        assertThat(saved.avatarUrl()).isEqualTo("https://cdn.example.com/alice.png [GH-90000]");
-        assertThat(saved.preferredLanguage()).isEqualTo("fr-FR [GH-90000]");
-        assertThat(saved.timezone()).isEqualTo("Europe/Paris [GH-90000]");
-        assertThat(saved.theme()).isEqualTo("dark [GH-90000]");
+        assertThat(saved.displayName()).isEqualTo("Alice Smith");
+        assertThat(saved.avatarUrl()).isEqualTo("https://cdn.example.com/alice.png");
+        assertThat(saved.preferredLanguage()).isEqualTo("fr-FR");
+        assertThat(saved.timezone()).isEqualTo("Europe/Paris");
+        assertThat(saved.theme()).isEqualTo("dark");
         assertThat(saved.notificationsEnabled()).isFalse(); // GH-90000
     }
 
     // ── Read ──────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("findByTenantAndUser returns empty Optional when profile does not exist [GH-90000]")
+    @DisplayName("findByTenantAndUser returns empty Optional when profile does not exist")
     void findReturnsEmptyWhenMissing() { // GH-90000
         Optional<UserProfile> result = runPromise(() -> // GH-90000
                 store.findByTenantAndUser("non-existent-tenant", "user-xyz")); // GH-90000
@@ -110,12 +110,12 @@ class ComprehensiveCrudTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("findByTenantAndUser returns the profile after upsert [GH-90000]")
+    @DisplayName("findByTenantAndUser returns the profile after upsert")
     void findReturnsSavedProfile() { // GH-90000
         UserProfile profile = UserProfile.builder() // GH-90000
-                .userId("user-find-001 [GH-90000]")
-                .tenantId("tenant-find [GH-90000]")
-                .email("find@example.com [GH-90000]")
+                .userId("user-find-001")
+                .tenantId("tenant-find")
+                .email("find@example.com")
                 .build(); // GH-90000
 
         runPromise(() -> store.upsert(profile)); // GH-90000
@@ -124,26 +124,26 @@ class ComprehensiveCrudTest extends EventloopTestBase {
                 store.findByTenantAndUser("tenant-find", "user-find-001")); // GH-90000
 
         assertThat(found).isPresent(); // GH-90000
-        assertThat(found.get().email()).isEqualTo("find@example.com [GH-90000]");
+        assertThat(found.get().email()).isEqualTo("find@example.com");
     }
 
     // ── Update ────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("upsert updates an existing profile by replacing stored values [GH-90000]")
+    @DisplayName("upsert updates an existing profile by replacing stored values")
     void upsertUpdatesExistingProfile() { // GH-90000
         UserProfile original = UserProfile.builder() // GH-90000
-                .userId("user-update-001 [GH-90000]")
-                .tenantId("tenant-update [GH-90000]")
-                .email("original@example.com [GH-90000]")
-                .displayName("Original Name [GH-90000]")
+                .userId("user-update-001")
+                .tenantId("tenant-update")
+                .email("original@example.com")
+                .displayName("Original Name")
                 .build(); // GH-90000
 
         runPromise(() -> store.upsert(original)); // GH-90000
 
         UserProfile updated = original.toBuilder() // GH-90000
-                .email("updated@example.com [GH-90000]")
-                .displayName("Updated Name [GH-90000]")
+                .email("updated@example.com")
+                .displayName("Updated Name")
                 .build(); // GH-90000
 
         runPromise(() -> store.upsert(updated)); // GH-90000
@@ -152,17 +152,17 @@ class ComprehensiveCrudTest extends EventloopTestBase {
                 store.findByTenantAndUser("tenant-update", "user-update-001")); // GH-90000
 
         assertThat(found).isPresent(); // GH-90000
-        assertThat(found.get().email()).isEqualTo("updated@example.com [GH-90000]");
-        assertThat(found.get().displayName()).isEqualTo("Updated Name [GH-90000]");
+        assertThat(found.get().email()).isEqualTo("updated@example.com");
+        assertThat(found.get().displayName()).isEqualTo("Updated Name");
     }
 
     @Test
-    @DisplayName("upsert updates the updatedAt timestamp on each call [GH-90000]")
+    @DisplayName("upsert updates the updatedAt timestamp on each call")
     void upsertAdvancesUpdatedAt() throws InterruptedException { // GH-90000
         UserProfile profile = UserProfile.builder() // GH-90000
-                .userId("user-ts-001 [GH-90000]")
-                .tenantId("tenant-ts [GH-90000]")
-                .email("ts@example.com [GH-90000]")
+                .userId("user-ts-001")
+                .tenantId("tenant-ts")
+                .email("ts@example.com")
                 .build(); // GH-90000
 
         UserProfile first = runPromise(() -> store.upsert(profile)); // GH-90000
@@ -177,12 +177,12 @@ class ComprehensiveCrudTest extends EventloopTestBase {
     // ── Delete ────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("delete removes the profile so findByTenantAndUser returns empty [GH-90000]")
+    @DisplayName("delete removes the profile so findByTenantAndUser returns empty")
     void deleteRemovesProfile() { // GH-90000
         UserProfile profile = UserProfile.builder() // GH-90000
-                .userId("user-del-001 [GH-90000]")
-                .tenantId("tenant-del [GH-90000]")
-                .email("delete@example.com [GH-90000]")
+                .userId("user-del-001")
+                .tenantId("tenant-del")
+                .email("delete@example.com")
                 .build(); // GH-90000
 
         runPromise(() -> store.upsert(profile)); // GH-90000
@@ -195,7 +195,7 @@ class ComprehensiveCrudTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("delete is a no-op when profile does not exist [GH-90000]")
+    @DisplayName("delete is a no-op when profile does not exist")
     void deleteIsNoOpWhenMissing() { // GH-90000
         // Should not throw
         runPromise(() -> store.delete("no-tenant", "no-user")); // GH-90000
@@ -207,12 +207,12 @@ class ComprehensiveCrudTest extends EventloopTestBase {
     // ── Default values ────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("profile uses email-derived displayName when displayName is not set [GH-90000]")
+    @DisplayName("profile uses email-derived displayName when displayName is not set")
     void profileDefaultsDisplayNameFromEmail() { // GH-90000
         UserProfile profile = UserProfile.builder() // GH-90000
-                .userId("user-defaults-001 [GH-90000]")
-                .tenantId("tenant-defaults [GH-90000]")
-                .email("defaults@example.com [GH-90000]")
+                .userId("user-defaults-001")
+                .tenantId("tenant-defaults")
+                .email("defaults@example.com")
                 .build(); // GH-90000
 
         // Default displayName is derived from the email local-part
@@ -221,50 +221,50 @@ class ComprehensiveCrudTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("profile defaults preferredLanguage to en-US [GH-90000]")
+    @DisplayName("profile defaults preferredLanguage to en-US")
     void profileDefaultsPreferredLanguage() { // GH-90000
         UserProfile profile = UserProfile.builder() // GH-90000
-                .userId("user-lang-001 [GH-90000]")
-                .tenantId("tenant-lang [GH-90000]")
-                .email("lang@example.com [GH-90000]")
+                .userId("user-lang-001")
+                .tenantId("tenant-lang")
+                .email("lang@example.com")
                 .build(); // GH-90000
 
-        assertThat(profile.preferredLanguage()).isEqualTo("en-US [GH-90000]");
+        assertThat(profile.preferredLanguage()).isEqualTo("en-US");
     }
 
     @Test
-    @DisplayName("profile defaults timezone to UTC [GH-90000]")
+    @DisplayName("profile defaults timezone to UTC")
     void profileDefaultsTimezone() { // GH-90000
         UserProfile profile = UserProfile.builder() // GH-90000
-                .userId("user-tz-001 [GH-90000]")
-                .tenantId("tenant-tz [GH-90000]")
-                .email("tz@example.com [GH-90000]")
+                .userId("user-tz-001")
+                .tenantId("tenant-tz")
+                .email("tz@example.com")
                 .build(); // GH-90000
 
-        assertThat(profile.timezone()).isEqualTo("UTC [GH-90000]");
+        assertThat(profile.timezone()).isEqualTo("UTC");
     }
 
     @Test
-    @DisplayName("profile defaults theme to system [GH-90000]")
+    @DisplayName("profile defaults theme to system")
     void profileDefaultsTheme() { // GH-90000
         UserProfile profile = UserProfile.builder() // GH-90000
-                .userId("user-theme-001 [GH-90000]")
-                .tenantId("tenant-theme [GH-90000]")
-                .email("theme@example.com [GH-90000]")
+                .userId("user-theme-001")
+                .tenantId("tenant-theme")
+                .email("theme@example.com")
                 .build(); // GH-90000
 
-        assertThat(profile.theme()).isEqualTo("system [GH-90000]");
+        assertThat(profile.theme()).isEqualTo("system");
     }
 
     // ── Multiple profiles ─────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("multiple profiles across different users can be stored and retrieved [GH-90000]")
+    @DisplayName("multiple profiles across different users can be stored and retrieved")
     void multipleDifferentUsersInSameTenant() { // GH-90000
         for (int i = 1; i <= 5; i++) { // GH-90000
             UserProfile p = UserProfile.builder() // GH-90000
                     .userId("user-" + i) // GH-90000
-                    .tenantId("shared-tenant [GH-90000]")
+                    .tenantId("shared-tenant")
                     .email("user" + i + "@example.com") // GH-90000
                     .build(); // GH-90000
             runPromise(() -> store.upsert(p)); // GH-90000

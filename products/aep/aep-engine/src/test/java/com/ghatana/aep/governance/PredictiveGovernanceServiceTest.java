@@ -19,11 +19,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.purpose Unit tests for predictive governance
  * @doc.layer test
  */
-@DisplayName("Predictive Governance Service Tests [GH-90000]")
+@DisplayName("Predictive Governance Service Tests")
 class PredictiveGovernanceServiceTest {
 
     @Test
-    @DisplayName("predicts incidents from error rate trends [GH-90000]")
+    @DisplayName("predicts incidents from error rate trends")
     void predictsIncidentsFromErrorRate() { // GH-90000
         PredictiveGovernanceService service = new PredictiveGovernanceService(0.5, 30, 100); // GH-90000
         String tenantId = "tenant-1";
@@ -38,11 +38,11 @@ class PredictiveGovernanceServiceTest {
         List<PredictiveGovernanceService.IncidentPrediction> predictions = service.predictIncidents(tenantId); // GH-90000
 
         assertThat(predictions).isNotEmpty(); // GH-90000
-        assertThat(predictions.stream().anyMatch(p -> p.type().equals("high_error_rate [GH-90000]"))).isTrue();
+        assertThat(predictions.stream().anyMatch(p -> p.type().equals("high_error_rate"))).isTrue();
     }
 
     @Test
-    @DisplayName("predicts incidents from high latency [GH-90000]")
+    @DisplayName("predicts incidents from high latency")
     void predictsIncidentsFromHighLatency() { // GH-90000
         PredictiveGovernanceService service = new PredictiveGovernanceService(0.5, 30, 100); // GH-90000
         String tenantId = "tenant-1";
@@ -56,11 +56,11 @@ class PredictiveGovernanceServiceTest {
         List<PredictiveGovernanceService.IncidentPrediction> predictions = service.predictIncidents(tenantId); // GH-90000
 
         assertThat(predictions).isNotEmpty(); // GH-90000
-        assertThat(predictions.stream().anyMatch(p -> p.type().equals("high_latency [GH-90000]"))).isTrue();
+        assertThat(predictions.stream().anyMatch(p -> p.type().equals("high_latency"))).isTrue();
     }
 
     @Test
-    @DisplayName("predicts incidents from throughput drop [GH-90000]")
+    @DisplayName("predicts incidents from throughput drop")
     void predictsIncidentsFromThroughputDrop() { // GH-90000
         PredictiveGovernanceService service = new PredictiveGovernanceService(0.5, 30, 100); // GH-90000
         String tenantId = "tenant-1";
@@ -75,11 +75,11 @@ class PredictiveGovernanceServiceTest {
         List<PredictiveGovernanceService.IncidentPrediction> predictions = service.predictIncidents(tenantId); // GH-90000
 
         assertThat(predictions).isNotEmpty(); // GH-90000
-        assertThat(predictions.stream().anyMatch(p -> p.type().equals("throughput_drop [GH-90000]"))).isTrue();
+        assertThat(predictions.stream().anyMatch(p -> p.type().equals("throughput_drop"))).isTrue();
     }
 
     @Test
-    @DisplayName("predicts incidents from resource exhaustion [GH-90000]")
+    @DisplayName("predicts incidents from resource exhaustion")
     void predictsIncidentsFromResourceExhaustion() { // GH-90000
         PredictiveGovernanceService service = new PredictiveGovernanceService(0.5, 30, 100); // GH-90000
         String tenantId = "tenant-1";
@@ -94,11 +94,11 @@ class PredictiveGovernanceServiceTest {
         List<PredictiveGovernanceService.IncidentPrediction> predictions = service.predictIncidents(tenantId); // GH-90000
 
         assertThat(predictions).isNotEmpty(); // GH-90000
-        assertThat(predictions.stream().anyMatch(p -> p.type().equals("resource_exhaustion [GH-90000]"))).isTrue();
+        assertThat(predictions.stream().anyMatch(p -> p.type().equals("resource_exhaustion"))).isTrue();
     }
 
     @Test
-    @DisplayName("filters predictions by threshold [GH-90000]")
+    @DisplayName("filters predictions by threshold")
     void filtersPredictionsByThreshold() { // GH-90000
         PredictiveGovernanceService service = new PredictiveGovernanceService(0.9, 30, 100); // GH-90000
         String tenantId = "tenant-1";
@@ -116,7 +116,7 @@ class PredictiveGovernanceServiceTest {
     }
 
     @Test
-    @DisplayName("retrieves predictions for tenant [GH-90000]")
+    @DisplayName("retrieves predictions for tenant")
     void retrievesPredictionsForTenant() { // GH-90000
         PredictiveGovernanceService service = new PredictiveGovernanceService(0.5, 30, 100); // GH-90000
         String tenantId = "tenant-1";
@@ -135,7 +135,7 @@ class PredictiveGovernanceServiceTest {
     }
 
     @Test
-    @DisplayName("retrieves high-severity predictions [GH-90000]")
+    @DisplayName("retrieves high-severity predictions")
     void retrievesHighSeverityPredictions() { // GH-90000
         PredictiveGovernanceService service = new PredictiveGovernanceService(0.5, 30, 100); // GH-90000
         String tenantId = "tenant-1";
@@ -157,7 +157,7 @@ class PredictiveGovernanceServiceTest {
     }
 
     @Test
-    @DisplayName("clears tenant data [GH-90000]")
+    @DisplayName("clears tenant data")
     void clearsTenantData() { // GH-90000
         PredictiveGovernanceService service = new PredictiveGovernanceService(); // GH-90000
         String tenantId = "tenant-1";
@@ -173,23 +173,23 @@ class PredictiveGovernanceServiceTest {
     }
 
     @Test
-    @DisplayName("clears all data [GH-90000]")
+    @DisplayName("clears all data")
     void clearsAllData() { // GH-90000
         PredictiveGovernanceService service = new PredictiveGovernanceService(); // GH-90000
 
         service.recordMetric("tenant-1", "error_rate", 0.1, Instant.now()); // GH-90000
         service.recordMetric("tenant-2", "error_rate", 0.1, Instant.now()); // GH-90000
-        service.predictIncidents("tenant-1 [GH-90000]");
-        service.predictIncidents("tenant-2 [GH-90000]");
+        service.predictIncidents("tenant-1");
+        service.predictIncidents("tenant-2");
 
         service.clearAll(); // GH-90000
 
-        assertThat(service.getPredictions("tenant-1 [GH-90000]")).isEmpty();
-        assertThat(service.getPredictions("tenant-2 [GH-90000]")).isEmpty();
+        assertThat(service.getPredictions("tenant-1")).isEmpty();
+        assertThat(service.getPredictions("tenant-2")).isEmpty();
     }
 
     @Test
-    @DisplayName("prunes old predictions [GH-90000]")
+    @DisplayName("prunes old predictions")
     void prunesOldPredictions() { // GH-90000
         PredictiveGovernanceService service = new PredictiveGovernanceService(0.5, 30, 100); // GH-90000
         String tenantId = "tenant-1";

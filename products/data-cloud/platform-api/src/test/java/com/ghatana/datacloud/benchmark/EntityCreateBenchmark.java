@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern Benchmark Test
  */
 @Timeout(value = 60, unit = TimeUnit.SECONDS) // GH-90000
-@DisplayName("EntityCreateBenchmark – Performance < 100ms p99 [GH-90000]")
+@DisplayName("EntityCreateBenchmark – Performance < 100ms p99")
 class EntityCreateBenchmark extends EventloopTestBase {
 
     private static final int WARMUP_ITERATIONS = 100;
@@ -30,7 +30,7 @@ class EntityCreateBenchmark extends EventloopTestBase {
     private static final long P99_THRESHOLD_MS = 100;
 
     @Test
-    @DisplayName("[TEST-086]: entity_create_p99_under_100ms [GH-90000]")
+    @DisplayName("[TEST-086]: entity_create_p99_under_100ms")
     void entityCreateP99Under100ms() { // GH-90000
         // Warmup
         for (int i = 0; i < WARMUP_ITERATIONS; i++) { // GH-90000
@@ -58,7 +58,7 @@ class EntityCreateBenchmark extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[TEST-086]: entity_create_throughput_sustained [GH-90000]")
+    @DisplayName("[TEST-086]: entity_create_throughput_sustained")
     void entityCreateThroughputSustained() { // GH-90000
         int operations = 500;
         long durationMs = 1000; // 1 second

@@ -56,7 +56,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("100+ Tenant Concurrent Stress Test [GH-90000]")
+@DisplayName("100+ Tenant Concurrent Stress Test")
 class HundredTenantStressTest {
 
     private static final int    TENANT_COUNT        = 100;
@@ -81,7 +81,7 @@ class HundredTenantStressTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("100 tenants × 50 reads+writes: zero cross-tenant leakage, all succeed [GH-90000]")
+    @DisplayName("100 tenants × 50 reads+writes: zero cross-tenant leakage, all succeed")
     void hundredTenants_zeroLeakage_allOperationsSucceed() throws InterruptedException { // GH-90000
         CountDownLatch done        = new CountDownLatch(TENANT_COUNT); // GH-90000
         AtomicInteger  successes   = new AtomicInteger(0); // GH-90000
@@ -141,12 +141,12 @@ class HundredTenantStressTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Burst traffic scenario [GH-90000]")
+    @DisplayName("Burst traffic scenario")
     class BurstTrafficTests {
 
         @Test
-        @Tag("stress [GH-90000]")
-        @DisplayName("100 tenants starting simultaneously — no deadlock within 60s [GH-90000]")
+        @Tag("stress")
+        @DisplayName("100 tenants starting simultaneously — no deadlock within 60s")
         void burstStart_hundredTenants_noDeadlock() throws InterruptedException { // GH-90000
             CountDownLatch startGate = new CountDownLatch(1); // GH-90000
             CountDownLatch done      = new CountDownLatch(TENANT_COUNT); // GH-90000
@@ -188,8 +188,8 @@ class HundredTenantStressTest {
         }
 
         @Test
-        @Tag("stress [GH-90000]")
-        @DisplayName("tenant burst: no cross-tenant entity leakage under burst conditions [GH-90000]")
+        @Tag("stress")
+        @DisplayName("tenant burst: no cross-tenant entity leakage under burst conditions")
         void burstStart_zeroLeakageUnderLoad() throws InterruptedException { // GH-90000
             int samples       = 20;  // probe 20 out of 100 tenants for isolation
             CountDownLatch done = new CountDownLatch(samples); // GH-90000
@@ -210,7 +210,7 @@ class HundredTenantStressTest {
                                         COLLECTION, Query.all())) // GH-90000
                                     .whenResult(entities -> { // GH-90000
                                         for (Entity entity : entities) { // GH-90000
-                                            Object tag = entity.data().get("tenantTag [GH-90000]");
+                                            Object tag = entity.data().get("tenantTag");
                                             if (tag != null) { // GH-90000
                                                 tenantTags.get(tenantId).add(tag.toString()); // GH-90000
                                             }
@@ -245,11 +245,11 @@ class HundredTenantStressTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Isolation invariants at 100-tenant scale [GH-90000]")
+    @DisplayName("Isolation invariants at 100-tenant scale")
     class IsolationInvariantsTests {
 
         @Test
-        @DisplayName("entities saved by tenant-A are not returned by queries for tenant-B at 100-tenant scale [GH-90000]")
+        @DisplayName("entities saved by tenant-A are not returned by queries for tenant-B at 100-tenant scale")
         void tenantA_entities_invisibleTo_tenantB_atScale() throws InterruptedException { // GH-90000
             CountDownLatch latch = new CountDownLatch(2); // GH-90000
             List<String> tenantAIds = Collections.synchronizedList(new ArrayList<>()); // GH-90000
@@ -286,9 +286,9 @@ class HundredTenantStressTest {
 
             // Tenant B must see zero of Tenant A's entities
             for (Entity entity : tenantBResults) { // GH-90000
-                assertThat(entity.data().get("tenantTag [GH-90000]"))
-                    .as("Tenant B must not see Tenant A's data [GH-90000]")
-                    .isNotEqualTo("scale-tenant-alpha [GH-90000]");
+                assertThat(entity.data().get("tenantTag"))
+                    .as("Tenant B must not see Tenant A's data")
+                    .isNotEqualTo("scale-tenant-alpha");
             }
         }
     }

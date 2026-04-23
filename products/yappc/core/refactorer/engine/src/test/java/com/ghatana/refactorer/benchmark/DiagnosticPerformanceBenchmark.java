@@ -153,9 +153,9 @@ public class DiagnosticPerformanceBenchmark extends EventloopTestBase {
      */
     private Promise<List<UnifiedDiagnostic>> processFile(Path file) { // GH-90000
         String fileName = file.getFileName().toString(); // GH-90000
-        if (fileName.endsWith(".java [GH-90000]")) {
+        if (fileName.endsWith(".java")) {
             return javaService.diagnose(context, List.of(file)); // GH-90000
-        } else if (fileName.endsWith(".py [GH-90000]")) {
+        } else if (fileName.endsWith(".py")) {
             return pythonService.diagnose(context, List.of(file)); // GH-90000
         } else {
             return Promise.of(List.of()); // GH-90000

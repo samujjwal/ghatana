@@ -9,7 +9,8 @@ import java.util.List;
  * @doc.type class
  * @doc.purpose Model for complete content package
  * @doc.layer product
- */
+  * @doc.pattern Component
+*/
 @Builder
 @Getter
 public class CompleteContentPackage {

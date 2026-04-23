@@ -23,7 +23,7 @@ import static org.mockito.Mockito.mock;
 /**
  * Comprehensive tests for HybridAgent — all routing strategies.
  */
-@DisplayName("Hybrid Agent [GH-90000]")
+@DisplayName("Hybrid Agent")
 class HybridAgentTest {
 
     private AgentContext ctx;
@@ -31,9 +31,9 @@ class HybridAgentTest {
     @BeforeEach
     void setUp() { // GH-90000
         ctx = AgentContext.builder() // GH-90000
-                .turnId("turn-1 [GH-90000]")
-                .agentId("hybrid-test [GH-90000]")
-                .tenantId("test-tenant [GH-90000]")
+                .turnId("turn-1")
+                .agentId("hybrid-test")
+                .tenantId("test-tenant")
                 .memoryStore(mock(MemoryStore.class)) // GH-90000
                 .build(); // GH-90000
     }
@@ -69,7 +69,7 @@ class HybridAgentTest {
 
         StubAgent(String id, Map<String, Object> output, double confidence, boolean shouldFail) { // GH-90000
             this.desc = AgentDescriptor.builder() // GH-90000
-                    .agentId(id).name(id).version("1.0 [GH-90000]")
+                    .agentId(id).name(id).version("1.0")
                     .type(AgentType.DETERMINISTIC) // GH-90000
                     .build(); // GH-90000
             this.fixedOutput = output;
@@ -82,7 +82,7 @@ class HybridAgentTest {
         @Override protected @NotNull Promise<AgentResult<Map<String, Object>>> doProcess( // GH-90000
                 @NotNull AgentContext ctx, @NotNull Map<String, Object> input) {
             if (shouldFail) { // GH-90000
-                return Promise.ofException(new RuntimeException("Stub failure [GH-90000]"));
+                return Promise.ofException(new RuntimeException("Stub failure"));
             }
             return Promise.of(AgentResult.<Map<String, Object>>builder() // GH-90000
                     .output(fixedOutput) // GH-90000
@@ -108,7 +108,7 @@ class HybridAgentTest {
                 .build(); // GH-90000
 
         // Initialize both stubs
-        AgentConfig stubConfig = AgentConfig.builder().agentId("stub [GH-90000]").type(AgentType.DETERMINISTIC).build();
+        AgentConfig stubConfig = AgentConfig.builder().agentId("stub").type(AgentType.DETERMINISTIC).build();
         runOnEventloop(() -> det.initialize(stubConfig)); // GH-90000
         runOnEventloop(() -> prob.initialize(stubConfig)); // GH-90000
         runOnEventloop(() -> agent.initialize(config)); // GH-90000
@@ -120,7 +120,7 @@ class HybridAgentTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("DETERMINISTIC_FIRST [GH-90000]")
+    @DisplayName("DETERMINISTIC_FIRST")
     class DeterministicFirst {
 
         @Test void usesDetResultWhenHighConfidence() { // GH-90000
@@ -153,7 +153,7 @@ class HybridAgentTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("PROBABILISTIC_FIRST [GH-90000]")
+    @DisplayName("PROBABILISTIC_FIRST")
     class ProbabilisticFirst {
 
         @Test void usesProbWhenHighConfidence() { // GH-90000
@@ -184,7 +184,7 @@ class HybridAgentTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("PARALLEL [GH-90000]")
+    @DisplayName("PARALLEL")
     class ParallelStrategy {
 
         @Test void mergesBothResults() { // GH-90000
@@ -197,8 +197,8 @@ class HybridAgentTest {
             var result = runOnEventloop(() -> agent.process(ctx, Map.of("x", 1))); // GH-90000
             assertThat(result.isSuccess()).isTrue(); // GH-90000
             // Parallel should merge outputs
-            assertThat(result.getOutput()).containsKey("rule_decision [GH-90000]");
-            assertThat(result.getOutput()).containsKey("ml_score [GH-90000]");
+            assertThat(result.getOutput()).containsKey("rule_decision");
+            assertThat(result.getOutput()).containsKey("ml_score");
         }
 
         @Test void detOverridesProbOnConflict() { // GH-90000
@@ -218,7 +218,7 @@ class HybridAgentTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Lifecycle [GH-90000]")
+    @DisplayName("Lifecycle")
     class LifecycleTests {
 
         @Test void tracksMetrics() { // GH-90000

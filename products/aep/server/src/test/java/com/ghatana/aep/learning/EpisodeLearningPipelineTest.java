@@ -42,7 +42,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("EpisodeLearningPipeline [GH-90000]")
+@DisplayName("EpisodeLearningPipeline")
 class EpisodeLearningPipelineTest {
 
     private static final String TENANT  = "tenant-alpha";
@@ -64,22 +64,22 @@ class EpisodeLearningPipelineTest {
     // ─── computeMetrics (static, package-visible) ───────────────────────── // GH-90000
 
     @Nested
-    @DisplayName("computeMetrics() [GH-90000]")
+    @DisplayName("computeMetrics()")
     class ComputeMetricsTest {
 
         @Test
-        @DisplayName("returns zero metrics for empty episode list [GH-90000]")
+        @DisplayName("returns zero metrics for empty episode list")
         void computeMetrics_emptyEpisodes_returnsZeroMetrics() { // GH-90000
             Map<String, Double> metrics = EpisodeLearningPipeline.computeMetrics(List.of()); // GH-90000
 
-            assertThat(metrics.get("successRate [GH-90000]")).isZero();
-            assertThat(metrics.get("errorRate [GH-90000]")).isZero();
-            assertThat(metrics.get("avgLatencyMs [GH-90000]")).isZero();
-            assertThat(metrics.get("count [GH-90000]")).isZero();
+            assertThat(metrics.get("successRate")).isZero();
+            assertThat(metrics.get("errorRate")).isZero();
+            assertThat(metrics.get("avgLatencyMs")).isZero();
+            assertThat(metrics.get("count")).isZero();
         }
 
         @Test
-        @DisplayName("computes correct rates for all-success episodes [GH-90000]")
+        @DisplayName("computes correct rates for all-success episodes")
         void computeMetrics_allSuccess_successRateOne() { // GH-90000
             List<Entity> episodes = List.of( // GH-90000
                     episode("e1", AGENT_A, "SUCCESS", 100), // GH-90000
@@ -88,14 +88,14 @@ class EpisodeLearningPipelineTest {
 
             Map<String, Double> metrics = EpisodeLearningPipeline.computeMetrics(episodes); // GH-90000
 
-            assertThat(metrics.get("successRate [GH-90000]")).isEqualTo(1.0);
-            assertThat(metrics.get("errorRate [GH-90000]")).isZero();
-            assertThat(metrics.get("count [GH-90000]")).isEqualTo(3.0);
-            assertThat(metrics.get("avgLatencyMs [GH-90000]")).isEqualTo(150.0);
+            assertThat(metrics.get("successRate")).isEqualTo(1.0);
+            assertThat(metrics.get("errorRate")).isZero();
+            assertThat(metrics.get("count")).isEqualTo(3.0);
+            assertThat(metrics.get("avgLatencyMs")).isEqualTo(150.0);
         }
 
         @Test
-        @DisplayName("computes correct rates for mixed outcomes [GH-90000]")
+        @DisplayName("computes correct rates for mixed outcomes")
         void computeMetrics_mixedOutcomes_correctRates() { // GH-90000
             List<Entity> episodes = List.of( // GH-90000
                     episode("e1", AGENT_A, "SUCCESS",  100), // GH-90000
@@ -107,33 +107,33 @@ class EpisodeLearningPipelineTest {
             Map<String, Double> metrics = EpisodeLearningPipeline.computeMetrics(episodes); // GH-90000
 
             // 2/5 success
-            assertThat(metrics.get("successRate [GH-90000]")).isEqualTo(2.0 / 5.0);
+            assertThat(metrics.get("successRate")).isEqualTo(2.0 / 5.0);
             // 2/5 failures (FAILURE + TIMEOUT); CANCELLED not counted as failure // GH-90000
-            assertThat(metrics.get("errorRate [GH-90000]")).isEqualTo(2.0 / 5.0);
-            assertThat(metrics.get("count [GH-90000]")).isEqualTo(5.0);
-            assertThat(metrics.get("avgLatencyMs [GH-90000]")).isEqualTo(300.0);  // (100+200+300+400+500)/5
+            assertThat(metrics.get("errorRate")).isEqualTo(2.0 / 5.0);
+            assertThat(metrics.get("count")).isEqualTo(5.0);
+            assertThat(metrics.get("avgLatencyMs")).isEqualTo(300.0);  // (100+200+300+400+500)/5
         }
 
         @Test
-        @DisplayName("handles episodes with no latencyMs field gracefully [GH-90000]")
+        @DisplayName("handles episodes with no latencyMs field gracefully")
         void computeMetrics_missingLatency_treatsAsZero() { // GH-90000
             Entity noLatency = Entity.of("e1", "dc_memory", // GH-90000
                     Map.of("agentId", AGENT_A, "outcome", "SUCCESS", "type", "EPISODIC")); // GH-90000
             Map<String, Double> metrics = EpisodeLearningPipeline.computeMetrics( // GH-90000
                     List.of(noLatency)); // GH-90000
 
-            assertThat(metrics.get("avgLatencyMs [GH-90000]")).isZero();
+            assertThat(metrics.get("avgLatencyMs")).isZero();
         }
     }
 
     // ─── run() ─────────────────────────────────────────────────────────────── // GH-90000
 
     @Nested
-    @DisplayName("run() [GH-90000]")
+    @DisplayName("run()")
     class RunTest {
 
         @Test
-        @DisplayName("returns empty result when DataCloud returns no episodes [GH-90000]")
+        @DisplayName("returns empty result when DataCloud returns no episodes")
         void run_noEpisodes_returnsEmptyResult() { // GH-90000
             when(dataCloud.query(eq(TENANT), anyString(), any(Query.class))) // GH-90000
                     .thenReturn(Promise.of(List.of())); // GH-90000
@@ -148,7 +148,7 @@ class EpisodeLearningPipelineTest {
         }
 
         @Test
-        @DisplayName("skips all skills when episode count is below minimum [GH-90000]")
+        @DisplayName("skips all skills when episode count is below minimum")
         void run_insufficientEpisodes_skipsAllSkills() { // GH-90000
             // 5 episodes for one skill — below default minEpisodeCount (10) // GH-90000
             List<Entity> fewEpisodes = List.of( // GH-90000
@@ -174,7 +174,7 @@ class EpisodeLearningPipelineTest {
         }
 
         @Test
-        @DisplayName("queues policy when gate passes with sufficient confidence [GH-90000]")
+        @DisplayName("queues policy when gate passes with sufficient confidence")
         void run_passingEvaluation_queuesForReview() { // GH-90000
             List<Entity> enoughEpisodes = successEpisodes(AGENT_A, 12); // GH-90000
 
@@ -195,7 +195,7 @@ class EpisodeLearningPipelineTest {
         }
 
         @Test
-        @DisplayName("does not queue when gate confidence is below reviewThreshold [GH-90000]")
+        @DisplayName("does not queue when gate confidence is below reviewThreshold")
         void run_lowConfidence_doesNotQueue() { // GH-90000
             // Use a pipeline with reviewThreshold=0.70 (default) but gate returns 0.60 // GH-90000
             List<Entity> enoughEpisodes = successEpisodes(AGENT_A, 12); // GH-90000
@@ -214,7 +214,7 @@ class EpisodeLearningPipelineTest {
         }
 
         @Test
-        @DisplayName("does not queue when gate explicitly fails (passed=false) [GH-90000]")
+        @DisplayName("does not queue when gate explicitly fails (passed=false)")
         void run_gateFailedExplicitly_doesNotQueue() { // GH-90000
             List<Entity> enoughEpisodes = successEpisodes(AGENT_A, 15); // GH-90000
 
@@ -232,7 +232,7 @@ class EpisodeLearningPipelineTest {
         }
 
         @Test
-        @DisplayName("evaluates multiple skills independently [GH-90000]")
+        @DisplayName("evaluates multiple skills independently")
         void run_multipleSkills_evaluatesEach() { // GH-90000
             List<Entity> mixed = new java.util.ArrayList<>(); // GH-90000
             mixed.addAll(successEpisodes(AGENT_A, 12)); // GH-90000
@@ -254,20 +254,20 @@ class EpisodeLearningPipelineTest {
         }
 
         @Test
-        @DisplayName("returns failed result when DataCloud throws [GH-90000]")
+        @DisplayName("returns failed result when DataCloud throws")
         void run_dataCloudError_returnsFailed() { // GH-90000
             when(dataCloud.query(eq(TENANT), anyString(), any(Query.class))) // GH-90000
-                    .thenReturn(Promise.ofException(new RuntimeException("dc unavailable [GH-90000]")));
+                    .thenReturn(Promise.ofException(new RuntimeException("dc unavailable")));
 
             EpisodeLearningPipeline.LearningPipelineResult result =
                     pipelineDefault.run(TENANT).getResult(); // GH-90000
 
             assertThat(result.success()).isFalse(); // GH-90000
-            assertThat(result.errorMessage()).contains("dc unavailable [GH-90000]");
+            assertThat(result.errorMessage()).contains("dc unavailable");
         }
 
         @Test
-        @DisplayName("review item context includes provenance and auto-promotable flag [GH-90000]")
+        @DisplayName("review item context includes provenance and auto-promotable flag")
         void run_autoPromotableConfidence_taggedInContext() { // GH-90000
             // Use a pipeline with autoPromoteThreshold=0.85 (default); gate returns 0.90 // GH-90000
             EpisodeLearningPipeline pipeline = new EpisodeLearningPipeline( // GH-90000
@@ -285,12 +285,12 @@ class EpisodeLearningPipelineTest {
             pipeline.run(TENANT).getResult(); // GH-90000
 
             ReviewItem submitted = captor.getValue(); // GH-90000
-            assertThat(submitted.getEvaluationSummary()).contains("auto-promotable [GH-90000]");
+            assertThat(submitted.getEvaluationSummary()).contains("auto-promotable");
             assertThat(submitted.getConfidenceScore()).isGreaterThanOrEqualTo(0.90); // GH-90000
         }
 
         @Test
-        @DisplayName("review item not tagged auto-promotable when confidence below threshold [GH-90000]")
+        @DisplayName("review item not tagged auto-promotable when confidence below threshold")
         void run_belowAutoPromoteThreshold_notTaggedAutoPromotable() { // GH-90000
             // Use default pipeline with autoPromoteThreshold=0.85; gate returns 0.80
             List<Entity> enoughEpisodes = successEpisodes(AGENT_A, 12); // GH-90000
@@ -306,12 +306,12 @@ class EpisodeLearningPipelineTest {
             pipelineDefault.run(TENANT).getResult(); // GH-90000
 
             ReviewItem submitted = captor.getValue(); // GH-90000
-            assertThat(submitted.getEvaluationSummary()).doesNotContain("auto-promotable [GH-90000]");
+            assertThat(submitted.getEvaluationSummary()).doesNotContain("auto-promotable");
             assertThat(submitted.getConfidenceScore()).isLessThan(0.85); // GH-90000
         }
 
         @Test
-        @DisplayName("enqueued review item has correct tenant, skill, and type [GH-90000]")
+        @DisplayName("enqueued review item has correct tenant, skill, and type")
         void run_passingEvaluation_reviewItemHasCorrectFields() { // GH-90000
             List<Entity> enoughEpisodes = successEpisodes(AGENT_A, 12); // GH-90000
 

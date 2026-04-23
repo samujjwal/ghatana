@@ -29,7 +29,7 @@ class CapabilityTaxonomyScannerTest {
         CapabilityTaxonomyScanner.TaxonomyResult result = 
             scanner.scanAgent("agent-1", "ML Agent", "deliberative", config); // GH-90000
         
-        assertTrue(result.inferredCapabilities().contains("ML_INFERENCE [GH-90000]"));
+        assertTrue(result.inferredCapabilities().contains("ML_INFERENCE"));
         assertTrue(result.confidence() > 0.5); // GH-90000
     }
 
@@ -43,7 +43,7 @@ class CapabilityTaxonomyScannerTest {
         CapabilityTaxonomyScanner.TaxonomyResult result = 
             scanner.scanAgent("agent-2", "NLP Agent", "reactive", config); // GH-90000
         
-        assertTrue(result.inferredCapabilities().contains("NATURAL_LANGUAGE [GH-90000]"));
+        assertTrue(result.inferredCapabilities().contains("NATURAL_LANGUAGE"));
     }
 
     @Test
@@ -56,7 +56,7 @@ class CapabilityTaxonomyScannerTest {
         CapabilityTaxonomyScanner.TaxonomyResult result = 
             scanner.scanAgent("agent-3", "Vision Agent", "reactive", config); // GH-90000
         
-        assertTrue(result.inferredCapabilities().contains("VISION [GH-90000]"));
+        assertTrue(result.inferredCapabilities().contains("VISION"));
     }
 
     @Test
@@ -68,7 +68,7 @@ class CapabilityTaxonomyScannerTest {
         CapabilityTaxonomyScanner.TaxonomyResult result = 
             scanner.scanAgent("agent-4", "Stream Agent", "reactive", config); // GH-90000
         
-        assertTrue(result.inferredCapabilities().contains("DATA_PROCESSING [GH-90000]"));
+        assertTrue(result.inferredCapabilities().contains("DATA_PROCESSING"));
     }
 
     @Test
@@ -78,7 +78,7 @@ class CapabilityTaxonomyScannerTest {
         CapabilityTaxonomyScanner.TaxonomyResult result = 
             scanner.scanAgent("agent-5", "Planning Agent", "deliberative", config); // GH-90000
         
-        assertTrue(result.inferredCapabilities().contains("WORKFLOW [GH-90000]"));
+        assertTrue(result.inferredCapabilities().contains("WORKFLOW"));
     }
 
     @Test
@@ -91,7 +91,7 @@ class CapabilityTaxonomyScannerTest {
         CapabilityTaxonomyScanner.TaxonomyResult result = 
             scanner.scanAgent("agent-6", "API Agent", "reactive", config); // GH-90000
         
-        assertTrue(result.inferredCapabilities().contains("INTEGRATION [GH-90000]"));
+        assertTrue(result.inferredCapabilities().contains("INTEGRATION"));
     }
 
     @Test
@@ -104,7 +104,7 @@ class CapabilityTaxonomyScannerTest {
         CapabilityTaxonomyScanner.TaxonomyResult result = 
             scanner.scanAgent("agent-7", "Security Agent", "reactive", config); // GH-90000
         
-        assertTrue(result.inferredCapabilities().contains("SECURITY [GH-90000]"));
+        assertTrue(result.inferredCapabilities().contains("SECURITY"));
     }
 
     @Test
@@ -133,9 +133,9 @@ class CapabilityTaxonomyScannerTest {
         List<CapabilityTaxonomyScanner.TaxonomyResult> results = scanner.scanAgents(agents); // GH-90000
         
         assertEquals(3, results.size()); // GH-90000
-        assertTrue(results.get(0).inferredCapabilities().contains("ML_INFERENCE [GH-90000]"));
-        assertTrue(results.get(1).inferredCapabilities().contains("NATURAL_LANGUAGE [GH-90000]"));
-        assertTrue(results.get(2).inferredCapabilities().contains("DATA_PROCESSING [GH-90000]"));
+        assertTrue(results.get(0).inferredCapabilities().contains("ML_INFERENCE"));
+        assertTrue(results.get(1).inferredCapabilities().contains("NATURAL_LANGUAGE"));
+        assertTrue(results.get(2).inferredCapabilities().contains("DATA_PROCESSING"));
     }
 
     @Test
@@ -150,12 +150,12 @@ class CapabilityTaxonomyScannerTest {
         List<CapabilityTaxonomyScanner.TaxonomyResult> results = scanner.scanAgents(agents); // GH-90000
         Map<String, Object> summary = scanner.summarizeCapabilities(results); // GH-90000
         
-        assertEquals(2, summary.get("totalAgents [GH-90000]"));
+        assertEquals(2, summary.get("totalAgents"));
         
-        @SuppressWarnings("unchecked [GH-90000]")
-        Map<String, Integer> capabilityCounts = (Map<String, Integer>) summary.get("capabilityCounts [GH-90000]");
+        @SuppressWarnings("unchecked")
+        Map<String, Integer> capabilityCounts = (Map<String, Integer>) summary.get("capabilityCounts");
         assertNotNull(capabilityCounts); // GH-90000
-        assertTrue(capabilityCounts.containsKey("ML_INFERENCE [GH-90000]"));
-        assertTrue(capabilityCounts.containsKey("NATURAL_LANGUAGE [GH-90000]"));
+        assertTrue(capabilityCounts.containsKey("ML_INFERENCE"));
+        assertTrue(capabilityCounts.containsKey("NATURAL_LANGUAGE"));
     }
 }

@@ -29,7 +29,11 @@ import java.util.concurrent.atomic.AtomicReference;
  *   <li>{@code AV_CB_FAILURE_THRESHOLD} — consecutive failures before opening (default 5)</li>
  *   <li>{@code AV_CB_RESET_TIMEOUT_MS} — ms to wait before probing in HALF_OPEN (default 30000)</li>
  * </ul>
- */
+  * @doc.type enum
+ * @doc.purpose Provides circuit breaker server interceptor functionality.
+ * @doc.layer product
+ * @doc.pattern Filter
+*/
 public class CircuitBreakerServerInterceptor implements ServerInterceptor {
 
     private static final Logger LOG = LoggerFactory.getLogger(CircuitBreakerServerInterceptor.class);

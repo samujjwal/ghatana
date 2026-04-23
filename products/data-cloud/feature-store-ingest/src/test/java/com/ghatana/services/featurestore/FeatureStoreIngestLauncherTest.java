@@ -11,13 +11,13 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("FeatureStoreIngestLauncher [GH-90000]")
+@DisplayName("FeatureStoreIngestLauncher")
 class FeatureStoreIngestLauncherTest {
 
     @Test
-    @DisplayName("extractFeatures uses deterministic ordering and sanitizes feature names [GH-90000]")
+    @DisplayName("extractFeatures uses deterministic ordering and sanitizes feature names")
     void extractFeaturesUsesDeterministicOrderingAndSanitizesFeatureNames() { // GH-90000
-        Instant timestamp = Instant.parse("2026-03-27T14:15:16Z [GH-90000]");
+        Instant timestamp = Instant.parse("2026-03-27T14:15:16Z");
         Map<String, Object> payload = new HashMap<>(); // GH-90000
         payload.put("z-score", 7); // GH-90000
         payload.put("amount", 12.5); // GH-90000
@@ -37,9 +37,9 @@ class FeatureStoreIngestLauncherTest {
     }
 
     @Test
-    @DisplayName("extractFeatures reuses one fallback entity id for all derived features [GH-90000]")
+    @DisplayName("extractFeatures reuses one fallback entity id for all derived features")
     void extractFeaturesReusesOneFallbackEntityIdForAllDerivedFeatures() { // GH-90000
-        Instant timestamp = Instant.parse("2026-03-27T00:00:00Z [GH-90000]");
+        Instant timestamp = Instant.parse("2026-03-27T00:00:00Z");
         Map<String, Object> payload = Map.of("segment", "gold"); // GH-90000
 
         List<MLFeature> features = FeatureStoreIngestLauncher.extractFeatures(null, payload, timestamp); // GH-90000

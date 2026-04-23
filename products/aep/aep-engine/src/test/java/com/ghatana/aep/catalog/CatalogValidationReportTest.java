@@ -12,11 +12,11 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@DisplayName("CatalogValidationReport [GH-90000]")
+@DisplayName("CatalogValidationReport")
 class CatalogValidationReportTest {
 
     @Test
-    @DisplayName("empty builder produces valid empty report [GH-90000]")
+    @DisplayName("empty builder produces valid empty report")
     void emptyBuilderProducesValidReport() { // GH-90000
         CatalogValidationReport report = CatalogValidationReport.builder().build(); // GH-90000
 
@@ -30,7 +30,7 @@ class CatalogValidationReportTest {
     }
 
     @Test
-    @DisplayName("builder aggregates counts issues and exposes immutable collections [GH-90000]")
+    @DisplayName("builder aggregates counts issues and exposes immutable collections")
     void builderAggregatesCountsAndIssues() { // GH-90000
         CatalogValidationReport report = CatalogValidationReport.builder() // GH-90000
                 .addLoadedCatalog("aep", 3) // GH-90000
@@ -46,10 +46,10 @@ class CatalogValidationReportTest {
         assertThat(report.loadedCatalogs()).isEqualTo(Map.of("aep", 3, "yappc", 5)); // GH-90000
         assertThat(report.errors()).singleElement() // GH-90000
                 .extracting(CatalogValidationReport.ValidationIssue::code) // GH-90000
-                .isEqualTo("LOAD_FAILED [GH-90000]");
+                .isEqualTo("LOAD_FAILED");
         assertThat(report.warnings()).singleElement() // GH-90000
                 .extracting(CatalogValidationReport.ValidationIssue::code) // GH-90000
-                .isEqualTo("DUPLICATE_AGENT [GH-90000]");
+                .isEqualTo("DUPLICATE_AGENT");
 
         assertThatThrownBy(() -> report.loadedCatalogs().put("data-cloud", 1)) // GH-90000
                 .isInstanceOf(UnsupportedOperationException.class); // GH-90000

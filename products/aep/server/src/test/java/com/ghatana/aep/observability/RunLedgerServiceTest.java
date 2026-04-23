@@ -37,7 +37,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("RunLedgerService [GH-90000]")
+@DisplayName("RunLedgerService")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class RunLedgerServiceTest extends EventloopTestBase {
 
@@ -61,28 +61,28 @@ class RunLedgerServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("recordRunStarted [GH-90000]")
+    @DisplayName("recordRunStarted")
     class RecordRunStarted {
 
         @Test
-        @DisplayName("appends run.started event to ledger [GH-90000]")
+        @DisplayName("appends run.started event to ledger")
         void appendsRunStartedEvent() { // GH-90000
             when(mockEventLogStore.append(any(TenantContext.class), any(EventEntry.class))) // GH-90000
-                .thenReturn(Promise.of(Offset.of("1 [GH-90000]")));
+                .thenReturn(Promise.of(Offset.of("1")));
 
             runPromise(() -> serviceWithLedger.recordRunStarted( // GH-90000
                 "run-1", "tenant-1", "pipeline-1", "trace-abc", Instant.now())); // GH-90000
 
             verify(mockEventLogStore).append(tenantCaptor.capture(), entryCaptor.capture()); // GH-90000
-            assertThat(tenantCaptor.getValue().tenantId()).isEqualTo("tenant-1 [GH-90000]");
+            assertThat(tenantCaptor.getValue().tenantId()).isEqualTo("tenant-1");
             EventEntry entry = entryCaptor.getValue(); // GH-90000
-            assertThat(entry.eventType()).isEqualTo("run.started [GH-90000]");
-            assertThat(entry.headers().get("runId [GH-90000]")).isEqualTo("run-1 [GH-90000]");
-            assertThat(entry.headers().get("pipelineId [GH-90000]")).isEqualTo("pipeline-1 [GH-90000]");
+            assertThat(entry.eventType()).isEqualTo("run.started");
+            assertThat(entry.headers().get("runId")).isEqualTo("run-1");
+            assertThat(entry.headers().get("pipelineId")).isEqualTo("pipeline-1");
         }
 
         @Test
-        @DisplayName("noop service does not call EventLogStore [GH-90000]")
+        @DisplayName("noop service does not call EventLogStore")
         void noopServiceDoesNotCallStore() { // GH-90000
             runPromise(() -> noopService.recordRunStarted( // GH-90000
                 "run-1", "tenant-1", null, null, Instant.now())); // GH-90000
@@ -90,28 +90,28 @@ class RunLedgerServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("uses 'event' as pipelineId when null [GH-90000]")
+        @DisplayName("uses 'event' as pipelineId when null")
         void usesFallbackPipelineId() { // GH-90000
             when(mockEventLogStore.append(any(TenantContext.class), any(EventEntry.class))) // GH-90000
-                .thenReturn(Promise.of(Offset.of("1 [GH-90000]")));
+                .thenReturn(Promise.of(Offset.of("1")));
 
             runPromise(() -> serviceWithLedger.recordRunStarted( // GH-90000
                 "run-1", "tenant-1", null, null, Instant.now())); // GH-90000
 
             verify(mockEventLogStore).append(any(), entryCaptor.capture()); // GH-90000
-            assertThat(entryCaptor.getValue().headers().get("pipelineId [GH-90000]")).isEqualTo("event [GH-90000]");
+            assertThat(entryCaptor.getValue().headers().get("pipelineId")).isEqualTo("event");
         }
     }
 
     @Nested
-    @DisplayName("recordRunCompleted [GH-90000]")
+    @DisplayName("recordRunCompleted")
     class RecordRunCompleted {
 
         @Test
-        @DisplayName("appends run.completed event with SUCCEEDED status in JSON [GH-90000]")
+        @DisplayName("appends run.completed event with SUCCEEDED status in JSON")
         void appendsRunCompletedEvent() { // GH-90000
             when(mockEventLogStore.append(any(TenantContext.class), any(EventEntry.class))) // GH-90000
-                .thenReturn(Promise.of(Offset.of("2 [GH-90000]")));
+                .thenReturn(Promise.of(Offset.of("2")));
             Instant start = Instant.now().minusMillis(200); // GH-90000
 
             runPromise(() -> serviceWithLedger.recordRunCompleted( // GH-90000
@@ -119,14 +119,14 @@ class RunLedgerServiceTest extends EventloopTestBase {
 
             verify(mockEventLogStore).append(tenantCaptor.capture(), entryCaptor.capture()); // GH-90000
             EventEntry entry = entryCaptor.getValue(); // GH-90000
-            assertThat(entry.eventType()).isEqualTo("run.completed [GH-90000]");
+            assertThat(entry.eventType()).isEqualTo("run.completed");
             String payloadJson = new String(entry.payload().array(), java.nio.charset.StandardCharsets.UTF_8); // GH-90000
-            assertThat(payloadJson).contains("SUCCEEDED [GH-90000]");
-            assertThat(payloadJson).contains("run-2 [GH-90000]");
+            assertThat(payloadJson).contains("SUCCEEDED");
+            assertThat(payloadJson).contains("run-2");
         }
 
         @Test
-        @DisplayName("noop service does not call EventLogStore [GH-90000]")
+        @DisplayName("noop service does not call EventLogStore")
         void noopServiceDoesNotCallStore() { // GH-90000
             runPromise(() -> noopService.recordRunCompleted( // GH-90000
                 "run-2", "tenant-1", null, null, Instant.now(), 0)); // GH-90000
@@ -135,14 +135,14 @@ class RunLedgerServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("recordRunFailed [GH-90000]")
+    @DisplayName("recordRunFailed")
     class RecordRunFailed {
 
         @Test
-        @DisplayName("appends run.failed event with FAILED status in JSON [GH-90000]")
+        @DisplayName("appends run.failed event with FAILED status in JSON")
         void appendsRunFailedEvent() { // GH-90000
             when(mockEventLogStore.append(any(TenantContext.class), any(EventEntry.class))) // GH-90000
-                .thenReturn(Promise.of(Offset.of("3 [GH-90000]")));
+                .thenReturn(Promise.of(Offset.of("3")));
             Instant start = Instant.now().minusMillis(100); // GH-90000
 
             runPromise(() -> serviceWithLedger.recordRunFailed( // GH-90000
@@ -151,22 +151,22 @@ class RunLedgerServiceTest extends EventloopTestBase {
 
             verify(mockEventLogStore).append(any(), entryCaptor.capture()); // GH-90000
             EventEntry entry = entryCaptor.getValue(); // GH-90000
-            assertThat(entry.eventType()).isEqualTo("run.failed [GH-90000]");
+            assertThat(entry.eventType()).isEqualTo("run.failed");
             String payloadJson = new String(entry.payload().array(), java.nio.charset.StandardCharsets.UTF_8); // GH-90000
-            assertThat(payloadJson).contains("FAILED [GH-90000]");
-            assertThat(payloadJson).contains("timeout [GH-90000]");
+            assertThat(payloadJson).contains("FAILED");
+            assertThat(payloadJson).contains("timeout");
         }
     }
 
     @Nested
-    @DisplayName("error resilience [GH-90000]")
+    @DisplayName("error resilience")
     class ErrorResilience {
 
         @Test
-        @DisplayName("ledger errors are swallowed and do not propagate [GH-90000]")
+        @DisplayName("ledger errors are swallowed and do not propagate")
         void ledgerErrorsDoNotPropagate() { // GH-90000
             when(mockEventLogStore.append(any(TenantContext.class), any(EventEntry.class))) // GH-90000
-                .thenReturn(Promise.ofException(new RuntimeException("store failure [GH-90000]")));
+                .thenReturn(Promise.ofException(new RuntimeException("store failure")));
 
             // Should complete without throwing
             runPromise(() -> serviceWithLedger.recordRunStarted( // GH-90000
@@ -175,14 +175,14 @@ class RunLedgerServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("recordReviewDecision [GH-90000]")
+    @DisplayName("recordReviewDecision")
     class RecordReviewDecision {
 
         @Test
-        @DisplayName("appends a step-completed event with review.decision type [GH-90000]")
+        @DisplayName("appends a step-completed event with review.decision type")
         void appendsStepCompletedEvent() { // GH-90000
             when(mockEventLogStore.append(any(TenantContext.class), any(EventEntry.class))) // GH-90000
-                .thenReturn(Promise.of(Offset.of("4 [GH-90000]")));
+                .thenReturn(Promise.of(Offset.of("4")));
 
             runPromise(() -> serviceWithLedger.recordReviewDecision( // GH-90000
                 "item-1", "run-1", "tenant-1", "skill-abc", "APPROVED", Instant.now())); // GH-90000
@@ -191,8 +191,8 @@ class RunLedgerServiceTest extends EventloopTestBase {
             String payloadJson = new String( // GH-90000
                 entryCaptor.getValue().payload().array(), // GH-90000
                 java.nio.charset.StandardCharsets.UTF_8);
-            assertThat(payloadJson).contains("review.decision [GH-90000]");
-            assertThat(payloadJson).contains("APPROVED [GH-90000]");
+            assertThat(payloadJson).contains("review.decision");
+            assertThat(payloadJson).contains("APPROVED");
         }
     }
 }

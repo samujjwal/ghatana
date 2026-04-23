@@ -31,7 +31,7 @@ import static org.mockito.Mockito.verify;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("YappcPluginBridgeExtension [GH-90000]")
+@DisplayName("YappcPluginBridgeExtension")
 class YappcPluginBridgeExtensionTest extends EventloopTestBase {
 
     @Mock
@@ -52,34 +52,34 @@ class YappcPluginBridgeExtensionTest extends EventloopTestBase {
     // ==================== Identity ====================
 
     @Test
-    @DisplayName("extension ID is 'yappc-plugin-bridge' [GH-90000]")
+    @DisplayName("extension ID is 'yappc-plugin-bridge'")
     void extensionIdIsCorrect() { // GH-90000
-        assertThat(extension.getExtensionId()).isEqualTo("yappc-plugin-bridge [GH-90000]");
+        assertThat(extension.getExtensionId()).isEqualTo("yappc-plugin-bridge");
     }
 
     @Test
-    @DisplayName("extension name is human-readable [GH-90000]")
+    @DisplayName("extension name is human-readable")
     void extensionNameIsHumanReadable() { // GH-90000
-        assertThat(extension.getName()).isEqualTo("YAPPC Plugin Bridge [GH-90000]");
+        assertThat(extension.getName()).isEqualTo("YAPPC Plugin Bridge");
     }
 
     @Test
-    @DisplayName("extension version follows semver [GH-90000]")
+    @DisplayName("extension version follows semver")
     void extensionVersionIsSemver() { // GH-90000
-        assertThat(extension.getVersion()).matches("\\d+\\.\\d+\\.\\d+.* [GH-90000]");
+        assertThat(extension.getVersion()).matches("\\d+\\.\\d+\\.\\d+.*");
     }
 
     // ==================== Descriptor ====================
 
     @Test
-    @DisplayName("descriptor type is EXTENSION [GH-90000]")
+    @DisplayName("descriptor type is EXTENSION")
     void descriptorTypeIsExtension() { // GH-90000
         KernelDescriptor descriptor = extension.getDescriptor(); // GH-90000
         assertThat(descriptor.getType()).isEqualTo(KernelDescriptor.DescriptorType.EXTENSION); // GH-90000
     }
 
     @Test
-    @DisplayName("descriptor ID matches extension ID [GH-90000]")
+    @DisplayName("descriptor ID matches extension ID")
     void descriptorIdMatchesExtensionId() { // GH-90000
         assertThat(extension.getDescriptor().getDescriptorId()).isEqualTo(extension.getExtensionId()); // GH-90000
     }
@@ -87,36 +87,36 @@ class YappcPluginBridgeExtensionTest extends EventloopTestBase {
     // ==================== Capabilities ====================
 
     @Test
-    @DisplayName("contributes YAPPC registry and validator capabilities [GH-90000]")
+    @DisplayName("contributes YAPPC registry and validator capabilities")
     void contributesTwoCapabilities() { // GH-90000
         Set<KernelCapability> caps = extension.getContributedCapabilities(); // GH-90000
         assertThat(caps).hasSize(2); // GH-90000
     }
 
     @Test
-    @DisplayName("contributes yappc.plugin-registry capability [GH-90000]")
+    @DisplayName("contributes yappc.plugin-registry capability")
     void contributesRegistryCapability() { // GH-90000
         Set<KernelCapability> caps = extension.getContributedCapabilities(); // GH-90000
-        assertThat(caps).anyMatch(c -> c.getCapabilityId().equals("yappc.plugin-registry [GH-90000]"));
+        assertThat(caps).anyMatch(c -> c.getCapabilityId().equals("yappc.plugin-registry"));
     }
 
     @Test
-    @DisplayName("contributes yappc.code-validators capability [GH-90000]")
+    @DisplayName("contributes yappc.code-validators capability")
     void contributesValidatorCapability() { // GH-90000
         Set<KernelCapability> caps = extension.getContributedCapabilities(); // GH-90000
-        assertThat(caps).anyMatch(c -> c.getCapabilityId().equals("yappc.code-validators [GH-90000]"));
+        assertThat(caps).anyMatch(c -> c.getCapabilityId().equals("yappc.code-validators"));
     }
 
     // ==================== Compatibility ====================
 
     @Test
-    @DisplayName("is compatible with any non-null module [GH-90000]")
+    @DisplayName("is compatible with any non-null module")
     void isCompatibleWithAnyModule() { // GH-90000
         assertThat(extension.isCompatible(hostModule)).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("returns false for null host module [GH-90000]")
+    @DisplayName("returns false for null host module")
     void returnsFalseForNullModule() { // GH-90000
         assertThat(extension.isCompatible(null)).isFalse(); // GH-90000
     }
@@ -124,7 +124,7 @@ class YappcPluginBridgeExtensionTest extends EventloopTestBase {
     // ==================== Lifecycle ====================
 
     @Test
-    @DisplayName("onModuleInitialized registers PluginRegistry into context [GH-90000]")
+    @DisplayName("onModuleInitialized registers PluginRegistry into context")
     void onModuleInitializedRegistersRegistry() { // GH-90000
         extension.onModuleInitialized(context); // GH-90000
 
@@ -132,7 +132,7 @@ class YappcPluginBridgeExtensionTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("onModuleInitialized is idempotent — second call is no-op [GH-90000]")
+    @DisplayName("onModuleInitialized is idempotent — second call is no-op")
     void onModuleInitializedIsIdempotent() { // GH-90000
         extension.onModuleInitialized(context); // GH-90000
         extension.onModuleInitialized(context); // GH-90000
@@ -141,7 +141,7 @@ class YappcPluginBridgeExtensionTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("full lifecycle runs without error [GH-90000]")
+    @DisplayName("full lifecycle runs without error")
     void fullLifecycleRunsWithoutError() { // GH-90000
         extension.onModuleInitialized(context); // GH-90000
         extension.onModuleStarted(context); // GH-90000
@@ -151,7 +151,7 @@ class YappcPluginBridgeExtensionTest extends EventloopTestBase {
     // ==================== Construction guard ====================
 
     @Test
-    @DisplayName("null registry is rejected at construction [GH-90000]")
+    @DisplayName("null registry is rejected at construction")
     void nullRegistryIsRejected() { // GH-90000
         assertThatThrownBy(() -> new YappcPluginBridgeExtension(null)) // GH-90000
             .isInstanceOf(NullPointerException.class); // GH-90000

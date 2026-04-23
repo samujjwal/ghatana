@@ -7,7 +7,8 @@ package com.ghatana.agent.learning.retention;
  * @doc.type class
  * @doc.purpose Power-law decay function
  * @doc.layer agent-learning
- */
+  * @doc.pattern Component
+*/
 public class PowerLawDecay implements DecayFunction {
 
     private final double scale;

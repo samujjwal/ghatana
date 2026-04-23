@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Ghatana Kernel Team
  * @since 1.0.0
  */
-@DisplayName("Security Framework Integration Tests [GH-90000]")
+@DisplayName("Security Framework Integration Tests")
 class SecurityFrameworkIntegrationTest {
 
     private MockKernelSecurityManager securityManager;
@@ -34,7 +34,7 @@ class SecurityFrameworkIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should create security context with tenant and user [GH-90000]")
+    @DisplayName("Should create security context with tenant and user")
     void testCreateSecurityContext() { // GH-90000
         SecurityContext context = securityManager.createSecurityContext("tenant-1", "user-1"); // GH-90000
 
@@ -45,7 +45,7 @@ class SecurityFrameworkIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should authorize action with valid security context [GH-90000]")
+    @DisplayName("Should authorize action with valid security context")
     void testAuthorizeAction() { // GH-90000
         SecurityContext context = securityManager.createSecurityContext("tenant-1", "user-1"); // GH-90000
         KernelSecurityManager.Action action = new KernelSecurityManager.Action( // GH-90000
@@ -58,7 +58,7 @@ class SecurityFrameworkIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should enforce security policy [GH-90000]")
+    @DisplayName("Should enforce security policy")
     void testEnforceSecurityPolicy() { // GH-90000
         SecurityContext context = securityManager.createSecurityContext("tenant-1", "user-1"); // GH-90000
         Policy policy = new MockPolicy("test-policy", Policy.PolicyType.AUTHORIZATION); // GH-90000
@@ -67,7 +67,7 @@ class SecurityFrameworkIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should check consent status for data request [GH-90000]")
+    @DisplayName("Should check consent status for data request")
     void testCheckConsent() { // GH-90000
         PrivacyManager.DataRequest request = new PrivacyManager.DataRequest( // GH-90000
             "user-1", "patient-data", "treatment", Map.of() // GH-90000
@@ -80,7 +80,7 @@ class SecurityFrameworkIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should classify data according to privacy rules [GH-90000]")
+    @DisplayName("Should classify data according to privacy rules")
     void testClassifyData() { // GH-90000
         Object sensitiveData = Map.of("ssn", "123-45-6789", "name", "John Doe"); // GH-90000
 
@@ -91,7 +91,7 @@ class SecurityFrameworkIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should enforce data residency requirements [GH-90000]")
+    @DisplayName("Should enforce data residency requirements")
     void testEnforceResidency() { // GH-90000
         PrivacyManager.DataLocation location = new PrivacyManager.DataLocation( // GH-90000
             "us-east-1", "USA", "datacenter-1"
@@ -103,13 +103,13 @@ class SecurityFrameworkIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should enforce policy with authenticated context [GH-90000]")
+    @DisplayName("Should enforce policy with authenticated context")
     void testPolicyEnforcementWithAuthentication() { // GH-90000
         SecurityContext context = securityManager.createSecurityContext("tenant-1", "user-1"); // GH-90000
         PolicyEnforcementPoint.Request request = PolicyEnforcementPoint.Request.builder() // GH-90000
-            .resource("patient-records [GH-90000]")
-            .operation("read [GH-90000]")
-            .scope("phr [GH-90000]")
+            .resource("patient-records")
+            .operation("read")
+            .scope("phr")
             .build(); // GH-90000
 
         PolicyEnforcementPoint.EnforcementDecision decision =
@@ -119,13 +119,13 @@ class SecurityFrameworkIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should deny policy enforcement without authentication [GH-90000]")
+    @DisplayName("Should deny policy enforcement without authentication")
     void testPolicyEnforcementWithoutAuthentication() { // GH-90000
         SecurityContext context = new MockSecurityContext("tenant-1", "user-1", false); // GH-90000
         PolicyEnforcementPoint.Request request = PolicyEnforcementPoint.Request.builder() // GH-90000
-            .resource("patient-records [GH-90000]")
-            .operation("read [GH-90000]")
-            .scope("phr [GH-90000]")
+            .resource("patient-records")
+            .operation("read")
+            .scope("phr")
             .build(); // GH-90000
 
         PolicyEnforcementPoint.EnforcementDecision decision =
@@ -136,16 +136,16 @@ class SecurityFrameworkIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should enforce consent requirements [GH-90000]")
+    @DisplayName("Should enforce consent requirements")
     void testPolicyEnforcementWithConsent() { // GH-90000
         SecurityContext context = securityManager.createSecurityContext("tenant-1", "user-1"); // GH-90000
         PolicyEnforcementPoint.Request request = PolicyEnforcementPoint.Request.builder() // GH-90000
-            .resource("patient-records [GH-90000]")
-            .operation("read [GH-90000]")
-            .scope("phr [GH-90000]")
+            .resource("patient-records")
+            .operation("read")
+            .scope("phr")
             .requiresConsent(true) // GH-90000
-            .dataType("patient-data [GH-90000]")
-            .purpose("treatment [GH-90000]")
+            .dataType("patient-data")
+            .purpose("treatment")
             .build(); // GH-90000
 
         PolicyEnforcementPoint.EnforcementDecision decision =
@@ -163,8 +163,8 @@ class SecurityFrameworkIntegrationTest {
                 .tenantId(tenantId) // GH-90000
                 .userId(userId) // GH-90000
                 .sessionId("session-" + System.currentTimeMillis()) // GH-90000
-                .role("user [GH-90000]")
-                .permission("read:patient-records [GH-90000]")
+                .role("user")
+                .permission("read:patient-records")
                 .authenticated(true) // GH-90000
                 .build(); // GH-90000
         }
@@ -177,7 +177,7 @@ class SecurityFrameworkIntegrationTest {
         @Override
         public void enforceSecurityPolicy(SecurityContext context, Policy policy) { // GH-90000
             if (!context.isAuthenticated()) { // GH-90000
-                throw new SecurityPolicyViolationException("Not authenticated [GH-90000]");
+                throw new SecurityPolicyViolationException("Not authenticated");
             }
         }
 

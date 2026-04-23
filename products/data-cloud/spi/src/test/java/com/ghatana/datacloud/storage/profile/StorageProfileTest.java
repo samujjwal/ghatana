@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("Storage Profile Tests [GH-90000]")
+@DisplayName("Storage Profile Tests")
 class StorageProfileTest extends EventloopTestBase {
 
     // ── Storage profile model ─────────────────────────────────────────────────
@@ -35,15 +35,15 @@ class StorageProfileTest extends EventloopTestBase {
             Objects.requireNonNull(profileId, "profileId must not be null"); // GH-90000
             Objects.requireNonNull(tenantId, "tenantId must not be null"); // GH-90000
             Objects.requireNonNull(storageType, "storageType must not be null"); // GH-90000
-            if (replicationFactor < 1) throw new IllegalArgumentException("replicationFactor must be >= 1 [GH-90000]");
+            if (replicationFactor < 1) throw new IllegalArgumentException("replicationFactor must be >= 1");
             if (storageType == StorageType.POSTGRES) { // GH-90000
-                if (!config.containsKey("jdbcUrl [GH-90000]")) {
-                    throw new IllegalArgumentException("POSTGRES profile requires jdbcUrl [GH-90000]");
+                if (!config.containsKey("jdbcUrl")) {
+                    throw new IllegalArgumentException("POSTGRES profile requires jdbcUrl");
                 }
             }
             if (storageType == StorageType.S3) { // GH-90000
-                if (!config.containsKey("bucket [GH-90000]")) {
-                    throw new IllegalArgumentException("S3 profile requires bucket [GH-90000]");
+                if (!config.containsKey("bucket")) {
+                    throw new IllegalArgumentException("S3 profile requires bucket");
                 }
             }
         }
@@ -59,7 +59,7 @@ class StorageProfileTest extends EventloopTestBase {
     // ── Profile creation ──────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("create stores a valid storage profile [GH-90000]")
+    @DisplayName("create stores a valid storage profile")
     void createStoresValidProfile() { // GH-90000
         StorageProfile profile = new StorageProfile( // GH-90000
                 "profile-1", "tenant-A", StorageType.IN_MEMORY,
@@ -71,7 +71,7 @@ class StorageProfileTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("create a POSTGRES profile with valid jdbc URL succeeds [GH-90000]")
+    @DisplayName("create a POSTGRES profile with valid jdbc URL succeeds")
     void createPostgresProfileWithValidJdbcUrl() { // GH-90000
         StorageProfile profile = new StorageProfile( // GH-90000
                 "profile-pg", "tenant-PG", StorageType.POSTGRES,
@@ -82,7 +82,7 @@ class StorageProfileTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("create an S3 profile with bucket config succeeds [GH-90000]")
+    @DisplayName("create an S3 profile with bucket config succeeds")
     void createS3ProfileWithBucketConfig() { // GH-90000
         StorageProfile profile = new StorageProfile( // GH-90000
                 "profile-s3", "tenant-S3", StorageType.S3,
@@ -95,7 +95,7 @@ class StorageProfileTest extends EventloopTestBase {
     // ── Validation ────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("create fails when profileId is null [GH-90000]")
+    @DisplayName("create fails when profileId is null")
     void createFailsWhenProfileIdIsNull() { // GH-90000
         StorageProfile invalid = new StorageProfile( // GH-90000
                 null, "tenant-V", StorageType.IN_MEMORY, Map.of(), false, 1); // GH-90000
@@ -105,53 +105,53 @@ class StorageProfileTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("create fails when replicationFactor is less than 1 [GH-90000]")
+    @DisplayName("create fails when replicationFactor is less than 1")
     void createFailsWhenReplicationFactorLessThanOne() { // GH-90000
         StorageProfile invalid = new StorageProfile( // GH-90000
                 "profile-bad", "tenant-V", StorageType.IN_MEMORY, Map.of(), false, 0); // GH-90000
 
         assertThatThrownBy(() -> profileRegistry.create(invalid)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("replicationFactor [GH-90000]");
+                .hasMessageContaining("replicationFactor");
     }
 
     @Test
-    @DisplayName("POSTGRES profile without jdbcUrl fails validation [GH-90000]")
+    @DisplayName("POSTGRES profile without jdbcUrl fails validation")
     void postgresProfileWithoutJdbcUrlFailsValidation() { // GH-90000
         StorageProfile invalid = new StorageProfile( // GH-90000
                 "profile-pgbad", "tenant-V", StorageType.POSTGRES, Map.of(), false, 1); // GH-90000
 
         assertThatThrownBy(() -> profileRegistry.create(invalid)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("jdbcUrl [GH-90000]");
+                .hasMessageContaining("jdbcUrl");
     }
 
     // ── Profile application ───────────────────────────────────────────────────
 
     @Test
-    @DisplayName("apply returns the profile for the given tenant [GH-90000]")
+    @DisplayName("apply returns the profile for the given tenant")
     void applyReturnsProfileForTenant() { // GH-90000
         StorageProfile profile = new StorageProfile( // GH-90000
                 "profile-app", "tenant-apply", StorageType.REDIS,
                 Map.of("host", "redis://localhost:6379"), false, 1); // GH-90000
         profileRegistry.create(profile); // GH-90000
 
-        Optional<StorageProfile> applied = profileRegistry.findByTenant("tenant-apply [GH-90000]");
+        Optional<StorageProfile> applied = profileRegistry.findByTenant("tenant-apply");
         assertThat(applied).isPresent(); // GH-90000
         assertThat(applied.get().storageType()).isEqualTo(StorageType.REDIS); // GH-90000
     }
 
     @Test
-    @DisplayName("apply returns empty for tenant with no profile [GH-90000]")
+    @DisplayName("apply returns empty for tenant with no profile")
     void applyReturnsEmptyForTenantWithNoProfile() { // GH-90000
-        Optional<StorageProfile> applied = profileRegistry.findByTenant("tenant-ghost [GH-90000]");
+        Optional<StorageProfile> applied = profileRegistry.findByTenant("tenant-ghost");
         assertThat(applied).isEmpty(); // GH-90000
     }
 
     // ── Profile migration ─────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("migration replaces old profile with new version [GH-90000]")
+    @DisplayName("migration replaces old profile with new version")
     void migrationReplacesOldProfileWithNewVersion() { // GH-90000
         StorageProfile v1 = new StorageProfile( // GH-90000
                 "profile-mig", "tenant-mig", StorageType.IN_MEMORY, Map.of(), false, 1); // GH-90000
@@ -168,7 +168,7 @@ class StorageProfileTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("migration fails if source profile does not match registered version [GH-90000]")
+    @DisplayName("migration fails if source profile does not match registered version")
     void migrationFailsIfSourceProfileDoesNotMatch() { // GH-90000
         StorageProfile registered = new StorageProfile( // GH-90000
                 "profile-mis", "tenant-mis", StorageType.IN_MEMORY, Map.of(), false, 1); // GH-90000
@@ -208,7 +208,7 @@ class StorageProfileTest extends EventloopTestBase {
             String k = key(source.profileId(), source.tenantId()); // GH-90000
             StorageProfile current = store.get(k); // GH-90000
             if (current == null || current.storageType() != source.storageType()) { // GH-90000
-                throw new IllegalStateException("Source profile does not match current registration [GH-90000]");
+                throw new IllegalStateException("Source profile does not match current registration");
             }
             target.validate(); // GH-90000
             store.put(k, target); // GH-90000

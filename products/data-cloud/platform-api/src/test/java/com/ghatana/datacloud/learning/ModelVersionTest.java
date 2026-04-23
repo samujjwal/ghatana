@@ -32,7 +32,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("ModelVersion – Versioning and Rollback (D012) [GH-90000]")
+@DisplayName("ModelVersion – Versioning and Rollback (D012)")
 class ModelVersionTest extends EventloopTestBase {
 
     @Mock
@@ -43,11 +43,11 @@ class ModelVersionTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Version Creation [GH-90000]")
+    @DisplayName("Version Creation")
     class VersionCreationTests {
 
         @Test
-        @DisplayName("[D012]: save_creates_new_version [GH-90000]")
+        @DisplayName("[D012]: save_creates_new_version")
         void saveCreatesNewVersion() { // GH-90000
             String modelId = "model-001";
 
@@ -65,12 +65,12 @@ class ModelVersionTest extends EventloopTestBase {
                 versionRepository.save(version) // GH-90000
             );
 
-            assertThat(result.id()).isEqualTo("v-001 [GH-90000]");
-            assertThat(result.versionNumber()).isEqualTo("1.0.0 [GH-90000]");
+            assertThat(result.id()).isEqualTo("v-001");
+            assertThat(result.versionNumber()).isEqualTo("1.0.0");
         }
 
         @Test
-        @DisplayName("[D012]: version_has_unique_version_number [GH-90000]")
+        @DisplayName("[D012]: version_has_unique_version_number")
         void versionHasUniqueVersionNumber() { // GH-90000
             String modelId = "model-001";
 
@@ -93,11 +93,11 @@ class ModelVersionTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Tag Management [GH-90000]")
+    @DisplayName("Tag Management")
     class TagManagementTests {
 
         @Test
-        @DisplayName("[D012]: tag_version_adds_tag [GH-90000]")
+        @DisplayName("[D012]: tag_version_adds_tag")
         void tagVersionAddsTag() { // GH-90000
             String versionId = "v-001";
             String tag = "production";
@@ -111,7 +111,7 @@ class ModelVersionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D012]: version_has_tag_checks_correctly [GH-90000]")
+        @DisplayName("[D012]: version_has_tag_checks_correctly")
         void versionHasTagChecksCorrectly() { // GH-90000
             ModelVersionRepository.ModelVersion version = new ModelVersionRepository.ModelVersion( // GH-90000
                 "v-001", "model-001", "tenant-alpha", "1.0.0",
@@ -119,17 +119,17 @@ class ModelVersionTest extends EventloopTestBase {
                 null, null, Instant.now(), "user", true // GH-90000
             );
 
-            assertThat(version.hasTag("production [GH-90000]")).isTrue();
-            assertThat(version.hasTag("stable [GH-90000]")).isTrue();
-            assertThat(version.hasTag("experimental [GH-90000]")).isFalse();
+            assertThat(version.hasTag("production")).isTrue();
+            assertThat(version.hasTag("stable")).isTrue();
+            assertThat(version.hasTag("experimental")).isFalse();
         }
 
         @Test
-        @DisplayName("[D012]: production_tag_detected [GH-90000]")
+        @DisplayName("[D012]: production_tag_detected")
         void productionTagDetected() { // GH-90000
             ModelVersionRepository.ModelVersion prod = new ModelVersionRepository.ModelVersion( // GH-90000
                 "v-001", "model-001", "tenant-alpha", "1.0.0",
-                List.of("production [GH-90000]"), "Prod version", "/path", 1000,
+                List.of("production"), "Prod version", "/path", 1000,
                 null, null, Instant.now(), "user", true // GH-90000
             );
 
@@ -137,14 +137,14 @@ class ModelVersionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D012]: find_by_tag_returns_correct_version [GH-90000]")
+        @DisplayName("[D012]: find_by_tag_returns_correct_version")
         void findByTagReturnsCorrectVersion() { // GH-90000
             String modelId = "model-001";
             String tag = "production";
 
             ModelVersionRepository.ModelVersion version = new ModelVersionRepository.ModelVersion( // GH-90000
                 "v-prod", modelId, "tenant-alpha", "1.2.0",
-                List.of("production [GH-90000]"), "Production ready", "/models/prod", 1024000,
+                List.of("production"), "Production ready", "/models/prod", 1024000,
                 new ModelVersionRepository.ModelMetrics(0.90, 0.88, 0.87, 0.875, 0.2, 2000, 400, 7200000), // GH-90000
                 "job-prod", Instant.now(), "user-001", true // GH-90000
             );
@@ -166,18 +166,18 @@ class ModelVersionTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Rollback [GH-90000]")
+    @DisplayName("Rollback")
     class RollbackTests {
 
         @Test
-        @DisplayName("[D012]: rollback_to_previous_version [GH-90000]")
+        @DisplayName("[D012]: rollback_to_previous_version")
         void rollbackToPreviousVersion() { // GH-90000
             String modelId = "model-001";
             String targetVersionId = "v-001";
 
             ModelVersionRepository.ModelVersion previous = new ModelVersionRepository.ModelVersion( // GH-90000
                 targetVersionId, modelId, "tenant-alpha", "1.0.0",
-                List.of("stable [GH-90000]"), "Previous stable", "/models/v1", 1000,
+                List.of("stable"), "Previous stable", "/models/v1", 1000,
                 null, null, Instant.now(), "user", false // GH-90000
             );
 
@@ -192,7 +192,7 @@ class ModelVersionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D012]: rollback_makes_version_current [GH-90000]")
+        @DisplayName("[D012]: rollback_makes_version_current")
         void rollbackMakesVersionCurrent() { // GH-90000
             String modelId = "model-001";
             String targetVersionId = "v-stable";
@@ -219,11 +219,11 @@ class ModelVersionTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Version Listing [GH-90000]")
+    @DisplayName("Version Listing")
     class VersionListingTests {
 
         @Test
-        @DisplayName("[D012]: list_versions_returns_all_versions [GH-90000]")
+        @DisplayName("[D012]: list_versions_returns_all_versions")
         void listVersionsReturnsAllVersions() { // GH-90000
             String modelId = "model-001";
 
@@ -231,9 +231,9 @@ class ModelVersionTest extends EventloopTestBase {
                 new ModelVersionRepository.ModelVersion("v-1", modelId, "tenant-alpha", "1.0.0", // GH-90000
                     List.of(), "V1", "/path1", 1000, null, null, Instant.now(), "user", false), // GH-90000
                 new ModelVersionRepository.ModelVersion("v-2", modelId, "tenant-alpha", "1.1.0", // GH-90000
-                    List.of("beta [GH-90000]"), "V2", "/path2", 1100, null, null, Instant.now(), "user", false),
+                    List.of("beta"), "V2", "/path2", 1100, null, null, Instant.now(), "user", false),
                 new ModelVersionRepository.ModelVersion("v-3", modelId, "tenant-alpha", "1.2.0", // GH-90000
-                    List.of("production [GH-90000]"), "V3", "/path3", 1200, null, null, Instant.now(), "user", true)
+                    List.of("production"), "V3", "/path3", 1200, null, null, Instant.now(), "user", true)
             );
 
             when(versionRepository.listVersions(modelId)) // GH-90000
@@ -248,13 +248,13 @@ class ModelVersionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D012]: find_latest_returns_most_recent [GH-90000]")
+        @DisplayName("[D012]: find_latest_returns_most_recent")
         void findLatestReturnsMostRecent() { // GH-90000
             String modelId = "model-001";
 
             ModelVersionRepository.ModelVersion latest = new ModelVersionRepository.ModelVersion( // GH-90000
                 "v-latest", modelId, "tenant-alpha", "2.0.0",
-                List.of("latest [GH-90000]"), "Latest version", "/models/latest", 2000,
+                List.of("latest"), "Latest version", "/models/latest", 2000,
                 null, null, Instant.now(), "user", true // GH-90000
             );
 
@@ -266,7 +266,7 @@ class ModelVersionTest extends EventloopTestBase {
             );
 
             assertThat(result).isPresent(); // GH-90000
-            assertThat(result.get().versionNumber()).isEqualTo("2.0.0 [GH-90000]");
+            assertThat(result.get().versionNumber()).isEqualTo("2.0.0");
         }
     }
 
@@ -275,11 +275,11 @@ class ModelVersionTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Version Metrics [GH-90000]")
+    @DisplayName("Version Metrics")
     class MetricsTests {
 
         @Test
-        @DisplayName("[D012]: version_includes_training_metrics [GH-90000]")
+        @DisplayName("[D012]: version_includes_training_metrics")
         void versionIncludesTrainingMetrics() { // GH-90000
             ModelVersionRepository.ModelMetrics metrics = new ModelVersionRepository.ModelMetrics( // GH-90000
                 0.92, 0.90, 0.88, 0.89, 0.15, 5000, 1000, 14400000
@@ -297,7 +297,7 @@ class ModelVersionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D012]: metrics_meets_threshold [GH-90000]")
+        @DisplayName("[D012]: metrics_meets_threshold")
         void metricsMeetsThreshold() { // GH-90000
             ModelVersionRepository.ModelMetrics good = new ModelVersionRepository.ModelMetrics( // GH-90000
                 0.92, 0.90, 0.88, 0.89, 0.15, 1000, 200, 3600000
@@ -318,11 +318,11 @@ class ModelVersionTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Version Deletion [GH-90000]")
+    @DisplayName("Version Deletion")
     class VersionDeletionTests {
 
         @Test
-        @DisplayName("[D012]: delete_version_removes_version [GH-90000]")
+        @DisplayName("[D012]: delete_version_removes_version")
         void deleteVersionRemovesVersion() { // GH-90000
             String versionId = "v-001";
 
@@ -337,7 +337,7 @@ class ModelVersionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D012]: cannot_delete_current_version [GH-90000]")
+        @DisplayName("[D012]: cannot_delete_current_version")
         void cannotDeleteCurrentVersion() { // GH-90000
             String versionId = "v-current";
 

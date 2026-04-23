@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
  * Unit tests for {@link VideoAnalysisService} (AV-009.4). // GH-90000
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("VideoAnalysisService — AV-009.4 [GH-90000]")
+@DisplayName("VideoAnalysisService — AV-009.4")
 class VideoAnalysisServiceTest {
 
     @Mock
@@ -59,12 +59,12 @@ class VideoAnalysisServiceTest {
     }
 
     @Test
-    @DisplayName("analyze processes frames and returns result with correct frame count [GH-90000]")
+    @DisplayName("analyze processes frames and returns result with correct frame count")
     void analyzeReturnsCorrectFrameCount() throws IOException { // GH-90000
         // Arrange: 3 frames in temp dir
-        Path frame1 = tempDir.resolve("frame_0001.jpg [GH-90000]");
-        Path frame2 = tempDir.resolve("frame_0002.jpg [GH-90000]");
-        Path frame3 = tempDir.resolve("frame_0003.jpg [GH-90000]");
+        Path frame1 = tempDir.resolve("frame_0001.jpg");
+        Path frame2 = tempDir.resolve("frame_0002.jpg");
+        Path frame3 = tempDir.resolve("frame_0003.jpg");
         Files.write(frame1, new byte[]{0x01}); // GH-90000
         Files.write(frame2, new byte[]{0x02}); // GH-90000
         Files.write(frame3, new byte[]{0x03}); // GH-90000
@@ -75,7 +75,7 @@ class VideoAnalysisServiceTest {
                 new VideoFrameExtractor.ExtractedFrame(frame3, 2000L, 2) // GH-90000
         );
 
-        Path fakeVideo = tempDir.resolve("test.mp4 [GH-90000]");
+        Path fakeVideo = tempDir.resolve("test.mp4");
         Files.write(fakeVideo, new byte[]{0x00}); // GH-90000
 
         when(frameExtractor.extractFrames(eq(fakeVideo), any(), any())).thenReturn(frames); // GH-90000
@@ -96,11 +96,11 @@ class VideoAnalysisServiceTest {
     }
 
     @Test
-    @DisplayName("classCounts returns aggregated object class frequencies [GH-90000]")
+    @DisplayName("classCounts returns aggregated object class frequencies")
     void classCountsAggregated() throws IOException { // GH-90000
-        Path frame1 = tempDir.resolve("frame_0001.jpg [GH-90000]");
+        Path frame1 = tempDir.resolve("frame_0001.jpg");
         Files.write(frame1, new byte[]{0x01}); // GH-90000
-        Path fakeVideo = tempDir.resolve("v.mp4 [GH-90000]");
+        Path fakeVideo = tempDir.resolve("v.mp4");
         Files.write(fakeVideo, new byte[]{0x00}); // GH-90000
 
         when(frameExtractor.extractFrames(any(), any(), any())).thenReturn(List.of( // GH-90000
@@ -115,16 +115,16 @@ class VideoAnalysisServiceTest {
         VideoAnalysisResult result = service.analyze(fakeVideo, config, defaultOptions); // GH-90000
 
         Map<String, Long> counts = result.classCounts(); // GH-90000
-        assertThat(counts).containsKey("person [GH-90000]");
-        assertThat(counts).containsKey("car [GH-90000]");
+        assertThat(counts).containsKey("person");
+        assertThat(counts).containsKey("car");
     }
 
     @Test
-    @DisplayName("analyze with no detections returns result with 0 tracks [GH-90000]")
+    @DisplayName("analyze with no detections returns result with 0 tracks")
     void analyzeNoDetections() throws IOException { // GH-90000
-        Path frame1 = tempDir.resolve("frame_0001.jpg [GH-90000]");
+        Path frame1 = tempDir.resolve("frame_0001.jpg");
         Files.write(frame1, new byte[]{0x01}); // GH-90000
-        Path fakeVideo = tempDir.resolve("v.mp4 [GH-90000]");
+        Path fakeVideo = tempDir.resolve("v.mp4");
         Files.write(fakeVideo, new byte[]{0x00}); // GH-90000
 
         when(frameExtractor.extractFrames(any(), any(), any())).thenReturn(List.of( // GH-90000
@@ -139,7 +139,7 @@ class VideoAnalysisServiceTest {
     }
 
     @Test
-    @DisplayName("Builder rejects null detector [GH-90000]")
+    @DisplayName("Builder rejects null detector")
     void builderRejectsNullDetector() { // GH-90000
         assertThatThrownBy(() -> VideoAnalysisService.builder() // GH-90000
                 .frameExtractor(frameExtractor) // GH-90000
@@ -148,7 +148,7 @@ class VideoAnalysisServiceTest {
     }
 
     @Test
-    @DisplayName("Builder rejects invalid IoU threshold [GH-90000]")
+    @DisplayName("Builder rejects invalid IoU threshold")
     void builderRejectsInvalidIou() { // GH-90000
         assertThatThrownBy(() -> VideoAnalysisService.builder().iouThreshold(1.5)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class); // GH-90000

@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("Field Masking and PII Redaction Tests [GH-90000]")
+@DisplayName("Field Masking and PII Redaction Tests")
 class FieldMaskingTest extends EventloopTestBase {
 
     // ── Masking model ─────────────────────────────────────────────────────────
@@ -49,51 +49,51 @@ class FieldMaskingTest extends EventloopTestBase {
     // ── Individual field masking ───────────────────────────────────────────────
 
     @Test
-    @DisplayName("email is partially masked — local-part is hidden [GH-90000]")
+    @DisplayName("email is partially masked — local-part is hidden")
     void emailIsPartiallyMasked() { // GH-90000
         String masked = masker.mask("email", "alice@example.com"); // GH-90000
-        assertThat(masked).endsWith("@example.com [GH-90000]");
-        assertThat(masked).doesNotContain("alice [GH-90000]");
+        assertThat(masked).endsWith("@example.com");
+        assertThat(masked).doesNotContain("alice");
     }
 
     @Test
-    @DisplayName("phoneNumber is partially masked — only last 4 digits visible [GH-90000]")
+    @DisplayName("phoneNumber is partially masked — only last 4 digits visible")
     void phoneNumberIsPartiallyMasked() { // GH-90000
         String masked = masker.mask("phoneNumber", "+12025551234"); // GH-90000
-        assertThat(masked).endsWith("1234 [GH-90000]");
-        assertThat(masked).doesNotContain("+12025551 [GH-90000]");
+        assertThat(masked).endsWith("1234");
+        assertThat(masked).doesNotContain("+12025551");
     }
 
     @Test
-    @DisplayName("credit card is fully masked — all digits replaced [GH-90000]")
+    @DisplayName("credit card is fully masked — all digits replaced")
     void creditCardIsFullyMasked() { // GH-90000
         String masked = masker.mask("creditCard", "4111111111111111"); // GH-90000
-        assertThat(masked).doesNotContain("4111 [GH-90000]");
-        assertThat(masked).matches("[*]+ [GH-90000]");
+        assertThat(masked).doesNotContain("4111");
+        assertThat(masked).matches("[*]+");
     }
 
     @Test
-    @DisplayName("SSN is redacted — returns a fixed redaction token [GH-90000]")
+    @DisplayName("SSN is redacted — returns a fixed redaction token")
     void ssnIsRedacted() { // GH-90000
         String masked = masker.mask("ssn", "123-45-6789"); // GH-90000
-        assertThat(masked).isEqualTo("[REDACTED] [GH-90000]");
-        assertThat(masked).doesNotContain("123 [GH-90000]");
+        assertThat(masked).isEqualTo("[REDACTED]");
+        assertThat(masked).doesNotContain("123");
     }
 
     @Test
-    @DisplayName("non-PII fields pass through unmodified [GH-90000]")
+    @DisplayName("non-PII fields pass through unmodified")
     void nonPiiFieldsPassThrough() { // GH-90000
         String username = masker.mask("username", "alice_wonder"); // GH-90000
         String createdAt = masker.mask("createdAt", "2026-01-01T00:00:00Z"); // GH-90000
 
-        assertThat(username).isEqualTo("alice_wonder [GH-90000]");
-        assertThat(createdAt).isEqualTo("2026-01-01T00:00:00Z [GH-90000]");
+        assertThat(username).isEqualTo("alice_wonder");
+        assertThat(createdAt).isEqualTo("2026-01-01T00:00:00Z");
     }
 
     // ── Record-level masking ──────────────────────────────────────────────────
 
     @Test
-    @DisplayName("maskRecord masks all PII fields in a data record [GH-90000]")
+    @DisplayName("maskRecord masks all PII fields in a data record")
     void maskRecordMasksAllPiiFields() { // GH-90000
         DataRecord record = new DataRecord("record-001", new HashMap<>(Map.of( // GH-90000
                 "email", "bob@example.com",
@@ -106,16 +106,16 @@ class FieldMaskingTest extends EventloopTestBase {
 
         DataRecord masked = masker.maskRecord(record); // GH-90000
 
-        assertThat(masked.fields().get("email [GH-90000]")).doesNotContain("bob [GH-90000]");
-        assertThat(masked.fields().get("phoneNumber [GH-90000]")).endsWith("7890 [GH-90000]");
-        assertThat(masked.fields().get("creditCard [GH-90000]")).matches("[*]+ [GH-90000]");
-        assertThat(masked.fields().get("ssn [GH-90000]")).isEqualTo("[REDACTED] [GH-90000]");
-        assertThat(masked.fields().get("username [GH-90000]")).isEqualTo("bob_builder [GH-90000]");
-        assertThat(masked.fields().get("createdAt [GH-90000]")).isEqualTo("2026-03-01T10:00:00Z [GH-90000]");
+        assertThat(masked.fields().get("email")).doesNotContain("bob");
+        assertThat(masked.fields().get("phoneNumber")).endsWith("7890");
+        assertThat(masked.fields().get("creditCard")).matches("[*]+");
+        assertThat(masked.fields().get("ssn")).isEqualTo("[REDACTED]");
+        assertThat(masked.fields().get("username")).isEqualTo("bob_builder");
+        assertThat(masked.fields().get("createdAt")).isEqualTo("2026-03-01T10:00:00Z");
     }
 
     @Test
-    @DisplayName("maskRecord does not mutate the original record [GH-90000]")
+    @DisplayName("maskRecord does not mutate the original record")
     void maskRecordDoesNotMutateOriginal() { // GH-90000
         DataRecord original = new DataRecord("r-002", new HashMap<>(Map.of( // GH-90000
                 "email", "carol@example.com",
@@ -124,15 +124,15 @@ class FieldMaskingTest extends EventloopTestBase {
 
         masker.maskRecord(original); // GH-90000
 
-        assertThat(original.fields().get("email [GH-90000]")).isEqualTo("carol@example.com [GH-90000]");
-        assertThat(original.fields().get("ssn [GH-90000]")).isEqualTo("111-22-3333 [GH-90000]");
+        assertThat(original.fields().get("email")).isEqualTo("carol@example.com");
+        assertThat(original.fields().get("ssn")).isEqualTo("111-22-3333");
     }
 
     @Test
-    @DisplayName("unknown fields pass through unmodified [GH-90000]")
+    @DisplayName("unknown fields pass through unmodified")
     void unknownFieldsPassThrough() { // GH-90000
         String masked = masker.mask("unknownField", "some-value"); // GH-90000
-        assertThat(masked).isEqualTo("some-value [GH-90000]");
+        assertThat(masked).isEqualTo("some-value");
     }
 
     // ── Field masker implementation (inner, for test) ───────────────────────── // GH-90000
@@ -152,11 +152,11 @@ class FieldMaskingTest extends EventloopTestBase {
             return switch (policy.maskLevel()) { // GH-90000
                 case NONE -> value;
                 case PARTIAL -> {
-                    if (value.contains("@ [GH-90000]")) {
+                    if (value.contains("@")) {
                         // Email: hide local-part
                         int atIdx = value.indexOf('@'); // GH-90000
                         yield "***" + value.substring(atIdx); // GH-90000
-                    } else if (value.matches("[+0-9 ()-]+ [GH-90000]")) {
+                    } else if (value.matches("[+0-9 ()-]+")) {
                         // Phone: show last 4
                         String digits = value.replaceAll("[^0-9]", ""); // GH-90000
                         String last4 = digits.length() >= 4 // GH-90000

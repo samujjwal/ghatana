@@ -45,7 +45,7 @@ import java.time.Duration;
  * try (HttpServerTestRunner runner = HttpServerTestRunner.create(servlet)) { // GH-90000
  *     runner.start(); // GH-90000
  *
- *     HttpResponse response = runner.get("/users/123 [GH-90000]");
+ *     HttpResponse response = runner.get("/users/123");
  *     assertEquals(200, response.getCode()); // GH-90000
  *
  *     String json = new String(response.getBody().asArray()); // GH-90000
@@ -60,14 +60,14 @@ import java.time.Duration;
  *         "{\"name\":\"John Doe\",\"email\":\"john@example.com\"}");
  *
  *     assertEquals(201, response.getCode()); // GH-90000
- *     assertEquals("application/json", response.getHeader("Content-Type [GH-90000]"));
+ *     assertEquals("application/json", response.getHeader("Content-Type"));
  * }
  *
  * // 3. Custom timeout (1 minute for slow operations) // GH-90000
  * try (HttpServerTestRunner runner = HttpServerTestRunner.create(servlet, Duration.ofMinutes(1))) { // GH-90000
  *     runner.start(); // GH-90000
  *
- *     HttpResponse response = runner.get("/slow-operation [GH-90000]");
+ *     HttpResponse response = runner.get("/slow-operation");
  *     assertEquals(200, response.getCode()); // GH-90000
  * }
  *
@@ -96,7 +96,7 @@ import java.time.Duration;
  * try (HttpServerTestRunner runner = HttpServerTestRunner.create(servlet, eventloopRunner)) { // GH-90000
  *     runner.start(); // GH-90000
  *
- *     HttpResponse response = runner.get("/api/data [GH-90000]");
+ *     HttpResponse response = runner.get("/api/data");
  *     assertEquals(200, response.getCode()); // GH-90000
  * }
  * // eventloopRunner NOT closed (external ownership) // GH-90000
@@ -106,7 +106,7 @@ import java.time.Duration;
  *     runner.start(); // GH-90000
  *
  *     // GET
- *     HttpResponse getResponse = runner.get("/users/123 [GH-90000]");
+ *     HttpResponse getResponse = runner.get("/users/123");
  *
  *     // POST
  *     HttpResponse postResponse = runner.post("/users", // GH-90000
@@ -117,7 +117,7 @@ import java.time.Duration;
  *         "{\"name\":\"Jane Updated\"}");
  *
  *     // DELETE
- *     HttpResponse deleteResponse = runner.delete("/users/123 [GH-90000]");
+ *     HttpResponse deleteResponse = runner.delete("/users/123");
  *
  *     assertEquals(200, getResponse.getCode()); // GH-90000
  *     assertEquals(201, postResponse.getCode()); // GH-90000
@@ -133,7 +133,7 @@ import java.time.Duration;
  *     try (HttpServerTestRunner runner = HttpServerTestRunner.create(servlet)) { // GH-90000
  *         runner.start(); // GH-90000
  *
- *         HttpResponse response = runner.get("/users [GH-90000]");
+ *         HttpResponse response = runner.get("/users");
  *         assertEquals(200, response.getCode()); // GH-90000
  *
  *         User[] users = objectMapper.readValue( // GH-90000
@@ -257,7 +257,7 @@ public class HttpServerTestRunner implements AutoCloseable {
         EventloopTestRunner eventloopRunner = EventloopTestRunner.builder() // GH-90000
             .timeout(timeout) // GH-90000
             .watchdogEvery(Duration.ofSeconds(2)) // GH-90000
-            .threadName("http-test [GH-90000]")
+            .threadName("http-test")
             .build(); // GH-90000
 
         return new HttpServerTestRunner(servlet, eventloopRunner); // GH-90000
@@ -393,7 +393,7 @@ public class HttpServerTestRunner implements AutoCloseable {
         if (server != null) { // GH-90000
             eventloopRunner.runBlocking(() -> { // GH-90000
                 server.close(); // GH-90000
-                log.info("Test HTTP server stopped [GH-90000]");
+                log.info("Test HTTP server stopped");
                 return null;
             });
         }

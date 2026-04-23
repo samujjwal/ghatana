@@ -28,7 +28,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer test
  * @doc.pattern Test
  */
-@DisplayName("ShapeService [GH-90000]")
+@DisplayName("ShapeService")
 class ShapeServiceTest extends EventloopTestBase {
 
     private CompletionService aiService;
@@ -49,7 +49,7 @@ class ShapeServiceTest extends EventloopTestBase {
         when(aiService.complete(any(CompletionRequest.class))) // GH-90000
                 .thenReturn(Promise.of(CompletionResult.builder() // GH-90000
                         .text(text) // GH-90000
-                        .modelUsed("gpt-4 [GH-90000]")
+                        .modelUsed("gpt-4")
                         .build())); // GH-90000
     }
 
@@ -60,9 +60,9 @@ class ShapeServiceTest extends EventloopTestBase {
 
     private IntentSpec intent(String tenantId) { // GH-90000
         return IntentSpec.builder() // GH-90000
-                .id("intent-123 [GH-90000]")
-                .productName("Task Manager [GH-90000]")
-                .description("Team collaboration tool [GH-90000]")
+                .id("intent-123")
+                .productName("Task Manager")
+                .description("Team collaboration tool")
                 .goals(List.of()) // GH-90000
                 .personas(List.of()) // GH-90000
                 .constraints(List.of()) // GH-90000
@@ -72,8 +72,8 @@ class ShapeServiceTest extends EventloopTestBase {
 
     private ShapeSpec spec(String tenantId) { // GH-90000
         return ShapeSpec.builder() // GH-90000
-                .id("shape-123 [GH-90000]")
-                .intentRef("intent-123 [GH-90000]")
+                .id("shape-123")
+                .intentRef("intent-123")
                 .domainModel(null) // GH-90000
                 .workflows(List.of()) // GH-90000
                 .integrations(List.of()) // GH-90000
@@ -82,15 +82,15 @@ class ShapeServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("derive() [GH-90000]")
+    @DisplayName("derive()")
     class DeriveTests {
 
         @Test
-        @DisplayName("returns ShapeSpec with intentRef and tenant preserved [GH-90000]")
+        @DisplayName("returns ShapeSpec with intentRef and tenant preserved")
         void shouldDeriveShapeFromIntent() { // GH-90000
             stubAiSuccess("{\"architecture\": {\"name\": \"microservices\"}, \"domainModel\": {}}"); // GH-90000
 
-            ShapeSpec result = runPromise(() -> service.derive(intent("tenant-123 [GH-90000]")));
+            ShapeSpec result = runPromise(() -> service.derive(intent("tenant-123")));
 
             assertNotNull(result); // GH-90000
             assertNotNull(result.id()); // GH-90000
@@ -102,45 +102,45 @@ class ShapeServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("records timer with tenant tag on success [GH-90000]")
+        @DisplayName("records timer with tenant tag on success")
         void shouldRecordTimerOnDerive() { // GH-90000
             stubAiSuccess("{\"architecture\": {\"name\": \"monolith\"}, \"domainModel\": {}}"); // GH-90000
 
-            runPromise(() -> service.derive(intent("tenant-abc [GH-90000]")));
+            runPromise(() -> service.derive(intent("tenant-abc")));
 
-            verify(metrics).recordTimer(eq("yappc.shape.derive [GH-90000]"), anyLong(),
+            verify(metrics).recordTimer(eq("yappc.shape.derive"), anyLong(),
                     any(Map.class)); // GH-90000
         }
 
         @Test
-        @DisplayName("increments success counter on successful derive [GH-90000]")
+        @DisplayName("increments success counter on successful derive")
         void shouldIncrementSuccessCounterOnDerive() { // GH-90000
             stubAiSuccess("{\"architecture\": {}, \"domainModel\": {}}"); // GH-90000
 
-            runPromise(() -> service.derive(intent("tenant-abc [GH-90000]")));
+            runPromise(() -> service.derive(intent("tenant-abc")));
 
-            verify(metrics).incrementCounter(contains("success [GH-90000]"), anyMap());
+            verify(metrics).incrementCounter(contains("success"), anyMap());
         }
 
         @Test
-        @DisplayName("AI failure on derive uses fallback shape and records fallback metric [GH-90000]")
+        @DisplayName("AI failure on derive uses fallback shape and records fallback metric")
         void shouldHandleAIServiceFailureOnDerive() { // GH-90000
-            stubAiFailure("AI service unavailable [GH-90000]");
+            stubAiFailure("AI service unavailable");
 
-            ShapeSpec result = runPromise(() -> service.derive(intent("tenant-fail [GH-90000]")));
+            ShapeSpec result = runPromise(() -> service.derive(intent("tenant-fail")));
 
             assertNotNull(result); // GH-90000
             assertEquals("intent-123", result.intentRef()); // GH-90000
-            verify(metrics).incrementCounter(eq("yappc.ai.shape.derive.fallback [GH-90000]"), anyMap());
+            verify(metrics).incrementCounter(eq("yappc.ai.shape.derive.fallback"), anyMap());
         }
 
         @Test
-        @DisplayName("different tenants get distinct shape IDs [GH-90000]")
+        @DisplayName("different tenants get distinct shape IDs")
         void shouldIsolateTenantsOnDerive() { // GH-90000
             stubAiSuccess("{\"architecture\": {}, \"domainModel\": {}}"); // GH-90000
 
-            ShapeSpec s1 = runPromise(() -> service.derive(intent("tenant-A [GH-90000]")));
-            ShapeSpec s2 = runPromise(() -> service.derive(intent("tenant-B [GH-90000]")));
+            ShapeSpec s1 = runPromise(() -> service.derive(intent("tenant-A")));
+            ShapeSpec s2 = runPromise(() -> service.derive(intent("tenant-B")));
 
             assertNotEquals(s1.id(), s2.id()); // GH-90000
             assertEquals("tenant-A", s1.tenantId()); // GH-90000
@@ -149,15 +149,15 @@ class ShapeServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("generateModel() [GH-90000]")
+    @DisplayName("generateModel()")
     class GenerateModelTests {
 
         @Test
-        @DisplayName("returns SystemModel referencing the original ShapeSpec [GH-90000]")
+        @DisplayName("returns SystemModel referencing the original ShapeSpec")
         void shouldGenerateSystemModel() { // GH-90000
-            stubAiSuccess("Design Rationale: Microservices for scalability [GH-90000]");
+            stubAiSuccess("Design Rationale: Microservices for scalability");
 
-            ShapeSpec input = spec("tenant-123 [GH-90000]");
+            ShapeSpec input = spec("tenant-123");
             SystemModel result = runPromise(() -> service.generateModel(input)); // GH-90000
 
             assertNotNull(result); // GH-90000
@@ -168,36 +168,36 @@ class ShapeServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("records timer with tenant tag on success [GH-90000]")
+        @DisplayName("records timer with tenant tag on success")
         void shouldRecordTimerOnGenerateModel() { // GH-90000
-            stubAiSuccess("Design Rationale: Simple monolith [GH-90000]");
+            stubAiSuccess("Design Rationale: Simple monolith");
 
-            runPromise(() -> service.generateModel(spec("tenant-xyz [GH-90000]")));
+            runPromise(() -> service.generateModel(spec("tenant-xyz")));
 
-            verify(metrics).recordTimer(eq("yappc.shape.generateModel [GH-90000]"), anyLong(),
+            verify(metrics).recordTimer(eq("yappc.shape.generateModel"), anyLong(),
                     any(Map.class)); // GH-90000
         }
 
         @Test
-        @DisplayName("increments success counter on successful generateModel [GH-90000]")
+        @DisplayName("increments success counter on successful generateModel")
         void shouldIncrementSuccessCounterOnGenerateModel() { // GH-90000
-            stubAiSuccess("Design Rationale: Serverless for low cost [GH-90000]");
+            stubAiSuccess("Design Rationale: Serverless for low cost");
 
-            runPromise(() -> service.generateModel(spec("tenant-xyz [GH-90000]")));
+            runPromise(() -> service.generateModel(spec("tenant-xyz")));
 
-            verify(metrics).incrementCounter(contains("success [GH-90000]"), anyMap());
+            verify(metrics).incrementCounter(contains("success"), anyMap());
         }
 
         @Test
-        @DisplayName("AI failure during generateModel uses fallback model and records fallback metric [GH-90000]")
+        @DisplayName("AI failure during generateModel uses fallback model and records fallback metric")
         void shouldHandleAIServiceFailureOnGenerateModel() { // GH-90000
-            stubAiFailure("LLM timeout [GH-90000]");
+            stubAiFailure("LLM timeout");
 
-            SystemModel result = runPromise(() -> service.generateModel(spec("tenant-err [GH-90000]")));
+            SystemModel result = runPromise(() -> service.generateModel(spec("tenant-err")));
 
             assertNotNull(result); // GH-90000
             assertNotNull(result.designRationale()); // GH-90000
-            verify(metrics).incrementCounter(eq("yappc.ai.shape.systemModel.fallback [GH-90000]"), anyMap());
+            verify(metrics).incrementCounter(eq("yappc.ai.shape.systemModel.fallback"), anyMap());
         }
     }
 }

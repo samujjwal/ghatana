@@ -6,7 +6,11 @@ import java.util.Objects;
  * Unique identifier for a processing pipeline.
  *
  * @param value the string representation of the pipeline ID
- */
+  * @doc.type record
+ * @doc.purpose Provides pipeline id functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 public record PipelineId(String value) {
 
     public PipelineId {

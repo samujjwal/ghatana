@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern UnitTest
  */
-@DisplayName("End-to-End Journey Tests [GH-90000]")
+@DisplayName("End-to-End Journey Tests")
 public class E2EJourneyTests {
 
     // In-memory state management for E2E tests
@@ -44,15 +44,15 @@ public class E2EJourneyTests {
     }
 
     @Nested
-    @DisplayName("DataExplorerJourney [GH-90000]")
+    @DisplayName("DataExplorerJourney")
     class DataExplorerJourney {
 
         @Test
-        @DisplayName("journey: create collection → upload dataset → query data [GH-90000]")
+        @DisplayName("journey: create collection → upload dataset → query data")
         void shouldCompleteDataExplorationJourney() { // GH-90000
             // Step 1: User creates a collection
             Map<String, Object> collection = createCollection("Sales 2026", "Annual sales data"); // GH-90000
-            String collectionId = collection.get("id [GH-90000]").toString();
+            String collectionId = collection.get("id").toString();
             assertThat(collectionId).isNotEmpty(); // GH-90000
 
             // Step 2: User uploads a dataset to the collection
@@ -62,9 +62,9 @@ public class E2EJourneyTests {
                     "CSV",
                     100000 // 100K rows
             );
-            String datasetId = dataset.get("id [GH-90000]").toString();
+            String datasetId = dataset.get("id").toString();
             assertThat(datasetId).isNotEmpty(); // GH-90000
-            assertThat(dataset.get("status [GH-90000]")).isEqualTo("ACTIVE [GH-90000]");
+            assertThat(dataset.get("status")).isEqualTo("ACTIVE");
 
             // Step 3: User queries the dataset
             Map<String, Object> queryResult = executeQuery( // GH-90000
@@ -72,51 +72,51 @@ public class E2EJourneyTests {
                     datasetId,
                     "SELECT month, revenue FROM monthly_sales WHERE year = 2026"
             );
-            assertThat(queryResult.get("status [GH-90000]")).isEqualTo("SUCCESS [GH-90000]");
+            assertThat(queryResult.get("status")).isEqualTo("SUCCESS");
 
             // Step 4: User validates results
-            List<?> rows = (List<?>) queryResult.get("rows [GH-90000]");
+            List<?> rows = (List<?>) queryResult.get("rows");
             assertThat(rows).isNotEmpty(); // GH-90000
 
             // Step 5: User exports results
             Map<String, Object> export = exportResults(queryResult, "CSV"); // GH-90000
-            assertThat(export.get("downloadUrl [GH-90000]")).isNotNull();
+            assertThat(export.get("downloadUrl")).isNotNull();
         }
 
         @Test
-        @DisplayName("sub-step: collection visibility after creation [GH-90000]")
+        @DisplayName("sub-step: collection visibility after creation")
         void shouldShowCollectionInList() { // GH-90000
             Map<String, Object> collection = createCollection("Test Collection", "test"); // GH-90000
-            String collectionId = collection.get("id [GH-90000]").toString();
+            String collectionId = collection.get("id").toString();
 
             Map<String, Object> collections = listCollections(); // GH-90000
-            List<?> items = (List<?>) collections.get("items [GH-90000]");
+            List<?> items = (List<?>) collections.get("items");
             boolean found = items.stream() // GH-90000
-                    .map(item -> ((Map<String, ?>) item).get("id [GH-90000]"))
+                    .map(item -> ((Map<String, ?>) item).get("id"))
                     .anyMatch(id -> id.equals(collectionId)); // GH-90000
 
             assertThat(found).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("sub-step: dataset upload triggers indexing [GH-90000]")
+        @DisplayName("sub-step: dataset upload triggers indexing")
         void shouldIndexDatasetAutomatically() { // GH-90000
             Map<String, Object> collection = createCollection("Indexed Collection", "test"); // GH-90000
-            String collectionId = collection.get("id [GH-90000]").toString();
+            String collectionId = collection.get("id").toString();
 
             Map<String, Object> dataset = uploadDataset(collectionId, "data.csv", "CSV", 50000); // GH-90000
-            String datasetId = dataset.get("id [GH-90000]").toString();
+            String datasetId = dataset.get("id").toString();
 
             // Check that indexing started
             Map<String, Object> datasetDetail = getDatasetDetail(collectionId, datasetId); // GH-90000
-            assertThat(datasetDetail.get("indexed [GH-90000]")).isEqualTo(true);
+            assertThat(datasetDetail.get("indexed")).isEqualTo(true);
         }
 
         @Test
-        @DisplayName("sub-step: query validation before execution [GH-90000]")
+        @DisplayName("sub-step: query validation before execution")
         void shouldValidateQueryBeforeExecution() { // GH-90000
             Map<String, Object> collection = createCollection("Validation Test", "test"); // GH-90000
-            String collectionId = collection.get("id [GH-90000]").toString();
+            String collectionId = collection.get("id").toString();
             uploadDataset(collectionId, "test.csv", "CSV", 1000); // GH-90000
 
             Map<String, Object> validation = validateQuery( // GH-90000
@@ -124,40 +124,40 @@ public class E2EJourneyTests {
                     "INVALID SQL HERE"
             );
 
-            assertThat(validation.get("valid [GH-90000]")).isEqualTo(false);
-            assertThat(validation).containsKey("error [GH-90000]");
+            assertThat(validation.get("valid")).isEqualTo(false);
+            assertThat(validation).containsKey("error");
         }
 
         @Test
-        @DisplayName("sub-step: results caching for repeated queries [GH-90000]")
+        @DisplayName("sub-step: results caching for repeated queries")
         void shouldCacheQueryResults() { // GH-90000
             Map<String, Object> collection = createCollection("Cache Test", "test"); // GH-90000
-            String collectionId = collection.get("id [GH-90000]").toString();
+            String collectionId = collection.get("id").toString();
             Map<String, Object> dataset = uploadDataset(collectionId, "test.csv", "CSV", 5000); // GH-90000
-            String datasetId = dataset.get("id [GH-90000]").toString();
+            String datasetId = dataset.get("id").toString();
 
             String query = "SELECT * FROM data LIMIT 100";
 
             // First execution
             Map<String, Object> result1 = executeQuery(collectionId, datasetId, query); // GH-90000
-            long duration1 = ((Number) result1.get("executionTimeMs [GH-90000]")).longValue();
+            long duration1 = ((Number) result1.get("executionTimeMs")).longValue();
 
             // Second execution (should use cache) // GH-90000
             Map<String, Object> result2 = executeQuery(collectionId, datasetId, query); // GH-90000
-            long duration2 = ((Number) result2.get("executionTimeMs [GH-90000]")).longValue();
+            long duration2 = ((Number) result2.get("executionTimeMs")).longValue();
 
             // Cached result should be faster
             assertThat(duration2).isLessThan(duration1); // GH-90000
-            assertThat(result2.get("cached [GH-90000]")).isEqualTo(true);
+            assertThat(result2.get("cached")).isEqualTo(true);
         }
     }
 
     @Nested
-    @DisplayName("AnalyticsJourney [GH-90000]")
+    @DisplayName("AnalyticsJourney")
     class AnalyticsJourney {
 
         @Test
-        @DisplayName("journey: create report → schedule execution → download results [GH-90000]")
+        @DisplayName("journey: create report → schedule execution → download results")
         void shouldCompleteAnalyticsJourney() { // GH-90000
             // Step 1: User creates a report
             Map<String, Object> report = createReport( // GH-90000
@@ -165,7 +165,7 @@ public class E2EJourneyTests {
                     "Analyze Q2 revenue by region",
                     "MONTHLY"
             );
-            String reportId = report.get("id [GH-90000]").toString();
+            String reportId = report.get("id").toString();
             assertThat(reportId).isNotEmpty(); // GH-90000
 
             // Step 2: User configures and saves report
@@ -174,7 +174,7 @@ public class E2EJourneyTests {
                     "BAR",
                     List.of("revenue", "growth") // GH-90000
             );
-            assertThat(config.get("valid [GH-90000]")).isEqualTo(true);
+            assertThat(config.get("valid")).isEqualTo(true);
 
             // Step 3: User schedules report execution
             Map<String, Object> schedule = scheduleReportExecution( // GH-90000
@@ -182,101 +182,101 @@ public class E2EJourneyTests {
                     "2026-04-01T08:00:00Z",
                     "weekly"
             );
-            assertThat(schedule.get("scheduled [GH-90000]")).isEqualTo(true);
+            assertThat(schedule.get("scheduled")).isEqualTo(true);
 
             // Step 4: System generates report
             Map<String, Object> generated = generateReport(reportId); // GH-90000
-            assertThat(generated.get("status [GH-90000]")).isEqualTo("GENERATED [GH-90000]");
+            assertThat(generated.get("status")).isEqualTo("GENERATED");
 
             // Step 5: User downloads report
             Map<String, Object> download = downloadReport(reportId, "PDF"); // GH-90000
-            assertThat(download.get("downloadUrl [GH-90000]")).isNotNull();
-            assertThat(download.get("format [GH-90000]")).isEqualTo("PDF [GH-90000]");
+            assertThat(download.get("downloadUrl")).isNotNull();
+            assertThat(download.get("format")).isEqualTo("PDF");
 
             // Step 6: User shares report with team
             Map<String, Object> shared = shareReport(reportId, List.of("analyst-1@example.com", "manager@example.com")); // GH-90000
-            assertThat(shared.get("shared [GH-90000]")).isEqualTo(true);
+            assertThat(shared.get("shared")).isEqualTo(true);
         }
 
         @Test
-        @DisplayName("sub-step: report template support [GH-90000]")
+        @DisplayName("sub-step: report template support")
         void shouldSupportReportTemplates() { // GH-90000
             List<?> templates = listReportTemplates(); // GH-90000
             assertThat(templates).hasSizeGreaterThan(0); // GH-90000
         }
 
         @Test
-        @DisplayName("sub-step: scheduled report execution history [GH-90000]")
+        @DisplayName("sub-step: scheduled report execution history")
         void shouldTrackExecutionHistory() { // GH-90000
             Map<String, Object> report = createReport("History Test", "test", "WEEKLY"); // GH-90000
-            String reportId = report.get("id [GH-90000]").toString();
+            String reportId = report.get("id").toString();
 
             scheduleReportExecution(reportId, "2026-04-01T08:00:00Z", "weekly"); // GH-90000
 
             Map<String, Object> history = getReportExecutionHistory(reportId); // GH-90000
-            List<?> executions = (List<?>) history.get("executions [GH-90000]");
+            List<?> executions = (List<?>) history.get("executions");
             assertThat(executions).isNotEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("sub-step: report modification after scheduling [GH-90000]")
+        @DisplayName("sub-step: report modification after scheduling")
         void shouldAllowReportModification() { // GH-90000
             Map<String, Object> report = createReport("Modifiable Report", "test", "MONTHLY"); // GH-90000
-            String reportId = report.get("id [GH-90000]").toString();
+            String reportId = report.get("id").toString();
 
             scheduleReportExecution(reportId, "2026-04-01T08:00:00Z", "monthly"); // GH-90000
 
             Map<String, Object> updated = updateReportTitle(reportId, "Updated Report Title"); // GH-90000
-            assertThat(updated.get("title [GH-90000]")).isEqualTo("Updated Report Title [GH-90000]");
+            assertThat(updated.get("title")).isEqualTo("Updated Report Title");
         }
 
         @Test
-        @DisplayName("sub-step: multi-format export support [GH-90000]")
+        @DisplayName("sub-step: multi-format export support")
         void shouldSupportMultipleFormats() { // GH-90000
             Map<String, Object> report = createReport("Export Test", "test", "MANUAL"); // GH-90000
-            String reportId = report.get("id [GH-90000]").toString();
+            String reportId = report.get("id").toString();
             generateReport(reportId); // GH-90000
 
             for (String format : List.of("PDF", "CSV", "EXCEL", "JSON")) { // GH-90000
                 Map<String, Object> download = downloadReport(reportId, format); // GH-90000
-                assertThat(download.get("format [GH-90000]")).isEqualTo(format);
+                assertThat(download.get("format")).isEqualTo(format);
             }
         }
     }
 
     @Nested
-    @DisplayName("SQLWorkspaceJourney [GH-90000]")
+    @DisplayName("SQLWorkspaceJourney")
     class SQLWorkspaceJourney {
 
         @Test
-        @DisplayName("journey: write query → execute → analyze results → export [GH-90000]")
+        @DisplayName("journey: write query → execute → analyze results → export")
         void shouldCompleteSQLWorkspaceJourney() { // GH-90000
             // Step 1: User opens SQL workspace
-            Map<String, Object> workspace = createSQLWorkspace("Q2 Analysis [GH-90000]");
-            String workspaceId = workspace.get("id [GH-90000]").toString();
+            Map<String, Object> workspace = createSQLWorkspace("Q2 Analysis");
+            String workspaceId = workspace.get("id").toString();
             assertThat(workspaceId).isNotEmpty(); // GH-90000
 
             // Step 2: User writes SQL query with autocomplete
             String sqlQuery = "SELECT region, SUM(revenue) as total FROM sales WHERE year = 2026 GROUP BY region"; // GH-90000
-            Map<String, Object> autocomplete = getAutocompleteSuggestions("SELECT region [GH-90000]");
-            assertThat(autocomplete).containsKey("suggestions [GH-90000]");
+            Map<String, Object> autocomplete = getAutocompleteSuggestions("SELECT region");
+            assertThat(autocomplete).containsKey("suggestions");
 
             // Step 3: User validates query syntax
             Map<String, Object> validate = validateSQLSyntax(sqlQuery); // GH-90000
-            assertThat(validate.get("valid [GH-90000]")).isEqualTo(true);
+            assertThat(validate.get("valid")).isEqualTo(true);
 
             // Step 4: User executes query
             Map<String, Object> execution = executeSQLQuery(workspaceId, sqlQuery); // GH-90000
-            String executionId = execution.get("id [GH-90000]").toString();
-            assertThat(execution.get("status [GH-90000]")).isEqualTo("RUNNING [GH-90000]");
+            String executionId = execution.get("id").toString();
+            assertThat(execution.get("status")).isEqualTo("RUNNING");
 
             // Step 5: User monitors execution progress
             Map<String, Object> progress = getExecutionProgress(executionId); // GH-90000
-            assertThat(progress.get("status [GH-90000]")).isIn("RUNNING", "COMPLETED");
+            assertThat(progress.get("status")).isIn("RUNNING", "COMPLETED");
 
             // Step 6: User views results
             Map<String, Object> results = getQueryResults(executionId); // GH-90000
-            List<?> rows = (List<?>) results.get("rows [GH-90000]");
+            List<?> rows = (List<?>) results.get("rows");
             assertThat(rows).isNotEmpty(); // GH-90000
 
             // Step 7: User analyzes execution plan
@@ -285,68 +285,68 @@ public class E2EJourneyTests {
 
             // Step 8: User exports results
             Map<String, Object> export = exportQueryResults(executionId, "CSV"); // GH-90000
-            assertThat(export.get("downloadUrl [GH-90000]")).isNotNull();
+            assertThat(export.get("downloadUrl")).isNotNull();
 
             // Step 9: User saves query for future use
             Map<String, Object> saved = saveQuery(workspaceId, sqlQuery, "Q2 Sales Summary"); // GH-90000
-            assertThat(saved.get("saved [GH-90000]")).isEqualTo(true);
+            assertThat(saved.get("saved")).isEqualTo(true);
         }
 
         @Test
-        @DisplayName("sub-step: query history tracking [GH-90000]")
+        @DisplayName("sub-step: query history tracking")
         void shouldTrackQueryHistory() { // GH-90000
-            Map<String, Object> workspace = createSQLWorkspace("History Test [GH-90000]");
-            String workspaceId = workspace.get("id [GH-90000]").toString();
+            Map<String, Object> workspace = createSQLWorkspace("History Test");
+            String workspaceId = workspace.get("id").toString();
 
             executeSQLQuery(workspaceId, "SELECT COUNT(*) FROM events"); // GH-90000
             executeSQLQuery(workspaceId, "SELECT * FROM collections LIMIT 10"); // GH-90000
 
             Map<String, Object> history = getQueryHistory(workspaceId); // GH-90000
-            List<?> queries = (List<?>) history.get("queries [GH-90000]");
+            List<?> queries = (List<?>) history.get("queries");
             assertThat(queries).hasSize(2); // GH-90000
         }
 
         @Test
-        @DisplayName("sub-step: saved queries retrieval and reuse [GH-90000]")
+        @DisplayName("sub-step: saved queries retrieval and reuse")
         void shouldRetrieveSavedQueries() { // GH-90000
-            Map<String, Object> workspace = createSQLWorkspace("Saved Queries Test [GH-90000]");
-            String workspaceId = workspace.get("id [GH-90000]").toString();
+            Map<String, Object> workspace = createSQLWorkspace("Saved Queries Test");
+            String workspaceId = workspace.get("id").toString();
 
             String query1 = "SELECT * FROM sales";
             saveQuery(workspaceId, query1, "Sales Report"); // GH-90000
 
             Map<String, Object> saved = getSavedQueries(workspaceId); // GH-90000
-            List<?> queries = (List<?>) saved.get("queries [GH-90000]");
+            List<?> queries = (List<?>) saved.get("queries");
             assertThat(queries).hasSize(1); // GH-90000
         }
 
         @Test
-        @DisplayName("sub-step: query cancellation during execution [GH-90000]")
+        @DisplayName("sub-step: query cancellation during execution")
         void shouldAllowQueryCancellation() { // GH-90000
-            Map<String, Object> workspace = createSQLWorkspace("Cancel Test [GH-90000]");
-            String workspaceId = workspace.get("id [GH-90000]").toString();
+            Map<String, Object> workspace = createSQLWorkspace("Cancel Test");
+            String workspaceId = workspace.get("id").toString();
 
             Map<String, Object> execution = executeSQLQuery(workspaceId, "SELECT * FROM large_table"); // GH-90000
-            String executionId = execution.get("id [GH-90000]").toString();
+            String executionId = execution.get("id").toString();
 
             Map<String, Object> cancelled = cancelQuery(executionId); // GH-90000
-            assertThat(cancelled.get("cancelled [GH-90000]")).isEqualTo(true);
+            assertThat(cancelled.get("cancelled")).isEqualTo(true);
         }
 
         @Test
-        @DisplayName("sub-step: query performance comparison [GH-90000]")
+        @DisplayName("sub-step: query performance comparison")
         void shouldCompareQueryPerformance() { // GH-90000
-            Map<String, Object> workspace = createSQLWorkspace("Performance Test [GH-90000]");
-            String workspaceId = workspace.get("id [GH-90000]").toString();
+            Map<String, Object> workspace = createSQLWorkspace("Performance Test");
+            String workspaceId = workspace.get("id").toString();
 
             Map<String, Object> result1 = executeSQLQuery(workspaceId, "SELECT * FROM events WHERE id = 1"); // GH-90000
-            long duration1 = ((Number) result1.get("executionTimeMs [GH-90000]")).longValue();
+            long duration1 = ((Number) result1.get("executionTimeMs")).longValue();
 
             Map<String, Object> result2 = executeSQLQuery(workspaceId, "SELECT COUNT(*) FROM events"); // GH-90000
-            long duration2 = ((Number) result2.get("executionTimeMs [GH-90000]")).longValue();
+            long duration2 = ((Number) result2.get("executionTimeMs")).longValue();
 
             Map<String, Object> comparison = compareExecutions(duration1, duration2); // GH-90000
-            assertThat(comparison.get("faster [GH-90000]")).isNotNull();
+            assertThat(comparison.get("faster")).isNotNull();
         }
     }
 
@@ -422,7 +422,7 @@ public class E2EJourneyTests {
     }
 
     private Map<String, Object> validateQuery(String collectionId, String query) { // GH-90000
-        boolean valid = query.toUpperCase().startsWith("SELECT [GH-90000]");
+        boolean valid = query.toUpperCase().startsWith("SELECT");
         return Map.of("valid", valid, "error", valid ? null : "Invalid SQL syntax"); // GH-90000
     }
 
@@ -495,7 +495,7 @@ public class E2EJourneyTests {
     }
 
     private Map<String, Object> validateSQLSyntax(String query) { // GH-90000
-        boolean valid = query.toUpperCase().startsWith("SELECT [GH-90000]");
+        boolean valid = query.toUpperCase().startsWith("SELECT");
         return Map.of("valid", valid); // GH-90000
     }
 
@@ -508,13 +508,13 @@ public class E2EJourneyTests {
         execution.put("executionTimeMs", 523L); // GH-90000
 
         // Store in executions map for lifecycle management
-        executions.put(execution.get("id [GH-90000]").toString(), execution);
+        executions.put(execution.get("id").toString(), execution);
 
         // Track in execution history
         Map<String, Object> historyEntry = new HashMap<>(); // GH-90000
         historyEntry.put("workspaceId", workspaceId); // GH-90000
         historyEntry.put("query", query); // GH-90000
-        historyEntry.put("executionId", execution.get("id [GH-90000]"));
+        historyEntry.put("executionId", execution.get("id"));
         executionHistory.add(historyEntry); // GH-90000
 
         return execution;
@@ -522,7 +522,7 @@ public class E2EJourneyTests {
 
     private Map<String, Object> getExecutionProgress(String executionId) { // GH-90000
         Map<String, Object> execution = executions.get(executionId); // GH-90000
-        if (execution != null && "RUNNING".equals(execution.get("status [GH-90000]"))) {
+        if (execution != null && "RUNNING".equals(execution.get("status"))) {
             execution.put("status", "COMPLETED"); // GH-90000
             execution.put("progress", 100); // GH-90000
         }
@@ -562,16 +562,16 @@ public class E2EJourneyTests {
 
     private Map<String, Object> getQueryHistory(String workspaceId) { // GH-90000
         List<Map<String, Object>> filteredHistory = executionHistory.stream() // GH-90000
-                .filter(entry -> workspaceId.equals(entry.get("workspaceId [GH-90000]")))
-                .map(entry -> Map.of("query", entry.get("query [GH-90000]"), "executionId", entry.get("executionId [GH-90000]")))
+                .filter(entry -> workspaceId.equals(entry.get("workspaceId")))
+                .map(entry -> Map.of("query", entry.get("query"), "executionId", entry.get("executionId")))
                 .toList(); // GH-90000
         return Map.of("workspaceId", workspaceId, "queries", filteredHistory); // GH-90000
     }
 
     private Map<String, Object> getSavedQueries(String workspaceId) { // GH-90000
         List<Map<String, Object>> filteredQueries = savedQueries.stream() // GH-90000
-                .filter(query -> workspaceId.equals(query.get("workspaceId [GH-90000]")))
-                .map(query -> Map.of("id", query.get("id [GH-90000]"), "title", query.get("title [GH-90000]"), "query", query.get("query [GH-90000]")))
+                .filter(query -> workspaceId.equals(query.get("workspaceId")))
+                .map(query -> Map.of("id", query.get("id"), "title", query.get("title"), "query", query.get("query")))
                 .toList(); // GH-90000
         return Map.of("workspaceId", workspaceId, "queries", filteredQueries); // GH-90000
     }

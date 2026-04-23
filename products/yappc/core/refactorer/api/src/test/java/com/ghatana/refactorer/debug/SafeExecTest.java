@@ -121,7 +121,7 @@ class SafeExecTest {
             // Arrange
             var command = List.of("ECHO", "hello"); // GH-90000
             var allowedCommand =
-                    new AllowlistPolicy.AllowedCommand("echo-cmd", List.of("echo [GH-90000]"), List.of());
+                    new AllowlistPolicy.AllowedCommand("echo-cmd", List.of("echo"), List.of());
             when(mockPolicy.commands()).thenReturn(List.of(allowedCommand)); // GH-90000
 
             // Set up the mock to return a successful result
@@ -147,7 +147,7 @@ class SafeExecTest {
     void run_commandFails_throwsIOException() { // GH-90000
         try (MockedStatic<ProcessExec> mocked = Mockito.mockStatic(ProcessExec.class)) { // GH-90000
             // Arrange
-            var command = List.of("failing-command [GH-90000]");
+            var command = List.of("failing-command");
             var allowedCommand = new AllowlistPolicy.AllowedCommand("test", command, List.of()); // GH-90000
             when(mockPolicy.commands()).thenReturn(List.of(allowedCommand)); // GH-90000
 
@@ -162,7 +162,7 @@ class SafeExecTest {
                             () -> safeExec.run(tempDir, command, Duration.ofSeconds(1).toMillis())); // GH-90000
 
             // Verify the exception message
-            assertTrue(exception.getMessage().contains("Command failed [GH-90000]"));
+            assertTrue(exception.getMessage().contains("Command failed"));
 
             // Verify ProcessExec.run was called with the expected parameters
             mocked.verify( // GH-90000
@@ -218,7 +218,7 @@ class SafeExecTest {
     void run_failingCommand_throwsIOException() { // GH-90000
         try (MockedStatic<ProcessExec> mocked = Mockito.mockStatic(ProcessExec.class)) { // GH-90000
             // Arrange
-            var command = List.of("failing-command [GH-90000]");
+            var command = List.of("failing-command");
             var allowedCommand = new AllowlistPolicy.AllowedCommand("test", command, List.of()); // GH-90000
             when(mockPolicy.commands()).thenReturn(List.of(allowedCommand)); // GH-90000
 
@@ -233,7 +233,7 @@ class SafeExecTest {
                             () -> safeExec.run(tempDir, command, Duration.ofSeconds(1).toMillis())); // GH-90000
 
             // Verify the exception message
-            assertTrue(exception.getMessage().contains("Command failed [GH-90000]"));
+            assertTrue(exception.getMessage().contains("Command failed"));
 
             // Verify ProcessExec.run was called with the expected parameters
             mocked.verify( // GH-90000

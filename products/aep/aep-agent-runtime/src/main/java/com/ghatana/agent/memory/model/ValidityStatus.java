@@ -6,7 +6,8 @@ package com.ghatana.agent.memory.model;
  * @doc.type enum
  * @doc.purpose Memory validity lifecycle states
  * @doc.layer agent-memory
- */
+  * @doc.pattern Enum
+*/
 public enum ValidityStatus {
 
     /** Item is current and actively used. */

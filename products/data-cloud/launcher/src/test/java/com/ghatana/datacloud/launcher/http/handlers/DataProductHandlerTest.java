@@ -25,7 +25,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataProductHandler [GH-90000]")
+@DisplayName("DataProductHandler")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class DataProductHandlerTest extends EventloopTestBase {
 
@@ -53,7 +53,7 @@ class DataProductHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("publish rejects missing tenant before reading body [GH-90000]")
+    @DisplayName("publish rejects missing tenant before reading body")
     void publishRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
@@ -65,7 +65,7 @@ class DataProductHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("list rejects missing tenant before querying products [GH-90000]")
+    @DisplayName("list rejects missing tenant before querying products")
     void listRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
@@ -76,7 +76,7 @@ class DataProductHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("subscribe rejects missing tenant before reading body [GH-90000]")
+    @DisplayName("subscribe rejects missing tenant before reading body")
     void subscribeRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 

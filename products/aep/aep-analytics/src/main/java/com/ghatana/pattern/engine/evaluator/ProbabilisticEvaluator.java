@@ -12,7 +12,11 @@ import java.util.*;
  *
  * Day 26 Implementation: NFA-based pattern matching with probability per state
  * Supports confidence scoring and uncertainty propagation through pattern matches
- */
+  * @doc.type class
+ * @doc.purpose Provides probabilistic evaluator functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 public class ProbabilisticEvaluator {
 
     /**

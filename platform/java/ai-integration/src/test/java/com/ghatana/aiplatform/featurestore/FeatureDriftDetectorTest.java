@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.within;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("FeatureDriftDetector [GH-90000]")
+@DisplayName("FeatureDriftDetector")
 class FeatureDriftDetectorTest {
 
     private final RecordingEventBus eventBus = new RecordingEventBus(); // GH-90000
@@ -35,11 +35,11 @@ class FeatureDriftDetectorTest {
     }
 
     @Nested
-    @DisplayName("PSI computation [GH-90000]")
+    @DisplayName("PSI computation")
     class PsiTests {
 
         @Test
-        @DisplayName("identical distributions yield PSI ≈ 0 [GH-90000]")
+        @DisplayName("identical distributions yield PSI ≈ 0")
         void identicalDistributions() { // GH-90000
             double[] data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
             FeatureDriftDetector.DriftResult result = detector.check("feat-same", data, data.clone()); // GH-90000
@@ -49,7 +49,7 @@ class FeatureDriftDetectorTest {
         }
 
         @Test
-        @DisplayName("similar distributions produce low PSI (STABLE) [GH-90000]")
+        @DisplayName("similar distributions produce low PSI (STABLE)")
         void similarDistributionsStable() { // GH-90000
             Random rng = new Random(42); // GH-90000
             double[] ref = rng.doubles(1000, 0, 100).toArray(); // GH-90000
@@ -65,7 +65,7 @@ class FeatureDriftDetectorTest {
         }
 
         @Test
-        @DisplayName("shifted distribution produces high PSI (DRIFT_DETECTED) [GH-90000]")
+        @DisplayName("shifted distribution produces high PSI (DRIFT_DETECTED)")
         void shiftedDistributionDrift() { // GH-90000
             Random rng = new Random(42); // GH-90000
             double[] ref = rng.doubles(1000, 0, 50).toArray(); // GH-90000
@@ -78,7 +78,7 @@ class FeatureDriftDetectorTest {
         }
 
         @Test
-        @DisplayName("constant distributions yield PSI = 0 [GH-90000]")
+        @DisplayName("constant distributions yield PSI = 0")
         void constantDistributions() { // GH-90000
             double[] ref = {5, 5, 5, 5, 5};
             double[] cur = {5, 5, 5, 5, 5};
@@ -90,11 +90,11 @@ class FeatureDriftDetectorTest {
     }
 
     @Nested
-    @DisplayName("KS statistic [GH-90000]")
+    @DisplayName("KS statistic")
     class KsTests {
 
         @Test
-        @DisplayName("identical samples yield KS ≈ 0 [GH-90000]")
+        @DisplayName("identical samples yield KS ≈ 0")
         void identicalSamplesKsZero() { // GH-90000
             double[] data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 
@@ -104,7 +104,7 @@ class FeatureDriftDetectorTest {
         }
 
         @Test
-        @DisplayName("completely separated samples yield KS = 1.0 [GH-90000]")
+        @DisplayName("completely separated samples yield KS = 1.0")
         void separatedSamplesKsOne() { // GH-90000
             double[] ref = {1, 2, 3, 4, 5};
             double[] cur = {10, 11, 12, 13, 14};
@@ -115,7 +115,7 @@ class FeatureDriftDetectorTest {
         }
 
         @Test
-        @DisplayName("partially overlapping samples produce intermediate KS [GH-90000]")
+        @DisplayName("partially overlapping samples produce intermediate KS")
         void partialOverlap() { // GH-90000
             double[] ref = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
             double[] cur = {5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
@@ -127,11 +127,11 @@ class FeatureDriftDetectorTest {
     }
 
     @Nested
-    @DisplayName("Event emission [GH-90000]")
+    @DisplayName("Event emission")
     class EventTests {
 
         @Test
-        @DisplayName("drift_detected event emitted when PSI exceeds threshold [GH-90000]")
+        @DisplayName("drift_detected event emitted when PSI exceeds threshold")
         void emitsEventOnDrift() { // GH-90000
             Random rng = new Random(42); // GH-90000
             double[] ref = rng.doubles(1000, 0, 50).toArray(); // GH-90000
@@ -142,13 +142,13 @@ class FeatureDriftDetectorTest {
             assertThat(eventBus.events).hasSize(1); // GH-90000
             FeatureDriftDetector.FeatureDriftEvent event =
                     (FeatureDriftDetector.FeatureDriftEvent) eventBus.events.get(0); // GH-90000
-            assertThat(event.featureName()).isEqualTo("feat-drift-event [GH-90000]");
-            assertThat(event.eventType()).isEqualTo("feature.drift_detected [GH-90000]");
+            assertThat(event.featureName()).isEqualTo("feat-drift-event");
+            assertThat(event.eventType()).isEqualTo("feature.drift_detected");
             assertThat(event.psi()).isGreaterThan(FeatureDriftDetector.PSI_DRIFT_THRESHOLD); // GH-90000
         }
 
         @Test
-        @DisplayName("no event emitted for stable distributions [GH-90000]")
+        @DisplayName("no event emitted for stable distributions")
         void noEventWhenStable() { // GH-90000
             double[] data = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 
@@ -158,7 +158,7 @@ class FeatureDriftDetectorTest {
         }
 
         @Test
-        @DisplayName("no event emitted for warning-level drift [GH-90000]")
+        @DisplayName("no event emitted for warning-level drift")
         void noEventOnWarning() { // GH-90000
             // Construct a mildly shifted distribution that produces 0.1 <= PSI < 0.2
             Random rng = new Random(42); // GH-90000
@@ -181,18 +181,18 @@ class FeatureDriftDetectorTest {
     }
 
     @Nested
-    @DisplayName("Result metadata [GH-90000]")
+    @DisplayName("Result metadata")
     class ResultTests {
 
         @Test
-        @DisplayName("result includes feature name and sample counts [GH-90000]")
+        @DisplayName("result includes feature name and sample counts")
         void resultMetadata() { // GH-90000
             double[] ref = {1, 2, 3, 4, 5};
             double[] cur = {6, 7, 8, 9, 10, 11, 12};
 
             FeatureDriftDetector.DriftResult result = detector.check("feat-meta", ref, cur); // GH-90000
 
-            assertThat(result.featureName()).isEqualTo("feat-meta [GH-90000]");
+            assertThat(result.featureName()).isEqualTo("feat-meta");
             assertThat(result.referenceCount()).isEqualTo(5); // GH-90000
             assertThat(result.currentCount()).isEqualTo(7); // GH-90000
             assertThat(result.checkedAt()).isNotNull(); // GH-90000
@@ -200,32 +200,32 @@ class FeatureDriftDetectorTest {
     }
 
     @Nested
-    @DisplayName("Input validation [GH-90000]")
+    @DisplayName("Input validation")
     class ValidationTests {
 
         @Test
-        @DisplayName("null reference values throws [GH-90000]")
+        @DisplayName("null reference values throws")
         void nullReferenceThrows() { // GH-90000
             assertThatThrownBy(() -> detector.check("f", null, new double[]{1})) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("empty reference values throws [GH-90000]")
+        @DisplayName("empty reference values throws")
         void emptyReferenceThrows() { // GH-90000
             assertThatThrownBy(() -> detector.check("f", new double[]{}, new double[]{1})) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("null current values throws [GH-90000]")
+        @DisplayName("null current values throws")
         void nullCurrentThrows() { // GH-90000
             assertThatThrownBy(() -> detector.check("f", new double[]{1}, null)) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("bucket count < 2 throws [GH-90000]")
+        @DisplayName("bucket count < 2 throws")
         void invalidBucketCount() { // GH-90000
             assertThatThrownBy(() -> new FeatureDriftDetector(MetricsCollector.create(), eventBus, 1)) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class); // GH-90000

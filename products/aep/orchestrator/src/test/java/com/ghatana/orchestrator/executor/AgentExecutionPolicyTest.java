@@ -27,7 +27,7 @@ class AgentExecutionPolicyTest {
     }
 
     @Test
-    @DisplayName("Should create policy with default values [GH-90000]")
+    @DisplayName("Should create policy with default values")
     void shouldCreatePolicyWithDefaults() { // GH-90000
         AgentExecutionPolicy policy = AgentExecutionPolicy.defaultPolicy(); // GH-90000
 
@@ -43,7 +43,7 @@ class AgentExecutionPolicyTest {
     }
 
     @Test
-    @DisplayName("Should create fast policy with appropriate values [GH-90000]")
+    @DisplayName("Should create fast policy with appropriate values")
     void shouldCreateFastPolicy() { // GH-90000
         AgentExecutionPolicy policy = AgentExecutionPolicy.fastPolicy(); // GH-90000
 
@@ -56,7 +56,7 @@ class AgentExecutionPolicyTest {
     }
 
     @Test
-    @DisplayName("Should create long-running policy with appropriate values [GH-90000]")
+    @DisplayName("Should create long-running policy with appropriate values")
     void shouldCreateLongRunningPolicy() { // GH-90000
         AgentExecutionPolicy policy = AgentExecutionPolicy.longRunningPolicy(); // GH-90000
 
@@ -69,7 +69,7 @@ class AgentExecutionPolicyTest {
     }
 
     @Test
-    @DisplayName("Should build custom policy with specified values [GH-90000]")
+    @DisplayName("Should build custom policy with specified values")
     void shouldBuildCustomPolicy() { // GH-90000
         AgentExecutionPolicy policy = builder.stepTimeout(Duration.ofMinutes(15)) // GH-90000
                 .maxRetries(2) // GH-90000
@@ -94,7 +94,7 @@ class AgentExecutionPolicyTest {
     }
 
     @Test
-    @DisplayName("Should calculate exponential backoff correctly [GH-90000]")
+    @DisplayName("Should calculate exponential backoff correctly")
     void shouldCalculateExponentialBackoff() { // GH-90000
         AgentExecutionPolicy policy = builder.initialBackoff(Duration.ofSeconds(1)) // GH-90000
                 .maxBackoff(Duration.ofMinutes(5)) // GH-90000
@@ -116,7 +116,7 @@ class AgentExecutionPolicyTest {
     }
 
     @Test
-    @DisplayName("Should respect maximum backoff limit [GH-90000]")
+    @DisplayName("Should respect maximum backoff limit")
     void shouldRespectMaxBackoffLimit() { // GH-90000
         AgentExecutionPolicy policy = builder.initialBackoff(Duration.ofSeconds(30)) // GH-90000
                 .maxBackoff(Duration.ofMinutes(1)) // GH-90000
@@ -130,7 +130,7 @@ class AgentExecutionPolicyTest {
     }
 
     @Test
-    @DisplayName("Should apply jitter when enabled [GH-90000]")
+    @DisplayName("Should apply jitter when enabled")
     void shouldApplyJitterWhenEnabled() { // GH-90000
         AgentExecutionPolicy policy = builder.initialBackoff(Duration.ofSeconds(2)) // GH-90000
                 .backoffMultiplier(2.0) // GH-90000
@@ -149,7 +149,7 @@ class AgentExecutionPolicyTest {
     }
 
     @Test
-    @DisplayName("Should determine retry eligibility correctly [GH-90000]")
+    @DisplayName("Should determine retry eligibility correctly")
     void shouldDetermineRetryEligibility() { // GH-90000
         AgentExecutionPolicy policy = builder.maxRetries(3).build(); // GH-90000
 
@@ -160,7 +160,7 @@ class AgentExecutionPolicyTest {
     }
 
     @Test
-    @DisplayName("Should handle zero retry attempts [GH-90000]")
+    @DisplayName("Should handle zero retry attempts")
     void shouldHandleZeroRetryAttempts() { // GH-90000
         AgentExecutionPolicy policy = builder.maxRetries(0).build(); // GH-90000
 
@@ -168,7 +168,7 @@ class AgentExecutionPolicyTest {
     }
 
     @Test
-    @DisplayName("Should calculate backoff for attempt 0 [GH-90000]")
+    @DisplayName("Should calculate backoff for attempt 0")
     void shouldCalculateBackoffForAttemptZero() { // GH-90000
         AgentExecutionPolicy policy =
                 builder.initialBackoff(Duration.ofSeconds(5)).build(); // GH-90000
@@ -178,15 +178,15 @@ class AgentExecutionPolicyTest {
     }
 
     @Test
-    @DisplayName("Should have meaningful toString representation [GH-90000]")
+    @DisplayName("Should have meaningful toString representation")
     void shouldHaveMeaningfulToString() { // GH-90000
         AgentExecutionPolicy policy = AgentExecutionPolicy.defaultPolicy(); // GH-90000
         String toString = policy.toString(); // GH-90000
 
         assertNotNull(toString); // GH-90000
-        assertTrue(toString.contains("AgentExecutionPolicy [GH-90000]"));
-        assertTrue(toString.contains("timeout [GH-90000]"));
-        assertTrue(toString.contains("maxRetries [GH-90000]"));
-        assertTrue(toString.contains("initialBackoff [GH-90000]"));
+        assertTrue(toString.contains("AgentExecutionPolicy"));
+        assertTrue(toString.contains("timeout"));
+        assertTrue(toString.contains("maxRetries"));
+        assertTrue(toString.contains("initialBackoff"));
     }
 }

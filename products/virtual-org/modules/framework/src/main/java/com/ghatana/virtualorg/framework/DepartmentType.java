@@ -2,7 +2,11 @@ package com.ghatana.virtualorg.framework;
 
 /**
  * Enumeration of department types in software organizations.
- */
+  * @doc.type enum
+ * @doc.purpose Provides department type functionality.
+ * @doc.layer product
+ * @doc.pattern Enum
+*/
 public enum DepartmentType {
     ENGINEERING("Engineering", "Software development and architecture"),
     QA("Quality Assurance", "Testing and quality verification"),

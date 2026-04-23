@@ -33,7 +33,7 @@ class FixSuggesterTest {
 
     @Test
     void testSuggestFixes_NoMatches() { // GH-90000
-        var suggestions = fixSuggester.suggestFixes("This is not an error message [GH-90000]");
+        var suggestions = fixSuggester.suggestFixes("This is not an error message");
         assertTrue(suggestions.isEmpty(), "Should not suggest fixes for non-matching messages"); // GH-90000
     }
 
@@ -57,10 +57,10 @@ class FixSuggesterTest {
         String customPattern = "CustomError: (.+?)"; // GH-90000
         FixSuggestion suggestion =
                 FixSuggestion.builder() // GH-90000
-                        .id("custom.fix [GH-90000]")
-                        .description("Custom fix for testing [GH-90000]")
-                        .fixPattern("// Fix for ${1} [GH-90000]")
-                        .language("test [GH-90000]")
+                        .id("custom.fix")
+                        .description("Custom fix for testing")
+                        .fixPattern("// Fix for ${1}")
+                        .language("test")
                         .confidence(0.7) // GH-90000
                         .build(); // GH-90000
 
@@ -83,13 +83,13 @@ class FixSuggesterTest {
 
     @Test
     void testGetSuggestionsForLanguage() { // GH-90000
-        var javaSuggestions = fixSuggester.getSuggestionsForLanguage("java [GH-90000]");
+        var javaSuggestions = fixSuggester.getSuggestionsForLanguage("java");
         assertFalse(javaSuggestions.isEmpty(), "Should return Java suggestions"); // GH-90000
 
-        var pythonSuggestions = fixSuggester.getSuggestionsForLanguage("python [GH-90000]");
+        var pythonSuggestions = fixSuggester.getSuggestionsForLanguage("python");
         assertFalse(pythonSuggestions.isEmpty(), "Should return Python suggestions"); // GH-90000
 
-        var unknownSuggestions = fixSuggester.getSuggestionsForLanguage("nonexistent [GH-90000]");
+        var unknownSuggestions = fixSuggester.getSuggestionsForLanguage("nonexistent");
         assertTrue(unknownSuggestions.isEmpty(), "Should return empty list for unknown language"); // GH-90000
     }
 
@@ -125,9 +125,9 @@ class FixSuggesterTest {
         FixSuggestion suggestion =
                 FixSuggestion.builder() // GH-90000
                         .id(suggestionId) // GH-90000
-                        .description("Test suggestion [GH-90000]")
-                        .fixPattern("// ${1} [GH-90000]")
-                        .language("java [GH-90000]")
+                        .description("Test suggestion")
+                        .fixPattern("// ${1}")
+                        .language("java")
                         .confidence(0.5) // GH-90000
                         .build(); // GH-90000
 

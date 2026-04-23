@@ -11,17 +11,17 @@ import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.*;
 
-@DisplayName("WorkflowStepDefinition Tests [GH-90000]")
+@DisplayName("WorkflowStepDefinition Tests")
 class WorkflowStepDefinitionTest {
 
     @Test
     void shouldCreateActionStep() { // GH-90000
         WorkflowStepDefinition step = WorkflowStepDefinition.action("s1", "Validate", "validate-op"); // GH-90000
 
-        assertThat(step.stepId()).isEqualTo("s1 [GH-90000]");
-        assertThat(step.name()).isEqualTo("Validate [GH-90000]");
+        assertThat(step.stepId()).isEqualTo("s1");
+        assertThat(step.name()).isEqualTo("Validate");
         assertThat(step.kind()).isEqualTo(WorkflowStepKind.ACTION); // GH-90000
-        assertThat(step.operatorId()).isEqualTo("validate-op [GH-90000]");
+        assertThat(step.operatorId()).isEqualTo("validate-op");
         assertThat(step.maxRetries()).isZero(); // GH-90000
         assertThat(step.config()).isEmpty(); // GH-90000
     }
@@ -32,9 +32,9 @@ class WorkflowStepDefinitionTest {
             "s2", "Check Amount", "ctx.amount > 1000", "step-high", "step-low");
 
         assertThat(step.kind()).isEqualTo(WorkflowStepKind.DECISION); // GH-90000
-        assertThat(step.celCondition()).isEqualTo("ctx.amount > 1000 [GH-90000]");
-        assertThat(step.nextStepOnTrue()).isEqualTo("step-high [GH-90000]");
-        assertThat(step.nextStepOnFalse()).isEqualTo("step-low [GH-90000]");
+        assertThat(step.celCondition()).isEqualTo("ctx.amount > 1000");
+        assertThat(step.nextStepOnTrue()).isEqualTo("step-high");
+        assertThat(step.nextStepOnFalse()).isEqualTo("step-low");
     }
 
     @Test
@@ -52,7 +52,7 @@ class WorkflowStepDefinitionTest {
             "s4", "Run Sub", "sub-wf-1");
 
         assertThat(step.kind()).isEqualTo(WorkflowStepKind.SUB_WORKFLOW); // GH-90000
-        assertThat(step.subWorkflowId()).isEqualTo("sub-wf-1 [GH-90000]");
+        assertThat(step.subWorkflowId()).isEqualTo("sub-wf-1");
     }
 
     @Test
@@ -62,7 +62,7 @@ class WorkflowStepDefinitionTest {
 
         assertThat(withRetries.maxRetries()).isEqualTo(5); // GH-90000
         assertThat(withRetries.retryBackoff()).isEqualTo(Duration.ofSeconds(2)); // GH-90000
-        assertThat(withRetries.stepId()).isEqualTo("s1 [GH-90000]");
+        assertThat(withRetries.stepId()).isEqualTo("s1");
     }
 
     @Test
@@ -76,17 +76,17 @@ class WorkflowStepDefinitionTest {
     @Test
     void shouldApplyCompensation() { // GH-90000
         WorkflowStepDefinition base = WorkflowStepDefinition.action("s1", "Do", "op"); // GH-90000
-        WorkflowStepDefinition withComp = base.withCompensation("comp-step [GH-90000]");
+        WorkflowStepDefinition withComp = base.withCompensation("comp-step");
 
-        assertThat(withComp.compensationStepId()).isEqualTo("comp-step [GH-90000]");
+        assertThat(withComp.compensationStepId()).isEqualTo("comp-step");
     }
 
     @Test
     void shouldApplyNextStep() { // GH-90000
         WorkflowStepDefinition base = WorkflowStepDefinition.action("s1", "Do", "op"); // GH-90000
-        WorkflowStepDefinition withNext = base.withNextStep("s2 [GH-90000]");
+        WorkflowStepDefinition withNext = base.withNextStep("s2");
 
-        assertThat(withNext.nextStep()).isEqualTo("s2 [GH-90000]");
+        assertThat(withNext.nextStep()).isEqualTo("s2");
     }
 
     @Test
@@ -107,6 +107,6 @@ class WorkflowStepDefinitionTest {
 
         // Modifying original shouldn't affect step
         mutableConfig.put("k2", "v2"); // GH-90000
-        assertThat(step.config()).doesNotContainKey("k2 [GH-90000]");
+        assertThat(step.config()).doesNotContainKey("k2");
     }
 }

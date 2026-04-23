@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.*;
  * Tests for WP5: Evidence plane — HashChainedTraceAppender, TraceEvent,
  * TraceEventBuilder, hash chain integrity and tamper detection.
  */
-@DisplayName("Evidence Plane (WP5) [GH-90000]")
+@DisplayName("Evidence Plane (WP5)")
 class HashChainedTraceAppenderTest extends EventloopTestBase {
 
     private HashChainedTraceAppender appender;
@@ -41,11 +41,11 @@ class HashChainedTraceAppenderTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("append and retrieval [GH-90000]")
+    @DisplayName("append and retrieval")
     class AppendAndRetrieval {
 
         @Test
-        @DisplayName("should append and retrieve events by trace [GH-90000]")
+        @DisplayName("should append and retrieve events by trace")
         void shouldAppendAndRetrieveByTrace() { // GH-90000
             TraceEventBuilder builder = new TraceEventBuilder( // GH-90000
                     "trace-1", "agent-1", "tenant-1", "");
@@ -60,13 +60,13 @@ class HashChainedTraceAppenderTest extends EventloopTestBase {
                     () -> appender.getByTrace("trace-1", "tenant-1")); // GH-90000
 
             assertThat(retrieved).hasSize(1); // GH-90000
-            assertThat(retrieved.getFirst().summary()).isEqualTo("Called API [GH-90000]");
+            assertThat(retrieved.getFirst().summary()).isEqualTo("Called API");
             assertThat(retrieved.getFirst().eventType()).isEqualTo(TraceEventType.ACTION_EXECUTED); // GH-90000
             assertThat(retrieved.getFirst().payload()).containsEntry("toolId", "weather-lookup"); // GH-90000
         }
 
         @Test
-        @DisplayName("should retrieve events by agent [GH-90000]")
+        @DisplayName("should retrieve events by agent")
         void shouldRetrieveByAgent() { // GH-90000
             TraceEventBuilder builder = new TraceEventBuilder( // GH-90000
                     "trace-1", "agent-1", "tenant-1", "");
@@ -83,7 +83,7 @@ class HashChainedTraceAppenderTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should retrieve events by type [GH-90000]")
+        @DisplayName("should retrieve events by type")
         void shouldRetrieveByType() { // GH-90000
             TraceEventBuilder builder = new TraceEventBuilder( // GH-90000
                     "trace-1", "agent-1", "tenant-1", "");
@@ -104,7 +104,7 @@ class HashChainedTraceAppenderTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should enforce time range filters on getByAgent [GH-90000]")
+        @DisplayName("should enforce time range filters on getByAgent")
         void shouldFilterByTimeRange() { // GH-90000
             Instant now = Instant.now(); // GH-90000
             TraceEventBuilder builder = new TraceEventBuilder( // GH-90000
@@ -122,7 +122,7 @@ class HashChainedTraceAppenderTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should respect limit parameter [GH-90000]")
+        @DisplayName("should respect limit parameter")
         void shouldRespectLimit() { // GH-90000
             TraceEventBuilder builder = new TraceEventBuilder( // GH-90000
                     "trace-1", "agent-1", "tenant-1", "");
@@ -144,11 +144,11 @@ class HashChainedTraceAppenderTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("hash chain integrity [GH-90000]")
+    @DisplayName("hash chain integrity")
     class HashChainIntegrity {
 
         @Test
-        @DisplayName("events should be hash-chained (previousHash links) [GH-90000]")
+        @DisplayName("events should be hash-chained (previousHash links)")
         void eventsShouldBeHashChained() { // GH-90000
             TraceEventBuilder builder = new TraceEventBuilder( // GH-90000
                     "trace-1", "agent-1", "tenant-1", "");
@@ -168,7 +168,7 @@ class HashChainedTraceAppenderTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("first event should have empty previousHash (genesis) [GH-90000]")
+        @DisplayName("first event should have empty previousHash (genesis)")
         void firstEventShouldHaveEmptyPreviousHash() { // GH-90000
             TraceEventBuilder builder = new TraceEventBuilder( // GH-90000
                     "trace-1", "agent-1", "tenant-1", "");
@@ -179,7 +179,7 @@ class HashChainedTraceAppenderTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("verifyChain should return true for valid chain [GH-90000]")
+        @DisplayName("verifyChain should return true for valid chain")
         void verifyChainShouldReturnTrueForValid() { // GH-90000
             TraceEventBuilder builder = new TraceEventBuilder( // GH-90000
                     "trace-1", "agent-1", "tenant-1", "");
@@ -196,13 +196,13 @@ class HashChainedTraceAppenderTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("verifyChain should return true for empty list [GH-90000]")
+        @DisplayName("verifyChain should return true for empty list")
         void verifyChainShouldReturnTrueForEmpty() { // GH-90000
             assertThat(appender.verifyChain(List.of())).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("verifyChain should detect tampered event hash [GH-90000]")
+        @DisplayName("verifyChain should detect tampered event hash")
         void verifyChainShouldDetectTamperedHash() { // GH-90000
             TraceEventBuilder builder = new TraceEventBuilder( // GH-90000
                     "trace-1", "agent-1", "tenant-1", "");
@@ -221,7 +221,7 @@ class HashChainedTraceAppenderTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("verifyChain should detect broken previousHash link [GH-90000]")
+        @DisplayName("verifyChain should detect broken previousHash link")
         void verifyChainShouldDetectBrokenLink() { // GH-90000
             TraceEventBuilder builder = new TraceEventBuilder( // GH-90000
                     "trace-1", "agent-1", "tenant-1", "");
@@ -245,11 +245,11 @@ class HashChainedTraceAppenderTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("rejection [GH-90000]")
+    @DisplayName("rejection")
     class Rejection {
 
         @Test
-        @DisplayName("should reject event with wrong previousHash [GH-90000]")
+        @DisplayName("should reject event with wrong previousHash")
         void shouldRejectWrongPreviousHash() { // GH-90000
             TraceEventBuilder builder = new TraceEventBuilder( // GH-90000
                     "trace-1", "agent-1", "tenant-1", "");
@@ -264,15 +264,15 @@ class HashChainedTraceAppenderTest extends EventloopTestBase {
 
             try {
                 runPromise(() -> appender.append(rogue1)); // GH-90000
-                fail("Should have thrown due to broken hash chain [GH-90000]");
+                fail("Should have thrown due to broken hash chain");
             } catch (Exception e) { // GH-90000
-                assertThat(e).hasMessageContaining("Hash chain broken [GH-90000]");
+                assertThat(e).hasMessageContaining("Hash chain broken");
             }
             clearFatalError(); // GH-90000
         }
 
         @Test
-        @DisplayName("should reject event with tampered hash [GH-90000]")
+        @DisplayName("should reject event with tampered hash")
         void shouldRejectTamperedHash() { // GH-90000
             TraceEvent tampered = new TraceEvent( // GH-90000
                     "evt-1", "trace-1", 0,
@@ -282,9 +282,9 @@ class HashChainedTraceAppenderTest extends EventloopTestBase {
 
             try {
                 runPromise(() -> appender.append(tampered)); // GH-90000
-                fail("Should have thrown due to hash mismatch [GH-90000]");
+                fail("Should have thrown due to hash mismatch");
             } catch (Exception e) { // GH-90000
-                assertThat(e).hasMessageContaining("hash mismatch [GH-90000]");
+                assertThat(e).hasMessageContaining("hash mismatch");
             }
             clearFatalError(); // GH-90000
         }
@@ -295,11 +295,11 @@ class HashChainedTraceAppenderTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("tenant isolation [GH-90000]")
+    @DisplayName("tenant isolation")
     class TenantIsolation {
 
         @Test
-        @DisplayName("different tenants should have separate ledger partitions [GH-90000]")
+        @DisplayName("different tenants should have separate ledger partitions")
         void differentTenantsShouldBeIsolated() { // GH-90000
             TraceEventBuilder builder1 = new TraceEventBuilder( // GH-90000
                     "trace-1", "agent-1", "tenant-A", "");
@@ -329,13 +329,13 @@ class HashChainedTraceAppenderTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("hash computation [GH-90000]")
+    @DisplayName("hash computation")
     class HashComputation {
 
         @Test
-        @DisplayName("computeHash should be deterministic [GH-90000]")
+        @DisplayName("computeHash should be deterministic")
         void computeHashShouldBeDeterministic() { // GH-90000
-            Instant now = Instant.parse("2026-03-22T12:00:00Z [GH-90000]");
+            Instant now = Instant.parse("2026-03-22T12:00:00Z");
             TraceEvent event = new TraceEvent( // GH-90000
                     "evt-1", "trace-1", 0,
                     TraceEventType.ACTION_EXECUTED, "agent-1", "tenant-1",
@@ -350,7 +350,7 @@ class HashChainedTraceAppenderTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("different events should produce different hashes [GH-90000]")
+        @DisplayName("different events should produce different hashes")
         void differentEventsShouldProduceDifferentHashes() { // GH-90000
             Instant now = Instant.now(); // GH-90000
             TraceEvent e1 = new TraceEvent( // GH-90000

@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-@DisplayName("KGQueryService Tests [GH-90000]")
+@DisplayName("KGQueryService Tests")
 class KGQueryServiceTest extends EventloopTestBase {
 
   @Mock private KGNodeRepository nodeRepository;
@@ -38,20 +38,20 @@ class KGQueryServiceTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("traverse returns empty list when max hops is nonpositive [GH-90000]")
+  @DisplayName("traverse returns empty list when max hops is nonpositive")
   void traverseReturnsEmptyListWhenMaxHopsIsNonpositive() { // GH-90000
     assertThat(runPromise(() -> service.traverse("node-a", 0, "tenant-a"))).isEmpty(); // GH-90000
   }
 
   @Test
-  @DisplayName("traverse follows outgoing edges across hops [GH-90000]")
+  @DisplayName("traverse follows outgoing edges across hops")
   void traverseFollowsOutgoingEdgesAcrossHops() { // GH-90000
     YAPPCGraphEdge edge1 = edge("node-a", "node-b"); // GH-90000
     YAPPCGraphEdge edge2 = edge("node-b", "node-c"); // GH-90000
     when(edgeRepository.findEdgesFromSource("node-a", "tenant-a", Set.of())).thenReturn(Promise.of(List.of(edge1))); // GH-90000
     when(edgeRepository.findEdgesFromSource("node-b", "tenant-a", Set.of())).thenReturn(Promise.of(List.of(edge2))); // GH-90000
     when(nodeRepository.findNodesByIds(List.of("node-b", "node-c"), "tenant-a")) // GH-90000
-        .thenReturn(Promise.of(List.of(node("node-b [GH-90000]"), node("node-c [GH-90000]"))));
+        .thenReturn(Promise.of(List.of(node("node-b"), node("node-c"))));
 
     List<YAPPCGraphNode> result = runPromise(() -> service.traverse("node-a", 2, "tenant-a")); // GH-90000
 
@@ -59,7 +59,7 @@ class KGQueryServiceTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("traverse returns empty when there are no reachable nodes [GH-90000]")
+  @DisplayName("traverse returns empty when there are no reachable nodes")
   void traverseReturnsEmptyWhenThereAreNoReachableNodes() { // GH-90000
     when(edgeRepository.findEdgesFromSource("node-a", "tenant-a", Set.of())).thenReturn(Promise.of(List.of())); // GH-90000
 
@@ -68,38 +68,38 @@ class KGQueryServiceTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("traverse stops when hop limit is reached before the frontier is exhausted [GH-90000]")
+  @DisplayName("traverse stops when hop limit is reached before the frontier is exhausted")
   void traverseStopsWhenHopLimitIsReachedBeforeTheFrontierIsExhausted() { // GH-90000
     when(edgeRepository.findEdgesFromSource("node-a", "tenant-a", Set.of())) // GH-90000
         .thenReturn(Promise.of(List.of(edge("node-a", "node-b")))); // GH-90000
-    when(nodeRepository.findNodesByIds(List.of("node-b [GH-90000]"), "tenant-a"))
-        .thenReturn(Promise.of(List.of(node("node-b [GH-90000]"))));
+    when(nodeRepository.findNodesByIds(List.of("node-b"), "tenant-a"))
+        .thenReturn(Promise.of(List.of(node("node-b"))));
 
     List<YAPPCGraphNode> result = runPromise(() -> service.traverse("node-a", 1, "tenant-a")); // GH-90000
 
-    assertThat(result).extracting(YAPPCGraphNode::id).containsExactly("node-b [GH-90000]");
+    assertThat(result).extracting(YAPPCGraphNode::id).containsExactly("node-b");
   }
 
   @Test
-  @DisplayName("traverse ignores duplicate targets that were already visited [GH-90000]")
+  @DisplayName("traverse ignores duplicate targets that were already visited")
   void traverseIgnoresDuplicateTargetsThatWereAlreadyVisited() { // GH-90000
     when(edgeRepository.findEdgesFromSource("node-a", "tenant-a", Set.of())) // GH-90000
         .thenReturn(Promise.of(List.of(edge("node-a", "node-b"), edge("node-a", "node-b")))); // GH-90000
     when(edgeRepository.findEdgesFromSource("node-b", "tenant-a", Set.of())) // GH-90000
       .thenReturn(Promise.of(List.of())); // GH-90000
-    when(nodeRepository.findNodesByIds(List.of("node-b [GH-90000]"), "tenant-a"))
-        .thenReturn(Promise.of(List.of(node("node-b [GH-90000]"))));
+    when(nodeRepository.findNodesByIds(List.of("node-b"), "tenant-a"))
+        .thenReturn(Promise.of(List.of(node("node-b"))));
 
     List<YAPPCGraphNode> result = runPromise(() -> service.traverse("node-a", 2, "tenant-a")); // GH-90000
 
-    assertThat(result).extracting(YAPPCGraphNode::id).containsExactly("node-b [GH-90000]");
+    assertThat(result).extracting(YAPPCGraphNode::id).containsExactly("node-b");
   }
 
   @Test
-  @DisplayName("semanticSearch delegates and returns empty for blank queries [GH-90000]")
+  @DisplayName("semanticSearch delegates and returns empty for blank queries")
   void semanticSearchDelegatesAndReturnsEmptyForBlankQueries() { // GH-90000
     KGSemanticSearchService.SemanticNodeMatch match =
-        new KGSemanticSearchService.SemanticNodeMatch(node("node-b [GH-90000]"), 0.92, Map.of("tenantId", "tenant-a"));
+        new KGSemanticSearchService.SemanticNodeMatch(node("node-b"), 0.92, Map.of("tenantId", "tenant-a"));
     when(semanticSearchService.findSimilarNodes("billing", "tenant-a", 5, 0.75)) // GH-90000
         .thenReturn(Promise.of(List.of(match))); // GH-90000
 
@@ -109,7 +109,7 @@ class KGQueryServiceTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("findPaths returns node paths and avoids cycles [GH-90000]")
+  @DisplayName("findPaths returns node paths and avoids cycles")
   void findPathsReturnsNodePathsAndAvoidsCycles() { // GH-90000
     when(edgeRepository.findEdgesFromSource("node-a", "tenant-a", Set.of())) // GH-90000
         .thenReturn(Promise.of(List.of(edge("node-a", "node-b"), edge("node-a", "node-c")))); // GH-90000
@@ -118,7 +118,7 @@ class KGQueryServiceTest extends EventloopTestBase {
     when(edgeRepository.findEdgesFromSource("node-c", "tenant-a", Set.of())) // GH-90000
         .thenReturn(Promise.of(List.of(edge("node-c", "node-a")))); // GH-90000
     when(nodeRepository.findNodesByIds(List.of("node-a", "node-c"), "tenant-a")) // GH-90000
-        .thenReturn(Promise.of(List.of(node("node-a [GH-90000]"), node("node-b [GH-90000]"), node("node-c [GH-90000]"))));
+        .thenReturn(Promise.of(List.of(node("node-a"), node("node-b"), node("node-c"))));
 
     List<List<YAPPCGraphNode>> result =
         runPromise(() -> service.findPaths("node-a", "node-c", "tenant-a")); // GH-90000
@@ -128,7 +128,7 @@ class KGQueryServiceTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("findPaths returns empty when no path exists [GH-90000]")
+  @DisplayName("findPaths returns empty when no path exists")
   void findPathsReturnsEmptyWhenNoPathExists() { // GH-90000
     when(edgeRepository.findEdgesFromSource("node-a", "tenant-a", Set.of())) // GH-90000
         .thenReturn(Promise.of(List.of(edge("node-a", "node-b")))); // GH-90000
@@ -139,7 +139,7 @@ class KGQueryServiceTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("findPaths ignores cyclic edges already present in the current path [GH-90000]")
+  @DisplayName("findPaths ignores cyclic edges already present in the current path")
   void findPathsIgnoresCyclicEdgesAlreadyPresentInTheCurrentPath() { // GH-90000
     when(edgeRepository.findEdgesFromSource("node-a", "tenant-a", Set.of())) // GH-90000
         .thenReturn(Promise.of(List.of(edge("node-a", "node-b")))); // GH-90000
@@ -150,7 +150,7 @@ class KGQueryServiceTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("findPaths stops when the search depth budget is exhausted [GH-90000]")
+  @DisplayName("findPaths stops when the search depth budget is exhausted")
   void findPathsStopsWhenTheSearchDepthBudgetIsExhausted() { // GH-90000
     when(edgeRepository.findEdgesFromSource("node-a", "tenant-a", Set.of())) // GH-90000
         .thenReturn(Promise.of(List.of(edge("node-a", "node-b")))); // GH-90000
@@ -167,27 +167,27 @@ class KGQueryServiceTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("findPaths returns the trivial path when source equals target [GH-90000]")
+  @DisplayName("findPaths returns the trivial path when source equals target")
   void findPathsReturnsTheTrivialPathWhenSourceEqualsTarget() { // GH-90000
-    when(nodeRepository.findNodesByIds(List.of("node-a [GH-90000]"), "tenant-a"))
-        .thenReturn(Promise.of(List.of(node("node-a [GH-90000]"))));
+    when(nodeRepository.findNodesByIds(List.of("node-a"), "tenant-a"))
+        .thenReturn(Promise.of(List.of(node("node-a"))));
 
     List<List<YAPPCGraphNode>> result = runPromise(() -> service.findPaths("node-a", "node-a", "tenant-a")); // GH-90000
 
-    assertThat(result).singleElement().satisfies(path -> assertThat(path).extracting(YAPPCGraphNode::id).containsExactly("node-a [GH-90000]"));
+    assertThat(result).singleElement().satisfies(path -> assertThat(path).extracting(YAPPCGraphNode::id).containsExactly("node-a"));
   }
 
   @Test
-  @DisplayName("findPaths drops ids that cannot be resolved back to nodes [GH-90000]")
+  @DisplayName("findPaths drops ids that cannot be resolved back to nodes")
   void findPathsDropsIdsThatCannotBeResolvedBackToNodes() { // GH-90000
     when(edgeRepository.findEdgesFromSource("node-a", "tenant-a", Set.of())) // GH-90000
         .thenReturn(Promise.of(List.of(edge("node-a", "node-c")))); // GH-90000
     when(nodeRepository.findNodesByIds(List.of("node-a", "node-c"), "tenant-a")) // GH-90000
-        .thenReturn(Promise.of(List.of(node("node-a [GH-90000]"))));
+        .thenReturn(Promise.of(List.of(node("node-a"))));
 
     List<List<YAPPCGraphNode>> result = runPromise(() -> service.findPaths("node-a", "node-c", "tenant-a")); // GH-90000
 
-    assertThat(result).singleElement().satisfies(path -> assertThat(path).extracting(YAPPCGraphNode::id).containsExactly("node-a [GH-90000]"));
+    assertThat(result).singleElement().satisfies(path -> assertThat(path).extracting(YAPPCGraphNode::id).containsExactly("node-a"));
   }
 
   private static YAPPCGraphNode node(String id) { // GH-90000

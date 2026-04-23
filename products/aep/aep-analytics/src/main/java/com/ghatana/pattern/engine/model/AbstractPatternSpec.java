@@ -5,7 +5,11 @@ import java.util.List;
 
 /**
  * Base abstract class for pattern specifications.
- */
+  * @doc.type class
+ * @doc.purpose Provides abstract pattern spec functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 public abstract class AbstractPatternSpec implements IPatternSpec {
     @Override
     public List<IPatternSpec> getPatterns() {

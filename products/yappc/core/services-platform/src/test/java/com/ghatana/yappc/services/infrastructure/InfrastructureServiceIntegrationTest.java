@@ -26,16 +26,16 @@ class InfrastructureServiceIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Integration: Should provision compute resources [GH-90000]")
+    @DisplayName("Integration: Should provision compute resources")
     void testProvisionCompute() throws Exception { // GH-90000
         ResourceRequest request = ResourceRequest.builder() // GH-90000
-                .resourceType("COMPUTE [GH-90000]")
+                .resourceType("COMPUTE")
                 .specification(Map.of( // GH-90000
                     "cpu", "4",
                     "memory", "16GB",
                     "region", "us-west-2"
                 ))
-                .tenantId("test-tenant [GH-90000]")
+                .tenantId("test-tenant")
                 .build(); // GH-90000
 
         Promise<Resource> promise = infrastructureService.provision(request); // GH-90000
@@ -43,41 +43,41 @@ class InfrastructureServiceIntegrationTest extends EventloopTestBase {
 
         assertThat(resource).isNotNull(); // GH-90000
         assertThat(resource.id()).isNotNull(); // GH-90000
-        assertThat(resource.type()).isEqualTo("COMPUTE [GH-90000]");
-        assertThat(resource.status()).isEqualTo("PROVISIONED [GH-90000]");
+        assertThat(resource.type()).isEqualTo("COMPUTE");
+        assertThat(resource.status()).isEqualTo("PROVISIONED");
     }
 
     @Test
-    @DisplayName("Integration: Should provision database [GH-90000]")
+    @DisplayName("Integration: Should provision database")
     void testProvisionDatabase() throws Exception { // GH-90000
         ResourceRequest request = ResourceRequest.builder() // GH-90000
-                .resourceType("DATABASE [GH-90000]")
+                .resourceType("DATABASE")
                 .specification(Map.of( // GH-90000
                     "engine", "postgresql",
                     "version", "15",
                     "instanceClass", "db.r5.xlarge"
                 ))
-                .tenantId("test-tenant [GH-90000]")
+                .tenantId("test-tenant")
                 .build(); // GH-90000
 
         Promise<Resource> promise = infrastructureService.provision(request); // GH-90000
         Resource resource = runPromise(() -> promise); // GH-90000
 
-        assertThat(resource.type()).isEqualTo("DATABASE [GH-90000]");
-        assertThat(resource.endpoints()).containsKey("jdbc [GH-90000]");
+        assertThat(resource.type()).isEqualTo("DATABASE");
+        assertThat(resource.endpoints()).containsKey("jdbc");
     }
 
     @Test
-    @DisplayName("Integration: Should configure networking [GH-90000]")
+    @DisplayName("Integration: Should configure networking")
     void testConfigureNetworking() throws Exception { // GH-90000
         NetworkRequest request = NetworkRequest.builder() // GH-90000
-                .vpcName("test-vpc [GH-90000]")
-                .cidrBlock("10.0.0.0/16 [GH-90000]")
+                .vpcName("test-vpc")
+                .cidrBlock("10.0.0.0/16")
                 .subnets(Map.of( // GH-90000
                     "public-1a", "10.0.1.0/24",
                     "private-1a", "10.0.2.0/24"
                 ))
-                .tenantId("test-tenant [GH-90000]")
+                .tenantId("test-tenant")
                 .build(); // GH-90000
 
         Promise<NetworkConfig> promise = infrastructureService.configureNetwork(request); // GH-90000
@@ -89,14 +89,14 @@ class InfrastructureServiceIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Integration: Should set up load balancer [GH-90000]")
+    @DisplayName("Integration: Should set up load balancer")
     void testSetupLoadBalancer() throws Exception { // GH-90000
         LoadBalancerRequest request = LoadBalancerRequest.builder() // GH-90000
-                .name("test-lb [GH-90000]")
-                .type("ALB [GH-90000]")
+                .name("test-lb")
+                .type("ALB")
                 .listeners(Map.of("80", "HTTP", "443", "HTTPS")) // GH-90000
                 .targetGroups(Map.of("web", "80", "api", "8080")) // GH-90000
-                .tenantId("test-tenant [GH-90000]")
+                .tenantId("test-tenant")
                 .build(); // GH-90000
 
         Promise<LoadBalancer> promise = infrastructureService.setupLoadBalancer(request); // GH-90000
@@ -108,17 +108,17 @@ class InfrastructureServiceIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Integration: Should configure security groups [GH-90000]")
+    @DisplayName("Integration: Should configure security groups")
     void testConfigureSecurityGroups() throws Exception { // GH-90000
         SecurityGroupRequest request = SecurityGroupRequest.builder() // GH-90000
-                .name("test-sg [GH-90000]")
-                .vpcId("vpc-12345 [GH-90000]")
+                .name("test-sg")
+                .vpcId("vpc-12345")
                 .rules(java.util.List.of( // GH-90000
                     Rule.ingress("0.0.0.0/0", "tcp", 443), // GH-90000
                     Rule.ingress("10.0.0.0/8", "tcp", 8080), // GH-90000
                     Rule.egress("0.0.0.0/0", "all", 0) // GH-90000
                 ))
-                .tenantId("test-tenant [GH-90000]")
+                .tenantId("test-tenant")
                 .build(); // GH-90000
 
         Promise<SecurityGroup> promise = infrastructureService.configureSecurityGroup(request); // GH-90000
@@ -129,35 +129,35 @@ class InfrastructureServiceIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Integration: Should deploy container to Kubernetes [GH-90000]")
+    @DisplayName("Integration: Should deploy container to Kubernetes")
     void testDeployContainer() throws Exception { // GH-90000
         ContainerDeploymentRequest request = ContainerDeploymentRequest.builder() // GH-90000
-                .image("yappc/api:latest [GH-90000]")
+                .image("yappc/api:latest")
                 .replicas(3) // GH-90000
                 .resources(Map.of("cpu", "500m", "memory", "1Gi")) // GH-90000
                 .environment(Map.of("ENV", "production", "LOG_LEVEL", "info")) // GH-90000
-                .tenantId("test-tenant [GH-90000]")
+                .tenantId("test-tenant")
                 .build(); // GH-90000
 
         Promise<Deployment> promise = infrastructureService.deployContainer(request); // GH-90000
         Deployment deployment = runPromise(() -> promise); // GH-90000
 
         assertThat(deployment.id()).isNotNull(); // GH-90000
-        assertThat(deployment.status()).isEqualTo("RUNNING [GH-90000]");
+        assertThat(deployment.status()).isEqualTo("RUNNING");
         assertThat(deployment.endpoints()).isNotEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("Integration: Should configure auto-scaling [GH-90000]")
+    @DisplayName("Integration: Should configure auto-scaling")
     void testConfigureAutoScaling() throws Exception { // GH-90000
         AutoScalingRequest request = AutoScalingRequest.builder() // GH-90000
-                .resourceId("deployment-123 [GH-90000]")
+                .resourceId("deployment-123")
                 .minCapacity(2) // GH-90000
                 .maxCapacity(10) // GH-90000
                 .targetCpuUtilization(70.0) // GH-90000
                 .scaleOutCooldown(300) // GH-90000
                 .scaleInCooldown(600) // GH-90000
-                .tenantId("test-tenant [GH-90000]")
+                .tenantId("test-tenant")
                 .build(); // GH-90000
 
         Promise<AutoScalingConfig> promise = infrastructureService.configureAutoScaling(request); // GH-90000
@@ -169,9 +169,9 @@ class InfrastructureServiceIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Integration: Should retrieve resource metrics [GH-90000]")
+    @DisplayName("Integration: Should retrieve resource metrics")
     void testGetResourceMetrics() throws Exception { // GH-90000
-        Promise<ResourceMetrics> promise = infrastructureService.getMetrics("deployment-123 [GH-90000]");
+        Promise<ResourceMetrics> promise = infrastructureService.getMetrics("deployment-123");
         ResourceMetrics metrics = runPromise(() -> promise); // GH-90000
 
         assertThat(metrics).isNotNull(); // GH-90000
@@ -181,9 +181,9 @@ class InfrastructureServiceIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Integration: Should decommission resources [GH-90000]")
+    @DisplayName("Integration: Should decommission resources")
     void testDecommissionResources() throws Exception { // GH-90000
-        Promise<Boolean> promise = infrastructureService.decommission("resource-123 [GH-90000]");
+        Promise<Boolean> promise = infrastructureService.decommission("resource-123");
         Boolean result = runPromise(() -> promise); // GH-90000
 
         assertThat(result).isTrue(); // GH-90000
@@ -327,14 +327,14 @@ class InfrastructureServiceIntegrationTest extends EventloopTestBase {
         public Promise<Resource> provision(ResourceRequest request) { // GH-90000
             return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
                 Map<String, String> endpoints = new java.util.HashMap<>(); // GH-90000
-                if (request.resourceType().equals("DATABASE [GH-90000]")) {
+                if (request.resourceType().equals("DATABASE")) {
                     endpoints.put("jdbc", "jdbc:postgresql://localhost:5432/test"); // GH-90000
                 }
 
                 return Resource.builder() // GH-90000
                     .id("resource-" + java.util.UUID.randomUUID()) // GH-90000
                     .type(request.resourceType()) // GH-90000
-                    .status("PROVISIONED [GH-90000]")
+                    .status("PROVISIONED")
                     .endpoints(endpoints) // GH-90000
                     .tenantId(request.tenantId()) // GH-90000
                     .build(); // GH-90000

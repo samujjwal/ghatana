@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern UnitTest
  */
-@DisplayName("EventSchemaInferenceService [GH-90000]")
+@DisplayName("EventSchemaInferenceService")
 class EventSchemaInferenceServiceTest {
 
     private EventSchemaInferenceService service;
@@ -36,11 +36,11 @@ class EventSchemaInferenceServiceTest {
     }
 
     @Nested
-    @DisplayName("inferSchema() [GH-90000]")
+    @DisplayName("inferSchema()")
     class InferSchemaTests {
 
         @Test
-        @DisplayName("infers schema from sample events [GH-90000]")
+        @DisplayName("infers schema from sample events")
         void infersSchemaFromSampleEvents() { // GH-90000
             List<Map<String, Object>> samples = List.of( // GH-90000
                 Map.of("id", 1, "name", "Alice", "amount", 100.0, "active", true), // GH-90000
@@ -50,16 +50,16 @@ class EventSchemaInferenceServiceTest {
 
             EventSchema schema = service.inferSchema("transaction.created", samples); // GH-90000
 
-            assertThat(schema.eventType()).isEqualTo("transaction.created [GH-90000]");
+            assertThat(schema.eventType()).isEqualTo("transaction.created");
             assertThat(schema.fields()).isNotEmpty(); // GH-90000
-            assertThat(schema.fields()).containsKey("id [GH-90000]");
-            assertThat(schema.fields()).containsKey("name [GH-90000]");
-            assertThat(schema.fields()).containsKey("amount [GH-90000]");
-            assertThat(schema.fields()).containsKey("active [GH-90000]");
+            assertThat(schema.fields()).containsKey("id");
+            assertThat(schema.fields()).containsKey("name");
+            assertThat(schema.fields()).containsKey("amount");
+            assertThat(schema.fields()).containsKey("active");
         }
 
         @Test
-        @DisplayName("infers field types correctly [GH-90000]")
+        @DisplayName("infers field types correctly")
         void infersFieldTypesCorrectly() { // GH-90000
             List<Map<String, Object>> samples = List.of( // GH-90000
                 Map.of("id", 1, "amount", 100.0, "active", true, "data", Map.of("key", "value")) // GH-90000
@@ -67,14 +67,14 @@ class EventSchemaInferenceServiceTest {
 
             EventSchema schema = service.inferSchema("test.event", samples); // GH-90000
 
-            assertThat(schema.fields().get("id [GH-90000]").type()).isEqualTo(EventSchemaInferenceService.FieldType.INTEGER);
-            assertThat(schema.fields().get("amount [GH-90000]").type()).isEqualTo(EventSchemaInferenceService.FieldType.NUMBER);
-            assertThat(schema.fields().get("active [GH-90000]").type()).isEqualTo(EventSchemaInferenceService.FieldType.BOOLEAN);
-            assertThat(schema.fields().get("data [GH-90000]").type()).isEqualTo(EventSchemaInferenceService.FieldType.OBJECT);
+            assertThat(schema.fields().get("id").type()).isEqualTo(EventSchemaInferenceService.FieldType.INTEGER);
+            assertThat(schema.fields().get("amount").type()).isEqualTo(EventSchemaInferenceService.FieldType.NUMBER);
+            assertThat(schema.fields().get("active").type()).isEqualTo(EventSchemaInferenceService.FieldType.BOOLEAN);
+            assertThat(schema.fields().get("data").type()).isEqualTo(EventSchemaInferenceService.FieldType.OBJECT);
         }
 
         @Test
-        @DisplayName("infers required fields [GH-90000]")
+        @DisplayName("infers required fields")
         void infersRequiredFields() { // GH-90000
             List<Map<String, Object>> samples = List.of( // GH-90000
                 Map.of("id", 1, "name", "Alice"), // GH-90000
@@ -84,12 +84,12 @@ class EventSchemaInferenceServiceTest {
 
             EventSchema schema = service.inferSchema("test.event", samples); // GH-90000
 
-            assertThat(schema.requiredFields()).contains("id [GH-90000]");
-            assertThat(schema.requiredFields()).contains("name [GH-90000]");
+            assertThat(schema.requiredFields()).contains("id");
+            assertThat(schema.requiredFields()).contains("name");
         }
 
         @Test
-        @DisplayName("handles fields with nulls [GH-90000]")
+        @DisplayName("handles fields with nulls")
         void handlesFieldsWithNulls() { // GH-90000
             Map<String, Object> first = new HashMap<>(); // GH-90000
             first.put("id", 1); // GH-90000
@@ -109,12 +109,12 @@ class EventSchemaInferenceServiceTest {
 
             EventSchema schema = service.inferSchema("test.event", samples); // GH-90000
 
-            assertThat(schema.fields().get("optional [GH-90000]").nullable()).isTrue();
-            assertThat(schema.requiredFields()).doesNotContain("optional [GH-90000]");
+            assertThat(schema.fields().get("optional").nullable()).isTrue();
+            assertThat(schema.requiredFields()).doesNotContain("optional");
         }
 
         @Test
-        @DisplayName("infers constraints for numeric fields [GH-90000]")
+        @DisplayName("infers constraints for numeric fields")
         void infersConstraintsForNumericFields() { // GH-90000
             List<Map<String, Object>> samples = List.of( // GH-90000
                 Map.of("amount", 10.0), // GH-90000
@@ -124,13 +124,13 @@ class EventSchemaInferenceServiceTest {
 
             EventSchema schema = service.inferSchema("test.event", samples); // GH-90000
 
-            Map<String, Object> constraints = schema.fields().get("amount [GH-90000]").constraints();
-            assertThat(constraints).containsKey("min [GH-90000]");
-            assertThat(constraints).containsKey("max [GH-90000]");
+            Map<String, Object> constraints = schema.fields().get("amount").constraints();
+            assertThat(constraints).containsKey("min");
+            assertThat(constraints).containsKey("max");
         }
 
         @Test
-        @DisplayName("infers constraints for string fields [GH-90000]")
+        @DisplayName("infers constraints for string fields")
         void infersConstraintsForStringFields() { // GH-90000
             List<Map<String, Object>> samples = List.of( // GH-90000
                 Map.of("status", "pending"), // GH-90000
@@ -140,35 +140,35 @@ class EventSchemaInferenceServiceTest {
 
             EventSchema schema = service.inferSchema("test.event", samples); // GH-90000
 
-            Map<String, Object> constraints = schema.fields().get("status [GH-90000]").constraints();
-            assertThat(constraints).containsKey("enum [GH-90000]");
+            Map<String, Object> constraints = schema.fields().get("status").constraints();
+            assertThat(constraints).containsKey("enum");
         }
 
         @Test
-        @DisplayName("returns empty schema for null samples [GH-90000]")
+        @DisplayName("returns empty schema for null samples")
         void returnsEmptySchemaForNullSamples() { // GH-90000
             EventSchema schema = service.inferSchema("test.event", null); // GH-90000
 
-            assertThat(schema.eventType()).isEqualTo("test.event [GH-90000]");
+            assertThat(schema.eventType()).isEqualTo("test.event");
             assertThat(schema.fields()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("returns empty schema for empty samples [GH-90000]")
+        @DisplayName("returns empty schema for empty samples")
         void returnsEmptySchemaForEmptySamples() { // GH-90000
             EventSchema schema = service.inferSchema("test.event", List.of()); // GH-90000
 
-            assertThat(schema.eventType()).isEqualTo("test.event [GH-90000]");
+            assertThat(schema.eventType()).isEqualTo("test.event");
             assertThat(schema.fields()).isEmpty(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("validateEvent() [GH-90000]")
+    @DisplayName("validateEvent()")
     class ValidateEventTests {
 
         @Test
-        @DisplayName("validates event against schema [GH-90000]")
+        @DisplayName("validates event against schema")
         void validatesEventAgainstSchema() { // GH-90000
             List<Map<String, Object>> samples = List.of( // GH-90000
                 Map.of("id", 1, "name", "Alice", "amount", 100.0) // GH-90000
@@ -184,7 +184,7 @@ class EventSchemaInferenceServiceTest {
         }
 
         @Test
-        @DisplayName("detects missing required fields [GH-90000]")
+        @DisplayName("detects missing required fields")
         void detectsMissingRequiredFields() { // GH-90000
             List<Map<String, Object>> samples = List.of( // GH-90000
                 Map.of("id", 1, "name", "Alice") // GH-90000
@@ -196,11 +196,11 @@ class EventSchemaInferenceServiceTest {
             EventSchemaInferenceService.ValidationResult result = service.validateEvent(event, schema); // GH-90000
 
             assertThat(result.valid()).isFalse(); // GH-90000
-            assertThat(result.errors()).anyMatch(e -> e.contains("Missing required [GH-90000]"));
+            assertThat(result.errors()).anyMatch(e -> e.contains("Missing required"));
         }
 
         @Test
-        @DisplayName("detects type mismatches [GH-90000]")
+        @DisplayName("detects type mismatches")
         void detectsTypeMismatches() { // GH-90000
             List<Map<String, Object>> samples = List.of( // GH-90000
                 Map.of("id", 1, "amount", 100.0) // GH-90000
@@ -212,11 +212,11 @@ class EventSchemaInferenceServiceTest {
             EventSchemaInferenceService.ValidationResult result = service.validateEvent(event, schema); // GH-90000
 
             assertThat(result.valid()).isFalse(); // GH-90000
-            assertThat(result.errors()).anyMatch(e -> e.contains("invalid type [GH-90000]"));
+            assertThat(result.errors()).anyMatch(e -> e.contains("invalid type"));
         }
 
         @Test
-        @DisplayName("warns about unknown fields [GH-90000]")
+        @DisplayName("warns about unknown fields")
         void warnsAboutUnknownFields() { // GH-90000
             List<Map<String, Object>> samples = List.of( // GH-90000
                 Map.of("id", 1) // GH-90000
@@ -228,11 +228,11 @@ class EventSchemaInferenceServiceTest {
             EventSchemaInferenceService.ValidationResult result = service.validateEvent(event, schema); // GH-90000
 
             assertThat(result.valid()).isTrue(); // GH-90000
-            assertThat(result.warnings()).anyMatch(w -> w.contains("Unknown field [GH-90000]"));
+            assertThat(result.warnings()).anyMatch(w -> w.contains("Unknown field"));
         }
 
         @Test
-        @DisplayName("validates max field count [GH-90000]")
+        @DisplayName("validates max field count")
         void validatesMaxFieldCount() { // GH-90000
             List<Map<String, Object>> samples = List.of( // GH-90000
                 Map.of("id", 1) // GH-90000
@@ -247,16 +247,16 @@ class EventSchemaInferenceServiceTest {
             EventSchemaInferenceService.ValidationResult result = service.validateEvent(event, schema); // GH-90000
 
             assertThat(result.valid()).isFalse(); // GH-90000
-            assertThat(result.errors()).anyMatch(e -> e.contains("exceeds maximum field count [GH-90000]"));
+            assertThat(result.errors()).anyMatch(e -> e.contains("exceeds maximum field count"));
         }
     }
 
     @Nested
-    @DisplayName("suggestImprovements() [GH-90000]")
+    @DisplayName("suggestImprovements()")
     class SuggestImprovementsTests {
 
         @Test
-        @DisplayName("suggests allowing unknown fields [GH-90000]")
+        @DisplayName("suggests allowing unknown fields")
         void suggestsAllowingUnknownFields() { // GH-90000
             EventSchema schema = new EventSchema( // GH-90000
                 "test.event",
@@ -272,7 +272,7 @@ class EventSchemaInferenceServiceTest {
         }
 
         @Test
-        @DisplayName("logs suggestion for missing required fields [GH-90000]")
+        @DisplayName("logs suggestion for missing required fields")
         void logsSuggestionForMissingRequiredFields() { // GH-90000
             EventSchema schema = new EventSchema( // GH-90000
                 "test.event",
@@ -281,7 +281,7 @@ class EventSchemaInferenceServiceTest {
                 new EventSchemaInferenceService.SchemaConstraints(50, 10000, false) // GH-90000
             );
 
-            List<String> errors = List.of("Missing required field: id [GH-90000]");
+            List<String> errors = List.of("Missing required field: id");
             EventSchema improved = service.suggestImprovements(schema, errors); // GH-90000
 
             // Should log suggestion (verified in logs) // GH-90000
@@ -290,11 +290,11 @@ class EventSchemaInferenceServiceTest {
     }
 
     @Nested
-    @DisplayName("EventSchema [GH-90000]")
+    @DisplayName("EventSchema")
     class EventSchemaTests {
 
         @Test
-        @DisplayName("schema has required fields [GH-90000]")
+        @DisplayName("schema has required fields")
         void schemaHasRequiredFields() { // GH-90000
             EventSchema schema = new EventSchema( // GH-90000
                 "test.event",
@@ -311,11 +311,11 @@ class EventSchemaInferenceServiceTest {
     }
 
     @Nested
-    @DisplayName("FieldDefinition [GH-90000]")
+    @DisplayName("FieldDefinition")
     class FieldDefinitionTests {
 
         @Test
-        @DisplayName("field definition has required fields [GH-90000]")
+        @DisplayName("field definition has required fields")
         void fieldDefinitionHasRequiredFields() { // GH-90000
             EventSchemaInferenceService.FieldDefinition field = new EventSchemaInferenceService.FieldDefinition( // GH-90000
                 "id",

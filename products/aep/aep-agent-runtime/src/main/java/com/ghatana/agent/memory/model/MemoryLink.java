@@ -15,7 +15,8 @@ import org.jetbrains.annotations.Nullable;
  * @doc.type value-object
  * @doc.purpose Inter-memory-item relationships
  * @doc.layer agent-memory
- */
+  * @doc.pattern Component
+*/
 @Value
 @Builder
 @Jacksonized

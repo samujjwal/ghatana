@@ -27,7 +27,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer core
  * @doc.pattern Test
  */
-@DisplayName("OperatorComposer [GH-90000]")
+@DisplayName("OperatorComposer")
 class OperatorComposerTest extends EventloopTestBase {
 
     private final OperatorComposer composer = new OperatorComposer(); // GH-90000
@@ -35,11 +35,11 @@ class OperatorComposerTest extends EventloopTestBase {
     // ─── sequential ───────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("sequential() [GH-90000]")
+    @DisplayName("sequential()")
     class Sequential {
 
         @Test
-        @DisplayName("chains two operators in order — second receives first's output [GH-90000]")
+        @DisplayName("chains two operators in order — second receives first's output")
         void twoOperators_processedInOrder() { // GH-90000
             UnifiedOperator first = mock(UnifiedOperator.class); // GH-90000
             UnifiedOperator second = mock(UnifiedOperator.class); // GH-90000
@@ -58,7 +58,7 @@ class OperatorComposerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("single operator vararg — behaves as passthrough chain [GH-90000]")
+        @DisplayName("single operator vararg — behaves as passthrough chain")
         void singleOperator_returnsDirectResult() { // GH-90000
             UnifiedOperator op = mock(UnifiedOperator.class); // GH-90000
             Event event = mock(Event.class); // GH-90000
@@ -72,7 +72,7 @@ class OperatorComposerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("list overload behaves identically to vararg overload [GH-90000]")
+        @DisplayName("list overload behaves identically to vararg overload")
         void listOverload_sameAsVararg() { // GH-90000
             UnifiedOperator first = mock(UnifiedOperator.class); // GH-90000
             UnifiedOperator second = mock(UnifiedOperator.class); // GH-90000
@@ -89,14 +89,14 @@ class OperatorComposerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("null vararg array throws NullPointerException [GH-90000]")
+        @DisplayName("null vararg array throws NullPointerException")
         void nullVararg_throwsNPE() { // GH-90000
             assertThatNullPointerException() // GH-90000
                     .isThrownBy(() -> composer.sequential((UnifiedOperator[]) null)); // GH-90000
         }
 
         @Test
-        @DisplayName("null list throws NullPointerException [GH-90000]")
+        @DisplayName("null list throws NullPointerException")
         void nullList_throwsNPE() { // GH-90000
             assertThatNullPointerException() // GH-90000
                     .isThrownBy(() -> composer.sequential((List<UnifiedOperator>) null)); // GH-90000
@@ -106,11 +106,11 @@ class OperatorComposerTest extends EventloopTestBase {
     // ─── parallel ─────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("parallel() [GH-90000]")
+    @DisplayName("parallel()")
     class Parallel {
 
         @Test
-        @DisplayName("all operators receive the same event [GH-90000]")
+        @DisplayName("all operators receive the same event")
         void allOperators_receiveIdenticalEvent() { // GH-90000
             UnifiedOperator op1 = mock(UnifiedOperator.class); // GH-90000
             UnifiedOperator op2 = mock(UnifiedOperator.class); // GH-90000
@@ -131,7 +131,7 @@ class OperatorComposerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("outputs from all operators are collected in result [GH-90000]")
+        @DisplayName("outputs from all operators are collected in result")
         void outputs_collectedFromAll() { // GH-90000
             UnifiedOperator op1 = mock(UnifiedOperator.class); // GH-90000
             UnifiedOperator op2 = mock(UnifiedOperator.class); // GH-90000
@@ -149,7 +149,7 @@ class OperatorComposerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("list overload works identically to vararg [GH-90000]")
+        @DisplayName("list overload works identically to vararg")
         void listOverload_works() { // GH-90000
             UnifiedOperator op1 = mock(UnifiedOperator.class); // GH-90000
             UnifiedOperator op2 = mock(UnifiedOperator.class); // GH-90000
@@ -165,7 +165,7 @@ class OperatorComposerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("null vararg throws NullPointerException [GH-90000]")
+        @DisplayName("null vararg throws NullPointerException")
         void nullVararg_throwsNPE() { // GH-90000
             assertThatNullPointerException() // GH-90000
                     .isThrownBy(() -> composer.parallel((UnifiedOperator[]) null)); // GH-90000
@@ -175,11 +175,11 @@ class OperatorComposerTest extends EventloopTestBase {
     // ─── conditional ──────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("conditional() [GH-90000]")
+    @DisplayName("conditional()")
     class Conditional {
 
         @Test
-        @DisplayName("routes to ifTrue operator when predicate is true [GH-90000]")
+        @DisplayName("routes to ifTrue operator when predicate is true")
         void predicateTrue_routesToIfTrue() { // GH-90000
             UnifiedOperator ifTrue = mock(UnifiedOperator.class); // GH-90000
             UnifiedOperator ifFalse = mock(UnifiedOperator.class); // GH-90000
@@ -196,7 +196,7 @@ class OperatorComposerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("routes to ifFalse operator when predicate is false [GH-90000]")
+        @DisplayName("routes to ifFalse operator when predicate is false")
         void predicateFalse_routesToIfFalse() { // GH-90000
             UnifiedOperator ifTrue = mock(UnifiedOperator.class); // GH-90000
             UnifiedOperator ifFalse = mock(UnifiedOperator.class); // GH-90000
@@ -213,7 +213,7 @@ class OperatorComposerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("null condition throws NullPointerException [GH-90000]")
+        @DisplayName("null condition throws NullPointerException")
         void nullCondition_throwsNPE() { // GH-90000
             UnifiedOperator op = mock(UnifiedOperator.class); // GH-90000
             assertThatNullPointerException() // GH-90000
@@ -221,7 +221,7 @@ class OperatorComposerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("null ifTrue throws NullPointerException [GH-90000]")
+        @DisplayName("null ifTrue throws NullPointerException")
         void nullIfTrue_throwsNPE() { // GH-90000
             UnifiedOperator op = mock(UnifiedOperator.class); // GH-90000
             assertThatNullPointerException() // GH-90000
@@ -229,7 +229,7 @@ class OperatorComposerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("null ifFalse throws NullPointerException [GH-90000]")
+        @DisplayName("null ifFalse throws NullPointerException")
         void nullIfFalse_throwsNPE() { // GH-90000
             UnifiedOperator op = mock(UnifiedOperator.class); // GH-90000
             assertThatNullPointerException() // GH-90000
@@ -240,11 +240,11 @@ class OperatorComposerTest extends EventloopTestBase {
     // ─── fanOut ───────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("fanOut() [GH-90000]")
+    @DisplayName("fanOut()")
     class FanOut {
 
         @Test
-        @DisplayName("broadcasts event to all operators [GH-90000]")
+        @DisplayName("broadcasts event to all operators")
         void allOperators_receiveSameEvent() { // GH-90000
             UnifiedOperator op1 = mock(UnifiedOperator.class); // GH-90000
             UnifiedOperator op2 = mock(UnifiedOperator.class); // GH-90000
@@ -262,7 +262,7 @@ class OperatorComposerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("collected outputs include results from all operators [GH-90000]")
+        @DisplayName("collected outputs include results from all operators")
         void collectedOutputs_containAllResults() { // GH-90000
             UnifiedOperator op1 = mock(UnifiedOperator.class); // GH-90000
             UnifiedOperator op2 = mock(UnifiedOperator.class); // GH-90000
@@ -280,7 +280,7 @@ class OperatorComposerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("list overload works identically [GH-90000]")
+        @DisplayName("list overload works identically")
         void listOverload_works() { // GH-90000
             UnifiedOperator op1 = mock(UnifiedOperator.class); // GH-90000
             UnifiedOperator op2 = mock(UnifiedOperator.class); // GH-90000
@@ -296,14 +296,14 @@ class OperatorComposerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("null vararg throws NullPointerException [GH-90000]")
+        @DisplayName("null vararg throws NullPointerException")
         void nullVararg_throwsNPE() { // GH-90000
             assertThatNullPointerException() // GH-90000
                     .isThrownBy(() -> composer.fanOut((UnifiedOperator[]) null)); // GH-90000
         }
 
         @Test
-        @DisplayName("null list throws NullPointerException [GH-90000]")
+        @DisplayName("null list throws NullPointerException")
         void nullList_throwsNPE() { // GH-90000
             assertThatNullPointerException() // GH-90000
                     .isThrownBy(() -> composer.fanOut((List<UnifiedOperator>) null)); // GH-90000

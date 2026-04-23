@@ -105,7 +105,7 @@ class TimeSeriesConnectorTest extends EventloopTestBase {
                 .data(Map.of("value", 99.0, "timestamp", Instant.now().toString())) // GH-90000
                 .build(); // GH-90000
         Entity result = resolve(connector.update(updated)); // GH-90000
-        assertThat(result.getData().get("value [GH-90000]")).isEqualTo(99.0);
+        assertThat(result.getData().get("value")).isEqualTo(99.0);
     }
 
     @Test

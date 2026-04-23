@@ -2,7 +2,11 @@ package com.ghatana.audio.video.multimodal.engine;
 
 /**
  * Input request for multimodal analysis.
- */
+  * @doc.type class
+ * @doc.purpose Provides multimodal request functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 public class MultimodalRequest {
 
     private final byte[] audioData;

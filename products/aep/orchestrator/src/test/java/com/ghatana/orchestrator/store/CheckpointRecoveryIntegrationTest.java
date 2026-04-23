@@ -19,7 +19,7 @@ import org.junit.jupiter.api.*;
  * Validates the full pipeline lifecycle: create → step tracking → failure → resume.
  * Complements the Mockito-based {@link PostgresqlCheckpointStoreTest}.
  */
-@DisplayName("Checkpoint Recovery Integration [GH-90000]")
+@DisplayName("Checkpoint Recovery Integration")
 class CheckpointRecoveryIntegrationTest extends EventloopTestBase {
 
     private static final String TENANT = "tenant-1";
@@ -39,18 +39,18 @@ class CheckpointRecoveryIntegrationTest extends EventloopTestBase {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Full Lifecycle [GH-90000]")
+    @DisplayName("Full Lifecycle")
     class FullLifecycleTests {
 
         @Test
-        @DisplayName("Create → run steps → complete successfully [GH-90000]")
+        @DisplayName("Create → run steps → complete successfully")
         void fullSuccessfulExecution() { // GH-90000
             PipelineCheckpoint cp = store.createExecution(TENANT, PIPELINE, "inst-1", "key-1", Map.of("totalSteps", 3)); // GH-90000
 
             assertThat(cp.getStatus()).isEqualTo(PipelineCheckpointStatus.CREATED); // GH-90000
             assertThat(cp.getCompletedSteps()).isZero(); // GH-90000
             assertThat(cp.getTotalSteps()).isEqualTo(3); // GH-90000
-            assertThat(cp.getInstanceId()).isEqualTo("inst-1 [GH-90000]");
+            assertThat(cp.getInstanceId()).isEqualTo("inst-1");
 
             // Step 1: extract
             PipelineCheckpoint after1 = store.updateCheckpoint( // GH-90000
@@ -62,7 +62,7 @@ class CheckpointRecoveryIntegrationTest extends EventloopTestBase {
                     Map.of("totalSteps", 3)); // GH-90000
             assertThat(after1.getStatus()).isEqualTo(PipelineCheckpointStatus.RUNNING); // GH-90000
             assertThat(after1.getCompletedSteps()).isEqualTo(1); // GH-90000
-            assertThat(after1.getCurrentStepId()).isEqualTo("step-extract [GH-90000]");
+            assertThat(after1.getCurrentStepId()).isEqualTo("step-extract");
 
             // Step 2: transform
             PipelineCheckpoint after2 = store.updateCheckpoint( // GH-90000
@@ -88,14 +88,14 @@ class CheckpointRecoveryIntegrationTest extends EventloopTestBase {
             store.completeExecution( // GH-90000
                     "inst-1", PipelineCheckpointStatus.COMPLETED, Map.of("totalRows", 950, "status", "done")); // GH-90000
 
-            PipelineCheckpoint final_ = store.findByInstanceId("inst-1 [GH-90000]").orElseThrow();
+            PipelineCheckpoint final_ = store.findByInstanceId("inst-1").orElseThrow();
             assertThat(final_.getStatus()).isEqualTo(PipelineCheckpointStatus.COMPLETED); // GH-90000
             assertThat(final_.getResult()).containsEntry("totalRows", 950); // GH-90000
             assertThat(final_.isActive()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("Create → partial run → fail → not active [GH-90000]")
+        @DisplayName("Create → partial run → fail → not active")
         void failedExecutionLifecycle() { // GH-90000
             store.createExecution(TENANT, PIPELINE, "inst-fail", "key-fail", Map.of("totalSteps", 3)); // GH-90000
 
@@ -112,20 +112,20 @@ class CheckpointRecoveryIntegrationTest extends EventloopTestBase {
 
             store.completeExecution("inst-fail", PipelineCheckpointStatus.FAILED, Map.of("error", "Step2 timed out")); // GH-90000
 
-            PipelineCheckpoint cp = store.findByInstanceId("inst-fail [GH-90000]").orElseThrow();
+            PipelineCheckpoint cp = store.findByInstanceId("inst-fail").orElseThrow();
             assertThat(cp.getStatus()).isEqualTo(PipelineCheckpointStatus.FAILED); // GH-90000
             assertThat(cp.isActive()).isFalse(); // GH-90000
             assertThat(cp.getCompletedSteps()).isEqualTo(1); // only step-1 succeeded // GH-90000
         }
 
         @Test
-        @DisplayName("Create → cancel → not active [GH-90000]")
+        @DisplayName("Create → cancel → not active")
         void cancelledExecution() { // GH-90000
             store.createExecution(TENANT, PIPELINE, "inst-cancel", "key-cancel", Map.of()); // GH-90000
 
             store.completeExecution("inst-cancel", PipelineCheckpointStatus.CANCELLED, Map.of()); // GH-90000
 
-            PipelineCheckpoint cp = store.findByInstanceId("inst-cancel [GH-90000]").orElseThrow();
+            PipelineCheckpoint cp = store.findByInstanceId("inst-cancel").orElseThrow();
             assertThat(cp.getStatus()).isEqualTo(PipelineCheckpointStatus.CANCELLED); // GH-90000
             assertThat(cp.isActive()).isFalse(); // GH-90000
         }
@@ -136,11 +136,11 @@ class CheckpointRecoveryIntegrationTest extends EventloopTestBase {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Resume from Checkpoint [GH-90000]")
+    @DisplayName("Resume from Checkpoint")
     class ResumeTests {
 
         @Test
-        @DisplayName("Resume from last successful step after failure [GH-90000]")
+        @DisplayName("Resume from last successful step after failure")
         void resumeFromLastSuccessfulStep() { // GH-90000
             // Simulate a 5-step pipeline that fails at step 3
             store.createExecution(TENANT, PIPELINE, "inst-resume", "key-resume", Map.of("totalSteps", 5)); // GH-90000
@@ -172,14 +172,14 @@ class CheckpointRecoveryIntegrationTest extends EventloopTestBase {
                     Map.of()); // GH-90000
 
             // Recover: find last successful step
-            Optional<StepCheckpoint> lastSuccess = store.getLastSuccessfulStep("inst-resume [GH-90000]");
+            Optional<StepCheckpoint> lastSuccess = store.getLastSuccessfulStep("inst-resume");
             assertThat(lastSuccess).isPresent(); // GH-90000
-            assertThat(lastSuccess.get().getStepId()).isEqualTo("step-2 [GH-90000]");
-            assertThat(lastSuccess.get().getStepName()).isEqualTo("Validate [GH-90000]");
+            assertThat(lastSuccess.get().getStepId()).isEqualTo("step-2");
+            assertThat(lastSuccess.get().getStepName()).isEqualTo("Validate");
             assertThat(lastSuccess.get().getOutput()).containsEntry("valid", 95); // GH-90000
 
             // Resume: re-execute from step-3 onward
-            PipelineCheckpoint cp = store.findByInstanceId("inst-resume [GH-90000]").orElseThrow();
+            PipelineCheckpoint cp = store.findByInstanceId("inst-resume").orElseThrow();
             assertThat(cp.getCompletedSteps()).isEqualTo(2); // GH-90000
             assertThat(cp.getStatus()).isEqualTo(PipelineCheckpointStatus.STEP_FAILED); // GH-90000
             // STEP_FAILED is not "active" (only CREATED/RUNNING are) — it requires intervention // GH-90000
@@ -187,7 +187,7 @@ class CheckpointRecoveryIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("No successful steps → resume returns empty [GH-90000]")
+        @DisplayName("No successful steps → resume returns empty")
         void noSuccessfulStepsReturnsEmpty() { // GH-90000
             store.createExecution(TENANT, PIPELINE, "inst-empty", "key-empty", Map.of()); // GH-90000
 
@@ -205,12 +205,12 @@ class CheckpointRecoveryIntegrationTest extends EventloopTestBase {
                             "config error",
                             0));
 
-            Optional<StepCheckpoint> lastSuccess = store.getLastSuccessfulStep("inst-empty [GH-90000]");
+            Optional<StepCheckpoint> lastSuccess = store.getLastSuccessfulStep("inst-empty");
             assertThat(lastSuccess).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("Step checkpoint upsert — retry updates existing step [GH-90000]")
+        @DisplayName("Step checkpoint upsert — retry updates existing step")
         void stepCheckpointUpsert() { // GH-90000
             store.createExecution(TENANT, PIPELINE, "inst-upsert", "key-upsert", Map.of()); // GH-90000
 
@@ -242,14 +242,14 @@ class CheckpointRecoveryIntegrationTest extends EventloopTestBase {
                             null,
                             2));
 
-            List<StepCheckpoint> history = store.getStepHistory("inst-upsert [GH-90000]");
+            List<StepCheckpoint> history = store.getStepHistory("inst-upsert");
             assertThat(history).hasSize(1); // upsert, not append // GH-90000
             assertThat(history.get(0).getStatus()).isEqualTo(PipelineCheckpointStatus.STEP_SUCCESS); // GH-90000
             assertThat(history.get(0).getRetryCount()).isEqualTo(2); // GH-90000
         }
 
         @Test
-        @DisplayName("Step history preserves insertion order [GH-90000]")
+        @DisplayName("Step history preserves insertion order")
         void stepHistoryPreservesOrder() { // GH-90000
             store.createExecution(TENANT, PIPELINE, "inst-order", "key-order", Map.of()); // GH-90000
 
@@ -257,7 +257,7 @@ class CheckpointRecoveryIntegrationTest extends EventloopTestBase {
             recordSuccessfulStep("inst-order", "step-b", "B", Map.of()); // GH-90000
             recordSuccessfulStep("inst-order", "step-c", "C", Map.of()); // GH-90000
 
-            List<StepCheckpoint> history = store.getStepHistory("inst-order [GH-90000]");
+            List<StepCheckpoint> history = store.getStepHistory("inst-order");
             assertThat(history).hasSize(3); // GH-90000
             assertThat(history).extracting(StepCheckpoint::getStepId).containsExactly("step-a", "step-b", "step-c"); // GH-90000
         }
@@ -268,31 +268,31 @@ class CheckpointRecoveryIntegrationTest extends EventloopTestBase {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Idempotency & Deduplication [GH-90000]")
+    @DisplayName("Idempotency & Deduplication")
     class IdempotencyTests {
 
         @Test
-        @DisplayName("Duplicate idempotency key throws exception [GH-90000]")
+        @DisplayName("Duplicate idempotency key throws exception")
         void duplicateIdempotencyKeyThrows() { // GH-90000
             store.createExecution(TENANT, PIPELINE, "inst-dup-1", "key-dup", Map.of()); // GH-90000
 
             assertThatThrownBy(() -> store.createExecution(TENANT, PIPELINE, "inst-dup-2", "key-dup", Map.of())) // GH-90000
                     .isInstanceOf(RuntimeException.class) // GH-90000
-                    .hasMessageContaining("Duplicate [GH-90000]");
+                    .hasMessageContaining("Duplicate");
         }
 
         @Test
-        @DisplayName("Same key in different tenants is allowed [GH-90000]")
+        @DisplayName("Same key in different tenants is allowed")
         void sameKeyDifferentTenantAllowed() { // GH-90000
             store.createExecution("tenant-A", PIPELINE, "inst-a", "shared-key", Map.of()); // GH-90000
             store.createExecution("tenant-B", PIPELINE, "inst-b", "shared-key", Map.of()); // GH-90000
 
-            assertThat(store.findByInstanceId("inst-a [GH-90000]")).isPresent();
-            assertThat(store.findByInstanceId("inst-b [GH-90000]")).isPresent();
+            assertThat(store.findByInstanceId("inst-a")).isPresent();
+            assertThat(store.findByInstanceId("inst-b")).isPresent();
         }
 
         @Test
-        @DisplayName("isDuplicate returns correct result [GH-90000]")
+        @DisplayName("isDuplicate returns correct result")
         void isDuplicateCheck() { // GH-90000
             store.createExecution(TENANT, PIPELINE, "inst-x", "dedup-key", Map.of()); // GH-90000
 
@@ -302,13 +302,13 @@ class CheckpointRecoveryIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("findByIdempotencyKey retrieves correct checkpoint [GH-90000]")
+        @DisplayName("findByIdempotencyKey retrieves correct checkpoint")
         void findByIdempotencyKey() { // GH-90000
             store.createExecution(TENANT, PIPELINE, "inst-find", "find-key", Map.of()); // GH-90000
 
             Optional<PipelineCheckpoint> found = store.findByIdempotencyKey(TENANT, "find-key"); // GH-90000
             assertThat(found).isPresent(); // GH-90000
-            assertThat(found.get().getInstanceId()).isEqualTo("inst-find [GH-90000]");
+            assertThat(found.get().getInstanceId()).isEqualTo("inst-find");
 
             assertThat(store.findByIdempotencyKey(TENANT, "non-existent")).isEmpty(); // GH-90000
         }
@@ -319,11 +319,11 @@ class CheckpointRecoveryIntegrationTest extends EventloopTestBase {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Query Capabilities [GH-90000]")
+    @DisplayName("Query Capabilities")
     class QueryTests {
 
         @Test
-        @DisplayName("findByPipelineId returns newest first, respects limit [GH-90000]")
+        @DisplayName("findByPipelineId returns newest first, respects limit")
         void findByPipelineIdOrdered() { // GH-90000
             store.createExecution(TENANT, PIPELINE, "inst-q1", "q-key-1", Map.of()); // GH-90000
             store.createExecution(TENANT, PIPELINE, "inst-q2", "q-key-2", Map.of()); // GH-90000
@@ -339,7 +339,7 @@ class CheckpointRecoveryIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("findActive returns only CREATED/RUNNING checkpoints [GH-90000]")
+        @DisplayName("findActive returns only CREATED/RUNNING checkpoints")
         void findActiveStatus() { // GH-90000
             store.createExecution(TENANT, PIPELINE, "inst-active", "active-key", Map.of()); // GH-90000
             store.createExecution(TENANT, PIPELINE, "inst-done", "done-key", Map.of()); // GH-90000
@@ -347,11 +347,11 @@ class CheckpointRecoveryIntegrationTest extends EventloopTestBase {
 
             List<PipelineCheckpoint> active = store.findActive(10); // GH-90000
             assertThat(active).hasSize(1); // GH-90000
-            assertThat(active.get(0).getInstanceId()).isEqualTo("inst-active [GH-90000]");
+            assertThat(active.get(0).getInstanceId()).isEqualTo("inst-active");
         }
 
         @Test
-        @DisplayName("findStale returns executions updated before threshold [GH-90000]")
+        @DisplayName("findStale returns executions updated before threshold")
         void findStaleExecutions() { // GH-90000
             // Create execution and manually set old updatedAt by creating with initial state
             store.createExecution(TENANT, PIPELINE, "inst-stale", "stale-key", Map.of()); // GH-90000
@@ -366,16 +366,16 @@ class CheckpointRecoveryIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("isExecutionAllowed — active vs completed [GH-90000]")
+        @DisplayName("isExecutionAllowed — active vs completed")
         void isExecutionAllowed() { // GH-90000
             store.createExecution(TENANT, PIPELINE, "inst-allowed", "allowed-key", Map.of()); // GH-90000
-            assertThat(store.isExecutionAllowed("inst-allowed [GH-90000]")).isTrue();
+            assertThat(store.isExecutionAllowed("inst-allowed")).isTrue();
 
             store.completeExecution("inst-allowed", PipelineCheckpointStatus.COMPLETED, Map.of()); // GH-90000
-            assertThat(store.isExecutionAllowed("inst-allowed [GH-90000]")).isFalse();
+            assertThat(store.isExecutionAllowed("inst-allowed")).isFalse();
 
             // Non-existent instance
-            assertThat(store.isExecutionAllowed("non-existent [GH-90000]")).isFalse();
+            assertThat(store.isExecutionAllowed("non-existent")).isFalse();
         }
     }
 
@@ -384,11 +384,11 @@ class CheckpointRecoveryIntegrationTest extends EventloopTestBase {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Cleanup [GH-90000]")
+    @DisplayName("Cleanup")
     class CleanupTests {
 
         @Test
-        @DisplayName("cleanupOldCheckpoints removes completed, leaves active [GH-90000]")
+        @DisplayName("cleanupOldCheckpoints removes completed, leaves active")
         void cleanupRemovesCompletedOnly() { // GH-90000
             store.createExecution(TENANT, PIPELINE, "inst-keep", "keep-key", Map.of()); // GH-90000
             store.createExecution(TENANT, PIPELINE, "inst-remove", "remove-key", Map.of()); // GH-90000
@@ -397,12 +397,12 @@ class CheckpointRecoveryIntegrationTest extends EventloopTestBase {
             int removed = store.cleanupOldCheckpoints(Instant.now().plus(1, ChronoUnit.SECONDS)); // GH-90000
             assertThat(removed).isEqualTo(1); // GH-90000
 
-            assertThat(store.findByInstanceId("inst-keep [GH-90000]")).isPresent();
-            assertThat(store.findByInstanceId("inst-remove [GH-90000]")).isEmpty();
+            assertThat(store.findByInstanceId("inst-keep")).isPresent();
+            assertThat(store.findByInstanceId("inst-remove")).isEmpty();
         }
 
         @Test
-        @DisplayName("cleanup also removes associated step checkpoints [GH-90000]")
+        @DisplayName("cleanup also removes associated step checkpoints")
         void cleanupRemovesStepCheckpoints() { // GH-90000
             store.createExecution(TENANT, PIPELINE, "inst-clean", "clean-key", Map.of()); // GH-90000
             recordSuccessfulStep("inst-clean", "s1", "S1", Map.of()); // GH-90000
@@ -411,7 +411,7 @@ class CheckpointRecoveryIntegrationTest extends EventloopTestBase {
 
             store.cleanupOldCheckpoints(Instant.now().plus(1, ChronoUnit.SECONDS)); // GH-90000
 
-            assertThat(store.getStepHistory("inst-clean [GH-90000]")).isEmpty();
+            assertThat(store.getStepHistory("inst-clean")).isEmpty();
         }
     }
 
@@ -420,11 +420,11 @@ class CheckpointRecoveryIntegrationTest extends EventloopTestBase {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Checkpoint-Aware Queue Integration [GH-90000]")
+    @DisplayName("Checkpoint-Aware Queue Integration")
     class QueueIntegrationTests {
 
         @Test
-        @DisplayName("Enqueue creates checkpoint and adds to queue [GH-90000]")
+        @DisplayName("Enqueue creates checkpoint and adds to queue")
         void enqueueCreatesCheckpoint() { // GH-90000
             queue.enqueue(TENANT, PIPELINE, Map.of("trigger", "manual"), "enq-key-1"); // GH-90000
 
@@ -433,7 +433,7 @@ class CheckpointRecoveryIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Duplicate enqueue is silently ignored [GH-90000]")
+        @DisplayName("Duplicate enqueue is silently ignored")
         void duplicateEnqueueIgnored() { // GH-90000
             queue.enqueue(TENANT, PIPELINE, Map.of(), "enq-dup"); // GH-90000
             queue.enqueue(TENANT, PIPELINE, Map.of(), "enq-dup"); // GH-90000
@@ -442,7 +442,7 @@ class CheckpointRecoveryIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Poll validates checkpoint before returning job [GH-90000]")
+        @DisplayName("Poll validates checkpoint before returning job")
         void pollValidatesCheckpoint() { // GH-90000
             queue.enqueue(TENANT, PIPELINE, Map.of(), "poll-key"); // GH-90000
 
@@ -454,7 +454,7 @@ class CheckpointRecoveryIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Poll skips jobs with completed/cancelled checkpoints [GH-90000]")
+        @DisplayName("Poll skips jobs with completed/cancelled checkpoints")
         void pollSkipsCompletedJobs() { // GH-90000
             queue.enqueue(TENANT, PIPELINE, Map.of(), "skip-key"); // GH-90000
 
@@ -469,7 +469,7 @@ class CheckpointRecoveryIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Clear empties queue but preserves checkpoints [GH-90000]")
+        @DisplayName("Clear empties queue but preserves checkpoints")
         void clearPreservesCheckpoints() { // GH-90000
             queue.enqueue(TENANT, PIPELINE, Map.of(), "clear-key"); // GH-90000
 
@@ -486,11 +486,11 @@ class CheckpointRecoveryIntegrationTest extends EventloopTestBase {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Concurrent Execution Scenarios [GH-90000]")
+    @DisplayName("Concurrent Execution Scenarios")
     class ConcurrencyTests {
 
         @Test
-        @DisplayName("Multiple pipelines execute independently [GH-90000]")
+        @DisplayName("Multiple pipelines execute independently")
         void multiplePipelinesIndependent() { // GH-90000
             store.createExecution(TENANT, "pipeline-A", "inst-a", "key-a", Map.of("totalSteps", 2)); // GH-90000
             store.createExecution(TENANT, "pipeline-B", "inst-b", "key-b", Map.of("totalSteps", 3)); // GH-90000
@@ -499,15 +499,15 @@ class CheckpointRecoveryIntegrationTest extends EventloopTestBase {
             recordSuccessfulStep("inst-b", "b-step-1", "B-1", Map.of()); // GH-90000
             recordSuccessfulStep("inst-b", "b-step-2", "B-2", Map.of()); // GH-90000
 
-            PipelineCheckpoint cpA = store.findByInstanceId("inst-a [GH-90000]").orElseThrow();
-            PipelineCheckpoint cpB = store.findByInstanceId("inst-b [GH-90000]").orElseThrow();
+            PipelineCheckpoint cpA = store.findByInstanceId("inst-a").orElseThrow();
+            PipelineCheckpoint cpB = store.findByInstanceId("inst-b").orElseThrow();
 
             assertThat(cpA.getCompletedSteps()).isEqualTo(1); // GH-90000
             assertThat(cpB.getCompletedSteps()).isEqualTo(2); // GH-90000
         }
 
         @Test
-        @DisplayName("Many concurrent executions with unique idempotency keys [GH-90000]")
+        @DisplayName("Many concurrent executions with unique idempotency keys")
         void manyConcurrentExecutions() { // GH-90000
             IntStream.range(0, 50) // GH-90000
                     .forEach(i -> // GH-90000
@@ -523,39 +523,39 @@ class CheckpointRecoveryIntegrationTest extends EventloopTestBase {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Edge Cases [GH-90000]")
+    @DisplayName("Edge Cases")
     class EdgeCaseTests {
 
         @Test
-        @DisplayName("Update non-existent checkpoint throws [GH-90000]")
+        @DisplayName("Update non-existent checkpoint throws")
         void updateNonExistentThrows() { // GH-90000
             assertThatThrownBy(() -> store.updateCheckpoint( // GH-90000
                             "no-such-instance", "s", "S", PipelineCheckpointStatus.STEP_SUCCESS, Map.of(), Map.of())) // GH-90000
                     .isInstanceOf(RuntimeException.class) // GH-90000
-                    .hasMessageContaining("not found [GH-90000]");
+                    .hasMessageContaining("not found");
         }
 
         @Test
-        @DisplayName("Complete non-existent checkpoint throws [GH-90000]")
+        @DisplayName("Complete non-existent checkpoint throws")
         void completeNonExistentThrows() { // GH-90000
             assertThatThrownBy(() -> store.completeExecution("no-such", PipelineCheckpointStatus.COMPLETED, Map.of())) // GH-90000
                     .isInstanceOf(RuntimeException.class) // GH-90000
-                    .hasMessageContaining("not found [GH-90000]");
+                    .hasMessageContaining("not found");
         }
 
         @Test
-        @DisplayName("Step failure does not increment completedSteps [GH-90000]")
+        @DisplayName("Step failure does not increment completedSteps")
         void stepFailureNoIncrement() { // GH-90000
             store.createExecution(TENANT, PIPELINE, "inst-noinc", "key-noinc", Map.of()); // GH-90000
 
             store.updateCheckpoint("inst-noinc", "s1", "S1", PipelineCheckpointStatus.STEP_FAILED, Map.of(), Map.of()); // GH-90000
 
-            PipelineCheckpoint cp = store.findByInstanceId("inst-noinc [GH-90000]").orElseThrow();
+            PipelineCheckpoint cp = store.findByInstanceId("inst-noinc").orElseThrow();
             assertThat(cp.getCompletedSteps()).isZero(); // GH-90000
         }
 
         @Test
-        @DisplayName("State is preserved across updates [GH-90000]")
+        @DisplayName("State is preserved across updates")
         void statePreservedAcrossUpdates() { // GH-90000
             store.createExecution(TENANT, PIPELINE, "inst-state", "key-state", Map.of("initial", "data")); // GH-90000
 
@@ -567,23 +567,23 @@ class CheckpointRecoveryIntegrationTest extends EventloopTestBase {
                     Map.of(), // GH-90000
                     Map.of("cursor", "page-2")); // GH-90000
 
-            PipelineCheckpoint cp = store.findByInstanceId("inst-state [GH-90000]").orElseThrow();
+            PipelineCheckpoint cp = store.findByInstanceId("inst-state").orElseThrow();
             assertThat(cp.getState()).containsEntry("cursor", "page-2"); // GH-90000
         }
 
         @Test
-        @DisplayName("Null state in update preserves previous state [GH-90000]")
+        @DisplayName("Null state in update preserves previous state")
         void nullStatePreservesPrevious() { // GH-90000
             store.createExecution(TENANT, PIPELINE, "inst-null", "key-null", Map.of("keep", "this")); // GH-90000
 
             store.updateCheckpoint("inst-null", "s1", "S1", PipelineCheckpointStatus.STEP_SUCCESS, Map.of(), null); // GH-90000
 
-            PipelineCheckpoint cp = store.findByInstanceId("inst-null [GH-90000]").orElseThrow();
+            PipelineCheckpoint cp = store.findByInstanceId("inst-null").orElseThrow();
             assertThat(cp.getState()).containsEntry("keep", "this"); // GH-90000
         }
 
         @Test
-        @DisplayName("InMemoryCheckpointStore clear resets all state [GH-90000]")
+        @DisplayName("InMemoryCheckpointStore clear resets all state")
         void clearResetsAll() { // GH-90000
             store.createExecution(TENANT, PIPELINE, "inst-clear", "key-clear", Map.of()); // GH-90000
             recordSuccessfulStep("inst-clear", "s1", "S1", Map.of()); // GH-90000
@@ -592,7 +592,7 @@ class CheckpointRecoveryIntegrationTest extends EventloopTestBase {
 
             assertThat(store.size()).isZero(); // GH-90000
             assertThat(store.isDuplicate(TENANT, "key-clear")).isFalse(); // GH-90000
-            assertThat(store.getStepHistory("inst-clear [GH-90000]")).isEmpty();
+            assertThat(store.getStepHistory("inst-clear")).isEmpty();
         }
     }
 

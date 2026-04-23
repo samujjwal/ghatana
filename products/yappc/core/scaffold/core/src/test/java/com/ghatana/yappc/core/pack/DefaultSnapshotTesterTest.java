@@ -22,7 +22,7 @@ class DefaultSnapshotTesterTest {
 
     @BeforeEach
     void setUp(@TempDir Path tempDir) { // GH-90000
-        snapshotDir = tempDir.resolve("snapshots [GH-90000]");
+        snapshotDir = tempDir.resolve("snapshots");
         snapshotTester = new DefaultSnapshotTester(snapshotDir); // GH-90000
     }
 
@@ -69,8 +69,8 @@ class DefaultSnapshotTesterTest {
         assertEquals(originalContent, result.expectedContent()); // GH-90000
         assertEquals(modifiedContent, result.actualContent()); // GH-90000
         assertFalse(result.diff().isEmpty()); // GH-90000
-        assertTrue(result.diff().contains("Original content [GH-90000]"));
-        assertTrue(result.diff().contains("Modified content [GH-90000]"));
+        assertTrue(result.diff().contains("Original content"));
+        assertTrue(result.diff().contains("Modified content"));
     }
 
     @Test
@@ -99,7 +99,7 @@ class DefaultSnapshotTesterTest {
 
     @Test
     void testUpdateMode() throws IOException { // GH-90000
-        Path updateSnapshotDir = snapshotDir.resolve("update_mode [GH-90000]");
+        Path updateSnapshotDir = snapshotDir.resolve("update_mode");
         DefaultSnapshotTester updateTester = new DefaultSnapshotTester(updateSnapshotDir, true); // GH-90000
 
         String content = "Update test content\n";
@@ -180,8 +180,8 @@ class DefaultSnapshotTesterTest {
 
         assertFalse(result.matches()); // GH-90000
         assertFalse(result.diff().isEmpty()); // GH-90000
-        assertTrue(result.diff().contains("Line 2 [GH-90000]"), "Diff should show original line");
-        assertTrue(result.diff().contains("Modified Line 2 [GH-90000]"), "Diff should show modified line");
-        assertTrue(result.diff().contains("Expected vs Actual [GH-90000]"), "Diff should have header");
+        assertTrue(result.diff().contains("Line 2"), "Diff should show original line");
+        assertTrue(result.diff().contains("Modified Line 2"), "Diff should show modified line");
+        assertTrue(result.diff().contains("Expected vs Actual"), "Diff should have header");
     }
 }

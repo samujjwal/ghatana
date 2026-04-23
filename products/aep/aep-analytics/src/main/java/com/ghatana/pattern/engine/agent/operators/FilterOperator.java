@@ -34,7 +34,11 @@ import java.util.function.Predicate;
  *       })
  *       .build();
  * }</pre>
- */
+  * @doc.type class
+ * @doc.purpose Provides filter operator functionality.
+ * @doc.layer product
+ * @doc.pattern Filter
+*/
 public class FilterOperator extends BaseOperator {
 
     private static final String CAPABILITY_FILTER = "event-filtering";

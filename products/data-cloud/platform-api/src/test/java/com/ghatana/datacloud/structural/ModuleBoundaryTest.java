@@ -25,15 +25,15 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern Structural Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("ModuleBoundary – Boundary Verification (SC001) [GH-90000]")
+@DisplayName("ModuleBoundary – Boundary Verification (SC001)")
 class ModuleBoundaryTest extends EventloopTestBase {
 
     @Nested
-    @DisplayName("Package Boundaries [GH-90000]")
+    @DisplayName("Package Boundaries")
     class PackageBoundariesTests {
 
         @Test
-        @DisplayName("[SC001]: platform_api_exports_correct_packages [GH-90000]")
+        @DisplayName("[SC001]: platform_api_exports_correct_packages")
         void platformApiExportsCorrectPackages() { // GH-90000
             // Verify public API surface is correct
             Set<String> expectedPublicPackages = Set.of( // GH-90000
@@ -47,7 +47,7 @@ class ModuleBoundaryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[SC001]: internal_packages_not_exposed [GH-90000]")
+        @DisplayName("[SC001]: internal_packages_not_exposed")
         void internalPackagesNotExposed() { // GH-90000
             // Internal implementation details should not leak
             Set<String> internalPackages = Set.of( // GH-90000
@@ -56,16 +56,16 @@ class ModuleBoundaryTest extends EventloopTestBase {
             );
 
             // Internal packages should not be in public API
-            assertThat(internalPackages).doesNotContain("com.ghatana.datacloud.api [GH-90000]");
+            assertThat(internalPackages).doesNotContain("com.ghatana.datacloud.api");
         }
     }
 
     @Nested
-    @DisplayName("Dependency Direction [GH-90000]")
+    @DisplayName("Dependency Direction")
     class DependencyDirectionTests {
 
         @Test
-        @DisplayName("[SC001]: dependencies_flow_downward [GH-90000]")
+        @DisplayName("[SC001]: dependencies_flow_downward")
         void dependenciesFlowDownward() { // GH-90000
             // Higher-level modules should depend on lower-level, not vice versa
             // api -> service -> repository -> infrastructure
@@ -80,7 +80,7 @@ class ModuleBoundaryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[SC001]: no_circular_dependencies [GH-90000]")
+        @DisplayName("[SC001]: no_circular_dependencies")
         void noCircularDependencies() { // GH-90000
             // Circular dependencies should not exist
             boolean hasCircularDependency = false;
@@ -89,11 +89,11 @@ class ModuleBoundaryTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Interface Segregation [GH-90000]")
+    @DisplayName("Interface Segregation")
     class InterfaceSegregationTests {
 
         @Test
-        @DisplayName("[SC001]: interfaces_are_focussed [GH-90000]")
+        @DisplayName("[SC001]: interfaces_are_focussed")
         void interfacesAreFocussed() { // GH-90000
             // Each interface should have a single responsibility
             Set<String> interfaceNames = Set.of( // GH-90000
@@ -102,11 +102,11 @@ class ModuleBoundaryTest extends EventloopTestBase {
             );
 
             // Each service handles one concern
-            assertThat(interfaceNames).allMatch(name -> name.endsWith("Service [GH-90000]") || name.endsWith("Manager [GH-90000]"));
+            assertThat(interfaceNames).allMatch(name -> name.endsWith("Service") || name.endsWith("Manager"));
         }
 
         @Test
-        @DisplayName("[SC001]: no_god_interfaces [GH-90000]")
+        @DisplayName("[SC001]: no_god_interfaces")
         void noGodInterfaces() { // GH-90000
             // No interface should have too many methods
             int maxMethodsPerInterface = 20;
@@ -115,23 +115,23 @@ class ModuleBoundaryTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Module Cohesion [GH-90000]")
+    @DisplayName("Module Cohesion")
     class ModuleCohesionTests {
 
         @Test
-        @DisplayName("[SC001]: related_classes_grouped [GH-90000]")
+        @DisplayName("[SC001]: related_classes_grouped")
         void relatedClassesGrouped() { // GH-90000
             // Related classes should be in same package
             Set<String> entityPackage = Set.of("Entity", "EntityId", "EntityType", "EntityRepository"); // GH-90000
             Set<String> eventPackage = Set.of("Event", "EventId", "EventType", "EventPublisher"); // GH-90000
 
             // Each package has cohesive set of classes
-            assertThat(entityPackage).allMatch(s -> s.contains("Entity [GH-90000]"));
-            assertThat(eventPackage).allMatch(s -> s.contains("Event [GH-90000]"));
+            assertThat(entityPackage).allMatch(s -> s.contains("Entity"));
+            assertThat(eventPackage).allMatch(s -> s.contains("Event"));
         }
 
         @Test
-        @DisplayName("[SC001]: cross_module_references_minimal [GH-90000]")
+        @DisplayName("[SC001]: cross_module_references_minimal")
         void crossModuleReferencesMinimal() { // GH-90000
             // Cross-module references should be through interfaces only
             boolean onlyInterfaceReferences = true;
@@ -140,11 +140,11 @@ class ModuleBoundaryTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Public API Surface [GH-90000]")
+    @DisplayName("Public API Surface")
     class PublicApiSurfaceTests {
 
         @Test
-        @DisplayName("[SC001]: public_classes_documented [GH-90000]")
+        @DisplayName("[SC001]: public_classes_documented")
         void publicClassesDocumented() { // GH-90000
             // All public classes should have documentation tags
             boolean allDocumented = true;
@@ -152,7 +152,7 @@ class ModuleBoundaryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[SC001]: breaking_changes_detected [GH-90000]")
+        @DisplayName("[SC001]: breaking_changes_detected")
         void breakingChangesDetected() { // GH-90000
             // API changes should be tracked
             boolean apiChangeDetected = true;

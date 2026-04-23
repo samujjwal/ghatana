@@ -75,11 +75,11 @@ class RedisTlsConfigTest {
         SSLParameters sslParameters = config.createSslParameters(); // GH-90000
 
         // Then
-        assertThat(sslParameters.getProtocols()).containsExactly("TLSv1.3 [GH-90000]");
+        assertThat(sslParameters.getProtocols()).containsExactly("TLSv1.3");
         assertThat(sslParameters.getCipherSuites()) // GH-90000
-                .contains("TLS_AES_256_GCM_SHA384 [GH-90000]")
-                .contains("TLS_AES_128_GCM_SHA256 [GH-90000]")
-                .contains("TLS_CHACHA20_POLY1305_SHA256 [GH-90000]");
+                .contains("TLS_AES_256_GCM_SHA384")
+                .contains("TLS_AES_128_GCM_SHA256")
+                .contains("TLS_CHACHA20_POLY1305_SHA256");
     }
 
     @Test
@@ -116,7 +116,7 @@ class RedisTlsConfigTest {
         SSLParameters sslParameters = config.createSslParameters(); // GH-90000
 
         // Then
-        assertThat(sslParameters.getEndpointIdentificationAlgorithm()).isEqualTo("HTTPS [GH-90000]");
+        assertThat(sslParameters.getEndpointIdentificationAlgorithm()).isEqualTo("HTTPS");
     }
 
     @Test
@@ -180,12 +180,12 @@ class RedisTlsConfigTest {
         // When/Then
         assertThatThrownBy(() -> // GH-90000
                 RedisTlsConfig.builder() // GH-90000
-                        .keyStorePath("/path/to/keystore.jks [GH-90000]")
+                        .keyStorePath("/path/to/keystore.jks")
                         .keyStorePassword(TEST_PASSWORD) // GH-90000
                         .build() // GH-90000
         )
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("Trust store path must be provided [GH-90000]");
+                .hasMessageContaining("Trust store path must be provided");
     }
 
     @Test
@@ -200,7 +200,7 @@ class RedisTlsConfigTest {
                         .build() // GH-90000
         )
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("Trust store password must be provided [GH-90000]");
+                .hasMessageContaining("Trust store password must be provided");
     }
 
     @Test
@@ -208,12 +208,12 @@ class RedisTlsConfigTest {
         // When/Then
         assertThatThrownBy(() -> // GH-90000
                 RedisTlsConfig.builder() // GH-90000
-                        .trustStorePath("/nonexistent/truststore.jks [GH-90000]")
+                        .trustStorePath("/nonexistent/truststore.jks")
                         .trustStorePassword(TEST_PASSWORD) // GH-90000
                         .build() // GH-90000
         )
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("Trust store file not found [GH-90000]");
+                .hasMessageContaining("Trust store file not found");
     }
 
     @Test
@@ -224,14 +224,14 @@ class RedisTlsConfigTest {
         // When/Then
         assertThatThrownBy(() -> // GH-90000
                 RedisTlsConfig.builder() // GH-90000
-                        .keyStorePath("/nonexistent/keystore.jks [GH-90000]")
+                        .keyStorePath("/nonexistent/keystore.jks")
                         .keyStorePassword(TEST_PASSWORD) // GH-90000
                         .trustStorePath(trustStore.toString()) // GH-90000
                         .trustStorePassword(TEST_PASSWORD) // GH-90000
                         .build() // GH-90000
         )
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("Key store file not found [GH-90000]");
+                .hasMessageContaining("Key store file not found");
     }
 
     @Test
@@ -249,7 +249,7 @@ class RedisTlsConfigTest {
                         .build() // GH-90000
         )
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("Key store password must be provided [GH-90000]");
+                .hasMessageContaining("Key store password must be provided");
     }
 
     @Test
@@ -262,7 +262,7 @@ class RedisTlsConfigTest {
         RedisTlsConfig config = RedisTlsConfig.builder() // GH-90000
                 .keyStorePath(keyStore.toString()) // GH-90000
                 .keyStorePassword(TEST_PASSWORD) // GH-90000
-                .keyStoreType("JKS [GH-90000]") // Using JKS for test
+                .keyStoreType("JKS") // Using JKS for test
                 .trustStorePath(trustStore.toString()) // GH-90000
                 .trustStorePassword(TEST_PASSWORD) // GH-90000
                 .build(); // GH-90000
@@ -299,13 +299,13 @@ class RedisTlsConfigTest {
         RedisTlsConfig config = RedisTlsConfig.builder() // GH-90000
                 .trustStorePath(trustStore.toString()) // GH-90000
                 .trustStorePassword(TEST_PASSWORD) // GH-90000
-                .enabledCipherSuites("TLS_AES_256_GCM_SHA384 [GH-90000]")
+                .enabledCipherSuites("TLS_AES_256_GCM_SHA384")
                 .build(); // GH-90000
 
         SSLParameters sslParameters = config.createSslParameters(); // GH-90000
 
         // Then
-        assertThat(sslParameters.getCipherSuites()).containsExactly("TLS_AES_256_GCM_SHA384 [GH-90000]");
+        assertThat(sslParameters.getCipherSuites()).containsExactly("TLS_AES_256_GCM_SHA384");
     }
 
     @Test
@@ -318,14 +318,14 @@ class RedisTlsConfigTest {
         RedisTlsConfig config = RedisTlsConfig.builder() // GH-90000
                 .keyStorePath(keyStore.toString()) // GH-90000
                 .keyStorePassword(TEST_PASSWORD) // GH-90000
-                .keyStoreType("JKS [GH-90000]")
+                .keyStoreType("JKS")
                 .trustStorePath(trustStore.toString()) // GH-90000
                 .trustStorePassword(TEST_PASSWORD) // GH-90000
-                .trustStoreType("JKS [GH-90000]")
+                .trustStoreType("JKS")
                 .verifyPeer(true) // GH-90000
                 .enforceStrongCiphers(true) // GH-90000
-                .enabledProtocols("TLSv1.3 [GH-90000]")
-                .enabledCipherSuites("TLS_AES_256_GCM_SHA384 [GH-90000]")
+                .enabledProtocols("TLSv1.3")
+                .enabledCipherSuites("TLS_AES_256_GCM_SHA384")
                 .build(); // GH-90000
 
         // Then
@@ -341,7 +341,7 @@ class RedisTlsConfigTest {
 
         RedisTlsConfig config = RedisTlsConfig.builder() // GH-90000
                 .keyStorePath(keyStore.toString()) // GH-90000
-                .keyStorePassword("wrongpassword [GH-90000]")
+                .keyStorePassword("wrongpassword")
                 .trustStorePath(trustStore.toString()) // GH-90000
                 .trustStorePassword(TEST_PASSWORD) // GH-90000
                 .build(); // GH-90000
@@ -349,7 +349,7 @@ class RedisTlsConfigTest {
         // When/Then
         assertThatThrownBy(config::createSslSocketFactory) // GH-90000
                 .isInstanceOf(RuntimeException.class) // GH-90000
-                .hasMessageContaining("Failed to create [GH-90000]");
+                .hasMessageContaining("Failed to create");
     }
 
     @Test
@@ -359,12 +359,12 @@ class RedisTlsConfigTest {
 
         RedisTlsConfig config = RedisTlsConfig.builder() // GH-90000
                 .trustStorePath(trustStore.toString()) // GH-90000
-                .trustStorePassword("wrongpassword [GH-90000]")
+                .trustStorePassword("wrongpassword")
                 .build(); // GH-90000
 
         // When/Then
         assertThatThrownBy(config::createSslSocketFactory) // GH-90000
                 .isInstanceOf(RuntimeException.class) // GH-90000
-                .hasMessageContaining("Failed to create [GH-90000]");
+                .hasMessageContaining("Failed to create");
     }
 }

@@ -56,7 +56,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern Test, Integration
  */
 @Testcontainers(disabledWithoutDocker = true) // GH-90000
-@DisplayName("Broker-backed connector strategies [GH-90000]")
+@DisplayName("Broker-backed connector strategies")
 class BrokerConnectorIntegrationTest extends EventloopTestBase {
 
     @Container
@@ -80,7 +80,7 @@ class BrokerConnectorIntegrationTest extends EventloopTestBase {
         .withStartupTimeout(Duration.ofMinutes(2)); // GH-90000
 
     @Test
-    @DisplayName("KafkaProducerStrategy sends records to Kafka [GH-90000]")
+    @DisplayName("KafkaProducerStrategy sends records to Kafka")
     void shouldSendKafkaRecords() { // GH-90000
         String topic = "aep-producer-" + UUID.randomUUID(); // GH-90000
         KafkaProducerStrategy strategy = new KafkaProducerStrategy(KafkaProducerConfig.builder() // GH-90000
@@ -106,7 +106,7 @@ class BrokerConnectorIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("KafkaConsumerStrategy consumes records from Kafka [GH-90000]")
+    @DisplayName("KafkaConsumerStrategy consumes records from Kafka")
     void shouldConsumeKafkaRecords() throws Exception { // GH-90000
         String topic = "aep-consumer-" + UUID.randomUUID(); // GH-90000
         CountDownLatch received = new CountDownLatch(1); // GH-90000
@@ -137,7 +137,7 @@ class BrokerConnectorIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("D-7: RabbitMQConsumerStrategy consumes queued messages [GH-90000]")
+    @DisplayName("D-7: RabbitMQConsumerStrategy consumes queued messages")
     void shouldConsumeRabbitMqMessages() throws Exception { // GH-90000
         String queueName = "aep-rabbit-" + UUID.randomUUID();
         CountDownLatch received = new CountDownLatch(1);
@@ -174,7 +174,7 @@ class BrokerConnectorIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("SqsProducerStrategy sends messages to emulated SQS [GH-90000]")
+    @DisplayName("SqsProducerStrategy sends messages to emulated SQS")
     void shouldSendSqsMessages() { // GH-90000
         String queueUrl = createQueue("aep-producer-queue-" + UUID.randomUUID()); // GH-90000
         SqsProducerStrategy strategy = new SqsProducerStrategy(sqsConfig(queueUrl)); // GH-90000
@@ -198,7 +198,7 @@ class BrokerConnectorIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("SqsConsumerStrategy consumes messages from emulated SQS [GH-90000]")
+    @DisplayName("SqsConsumerStrategy consumes messages from emulated SQS")
     void shouldConsumeSqsMessages() throws Exception { // GH-90000
         String queueUrl = createQueue("aep-consumer-queue-" + UUID.randomUUID()); // GH-90000
         CountDownLatch received = new CountDownLatch(1); // GH-90000

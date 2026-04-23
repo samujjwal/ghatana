@@ -43,13 +43,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.pattern Test, Integration
  */
 @Testcontainers(disabledWithoutDocker = true) // GH-90000
-@DisplayName("ClickHouseTimeSeriesConnector Integration Tests [GH-90000]")
+@DisplayName("ClickHouseTimeSeriesConnector Integration Tests")
 class ClickHouseTimeSeriesConnectorTest extends EventloopTestBase {
 
-    @SuppressWarnings("resource [GH-90000]")
+    @SuppressWarnings("resource")
     @Container
     static final ClickHouseContainer CLICK_HOUSE = new ClickHouseContainer( // GH-90000
-            DockerImageName.parse("clickhouse/clickhouse-server:24.3-alpine [GH-90000]"))
+            DockerImageName.parse("clickhouse/clickhouse-server:24.3-alpine"))
             .withStartupTimeout(Duration.ofMinutes(2)); // GH-90000
 
     private static final String TENANT_ID = "tenant-ch-test";
@@ -78,7 +78,7 @@ class ClickHouseTimeSeriesConnectorTest extends EventloopTestBase {
     // =========================================================================
 
     @Test
-    @DisplayName("getMetadata should report TIMESERIES backend type [GH-90000]")
+    @DisplayName("getMetadata should report TIMESERIES backend type")
     void getMetadataShouldReportCorrectBackendType() { // GH-90000
         StorageConnector.ConnectorMetadata meta = connector.getMetadata(); // GH-90000
 
@@ -92,7 +92,7 @@ class ClickHouseTimeSeriesConnectorTest extends EventloopTestBase {
     // =========================================================================
 
     @Test
-    @DisplayName("healthCheck should complete without error when ClickHouse is up [GH-90000]")
+    @DisplayName("healthCheck should complete without error when ClickHouse is up")
     void healthCheckShouldSucceed() { // GH-90000
         runPromise(() -> connector.healthCheck()); // GH-90000
         // No assertion needed — runPromise would throw if the promise fails
@@ -103,16 +103,16 @@ class ClickHouseTimeSeriesConnectorTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Create and Read [GH-90000]")
+    @DisplayName("Create and Read")
     class CreateAndRead {
 
         @Test
-        @DisplayName("should persist an entity and read it back by ID [GH-90000]")
+        @DisplayName("should persist an entity and read it back by ID")
         void shouldCreateAndReadEntity() { // GH-90000
             // GIVEN
             Entity entity = Entity.builder() // GH-90000
                     .tenantId(TENANT_ID) // GH-90000
-                    .collectionName("timeseries-events [GH-90000]")
+                    .collectionName("timeseries-events")
                     .data(Map.of("metric", "cpu_usage", "value", 72.5, "host", "web-01")) // GH-90000
                     .build(); // GH-90000
 
@@ -133,7 +133,7 @@ class ClickHouseTimeSeriesConnectorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should return empty Optional when entity does not exist [GH-90000]")
+        @DisplayName("should return empty Optional when entity does not exist")
         void shouldReturnEmptyForMissingEntity() { // GH-90000
             Optional<Entity> found = runPromise(() -> // GH-90000
                     connector.read(COLLECTION_ID, TENANT_ID, UUID.randomUUID())); // GH-90000
@@ -147,16 +147,16 @@ class ClickHouseTimeSeriesConnectorTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Update and Delete [GH-90000]")
+    @DisplayName("Update and Delete")
     class UpdateAndDelete {
 
         @Test
-        @DisplayName("should overwrite entity on update [GH-90000]")
+        @DisplayName("should overwrite entity on update")
         void shouldUpdateEntity() { // GH-90000
             // GIVEN
             Entity original = Entity.builder() // GH-90000
                     .tenantId(TENANT_ID) // GH-90000
-                    .collectionName("update-test [GH-90000]")
+                    .collectionName("update-test")
                     .data(Map.of("status", "pending")) // GH-90000
                     .build(); // GH-90000
             Entity saved = runPromise(() -> connector.create(original)); // GH-90000
@@ -164,7 +164,7 @@ class ClickHouseTimeSeriesConnectorTest extends EventloopTestBase {
             Entity updated = Entity.builder() // GH-90000
                     .id(saved.getId()) // GH-90000
                     .tenantId(TENANT_ID) // GH-90000
-                    .collectionName("update-test [GH-90000]")
+                    .collectionName("update-test")
                     .data(Map.of("status", "completed")) // GH-90000
                     .build(); // GH-90000
 
@@ -177,12 +177,12 @@ class ClickHouseTimeSeriesConnectorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should delete an entity by ID [GH-90000]")
+        @DisplayName("should delete an entity by ID")
         void shouldDeleteEntity() { // GH-90000
             // GIVEN
             Entity entity = Entity.builder() // GH-90000
                     .tenantId(TENANT_ID) // GH-90000
-                    .collectionName("delete-test [GH-90000]")
+                    .collectionName("delete-test")
                     .data(Map.of("tag", "ephemeral")) // GH-90000
                     .build(); // GH-90000
             Entity saved = runPromise(() -> connector.create(entity)); // GH-90000
@@ -202,11 +202,11 @@ class ClickHouseTimeSeriesConnectorTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Count and Scan [GH-90000]")
+    @DisplayName("Count and Scan")
     class CountAndScan {
 
         @Test
-        @DisplayName("count should return number of tenant entities [GH-90000]")
+        @DisplayName("count should return number of tenant entities")
         void shouldCountEntities() { // GH-90000
             // GIVEN: insert 3 entities for a unique tenant
             String countTenant = "tenant-count-" + System.currentTimeMillis(); // GH-90000
@@ -214,7 +214,7 @@ class ClickHouseTimeSeriesConnectorTest extends EventloopTestBase {
                 final int seq = i;
                 Entity e = Entity.builder() // GH-90000
                         .tenantId(countTenant) // GH-90000
-                        .collectionName("metrics [GH-90000]")
+                        .collectionName("metrics")
                         .data(Map.of("seq", seq)) // GH-90000
                         .build(); // GH-90000
                 runPromise(() -> connector.create(e)); // GH-90000
@@ -228,7 +228,7 @@ class ClickHouseTimeSeriesConnectorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("scan should return paged results [GH-90000]")
+        @DisplayName("scan should return paged results")
         void shouldScanWithPagination() { // GH-90000
             // GIVEN: insert 5 entities
             String scanTenant = "tenant-scan-" + System.currentTimeMillis(); // GH-90000
@@ -236,7 +236,7 @@ class ClickHouseTimeSeriesConnectorTest extends EventloopTestBase {
                 final int seq = i;
                 Entity e = Entity.builder() // GH-90000
                         .tenantId(scanTenant) // GH-90000
-                        .collectionName("scan-test [GH-90000]")
+                        .collectionName("scan-test")
                         .data(Map.of("seq", seq)) // GH-90000
                         .build(); // GH-90000
                 runPromise(() -> connector.create(e)); // GH-90000
@@ -250,12 +250,12 @@ class ClickHouseTimeSeriesConnectorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("count should reject tenant identifiers with SQL injection payloads [GH-90000]")
+        @DisplayName("count should reject tenant identifiers with SQL injection payloads")
         void shouldRejectInjectedTenantIdentifier() { // GH-90000
             assertThatThrownBy(() -> runPromise(() -> // GH-90000
                     connector.count(COLLECTION_ID, "tenant' OR 1=1 --", null))) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("tenantId contains illegal characters [GH-90000]");
+                    .hasMessageContaining("tenantId contains illegal characters");
         }
     }
 
@@ -264,12 +264,12 @@ class ClickHouseTimeSeriesConnectorTest extends EventloopTestBase {
     // =========================================================================
 
     @Test
-    @DisplayName("query should return entities within time window [GH-90000]")
+    @DisplayName("query should return entities within time window")
     void shouldQueryWithinTimeWindow() { // GH-90000
         // GIVEN: insert an entity
         Entity entity = Entity.builder() // GH-90000
                 .tenantId(TENANT_ID) // GH-90000
-                .collectionName("time-window-test [GH-90000]")
+                .collectionName("time-window-test")
                 .data(Map.of("event", "startup")) // GH-90000
                 .build(); // GH-90000
         runPromise(() -> connector.create(entity)); // GH-90000

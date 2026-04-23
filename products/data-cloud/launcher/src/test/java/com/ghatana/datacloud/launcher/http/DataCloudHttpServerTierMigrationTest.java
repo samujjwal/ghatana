@@ -38,7 +38,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataCloudHttpServer – Tier Migration Endpoint (B10) [GH-90000]")
+@DisplayName("DataCloudHttpServer – Tier Migration Endpoint (B10)")
 class DataCloudHttpServerTierMigrationTest {
 
     private DataCloudClient mockClient;
@@ -112,87 +112,87 @@ class DataCloudHttpServerTierMigrationTest {
     // ─── tests ───────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("WARM tier migration [GH-90000]")
+    @DisplayName("WARM tier migration")
     class WarmTierTests {
 
         @Test
-        @DisplayName("returns 200 with status COMPLETED when warm scheduler triggers successfully [GH-90000]")
+        @DisplayName("returns 200 with status COMPLETED when warm scheduler triggers successfully")
         void warmMigration_schedulerSuccess_returns200Completed() throws Exception { // GH-90000
             when(mockWarmScheduler.triggerMigration(anyString(), anyString())) // GH-90000
                     .thenReturn(Promise.of(42L)); // GH-90000
             startServerWithSchedulers(); // GH-90000
 
-            HttpResponse<String> response = post("/api/v1/collections/my-col/migrate?targetTier=WARM [GH-90000]");
+            HttpResponse<String> response = post("/api/v1/collections/my-col/migrate?targetTier=WARM");
 
             assertThat(response.statusCode()).isEqualTo(200); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, Object> body = mapper.readValue(response.body(), Map.class); // GH-90000
-            assertThat(body.get("status [GH-90000]")).isEqualTo("COMPLETED [GH-90000]");
-            assertThat(body.get("targetTier [GH-90000]")).isEqualTo("WARM [GH-90000]");
-            assertThat(((Number) body.get("eventsMigrated [GH-90000]")).longValue()).isEqualTo(42L);
+            assertThat(body.get("status")).isEqualTo("COMPLETED");
+            assertThat(body.get("targetTier")).isEqualTo("WARM");
+            assertThat(((Number) body.get("eventsMigrated")).longValue()).isEqualTo(42L);
         }
 
         @Test
-        @DisplayName("returns 503 when warm scheduler is not configured [GH-90000]")
+        @DisplayName("returns 503 when warm scheduler is not configured")
         void warmMigration_noScheduler_returns503() throws Exception { // GH-90000
             startServerWithoutSchedulers(); // GH-90000
 
-            HttpResponse<String> response = post("/api/v1/collections/my-col/migrate?targetTier=WARM [GH-90000]");
+            HttpResponse<String> response = post("/api/v1/collections/my-col/migrate?targetTier=WARM");
 
             assertThat(response.statusCode()).isEqualTo(503); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("COLD tier migration [GH-90000]")
+    @DisplayName("COLD tier migration")
     class ColdTierTests {
 
         @Test
-        @DisplayName("returns 200 with status SCHEDULED when cold migration cycle triggered [GH-90000]")
+        @DisplayName("returns 200 with status SCHEDULED when cold migration cycle triggered")
         void coldMigration_returns200Scheduled() throws Exception { // GH-90000
             lenient().doNothing().when(mockColdScheduler).runMigrationCycle(); // GH-90000
             startServerWithSchedulers(); // GH-90000
 
-            HttpResponse<String> response = post("/api/v1/collections/my-col/migrate?targetTier=COLD [GH-90000]");
+            HttpResponse<String> response = post("/api/v1/collections/my-col/migrate?targetTier=COLD");
 
             assertThat(response.statusCode()).isEqualTo(200); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, Object> body = mapper.readValue(response.body(), Map.class); // GH-90000
-            assertThat(body.get("status [GH-90000]")).isEqualTo("SCHEDULED [GH-90000]");
-            assertThat(body.get("targetTier [GH-90000]")).isEqualTo("COLD [GH-90000]");
+            assertThat(body.get("status")).isEqualTo("SCHEDULED");
+            assertThat(body.get("targetTier")).isEqualTo("COLD");
         }
 
         @Test
-        @DisplayName("returns 503 when cold scheduler is not configured [GH-90000]")
+        @DisplayName("returns 503 when cold scheduler is not configured")
         void coldMigration_noScheduler_returns503() throws Exception { // GH-90000
             startServerWithoutSchedulers(); // GH-90000
 
-            HttpResponse<String> response = post("/api/v1/collections/my-col/migrate?targetTier=COLD [GH-90000]");
+            HttpResponse<String> response = post("/api/v1/collections/my-col/migrate?targetTier=COLD");
 
             assertThat(response.statusCode()).isEqualTo(503); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Input validation [GH-90000]")
+    @DisplayName("Input validation")
     class InputValidationTests {
 
         @Test
-        @DisplayName("returns 400 when targetTier is missing [GH-90000]")
+        @DisplayName("returns 400 when targetTier is missing")
         void migrate_missingTargetTier_returns400() throws Exception { // GH-90000
             startServerWithSchedulers(); // GH-90000
 
-            HttpResponse<String> response = post("/api/v1/collections/my-col/migrate [GH-90000]");
+            HttpResponse<String> response = post("/api/v1/collections/my-col/migrate");
 
             assertThat(response.statusCode()).isEqualTo(400); // GH-90000
         }
 
         @Test
-        @DisplayName("returns 400 when targetTier is invalid [GH-90000]")
+        @DisplayName("returns 400 when targetTier is invalid")
         void migrate_invalidTargetTier_returns400() throws Exception { // GH-90000
             startServerWithSchedulers(); // GH-90000
 
-            HttpResponse<String> response = post("/api/v1/collections/my-col/migrate?targetTier=HOT [GH-90000]");
+            HttpResponse<String> response = post("/api/v1/collections/my-col/migrate?targetTier=HOT");
 
             assertThat(response.statusCode()).isEqualTo(400); // GH-90000
         }

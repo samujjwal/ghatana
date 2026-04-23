@@ -44,9 +44,9 @@ class KernelCoreUnitTest extends EventloopTestBase {
     @Test
     void kernelDescriptorBuilderCreatesValidDescriptor() { // GH-90000
         KernelDescriptor descriptor = new KernelDescriptor.Builder() // GH-90000
-            .withDescriptorId("test-module [GH-90000]")
-            .withName("Test Module [GH-90000]")
-            .withVersion("1.0.0 [GH-90000]")
+            .withDescriptorId("test-module")
+            .withName("Test Module")
+            .withVersion("1.0.0")
             .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
             .build(); // GH-90000
 
@@ -60,9 +60,9 @@ class KernelCoreUnitTest extends EventloopTestBase {
     void kernelDescriptorValidationRejectsInvalidId() { // GH-90000
         assertThrows(IllegalArgumentException.class, () -> // GH-90000
             new KernelDescriptor.Builder() // GH-90000
-                .withDescriptorId("Invalid_ID_With_CAPS [GH-90000]") // Invalid: uppercase
-                .withName("Test [GH-90000]")
-                .withVersion("1.0.0 [GH-90000]")
+                .withDescriptorId("Invalid_ID_With_CAPS") // Invalid: uppercase
+                .withName("Test")
+                .withVersion("1.0.0")
                 .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
                 .build() // GH-90000
         );
@@ -72,9 +72,9 @@ class KernelCoreUnitTest extends EventloopTestBase {
     void kernelDescriptorValidationRejectsInvalidVersion() { // GH-90000
         assertThrows(IllegalArgumentException.class, () -> // GH-90000
             new KernelDescriptor.Builder() // GH-90000
-                .withDescriptorId("test-module [GH-90000]")
-                .withName("Test [GH-90000]")
-                .withVersion("invalid-version [GH-90000]") // Invalid: not semver
+                .withDescriptorId("test-module")
+                .withName("Test")
+                .withVersion("invalid-version") // Invalid: not semver
                 .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
                 .build() // GH-90000
         );
@@ -85,44 +85,44 @@ class KernelCoreUnitTest extends EventloopTestBase {
         KernelCapability capability = KernelCapability.Core.DATA_STORAGE;
 
         KernelDescriptor descriptor = new KernelDescriptor.Builder() // GH-90000
-            .withDescriptorId("test-module [GH-90000]")
-            .withName("Test Module [GH-90000]")
-            .withVersion("1.0.0 [GH-90000]")
+            .withDescriptorId("test-module")
+            .withName("Test Module")
+            .withVersion("1.0.0")
             .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
             .withCapability(capability) // GH-90000
             .build(); // GH-90000
 
         assertTrue(descriptor.hasCapability(capability)); // GH-90000
-        assertTrue(descriptor.hasCapability("data.storage [GH-90000]"));
-        assertFalse(descriptor.hasCapability("nonexistent [GH-90000]"));
+        assertTrue(descriptor.hasCapability("data.storage"));
+        assertFalse(descriptor.hasCapability("nonexistent"));
     }
 
     @Test
     void kernelDescriptorSupportsTenantCheck() { // GH-90000
         KernelDescriptor descriptor = new KernelDescriptor.Builder() // GH-90000
-            .withDescriptorId("test-module [GH-90000]")
-            .withName("Test [GH-90000]")
-            .withVersion("1.0.0 [GH-90000]")
+            .withDescriptorId("test-module")
+            .withName("Test")
+            .withVersion("1.0.0")
             .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
-            .withSupportedTenant("tenant-1 [GH-90000]")
-            .withSupportedTenant("tenant-2 [GH-90000]")
+            .withSupportedTenant("tenant-1")
+            .withSupportedTenant("tenant-2")
             .build(); // GH-90000
 
-        assertTrue(descriptor.supportsTenant("tenant-1 [GH-90000]"));
-        assertTrue(descriptor.supportsTenant("tenant-2 [GH-90000]"));
-        assertFalse(descriptor.supportsTenant("tenant-3 [GH-90000]"));
+        assertTrue(descriptor.supportsTenant("tenant-1"));
+        assertTrue(descriptor.supportsTenant("tenant-2"));
+        assertFalse(descriptor.supportsTenant("tenant-3"));
     }
 
     @Test
     void kernelDescriptorEmptySupportedTenantsMeansAllTenants() { // GH-90000
         KernelDescriptor descriptor = new KernelDescriptor.Builder() // GH-90000
-            .withDescriptorId("test-module [GH-90000]")
-            .withName("Test [GH-90000]")
-            .withVersion("1.0.0 [GH-90000]")
+            .withDescriptorId("test-module")
+            .withName("Test")
+            .withVersion("1.0.0")
             .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
             .build(); // GH-90000
 
-        assertTrue(descriptor.supportsTenant("any-tenant [GH-90000]"));
+        assertTrue(descriptor.supportsTenant("any-tenant"));
     }
 
     // ==================== KernelCapability Tests ====================
@@ -152,9 +152,9 @@ class KernelCoreUnitTest extends EventloopTestBase {
             Map.of("required_services", "service1,service2") // GH-90000
         );
 
-        assertTrue(capability.requiresService("service1 [GH-90000]"));
-        assertTrue(capability.requiresService("service2 [GH-90000]"));
-        assertFalse(capability.requiresService("service3 [GH-90000]"));
+        assertTrue(capability.requiresService("service1"));
+        assertTrue(capability.requiresService("service2"));
+        assertFalse(capability.requiresService("service3"));
     }
 
     @Test
@@ -167,9 +167,9 @@ class KernelCoreUnitTest extends EventloopTestBase {
             Map.of("supported_products", "phr,finance") // GH-90000
         );
 
-        assertTrue(capability.supportsProduct("phr [GH-90000]"));
-        assertTrue(capability.supportsProduct("finance [GH-90000]"));
-        assertFalse(capability.supportsProduct("flashit [GH-90000]"));
+        assertTrue(capability.supportsProduct("phr"));
+        assertTrue(capability.supportsProduct("finance"));
+        assertFalse(capability.supportsProduct("flashit"));
     }
 
     @Test
@@ -182,7 +182,7 @@ class KernelCoreUnitTest extends EventloopTestBase {
             Map.of() // GH-90000
         );
 
-        assertTrue(capability.supportsProduct("any-product [GH-90000]"));
+        assertTrue(capability.supportsProduct("any-product"));
     }
 
     @Test
@@ -242,7 +242,7 @@ class KernelCoreUnitTest extends EventloopTestBase {
             "test-tenant",
             KernelTenantContext.TenantType.STANDARD,
             Map.of(), // GH-90000
-            Set.of("test-feature [GH-90000]"),
+            Set.of("test-feature"),
             null,
             null
         );

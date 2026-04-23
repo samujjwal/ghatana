@@ -39,7 +39,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataCloudHttpServer – MCP Tools [GH-90000]")
+@DisplayName("DataCloudHttpServer – MCP Tools")
 class DataCloudHttpServerMcpToolsTest {
 
     private static final String TENANT_ID = "tenant-mcp";
@@ -71,24 +71,24 @@ class DataCloudHttpServerMcpToolsTest {
                 "name", "orders",
                 "schema", Map.of("fields", List.of(Map.of("name", "orderId", "type", "string", "required", true))) // GH-90000
             ),
-            Instant.parse("2026-04-18T08:55:00Z [GH-90000]"),
-            Instant.parse("2026-04-18T08:56:00Z [GH-90000]"),
+            Instant.parse("2026-04-18T08:55:00Z"),
+            Instant.parse("2026-04-18T08:56:00Z"),
             1L
         );
         DataCloudClient.Entity order1 = new DataCloudClient.Entity( // GH-90000
             "order-1",
             "orders",
             Map.of("orderId", "order-1", "status", "ready"), // GH-90000
-            Instant.parse("2026-04-18T08:57:00Z [GH-90000]"),
-            Instant.parse("2026-04-18T08:58:00Z [GH-90000]"),
+            Instant.parse("2026-04-18T08:57:00Z"),
+            Instant.parse("2026-04-18T08:58:00Z"),
             1L
         );
 
         when(client.findById(TENANT_ID, "dc_collections", "orders")) // GH-90000
             .thenReturn(Promise.of(Optional.of(collectionMetadata))); // GH-90000
-        when(client.query(eq(TENANT_ID), eq("orders [GH-90000]"), any(DataCloudClient.Query.class)))
+        when(client.query(eq(TENANT_ID), eq("orders"), any(DataCloudClient.Query.class)))
             .thenReturn(Promise.of(List.of(order1))); // GH-90000
-        when(client.query(eq(TENANT_ID), eq("_governance_retention_policies [GH-90000]"), any(DataCloudClient.Query.class)))
+        when(client.query(eq(TENANT_ID), eq("_governance_retention_policies"), any(DataCloudClient.Query.class)))
             .thenReturn(Promise.of(List.of())); // GH-90000
         when(entityStore.count(any(TenantContext.class), any(EntityStore.QuerySpec.class))).thenReturn(Promise.of(1L)); // GH-90000
         when(lineagePlugin.getUpstreamLineage(TENANT_ID, "orders")) // GH-90000
@@ -116,14 +116,14 @@ class DataCloudHttpServerMcpToolsTest {
 
     @Test
     void listsDiscoverableMcpTools() throws IOException, InterruptedException { // GH-90000
-        HttpRequest request = authenticatedRequest("/mcp/v1/tools [GH-90000]").GET().build();
+        HttpRequest request = authenticatedRequest("/mcp/v1/tools").GET().build();
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString()); // GH-90000
 
         assertThat(response.statusCode()).isEqualTo(200); // GH-90000
         JsonNode body = mapper.readTree(response.body()); // GH-90000
-        assertThat(body.path("tools [GH-90000]")).hasSize(4);
-        assertThat(body.path("tools [GH-90000]").get(0).path("name [GH-90000]").asText()).isEqualTo("data_cloud_get_context [GH-90000]");
+        assertThat(body.path("tools")).hasSize(4);
+        assertThat(body.path("tools").get(0).path("name").asText()).isEqualTo("data_cloud_get_context");
     }
 
     @Test
@@ -154,7 +154,7 @@ class DataCloudHttpServerMcpToolsTest {
             }
             """;
 
-        HttpRequest request = authenticatedRequest("/mcp/v1/tools [GH-90000]")
+        HttpRequest request = authenticatedRequest("/mcp/v1/tools")
             .header("Content-Type", "application/json") // GH-90000
             .POST(HttpRequest.BodyPublishers.ofString(body)) // GH-90000
             .build(); // GH-90000
@@ -163,9 +163,9 @@ class DataCloudHttpServerMcpToolsTest {
 
         assertThat(response.statusCode()).isEqualTo(200); // GH-90000
         JsonNode json = mapper.readTree(response.body()); // GH-90000
-        assertThat(json.path("jsonrpc [GH-90000]").asText()).isEqualTo("2.0 [GH-90000]");
-        assertThat(json.path("result [GH-90000]").path("content [GH-90000]").get(0).path("text [GH-90000]").asText()).contains("orders [GH-90000]");
-        assertThat(json.path("result [GH-90000]").path("content [GH-90000]").get(0).path("text [GH-90000]").asText()).contains("entityCount [GH-90000]");
+        assertThat(json.path("jsonrpc").asText()).isEqualTo("2.0");
+        assertThat(json.path("result").path("content").get(0).path("text").asText()).contains("orders");
+        assertThat(json.path("result").path("content").get(0).path("text").asText()).contains("entityCount");
     }
 
     private HttpRequest.Builder authenticatedRequest(String path) { // GH-90000
@@ -179,7 +179,7 @@ class DataCloudHttpServerMcpToolsTest {
     }
 
     private String createToken() { // GH-90000
-        return jwtProvider().createToken("integration-user", List.of("viewer [GH-90000]"), Map.of("tenant_id", TENANT_ID));
+        return jwtProvider().createToken("integration-user", List.of("viewer"), Map.of("tenant_id", TENANT_ID));
     }
 
     private int randomPort() throws IOException { // GH-90000

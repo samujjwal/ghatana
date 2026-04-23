@@ -18,13 +18,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("CanaryAnalyzer Tests [GH-90000]")
+@DisplayName("CanaryAnalyzer Tests")
 class CanaryAnalyzerTest extends EventloopTestBase {
 
   @Mock private YAPPCAIService aiService;
 
   @Test
-  @DisplayName("evaluate holds when the sample size is too small [GH-90000]")
+  @DisplayName("evaluate holds when the sample size is too small")
   void evaluateHoldsWhenSampleSizeIsTooSmall() { // GH-90000
     RecordingDeploymentController controller = new RecordingDeploymentController(); // GH-90000
     RecordingDecisionPublisher publisher = new RecordingDecisionPublisher(); // GH-90000
@@ -40,7 +40,7 @@ class CanaryAnalyzerTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("evaluate rolls back when error rate exceeds threshold [GH-90000]")
+  @DisplayName("evaluate rolls back when error rate exceeds threshold")
   void evaluateRollsBackWhenErrorRateExceedsThreshold() { // GH-90000
     RecordingDeploymentController controller = new RecordingDeploymentController(); // GH-90000
     RecordingDecisionPublisher publisher = new RecordingDecisionPublisher(); // GH-90000
@@ -50,12 +50,12 @@ class CanaryAnalyzerTest extends EventloopTestBase {
         runPromise(() -> analyzer.evaluate("deploy-1", config())); // GH-90000
 
     assertThat(decision.type()).isEqualTo(CanaryAnalyzer.CanaryDecisionType.ROLLBACK); // GH-90000
-    assertThat(controller.actions).containsExactly("rollback:deploy-1:v1.0.0 [GH-90000]");
+    assertThat(controller.actions).containsExactly("rollback:deploy-1:v1.0.0");
     assertThat(decision.aiGenerated()).isFalse(); // GH-90000
   }
 
   @Test
-  @DisplayName("evaluate rolls back when latency exceeds threshold [GH-90000]")
+  @DisplayName("evaluate rolls back when latency exceeds threshold")
   void evaluateRollsBackWhenLatencyExceedsThreshold() { // GH-90000
     RecordingDeploymentController controller = new RecordingDeploymentController(); // GH-90000
     CanaryAnalyzer analyzer = analyzer(metrics(0.01, 900, 0.95, 120), controller, new RecordingDecisionPublisher()); // GH-90000
@@ -64,11 +64,11 @@ class CanaryAnalyzerTest extends EventloopTestBase {
         runPromise(() -> analyzer.evaluate("deploy-2", config())); // GH-90000
 
     assertThat(decision.type()).isEqualTo(CanaryAnalyzer.CanaryDecisionType.ROLLBACK); // GH-90000
-    assertThat(controller.actions).containsExactly("rollback:deploy-2:v1.0.0 [GH-90000]");
+    assertThat(controller.actions).containsExactly("rollback:deploy-2:v1.0.0");
   }
 
   @Test
-  @DisplayName("evaluate rolls back when success rate drops below threshold [GH-90000]")
+  @DisplayName("evaluate rolls back when success rate drops below threshold")
   void evaluateRollsBackWhenSuccessRateDropsBelowThreshold() { // GH-90000
     RecordingDeploymentController controller = new RecordingDeploymentController(); // GH-90000
     CanaryAnalyzer analyzer = analyzer(metrics(0.01, 150, 0.85, 120), controller, new RecordingDecisionPublisher()); // GH-90000
@@ -77,11 +77,11 @@ class CanaryAnalyzerTest extends EventloopTestBase {
         runPromise(() -> analyzer.evaluate("deploy-3", config())); // GH-90000
 
     assertThat(decision.type()).isEqualTo(CanaryAnalyzer.CanaryDecisionType.ROLLBACK); // GH-90000
-    assertThat(controller.actions).containsExactly("rollback:deploy-3:v1.0.0 [GH-90000]");
+    assertThat(controller.actions).containsExactly("rollback:deploy-3:v1.0.0");
   }
 
   @Test
-  @DisplayName("evaluate promotes when AI recommends promotion [GH-90000]")
+  @DisplayName("evaluate promotes when AI recommends promotion")
   void evaluatePromotesWhenAiRecommendsPromotion() { // GH-90000
     when(aiService.reason(anyString(), anyMap())) // GH-90000
         .thenReturn(Promise.of("{\"decision\":\"PROMOTE\",\"rationale\":\"Metrics are stable\",\"confidence\":0.91}")); // GH-90000
@@ -95,15 +95,15 @@ class CanaryAnalyzerTest extends EventloopTestBase {
 
     assertThat(decision.type()).isEqualTo(CanaryAnalyzer.CanaryDecisionType.PROMOTE); // GH-90000
     assertThat(decision.aiGenerated()).isTrue(); // GH-90000
-    assertThat(controller.actions).containsExactly("promote:deploy-4:production [GH-90000]");
+    assertThat(controller.actions).containsExactly("promote:deploy-4:production");
     assertThat(publisher.decisions).containsExactly(decision); // GH-90000
   }
 
   @Test
-  @DisplayName("evaluate holds when AI response is blank or null [GH-90000]")
+  @DisplayName("evaluate holds when AI response is blank or null")
   void evaluateHoldsWhenAiResponseIsBlankOrNull() { // GH-90000
     when(aiService.reason(anyString(), anyMap())) // GH-90000
-      .thenReturn(Promise.of("  [GH-90000]"))
+      .thenReturn(Promise.of(" "))
       .thenReturn(Promise.of(null)); // GH-90000
 
     CanaryAnalyzer analyzer =
@@ -116,9 +116,9 @@ class CanaryAnalyzerTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("evaluate holds when AI response is malformed [GH-90000]")
+  @DisplayName("evaluate holds when AI response is malformed")
   void evaluateHoldsWhenAiResponseIsMalformed() { // GH-90000
-    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("not-json [GH-90000]"));
+    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("not-json"));
 
     CanaryAnalyzer analyzer =
         analyzer(metrics(0.01, 120, 0.99, 120), new RecordingDeploymentController(), new RecordingDecisionPublisher()); // GH-90000
@@ -131,7 +131,7 @@ class CanaryAnalyzerTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("evaluate defaults blank AI decision fields to hold with generated rationale [GH-90000]")
+  @DisplayName("evaluate defaults blank AI decision fields to hold with generated rationale")
   void evaluateDefaultsBlankAiDecisionFieldsToHoldWithGeneratedRationale() { // GH-90000
     when(aiService.reason(anyString(), anyMap())) // GH-90000
         .thenReturn(Promise.of("{\"decision\":\"\",\"rationale\":\"\",\"confidence\":0.4}")); // GH-90000
@@ -143,12 +143,12 @@ class CanaryAnalyzerTest extends EventloopTestBase {
         runPromise(() -> analyzer.evaluate("deploy-8", config())); // GH-90000
 
     assertThat(decision.type()).isEqualTo(CanaryAnalyzer.CanaryDecisionType.HOLD); // GH-90000
-    assertThat(decision.rationale()).isEqualTo("AI generated canary recommendation. [GH-90000]");
+    assertThat(decision.rationale()).isEqualTo("AI generated canary recommendation.");
     assertThat(decision.aiGenerated()).isTrue(); // GH-90000
   }
 
   @Test
-  @DisplayName("canary records normalize invalid values [GH-90000]")
+  @DisplayName("canary records normalize invalid values")
   void canaryRecordsNormalizeInvalidValues() { // GH-90000
     CanaryAnalyzer.CanaryConfig config =
         new CanaryAnalyzer.CanaryConfig(-1.0, -5, 2.0, -2, null, null); // GH-90000
@@ -159,13 +159,13 @@ class CanaryAnalyzerTest extends EventloopTestBase {
     assertThat(config.latencyP99ThresholdMillis()).isEqualTo(1); // GH-90000
     assertThat(config.minimumSuccessRate()).isEqualTo(1.0); // GH-90000
     assertThat(config.minimumSampleSize()).isEqualTo(1); // GH-90000
-    assertThat(config.targetEnvironment()).isEqualTo("production [GH-90000]");
+    assertThat(config.targetEnvironment()).isEqualTo("production");
 
     assertThat(metrics.errorRate()).isZero(); // GH-90000
     assertThat(metrics.latencyP99Millis()).isZero(); // GH-90000
     assertThat(metrics.successRate()).isEqualTo(1.0); // GH-90000
     assertThat(metrics.sampleSize()).isZero(); // GH-90000
-    assertThat(metrics.summary()).contains("sampleSize=0 [GH-90000]");
+    assertThat(metrics.summary()).contains("sampleSize=0");
 
     assertThat(decision.type()).isEqualTo(CanaryAnalyzer.CanaryDecisionType.HOLD); // GH-90000
     assertThat(decision.rationale()).isEmpty(); // GH-90000

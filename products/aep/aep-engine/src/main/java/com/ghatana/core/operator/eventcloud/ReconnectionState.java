@@ -12,7 +12,11 @@ import java.util.Optional;
  * </p>
  *
  * @since 2.0
- */
+  * @doc.type class
+ * @doc.purpose Provides reconnection state functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 public final class ReconnectionState {
 
     private int attemptCount;

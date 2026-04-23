@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("Multi-Tenancy Isolation Tests [GH-90000]")
+@DisplayName("Multi-Tenancy Isolation Tests")
 class MultiTenancyIsolationTest extends EventloopTestBase {
 
     private static final String TENANT_A = "tenant-alpha";
@@ -52,11 +52,11 @@ class MultiTenancyIsolationTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Entity Store Isolation [GH-90000]")
+    @DisplayName("Entity Store Isolation")
     class EntityStoreIsolation {
 
         @Test
-        @DisplayName("entities saved under tenant-A are not visible to tenant-B [GH-90000]")
+        @DisplayName("entities saved under tenant-A are not visible to tenant-B")
         void entitySavedByTenantA_invisibleToTenantB() { // GH-90000
             runPromise(() -> client.save(TENANT_A, COLLECTION, // GH-90000
                     Map.of("id", "shared-id", "secret", "alpha-value"))); // GH-90000
@@ -68,7 +68,7 @@ class MultiTenancyIsolationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("same entity-id in different tenants stores independent values [GH-90000]")
+        @DisplayName("same entity-id in different tenants stores independent values")
         void sameEntityId_differentTenants_storeIndependently() { // GH-90000
             String sharedId = "entity-common-id";
             runPromise(() -> client.save(TENANT_A, COLLECTION, // GH-90000
@@ -89,7 +89,7 @@ class MultiTenancyIsolationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("query for tenant-B returns only tenant-B entities [GH-90000]")
+        @DisplayName("query for tenant-B returns only tenant-B entities")
         void queryByTenantB_returnsOnlyTenantBEntities() { // GH-90000
             for (int i = 1; i <= 5; i++) { // GH-90000
                 int idx = i;
@@ -107,12 +107,12 @@ class MultiTenancyIsolationTest extends EventloopTestBase {
 
             assertThat(resultsForB).hasSize(3); // GH-90000
             assertThat(resultsForB) // GH-90000
-                    .extracting(e -> e.data().get("tenant [GH-90000]"))
-                    .containsOnly("beta [GH-90000]");
+                    .extracting(e -> e.data().get("tenant"))
+                    .containsOnly("beta");
         }
 
         @Test
-        @DisplayName("deleting an entity for tenant-A does not affect tenant-B's copy [GH-90000]")
+        @DisplayName("deleting an entity for tenant-A does not affect tenant-B's copy")
         void deleteByTenantA_doesNotAffectTenantB() { // GH-90000
             String id = "shared-del-id";
             runPromise(() -> client.save(TENANT_A, COLLECTION, Map.of("id", id))); // GH-90000
@@ -130,7 +130,7 @@ class MultiTenancyIsolationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("tenant isolation holds across N concurrent tenants [GH-90000]")
+        @DisplayName("tenant isolation holds across N concurrent tenants")
         void concurrentTenants_allIsolated() { // GH-90000
             int tenantCount = 20;
             for (int i = 0; i < tenantCount; i++) { // GH-90000
@@ -152,7 +152,7 @@ class MultiTenancyIsolationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("collection namespace isolation: same collection name is scoped per tenant [GH-90000]")
+        @DisplayName("collection namespace isolation: same collection name is scoped per tenant")
         void collectionNameIsolation_sameNameDifferentTenants() { // GH-90000
             String colName = "customer-profiles";
             runPromise(() -> client.save(TENANT_A, colName, Map.of("id", "p1", "tier", "gold"))); // GH-90000
@@ -174,23 +174,23 @@ class MultiTenancyIsolationTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Event Log Isolation [GH-90000]")
+    @DisplayName("Event Log Isolation")
     class EventLogIsolation {
 
         @Test
-        @DisplayName("events appended for tenant-A are not visible to tenant-B [GH-90000]")
+        @DisplayName("events appended for tenant-A are not visible to tenant-B")
         void eventsForTenantA_invisibleToTenantB() { // GH-90000
             Event event = Event.of("order.created", Map.of("orderId", "A-001")); // GH-90000
             runPromise(() -> client.appendEvent(TENANT_A, event)); // GH-90000
 
             List<Event> fromB = runPromise( // GH-90000
-                    () -> client.queryEvents(TENANT_B, EventQuery.byType("order.created [GH-90000]")));
+                    () -> client.queryEvents(TENANT_B, EventQuery.byType("order.created")));
 
             assertThat(fromB).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("event query for tenant-B returns only tenant-B events [GH-90000]")
+        @DisplayName("event query for tenant-B returns only tenant-B events")
         void eventQueryByTenantB_returnsOnlyOwnEvents() { // GH-90000
             for (int i = 1; i <= 4; i++) { // GH-90000
                 int idx = i;
@@ -204,15 +204,15 @@ class MultiTenancyIsolationTest extends EventloopTestBase {
             }
 
             List<Event> fromB = runPromise( // GH-90000
-                    () -> client.queryEvents(TENANT_B, EventQuery.byType("payment.processed [GH-90000]")));
+                    () -> client.queryEvents(TENANT_B, EventQuery.byType("payment.processed")));
 
             assertThat(fromB).hasSize(2); // GH-90000
             fromB.forEach(e -> // GH-90000
-                    assertThat(e.payload().get("ref [GH-90000]").toString()).startsWith("B- [GH-90000]"));
+                    assertThat(e.payload().get("ref").toString()).startsWith("B-"));
         }
 
         @Test
-        @DisplayName("tenant event tail subscription does not receive other tenants' events [GH-90000]")
+        @DisplayName("tenant event tail subscription does not receive other tenants' events")
         void tailSubscription_receivesOnlyOwnTenantEvents() throws InterruptedException { // GH-90000
             AtomicInteger receivedByA = new AtomicInteger(0); // GH-90000
             CountDownLatch latch = new CountDownLatch(3); // GH-90000
@@ -251,11 +251,11 @@ class MultiTenancyIsolationTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Cross-Tenant Leakage Guards [GH-90000]")
+    @DisplayName("Cross-Tenant Leakage Guards")
     class CrossTenantLeakageGuards {
 
         @Test
-        @DisplayName("blank tenantId is rejected with IllegalArgumentException [GH-90000]")
+        @DisplayName("blank tenantId is rejected with IllegalArgumentException")
         void blankTenantId_isRejected() { // GH-90000
             assertThatThrownBy(() -> // GH-90000
                     runPromise(() -> client.save("", COLLECTION, Map.of("id", "e1")))) // GH-90000
@@ -263,7 +263,7 @@ class MultiTenancyIsolationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("null tenantId is rejected with NullPointerException [GH-90000]")
+        @DisplayName("null tenantId is rejected with NullPointerException")
         void nullTenantId_isRejected() { // GH-90000
             assertThatThrownBy(() -> // GH-90000
                     runPromise(() -> client.save(null, COLLECTION, Map.of("id", "e1")))) // GH-90000
@@ -271,7 +271,7 @@ class MultiTenancyIsolationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("wildcard tenant injection attempt returns no cross-tenant data [GH-90000]")
+        @DisplayName("wildcard tenant injection attempt returns no cross-tenant data")
         void wildcardTenantId_returnsNoData() { // GH-90000
             // Plant data under a legitimate tenant
             runPromise(() -> client.save(TENANT_A, COLLECTION, // GH-90000
@@ -288,7 +288,7 @@ class MultiTenancyIsolationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("three independent tenants see only their own data after interleaved writes [GH-90000]")
+        @DisplayName("three independent tenants see only their own data after interleaved writes")
         void threeTenantsInterleavedWrites_eachSeesOnlyOwn() { // GH-90000
             // Interleave writes from three tenants
             runPromise(() -> client.save(TENANT_A, COLLECTION, Map.of("id", "a1", "v", "A"))); // GH-90000
@@ -303,15 +303,15 @@ class MultiTenancyIsolationTest extends EventloopTestBase {
             List<Entity> c = runPromise(() -> client.query(TENANT_C, COLLECTION, Query.all())); // GH-90000
 
             assertThat(a).hasSize(2).allSatisfy(e -> // GH-90000
-                    assertThat(e.data().get("v [GH-90000]")).isEqualTo("A [GH-90000]"));
+                    assertThat(e.data().get("v")).isEqualTo("A"));
             assertThat(b).hasSize(2).allSatisfy(e -> // GH-90000
-                    assertThat(e.data().get("v [GH-90000]")).isEqualTo("B [GH-90000]"));
+                    assertThat(e.data().get("v")).isEqualTo("B"));
             assertThat(c).hasSize(2).allSatisfy(e -> // GH-90000
-                    assertThat(e.data().get("v [GH-90000]")).isEqualTo("C [GH-90000]"));
+                    assertThat(e.data().get("v")).isEqualTo("C"));
         }
 
         @Test
-        @DisplayName("query filter cannot be used to escape tenant scope via field injection [GH-90000]")
+        @DisplayName("query filter cannot be used to escape tenant scope via field injection")
         void queryFilterInjection_cannotLeakCrossTenantData() { // GH-90000
             // Setup: tenant A has sensitive data
             runPromise(() -> client.save(TENANT_A, COLLECTION, // GH-90000

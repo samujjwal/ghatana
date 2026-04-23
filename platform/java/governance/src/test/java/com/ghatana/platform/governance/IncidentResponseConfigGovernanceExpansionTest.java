@@ -25,15 +25,15 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("IncidentResponseConfig - Phase 4 Governance [GH-90000]")
+@DisplayName("IncidentResponseConfig - Phase 4 Governance")
 class IncidentResponseConfigGovernanceExpansionTest extends EventloopTestBase {
 
     @Nested
-    @DisplayName("Incident Response Governance [GH-90000]")
+    @DisplayName("Incident Response Governance")
     class IncidentGovernanceTests {
 
         @Test
-        @DisplayName("Incident severity classification policy [GH-90000]")
+        @DisplayName("Incident severity classification policy")
         void severityClassification() { // GH-90000
             Map<String, Integer> severityOrder = new HashMap<>(); // GH-90000
             severityOrder.put("critical", 1); // GH-90000
@@ -42,11 +42,11 @@ class IncidentResponseConfigGovernanceExpansionTest extends EventloopTestBase {
             severityOrder.put("low", 4); // GH-90000
             severityOrder.put("info", 5); // GH-90000
 
-            assertThat(severityOrder.get("critical [GH-90000]")).isLessThan(severityOrder.get("low [GH-90000]"));
+            assertThat(severityOrder.get("critical")).isLessThan(severityOrder.get("low"));
         }
 
         @Test
-        @DisplayName("Incident response team assignment policy [GH-90000]")
+        @DisplayName("Incident response team assignment policy")
         void teamAssignmentPolicy() { // GH-90000
             Map<String, String> severityTeam = new HashMap<>(); // GH-90000
             severityTeam.put("critical", "incident-commander"); // GH-90000
@@ -54,11 +54,11 @@ class IncidentResponseConfigGovernanceExpansionTest extends EventloopTestBase {
             severityTeam.put("medium", "on-call-team"); // GH-90000
             severityTeam.put("low", "support-team"); // GH-90000
 
-            assertThat(severityTeam.get("critical [GH-90000]")).isEqualTo("incident-commander [GH-90000]");
+            assertThat(severityTeam.get("critical")).isEqualTo("incident-commander");
         }
 
         @Test
-        @DisplayName("Incident escalation timeline policy [GH-90000]")
+        @DisplayName("Incident escalation timeline policy")
         void escalationTimeline() { // GH-90000
             Map<String, Integer> escalationMinutes = new HashMap<>(); // GH-90000
             escalationMinutes.put("severity-1", 5); // GH-90000
@@ -72,7 +72,7 @@ class IncidentResponseConfigGovernanceExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Post-incident review policy [GH-90000]")
+        @DisplayName("Post-incident review policy")
         void postIncidentPolicy() { // GH-90000
             Map<String, Object> pirPolicy = new HashMap<>(); // GH-90000
             pirPolicy.put("requiredWithin", 24); // hours // GH-90000
@@ -80,11 +80,11 @@ class IncidentResponseConfigGovernanceExpansionTest extends EventloopTestBase {
             pirPolicy.put("actionItemTracking", true); // GH-90000
             pirPolicy.put("tenantNotificationRequired", true); // GH-90000
 
-            assertThat(pirPolicy.get("rootCauseAnalysisRequired [GH-90000]")).isEqualTo(true);
+            assertThat(pirPolicy.get("rootCauseAnalysisRequired")).isEqualTo(true);
         }
 
         @Test
-        @DisplayName("Incident history and audit trail [GH-90000]")
+        @DisplayName("Incident history and audit trail")
         void incidentAuditTrail() { // GH-90000
             runPromise(() -> { // GH-90000
                 io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete(); // GH-90000
@@ -105,39 +105,39 @@ class IncidentResponseConfigGovernanceExpansionTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Configuration Governance [GH-90000]")
+    @DisplayName("Configuration Governance")
     class ConfigGovernanceTests {
 
         @Test
-        @DisplayName("Configuration change approval policy [GH-90000]")
+        @DisplayName("Configuration change approval policy")
         void changeApprovalPolicy() { // GH-90000
             Map<String, Object> approvalPolicy = new HashMap<>(); // GH-90000
             approvalPolicy.put("requiresApprovalForProd", true); // GH-90000
             approvalPolicy.put("approvalTiers", 3); // GH-90000
             approvalPolicy.put("auditTrailRequired", true); // GH-90000
 
-            assertThat(approvalPolicy.get("requiresApprovalForProd [GH-90000]")).isEqualTo(true);
+            assertThat(approvalPolicy.get("requiresApprovalForProd")).isEqualTo(true);
         }
 
         @Test
-        @DisplayName("Configuration environment separation [GH-90000]")
+        @DisplayName("Configuration environment separation")
         void environmentSeparation() { // GH-90000
             Map<String, Map<String, String>> envConfigs = new HashMap<>(); // GH-90000
 
             for (String env : new String[]{"dev", "staging", "prod"}) { // GH-90000
                 Map<String, String> config = new HashMap<>(); // GH-90000
-                config.put("logLevel", env.equals("prod [GH-90000]") ? "WARN" : "DEBUG");
-                config.put("dataRetention", env.equals("prod [GH-90000]") ? "365" : "30");
-                config.put("securityMode", env.equals("prod [GH-90000]") ? "strict" : "permissive");
+                config.put("logLevel", env.equals("prod") ? "WARN" : "DEBUG");
+                config.put("dataRetention", env.equals("prod") ? "365" : "30");
+                config.put("securityMode", env.equals("prod") ? "strict" : "permissive");
                 envConfigs.put(env, config); // GH-90000
             }
 
             assertThat(envConfigs).hasSize(3); // GH-90000
-            assertThat(envConfigs.get("prod [GH-90000]").get("securityMode [GH-90000]")).isEqualTo("strict [GH-90000]");
+            assertThat(envConfigs.get("prod").get("securityMode")).isEqualTo("strict");
         }
 
         @Test
-        @DisplayName("Secret management governance [GH-90000]")
+        @DisplayName("Secret management governance")
         void secretManagement() { // GH-90000
             Map<String, Object> secretPolicy = new HashMap<>(); // GH-90000
             secretPolicy.put("rotationDays", 90); // GH-90000
@@ -145,11 +145,11 @@ class IncidentResponseConfigGovernanceExpansionTest extends EventloopTestBase {
             secretPolicy.put("auditAccessRequired", true); // GH-90000
             secretPolicy.put("noHardcodingAllowed", true); // GH-90000
 
-            assertThat(secretPolicy.get("noHardcodingAllowed [GH-90000]")).isEqualTo(true);
+            assertThat(secretPolicy.get("noHardcodingAllowed")).isEqualTo(true);
         }
 
         @Test
-        @DisplayName("Configuration versioning and rollback policy [GH-90000]")
+        @DisplayName("Configuration versioning and rollback policy")
         void versioningPolicy() { // GH-90000
             Map<Integer, Map<String, Object>> versions = new HashMap<>(); // GH-90000
 
@@ -165,7 +165,7 @@ class IncidentResponseConfigGovernanceExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Feature flag governance [GH-90000]")
+        @DisplayName("Feature flag governance")
         void featureFlagGovernance() { // GH-90000
             runPromise(() -> { // GH-90000
                 io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete(); // GH-90000
@@ -186,11 +186,11 @@ class IncidentResponseConfigGovernanceExpansionTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Compliance & Auditing [GH-90000]")
+    @DisplayName("Compliance & Auditing")
     class ComplianceGovernanceTests {
 
         @Test
-        @DisplayName("Configuration audit trail [GH-90000]")
+        @DisplayName("Configuration audit trail")
         void configAuditTrail() { // GH-90000
             Map<String, Object> auditEntry = new HashMap<>(); // GH-90000
             auditEntry.put("timestamp", Instant.now()); // GH-90000
@@ -200,11 +200,11 @@ class IncidentResponseConfigGovernanceExpansionTest extends EventloopTestBase {
             auditEntry.put("newValue", "value2"); // GH-90000
             auditEntry.put("approvedBy", "approver-1"); // GH-90000
 
-            assertThat(auditEntry.get("action [GH-90000]")).isEqualTo("CONFIG_CHANGED [GH-90000]");
+            assertThat(auditEntry.get("action")).isEqualTo("CONFIG_CHANGED");
         }
 
         @Test
-        @DisplayName("Compliance requirement enforcement [GH-90000]")
+        @DisplayName("Compliance requirement enforcement")
         void complianceEnforcement() { // GH-90000
             Map<String, Boolean> complianceChecks = new HashMap<>(); // GH-90000
             complianceChecks.put("gdprCompliant", true); // GH-90000

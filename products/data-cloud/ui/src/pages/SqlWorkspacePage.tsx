@@ -39,6 +39,7 @@ import {
   Shield,
 } from 'lucide-react';
 import { TrustBadge, SensitivityBadge, AccessLevelIndicator } from '../components/governance/TrustSignal';
+import { Table } from '@ghatana/design-system';
 import {
   cn,
   cardStyles,
@@ -1193,29 +1194,27 @@ LIMIT 100;"
               )}
 
               {resultsTab === 'results' && queryResult ? (
-                <div className={tableStyles.container} data-testid="sql-query-results">
-                  <table className={tableStyles.table}>
-                    <thead className={tableStyles.thead}>
-                      <tr>
-                        {queryResult.rows.length > 0
-                          ? Object.keys(queryResult.rows[0]).map((col) => (
-                            <th key={col} className={tableStyles.th}>{col}</th>
-                          ))
-                          : null}
-                      </tr>
-                    </thead>
-                    <tbody className={tableStyles.tbody}>
-                      {queryResult.rows.map((row, i) => (
-                        <tr key={i} className={tableStyles.tr}>
-                          {Object.values(row).map((cell, j) => (
-                            <td key={j} className={cn(tableStyles.td, 'font-mono text-xs')}>
-                              {cell === null || cell === undefined ? <em className="text-gray-400">null</em> : String(cell)}
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div data-testid="sql-query-results">
+                  <Table<Record<string, unknown>>
+                    columns={
+                      queryResult.rows.length > 0
+                        ? Object.keys(queryResult.rows[0]).map((col) => ({
+                          key: col,
+                          header: col,
+                          accessor: (row: Record<string, unknown>) => {
+                            const cell = row[col];
+                            return cell === null || cell === undefined ? (
+                              <em className="text-gray-400">null</em>
+                            ) : (
+                              String(cell)
+                            );
+                          },
+                        }))
+                        : []
+                    }
+                    data={queryResult.rows}
+                    size="sm"
+                  />
                 </div>
               ) : !queryError ? (
                 <div className={cn(textStyles.muted, 'text-center py-12')}>

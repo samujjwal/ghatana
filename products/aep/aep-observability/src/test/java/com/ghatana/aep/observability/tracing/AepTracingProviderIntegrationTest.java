@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.pattern IntegrationTest
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("AEP Tracing Provider Integration Tests [GH-90000]")
+@DisplayName("AEP Tracing Provider Integration Tests")
 class AepTracingProviderIntegrationTest {
 
     private AepTracingProvider tracingProvider;
@@ -34,7 +34,7 @@ class AepTracingProviderIntegrationTest {
     }
 
     @Nested
-    @DisplayName("Pipeline Deployment Tracing [GH-90000]")
+    @DisplayName("Pipeline Deployment Tracing")
     class PipelineDeploymentTracingTests {
 
         @Test
@@ -48,9 +48,9 @@ class AepTracingProviderIntegrationTest {
 
             // Then
             assertThat(span).isNotNull(); // GH-90000
-            assertThat(MDC.get("pipelineId [GH-90000]")).isEqualTo(pipelineId);
-            assertThat(MDC.get("tenantId [GH-90000]")).isEqualTo(tenantId);
-            assertThat(MDC.get("correlationId [GH-90000]")).isNotNull();
+            assertThat(MDC.get("pipelineId")).isEqualTo(pipelineId);
+            assertThat(MDC.get("tenantId")).isEqualTo(tenantId);
+            assertThat(MDC.get("correlationId")).isNotNull();
 
             span.end(); // GH-90000
             MDC.clear(); // GH-90000
@@ -67,7 +67,7 @@ class AepTracingProviderIntegrationTest {
             Span span = tracingProvider.startPipelineDeploymentSpan(pipelineId, tenantId); // GH-90000
 
             // Then
-            assertThat(MDC.get("correlationId [GH-90000]")).isEqualTo("existing-correlation-id [GH-90000]");
+            assertThat(MDC.get("correlationId")).isEqualTo("existing-correlation-id");
 
             span.end(); // GH-90000
             MDC.clear(); // GH-90000
@@ -82,12 +82,12 @@ class AepTracingProviderIntegrationTest {
 
             // When
             Span span = tracingProvider.startPipelineDeploymentSpan(pipelineId, tenantId); // GH-90000
-            String generatedCorrelationId = MDC.get("correlationId [GH-90000]");
+            String generatedCorrelationId = MDC.get("correlationId");
 
             // Then
             assertThat(generatedCorrelationId).isNotNull(); // GH-90000
             assertThat(generatedCorrelationId).isNotEmpty(); // GH-90000
-            assertThat(generatedCorrelationId).matches("[0-9a-f\\-]+ [GH-90000]");
+            assertThat(generatedCorrelationId).matches("[0-9a-f\\-]+");
 
             span.end(); // GH-90000
             MDC.clear(); // GH-90000
@@ -95,7 +95,7 @@ class AepTracingProviderIntegrationTest {
     }
 
     @Nested
-    @DisplayName("Agent Execution Tracing [GH-90000]")
+    @DisplayName("Agent Execution Tracing")
     class AgentExecutionTracingTests {
 
         @Test
@@ -110,8 +110,8 @@ class AepTracingProviderIntegrationTest {
 
             // Then
             assertThat(span).isNotNull(); // GH-90000
-            assertThat(MDC.get("agentId [GH-90000]")).isEqualTo(agentId);
-            assertThat(MDC.get("correlationId [GH-90000]")).isNotNull();
+            assertThat(MDC.get("agentId")).isEqualTo(agentId);
+            assertThat(MDC.get("correlationId")).isNotNull();
 
             span.end(); // GH-90000
             MDC.clear(); // GH-90000
@@ -126,11 +126,11 @@ class AepTracingProviderIntegrationTest {
 
             // When
             Span span = tracingProvider.startAgentExecutionSpan(agentId, pipelineId, tenantId); // GH-90000
-            String traceId = MDC.get("traceId [GH-90000]");
+            String traceId = MDC.get("traceId");
 
             // Then
-            assertThat(MDC.get("correlationId [GH-90000]")).isNotNull();
-            assertThat(MDC.get("agentId [GH-90000]")).isEqualTo(agentId);
+            assertThat(MDC.get("correlationId")).isNotNull();
+            assertThat(MDC.get("agentId")).isEqualTo(agentId);
 
             span.end(); // GH-90000
             MDC.clear(); // GH-90000
@@ -138,7 +138,7 @@ class AepTracingProviderIntegrationTest {
     }
 
     @Nested
-    @DisplayName("Event Processing Tracing [GH-90000]")
+    @DisplayName("Event Processing Tracing")
     class EventProcessingTracingTests {
 
         @Test
@@ -153,9 +153,9 @@ class AepTracingProviderIntegrationTest {
 
             // Then
             assertThat(span).isNotNull(); // GH-90000
-            assertThat(MDC.get("eventId [GH-90000]")).isEqualTo(eventId);
-            assertThat(MDC.get("eventType [GH-90000]")).isEqualTo(eventType);
-            assertThat(MDC.get("correlationId [GH-90000]")).isNotNull();
+            assertThat(MDC.get("eventId")).isEqualTo(eventId);
+            assertThat(MDC.get("eventType")).isEqualTo(eventType);
+            assertThat(MDC.get("correlationId")).isNotNull();
 
             span.end(); // GH-90000
             MDC.clear(); // GH-90000
@@ -172,7 +172,7 @@ class AepTracingProviderIntegrationTest {
             Span span = tracingProvider.startEventProcessingSpan(eventId, eventType, tenantId); // GH-90000
 
             // Then
-            assertThat(MDC.get("eventType [GH-90000]")).isEqualTo("pipeline.updated [GH-90000]");
+            assertThat(MDC.get("eventType")).isEqualTo("pipeline.updated");
 
             span.end(); // GH-90000
             MDC.clear(); // GH-90000
@@ -180,13 +180,13 @@ class AepTracingProviderIntegrationTest {
     }
 
     @Nested
-    @DisplayName("Success Recording [GH-90000]")
+    @DisplayName("Success Recording")
     class SuccessRecordingTests {
 
         @Test
         void shouldRecordSuccessfulOperation() { // GH-90000
             // Given
-            Span span = tracingProvider.getTracer().spanBuilder("test.operation [GH-90000]").startSpan();
+            Span span = tracingProvider.getTracer().spanBuilder("test.operation").startSpan();
             long duration = 150;
 
             // When
@@ -207,7 +207,7 @@ class AepTracingProviderIntegrationTest {
         @Test
         void shouldRecordDurationAttribute() { // GH-90000
             // Given
-            Span span = tracingProvider.getTracer().spanBuilder("duration.test [GH-90000]").startSpan();
+            Span span = tracingProvider.getTracer().spanBuilder("duration.test").startSpan();
             long duration = 250;
 
             // When
@@ -220,14 +220,14 @@ class AepTracingProviderIntegrationTest {
     }
 
     @Nested
-    @DisplayName("Error Recording [GH-90000]")
+    @DisplayName("Error Recording")
     class ErrorRecordingTests {
 
         @Test
         void shouldRecordErrorWithException() { // GH-90000
             // Given
-            Span span = tracingProvider.getTracer().spanBuilder("error.test [GH-90000]").startSpan();
-            Exception exception = new IllegalArgumentException("Test error [GH-90000]");
+            Span span = tracingProvider.getTracer().spanBuilder("error.test").startSpan();
+            Exception exception = new IllegalArgumentException("Test error");
             long duration = 100;
 
             // When
@@ -240,7 +240,7 @@ class AepTracingProviderIntegrationTest {
         @Test
         void shouldHandleNullSpanInError() { // GH-90000
             // When + Then
-            Exception exception = new RuntimeException("Test [GH-90000]");
+            Exception exception = new RuntimeException("Test");
             tracingProvider.recordError(null, exception, 50); // GH-90000
             // Should not throw
         }
@@ -248,26 +248,26 @@ class AepTracingProviderIntegrationTest {
         @Test
         void shouldRecordExceptionDetails() { // GH-90000
             // Given
-            Span span = tracingProvider.getTracer().spanBuilder("exception.details.test [GH-90000]").startSpan();
-            Exception exception = new IllegalStateException("Invalid state [GH-90000]");
+            Span span = tracingProvider.getTracer().spanBuilder("exception.details.test").startSpan();
+            Exception exception = new IllegalStateException("Invalid state");
             long duration = 75;
 
             // When
             tracingProvider.recordError(span, exception, duration); // GH-90000
 
             // Then
-            assertThat(exception.getMessage()).isEqualTo("Invalid state [GH-90000]");
+            assertThat(exception.getMessage()).isEqualTo("Invalid state");
         }
 
         @Test
         void shouldHandleDifferentExceptionTypes() { // GH-90000
             // Given
-            Span span1 = tracingProvider.getTracer().spanBuilder("io.error [GH-90000]").startSpan();
-            Span span2 = tracingProvider.getTracer().spanBuilder("validation.error [GH-90000]").startSpan();
+            Span span1 = tracingProvider.getTracer().spanBuilder("io.error").startSpan();
+            Span span2 = tracingProvider.getTracer().spanBuilder("validation.error").startSpan();
 
             // When
-            tracingProvider.recordError(span1, new java.io.IOException("IO failed [GH-90000]"), 100);
-            tracingProvider.recordError(span2, new IllegalArgumentException("Invalid arg [GH-90000]"), 80);
+            tracingProvider.recordError(span1, new java.io.IOException("IO failed"), 100);
+            tracingProvider.recordError(span2, new IllegalArgumentException("Invalid arg"), 80);
 
             // Then
             assertThat(span1).isNotNull(); // GH-90000
@@ -276,13 +276,13 @@ class AepTracingProviderIntegrationTest {
     }
 
     @Nested
-    @DisplayName("Scope Management [GH-90000]")
+    @DisplayName("Scope Management")
     class ScopeManagementTests {
 
         @Test
         void shouldCreateScopeForSpan() { // GH-90000
             // Given
-            Span span = tracingProvider.getTracer().spanBuilder("scope.test [GH-90000]").startSpan();
+            Span span = tracingProvider.getTracer().spanBuilder("scope.test").startSpan();
 
             // When
             Scope scope = tracingProvider.createScope(span); // GH-90000
@@ -299,11 +299,11 @@ class AepTracingProviderIntegrationTest {
             String pipelineId = "scope-context-test";
             String tenantId = "tenant-scope-test";
             Span span = tracingProvider.startPipelineDeploymentSpan(pipelineId, tenantId); // GH-90000
-            String correlationIdBeforeScope = MDC.get("correlationId [GH-90000]");
+            String correlationIdBeforeScope = MDC.get("correlationId");
 
             // When
             Scope scope = tracingProvider.createScope(span); // GH-90000
-            String correlationIdInScope = MDC.get("correlationId [GH-90000]");
+            String correlationIdInScope = MDC.get("correlationId");
 
             // Then
             assertThat(correlationIdInScope).isEqualTo(correlationIdBeforeScope); // GH-90000
@@ -314,7 +314,7 @@ class AepTracingProviderIntegrationTest {
     }
 
     @Nested
-    @DisplayName("Provider Shutdown [GH-90000]")
+    @DisplayName("Provider Shutdown")
     class ProviderShutdownTests {
 
         @Test
@@ -331,7 +331,7 @@ class AepTracingProviderIntegrationTest {
     }
 
     @Nested
-    @DisplayName("Multi-Tenant Isolation [GH-90000]")
+    @DisplayName("Multi-Tenant Isolation")
     class MultiTenantIsolationTests {
 
         @Test
@@ -343,13 +343,13 @@ class AepTracingProviderIntegrationTest {
 
             // When
             Span span1 = tracingProvider.startPipelineDeploymentSpan(pipelineId, tenant1Id); // GH-90000
-            String tenant1Context = MDC.get("tenantId [GH-90000]");
+            String tenant1Context = MDC.get("tenantId");
 
             // Reset MDC for second tenant
             MDC.clear(); // GH-90000
 
             Span span2 = tracingProvider.startPipelineDeploymentSpan(pipelineId, tenant2Id); // GH-90000
-            String tenant2Context = MDC.get("tenantId [GH-90000]");
+            String tenant2Context = MDC.get("tenantId");
 
             // Then
             assertThat(tenant1Context).isEqualTo(tenant1Id); // GH-90000
@@ -373,7 +373,7 @@ class AepTracingProviderIntegrationTest {
             Span span = tracingProvider.startPipelineDeploymentSpan(pipelineId, tenant1Id); // GH-90000
 
             // Then
-            assertThat(MDC.get("correlationId [GH-90000]")).isEqualTo(correlationId);
+            assertThat(MDC.get("correlationId")).isEqualTo(correlationId);
 
             span.end(); // GH-90000
             MDC.clear(); // GH-90000
@@ -381,7 +381,7 @@ class AepTracingProviderIntegrationTest {
     }
 
     @Nested
-    @DisplayName("Tracer and Meter Access [GH-90000]")
+    @DisplayName("Tracer and Meter Access")
     class TracerAndMeterAccessTests {
 
         @Test
@@ -413,7 +413,7 @@ class AepTracingProviderIntegrationTest {
     }
 
     @Nested
-    @DisplayName("Concurrent Span Operations [GH-90000]")
+    @DisplayName("Concurrent Span Operations")
     class ConcurrentSpanOperationsTests {
 
         @Test

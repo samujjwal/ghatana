@@ -41,15 +41,15 @@ class PostgresIntegrationTest {
                 () -> "Skipping PostgresIntegrationTest because Docker is unavailable. Start Docker Desktop to run these tests."); // GH-90000
 
         try {
-            log.info("Starting PostgreSQL container for testing... [GH-90000]");
+            log.info("Starting PostgreSQL container for testing...");
             // Start the container before all tests
             PostgresTestContainer.start(); // GH-90000
             log.info("PostgreSQL container started at: {}", PostgresTestContainer.getJdbcUrl()); // GH-90000
 
             // Initialize test data
-            log.info("Initializing test data... [GH-90000]");
+            log.info("Initializing test data...");
             initializeTestData(); // GH-90000
-            log.info("Test data initialization complete [GH-90000]");
+            log.info("Test data initialization complete");
         } catch (Exception e) { // GH-90000
             log.error("Failed to initialize test environment", e); // GH-90000
             Assumptions.assumeTrue(false, // GH-90000
@@ -60,7 +60,7 @@ class PostgresIntegrationTest {
     @AfterAll
     static void tearDown() { // GH-90000
         // Container will be stopped by the JVM shutdown hook
-        log.info("PostgreSQL integration tests completed [GH-90000]");
+        log.info("PostgreSQL integration tests completed");
     }
 
     @Test
@@ -119,7 +119,7 @@ class PostgresIntegrationTest {
                 ('Test 3')
                 """);
 
-            log.info("Test data initialized [GH-90000]");
+            log.info("Test data initialized");
         } catch (SQLException e) { // GH-90000
             log.error("Failed to initialize test data", e); // GH-90000
             throw new RuntimeException("Failed to initialize test data", e); // GH-90000

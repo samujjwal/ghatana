@@ -16,7 +16,8 @@ import java.util.List;
  * @doc.type interface
  * @doc.purpose LLM-based fact extraction from episodes
  * @doc.layer agent-learning
- */
+  * @doc.pattern Interface
+*/
 public interface LLMFactExtractor {
 
     /**

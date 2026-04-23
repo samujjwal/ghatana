@@ -21,18 +21,18 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Connection Pool Behavior Tests [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("Connection Pool Behavior Tests")
+@Tag("integration")
 class ConnectionPoolBehaviorTest extends EventloopTestBase {
 
     // ── Pool sizing ───────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("pool sizing [GH-90000]")
+    @DisplayName("pool sizing")
     class PoolSizing {
 
         @Test
-        @DisplayName("pool starts with minConnections pre-allocated [GH-90000]")
+        @DisplayName("pool starts with minConnections pre-allocated")
         void pool_startsWithMinConnectionsPreAllocated() { // GH-90000
             int minConnections = 5;
             AtomicInteger poolSize = new AtomicInteger(minConnections); // GH-90000
@@ -41,7 +41,7 @@ class ConnectionPoolBehaviorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("pool grows up to maxConnections under demand [GH-90000]")
+        @DisplayName("pool grows up to maxConnections under demand")
         void pool_growsUpToMaxConnectionsUnderDemand() { // GH-90000
             int minConnections = 2;
             int maxConnections = 10;
@@ -57,7 +57,7 @@ class ConnectionPoolBehaviorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("pool does not exceed maxConnections under concurrent demand [GH-90000]")
+        @DisplayName("pool does not exceed maxConnections under concurrent demand")
         void pool_doesNotExceedMaxConnections() { // GH-90000
             int maxConnections = 5;
             AtomicInteger active = new AtomicInteger(0); // GH-90000
@@ -84,11 +84,11 @@ class ConnectionPoolBehaviorTest extends EventloopTestBase {
     // ── Connection reuse ───────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("connection reuse [GH-90000]")
+    @DisplayName("connection reuse")
     class ConnectionReuse {
 
         @Test
-        @DisplayName("released connection is available for subsequent acquisition [GH-90000]")
+        @DisplayName("released connection is available for subsequent acquisition")
         void releasedConnection_isAvailableForSubsequentAcquisition() { // GH-90000
             AtomicInteger availableConnections = new AtomicInteger(10); // GH-90000
 
@@ -106,7 +106,7 @@ class ConnectionPoolBehaviorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("connection returns to same pool after release [GH-90000]")
+        @DisplayName("connection returns to same pool after release")
         void connection_returnsToSamePool_afterRelease() { // GH-90000
             AtomicInteger poolA = new AtomicInteger(5); // GH-90000
             AtomicInteger poolB = new AtomicInteger(5); // GH-90000
@@ -125,11 +125,11 @@ class ConnectionPoolBehaviorTest extends EventloopTestBase {
     // ── Pool exhaustion ───────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("pool exhaustion [GH-90000]")
+    @DisplayName("pool exhaustion")
     class PoolExhaustion {
 
         @Test
-        @DisplayName("acquisition blocks when pool is exhausted [GH-90000]")
+        @DisplayName("acquisition blocks when pool is exhausted")
         void acquisition_blocks_whenPoolIsExhausted() { // GH-90000
             AtomicInteger available = new AtomicInteger(0); // fully exhausted // GH-90000
             boolean acquired = false;
@@ -143,7 +143,7 @@ class ConnectionPoolBehaviorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("exhaustion causes acquisition timeout after threshold [GH-90000]")
+        @DisplayName("exhaustion causes acquisition timeout after threshold")
         void exhaustion_causesAcquisitionTimeoutAfterThreshold() { // GH-90000
             AtomicInteger available = new AtomicInteger(0); // GH-90000
             boolean timedOut = false;
@@ -162,7 +162,7 @@ class ConnectionPoolBehaviorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("pool recovers after connections are released [GH-90000]")
+        @DisplayName("pool recovers after connections are released")
         void pool_recovers_afterConnectionsAreReleased() { // GH-90000
             AtomicInteger available = new AtomicInteger(0); // exhausted // GH-90000
 
@@ -179,11 +179,11 @@ class ConnectionPoolBehaviorTest extends EventloopTestBase {
     // ── Idle timeout ──────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("idle connection timeout [GH-90000]")
+    @DisplayName("idle connection timeout")
     class IdleConnectionTimeout {
 
         @Test
-        @DisplayName("idle connection evicted after configured timeout [GH-90000]")
+        @DisplayName("idle connection evicted after configured timeout")
         void idleConnection_evictedAfterConfiguredTimeout() { // GH-90000
             AtomicInteger poolSize = new AtomicInteger(10); // GH-90000
             long idleMs = 310_000L;
@@ -197,7 +197,7 @@ class ConnectionPoolBehaviorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("pool maintains minConnections even after idle eviction [GH-90000]")
+        @DisplayName("pool maintains minConnections even after idle eviction")
         void pool_maintainsMinConnections_afterIdleEviction() { // GH-90000
             int minConnections = 2;
             AtomicInteger poolSize = new AtomicInteger(10); // GH-90000
@@ -214,11 +214,11 @@ class ConnectionPoolBehaviorTest extends EventloopTestBase {
     // ── Validation queries ─────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("connection validation [GH-90000]")
+    @DisplayName("connection validation")
     class ConnectionValidation {
 
         @Test
-        @DisplayName("validation query detects broken connections before use [GH-90000]")
+        @DisplayName("validation query detects broken connections before use")
         void validationQuery_detectsBrokenConnections() { // GH-90000
             boolean connectionValid = false; // simulate broken connection
 
@@ -230,7 +230,7 @@ class ConnectionPoolBehaviorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("valid connection passes validation check [GH-90000]")
+        @DisplayName("valid connection passes validation check")
         void validConnection_passesValidationCheck() { // GH-90000
             boolean connectionValid = true; // SELECT 1 returns 1
 

@@ -15,7 +15,7 @@ class KgConfigurationLoaderTest extends EventloopTestBase {
 
   @Test
   void testLoadDefaultConfiguration() { // GH-90000
-    KgConfiguration config = KgConfigurationLoader.loadForEnvironment("default [GH-90000]");
+    KgConfiguration config = KgConfigurationLoader.loadForEnvironment("default");
 
     assertThat(config.mining().minSupport()).isEqualTo(0.3); // GH-90000
     assertThat(config.mining().minConfidence()).isEqualTo(0.5); // GH-90000
@@ -23,7 +23,7 @@ class KgConfigurationLoaderTest extends EventloopTestBase {
 
   @Test
   void testLoadDevelopmentConfiguration() { // GH-90000
-    KgConfiguration config = KgConfigurationLoader.loadForEnvironment("development [GH-90000]");
+    KgConfiguration config = KgConfigurationLoader.loadForEnvironment("development");
 
     assertThat(config.mining().minSupport()).isEqualTo(0.2); // GH-90000
     assertThat(config.mining().minConfidence()).isEqualTo(0.3); // GH-90000
@@ -32,7 +32,7 @@ class KgConfigurationLoaderTest extends EventloopTestBase {
 
   @Test
   void testLoadProductionConfiguration() { // GH-90000
-    KgConfiguration config = KgConfigurationLoader.loadForEnvironment("production [GH-90000]");
+    KgConfiguration config = KgConfigurationLoader.loadForEnvironment("production");
 
     assertThat(config.mining().minSupport()).isEqualTo(0.5); // GH-90000
     assertThat(config.mining().minConfidence()).isEqualTo(0.8); // GH-90000
@@ -41,7 +41,7 @@ class KgConfigurationLoaderTest extends EventloopTestBase {
 
   @Test
   void testLoadUnknownEnvironmentDefaultsToDefault() { // GH-90000
-    KgConfiguration config = KgConfigurationLoader.loadForEnvironment("unknown [GH-90000]");
+    KgConfiguration config = KgConfigurationLoader.loadForEnvironment("unknown");
 
     // Unknown environment should use default configuration
     assertThat(config.mining().minSupport()).isEqualTo(0.3); // GH-90000
@@ -74,7 +74,7 @@ class KgConfigurationLoaderTest extends EventloopTestBase {
         .frequentPatternMiningEnabled(true) // GH-90000
         .batchSize(1500) // GH-90000
         .cacheEnabled(true) // GH-90000
-        .evictionPolicy("LRU [GH-90000]")
+        .evictionPolicy("LRU")
         .maxPatterns(20000) // GH-90000
         .build(); // GH-90000
 
@@ -133,7 +133,7 @@ class KgConfigurationLoaderTest extends EventloopTestBase {
 
   @Test
   void testProductionConfigurationValues() { // GH-90000
-    KgConfiguration config = KgConfigurationLoader.loadForEnvironment("production [GH-90000]");
+    KgConfiguration config = KgConfigurationLoader.loadForEnvironment("production");
 
     // Production-specific validations
     assertThat(config.mining().minSupport()).isEqualTo(0.5); // GH-90000
@@ -147,7 +147,7 @@ class KgConfigurationLoaderTest extends EventloopTestBase {
 
   @Test
   void testDevelopmentConfigurationValues() { // GH-90000
-    KgConfiguration config = KgConfigurationLoader.loadForEnvironment("development [GH-90000]");
+    KgConfiguration config = KgConfigurationLoader.loadForEnvironment("development");
 
     // Development-specific validations
     assertThat(config.mining().minSupport()).isEqualTo(0.2); // GH-90000

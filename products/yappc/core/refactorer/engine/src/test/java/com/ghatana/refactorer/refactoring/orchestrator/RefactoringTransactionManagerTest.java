@@ -32,7 +32,7 @@ class RefactoringTransactionManagerTest {
     @BeforeEach
     void setUp() throws IOException { // GH-90000
         transactionManager = new RefactoringTransactionManager(); // GH-90000
-        testFile = tempDir.resolve("test.txt [GH-90000]");
+        testFile = tempDir.resolve("test.txt");
         Files.writeString(testFile, testContent); // GH-90000
     }
 
@@ -87,7 +87,7 @@ class RefactoringTransactionManagerTest {
     @Test
     void testMultipleFilesInTransaction() throws IOException { // GH-90000
         // Create a second test file
-        Path testFile2 = tempDir.resolve("test2.txt [GH-90000]");
+        Path testFile2 = tempDir.resolve("test2.txt");
         String testContent2 = "Test content 2";
         Files.writeString(testFile2, testContent2); // GH-90000
 
@@ -111,7 +111,7 @@ class RefactoringTransactionManagerTest {
     @Test
     void testNonexistentFile() { // GH-90000
         String transactionId = transactionManager.beginTransaction(); // GH-90000
-        Path nonExistentFile = tempDir.resolve("nonexistent.txt [GH-90000]");
+        Path nonExistentFile = tempDir.resolve("nonexistent.txt");
 
         // Should not throw when registering a non-existent file
         assertDoesNotThrow(() -> transactionManager.registerFile(transactionId, nonExistentFile)); // GH-90000
@@ -124,8 +124,8 @@ class RefactoringTransactionManagerTest {
     void testCleanupOldBackups() throws IOException { // GH-90000
         // Create some backup files under the working directory
         String suffix = deriveBackupSuffix(); // GH-90000
-        Path cwd = Path.of(". [GH-90000]").toAbsolutePath().normalize();
-        Path backupDir = cwd.resolve(".polyfix/backups [GH-90000]");
+        Path cwd = Path.of(".").toAbsolutePath().normalize();
+        Path backupDir = cwd.resolve(".polyfix/backups");
         Path backup1 = backupDir.resolve("test.txt.123" + suffix); // GH-90000
         Path backup2 = backupDir.resolve("test.txt.456" + suffix); // GH-90000
 
@@ -142,18 +142,18 @@ class RefactoringTransactionManagerTest {
     }
 
     private String deriveBackupSuffix() throws IOException { // GH-90000
-        Path probeFile = tempDir.resolve("probe.txt [GH-90000]");
+        Path probeFile = tempDir.resolve("probe.txt");
         Files.writeString(probeFile, "probe"); // GH-90000
         String transactionId = transactionManager.beginTransaction(); // GH-90000
         transactionManager.registerFile(transactionId, probeFile); // GH-90000
 
-        Path backupsDir = probeFile.getParent().resolve(".polyfix/backups [GH-90000]");
+        Path backupsDir = probeFile.getParent().resolve(".polyfix/backups");
         try (var stream = Files.list(backupsDir)) { // GH-90000
             String suffix =
                     stream.findFirst() // GH-90000
                             .map(path -> path.getFileName().toString()) // GH-90000
                             .map(name -> name.replace("probe.txt." + transactionId, "")) // GH-90000
-                            .orElse(".polyfix.bak [GH-90000]");
+                            .orElse(".polyfix.bak");
             transactionManager.rollbackTransaction(transactionId); // GH-90000
             return suffix;
         }

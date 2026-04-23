@@ -64,13 +64,13 @@ public final class TestContainersConfig {
     public static PostgreSQLContainer<?> postgres() { // GH-90000
         return (PostgreSQLContainer<?>) CONTAINERS.computeIfAbsent("postgres", k -> { // GH-90000
             PostgreSQLContainer<?> container = new PostgreSQLContainer<>( // GH-90000
-                DockerImageName.parse("pgvector/pgvector:pg16 [GH-90000]")
-                    .asCompatibleSubstituteFor("postgres [GH-90000]")
+                DockerImageName.parse("pgvector/pgvector:pg16")
+                    .asCompatibleSubstituteFor("postgres")
             )
-                .withDatabaseName("datacloud_test [GH-90000]")
-                .withUsername("test [GH-90000]")
-                .withPassword("test [GH-90000]")
-                .withInitScript("db/init_pgvector.sql [GH-90000]");
+                .withDatabaseName("datacloud_test")
+                .withUsername("test")
+                .withPassword("test")
+                .withInitScript("db/init_pgvector.sql");
 
             container.addExposedPort(5432); // GH-90000
             return container;
@@ -85,7 +85,7 @@ public final class TestContainersConfig {
     public static KafkaContainer kafka() { // GH-90000
         return (KafkaContainer) CONTAINERS.computeIfAbsent("kafka", k -> { // GH-90000
             KafkaContainer container = new KafkaContainer( // GH-90000
-                DockerImageName.parse("confluentinc/cp-kafka:7.5.0 [GH-90000]")
+                DockerImageName.parse("confluentinc/cp-kafka:7.5.0")
             )
                 .withEmbeddedZookeeper(); // GH-90000
 
@@ -101,7 +101,7 @@ public final class TestContainersConfig {
     public static GenericContainer<?> redis() { // GH-90000
         return CONTAINERS.computeIfAbsent("redis", k -> { // GH-90000
             GenericContainer<?> container = new GenericContainer<>( // GH-90000
-                DockerImageName.parse("redis:7-alpine [GH-90000]")
+                DockerImageName.parse("redis:7-alpine")
             )
                 .withExposedPorts(6379) // GH-90000
                 .withCommand("redis-server", "--appendonly", "yes"); // GH-90000
@@ -118,7 +118,7 @@ public final class TestContainersConfig {
     public static LocalStackContainer s3() { // GH-90000
         return (LocalStackContainer) CONTAINERS.computeIfAbsent("s3", k -> { // GH-90000
             LocalStackContainer container = new LocalStackContainer( // GH-90000
-                DockerImageName.parse("localstack/localstack:2.3 [GH-90000]")
+                DockerImageName.parse("localstack/localstack:2.3")
             )
                 .withServices(S3) // GH-90000
                 .withEnv("AWS_ACCESS_KEY_ID", "test") // GH-90000
@@ -136,9 +136,9 @@ public final class TestContainersConfig {
      * @throws IllegalStateException if container not started
      */
     public static String getPostgresJdbcUrl() { // GH-90000
-        PostgreSQLContainer<?> container = (PostgreSQLContainer<?>) CONTAINERS.get("postgres [GH-90000]");
+        PostgreSQLContainer<?> container = (PostgreSQLContainer<?>) CONTAINERS.get("postgres");
         if (container == null || !container.isRunning()) { // GH-90000
-            throw new IllegalStateException("PostgreSQL container not started. Call postgres().start() first. [GH-90000]");
+            throw new IllegalStateException("PostgreSQL container not started. Call postgres().start() first.");
         }
         return container.getJdbcUrl(); // GH-90000
     }
@@ -150,9 +150,9 @@ public final class TestContainersConfig {
      * @throws IllegalStateException if container not started
      */
     public static String getKafkaBootstrapServers() { // GH-90000
-        KafkaContainer container = (KafkaContainer) CONTAINERS.get("kafka [GH-90000]");
+        KafkaContainer container = (KafkaContainer) CONTAINERS.get("kafka");
         if (container == null || !container.isRunning()) { // GH-90000
-            throw new IllegalStateException("Kafka container not started. Call kafka().start() first. [GH-90000]");
+            throw new IllegalStateException("Kafka container not started. Call kafka().start() first.");
         }
         return container.getBootstrapServers(); // GH-90000
     }
@@ -164,9 +164,9 @@ public final class TestContainersConfig {
      * @throws IllegalStateException if container not started
      */
     public static String getRedisUrl() { // GH-90000
-        GenericContainer<?> container = CONTAINERS.get("redis [GH-90000]");
+        GenericContainer<?> container = CONTAINERS.get("redis");
         if (container == null || !container.isRunning()) { // GH-90000
-            throw new IllegalStateException("Redis container not started. Call redis().start() first. [GH-90000]");
+            throw new IllegalStateException("Redis container not started. Call redis().start() first.");
         }
         return container.getHost() + ":" + container.getMappedPort(6379); // GH-90000
     }
@@ -178,9 +178,9 @@ public final class TestContainersConfig {
      * @throws IllegalStateException if container not started
      */
     public static String getS3EndpointUrl() { // GH-90000
-        LocalStackContainer container = (LocalStackContainer) CONTAINERS.get("s3 [GH-90000]");
+        LocalStackContainer container = (LocalStackContainer) CONTAINERS.get("s3");
         if (container == null || !container.isRunning()) { // GH-90000
-            throw new IllegalStateException("S3 container not started. Call s3().start() first. [GH-90000]");
+            throw new IllegalStateException("S3 container not started. Call s3().start() first.");
         }
         return container.getEndpointOverride(S3).toString(); // GH-90000
     }
@@ -219,9 +219,9 @@ public final class TestContainersConfig {
      * @throws IllegalStateException if container not started
      */
     public static void createS3Bucket(String bucketName) { // GH-90000
-        LocalStackContainer container = (LocalStackContainer) CONTAINERS.get("s3 [GH-90000]");
+        LocalStackContainer container = (LocalStackContainer) CONTAINERS.get("s3");
         if (container == null || !container.isRunning()) { // GH-90000
-            throw new IllegalStateException("S3 container not started. Call s3().start() first. [GH-90000]");
+            throw new IllegalStateException("S3 container not started. Call s3().start() first.");
         }
 
         try {

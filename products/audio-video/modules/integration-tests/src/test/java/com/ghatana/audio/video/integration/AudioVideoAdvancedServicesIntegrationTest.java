@@ -29,18 +29,18 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@Tag("integration [GH-90000]")
-@DisplayName("Audio-Video Service Integration Tests — AV-012 [GH-90000]")
+@Tag("integration")
+@DisplayName("Audio-Video Service Integration Tests — AV-012")
 class AudioVideoAdvancedServicesIntegrationTest {
 
     // ─── STT advanced feature integration ────────────────────────────────────
 
     @Nested
-    @DisplayName("STT Advanced Features Integration (AV-007) [GH-90000]")
+    @DisplayName("STT Advanced Features Integration (AV-007)")
     class SttAdvancedIntegration {
 
         @Test
-        @DisplayName("diarizer → language detector → vocabulary manager pipeline works end-to-end [GH-90000]")
+        @DisplayName("diarizer → language detector → vocabulary manager pipeline works end-to-end")
         void sttPipeline_diarizationToVocabulary_endToEnd() { // GH-90000
             // Step 1: Diarize
             SpeakerDiarizationService diarizer = SpeakerDiarizationService.builder() // GH-90000
@@ -61,17 +61,17 @@ class AudioVideoAdvancedServicesIntegrationTest {
             LanguageDetectionService langDetector = LanguageDetectionService.of( // GH-90000
                     textSample -> List.of(LanguageDetectionService.LanguageCandidate.of("en", 0.98))); // GH-90000
             LanguageDetectionService.DetectionResult langResult = langDetector.detect(turns.get(0).text()); // GH-90000
-            assertThat(langResult.topLanguageTag()).contains("en [GH-90000]");
+            assertThat(langResult.topLanguageTag()).contains("en");
 
             // Step 3: Vocabulary enhancement
             CustomVocabularyManager vocab = CustomVocabularyManager.of(List.of("Ghatana", "ActiveJ")); // GH-90000
             String enhanced = vocab.apply(turns.get(0).text()); // GH-90000
-            assertThat(enhanced).isEqualTo("Ghatana is awesome [GH-90000]");
-            assertThat(vocab.contains("ghatana [GH-90000]")).isTrue();
+            assertThat(enhanced).isEqualTo("Ghatana is awesome");
+            assertThat(vocab.contains("ghatana")).isTrue();
         }
 
         @Test
-        @DisplayName("multiple speakers with distinct audio signatures are correctly identified [GH-90000]")
+        @DisplayName("multiple speakers with distinct audio signatures are correctly identified")
         void sttIntegration_multipleSpeakers_isolatedLabels() { // GH-90000
             SpeakerDiarizationService diarizer = SpeakerDiarizationService.builder() // GH-90000
                     .embeddingExtractor(bytes -> { // GH-90000
@@ -101,11 +101,11 @@ class AudioVideoAdvancedServicesIntegrationTest {
     // ─── TTS SSML integration ─────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("TTS SSML Integration (AV-008) [GH-90000]")
+    @DisplayName("TTS SSML Integration (AV-008)")
     class TtsAdvancedIntegration {
 
         @Test
-        @DisplayName("complex SSML document is correctly parsed into ordered segments [GH-90000]")
+        @DisplayName("complex SSML document is correctly parsed into ordered segments")
         void ssmlIntegration_complexDocument_correctSegments() { // GH-90000
             SsmlProcessor processor = SsmlProcessor.create(); // GH-90000
             String ssml = "<speak>"
@@ -131,22 +131,22 @@ class AudioVideoAdvancedServicesIntegrationTest {
         }
 
         @Test
-        @DisplayName("toPlainText strips all markup for fallback text-only rendering [GH-90000]")
+        @DisplayName("toPlainText strips all markup for fallback text-only rendering")
         void ssmlIntegration_plainText_fallback() { // GH-90000
             SsmlProcessor processor = SsmlProcessor.create(); // GH-90000
             String ssml = "<speak>Hello <emphasis level=\"strong\">World</emphasis></speak>";
-            assertThat(processor.toPlainText(ssml)).isEqualTo("Hello World [GH-90000]");
+            assertThat(processor.toPlainText(ssml)).isEqualTo("Hello World");
         }
     }
 
     // ─── Vision advanced features integration ────────────────────────────────
 
     @Nested
-    @DisplayName("Vision Advanced Features Integration (AV-009) [GH-90000]")
+    @DisplayName("Vision Advanced Features Integration (AV-009)")
     class VisionAdvancedIntegration {
 
         @Test
-        @DisplayName("facial recognition and scene understanding run on same image bytes [GH-90000]")
+        @DisplayName("facial recognition and scene understanding run on same image bytes")
         void visionIntegration_faceAndScene_parallel() { // GH-90000
             byte[] imageBytes = new byte[512]; // dummy image
 
@@ -164,11 +164,11 @@ class AudioVideoAdvancedServicesIntegrationTest {
             assertThat(faces).hasSize(1); // GH-90000
             assertThat(faces.get(0).confidence()).isGreaterThan(0.90); // GH-90000
             assertThat(scene.hasTopScene()).isTrue(); // GH-90000
-            assertThat(scene.topSceneLabel()).isEqualTo("office/meeting-room [GH-90000]");
+            assertThat(scene.topSceneLabel()).isEqualTo("office/meeting-room");
         }
 
         @Test
-        @DisplayName("OCR and facial recognition on same image return independent results [GH-90000]")
+        @DisplayName("OCR and facial recognition on same image return independent results")
         void visionIntegration_ocrAndFace_independent() { // GH-90000
             byte[] imageBytes = new byte[256];
 
@@ -180,12 +180,12 @@ class AudioVideoAdvancedServicesIntegrationTest {
                             new FacialRecognitionService.BoundingBox(0, 0.1, 0.3, 0.3), // GH-90000
                             0.95, new float[]{0.8f})));
 
-            assertThat(ocrService.extractText(imageBytes)).isEqualTo("Meeting Agenda [GH-90000]");
+            assertThat(ocrService.extractText(imageBytes)).isEqualTo("Meeting Agenda");
             assertThat(faceService.detect(imageBytes)).hasSize(1); // GH-90000
         }
 
         @Test
-        @DisplayName("identity identification with enrolled embeddings works for known person [GH-90000]")
+        @DisplayName("identity identification with enrolled embeddings works for known person")
         void visionIntegration_identityRecognition_knownPerson() { // GH-90000
             float[] enrolledEmbedding = new float[]{0.7f, 0.7f, 0.0f};
 
@@ -201,7 +201,7 @@ class AudioVideoAdvancedServicesIntegrationTest {
                     faces.get(0).embedding(), // GH-90000
                     Map.of("alice", enrolledEmbedding)); // GH-90000
             assertThat(match).isPresent(); // GH-90000
-            assertThat(match.get().identityId()).isEqualTo("alice [GH-90000]");
+            assertThat(match.get().identityId()).isEqualTo("alice");
             assertThat(match.get().similarity()).isGreaterThan(0.99); // GH-90000
         }
     }

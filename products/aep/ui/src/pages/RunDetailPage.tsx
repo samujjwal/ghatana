@@ -65,32 +65,24 @@ function MetaRow({ label, value }: { label: string; value: React.ReactNode }) {
 function BoundaryPanel({
   title,
   summary,
-  bullets,
   locked = false,
 }: {
   title: string;
   summary: string;
-  bullets: string[];
   locked?: boolean;
 }) {
   return (
-    <div className="p-6">
-      <div className="max-w-3xl rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-950">
-        <div className={`rounded-lg border px-4 py-3 text-sm ${locked
-          ? 'border-gray-300 bg-gray-50 text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300'
-          : 'border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200'}`}>
-          <p className="font-medium">{title}</p>
-          <p className="mt-1">{summary}</p>
-        </div>
-
-        <div className="mt-5">
-          <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Current run facts</h3>
-          <ul className="list-disc space-y-2 pl-5 text-sm text-gray-700 dark:text-gray-300">
-            {bullets.map((bullet) => (
-              <li key={bullet}>{bullet}</li>
-            ))}
-          </ul>
-        </div>
+    <div className="p-4">
+      <div
+        className={[
+          'rounded-lg border px-3 py-2 text-xs',
+          locked
+            ? 'border-gray-200 bg-gray-50 text-gray-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400'
+            : 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200',
+        ].join(' ')}
+      >
+        <span className="font-medium">{title}</span>{' '}
+        <span>{summary}</span>
       </div>
     </div>
   );
@@ -257,12 +249,8 @@ export function RunDetailPage() {
               />
             ) : activeTab === 'lineage' ? (
               <BoundaryPanel
-                title="Event lineage not enabled"
-                summary="Event-lineage tracing is disabled for this tenant or deployment profile."
-                bullets={[
-                  'The UI does not render mock lineage nodes when the feature is disabled.',
-                  'Enable the backend lineage feed before using this tab as an operator tool.',
-                ]}
+                title="Event lineage not enabled."
+                summary="Enable the backend lineage feed before using this tab as an operator tool."
                 locked
               />
             ) : null}
@@ -286,12 +274,8 @@ export function RunDetailPage() {
               />
             ) : activeTab === 'decisions' ? (
               <BoundaryPanel
-                title="Agent decisions not enabled"
-                summary="Agent-decision tracking is disabled for this tenant or deployment profile."
-                bullets={[
-                  'No synthetic agent decisions are shown while this feature is disabled.',
-                  'Enable the decision feed before treating this tab as operational evidence.',
-                ]}
+                title="Agent decisions not enabled."
+                summary="Enable the decision feed before treating this tab as operational evidence."
                 locked
               />
             ) : null}
@@ -314,12 +298,8 @@ export function RunDetailPage() {
               />
             ) : activeTab === 'policies' ? (
               <BoundaryPanel
-                title="Policy references not enabled"
-                summary="Policy-reference tracking is disabled for this tenant or deployment profile."
-                bullets={[
-                  'No mock policy data is rendered while the feature is disabled.',
-                  'Enable policy-reference tracking before relying on this tab for run-level governance evidence.',
-                ]}
+                title="Policy references not enabled."
+                summary="Enable policy-reference tracking before relying on this tab for run-level governance evidence."
                 locked
               />
             ) : null}

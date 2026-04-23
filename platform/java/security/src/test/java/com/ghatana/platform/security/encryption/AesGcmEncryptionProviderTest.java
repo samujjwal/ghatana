@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer core
  * @doc.pattern Unit Test
  */
-@DisplayName("AesGcmEncryptionProvider [GH-90000]")
+@DisplayName("AesGcmEncryptionProvider")
 class AesGcmEncryptionProviderTest extends EventloopTestBase {
 
     private AesGcmEncryptionProvider provider;
@@ -33,11 +33,11 @@ class AesGcmEncryptionProviderTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("encrypt/decrypt round-trip [GH-90000]")
+    @DisplayName("encrypt/decrypt round-trip")
     class RoundTrip {
 
         @Test
-        @DisplayName("should encrypt and decrypt text data [GH-90000]")
+        @DisplayName("should encrypt and decrypt text data")
         void shouldRoundTripText() { // GH-90000
             byte[] plaintext = "Hello, World!".getBytes(StandardCharsets.UTF_8); // GH-90000
 
@@ -45,11 +45,11 @@ class AesGcmEncryptionProviderTest extends EventloopTestBase {
             byte[] decrypted = runPromise(() -> provider.decrypt(encrypted)); // GH-90000
 
             assertThat(decrypted).isEqualTo(plaintext); // GH-90000
-            assertThat(new String(decrypted, StandardCharsets.UTF_8)).isEqualTo("Hello, World! [GH-90000]");
+            assertThat(new String(decrypted, StandardCharsets.UTF_8)).isEqualTo("Hello, World!");
         }
 
         @Test
-        @DisplayName("should encrypt and decrypt empty data [GH-90000]")
+        @DisplayName("should encrypt and decrypt empty data")
         void shouldRoundTripEmpty() { // GH-90000
             byte[] plaintext = new byte[0];
 
@@ -60,7 +60,7 @@ class AesGcmEncryptionProviderTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should encrypt and decrypt large data [GH-90000]")
+        @DisplayName("should encrypt and decrypt large data")
         void shouldRoundTripLargeData() { // GH-90000
             byte[] plaintext = new byte[1024 * 1024]; // 1 MB
             Arrays.fill(plaintext, (byte) 0xAB); // GH-90000
@@ -72,7 +72,7 @@ class AesGcmEncryptionProviderTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should produce different ciphertext for same plaintext (random IV) [GH-90000]")
+        @DisplayName("should produce different ciphertext for same plaintext (random IV)")
         void shouldUseDifferentIVs() { // GH-90000
             byte[] plaintext = "deterministic?".getBytes(StandardCharsets.UTF_8); // GH-90000
 
@@ -84,11 +84,11 @@ class AesGcmEncryptionProviderTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("decrypt failures [GH-90000]")
+    @DisplayName("decrypt failures")
     class DecryptFailures {
 
         @Test
-        @DisplayName("should fail to decrypt tampered ciphertext [GH-90000]")
+        @DisplayName("should fail to decrypt tampered ciphertext")
         void shouldFailOnTamperedData() { // GH-90000
             byte[] plaintext = "secret".getBytes(StandardCharsets.UTF_8); // GH-90000
             byte[] encrypted = runPromise(() -> provider.encrypt(plaintext)); // GH-90000
@@ -99,7 +99,7 @@ class AesGcmEncryptionProviderTest extends EventloopTestBase {
             byte[] tampered = encrypted;
             runPromise(() -> provider.decrypt(tampered) // GH-90000
                     .then( // GH-90000
-                            result -> Promise.<byte[]>ofException(new RuntimeException("Should have failed [GH-90000]")),
+                            result -> Promise.<byte[]>ofException(new RuntimeException("Should have failed")),
                             e -> {
                                 assertThat(e).isNotNull(); // GH-90000
                                 return Promise.of((byte[]) null); // GH-90000
@@ -108,7 +108,7 @@ class AesGcmEncryptionProviderTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should fail to decrypt data with different key [GH-90000]")
+        @DisplayName("should fail to decrypt data with different key")
         void shouldFailWithDifferentKey() { // GH-90000
             byte[] plaintext = "secret".getBytes(StandardCharsets.UTF_8); // GH-90000
             byte[] encrypted = runPromise(() -> provider.encrypt(plaintext)); // GH-90000
@@ -117,7 +117,7 @@ class AesGcmEncryptionProviderTest extends EventloopTestBase {
 
             runPromise(() -> otherProvider.decrypt(encrypted) // GH-90000
                     .then( // GH-90000
-                            result -> Promise.<byte[]>ofException(new RuntimeException("Should have failed [GH-90000]")),
+                            result -> Promise.<byte[]>ofException(new RuntimeException("Should have failed")),
                             e -> {
                                 assertThat(e).isNotNull(); // GH-90000
                                 return Promise.of((byte[]) null); // GH-90000
@@ -127,23 +127,23 @@ class AesGcmEncryptionProviderTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("factory methods [GH-90000]")
+    @DisplayName("factory methods")
     class FactoryMethods {
 
         @Test
-        @DisplayName("should generate provider with 128-bit key [GH-90000]")
+        @DisplayName("should generate provider with 128-bit key")
         void shouldGenerate128BitKey() { // GH-90000
             AesGcmEncryptionProvider p = AesGcmEncryptionProvider.withNewKey(128, "k-128"); // GH-90000
-            assertThat(p.getAlgorithm()).isEqualTo("AES/GCM/NoPadding [GH-90000]");
-            assertThat(p.getKeyId()).isEqualTo("k-128 [GH-90000]");
+            assertThat(p.getAlgorithm()).isEqualTo("AES/GCM/NoPadding");
+            assertThat(p.getKeyId()).isEqualTo("k-128");
         }
 
         @Test
-        @DisplayName("should generate provider with 256-bit key [GH-90000]")
+        @DisplayName("should generate provider with 256-bit key")
         void shouldGenerate256BitKey() { // GH-90000
             AesGcmEncryptionProvider p = AesGcmEncryptionProvider.withNewKey(256, "k-256"); // GH-90000
-            assertThat(p.getAlgorithm()).isEqualTo("AES/GCM/NoPadding [GH-90000]");
-            assertThat(p.getKeyId()).isEqualTo("k-256 [GH-90000]");
+            assertThat(p.getAlgorithm()).isEqualTo("AES/GCM/NoPadding");
+            assertThat(p.getKeyId()).isEqualTo("k-256");
         }
     }
 }

@@ -20,8 +20,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Kafka Connector Integration Tests [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("Kafka Connector Integration Tests")
+@Tag("integration")
 class KafkaConnectorIntegrationTest extends EventloopTestBase {
 
     // ── In-memory Kafka topic simulation ──────────────────────────────────────
@@ -59,11 +59,11 @@ class KafkaConnectorIntegrationTest extends EventloopTestBase {
     // ── Producer ──────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("producer [GH-90000]")
+    @DisplayName("producer")
     class Producer {
 
         @Test
-        @DisplayName("produced message is stored at monotonically increasing offset [GH-90000]")
+        @DisplayName("produced message is stored at monotonically increasing offset")
         void producedMessage_storedAtMonotonicallyIncreasingOffset() { // GH-90000
             InMemoryTopic topic = new InMemoryTopic(); // GH-90000
             topic.produce("k1", "v1"); // GH-90000
@@ -79,7 +79,7 @@ class KafkaConnectorIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("producing with null value stores empty record [GH-90000]")
+        @DisplayName("producing with null value stores empty record")
         void producingWithNullValue_storesEmptyRecord() { // GH-90000
             InMemoryTopic topic = new InMemoryTopic(); // GH-90000
             topic.produce("tombstone-key", null); // GH-90000
@@ -91,7 +91,7 @@ class KafkaConnectorIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("batch produce stores all messages in order [GH-90000]")
+        @DisplayName("batch produce stores all messages in order")
         void batchProduce_storesAllMessagesInOrder() { // GH-90000
             InMemoryTopic topic = new InMemoryTopic(); // GH-90000
             List<String> keys = List.of("a", "b", "c", "d", "e"); // GH-90000
@@ -108,11 +108,11 @@ class KafkaConnectorIntegrationTest extends EventloopTestBase {
     // ── Consumer ──────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("consumer [GH-90000]")
+    @DisplayName("consumer")
     class Consumer {
 
         @Test
-        @DisplayName("consume from offset 0 returns all messages [GH-90000]")
+        @DisplayName("consume from offset 0 returns all messages")
         void consumeFromOffset0_returnsAllMessages() { // GH-90000
             InMemoryTopic topic = new InMemoryTopic(); // GH-90000
             topic.produce("k1", "v1"); // GH-90000
@@ -124,7 +124,7 @@ class KafkaConnectorIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("consume from mid-offset returns only newer messages [GH-90000]")
+        @DisplayName("consume from mid-offset returns only newer messages")
         void consumeFromMidOffset_returnsOnlyNewerMessages() { // GH-90000
             InMemoryTopic topic = new InMemoryTopic(); // GH-90000
             topic.produce("old-k", "old-v");     // offset 0 // GH-90000
@@ -134,11 +134,11 @@ class KafkaConnectorIntegrationTest extends EventloopTestBase {
             List<KafkaMessage> newer = topic.consume(2L); // GH-90000
 
             assertThat(newer).hasSize(1); // GH-90000
-            assertThat(newer.getFirst().key()).isEqualTo("new-k [GH-90000]");
+            assertThat(newer.getFirst().key()).isEqualTo("new-k");
         }
 
         @Test
-        @DisplayName("consume with maxMessages limits returned records [GH-90000]")
+        @DisplayName("consume with maxMessages limits returned records")
         void consumeWithMaxMessages_limitsReturnedRecords() { // GH-90000
             InMemoryTopic topic = new InMemoryTopic(); // GH-90000
             for (int i = 0; i < 10; i++) { // GH-90000
@@ -154,11 +154,11 @@ class KafkaConnectorIntegrationTest extends EventloopTestBase {
     // ── Offset management ─────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("offset management [GH-90000]")
+    @DisplayName("offset management")
     class OffsetManagement {
 
         @Test
-        @DisplayName("committed offset advances consumer position correctly [GH-90000]")
+        @DisplayName("committed offset advances consumer position correctly")
         void committedOffset_advancesConsumerPositionCorrectly() { // GH-90000
             InMemoryTopic topic = new InMemoryTopic(); // GH-90000
             topic.produce("a", "1");  // offset 0 // GH-90000
@@ -169,11 +169,11 @@ class KafkaConnectorIntegrationTest extends EventloopTestBase {
             List<KafkaMessage> remaining = topic.consume(committedOffset); // GH-90000
 
             assertThat(remaining).hasSize(1); // GH-90000
-            assertThat(remaining.getFirst().key()).isEqualTo("c [GH-90000]");
+            assertThat(remaining.getFirst().key()).isEqualTo("c");
         }
 
         @Test
-        @DisplayName("seek to latest offset returns empty if no new messages [GH-90000]")
+        @DisplayName("seek to latest offset returns empty if no new messages")
         void seekToLatestOffset_returnsEmpty_ifNoNewMessages() { // GH-90000
             InMemoryTopic topic = new InMemoryTopic(); // GH-90000
             topic.produce("k", "v"); // GH-90000
@@ -185,7 +185,7 @@ class KafkaConnectorIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("consumer position is tracked between poll cycles [GH-90000]")
+        @DisplayName("consumer position is tracked between poll cycles")
         void consumerPosition_isTrackedBetweenPollCycles() { // GH-90000
             InMemoryTopic topic = new InMemoryTopic(); // GH-90000
             for (int i = 0; i < 6; i++) { // GH-90000
@@ -208,11 +208,11 @@ class KafkaConnectorIntegrationTest extends EventloopTestBase {
     // ── Exactly-once semantics simulation ────────────────────────────────────
 
     @Nested
-    @DisplayName("exactly-once semantics (idempotent producer) [GH-90000]")
+    @DisplayName("exactly-once semantics (idempotent producer)")
     class ExactlyOnceSemantics {
 
         @Test
-        @DisplayName("idempotent producer does not duplicate a retried message [GH-90000]")
+        @DisplayName("idempotent producer does not duplicate a retried message")
         void idempotentProducer_doesNotDuplicateRetriedMessage() { // GH-90000
             // Simulate: deduplication by sequence ID
             record ProducerRecord(String key, String value, long sequenceId) {} // GH-90000

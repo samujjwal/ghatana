@@ -34,7 +34,7 @@ import static org.mockito.Mockito.mock;
  *   <li>Hybrid metadata in output (_hybrid.source, _hybrid.strategy)</li> // GH-90000
  * </ul>
  */
-@DisplayName("Hybrid Agent — Gap Tests [GH-90000]")
+@DisplayName("Hybrid Agent — Gap Tests")
 class HybridAgentGapTest {
 
     private AgentContext ctx;
@@ -42,9 +42,9 @@ class HybridAgentGapTest {
     @BeforeEach
     void setUp() { // GH-90000
         ctx = AgentContext.builder() // GH-90000
-                .turnId("turn-1 [GH-90000]")
-                .agentId("hybrid-gap [GH-90000]")
-                .tenantId("test-tenant [GH-90000]")
+                .turnId("turn-1")
+                .agentId("hybrid-gap")
+                .tenantId("test-tenant")
                 .memoryStore(mock(MemoryStore.class)) // GH-90000
                 .build(); // GH-90000
     }
@@ -77,7 +77,7 @@ class HybridAgentGapTest {
         StubAgent(String id, Map<String, Object> output, double confidence, // GH-90000
                   boolean shouldFail, boolean shouldTimeout) {
             this.desc = AgentDescriptor.builder() // GH-90000
-                    .agentId(id).name(id).version("1.0 [GH-90000]")
+                    .agentId(id).name(id).version("1.0")
                     .type(AgentType.DETERMINISTIC).build(); // GH-90000
             this.fixedOutput = output;
             this.confidence = confidence;
@@ -121,7 +121,7 @@ class HybridAgentGapTest {
                 .escalationConfidenceThreshold(0.7) // GH-90000
                 .build(); // GH-90000
 
-        AgentConfig stubConfig = AgentConfig.builder().agentId("stub [GH-90000]").type(AgentType.DETERMINISTIC).build();
+        AgentConfig stubConfig = AgentConfig.builder().agentId("stub").type(AgentType.DETERMINISTIC).build();
         if (det != null) runOnEventloop(() -> det.initialize(stubConfig)); // GH-90000
         if (prob != null) runOnEventloop(() -> prob.initialize(stubConfig)); // GH-90000
         runOnEventloop(() -> agent.initialize(config)); // GH-90000
@@ -133,7 +133,7 @@ class HybridAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Fallback on Timeout [GH-90000]")
+    @DisplayName("Fallback on Timeout")
     class FallbackOnTimeoutTests {
 
         @Test
@@ -166,7 +166,7 @@ class HybridAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Both Agents Fail [GH-90000]")
+    @DisplayName("Both Agents Fail")
     class BothAgentsFailTests {
 
         @Test
@@ -179,7 +179,7 @@ class HybridAgentGapTest {
 
             var result = runOnEventloop(() -> agent.process(ctx, Map.of("x", 1))); // GH-90000
             assertThat(result.getStatus()).isEqualTo(AgentResultStatus.FAILED); // GH-90000
-            assertThat(result.getExplanation()).contains("RuntimeException [GH-90000]");
+            assertThat(result.getExplanation()).contains("Deterministic: FAILED");
         }
 
         @Test
@@ -202,25 +202,25 @@ class HybridAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Missing Sub-Agent [GH-90000]")
+    @DisplayName("Missing Sub-Agent")
     class MissingSubAgentTests {
 
         @Test
         void detFirstWithNoProbReturnsDetResultIfHighConfidence() { // GH-90000
             StubAgent det = new StubAgent("det-only", Map.of("answer", "rule"), 0.95); // GH-90000
 
-            HybridAgent agent = new HybridAgent("h-det-only [GH-90000]");
+            HybridAgent agent = new HybridAgent("h-det-only");
             agent.setDeterministicAgent(det); // GH-90000
             // No probabilistic agent set
 
             HybridAgentConfig config = HybridAgentConfig.builder() // GH-90000
-                    .agentId("h-det-only [GH-90000]")
+                    .agentId("h-det-only")
                     .type(AgentType.HYBRID) // GH-90000
                     .strategy(HybridAgentConfig.RoutingStrategy.DETERMINISTIC_FIRST) // GH-90000
                     .escalationConfidenceThreshold(0.7) // GH-90000
                     .build(); // GH-90000
 
-            AgentConfig stubConfig = AgentConfig.builder().agentId("s [GH-90000]").type(AgentType.DETERMINISTIC).build();
+            AgentConfig stubConfig = AgentConfig.builder().agentId("s").type(AgentType.DETERMINISTIC).build();
             runOnEventloop(() -> det.initialize(stubConfig)); // GH-90000
             runOnEventloop(() -> agent.initialize(config)); // GH-90000
 
@@ -232,17 +232,17 @@ class HybridAgentGapTest {
         void detFirstLowConfAndNoProbReturnsDegraded() { // GH-90000
             StubAgent det = new StubAgent("det-low", Map.of("answer", "unsure"), 0.3); // GH-90000
 
-            HybridAgent agent = new HybridAgent("h-no-prob [GH-90000]");
+            HybridAgent agent = new HybridAgent("h-no-prob");
             agent.setDeterministicAgent(det); // GH-90000
 
             HybridAgentConfig config = HybridAgentConfig.builder() // GH-90000
-                    .agentId("h-no-prob [GH-90000]")
+                    .agentId("h-no-prob")
                     .type(AgentType.HYBRID) // GH-90000
                     .strategy(HybridAgentConfig.RoutingStrategy.DETERMINISTIC_FIRST) // GH-90000
                     .escalationConfidenceThreshold(0.7) // GH-90000
                     .build(); // GH-90000
 
-            AgentConfig stubConfig = AgentConfig.builder().agentId("s [GH-90000]").type(AgentType.DETERMINISTIC).build();
+            AgentConfig stubConfig = AgentConfig.builder().agentId("s").type(AgentType.DETERMINISTIC).build();
             runOnEventloop(() -> det.initialize(stubConfig)); // GH-90000
             runOnEventloop(() -> agent.initialize(config)); // GH-90000
 
@@ -256,7 +256,7 @@ class HybridAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Parallel — metadata [GH-90000]")
+    @DisplayName("Parallel — metadata")
     class ParallelMetadataTests {
 
         @Test
@@ -293,7 +293,7 @@ class HybridAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Escalation Reason Tracking [GH-90000]")
+    @DisplayName("Escalation Reason Tracking")
     class EscalationReasonTests {
 
         @Test
@@ -305,7 +305,7 @@ class HybridAgentGapTest {
                     HybridAgentConfig.RoutingStrategy.DETERMINISTIC_FIRST);
 
             var result = runOnEventloop(() -> agent.process(ctx, Map.of("x", 1))); // GH-90000
-            assertThat(result.getOutput()).containsKey("_hybrid.escalationReason [GH-90000]");
+            assertThat(result.getOutput()).containsKey("_hybrid.escalationReason");
             assertThat(result.getOutput()).containsEntry("_hybrid.source", "probabilistic"); // GH-90000
         }
     }

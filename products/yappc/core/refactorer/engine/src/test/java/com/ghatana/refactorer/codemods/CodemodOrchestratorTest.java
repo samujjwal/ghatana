@@ -42,7 +42,7 @@ class CodemodOrchestratorTest {
 
     @BeforeEach
     void setUp() { // GH-90000
-        srcDir = tempDir.resolve("src/main/java [GH-90000]");
+        srcDir = tempDir.resolve("src/main/java");
 
         mockContext = mock(PolyfixProjectContext.class); // GH-90000
         Logger mockLogger = mock(Logger.class); // GH-90000
@@ -52,7 +52,7 @@ class CodemodOrchestratorTest {
         mockOpenRewriteRunner = mock(OpenRewriteRunner.class); // GH-90000
         mockJsonYamlCodemods = mock(JsonYamlCodemods.class); // GH-90000
         mockRecipe = mock(Recipe.class); // GH-90000
-        lenient().when(mockRecipe.getName()).thenReturn("mock-recipe [GH-90000]");
+        lenient().when(mockRecipe.getName()).thenReturn("mock-recipe");
 
         recipeSupplier = () -> List.of(mockRecipe); // GH-90000
 
@@ -71,7 +71,7 @@ class CodemodOrchestratorTest {
     @Test
     void testJavaFilesOnly() throws Exception { // GH-90000
         // Setup test files
-        Path javaFile = srcDir.resolve("Test.java [GH-90000]");
+        Path javaFile = srcDir.resolve("Test.java");
         Files.createDirectories(javaFile.getParent()); // GH-90000
         Files.writeString(javaFile, "class Test {}"); // GH-90000
 
@@ -100,7 +100,7 @@ class CodemodOrchestratorTest {
         Files.writeString(JSONFile, "{}"); // GH-90000
 
         // Create schema directory
-        Path schemaDir = tempDir.resolve("config/schemas [GH-90000]");
+        Path schemaDir = tempDir.resolve("config/schemas");
         Files.createDirectories(schemaDir); // GH-90000
 
         // Mock JSON/YAML codemods response
@@ -123,7 +123,7 @@ class CodemodOrchestratorTest {
     @Test
     void testMixedFileTypes() throws Exception { // GH-90000
         // Setup test files
-        Path javaFile = srcDir.resolve("Test.java [GH-90000]");
+        Path javaFile = srcDir.resolve("Test.java");
         Path JSONFile = srcDir.resolve("config." + JSON); // GH-90000
 
         Files.createDirectories(javaFile.getParent()); // GH-90000
@@ -131,7 +131,7 @@ class CodemodOrchestratorTest {
         Files.writeString(JSONFile, "{}"); // GH-90000
 
         // Create schema directory
-        Path schemaDir = tempDir.resolve("config/schemas [GH-90000]");
+        Path schemaDir = tempDir.resolve("config/schemas");
         Files.createDirectories(schemaDir); // GH-90000
 
         // Mock responses
@@ -161,13 +161,13 @@ class CodemodOrchestratorTest {
     @Test
     void testErrorHandling() throws Exception { // GH-90000
         // Setup test file
-        Path javaFile = srcDir.resolve("Test.java [GH-90000]");
+        Path javaFile = srcDir.resolve("Test.java");
         Files.createDirectories(javaFile.getParent()); // GH-90000
         Files.writeString(javaFile, "class Test {}"); // GH-90000
 
         // Mock error
         when(mockOpenRewriteRunner.run(eq(mockRecipe), anyList())) // GH-90000
-                .thenThrow(new RuntimeException("Test error [GH-90000]"));
+                .thenThrow(new RuntimeException("Test error"));
 
         // Execute
         List<UnifiedDiagnostic> results = orchestrator.applyCodemods(List.of(javaFile)); // GH-90000
@@ -175,12 +175,12 @@ class CodemodOrchestratorTest {
         // Verify
         assertThat(results).hasSize(1); // GH-90000
         assertThat(results.get(0).getMessage()) // GH-90000
-                .contains("Error applying Java codemods: Test error [GH-90000]");
+                .contains("Error applying Java codemods: Test error");
     }
 
     private UnifiedDiagnostic createMockDiagnostic(String type) { // GH-90000
         return UnifiedDiagnostic.builder() // GH-90000
-                .tool("test [GH-90000]")
+                .tool("test")
                 .code(type) // GH-90000
                 .message(type) // GH-90000
                 .startLine(1) // GH-90000

@@ -36,7 +36,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("GovernedMemoryPlane — TX-1 privacy gate [GH-90000]")
+@DisplayName("GovernedMemoryPlane — TX-1 privacy gate")
 class GovernedMemoryPlaneTest extends EventloopTestBase {
 
     private static final String TENANT_ID = "tenant-1";
@@ -76,12 +76,12 @@ class GovernedMemoryPlaneTest extends EventloopTestBase {
     @Test
     void searchSemantic_deniedAccess_propagatesFailure() { // GH-90000
         when(accessBroker.checkAccess(anyString(), anyString(), anyString(), anyString())) // GH-90000
-                .thenReturn(Promise.ofException(new SecurityException("access denied [GH-90000]")));
+                .thenReturn(Promise.ofException(new SecurityException("access denied")));
 
         assertThatThrownBy(() -> // GH-90000
                 runPromise(() -> governed.searchSemantic("q", null, 5, null, null))) // GH-90000
                 .isInstanceOf(SecurityException.class) // GH-90000
-                .hasMessageContaining("access denied [GH-90000]");
+                .hasMessageContaining("access denied");
 
         verifyNoInteractions(delegate); // GH-90000
     }
@@ -175,13 +175,13 @@ class GovernedMemoryPlaneTest extends EventloopTestBase {
     void constructor_rejectsBlankTenantId() { // GH-90000
         assertThatThrownBy(() -> new GovernedMemoryPlane(delegate, accessBroker, "", SUBJECT_ID)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("tenantId [GH-90000]");
+                .hasMessageContaining("tenantId");
     }
 
     @Test
     void constructor_rejectsBlankSubjectId() { // GH-90000
         assertThatThrownBy(() -> new GovernedMemoryPlane(delegate, accessBroker, TENANT_ID, "")) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("subjectId [GH-90000]");
+                .hasMessageContaining("subjectId");
     }
 }

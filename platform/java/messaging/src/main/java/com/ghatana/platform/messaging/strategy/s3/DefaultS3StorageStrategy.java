@@ -10,7 +10,11 @@ import io.activej.promise.Promise;
 
 /**
  * S3 storage strategy implementation for egress to S3.
- */
+  * @doc.type class
+ * @doc.purpose Provides default s3storage strategy functionality.
+ * @doc.layer platform
+ * @doc.pattern Component
+*/
 public class DefaultS3StorageStrategy implements QueueProducerStrategy {
 
     private final S3Config config;

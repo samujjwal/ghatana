@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("Agent Registry Contract Tests (SPI) [GH-90000]")
+@DisplayName("Agent Registry Contract Tests (SPI)")
 class AgentRegistryContractTest extends EventloopTestBase {
 
     // ── Agent registry model ──────────────────────────────────────────────────
@@ -51,7 +51,7 @@ class AgentRegistryContractTest extends EventloopTestBase {
     // ── Registration contract ─────────────────────────────────────────────────
 
     @Test
-    @DisplayName("§Contract: register assigns a non-null, non-blank ID to each agent [GH-90000]")
+    @DisplayName("§Contract: register assigns a non-null, non-blank ID to each agent")
     void contractRegisterAssignsNonBlankId() { // GH-90000
         AgentDescriptor agent = makeAgent("agent-spi-1", "DETERMINISTIC", "1.0.0", // GH-90000
                 "tenant-contract", Set.of("entity:read", "entity:write")); // GH-90000
@@ -63,10 +63,10 @@ class AgentRegistryContractTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("§Contract: registered agent starts in ACTIVE state [GH-90000]")
+    @DisplayName("§Contract: registered agent starts in ACTIVE state")
     void contractRegisteredAgentStartsActive() { // GH-90000
         AgentDescriptor agent = makeAgent("agent-c1", "PROBABILISTIC", "2.0.0", // GH-90000
-                "tenant-c", Set.of("model:infer [GH-90000]"));
+                "tenant-c", Set.of("model:infer"));
         agentRegistry.register(agent); // GH-90000
 
         AgentDescriptor found = agentRegistry.findById("agent-c1", "tenant-c").get(); // GH-90000
@@ -74,7 +74,7 @@ class AgentRegistryContractTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("§Contract: duplicate registration for same ID+version+tenant is rejected [GH-90000]")
+    @DisplayName("§Contract: duplicate registration for same ID+version+tenant is rejected")
     void contractDuplicateRegistrationRejected() { // GH-90000
         AgentDescriptor agent = makeAgent("agent-dup", "REACTIVE", "1.0.0", "tenant-dup", Set.of()); // GH-90000
         agentRegistry.register(agent); // GH-90000
@@ -86,32 +86,32 @@ class AgentRegistryContractTest extends EventloopTestBase {
     // ── Lookup contract ───────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("§Contract: lookup by ID and tenant returns the correct agent [GH-90000]")
+    @DisplayName("§Contract: lookup by ID and tenant returns the correct agent")
     void contractLookupByIdAndTenantReturnsCorrectAgent() { // GH-90000
         agentRegistry.register(makeAgent("agent-look", "ADAPTIVE", "1.0.0", "tenant-look", Set.of())); // GH-90000
         agentRegistry.register(makeAgent("agent-look", "ADAPTIVE", "1.0.0", "tenant-other", Set.of())); // GH-90000
 
         AgentDescriptor result = agentRegistry.findById("agent-look", "tenant-look").get(); // GH-90000
-        assertThat(result.tenantId()).isEqualTo("tenant-look [GH-90000]");
+        assertThat(result.tenantId()).isEqualTo("tenant-look");
     }
 
     @Test
-    @DisplayName("§Contract: lookup by capability returns all agents that declare it [GH-90000]")
+    @DisplayName("§Contract: lookup by capability returns all agents that declare it")
     void contractLookupByCapabilityReturnsMatchingAgents() { // GH-90000
         agentRegistry.register(makeAgent("a1", "COMPOSITE", "1.0", "tenant-Q", // GH-90000
                 Set.of("memory:read", "entity:write"))); // GH-90000
         agentRegistry.register(makeAgent("a2", "PLANNING", "1.0", "tenant-Q", // GH-90000
                 Set.of("entity:write", "workflow:execute"))); // GH-90000
         agentRegistry.register(makeAgent("a3", "DETERMINISTIC", "1.0", "tenant-Q", // GH-90000
-                Set.of("audit:log [GH-90000]")));
+                Set.of("audit:log")));
 
         List<AgentDescriptor> results = agentRegistry.findByCapability("tenant-Q", "entity:write"); // GH-90000
         assertThat(results).hasSize(2); // GH-90000
-        assertThat(results).allMatch(a -> a.capabilities().contains("entity:write [GH-90000]"));
+        assertThat(results).allMatch(a -> a.capabilities().contains("entity:write"));
     }
 
     @Test
-    @DisplayName("§Contract: lookup by type returns all active agents of that type [GH-90000]")
+    @DisplayName("§Contract: lookup by type returns all active agents of that type")
     void contractLookupByTypeReturnsActiveAgents() { // GH-90000
         agentRegistry.register(makeAgent("type-a1", "REACTIVE", "1.0", "tenant-T", Set.of())); // GH-90000
         agentRegistry.register(makeAgent("type-a2", "REACTIVE", "2.0", "tenant-T", Set.of())); // GH-90000
@@ -119,11 +119,11 @@ class AgentRegistryContractTest extends EventloopTestBase {
 
         List<AgentDescriptor> reactive = agentRegistry.findByType("tenant-T", "REACTIVE"); // GH-90000
         assertThat(reactive).hasSize(2); // GH-90000
-        assertThat(reactive).allMatch(a -> a.agentType().equals("REACTIVE [GH-90000]"));
+        assertThat(reactive).allMatch(a -> a.agentType().equals("REACTIVE"));
     }
 
     @Test
-    @DisplayName("§Contract: lookup returns empty for non-existent agent [GH-90000]")
+    @DisplayName("§Contract: lookup returns empty for non-existent agent")
     void contractLookupReturnsEmptyForNonExistentAgent() { // GH-90000
         Optional<AgentDescriptor> result = agentRegistry.findById("ghost-agent", "tenant-ghost"); // GH-90000
         assertThat(result).isEmpty(); // GH-90000
@@ -132,7 +132,7 @@ class AgentRegistryContractTest extends EventloopTestBase {
     // ── Versioning contract ───────────────────────────────────────────────────
 
     @Test
-    @DisplayName("§Contract: multiple versions of the same agent can coexist [GH-90000]")
+    @DisplayName("§Contract: multiple versions of the same agent can coexist")
     void contractMultipleVersionsCoexist() { // GH-90000
         agentRegistry.register(makeAgent("agent-ver", "HYBRID", "1.0.0", "tenant-V", Set.of())); // GH-90000
         agentRegistry.register(makeAgent("agent-ver", "HYBRID", "2.0.0", "tenant-V", Set.of())); // GH-90000
@@ -146,7 +146,7 @@ class AgentRegistryContractTest extends EventloopTestBase {
     // ── Deprecation contract ──────────────────────────────────────────────────
 
     @Test
-    @DisplayName("§Contract: deprecated agent is no longer returned by active lookups [GH-90000]")
+    @DisplayName("§Contract: deprecated agent is no longer returned by active lookups")
     void contractDeprecatedAgentExcludedFromActiveLookups() { // GH-90000
         agentRegistry.register(makeAgent("agent-dep", "STREAM_PROCESSOR", "1.0", "tenant-D", Set.of())); // GH-90000
         agentRegistry.deprecate("agent-dep", "1.0", "tenant-D"); // GH-90000
@@ -156,7 +156,7 @@ class AgentRegistryContractTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("§Contract: deprecated agent can still be retrieved by exact ID lookup [GH-90000]")
+    @DisplayName("§Contract: deprecated agent can still be retrieved by exact ID lookup")
     void contractDeprecatedAgentCanBeRetrievedByExactId() { // GH-90000
         agentRegistry.register(makeAgent("agent-depx", "PLANNING", "1.0", "tenant-DX", Set.of())); // GH-90000
         agentRegistry.deprecate("agent-depx", "1.0", "tenant-DX"); // GH-90000

@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer   service
  * @doc.pattern Test
  */
-@DisplayName("UserProfile Tenant Isolation Tests [GH-90000]")
+@DisplayName("UserProfile Tenant Isolation Tests")
 class TenantIsolationTest extends EventloopTestBase {
 
     private UserProfileStore store;
@@ -58,12 +58,12 @@ class TenantIsolationTest extends EventloopTestBase {
     // ── Cross-tenant read isolation ───────────────────────────────────────────
 
     @Test
-    @DisplayName("profile stored under tenant-A is not visible from tenant-B [GH-90000]")
+    @DisplayName("profile stored under tenant-A is not visible from tenant-B")
     void profileUnderTenantAIsHiddenFromTenantB() { // GH-90000
         UserProfile profile = UserProfile.builder() // GH-90000
-                .userId("shared-user-id [GH-90000]")
-                .tenantId("tenant-A [GH-90000]")
-                .email("alice@tenant-a.com [GH-90000]")
+                .userId("shared-user-id")
+                .tenantId("tenant-A")
+                .email("alice@tenant-a.com")
                 .build(); // GH-90000
 
         runPromise(() -> store.upsert(profile)); // GH-90000
@@ -75,22 +75,22 @@ class TenantIsolationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("identical userId in different tenants returns tenant-specific profiles [GH-90000]")
+    @DisplayName("identical userId in different tenants returns tenant-specific profiles")
     void identicalUserIdInDifferentTenantsReturnsCorrectData() { // GH-90000
         String userId = "user-shared";
 
         UserProfile profileA = UserProfile.builder() // GH-90000
                 .userId(userId) // GH-90000
-                .tenantId("tenant-alpha [GH-90000]")
-                .email("user@alpha.com [GH-90000]")
-                .displayName("Alpha User [GH-90000]")
+                .tenantId("tenant-alpha")
+                .email("user@alpha.com")
+                .displayName("Alpha User")
                 .build(); // GH-90000
 
         UserProfile profileB = UserProfile.builder() // GH-90000
                 .userId(userId) // GH-90000
-                .tenantId("tenant-beta [GH-90000]")
-                .email("user@beta.com [GH-90000]")
-                .displayName("Beta User [GH-90000]")
+                .tenantId("tenant-beta")
+                .email("user@beta.com")
+                .displayName("Beta User")
                 .build(); // GH-90000
 
         runPromise(() -> store.upsert(profileA)); // GH-90000
@@ -102,33 +102,33 @@ class TenantIsolationTest extends EventloopTestBase {
                 store.findByTenantAndUser("tenant-beta", userId)); // GH-90000
 
         assertThat(foundAlpha).isPresent(); // GH-90000
-        assertThat(foundAlpha.get().email()).isEqualTo("user@alpha.com [GH-90000]");
-        assertThat(foundAlpha.get().displayName()).isEqualTo("Alpha User [GH-90000]");
+        assertThat(foundAlpha.get().email()).isEqualTo("user@alpha.com");
+        assertThat(foundAlpha.get().displayName()).isEqualTo("Alpha User");
 
         assertThat(foundBeta).isPresent(); // GH-90000
-        assertThat(foundBeta.get().email()).isEqualTo("user@beta.com [GH-90000]");
-        assertThat(foundBeta.get().displayName()).isEqualTo("Beta User [GH-90000]");
+        assertThat(foundBeta.get().email()).isEqualTo("user@beta.com");
+        assertThat(foundBeta.get().displayName()).isEqualTo("Beta User");
     }
 
     // ── Cross-tenant update isolation ─────────────────────────────────────────
 
     @Test
-    @DisplayName("updating profile in tenant-A does not affect the same userId in tenant-B [GH-90000]")
+    @DisplayName("updating profile in tenant-A does not affect the same userId in tenant-B")
     void updateInTenantADoesNotAffectTenantB() { // GH-90000
         String userId = "user-update-isolation";
 
         UserProfile profileA = UserProfile.builder() // GH-90000
                 .userId(userId) // GH-90000
-                .tenantId("tenant-X [GH-90000]")
-                .email("orig@x.com [GH-90000]")
-                .displayName("Original [GH-90000]")
+                .tenantId("tenant-X")
+                .email("orig@x.com")
+                .displayName("Original")
                 .build(); // GH-90000
 
         UserProfile profileB = UserProfile.builder() // GH-90000
                 .userId(userId) // GH-90000
-                .tenantId("tenant-Y [GH-90000]")
-                .email("orig@y.com [GH-90000]")
-                .displayName("Should Stay [GH-90000]")
+                .tenantId("tenant-Y")
+                .email("orig@y.com")
+                .displayName("Should Stay")
                 .build(); // GH-90000
 
         runPromise(() -> store.upsert(profileA)); // GH-90000
@@ -136,33 +136,33 @@ class TenantIsolationTest extends EventloopTestBase {
 
         // Update tenant-X profile
         runPromise(() -> store.upsert(profileA.toBuilder() // GH-90000
-                .displayName("Changed in X [GH-90000]")
+                .displayName("Changed in X")
                 .build())); // GH-90000
 
         Optional<UserProfile> foundB = runPromise(() -> // GH-90000
                 store.findByTenantAndUser("tenant-Y", userId)); // GH-90000
 
         assertThat(foundB).isPresent(); // GH-90000
-        assertThat(foundB.get().displayName()).isEqualTo("Should Stay [GH-90000]");
+        assertThat(foundB.get().displayName()).isEqualTo("Should Stay");
     }
 
     // ── Cross-tenant delete isolation ─────────────────────────────────────────
 
     @Test
-    @DisplayName("deleting profile in tenant-A does not remove the same userId in tenant-B [GH-90000]")
+    @DisplayName("deleting profile in tenant-A does not remove the same userId in tenant-B")
     void deleteInTenantADoesNotAffectTenantB() { // GH-90000
         String userId = "user-del-isolation";
 
         UserProfile profileA = UserProfile.builder() // GH-90000
                 .userId(userId) // GH-90000
-                .tenantId("tenant-del-a [GH-90000]")
-                .email("a@del.com [GH-90000]")
+                .tenantId("tenant-del-a")
+                .email("a@del.com")
                 .build(); // GH-90000
 
         UserProfile profileB = UserProfile.builder() // GH-90000
                 .userId(userId) // GH-90000
-                .tenantId("tenant-del-b [GH-90000]")
-                .email("b@del.com [GH-90000]")
+                .tenantId("tenant-del-b")
+                .email("b@del.com")
                 .build(); // GH-90000
 
         runPromise(() -> store.upsert(profileA)); // GH-90000
@@ -177,13 +177,13 @@ class TenantIsolationTest extends EventloopTestBase {
 
         assertThat(foundA).isEmpty(); // GH-90000
         assertThat(foundB).isPresent(); // GH-90000
-        assertThat(foundB.get().email()).isEqualTo("b@del.com [GH-90000]");
+        assertThat(foundB.get().email()).isEqualTo("b@del.com");
     }
 
     // ── Multiple tenants coexistence ──────────────────────────────────────────
 
     @Test
-    @DisplayName("five tenants with distinct users do not interfere with each other [GH-90000]")
+    @DisplayName("five tenants with distinct users do not interfere with each other")
     void fiveTenantsWithDistinctUsersAreIsolated() { // GH-90000
         // Seed users for 5 tenants
         for (int t = 1; t <= 5; t++) { // GH-90000

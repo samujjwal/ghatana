@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataCloud Startup Validator Tests [GH-90000]")
+@DisplayName("DataCloud Startup Validator Tests")
 class DataCloudStartupValidatorTest {
 
     // =========================================================================
@@ -37,11 +37,11 @@ class DataCloudStartupValidatorTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("STANDALONE mode validation [GH-90000]")
+    @DisplayName("STANDALONE mode validation")
     class StandaloneModeValidation {
 
         @Test
-        @DisplayName("should pass with valid HTTPS URL in production [GH-90000]")
+        @DisplayName("should pass with valid HTTPS URL in production")
         void shouldPassWithValidHttpsUrlInProduction() { // GH-90000
             Map<String, String> env = Map.of( // GH-90000
                 "DC_DEPLOYMENT_MODE", "STANDALONE",
@@ -56,7 +56,7 @@ class DataCloudStartupValidatorTest {
         }
 
         @Test
-        @DisplayName("should pass with HTTP URL in development [GH-90000]")
+        @DisplayName("should pass with HTTP URL in development")
         void shouldPassWithHttpUrlInDevelopment() { // GH-90000
             Map<String, String> env = Map.of( // GH-90000
                 "DC_DEPLOYMENT_MODE", "STANDALONE",
@@ -70,7 +70,7 @@ class DataCloudStartupValidatorTest {
         }
 
         @Test
-        @DisplayName("should fail with blank server URL in STANDALONE mode [GH-90000]")
+        @DisplayName("should fail with blank server URL in STANDALONE mode")
         void shouldFailWithBlankServerUrlInStandaloneMode() { // GH-90000
             Map<String, String> env = Map.of( // GH-90000
                 "DC_DEPLOYMENT_MODE", "STANDALONE",
@@ -81,11 +81,11 @@ class DataCloudStartupValidatorTest {
 
             assertThatThrownBy(() -> DataCloudStartupValidator.validate(config)) // GH-90000
                 .isInstanceOf(IllegalStateException.class) // GH-90000
-                .hasMessageContaining("DC_SERVER_URL to be set [GH-90000]");
+                .hasMessageContaining("DC_SERVER_URL to be set");
         }
 
         @Test
-        @DisplayName("should fail with HTTP URL in production [GH-90000]")
+        @DisplayName("should fail with HTTP URL in production")
         void shouldFailWithHttpUrlInProduction() { // GH-90000
             Map<String, String> env = Map.of( // GH-90000
                 "DC_DEPLOYMENT_MODE", "STANDALONE",
@@ -98,11 +98,11 @@ class DataCloudStartupValidatorTest {
 
             assertThatThrownBy(() -> DataCloudStartupValidator.validate(config)) // GH-90000
                 .isInstanceOf(IllegalStateException.class) // GH-90000
-                .hasMessageContaining("must start with 'https://' [GH-90000]");
+                .hasMessageContaining("must start with 'https://'");
         }
 
         @Test
-        @DisplayName("should fail with blank auth token in production [GH-90000]")
+        @DisplayName("should fail with blank auth token in production")
         void shouldFailWithBlankAuthTokenInProduction() { // GH-90000
             Map<String, String> env = Map.of( // GH-90000
                 "DC_DEPLOYMENT_MODE", "STANDALONE",
@@ -114,7 +114,7 @@ class DataCloudStartupValidatorTest {
 
             assertThatThrownBy(() -> DataCloudStartupValidator.validate(config)) // GH-90000
                 .isInstanceOf(IllegalStateException.class) // GH-90000
-                .hasMessageContaining("DATACLOUD_HTTP_AUTH_TOKEN to be set [GH-90000]");
+                .hasMessageContaining("DATACLOUD_HTTP_AUTH_TOKEN to be set");
         }
     }
 
@@ -123,11 +123,11 @@ class DataCloudStartupValidatorTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("DISTRIBUTED mode validation [GH-90000]")
+    @DisplayName("DISTRIBUTED mode validation")
     class DistributedModeValidation {
 
         @Test
-        @DisplayName("should pass with valid HTTPS cluster URLs in production [GH-90000]")
+        @DisplayName("should pass with valid HTTPS cluster URLs in production")
         void shouldPassWithValidHttpsClusterUrlsInProduction() { // GH-90000
             Map<String, String> env = Map.of( // GH-90000
                 "DC_DEPLOYMENT_MODE", "DISTRIBUTED",
@@ -142,7 +142,7 @@ class DataCloudStartupValidatorTest {
         }
 
         @Test
-        @DisplayName("should pass with HTTP cluster URLs in development [GH-90000]")
+        @DisplayName("should pass with HTTP cluster URLs in development")
         void shouldPassWithHttpClusterUrlsInDevelopment() { // GH-90000
             Map<String, String> env = Map.of( // GH-90000
                 "DC_DEPLOYMENT_MODE", "DISTRIBUTED",
@@ -156,7 +156,7 @@ class DataCloudStartupValidatorTest {
         }
 
         @Test
-        @DisplayName("should fail with blank cluster URLs [GH-90000]")
+        @DisplayName("should fail with blank cluster URLs")
         void shouldFailWithBlankClusterUrls() { // GH-90000
             Map<String, String> env = Map.of( // GH-90000
                 "DC_DEPLOYMENT_MODE", "DISTRIBUTED",
@@ -167,11 +167,11 @@ class DataCloudStartupValidatorTest {
 
             assertThatThrownBy(() -> DataCloudStartupValidator.validate(config)) // GH-90000
                 .isInstanceOf(IllegalStateException.class) // GH-90000
-                .hasMessageContaining("DC_CLUSTER_URLS to be set [GH-90000]");
+                .hasMessageContaining("DC_CLUSTER_URLS to be set");
         }
 
         @Test
-        @DisplayName("should fail with single cluster URL [GH-90000]")
+        @DisplayName("should fail with single cluster URL")
         void shouldFailWithSingleClusterUrl() { // GH-90000
             Map<String, String> env = Map.of( // GH-90000
                 "DC_DEPLOYMENT_MODE", "DISTRIBUTED",
@@ -184,11 +184,11 @@ class DataCloudStartupValidatorTest {
 
             assertThatThrownBy(() -> DataCloudStartupValidator.validate(config)) // GH-90000
                 .isInstanceOf(IllegalStateException.class) // GH-90000
-                .hasMessageContaining("at least 2 nodes [GH-90000]");
+                .hasMessageContaining("at least 2 nodes");
         }
 
         @Test
-        @DisplayName("should fail with HTTP cluster URL in production [GH-90000]")
+        @DisplayName("should fail with HTTP cluster URL in production")
         void shouldFailWithHttpClusterUrlInProduction() { // GH-90000
             Map<String, String> env = Map.of( // GH-90000
                 "DC_DEPLOYMENT_MODE", "DISTRIBUTED",
@@ -201,11 +201,11 @@ class DataCloudStartupValidatorTest {
 
             assertThatThrownBy(() -> DataCloudStartupValidator.validate(config)) // GH-90000
                 .isInstanceOf(IllegalStateException.class) // GH-90000
-                .hasMessageContaining("must start with 'https://' [GH-90000]");
+                .hasMessageContaining("must start with 'https://'");
         }
 
         @Test
-        @DisplayName("should fail with blank auth token in production [GH-90000]")
+        @DisplayName("should fail with blank auth token in production")
         void shouldFailWithBlankAuthTokenInProduction() { // GH-90000
             Map<String, String> env = Map.of( // GH-90000
                 "DC_DEPLOYMENT_MODE", "DISTRIBUTED",
@@ -217,7 +217,7 @@ class DataCloudStartupValidatorTest {
 
             assertThatThrownBy(() -> DataCloudStartupValidator.validate(config)) // GH-90000
                 .isInstanceOf(IllegalStateException.class) // GH-90000
-                .hasMessageContaining("DATACLOUD_HTTP_AUTH_TOKEN to be set [GH-90000]");
+                .hasMessageContaining("DATACLOUD_HTTP_AUTH_TOKEN to be set");
         }
     }
 
@@ -226,11 +226,11 @@ class DataCloudStartupValidatorTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("EMBEDDED mode validation [GH-90000]")
+    @DisplayName("EMBEDDED mode validation")
     class EmbeddedModeValidation {
 
         @Test
-        @DisplayName("should pass without any URL in EMBEDDED mode [GH-90000]")
+        @DisplayName("should pass without any URL in EMBEDDED mode")
         void shouldPassWithoutAnyUrlInEmbeddedMode() { // GH-90000
             Map<String, String> env = Map.of( // GH-90000
                 "DC_DEPLOYMENT_MODE", "EMBEDDED",
@@ -243,7 +243,7 @@ class DataCloudStartupValidatorTest {
         }
 
         @Test
-        @DisplayName("should pass with any URL in EMBEDDED mode [GH-90000]")
+        @DisplayName("should pass with any URL in EMBEDDED mode")
         void shouldPassWithAnyUrlInEmbeddedMode() { // GH-90000
             Map<String, String> env = Map.of( // GH-90000
                 "DC_DEPLOYMENT_MODE", "EMBEDDED",
@@ -264,11 +264,11 @@ class DataCloudStartupValidatorTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Invalid deployment mode [GH-90000]")
+    @DisplayName("Invalid deployment mode")
     class InvalidDeploymentMode {
 
         @Test
-        @DisplayName("should fail with invalid deployment mode [GH-90000]")
+        @DisplayName("should fail with invalid deployment mode")
         void shouldFailWithInvalidDeploymentMode() { // GH-90000
             Map<String, String> env = Map.of( // GH-90000
                 "DC_DEPLOYMENT_MODE", "INVALID_MODE",
@@ -279,7 +279,7 @@ class DataCloudStartupValidatorTest {
 
             assertThatThrownBy(() -> DataCloudStartupValidator.validate(config)) // GH-90000
                 .isInstanceOf(IllegalStateException.class) // GH-90000
-                .hasMessageContaining("EMBEDDED, STANDALONE, or DISTRIBUTED [GH-90000]");
+                .hasMessageContaining("EMBEDDED, STANDALONE, or DISTRIBUTED");
         }
     }
 }

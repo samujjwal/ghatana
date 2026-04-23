@@ -26,7 +26,7 @@ import static org.mockito.Mockito.when;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("TranscriptionJobConsumer Tests [GH-90000]")
+@DisplayName("TranscriptionJobConsumer Tests")
 class TranscriptionJobConsumerTest {
 
     @Mock
@@ -36,18 +36,18 @@ class TranscriptionJobConsumerTest {
     private MetricsCollector metricsCollector;
 
     @Test
-    @DisplayName("start fails when job processor is missing [GH-90000]")
+    @DisplayName("start fails when job processor is missing")
     void startFailsWithoutProcessor() { // GH-90000
         TranscriptionJobConsumer consumer = new TranscriptionJobConsumer("av.jobs", consumerStrategy, metricsCollector); // GH-90000
 
         var promise = consumer.start(); // GH-90000
 
         assertThat(promise.getException()).isInstanceOf(IllegalStateException.class); // GH-90000
-        assertThat(promise.getException()).hasMessageContaining("Job processor not set [GH-90000]");
+        assertThat(promise.getException()).hasMessageContaining("Job processor not set");
     }
 
     @Test
-    @DisplayName("start and stop delegate lifecycle to strategy [GH-90000]")
+    @DisplayName("start and stop delegate lifecycle to strategy")
     void startAndStopDelegateLifecycle() { // GH-90000
         TranscriptionJobConsumer consumer = new TranscriptionJobConsumer("av.jobs", consumerStrategy, metricsCollector); // GH-90000
         consumer.setJobProcessor(job -> Promise.complete()); // GH-90000
@@ -69,7 +69,7 @@ class TranscriptionJobConsumerTest {
     }
 
     @Test
-    @DisplayName("start without processor does not move consumer to STARTED [GH-90000]")
+    @DisplayName("start without processor does not move consumer to STARTED")
     void startWithoutProcessorDoesNotChangeState() { // GH-90000
         TranscriptionJobConsumer consumer = new TranscriptionJobConsumer("av.jobs", consumerStrategy, metricsCollector); // GH-90000
 
@@ -85,16 +85,16 @@ class TranscriptionJobConsumerTest {
     }
 
     @Test
-    @DisplayName("message handler rethrows processor failure for strategy nack/retry [GH-90000]")
+    @DisplayName("message handler rethrows processor failure for strategy nack/retry")
     void messageHandlerRethrowsProcessorFailure() { // GH-90000
         TranscriptionJobConsumer consumer = new TranscriptionJobConsumer("av.jobs", consumerStrategy, metricsCollector); // GH-90000
-        consumer.setJobProcessor(job -> Promise.ofException(new RuntimeException("simulated failure [GH-90000]")));
+        consumer.setJobProcessor(job -> Promise.ofException(new RuntimeException("simulated failure")));
 
         when(consumerStrategy.start()).thenReturn(Promise.complete()); // GH-90000
 
         consumer.start().getResult(); // GH-90000
 
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         ArgumentCaptor<Consumer<String>> handlerCaptor =
             (ArgumentCaptor<Consumer<String>>) (ArgumentCaptor<?>) ArgumentCaptor.forClass(Consumer.class); // GH-90000
         verify(consumerStrategy).setMessageHandler(handlerCaptor.capture()); // GH-90000
@@ -105,6 +105,6 @@ class TranscriptionJobConsumerTest {
 
         assertThatThrownBy(() -> handlerCaptor.getValue().accept(payload)) // GH-90000
             .isInstanceOf(RuntimeException.class) // GH-90000
-            .hasMessageContaining("simulated failure [GH-90000]");
+            .hasMessageContaining("simulated failure");
     }
 }

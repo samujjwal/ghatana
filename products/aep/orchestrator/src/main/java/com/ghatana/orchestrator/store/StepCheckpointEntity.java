@@ -33,6 +33,12 @@ import org.hibernate.type.SqlTypes;
             @Index(name = "idx_step_checkpoints_status", columnList = "status"),
             @Index(name = "idx_step_checkpoints_started_at", columnList = "started_at")
         })
+/**
+ * @doc.type class
+ * @doc.purpose Provides step checkpoint entity functionality.
+ * @doc.layer product
+ * @doc.pattern Entity
+ */
 public class StepCheckpointEntity {
 
     @Id

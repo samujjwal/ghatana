@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test video streaming, adaptive bitrate, and quality of service.
  */
-@DisplayName("Video Streaming Tests [GH-90000]")
+@DisplayName("Video Streaming Tests")
 class VideoStreamingTest {
 
     private final VideoStreamSession session = new VideoStreamSession();

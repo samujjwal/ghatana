@@ -41,7 +41,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("AepComplianceService [GH-90000]")
+@DisplayName("AepComplianceService")
 class AepComplianceServiceTest {
 
     private static final String TENANT     = "tenant-gamma";
@@ -67,20 +67,20 @@ class AepComplianceServiceTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Construction [GH-90000]")
+    @DisplayName("Construction")
     class ConstructionTests {
 
         @Test
-        @DisplayName("null client → NullPointerException [GH-90000]")
+        @DisplayName("null client → NullPointerException")
         void nullClient_throwsNpe() { // GH-90000
             assertThatThrownBy(() -> new AepComplianceService(null)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("registerCollection adds custom collection to the registry [GH-90000]")
+        @DisplayName("registerCollection adds custom collection to the registry")
         void registerCollection_addsToRegistry() { // GH-90000
-            service.registerCollection("my_custom_logs [GH-90000]");
+            service.registerCollection("my_custom_logs");
 
             // Trigger accessRequest; the custom collection must also be queried
             stubQueryEmpty(TENANT, "my_custom_logs"); // GH-90000
@@ -88,14 +88,14 @@ class AepComplianceServiceTest {
 
             AepComplianceReport report = service.accessRequest(TENANT, SUBJECT_ID).getResult(); // GH-90000
 
-            assertThat(report.breakdown()).containsKey("my_custom_logs [GH-90000]");
+            assertThat(report.breakdown()).containsKey("my_custom_logs");
         }
 
         @Test
-        @DisplayName("registerCollection is idempotent — duplicate adds are ignored [GH-90000]")
+        @DisplayName("registerCollection is idempotent — duplicate adds are ignored")
         void registerCollection_idempotent() { // GH-90000
-            service.registerCollection("my_logs [GH-90000]");
-            service.registerCollection("my_logs [GH-90000]"); // duplicate
+            service.registerCollection("my_logs");
+            service.registerCollection("my_logs"); // duplicate
 
             stubQueryEmpty(TENANT, "my_logs"); // GH-90000
             stubAllDefaultCollectionsEmpty(new String[0]); // GH-90000
@@ -103,7 +103,7 @@ class AepComplianceServiceTest {
             AepComplianceReport report = service.accessRequest(TENANT, SUBJECT_ID).getResult(); // GH-90000
 
             // Still only one entry for the collection
-            assertThat(report.breakdown().get("my_logs [GH-90000]")).isEqualTo(0L);
+            assertThat(report.breakdown().get("my_logs")).isEqualTo(0L);
         }
     }
 
@@ -112,13 +112,13 @@ class AepComplianceServiceTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("accessRequest (Right of Access) [GH-90000]")
+    @DisplayName("accessRequest (Right of Access)")
     class AccessRequestTests {
 
         @Test
-        @DisplayName("returns success report with correct total when records found [GH-90000]")
+        @DisplayName("returns success report with correct total when records found")
         void withMatchingRecords_returnsTotalCount() { // GH-90000
-            Entity e1 = entity("e1 [GH-90000]"), e2 = entity("e2 [GH-90000]");
+            Entity e1 = entity("e1"), e2 = entity("e2");
             stubQuery(TENANT, "aep_patterns", List.of(e1, e2)); // GH-90000
             stubQueryEmpty(TENANT, "aep_pipelines"); // GH-90000
             stubQueryEmpty(TENANT, "agent-registry"); // GH-90000
@@ -128,7 +128,7 @@ class AepComplianceServiceTest {
             AepComplianceReport report = service.accessRequest(TENANT, SUBJECT_ID).getResult(); // GH-90000
 
             assertThat(report.success()).isTrue(); // GH-90000
-            assertThat(report.operation()).isEqualTo("GDPR_ACCESS [GH-90000]");
+            assertThat(report.operation()).isEqualTo("GDPR_ACCESS");
             assertThat(report.tenantId()).isEqualTo(TENANT); // GH-90000
             assertThat(report.subjectId()).isEqualTo(SUBJECT_ID); // GH-90000
             assertThat(report.recordsAffected()).isEqualTo(2L); // GH-90000
@@ -136,12 +136,12 @@ class AepComplianceServiceTest {
         }
 
         @Test
-        @DisplayName("aggregates counts across multiple collections [GH-90000]")
+        @DisplayName("aggregates counts across multiple collections")
         void multipleCollections_aggregatesTotal() { // GH-90000
-            stubQuery(TENANT, "aep_patterns",  List.of(entity("p1 [GH-90000]")));
-            stubQuery(TENANT, "aep_pipelines", List.of(entity("pl1 [GH-90000]"), entity("pl2 [GH-90000]")));
+            stubQuery(TENANT, "aep_patterns",  List.of(entity("p1")));
+            stubQuery(TENANT, "aep_pipelines", List.of(entity("pl1"), entity("pl2")));
             stubQueryEmpty(TENANT, "agent-registry"); // GH-90000
-            stubQuery(TENANT, "dc_memory",     List.of(entity("m1 [GH-90000]"), entity("m2 [GH-90000]"), entity("m3 [GH-90000]")));
+            stubQuery(TENANT, "dc_memory",     List.of(entity("m1"), entity("m2"), entity("m3")));
             stubQueryEmpty(TENANT, "aep_audit"); // GH-90000
 
             AepComplianceReport report = service.accessRequest(TENANT, SUBJECT_ID).getResult(); // GH-90000
@@ -156,7 +156,7 @@ class AepComplianceServiceTest {
         }
 
         @Test
-        @DisplayName("returns zero total when no records found [GH-90000]")
+        @DisplayName("returns zero total when no records found")
         void noRecords_returnsTotalOfZero() { // GH-90000
             stubAllDefaultCollectionsEmpty(new String[0]); // GH-90000
 
@@ -167,13 +167,13 @@ class AepComplianceServiceTest {
         }
 
         @Test
-        @DisplayName("query failure for one collection does NOT fail the whole request [GH-90000]")
+        @DisplayName("query failure for one collection does NOT fail the whole request")
         void oneCollectionQueryFails_rest_succeeds() { // GH-90000
             // "aep_patterns" throws
-            when(client.query(eq(TENANT), eq("aep_patterns [GH-90000]"), any(Query.class)))
-                    .thenReturn(Promise.ofException(new RuntimeException("network error [GH-90000]")));
+            when(client.query(eq(TENANT), eq("aep_patterns"), any(Query.class)))
+                    .thenReturn(Promise.ofException(new RuntimeException("network error")));
             stubQueryEmpty(TENANT, "aep_pipelines"); // GH-90000
-            stubQuery(TENANT, "agent-registry", List.of(entity("a1 [GH-90000]")));
+            stubQuery(TENANT, "agent-registry", List.of(entity("a1")));
             stubQueryEmpty(TENANT, "dc_memory"); // GH-90000
             stubQueryEmpty(TENANT, "aep_audit"); // GH-90000
 
@@ -188,7 +188,7 @@ class AepComplianceServiceTest {
         }
 
         @Test
-        @DisplayName("groups subjects through the right SUBJECT_ID_FIELD filter [GH-90000]")
+        @DisplayName("groups subjects through the right SUBJECT_ID_FIELD filter")
         void queryFilter_usesSubjectIdField() { // GH-90000
             stubAllDefaultCollectionsEmpty(new String[0]); // GH-90000
 
@@ -206,22 +206,22 @@ class AepComplianceServiceTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("deletionRequest (Right to Erasure) [GH-90000]")
+    @DisplayName("deletionRequest (Right to Erasure)")
     class DeletionRequestTests {
 
         @Test
-        @DisplayName("deletes all matching entities and returns the deleted count [GH-90000]")
+        @DisplayName("deletes all matching entities and returns the deleted count")
         void matchingEntities_areDeleted() { // GH-90000
-            Entity e1 = entity("e1 [GH-90000]"), e2 = entity("e2 [GH-90000]");
+            Entity e1 = entity("e1"), e2 = entity("e2");
             stubQuery(TENANT, "aep_patterns", List.of(e1, e2)); // GH-90000
-            stubAllDefaultCollectionsEmpty("aep_patterns [GH-90000]");
-            when(client.delete(eq(TENANT), eq("aep_patterns [GH-90000]"), anyString()))
+            stubAllDefaultCollectionsEmpty("aep_patterns");
+            when(client.delete(eq(TENANT), eq("aep_patterns"), anyString()))
                     .thenReturn(Promise.of(null)); // GH-90000
 
             AepComplianceReport report = service.deletionRequest(TENANT, SUBJECT_ID).getResult(); // GH-90000
 
             assertThat(report.success()).isTrue(); // GH-90000
-            assertThat(report.operation()).isEqualTo("GDPR_ERASURE [GH-90000]");
+            assertThat(report.operation()).isEqualTo("GDPR_ERASURE");
             assertThat(report.recordsAffected()).isEqualTo(2L); // GH-90000
             assertThat(report.breakdown()).containsEntry("aep_patterns", 2L); // GH-90000
             verify(client).delete(TENANT, "aep_patterns", "e1"); // GH-90000
@@ -229,7 +229,7 @@ class AepComplianceServiceTest {
         }
 
         @Test
-        @DisplayName("no matching entities → zero deletions and success [GH-90000]")
+        @DisplayName("no matching entities → zero deletions and success")
         void noMatchingEntities_returnsZeroDeletions() { // GH-90000
             stubAllDefaultCollectionsEmpty(new String[0]); // GH-90000
 
@@ -240,11 +240,11 @@ class AepComplianceServiceTest {
         }
 
         @Test
-        @DisplayName("deletion failure in one collection adds a warning but succeeds overall [GH-90000]")
+        @DisplayName("deletion failure in one collection adds a warning but succeeds overall")
         void oneCollectionFails_addsWarningAndContinues() { // GH-90000
-            when(client.query(eq(TENANT), eq("aep_patterns [GH-90000]"), any(Query.class)))
-                    .thenReturn(Promise.ofException(new RuntimeException("disk full [GH-90000]")));
-            stubAllDefaultCollectionsEmpty("aep_patterns [GH-90000]");
+            when(client.query(eq(TENANT), eq("aep_patterns"), any(Query.class)))
+                    .thenReturn(Promise.ofException(new RuntimeException("disk full")));
+            stubAllDefaultCollectionsEmpty("aep_patterns");
 
             AepComplianceReport report = service.deletionRequest(TENANT, SUBJECT_ID).getResult(); // GH-90000
 
@@ -253,10 +253,10 @@ class AepComplianceServiceTest {
         }
 
         @Test
-        @DisplayName("aggregates deletions across all collections [GH-90000]")
+        @DisplayName("aggregates deletions across all collections")
         void aggregatesDeletionsAcrossCollections() { // GH-90000
-            stubQuery(TENANT, "aep_patterns",  List.of(entity("p1 [GH-90000]")));
-            stubQuery(TENANT, "aep_pipelines", List.of(entity("pl1 [GH-90000]"), entity("pl2 [GH-90000]")));
+            stubQuery(TENANT, "aep_patterns",  List.of(entity("p1")));
+            stubQuery(TENANT, "aep_pipelines", List.of(entity("pl1"), entity("pl2")));
             stubAllDefaultCollectionsEmpty("aep_patterns", "aep_pipelines"); // GH-90000
             when(client.delete(any(), any(), any())).thenReturn(Promise.of(null)); // GH-90000
 
@@ -266,15 +266,15 @@ class AepComplianceServiceTest {
         }
 
         @Test
-        @DisplayName("continues deleting until all subject pages are exhausted [GH-90000]")
+        @DisplayName("continues deleting until all subject pages are exhausted")
         void paginatedDeletions_deleteAllPages() { // GH-90000
-            when(client.query(eq(TENANT), eq("aep_patterns [GH-90000]"), any(Query.class)))
+            when(client.query(eq(TENANT), eq("aep_patterns"), any(Query.class)))
                     .thenReturn( // GH-90000
-                            Promise.of(List.of(entity("p1 [GH-90000]"), entity("p2 [GH-90000]"))),
-                            Promise.of(List.of(entity("p3 [GH-90000]"))),
+                            Promise.of(List.of(entity("p1"), entity("p2"))),
+                            Promise.of(List.of(entity("p3"))),
                             Promise.of(List.of())); // GH-90000
-            stubAllDefaultCollectionsEmpty("aep_patterns [GH-90000]");
-            when(client.delete(eq(TENANT), eq("aep_patterns [GH-90000]"), anyString()))
+            stubAllDefaultCollectionsEmpty("aep_patterns");
+            when(client.delete(eq(TENANT), eq("aep_patterns"), anyString()))
                     .thenReturn(Promise.of(null)); // GH-90000
 
             AepComplianceReport report = service.deletionRequest(TENANT, SUBJECT_ID).getResult(); // GH-90000
@@ -283,11 +283,11 @@ class AepComplianceServiceTest {
             verify(client).delete(TENANT, "aep_patterns", "p1"); // GH-90000
             verify(client).delete(TENANT, "aep_patterns", "p2"); // GH-90000
             verify(client).delete(TENANT, "aep_patterns", "p3"); // GH-90000
-            verify(client, times(3)).query(eq(TENANT), eq("aep_patterns [GH-90000]"), any(Query.class));
+            verify(client, times(3)).query(eq(TENANT), eq("aep_patterns"), any(Query.class));
         }
 
         @Test
-        @DisplayName("runs post-erasure cleanup hooks after successful deletion [GH-90000]")
+        @DisplayName("runs post-erasure cleanup hooks after successful deletion")
         void postErasureCleanupHooks_areInvoked() { // GH-90000
             AtomicBoolean cleanupInvoked = new AtomicBoolean(false); // GH-90000
             service = new AepComplianceService(client, List.of((tenantId, subjectId, report) -> { // GH-90000
@@ -308,16 +308,16 @@ class AepComplianceServiceTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("correctionRequest (Right to Correction) [GH-90000]")
+    @DisplayName("correctionRequest (Right to Correction)")
     class CorrectionRequestTests {
 
         @Test
-        @DisplayName("applies corrections and saves each updated entity [GH-90000]")
+        @DisplayName("applies corrections and saves each updated entity")
         void appliesCorrections_savesUpdatedEntities() { // GH-90000
             Entity e1 = entity("c1", Map.of("name", "Alice", "_subjectId", SUBJECT_ID)); // GH-90000
             stubQuery(TENANT, "aep_patterns", List.of(e1)); // GH-90000
-            when(client.save(eq(TENANT), eq("aep_patterns [GH-90000]"), any()))
-                    .thenReturn(Promise.of(entity("c1 [GH-90000]")));
+            when(client.save(eq(TENANT), eq("aep_patterns"), any()))
+                    .thenReturn(Promise.of(entity("c1")));
 
             Map<String, Object> corrections = Map.of("name", "Alice Updated"); // GH-90000
             AepComplianceReport report = service
@@ -325,17 +325,17 @@ class AepComplianceServiceTest {
                     .getResult(); // GH-90000
 
             assertThat(report.success()).isTrue(); // GH-90000
-            assertThat(report.operation()).isEqualTo("GDPR_CORRECTION [GH-90000]");
+            assertThat(report.operation()).isEqualTo("GDPR_CORRECTION");
             assertThat(report.recordsAffected()).isEqualTo(1L); // GH-90000
 
             // Verify save was called with the correction applied
             ArgumentCaptor<Map<String, Object>> dataCaptor = mapCaptor(); // GH-90000
-            verify(client).save(eq(TENANT), eq("aep_patterns [GH-90000]"), dataCaptor.capture());
+            verify(client).save(eq(TENANT), eq("aep_patterns"), dataCaptor.capture());
             assertThat(dataCaptor.getValue()).containsEntry("name", "Alice Updated"); // GH-90000
         }
 
         @Test
-        @DisplayName("correction on empty collection returns 0 affected [GH-90000]")
+        @DisplayName("correction on empty collection returns 0 affected")
         void emptyCollection_returnsZero() { // GH-90000
             stubQueryEmpty(TENANT, "aep_patterns"); // GH-90000
 
@@ -348,10 +348,10 @@ class AepComplianceServiceTest {
         }
 
         @Test
-        @DisplayName("query failure → returns failure report [GH-90000]")
+        @DisplayName("query failure → returns failure report")
         void queryFailure_returnsFailureReport() { // GH-90000
-            when(client.query(eq(TENANT), eq("aep_patterns [GH-90000]"), any(Query.class)))
-                    .thenReturn(Promise.ofException(new RuntimeException("timeout [GH-90000]")));
+            when(client.query(eq(TENANT), eq("aep_patterns"), any(Query.class)))
+                    .thenReturn(Promise.ofException(new RuntimeException("timeout")));
 
             AepComplianceReport report = service
                     .correctionRequest(TENANT, "aep_patterns", SUBJECT_ID, Map.of("x", "y")) // GH-90000
@@ -361,18 +361,18 @@ class AepComplianceServiceTest {
         }
 
         @Test
-        @DisplayName("corrected entities carry _correctedAt timestamp [GH-90000]")
+        @DisplayName("corrected entities carry _correctedAt timestamp")
         void correctedEntities_haveCorrectedAtField() { // GH-90000
             Entity e1 = entity("u1", Map.of("email", "a@b.com", "_subjectId", SUBJECT_ID)); // GH-90000
             stubQuery(TENANT, "dc_memory", List.of(e1)); // GH-90000
             var dataCaptor = mapCaptor(); // GH-90000
-            when(client.save(eq(TENANT), eq("dc_memory [GH-90000]"), dataCaptor.capture()))
-                    .thenReturn(Promise.of(entity("u1 [GH-90000]")));
+            when(client.save(eq(TENANT), eq("dc_memory"), dataCaptor.capture()))
+                    .thenReturn(Promise.of(entity("u1")));
 
             service.correctionRequest(TENANT, "dc_memory", SUBJECT_ID, // GH-90000
                     Map.of("email", "new@b.com")).getResult(); // GH-90000
 
-            assertThat(dataCaptor.getValue()).containsKey("_correctedAt [GH-90000]");
+            assertThat(dataCaptor.getValue()).containsKey("_correctedAt");
         }
     }
 
@@ -381,51 +381,51 @@ class AepComplianceServiceTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("portabilityRequest (Right to Portability) [GH-90000]")
+    @DisplayName("portabilityRequest (Right to Portability)")
     class PortabilityRequestTests {
 
         @Test
-        @DisplayName("exports all collections into structured map with correct keys [GH-90000]")
+        @DisplayName("exports all collections into structured map with correct keys")
         void exportsAllCollections_withStructuredKeys() { // GH-90000
             stubAllDefaultCollectionsEmpty(new String[0]); // GH-90000
 
             Map<String, Object> export = service.portabilityRequest(TENANT, SUBJECT_ID).getResult(); // GH-90000
 
-            assertThat(export).containsKey("subjectId [GH-90000]");
-            assertThat(export).containsKey("tenantId [GH-90000]");
-            assertThat(export).containsKey("exportedAt [GH-90000]");
-            assertThat(export).containsKey("collections [GH-90000]");
-            assertThat(export.get("subjectId [GH-90000]")).isEqualTo(SUBJECT_ID);
-            assertThat(export.get("tenantId [GH-90000]")).isEqualTo(TENANT);
+            assertThat(export).containsKey("subjectId");
+            assertThat(export).containsKey("tenantId");
+            assertThat(export).containsKey("exportedAt");
+            assertThat(export).containsKey("collections");
+            assertThat(export.get("subjectId")).isEqualTo(SUBJECT_ID);
+            assertThat(export.get("tenantId")).isEqualTo(TENANT);
         }
 
         @Test
-        @DisplayName("exported collections map contains default AEP collections [GH-90000]")
+        @DisplayName("exported collections map contains default AEP collections")
         void exportedCollections_mapContainsDefaultCollections() { // GH-90000
             stubAllDefaultCollectionsEmpty(new String[0]); // GH-90000
 
             Map<String, Object> export = service.portabilityRequest(TENANT, SUBJECT_ID).getResult(); // GH-90000
 
-            @SuppressWarnings("unchecked [GH-90000]")
-            Map<String, Object> collections = (Map<String, Object>) export.get("collections [GH-90000]");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> collections = (Map<String, Object>) export.get("collections");
             assertThat(collections).containsKeys("aep_patterns", "aep_pipelines", // GH-90000
                     "agent-registry", "dc_memory", "aep_audit");
         }
 
         @Test
-        @DisplayName("entity data is included in the export [GH-90000]")
+        @DisplayName("entity data is included in the export")
         void entityData_isIncludedInExport() { // GH-90000
             Entity e1 = entity("p1", Map.of("name", "my-pattern", "_subjectId", SUBJECT_ID)); // GH-90000
             stubQuery(TENANT, "aep_patterns", List.of(e1)); // GH-90000
-            stubAllDefaultCollectionsEmpty("aep_patterns [GH-90000]");
+            stubAllDefaultCollectionsEmpty("aep_patterns");
 
             Map<String, Object> export = service.portabilityRequest(TENANT, SUBJECT_ID).getResult(); // GH-90000
 
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, List<Map<String, Object>>> collections =
-                    (Map<String, List<Map<String, Object>>>) export.get("collections [GH-90000]");
-            assertThat(collections.get("aep_patterns [GH-90000]")).hasSize(1);
-            assertThat(collections.get("aep_patterns [GH-90000]").get(0)).containsEntry("name", "my-pattern");
+                    (Map<String, List<Map<String, Object>>>) export.get("collections");
+            assertThat(collections.get("aep_patterns")).hasSize(1);
+            assertThat(collections.get("aep_patterns").get(0)).containsEntry("name", "my-pattern");
         }
     }
 
@@ -434,11 +434,11 @@ class AepComplianceServiceTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("ccpaOptOut (CCPA Right to Opt-Out) [GH-90000]")
+    @DisplayName("ccpaOptOut (CCPA Right to Opt-Out)")
     class CcpaOptOutTests {
 
         @Test
-        @DisplayName("saves opt-out record and returns success report [GH-90000]")
+        @DisplayName("saves opt-out record and returns success report")
         void savesOptOutRecord_returnsSuccessReport() { // GH-90000
             when(client.save(eq(TENANT), eq(AepComplianceService.OPT_OUT_COLLECTION), any())) // GH-90000
                     .thenReturn(Promise.of(entity(CONSUMER_ID))); // GH-90000
@@ -446,14 +446,14 @@ class AepComplianceServiceTest {
             AepComplianceReport report = service.ccpaOptOut(TENANT, CONSUMER_ID).getResult(); // GH-90000
 
             assertThat(report.success()).isTrue(); // GH-90000
-            assertThat(report.operation()).isEqualTo("CCPA_OPT_OUT [GH-90000]");
+            assertThat(report.operation()).isEqualTo("CCPA_OPT_OUT");
             assertThat(report.recordsAffected()).isEqualTo(1L); // GH-90000
             assertThat(report.breakdown()) // GH-90000
                     .containsEntry(AepComplianceService.OPT_OUT_COLLECTION, 1L); // GH-90000
         }
 
         @Test
-        @DisplayName("opt-out record contains required fields [GH-90000]")
+        @DisplayName("opt-out record contains required fields")
         void optOutRecord_containsRequiredFields() { // GH-90000
             var dataCaptor = mapCaptor(); // GH-90000
             when(client.save(eq(TENANT), eq(AepComplianceService.OPT_OUT_COLLECTION), dataCaptor.capture())) // GH-90000
@@ -467,11 +467,11 @@ class AepComplianceServiceTest {
                     .containsEntry("_ccpaOptOut", true) // GH-90000
                     .containsEntry("consumerId",  CONSUMER_ID) // GH-90000
                     .containsEntry("tenantId",    TENANT) // GH-90000
-                    .containsKey("recordedAt [GH-90000]");
+                    .containsKey("recordedAt");
         }
 
         @Test
-        @DisplayName("ccpa opt-out uses consumerId as entity id for idempotent upsert [GH-90000]")
+        @DisplayName("ccpa opt-out uses consumerId as entity id for idempotent upsert")
         void optOut_usesConsumerIdAsEntityId() throws Exception { // GH-90000
             var dataCaptor = mapCaptor(); // GH-90000
             when(client.save(eq(TENANT), eq(AepComplianceService.OPT_OUT_COLLECTION), dataCaptor.capture())) // GH-90000
@@ -479,14 +479,14 @@ class AepComplianceServiceTest {
 
             service.ccpaOptOut(TENANT, CONSUMER_ID).getResult(); // GH-90000
 
-            assertThat(dataCaptor.getValue().get("id [GH-90000]")).isEqualTo(CONSUMER_ID);
+            assertThat(dataCaptor.getValue().get("id")).isEqualTo(CONSUMER_ID);
         }
 
         @Test
-        @DisplayName("save failure → returns failure report (not exception) [GH-90000]")
+        @DisplayName("save failure → returns failure report (not exception)")
         void saveFailure_returnsFailureReport() { // GH-90000
             when(client.save(eq(TENANT), eq(AepComplianceService.OPT_OUT_COLLECTION), any())) // GH-90000
-                    .thenReturn(Promise.ofException(new RuntimeException("write failed [GH-90000]")));
+                    .thenReturn(Promise.ofException(new RuntimeException("write failed")));
 
             AepComplianceReport report = service.ccpaOptOut(TENANT, CONSUMER_ID).getResult(); // GH-90000
 

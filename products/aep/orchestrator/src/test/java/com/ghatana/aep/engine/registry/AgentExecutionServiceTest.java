@@ -43,7 +43,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AgentExecutionService [GH-90000]")
+@DisplayName("AgentExecutionService")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class AgentExecutionServiceTest extends EventloopTestBase {
 
@@ -69,35 +69,35 @@ class AgentExecutionServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("execute records history and memory after a successful completion [GH-90000]")
+    @DisplayName("execute records history and memory after a successful completion")
     void executeRecordsHistoryAndMemory() { // GH-90000
-        when(agentRegistry.resolve("agent-1 [GH-90000]"))
-            .thenReturn(Promise.of(Optional.of(new TestAgent("agent-1 [GH-90000]"))));
+        when(agentRegistry.resolve("agent-1"))
+            .thenReturn(Promise.of(Optional.of(new TestAgent("agent-1"))));
         when(llmGateway.complete(any(CompletionRequest.class))) // GH-90000
             .thenReturn(Promise.of(CompletionResult.builder() // GH-90000
-                .text("result-text [GH-90000]")
+                .text("result-text")
                 .tokensUsed(42) // GH-90000
                 .build())); // GH-90000
 
         AgentExecutionService.ExecutionResult result =
             runPromise(() -> service.execute("agent-1", Map.of("message", "hello"))); // GH-90000
 
-        assertThat(result.status()).isEqualTo("success [GH-90000]");
-        assertThat(result.output()).isEqualTo("result-text [GH-90000]");
+        assertThat(result.status()).isEqualTo("success");
+        assertThat(result.output()).isEqualTo("result-text");
 
         ArgumentCaptor<AgentExecutionService.ExecutionRecord> recordCaptor =
             ArgumentCaptor.forClass(AgentExecutionService.ExecutionRecord.class); // GH-90000
-        verify(historyStore).append(eq("agent-1 [GH-90000]"), recordCaptor.capture());
-        verify(memoryClient).recordExecution(eq("agent-1 [GH-90000]"), eq(result.executionId()),
-            eq(Map.of("message", "hello")), eq("result-text [GH-90000]"), eq(result.durationMs()));
+        verify(historyStore).append(eq("agent-1"), recordCaptor.capture());
+        verify(memoryClient).recordExecution(eq("agent-1"), eq(result.executionId()),
+            eq(Map.of("message", "hello")), eq("result-text"), eq(result.durationMs()));
 
         AgentExecutionService.ExecutionRecord record = recordCaptor.getValue(); // GH-90000
-        assertThat(record.status()).isEqualTo("success [GH-90000]");
-        assertThat(record.output()).isEqualTo("result-text [GH-90000]");
+        assertThat(record.status()).isEqualTo("success");
+        assertThat(record.output()).isEqualTo("result-text");
     }
 
     @Test
-    @DisplayName("getHistory delegates to the configured history store [GH-90000]")
+    @DisplayName("getHistory delegates to the configured history store")
     void getHistoryDelegates() { // GH-90000
         List<AgentExecutionService.ExecutionRecord> records = List.of( // GH-90000
             new AgentExecutionService.ExecutionRecord("exec-1", "success", "in", "out", 12L, "2026-04-15T00:00:00Z")); // GH-90000
@@ -110,29 +110,29 @@ class AgentExecutionServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("getMemory delegates to the configured memory client [GH-90000]")
+    @DisplayName("getMemory delegates to the configured memory client")
     void getMemoryDelegates() { // GH-90000
         AgentExecutionService.AgentMemory memory = new AgentExecutionService.AgentMemory( // GH-90000
             List.of(Map.of("id", "ep-1")), // GH-90000
             Map.of("count", 1), // GH-90000
             Map.of("count", 0), // GH-90000
             "2026-04-15T00:00:00Z");
-        when(memoryClient.getMemory("agent-9 [GH-90000]")).thenReturn(Promise.of(memory));
+        when(memoryClient.getMemory("agent-9")).thenReturn(Promise.of(memory));
 
         AgentExecutionService.AgentMemory result =
-            runPromise(() -> service.getMemory("agent-9 [GH-90000]"));
+            runPromise(() -> service.getMemory("agent-9"));
 
         assertThat(result).isEqualTo(memory); // GH-90000
     }
 
     @Test
-    @DisplayName("execute rejects registry entries marked as discovery-only [GH-90000]")
+    @DisplayName("execute rejects registry entries marked as discovery-only")
     void executeRejectsDiscoveryOnlyAgents() { // GH-90000
-        when(agentRegistry.resolve("agent-placeholder [GH-90000]"))
+        when(agentRegistry.resolve("agent-placeholder"))
             .thenReturn(Promise.of(Optional.of(new TestAgent( // GH-90000
                 AgentDescriptor.builder() // GH-90000
-                    .agentId("agent-placeholder [GH-90000]")
-                    .name("Placeholder Agent [GH-90000]")
+                    .agentId("agent-placeholder")
+                    .name("Placeholder Agent")
                     .type(AgentType.PROBABILISTIC) // GH-90000
                     .metadata(Map.of( // GH-90000
                         "executable", false,
@@ -143,7 +143,7 @@ class AgentExecutionServiceTest extends EventloopTestBase {
 
         assertThatThrownBy(() -> runPromise(() -> service.execute("agent-placeholder", Map.of("message", "hello")))) // GH-90000
             .isInstanceOf(IllegalStateException.class) // GH-90000
-            .hasMessageContaining("cannot be executed [GH-90000]");
+            .hasMessageContaining("cannot be executed");
 
         verify(llmGateway, never()).complete(any(CompletionRequest.class)); // GH-90000
     }
@@ -155,7 +155,7 @@ class AgentExecutionServiceTest extends EventloopTestBase {
         private TestAgent(String agentId) { // GH-90000
             this(AgentDescriptor.builder() // GH-90000
                 .agentId(agentId) // GH-90000
-                .name("Test Agent [GH-90000]")
+                .name("Test Agent")
                 .type(AgentType.PROBABILISTIC) // GH-90000
                 .build()); // GH-90000
         }
@@ -181,7 +181,7 @@ class AgentExecutionServiceTest extends EventloopTestBase {
 
         @Override
         public @NotNull Promise<HealthStatus> healthCheck() { // GH-90000
-            return Promise.of(HealthStatus.healthy("ok [GH-90000]"));
+            return Promise.of(HealthStatus.healthy("ok"));
         }
 
         @Override

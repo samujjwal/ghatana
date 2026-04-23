@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer test
  * @doc.pattern Integration Test
  */
-@DisplayName("AI and Plugin Integration Tests [GH-90000]")
+@DisplayName("AI and Plugin Integration Tests")
 class AIPluginIntegrationTest extends EventloopTestBase {
 
     @Mock
@@ -49,11 +49,11 @@ class AIPluginIntegrationTest extends EventloopTestBase {
         aiService = new AIAssistServiceImpl(llmProvider, metrics); // GH-90000
         pluginRegistry = new PluginRegistryImpl(metrics); // GH-90000
 
-        when(llmProvider.getName()).thenReturn("OpenAI [GH-90000]");
+        when(llmProvider.getName()).thenReturn("OpenAI");
     }
 
     @Test
-    @DisplayName("[INTEGRATION-005]: ai_assist_with_active_plugin [GH-90000]")
+    @DisplayName("[INTEGRATION-005]: ai_assist_with_active_plugin")
     void aiAssistWithActivePlugin() { // GH-90000
         // Given - Register and activate a data processing plugin
         PluginRegistry.PluginMetadata plugin = new PluginRegistry.PluginMetadata( // GH-90000
@@ -64,7 +64,7 @@ class AIPluginIntegrationTest extends EventloopTestBase {
             "tenant-alpha",
             PluginRegistry.PluginType.CUSTOM,
             PluginRegistry.PluginStatus.REGISTERED,
-            List.of("processQuery [GH-90000]"),
+            List.of("processQuery"),
             List.of(), // GH-90000
             Map.of("capability", "data-analysis"), // GH-90000
             Instant.now(), // GH-90000
@@ -75,7 +75,7 @@ class AIPluginIntegrationTest extends EventloopTestBase {
         PluginRegistry.PluginMetadata registered = runPromise(() -> pluginRegistry.register(plugin)); // GH-90000
         assertThat(registered.status()).isEqualTo(PluginRegistry.PluginStatus.REGISTERED); // GH-90000
 
-        PluginRegistry.PluginMetadata activated = runPromise(() -> pluginRegistry.activate("data-processor [GH-90000]"));
+        PluginRegistry.PluginMetadata activated = runPromise(() -> pluginRegistry.activate("data-processor"));
         assertThat(activated.isActive()).isTrue(); // GH-90000
 
         // When - Execute plugin hook
@@ -84,13 +84,13 @@ class AIPluginIntegrationTest extends EventloopTestBase {
 
         // Then
         assertThat(hookResult.success()).isTrue(); // GH-90000
-        assertThat(hookResult.pluginId()).isEqualTo("data-processor [GH-90000]");
+        assertThat(hookResult.pluginId()).isEqualTo("data-processor");
 
         System.out.println("[INTEGRATION] Plugin hook executed: " + hookResult.hookName()); // GH-90000
     }
 
     @Test
-    @DisplayName("[INTEGRATION-006]: ai_service_status_with_plugins [GH-90000]")
+    @DisplayName("[INTEGRATION-006]: ai_service_status_with_plugins")
     void aiServiceStatusWithPlugins() { // GH-90000
         // Given - AI service processing queries
         when(llmProvider.complete(any())).thenReturn(Promise.of(new LLMProvider.CompletionResponse( // GH-90000
@@ -113,13 +113,13 @@ class AIPluginIntegrationTest extends EventloopTestBase {
         // Then
         assertThat(status.available()).isTrue(); // GH-90000
         assertThat(status.requestsProcessed()).isEqualTo(5); // GH-90000
-        assertThat(status.provider()).isEqualTo("OpenAI [GH-90000]");
+        assertThat(status.provider()).isEqualTo("OpenAI");
 
         System.out.println("[INTEGRATION] AI Service processed " + status.requestsProcessed() + " requests"); // GH-90000
     }
 
     @Test
-    @DisplayName("[INTEGRATION-007]: plugin_registry_with_ai_integration [GH-90000]")
+    @DisplayName("[INTEGRATION-007]: plugin_registry_with_ai_integration")
     void pluginRegistryWithAIIntegration() { // GH-90000
         // Given - Register AI-powered plugin
         PluginRegistry.PluginMetadata aiPlugin = new PluginRegistry.PluginMetadata( // GH-90000
@@ -150,20 +150,20 @@ class AIPluginIntegrationTest extends EventloopTestBase {
         Map<String, Object> savedConfig = runPromise(() -> pluginRegistry.updateConfiguration(aiPlugin.id(), config)); // GH-90000
 
         // Then
-        assertThat(registered.id()).isEqualTo("ai-enhancer [GH-90000]");
+        assertThat(registered.id()).isEqualTo("ai-enhancer");
 
         Map<String, Object> retrievedConfig = runPromise(() -> pluginRegistry.getConfiguration(aiPlugin.id())); // GH-90000
-        assertThat(retrievedConfig.get("model [GH-90000]")).isEqualTo("gpt-4 [GH-90000]");
+        assertThat(retrievedConfig.get("model")).isEqualTo("gpt-4");
 
         // Verify health
         PluginRegistry.PluginHealth health = runPromise(() -> pluginRegistry.getHealth(aiPlugin.id())); // GH-90000
         assertThat(health.healthy()).isTrue(); // GH-90000
 
-        System.out.println("[INTEGRATION] AI Plugin configured with model: " + retrievedConfig.get("model [GH-90000]"));
+        System.out.println("[INTEGRATION] AI Plugin configured with model: " + retrievedConfig.get("model"));
     }
 
     @Test
-    @DisplayName("[INTEGRATION-008]: multi_plugin_workflow [GH-90000]")
+    @DisplayName("[INTEGRATION-008]: multi_plugin_workflow")
     void multiPluginWorkflow() { // GH-90000
         // Given - Multiple plugins for a workflow
         String tenantId = "tenant-workflow";
@@ -177,7 +177,7 @@ class AIPluginIntegrationTest extends EventloopTestBase {
             tenantId,
             PluginRegistry.PluginType.CUSTOM,
             PluginRegistry.PluginStatus.REGISTERED,
-            List.of("fetchData [GH-90000]"),
+            List.of("fetchData"),
             List.of(), // GH-90000
             Map.of(), // GH-90000
             Instant.now(), // GH-90000
@@ -194,8 +194,8 @@ class AIPluginIntegrationTest extends EventloopTestBase {
             tenantId,
             PluginRegistry.PluginType.CUSTOM,
             PluginRegistry.PluginStatus.REGISTERED,
-            List.of("transform [GH-90000]"),
-            List.of("data-source [GH-90000]"), // Depends on data-source
+            List.of("transform"),
+            List.of("data-source"), // Depends on data-source
             Map.of(), // GH-90000
             Instant.now(), // GH-90000
             null,
@@ -229,7 +229,7 @@ class AIPluginIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[INTEGRATION-009]: ai_conversation_with_plugin_context [GH-90000]")
+    @DisplayName("[INTEGRATION-009]: ai_conversation_with_plugin_context")
     void aiConversationWithPluginContext() { // GH-90000
         // Given - Create conversation
         AIAssistService.Conversation conv = runPromise(() -> // GH-90000

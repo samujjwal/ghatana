@@ -14,7 +14,8 @@ import java.util.List;
  * @doc.type class
  * @doc.purpose Skill promotion result
  * @doc.layer agent-learning
- */
+  * @doc.pattern ValueObject
+*/
 @Value
 @Builder
 public class PromotionResult {

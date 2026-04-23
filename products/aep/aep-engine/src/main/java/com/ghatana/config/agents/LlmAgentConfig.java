@@ -1,5 +1,11 @@
 package com.ghatana.config.agents;
 
+/**
+ * @doc.type class
+ * @doc.purpose Provides llm agent config functionality.
+ * @doc.layer product
+ * @doc.pattern Configuration
+ */
 public class LlmAgentConfig extends AgentConfig {
 
     private String model;

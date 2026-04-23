@@ -21,7 +21,8 @@ import java.util.stream.Collectors;
  * @doc.type class
  * @doc.purpose Structured context formatting for LLM injection
  * @doc.layer agent-memory
- */
+  * @doc.pattern Component
+*/
 public class StructuredContextInjector implements ContextInjector {
 
     @Override

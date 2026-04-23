@@ -46,7 +46,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataCloudHttpServer – Entity Edge Cases &amp; Boundary Conditions [GH-90000]")
+@DisplayName("DataCloudHttpServer – Entity Edge Cases &amp; Boundary Conditions")
 class EntityEdgeCaseTest {
 
     private DataCloudClient mockClient;
@@ -80,7 +80,7 @@ class EntityEdgeCaseTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Unicode field values [GH-90000]")
+    @DisplayName("Unicode field values")
     class UnicodeFieldTests {
 
         @ParameterizedTest(name = "[{index}] unicode value: {0}") // GH-90000
@@ -92,10 +92,10 @@ class EntityEdgeCaseTest {
             "caf\u00E9",                            // Precomposed accented letter
             "\uFEFF data",                          // BOM prefix
         })
-        @DisplayName("Should store entity with unicode field value without data corruption [GH-90000]")
+        @DisplayName("Should store entity with unicode field value without data corruption")
         void shouldSaveEntityWithUnicodeFieldValue(String unicodeValue) throws Exception { // GH-90000
             DataCloudClient.Entity entity = DataCloudClient.Entity.of("u-1", "unicode-col", Map.of("name", unicodeValue)); // GH-90000
-            when(mockClient.save(anyString(), eq("unicode-col [GH-90000]"), any())).thenReturn(Promise.of(entity));
+            when(mockClient.save(anyString(), eq("unicode-col"), any())).thenReturn(Promise.of(entity));
 
             startServer(); // GH-90000
             HttpResponse<String> resp = postJson("/api/v1/entities/unicode-col", // GH-90000
@@ -105,7 +105,7 @@ class EntityEdgeCaseTest {
         }
 
         @Test
-        @DisplayName("Should reject entity with null-byte in field value [GH-90000]")
+        @DisplayName("Should reject entity with null-byte in field value")
         void shouldRejectEntityWithNullByteInField() throws Exception { // GH-90000
             startServer(); // GH-90000
             // Null byte in JSON — the JSON parser should reject it or the server return 400
@@ -116,12 +116,12 @@ class EntityEdgeCaseTest {
         }
 
         @Test
-        @DisplayName("Should accept very long unicode string within payload limits [GH-90000]")
+        @DisplayName("Should accept very long unicode string within payload limits")
         void shouldAcceptLongUnicodeString() throws Exception { // GH-90000
             String longValue = "\uD83D\uDE00".repeat(500); // 500 emoji = 2000 bytes // GH-90000
             DataCloudClient.Entity entity = DataCloudClient.Entity.of("u-long", "emoji-col", // GH-90000
                 Map.of("data", longValue)); // GH-90000
-            when(mockClient.save(anyString(), eq("emoji-col [GH-90000]"), any())).thenReturn(Promise.of(entity));
+            when(mockClient.save(anyString(), eq("emoji-col"), any())).thenReturn(Promise.of(entity));
 
             startServer(); // GH-90000
             HttpResponse<String> resp = postJson("/api/v1/entities/emoji-col", // GH-90000
@@ -137,7 +137,7 @@ class EntityEdgeCaseTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Collection name boundary conditions [GH-90000]")
+    @DisplayName("Collection name boundary conditions")
     class CollectionNameEdgeCaseTests {
 
         @ParameterizedTest(name = "[{index}] malicious collection: {0}") // GH-90000
@@ -147,7 +147,7 @@ class EntityEdgeCaseTest {
             "%00collection",              // null byte injection
             "col%2Fnested%2Fpath",        // encoded slash (potential path traversal) // GH-90000
         })
-        @DisplayName("Should reject collection names with path-traversal patterns [GH-90000]")
+        @DisplayName("Should reject collection names with path-traversal patterns")
         void shouldRejectMaliciousCollectionName(String malicious) throws Exception { // GH-90000
             startServer(); // GH-90000
             HttpResponse<String> resp = postJson("/api/v1/entities/" + malicious, // GH-90000
@@ -159,7 +159,7 @@ class EntityEdgeCaseTest {
         }
 
         @Test
-        @DisplayName("Should reject collection names longer than 255 characters [GH-90000]")
+        @DisplayName("Should reject collection names longer than 255 characters")
         void shouldRejectTooLongCollectionName() throws Exception { // GH-90000
             String tooLong = "a".repeat(300); // GH-90000
             startServer(); // GH-90000
@@ -170,10 +170,10 @@ class EntityEdgeCaseTest {
         }
 
         @Test
-        @DisplayName("Valid minimal collection name (single letter) should succeed [GH-90000]")
+        @DisplayName("Valid minimal collection name (single letter) should succeed")
         void shouldAcceptSingleLetterCollectionName() throws Exception { // GH-90000
             DataCloudClient.Entity entity = DataCloudClient.Entity.of("x-1", "x", Map.of("k", "v")); // GH-90000
-            when(mockClient.save(anyString(), eq("x [GH-90000]"), any())).thenReturn(Promise.of(entity));
+            when(mockClient.save(anyString(), eq("x"), any())).thenReturn(Promise.of(entity));
 
             startServer(); // GH-90000
             HttpResponse<String> resp = postJson("/api/v1/entities/x", Map.of("k", "v")); // GH-90000
@@ -187,11 +187,11 @@ class EntityEdgeCaseTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Payload size boundary conditions [GH-90000]")
+    @DisplayName("Payload size boundary conditions")
     class PayloadSizeTests {
 
         @Test
-        @DisplayName("Empty entity data map should return 400 [GH-90000]")
+        @DisplayName("Empty entity data map should return 400")
         void emptyEntityData_returns400() throws Exception { // GH-90000
             startServer(); // GH-90000
             HttpResponse<String> resp = postJson("/api/v1/entities/test-col", Map.of()); // GH-90000
@@ -201,11 +201,11 @@ class EntityEdgeCaseTest {
         }
 
         @Test
-        @DisplayName("Entity with single small field should succeed [GH-90000]")
+        @DisplayName("Entity with single small field should succeed")
         void singleFieldEntity_succeeds() throws Exception { // GH-90000
             DataCloudClient.Entity entity = DataCloudClient.Entity.of("tiny-1", "small-col", // GH-90000
                 Map.of("k", "v")); // GH-90000
-            when(mockClient.save(anyString(), eq("small-col [GH-90000]"), any())).thenReturn(Promise.of(entity));
+            when(mockClient.save(anyString(), eq("small-col"), any())).thenReturn(Promise.of(entity));
 
             startServer(); // GH-90000
             HttpResponse<String> resp = postJson("/api/v1/entities/small-col", Map.of("k", "v")); // GH-90000
@@ -214,7 +214,7 @@ class EntityEdgeCaseTest {
         }
 
         @Test
-        @DisplayName("Entity with deeply nested object should be accepted or rejected cleanly [GH-90000]")
+        @DisplayName("Entity with deeply nested object should be accepted or rejected cleanly")
         void deeplyNestedEntityObject_handledCleanly() throws Exception { // GH-90000
             // Build 5-level deep nesting
             Map<String, Object> level5 = Map.of("leaf", "value"); // GH-90000
@@ -224,7 +224,7 @@ class EntityEdgeCaseTest {
             Map<String, Object> payload = Map.of("l2", level2, "type", "nested"); // GH-90000
 
             DataCloudClient.Entity entity = DataCloudClient.Entity.of("nested-1", "deep-col", payload); // GH-90000
-            when(mockClient.save(anyString(), eq("deep-col [GH-90000]"), any())).thenReturn(Promise.of(entity));
+            when(mockClient.save(anyString(), eq("deep-col"), any())).thenReturn(Promise.of(entity));
 
             startServer(); // GH-90000
             HttpResponse<String> resp = postJson("/api/v1/entities/deep-col", payload); // GH-90000
@@ -233,14 +233,14 @@ class EntityEdgeCaseTest {
         }
 
         @Test
-        @DisplayName("Entity with array field containing 1000 items should be handled [GH-90000]")
+        @DisplayName("Entity with array field containing 1000 items should be handled")
         void entityWithLargeArrayField_handledCleanly() throws Exception { // GH-90000
             List<String> largeArray = new ArrayList<>(); // GH-90000
             for (int i = 0; i < 1000; i++) largeArray.add("item-" + i); // GH-90000
             Map<String, Object> payload = Map.of("tags", largeArray, "type", "tagged"); // GH-90000
 
             DataCloudClient.Entity entity = DataCloudClient.Entity.of("large-array-1", "tagged-col", payload); // GH-90000
-            when(mockClient.save(anyString(), eq("tagged-col [GH-90000]"), any())).thenReturn(Promise.of(entity));
+            when(mockClient.save(anyString(), eq("tagged-col"), any())).thenReturn(Promise.of(entity));
 
             startServer(); // GH-90000
             HttpResponse<String> resp = postJson("/api/v1/entities/tagged-col", payload); // GH-90000
@@ -254,18 +254,18 @@ class EntityEdgeCaseTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Numeric and type boundary conditions [GH-90000]")
+    @DisplayName("Numeric and type boundary conditions")
     class NumericEdgeCaseTests {
 
         @Test
-        @DisplayName("Entity with Long.MAX_VALUE should not cause overflow [GH-90000]")
+        @DisplayName("Entity with Long.MAX_VALUE should not cause overflow")
         void longMaxValue_storedSafely() throws Exception { // GH-90000
             Map<String, Object> payload = new HashMap<>(); // GH-90000
             payload.put("amount", Long.MAX_VALUE); // GH-90000
             payload.put("type", "numeric"); // GH-90000
 
             DataCloudClient.Entity entity = DataCloudClient.Entity.of("max-long-1", "numeric-col", payload); // GH-90000
-            when(mockClient.save(anyString(), eq("numeric-col [GH-90000]"), any())).thenReturn(Promise.of(entity));
+            when(mockClient.save(anyString(), eq("numeric-col"), any())).thenReturn(Promise.of(entity));
 
             startServer(); // GH-90000
             HttpResponse<String> resp = postJson("/api/v1/entities/numeric-col", payload); // GH-90000
@@ -274,11 +274,11 @@ class EntityEdgeCaseTest {
         }
 
         @Test
-        @DisplayName("Entity with negative integer field should be accepted [GH-90000]")
+        @DisplayName("Entity with negative integer field should be accepted")
         void negativeIntegerField_accepted() throws Exception { // GH-90000
             Map<String, Object> payload = Map.of("count", -1, "balance", -99999.99); // GH-90000
             DataCloudClient.Entity entity = DataCloudClient.Entity.of("neg-1", "numeric-col", payload); // GH-90000
-            when(mockClient.save(anyString(), eq("numeric-col [GH-90000]"), any())).thenReturn(Promise.of(entity));
+            when(mockClient.save(anyString(), eq("numeric-col"), any())).thenReturn(Promise.of(entity));
 
             startServer(); // GH-90000
             HttpResponse<String> resp = postJson("/api/v1/entities/numeric-col", payload); // GH-90000
@@ -287,11 +287,11 @@ class EntityEdgeCaseTest {
         }
 
         @Test
-        @DisplayName("Entity with boolean fields should be accepted [GH-90000]")
+        @DisplayName("Entity with boolean fields should be accepted")
         void booleanFields_accepted() throws Exception { // GH-90000
             Map<String, Object> payload = Map.of("active", true, "deleted", false, "type", "flags"); // GH-90000
             DataCloudClient.Entity entity = DataCloudClient.Entity.of("bool-1", "flag-col", payload); // GH-90000
-            when(mockClient.save(anyString(), eq("flag-col [GH-90000]"), any())).thenReturn(Promise.of(entity));
+            when(mockClient.save(anyString(), eq("flag-col"), any())).thenReturn(Promise.of(entity));
 
             startServer(); // GH-90000
             HttpResponse<String> resp = postJson("/api/v1/entities/flag-col", payload); // GH-90000
@@ -305,16 +305,16 @@ class EntityEdgeCaseTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Entity read edge cases [GH-90000]")
+    @DisplayName("Entity read edge cases")
     class ReadEdgeCaseTests {
 
         @Test
-        @DisplayName("GET entity with UUID-format ID must return 200 when found [GH-90000]")
+        @DisplayName("GET entity with UUID-format ID must return 200 when found")
         void getEntityWithUuidFormatId_returns200() throws Exception { // GH-90000
             String entityId = UUID.randomUUID().toString(); // GH-90000
             DataCloudClient.Entity entity = DataCloudClient.Entity.of(entityId, "orders", // GH-90000
                 Map.of("status", "PENDING")); // GH-90000
-            when(mockClient.findById(anyString(), eq("orders [GH-90000]"), eq(entityId)))
+            when(mockClient.findById(anyString(), eq("orders"), eq(entityId)))
                 .thenReturn(Promise.of(Optional.of(entity))); // GH-90000
 
             startServer(); // GH-90000
@@ -324,35 +324,35 @@ class EntityEdgeCaseTest {
         }
 
         @Test
-        @DisplayName("GET entity with non-existent ID returns 404 [GH-90000]")
+        @DisplayName("GET entity with non-existent ID returns 404")
         void getEntityNonExistent_returns404() throws Exception { // GH-90000
             when(mockClient.findById(anyString(), anyString(), anyString())) // GH-90000
                 .thenReturn(Promise.of(Optional.empty())); // GH-90000
 
             startServer(); // GH-90000
-            HttpResponse<String> resp = get("/api/v1/entities/orders/does-not-exist [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/entities/orders/does-not-exist");
 
             assertThat(resp.statusCode()).isEqualTo(404); // GH-90000
         }
 
         @Test
-        @DisplayName("GET entity when client throws exception returns 500 [GH-90000]")
+        @DisplayName("GET entity when client throws exception returns 500")
         void getEntityWithClientException_returns500() throws Exception { // GH-90000
             when(mockClient.findById(anyString(), anyString(), anyString())) // GH-90000
-                .thenReturn(Promise.ofException(new RuntimeException("Storage failure [GH-90000]")));
+                .thenReturn(Promise.ofException(new RuntimeException("Storage failure")));
 
             startServer(); // GH-90000
-            HttpResponse<String> resp = get("/api/v1/entities/orders/fail-id [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/entities/orders/fail-id");
 
             assertThat(resp.statusCode()).isIn(500, 503); // GH-90000
         }
 
         @Test
-        @DisplayName("GET entity with special characters in ID path-segment returns 400 or 404 [GH-90000]")
+        @DisplayName("GET entity with special characters in ID path-segment returns 400 or 404")
         void getEntityWithSpecialCharsInId_handledSafely() throws Exception { // GH-90000
             startServer(); // GH-90000
             // Test path traversal in ID
-            HttpResponse<String> resp = get("/api/v1/entities/orders/../admin [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/entities/orders/../admin");
 
             assertThat(resp.statusCode()).isIn(400, 404); // GH-90000
         }
@@ -363,11 +363,11 @@ class EntityEdgeCaseTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Tenant isolation edge cases [GH-90000]")
+    @DisplayName("Tenant isolation edge cases")
     class TenantIsolationEdgeCaseTests {
 
         @Test
-        @DisplayName("Requests with tenant-id header use that tenant for data access [GH-90000]")
+        @DisplayName("Requests with tenant-id header use that tenant for data access")
         void requestWithTenantHeader_usesTenant() throws Exception { // GH-90000
             String tenantId = "explicit-tenant-abc";
             DataCloudClient.Entity entity = DataCloudClient.Entity.of("t-1", "orders", // GH-90000
@@ -383,7 +383,7 @@ class EntityEdgeCaseTest {
         }
 
         @Test
-        @DisplayName("Requests with empty tenant-id header are treated as absent and return 404 for missing entity [GH-90000]")
+        @DisplayName("Requests with empty tenant-id header are treated as absent and return 404 for missing entity")
         void requestWithEmptyTenantHeader_usesDefault() throws Exception { // GH-90000
             when(mockClient.findById(anyString(), anyString(), anyString())) // GH-90000
                 .thenReturn(Promise.of(Optional.empty())); // GH-90000
@@ -396,7 +396,7 @@ class EntityEdgeCaseTest {
         }
 
         @Test
-        @DisplayName("Requests with whitespace-only tenant-id header are treated as absent and return 404 [GH-90000]")
+        @DisplayName("Requests with whitespace-only tenant-id header are treated as absent and return 404")
         void requestWithWhitespaceTenantId_handledSafely() throws Exception { // GH-90000
             when(mockClient.findById(anyString(), anyString(), anyString())) // GH-90000
                 .thenReturn(Promise.of(Optional.empty())); // GH-90000
@@ -414,35 +414,35 @@ class EntityEdgeCaseTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Entity delete edge cases [GH-90000]")
+    @DisplayName("Entity delete edge cases")
     class DeleteEdgeCaseTests {
 
         @Test
-        @DisplayName("DELETE non-existent entity returns 404 [GH-90000]")
+        @DisplayName("DELETE non-existent entity returns 404")
         void deleteNonExistentEntity_returns404() throws Exception { // GH-90000
             when(mockClient.delete(anyString(), anyString(), anyString())) // GH-90000
-                .thenReturn(Promise.ofException(new NoSuchElementException("Not found [GH-90000]")));
+                .thenReturn(Promise.ofException(new NoSuchElementException("Not found")));
 
             startServer(); // GH-90000
-            HttpResponse<String> resp = delete("/api/v1/entities/orders/ghost-id [GH-90000]");
+            HttpResponse<String> resp = delete("/api/v1/entities/orders/ghost-id");
 
             assertThat(resp.statusCode()).isIn(404, 500); // GH-90000
         }
 
         @Test
-        @DisplayName("DELETE same entity twice returns consistent result (idempotency) [GH-90000]")
+        @DisplayName("DELETE same entity twice returns consistent result (idempotency)")
         void deleteSameEntityTwice_idempotent() throws Exception { // GH-90000
             DataCloudClient.Entity entity = DataCloudClient.Entity.of("del-1", "orders", Map.of("k", "v")); // GH-90000
             // First call finds the entity, second simulates already-deleted
-            when(mockClient.findById(anyString(), eq("orders [GH-90000]"), eq("del-1 [GH-90000]")))
+            when(mockClient.findById(anyString(), eq("orders"), eq("del-1")))
                 .thenReturn(Promise.of(Optional.of(entity))) // GH-90000
                 .thenReturn(Promise.of(Optional.empty())); // GH-90000
-            when(mockClient.delete(anyString(), eq("orders [GH-90000]"), eq("del-1 [GH-90000]")))
+            when(mockClient.delete(anyString(), eq("orders"), eq("del-1")))
                 .thenReturn(Promise.of((Void) null)); // GH-90000
 
             startServer(); // GH-90000
-            HttpResponse<String> first = delete("/api/v1/entities/orders/del-1 [GH-90000]");
-            HttpResponse<String> second = delete("/api/v1/entities/orders/del-1 [GH-90000]");
+            HttpResponse<String> first = delete("/api/v1/entities/orders/del-1");
+            HttpResponse<String> second = delete("/api/v1/entities/orders/del-1");
 
             assertThat(first.statusCode()).isIn(200, 204); // GH-90000
             // Second delete may return same or 404 depending on implementation
@@ -455,15 +455,15 @@ class EntityEdgeCaseTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("HTTP method edge cases [GH-90000]")
+    @DisplayName("HTTP method edge cases")
     class HttpMethodEdgeCaseTests {
 
         @Test
-        @DisplayName("PATCH to entity endpoint returns 405 or 404 [GH-90000]")
+        @DisplayName("PATCH to entity endpoint returns 405 or 404")
         void patchToEntityEndpoint_returns405Or404() throws Exception { // GH-90000
             startServer(); // GH-90000
             HttpRequest req = HttpRequest.newBuilder() // GH-90000
-                .method("PATCH", HttpRequest.BodyPublishers.ofString("{} [GH-90000]"))
+                .method("PATCH", HttpRequest.BodyPublishers.ofString("{}"))
                 .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/entities/orders")) // GH-90000
                 .header("Content-Type", "application/json") // GH-90000
                 .build(); // GH-90000
@@ -473,7 +473,7 @@ class EntityEdgeCaseTest {
         }
 
         @Test
-        @DisplayName("HEAD request to entity collection endpoint returns 404 or 200 with no body [GH-90000]")
+        @DisplayName("HEAD request to entity collection endpoint returns 404 or 200 with no body")
         void headRequestToEntityEndpoint_returnsSafeResponse() throws Exception { // GH-90000
             startServer(); // GH-90000
             HttpRequest req = HttpRequest.newBuilder() // GH-90000

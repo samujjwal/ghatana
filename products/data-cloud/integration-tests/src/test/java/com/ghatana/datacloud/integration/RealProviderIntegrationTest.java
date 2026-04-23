@@ -45,27 +45,27 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@DisplayName("Real Provider Integration Tests [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("Real Provider Integration Tests")
+@Tag("integration")
 class RealProviderIntegrationTest {
 
     private static final PostgreSQLContainer<?> POSTGRESQL = new PostgreSQLContainer<>( // GH-90000
-        DockerImageName.parse("postgres:16-alpine [GH-90000]"))
-        .withDatabaseName("datacloud_test [GH-90000]")
-        .withUsername("test_user [GH-90000]")
-        .withPassword("test_pass [GH-90000]")
+        DockerImageName.parse("postgres:16-alpine"))
+        .withDatabaseName("datacloud_test")
+        .withUsername("test_user")
+        .withPassword("test_pass")
         .withStartupTimeout(Duration.ofSeconds(60)); // GH-90000
 
     private static final KafkaContainer KAFKA = new KafkaContainer( // GH-90000
-        DockerImageName.parse("confluentinc/cp-kafka:7.5.0 [GH-90000]"))
+        DockerImageName.parse("confluentinc/cp-kafka:7.5.0"))
         .withStartupTimeout(Duration.ofSeconds(60)); // GH-90000
 
     private static final RedisContainer REDIS = new RedisContainer( // GH-90000
-        DockerImageName.parse("redis:7-alpine [GH-90000]"))
+        DockerImageName.parse("redis:7-alpine"))
         .withStartupTimeout(Duration.ofSeconds(60)); // GH-90000
 
     private static final ClickHouseContainer CLICKHOUSE = new ClickHouseContainer( // GH-90000
-        DockerImageName.parse("clickhouse/clickhouse-server:24.3 [GH-90000]"))
+        DockerImageName.parse("clickhouse/clickhouse-server:24.3"))
         .withStartupTimeout(Duration.ofSeconds(60)); // GH-90000
 
     @BeforeAll
@@ -85,12 +85,12 @@ class RealProviderIntegrationTest {
     }
 
     @Test
-    @DisplayName("PostgreSQL container is running and accessible [GH-90000]")
+    @DisplayName("PostgreSQL container is running and accessible")
     void postgresqlContainerIsRunningAndAccessible() throws SQLException { // GH-90000
         assertThat(POSTGRESQL.isRunning()).isTrue(); // GH-90000
         assertThat(POSTGRESQL.getJdbcUrl()).isNotEmpty(); // GH-90000
-        assertThat(POSTGRESQL.getUsername()).isEqualTo("test_user [GH-90000]");
-        assertThat(POSTGRESQL.getPassword()).isEqualTo("test_pass [GH-90000]");
+        assertThat(POSTGRESQL.getUsername()).isEqualTo("test_user");
+        assertThat(POSTGRESQL.getPassword()).isEqualTo("test_pass");
 
         // Test actual connection
         try (Connection conn = DriverManager.getConnection( // GH-90000
@@ -100,7 +100,7 @@ class RealProviderIntegrationTest {
             assertThat(conn.isValid(5)).isTrue(); // GH-90000
 
             // Test query
-            try (ResultSet rs = conn.createStatement().executeQuery("SELECT 1 [GH-90000]")) {
+            try (ResultSet rs = conn.createStatement().executeQuery("SELECT 1")) {
                 assertThat(rs.next()).isTrue(); // GH-90000
                 assertThat(rs.getInt(1)).isEqualTo(1); // GH-90000
             }
@@ -108,7 +108,7 @@ class RealProviderIntegrationTest {
     }
 
     @Test
-    @DisplayName("PostgreSQL can create and query tables [GH-90000]")
+    @DisplayName("PostgreSQL can create and query tables")
     void postgresqlCanCreateAndQueryTables() throws SQLException { // GH-90000
         try (Connection conn = DriverManager.getConnection( // GH-90000
             POSTGRESQL.getJdbcUrl(), // GH-90000
@@ -143,23 +143,23 @@ class RealProviderIntegrationTest {
             try (ResultSet rs = conn.createStatement().executeQuery( // GH-90000
                 "SELECT feature_name, feature_value, tenant_id FROM test_features ORDER BY id")) {
                 assertThat(rs.next()).isTrue(); // GH-90000
-                assertThat(rs.getString("feature_name [GH-90000]")).isEqualTo("test_feature_1 [GH-90000]");
-                assertThat(rs.getDouble("feature_value [GH-90000]")).isEqualTo(123.45);
-                assertThat(rs.getString("tenant_id [GH-90000]")).isEqualTo("tenant-1 [GH-90000]");
+                assertThat(rs.getString("feature_name")).isEqualTo("test_feature_1");
+                assertThat(rs.getDouble("feature_value")).isEqualTo(123.45);
+                assertThat(rs.getString("tenant_id")).isEqualTo("tenant-1");
 
                 assertThat(rs.next()).isTrue(); // GH-90000
-                assertThat(rs.getString("feature_name [GH-90000]")).isEqualTo("test_feature_2 [GH-90000]");
-                assertThat(rs.getDouble("feature_value [GH-90000]")).isEqualTo(678.90);
-                assertThat(rs.getString("tenant_id [GH-90000]")).isEqualTo("tenant-2 [GH-90000]");
+                assertThat(rs.getString("feature_name")).isEqualTo("test_feature_2");
+                assertThat(rs.getDouble("feature_value")).isEqualTo(678.90);
+                assertThat(rs.getString("tenant_id")).isEqualTo("tenant-2");
             }
 
             // Cleanup
-            conn.createStatement().execute("DROP TABLE test_features [GH-90000]");
+            conn.createStatement().execute("DROP TABLE test_features");
         }
     }
 
     @Test
-    @DisplayName("PostgreSQL supports tenant isolation with row-level security [GH-90000]")
+    @DisplayName("PostgreSQL supports tenant isolation with row-level security")
     void postgresqlSupportsTenantIsolationWithRowLevelSecurity() throws SQLException { // GH-90000
         try (Connection conn = DriverManager.getConnection( // GH-90000
             POSTGRESQL.getJdbcUrl(), // GH-90000
@@ -195,27 +195,27 @@ class RealProviderIntegrationTest {
                 ps.setString(1, "tenant-a"); // GH-90000
                 try (ResultSet rs = ps.executeQuery()) { // GH-90000
                     assertThat(rs.next()).isTrue(); // GH-90000
-                    assertThat(rs.getString("feature_name [GH-90000]")).isEqualTo("tenant_a_feature [GH-90000]");
-                    assertThat(rs.getDouble("feature_value [GH-90000]")).isEqualTo(100.0);
+                    assertThat(rs.getString("feature_name")).isEqualTo("tenant_a_feature");
+                    assertThat(rs.getDouble("feature_value")).isEqualTo(100.0);
                     assertThat(rs.next()).isFalse(); // Only one row for tenant-a // GH-90000
                 }
             }
 
             // Cleanup
-            conn.createStatement().execute("DROP TABLE tenant_isolated_features [GH-90000]");
+            conn.createStatement().execute("DROP TABLE tenant_isolated_features");
         }
     }
 
     @Test
-    @DisplayName("Kafka container is running and accessible [GH-90000]")
+    @DisplayName("Kafka container is running and accessible")
     void kafkaContainerIsRunningAndAccessible() { // GH-90000
         assertThat(KAFKA.isRunning()).isTrue(); // GH-90000
         assertThat(KAFKA.getBootstrapServers()).isNotEmpty(); // GH-90000
-        assertThat(KAFKA.getBootstrapServers()).contains("9092 [GH-90000]");
+        assertThat(KAFKA.getBootstrapServers()).contains("9092");
     }
 
     @Test
-    @DisplayName("Kafka can create and list topics [GH-90000]")
+    @DisplayName("Kafka can create and list topics")
     void kafkaCanCreateAndListTopics() { // GH-90000
         // This test verifies Kafka is accessible
         // Full Kafka client testing would require additional dependencies
@@ -224,7 +224,7 @@ class RealProviderIntegrationTest {
     }
 
     @Test
-    @DisplayName("Redis container is running and accessible [GH-90000]")
+    @DisplayName("Redis container is running and accessible")
     void redisContainerIsRunningAndAccessible() { // GH-90000
         assertThat(REDIS.isRunning()).isTrue(); // GH-90000
         assertThat(REDIS.getRedisHost()).isNotEmpty(); // GH-90000
@@ -232,18 +232,18 @@ class RealProviderIntegrationTest {
     }
 
     @Test
-    @DisplayName("Redis can store and retrieve values [GH-90000]")
+    @DisplayName("Redis can store and retrieve values")
     void redisCanStoreAndRetrieveValues() { // GH-90000
         try (Jedis jedis = new Jedis(REDIS.getRedisHost(), REDIS.getRedisPort())) { // GH-90000
             // Test set and get
             jedis.set("test_key", "test_value"); // GH-90000
-            String value = jedis.get("test_key [GH-90000]");
-            assertThat(value).isEqualTo("test_value [GH-90000]");
+            String value = jedis.get("test_key");
+            assertThat(value).isEqualTo("test_value");
 
             // Test numeric operations
             jedis.set("counter", "0"); // GH-90000
-            jedis.incr("counter [GH-90000]");
-            assertThat(Long.parseLong(jedis.get("counter [GH-90000]"))).isEqualTo(1);
+            jedis.incr("counter");
+            assertThat(Long.parseLong(jedis.get("counter"))).isEqualTo(1);
 
             // Test hash operations
             jedis.hset("feature:1", Map.of( // GH-90000
@@ -251,11 +251,11 @@ class RealProviderIntegrationTest {
                 "value", "123.45",
                 "tenant", "tenant-1"
             ));
-            Map<String, String> feature = jedis.hgetAll("feature:1 [GH-90000]");
+            Map<String, String> feature = jedis.hgetAll("feature:1");
             assertThat(feature).hasSize(3); // GH-90000
-            assertThat(feature.get("name [GH-90000]")).isEqualTo("feature_1 [GH-90000]");
-            assertThat(feature.get("value [GH-90000]")).isEqualTo("123.45 [GH-90000]");
-            assertThat(feature.get("tenant [GH-90000]")).isEqualTo("tenant-1 [GH-90000]");
+            assertThat(feature.get("name")).isEqualTo("feature_1");
+            assertThat(feature.get("value")).isEqualTo("123.45");
+            assertThat(feature.get("tenant")).isEqualTo("tenant-1");
 
             // Test list operations
             jedis.lpush("feature_list", "feature_3", "feature_2", "feature_1"); // GH-90000
@@ -269,16 +269,16 @@ class RealProviderIntegrationTest {
     }
 
     @Test
-    @DisplayName("Redis supports expiration and caching patterns [GH-90000]")
+    @DisplayName("Redis supports expiration and caching patterns")
     void redisSupportsExpirationAndCachingPatterns() throws InterruptedException { // GH-90000
         try (Jedis jedis = new Jedis(REDIS.getRedisHost(), REDIS.getRedisPort())) { // GH-90000
             // Test TTL
             jedis.setex("expiring_key", 2, "will_expire"); // GH-90000
-            assertThat(jedis.ttl("expiring_key [GH-90000]")).isGreaterThan(0);
-            assertThat(jedis.get("expiring_key [GH-90000]")).isEqualTo("will_expire [GH-90000]");
+            assertThat(jedis.ttl("expiring_key")).isGreaterThan(0);
+            assertThat(jedis.get("expiring_key")).isEqualTo("will_expire");
 
             Thread.sleep(2500); // GH-90000
-            assertThat(jedis.get("expiring_key [GH-90000]")).isNull();
+            assertThat(jedis.get("expiring_key")).isNull();
 
             // Test cache pattern
             String cacheKey = "cache:feature:123";
@@ -294,7 +294,7 @@ class RealProviderIntegrationTest {
     }
 
     @Test
-    @DisplayName("ClickHouse container is running and accessible [GH-90000]")
+    @DisplayName("ClickHouse container is running and accessible")
     void clickhouseContainerIsRunningAndAccessible() throws SQLException { // GH-90000
         assertThat(CLICKHOUSE.isRunning()).isTrue(); // GH-90000
         assertThat(CLICKHOUSE.getJdbcUrl()).isNotEmpty(); // GH-90000
@@ -309,7 +309,7 @@ class RealProviderIntegrationTest {
             assertThat(conn.isValid(5)).isTrue(); // GH-90000
 
             // Test query
-            try (ResultSet rs = conn.createStatement().executeQuery("SELECT 1 [GH-90000]")) {
+            try (ResultSet rs = conn.createStatement().executeQuery("SELECT 1")) {
                 assertThat(rs.next()).isTrue(); // GH-90000
                 assertThat(rs.getInt(1)).isEqualTo(1); // GH-90000
             }
@@ -317,7 +317,7 @@ class RealProviderIntegrationTest {
     }
 
     @Test
-    @DisplayName("ClickHouse can create and query time-series data [GH-90000]")
+    @DisplayName("ClickHouse can create and query time-series data")
     void clickhouseCanCreateAndQueryTimeSeriesData() throws SQLException { // GH-90000
         try (Connection conn = DriverManager.getConnection( // GH-90000
             CLICKHOUSE.getJdbcUrl(), // GH-90000
@@ -357,20 +357,20 @@ class RealProviderIntegrationTest {
                 int rowCount = 0;
                 while (rs.next()) { // GH-90000
                     rowCount++;
-                    assertThat(rs.getString("feature_name [GH-90000]")).startsWith("metric_ [GH-90000]");
-                    assertThat(rs.getDouble("avg_value [GH-90000]")).isGreaterThan(0);
-                    assertThat(rs.getLong("count [GH-90000]")).isGreaterThan(0);
+                    assertThat(rs.getString("feature_name")).startsWith("metric_");
+                    assertThat(rs.getDouble("avg_value")).isGreaterThan(0);
+                    assertThat(rs.getLong("count")).isGreaterThan(0);
                 }
                 assertThat(rowCount).isEqualTo(3); // 3 unique metrics // GH-90000
             }
 
             // Cleanup
-            conn.createStatement().execute("DROP TABLE feature_metrics [GH-90000]");
+            conn.createStatement().execute("DROP TABLE feature_metrics");
         }
     }
 
     @Test
-    @DisplayName("ClickHouse supports efficient aggregations [GH-90000]")
+    @DisplayName("ClickHouse supports efficient aggregations")
     void clickhouseSupportsEfficientAggregations() throws SQLException { // GH-90000
         try (Connection conn = DriverManager.getConnection( // GH-90000
             CLICKHOUSE.getJdbcUrl(), // GH-90000
@@ -416,21 +416,21 @@ class RealProviderIntegrationTest {
                 int tenantCount = 0;
                 while (rs.next()) { // GH-90000
                     tenantCount++;
-                    assertThat(rs.getString("tenant_id [GH-90000]")).startsWith("tenant- [GH-90000]");
-                    assertThat(rs.getLong("event_count [GH-90000]")).isGreaterThan(0);
-                    assertThat(rs.getDouble("avg_value [GH-90000]")).isBetween(0.0, 1000.0);
-                    assertThat(rs.getDouble("max_value [GH-90000]")).isBetween(0.0, 1000.0);
+                    assertThat(rs.getString("tenant_id")).startsWith("tenant-");
+                    assertThat(rs.getLong("event_count")).isGreaterThan(0);
+                    assertThat(rs.getDouble("avg_value")).isBetween(0.0, 1000.0);
+                    assertThat(rs.getDouble("max_value")).isBetween(0.0, 1000.0);
                 }
                 assertThat(tenantCount).isEqualTo(5); // 5 tenants // GH-90000
             }
 
             // Cleanup
-            conn.createStatement().execute("DROP TABLE feature_events [GH-90000]");
+            conn.createStatement().execute("DROP TABLE feature_events");
         }
     }
 
     @Test
-    @DisplayName("All providers can be used together in a multi-provider scenario [GH-90000]")
+    @DisplayName("All providers can be used together in a multi-provider scenario")
     void allProvidersCanBeUsedTogetherInMultiProviderScenario() throws SQLException { // GH-90000
         // This test demonstrates a scenario where all providers work together
         // PostgreSQL for persistent storage, Redis for caching, ClickHouse for analytics
@@ -483,12 +483,12 @@ class RealProviderIntegrationTest {
             }
 
             // Verify all operations succeeded
-            assertThat(jedis.get("cache:multi_provider_feature [GH-90000]")).isEqualTo("42.0 [GH-90000]");
+            assertThat(jedis.get("cache:multi_provider_feature")).isEqualTo("42.0");
 
             try (ResultSet rs = pgConn.createStatement().executeQuery( // GH-90000
                 "SELECT value FROM features WHERE name = 'multi_provider_feature'")) {
                 assertThat(rs.next()).isTrue(); // GH-90000
-                assertThat(rs.getDouble("value [GH-90000]")).isEqualTo(42.0);
+                assertThat(rs.getDouble("value")).isEqualTo(42.0);
             }
 
             try (ResultSet rs = chConn.createStatement().executeQuery( // GH-90000
@@ -500,7 +500,7 @@ class RealProviderIntegrationTest {
     }
 
     @Test
-    @DisplayName("Providers handle concurrent operations correctly [GH-90000]")
+    @DisplayName("Providers handle concurrent operations correctly")
     void providersHandleConcurrentOperationsCorrectly() throws SQLException, InterruptedException { // GH-90000
         // Test concurrent writes to PostgreSQL
         try (Connection conn = DriverManager.getConnection( // GH-90000

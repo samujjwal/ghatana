@@ -34,7 +34,11 @@ import java.util.Objects;
  * }</pre>
  *
  * @see WindowedResult
- */
+  * @doc.type class
+ * @doc.purpose Provides window spec functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 @Data
 @SuperBuilder
 public class WindowSpec {

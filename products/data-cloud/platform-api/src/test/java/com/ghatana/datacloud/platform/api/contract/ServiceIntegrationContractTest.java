@@ -39,7 +39,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test, Contract
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("Service Integration API Contract Tests [GH-90000]")
+@DisplayName("Service Integration API Contract Tests")
 class ServiceIntegrationContractTest extends EventloopTestBase {
 
     @Mock
@@ -73,11 +73,11 @@ class ServiceIntegrationContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Event Streaming to AEP [GH-90000]")
+    @DisplayName("Event Streaming to AEP")
     class EventStreamingContract {
 
         @Test
-        @DisplayName("entity events must be streamed to AEP for pattern matching [GH-90000]")
+        @DisplayName("entity events must be streamed to AEP for pattern matching")
         void eventsMustBeStreamed() { // GH-90000
             EnrichedEvent event = new EnrichedEvent(); // GH-90000
             event.id = "evt-001";
@@ -95,7 +95,7 @@ class ServiceIntegrationContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("streamed events must include tenant context for isolation [GH-90000]")
+        @DisplayName("streamed events must include tenant context for isolation")
         void streamedEventMustHaveTenant() { // GH-90000
             EnrichedEvent event = new EnrichedEvent(); // GH-90000
             event.tenantId = "tenant-2";
@@ -106,13 +106,13 @@ class ServiceIntegrationContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("streaming failure must not block entity operation [GH-90000]")
+        @DisplayName("streaming failure must not block entity operation")
         void streamingFailureMustBeResillient() { // GH-90000
             EnrichedEvent event = new EnrichedEvent(); // GH-90000
             event.id = "evt-003";
             lenient().when(aepProcessor.streamEvent(any())) // GH-90000
                     .thenReturn(Promise.ofException( // GH-90000
-                            new RuntimeException("AEP unavailable [GH-90000]")));
+                            new RuntimeException("AEP unavailable")));
 
             // Entity operation succeeded, but streaming failed (async operation) // GH-90000
             // Contract: Data Cloud succeeds regardless of AEP status
@@ -124,7 +124,7 @@ class ServiceIntegrationContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("events must be streamed with correlation ID for tracing [GH-90000]")
+        @DisplayName("events must be streamed with correlation ID for tracing")
         void streamedEventMustHaveTracing() { // GH-90000
             EnrichedEvent event = new EnrichedEvent(); // GH-90000
             event.id = "evt-trace-123";
@@ -140,11 +140,11 @@ class ServiceIntegrationContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Policy Evaluation Request/Response [GH-90000]")
+    @DisplayName("Policy Evaluation Request/Response")
     class PolicyEvaluationContract {
 
         @Test
-        @DisplayName("AEP evaluatePolicy must return within SLA timeout [GH-90000]")
+        @DisplayName("AEP evaluatePolicy must return within SLA timeout")
         void policyEvaluationMustBeFast() { // GH-90000
             EnrichedEvent event = new EnrichedEvent(); // GH-90000
             event.id = "evt-eval-1";
@@ -168,7 +168,7 @@ class ServiceIntegrationContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("policy evaluation result must include match status [GH-90000]")
+        @DisplayName("policy evaluation result must include match status")
         void resultMustIndicateMatch() { // GH-90000
             PolicyEvaluationResult result = new PolicyEvaluationResult(); // GH-90000
             result.eventId = "evt-1";
@@ -180,13 +180,13 @@ class ServiceIntegrationContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("policy evaluation failure must communicate error [GH-90000]")
+        @DisplayName("policy evaluation failure must communicate error")
         void evaluationFailureMustBeRetryable() { // GH-90000
             EnrichedEvent event = new EnrichedEvent(); // GH-90000
             event.id = "evt-fail-1";
             lenient().when(aepProcessor.evaluatePolicy(any())) // GH-90000
                     .thenReturn(Promise.ofException( // GH-90000
-                            new RuntimeException("AEP timeout [GH-90000]")));
+                            new RuntimeException("AEP timeout")));
 
             // Failure must be communicated, allowing retry logic
             Throwable thrown = catchThrowable(() -> // GH-90000
@@ -202,11 +202,11 @@ class ServiceIntegrationContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Cross-Service Consistency [GH-90000]")
+    @DisplayName("Cross-Service Consistency")
     class CrossServiceConsistencyContract {
 
         @Test
-        @DisplayName("entity ID from Data Cloud must match in AEP events [GH-90000]")
+        @DisplayName("entity ID from Data Cloud must match in AEP events")
         void entityIdMustBeConsistent() { // GH-90000
             String dataCloudEntityId = "entity-abc-123";
             EnrichedEvent event = new EnrichedEvent(); // GH-90000
@@ -217,7 +217,7 @@ class ServiceIntegrationContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("tenant context must match between Data Cloud and AEP [GH-90000]")
+        @DisplayName("tenant context must match between Data Cloud and AEP")
         void tenantContextMustMatch() { // GH-90000
             String tenantId = "tenant-secure";
             EnrichedEvent event = new EnrichedEvent(); // GH-90000
@@ -228,7 +228,7 @@ class ServiceIntegrationContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("event timestamp must be consistent across services [GH-90000]")
+        @DisplayName("event timestamp must be consistent across services")
         void timestampMustBeConsistent() { // GH-90000
             long eventTime = System.currentTimeMillis(); // GH-90000
             EnrichedEvent event = new EnrichedEvent(); // GH-90000
@@ -244,11 +244,11 @@ class ServiceIntegrationContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Service API Backwards Compatibility [GH-90000]")
+    @DisplayName("Service API Backwards Compatibility")
     class ServiceBackwardsCompatibilityContract {
 
         @Test
-        @DisplayName("AEP evaluatePolicy API must support v1 and v2 events [GH-90000]")
+        @DisplayName("AEP evaluatePolicy API must support v1 and v2 events")
         void aepMustSupportMultipleVersions() { // GH-90000
             // V1 event format (older Data Cloud) // GH-90000
             EnrichedEvent v1Event = new EnrichedEvent(); // GH-90000
@@ -274,7 +274,7 @@ class ServiceIntegrationContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("streamed events must include optional new fields [GH-90000]")
+        @DisplayName("streamed events must include optional new fields")
         void streamedEventsMustBeExtensible() { // GH-90000
             // V1: streamEvent(eventId, eventType, tenantId, data) // GH-90000
             // V2: streamEvent(eventId, eventType, tenantId, data, additionalContext) // GH-90000
@@ -303,28 +303,28 @@ class ServiceIntegrationContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Error Handling and Recovery [GH-90000]")
+    @DisplayName("Error Handling and Recovery")
     class ErrorHandlingContract {
 
         @Test
-        @DisplayName("network failure to AEP must be retryable [GH-90000]")
+        @DisplayName("network failure to AEP must be retryable")
         void networkFailureMustBeRetryable() { // GH-90000
             EnrichedEvent event = new EnrichedEvent(); // GH-90000
             event.id = "evt-retry-1";
             lenient().when(aepProcessor.streamEvent(any())) // GH-90000
                     .thenReturn(Promise.ofException( // GH-90000
-                            new RuntimeException("Connection timeout [GH-90000]")));
+                            new RuntimeException("Connection timeout")));
 
             // Failure communicates timeout (not permanent) // GH-90000
             // Data Cloud will retry with exponential backoff
             Throwable thrown = catchThrowable(() -> // GH-90000
                     runPromise(() -> aepProcessor.streamEvent(event))); // GH-90000
 
-            assertThat(thrown).isNotNull().hasMessageContaining("timeout [GH-90000]");
+            assertThat(thrown).isNotNull().hasMessageContaining("timeout");
         }
 
         @Test
-        @DisplayName("AEP unavailability must not lose Data Cloud data [GH-90000]")
+        @DisplayName("AEP unavailability must not lose Data Cloud data")
         void dataLossMustBePrevented() { // GH-90000
             EnrichedEvent event = new EnrichedEvent(); // GH-90000
             event.id = "evt-persist-1";
@@ -333,7 +333,7 @@ class ServiceIntegrationContractTest extends EventloopTestBase {
             // and retried later (async) // GH-90000
             lenient().when(aepProcessor.streamEvent(any())) // GH-90000
                     .thenReturn(Promise.ofException( // GH-90000
-                            new RuntimeException("Service unavailable [GH-90000]")));
+                            new RuntimeException("Service unavailable")));
 
             // Operation succeeds at Data Cloud layer
             // Streaming failure is logged for retry, not amplified to user
@@ -350,11 +350,11 @@ class ServiceIntegrationContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Service Rate Limiting [GH-90000]")
+    @DisplayName("Service Rate Limiting")
     class RateLimitingContract {
 
         @Test
-        @DisplayName("AEP can request Data Cloud to throttle events [GH-90000]")
+        @DisplayName("AEP can request Data Cloud to throttle events")
         void aepCanThrottleDataCloud() { // GH-90000
             // If AEP is overwhelmed, it can request backpressure:
             // HTTP 429 Too Many Requests
@@ -366,7 +366,7 @@ class ServiceIntegrationContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("service calls should include timeout headers [GH-90000]")
+        @DisplayName("service calls should include timeout headers")
         void callsMustHaveTimeout() { // GH-90000
             // Request header: X-Request-Timeout: 10000 (milliseconds) // GH-90000
             // or standard: Timeout: 10000ms

@@ -14,7 +14,7 @@ import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.api.io.TempDir;
 
 /** Tests for {@link CargoFixRunner}. */
-@Tag("integration [GH-90000]")
+@Tag("integration")
 /**
  * @doc.type class
  * @doc.purpose Handles cargo fix runner test operations
@@ -45,7 +45,7 @@ class CargoFixRunnerTest {
     }
 
     @Test
-    @EnabledIf("isCargoInstalled [GH-90000]")
+    @EnabledIf("isCargoInstalled")
     void testRunWithCleanCode() throws IOException { // GH-90000
         // Create a simple Rust project
         createCargoProject(tempDir, TEST_PROJECT); // GH-90000
@@ -65,7 +65,7 @@ class CargoFixRunnerTest {
     }
 
     @Test
-    @EnabledIf("isCargoInstalled [GH-90000]")
+    @EnabledIf("isCargoInstalled")
     void testRunWithWarnings() throws IOException { // GH-90000
         // Create a simple Rust project
         createCargoProject(tempDir, TEST_PROJECT); // GH-90000
@@ -86,7 +86,7 @@ class CargoFixRunnerTest {
         ProcessExec.Result result = cargoFix.run(tempDir, 30000, true); // GH-90000
 
         // Debug output
-        System.out.println("=== cargo fix output === [GH-90000]");
+        System.out.println("=== cargo fix output ===");
         System.out.println(EXIT_CODE_PREFIX + result.exitCode()); // GH-90000
         System.out.println(STDOUT_PREFIX + result.out()); // GH-90000
         System.out.println(STDERR_PREFIX + result.err()); // GH-90000
@@ -96,19 +96,19 @@ class CargoFixRunnerTest {
 
         // Read the code after running cargo fix
         String fixedCode = Files.readString(mainRs); // GH-90000
-        System.out.println("=== Code after cargo fix === [GH-90000]");
+        System.out.println("=== Code after cargo fix ===");
         System.out.println(fixedCode); // GH-90000
 
         // Check if the warning was fixed (x should be prefixed with _ to indicate it's // GH-90000
         // intentionally unused)
-        boolean isFixed = fixedCode.contains("let _x = 42; [GH-90000]") || fixedCode.contains("let _ = x; [GH-90000]");
+        boolean isFixed = fixedCode.contains("let _x = 42;") || fixedCode.contains("let _ = x;");
 
         // If not fixed, try to apply the fix manually based on the compiler suggestion
         if (!isFixed) { // GH-90000
-            System.out.println("=== Applying fix manually === [GH-90000]");
+            System.out.println("=== Applying fix manually ===");
             String manualFix = fixedCode.replace("let x = 42;", "let _x = 42;"); // GH-90000
             Files.writeString(mainRs, manualFix, StandardOpenOption.TRUNCATE_EXISTING); // GH-90000
-            System.out.println("=== Manually fixed code === [GH-90000]");
+            System.out.println("=== Manually fixed code ===");
             System.out.println(manualFix); // GH-90000
 
             // Rerun cargo fix to verify the fix is valid
@@ -121,13 +121,13 @@ class CargoFixRunnerTest {
             // Check if the fix is now valid
             String verifiedCode = Files.readString(mainRs); // GH-90000
             assertTrue( // GH-90000
-                    verifiedCode.contains("let _x = 42; [GH-90000]") || verifiedCode.contains("let _ = x; [GH-90000]"),
+                    verifiedCode.contains("let _x = 42;") || verifiedCode.contains("let _ = x;"),
                     "Expected manual fix to be valid. Actual code:\n" + verifiedCode);
         }
     }
 
     @Test
-    @EnabledIf("isCargoInstalled [GH-90000]")
+    @EnabledIf("isCargoInstalled")
     void testRunWithErrors() throws IOException { // GH-90000
         // Create a simple Rust project
         createCargoProject(tempDir, TEST_PROJECT); // GH-90000
@@ -149,7 +149,7 @@ class CargoFixRunnerTest {
         ProcessExec.Result result = cargoFix.run(tempDir, 30000, true); // GH-90000
 
         // Debug output
-        System.out.println("=== cargo fix output (errors) === [GH-90000]");
+        System.out.println("=== cargo fix output (errors) ===");
         System.out.println(EXIT_CODE_PREFIX + result.exitCode()); // GH-90000
         System.out.println(STDOUT_PREFIX + result.out()); // GH-90000
         System.out.println(STDERR_PREFIX + result.err()); // GH-90000
@@ -159,8 +159,8 @@ class CargoFixRunnerTest {
 
         // Check for the Rust compiler error message in the JSON output
         boolean hasExpectedError =
-                result.out().contains("expected `;`, found `println` [GH-90000]")
-                        || result.out().contains("expected one of [GH-90000]");
+                result.out().contains("expected `;`, found `println`")
+                        || result.out().contains("expected one of");
         assertTrue( // GH-90000
                 hasExpectedError,
                 "Expected syntax error in output. Stdout: "
@@ -171,7 +171,7 @@ class CargoFixRunnerTest {
 
     @Test
     void testRunWithNonexistentDirectory() { // GH-90000
-        Path nonExistentDir = tempDir.resolve("nonexistent [GH-90000]");
+        Path nonExistentDir = tempDir.resolve("nonexistent");
 
         // Run cargo fix on non-existent directory
         ProcessExec.Result result = cargoFix.run(nonExistentDir, 10000, false); // GH-90000
@@ -182,7 +182,7 @@ class CargoFixRunnerTest {
     }
 
     @Test
-    @EnabledIf("areDependenciesInstalled [GH-90000]")
+    @EnabledIf("areDependenciesInstalled")
     void testRunWithDirtyWorkspace() throws IOException, InterruptedException { // GH-90000
         // Create a Git repository
         ProcessBuilder gitInit = new ProcessBuilder(GIT, "init"); // GH-90000
@@ -267,12 +267,12 @@ class CargoFixRunnerTest {
 
         // Verify the file was actually written
         String actualContent = Files.readString(mainRs); // GH-90000
-        System.out.println("=== Actual file content === [GH-90000]");
+        System.out.println("=== Actual file content ===");
         System.out.println(actualContent); // GH-90000
         assertEquals(modifiedContent, actualContent, "File content does not match expected"); // GH-90000
 
         // Debug Git repository state
-        System.out.println("\n=== Git repository info === [GH-90000]");
+        System.out.println("\n=== Git repository info ===");
         runGitCommand(tempDir, "status"); // GH-90000
         runGitCommand(tempDir, "ls-files"); // GH-90000
         runGitCommand(tempDir, "diff --cached"); // GH-90000
@@ -295,7 +295,7 @@ class CargoFixRunnerTest {
         String gitStatusError = new String(statusProcess.getErrorStream().readAllBytes()); // GH-90000
         statusProcess.waitFor(); // GH-90000
 
-        System.out.println("\n=== Git status output === [GH-90000]");
+        System.out.println("\n=== Git status output ===");
         System.out.println(gitStatusOutput); // GH-90000
         if (!gitStatusError.isEmpty()) { // GH-90000
             System.out.println("Git status error: " + gitStatusError); // GH-90000
@@ -309,14 +309,14 @@ class CargoFixRunnerTest {
         ProcessExec.Result result = cargoFix.run(tempDir, 10000, false); // GH-90000
 
         // Debug output
-        System.out.println("=== cargo fix output (dirty workspace) === [GH-90000]");
+        System.out.println("=== cargo fix output (dirty workspace) ===");
         System.out.println(EXIT_CODE_PREFIX + result.exitCode()); // GH-90000
         System.out.println(STDOUT_PREFIX + result.out()); // GH-90000
         System.out.println(STDERR_PREFIX + result.err()); // GH-90000
 
         // Check the current content after the first run
         String currentContent = Files.readString(mainRs); // GH-90000
-        System.out.println("=== Current content after first cargo fix run === [GH-90000]");
+        System.out.println("=== Current content after first cargo fix run ===");
         System.out.println(currentContent); // GH-90000
 
         // Check if the file was modified by cargo fix
@@ -332,14 +332,14 @@ class CargoFixRunnerTest {
             // Run with allowDirty=true
             result = cargoFix.run(tempDir, 10000, true); // GH-90000
 
-            System.out.println("=== cargo fix output (with allowDirty=true) === [GH-90000]");
+            System.out.println("=== cargo fix output (with allowDirty=true) ===");
             System.out.println(EXIT_CODE_PREFIX + result.exitCode()); // GH-90000
             System.out.println(STDOUT_PREFIX + result.out()); // GH-90000
             System.out.println(STDERR_PREFIX + result.err()); // GH-90000
 
             // Check the content again
             currentContent = Files.readString(mainRs); // GH-90000
-            System.out.println("=== Current content after second cargo fix run === [GH-90000]");
+            System.out.println("=== Current content after second cargo fix run ===");
             System.out.println(currentContent); // GH-90000
 
             // Verify the command succeeded
@@ -350,7 +350,7 @@ class CargoFixRunnerTest {
 
             // Verify that cargo fix ran successfully, even if it didn't modify the file
             // The important part is that it didn't fail due to the dirty workspace
-            System.out.println("Note: cargo fix did not modify the file, but it ran successfully [GH-90000]");
+            System.out.println("Note: cargo fix did not modify the file, but it ran successfully");
 
             // Since we've verified that cargo fix runs with allowDirty=true without errors,
             // we can consider this test case passed
@@ -367,7 +367,7 @@ class CargoFixRunnerTest {
         // Verify the file was fixed (unused variable should be prefixed with _) // GH-90000
         currentContent = Files.readString(mainRs); // GH-90000
         assertTrue( // GH-90000
-                currentContent.contains("let _y = 43 [GH-90000]") || currentContent.contains("let _ = y [GH-90000]"),
+                currentContent.contains("let _y = 43") || currentContent.contains("let _ = y"),
                 "Expected cargo fix to fix the unused variable when allowDirty=true");
     }
 
@@ -383,7 +383,7 @@ class CargoFixRunnerTest {
                                 + "[dependencies]%n",
                         name);
 
-        Files.writeString(dir.resolve("Cargo.toml [GH-90000]"), cargoToml);
+        Files.writeString(dir.resolve("Cargo.toml"), cargoToml);
 
         // Create src directory
         Path srcDir = dir.resolve(SRC); // GH-90000
@@ -408,7 +408,7 @@ class CargoFixRunnerTest {
     // Helper method to run a git command and return its output
     private static String runGitCommand(Path repoDir, String command) // GH-90000
             throws IOException, InterruptedException {
-        String[] cmd = (GIT + " " + command).split("  [GH-90000]");
+        String[] cmd = (GIT + " " + command).split(" ");
         ProcessBuilder pb = new ProcessBuilder(cmd); // GH-90000
         pb.directory(repoDir.toFile()); // GH-90000
         pb.redirectErrorStream(true); // GH-90000

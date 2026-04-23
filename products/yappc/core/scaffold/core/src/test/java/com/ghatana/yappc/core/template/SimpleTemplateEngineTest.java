@@ -57,7 +57,7 @@ class SimpleTemplateEngineTest {
 
         String result = templateEngine.render(template, context); // GH-90000
 
-        assertTrue(result.contains("com/example/test [GH-90000]"));
+        assertTrue(result.contains("com/example/test"));
     }
 
     @Test
@@ -67,7 +67,7 @@ class SimpleTemplateEngineTest {
 
         String result = templateEngine.render(template, context); // GH-90000
 
-        assertTrue(result.contains("import java.util.List; [GH-90000]"));
+        assertTrue(result.contains("import java.util.List;"));
     }
 
     @Test

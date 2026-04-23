@@ -25,8 +25,8 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer   platform
  * @doc.pattern IntegrationTest
  */
-@DisplayName("Platform Observability Integration Tests [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("Platform Observability Integration Tests")
+@Tag("integration")
 class ObservabilityIntegrationTest extends EventloopTestBase {
 
     private ObservabilityPlatform observability;
@@ -39,7 +39,7 @@ class ObservabilityIntegrationTest extends EventloopTestBase {
     // ── Metrics ───────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("counter increments are accumulated correctly [GH-90000]")
+    @DisplayName("counter increments are accumulated correctly")
     void counterIncrementsAreAccumulatedCorrectly() { // GH-90000
         observability.increment("http.requests.total", Map.of("method", "GET", "path", "/api")); // GH-90000
         observability.increment("http.requests.total", Map.of("method", "GET", "path", "/api")); // GH-90000
@@ -51,7 +51,7 @@ class ObservabilityIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("gauge records the last written value [GH-90000]")
+    @DisplayName("gauge records the last written value")
     void gaugeRecordsLastWrittenValue() { // GH-90000
         observability.gauge("jvm.memory.used", 512_000_000L, Map.of("area", "heap")); // GH-90000
         observability.gauge("jvm.memory.used", 600_000_000L, Map.of("area", "heap")); // GH-90000
@@ -61,7 +61,7 @@ class ObservabilityIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("histogram records all observations and computes correct percentile [GH-90000]")
+    @DisplayName("histogram records all observations and computes correct percentile")
     void histogramRecordsAllObservationsAndComputesPercentile() { // GH-90000
         long[] latencies = {10, 20, 30, 40, 50, 60, 70, 80, 90, 100};
         for (long l : latencies) { // GH-90000
@@ -75,7 +75,7 @@ class ObservabilityIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("different label combinations are tracked independently [GH-90000]")
+    @DisplayName("different label combinations are tracked independently")
     void differentLabelCombinationsTrackedIndependently() { // GH-90000
         observability.increment("requests", Map.of("status", "200")); // GH-90000
         observability.increment("requests", Map.of("status", "200")); // GH-90000
@@ -88,7 +88,7 @@ class ObservabilityIntegrationTest extends EventloopTestBase {
     // ── Tracing ───────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("starting a span creates a new trace with a non-null traceId [GH-90000]")
+    @DisplayName("starting a span creates a new trace with a non-null traceId")
     void startingSpanCreatesTraceWithNonNullTraceId() { // GH-90000
         ObservabilityPlatform.Span span = observability.startSpan("process-request", "service-a"); // GH-90000
         assertThat(span.traceId()).isNotNull().isNotBlank(); // GH-90000
@@ -97,7 +97,7 @@ class ObservabilityIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("child span shares the parent traceId [GH-90000]")
+    @DisplayName("child span shares the parent traceId")
     void childSpanSharesParentTraceId() { // GH-90000
         ObservabilityPlatform.Span parent = observability.startSpan("parent-op", "service-a"); // GH-90000
         ObservabilityPlatform.Span child = observability.startChildSpan("child-op", parent); // GH-90000
@@ -108,7 +108,7 @@ class ObservabilityIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("ended span records a non-null duration [GH-90000]")
+    @DisplayName("ended span records a non-null duration")
     void endedSpanRecordsNonNullDuration() { // GH-90000
         ObservabilityPlatform.Span span = observability.startSpan("timed-op", "service-b"); // GH-90000
         span.end(); // GH-90000
@@ -117,7 +117,7 @@ class ObservabilityIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("spans can be tagged with key-value attributes [GH-90000]")
+    @DisplayName("spans can be tagged with key-value attributes")
     void spansCanBeTaggedWithKeyValueAttributes() { // GH-90000
         ObservabilityPlatform.Span span = observability.startSpan("tagged-op", "service-c"); // GH-90000
         span.addTag("db.type", "postgres"); // GH-90000
@@ -131,68 +131,68 @@ class ObservabilityIntegrationTest extends EventloopTestBase {
     // ── Structured logging ────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("log entry is persisted with structured fields [GH-90000]")
+    @DisplayName("log entry is persisted with structured fields")
     void logEntryPersistedWithStructuredFields() { // GH-90000
         observability.log("INFO", "user.login.success", // GH-90000
                 Map.of("userId", "u-1", "tenantId", "t-1", "correlationId", "c-1")); // GH-90000
 
-        List<ObservabilityPlatform.LogEntry> logs = observability.getLogs("INFO [GH-90000]");
+        List<ObservabilityPlatform.LogEntry> logs = observability.getLogs("INFO");
         assertThat(logs).anyMatch(l -> "user.login.success".equals(l.event()) // GH-90000
-                && "u-1".equals(l.fields().get("userId [GH-90000]")));
+                && "u-1".equals(l.fields().get("userId")));
     }
 
     @Test
-    @DisplayName("logs at ERROR level are retrievable independently from INFO level [GH-90000]")
+    @DisplayName("logs at ERROR level are retrievable independently from INFO level")
     void errorLogsRetrievableIndependently() { // GH-90000
         observability.log("INFO", "info.event", Map.of()); // GH-90000
         observability.log("ERROR", "error.event", Map.of("reason", "timeout")); // GH-90000
 
-        assertThat(observability.getLogs("ERROR [GH-90000]")).hasSize(1);
-        assertThat(observability.getLogs("INFO [GH-90000]")).hasSize(1);
+        assertThat(observability.getLogs("ERROR")).hasSize(1);
+        assertThat(observability.getLogs("INFO")).hasSize(1);
     }
 
     // ── Health checks ─────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("healthy service produces UP health status [GH-90000]")
+    @DisplayName("healthy service produces UP health status")
     void healthyServiceProducesUpStatus() { // GH-90000
         observability.registerHealthCheck("database", () -> true); // GH-90000
 
-        ObservabilityPlatform.HealthStatus status = observability.getHealth("database [GH-90000]");
-        assertThat(status.status()).isEqualTo("UP [GH-90000]");
+        ObservabilityPlatform.HealthStatus status = observability.getHealth("database");
+        assertThat(status.status()).isEqualTo("UP");
     }
 
     @Test
-    @DisplayName("failing health check produces DOWN status with error message [GH-90000]")
+    @DisplayName("failing health check produces DOWN status with error message")
     void failingHealthCheckProducesDownStatus() { // GH-90000
         observability.registerHealthCheck("message-queue", () -> false); // GH-90000
 
-        ObservabilityPlatform.HealthStatus status = observability.getHealth("message-queue [GH-90000]");
-        assertThat(status.status()).isEqualTo("DOWN [GH-90000]");
+        ObservabilityPlatform.HealthStatus status = observability.getHealth("message-queue");
+        assertThat(status.status()).isEqualTo("DOWN");
     }
 
     @Test
-    @DisplayName("aggregate health is DOWN if any component is DOWN [GH-90000]")
+    @DisplayName("aggregate health is DOWN if any component is DOWN")
     void aggregateHealthIsDownIfAnyComponentDown() { // GH-90000
         observability.registerHealthCheck("db", () -> true); // GH-90000
         observability.registerHealthCheck("cache", () -> false); // GH-90000
 
-        assertThat(observability.getAggregateHealth()).isEqualTo("DOWN [GH-90000]");
+        assertThat(observability.getAggregateHealth()).isEqualTo("DOWN");
     }
 
     @Test
-    @DisplayName("aggregate health is UP when all components are healthy [GH-90000]")
+    @DisplayName("aggregate health is UP when all components are healthy")
     void aggregateHealthIsUpWhenAllComponentsHealthy() { // GH-90000
         observability.registerHealthCheck("db2", () -> true); // GH-90000
         observability.registerHealthCheck("cache2", () -> true); // GH-90000
 
-        assertThat(observability.getAggregateHealth()).isEqualTo("UP [GH-90000]");
+        assertThat(observability.getAggregateHealth()).isEqualTo("UP");
     }
 
     // ── Alert thresholds ──────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("counter exceeding threshold fires an alert [GH-90000]")
+    @DisplayName("counter exceeding threshold fires an alert")
     void counterExceedingThresholdFiresAlert() { // GH-90000
         observability.setAlert("http.errors", Map.of("status", "500"), 3, "WARN"); // GH-90000
 
@@ -201,7 +201,7 @@ class ObservabilityIntegrationTest extends EventloopTestBase {
         }
 
         List<String> alerts = observability.getFiredAlerts(); // GH-90000
-        assertThat(alerts).anyMatch(a -> a.contains("http.errors [GH-90000]"));
+        assertThat(alerts).anyMatch(a -> a.contains("http.errors"));
     }
 
     // ── Observability platform implementation (for tests) ───────────────────── // GH-90000
@@ -314,7 +314,7 @@ class ObservabilityIntegrationTest extends EventloopTestBase {
         private void checkAlerts(String metric, Map<String, String> labels) { // GH-90000
             for (Object[] config : alertConfigs) { // GH-90000
                 String cfgMetric = (String) config[0]; // GH-90000
-                @SuppressWarnings("unchecked [GH-90000]") Map<String, String> cfgLabels = (Map<String, String>) config[1];
+                @SuppressWarnings("unchecked") Map<String, String> cfgLabels = (Map<String, String>) config[1];
                 long threshold = (long) config[2]; // GH-90000
                 String severity = (String) config[3]; // GH-90000
                 if (cfgMetric.equals(metric) && cfgLabels.equals(labels)) { // GH-90000

@@ -35,7 +35,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("Compliance Automation Tests [GH-90000]")
+@DisplayName("Compliance Automation Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class ComplianceAutomationTest extends EventloopTestBase {
 
@@ -51,11 +51,11 @@ class ComplianceAutomationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("GDPR – Right to Erasure (Article 17) [GH-90000]")
+    @DisplayName("GDPR – Right to Erasure (Article 17)")
     class GdprErasureTests {
 
         @Test
-        @DisplayName("Delete request removes entity and entity is no longer retrievable [GH-90000]")
+        @DisplayName("Delete request removes entity and entity is no longer retrievable")
         void deleteRequest_entityRemovedPermanently() throws Exception { // GH-90000
             String entityId = UUID.randomUUID().toString(); // GH-90000
             lenient().when(client.delete(TENANT_ID, COLLECTION_NAME, entityId)) // GH-90000
@@ -72,7 +72,7 @@ class ComplianceAutomationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Delete confirms success without exception [GH-90000]")
+        @DisplayName("Delete confirms success without exception")
         void deleteRequest_completesWithoutException() { // GH-90000
             String entityId = UUID.randomUUID().toString(); // GH-90000
             when(client.delete(TENANT_ID, COLLECTION_NAME, entityId)) // GH-90000
@@ -83,7 +83,7 @@ class ComplianceAutomationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Delete is idempotent — second call does not throw [GH-90000]")
+        @DisplayName("Delete is idempotent — second call does not throw")
         void deleteRequest_idempotent_secondCallSucceeds() throws Exception { // GH-90000
             String entityId = UUID.randomUUID().toString(); // GH-90000
             when(client.delete(TENANT_ID, COLLECTION_NAME, entityId)) // GH-90000
@@ -96,7 +96,7 @@ class ComplianceAutomationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Delete for one subject does not affect other subjects (targeted erasure) [GH-90000]")
+        @DisplayName("Delete for one subject does not affect other subjects (targeted erasure)")
         void deleteRequest_targetedErasure_otherSubjectsUnaffected() throws Exception { // GH-90000
             String subjectToDelete = UUID.randomUUID().toString(); // GH-90000
             String subjectToRetain = UUID.randomUUID().toString(); // GH-90000
@@ -114,7 +114,7 @@ class ComplianceAutomationTest extends EventloopTestBase {
                 client.findById(TENANT_ID, COLLECTION_NAME, subjectToRetain)); // GH-90000
 
             assertThat(result).isPresent(); // GH-90000
-            assertThat(result.get().data()).containsKey("name [GH-90000]");
+            assertThat(result.get().data()).containsKey("name");
         }
     }
 
@@ -123,12 +123,12 @@ class ComplianceAutomationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("PII – Redaction and Masking [GH-90000]")
+    @DisplayName("PII – Redaction and Masking")
     class PiiRedactionTests {
 
         @ParameterizedTest(name = "PII field ''{0}'' must not appear in plaintext in stored data key-names") // GH-90000
         @ValueSource(strings = {"ssn", "socialSecurityNumber", "creditCardNumber", "cvv", "password", "secret"}) // GH-90000
-        @DisplayName("Sensitive PII field names must be rejected or redacted at the boundary [GH-90000]")
+        @DisplayName("Sensitive PII field names must be rejected or redacted at the boundary")
         void sensitiveFieldNames_redactedOrRejectedAtBoundary(String sensitiveField) { // GH-90000
             // A compliant client must either reject or not store the raw field name
             Map<String, Object> piiData = new HashMap<>(); // GH-90000
@@ -137,7 +137,7 @@ class ComplianceAutomationTest extends EventloopTestBase {
 
             when(client.save(eq(TENANT_ID), eq(COLLECTION_NAME), any())) // GH-90000
                 .thenAnswer(inv -> { // GH-90000
-                    @SuppressWarnings("unchecked [GH-90000]")
+                    @SuppressWarnings("unchecked")
                     Map<String, Object> storedData = inv.getArgument(2); // GH-90000
                     // Verify: stored data must not contain unredacted sensitive field
                     assertThat(storedData) // GH-90000
@@ -154,28 +154,28 @@ class ComplianceAutomationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Email addresses are stored with domain preserved but local-part masked [GH-90000]")
+        @DisplayName("Email addresses are stored with domain preserved but local-part masked")
         void emailAddress_partiallyMasked() { // GH-90000
             String rawEmail = "john.doe@example.com";
             String masked = maskEmail(rawEmail); // GH-90000
 
-            assertThat(masked).endsWith("@example.com [GH-90000]");
-            assertThat(masked).doesNotContain("john.doe [GH-90000]");
+            assertThat(masked).endsWith("@example.com");
+            assertThat(masked).doesNotContain("john.doe");
         }
 
         @Test
-        @DisplayName("Phone numbers are masked to show only last 4 digits [GH-90000]")
+        @DisplayName("Phone numbers are masked to show only last 4 digits")
         void phoneNumber_lastFourDigitsOnly() { // GH-90000
             String phone = "+1-800-555-1234";
             String masked = maskPhone(phone); // GH-90000
 
-            assertThat(masked).contains("1234 [GH-90000]");
-            assertThat(masked).doesNotContain("800 [GH-90000]");
-            assertThat(masked).doesNotContain("555 [GH-90000]");
+            assertThat(masked).contains("1234");
+            assertThat(masked).doesNotContain("800");
+            assertThat(masked).doesNotContain("555");
         }
 
         @Test
-        @DisplayName("Null PII fields do not cause NullPointerException in redaction layer [GH-90000]")
+        @DisplayName("Null PII fields do not cause NullPointerException in redaction layer")
         void nullPiiFields_redactionDoesNotThrow() { // GH-90000
             Map<String, Object> dataWithNulls = new HashMap<>(); // GH-90000
             dataWithNulls.put("ssn", null); // GH-90000
@@ -190,11 +190,11 @@ class ComplianceAutomationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Data Retention Policy [GH-90000]")
+    @DisplayName("Data Retention Policy")
     class DataRetentionTests {
 
         @Test
-        @DisplayName("Entity created beyond retention window is marked expired in query results [GH-90000]")
+        @DisplayName("Entity created beyond retention window is marked expired in query results")
         void entityBeyondRetentionWindow_markedExpired() { // GH-90000
             Instant beyondRetention = Instant.now().minusSeconds(366L * 24 * 3600); // > 1 year // GH-90000
             DataRetentionPolicy policy = DataRetentionPolicy.of(365); // 365 days // GH-90000
@@ -203,7 +203,7 @@ class ComplianceAutomationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Entity within retention window is not expired [GH-90000]")
+        @DisplayName("Entity within retention window is not expired")
         void entityWithinRetentionWindow_notExpired() { // GH-90000
             Instant recent = Instant.now().minusSeconds(30L * 24 * 3600); // 30 days ago // GH-90000
             DataRetentionPolicy policy = DataRetentionPolicy.of(365); // GH-90000
@@ -212,7 +212,7 @@ class ComplianceAutomationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Entity exactly at the retention boundary is expired [GH-90000]")
+        @DisplayName("Entity exactly at the retention boundary is expired")
         void entityAtBoundary_expired() { // GH-90000
             // Edge: exactly at retention boundary (inclusive of boundary) // GH-90000
             Instant atBoundary = Instant.now().minusSeconds(365L * 24 * 3600 + 1); // GH-90000
@@ -222,7 +222,7 @@ class ComplianceAutomationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("RetentionPolicy with 0 days retains nothing [GH-90000]")
+        @DisplayName("RetentionPolicy with 0 days retains nothing")
         void zeroRetentionDays_allDataExpired() { // GH-90000
             DataRetentionPolicy immediateExpiry = DataRetentionPolicy.of(0); // GH-90000
 
@@ -231,7 +231,7 @@ class ComplianceAutomationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Data purge request deletes all entities beyond retention window [GH-90000]")
+        @DisplayName("Data purge request deletes all entities beyond retention window")
         void purgeExpiredData_deletesEntityBeyondWindow() throws Exception { // GH-90000
             String expiredEntityId = UUID.randomUUID().toString(); // GH-90000
             when(client.delete(TENANT_ID, COLLECTION_NAME, expiredEntityId)) // GH-90000
@@ -249,11 +249,11 @@ class ComplianceAutomationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Audit Trail Completeness [GH-90000]")
+    @DisplayName("Audit Trail Completeness")
     class AuditTrailTests {
 
         @Test
-        @DisplayName("Every entity save must produce an event with tenantId, entityId, and action [GH-90000]")
+        @DisplayName("Every entity save must produce an event with tenantId, entityId, and action")
         void entitySave_producesCompleteAuditEvent() throws Exception { // GH-90000
             String entityId = UUID.randomUUID().toString(); // GH-90000
             Map<String, Object> data = Map.of("field", "value"); // GH-90000
@@ -272,7 +272,7 @@ class ComplianceAutomationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Audit log must capture both write and read operations for sensitive collections [GH-90000]")
+        @DisplayName("Audit log must capture both write and read operations for sensitive collections")
         void auditLog_capturesBothReadAndWrite() throws Exception { // GH-90000
             String entityId = UUID.randomUUID().toString(); // GH-90000
             Map<String, Object> data = Map.of("sensitiveField", "value"); // GH-90000
@@ -290,7 +290,7 @@ class ComplianceAutomationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Audit events for event append must include event type and tenant [GH-90000]")
+        @DisplayName("Audit events for event append must include event type and tenant")
         void eventAppend_auditableWithEventTypeAndTenant() throws Exception { // GH-90000
             DataCloudClient.Event event = DataCloudClient.Event.of("AUDIT_TEST", Map.of("k", "v")); // GH-90000
             when(client.appendEvent(TENANT_ID, event)) // GH-90000
@@ -304,7 +304,7 @@ class ComplianceAutomationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Deletion must be auditable — delete is observable via mock verification [GH-90000]")
+        @DisplayName("Deletion must be auditable — delete is observable via mock verification")
         void deletion_observableAsAuditEvent() throws Exception { // GH-90000
             String entityId = UUID.randomUUID().toString(); // GH-90000
             when(client.delete(TENANT_ID, COLLECTION_NAME, entityId)) // GH-90000
@@ -321,11 +321,11 @@ class ComplianceAutomationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Data Classification and Encryption [GH-90000]")
+    @DisplayName("Data Classification and Encryption")
     class DataClassificationTests {
 
         @Test
-        @DisplayName("Sensitive data classification prevents storage in unencrypted collections [GH-90000]")
+        @DisplayName("Sensitive data classification prevents storage in unencrypted collections")
         void sensitiveData_rejectedInUnencryptedCollection() { // GH-90000
             DataClassifier classifier = new DataClassifier(); // GH-90000
             Map<String, Object> sensitiveData = Map.of( // GH-90000
@@ -340,7 +340,7 @@ class ComplianceAutomationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Non-sensitive data is classified as PUBLIC or INTERNAL [GH-90000]")
+        @DisplayName("Non-sensitive data is classified as PUBLIC or INTERNAL")
         void nonSensitiveData_classifiedApproprietly() { // GH-90000
             DataClassifier classifier = new DataClassifier(); // GH-90000
             Map<String, Object> publicData = Map.of("productName", "Widget", "price", 9.99); // GH-90000
@@ -352,7 +352,7 @@ class ComplianceAutomationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Event payload containing PII is classified as at least SENSITIVE [GH-90000]")
+        @DisplayName("Event payload containing PII is classified as at least SENSITIVE")
         void eventWithPii_classifiedSensitiveOrHigher() { // GH-90000
             DataClassifier classifier = new DataClassifier(); // GH-90000
             Map<String, Object> piiPayload = Map.of( // GH-90000
@@ -373,11 +373,11 @@ class ComplianceAutomationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Access Control Compliance [GH-90000]")
+    @DisplayName("Access Control Compliance")
     class AccessControlComplianceTests {
 
         @Test
-        @DisplayName("Cross-tenant data access must be rejected at the service boundary [GH-90000]")
+        @DisplayName("Cross-tenant data access must be rejected at the service boundary")
         void crossTenantAccess_rejected() throws Exception { // GH-90000
             String entityId = UUID.randomUUID().toString(); // GH-90000
             when(client.findById("wrong-tenant", COLLECTION_NAME, entityId)) // GH-90000
@@ -387,11 +387,11 @@ class ComplianceAutomationTest extends EventloopTestBase {
             assertThatThrownBy(() -> // GH-90000
                 runPromise(() -> client.findById("wrong-tenant", COLLECTION_NAME, entityId))) // GH-90000
                 .isInstanceOf(SecurityException.class) // GH-90000
-                .hasMessageContaining("Cross-tenant access denied [GH-90000]");
+                .hasMessageContaining("Cross-tenant access denied");
         }
 
         @Test
-        @DisplayName("Event query with wrong tenantId returns no results — not an error [GH-90000]")
+        @DisplayName("Event query with wrong tenantId returns no results — not an error")
         void eventQueryWrongTenant_returnsEmpty() throws Exception { // GH-90000
             DataCloudClient.EventQuery query = DataCloudClient.EventQuery.all(); // GH-90000
             when(client.queryEvents("non-existent-tenant", query)) // GH-90000
@@ -404,7 +404,7 @@ class ComplianceAutomationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Concurrent delete and read for same entity — no data leakage via race condition [GH-90000]")
+        @DisplayName("Concurrent delete and read for same entity — no data leakage via race condition")
         void concurrentDeleteReadRace_noDataLeakage() throws Exception { // GH-90000
             String entityId = UUID.randomUUID().toString(); // GH-90000
             when(client.delete(TENANT_ID, COLLECTION_NAME, entityId)) // GH-90000

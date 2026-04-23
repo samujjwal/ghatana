@@ -26,7 +26,7 @@ import static org.mockito.Mockito.*;
  * Real HTTP client tests with connection management, retries, timeouts,
  * and error handling using OkHttpAdapter.
  */
-@DisplayName("HTTP Client Integration Tests [GH-90000]")
+@DisplayName("HTTP Client Integration Tests")
 class HttpClientIntegrationTest extends EventloopTestBase {
 
     private MockWebServer mockWebServer;
@@ -42,7 +42,7 @@ class HttpClientIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle HTTP GET requests [GH-90000]")
+    @DisplayName("Should handle HTTP GET requests")
     void shouldHandleHttpGetRequests() { // GH-90000
         mockWebServer = new MockWebServer(); // GH-90000
         okHttpClient = new OkHttpClient(); // GH-90000
@@ -60,7 +60,7 @@ class HttpClientIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle HTTP POST requests [GH-90000]")
+    @DisplayName("Should handle HTTP POST requests")
     void shouldHandleHttpPostRequests() { // GH-90000
         mockWebServer = new MockWebServer(); // GH-90000
         okHttpClient = new OkHttpClient(); // GH-90000
@@ -78,7 +78,7 @@ class HttpClientIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle connection retries [GH-90000]")
+    @DisplayName("Should handle connection retries")
     void shouldHandleConnectionRetries() { // GH-90000
         HttpClientConfig config = HttpClientConfig.builder() // GH-90000
             .retryOnConnectionFailure(true) // GH-90000
@@ -90,7 +90,7 @@ class HttpClientIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle request timeouts [GH-90000]")
+    @DisplayName("Should handle request timeouts")
     void shouldHandleRequestTimeouts() { // GH-90000
         HttpClientConfig config = HttpClientConfig.builder() // GH-90000
             .connectTimeout(Duration.ofSeconds(5)) // GH-90000
@@ -104,7 +104,7 @@ class HttpClientIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle connection pooling [GH-90000]")
+    @DisplayName("Should handle connection pooling")
     void shouldHandleConnectionPooling() { // GH-90000
         HttpClientConfig config = HttpClientConfig.builder() // GH-90000
             .maxConnections(20) // GH-90000
@@ -116,7 +116,7 @@ class HttpClientIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle HTTP error responses [GH-90000]")
+    @DisplayName("Should handle HTTP error responses")
     void shouldHandleHttpErrorResponses() { // GH-90000
         mockWebServer = new MockWebServer(); // GH-90000
         okHttpClient = new OkHttpClient(); // GH-90000

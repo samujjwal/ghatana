@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AepHttpServer – Pattern Endpoints [GH-90000]")
+@DisplayName("AepHttpServer – Pattern Endpoints")
 class AepHttpServerPatternTest {
 
     private AepEngine engine;
@@ -57,23 +57,23 @@ class AepHttpServerPatternTest {
     // ==================== GET /api/v1/patterns ====================
 
     @Nested
-    @DisplayName("GET /api/v1/patterns [GH-90000]")
+    @DisplayName("GET /api/v1/patterns")
     class ListPatternsTests {
 
         @Test
-        @DisplayName("returns 200 with empty list when no patterns registered [GH-90000]")
+        @DisplayName("returns 200 with empty list when no patterns registered")
         void listPatterns_whenEmpty_returns200WithEmptyList() throws Exception { // GH-90000
-            HttpResponse<String> resp = get("/api/v1/patterns [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/patterns");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("count [GH-90000]")).isEqualTo(0);
-            assertThat((List<?>) body.get("patterns [GH-90000]")).isEmpty();
-            assertThat(body.get("timestamp [GH-90000]")).isNotNull();
+            assertThat(body.get("count")).isEqualTo(0);
+            assertThat((List<?>) body.get("patterns")).isEmpty();
+            assertThat(body.get("timestamp")).isNotNull();
         }
 
         @Test
-        @DisplayName("returns 200 with patterns after registration [GH-90000]")
+        @DisplayName("returns 200 with patterns after registration")
         void listPatterns_afterRegistration_returns200WithPatterns() throws Exception { // GH-90000
             // Register a pattern first
             String reqBody = mapper.writeValueAsString(Map.of( // GH-90000
@@ -84,33 +84,33 @@ class AepHttpServerPatternTest {
             ));
             post("/api/v1/patterns", reqBody); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/patterns?tenantId=test-tenant [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/patterns?tenantId=test-tenant");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            int count = ((Number) body.get("count [GH-90000]")).intValue();
+            int count = ((Number) body.get("count")).intValue();
             assertThat(count).isGreaterThanOrEqualTo(1); // GH-90000
         }
 
         @Test
-        @DisplayName("uses default tenant when tenantId not specified [GH-90000]")
+        @DisplayName("uses default tenant when tenantId not specified")
         void listPatterns_withoutTenantId_usesDefault() throws Exception { // GH-90000
-            HttpResponse<String> resp = get("/api/v1/patterns [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/patterns");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("timestamp [GH-90000]")).isNotNull();
+            assertThat(body.get("timestamp")).isNotNull();
         }
     }
 
     // ==================== POST /api/v1/patterns ====================
 
     @Nested
-    @DisplayName("POST /api/v1/patterns [GH-90000]")
+    @DisplayName("POST /api/v1/patterns")
     class RegisterPatternTests {
 
         @Test
-        @DisplayName("returns 200 with pattern details on valid registration [GH-90000]")
+        @DisplayName("returns 200 with pattern details on valid registration")
         void registerPattern_withValidData_returns200() throws Exception { // GH-90000
             String reqBody = mapper.writeValueAsString(Map.of( // GH-90000
                 "name", "HighCpuAnomaly",
@@ -124,14 +124,14 @@ class AepHttpServerPatternTest {
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            Map<?, ?> pattern = (Map<?, ?>) body.get("pattern [GH-90000]");
-            assertThat(pattern.get("name [GH-90000]")).isEqualTo("HighCpuAnomaly [GH-90000]");
-            assertThat(pattern.get("id [GH-90000]")).isNotNull();
-            assertThat(body.get("timestamp [GH-90000]")).isNotNull();
+            Map<?, ?> pattern = (Map<?, ?>) body.get("pattern");
+            assertThat(pattern.get("name")).isEqualTo("HighCpuAnomaly");
+            assertThat(pattern.get("id")).isNotNull();
+            assertThat(body.get("timestamp")).isNotNull();
         }
 
         @Test
-        @DisplayName("returns 400 on malformed JSON body [GH-90000]")
+        @DisplayName("returns 400 on malformed JSON body")
         void registerPattern_withMalformedJson_returns400() throws Exception { // GH-90000
             HttpResponse<String> resp = post("/api/v1/patterns", "{not valid json"); // GH-90000
 
@@ -139,7 +139,7 @@ class AepHttpServerPatternTest {
         }
 
         @Test
-        @DisplayName("returns 400 on invalid pattern type [GH-90000]")
+        @DisplayName("returns 400 on invalid pattern type")
         void registerPattern_withInvalidType_returns400() throws Exception { // GH-90000
             String reqBody = mapper.writeValueAsString(Map.of( // GH-90000
                 "name", "BadType",
@@ -150,18 +150,18 @@ class AepHttpServerPatternTest {
 
             assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("message [GH-90000]")).isNotNull();
+            assertThat(body.get("message")).isNotNull();
         }
     }
 
     // ==================== GET /api/v1/patterns/:patternId ====================
 
     @Nested
-    @DisplayName("GET /api/v1/patterns/:patternId [GH-90000]")
+    @DisplayName("GET /api/v1/patterns/:patternId")
     class GetPatternTests {
 
         @Test
-        @DisplayName("returns 200 with pattern detail when found [GH-90000]")
+        @DisplayName("returns 200 with pattern detail when found")
         void getPattern_whenFound_returns200() throws Exception { // GH-90000
             // Register a pattern first
             String reqBody = mapper.writeValueAsString(Map.of( // GH-90000
@@ -171,36 +171,36 @@ class AepHttpServerPatternTest {
             ));
             HttpResponse<String> createResp = post("/api/v1/patterns", reqBody); // GH-90000
             Map<?, ?> created = mapper.readValue(createResp.body(), Map.class); // GH-90000
-            String patternId = (String) ((Map<?, ?>) created.get("pattern [GH-90000]")).get("id [GH-90000]");
+            String patternId = (String) ((Map<?, ?>) created.get("pattern")).get("id");
 
             HttpResponse<String> resp = get("/api/v1/patterns/" + patternId + "?tenantId=t1"); // GH-90000
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            Map<?, ?> pattern = (Map<?, ?>) body.get("pattern [GH-90000]");
-            assertThat(pattern.get("id [GH-90000]")).isEqualTo(patternId);
-            assertThat(pattern.get("name [GH-90000]")).isEqualTo("FindMe [GH-90000]");
+            Map<?, ?> pattern = (Map<?, ?>) body.get("pattern");
+            assertThat(pattern.get("id")).isEqualTo(patternId);
+            assertThat(pattern.get("name")).isEqualTo("FindMe");
         }
 
         @Test
-        @DisplayName("returns 404 when pattern not found [GH-90000]")
+        @DisplayName("returns 404 when pattern not found")
         void getPattern_whenNotFound_returns404() throws Exception { // GH-90000
-            HttpResponse<String> resp = get("/api/v1/patterns/nonexistent-id?tenantId=t1 [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/patterns/nonexistent-id?tenantId=t1");
 
             assertThat(resp.statusCode()).isEqualTo(404); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("message [GH-90000]").toString()).contains("not found [GH-90000]");
+            assertThat(body.get("message").toString()).contains("not found");
         }
     }
 
     // ==================== DELETE /api/v1/patterns/:patternId ====================
 
     @Nested
-    @DisplayName("DELETE /api/v1/patterns/:patternId [GH-90000]")
+    @DisplayName("DELETE /api/v1/patterns/:patternId")
     class DeletePatternTests {
 
         @Test
-        @DisplayName("returns 200 with deleted=true on successful deletion [GH-90000]")
+        @DisplayName("returns 200 with deleted=true on successful deletion")
         void deletePattern_returnsDeletedTrue() throws Exception { // GH-90000
             // Register a pattern first
             String reqBody = mapper.writeValueAsString(Map.of( // GH-90000
@@ -210,14 +210,14 @@ class AepHttpServerPatternTest {
             ));
             HttpResponse<String> createResp = post("/api/v1/patterns", reqBody); // GH-90000
             Map<?, ?> created = mapper.readValue(createResp.body(), Map.class); // GH-90000
-            String patternId = (String) ((Map<?, ?>) created.get("pattern [GH-90000]")).get("id [GH-90000]");
+            String patternId = (String) ((Map<?, ?>) created.get("pattern")).get("id");
 
             HttpResponse<String> resp = delete("/api/v1/patterns/" + patternId + "?tenantId=t1"); // GH-90000
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("deleted [GH-90000]")).isEqualTo(true);
-            assertThat(body.get("patternId [GH-90000]")).isEqualTo(patternId);
+            assertThat(body.get("deleted")).isEqualTo(true);
+            assertThat(body.get("patternId")).isEqualTo(patternId);
         }
     }
 

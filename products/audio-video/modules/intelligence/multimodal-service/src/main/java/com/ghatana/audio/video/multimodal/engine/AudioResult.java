@@ -5,7 +5,11 @@ import java.util.List;
 
 /**
  * Result from STT transcription.
- */
+  * @doc.type class
+ * @doc.purpose Provides audio result functionality.
+ * @doc.layer product
+ * @doc.pattern ValueObject
+*/
 public class AudioResult {
 
     private final String transcription;

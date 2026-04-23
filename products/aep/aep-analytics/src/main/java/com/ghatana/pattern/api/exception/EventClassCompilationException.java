@@ -9,7 +9,11 @@ import java.util.Objects;
 
 /**
  * Checked exception raised when dynamic class compilation fails.
- */
+  * @doc.type enum
+ * @doc.purpose Provides event class compilation exception functionality.
+ * @doc.layer product
+ * @doc.pattern Event
+*/
 public class EventClassCompilationException extends Exception {
 
     public enum Reason {

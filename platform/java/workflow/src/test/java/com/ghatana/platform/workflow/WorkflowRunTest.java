@@ -13,7 +13,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.*;
 
-@DisplayName("WorkflowRun Tests [GH-90000]")
+@DisplayName("WorkflowRun Tests")
 class WorkflowRunTest {
 
     @Test
@@ -24,12 +24,12 @@ class WorkflowRunTest {
             WorkflowRunStatus.PENDING, WorkflowOptions.durable(), // GH-90000
             now, null, "step-1", Map.of("key", "val"), null, null, List.of()); // GH-90000
 
-        assertThat(run.runId()).isEqualTo("run-1 [GH-90000]");
-        assertThat(run.workflowId()).isEqualTo("wf-1 [GH-90000]");
-        assertThat(run.tenantId()).isEqualTo("tenant-1 [GH-90000]");
+        assertThat(run.runId()).isEqualTo("run-1");
+        assertThat(run.workflowId()).isEqualTo("wf-1");
+        assertThat(run.tenantId()).isEqualTo("tenant-1");
         assertThat(run.kind()).isEqualTo(WorkflowKind.DURABLE); // GH-90000
         assertThat(run.status()).isEqualTo(WorkflowRunStatus.PENDING); // GH-90000
-        assertThat(run.currentStepId()).isEqualTo("step-1 [GH-90000]");
+        assertThat(run.currentStepId()).isEqualTo("step-1");
         assertThat(run.errorMessage()).isNull(); // GH-90000
         assertThat(run.startedAt()).isEqualTo(now); // GH-90000
         assertThat(run.completedAt()).isNull(); // GH-90000
@@ -67,9 +67,9 @@ class WorkflowRunTest {
             WorkflowRunStatus.RUNNING, WorkflowOptions.durable(), // GH-90000
             Instant.now(), null, null, Map.of(), null, null, List.of()); // GH-90000
 
-        WorkflowRun failed = run.withError("something broke [GH-90000]");
+        WorkflowRun failed = run.withError("something broke");
 
-        assertThat(failed.errorMessage()).isEqualTo("something broke [GH-90000]");
+        assertThat(failed.errorMessage()).isEqualTo("something broke");
     }
 
     @Test
@@ -93,8 +93,8 @@ class WorkflowRunTest {
             WorkflowRunStatus.RUNNING, WorkflowOptions.durable(), // GH-90000
             Instant.now(), null, "step-1", Map.of(), null, null, List.of()); // GH-90000
 
-        WorkflowRun updated = run.withCurrentStep("step-2 [GH-90000]");
+        WorkflowRun updated = run.withCurrentStep("step-2");
 
-        assertThat(updated.currentStepId()).isEqualTo("step-2 [GH-90000]");
+        assertThat(updated.currentStepId()).isEqualTo("step-2");
     }
 }

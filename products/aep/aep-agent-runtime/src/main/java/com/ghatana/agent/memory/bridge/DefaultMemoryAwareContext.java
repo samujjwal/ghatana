@@ -22,7 +22,8 @@ import java.util.Objects;
  * @doc.type class
  * @doc.purpose Memory plane-aware agent context implementation
  * @doc.layer agent-memory
- */
+  * @doc.pattern Component
+*/
 public class DefaultMemoryAwareContext implements MemoryAwareContext {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultMemoryAwareContext.class);

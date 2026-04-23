@@ -11,7 +11,7 @@
  * - Anomaly highlighting
  *
  * @doc.type component
- * @doc.purpose AI-powered hover explanations
+ * @doc.purpose Assisted hover explanations
  * @doc.layer frontend
  */
 

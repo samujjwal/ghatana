@@ -13,7 +13,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.*;
 
-@DisplayName("CelWorkflowExpressionEvaluator Tests [GH-90000]")
+@DisplayName("CelWorkflowExpressionEvaluator Tests")
 class CelWorkflowExpressionEvaluatorTest {
 
     /** Simple mock CEL engine that handles basic patterns for testing */
@@ -21,10 +21,10 @@ class CelWorkflowExpressionEvaluatorTest {
         new CelWorkflowExpressionEvaluator.CelEnginePort() { // GH-90000
             @Override
             public Object evaluate(String expression, Map<String, Object> context) { // GH-90000
-                if (expression.equals("true [GH-90000]")) return true;
-                if (expression.equals("false [GH-90000]")) return false;
-                if (expression.equals("ctx.amount > 100 [GH-90000]")) {
-                    Object amount = context.get("amount [GH-90000]");
+                if (expression.equals("true")) return true;
+                if (expression.equals("false")) return false;
+                if (expression.equals("ctx.amount > 100")) {
+                    Object amount = context.get("amount");
                     if (amount instanceof Number n) return n.doubleValue() > 100; // GH-90000
                     return false;
                 }
@@ -33,8 +33,8 @@ class CelWorkflowExpressionEvaluatorTest {
 
             @Override
             public void validate(String expression) { // GH-90000
-                if (expression.equals("invalid!!! [GH-90000]")) {
-                    throw new IllegalArgumentException("Syntax error [GH-90000]");
+                if (expression.equals("invalid!!!")) {
+                    throw new IllegalArgumentException("Syntax error");
                 }
             }
         };
@@ -72,12 +72,12 @@ class CelWorkflowExpressionEvaluatorTest {
 
     @Test
     void shouldValidateGoodExpression() { // GH-90000
-        assertThatNoException().isThrownBy(() -> evaluator.validate("true [GH-90000]"));
+        assertThatNoException().isThrownBy(() -> evaluator.validate("true"));
     }
 
     @Test
     void shouldRejectInvalidExpression() { // GH-90000
-        assertThatThrownBy(() -> evaluator.validate("invalid!!! [GH-90000]"))
+        assertThatThrownBy(() -> evaluator.validate("invalid!!!"))
             .isInstanceOf(WorkflowDefinitionException.class); // GH-90000
     }
 
@@ -97,7 +97,7 @@ class CelWorkflowExpressionEvaluatorTest {
         WorkflowContext ctx = WorkflowContext.forWorkflow("w", "t"); // GH-90000
         assertThatThrownBy(() -> eval.evaluateBoolean("expr", ctx)) // GH-90000
             .isInstanceOf(WorkflowDefinitionException.class) // GH-90000
-            .hasMessageContaining("did not return a boolean [GH-90000]");
+            .hasMessageContaining("did not return a boolean");
     }
 
     @Test

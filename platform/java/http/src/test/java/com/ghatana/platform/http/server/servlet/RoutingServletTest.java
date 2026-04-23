@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("RoutingServlet — HTTP route registration, dispatch, and 404 handling [GH-90000]")
+@DisplayName("RoutingServlet — HTTP route registration, dispatch, and 404 handling")
 class RoutingServletTest extends EventloopTestBase {
 
     private RoutingServlet servlet;
@@ -30,20 +30,20 @@ class RoutingServletTest extends EventloopTestBase {
     // ── Route registration ────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("new servlet has zero routes [GH-90000]")
+    @DisplayName("new servlet has zero routes")
     void newServletHasZeroRoutes() { // GH-90000
         assertThat(servlet.getRouteCount()).isEqualTo(0); // GH-90000
     }
 
     @Test
-    @DisplayName("addRoute() increments route count [GH-90000]")
+    @DisplayName("addRoute() increments route count")
     void addRouteIncrementsCount() { // GH-90000
         servlet.addRoute(HttpMethod.GET, "/ping", req -> HttpResponse.ok200().build()); // GH-90000
         assertThat(servlet.getRouteCount()).isEqualTo(1); // GH-90000
     }
 
     @Test
-    @DisplayName("addAsyncRoute() increments route count [GH-90000]")
+    @DisplayName("addAsyncRoute() increments route count")
     void addAsyncRouteIncrementsCount() { // GH-90000
         servlet.addAsyncRoute(HttpMethod.POST, "/items", // GH-90000
                 req -> Promise.of(HttpResponse.ofCode(201).build())); // GH-90000
@@ -53,23 +53,23 @@ class RoutingServletTest extends EventloopTestBase {
     // ── Exact-match routing ───────────────────────────────────────────────────
 
     @Test
-    @DisplayName("GET /ping returns 200 from registered sync route [GH-90000]")
+    @DisplayName("GET /ping returns 200 from registered sync route")
     void exactGetMatchReturns200() { // GH-90000
         servlet.addRoute(HttpMethod.GET, "/ping", req -> HttpResponse.ok200().build()); // GH-90000
 
-        HttpRequest request = HttpRequest.get("http://localhost/ping [GH-90000]").build();
+        HttpRequest request = HttpRequest.get("http://localhost/ping").build();
         HttpResponse response = runPromise(() -> servlet.serve(request)); // GH-90000
 
         assertThat(response.getCode()).isEqualTo(200); // GH-90000
     }
 
     @Test
-    @DisplayName("POST route returns 201 from registered async route [GH-90000]")
+    @DisplayName("POST route returns 201 from registered async route")
     void asyncPostRouteReturns201() { // GH-90000
         servlet.addAsyncRoute(HttpMethod.POST, "/items", // GH-90000
                 req -> Promise.of(HttpResponse.ofCode(201).build())); // GH-90000
 
-        HttpRequest request = HttpRequest.post("http://localhost/items [GH-90000]").build();
+        HttpRequest request = HttpRequest.post("http://localhost/items").build();
         HttpResponse response = runPromise(() -> servlet.serve(request)); // GH-90000
 
         assertThat(response.getCode()).isEqualTo(201); // GH-90000
@@ -78,20 +78,20 @@ class RoutingServletTest extends EventloopTestBase {
     // ── 404 for unregistered routes ───────────────────────────────────────────
 
     @Test
-    @DisplayName("unregistered path returns 404 [GH-90000]")
+    @DisplayName("unregistered path returns 404")
     void unregisteredPathReturns404() { // GH-90000
-        HttpRequest request = HttpRequest.get("http://localhost/missing [GH-90000]").build();
+        HttpRequest request = HttpRequest.get("http://localhost/missing").build();
         HttpResponse response = runPromise(() -> servlet.serve(request)); // GH-90000
 
         assertThat(response.getCode()).isEqualTo(404); // GH-90000
     }
 
     @Test
-    @DisplayName("registered GET route returns 404 for DELETE on same path [GH-90000]")
+    @DisplayName("registered GET route returns 404 for DELETE on same path")
     void getRouteDoesNotMatchDelete() { // GH-90000
         servlet.addRoute(HttpMethod.GET, "/resource", req -> HttpResponse.ok200().build()); // GH-90000
 
-        HttpRequest request = HttpRequest.post("http://localhost/resource [GH-90000]").build();
+        HttpRequest request = HttpRequest.post("http://localhost/resource").build();
         HttpResponse response = runPromise(() -> servlet.serve(request)); // GH-90000
 
         assertThat(response.getCode()).isEqualTo(404); // GH-90000
@@ -100,25 +100,25 @@ class RoutingServletTest extends EventloopTestBase {
     // ── Path parameter patterns ───────────────────────────────────────────────
 
     @Test
-    @DisplayName("path pattern /users/:id matches /users/42 [GH-90000]")
+    @DisplayName("path pattern /users/:id matches /users/42")
     void pathParameterRouteMatchesConcreteValue() { // GH-90000
         servlet.addRoute(HttpMethod.GET, "/users/:id", // GH-90000
                 req -> HttpResponse.ok200().build()); // GH-90000
 
-        HttpRequest request = HttpRequest.get("http://localhost/users/42 [GH-90000]").build();
+        HttpRequest request = HttpRequest.get("http://localhost/users/42").build();
         HttpResponse response = runPromise(() -> servlet.serve(request)); // GH-90000
 
         assertThat(response.getCode()).isEqualTo(200); // GH-90000
     }
 
     @Test
-    @DisplayName("pattern route does not match missing segment [GH-90000]")
+    @DisplayName("pattern route does not match missing segment")
     void patternRouteDoesNotMatchMissingSegment() { // GH-90000
         servlet.addRoute(HttpMethod.GET, "/users/:id", // GH-90000
                 req -> HttpResponse.ok200().build()); // GH-90000
 
         // /users without ID segment should not match /users/:id
-        HttpRequest request = HttpRequest.get("http://localhost/users [GH-90000]").build();
+        HttpRequest request = HttpRequest.get("http://localhost/users").build();
         HttpResponse response = runPromise(() -> servlet.serve(request)); // GH-90000
 
         assertThat(response.getCode()).isEqualTo(404); // GH-90000
@@ -127,7 +127,7 @@ class RoutingServletTest extends EventloopTestBase {
     // ── Route merging ─────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("merge() combines routes from another servlet [GH-90000]")
+    @DisplayName("merge() combines routes from another servlet")
     void mergeCombinesRoutes() { // GH-90000
         RoutingServlet other = new RoutingServlet(); // GH-90000
         other.addRoute(HttpMethod.GET, "/a", req -> HttpResponse.ok200().build()); // GH-90000
@@ -140,7 +140,7 @@ class RoutingServletTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("merge(null) is a no-op and returns the same servlet [GH-90000]")
+    @DisplayName("merge(null) is a no-op and returns the same servlet")
     void mergeNullIsNoOp() { // GH-90000
         servlet.addRoute(HttpMethod.GET, "/x", req -> HttpResponse.ok200().build()); // GH-90000
         RoutingServlet returned = servlet.merge(null); // GH-90000
@@ -152,7 +152,7 @@ class RoutingServletTest extends EventloopTestBase {
     // ── Clear ─────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("clear() removes all registered routes [GH-90000]")
+    @DisplayName("clear() removes all registered routes")
     void clearRemovesAllRoutes() { // GH-90000
         servlet.addRoute(HttpMethod.GET, "/a", req -> HttpResponse.ok200().build()); // GH-90000
         servlet.addRoute(HttpMethod.POST, "/b", req -> HttpResponse.ok200().build()); // GH-90000

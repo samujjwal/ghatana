@@ -17,7 +17,8 @@ import org.jetbrains.annotations.NotNull;
  * @doc.type interface
  * @doc.purpose Workflow step definition (functional interface)
  * @doc.layer core
- */
+  * @doc.pattern Workflow
+*/
 @FunctionalInterface
 public interface WorkflowStep {
 

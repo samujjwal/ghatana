@@ -59,14 +59,14 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @since 2.4.0
  */
-@DisplayName("YAPPC Platform Complete Integration Tests (Session 6) [GH-90000]")
+@DisplayName("YAPPC Platform Complete Integration Tests (Session 6)")
 public class YappcIntegrationTest {
 
     @ClassRule
     public static EventloopRule eventloopRule = new EventloopRule(); // GH-90000
 
     @Test
-    @DisplayName("Complete setup - all new security and retrieval components instantiate [GH-90000]")
+    @DisplayName("Complete setup - all new security and retrieval components instantiate")
     public void testAllComponentsInstantiate() { // GH-90000
         // GIVEN - All executors available
         Executor executor = Executors.newCachedThreadPool(); // GH-90000
@@ -87,7 +87,7 @@ public class YappcIntegrationTest {
     }
 
     @Test
-    @DisplayName("Complete setup - all new retrieval components instantiate [GH-90000]")
+    @DisplayName("Complete setup - all new retrieval components instantiate")
     public void testAllRetrievalComponentsInstantiate() { // GH-90000
         // GIVEN
         Executor executor = Executors.newCachedThreadPool(); // GH-90000
@@ -104,7 +104,7 @@ public class YappcIntegrationTest {
     }
 
     @Test
-    @DisplayName("DI modules - InfrastructureServiceModule configures without error [GH-90000]")
+    @DisplayName("DI modules - InfrastructureServiceModule configures without error")
     public void testInfrastructureServiceModuleConfiguration() { // GH-90000
         // GIVEN
         InfrastructureServiceModule module = new InfrastructureServiceModule(); // GH-90000
@@ -114,7 +114,7 @@ public class YappcIntegrationTest {
     }
 
     @Test
-    @DisplayName("DI modules - KnowledgeModule configures without error [GH-90000]")
+    @DisplayName("DI modules - KnowledgeModule configures without error")
     public void testKnowledgeModuleConfiguration() { // GH-90000
         // GIVEN
         KnowledgeModule module = new KnowledgeModule(); // GH-90000
@@ -124,7 +124,7 @@ public class YappcIntegrationTest {
     }
 
     @Test
-    @DisplayName("Security architecture - CompositeScanner correctly identifies itself [GH-90000]")
+    @DisplayName("Security architecture - CompositeScanner correctly identifies itself")
     public void testCompositeSecurityScannerIdentification() { // GH-90000
         // GIVEN
         Executor executor = Executors.newCachedThreadPool(); // GH-90000
@@ -140,7 +140,7 @@ public class YappcIntegrationTest {
     }
 
     @Test
-    @DisplayName("Retrieval architecture - Both retrievers implement correct interface [GH-90000]")
+    @DisplayName("Retrieval architecture - Both retrievers implement correct interface")
     public void testRetrieverInterfaceCompliance() { // GH-90000
         // GIVEN
         Executor executor = Executors.newCachedThreadPool(); // GH-90000
@@ -158,7 +158,7 @@ public class YappcIntegrationTest {
     }
 
     @Test
-    @DisplayName("Architectural constraints - No shell execution in security scanner [GH-90000]")
+    @DisplayName("Architectural constraints - No shell execution in security scanner")
     public void testNoShellExecutionViolations() { // GH-90000
         // GIVEN - OSV adapter uses SafeHookExecutor pattern (no sh -c) // GH-90000
         Executor executor = Executors.newCachedThreadPool(); // GH-90000
@@ -167,13 +167,13 @@ public class YappcIntegrationTest {
         // WHEN / THEN - Verify no unsafe patterns
         assertThat(osvScanner).isNotNull(); // GH-90000
         assertThat(osvScanner.getClass().getName()) // GH-90000
-            .doesNotContain("ProcessBuilder [GH-90000]")
-            .doesNotContain("Runtime.exec [GH-90000]");
+            .doesNotContain("ProcessBuilder")
+            .doesNotContain("Runtime.exec");
         // Implementation uses safe HTTP client approach
     }
 
     @Test
-    @DisplayName("Code quality - All components follow @doc tagging standards [GH-90000]")
+    @DisplayName("Code quality - All components follow @doc tagging standards")
     public void testCodeQualityStandards() { // GH-90000
         // VERIFY - All classes have @doc comments (checked at compile time via annotation processor) // GH-90000
         // This test exists to document the requirement
@@ -184,7 +184,7 @@ public class YappcIntegrationTest {
     }
 
     @Test
-    @DisplayName("Session 6 Summary - All 4 core work items completed [GH-90000]")
+    @DisplayName("Session 6 Summary - All 4 core work items completed")
     public void testSession6Completion() { // GH-90000
         // VERIFICATION OF SESSION 6 ITEMS:
         // ✅ Item 4.6-4.7: OsvScannerAdapter + CompositeSecurityScanner + SecurityServiceAdapter wiring

@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("AsyncBridge - Phase 3 Expansion [GH-90000]")
+@DisplayName("AsyncBridge - Phase 3 Expansion")
 class AsyncBridgeExpansionTest extends EventloopTestBase {
 
     // ============================================
@@ -35,11 +35,11 @@ class AsyncBridgeExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("RunBlocking Variations [GH-90000]")
+    @DisplayName("RunBlocking Variations")
     class RunBlockingTests {
 
         @Test
-        @DisplayName("Blocks correctly with long-running operations [GH-90000]")
+        @DisplayName("Blocks correctly with long-running operations")
         void blockingLongOperation() { // GH-90000
             String result = runPromise(() -> AsyncBridge.runBlocking(() -> { // GH-90000
                 try {
@@ -50,11 +50,11 @@ class AsyncBridgeExpansionTest extends EventloopTestBase {
                 return "completed";
             }));
 
-            assertThat(result).isEqualTo("completed [GH-90000]");
+            assertThat(result).isEqualTo("completed");
         }
 
         @Test
-        @DisplayName("Multiple sequential blocking operations complete in order [GH-90000]")
+        @DisplayName("Multiple sequential blocking operations complete in order")
         void sequentialBlocking() { // GH-90000
             List<String> results = new ArrayList<>(); // GH-90000
 
@@ -76,7 +76,7 @@ class AsyncBridgeExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Blocking operation with null return handled [GH-90000]")
+        @DisplayName("Blocking operation with null return handled")
         void blockingNullReturn() { // GH-90000
             String result = runPromise(() -> AsyncBridge.runBlocking(() -> null)); // GH-90000
 
@@ -84,7 +84,7 @@ class AsyncBridgeExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Blocking interrupted thread is properly handled [GH-90000]")
+        @DisplayName("Blocking interrupted thread is properly handled")
         void blockingInterruptedThread() { // GH-90000
             assertThatThrownBy(() -> { // GH-90000
                 runPromise(() -> AsyncBridge.runBlocking(() -> { // GH-90000
@@ -93,22 +93,22 @@ class AsyncBridgeExpansionTest extends EventloopTestBase {
                         Thread.sleep(100); // GH-90000
                     } catch (InterruptedException e) { // GH-90000
                         Thread.currentThread().interrupt(); // GH-90000
-                        throw new RuntimeException("Interrupted [GH-90000]");
+                        throw new RuntimeException("Interrupted");
                     }
                     return "should-not-get-here";
                 }));
-            }).hasMessageContaining("Interrupted [GH-90000]");
+            }).hasMessageContaining("Interrupted");
             clearFatalError(); // GH-90000
         }
 
         @Test
-        @DisplayName("Blocking with exception is properly propagated [GH-90000]")
+        @DisplayName("Blocking with exception is properly propagated")
         void blockingExceptionPropagation() { // GH-90000
             assertThatThrownBy(() -> { // GH-90000
                 runPromise(() -> AsyncBridge.runBlocking(() -> { // GH-90000
-                    throw new IllegalArgumentException("invalid input [GH-90000]");
+                    throw new IllegalArgumentException("invalid input");
                 }));
-            }).hasMessageContaining("invalid input [GH-90000]");
+            }).hasMessageContaining("invalid input");
             clearFatalError(); // GH-90000
         }
     }
@@ -118,42 +118,42 @@ class AsyncBridgeExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Future to Promise Conversion [GH-90000]")
+    @DisplayName("Future to Promise Conversion")
     class FutureToPromiseTests {
 
         @Test
-        @DisplayName("Completed future converts to resolved promise [GH-90000]")
+        @DisplayName("Completed future converts to resolved promise")
         void completedFutureToPromise() { // GH-90000
-            CompletableFuture<String> future = CompletableFuture.completedFuture("value [GH-90000]");
+            CompletableFuture<String> future = CompletableFuture.completedFuture("value");
             Promise<String> promise = AsyncBridge.fromFuture(future); // GH-90000
 
             String result = runPromise(() -> promise); // GH-90000
 
-            assertThat(result).isEqualTo("value [GH-90000]");
+            assertThat(result).isEqualTo("value");
         }
 
         @Test
-        @DisplayName("Exceptional future converts to failed promise [GH-90000]")
+        @DisplayName("Exceptional future converts to failed promise")
         void exceptionalFutureToPromise() { // GH-90000
             CompletableFuture<String> future = new CompletableFuture<>(); // GH-90000
-            future.completeExceptionally(new RuntimeException("future failed [GH-90000]"));
+            future.completeExceptionally(new RuntimeException("future failed"));
             Promise<String> promise = AsyncBridge.fromFuture(future); // GH-90000
 
             assertThatThrownBy(() -> { // GH-90000
                 runPromise(() -> promise); // GH-90000
-            }).hasMessageContaining("future failed [GH-90000]");
+            }).hasMessageContaining("future failed");
             clearFatalError(); // GH-90000
         }
 
         @Test
-        @DisplayName("Future completed asynchronously resolves promise [GH-90000]")
+        @DisplayName("Future completed asynchronously resolves promise")
         void asyncCompletedFutureToPromise() { // GH-90000
             CompletableFuture<String> future = new CompletableFuture<>(); // GH-90000
 
             new Thread(() -> { // GH-90000
                 try {
                     Thread.sleep(20); // GH-90000
-                    future.complete("async-value [GH-90000]");
+                    future.complete("async-value");
                 } catch (InterruptedException e) { // GH-90000
                     Thread.currentThread().interrupt(); // GH-90000
                 }
@@ -162,11 +162,11 @@ class AsyncBridgeExpansionTest extends EventloopTestBase {
             Promise<String> promise = AsyncBridge.fromFuture(future); // GH-90000
             String result = runPromise(() -> promise); // GH-90000
 
-            assertThat(result).isEqualTo("async-value [GH-90000]");
+            assertThat(result).isEqualTo("async-value");
         }
 
         @Test
-        @DisplayName("Many futures converted to promises in bulk [GH-90000]")
+        @DisplayName("Many futures converted to promises in bulk")
         void bulkFutureConversion() { // GH-90000
             List<CompletableFuture<Integer>> futures = new ArrayList<>(); // GH-90000
             for (int i = 0; i < 100; i++) { // GH-90000
@@ -188,33 +188,33 @@ class AsyncBridgeExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Promise to Future Conversion [GH-90000]")
+    @DisplayName("Promise to Future Conversion")
     class PromiseToFutureTests {
 
         @Test
-        @DisplayName("Resolved promise converts to completed future [GH-90000]")
+        @DisplayName("Resolved promise converts to completed future")
         void resolvedPromiseToFuture() { // GH-90000
-            Promise<String> promise = Promise.of("promise-value [GH-90000]");
+            Promise<String> promise = Promise.of("promise-value");
             CompletableFuture<String> future = AsyncBridge.toFuture(promise); // GH-90000
 
             runPromise(() -> promise); // GH-90000
 
-            assertThat(future).isCompletedWithValue("promise-value [GH-90000]");
+            assertThat(future).isCompletedWithValue("promise-value");
         }
 
         @Test
-        @DisplayName("Failed promise converts to exceptional future [GH-90000]")
+        @DisplayName("Failed promise converts to exceptional future")
         void failedPromiseToFuture() { // GH-90000
-            Promise<String> promise = Promise.ofException(new RuntimeException("promise failed [GH-90000]"));
+            Promise<String> promise = Promise.ofException(new RuntimeException("promise failed"));
             CompletableFuture<String> future = AsyncBridge.toFuture(promise); // GH-90000
 
             assertThat(future).isCompletedExceptionally(); // GH-90000
             assertThatThrownBy(future::join) // GH-90000
-                .hasMessageContaining("promise failed [GH-90000]");
+                .hasMessageContaining("promise failed");
         }
 
         @Test
-        @DisplayName("Null promise value converts correctly [GH-90000]")
+        @DisplayName("Null promise value converts correctly")
         void nullPromiseToFuture() { // GH-90000
             Promise<String> promise = Promise.of(null); // GH-90000
             CompletableFuture<String> future = AsyncBridge.toFuture(promise); // GH-90000
@@ -225,7 +225,7 @@ class AsyncBridgeExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Many promises converted to futures in bulk [GH-90000]")
+        @DisplayName("Many promises converted to futures in bulk")
         void bulkPromiseConversion() { // GH-90000
             List<Promise<Integer>> promises = new ArrayList<>(); // GH-90000
             for (int i = 0; i < 100; i++) { // GH-90000
@@ -247,44 +247,44 @@ class AsyncBridgeExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Round Trip Conversions [GH-90000]")
+    @DisplayName("Round Trip Conversions")
     class RoundTripTests {
 
         @Test
-        @DisplayName("Promise → Future → Promise preserves value [GH-90000]")
+        @DisplayName("Promise → Future → Promise preserves value")
         void promiseFutureRoundTrip() { // GH-90000
-            Promise<String> original = Promise.of("original-value [GH-90000]");
+            Promise<String> original = Promise.of("original-value");
             CompletableFuture<String> future = AsyncBridge.toFuture(original); // GH-90000
             Promise<String> restored = AsyncBridge.fromFuture(future); // GH-90000
 
             runPromise(() -> original); // GH-90000
             String result = runPromise(() -> restored); // GH-90000
 
-            assertThat(result).isEqualTo("original-value [GH-90000]");
+            assertThat(result).isEqualTo("original-value");
         }
 
         @Test
-        @DisplayName("Future → Promise → Future preserves value [GH-90000]")
+        @DisplayName("Future → Promise → Future preserves value")
         void futurePromiseRoundTrip() { // GH-90000
-            CompletableFuture<String> original = CompletableFuture.completedFuture("round-trip [GH-90000]");
+            CompletableFuture<String> original = CompletableFuture.completedFuture("round-trip");
             Promise<String> promise = AsyncBridge.fromFuture(original); // GH-90000
             CompletableFuture<String> restored = AsyncBridge.toFuture(promise); // GH-90000
 
             String result = runPromise(() -> promise); // GH-90000
-            assertThat(restored).isCompletedWithValue("round-trip [GH-90000]");
+            assertThat(restored).isCompletedWithValue("round-trip");
         }
 
         @Test
-        @DisplayName("Exception preserved through round trip conversion [GH-90000]")
+        @DisplayName("Exception preserved through round trip conversion")
         void exceptionRoundTrip() { // GH-90000
-            Promise<String> original = Promise.ofException(new RuntimeException("round-trip-error [GH-90000]"));
+            Promise<String> original = Promise.ofException(new RuntimeException("round-trip-error"));
             CompletableFuture<String> future = AsyncBridge.toFuture(original); // GH-90000
             Promise<String> restored = AsyncBridge.fromFuture(future); // GH-90000
 
             assertThat(future).isCompletedExceptionally(); // GH-90000
             assertThatThrownBy(() -> { // GH-90000
                 runPromise(() -> restored); // GH-90000
-            }).hasMessageContaining("round-trip-error [GH-90000]");
+            }).hasMessageContaining("round-trip-error");
             clearFatalError(); // GH-90000
         }
     }
@@ -294,11 +294,11 @@ class AsyncBridgeExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Concurrent Conversion [GH-90000]")
+    @DisplayName("Concurrent Conversion")
     class ConcurrentConversionTests {
 
         @Test
-        @DisplayName("Many threads simultaneously converting futures to promises [GH-90000]")
+        @DisplayName("Many threads simultaneously converting futures to promises")
         void concurrentFutureToPromise() { // GH-90000
             int threadCount = 20;
             List<CompletableFuture<String>> futures = new ArrayList<>(); // GH-90000
@@ -332,7 +332,7 @@ class AsyncBridgeExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Many threads simultaneously converting promises to futures [GH-90000]")
+        @DisplayName("Many threads simultaneously converting promises to futures")
         void concurrentPromiseToFuture() { // GH-90000
             int threadCount = 20;
             List<Promise<String>> promises = new ArrayList<>(); // GH-90000
@@ -366,7 +366,7 @@ class AsyncBridgeExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Mixed conversions under concurrent load [GH-90000]")
+        @DisplayName("Mixed conversions under concurrent load")
         void mixedConcurrentConversions() throws Exception { // GH-90000
             int threadCount = 10;
             AtomicInteger conversionCount = new AtomicInteger(0); // GH-90000
@@ -379,10 +379,10 @@ class AsyncBridgeExpansionTest extends EventloopTestBase {
                         try {
                             for (int j = 0; j < 25; j++) { // GH-90000
                                 if (j % 2 == 0) { // GH-90000
-                                    CompletableFuture<String> future = CompletableFuture.completedFuture("mixed [GH-90000]");
+                                    CompletableFuture<String> future = CompletableFuture.completedFuture("mixed");
                                     AsyncBridge.fromFuture(future); // GH-90000
                                 } else {
-                                    Promise<String> promise = Promise.of("mixed [GH-90000]");
+                                    Promise<String> promise = Promise.of("mixed");
                                     AsyncBridge.toFuture(promise); // GH-90000
                                 }
                                 conversionCount.incrementAndGet(); // GH-90000
@@ -407,11 +407,11 @@ class AsyncBridgeExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Special Cases [GH-90000]")
+    @DisplayName("Special Cases")
     class SpecialCaseTests {
 
         @Test
-        @DisplayName("Chained blocking operations execute serially [GH-90000]")
+        @DisplayName("Chained blocking operations execute serially")
         void chainedBlockingOps() { // GH-90000
             List<Integer> order = new ArrayList<>(); // GH-90000
 
@@ -434,14 +434,14 @@ class AsyncBridgeExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Future with delay completes correctly after conversion [GH-90000]")
+        @DisplayName("Future with delay completes correctly after conversion")
         void delayedFutureConversion() throws Exception { // GH-90000
             CompletableFuture<String> future = new CompletableFuture<>(); // GH-90000
 
             new Thread(() -> { // GH-90000
                 try {
                     Thread.sleep(30); // GH-90000
-                    future.complete("delayed [GH-90000]");
+                    future.complete("delayed");
                 } catch (InterruptedException e) { // GH-90000
                     Thread.currentThread().interrupt(); // GH-90000
                 }
@@ -450,11 +450,11 @@ class AsyncBridgeExpansionTest extends EventloopTestBase {
             Promise<String> promise = AsyncBridge.fromFuture(future); // GH-90000
             String result = runPromise(() -> promise); // GH-90000
 
-            assertThat(result).isEqualTo("delayed [GH-90000]");
+            assertThat(result).isEqualTo("delayed");
         }
 
         @Test
-        @DisplayName("Many levels of nested conversions [GH-90000]")
+        @DisplayName("Many levels of nested conversions")
         void nestedConversions() { // GH-90000
             // Future → Promise → Future → Promise ...
             CompletableFuture<Integer> future = CompletableFuture.completedFuture(42); // GH-90000
@@ -470,7 +470,7 @@ class AsyncBridgeExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Conversion with large payload completes [GH-90000]")
+        @DisplayName("Conversion with large payload completes")
         void largePayloadConversion() { // GH-90000
             String largeString = "x".repeat(10000); // GH-90000
             CompletableFuture<String> future = CompletableFuture.completedFuture(largeString); // GH-90000
@@ -488,28 +488,28 @@ class AsyncBridgeExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Error Recovery [GH-90000]")
+    @DisplayName("Error Recovery")
     class ErrorRecoveryTests {
 
         @Test
-        @DisplayName("Recovers from exception in converted promise [GH-90000]")
+        @DisplayName("Recovers from exception in converted promise")
         void errorRecoveryFromPromise() { // GH-90000
-            Promise<String> failed = Promise.ofException(new RuntimeException("test error [GH-90000]"));
+            Promise<String> failed = Promise.ofException(new RuntimeException("test error"));
             CompletableFuture<String> future = AsyncBridge.toFuture(failed); // GH-90000
 
             assertThat(future).isCompletedExceptionally(); // GH-90000
             assertThatThrownBy(future::join) // GH-90000
-                .hasMessageContaining("test error [GH-90000]");
+                .hasMessageContaining("test error");
         }
 
         @Test
-        @DisplayName("Recovers from exception in blocking operation [GH-90000]")
+        @DisplayName("Recovers from exception in blocking operation")
         void errorRecoveryFromBlocking() { // GH-90000
             assertThatThrownBy(() -> { // GH-90000
                 runPromise(() -> AsyncBridge.runBlocking(() -> { // GH-90000
-                    throw new IllegalStateException("blocking failed [GH-90000]");
+                    throw new IllegalStateException("blocking failed");
                 }));
-            }).hasMessageContaining("blocking failed [GH-90000]");
+            }).hasMessageContaining("blocking failed");
             clearFatalError(); // GH-90000
         }
     }

@@ -15,8 +15,8 @@ class AuditTrailTest {
         return AuditEntry.builder() // GH-90000
             .action(action) // GH-90000
             .resourceId(resourceId) // GH-90000
-            .resourceType("TEST [GH-90000]")
-            .performedBy("test [GH-90000]")
+            .resourceType("TEST")
+            .performedBy("test")
             .timestamp(System.currentTimeMillis()) // GH-90000
             .build(); // GH-90000
     }
@@ -73,7 +73,7 @@ class AuditTrailTest {
         // When/Then
         assertThatThrownBy(() -> new AuditTrail(null)) // GH-90000
             .isInstanceOf(NullPointerException.class) // GH-90000
-            .hasMessage("Entries list cannot be null [GH-90000]");
+            .hasMessage("Entries list cannot be null");
     }
 
     @Test
@@ -84,7 +84,7 @@ class AuditTrailTest {
         // When/Then
         assertThatThrownBy(() -> trail.withEntry(null)) // GH-90000
             .isInstanceOf(NullPointerException.class) // GH-90000
-            .hasMessage("Audit entry cannot be null [GH-90000]");
+            .hasMessage("Audit entry cannot be null");
     }
 
     @Test
@@ -102,7 +102,7 @@ class AuditTrailTest {
         assertThat(filteredTrail.size()).isEqualTo(2); // GH-90000
         assertThat(filteredTrail.getEntries()) // GH-90000
             .extracting(AuditEntry::getResourceId) // GH-90000
-            .containsOnly("res1 [GH-90000]");
+            .containsOnly("res1");
     }
 
     @Test
@@ -157,7 +157,7 @@ class AuditTrailTest {
 
         assertThat(trail1).isNotEqualTo(trail3); // GH-90000
         assertThat(trail1).isNotEqualTo(null); // GH-90000
-        assertThat(trail1).isNotEqualTo("not an audit trail [GH-90000]");
+        assertThat(trail1).isNotEqualTo("not an audit trail");
     }
 
     @Test
@@ -170,8 +170,8 @@ class AuditTrailTest {
         String str = trail.toString(); // GH-90000
 
         // Then
-        assertThat(str).contains("AuditTrail [GH-90000]");
-        assertThat(str).contains("entries=1 [GH-90000]");
+        assertThat(str).contains("AuditTrail");
+        assertThat(str).contains("entries=1");
     }
 
     @Test
@@ -190,7 +190,7 @@ class AuditTrailTest {
         assertThat(trail.getLatestEntry()) // GH-90000
             .isPresent() // GH-90000
             .hasValueSatisfying(e -> // GH-90000
-                assertThat(e.getAction()).isEqualTo("ACTION_999 [GH-90000]"));
+                assertThat(e.getAction()).isEqualTo("ACTION_999"));
     }
 
     @Test

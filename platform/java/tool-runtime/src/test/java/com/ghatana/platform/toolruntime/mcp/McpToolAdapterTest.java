@@ -38,7 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Integration tests for {@link McpToolAdapter} using WireMock to simulate an MCP server.
  */
-@DisplayName("McpToolAdapter [GH-90000]")
+@DisplayName("McpToolAdapter")
 class McpToolAdapterTest extends EventloopTestBase {
 
     private static WireMockServer wireMock;
@@ -97,13 +97,13 @@ class McpToolAdapterTest extends EventloopTestBase {
     // ─── Success scenario ──────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("successful tool response [GH-90000]")
+    @DisplayName("successful tool response")
     class Success {
 
         @Test
-        @DisplayName("returns SUCCESS status with tool output text [GH-90000]")
+        @DisplayName("returns SUCCESS status with tool output text")
         void successfulToolResponse() { // GH-90000
-            wireMock.stubFor(post(urlEqualTo("/mcp [GH-90000]"))
+            wireMock.stubFor(post(urlEqualTo("/mcp"))
                     .willReturn(aResponse() // GH-90000
                             .withStatus(200) // GH-90000
                             .withHeader("Content-Type", "application/json") // GH-90000
@@ -111,26 +111,26 @@ class McpToolAdapterTest extends EventloopTestBase {
                                     + "\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"Hello from MCP\"}]}}")));
 
             McpToolAdapter adapter = new McpToolAdapter(realTransport()); // GH-90000
-            ToolExecutionEnvelope e = envelope("web-search [GH-90000]");
+            ToolExecutionEnvelope e = envelope("web-search");
             ToolContract c = contract("web-search", baseUrl + "/mcp"); // GH-90000
 
             ToolExecutionResult result = runPromise(() -> adapter.handle(e, c)); // GH-90000
 
             assertThat(result.status()).isEqualTo(ToolExecutionStatus.SUCCESS); // GH-90000
-            assertThat(result.output()).isEqualTo("Hello from MCP [GH-90000]");
+            assertThat(result.output()).isEqualTo("Hello from MCP");
         }
     }
 
     // ─── Error scenario ─────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("MCP error response [GH-90000]")
+    @DisplayName("MCP error response")
     class McpError {
 
         @Test
-        @DisplayName("returns FAILED status with error message on MCP error response [GH-90000]")
+        @DisplayName("returns FAILED status with error message on MCP error response")
         void mcpErrorResponse() { // GH-90000
-            wireMock.stubFor(post(urlEqualTo("/mcp [GH-90000]"))
+            wireMock.stubFor(post(urlEqualTo("/mcp"))
                     .willReturn(aResponse() // GH-90000
                             .withStatus(200) // GH-90000
                             .withHeader("Content-Type", "application/json") // GH-90000
@@ -140,48 +140,48 @@ class McpToolAdapterTest extends EventloopTestBase {
             McpToolAdapter adapter = new McpToolAdapter(realTransport()); // GH-90000
             ToolContract c = contract("bad-tool", baseUrl + "/mcp"); // GH-90000
 
-            ToolExecutionResult result = runPromise(() -> adapter.handle(envelope("bad-tool [GH-90000]"), c));
+            ToolExecutionResult result = runPromise(() -> adapter.handle(envelope("bad-tool"), c));
 
             assertThat(result.status()).isEqualTo(ToolExecutionStatus.FAILED); // GH-90000
             assertThat(result.errorMessage()) // GH-90000
-                    .contains("-32601 [GH-90000]")
-                    .contains("Tool not found [GH-90000]");
+                    .contains("-32601")
+                    .contains("Tool not found");
         }
     }
 
     // ─── Timeout / transport failure ─────────────────────────────────────────
 
     @Nested
-    @DisplayName("transport failure [GH-90000]")
+    @DisplayName("transport failure")
     class TransportFailure {
 
         @Test
-        @DisplayName("returns FAILED status when transport promise fails with a connection error [GH-90000]")
+        @DisplayName("returns FAILED status when transport promise fails with a connection error")
         void transportException_producesFailedResult() { // GH-90000
             // Use a transport that always fails
             McpHttpTransport failingTransport =
-                    (url, body, headers) -> Promise.ofException(new RuntimeException("connection refused [GH-90000]"));
+                    (url, body, headers) -> Promise.ofException(new RuntimeException("connection refused"));
 
             McpToolAdapter adapter = new McpToolAdapter(failingTransport); // GH-90000
             ToolContract c = contract("any-tool", baseUrl + "/mcp"); // GH-90000
-            ToolExecutionEnvelope e = envelope("any-tool [GH-90000]");
+            ToolExecutionEnvelope e = envelope("any-tool");
 
             ToolExecutionResult result = runPromise(() -> adapter.handle(e, c)); // GH-90000
 
             assertThat(result.status()).isEqualTo(ToolExecutionStatus.FAILED); // GH-90000
-            assertThat(result.errorMessage()).contains("connection refused [GH-90000]");
+            assertThat(result.errorMessage()).contains("connection refused");
         }
 
         @Test
-        @DisplayName("returns TIMEOUT status when transport promise fails with a timeout error [GH-90000]")
+        @DisplayName("returns TIMEOUT status when transport promise fails with a timeout error")
         void transportTimeout_producesTimeoutResult() { // GH-90000
             McpHttpTransport timeoutTransport =
-                    (url, body, headers) -> Promise.ofException(new RuntimeException("Read timed out [GH-90000]"));
+                    (url, body, headers) -> Promise.ofException(new RuntimeException("Read timed out"));
 
             McpToolAdapter adapter = new McpToolAdapter(timeoutTransport); // GH-90000
             ToolContract c = contract("slow-tool", baseUrl + "/mcp"); // GH-90000
 
-            ToolExecutionResult result = runPromise(() -> adapter.handle(envelope("slow-tool [GH-90000]"), c));
+            ToolExecutionResult result = runPromise(() -> adapter.handle(envelope("slow-tool"), c));
 
             assertThat(result.status()).isEqualTo(ToolExecutionStatus.TIMEOUT); // GH-90000
         }
@@ -190,35 +190,35 @@ class McpToolAdapterTest extends EventloopTestBase {
     // ─── Missing endpoint ────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("missing remote endpoint [GH-90000]")
+    @DisplayName("missing remote endpoint")
     class MissingEndpoint {
 
         @Test
-        @DisplayName("returns DENIED when ToolContract has no remoteEndpoint [GH-90000]")
+        @DisplayName("returns DENIED when ToolContract has no remoteEndpoint")
         void noEndpointReturnsDenied() { // GH-90000
             McpToolAdapter adapter = new McpToolAdapter(realTransport()); // GH-90000
             ToolContract c = new ToolContractBuilder() // GH-90000
-                    .toolId("no-endpoint-tool [GH-90000]").name("no-endpoint-tool [GH-90000]")
+                    .toolId("no-endpoint-tool").name("no-endpoint-tool")
                     .actionClass(ActionClass.CALL_EXTERNAL) // GH-90000
                     .transport(ToolTransport.MCP) // GH-90000
                     // remoteEndpoint intentionally not set
                     .build(); // GH-90000
 
-            ToolExecutionResult result = runPromise(() -> adapter.handle(envelope("no-endpoint-tool [GH-90000]"), c));
+            ToolExecutionResult result = runPromise(() -> adapter.handle(envelope("no-endpoint-tool"), c));
 
             assertThat(result.status()).isEqualTo(ToolExecutionStatus.DENIED); // GH-90000
-            assertThat(result.errorMessage()).contains("remoteEndpoint [GH-90000]");
+            assertThat(result.errorMessage()).contains("remoteEndpoint");
         }
     }
 
     // ─── McpToolRequest / McpToolResponse unit coverage ─────────────────────
 
     @Nested
-    @DisplayName("McpToolRequest serialization [GH-90000]")
+    @DisplayName("McpToolRequest serialization")
     class RequestSerialization {
 
         @Test
-        @DisplayName("toJson produces JSON-RPC 2.0 payload [GH-90000]")
+        @DisplayName("toJson produces JSON-RPC 2.0 payload")
         void toJsonFormat() { // GH-90000
             McpToolRequest req = McpToolRequest.of("id-1", "web-search", Map.of("query", "test")); // GH-90000
             String json = req.toJson(); // GH-90000
@@ -231,7 +231,7 @@ class McpToolAdapterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("blank toolName throws IllegalArgumentException [GH-90000]")
+        @DisplayName("blank toolName throws IllegalArgumentException")
         void blankToolNameThrows() { // GH-90000
             org.assertj.core.api.Assertions.assertThatThrownBy( // GH-90000
                     () -> McpToolRequest.of("id-1", "  ", Map.of())) // GH-90000
@@ -240,32 +240,32 @@ class McpToolAdapterTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("McpToolResponse parsing [GH-90000]")
+    @DisplayName("McpToolResponse parsing")
     class ResponseParsing {
 
         @Test
-        @DisplayName("parse extracts text content from MCP success response [GH-90000]")
+        @DisplayName("parse extracts text content from MCP success response")
         void parseSuccessResponse() { // GH-90000
             String json = "{\"jsonrpc\":\"2.0\",\"id\":\"r1\","
                     + "\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"output\"}]}}";
             McpToolResponse resp = McpToolResponse.parse("r1", json); // GH-90000
             assertThat(resp.success()).isTrue(); // GH-90000
-            assertThat(resp.content()).isEqualTo("output [GH-90000]");
+            assertThat(resp.content()).isEqualTo("output");
         }
 
         @Test
-        @DisplayName("parse extracts code and message from MCP error response [GH-90000]")
+        @DisplayName("parse extracts code and message from MCP error response")
         void parseErrorResponse() { // GH-90000
             String json = "{\"jsonrpc\":\"2.0\",\"id\":\"r2\","
                     + "\"error\":{\"code\":-32601,\"message\":\"Method not found\"}}";
             McpToolResponse resp = McpToolResponse.parse("r2", json); // GH-90000
             assertThat(resp.success()).isFalse(); // GH-90000
             assertThat(resp.errorCode()).isEqualTo(-32601); // GH-90000
-            assertThat(resp.errorMessage()).isEqualTo("Method not found [GH-90000]");
+            assertThat(resp.errorMessage()).isEqualTo("Method not found");
         }
 
         @Test
-        @DisplayName("parse handles empty response string [GH-90000]")
+        @DisplayName("parse handles empty response string")
         void parseEmptyResponse() { // GH-90000
             McpToolResponse resp = McpToolResponse.parse("r3", ""); // GH-90000
             assertThat(resp.success()).isFalse(); // GH-90000

@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * </p>
  */
 @ExtendWith(EventloopExtension.class) // GH-90000
-@DisplayName("QueryHandler Tests [GH-90000]")
+@DisplayName("QueryHandler Tests")
 class QueryHandlerTest {
 
     private MockTraceStorage storage;
@@ -49,7 +49,7 @@ class QueryHandlerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces/{traceId} - should return trace when found [GH-90000]")
+    @DisplayName("GET /api/v1/traces/{traceId} - should return trace when found")
     void shouldGetTraceById(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         // Setup: Add span to storage
         String jsonBody = """
@@ -83,7 +83,7 @@ class QueryHandlerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces/{traceId} - should return 404 when trace not found [GH-90000]")
+    @DisplayName("GET /api/v1/traces/{traceId} - should return 404 when trace not found")
     void shouldReturn404ForTraceNotFound(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces/nonexistent") // GH-90000
                 .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
@@ -94,11 +94,11 @@ class QueryHandlerTest {
 
         assertThat(response.getCode()).isEqualTo(404); // GH-90000
         String body = response.getBody().getString(StandardCharsets.UTF_8); // GH-90000
-        assertThat(body).contains("code [GH-90000]");
+        assertThat(body).contains("code");
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces/{traceId} - should return 400 for blank trace ID [GH-90000]")
+    @DisplayName("GET /api/v1/traces/{traceId} - should return 400 for blank trace ID")
     void shouldReturn400ForBlankTraceId(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces/ ") // GH-90000
                 .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
@@ -111,7 +111,7 @@ class QueryHandlerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces - should search traces without filters [GH-90000]")
+    @DisplayName("GET /api/v1/traces - should search traces without filters")
     void shouldSearchTracesWithoutFilters(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces") // GH-90000
                 .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
@@ -126,7 +126,7 @@ class QueryHandlerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces - should accept serviceName filter [GH-90000]")
+    @DisplayName("GET /api/v1/traces - should accept serviceName filter")
     void shouldAcceptServiceNameFilter(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces?serviceName=service-a") // GH-90000
                 .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
@@ -139,7 +139,7 @@ class QueryHandlerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces - should accept operationName filter [GH-90000]")
+    @DisplayName("GET /api/v1/traces - should accept operationName filter")
     void shouldAcceptOperationNameFilter(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces?operationName=specific-op") // GH-90000
                 .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
@@ -152,7 +152,7 @@ class QueryHandlerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces - should accept status filter [GH-90000]")
+    @DisplayName("GET /api/v1/traces - should accept status filter")
     void shouldAcceptStatusFilter(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces?status=OK") // GH-90000
                 .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
@@ -165,7 +165,7 @@ class QueryHandlerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces - should accept startTime filter [GH-90000]")
+    @DisplayName("GET /api/v1/traces - should accept startTime filter")
     void shouldAcceptStartTimeFilter(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces?startTime=2024-01-01T00:00:00Z") // GH-90000
                 .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
@@ -178,7 +178,7 @@ class QueryHandlerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces - should accept endTime filter [GH-90000]")
+    @DisplayName("GET /api/v1/traces - should accept endTime filter")
     void shouldAcceptEndTimeFilter(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces?endTime=2024-12-31T23:59:59Z") // GH-90000
                 .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
@@ -191,7 +191,7 @@ class QueryHandlerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces - should accept minDuration filter [GH-90000]")
+    @DisplayName("GET /api/v1/traces - should accept minDuration filter")
     void shouldAcceptMinDurationFilter(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces?minDuration=100") // GH-90000
                 .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
@@ -204,7 +204,7 @@ class QueryHandlerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces - should accept maxDuration filter [GH-90000]")
+    @DisplayName("GET /api/v1/traces - should accept maxDuration filter")
     void shouldAcceptMaxDurationFilter(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces?maxDuration=5000") // GH-90000
                 .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
@@ -217,7 +217,7 @@ class QueryHandlerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces - should accept limit parameter [GH-90000]")
+    @DisplayName("GET /api/v1/traces - should accept limit parameter")
     void shouldAcceptLimitParameter(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces?limit=50") // GH-90000
                 .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
@@ -230,7 +230,7 @@ class QueryHandlerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces - should accept offset parameter [GH-90000]")
+    @DisplayName("GET /api/v1/traces - should accept offset parameter")
     void shouldAcceptOffsetParameter(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/traces?offset=10") // GH-90000
                 .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
@@ -243,7 +243,7 @@ class QueryHandlerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/traces - should accept combined filters [GH-90000]")
+    @DisplayName("GET /api/v1/traces - should accept combined filters")
     void shouldAcceptCombinedFilters(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, // GH-90000
                 "http://localhost/api/v1/traces?serviceName=svc&operationName=op&status=OK&limit=25")

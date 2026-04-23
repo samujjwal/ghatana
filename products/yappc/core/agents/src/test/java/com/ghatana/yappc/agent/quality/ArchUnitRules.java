@@ -33,36 +33,36 @@ public final class ArchUnitRules {
   public static ArchRule hexagonalLayers() { // GH-90000
     return layeredArchitecture() // GH-90000
         .consideringAllDependencies() // GH-90000
-        .layer("Domain [GH-90000]")
-        .definedBy("..domain.. [GH-90000]")
-        .layer("Application [GH-90000]")
-        .definedBy("..application.. [GH-90000]")
-        .layer("Adapters [GH-90000]")
-        .definedBy("..adapters.. [GH-90000]")
-        .layer("Infrastructure [GH-90000]")
-        .definedBy("..infrastructure.. [GH-90000]")
-        .whereLayer("Domain [GH-90000]")
+        .layer("Domain")
+        .definedBy("..domain..")
+        .layer("Application")
+        .definedBy("..application..")
+        .layer("Adapters")
+        .definedBy("..adapters..")
+        .layer("Infrastructure")
+        .definedBy("..infrastructure..")
+        .whereLayer("Domain")
         .mayOnlyBeAccessedByLayers("Application", "Adapters") // GH-90000
-        .whereLayer("Domain [GH-90000]")
+        .whereLayer("Domain")
         .mayNotAccessAnyLayer() // GH-90000
-        .whereLayer("Application [GH-90000]")
-        .mayOnlyAccessLayers("Domain [GH-90000]")
-        .whereLayer("Adapters [GH-90000]")
+        .whereLayer("Application")
+        .mayOnlyAccessLayers("Domain")
+        .whereLayer("Adapters")
         .mayOnlyAccessLayers("Application", "Domain") // GH-90000
-        .whereLayer("Infrastructure [GH-90000]")
+        .whereLayer("Infrastructure")
         .mayOnlyAccessLayers("Adapters", "Application", "Domain") // GH-90000
-        .as("Hexagonal architecture layers must be respected [GH-90000]");
+        .as("Hexagonal architecture layers must be respected");
   }
 
   /** Domain layer must not depend on infrastructure concerns. */
   public static ArchRule domainDoesNotDependOnInfrastructure() { // GH-90000
     return noClasses() // GH-90000
         .that() // GH-90000
-        .resideInAPackage("..domain.. [GH-90000]")
+        .resideInAPackage("..domain..")
         .should() // GH-90000
         .dependOnClassesThat() // GH-90000
-        .resideInAPackage("..infrastructure.. [GH-90000]")
-        .as("Domain layer must not depend on infrastructure [GH-90000]");
+        .resideInAPackage("..infrastructure..")
+        .as("Domain layer must not depend on infrastructure");
   }
 
   /**
@@ -76,7 +76,7 @@ public final class ArchUnitRules {
         .should() // GH-90000
         .dependOnClassesThat() // GH-90000
         .areAssignableTo(CompletableFuture.class) // GH-90000
-        .as("SDLC modules must use ActiveJ Promise, not CompletableFuture [GH-90000]");
+        .as("SDLC modules must use ActiveJ Promise, not CompletableFuture");
   }
 
   /** All WorkflowStep implementations must reside in correct phase packages. */
@@ -92,7 +92,7 @@ public final class ArchUnitRules {
             SDLC_BASE_PACKAGE + ".testing..",
             SDLC_BASE_PACKAGE + ".ops..",
             SDLC_BASE_PACKAGE + ".enhancement..")
-        .as("WorkflowStep implementations must reside in phase-specific packages [GH-90000]");
+        .as("WorkflowStep implementations must reside in phase-specific packages");
   }
 
   /**
@@ -108,7 +108,7 @@ public final class ArchUnitRules {
         .should() // GH-90000
         .dependOnClassesThat() // GH-90000
         .resideInAnyPackage("java.sql..", "java.net.http..", "okhttp3..", "org.apache.http..") // GH-90000
-        .as("WorkflowStep implementations must use adapters, not direct I/O [GH-90000]");
+        .as("WorkflowStep implementations must use adapters, not direct I/O");
   }
 
   /** Adapters must not leak into domain or application layers. */
@@ -118,32 +118,32 @@ public final class ArchUnitRules {
         .resideInAnyPackage("..domain..", "..application..") // GH-90000
         .should() // GH-90000
         .dependOnClassesThat() // GH-90000
-        .resideInAPackage("..adapters.. [GH-90000]")
-        .as("Domain and Application layers must not depend on Adapters [GH-90000]");
+        .resideInAPackage("..adapters..")
+        .as("Domain and Application layers must not depend on Adapters");
   }
 
   /** Run all SDLC architecture rules against the YAPPC codebase. */
   public static void main(String[] args) { // GH-90000
     JavaClasses classes = new ClassFileImporter().importPackages(GHATANA_BASE_PACKAGE); // GH-90000
 
-    log.info("Checking hexagonal layers... [GH-90000]");
+    log.info("Checking hexagonal layers...");
     hexagonalLayers().check(classes); // GH-90000
 
-    log.info("Checking domain isolation from infrastructure... [GH-90000]");
+    log.info("Checking domain isolation from infrastructure...");
     domainDoesNotDependOnInfrastructure().check(classes); // GH-90000
 
-    log.info("Checking ActiveJ Promise usage (no CompletableFuture)... [GH-90000]");
+    log.info("Checking ActiveJ Promise usage (no CompletableFuture)...");
     sdlcMustUseActivejPromise().check(classes); // GH-90000
 
-    log.info("Checking workflow step package placement... [GH-90000]");
+    log.info("Checking workflow step package placement...");
     workflowStepsInCorrectPackages().check(classes); // GH-90000
 
-    log.info("Checking adapter isolation... [GH-90000]");
+    log.info("Checking adapter isolation...");
     stepsUseAdaptersOnly().check(classes); // GH-90000
 
-    log.info("Checking adapter layer boundaries... [GH-90000]");
+    log.info("Checking adapter layer boundaries...");
     adaptersDontLeakUpwards().check(classes); // GH-90000
 
-    log.info("All YAPPC SDLC architecture rules passed! [GH-90000]");
+    log.info("All YAPPC SDLC architecture rules passed!");
   }
 }

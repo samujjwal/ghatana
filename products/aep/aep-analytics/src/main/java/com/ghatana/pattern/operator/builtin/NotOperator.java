@@ -63,7 +63,10 @@ import java.util.Map;
  * @doc.limitation Compile-Time Only - This implementation validates pattern structure at compile time.
  *                 Runtime execution logic (time window tracking, absence detection, strict mode enforcement)
  *                 is handled by the pattern engine's execution layer. Does not provide runtime matching logic.
- */
+  * @doc.type class
+ * @doc.purpose Provides not operator functionality.
+ * @doc.layer product
+*/
 public class NotOperator implements Operator {
 
     private static final String TYPE = "NOT";

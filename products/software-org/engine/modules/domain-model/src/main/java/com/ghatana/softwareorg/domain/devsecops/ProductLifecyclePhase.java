@@ -5,7 +5,11 @@ package com.ghatana.softwareorg.domain.devsecops;
  * DevSecOps persona and phase classification.
  *
  * This enum mirrors ProductLifecyclePhaseProto in the DevSecOps contracts.
- */
+  * @doc.type enum
+ * @doc.purpose Provides product lifecycle phase functionality.
+ * @doc.layer product
+ * @doc.pattern Enum
+*/
 public enum ProductLifecyclePhase {
 
     PROBLEM_DISCOVERY,

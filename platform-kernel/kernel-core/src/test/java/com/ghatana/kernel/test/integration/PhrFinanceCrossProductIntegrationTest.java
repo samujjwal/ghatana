@@ -47,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Ghatana Kernel Team
  * @since 1.1.0
  */
-@DisplayName("PHR-Finance Cross-Scope Integration Tests [GH-90000]")
+@DisplayName("PHR-Finance Cross-Scope Integration Tests")
 class PhrFinanceCrossProductIntegrationTest {
 
     private ScopeBoundaryEnforcer boundaryEnforcer;
@@ -55,9 +55,9 @@ class PhrFinanceCrossProductIntegrationTest {
     private InMemoryAuditStore auditStore;
 
     // Canonical scope descriptors — no product-id literal strings
-    private static final ScopeDescriptor PHR_SCOPE      = ScopeDescriptor.domainPack("phr [GH-90000]");
-    private static final ScopeDescriptor FINANCE_SCOPE  = ScopeDescriptor.domainPack("finance [GH-90000]");
-    private static final ScopeDescriptor PLATFORM_SCOPE = ScopeDescriptor.product("platform [GH-90000]");
+    private static final ScopeDescriptor PHR_SCOPE      = ScopeDescriptor.domainPack("phr");
+    private static final ScopeDescriptor FINANCE_SCOPE  = ScopeDescriptor.domainPack("finance");
+    private static final ScopeDescriptor PLATFORM_SCOPE = ScopeDescriptor.product("platform");
 
     // Classification descriptors — replaces hardcoded product-id branching
     private static final ClassificationDescriptor PHR_PROTECTED =
@@ -82,15 +82,15 @@ class PhrFinanceCrossProductIntegrationTest {
     // ── PHR Boundary Tests ───────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("PHR data access boundary enforcement [GH-90000]")
+    @DisplayName("PHR data access boundary enforcement")
     class PhrBoundaryTests {
 
         @Test
-        @DisplayName("Finance cannot read PHR restricted patient records without consent [GH-90000]")
+        @DisplayName("Finance cannot read PHR restricted patient records without consent")
         void financeCannotReadPhrRestrictedDataWithoutConsentFeature() { // GH-90000
             // No permissions, no consent feature → Layer 2 and Layer 3 both fail
             KernelTenantContext tenant = tenantContext("tenant-1", // GH-90000
-                    Set.of("read:patient.records [GH-90000]"),
+                    Set.of("read:patient.records"),
                     Set.of() /* no consent feature */); // GH-90000
 
             boolean allowed = boundaryEnforcer.canAccess( // GH-90000
@@ -104,12 +104,12 @@ class PhrFinanceCrossProductIntegrationTest {
         }
 
         @Test
-        @DisplayName("Finance can read PHR restricted records when tenant has consent feature [GH-90000]")
+        @DisplayName("Finance can read PHR restricted records when tenant has consent feature")
         void financeCanReadPhrRestrictedDataWithConsentFeature() { // GH-90000
             // Layer 2: has permission; Layer 3: has consent feature for DOMAIN_PACK target
             KernelTenantContext tenant = tenantContext("tenant-1", // GH-90000
-                    Set.of("read:patient.records [GH-90000]"),
-                    Set.of("cross-scope.consent.domain_pack [GH-90000]"));
+                    Set.of("read:patient.records"),
+                    Set.of("cross-scope.consent.domain_pack"));
 
             boolean allowed = boundaryEnforcer.canAccess( // GH-90000
                     FINANCE_SCOPE, PHR_SCOPE,
@@ -122,11 +122,11 @@ class PhrFinanceCrossProductIntegrationTest {
         }
 
         @Test
-        @DisplayName("PHR internal data allows cross-scope read with permission but no consent [GH-90000]")
+        @DisplayName("PHR internal data allows cross-scope read with permission but no consent")
         void phrInternalDataAllowsReadWithoutConsent() { // GH-90000
             // INTERNAL sensitivity → no consent required, only permission
             KernelTenantContext tenant = tenantContext("tenant-2", // GH-90000
-                    Set.of("read:patient.records [GH-90000]"),
+                    Set.of("read:patient.records"),
                     Set.of()); // GH-90000
 
             boolean allowed = boundaryEnforcer.canAccess( // GH-90000
@@ -140,11 +140,11 @@ class PhrFinanceCrossProductIntegrationTest {
         }
 
         @Test
-        @DisplayName("PHR data with residency restriction is blocked cross-scope even with consent [GH-90000]")
+        @DisplayName("PHR data with residency restriction is blocked cross-scope even with consent")
         void phrResidencyLockedDataBlockedCrossScope() { // GH-90000
             KernelTenantContext tenant = tenantContext("tenant-1", // GH-90000
-                    Set.of("read:patient.records [GH-90000]"),
-                    Set.of("cross-scope.consent.domain_pack [GH-90000]"));
+                    Set.of("read:patient.records"),
+                    Set.of("cross-scope.consent.domain_pack"));
 
             boolean allowed = boundaryEnforcer.canAccess( // GH-90000
                     FINANCE_SCOPE, PHR_SCOPE,
@@ -160,15 +160,15 @@ class PhrFinanceCrossProductIntegrationTest {
     // ── Finance Boundary Tests ───────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Finance trade data access boundary enforcement [GH-90000]")
+    @DisplayName("Finance trade data access boundary enforcement")
     class FinanceBoundaryTests {
 
         @Test
-        @DisplayName("PHR can write finance trade records when it holds the write permission [GH-90000]")
+        @DisplayName("PHR can write finance trade records when it holds the write permission")
         void phrCanWriteFinanceTradeRecordsWithPermission() { // GH-90000
             // CONFIDENTIAL data → no consent required, Layer 2 permission sufficient
             KernelTenantContext tenant = tenantContext("tenant-3", // GH-90000
-                    Set.of("write:trade.records [GH-90000]"),
+                    Set.of("write:trade.records"),
                     Set.of()); // GH-90000
 
             boolean allowed = boundaryEnforcer.canAccess( // GH-90000
@@ -182,7 +182,7 @@ class PhrFinanceCrossProductIntegrationTest {
         }
 
         @Test
-        @DisplayName("Cross-scope write is denied without the required permission [GH-90000]")
+        @DisplayName("Cross-scope write is denied without the required permission")
         void crossScopeWriteDeniedWithoutPermission() { // GH-90000
             KernelTenantContext tenant = tenantContext("tenant-3", Set.of(), Set.of()); // GH-90000
 
@@ -197,11 +197,11 @@ class PhrFinanceCrossProductIntegrationTest {
         }
 
         @Test
-        @DisplayName("Same-scope access with valid permission is allowed without consent [GH-90000]")
+        @DisplayName("Same-scope access with valid permission is allowed without consent")
         void sameScopeAccessAllowed() { // GH-90000
             // Source == target → Layer 1 returns allow(false); Layers 2+3 still gate on permission // GH-90000
             KernelTenantContext tenant = tenantContext("tenant-4", // GH-90000
-                    Set.of("write:trade.records [GH-90000]"),
+                    Set.of("write:trade.records"),
                     Set.of()); // GH-90000
 
             boolean allowed = boundaryEnforcer.canAccess( // GH-90000
@@ -217,18 +217,18 @@ class PhrFinanceCrossProductIntegrationTest {
     // ── Audit Policy Tests ───────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Scope-aware audit service policy resolution [GH-90000]")
+    @DisplayName("Scope-aware audit service policy resolution")
     class AuditPolicyTests {
 
         @Test
-        @DisplayName("PHR audit record uses Nepal-2081 25-year retention [GH-90000]")
+        @DisplayName("PHR audit record uses Nepal-2081 25-year retention")
         void phrAuditUsesNepal2081Retention() { // GH-90000
             CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() // GH-90000
                     .sourceScope(FINANCE_SCOPE) // GH-90000
                     .targetScope(PHR_SCOPE) // GH-90000
-                    .action("data.share [GH-90000]")
-                    .userId("user-101 [GH-90000]")
-                    .tenantId("tenant-nep [GH-90000]")
+                    .action("data.share")
+                    .userId("user-101")
+                    .tenantId("tenant-nep")
                     .classification(PHR_PROTECTED) // GH-90000
                     .build(); // GH-90000
 
@@ -243,14 +243,14 @@ class PhrFinanceCrossProductIntegrationTest {
         }
 
         @Test
-        @DisplayName("Finance audit record uses SEBON 10-year retention [GH-90000]")
+        @DisplayName("Finance audit record uses SEBON 10-year retention")
         void financeAuditUsesSebon10YearRetention() { // GH-90000
             CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() // GH-90000
                     .sourceScope(PHR_SCOPE) // GH-90000
                     .targetScope(FINANCE_SCOPE) // GH-90000
-                    .action("compliance.query [GH-90000]")
-                    .userId("user-202 [GH-90000]")
-                    .tenantId("tenant-fin [GH-90000]")
+                    .action("compliance.query")
+                    .userId("user-202")
+                    .tenantId("tenant-fin")
                     .classification(FINANCE_TRADE) // GH-90000
                     .build(); // GH-90000
 
@@ -265,14 +265,14 @@ class PhrFinanceCrossProductIntegrationTest {
         }
 
         @Test
-        @DisplayName("RESTRICTED audit record includes a cryptographic signature [GH-90000]")
+        @DisplayName("RESTRICTED audit record includes a cryptographic signature")
         void restrictedAuditRecordIncludesSignature() { // GH-90000
             CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() // GH-90000
                     .sourceScope(PLATFORM_SCOPE) // GH-90000
                     .targetScope(PHR_SCOPE) // GH-90000
-                    .action("patient.export [GH-90000]")
-                    .userId("user-303 [GH-90000]")
-                    .tenantId("tenant-1 [GH-90000]")
+                    .action("patient.export")
+                    .userId("user-303")
+                    .tenantId("tenant-1")
                     .classification(PHR_PROTECTED) // GH-90000
                     .build(); // GH-90000
 
@@ -284,14 +284,14 @@ class PhrFinanceCrossProductIntegrationTest {
         }
 
         @Test
-        @DisplayName("Audit event type uses 'cross-scope.' prefix, not legacy 'cross-product.' [GH-90000]")
+        @DisplayName("Audit event type uses 'cross-scope.' prefix, not legacy 'cross-product.'")
         void auditEventTypeUsesScopePrefix() { // GH-90000
             CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() // GH-90000
                     .sourceScope(FINANCE_SCOPE) // GH-90000
                     .targetScope(PHR_SCOPE) // GH-90000
-                    .action("data.check [GH-90000]")
-                    .userId("usr [GH-90000]")
-                    .tenantId("t1 [GH-90000]")
+                    .action("data.check")
+                    .userId("usr")
+                    .tenantId("t1")
                     .classification(GENERAL_DATA) // GH-90000
                     .build(); // GH-90000
 
@@ -300,21 +300,21 @@ class PhrFinanceCrossProductIntegrationTest {
             ScopeAuditRecord stored = auditStore.records.get(0); // GH-90000
             String eventType = stored.getEventType(); // GH-90000
             assertNotNull(eventType); // GH-90000
-            assertTrue(eventType.startsWith("cross-scope. [GH-90000]"),
+            assertTrue(eventType.startsWith("cross-scope."),
                 "Audit event type must start with 'cross-scope.' (got: " + eventType + ")"); // GH-90000
-            assertFalse(eventType.startsWith("cross-product. [GH-90000]"),
+            assertFalse(eventType.startsWith("cross-product."),
                 "Audit event type must NOT use legacy 'cross-product.' prefix");
         }
 
         @Test
-        @DisplayName("Audit record stores ScopeDescriptor objects, not raw product-id strings [GH-90000]")
+        @DisplayName("Audit record stores ScopeDescriptor objects, not raw product-id strings")
         void auditRecordCarriesScopeDescriptors() { // GH-90000
             CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() // GH-90000
                     .sourceScope(FINANCE_SCOPE) // GH-90000
                     .targetScope(PHR_SCOPE) // GH-90000
-                    .action("analytics.query [GH-90000]")
-                    .userId("analyst [GH-90000]")
-                    .tenantId("t-123 [GH-90000]")
+                    .action("analytics.query")
+                    .userId("analyst")
+                    .tenantId("t-123")
                     .classification(FINANCE_TRADE) // GH-90000
                     .build(); // GH-90000
 
@@ -331,11 +331,11 @@ class PhrFinanceCrossProductIntegrationTest {
     // ── Boundary + Audit Integration ─────────────────────────────────────────
 
     @Nested
-    @DisplayName("Boundary enforcement + audit trail integration [GH-90000]")
+    @DisplayName("Boundary enforcement + audit trail integration")
     class BoundaryAuditIntegrationTests {
 
         @Test
-        @DisplayName("Denied access creates no audit record — boundary gate fires before audit [GH-90000]")
+        @DisplayName("Denied access creates no audit record — boundary gate fires before audit")
         void deniedAccessProducesNoAuditRecord() { // GH-90000
             KernelTenantContext tenant = tenantContext("t-denied", Set.of(), Set.of()); // GH-90000
 
@@ -351,16 +351,16 @@ class PhrFinanceCrossProductIntegrationTest {
         }
 
         @Test
-        @DisplayName("Policy engine is product-agnostic — same rules apply to any domain-pack pair [GH-90000]")
+        @DisplayName("Policy engine is product-agnostic — same rules apply to any domain-pack pair")
         void policyDrivenAccessIsProductAgnostic() { // GH-90000
-            ScopeDescriptor alpha = ScopeDescriptor.domainPack("domain-alpha [GH-90000]");
-            ScopeDescriptor beta  = ScopeDescriptor.domainPack("domain-beta [GH-90000]");
+            ScopeDescriptor alpha = ScopeDescriptor.domainPack("domain-alpha");
+            ScopeDescriptor beta  = ScopeDescriptor.domainPack("domain-beta");
             ClassificationDescriptor restricted =
                     ClassificationDescriptor.of("general", SensitivityLevel.RESTRICTED, "nepal-2081"); // GH-90000
 
             KernelTenantContext tenantWithConsent = tenantContext("t-alpha", // GH-90000
-                    Set.of("read:patient.records [GH-90000]"),
-                    Set.of("cross-scope.consent.domain_pack [GH-90000]"));
+                    Set.of("read:patient.records"),
+                    Set.of("cross-scope.consent.domain_pack"));
 
             boolean allowed = boundaryEnforcer.canAccess( // GH-90000
                     alpha, beta,

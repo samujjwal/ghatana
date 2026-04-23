@@ -13,11 +13,11 @@ import org.junit.jupiter.api.Test;
  * @doc.layer test
  * @doc.pattern Unit Test
  */
-@DisplayName("ValidationResult Tests [GH-90000]")
+@DisplayName("ValidationResult Tests")
 class ValidationResultTest {
 
   @Test
-  @DisplayName("success should produce valid result with no errors [GH-90000]")
+  @DisplayName("success should produce valid result with no errors")
   void successShouldProduceValidResult() { // GH-90000
     ValidationResult result = ValidationResult.success(); // GH-90000
 
@@ -27,7 +27,7 @@ class ValidationResultTest {
   }
 
   @Test
-  @DisplayName("fail should preserve all supplied error messages [GH-90000]")
+  @DisplayName("fail should preserve all supplied error messages")
   void failShouldPreserveErrors() { // GH-90000
     ValidationResult result = ValidationResult.fail("missing id", "invalid phase"); // GH-90000
 

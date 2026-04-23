@@ -26,7 +26,7 @@ import org.mockito.MockitoAnnotations;
  * <p>All Promise-returning methods are executed within a managed ActiveJ Eventloop via
  * {@link EventloopTestBase#runPromise(java.util.concurrent.Callable)}. // GH-90000
  */
-@DisplayName("TriggerListener [GH-90000]")
+@DisplayName("TriggerListener")
 class TriggerListenerTest extends EventloopTestBase {
 
     @Mock
@@ -52,7 +52,7 @@ class TriggerListenerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("start() marks listener as running; stop() unmarks it [GH-90000]")
+    @DisplayName("start() marks listener as running; stop() unmarks it")
     void testStartAndStop() { // GH-90000
         assertFalse(triggerListener.isRunning()); // GH-90000
 
@@ -64,7 +64,7 @@ class TriggerListenerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("handlePatternMatch() enqueues with correct idempotency key [GH-90000]")
+    @DisplayName("handlePatternMatch() enqueues with correct idempotency key")
     void testHandlePatternMatch() { // GH-90000
         triggerListener.start(); // GH-90000
 
@@ -80,12 +80,12 @@ class TriggerListenerTest extends EventloopTestBase {
 
         String expectedIdempotencyKey = pipelineId + ":" + patternMatchId;
         verify(executionQueue).enqueue(tenantId, pipelineId, matchData, expectedIdempotencyKey); // GH-90000
-        verify(metrics).timer("orch.triggers.received [GH-90000]");
-        verify(metrics).timer("orch.enqueued [GH-90000]");
+        verify(metrics).timer("orch.triggers.received");
+        verify(metrics).timer("orch.enqueued");
     }
 
     @Test
-    @DisplayName("handlePatternMatch() is a no-op when listener is not running [GH-90000]")
+    @DisplayName("handlePatternMatch() is a no-op when listener is not running")
     void testHandlePatternMatchWhenNotRunning() { // GH-90000
         assertFalse(triggerListener.isRunning()); // GH-90000
 
@@ -95,7 +95,7 @@ class TriggerListenerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("idempotency key is constructed as pipelineId:patternMatchId [GH-90000]")
+    @DisplayName("idempotency key is constructed as pipelineId:patternMatchId")
     void testIdempotencyKeyGeneration() { // GH-90000
         triggerListener.start(); // GH-90000
 
@@ -110,7 +110,7 @@ class TriggerListenerTest extends EventloopTestBase {
 
         String expectedKey = "my-pipeline:match-456";
         verify(executionQueue).enqueue(tenantId, pipelineId, "data", expectedKey); // GH-90000
-        verify(metrics).timer("orch.triggers.received [GH-90000]");
-        verify(metrics).timer("orch.enqueued [GH-90000]");
+        verify(metrics).timer("orch.triggers.received");
+        verify(metrics).timer("orch.enqueued");
     }
 }

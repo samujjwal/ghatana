@@ -13,7 +13,8 @@ import java.time.Instant;
  * @doc.type class
  * @doc.purpose Skill rollback result
  * @doc.layer agent-learning
- */
+  * @doc.pattern ValueObject
+*/
 @Value
 @Builder
 public class RollbackResult {

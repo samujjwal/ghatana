@@ -7,11 +7,11 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("DefaultMemoryTierRouter [GH-90000]")
+@DisplayName("DefaultMemoryTierRouter")
 class DefaultMemoryTierRouterTest {
 
     @Test
-    @DisplayName("applies custom policies during construction [GH-90000]")
+    @DisplayName("applies custom policies during construction")
     void appliesCustomPoliciesDuringConstruction() { // GH-90000
         TierPolicy hotPolicy = TierPolicy.defaultFor(MemoryTier.HOT) // GH-90000
                 .toBuilder() // GH-90000

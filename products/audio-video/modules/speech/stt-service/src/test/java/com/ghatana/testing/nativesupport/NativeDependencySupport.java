@@ -39,14 +39,14 @@ public class NativeDependencySupport {
                 .orElse(null); // GH-90000
 
             if (annotation == null) { // GH-90000
-                return ConditionEvaluationResult.enabled("No @RequireNative annotation [GH-90000]");
+                return ConditionEvaluationResult.enabled("No @RequireNative annotation");
             }
 
             NativeType requiredType = annotation.value(); // GH-90000
             String customMessage = annotation.message(); // GH-90000
 
             if (isNativeAvailable(requiredType)) { // GH-90000
-                return ConditionEvaluationResult.enabled("Native dependencies available [GH-90000]");
+                return ConditionEvaluationResult.enabled("Native dependencies available");
             } else {
                 String message = String.format("%s: %s not available", // GH-90000
                     customMessage, requiredType);
@@ -58,12 +58,12 @@ public class NativeDependencySupport {
     private static boolean isNativeAvailable(NativeType type) { // GH-90000
         switch (type) { // GH-90000
             case WHISPER_CPP:
-                return isClassAvailable("com.ghatana.stt.core.whisper.WhisperCppAdapter [GH-90000]");
+                return isClassAvailable("com.ghatana.stt.core.whisper.WhisperCppAdapter");
             case COQUI_TTS:
-                return isClassAvailable("com.ghatana.tts.core.coqui.CoquiTTSAdapter [GH-90000]");
+                return isClassAvailable("com.ghatana.tts.core.coqui.CoquiTTSAdapter");
             case ANY:
-                return isClassAvailable("com.ghatana.stt.core.whisper.WhisperCppAdapter [GH-90000]") ||
-                       isClassAvailable("com.ghatana.tts.core.coqui.CoquiTTSAdapter [GH-90000]");
+                return isClassAvailable("com.ghatana.stt.core.whisper.WhisperCppAdapter") ||
+                       isClassAvailable("com.ghatana.tts.core.coqui.CoquiTTSAdapter");
             default:
                 return false;
         }
@@ -73,7 +73,7 @@ public class NativeDependencySupport {
         try {
             Class<?> clazz = Class.forName(className); // GH-90000
             try {
-                java.lang.reflect.Field field = clazz.getDeclaredField("NATIVE_LIBRARY_AVAILABLE [GH-90000]");
+                java.lang.reflect.Field field = clazz.getDeclaredField("NATIVE_LIBRARY_AVAILABLE");
                 field.setAccessible(true); // GH-90000
                 return field.getBoolean(null); // GH-90000
             } catch (NoSuchFieldException | IllegalAccessException e) { // GH-90000

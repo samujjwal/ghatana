@@ -43,7 +43,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("StorageTierManager [GH-90000]")
+@DisplayName("StorageTierManager")
 class StorageTierManagerTest {
 
     private static final String TENANT = "tenant-tier";
@@ -64,11 +64,11 @@ class StorageTierManagerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("save() [GH-90000]")
+    @DisplayName("save()")
     class SaveTests {
 
         @Test
-        @DisplayName("save: writes to HOT (primary) collection [GH-90000]")
+        @DisplayName("save: writes to HOT (primary) collection")
         void save_writesToHotCollection() { // GH-90000
             Map<String, Object> data = Map.of("id", "entity-1", "name", "Pattern Alpha"); // GH-90000
             Entity saved = entity("entity-1", data); // GH-90000
@@ -83,7 +83,7 @@ class StorageTierManagerTest {
         }
 
         @Test
-        @DisplayName("save: enriches data with storageTier=HOT and lastAccessedAt [GH-90000]")
+        @DisplayName("save: enriches data with storageTier=HOT and lastAccessedAt")
         void save_enrichesMetadata() { // GH-90000
             Map<String, Object> data = new HashMap<>(); // GH-90000
             data.put("id", "ent-42"); // GH-90000
@@ -100,10 +100,10 @@ class StorageTierManagerTest {
         }
 
         @Test
-        @DisplayName("save: propagates client failure as failed promise [GH-90000]")
+        @DisplayName("save: propagates client failure as failed promise")
         void save_whenClientFails_propagatesException() { // GH-90000
             when(client.save(anyString(), anyString(), anyMap())) // GH-90000
-                    .thenReturn(Promise.ofException(new RuntimeException("DB offline [GH-90000]")));
+                    .thenReturn(Promise.ofException(new RuntimeException("DB offline")));
 
             Promise<Entity> result = mgr.save(TENANT, COLL, Map.of("id", "ent")); // GH-90000
 
@@ -116,11 +116,11 @@ class StorageTierManagerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("findById() — tier cascade [GH-90000]")
+    @DisplayName("findById() — tier cascade")
     class FindByIdTests {
 
         @Test
-        @DisplayName("findById: returns HOT hit without checking lower tiers [GH-90000]")
+        @DisplayName("findById: returns HOT hit without checking lower tiers")
         void findById_hotHit_noLowerTierLookup() { // GH-90000
             String id = "hot-entity";
             when(client.findById(TENANT, hotCollection(COLL), id)) // GH-90000
@@ -135,7 +135,7 @@ class StorageTierManagerTest {
         }
 
         @Test
-        @DisplayName("findById: falls through to WARM when not in HOT [GH-90000]")
+        @DisplayName("findById: falls through to WARM when not in HOT")
         void findById_warmHit_afterHotMiss() { // GH-90000
             String id = "warm-entity";
             when(client.findById(TENANT, hotCollection(COLL), id)) // GH-90000
@@ -153,7 +153,7 @@ class StorageTierManagerTest {
         }
 
         @Test
-        @DisplayName("findById: promotes entity from COOL to WARM on hit [GH-90000]")
+        @DisplayName("findById: promotes entity from COOL to WARM on hit")
         void findById_coolHit_promotesToWarm() { // GH-90000
             String id = "cool-entity";
             Map<String, Object> coolData = entData(id, StorageTier.COOL); // GH-90000
@@ -181,7 +181,7 @@ class StorageTierManagerTest {
         }
 
         @Test
-        @DisplayName("findById: returns empty when entity absent from all tiers [GH-90000]")
+        @DisplayName("findById: returns empty when entity absent from all tiers")
         void findById_totalMiss_returnsEmpty() { // GH-90000
             String id = "ghost-entity";
             when(client.findById(anyString(), anyString(), eq(id))) // GH-90000
@@ -198,11 +198,11 @@ class StorageTierManagerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("queryHot() / queryHotAndWarm() [GH-90000]")
+    @DisplayName("queryHot() / queryHotAndWarm()")
     class QueryTests {
 
         @Test
-        @DisplayName("queryHot: queries only HOT collection [GH-90000]")
+        @DisplayName("queryHot: queries only HOT collection")
         void queryHot_queriesHotOnly() { // GH-90000
             Query q = Query.builder().limit(10).build(); // GH-90000
             when(client.query(TENANT, hotCollection(COLL), q)) // GH-90000
@@ -219,7 +219,7 @@ class StorageTierManagerTest {
         }
 
         @Test
-        @DisplayName("queryHotAndWarm: merges results; HOT entity takes precedence over WARM duplicate [GH-90000]")
+        @DisplayName("queryHotAndWarm: merges results; HOT entity takes precedence over WARM duplicate")
         void queryHotAndWarm_hotPrecedenceOnDuplicate() { // GH-90000
             Query q = Query.builder().limit(10).build(); // GH-90000
             String sharedId = "shared-ent";
@@ -241,11 +241,11 @@ class StorageTierManagerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("demoteIdleEntities() [GH-90000]")
+    @DisplayName("demoteIdleEntities()")
     class DemoteTests {
 
         @Test
-        @DisplayName("demoteIdleEntities: moves idle HOT entities to WARM and deletes from HOT [GH-90000]")
+        @DisplayName("demoteIdleEntities: moves idle HOT entities to WARM and deletes from HOT")
         void demoteIdleEntities_movesHotToWarm() { // GH-90000
             Instant threshold = Instant.now().minusSeconds(3600); // GH-90000
             List<Entity> idle = List.of( // GH-90000
@@ -267,7 +267,7 @@ class StorageTierManagerTest {
         }
 
         @Test
-        @DisplayName("demoteIdleEntities: returns 0 when no entities are idle [GH-90000]")
+        @DisplayName("demoteIdleEntities: returns 0 when no entities are idle")
         void demoteIdleEntities_nothingToPromote() { // GH-90000
             when(client.query(eq(TENANT), eq(hotCollection(COLL)), any(Query.class))) // GH-90000
                     .thenReturn(Promise.of(List.of())); // GH-90000
@@ -284,11 +284,11 @@ class StorageTierManagerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("deleteFromAllTiers() [GH-90000]")
+    @DisplayName("deleteFromAllTiers()")
     class DeleteTests {
 
         @Test
-        @DisplayName("deleteFromAllTiers: checks and deletes from all 4 tier collections [GH-90000]")
+        @DisplayName("deleteFromAllTiers: checks and deletes from all 4 tier collections")
         void deleteFromAllTiers_checksAllTiers() { // GH-90000
             String id = "to-erase";
             // Entity exists in HOT only
@@ -320,13 +320,13 @@ class StorageTierManagerTest {
     // =========================================================================
 
     @Test
-    @DisplayName("Collection name helpers return correct suffixes [GH-90000]")
+    @DisplayName("Collection name helpers return correct suffixes")
     void collectionNameHelpers_returnExpectedSuffixes() { // GH-90000
         String base = "entities";
-        assertThat(hotCollection(base)).isEqualTo("entities [GH-90000]");
-        assertThat(warmCollection(base)).isEqualTo("entities_warm [GH-90000]");
-        assertThat(coolCollection(base)).isEqualTo("entities_cool [GH-90000]");
-        assertThat(coldCollection(base)).isEqualTo("entities_cold [GH-90000]");
+        assertThat(hotCollection(base)).isEqualTo("entities");
+        assertThat(warmCollection(base)).isEqualTo("entities_warm");
+        assertThat(coolCollection(base)).isEqualTo("entities_cool");
+        assertThat(coldCollection(base)).isEqualTo("entities_cold");
     }
 
     // =========================================================================
@@ -334,7 +334,7 @@ class StorageTierManagerTest {
     // =========================================================================
 
     @Test
-    @DisplayName("TieredEntity.needsPromotionConsideration: true for non-HOT tiers [GH-90000]")
+    @DisplayName("TieredEntity.needsPromotionConsideration: true for non-HOT tiers")
     void tieredEntity_needsPromotionConsideration_trueForNonHot() { // GH-90000
         Entity e = entity("x", entData("x", StorageTier.WARM)); // GH-90000
         TieredEntity hot  = new TieredEntity(e, StorageTier.HOT); // GH-90000

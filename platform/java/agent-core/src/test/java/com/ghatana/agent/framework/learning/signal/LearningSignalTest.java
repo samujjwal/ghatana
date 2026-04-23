@@ -12,41 +12,41 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.*;
 
-@DisplayName("LearningSignal value type [GH-90000]")
+@DisplayName("LearningSignal value type")
 class LearningSignalTest {
 
     @Nested
-    @DisplayName("factory [GH-90000]")
+    @DisplayName("factory")
     class Factory {
 
         @Test
-        @DisplayName("generates a non-blank signalId [GH-90000]")
+        @DisplayName("generates a non-blank signalId")
         void generatesId() { // GH-90000
             var s = LearningSignal.of("skill.success", "agent-1", "tenant-1", "corr-1", null); // GH-90000
             assertThat(s.signalId()).isNotBlank(); // GH-90000
         }
 
         @Test
-        @DisplayName("sets all fields including emittedAt [GH-90000]")
+        @DisplayName("sets all fields including emittedAt")
         void setsAllFields() { // GH-90000
             var s = LearningSignal.of("tool.failure", "agent-2", "t2", "c2", Map.of("tool", "search")); // GH-90000
-            assertThat(s.signalType()).isEqualTo("tool.failure [GH-90000]");
-            assertThat(s.sourceAgentId()).isEqualTo("agent-2 [GH-90000]");
-            assertThat(s.tenantId()).isEqualTo("t2 [GH-90000]");
-            assertThat(s.correlationId()).isEqualTo("c2 [GH-90000]");
+            assertThat(s.signalType()).isEqualTo("tool.failure");
+            assertThat(s.sourceAgentId()).isEqualTo("agent-2");
+            assertThat(s.tenantId()).isEqualTo("t2");
+            assertThat(s.correlationId()).isEqualTo("c2");
             assertThat(s.payload()).containsEntry("tool", "search"); // GH-90000
             assertThat(s.emittedAt()).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("null payload is treated as empty map [GH-90000]")
+        @DisplayName("null payload is treated as empty map")
         void nullPayloadIsEmpty() { // GH-90000
             var s = LearningSignal.of("sig", "a", "t", "c", null); // GH-90000
             assertThat(s.payload()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("each call generates a unique signalId [GH-90000]")
+        @DisplayName("each call generates a unique signalId")
         void uniqueIds() { // GH-90000
             var s1 = LearningSignal.of("x", "a", "t", "c", null); // GH-90000
             var s2 = LearningSignal.of("x", "a", "t", "c", null); // GH-90000
@@ -55,19 +55,19 @@ class LearningSignalTest {
     }
 
     @Nested
-    @DisplayName("validation [GH-90000]")
+    @DisplayName("validation")
     class Validation {
 
         @Test
-        @DisplayName("blank signalType throws [GH-90000]")
+        @DisplayName("blank signalType throws")
         void blankSignalType() { // GH-90000
             assertThatThrownBy(() -> LearningSignal.of("  ", "a", "t", "c", null)) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("signalType [GH-90000]");
+                    .hasMessageContaining("signalType");
         }
 
         @Test
-        @DisplayName("payload is immutable [GH-90000]")
+        @DisplayName("payload is immutable")
         void payloadImmutable() { // GH-90000
             var s = LearningSignal.of("sig", "a", "t", "c", Map.of("k", "v")); // GH-90000
             assertThatThrownBy(() -> s.payload().put("x", "y")) // GH-90000
@@ -76,11 +76,11 @@ class LearningSignalTest {
     }
 
     @Nested
-    @DisplayName("LearningSignalRouter.noOp [GH-90000]")
+    @DisplayName("LearningSignalRouter.noOp")
     class NoOpRouter {
 
         @Test
-        @DisplayName("noOp router completes without error [GH-90000]")
+        @DisplayName("noOp router completes without error")
         void noOpCompletes() throws Exception { // GH-90000
             var router = LearningSignalRouter.noOp(); // GH-90000
             var signal = LearningSignal.of("sig", "a", "t", "c", null); // GH-90000

@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Core Platform Integration Tests [GH-90000]")
+@DisplayName("Core Platform Integration Tests")
 class CorePlatformIntegrationTest extends EventloopTestBase {
 
     private <T> T run(Promise<T> p) { // GH-90000
@@ -28,14 +28,14 @@ class CorePlatformIntegrationTest extends EventloopTestBase {
     private <T> Throwable runExpectFailure(Promise<T> p) { // GH-90000
         try {
             runPromise(() -> p); // GH-90000
-            throw new AssertionError("Expected promise to fail but it succeeded [GH-90000]");
+            throw new AssertionError("Expected promise to fail but it succeeded");
         } catch (RuntimeException e) { // GH-90000
             return e.getCause() != null ? e.getCause() : e; // GH-90000
         }
     }
 
     @Test
-    @DisplayName("should handle concurrent promise execution correctly [GH-90000]")
+    @DisplayName("should handle concurrent promise execution correctly")
     void shouldHandleConcurrentPromiseExecution() { // GH-90000
         AtomicInteger counter = new AtomicInteger(0); // GH-90000
 
@@ -51,28 +51,28 @@ class CorePlatformIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should propagate errors through promise chain [GH-90000]")
+    @DisplayName("should propagate errors through promise chain")
     void shouldPropagateErrorsThroughPromiseChain() { // GH-90000
         Throwable error = runExpectFailure( // GH-90000
             Promise.of(1) // GH-90000
-                .then(v -> Promise.ofException(new RuntimeException("Test error [GH-90000]")))
+                .then(v -> Promise.ofException(new RuntimeException("Test error")))
         );
 
-        assertThat(error).hasMessageContaining("Test error [GH-90000]");
+        assertThat(error).hasMessageContaining("Test error");
     }
 
     @Test
-    @DisplayName("should handle error callbacks [GH-90000]")
+    @DisplayName("should handle error callbacks")
     void shouldHandleErrorCallbacks() { // GH-90000
         Throwable error = runExpectFailure( // GH-90000
-            Promise.<String>ofException(new RuntimeException("Primary failed [GH-90000]"))
+            Promise.<String>ofException(new RuntimeException("Primary failed"))
         );
 
         assertThat(error).isInstanceOf(RuntimeException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("should handle nested promise chains [GH-90000]")
+    @DisplayName("should handle nested promise chains")
     void shouldHandleNestedPromiseChains() { // GH-90000
         Integer result = run( // GH-90000
             Promise.of(1) // GH-90000
@@ -85,22 +85,22 @@ class CorePlatformIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should handle conditional promise execution [GH-90000]")
+    @DisplayName("should handle conditional promise execution")
     void shouldHandleConditionalPromiseExecution() { // GH-90000
         boolean condition = true;
 
         String result = run( // GH-90000
             Promise.of(condition) // GH-90000
                 .then(cond -> cond ? // GH-90000
-                    Promise.of("Condition true [GH-90000]") :
-                    Promise.of("Condition false [GH-90000]"))
+                    Promise.of("Condition true") :
+                    Promise.of("Condition false"))
         );
 
-        assertThat(result).isEqualTo("Condition true [GH-90000]");
+        assertThat(result).isEqualTo("Condition true");
     }
 
     @Test
-    @DisplayName("should handle promise composition with combine [GH-90000]")
+    @DisplayName("should handle promise composition with combine")
     void shouldHandlePromiseComposition() { // GH-90000
         Integer result = run( // GH-90000
             Promise.of(10).combine(Promise.of(5), (b, m) -> b * m) // GH-90000
@@ -110,7 +110,7 @@ class CorePlatformIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should handle sequential promise execution [GH-90000]")
+    @DisplayName("should handle sequential promise execution")
     void shouldHandleSequentialPromiseExecution() { // GH-90000
         java.util.List<Integer> result = run( // GH-90000
             ActiveJPatterns.sequential(Promise.of(1), Promise.of(2), Promise.of(3)) // GH-90000
@@ -120,7 +120,7 @@ class CorePlatformIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should handle parallel promise execution [GH-90000]")
+    @DisplayName("should handle parallel promise execution")
     void shouldHandleParallelPromiseExecution() { // GH-90000
         java.util.List<Integer> result = run( // GH-90000
             ActiveJPatterns.parallel(Promise.of(1), Promise.of(2), Promise.of(3)) // GH-90000
@@ -130,7 +130,7 @@ class CorePlatformIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should handle promise retry logic [GH-90000]")
+    @DisplayName("should handle promise retry logic")
     void shouldHandlePromiseRetryLogic() { // GH-90000
         AtomicInteger attempts = new AtomicInteger(0); // GH-90000
 
@@ -152,17 +152,17 @@ class CorePlatformIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should handle promise callbacks on completion [GH-90000]")
+    @DisplayName("should handle promise callbacks on completion")
     void shouldHandlePromiseCallbacksOnCompletion() { // GH-90000
         String result = run( // GH-90000
-            Promise.of("Success value [GH-90000]")
+            Promise.of("Success value")
         );
 
-        assertThat(result).isEqualTo("Success value [GH-90000]");
+        assertThat(result).isEqualTo("Success value");
     }
 
     @Test
-    @DisplayName("should handle empty sequential promises [GH-90000]")
+    @DisplayName("should handle empty sequential promises")
     void shouldHandleEmptySequentialPromises() { // GH-90000
         java.util.List<Integer> result = run( // GH-90000
             ActiveJPatterns.sequential() // GH-90000
@@ -172,7 +172,7 @@ class CorePlatformIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should handle empty parallel promises [GH-90000]")
+    @DisplayName("should handle empty parallel promises")
     void shouldHandleEmptyParallelPromises() { // GH-90000
         java.util.List<Integer> result = run( // GH-90000
             ActiveJPatterns.parallel() // GH-90000

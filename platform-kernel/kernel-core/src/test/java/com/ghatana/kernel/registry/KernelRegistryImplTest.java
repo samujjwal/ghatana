@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @doc.layer test
  * @author Ghatana Kernel Team
  */
-@DisplayName("KernelRegistryImpl Tests [GH-90000]")
+@DisplayName("KernelRegistryImpl Tests")
 class KernelRegistryImplTest {
 
     private KernelRegistryImpl registry;
@@ -33,20 +33,20 @@ class KernelRegistryImplTest {
     }
 
     @Test
-    @DisplayName("Should register and retrieve module [GH-90000]")
+    @DisplayName("Should register and retrieve module")
     void shouldRegisterAndRetrieveModule() { // GH-90000
         KernelModule module = createTestModule("test-module", "1.0.0"); // GH-90000
 
         registry.registerModule(module); // GH-90000
 
-        Optional<KernelModule> retrieved = registry.getModule("test-module [GH-90000]");
+        Optional<KernelModule> retrieved = registry.getModule("test-module");
         assertTrue(retrieved.isPresent()); // GH-90000
         assertEquals("test-module", retrieved.get().getModuleId()); // GH-90000
         assertEquals("1.0.0", retrieved.get().getVersion()); // GH-90000
     }
 
     @Test
-    @DisplayName("Should throw exception when registering duplicate module [GH-90000]")
+    @DisplayName("Should throw exception when registering duplicate module")
     void shouldThrowExceptionWhenRegisteringDuplicateModule() { // GH-90000
         KernelModule module = createTestModule("test-module", "1.0.0"); // GH-90000
         registry.registerModule(module); // GH-90000
@@ -54,31 +54,31 @@ class KernelRegistryImplTest {
         KernelModule duplicate = createTestModule("test-module", "2.0.0"); // GH-90000
         IllegalStateException exception = assertThrows(IllegalStateException.class, // GH-90000
             () -> registry.registerModule(duplicate)); // GH-90000
-        assertTrue(exception.getMessage().contains("already registered [GH-90000]"));
+        assertTrue(exception.getMessage().contains("already registered"));
     }
 
     @Test
-    @DisplayName("Should unregister module [GH-90000]")
+    @DisplayName("Should unregister module")
     void shouldUnregisterModule() { // GH-90000
         KernelModule module = createTestModule("test-module", "1.0.0"); // GH-90000
         registry.registerModule(module); // GH-90000
 
-        boolean unregistered = registry.unregisterModule("test-module [GH-90000]");
+        boolean unregistered = registry.unregisterModule("test-module");
 
         assertTrue(unregistered); // GH-90000
-        assertFalse(registry.getModule("test-module [GH-90000]").isPresent());
-        assertFalse(registry.isModuleRegistered("test-module [GH-90000]"));
+        assertFalse(registry.getModule("test-module").isPresent());
+        assertFalse(registry.isModuleRegistered("test-module"));
     }
 
     @Test
-    @DisplayName("Should return false when unregistering non-existent module [GH-90000]")
+    @DisplayName("Should return false when unregistering non-existent module")
     void shouldReturnFalseWhenUnregisteringNonExistentModule() { // GH-90000
-        boolean unregistered = registry.unregisterModule("non-existent [GH-90000]");
+        boolean unregistered = registry.unregisterModule("non-existent");
         assertFalse(unregistered); // GH-90000
     }
 
     @Test
-    @DisplayName("Should get all modules [GH-90000]")
+    @DisplayName("Should get all modules")
     void shouldGetAllModules() { // GH-90000
         registry.registerModule(createTestModule("module-1", "1.0.0")); // GH-90000
         registry.registerModule(createTestModule("module-2", "1.0.0")); // GH-90000
@@ -88,27 +88,27 @@ class KernelRegistryImplTest {
     }
 
     @Test
-    @DisplayName("Should check module registration correctly [GH-90000]")
+    @DisplayName("Should check module registration correctly")
     void shouldCheckModuleRegistrationCorrectly() { // GH-90000
         registry.registerModule(createTestModule("registered", "1.0.0")); // GH-90000
 
-        assertTrue(registry.isModuleRegistered("registered [GH-90000]"));
-        assertFalse(registry.isModuleRegistered("not-registered [GH-90000]"));
+        assertTrue(registry.isModuleRegistered("registered"));
+        assertFalse(registry.isModuleRegistered("not-registered"));
     }
 
     @Test
-    @DisplayName("Should register and retrieve capability [GH-90000]")
+    @DisplayName("Should register and retrieve capability")
     void shouldRegisterAndRetrieveCapability() { // GH-90000
         KernelCapability capability = new KernelCapability("test.cap", "Test", "", KernelCapability.CapabilityType.DATA_MANAGEMENT, java.util.Map.of()); // GH-90000
 
         registry.registerCapability(capability); // GH-90000
 
-        assertTrue(registry.isCapabilityAvailable("test.cap [GH-90000]"));
+        assertTrue(registry.isCapabilityAvailable("test.cap"));
         assertEquals(1, registry.getAllCapabilities().size()); // GH-90000
     }
 
     @Test
-    @DisplayName("Should get modules by capability [GH-90000]")
+    @DisplayName("Should get modules by capability")
     void shouldGetModulesByCapability() { // GH-90000
         KernelCapability cap = KernelCapability.Core.DATA_STORAGE;
         KernelModule module = createTestModuleWithCapability("storage-module", cap); // GH-90000
@@ -120,7 +120,7 @@ class KernelRegistryImplTest {
     }
 
     @Test
-    @DisplayName("Should validate dependencies successfully [GH-90000]")
+    @DisplayName("Should validate dependencies successfully")
     void shouldValidateDependenciesSuccessfully() { // GH-90000
         // Register dependency first
         KernelDependency dep = new KernelDependency("dep-module", "1.0.0", // GH-90000
@@ -135,7 +135,7 @@ class KernelRegistryImplTest {
     }
 
     @Test
-    @DisplayName("Should detect missing dependencies [GH-90000]")
+    @DisplayName("Should detect missing dependencies")
     void shouldDetectMissingDependencies() { // GH-90000
         KernelDependency dep = new KernelDependency("missing-module", "1.0.0", // GH-90000
             KernelDependency.DependencyType.MODULE, false);
@@ -143,11 +143,11 @@ class KernelRegistryImplTest {
 
         assertFalse(registry.validateDependencies(module)); // GH-90000
         assertEquals(1, registry.getDependencyValidationErrors(module).size()); // GH-90000
-        assertTrue(registry.getDependencyValidationErrors(module).get(0).contains("missing-module [GH-90000]"));
+        assertTrue(registry.getDependencyValidationErrors(module).get(0).contains("missing-module"));
     }
 
     @Test
-    @DisplayName("Should skip validation for optional dependencies [GH-90000]")
+    @DisplayName("Should skip validation for optional dependencies")
     void shouldSkipValidationForOptionalDependencies() { // GH-90000
         KernelDependency dep = new KernelDependency("optional-module", "1.0.0", // GH-90000
             KernelDependency.DependencyType.EXTERNAL_SERVICE, true);
@@ -157,7 +157,7 @@ class KernelRegistryImplTest {
     }
 
     @Test
-    @DisplayName("Should resolve dependencies in correct order [GH-90000]")
+    @DisplayName("Should resolve dependencies in correct order")
     void shouldResolveDependenciesInCorrectOrder() { // GH-90000
         // Create modules with dependencies
         KernelDependency depA = new KernelDependency("module-a", "1.0.0", // GH-90000
@@ -182,7 +182,7 @@ class KernelRegistryImplTest {
     }
 
     @Test
-    @DisplayName("Should get dependent modules [GH-90000]")
+    @DisplayName("Should get dependent modules")
     void shouldGetDependentModules() { // GH-90000
         KernelDependency dep = new KernelDependency("base-module", "1.0.0", // GH-90000
             KernelDependency.DependencyType.MODULE, false);
@@ -193,14 +193,14 @@ class KernelRegistryImplTest {
         registry.registerModule(baseModule); // GH-90000
         registry.registerModule(dependentModule); // GH-90000
 
-        var dependents = registry.getDependentModules("base-module [GH-90000]");
+        var dependents = registry.getDependentModules("base-module");
 
         assertEquals(1, dependents.size()); // GH-90000
         assertEquals("dependent", dependents.get(0).getModuleId()); // GH-90000
     }
 
     @Test
-    @DisplayName("Should register and lookup typed dependencies [GH-90000]")
+    @DisplayName("Should register and lookup typed dependencies")
     void shouldRegisterAndLookupTypedDependencies() { // GH-90000
         TestService service = new TestService(); // GH-90000
 
@@ -212,21 +212,21 @@ class KernelRegistryImplTest {
     }
 
     @Test
-    @DisplayName("Should throw exception for missing dependency [GH-90000]")
+    @DisplayName("Should throw exception for missing dependency")
     void shouldThrowExceptionForMissingDependency() { // GH-90000
         IllegalStateException exception = assertThrows(IllegalStateException.class, // GH-90000
             () -> registry.getDependency(TestService.class)); // GH-90000
-        assertTrue(exception.getMessage().contains("not found [GH-90000]"));
+        assertTrue(exception.getMessage().contains("not found"));
     }
 
     @Test
-    @DisplayName("Should return empty optional for missing dependency [GH-90000]")
+    @DisplayName("Should return empty optional for missing dependency")
     void shouldReturnEmptyOptionalForMissingDependency() { // GH-90000
         assertTrue(registry.getOptionalDependency(TestService.class).isEmpty()); // GH-90000
     }
 
     @Test
-    @DisplayName("Should register and lookup named dependencies [GH-90000]")
+    @DisplayName("Should register and lookup named dependencies")
     void shouldRegisterAndLookupNamedDependencies() { // GH-90000
         TestService service = new TestService(); // GH-90000
 
@@ -236,18 +236,18 @@ class KernelRegistryImplTest {
     }
 
     @Test
-    @DisplayName("Should throw exception for type mismatch in named dependency [GH-90000]")
+    @DisplayName("Should throw exception for type mismatch in named dependency")
     void shouldThrowExceptionForTypeMismatchInNamedDependency() { // GH-90000
         TestService service = new TestService(); // GH-90000
         registry.registerDependency("my-service", service); // GH-90000
 
         IllegalStateException exception = assertThrows(IllegalStateException.class, // GH-90000
             () -> registry.getDependency("my-service", String.class)); // GH-90000
-        assertTrue(exception.getMessage().contains("type mismatch [GH-90000]"));
+        assertTrue(exception.getMessage().contains("type mismatch"));
     }
 
     @Test
-    @DisplayName("Should calculate aggregate health status [GH-90000]")
+    @DisplayName("Should calculate aggregate health status")
     void shouldCalculateAggregateHealthStatus() { // GH-90000
         KernelModule healthyModule = createTestModuleWithHealth("healthy", HealthStatus.healthy()); // GH-90000
         registry.registerModule(healthyModule); // GH-90000
@@ -255,15 +255,15 @@ class KernelRegistryImplTest {
         HealthStatus aggregate = registry.getAggregateHealthStatus(); // GH-90000
 
         assertEquals(HealthStatus.Status.HEALTHY, aggregate.getStatus()); // GH-90000
-        assertTrue(aggregate.getChecks().containsKey("healthy [GH-90000]"));
+        assertTrue(aggregate.getChecks().containsKey("healthy"));
     }
 
     @Test
-    @DisplayName("Should detect degraded health in aggregate [GH-90000]")
+    @DisplayName("Should detect degraded health in aggregate")
     void shouldDetectDegradedHealthInAggregate() { // GH-90000
         KernelModule healthyModule = createTestModuleWithHealth("healthy", HealthStatus.healthy()); // GH-90000
         KernelModule unhealthyModule = createTestModuleWithHealth("unhealthy", // GH-90000
-            HealthStatus.unhealthy("error [GH-90000]"));
+            HealthStatus.unhealthy("error"));
 
         registry.registerModule(healthyModule); // GH-90000
         registry.registerModule(unhealthyModule); // GH-90000
@@ -274,7 +274,7 @@ class KernelRegistryImplTest {
     }
 
     @Test
-    @DisplayName("Should validate capability dependencies [GH-90000]")
+    @DisplayName("Should validate capability dependencies")
     void shouldValidateCapabilityDependencies() { // GH-90000
         KernelCapability cap = new KernelCapability("test.cap", "Test", "", KernelCapability.CapabilityType.DATA_MANAGEMENT, java.util.Map.of()); // GH-90000
         registry.registerCapability(cap); // GH-90000
@@ -287,14 +287,14 @@ class KernelRegistryImplTest {
     }
 
     @Test
-    @DisplayName("Should detect missing capability dependencies [GH-90000]")
+    @DisplayName("Should detect missing capability dependencies")
     void shouldDetectMissingCapabilityDependencies() { // GH-90000
         KernelDependency dep = new KernelDependency("missing.cap", "1.0.0", // GH-90000
             KernelDependency.DependencyType.CAPABILITY, false);
         KernelModule module = createTestModuleWithDependency("test-module", dep); // GH-90000
 
         assertFalse(registry.validateDependencies(module)); // GH-90000
-        assertTrue(registry.getDependencyValidationErrors(module).get(0).contains("missing.cap [GH-90000]"));
+        assertTrue(registry.getDependencyValidationErrors(module).get(0).contains("missing.cap"));
     }
 
     // ==================== Test Helpers ====================

@@ -17,29 +17,29 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("Collection entity [GH-90000]")
+@DisplayName("Collection entity")
 class CollectionTest {
 
     @Nested
-    @DisplayName("equals() [GH-90000]")
+    @DisplayName("equals()")
     class EqualsTests {
 
         @Test
-        @DisplayName("should equal itself (reflexive) [GH-90000]")
+        @DisplayName("should equal itself (reflexive)")
         void shouldEqualItself() { // GH-90000
             Collection col = Collection.builder() // GH-90000
-                    .tenantId("t1 [GH-90000]")
-                    .name("col1 [GH-90000]")
+                    .tenantId("t1")
+                    .name("col1")
                     .build(); // GH-90000
             assertThat(col).isEqualTo(col); // GH-90000
         }
 
         @Test
-        @DisplayName("should equal another collection with the same UUID id [GH-90000]")
+        @DisplayName("should equal another collection with the same UUID id")
         void shouldEqualSameId() { // GH-90000
             UUID id = UUID.randomUUID(); // GH-90000
-            Collection a = Collection.builder().tenantId("t1 [GH-90000]").name("col-a [GH-90000]").build();
-            Collection b = Collection.builder().tenantId("t2 [GH-90000]").name("col-b [GH-90000]").build();
+            Collection a = Collection.builder().tenantId("t1").name("col-a").build();
+            Collection b = Collection.builder().tenantId("t2").name("col-b").build();
             // Set id via reflection to simulate JPA-assigned identity
             setId(a, id); // GH-90000
             setId(b, id); // GH-90000
@@ -48,10 +48,10 @@ class CollectionTest {
         }
 
         @Test
-        @DisplayName("should not equal a collection with a different UUID id [GH-90000]")
+        @DisplayName("should not equal a collection with a different UUID id")
         void shouldNotEqualDifferentId() { // GH-90000
-            Collection a = Collection.builder().tenantId("t1 [GH-90000]").name("col [GH-90000]").build();
-            Collection b = Collection.builder().tenantId("t1 [GH-90000]").name("col [GH-90000]").build();
+            Collection a = Collection.builder().tenantId("t1").name("col").build();
+            Collection b = Collection.builder().tenantId("t1").name("col").build();
             setId(a, UUID.randomUUID()); // GH-90000
             setId(b, UUID.randomUUID()); // GH-90000
 
@@ -59,49 +59,49 @@ class CollectionTest {
         }
 
         @Test
-        @DisplayName("should not equal when both ids are null (new unsaved entities) [GH-90000]")
+        @DisplayName("should not equal when both ids are null (new unsaved entities)")
         void shouldNotEqualBothNullId() { // GH-90000
-            Collection a = Collection.builder().tenantId("t1 [GH-90000]").name("col [GH-90000]").build();
-            Collection b = Collection.builder().tenantId("t1 [GH-90000]").name("col [GH-90000]").build();
+            Collection a = Collection.builder().tenantId("t1").name("col").build();
+            Collection b = Collection.builder().tenantId("t1").name("col").build();
             // ids are null (not yet persisted) // GH-90000
             assertThat(a).isNotEqualTo(b); // GH-90000
         }
 
         @Test
-        @DisplayName("should not equal when this id is null and other id is set [GH-90000]")
+        @DisplayName("should not equal when this id is null and other id is set")
         void shouldNotEqualThisNullId() { // GH-90000
-            Collection a = Collection.builder().tenantId("t1 [GH-90000]").name("col [GH-90000]").build();
-            Collection b = Collection.builder().tenantId("t1 [GH-90000]").name("col [GH-90000]").build();
+            Collection a = Collection.builder().tenantId("t1").name("col").build();
+            Collection b = Collection.builder().tenantId("t1").name("col").build();
             setId(b, UUID.randomUUID()); // GH-90000
 
             assertThat(a).isNotEqualTo(b); // GH-90000
         }
 
         @Test
-        @DisplayName("should not equal null [GH-90000]")
+        @DisplayName("should not equal null")
         void shouldNotEqualNull() { // GH-90000
-            Collection col = Collection.builder().tenantId("t1 [GH-90000]").name("col [GH-90000]").build();
+            Collection col = Collection.builder().tenantId("t1").name("col").build();
             assertThat(col).isNotEqualTo(null); // GH-90000
         }
 
         @Test
-        @DisplayName("should not equal an object of a different type [GH-90000]")
+        @DisplayName("should not equal an object of a different type")
         void shouldNotEqualDifferentType() { // GH-90000
-            Collection col = Collection.builder().tenantId("t1 [GH-90000]").name("col [GH-90000]").build();
-            assertThat(col).isNotEqualTo("not-a-collection [GH-90000]");
+            Collection col = Collection.builder().tenantId("t1").name("col").build();
+            assertThat(col).isNotEqualTo("not-a-collection");
         }
     }
 
     @Nested
-    @DisplayName("hashCode() [GH-90000]")
+    @DisplayName("hashCode()")
     class HashCodeTests {
 
         @Test
-        @DisplayName("should return same hash for same UUID id [GH-90000]")
+        @DisplayName("should return same hash for same UUID id")
         void shouldReturnSameHashForSameId() { // GH-90000
             UUID id = UUID.randomUUID(); // GH-90000
-            Collection a = Collection.builder().tenantId("t1 [GH-90000]").name("col [GH-90000]").build();
-            Collection b = Collection.builder().tenantId("t2 [GH-90000]").name("other [GH-90000]").build();
+            Collection a = Collection.builder().tenantId("t1").name("col").build();
+            Collection b = Collection.builder().tenantId("t2").name("other").build();
             setId(a, id); // GH-90000
             setId(b, id); // GH-90000
 
@@ -109,17 +109,17 @@ class CollectionTest {
         }
 
         @Test
-        @DisplayName("should return 0 when id is null [GH-90000]")
+        @DisplayName("should return 0 when id is null")
         void shouldReturnZeroForNullId() { // GH-90000
-            Collection col = Collection.builder().tenantId("t1 [GH-90000]").name("col [GH-90000]").build();
+            Collection col = Collection.builder().tenantId("t1").name("col").build();
             assertThat(col.hashCode()).isEqualTo(0); // GH-90000
         }
 
         @Test
-        @DisplayName("should return UUID hashCode when id is set [GH-90000]")
+        @DisplayName("should return UUID hashCode when id is set")
         void shouldReturnIdHashCode() { // GH-90000
             UUID id = UUID.randomUUID(); // GH-90000
-            Collection col = Collection.builder().tenantId("t1 [GH-90000]").name("col [GH-90000]").build();
+            Collection col = Collection.builder().tenantId("t1").name("col").build();
             setId(col, id); // GH-90000
 
             assertThat(col.hashCode()).isEqualTo(id.hashCode()); // GH-90000
@@ -127,107 +127,107 @@ class CollectionTest {
     }
 
     @Nested
-    @DisplayName("getField() [GH-90000]")
+    @DisplayName("getField()")
     class GetFieldTests {
 
         @Test
-        @DisplayName("should return present Optional when field exists by name [GH-90000]")
+        @DisplayName("should return present Optional when field exists by name")
         void shouldReturnFieldWhenFound() { // GH-90000
-            FieldDefinition field = FieldDefinition.builder().name("email [GH-90000]").build();
+            FieldDefinition field = FieldDefinition.builder().name("email").build();
             Collection col = Collection.builder() // GH-90000
-                    .tenantId("t1 [GH-90000]")
-                    .name("col [GH-90000]")
+                    .tenantId("t1")
+                    .name("col")
                     .fields(List.of(field)) // GH-90000
                     .build(); // GH-90000
 
-            assertThat(col.getField("email [GH-90000]")).isPresent();
-            assertThat(col.getField("email [GH-90000]").get().getName()).isEqualTo("email [GH-90000]");
+            assertThat(col.getField("email")).isPresent();
+            assertThat(col.getField("email").get().getName()).isEqualTo("email");
         }
 
         @Test
-        @DisplayName("should return empty Optional when field name not found [GH-90000]")
+        @DisplayName("should return empty Optional when field name not found")
         void shouldReturnEmptyWhenNotFound() { // GH-90000
-            FieldDefinition field = FieldDefinition.builder().name("email [GH-90000]").build();
+            FieldDefinition field = FieldDefinition.builder().name("email").build();
             Collection col = Collection.builder() // GH-90000
-                    .tenantId("t1 [GH-90000]")
-                    .name("col [GH-90000]")
+                    .tenantId("t1")
+                    .name("col")
                     .fields(List.of(field)) // GH-90000
                     .build(); // GH-90000
 
-            assertThat(col.getField("phone [GH-90000]")).isEmpty();
+            assertThat(col.getField("phone")).isEmpty();
         }
 
         @Test
-        @DisplayName("should return empty Optional when fields list is null [GH-90000]")
+        @DisplayName("should return empty Optional when fields list is null")
         void shouldReturnEmptyWhenFieldsNull() { // GH-90000
             Collection col = Collection.builder() // GH-90000
-                    .tenantId("t1 [GH-90000]")
-                    .name("col [GH-90000]")
+                    .tenantId("t1")
+                    .name("col")
                     .fields(null) // GH-90000
                     .build(); // GH-90000
 
-            assertThat(col.getField("email [GH-90000]")).isEmpty();
+            assertThat(col.getField("email")).isEmpty();
         }
 
         @Test
-        @DisplayName("should find correct field from multiple fields [GH-90000]")
+        @DisplayName("should find correct field from multiple fields")
         void shouldFindCorrectFieldAmongMany() { // GH-90000
-            FieldDefinition name = FieldDefinition.builder().name("name [GH-90000]").build();
-            FieldDefinition age = FieldDefinition.builder().name("age [GH-90000]").build();
-            FieldDefinition email = FieldDefinition.builder().name("email [GH-90000]").build();
+            FieldDefinition name = FieldDefinition.builder().name("name").build();
+            FieldDefinition age = FieldDefinition.builder().name("age").build();
+            FieldDefinition email = FieldDefinition.builder().name("email").build();
             Collection col = Collection.builder() // GH-90000
-                    .tenantId("t1 [GH-90000]")
-                    .name("col [GH-90000]")
+                    .tenantId("t1")
+                    .name("col")
                     .fields(List.of(name, age, email)) // GH-90000
                     .build(); // GH-90000
 
-            assertThat(col.getField("age [GH-90000]")).isPresent();
-            assertThat(col.getField("age [GH-90000]").get().getName()).isEqualTo("age [GH-90000]");
+            assertThat(col.getField("age")).isPresent();
+            assertThat(col.getField("age").get().getName()).isEqualTo("age");
         }
     }
 
     @Nested
-    @DisplayName("addField() [GH-90000]")
+    @DisplayName("addField()")
     class AddFieldTests {
 
         @Test
-        @DisplayName("should add a field and return this for chaining [GH-90000]")
+        @DisplayName("should add a field and return this for chaining")
         void shouldAddFieldAndReturnThis() { // GH-90000
-            Collection col = Collection.builder().tenantId("t1 [GH-90000]").name("col [GH-90000]").build();
-            FieldDefinition field = FieldDefinition.builder().name("score [GH-90000]").build();
+            Collection col = Collection.builder().tenantId("t1").name("col").build();
+            FieldDefinition field = FieldDefinition.builder().name("score").build();
 
             Collection result = col.addField(field); // GH-90000
 
             assertThat(result).isSameAs(col); // GH-90000
-            assertThat(col.getField("score [GH-90000]")).isPresent();
+            assertThat(col.getField("score")).isPresent();
         }
 
         @Test
-        @DisplayName("should initialize fields list when null before adding [GH-90000]")
+        @DisplayName("should initialize fields list when null before adding")
         void shouldInitializeNullFieldsBeforeAdding() { // GH-90000
             Collection col = Collection.builder() // GH-90000
-                    .tenantId("t1 [GH-90000]")
-                    .name("col [GH-90000]")
+                    .tenantId("t1")
+                    .name("col")
                     .fields(null) // GH-90000
                     .build(); // GH-90000
-            FieldDefinition field = FieldDefinition.builder().name("tag [GH-90000]").build();
+            FieldDefinition field = FieldDefinition.builder().name("tag").build();
 
             col.addField(field); // GH-90000
 
-            assertThat(col.getField("tag [GH-90000]")).isPresent();
+            assertThat(col.getField("tag")).isPresent();
         }
     }
 
     @Nested
-    @DisplayName("getPartitionCount() [GH-90000]")
+    @DisplayName("getPartitionCount()")
     class GetPartitionCountTests {
 
         @Test
-        @DisplayName("should return 1 when eventConfig is null [GH-90000]")
+        @DisplayName("should return 1 when eventConfig is null")
         void shouldReturnOneWhenEventConfigNull() { // GH-90000
             Collection col = Collection.builder() // GH-90000
-                    .tenantId("t1 [GH-90000]")
-                    .name("col [GH-90000]")
+                    .tenantId("t1")
+                    .name("col")
                     .eventConfig(null) // GH-90000
                     .build(); // GH-90000
 
@@ -235,12 +235,12 @@ class CollectionTest {
         }
 
         @Test
-        @DisplayName("should return 1 when eventConfig has null partitionCount [GH-90000]")
+        @DisplayName("should return 1 when eventConfig has null partitionCount")
         void shouldReturnOneWhenPartitionCountNull() { // GH-90000
             EventConfig config = EventConfig.builder().build(); // GH-90000
             Collection col = Collection.builder() // GH-90000
-                    .tenantId("t1 [GH-90000]")
-                    .name("col [GH-90000]")
+                    .tenantId("t1")
+                    .name("col")
                     .eventConfig(config) // GH-90000
                     .build(); // GH-90000
 
@@ -254,12 +254,12 @@ class CollectionTest {
         }
 
         @Test
-        @DisplayName("should return actual partition count from eventConfig [GH-90000]")
+        @DisplayName("should return actual partition count from eventConfig")
         void shouldReturnPartitionCountFromEventConfig() { // GH-90000
             EventConfig config = EventConfig.hashPartitioned("tenant-id", 8); // GH-90000
             Collection col = Collection.builder() // GH-90000
-                    .tenantId("t1 [GH-90000]")
-                    .name("col [GH-90000]")
+                    .tenantId("t1")
+                    .name("col")
                     .eventConfig(config) // GH-90000
                     .build(); // GH-90000
 
@@ -268,55 +268,55 @@ class CollectionTest {
     }
 
     @Nested
-    @DisplayName("Builder defaults [GH-90000]")
+    @DisplayName("Builder defaults")
     class BuilderDefaultTests {
 
         @Test
-        @DisplayName("should set default recordType to ENTITY [GH-90000]")
+        @DisplayName("should set default recordType to ENTITY")
         void shouldDefaultRecordTypeToEntity() { // GH-90000
-            Collection col = Collection.builder().tenantId("t1 [GH-90000]").name("col [GH-90000]").build();
+            Collection col = Collection.builder().tenantId("t1").name("col").build();
             assertThat(col.getRecordType()).isEqualTo(RecordType.ENTITY); // GH-90000
         }
 
         @Test
-        @DisplayName("should set default storageProfile to 'default' [GH-90000]")
+        @DisplayName("should set default storageProfile to 'default'")
         void shouldDefaultStorageProfile() { // GH-90000
-            Collection col = Collection.builder().tenantId("t1 [GH-90000]").name("col [GH-90000]").build();
-            assertThat(col.getStorageProfile()).isEqualTo("default [GH-90000]");
+            Collection col = Collection.builder().tenantId("t1").name("col").build();
+            assertThat(col.getStorageProfile()).isEqualTo("default");
         }
 
         @Test
-        @DisplayName("should set default schemaVersion to '1.0.0' [GH-90000]")
+        @DisplayName("should set default schemaVersion to '1.0.0'")
         void shouldDefaultSchemaVersion() { // GH-90000
-            Collection col = Collection.builder().tenantId("t1 [GH-90000]").name("col [GH-90000]").build();
-            assertThat(col.getSchemaVersion()).isEqualTo("1.0.0 [GH-90000]");
+            Collection col = Collection.builder().tenantId("t1").name("col").build();
+            assertThat(col.getSchemaVersion()).isEqualTo("1.0.0");
         }
 
         @Test
-        @DisplayName("should set default version to 1 [GH-90000]")
+        @DisplayName("should set default version to 1")
         void shouldDefaultVersionToOne() { // GH-90000
-            Collection col = Collection.builder().tenantId("t1 [GH-90000]").name("col [GH-90000]").build();
+            Collection col = Collection.builder().tenantId("t1").name("col").build();
             assertThat(col.getVersion()).isEqualTo(1); // GH-90000
         }
 
         @Test
-        @DisplayName("should set default active to true [GH-90000]")
+        @DisplayName("should set default active to true")
         void shouldDefaultActiveToTrue() { // GH-90000
-            Collection col = Collection.builder().tenantId("t1 [GH-90000]").name("col [GH-90000]").build();
+            Collection col = Collection.builder().tenantId("t1").name("col").build();
             assertThat(col.getActive()).isTrue(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("supportsOperation() [GH-90000]")
+    @DisplayName("supportsOperation()")
     class SupportsOperationTests {
 
         @Test
-        @DisplayName("ENTITY collection should support CREATE and READ [GH-90000]")
+        @DisplayName("ENTITY collection should support CREATE and READ")
         void entityShouldSupportCreateAndRead() { // GH-90000
             Collection col = Collection.builder() // GH-90000
-                    .tenantId("t1 [GH-90000]")
-                    .name("col [GH-90000]")
+                    .tenantId("t1")
+                    .name("col")
                     .recordType(RecordType.ENTITY) // GH-90000
                     .build(); // GH-90000
 
@@ -325,11 +325,11 @@ class CollectionTest {
         }
 
         @Test
-        @DisplayName("ENTITY collection should support UPDATE and DELETE (mutable) [GH-90000]")
+        @DisplayName("ENTITY collection should support UPDATE and DELETE (mutable)")
         void entityShouldSupportUpdateAndDelete() { // GH-90000
             Collection col = Collection.builder() // GH-90000
-                    .tenantId("t1 [GH-90000]")
-                    .name("col [GH-90000]")
+                    .tenantId("t1")
+                    .name("col")
                     .recordType(RecordType.ENTITY) // GH-90000
                     .build(); // GH-90000
 
@@ -338,11 +338,11 @@ class CollectionTest {
         }
 
         @Test
-        @DisplayName("EVENT collection should support APPEND and SUBSCRIBE [GH-90000]")
+        @DisplayName("EVENT collection should support APPEND and SUBSCRIBE")
         void eventShouldSupportAppendAndSubscribe() { // GH-90000
             Collection col = Collection.builder() // GH-90000
-                    .tenantId("t1 [GH-90000]")
-                    .name("col [GH-90000]")
+                    .tenantId("t1")
+                    .name("col")
                     .recordType(RecordType.EVENT) // GH-90000
                     .build(); // GH-90000
 
@@ -355,7 +355,7 @@ class CollectionTest {
 
     private static void setId(Collection col, UUID id) { // GH-90000
         try {
-            var field = Collection.class.getDeclaredField("id [GH-90000]");
+            var field = Collection.class.getDeclaredField("id");
             field.setAccessible(true); // GH-90000
             field.set(col, id); // GH-90000
         } catch (NoSuchFieldException | IllegalAccessException e) { // GH-90000

@@ -17,31 +17,31 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test injection attacks, token manipulation, and bypass attempts.
  */
-@DisplayName("Security Scenario Tests [GH-90000]")
+@DisplayName("Security Scenario Tests")
 class SecurityScenarioTest {
 
     @Test
-    @DisplayName("Should prevent SQL injection attacks [GH-90000]")
+    @DisplayName("Should prevent SQL injection attacks")
     void shouldPreventSqlInjectionAttacks() { // GH-90000
         String maliciousInput = "'; DROP TABLE users; --";
         String hashed = PasswordHasher.hash(maliciousInput); // GH-90000
 
         assertThat(hashed).isNotNull(); // GH-90000
-        assertThat(hashed).doesNotContain("DROP TABLE [GH-90000]");
+        assertThat(hashed).doesNotContain("DROP TABLE");
     }
 
     @Test
-    @DisplayName("Should prevent XSS attacks [GH-90000]")
+    @DisplayName("Should prevent XSS attacks")
     void shouldPreventXssAttacks() { // GH-90000
         String xssPayload = "<script>alert('xss')</script>"; // GH-90000
         String hashed = PasswordHasher.hash(xssPayload); // GH-90000
 
         assertThat(hashed).isNotNull(); // GH-90000
-        assertThat(hashed).doesNotContain("<script> [GH-90000]");
+        assertThat(hashed).doesNotContain("<script>");
     }
 
     @Test
-    @DisplayName("Should prevent token manipulation [GH-90000]")
+    @DisplayName("Should prevent token manipulation")
     void shouldPreventTokenManipulation() { // GH-90000
         String password = "validPassword123";
         String hashed = PasswordHasher.hash(password); // GH-90000
@@ -51,7 +51,7 @@ class SecurityScenarioTest {
     }
 
     @Test
-    @DisplayName("Should prevent authentication bypass [GH-90000]")
+    @DisplayName("Should prevent authentication bypass")
     void shouldPreventAuthenticationBypass() { // GH-90000
         String password = "securePassword";
         String hashed = PasswordHasher.hash(password); // GH-90000
@@ -61,7 +61,7 @@ class SecurityScenarioTest {
     }
 
     @Test
-    @DisplayName("Should prevent brute force attacks [GH-90000]")
+    @DisplayName("Should prevent brute force attacks")
     void shouldPreventBruteForceAttacks() { // GH-90000
         String password = "strongPassword123";
         String hashed = PasswordHasher.hash(password); // GH-90000
@@ -74,7 +74,7 @@ class SecurityScenarioTest {
     }
 
     @Test
-    @DisplayName("Should log security events [GH-90000]")
+    @DisplayName("Should log security events")
     void shouldLogSecurityEvents() { // GH-90000
         String password = "testPassword";
         String hashed = PasswordHasher.hash(password); // GH-90000

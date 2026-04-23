@@ -48,7 +48,7 @@ class AudioVideoIntegrationTest {
         eventloop = Eventloop.create(); // GH-90000
         executor = Executors.newSingleThreadExecutor(); // GH-90000
         executor.submit(() -> eventloop.run()); // GH-90000
-        library = AudioVideoLibrary.builder().withSttConfig(SttConfig.builder().modelId("test [GH-90000]").build()).build();
+        library = AudioVideoLibrary.builder().withSttConfig(SttConfig.builder().modelId("test").build()).build();
     }
 
     @AfterEach
@@ -59,7 +59,7 @@ class AudioVideoIntegrationTest {
     }
 
     @Test
-    @DisplayName("Integration: Circuit breaker protects failing STT engine [GH-90000]")
+    @DisplayName("Integration: Circuit breaker protects failing STT engine")
     void testCircuitBreakerProtection() throws Exception { // GH-90000
         // Create engine that always fails
         var failingEngine = AudioVideoTestUtils.createFailingSttEngine(1.0, RuntimeException.class); // GH-90000
@@ -94,7 +94,7 @@ class AudioVideoIntegrationTest {
     }
 
     @Test
-    @DisplayName("Integration: Retry handler recovers from transient failures [GH-90000]")
+    @DisplayName("Integration: Retry handler recovers from transient failures")
     void testRetryRecovery() { // GH-90000
         var retryHandler = StreamingRetryHandler.builder() // GH-90000
             .maxRetries(3) // GH-90000
@@ -116,7 +116,7 @@ class AudioVideoIntegrationTest {
     }
 
     @Test
-    @DisplayName("Integration: Timeout configuration applies correctly [GH-90000]")
+    @DisplayName("Integration: Timeout configuration applies correctly")
     void testTimeoutConfiguration() { // GH-90000
         var config = TimeoutConfig.lowLatency(); // GH-90000
 
@@ -142,7 +142,7 @@ class AudioVideoIntegrationTest {
     }
 
     @Test
-    @DisplayName("Integration: Configuration provider loads and applies settings [GH-90000]")
+    @DisplayName("Integration: Configuration provider loads and applies settings")
     void testConfigurationProvider() { // GH-90000
         var provider = ConfigurationProvider.getInstance(); // GH-90000
 
@@ -159,7 +159,7 @@ class AudioVideoIntegrationTest {
     }
 
     @Test
-    @DisplayName("Integration: All resilience patterns work together [GH-90000]")
+    @DisplayName("Integration: All resilience patterns work together")
     void testResiliencePatternsCombined() { // GH-90000
         // This test validates that multiple resilience patterns can work together
 
@@ -167,7 +167,7 @@ class AudioVideoIntegrationTest {
         var retryHandler = StreamingRetryHandler.defaults(); // GH-90000
 
         // 2. Create a circuit breaker
-        var circuitBreaker = com.ghatana.platform.resilience.CircuitBreaker.builder("integration-test [GH-90000]")
+        var circuitBreaker = com.ghatana.platform.resilience.CircuitBreaker.builder("integration-test")
             .failureThreshold(5) // GH-90000
             .resetTimeout(Duration.ofMillis(100)) // GH-90000
             .build(); // GH-90000
@@ -179,7 +179,7 @@ class AudioVideoIntegrationTest {
             () -> { // GH-90000
                 int call = callCount.incrementAndGet(); // GH-90000
                 if (call < 3) { // GH-90000
-                    throw new RuntimeException("try again failure [GH-90000]");
+                    throw new RuntimeException("try again failure");
                 }
                 return "recovered";
             },
@@ -191,10 +191,10 @@ class AudioVideoIntegrationTest {
     }
 
     @Test
-    @DisplayName("Integration: Library lifecycle management [GH-90000]")
+    @DisplayName("Integration: Library lifecycle management")
     void testLibraryLifecycle() { // GH-90000
         // Create library
-        var lib = AudioVideoLibrary.builder().withSttConfig(SttConfig.builder().modelId("test [GH-90000]").build()).withTtsConfig(TtsConfig.builder().defaultVoiceId("test [GH-90000]").build()).withVisionConfig(VisionConfig.builder().modelId("test [GH-90000]").build()).build();
+        var lib = AudioVideoLibrary.builder().withSttConfig(SttConfig.builder().modelId("test").build()).withTtsConfig(TtsConfig.builder().defaultVoiceId("test").build()).withVisionConfig(VisionConfig.builder().modelId("test").build()).build();
         assertNotNull(lib); // GH-90000
 
         // Get engines
@@ -219,7 +219,7 @@ class AudioVideoIntegrationTest {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("Failure: Engine returns typed ProcessingError with isRetryable flag [GH-90000]")
+    @DisplayName("Failure: Engine returns typed ProcessingError with isRetryable flag")
     void testProcessingErrorIsTyped() { // GH-90000
         // Engines must surface typed errors so callers can decide whether to retry.
         var failingEngine = AudioVideoTestUtils.createFailingSttEngine(1.0, RuntimeException.class); // GH-90000
@@ -233,7 +233,7 @@ class AudioVideoIntegrationTest {
     }
 
     @Test
-    @DisplayName("Failure: Retry handler exhausts attempts and propagates last error [GH-90000]")
+    @DisplayName("Failure: Retry handler exhausts attempts and propagates last error")
     void testRetryExhaustionHasLastError() { // GH-90000
         var retryHandler = StreamingRetryHandler.builder() // GH-90000
             .maxRetries(3) // GH-90000
@@ -260,10 +260,10 @@ class AudioVideoIntegrationTest {
     }
 
     @Test
-    @DisplayName("Failure: Circuit breaker recovers after timeout window [GH-90000]")
+    @DisplayName("Failure: Circuit breaker recovers after timeout window")
     void testCircuitBreakerRecoveryAfterTimeout() throws InterruptedException { // GH-90000
         var failingEngine = AudioVideoTestUtils.createFailingSttEngine(1.0, RuntimeException.class); // GH-90000
-        var circuitBreaker = com.ghatana.platform.resilience.CircuitBreaker.builder("recovery-test [GH-90000]")
+        var circuitBreaker = com.ghatana.platform.resilience.CircuitBreaker.builder("recovery-test")
             .failureThreshold(3) // GH-90000
             .successThreshold(1) // GH-90000
             .resetTimeout(Duration.ofMillis(100)) // GH-90000
@@ -300,7 +300,7 @@ class AudioVideoIntegrationTest {
     }
 
     @Test
-    @DisplayName("Failure: Concurrent requests do not exceed engine pool capacity [GH-90000]")
+    @DisplayName("Failure: Concurrent requests do not exceed engine pool capacity")
     void testConcurrentRequestsRespectPoolCapacity() throws Exception { // GH-90000
         int poolSize = 3;
         int totalRequests = 10;
@@ -357,7 +357,7 @@ class AudioVideoIntegrationTest {
     }
 
     @Test
-    @DisplayName("Failure: Empty audio data produces a ProcessingError, not a silent empty result [GH-90000]")
+    @DisplayName("Failure: Empty audio data produces a ProcessingError, not a silent empty result")
     void testEmptyAudioDataRejected() { // GH-90000
         var engine = AudioVideoTestUtils.createFailingSttEngine(0.0, RuntimeException.class); // GH-90000
         // An empty byte array is invalid for speech transcription.
@@ -377,12 +377,12 @@ class AudioVideoIntegrationTest {
     }
 
     @Test
-    @DisplayName("Failure: Model loading error surfaces before first inference attempt [GH-90000]")
+    @DisplayName("Failure: Model loading error surfaces before first inference attempt")
     void testModelLoadingErrorSurfacedEarly() { // GH-90000
         // A model path that does not exist should fail at engine construction or first use,
         // not silently fall through to produce garbage output.
         var invalidConfig = SttConfig.builder() // GH-90000
-            .modelId("nonexistent-model-that-does-not-exist [GH-90000]")
+            .modelId("nonexistent-model-that-does-not-exist")
             .build(); // GH-90000
 
         // Library construction with an invalid model should not throw immediately (lazy init), // GH-90000

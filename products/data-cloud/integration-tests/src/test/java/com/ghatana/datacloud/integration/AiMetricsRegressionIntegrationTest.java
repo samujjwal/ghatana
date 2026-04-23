@@ -39,7 +39,7 @@ import static org.assertj.core.api.Assertions.offset;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@DisplayName("AI Metrics Regression Integration Test [GH-90000]")
+@DisplayName("AI Metrics Regression Integration Test")
 class AiMetricsRegressionIntegrationTest {
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -47,11 +47,11 @@ class AiMetricsRegressionIntegrationTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Regression Thresholds [GH-90000]")
+    @DisplayName("Regression Thresholds")
     class RegressionThresholdTests {
 
         @Test
-        @DisplayName("entity_suggest fallback rate should not exceed 30% threshold [GH-90000]")
+        @DisplayName("entity_suggest fallback rate should not exceed 30% threshold")
         void entitySuggestFallbackRate_withinThreshold() { // GH-90000
             SimpleMeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
             SimpleMetricsCollector collector = new SimpleMetricsCollector(registry); // GH-90000
@@ -89,7 +89,7 @@ class AiMetricsRegressionIntegrationTest {
         }
 
         @Test
-        @DisplayName("analytics_suggest mean confidence should not drop below 0.60 threshold [GH-90000]")
+        @DisplayName("analytics_suggest mean confidence should not drop below 0.60 threshold")
         void analyticsSuggestConfidence_aboveThreshold() { // GH-90000
             SimpleMeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
             SimpleMetricsCollector collector = new SimpleMetricsCollector(registry); // GH-90000
@@ -119,7 +119,7 @@ class AiMetricsRegressionIntegrationTest {
         }
 
         @Test
-        @DisplayName("pipeline_draft latency should not exceed 500ms P95 threshold [GH-90000]")
+        @DisplayName("pipeline_draft latency should not exceed 500ms P95 threshold")
         void pipelineDraftLatency_withinThreshold() { // GH-90000
             SimpleMeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
             SimpleMetricsCollector collector = new SimpleMetricsCollector(registry); // GH-90000
@@ -153,11 +153,11 @@ class AiMetricsRegressionIntegrationTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Quality Snapshot [GH-90000]")
+    @DisplayName("Quality Snapshot")
     class QualitySnapshotTests {
 
         @Test
-        @DisplayName("snapshot includes all known recommendation types [GH-90000]")
+        @DisplayName("snapshot includes all known recommendation types")
         void snapshot_includesAllKnownTypes() { // GH-90000
             SimpleMeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
             SimpleMetricsCollector collector = new SimpleMetricsCollector(registry); // GH-90000
@@ -180,7 +180,7 @@ class AiMetricsRegressionIntegrationTest {
         }
 
         @Test
-        @DisplayName("snapshot accurately reflects fallback rates [GH-90000]")
+        @DisplayName("snapshot accurately reflects fallback rates")
         void snapshot_accuratelyReflectsFallbackRates() { // GH-90000
             SimpleMeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
             SimpleMetricsCollector collector = new SimpleMetricsCollector(registry); // GH-90000
@@ -203,7 +203,7 @@ class AiMetricsRegressionIntegrationTest {
         }
 
         @Test
-        @DisplayName("snapshot provides mean confidence for each type [GH-90000]")
+        @DisplayName("snapshot provides mean confidence for each type")
         void snapshot_providesMeanConfidence() { // GH-90000
             SimpleMeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
             SimpleMetricsCollector collector = new SimpleMetricsCollector(registry); // GH-90000
@@ -232,11 +232,11 @@ class AiMetricsRegressionIntegrationTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("User Feedback Recording [GH-90000]")
+    @DisplayName("User Feedback Recording")
     class FeedbackRecordingTests {
 
         @Test
-        @DisplayName("thumbs-up feedback is recorded without affecting request count [GH-90000]")
+        @DisplayName("thumbs-up feedback is recorded without affecting request count")
         void thumbsUpFeedback_recordedWithoutAffectingRequestCount() { // GH-90000
             SimpleMeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
             SimpleMetricsCollector collector = new SimpleMetricsCollector(registry); // GH-90000
@@ -257,7 +257,7 @@ class AiMetricsRegressionIntegrationTest {
         }
 
         @Test
-        @DisplayName("thumbs-down feedback is recorded [GH-90000]")
+        @DisplayName("thumbs-down feedback is recorded")
         void thumbsDownFeedback_recorded() { // GH-90000
             SimpleMeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
             SimpleMetricsCollector collector = new SimpleMetricsCollector(registry); // GH-90000
@@ -280,11 +280,11 @@ class AiMetricsRegressionIntegrationTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Error Recording [GH-90000]")
+    @DisplayName("Error Recording")
     class ErrorRecordingTests {
 
         @Test
-        @DisplayName("errors are recorded without affecting request count [GH-90000]")
+        @DisplayName("errors are recorded without affecting request count")
         void errors_recordedWithoutAffectingRequestCount() { // GH-90000
             SimpleMeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
             SimpleMetricsCollector collector = new SimpleMetricsCollector(registry); // GH-90000
@@ -300,7 +300,7 @@ class AiMetricsRegressionIntegrationTest {
             metrics.recordError( // GH-90000
                 AiRecommendationMetrics.TYPE_BRAIN_EXPLAIN, 
                 tenantId, 
-                new RuntimeException("LLM timeout [GH-90000]"));
+                new RuntimeException("LLM timeout"));
             
             // Request count should not change
             long requestCountAfter = metrics.getRequestCount(AiRecommendationMetrics.TYPE_BRAIN_EXPLAIN); // GH-90000
@@ -308,7 +308,7 @@ class AiMetricsRegressionIntegrationTest {
         }
 
         @Test
-        @DisplayName("error recording handles null cause gracefully [GH-90000]")
+        @DisplayName("error recording handles null cause gracefully")
         void errorRecording_handlesNullCause() { // GH-90000
             SimpleMeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
             SimpleMetricsCollector collector = new SimpleMetricsCollector(registry); // GH-90000
@@ -328,11 +328,11 @@ class AiMetricsRegressionIntegrationTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Cross-Type Regression [GH-90000]")
+    @DisplayName("Cross-Type Regression")
     class CrossTypeRegressionTests {
 
         @Test
-        @DisplayName("overall fallback rate across all types can be monitored [GH-90000]")
+        @DisplayName("overall fallback rate across all types can be monitored")
         void overallFallbackRate_canBeMonitored() { // GH-90000
             SimpleMeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
             SimpleMetricsCollector collector = new SimpleMetricsCollector(registry); // GH-90000
@@ -363,7 +363,7 @@ class AiMetricsRegressionIntegrationTest {
         }
 
         @Test
-        @DisplayName("regression can detect quality degradation across types [GH-90000]")
+        @DisplayName("regression can detect quality degradation across types")
         void regression_canDetectQualityDegradation() { // GH-90000
             SimpleMeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
             SimpleMetricsCollector collector = new SimpleMetricsCollector(registry); // GH-90000

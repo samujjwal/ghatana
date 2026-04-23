@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * Unit tests for {@link AepQueryResultCache} (AEP-004.2). // GH-90000
  */
-@DisplayName("AepQueryResultCache — AEP-004.2 [GH-90000]")
+@DisplayName("AepQueryResultCache — AEP-004.2")
 class AepQueryResultCacheTest {
 
     private static final Duration TTL_30S = Duration.ofSeconds(30); // GH-90000
@@ -32,7 +32,7 @@ class AepQueryResultCacheTest {
 
     @BeforeEach
     void setUp() { // GH-90000
-        now = Instant.parse("2026-01-01T00:00:00Z [GH-90000]");
+        now = Instant.parse("2026-01-01T00:00:00Z");
         clock = new MutableClock(now); // GH-90000
         cache = AepQueryResultCache.<String>builder() // GH-90000
                 .ttl(TTL_30S) // GH-90000
@@ -42,7 +42,7 @@ class AepQueryResultCacheTest {
     }
 
     @Test
-    @DisplayName("Cache miss loads value via loader and stores it [GH-90000]")
+    @DisplayName("Cache miss loads value via loader and stores it")
     void cacheMissLoadsAndStores() { // GH-90000
         AtomicInteger calls = new AtomicInteger(0); // GH-90000
         String result = cache.get("key1", () -> { // GH-90000
@@ -50,14 +50,14 @@ class AepQueryResultCacheTest {
             return "value1";
         });
 
-        assertThat(result).isEqualTo("value1 [GH-90000]");
+        assertThat(result).isEqualTo("value1");
         assertThat(calls.get()).isEqualTo(1); // GH-90000
         assertThat(cache.stats().misses()).isEqualTo(1); // GH-90000
         assertThat(cache.stats().hits()).isEqualTo(0); // GH-90000
     }
 
     @Test
-    @DisplayName("Subsequent calls within TTL return cached value without invoking loader [GH-90000]")
+    @DisplayName("Subsequent calls within TTL return cached value without invoking loader")
     void cacheHitSkipsLoader() { // GH-90000
         AtomicInteger calls = new AtomicInteger(0); // GH-90000
         cache.get("key2", () -> { calls.incrementAndGet(); return "v2"; }); // GH-90000
@@ -69,7 +69,7 @@ class AepQueryResultCacheTest {
     }
 
     @Test
-    @DisplayName("Expired entry triggers a fresh load [GH-90000]")
+    @DisplayName("Expired entry triggers a fresh load")
     void expiredEntryReloads() { // GH-90000
         AtomicInteger calls = new AtomicInteger(0); // GH-90000
         cache.get("key3", () -> { calls.incrementAndGet(); return "first"; }); // GH-90000
@@ -78,56 +78,56 @@ class AepQueryResultCacheTest {
         clock.advance(Duration.ofSeconds(31)); // GH-90000
         String result = cache.get("key3", () -> { calls.incrementAndGet(); return "refreshed"; }); // GH-90000
 
-        assertThat(result).isEqualTo("refreshed [GH-90000]");
+        assertThat(result).isEqualTo("refreshed");
         assertThat(calls.get()).isEqualTo(2); // GH-90000
     }
 
     @Test
-    @DisplayName("peek returns empty for unknown keys [GH-90000]")
+    @DisplayName("peek returns empty for unknown keys")
     void peekEmptyForUnknownKey() { // GH-90000
-        assertThat(cache.peek("no-such-key [GH-90000]")).isEmpty();
+        assertThat(cache.peek("no-such-key")).isEmpty();
     }
 
     @Test
-    @DisplayName("peek returns value for live entry [GH-90000]")
+    @DisplayName("peek returns value for live entry")
     void peekLiveEntry() { // GH-90000
         cache.put("k", "hello"); // GH-90000
-        Optional<String> result = cache.peek("k [GH-90000]");
-        assertThat(result).contains("hello [GH-90000]");
+        Optional<String> result = cache.peek("k");
+        assertThat(result).contains("hello");
     }
 
     @Test
-    @DisplayName("peek returns empty after TTL expires [GH-90000]")
+    @DisplayName("peek returns empty after TTL expires")
     void peekExpiredEntry() { // GH-90000
         cache.put("k", "hello"); // GH-90000
         clock.advance(Duration.ofSeconds(31)); // GH-90000
-        assertThat(cache.peek("k [GH-90000]")).isEmpty();
+        assertThat(cache.peek("k")).isEmpty();
     }
 
     @Test
-    @DisplayName("invalidate removes single entry [GH-90000]")
+    @DisplayName("invalidate removes single entry")
     void invalidateSingleEntry() { // GH-90000
         cache.put("to-remove", "value"); // GH-90000
-        cache.invalidate("to-remove [GH-90000]");
-        assertThat(cache.peek("to-remove [GH-90000]")).isEmpty();
+        cache.invalidate("to-remove");
+        assertThat(cache.peek("to-remove")).isEmpty();
     }
 
     @Test
-    @DisplayName("invalidateByPrefix removes matching entries [GH-90000]")
+    @DisplayName("invalidateByPrefix removes matching entries")
     void invalidateByPrefix() { // GH-90000
         cache.put("tenant:acme:config", "c1"); // GH-90000
         cache.put("tenant:acme:patterns", "c2"); // GH-90000
         cache.put("tenant:other:config", "c3"); // GH-90000
 
-        int removed = cache.invalidateByPrefix("tenant:acme: [GH-90000]");
+        int removed = cache.invalidateByPrefix("tenant:acme:");
         assertThat(removed).isEqualTo(2); // GH-90000
-        assertThat(cache.peek("tenant:acme:config [GH-90000]")).isEmpty();
-        assertThat(cache.peek("tenant:acme:patterns [GH-90000]")).isEmpty();
-        assertThat(cache.peek("tenant:other:config [GH-90000]")).isPresent();
+        assertThat(cache.peek("tenant:acme:config")).isEmpty();
+        assertThat(cache.peek("tenant:acme:patterns")).isEmpty();
+        assertThat(cache.peek("tenant:other:config")).isPresent();
     }
 
     @Test
-    @DisplayName("clear removes all entries [GH-90000]")
+    @DisplayName("clear removes all entries")
     void clearAllEntries() { // GH-90000
         cache.put("a", "1"); // GH-90000
         cache.put("b", "2"); // GH-90000
@@ -136,7 +136,7 @@ class AepQueryResultCacheTest {
     }
 
     @Test
-    @DisplayName("Hit rate meets >80% target when cache is warm [GH-90000]")
+    @DisplayName("Hit rate meets >80% target when cache is warm")
     void hitRateMeetsTarget() { // GH-90000
         // Pre-populate
         for (int i = 0; i < 10; i++) { // GH-90000
@@ -157,28 +157,28 @@ class AepQueryResultCacheTest {
     }
 
     @Test
-    @DisplayName("Null key throws NullPointerException [GH-90000]")
+    @DisplayName("Null key throws NullPointerException")
     void nullKeyThrows() { // GH-90000
         assertThatThrownBy(() -> cache.get(null, () -> "v")) // GH-90000
                 .isInstanceOf(NullPointerException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("Null loader throws NullPointerException [GH-90000]")
+    @DisplayName("Null loader throws NullPointerException")
     void nullLoaderThrows() { // GH-90000
         assertThatThrownBy(() -> cache.get("k", null)) // GH-90000
                 .isInstanceOf(NullPointerException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("Builder rejects non-positive TTL [GH-90000]")
+    @DisplayName("Builder rejects non-positive TTL")
     void builderRejectsZeroTtl() { // GH-90000
         assertThatThrownBy(() -> AepQueryResultCache.builder().ttl(Duration.ZERO).build()) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("Builder rejects non-positive maxSize [GH-90000]")
+    @DisplayName("Builder rejects non-positive maxSize")
     void builderRejectsZeroMaxSize() { // GH-90000
         assertThatThrownBy(() -> AepQueryResultCache.builder().maxSize(0).build()) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class); // GH-90000

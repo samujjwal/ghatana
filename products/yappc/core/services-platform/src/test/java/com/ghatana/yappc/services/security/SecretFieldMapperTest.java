@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.*;
  * <p>Uses a real {@link EncryptionService} with a predictable 32-byte key so that
  * round-trip properties can be verified without mocking the cipher.
  */
-@DisplayName("SecretFieldMapper [GH-90000]")
+@DisplayName("SecretFieldMapper")
 class SecretFieldMapperTest {
 
     /** 32-byte all-zero key — acceptable for testing; never use in production. */
@@ -33,15 +33,15 @@ class SecretFieldMapperTest {
     // ── encrypt ──────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("encrypt: produces enc:: prefix [GH-90000]")
+    @DisplayName("encrypt: produces enc:: prefix")
     void encrypt_addsPrefix() { // GH-90000
         String result = mapper.encrypt("my-secret-api-key", "lifecycle.config.apiKey"); // GH-90000
 
-        assertThat(result).startsWith("enc:: [GH-90000]");
+        assertThat(result).startsWith("enc::");
     }
 
     @Test
-    @DisplayName("encrypt: different calls produce different ciphertexts (random IV) [GH-90000]")
+    @DisplayName("encrypt: different calls produce different ciphertexts (random IV)")
     void encrypt_randomIv_differentCiphertexts() { // GH-90000
         String first  = mapper.encrypt("same-value", "field"); // GH-90000
         String second = mapper.encrypt("same-value", "field"); // GH-90000
@@ -50,13 +50,13 @@ class SecretFieldMapperTest {
     }
 
     @Test
-    @DisplayName("encrypt: null input returns null [GH-90000]")
+    @DisplayName("encrypt: null input returns null")
     void encrypt_null_returnsNull() { // GH-90000
         assertThat(mapper.encrypt(null, "lifecycle.apiKey")).isNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("encrypt: already-encrypted value is returned unchanged (idempotent) [GH-90000]")
+    @DisplayName("encrypt: already-encrypted value is returned unchanged (idempotent)")
     void encrypt_alreadyEncrypted_isIdempotent() { // GH-90000
         String firstPass = mapper.encrypt("plaintext", "field"); // GH-90000
         String secondPass = mapper.encrypt(firstPass, "field"); // GH-90000
@@ -65,17 +65,17 @@ class SecretFieldMapperTest {
     }
 
     @Test
-    @DisplayName("encrypt: empty string is encrypted normally [GH-90000]")
+    @DisplayName("encrypt: empty string is encrypted normally")
     void encrypt_emptyString_isEncrypted() { // GH-90000
         String result = mapper.encrypt("", "field"); // GH-90000
 
-        assertThat(result).startsWith("enc:: [GH-90000]");
+        assertThat(result).startsWith("enc::");
     }
 
     // ── decrypt ──────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("decrypt: round-trip returns original plaintext [GH-90000]")
+    @DisplayName("decrypt: round-trip returns original plaintext")
     void decrypt_roundTrip() { // GH-90000
         String original  = "my-secret-api-key";
         String encrypted = mapper.encrypt(original, "field"); // GH-90000
@@ -85,29 +85,29 @@ class SecretFieldMapperTest {
     }
 
     @Test
-    @DisplayName("decrypt: null input returns null [GH-90000]")
+    @DisplayName("decrypt: null input returns null")
     void decrypt_null_returnsNull() { // GH-90000
         assertThat(mapper.decrypt(null, "field")).isNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("decrypt: plaintext without enc:: prefix is returned as-is (graceful migration) [GH-90000]")
+    @DisplayName("decrypt: plaintext without enc:: prefix is returned as-is (graceful migration)")
     void decrypt_plaintext_returnedAsIs() { // GH-90000
         String result = mapper.decrypt("not-yet-migrated-value", "field"); // GH-90000
 
-        assertThat(result).isEqualTo("not-yet-migrated-value [GH-90000]");
+        assertThat(result).isEqualTo("not-yet-migrated-value");
     }
 
     @Test
-    @DisplayName("decrypt: empty string without prefix is returned as-is [GH-90000]")
+    @DisplayName("decrypt: empty string without prefix is returned as-is")
     void decrypt_emptyNonEncrypted_returnedAsIs() { // GH-90000
-        assertThat(mapper.decrypt("", "field")).isEqualTo(" [GH-90000]");
+        assertThat(mapper.decrypt("", "field")).isEqualTo("");
     }
 
     // ── isEncrypted ──────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("isEncrypted: returns true for enc:: prefixed values [GH-90000]")
+    @DisplayName("isEncrypted: returns true for enc:: prefixed values")
     void isEncrypted_true_forEncPrefix() { // GH-90000
         String encrypted = mapper.encrypt("value", "field"); // GH-90000
 
@@ -115,37 +115,37 @@ class SecretFieldMapperTest {
     }
 
     @Test
-    @DisplayName("isEncrypted: returns false for plaintext [GH-90000]")
+    @DisplayName("isEncrypted: returns false for plaintext")
     void isEncrypted_false_forPlaintext() { // GH-90000
-        assertThat(SecretFieldMapper.isEncrypted("plain-api-key [GH-90000]")).isFalse();
+        assertThat(SecretFieldMapper.isEncrypted("plain-api-key")).isFalse();
     }
 
     @Test
-    @DisplayName("isEncrypted: returns false for null [GH-90000]")
+    @DisplayName("isEncrypted: returns false for null")
     void isEncrypted_false_forNull() { // GH-90000
         assertThat(SecretFieldMapper.isEncrypted(null)).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("isEncrypted: returns false for empty string [GH-90000]")
+    @DisplayName("isEncrypted: returns false for empty string")
     void isEncrypted_false_forEmpty() { // GH-90000
-        assertThat(SecretFieldMapper.isEncrypted(" [GH-90000]")).isFalse();
+        assertThat(SecretFieldMapper.isEncrypted("")).isFalse();
     }
 
     // ── Constructor validation ────────────────────────────────────────────────
 
     @Test
-    @DisplayName("null encryptionService throws NullPointerException [GH-90000]")
+    @DisplayName("null encryptionService throws NullPointerException")
     void constructor_nullService_throws() { // GH-90000
         assertThatThrownBy(() -> new SecretFieldMapper(null)) // GH-90000
                 .isInstanceOf(NullPointerException.class) // GH-90000
-                .hasMessageContaining("encryptionService [GH-90000]");
+                .hasMessageContaining("encryptionService");
     }
 
     // ── Lifecycle / approval / agent-config field scenarios ──────────────────
 
     @Test
-    @DisplayName("encrypt+decrypt: lifecycle apiKey round-trip [GH-90000]")
+    @DisplayName("encrypt+decrypt: lifecycle apiKey round-trip")
     void lifecycleApiKey_roundTrip() { // GH-90000
         String apiKey = "sk-lifecycle-api-key-123";
         String stored = mapper.encrypt(apiKey, "lifecycle.config.apiKey"); // GH-90000
@@ -155,7 +155,7 @@ class SecretFieldMapperTest {
     }
 
     @Test
-    @DisplayName("encrypt+decrypt: approval attachment secret round-trip [GH-90000]")
+    @DisplayName("encrypt+decrypt: approval attachment secret round-trip")
     void approvalSecret_roundTrip() { // GH-90000
         String secret = "approval-signing-secret-xyz";
         String stored = mapper.encrypt(secret, "approval.signingSecret"); // GH-90000
@@ -165,7 +165,7 @@ class SecretFieldMapperTest {
     }
 
     @Test
-    @DisplayName("encrypt+decrypt: agent config third-party credential round-trip [GH-90000]")
+    @DisplayName("encrypt+decrypt: agent config third-party credential round-trip")
     void agentCredential_roundTrip() { // GH-90000
         String credential = "bearer eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhZ2VudC0xIn0";
         String stored = mapper.encrypt(credential, "agent.config.bearerToken"); // GH-90000

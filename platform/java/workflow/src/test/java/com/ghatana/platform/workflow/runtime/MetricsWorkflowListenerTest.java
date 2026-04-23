@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.*;
 
-@DisplayName("MetricsWorkflowListener Tests [GH-90000]")
+@DisplayName("MetricsWorkflowListener Tests")
 class MetricsWorkflowListenerTest {
 
     private MeterRegistry registry;
@@ -31,7 +31,7 @@ class MetricsWorkflowListenerTest {
         listener.onEvent(WorkflowLifecycleEvent.of( // GH-90000
             "run-1", "wf-1", WorkflowLifecycleEvent.Phase.WORKFLOW_STARTED));
 
-        assertThat(registry.counter("workflow.runs.started [GH-90000]").count()).isEqualTo(1.0);
+        assertThat(registry.counter("workflow.runs.started").count()).isEqualTo(1.0);
     }
 
     @Test
@@ -39,7 +39,7 @@ class MetricsWorkflowListenerTest {
         listener.onEvent(WorkflowLifecycleEvent.of( // GH-90000
             "run-1", "wf-1", WorkflowLifecycleEvent.Phase.WORKFLOW_COMPLETED));
 
-        assertThat(registry.counter("workflow.runs.completed [GH-90000]").count()).isEqualTo(1.0);
+        assertThat(registry.counter("workflow.runs.completed").count()).isEqualTo(1.0);
     }
 
     @Test
@@ -47,7 +47,7 @@ class MetricsWorkflowListenerTest {
         listener.onEvent(WorkflowLifecycleEvent.of( // GH-90000
             "run-1", "wf-1", WorkflowLifecycleEvent.Phase.WORKFLOW_FAILED));
 
-        assertThat(registry.counter("workflow.runs.failed [GH-90000]").count()).isEqualTo(1.0);
+        assertThat(registry.counter("workflow.runs.failed").count()).isEqualTo(1.0);
     }
 
     @Test
@@ -55,7 +55,7 @@ class MetricsWorkflowListenerTest {
         listener.onEvent(WorkflowLifecycleEvent.of( // GH-90000
             "run-1", "wf-1", WorkflowLifecycleEvent.Phase.WORKFLOW_COMPENSATED));
 
-        assertThat(registry.counter("workflow.runs.compensated [GH-90000]").count()).isEqualTo(1.0);
+        assertThat(registry.counter("workflow.runs.compensated").count()).isEqualTo(1.0);
     }
 
     @Test
@@ -63,7 +63,7 @@ class MetricsWorkflowListenerTest {
         listener.onEvent(WorkflowLifecycleEvent.forStep( // GH-90000
             "run-1", "wf-1", WorkflowLifecycleEvent.Phase.STEP_RETRYING, "s1"));
 
-        assertThat(registry.counter("workflow.step.retries [GH-90000]").count()).isEqualTo(1.0);
+        assertThat(registry.counter("workflow.step.retries").count()).isEqualTo(1.0);
     }
 
     @Test

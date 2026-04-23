@@ -50,7 +50,7 @@ import static org.mockito.Mockito.when;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("AdvancePhaseUseCase Integration Tests [GH-90000]")
+@DisplayName("AdvancePhaseUseCase Integration Tests")
 class AdvancePhaseUseCaseTest extends EventloopTestBase {
 
     @Mock
@@ -86,11 +86,11 @@ class AdvancePhaseUseCaseTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Invalid Transition Path [GH-90000]")
+    @DisplayName("Invalid Transition Path")
     class InvalidTransitionPath {
 
         @Test
-        @DisplayName("should detect invalid transition and route to DLQ [GH-90000]")
+        @DisplayName("should detect invalid transition and route to DLQ")
         void shouldDetectInvalidTransition() { // GH-90000
             // GIVEN: Transition rule does not exist
             when(transitionConfig.findTransition("intent", "context")) // GH-90000
@@ -109,21 +109,21 @@ class AdvancePhaseUseCaseTest extends EventloopTestBase {
             String result = transResult.isSuccess() ? transResult.toPhase() : transResult.status(); // GH-90000
 
             // THEN: Should return blocked result
-            assertThat(result).isEqualTo("BLOCKED [GH-90000]");
+            assertThat(result).isEqualTo("BLOCKED");
 
             // AND DLQ should be called with INVALID_TRANSITION
-            verify(dlqPublisher).publish(eq("tenant-456 [GH-90000]"), eq("lifecycle-management-v1 [GH-90000]"), eq("advance-phase [GH-90000]"), eq("PHASE_ADVANCE_BLOCKED [GH-90000]"), any(Map.class), eq("INVALID_TRANSITION [GH-90000]"), eq("proj-123 [GH-90000]"));
+            verify(dlqPublisher).publish(eq("tenant-456"), eq("lifecycle-management-v1"), eq("advance-phase"), eq("PHASE_ADVANCE_BLOCKED"), any(Map.class), eq("INVALID_TRANSITION"), eq("proj-123"));
         }
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Missing Artifact Path [GH-90000]")
+    @DisplayName("Missing Artifact Path")
     class MissingArtifactPath {
 
         @Test
-        @DisplayName("should detect missing artifacts and route to DLQ [GH-90000]")
+        @DisplayName("should detect missing artifacts and route to DLQ")
         void shouldDetectMissingArtifacts() { // GH-90000
             // GIVEN: Transition rule exists with required artifacts
             TransitionSpec spec = mock(TransitionSpec.class); // GH-90000
@@ -134,10 +134,10 @@ class AdvancePhaseUseCaseTest extends EventloopTestBase {
                     .thenReturn(Optional.of(spec)); // GH-90000
 
             // AND: Artifacts are missing
-            when(artifactRepository.list("proj-123/architecture.yml [GH-90000]"))
+            when(artifactRepository.list("proj-123/architecture.yml"))
                     .thenReturn(Promise.of(List.of())); // Empty = missing // GH-90000
 
-            when(artifactRepository.list("proj-123/requirements.md [GH-90000]"))
+            when(artifactRepository.list("proj-123/requirements.md"))
                     .thenReturn(Promise.of(List.of("v1", "v2"))); // Present // GH-90000
 
             TransitionRequest request = new TransitionRequest( // GH-90000
@@ -153,21 +153,21 @@ class AdvancePhaseUseCaseTest extends EventloopTestBase {
             String result = transResult.isSuccess() ? transResult.toPhase() : transResult.status(); // GH-90000
 
             // THEN: Should return blocked result with missing artifacts
-            assertThat(result).isEqualTo("BLOCKED [GH-90000]");
+            assertThat(result).isEqualTo("BLOCKED");
 
             // AND DLQ should be called with MISSING_ARTIFACT
-            verify(dlqPublisher).publish(eq("tenant-456 [GH-90000]"), eq("lifecycle-management-v1 [GH-90000]"), eq("advance-phase [GH-90000]"), eq("PHASE_ADVANCE_BLOCKED [GH-90000]"), any(Map.class), eq("MISSING_ARTIFACT [GH-90000]"), eq("proj-123 [GH-90000]"));
+            verify(dlqPublisher).publish(eq("tenant-456"), eq("lifecycle-management-v1"), eq("advance-phase"), eq("PHASE_ADVANCE_BLOCKED"), any(Map.class), eq("MISSING_ARTIFACT"), eq("proj-123"));
         }
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Policy Gate Rejection Path [GH-90000]")
+    @DisplayName("Policy Gate Rejection Path")
     class PolicyGateRejectionPath {
 
         @Test
-        @DisplayName("should reject transition when policy gate fails [GH-90000]")
+        @DisplayName("should reject transition when policy gate fails")
         void shouldRejectOnPolicyGate() { // GH-90000
             // GIVEN: Transition rule exists with no required artifacts
             TransitionSpec spec = mock(TransitionSpec.class); // GH-90000
@@ -177,7 +177,7 @@ class AdvancePhaseUseCaseTest extends EventloopTestBase {
                     .thenReturn(Optional.of(spec)); // GH-90000
 
             // AND: Policy engine denies the transition
-            when(policyEngine.evaluate(eq("phase_advance_policy [GH-90000]"), any(Map.class)))
+            when(policyEngine.evaluate(eq("phase_advance_policy"), any(Map.class)))
                     .thenReturn(Promise.of(false)); // GH-90000
 
             TransitionRequest request = new TransitionRequest( // GH-90000
@@ -193,35 +193,35 @@ class AdvancePhaseUseCaseTest extends EventloopTestBase {
             String result = transResult.isSuccess() ? transResult.toPhase() : transResult.status(); // GH-90000
 
             // THEN: Should return blocked result
-            assertThat(result).isEqualTo("BLOCKED [GH-90000]");
+            assertThat(result).isEqualTo("BLOCKED");
 
             // AND DLQ should be called with POLICY_GATE
-            verify(dlqPublisher).publish(eq("tenant-456 [GH-90000]"), eq("lifecycle-management-v1 [GH-90000]"), eq("advance-phase [GH-90000]"), eq("PHASE_ADVANCE_BLOCKED [GH-90000]"), any(Map.class), eq("POLICY_GATE [GH-90000]"), eq("proj-123 [GH-90000]"));
+            verify(dlqPublisher).publish(eq("tenant-456"), eq("lifecycle-management-v1"), eq("advance-phase"), eq("PHASE_ADVANCE_BLOCKED"), any(Map.class), eq("POLICY_GATE"), eq("proj-123"));
         }
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Successful Transition Path [GH-90000]")
+    @DisplayName("Successful Transition Path")
     class SuccessfulTransitionPath {
 
         @Test
-        @DisplayName("should advance phase when all gates pass [GH-90000]")
+        @DisplayName("should advance phase when all gates pass")
         void shouldAdvancePhase() { // GH-90000
             // GIVEN: Transition rule exists
             TransitionSpec spec = mock(TransitionSpec.class); // GH-90000
-            when(spec.getRequiredArtifacts()).thenReturn(List.of("req.yml [GH-90000]"));
+            when(spec.getRequiredArtifacts()).thenReturn(List.of("req.yml"));
 
             when(transitionConfig.findTransition("development", "testing")) // GH-90000
                     .thenReturn(Optional.of(spec)); // GH-90000
 
             // AND: Required artifact is present
-            when(artifactRepository.list("proj-123/req.yml [GH-90000]"))
-                    .thenReturn(Promise.of(List.of("v1 [GH-90000]")));
+            when(artifactRepository.list("proj-123/req.yml"))
+                    .thenReturn(Promise.of(List.of("v1")));
 
             // AND: Policy engine approves
-            when(policyEngine.evaluate(eq("phase_advance_policy [GH-90000]"), any(Map.class)))
+            when(policyEngine.evaluate(eq("phase_advance_policy"), any(Map.class)))
                     .thenReturn(Promise.of(true)); // GH-90000
 
             TransitionRequest request = new TransitionRequest( // GH-90000
@@ -237,7 +237,7 @@ class AdvancePhaseUseCaseTest extends EventloopTestBase {
             String result = transResult.isSuccess() ? transResult.toPhase() : transResult.status(); // GH-90000
 
             // THEN: Should return success with new phase
-            assertThat(result).isEqualTo("testing [GH-90000]");
+            assertThat(result).isEqualTo("testing");
 
             // AND DLQ should NOT be called
             // (verify was not called check would fail if called, so we're implicitly testing non-call) // GH-90000
@@ -247,7 +247,7 @@ class AdvancePhaseUseCaseTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("AI Readiness Gate Path [GH-90000]")
+    @DisplayName("AI Readiness Gate Path")
     class AiReadinessGatePath {
 
         @Mock
@@ -269,7 +269,7 @@ class AdvancePhaseUseCaseTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should block when AI readiness assessor returns not-ready [GH-90000]")
+        @DisplayName("should block when AI readiness assessor returns not-ready")
         void shouldBlockWhenAiReadinessBlocked() { // GH-90000
             // GIVEN: Transition rule exists
             when(transitionConfig.findTransition("intent", "shape")) // GH-90000
@@ -279,12 +279,12 @@ class AdvancePhaseUseCaseTest extends EventloopTestBase {
             com.ghatana.yappc.services.lifecycle.assessment.ReadinessReport blockedReport =
                     com.ghatana.yappc.services.lifecycle.assessment.ReadinessReport.blocked( // GH-90000
                             "intent", "shape", 0.4,
-                            List.of("No requirements captured [GH-90000]"),
-                            List.of("Add requirements before advancing [GH-90000]"),
+                            List.of("No requirements captured"),
+                            List.of("Add requirements before advancing"),
                             "AI gate blocked.");
             when(readinessAssessor.assess( // GH-90000
-                    org.mockito.ArgumentMatchers.eq("intent [GH-90000]"),
-                    org.mockito.ArgumentMatchers.eq("shape [GH-90000]"),
+                    org.mockito.ArgumentMatchers.eq("intent"),
+                    org.mockito.ArgumentMatchers.eq("shape"),
                     any())) // GH-90000
                     .thenReturn(Promise.of(blockedReport)); // GH-90000
 
@@ -296,17 +296,17 @@ class AdvancePhaseUseCaseTest extends EventloopTestBase {
 
             // THEN: Should be blocked with AI_READINESS_GATE code
             assertThat(result.isSuccess()).isFalse(); // GH-90000
-            assertThat(result.blockCode()).isEqualTo("AI_READINESS_GATE [GH-90000]");
-            assertThat(result.blockReason()).contains("No requirements captured [GH-90000]");
+            assertThat(result.blockCode()).isEqualTo("AI_READINESS_GATE");
+            assertThat(result.blockReason()).contains("No requirements captured");
 
             // AND DLQ published
             verify(dlqPublisher).publish( // GH-90000
-                    eq("tenant-ai [GH-90000]"), anyString(), anyString(), anyString(),
-                    any(Map.class), eq("AI_READINESS_GATE [GH-90000]"), eq("proj-ai-1 [GH-90000]"));
+                    eq("tenant-ai"), anyString(), anyString(), anyString(),
+                    any(Map.class), eq("AI_READINESS_GATE"), eq("proj-ai-1"));
         }
 
         @Test
-        @DisplayName("should proceed to policy gate when AI assessor returns ready [GH-90000]")
+        @DisplayName("should proceed to policy gate when AI assessor returns ready")
         void shouldProceedToPolicyGateWhenAiReady() { // GH-90000
             // GIVEN: Transition rule exists
             when(transitionConfig.findTransition("intent", "shape")) // GH-90000
@@ -317,13 +317,13 @@ class AdvancePhaseUseCaseTest extends EventloopTestBase {
                     com.ghatana.yappc.services.lifecycle.assessment.ReadinessReport.ready( // GH-90000
                             "intent", "shape", 0.9, "Ready.");
             when(readinessAssessor.assess( // GH-90000
-                    org.mockito.ArgumentMatchers.eq("intent [GH-90000]"),
-                    org.mockito.ArgumentMatchers.eq("shape [GH-90000]"),
+                    org.mockito.ArgumentMatchers.eq("intent"),
+                    org.mockito.ArgumentMatchers.eq("shape"),
                     any())) // GH-90000
                     .thenReturn(Promise.of(readyReport)); // GH-90000
 
             // AND: Policy engine approves
-            when(policyEngine.evaluate(eq("phase_advance_policy [GH-90000]"), any(Map.class)))
+            when(policyEngine.evaluate(eq("phase_advance_policy"), any(Map.class)))
                     .thenReturn(Promise.of(true)); // GH-90000
 
             TransitionRequest request = new TransitionRequest( // GH-90000
@@ -334,11 +334,11 @@ class AdvancePhaseUseCaseTest extends EventloopTestBase {
 
             // THEN: Should succeed
             assertThat(result.isSuccess()).isTrue(); // GH-90000
-            assertThat(result.toPhase()).isEqualTo("shape [GH-90000]");
+            assertThat(result.toPhase()).isEqualTo("shape");
         }
 
         @Test
-        @DisplayName("should skip AI gate and use 4-arg constructor path [GH-90000]")
+        @DisplayName("should skip AI gate and use 4-arg constructor path")
         void shouldSkipAiGateWithNoAssessor() { // GH-90000
             // GIVEN: 4-arg constructor (no assessor) // GH-90000
             AdvancePhaseUseCase useCaseNoAi = new AdvancePhaseUseCase( // GH-90000
@@ -346,7 +346,7 @@ class AdvancePhaseUseCaseTest extends EventloopTestBase {
 
             when(transitionConfig.findTransition("intent", "shape")) // GH-90000
                     .thenReturn(Optional.of(spec)); // GH-90000
-            when(policyEngine.evaluate(eq("phase_advance_policy [GH-90000]"), any(Map.class)))
+            when(policyEngine.evaluate(eq("phase_advance_policy"), any(Map.class)))
                     .thenReturn(Promise.of(true)); // GH-90000
 
             TransitionRequest request = new TransitionRequest( // GH-90000

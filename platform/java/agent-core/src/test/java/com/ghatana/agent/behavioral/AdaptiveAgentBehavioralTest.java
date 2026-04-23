@@ -26,7 +26,7 @@ import static org.mockito.Mockito.*;
  * Focus: Multi-armed bandit algorithms, self-tuning, parameter learning,
  * exploration vs exploitation trade-off, and convergence.
  */
-@DisplayName("AdaptiveAgent Behavioral Tests [GH-90000]")
+@DisplayName("AdaptiveAgent Behavioral Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class AdaptiveAgentBehavioralTest {
 
@@ -39,13 +39,13 @@ class AdaptiveAgentBehavioralTest {
     @BeforeEach
     void setUp() { // GH-90000
         agentContext = AgentContext.builder() // GH-90000
-                .turnId("turn-1 [GH-90000]")
-                .agentId("adaptive-agent [GH-90000]")
-                .tenantId("tenant-1 [GH-90000]")
+                .turnId("turn-1")
+                .agentId("adaptive-agent")
+                .tenantId("tenant-1")
                 .memoryStore(memoryStore) // GH-90000
                 .build(); // GH-90000
 
-        agent = new AdaptiveAgent("adaptive-agent [GH-90000]");
+        agent = new AdaptiveAgent("adaptive-agent");
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -53,15 +53,15 @@ class AdaptiveAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Processing & Arm Selection [GH-90000]")
+    @DisplayName("Processing & Arm Selection")
     class ProcessingTests {
 
         @Test
-        @DisplayName("Agent selects and returns arm value [GH-90000]")
+        @DisplayName("Agent selects and returns arm value")
         void armSelection() { // GH-90000
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder() // GH-90000
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.UCB1) // GH-90000
-                    .tunedParameter("threshold [GH-90000]")
+                    .tunedParameter("threshold")
                     .parameterMin(10.0) // GH-90000
                     .parameterMax(100.0) // GH-90000
                     .armCount(5) // GH-90000
@@ -77,14 +77,14 @@ class AdaptiveAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Selected arm value is within parameter bounds [GH-90000]")
+        @DisplayName("Selected arm value is within parameter bounds")
         void armWithinBounds() { // GH-90000
             double min = 20.0;
             double max = 80.0;
 
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder() // GH-90000
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.UCB1) // GH-90000
-                    .tunedParameter("threshold [GH-90000]")
+                    .tunedParameter("threshold")
                     .parameterMin(min) // GH-90000
                     .parameterMax(max) // GH-90000
                     .armCount(10) // GH-90000
@@ -104,11 +104,11 @@ class AdaptiveAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Agent tracks arm statistics over time [GH-90000]")
+        @DisplayName("Agent tracks arm statistics over time")
         void armStatisticsTracking() { // GH-90000
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder() // GH-90000
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.THOMPSON_SAMPLING) // GH-90000
-                    .tunedParameter("confidence [GH-90000]")
+                    .tunedParameter("confidence")
                     .parameterMin(0.1) // GH-90000
                     .parameterMax(0.9) // GH-90000
                     .armCount(5) // GH-90000
@@ -131,15 +131,15 @@ class AdaptiveAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("UCB1 Algorithm [GH-90000]")
+    @DisplayName("UCB1 Algorithm")
     class UCB1Tests {
 
         @Test
-        @DisplayName("UCB1 balances exploration and exploitation [GH-90000]")
+        @DisplayName("UCB1 balances exploration and exploitation")
         void ucb1BalanceExplorationExploitation() { // GH-90000
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder() // GH-90000
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.UCB1) // GH-90000
-                    .tunedParameter("rate [GH-90000]")
+                    .tunedParameter("rate")
                     .parameterMin(0.0) // GH-90000
                     .parameterMax(100.0) // GH-90000
                     .armCount(5) // GH-90000
@@ -163,11 +163,11 @@ class AdaptiveAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("UCB1 converges to best arm [GH-90000]")
+        @DisplayName("UCB1 converges to best arm")
         void ucb1Convergence() { // GH-90000
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder() // GH-90000
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.UCB1) // GH-90000
-                    .tunedParameter("success_rate [GH-90000]")
+                    .tunedParameter("success_rate")
                     .parameterMin(50.0) // GH-90000
                     .parameterMax(100.0) // GH-90000
                     .armCount(3) // GH-90000
@@ -195,15 +195,15 @@ class AdaptiveAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Thompson Sampling Algorithm [GH-90000]")
+    @DisplayName("Thompson Sampling Algorithm")
     class ThompsonSamplingTests {
 
         @Test
-        @DisplayName("Thompson Sampling samples from posterior [GH-90000]")
+        @DisplayName("Thompson Sampling samples from posterior")
         void thompsonSamplingPosterior() { // GH-90000
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder() // GH-90000
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.THOMPSON_SAMPLING) // GH-90000
-                    .tunedParameter("probability [GH-90000]")
+                    .tunedParameter("probability")
                     .parameterMin(0.0) // GH-90000
                     .parameterMax(1.0) // GH-90000
                     .armCount(4) // GH-90000
@@ -224,11 +224,11 @@ class AdaptiveAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Thompson Sampling converges with feedback [GH-90000]")
+        @DisplayName("Thompson Sampling converges with feedback")
         void thompsonConvergence() { // GH-90000
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder() // GH-90000
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.THOMPSON_SAMPLING) // GH-90000
-                    .tunedParameter("confidence [GH-90000]")
+                    .tunedParameter("confidence")
                     .parameterMin(10.0) // GH-90000
                     .parameterMax(90.0) // GH-90000
                     .armCount(5) // GH-90000
@@ -251,18 +251,18 @@ class AdaptiveAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Epsilon-Greedy Algorithm [GH-90000]")
+    @DisplayName("Epsilon-Greedy Algorithm")
     class EpsilonGreedyTests {
 
         @Test
-        @DisplayName("Epsilon-Greedy explores with fixed probability [GH-90000]")
+        @DisplayName("Epsilon-Greedy explores with fixed probability")
         void epsilonGreedyExploration() { // GH-90000
             double epsilon = 0.1;  // 10% exploration
 
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder() // GH-90000
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.EPSILON_GREEDY) // GH-90000
                     .explorationRate(epsilon) // GH-90000
-                    .tunedParameter("threshold [GH-90000]")
+                    .tunedParameter("threshold")
                     .parameterMin(0.0) // GH-90000
                     .parameterMax(100.0) // GH-90000
                     .armCount(5) // GH-90000
@@ -283,12 +283,12 @@ class AdaptiveAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Epsilon-Greedy greedy phase exploits best arm [GH-90000]")
+        @DisplayName("Epsilon-Greedy greedy phase exploits best arm")
         void epsilonGreedyExploitation() { // GH-90000
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder() // GH-90000
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.EPSILON_GREEDY) // GH-90000
                     .explorationRate(0.05)  // 5% exploration // GH-90000
-                    .tunedParameter("success_rate [GH-90000]")
+                    .tunedParameter("success_rate")
                     .parameterMin(50.0) // GH-90000
                     .parameterMax(100.0) // GH-90000
                     .armCount(3) // GH-90000
@@ -311,15 +311,15 @@ class AdaptiveAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Feedback Integration [GH-90000]")
+    @DisplayName("Feedback Integration")
     class FeedbackTests {
 
         @Test
-        @DisplayName("Agent learns from success feedback [GH-90000]")
+        @DisplayName("Agent learns from success feedback")
         void learningFromSuccess() { // GH-90000
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder() // GH-90000
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.THOMPSON_SAMPLING) // GH-90000
-                    .tunedParameter("reward_rate [GH-90000]")
+                    .tunedParameter("reward_rate")
                     .parameterMin(0.0) // GH-90000
                     .parameterMax(100.0) // GH-90000
                     .armCount(5) // GH-90000
@@ -341,11 +341,11 @@ class AdaptiveAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Agent learns from failure feedback [GH-90000]")
+        @DisplayName("Agent learns from failure feedback")
         void learningFromFailure() { // GH-90000
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder() // GH-90000
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.UCB1) // GH-90000
-                    .tunedParameter("failure_rate [GH-90000]")
+                    .tunedParameter("failure_rate")
                     .parameterMin(1.0) // GH-90000
                     .parameterMax(10.0) // GH-90000
                     .armCount(4) // GH-90000
@@ -367,11 +367,11 @@ class AdaptiveAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Agent adapts strategy based on reward distribution [GH-90000]")
+        @DisplayName("Agent adapts strategy based on reward distribution")
         void strategyAdaptation() { // GH-90000
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder() // GH-90000
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.THOMPSON_SAMPLING) // GH-90000
-                    .tunedParameter("strategy [GH-90000]")
+                    .tunedParameter("strategy")
                     .parameterMin(10.0) // GH-90000
                     .parameterMax(50.0) // GH-90000
                     .armCount(3) // GH-90000
@@ -406,15 +406,15 @@ class AdaptiveAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Convergence Behavior [GH-90000]")
+    @DisplayName("Convergence Behavior")
     class ConvergenceTests {
 
         @Test
-        @DisplayName("Agent converges toward optimal parameter [GH-90000]")
+        @DisplayName("Agent converges toward optimal parameter")
         void convergenceToOptimal() { // GH-90000
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder() // GH-90000
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.UCB1) // GH-90000
-                    .tunedParameter("optimal_value [GH-90000]")
+                    .tunedParameter("optimal_value")
                     .parameterMin(0.0) // GH-90000
                     .parameterMax(100.0) // GH-90000
                     .armCount(10) // GH-90000
@@ -437,32 +437,32 @@ class AdaptiveAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Multiple parameter ranges converge differently [GH-90000]")
+        @DisplayName("Multiple parameter ranges converge differently")
         void multipleRangeConvergence() { // GH-90000
             // Test with tight range
             AdaptiveAgentConfig tightConfig = AdaptiveAgentConfig.builder() // GH-90000
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.EPSILON_GREEDY) // GH-90000
                     .explorationRate(0.1) // GH-90000
-                    .tunedParameter("tight_range [GH-90000]")
+                    .tunedParameter("tight_range")
                     .parameterMin(45.0) // GH-90000
                     .parameterMax(55.0) // GH-90000
                     .armCount(5) // GH-90000
                     .build(); // GH-90000
 
-            AdaptiveAgent tightAgent = new AdaptiveAgent("tight-agent [GH-90000]");
+            AdaptiveAgent tightAgent = new AdaptiveAgent("tight-agent");
             runPromise(() -> tightAgent.initialize(tightConfig)); // GH-90000
 
             // Test with wide range
             AdaptiveAgentConfig wideConfig = AdaptiveAgentConfig.builder() // GH-90000
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.EPSILON_GREEDY) // GH-90000
                     .explorationRate(0.1) // GH-90000
-                    .tunedParameter("wide_range [GH-90000]")
+                    .tunedParameter("wide_range")
                     .parameterMin(0.0) // GH-90000
                     .parameterMax(1000.0) // GH-90000
                     .armCount(20) // GH-90000
                     .build(); // GH-90000
 
-            AdaptiveAgent wideAgent = new AdaptiveAgent("wide-agent [GH-90000]");
+            AdaptiveAgent wideAgent = new AdaptiveAgent("wide-agent");
             runPromise(() -> wideAgent.initialize(wideConfig)); // GH-90000
 
             // Both should converge but at different rates
@@ -483,15 +483,15 @@ class AdaptiveAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Stability [GH-90000]")
+    @DisplayName("Stability")
     class StabilityTests {
 
         @Test
-        @DisplayName("Agent handles zero and extreme rewards [GH-90000]")
+        @DisplayName("Agent handles zero and extreme rewards")
         void extremeRewardHandling() { // GH-90000
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder() // GH-90000
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.THOMPSON_SAMPLING) // GH-90000
-                    .tunedParameter("extreme_reward [GH-90000]")
+                    .tunedParameter("extreme_reward")
                     .parameterMin(1.0) // GH-90000
                     .parameterMax(100.0) // GH-90000
                     .armCount(5) // GH-90000
@@ -515,11 +515,11 @@ class AdaptiveAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Agent handles random reward variations [GH-90000]")
+        @DisplayName("Agent handles random reward variations")
         void randomRewardVariation() { // GH-90000
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder() // GH-90000
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.UCB1) // GH-90000
-                    .tunedParameter("random_variation [GH-90000]")
+                    .tunedParameter("random_variation")
                     .parameterMin(10.0) // GH-90000
                     .parameterMax(90.0) // GH-90000
                     .armCount(5) // GH-90000
@@ -546,15 +546,15 @@ class AdaptiveAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Confidence & Metrics [GH-90000]")
+    @DisplayName("Confidence & Metrics")
     class ConfidenceMetricsTests {
 
         @Test
-        @DisplayName("Confidence reflects learning progress [GH-90000]")
+        @DisplayName("Confidence reflects learning progress")
         void confidenceProgress() { // GH-90000
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder() // GH-90000
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.THOMPSON_SAMPLING) // GH-90000
-                    .tunedParameter("confidence [GH-90000]")
+                    .tunedParameter("confidence")
                     .parameterMin(0.0) // GH-90000
                     .parameterMax(100.0) // GH-90000
                     .armCount(5) // GH-90000
@@ -584,11 +584,11 @@ class AdaptiveAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Agent metrics include arm statistics [GH-90000]")
+        @DisplayName("Agent metrics include arm statistics")
         void armMetricsTracking() { // GH-90000
             AdaptiveAgentConfig config = AdaptiveAgentConfig.builder() // GH-90000
                     .banditAlgorithm(AdaptiveAgentConfig.BanditAlgorithm.UCB1) // GH-90000
-                    .tunedParameter("metrics [GH-90000]")
+                    .tunedParameter("metrics")
                     .parameterMin(0.0) // GH-90000
                     .parameterMax(100.0) // GH-90000
                     .armCount(5) // GH-90000

@@ -31,17 +31,17 @@ import static org.assertj.core.api.Assertions.assertThatCode;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@Tag("integration [GH-90000]")
+@Tag("integration")
 @Testcontainers
-@DisplayName("PostgresChangeApprovalWorkflow — integration tests [GH-90000]")
+@DisplayName("PostgresChangeApprovalWorkflow — integration tests")
 class PostgresChangeApprovalWorkflowTest extends EventloopTestBase {
 
     @Container
     private static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>("postgres:15-alpine [GH-90000]")
-                    .withDatabaseName("aep_change_test [GH-90000]")
-                    .withUsername("aep_test [GH-90000]")
-                    .withPassword("aep_test [GH-90000]");
+            new PostgreSQLContainer<>("postgres:15-alpine")
+                    .withDatabaseName("aep_change_test")
+                    .withUsername("aep_test")
+                    .withPassword("aep_test");
 
     private HikariDataSource dataSource;
     private PostgresChangeApprovalWorkflow workflow;
@@ -83,13 +83,13 @@ class PostgresChangeApprovalWorkflowTest extends EventloopTestBase {
     void tearDown() throws Exception { // GH-90000
         try (Connection conn = dataSource.getConnection(); // GH-90000
              Statement stmt = conn.createStatement()) { // GH-90000
-            stmt.execute("DROP TABLE IF EXISTS change_requests [GH-90000]");
+            stmt.execute("DROP TABLE IF EXISTS change_requests");
         }
         dataSource.close(); // GH-90000
     }
 
     @Test
-    @DisplayName("low-risk change (FEATURE_FLAG, risk=20) is auto-approved [GH-90000]")
+    @DisplayName("low-risk change (FEATURE_FLAG, risk=20) is auto-approved")
     void submitChange_featureFlag_autoApproved() { // GH-90000
         ChangeRequest req = runPromise(() -> workflow.submitChange( // GH-90000
                 "tenant-1", "agent-1", ChangeType.FEATURE_FLAG,
@@ -101,7 +101,7 @@ class PostgresChangeApprovalWorkflowTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("high-risk change (PERMISSION_GRANT, risk=80) is placed in PENDING_REVIEW [GH-90000]")
+    @DisplayName("high-risk change (PERMISSION_GRANT, risk=80) is placed in PENDING_REVIEW")
     void submitChange_permissionGrant_pendingReview() { // GH-90000
         ChangeRequest req = runPromise(() -> workflow.submitChange( // GH-90000
                 "tenant-2", "agent-2", ChangeType.PERMISSION_GRANT,
@@ -113,7 +113,7 @@ class PostgresChangeApprovalWorkflowTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("submitChange completes without error and returns a non-null changeId [GH-90000]")
+    @DisplayName("submitChange completes without error and returns a non-null changeId")
     void submitChange_returnsNonNullChangeId() { // GH-90000
         ChangeRequest req = runPromise(() -> workflow.submitChange( // GH-90000
                 "tenant-3", "agent-3", ChangeType.CONFIG_CHANGE,
@@ -124,15 +124,15 @@ class PostgresChangeApprovalWorkflowTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("invalid autoApproveThreshold throws IllegalArgumentException [GH-90000]")
+    @DisplayName("invalid autoApproveThreshold throws IllegalArgumentException")
     void constructor_invalidThreshold_throws() { // GH-90000
         assertThatCode(() -> new PostgresChangeApprovalWorkflow(dataSource, Runnable::run, 150)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("[0, 100] [GH-90000]");
+                .hasMessageContaining("[0, 100]");
     }
 
     @Test
-    @DisplayName("multiple changes for the same tenant are stored independently [GH-90000]")
+    @DisplayName("multiple changes for the same tenant are stored independently")
     void submitMultipleChanges_storedIndependently() { // GH-90000
         ChangeRequest req1 = runPromise(() -> workflow.submitChange( // GH-90000
                 "tenant-multi", "agent-1", ChangeType.FEATURE_FLAG, "Change 1", Map.of())); // GH-90000

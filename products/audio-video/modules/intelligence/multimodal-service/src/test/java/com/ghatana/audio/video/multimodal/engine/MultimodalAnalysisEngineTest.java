@@ -18,18 +18,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @doc.purpose Verifies multimodal analysis engine fusion behavior with fake adapters
  * @doc.layer product
  */
-@DisplayName("MultimodalAnalysisEngine Tests [GH-90000]")
+@DisplayName("MultimodalAnalysisEngine Tests")
 class MultimodalAnalysisEngineTest extends EventloopTestBase {
 
     @Test
-    @DisplayName("Should fuse audio image and text context [GH-90000]")
+    @DisplayName("Should fuse audio image and text context")
     void shouldFuseAudioImageAndTextContext() { // GH-90000
         AudioResult audio = AudioResult.builder() // GH-90000
-            .transcription("hello from the meeting room [GH-90000]")
+            .transcription("hello from the meeting room")
             .confidence(0.93) // GH-90000
             .build(); // GH-90000
         VisualResult visual = VisualResult.builder() // GH-90000
-            .sceneDescription("A person standing near a whiteboard [GH-90000]")
+            .sceneDescription("A person standing near a whiteboard")
             .detections(List.of(new DetectionResult("person", 0.98, 10, 20, 30, 40))) // GH-90000
             .confidence(0.98) // GH-90000
             .build(); // GH-90000
@@ -41,24 +41,24 @@ class MultimodalAnalysisEngineTest extends EventloopTestBase {
                 MultimodalRequest.builder() // GH-90000
                     .audioData(new byte[] {1, 2, 3}) // GH-90000
                     .imageData(new byte[] {4, 5, 6}) // GH-90000
-                    .text("board review [GH-90000]")
+                    .text("board review")
                     .build() // GH-90000
             )));
 
             assertEquals("hello from the meeting room", result.getAudioResult().getTranscription()); // GH-90000
             assertEquals("A person standing near a whiteboard", result.getVisualResult().getSceneDescription()); // GH-90000
             assertTrue(result.getCombinedAnalysis().contains("Speech: \"hello from the meeting room\"")); // GH-90000
-            assertTrue(result.getCombinedAnalysis().contains("Visual: A person standing near a whiteboard [GH-90000]"));
-            assertTrue(result.getCombinedAnalysis().contains("Text context: board review [GH-90000]"));
+            assertTrue(result.getCombinedAnalysis().contains("Visual: A person standing near a whiteboard"));
+            assertTrue(result.getCombinedAnalysis().contains("Text context: board review"));
             assertTrue(result.getProcessingTimeMs() >= 0); // GH-90000
         }
     }
 
     @Test
-    @DisplayName("Should align speech segments with video frames [GH-90000]")
+    @DisplayName("Should align speech segments with video frames")
     void shouldAlignSpeechSegmentsWithVideoFrames() { // GH-90000
         AudioResult audio = AudioResult.builder() // GH-90000
-            .transcription("hello world [GH-90000]")
+            .transcription("hello world")
             .confidence(0.88) // GH-90000
             .timedSegments(List.of( // GH-90000
                 new AudioResult.TimedSegment(0, 999, "hello"), // GH-90000
@@ -66,7 +66,7 @@ class MultimodalAnalysisEngineTest extends EventloopTestBase {
             ))
             .build(); // GH-90000
         VisualResult video = VisualResult.builder() // GH-90000
-            .sceneDescription("Two frames with objects [GH-90000]")
+            .sceneDescription("Two frames with objects")
             .frameResults(List.of( // GH-90000
                 new FrameResult(1, 500, List.of(new DetectionResult("person", 0.95, 0, 0, 10, 10))), // GH-90000
                 new FrameResult(2, 1500, List.of(new DetectionResult("car", 0.90, 5, 5, 15, 15))) // GH-90000
@@ -79,7 +79,7 @@ class MultimodalAnalysisEngineTest extends EventloopTestBase {
             .build(); // GH-90000
 
         try (MultimodalAnalysisEngine engine = new MultimodalAnalysisEngine( // GH-90000
-            new FakeMediaGateway(audio, VisualResult.error("unused [GH-90000]"), video),
+            new FakeMediaGateway(audio, VisualResult.error("unused"), video),
             AudioVideoRuntimeSettings.defaults())) { // GH-90000
             VideoAudioResult result = runPromise(() -> Promise.of( // GH-90000
                 engine.analyseVideoWithAudio(new byte[] {9, 8, 7}, true, true, 2) // GH-90000

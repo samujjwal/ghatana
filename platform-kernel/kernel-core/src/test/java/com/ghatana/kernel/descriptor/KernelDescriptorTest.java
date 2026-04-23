@@ -18,19 +18,19 @@ import static org.junit.jupiter.api.Assertions.*;
  * @doc.layer test
  * @author Ghatana Kernel Team
  */
-@DisplayName("KernelDescriptor Tests [GH-90000]")
+@DisplayName("KernelDescriptor Tests")
 class KernelDescriptorTest {
 
     private static KernelDescriptor.Builder baseBuilder() { // GH-90000
         return new KernelDescriptor.Builder() // GH-90000
-            .withDescriptorId("test-module [GH-90000]")
-            .withName("Test Module [GH-90000]")
-            .withVersion("1.0.0 [GH-90000]")
+            .withDescriptorId("test-module")
+            .withName("Test Module")
+            .withVersion("1.0.0")
             .withType(KernelDescriptor.DescriptorType.MODULE); // GH-90000
     }
 
     @Test
-    @DisplayName("Should create descriptor with required fields [GH-90000]")
+    @DisplayName("Should create descriptor with required fields")
     void shouldCreateDescriptorWithRequiredFields() { // GH-90000
         KernelDescriptor descriptor = baseBuilder().build(); // GH-90000
 
@@ -42,52 +42,52 @@ class KernelDescriptorTest {
     }
 
     @Test
-    @DisplayName("Should throw exception when descriptorId is null [GH-90000]")
+    @DisplayName("Should throw exception when descriptorId is null")
     void shouldThrowExceptionWhenDescriptorIdIsNull() { // GH-90000
         assertThrows(Exception.class, () -> // GH-90000
             new KernelDescriptor.Builder() // GH-90000
                 .withDescriptorId(null) // GH-90000
-                .withName("Test [GH-90000]")
-                .withVersion("1.0.0 [GH-90000]")
+                .withName("Test")
+                .withVersion("1.0.0")
                 .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
                 .build() // GH-90000
         );
     }
 
     @Test
-    @DisplayName("Should throw exception when descriptorId is empty [GH-90000]")
+    @DisplayName("Should throw exception when descriptorId is empty")
     void shouldThrowExceptionWhenDescriptorIdIsEmpty() { // GH-90000
         assertThrows(Exception.class, () -> // GH-90000
             new KernelDescriptor.Builder() // GH-90000
-                .withDescriptorId("   [GH-90000]")
-                .withName("Test [GH-90000]")
-                .withVersion("1.0.0 [GH-90000]")
+                .withDescriptorId("  ")
+                .withName("Test")
+                .withVersion("1.0.0")
                 .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
                 .build() // GH-90000
         );
     }
 
     @Test
-    @DisplayName("Should throw exception when name is null [GH-90000]")
+    @DisplayName("Should throw exception when name is null")
     void shouldThrowExceptionWhenNameIsNull() { // GH-90000
         assertThrows(Exception.class, () -> // GH-90000
             new KernelDescriptor.Builder() // GH-90000
-                .withDescriptorId("test [GH-90000]")
+                .withDescriptorId("test")
                 .withName(null) // GH-90000
-                .withVersion("1.0.0 [GH-90000]")
+                .withVersion("1.0.0")
                 .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
                 .build() // GH-90000
         );
     }
 
     @Test
-    @DisplayName("Should throw exception for invalid version format [GH-90000]")
+    @DisplayName("Should throw exception for invalid version format")
     void shouldThrowExceptionForInvalidVersionFormat() { // GH-90000
         assertThrows(Exception.class, () -> // GH-90000
             new KernelDescriptor.Builder() // GH-90000
-                .withDescriptorId("test [GH-90000]")
-                .withName("Test [GH-90000]")
-                .withVersion("invalid-version [GH-90000]")
+                .withDescriptorId("test")
+                .withName("Test")
+                .withVersion("invalid-version")
                 .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
                 .build() // GH-90000
         );
@@ -103,13 +103,13 @@ class KernelDescriptorTest {
         "v1.0.0, false",
         "1.0-SNAPSHOT, false"
     })
-    @DisplayName("Should validate semantic version format [GH-90000]")
+    @DisplayName("Should validate semantic version format")
     void shouldValidateSemanticVersionFormat(String version, boolean expectedValid) { // GH-90000
         if (expectedValid) { // GH-90000
             assertDoesNotThrow(() -> // GH-90000
                 new KernelDescriptor.Builder() // GH-90000
-                    .withDescriptorId("test [GH-90000]")
-                    .withName("Test [GH-90000]")
+                    .withDescriptorId("test")
+                    .withName("Test")
                     .withVersion(version) // GH-90000
                     .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
                     .build() // GH-90000
@@ -117,8 +117,8 @@ class KernelDescriptorTest {
         } else {
             assertThrows(Exception.class, () -> // GH-90000
                 new KernelDescriptor.Builder() // GH-90000
-                    .withDescriptorId("test [GH-90000]")
-                    .withName("Test [GH-90000]")
+                    .withDescriptorId("test")
+                    .withName("Test")
                     .withVersion(version) // GH-90000
                     .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
                     .build() // GH-90000
@@ -127,12 +127,12 @@ class KernelDescriptorTest {
     }
 
     @Test
-    @DisplayName("Should add and retrieve metadata [GH-90000]")
+    @DisplayName("Should add and retrieve metadata")
     void shouldAddAndRetrieveMetadata() { // GH-90000
         KernelDescriptor descriptor = new KernelDescriptor.Builder() // GH-90000
-            .withDescriptorId("test [GH-90000]")
-            .withName("Test [GH-90000]")
-            .withVersion("1.0.0 [GH-90000]")
+            .withDescriptorId("test")
+            .withName("Test")
+            .withVersion("1.0.0")
             .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
             .withMetadata("key1", "value1") // GH-90000
             .withMetadata("key2", "value2") // GH-90000
@@ -140,20 +140,20 @@ class KernelDescriptorTest {
 
         Map<String, String> metadata = descriptor.getMetadata(); // GH-90000
         assertEquals(2, metadata.size()); // GH-90000
-        assertEquals("value1", metadata.get("key1 [GH-90000]"));
-        assertEquals("value2", metadata.get("key2 [GH-90000]"));
+        assertEquals("value1", metadata.get("key1"));
+        assertEquals("value2", metadata.get("key2"));
     }
 
     @Test
-    @DisplayName("Should add and retrieve capabilities [GH-90000]")
+    @DisplayName("Should add and retrieve capabilities")
     void shouldAddAndRetrieveCapabilities() { // GH-90000
         KernelCapability cap1 = KernelCapability.Core.DATA_STORAGE;
         KernelCapability cap2 = KernelCapability.Core.USER_AUTHENTICATION;
 
         KernelDescriptor descriptor = new KernelDescriptor.Builder() // GH-90000
-            .withDescriptorId("test [GH-90000]")
-            .withName("Test [GH-90000]")
-            .withVersion("1.0.0 [GH-90000]")
+            .withDescriptorId("test")
+            .withName("Test")
+            .withVersion("1.0.0")
             .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
             .withCapability(cap1) // GH-90000
             .withCapability(cap2) // GH-90000
@@ -166,7 +166,7 @@ class KernelDescriptorTest {
     }
 
     @Test
-    @DisplayName("Should add and retrieve dependencies [GH-90000]")
+    @DisplayName("Should add and retrieve dependencies")
     void shouldAddAndRetrieveDependencies() { // GH-90000
         KernelDependency dep1 = new KernelDependency("dep1", "1.0.0", // GH-90000
             KernelDependency.DependencyType.MODULE, false);
@@ -174,9 +174,9 @@ class KernelDescriptorTest {
             KernelDependency.DependencyType.CAPABILITY, false);
 
         KernelDescriptor descriptor = new KernelDescriptor.Builder() // GH-90000
-            .withDescriptorId("test [GH-90000]")
-            .withName("Test [GH-90000]")
-            .withVersion("1.0.0 [GH-90000]")
+            .withDescriptorId("test")
+            .withName("Test")
+            .withVersion("1.0.0")
             .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
             .withDependency(dep1) // GH-90000
             .withDependency(dep2) // GH-90000
@@ -184,30 +184,30 @@ class KernelDescriptorTest {
 
         Set<KernelDependency> dependencies = descriptor.getDependencies(); // GH-90000
         assertEquals(2, dependencies.size()); // GH-90000
-        assertTrue(dependencies.stream().anyMatch(d -> d.getDependencyId().equals("dep1 [GH-90000]")));
-        assertTrue(dependencies.stream().anyMatch(d -> d.getDependencyId().equals("dep2 [GH-90000]")));
+        assertTrue(dependencies.stream().anyMatch(d -> d.getDependencyId().equals("dep1")));
+        assertTrue(dependencies.stream().anyMatch(d -> d.getDependencyId().equals("dep2")));
     }
 
     @Test
-    @DisplayName("Should add and retrieve tags [GH-90000]")
+    @DisplayName("Should add and retrieve tags")
     void shouldAddAndRetrieveTags() { // GH-90000
         KernelDescriptor descriptor = new KernelDescriptor.Builder() // GH-90000
-            .withDescriptorId("test [GH-90000]")
-            .withName("Test [GH-90000]")
-            .withVersion("1.0.0 [GH-90000]")
+            .withDescriptorId("test")
+            .withName("Test")
+            .withVersion("1.0.0")
             .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
-            .withTag("production [GH-90000]")
-            .withTag("critical [GH-90000]")
+            .withTag("production")
+            .withTag("critical")
             .build(); // GH-90000
 
         Set<String> tags = descriptor.getTags(); // GH-90000
         assertEquals(2, tags.size()); // GH-90000
-        assertTrue(tags.contains("production [GH-90000]"));
-        assertTrue(tags.contains("critical [GH-90000]"));
+        assertTrue(tags.contains("production"));
+        assertTrue(tags.contains("critical"));
     }
 
     @Test
-    @DisplayName("Should return empty collections when not set [GH-90000]")
+    @DisplayName("Should return empty collections when not set")
     void shouldReturnEmptyCollectionsWhenNotSet() { // GH-90000
         KernelDescriptor descriptor = baseBuilder().build(); // GH-90000
 
@@ -218,14 +218,14 @@ class KernelDescriptorTest {
     }
 
     @Test
-    @DisplayName("Should check hasCapability correctly [GH-90000]")
+    @DisplayName("Should check hasCapability correctly")
     void shouldCheckHasCapabilityCorrectly() { // GH-90000
         KernelCapability cap = KernelCapability.Core.DATA_STORAGE;
 
         KernelDescriptor descriptor = new KernelDescriptor.Builder() // GH-90000
-            .withDescriptorId("test [GH-90000]")
-            .withName("Test [GH-90000]")
-            .withVersion("1.0.0 [GH-90000]")
+            .withDescriptorId("test")
+            .withName("Test")
+            .withVersion("1.0.0")
             .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
             .withCapability(cap) // GH-90000
             .build(); // GH-90000
@@ -235,28 +235,28 @@ class KernelDescriptorTest {
     }
 
     @Test
-    @DisplayName("Should check getTags contains production [GH-90000]")
+    @DisplayName("Should check getTags contains production")
     void shouldCheckHasTagCorrectly() { // GH-90000
         KernelDescriptor descriptor = new KernelDescriptor.Builder() // GH-90000
-            .withDescriptorId("test [GH-90000]")
-            .withName("Test [GH-90000]")
-            .withVersion("1.0.0 [GH-90000]")
+            .withDescriptorId("test")
+            .withName("Test")
+            .withVersion("1.0.0")
             .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
-            .withTag("production [GH-90000]")
+            .withTag("production")
             .build(); // GH-90000
 
-        assertTrue(descriptor.getTags().contains("production [GH-90000]"));
-        assertFalse(descriptor.getTags().contains("development [GH-90000]"));
+        assertTrue(descriptor.getTags().contains("production"));
+        assertFalse(descriptor.getTags().contains("development"));
     }
 
     @Test
-    @DisplayName("Should create descriptor with all descriptor types [GH-90000]")
+    @DisplayName("Should create descriptor with all descriptor types")
     void shouldCreateDescriptorWithAllComponentTypes() { // GH-90000
         for (KernelDescriptor.DescriptorType type : KernelDescriptor.DescriptorType.values()) { // GH-90000
             KernelDescriptor descriptor = new KernelDescriptor.Builder() // GH-90000
                 .withDescriptorId("test-" + type.name().toLowerCase()) // GH-90000
                 .withName("Test " + type.name()) // GH-90000
-                .withVersion("1.0.0 [GH-90000]")
+                .withVersion("1.0.0")
                 .withType(type) // GH-90000
                 .build(); // GH-90000
 
@@ -265,15 +265,15 @@ class KernelDescriptorTest {
     }
 
     @Test
-    @DisplayName("Should return description when set [GH-90000]")
+    @DisplayName("Should return description when set")
     void shouldReturnDescriptionWhenSet() { // GH-90000
         String description = "This is a test module for demonstration purposes";
 
         KernelDescriptor descriptor = new KernelDescriptor.Builder() // GH-90000
-            .withDescriptorId("test [GH-90000]")
-            .withName("Test [GH-90000]")
+            .withDescriptorId("test")
+            .withName("Test")
             .withDescription(description) // GH-90000
-            .withVersion("1.0.0 [GH-90000]")
+            .withVersion("1.0.0")
             .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
             .build(); // GH-90000
 
@@ -281,7 +281,7 @@ class KernelDescriptorTest {
     }
 
     @Test
-    @DisplayName("Should return empty description when not set [GH-90000]")
+    @DisplayName("Should return empty description when not set")
     void shouldReturnEmptyDescriptionWhenNotSet() { // GH-90000
         KernelDescriptor descriptor = baseBuilder().build(); // GH-90000
 
@@ -291,21 +291,21 @@ class KernelDescriptorTest {
     }
 
     @Test
-    @DisplayName("Should implement equals and hashCode correctly [GH-90000]")
+    @DisplayName("Should implement equals and hashCode correctly")
     void shouldImplementEqualsAndHashCodeCorrectly() { // GH-90000
         KernelDescriptor descriptor1 = baseBuilder().build(); // GH-90000
 
         KernelDescriptor descriptor2 = new KernelDescriptor.Builder() // GH-90000
-            .withDescriptorId("test-module [GH-90000]")
-            .withName("Different Name [GH-90000]")
-            .withVersion("2.0.0 [GH-90000]")
+            .withDescriptorId("test-module")
+            .withName("Different Name")
+            .withVersion("2.0.0")
             .withType(KernelDescriptor.DescriptorType.PLUGIN) // GH-90000
             .build(); // GH-90000
 
         KernelDescriptor descriptor3 = new KernelDescriptor.Builder() // GH-90000
-            .withDescriptorId("different [GH-90000]")
-            .withName("Test Module [GH-90000]")
-            .withVersion("1.0.0 [GH-90000]")
+            .withDescriptorId("different")
+            .withName("Test Module")
+            .withVersion("1.0.0")
             .withType(KernelDescriptor.DescriptorType.MODULE) // GH-90000
             .build(); // GH-90000
 
@@ -315,14 +315,14 @@ class KernelDescriptorTest {
     }
 
     @Test
-    @DisplayName("Should implement toString correctly [GH-90000]")
+    @DisplayName("Should implement toString correctly")
     void shouldImplementToStringCorrectly() { // GH-90000
         KernelDescriptor descriptor = baseBuilder().build(); // GH-90000
 
         String toString = descriptor.toString(); // GH-90000
-        assertTrue(toString.contains("test-module [GH-90000]"));
-        assertTrue(toString.contains("Test Module [GH-90000]"));
-        assertTrue(toString.contains("1.0.0 [GH-90000]"));
-        assertTrue(toString.contains("MODULE [GH-90000]"));
+        assertTrue(toString.contains("test-module"));
+        assertTrue(toString.contains("Test Module"));
+        assertTrue(toString.contains("1.0.0"));
+        assertTrue(toString.contains("MODULE"));
     }
 }

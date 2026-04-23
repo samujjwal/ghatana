@@ -13,7 +13,8 @@ import java.util.UUID;
  * @doc.type factory
  * @doc.purpose Episode migration and construction
  * @doc.layer agent-memory
- */
+  * @doc.pattern Builder
+*/
 public final class EpisodeBuilder {
 
     private EpisodeBuilder() {

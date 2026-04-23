@@ -16,7 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Requirements DeriveRequirementsStep Tests [GH-90000]")
+@DisplayName("Requirements DeriveRequirementsStep Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles derive requirements step test operations
@@ -37,13 +37,13 @@ class DeriveRequirementsStepTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should return correct step ID [GH-90000]")
+  @DisplayName("Should return correct step ID")
   void shouldReturnCorrectStepId() { // GH-90000
-    assertThat(step.getStepId()).isEqualTo("requirements.deriverequirements [GH-90000]");
+    assertThat(step.getStepId()).isEqualTo("requirements.deriverequirements");
   }
 
   @Test
-  @DisplayName("Should derive structured requirements from normalized content [GH-90000]")
+  @DisplayName("Should derive structured requirements from normalized content")
   void shouldDeriveStructuredRequirements() { // GH-90000
     // GIVEN
     WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
@@ -60,12 +60,12 @@ class DeriveRequirementsStepTest extends EventloopTestBase {
 
     // THEN
     assertThat(result).isNotNull(); // GH-90000
-    assertThat(result.get("requirementId [GH-90000]")).isEqualTo("req-001 [GH-90000]");
-    assertThat(result.get("persisted [GH-90000]")).isEqualTo(true);
+    assertThat(result.get("requirementId")).isEqualTo("req-001");
+    assertThat(result.get("persisted")).isEqualTo(true);
   }
 
   @Test
-  @DisplayName("Should fail when requirementId is missing [GH-90000]")
+  @DisplayName("Should fail when requirementId is missing")
   void shouldFailWhenRequirementIdMissing() { // GH-90000
     // GIVEN
     WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
@@ -75,11 +75,11 @@ class DeriveRequirementsStepTest extends EventloopTestBase {
     // WHEN/THEN
     assertThatThrownBy(() -> runPromise(() -> step.execute(context))) // GH-90000
         .isInstanceOf(IllegalArgumentException.class) // GH-90000
-        .hasMessageContaining("requirementId [GH-90000]");
+        .hasMessageContaining("requirementId");
   }
 
   @Test
-  @DisplayName("Should fail when normalizedContent is missing [GH-90000]")
+  @DisplayName("Should fail when normalizedContent is missing")
   void shouldFailWhenNormalizedContentMissing() { // GH-90000
     // GIVEN
     WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
@@ -89,6 +89,6 @@ class DeriveRequirementsStepTest extends EventloopTestBase {
     // WHEN/THEN
     assertThatThrownBy(() -> runPromise(() -> step.execute(context))) // GH-90000
         .isInstanceOf(IllegalArgumentException.class) // GH-90000
-        .hasMessageContaining("normalizedContent [GH-90000]");
+        .hasMessageContaining("normalizedContent");
   }
 }

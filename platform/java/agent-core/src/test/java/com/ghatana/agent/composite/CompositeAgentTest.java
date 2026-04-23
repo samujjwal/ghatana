@@ -23,7 +23,7 @@ import static org.mockito.Mockito.mock;
 /**
  * Comprehensive tests for CompositeAgent — all aggregation strategies.
  */
-@DisplayName("Composite Agent [GH-90000]")
+@DisplayName("Composite Agent")
 class CompositeAgentTest {
 
     private AgentContext ctx;
@@ -31,9 +31,9 @@ class CompositeAgentTest {
     @BeforeEach
     void setUp() { // GH-90000
         ctx = AgentContext.builder() // GH-90000
-                .turnId("turn-1 [GH-90000]")
-                .agentId("composite-test [GH-90000]")
-                .tenantId("test-tenant [GH-90000]")
+                .turnId("turn-1")
+                .agentId("composite-test")
+                .tenantId("test-tenant")
                 .memoryStore(mock(MemoryStore.class)) // GH-90000
                 .build(); // GH-90000
     }
@@ -66,7 +66,7 @@ class CompositeAgentTest {
 
         StubAgent(String id, Map<String, Object> output, double confidence, boolean shouldFail) { // GH-90000
             this.desc = AgentDescriptor.builder() // GH-90000
-                    .agentId(id).name(id).version("1.0 [GH-90000]")
+                    .agentId(id).name(id).version("1.0")
                     .type(AgentType.DETERMINISTIC).build(); // GH-90000
             this.output = output;
             this.confidence = confidence;
@@ -103,7 +103,7 @@ class CompositeAgentTest {
             configBuilder.weight(w); // GH-90000
         }
 
-        AgentConfig stubConfig = AgentConfig.builder().agentId("s [GH-90000]").type(AgentType.DETERMINISTIC).build();
+        AgentConfig stubConfig = AgentConfig.builder().agentId("s").type(AgentType.DETERMINISTIC).build();
         for (StubAgent s : subs) { // GH-90000
             runOnEventloop(() -> s.initialize(stubConfig)); // GH-90000
         }
@@ -118,7 +118,7 @@ class CompositeAgentTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("WEIGHTED_AVERAGE [GH-90000]")
+    @DisplayName("WEIGHTED_AVERAGE")
     class WeightedAverageTests {
 
         @Test void computesWeightedScore() { // GH-90000
@@ -132,7 +132,7 @@ class CompositeAgentTest {
             var result = runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
             assertThat(result.isSuccess()).isTrue(); // GH-90000
             // Weighted: 0.7*80 + 0.3*60 = 56 + 18 = 74
-            Object score = result.getOutput().get("score [GH-90000]");
+            Object score = result.getOutput().get("score");
             assertThat(((Number) score).doubleValue()).isCloseTo(74.0, within(0.1)); // GH-90000
         }
 
@@ -154,7 +154,7 @@ class CompositeAgentTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("MAJORITY_VOTE [GH-90000]")
+    @DisplayName("MAJORITY_VOTE")
     class MajorityVoteTests {
 
         @Test void selectsMajority() { // GH-90000
@@ -182,7 +182,7 @@ class CompositeAgentTest {
             var result = runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
             assertThat(result.isSuccess()).isTrue(); // GH-90000
             // Should pick one, not crash
-            assertThat(result.getOutput().get("decision [GH-90000]")).isIn("A", "B");
+            assertThat(result.getOutput().get("decision")).isIn("A", "B");
         }
     }
 
@@ -191,7 +191,7 @@ class CompositeAgentTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("FIRST_MATCH [GH-90000]")
+    @DisplayName("FIRST_MATCH")
     class FirstMatchTests {
 
         @Test void takesFirstSuccessful() { // GH-90000
@@ -224,7 +224,7 @@ class CompositeAgentTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("UNANIMOUS [GH-90000]")
+    @DisplayName("UNANIMOUS")
     class UnanimousTests {
 
         @Test void succeedsWhenAllAgree() { // GH-90000
@@ -259,7 +259,7 @@ class CompositeAgentTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Failure Isolation [GH-90000]")
+    @DisplayName("Failure Isolation")
     class FailureIsolationTests {
 
         @Test void survivesSubAgentFailure() { // GH-90000
@@ -280,7 +280,7 @@ class CompositeAgentTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Lifecycle [GH-90000]")
+    @DisplayName("Lifecycle")
     class LifecycleTests {
 
         @Test void metricsTracked() { // GH-90000

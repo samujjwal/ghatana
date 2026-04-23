@@ -29,14 +29,14 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer   service
  * @doc.pattern Test
  */
-@DisplayName("OAuth 2.0 End-to-End Integration Tests [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("OAuth 2.0 End-to-End Integration Tests")
+@Tag("integration")
 class OAuthEndToEndIntegrationTest extends EventloopTestBase {
 
     // ── Authorization code flow ───────────────────────────────────────────────
 
     @Test
-    @DisplayName("authorization request includes required OAuth 2.0 parameters [GH-90000]")
+    @DisplayName("authorization request includes required OAuth 2.0 parameters")
     void authorizationRequestIncludesRequiredParameters() { // GH-90000
         String clientId = "ghatana-client";
         String redirectUri = "https://app.ghatana.io/auth/callback";
@@ -45,16 +45,16 @@ class OAuthEndToEndIntegrationTest extends EventloopTestBase {
 
         Map<String, String> params = buildAuthorizationRequest(clientId, redirectUri, state, scope); // GH-90000
 
-        assertThat(params).containsKey("client_id [GH-90000]");
-        assertThat(params).containsKey("redirect_uri [GH-90000]");
-        assertThat(params).containsKey("response_type [GH-90000]");
-        assertThat(params).containsKey("state [GH-90000]");
-        assertThat(params).containsKey("scope [GH-90000]");
-        assertThat(params.get("response_type [GH-90000]")).isEqualTo("code [GH-90000]");
+        assertThat(params).containsKey("client_id");
+        assertThat(params).containsKey("redirect_uri");
+        assertThat(params).containsKey("response_type");
+        assertThat(params).containsKey("state");
+        assertThat(params).containsKey("scope");
+        assertThat(params.get("response_type")).isEqualTo("code");
     }
 
     @Test
-    @DisplayName("state parameter is unique per authorization request (CSRF prevention) [GH-90000]")
+    @DisplayName("state parameter is unique per authorization request (CSRF prevention)")
     void stateParameterIsUniquePerRequest() { // GH-90000
         String state1 = UUID.randomUUID().toString(); // GH-90000
         String state2 = UUID.randomUUID().toString(); // GH-90000
@@ -64,7 +64,7 @@ class OAuthEndToEndIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("callback validates state to prevent CSRF attacks [GH-90000]")
+    @DisplayName("callback validates state to prevent CSRF attacks")
     void callbackValidatesStateParameter() { // GH-90000
         String originalState = UUID.randomUUID().toString(); // GH-90000
         String tamperedState = UUID.randomUUID().toString(); // GH-90000
@@ -76,7 +76,7 @@ class OAuthEndToEndIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("callback returns error for invalid authorization code [GH-90000]")
+    @DisplayName("callback returns error for invalid authorization code")
     void callbackReturnsErrorForInvalidCode() { // GH-90000
         String authCode = "";
 
@@ -86,7 +86,7 @@ class OAuthEndToEndIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("callback returns error for expired authorization code [GH-90000]")
+    @DisplayName("callback returns error for expired authorization code")
     void callbackReturnsErrorForExpiredCode() { // GH-90000
         long codeIssuedAt = System.currentTimeMillis() - 10 * 60 * 1000L; // 10 min ago // GH-90000
         long nowMs = System.currentTimeMillis(); // GH-90000
@@ -99,23 +99,23 @@ class OAuthEndToEndIntegrationTest extends EventloopTestBase {
     // ── PKCE (RFC 7636) ─────────────────────────────────────────────────────── // GH-90000
 
     @Test
-    @DisplayName("PKCE code_verifier meets RFC 7636 entropy requirements [GH-90000]")
+    @DisplayName("PKCE code_verifier meets RFC 7636 entropy requirements")
     void pkceCodeVerifierMeetsEntropyRequirements() { // GH-90000
         String verifier = generateCodeVerifier(); // GH-90000
 
         // RFC 7636: 43–128 characters, base64url-encoded
         assertThat(verifier.length()).isBetween(43, 128); // GH-90000
-        assertThat(verifier).matches("^[A-Za-z0-9\\-._~]+$ [GH-90000]");
+        assertThat(verifier).matches("^[A-Za-z0-9\\-._~]+$");
     }
 
     @Test
-    @DisplayName("PKCE code_challenge is SHA-256 hash of verifier in base64url [GH-90000]")
+    @DisplayName("PKCE code_challenge is SHA-256 hash of verifier in base64url")
     void pkceCodeChallengeIsCorrectHashOfVerifier() throws NoSuchAlgorithmException { // GH-90000
         String verifier = generateCodeVerifier(); // GH-90000
         String challenge = generateCodeChallenge(verifier); // GH-90000
 
         // Derive expected challenge
-        byte[] digest = MessageDigest.getInstance("SHA-256 [GH-90000]")
+        byte[] digest = MessageDigest.getInstance("SHA-256")
                 .digest(verifier.getBytes(StandardCharsets.US_ASCII)); // GH-90000
         String expected = Base64.getUrlEncoder().withoutPadding().encodeToString(digest); // GH-90000
 
@@ -123,13 +123,13 @@ class OAuthEndToEndIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("PKCE verifier and challenge pair validates correctly [GH-90000]")
+    @DisplayName("PKCE verifier and challenge pair validates correctly")
     void pkceVerifierAndChallengePairValidates() throws NoSuchAlgorithmException { // GH-90000
         String verifier = generateCodeVerifier(); // GH-90000
         String challenge = generateCodeChallenge(verifier); // GH-90000
 
         // Verify round-trip: re-derive challenge from verifier
-        byte[] digest = MessageDigest.getInstance("SHA-256 [GH-90000]")
+        byte[] digest = MessageDigest.getInstance("SHA-256")
                 .digest(verifier.getBytes(StandardCharsets.US_ASCII)); // GH-90000
         String rederived = Base64.getUrlEncoder().withoutPadding().encodeToString(digest); // GH-90000
 
@@ -137,13 +137,13 @@ class OAuthEndToEndIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("PKCE verifier mismatch causes challenge verification to fail [GH-90000]")
+    @DisplayName("PKCE verifier mismatch causes challenge verification to fail")
     void pkceVerifierMismatchFails() throws NoSuchAlgorithmException { // GH-90000
         String correctVerifier = generateCodeVerifier(); // GH-90000
         String wrongVerifier = generateCodeVerifier(); // GH-90000
         String challenge = generateCodeChallenge(correctVerifier); // GH-90000
 
-        byte[] digest = MessageDigest.getInstance("SHA-256 [GH-90000]")
+        byte[] digest = MessageDigest.getInstance("SHA-256")
                 .digest(wrongVerifier.getBytes(StandardCharsets.US_ASCII)); // GH-90000
         String wrongDerived = Base64.getUrlEncoder().withoutPadding().encodeToString(digest); // GH-90000
 
@@ -153,48 +153,48 @@ class OAuthEndToEndIntegrationTest extends EventloopTestBase {
     // ── Token exchange response ───────────────────────────────────────────────
 
     @Test
-    @DisplayName("token exchange response must contain required OIDC fields [GH-90000]")
+    @DisplayName("token exchange response must contain required OIDC fields")
     void tokenExchangeResponseContainsRequiredOidcFields() { // GH-90000
         Map<String, String> tokenResponse = buildMockTokenResponse(); // GH-90000
 
-        assertThat(tokenResponse).containsKey("access_token [GH-90000]");
-        assertThat(tokenResponse).containsKey("id_token [GH-90000]");
-        assertThat(tokenResponse).containsKey("token_type [GH-90000]");
-        assertThat(tokenResponse).containsKey("expires_in [GH-90000]");
-        assertThat(tokenResponse.get("token_type [GH-90000]")).isEqualToIgnoringCase("Bearer [GH-90000]");
+        assertThat(tokenResponse).containsKey("access_token");
+        assertThat(tokenResponse).containsKey("id_token");
+        assertThat(tokenResponse).containsKey("token_type");
+        assertThat(tokenResponse).containsKey("expires_in");
+        assertThat(tokenResponse.get("token_type")).isEqualToIgnoringCase("Bearer");
     }
 
     @ParameterizedTest(name = "scope={0} is requested during token exchange") // GH-90000
     @ValueSource(strings = {"openid", "openid profile", "openid email", "openid profile email"}) // GH-90000
-    @DisplayName("token exchange accepts OpenID Connect scopes [GH-90000]")
+    @DisplayName("token exchange accepts OpenID Connect scopes")
     void tokenExchangeAcceptsOidcScopes(String scope) { // GH-90000
         Map<String, String> request = buildTokenExchangeRequest("auth-code-123", scope); // GH-90000
-        assertThat(request.get("scope [GH-90000]")).isEqualTo(scope);
-        assertThat(request.get("scope [GH-90000]")).contains("openid [GH-90000]");
+        assertThat(request.get("scope")).isEqualTo(scope);
+        assertThat(request.get("scope")).contains("openid");
     }
 
     @Test
-    @DisplayName("token exchange request uses grant_type=authorization_code [GH-90000]")
+    @DisplayName("token exchange request uses grant_type=authorization_code")
     void tokenExchangeUsesCorrectGrantType() { // GH-90000
         Map<String, String> request = buildTokenExchangeRequest("auth-code-xyz", "openid"); // GH-90000
-        assertThat(request.get("grant_type [GH-90000]")).isEqualTo("authorization_code [GH-90000]");
+        assertThat(request.get("grant_type")).isEqualTo("authorization_code");
     }
 
     // ── Scope enforcement ─────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("offline_access scope triggers refresh token issuance [GH-90000]")
+    @DisplayName("offline_access scope triggers refresh token issuance")
     void offlineAccessScopeTriggersRefreshToken() { // GH-90000
         Set<String> requestedScopes = Set.of("openid", "profile", "email", "offline_access"); // GH-90000
-        boolean shouldIssueRefreshToken = requestedScopes.contains("offline_access [GH-90000]");
+        boolean shouldIssueRefreshToken = requestedScopes.contains("offline_access");
         assertThat(shouldIssueRefreshToken).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("refresh token is absent when offline_access scope is not requested [GH-90000]")
+    @DisplayName("refresh token is absent when offline_access scope is not requested")
     void refreshTokenAbsentWithoutOfflineAccessScope() { // GH-90000
         Set<String> requestedScopes = Set.of("openid", "profile"); // GH-90000
-        boolean shouldIssueRefreshToken = requestedScopes.contains("offline_access [GH-90000]");
+        boolean shouldIssueRefreshToken = requestedScopes.contains("offline_access");
         assertThat(shouldIssueRefreshToken).isFalse(); // GH-90000
     }
 
@@ -227,7 +227,7 @@ class OAuthEndToEndIntegrationTest extends EventloopTestBase {
 
     private String generateCodeChallenge(String verifier) { // GH-90000
         try {
-            byte[] digest = MessageDigest.getInstance("SHA-256 [GH-90000]")
+            byte[] digest = MessageDigest.getInstance("SHA-256")
                     .digest(verifier.getBytes(StandardCharsets.US_ASCII)); // GH-90000
             return Base64.getUrlEncoder().withoutPadding().encodeToString(digest); // GH-90000
         } catch (NoSuchAlgorithmException e) { // GH-90000

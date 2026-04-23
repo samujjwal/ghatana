@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.*;
  * <p>Verifies span hierarchy, attribute keys from {@link AgentTelemetryContract},
  * error handling, and all 11 lifecycle phases.
  */
-@DisplayName("AgentRunTracer [GH-90000]")
+@DisplayName("AgentRunTracer")
 class AgentRunTracerTest {
 
     private InMemorySpanExporter spanExporter;
@@ -46,7 +46,7 @@ class AgentRunTracerTest {
         tracerProvider = SdkTracerProvider.builder() // GH-90000
                 .addSpanProcessor(SimpleSpanProcessor.create(spanExporter)) // GH-90000
                 .build(); // GH-90000
-        Tracer otelTracer = tracerProvider.get("test-agent-tracer [GH-90000]");
+        Tracer otelTracer = tracerProvider.get("test-agent-tracer");
         tracer = new AgentRunTracer(otelTracer); // GH-90000
     }
 
@@ -60,11 +60,11 @@ class AgentRunTracerTest {
     }
 
     @Nested
-    @DisplayName("startRun [GH-90000]")
+    @DisplayName("startRun")
     class StartRun {
 
         @Test
-        @DisplayName("creates root span with required attributes [GH-90000]")
+        @DisplayName("creates root span with required attributes")
         void createsRootSpanWithRequiredAttributes() { // GH-90000
             try (AgentRunTracer.AgentRunSpan run = tracer.startRun( // GH-90000
                     "my-agent", "rel-001", "tenant-a", "corr-xyz")) {
@@ -76,19 +76,19 @@ class AgentRunTracerTest {
             SpanData span = spans.get(0); // GH-90000
             assertThat(span.getName()).isEqualTo(AgentTelemetryContract.SPAN_RUN_START); // GH-90000
             assertThat(span.getAttributes().get(AttributeKey.stringKey(AgentTelemetryContract.ATTR_AGENT_ID))) // GH-90000
-                    .isEqualTo("my-agent [GH-90000]");
+                    .isEqualTo("my-agent");
             assertThat(span.getAttributes().get(AttributeKey.stringKey(AgentTelemetryContract.ATTR_AGENT_RELEASE_ID))) // GH-90000
-                    .isEqualTo("rel-001 [GH-90000]");
+                    .isEqualTo("rel-001");
             assertThat(span.getAttributes().get(AttributeKey.stringKey(AgentTelemetryContract.ATTR_TENANT_ID))) // GH-90000
-                    .isEqualTo("tenant-a [GH-90000]");
+                    .isEqualTo("tenant-a");
             assertThat(span.getAttributes().get(AttributeKey.stringKey(AgentTelemetryContract.ATTR_CORRELATION_ID))) // GH-90000
-                    .isEqualTo("corr-xyz [GH-90000]");
+                    .isEqualTo("corr-xyz");
             assertThat(span.getAttributes().get(AttributeKey.stringKey(AgentTelemetryContract.ATTR_TELEMETRY_VERSION))) // GH-90000
                     .isEqualTo(AgentTelemetryContract.VERSION); // GH-90000
         }
 
         @Test
-        @DisplayName("null correlationId does not set correlation attribute [GH-90000]")
+        @DisplayName("null correlationId does not set correlation attribute")
         void nullCorrelationIdNotSet() { // GH-90000
             try (AgentRunTracer.AgentRunSpan run = tracer.startRun("ag", "r1", "t1", null)) { // GH-90000
                 // close span
@@ -101,11 +101,11 @@ class AgentRunTracerTest {
     }
 
     @Nested
-    @DisplayName("traceContextRetrieval [GH-90000]")
+    @DisplayName("traceContextRetrieval")
     class TraceContextRetrieval {
 
         @Test
-        @DisplayName("creates child span with item count attribute [GH-90000]")
+        @DisplayName("creates child span with item count attribute")
         void createsChildSpanWithItemCount() { // GH-90000
             try (AgentRunTracer.AgentRunSpan run = tracer.startRun("ag", "r1", "t1", null)) { // GH-90000
                 tracer.traceContextRetrieval(run, 7, Duration.ofMillis(15)); // GH-90000
@@ -115,7 +115,7 @@ class AgentRunTracerTest {
             SpanData contextSpan = spans.stream() // GH-90000
                     .filter(s -> s.getName().equals(AgentTelemetryContract.SPAN_CONTEXT_RETRIEVAL)) // GH-90000
                     .findFirst() // GH-90000
-                    .orElseThrow(() -> new AssertionError("No context retrieval span found [GH-90000]"));
+                    .orElseThrow(() -> new AssertionError("No context retrieval span found"));
             assertThat(contextSpan.getAttributes() // GH-90000
                     .get(AttributeKey.longKey(AgentTelemetryContract.ATTR_CONTEXT_ITEM_COUNT))) // GH-90000
                     .isEqualTo(7L); // GH-90000
@@ -123,11 +123,11 @@ class AgentRunTracerTest {
     }
 
     @Nested
-    @DisplayName("tracePolicyEval [GH-90000]")
+    @DisplayName("tracePolicyEval")
     class TracePolicyEval {
 
         @Test
-        @DisplayName("creates child span with policy decision attribute [GH-90000]")
+        @DisplayName("creates child span with policy decision attribute")
         void createsChildSpanWithDecision() { // GH-90000
             try (AgentRunTracer.AgentRunSpan run = tracer.startRun("ag", "r1", "t1", null)) { // GH-90000
                 tracer.tracePolicyEval(run, "pack-123", "ALLOW"); // GH-90000
@@ -136,22 +136,22 @@ class AgentRunTracerTest {
             SpanData policySpan = getSpans().stream() // GH-90000
                     .filter(s -> s.getName().equals(AgentTelemetryContract.SPAN_POLICY_EVAL)) // GH-90000
                     .findFirst() // GH-90000
-                    .orElseThrow(() -> new AssertionError("No policy eval span found [GH-90000]"));
+                    .orElseThrow(() -> new AssertionError("No policy eval span found"));
             assertThat(policySpan.getAttributes() // GH-90000
                     .get(AttributeKey.stringKey(AgentTelemetryContract.ATTR_POLICY_PACK_ID))) // GH-90000
-                    .isEqualTo("pack-123 [GH-90000]");
+                    .isEqualTo("pack-123");
             assertThat(policySpan.getAttributes() // GH-90000
                     .get(AttributeKey.stringKey(AgentTelemetryContract.ATTR_POLICY_DECISION))) // GH-90000
-                    .isEqualTo("ALLOW [GH-90000]");
+                    .isEqualTo("ALLOW");
         }
     }
 
     @Nested
-    @DisplayName("traceToolExecution [GH-90000]")
+    @DisplayName("traceToolExecution")
     class TraceToolExecution {
 
         @Test
-        @DisplayName("creates child span with tool attributes [GH-90000]")
+        @DisplayName("creates child span with tool attributes")
         void createsChildSpanWithToolAttributes() { // GH-90000
             try (AgentRunTracer.AgentRunSpan run = tracer.startRun("ag", "r1", "t1", null)) { // GH-90000
                 tracer.traceToolExecution(run, "search-tool", "READ", "ALLOW"); // GH-90000
@@ -160,25 +160,25 @@ class AgentRunTracerTest {
             SpanData toolSpan = getSpans().stream() // GH-90000
                     .filter(s -> s.getName().equals(AgentTelemetryContract.SPAN_TOOL_EXECUTE)) // GH-90000
                     .findFirst() // GH-90000
-                    .orElseThrow(() -> new AssertionError("No tool execution span found [GH-90000]"));
+                    .orElseThrow(() -> new AssertionError("No tool execution span found"));
             assertThat(toolSpan.getAttributes() // GH-90000
                     .get(AttributeKey.stringKey(AgentTelemetryContract.ATTR_TOOL_ID))) // GH-90000
-                    .isEqualTo("search-tool [GH-90000]");
+                    .isEqualTo("search-tool");
             assertThat(toolSpan.getAttributes() // GH-90000
                     .get(AttributeKey.stringKey(AgentTelemetryContract.ATTR_ACTION_CLASS))) // GH-90000
-                    .isEqualTo("READ [GH-90000]");
+                    .isEqualTo("READ");
         }
     }
 
     @Nested
-    @DisplayName("exception recording [GH-90000]")
+    @DisplayName("exception recording")
     class ExceptionRecording {
 
         @Test
-        @DisplayName("recordException sets ERROR status [GH-90000]")
+        @DisplayName("recordException sets ERROR status")
         void recordExceptionSetsErrorStatus() { // GH-90000
             try (AgentRunTracer.AgentRunSpan run = tracer.startRun("ag", "r1", "t1", null)) { // GH-90000
-                run.recordException(new RuntimeException("boom [GH-90000]"));
+                run.recordException(new RuntimeException("boom"));
             }
 
             SpanData span = getSpans().get(0); // GH-90000
@@ -186,24 +186,24 @@ class AgentRunTracerTest {
         }
 
         @Test
-        @DisplayName("recordException records exception event on span [GH-90000]")
+        @DisplayName("recordException records exception event on span")
         void recordExceptionCreatesEvent() { // GH-90000
             try (AgentRunTracer.AgentRunSpan run = tracer.startRun("ag", "r1", "t1", null)) { // GH-90000
-                run.recordException(new IllegalStateException("bad state [GH-90000]"));
+                run.recordException(new IllegalStateException("bad state"));
             }
 
             SpanData span = getSpans().get(0); // GH-90000
             assertThat(span.getEvents()) // GH-90000
-                    .anyMatch(e -> e.getName().equals("exception [GH-90000]"));
+                    .anyMatch(e -> e.getName().equals("exception"));
         }
     }
 
     @Nested
-    @DisplayName("all 11 lifecycle phases [GH-90000]")
+    @DisplayName("all 11 lifecycle phases")
     class AllPhases {
 
         @Test
-        @DisplayName("each phase creates a named child span [GH-90000]")
+        @DisplayName("each phase creates a named child span")
         void allPhasesCreateSpans() { // GH-90000
             try (AgentRunTracer.AgentRunSpan run = tracer.startRun("ag", "r1", "t1", "c1")) { // GH-90000
                 tracer.traceContextRetrieval(run, 3, Duration.ofMillis(10)); // GH-90000

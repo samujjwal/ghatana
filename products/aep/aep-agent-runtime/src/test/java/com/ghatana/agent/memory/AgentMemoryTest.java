@@ -17,45 +17,45 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test agent memory management, governance, and security.
  */
-@DisplayName("Agent Memory Tests [GH-90000]")
+@DisplayName("Agent Memory Tests")
 class AgentMemoryTest {
 
     @Test
-    @DisplayName("Should handle memory allocation [GH-90000]")
+    @DisplayName("Should handle memory allocation")
     void shouldHandleMemoryAllocation() { // GH-90000
         assertThat(TraceGrade.class).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle memory deallocation [GH-90000]")
+    @DisplayName("Should handle memory deallocation")
     void shouldHandleMemoryDeallocation() { // GH-90000
         String memoryId = "mem-123";
         assertThat(memoryId).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should enforce memory governance [GH-90000]")
+    @DisplayName("Should enforce memory governance")
     void shouldEnforceMemoryGovernance() { // GH-90000
         long memoryLimit = 1024 * 1024; // 1MB
         assertThat(memoryLimit).isPositive(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should secure memory access [GH-90000]")
+    @DisplayName("Should secure memory access")
     void shouldSecureMemoryAccess() { // GH-90000
         boolean accessGranted = true;
         assertThat(accessGranted).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle memory persistence [GH-90000]")
+    @DisplayName("Should handle memory persistence")
     void shouldHandleMemoryPersistence() { // GH-90000
         boolean persisted = true;
         assertThat(persisted).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle memory sharing [GH-90000]")
+    @DisplayName("Should handle memory sharing")
     void shouldHandleMemorySharing() { // GH-90000
         String sharedMemoryId = "shared-mem-456";
         assertThat(sharedMemoryId).isNotNull(); // GH-90000

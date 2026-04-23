@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
 class AgentStepResultTest {
 
     @Test
-    @DisplayName("Should create successful result with all fields [GH-90000]")
+    @DisplayName("Should create successful result with all fields")
     void shouldCreateSuccessfulResult() { // GH-90000
         Instant startTime = Instant.now().minusSeconds(10); // GH-90000
         Instant endTime = Instant.now(); // GH-90000
@@ -34,8 +34,8 @@ class AgentStepResultTest {
         Map<String, String> context = Map.of("tenant", "test-tenant", "pipeline", "test-pipeline"); // GH-90000
 
         AgentStepResult stepResult = AgentStepResult.builder() // GH-90000
-                .stepId("step-1 [GH-90000]")
-                .agentId("agent-1 [GH-90000]")
+                .stepId("step-1")
+                .agentId("agent-1")
                 .status(ExecutionStatus.SUCCESS) // GH-90000
                 .result(result) // GH-90000
                 .startTime(startTime) // GH-90000
@@ -59,15 +59,15 @@ class AgentStepResultTest {
     }
 
     @Test
-    @DisplayName("Should create failed result with error [GH-90000]")
+    @DisplayName("Should create failed result with error")
     void shouldCreateFailedResultWithError() { // GH-90000
         Instant startTime = Instant.now().minusSeconds(5); // GH-90000
         Instant endTime = Instant.now(); // GH-90000
-        Exception error = new RuntimeException("Test error [GH-90000]");
+        Exception error = new RuntimeException("Test error");
 
         AgentStepResult stepResult = AgentStepResult.builder() // GH-90000
-                .stepId("step-2 [GH-90000]")
-                .agentId("agent-2 [GH-90000]")
+                .stepId("step-2")
+                .agentId("agent-2")
                 .status(ExecutionStatus.FAILED) // GH-90000
                 .error(error) // GH-90000
                 .startTime(startTime) // GH-90000
@@ -87,14 +87,14 @@ class AgentStepResultTest {
     }
 
     @Test
-    @DisplayName("Should calculate duration correctly [GH-90000]")
+    @DisplayName("Should calculate duration correctly")
     void shouldCalculateDurationCorrectly() { // GH-90000
         Instant startTime = Instant.ofEpochMilli(1000); // GH-90000
         Instant endTime = Instant.ofEpochMilli(3500); // GH-90000
 
         AgentStepResult stepResult = AgentStepResult.builder() // GH-90000
-                .stepId("step-3 [GH-90000]")
-                .agentId("agent-3 [GH-90000]")
+                .stepId("step-3")
+                .agentId("agent-3")
                 .status(ExecutionStatus.SUCCESS) // GH-90000
                 .startTime(startTime) // GH-90000
                 .endTime(endTime) // GH-90000
@@ -104,11 +104,11 @@ class AgentStepResultTest {
     }
 
     @Test
-    @DisplayName("Should return -1 duration when end time is null [GH-90000]")
+    @DisplayName("Should return -1 duration when end time is null")
     void shouldReturnNegativeDurationWhenEndTimeIsNull() { // GH-90000
         AgentStepResult stepResult = AgentStepResult.builder() // GH-90000
-                .stepId("step-4 [GH-90000]")
-                .agentId("agent-4 [GH-90000]")
+                .stepId("step-4")
+                .agentId("agent-4")
                 .status(ExecutionStatus.RETRY) // GH-90000
                 .startTime(Instant.now()) // GH-90000
                 .build(); // GH-90000
@@ -117,18 +117,18 @@ class AgentStepResultTest {
     }
 
     @Test
-    @DisplayName("Should identify success status correctly [GH-90000]")
+    @DisplayName("Should identify success status correctly")
     void shouldIdentifySuccessStatusCorrectly() { // GH-90000
         AgentStepResult successResult = AgentStepResult.builder() // GH-90000
-                .stepId("step-5 [GH-90000]")
-                .agentId("agent-5 [GH-90000]")
+                .stepId("step-5")
+                .agentId("agent-5")
                 .status(ExecutionStatus.SUCCESS) // GH-90000
                 .startTime(Instant.now()) // GH-90000
                 .build(); // GH-90000
 
         AgentStepResult failedResult = AgentStepResult.builder() // GH-90000
-                .stepId("step-6 [GH-90000]")
-                .agentId("agent-6 [GH-90000]")
+                .stepId("step-6")
+                .agentId("agent-6")
                 .status(ExecutionStatus.FAILED) // GH-90000
                 .startTime(Instant.now()) // GH-90000
                 .build(); // GH-90000
@@ -138,18 +138,18 @@ class AgentStepResultTest {
     }
 
     @Test
-    @DisplayName("Should identify retry status correctly [GH-90000]")
+    @DisplayName("Should identify retry status correctly")
     void shouldIdentifyRetryStatusCorrectly() { // GH-90000
         AgentStepResult retryResult = AgentStepResult.builder() // GH-90000
-                .stepId("step-7 [GH-90000]")
-                .agentId("agent-7 [GH-90000]")
+                .stepId("step-7")
+                .agentId("agent-7")
                 .status(ExecutionStatus.RETRY) // GH-90000
                 .startTime(Instant.now()) // GH-90000
                 .build(); // GH-90000
 
         AgentStepResult successResult = AgentStepResult.builder() // GH-90000
-                .stepId("step-8 [GH-90000]")
-                .agentId("agent-8 [GH-90000]")
+                .stepId("step-8")
+                .agentId("agent-8")
                 .status(ExecutionStatus.SUCCESS) // GH-90000
                 .startTime(Instant.now()) // GH-90000
                 .build(); // GH-90000
@@ -159,18 +159,18 @@ class AgentStepResultTest {
     }
 
     @Test
-    @DisplayName("Should identify failed status correctly [GH-90000]")
+    @DisplayName("Should identify failed status correctly")
     void shouldIdentifyFailedStatusCorrectly() { // GH-90000
         AgentStepResult failedResult = AgentStepResult.builder() // GH-90000
-                .stepId("step-9 [GH-90000]")
-                .agentId("agent-9 [GH-90000]")
+                .stepId("step-9")
+                .agentId("agent-9")
                 .status(ExecutionStatus.FAILED) // GH-90000
                 .startTime(Instant.now()) // GH-90000
                 .build(); // GH-90000
 
         AgentStepResult timeoutResult = AgentStepResult.builder() // GH-90000
-                .stepId("step-10 [GH-90000]")
-                .agentId("agent-10 [GH-90000]")
+                .stepId("step-10")
+                .agentId("agent-10")
                 .status(ExecutionStatus.TIMEOUT) // GH-90000
                 .startTime(Instant.now()) // GH-90000
                 .build(); // GH-90000
@@ -180,26 +180,26 @@ class AgentStepResultTest {
     }
 
     @Test
-    @DisplayName("Should get metric value by key [GH-90000]")
+    @DisplayName("Should get metric value by key")
     void shouldGetMetricValueByKey() { // GH-90000
         Map<String, Object> metrics = Map.of("duration", 1000L, "retries", 2, "policy", "default"); // GH-90000
 
         AgentStepResult stepResult = AgentStepResult.builder() // GH-90000
-                .stepId("step-11 [GH-90000]")
-                .agentId("agent-11 [GH-90000]")
+                .stepId("step-11")
+                .agentId("agent-11")
                 .status(ExecutionStatus.SUCCESS) // GH-90000
                 .startTime(Instant.now()) // GH-90000
                 .metrics(metrics) // GH-90000
                 .build(); // GH-90000
 
-        assertEquals(1000L, stepResult.getMetric("duration [GH-90000]"));
-        assertEquals(2, stepResult.getMetric("retries [GH-90000]"));
-        assertEquals("default", stepResult.getMetric("policy [GH-90000]"));
-        assertNull(stepResult.getMetric("nonexistent [GH-90000]"));
+        assertEquals(1000L, stepResult.getMetric("duration"));
+        assertEquals(2, stepResult.getMetric("retries"));
+        assertEquals("default", stepResult.getMetric("policy"));
+        assertNull(stepResult.getMetric("nonexistent"));
     }
 
     @Test
-    @DisplayName("Should get context value by key [GH-90000]")
+    @DisplayName("Should get context value by key")
     void shouldGetContextValueByKey() { // GH-90000
         Map<String, String> context = Map.of( // GH-90000
                 "tenant", "test-tenant",
@@ -207,21 +207,21 @@ class AgentStepResultTest {
                 "version", "1.0");
 
         AgentStepResult stepResult = AgentStepResult.builder() // GH-90000
-                .stepId("step-12 [GH-90000]")
-                .agentId("agent-12 [GH-90000]")
+                .stepId("step-12")
+                .agentId("agent-12")
                 .status(ExecutionStatus.SUCCESS) // GH-90000
                 .startTime(Instant.now()) // GH-90000
                 .context(context) // GH-90000
                 .build(); // GH-90000
 
-        assertEquals("test-tenant", stepResult.getContextValue("tenant [GH-90000]"));
-        assertEquals("test-pipeline", stepResult.getContextValue("pipeline [GH-90000]"));
-        assertEquals("1.0", stepResult.getContextValue("version [GH-90000]"));
-        assertNull(stepResult.getContextValue("nonexistent [GH-90000]"));
+        assertEquals("test-tenant", stepResult.getContextValue("tenant"));
+        assertEquals("test-pipeline", stepResult.getContextValue("pipeline"));
+        assertEquals("1.0", stepResult.getContextValue("version"));
+        assertNull(stepResult.getContextValue("nonexistent"));
     }
 
     @Test
-    @DisplayName("Should require non-null required fields [GH-90000]")
+    @DisplayName("Should require non-null required fields")
     void shouldRequireNonNullRequiredFields() { // GH-90000
         AgentStepResult.Builder builder = AgentStepResult.builder(); // GH-90000
 
@@ -229,29 +229,29 @@ class AgentStepResultTest {
 
         assertThrows( // GH-90000
                 NullPointerException.class,
-                () -> builder.stepId("step-1 [GH-90000]").build(),
+                () -> builder.stepId("step-1").build(),
                 "Should throw when agentId is null");
 
         assertThrows( // GH-90000
                 NullPointerException.class,
-                () -> builder.stepId("step-1 [GH-90000]").agentId("agent-1 [GH-90000]").build(),
+                () -> builder.stepId("step-1").agentId("agent-1").build(),
                 "Should throw when status is null");
 
         assertThrows( // GH-90000
                 NullPointerException.class,
-                () -> builder.stepId("step-1 [GH-90000]")
-                        .agentId("agent-1 [GH-90000]")
+                () -> builder.stepId("step-1")
+                        .agentId("agent-1")
                         .status(ExecutionStatus.SUCCESS) // GH-90000
                         .build(), // GH-90000
                 "Should throw when startTime is null");
     }
 
     @Test
-    @DisplayName("Should have meaningful toString representation [GH-90000]")
+    @DisplayName("Should have meaningful toString representation")
     void shouldHaveMeaningfulToString() { // GH-90000
         AgentStepResult stepResult = AgentStepResult.builder() // GH-90000
-                .stepId("step-13 [GH-90000]")
-                .agentId("agent-13 [GH-90000]")
+                .stepId("step-13")
+                .agentId("agent-13")
                 .status(ExecutionStatus.SUCCESS) // GH-90000
                 .startTime(Instant.now().minusSeconds(2)) // GH-90000
                 .endTime(Instant.now()) // GH-90000
@@ -262,22 +262,22 @@ class AgentStepResultTest {
         String toString = stepResult.toString(); // GH-90000
 
         assertNotNull(toString); // GH-90000
-        assertTrue(toString.contains("AgentStepResult [GH-90000]"));
-        assertTrue(toString.contains("step-13 [GH-90000]"));
-        assertTrue(toString.contains("agent-13 [GH-90000]"));
-        assertTrue(toString.contains("SUCCESS [GH-90000]"));
-        assertTrue(toString.contains("1/3 [GH-90000]"));
+        assertTrue(toString.contains("AgentStepResult"));
+        assertTrue(toString.contains("step-13"));
+        assertTrue(toString.contains("agent-13"));
+        assertTrue(toString.contains("SUCCESS"));
+        assertTrue(toString.contains("1/3"));
     }
 
     @Test
-    @DisplayName("Should implement equals and hashCode correctly [GH-90000]")
+    @DisplayName("Should implement equals and hashCode correctly")
     void shouldImplementEqualsAndHashCodeCorrectly() { // GH-90000
         Instant startTime = Instant.now(); // GH-90000
         Instant endTime = startTime.plusSeconds(5); // GH-90000
 
         AgentStepResult result1 = AgentStepResult.builder() // GH-90000
-                .stepId("step-14 [GH-90000]")
-                .agentId("agent-14 [GH-90000]")
+                .stepId("step-14")
+                .agentId("agent-14")
                 .status(ExecutionStatus.SUCCESS) // GH-90000
                 .startTime(startTime) // GH-90000
                 .endTime(endTime) // GH-90000
@@ -286,8 +286,8 @@ class AgentStepResultTest {
                 .build(); // GH-90000
 
         AgentStepResult result2 = AgentStepResult.builder() // GH-90000
-                .stepId("step-14 [GH-90000]")
-                .agentId("agent-14 [GH-90000]")
+                .stepId("step-14")
+                .agentId("agent-14")
                 .status(ExecutionStatus.SUCCESS) // GH-90000
                 .startTime(startTime) // GH-90000
                 .endTime(endTime) // GH-90000
@@ -296,8 +296,8 @@ class AgentStepResultTest {
                 .build(); // GH-90000
 
         AgentStepResult result3 = AgentStepResult.builder() // GH-90000
-                .stepId("step-15 [GH-90000]") // Different stepId
-                .agentId("agent-14 [GH-90000]")
+                .stepId("step-15") // Different stepId
+                .agentId("agent-14")
                 .status(ExecutionStatus.SUCCESS) // GH-90000
                 .startTime(startTime) // GH-90000
                 .endTime(endTime) // GH-90000
@@ -312,11 +312,11 @@ class AgentStepResultTest {
     }
 
     @Test
-    @DisplayName("Should handle empty metrics and context maps [GH-90000]")
+    @DisplayName("Should handle empty metrics and context maps")
     void shouldHandleEmptyMapsAndContext() { // GH-90000
         AgentStepResult stepResult = AgentStepResult.builder() // GH-90000
-                .stepId("step-16 [GH-90000]")
-                .agentId("agent-16 [GH-90000]")
+                .stepId("step-16")
+                .agentId("agent-16")
                 .status(ExecutionStatus.SUCCESS) // GH-90000
                 .startTime(Instant.now()) // GH-90000
                 .build(); // GH-90000

@@ -28,12 +28,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@DisplayName("Contract Tests [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("Contract Tests")
+@Tag("integration")
 class ContractTest {
 
     @Test
-    @DisplayName("OpenAPI spec should match API endpoint paths [GH-90000]")
+    @DisplayName("OpenAPI spec should match API endpoint paths")
     void openAPISpecShouldMatchAPIEndpointPaths() { // GH-90000
         OpenAPISpec spec = new OpenAPISpec(); // GH-90000
         APIImplementation api = new APIImplementation(); // GH-90000
@@ -45,7 +45,7 @@ class ContractTest {
     }
 
     @Test
-    @DisplayName("OpenAPI spec should match API HTTP methods [GH-90000]")
+    @DisplayName("OpenAPI spec should match API HTTP methods")
     void openAPISpecShouldMatchAPIHTTPMethods() { // GH-90000
         OpenAPISpec spec = new OpenAPISpec(); // GH-90000
         APIImplementation api = new APIImplementation(); // GH-90000
@@ -57,7 +57,7 @@ class ContractTest {
     }
 
     @Test
-    @DisplayName("OpenAPI spec should match API request parameters [GH-90000]")
+    @DisplayName("OpenAPI spec should match API request parameters")
     void openAPISpecShouldMatchAPIRequestParameters() { // GH-90000
         OpenAPISpec spec = new OpenAPISpec(); // GH-90000
         APIImplementation api = new APIImplementation(); // GH-90000
@@ -69,7 +69,7 @@ class ContractTest {
     }
 
     @Test
-    @DisplayName("OpenAPI spec should match API response schemas [GH-90000]")
+    @DisplayName("OpenAPI spec should match API response schemas")
     void openAPISpecShouldMatchAPIResponseSchemas() { // GH-90000
         OpenAPISpec spec = new OpenAPISpec(); // GH-90000
         APIImplementation api = new APIImplementation(); // GH-90000
@@ -81,7 +81,7 @@ class ContractTest {
     }
 
     @Test
-    @DisplayName("OpenAPI spec should match API status codes [GH-90000]")
+    @DisplayName("OpenAPI spec should match API status codes")
     void openAPISpecShouldMatchAPIStatusCodes() { // GH-90000
         OpenAPISpec spec = new OpenAPISpec(); // GH-90000
         APIImplementation api = new APIImplementation(); // GH-90000
@@ -93,7 +93,7 @@ class ContractTest {
     }
 
     @Test
-    @DisplayName("SDK should match backend API response structure [GH-90000]")
+    @DisplayName("SDK should match backend API response structure")
     void sdkShouldMatchBackendAPIResponseStructure() { // GH-90000
         SDKClient sdk = new SDKClient(); // GH-90000
         BackendAPI backend = new BackendAPI(); // GH-90000
@@ -105,7 +105,7 @@ class ContractTest {
     }
 
     @Test
-    @DisplayName("SDK should match backend API data types [GH-90000]")
+    @DisplayName("SDK should match backend API data types")
     void sdkShouldMatchBackendAPIDataTypes() { // GH-90000
         SDKClient sdk = new SDKClient(); // GH-90000
         BackendAPI backend = new BackendAPI(); // GH-90000
@@ -117,7 +117,7 @@ class ContractTest {
     }
 
     @Test
-    @DisplayName("SDK should match backend API field names [GH-90000]")
+    @DisplayName("SDK should match backend API field names")
     void sdkShouldMatchBackendAPIFieldNames() { // GH-90000
         SDKClient sdk = new SDKClient(); // GH-90000
         BackendAPI backend = new BackendAPI(); // GH-90000
@@ -129,7 +129,7 @@ class ContractTest {
     }
 
     @Test
-    @DisplayName("SDK should match backend API required fields [GH-90000]")
+    @DisplayName("SDK should match backend API required fields")
     void sdkShouldMatchBackendAPIRequiredFields() { // GH-90000
         SDKClient sdk = new SDKClient(); // GH-90000
         BackendAPI backend = new BackendAPI(); // GH-90000
@@ -141,7 +141,7 @@ class ContractTest {
     }
 
     @Test
-    @DisplayName("SDK should match backend API error responses [GH-90000]")
+    @DisplayName("SDK should match backend API error responses")
     void sdkShouldMatchBackendAPIErrorResponses() { // GH-90000
         SDKClient sdk = new SDKClient(); // GH-90000
         BackendAPI backend = new BackendAPI(); // GH-90000
@@ -153,7 +153,7 @@ class ContractTest {
     }
 
     @Test
-    @DisplayName("API should return documented response headers [GH-90000]")
+    @DisplayName("API should return documented response headers")
     void apiShouldReturnDocumentedResponseHeaders() { // GH-90000
         OpenAPISpec spec = new OpenAPISpec(); // GH-90000
         APIImplementation api = new APIImplementation(); // GH-90000
@@ -165,7 +165,7 @@ class ContractTest {
     }
 
     @Test
-    @DisplayName("API should enforce documented authentication [GH-90000]")
+    @DisplayName("API should enforce documented authentication")
     void apiShouldEnforceDocumentedAuthentication() { // GH-90000
         OpenAPISpec spec = new OpenAPISpec(); // GH-90000
         APIImplementation api = new APIImplementation(); // GH-90000
@@ -177,7 +177,7 @@ class ContractTest {
     }
 
     @Test
-    @DisplayName("API should respect documented rate limits [GH-90000]")
+    @DisplayName("API should respect documented rate limits")
     void apiShouldRespectDocumentedRateLimits() { // GH-90000
         OpenAPISpec spec = new OpenAPISpec(); // GH-90000
         APIImplementation api = new APIImplementation(); // GH-90000
@@ -189,7 +189,7 @@ class ContractTest {
     }
 
     @Test
-    @DisplayName("API should match documented pagination parameters [GH-90000]")
+    @DisplayName("API should match documented pagination parameters")
     void apiShouldMatchDocumentedPaginationParameters() { // GH-90000
         OpenAPISpec spec = new OpenAPISpec(); // GH-90000
         APIImplementation api = new APIImplementation(); // GH-90000
@@ -201,7 +201,7 @@ class ContractTest {
     }
 
     @Test
-    @DisplayName("API should match documented filtering parameters [GH-90000]")
+    @DisplayName("API should match documented filtering parameters")
     void apiShouldMatchDocumentedFilteringParameters() { // GH-90000
         OpenAPISpec spec = new OpenAPISpec(); // GH-90000
         APIImplementation api = new APIImplementation(); // GH-90000
@@ -213,7 +213,7 @@ class ContractTest {
     }
 
     @Test
-    @DisplayName("API should match documented sorting parameters [GH-90000]")
+    @DisplayName("API should match documented sorting parameters")
     void apiShouldMatchDocumentedSortingParameters() { // GH-90000
         OpenAPISpec spec = new OpenAPISpec(); // GH-90000
         APIImplementation api = new APIImplementation(); // GH-90000
@@ -225,7 +225,7 @@ class ContractTest {
     }
 
     @Test
-    @DisplayName("SDK should handle all documented API error codes [GH-90000]")
+    @DisplayName("SDK should handle all documented API error codes")
     void sdkShouldHandleAllDocumentedAPIErrorCodes() { // GH-90000
         SDKClient sdk = new SDKClient(); // GH-90000
         BackendAPI backend = new BackendAPI(); // GH-90000
@@ -237,7 +237,7 @@ class ContractTest {
     }
 
     @Test
-    @DisplayName("SDK should match backend API version compatibility [GH-90000]")
+    @DisplayName("SDK should match backend API version compatibility")
     void sdkShouldMatchBackendAPIVersionCompatibility() { // GH-90000
         SDKClient sdk = new SDKClient(); // GH-90000
         BackendAPI backend = new BackendAPI(); // GH-90000
@@ -249,7 +249,7 @@ class ContractTest {
     }
 
     @Test
-    @DisplayName("API should return consistent error response format [GH-90000]")
+    @DisplayName("API should return consistent error response format")
     void apiShouldReturnConsistentErrorResponseFormat() { // GH-90000
         BackendAPI backend = new BackendAPI(); // GH-90000
         
@@ -260,7 +260,7 @@ class ContractTest {
     }
 
     @Test
-    @DisplayName("API should match documented content types [GH-90000]")
+    @DisplayName("API should match documented content types")
     void apiShouldMatchDocumentedContentTypes() { // GH-90000
         OpenAPISpec spec = new OpenAPISpec(); // GH-90000
         APIImplementation api = new APIImplementation(); // GH-90000
@@ -284,7 +284,7 @@ class ContractTest {
                 List.of("GET", "POST"), // GH-90000
                 Map.of("GET", List.of("page", "limit"), "POST", List.of("name", "description")), // GH-90000
                 Map.of("GET", "200", "POST", "201"), // GH-90000
-                Map.of("GET", List.of("application/json [GH-90000]"), "POST", List.of("application/json [GH-90000]"))
+                Map.of("GET", List.of("application/json"), "POST", List.of("application/json"))
             ));
         }
 
@@ -343,8 +343,8 @@ class ContractTest {
                 "/api/v1/collections",
                 List.of("GET", "POST"), // GH-90000
                 Map.of("GET", List.of("page", "limit"), "POST", List.of("name", "description")), // GH-90000
-                Map.of("GET", List.of("200 [GH-90000]"), "POST", List.of("201 [GH-90000]")),
-                Map.of("GET", List.of("application/json [GH-90000]"), "POST", List.of("application/json [GH-90000]"))
+                Map.of("GET", List.of("200"), "POST", List.of("201")),
+                Map.of("GET", List.of("application/json"), "POST", List.of("application/json"))
             ));
         }
 
@@ -400,7 +400,7 @@ class ContractTest {
                 "listCollections",
                 Map.of("page", "Integer", "limit", "Integer"), // GH-90000
                 "CollectionList",
-                List.of("Collection [GH-90000]")
+                List.of("Collection")
             ));
             methods.put("createCollection", new SDKMethod( // GH-90000
                 "createCollection",
@@ -669,9 +669,9 @@ class ContractTest {
 
         private String findBackendEndpointKey(String sdkMethodName, BackendAPI backend) { // GH-90000
             // Simple mapping: SDK method names to backend endpoints
-            if (sdkMethodName.equals("listCollections [GH-90000]")) {
+            if (sdkMethodName.equals("listCollections")) {
                 return "GET /api/v1/collections";
-            } else if (sdkMethodName.equals("createCollection [GH-90000]")) {
+            } else if (sdkMethodName.equals("createCollection")) {
                 return "POST /api/v1/collections";
             }
             return null;
@@ -798,16 +798,16 @@ class ContractTest {
                 String path = entry.getKey(); // GH-90000
                 EndpointSpec specEndpoint = entry.getValue(); // GH-90000
                 
-                if (path.contains("collections [GH-90000]")) {
-                    List<String> getParams = specEndpoint.getParameters().get("GET [GH-90000]");
+                if (path.contains("collections")) {
+                    List<String> getParams = specEndpoint.getParameters().get("GET");
                     if (getParams != null) { // GH-90000
-                        if (!getParams.contains("page [GH-90000]")) {
+                        if (!getParams.contains("page")) {
                             violations.add(new ContractViolation( // GH-90000
                                 "MISSING_PAGINATION_PARAMETER",
                                 "GET endpoint " + path + " missing 'page' parameter for pagination"
                             ));
                         }
-                        if (!getParams.contains("limit [GH-90000]")) {
+                        if (!getParams.contains("limit")) {
                             violations.add(new ContractViolation( // GH-90000
                                 "MISSING_PAGINATION_PARAMETER",
                                 "GET endpoint " + path + " missing 'limit' parameter for pagination"

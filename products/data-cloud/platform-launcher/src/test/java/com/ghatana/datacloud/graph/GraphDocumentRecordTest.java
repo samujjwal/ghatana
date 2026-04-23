@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.*;
  * the JPA layer (GraphRecord, DocumentRecord) and the trait-based layer // GH-90000
  * (FullGraphRecord, FullDocumentRecord), plus InMemoryGraphOperations. // GH-90000
  */
-@DisplayName("Graph & Document Record Types [GH-90000]")
+@DisplayName("Graph & Document Record Types")
 class GraphDocumentRecordTest {
 
     // ═══════════════════════════════════════════════════════════════
@@ -31,16 +31,16 @@ class GraphDocumentRecordTest {
     // ═══════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("JPA GraphRecord [GH-90000]")
+    @DisplayName("JPA GraphRecord")
     class JpaGraphRecordTests {
 
         @Test
-        @DisplayName("node builder sets defaults correctly [GH-90000]")
+        @DisplayName("node builder sets defaults correctly")
         void nodeDefaults() { // GH-90000
             GraphRecord node = GraphRecord.builder() // GH-90000
-                    .tenantId("t1 [GH-90000]")
-                    .collectionName("social [GH-90000]")
-                    .label("Person [GH-90000]")
+                    .tenantId("t1")
+                    .collectionName("social")
+                    .label("Person")
                     .data(Map.of("name", "Alice")) // GH-90000
                     .build(); // GH-90000
 
@@ -55,74 +55,74 @@ class GraphDocumentRecordTest {
         }
 
         @Test
-        @DisplayName("edge builder stores source and target [GH-90000]")
+        @DisplayName("edge builder stores source and target")
         void edgeFields() { // GH-90000
             GraphRecord edge = GraphRecord.builder() // GH-90000
-                    .tenantId("t1 [GH-90000]")
-                    .collectionName("social [GH-90000]")
+                    .tenantId("t1")
+                    .collectionName("social")
                     .elementType(GraphElementType.EDGE) // GH-90000
-                    .label("KNOWS [GH-90000]")
-                    .sourceNodeId("node-a [GH-90000]")
-                    .targetNodeId("node-b [GH-90000]")
+                    .label("KNOWS")
+                    .sourceNodeId("node-a")
+                    .targetNodeId("node-b")
                     .direction(GraphRecord.EdgeDirection.BIDIRECTIONAL) // GH-90000
                     .weight(0.75) // GH-90000
                     .build(); // GH-90000
 
             assertThat(edge.isEdge()).isTrue(); // GH-90000
-            assertThat(edge.getSourceNodeId()).isEqualTo("node-a [GH-90000]");
-            assertThat(edge.getTargetNodeId()).isEqualTo("node-b [GH-90000]");
+            assertThat(edge.getSourceNodeId()).isEqualTo("node-a");
+            assertThat(edge.getTargetNodeId()).isEqualTo("node-b");
             assertThat(edge.getDirection()).isEqualTo(GraphRecord.EdgeDirection.BIDIRECTIONAL); // GH-90000
             assertThat(edge.getWeight()).isEqualTo(0.75); // GH-90000
         }
 
         @Test
-        @DisplayName("connectsNode checks source and target [GH-90000]")
+        @DisplayName("connectsNode checks source and target")
         void connectsNode() { // GH-90000
             GraphRecord edge = GraphRecord.builder() // GH-90000
-                    .tenantId("t1 [GH-90000]")
-                    .collectionName("g [GH-90000]")
+                    .tenantId("t1")
+                    .collectionName("g")
                     .elementType(GraphElementType.EDGE) // GH-90000
-                    .label("E [GH-90000]")
-                    .sourceNodeId("A [GH-90000]")
-                    .targetNodeId("B [GH-90000]")
+                    .label("E")
+                    .sourceNodeId("A")
+                    .targetNodeId("B")
                     .build(); // GH-90000
 
-            assertThat(edge.connectsNode("A [GH-90000]")).isTrue();
-            assertThat(edge.connectsNode("B [GH-90000]")).isTrue();
-            assertThat(edge.connectsNode("C [GH-90000]")).isFalse();
+            assertThat(edge.connectsNode("A")).isTrue();
+            assertThat(edge.connectsNode("B")).isTrue();
+            assertThat(edge.connectsNode("C")).isFalse();
             assertThat(edge.connectsNode(null)).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("soft delete and restore lifecycle [GH-90000]")
+        @DisplayName("soft delete and restore lifecycle")
         void softDeleteRestore() { // GH-90000
             GraphRecord node = GraphRecord.builder() // GH-90000
-                    .tenantId("t1 [GH-90000]")
-                    .collectionName("g [GH-90000]")
-                    .label("Node [GH-90000]")
+                    .tenantId("t1")
+                    .collectionName("g")
+                    .label("Node")
                     .build(); // GH-90000
 
             assertThat(node.isDeleted()).isFalse(); // GH-90000
 
-            node.softDelete("admin [GH-90000]");
+            node.softDelete("admin");
             assertThat(node.isDeleted()).isTrue(); // GH-90000
-            assertThat(node.getUpdatedBy()).isEqualTo("admin [GH-90000]");
+            assertThat(node.getUpdatedBy()).isEqualTo("admin");
             assertThat(node.getUpdatedAt()).isNotNull(); // GH-90000
 
-            node.restore("admin [GH-90000]");
+            node.restore("admin");
             assertThat(node.isDeleted()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("toString includes graph-specific fields [GH-90000]")
+        @DisplayName("toString includes graph-specific fields")
         void toStringFormat() { // GH-90000
             GraphRecord edge = GraphRecord.builder() // GH-90000
-                    .tenantId("t1 [GH-90000]")
-                    .collectionName("g [GH-90000]")
+                    .tenantId("t1")
+                    .collectionName("g")
                     .elementType(GraphElementType.EDGE) // GH-90000
-                    .label("REL [GH-90000]")
-                    .sourceNodeId("src [GH-90000]")
-                    .targetNodeId("tgt [GH-90000]")
+                    .label("REL")
+                    .sourceNodeId("src")
+                    .targetNodeId("tgt")
                     .build(); // GH-90000
 
             String str = edge.toString(); // GH-90000
@@ -135,103 +135,103 @@ class GraphDocumentRecordTest {
     // ═══════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("JPA DocumentRecord [GH-90000]")
+    @DisplayName("JPA DocumentRecord")
     class JpaDocumentRecordTests {
 
         @Test
-        @DisplayName("builder sets defaults correctly [GH-90000]")
+        @DisplayName("builder sets defaults correctly")
         void defaults() { // GH-90000
             DocumentRecord doc = DocumentRecord.builder() // GH-90000
-                    .tenantId("t1 [GH-90000]")
-                    .collectionName("articles [GH-90000]")
-                    .title("Hello World [GH-90000]")
-                    .slug("hello-world [GH-90000]")
+                    .tenantId("t1")
+                    .collectionName("articles")
+                    .title("Hello World")
+                    .slug("hello-world")
                     .build(); // GH-90000
 
             assertThat(doc.getRecordType()).isEqualTo(com.ghatana.datacloud.RecordType.DOCUMENT); // GH-90000
-            assertThat(doc.getContentType()).isEqualTo("application/json [GH-90000]");
+            assertThat(doc.getContentType()).isEqualTo("application/json");
             assertThat(doc.getVersion()).isEqualTo(1); // GH-90000
             assertThat(doc.getActive()).isTrue(); // GH-90000
-            assertThat(doc.getTitle()).isEqualTo("Hello World [GH-90000]");
-            assertThat(doc.getSlug()).isEqualTo("hello-world [GH-90000]");
+            assertThat(doc.getTitle()).isEqualTo("Hello World");
+            assertThat(doc.getSlug()).isEqualTo("hello-world");
         }
 
         @Test
-        @DisplayName("tag list parsing and querying [GH-90000]")
+        @DisplayName("tag list parsing and querying")
         void tagOperations() { // GH-90000
             DocumentRecord doc = DocumentRecord.builder() // GH-90000
-                    .tenantId("t1 [GH-90000]")
-                    .collectionName("kb [GH-90000]")
-                    .tags("guide, onboarding, quickstart [GH-90000]")
+                    .tenantId("t1")
+                    .collectionName("kb")
+                    .tags("guide, onboarding, quickstart")
                     .build(); // GH-90000
 
             assertThat(doc.getTagList()).containsExactly("guide", "onboarding", "quickstart"); // GH-90000
-            assertThat(doc.hasTag("guide [GH-90000]")).isTrue();
-            assertThat(doc.hasTag("GUIDE [GH-90000]")).isTrue(); // case-insensitive
-            assertThat(doc.hasTag("missing [GH-90000]")).isFalse();
+            assertThat(doc.hasTag("guide")).isTrue();
+            assertThat(doc.hasTag("GUIDE")).isTrue(); // case-insensitive
+            assertThat(doc.hasTag("missing")).isFalse();
         }
 
         @Test
-        @DisplayName("setTagList round-trips [GH-90000]")
+        @DisplayName("setTagList round-trips")
         void setTagList() { // GH-90000
             DocumentRecord doc = DocumentRecord.builder() // GH-90000
-                    .tenantId("t1 [GH-90000]").collectionName("kb [GH-90000]").build();
+                    .tenantId("t1").collectionName("kb").build();
 
             doc.setTagList(List.of("a", "b", "c")); // GH-90000
-            assertThat(doc.getTags()).isEqualTo("a,b,c [GH-90000]");
+            assertThat(doc.getTags()).isEqualTo("a,b,c");
             assertThat(doc.getTagList()).containsExactly("a", "b", "c"); // GH-90000
         }
 
         @Test
-        @DisplayName("null/blank tags return empty list [GH-90000]")
+        @DisplayName("null/blank tags return empty list")
         void emptyTags() { // GH-90000
             DocumentRecord doc = DocumentRecord.builder() // GH-90000
-                    .tenantId("t1 [GH-90000]").collectionName("kb [GH-90000]").build();
+                    .tenantId("t1").collectionName("kb").build();
 
             assertThat(doc.getTagList()).isEmpty(); // GH-90000
-            doc.setTags(" [GH-90000]");
+            doc.setTags("");
             assertThat(doc.getTagList()).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("content type helpers [GH-90000]")
+        @DisplayName("content type helpers")
         void contentTypeHelpers() { // GH-90000
             DocumentRecord jsonDoc = DocumentRecord.builder() // GH-90000
-                    .tenantId("t1 [GH-90000]").collectionName("kb [GH-90000]")
-                    .contentType("application/json [GH-90000]")
+                    .tenantId("t1").collectionName("kb")
+                    .contentType("application/json")
                     .build(); // GH-90000
             assertThat(jsonDoc.isJson()).isTrue(); // GH-90000
             assertThat(jsonDoc.isText()).isFalse(); // GH-90000
 
             DocumentRecord textDoc = DocumentRecord.builder() // GH-90000
-                    .tenantId("t1 [GH-90000]").collectionName("kb [GH-90000]")
-                    .contentType("text/markdown [GH-90000]")
+                    .tenantId("t1").collectionName("kb")
+                    .contentType("text/markdown")
                     .build(); // GH-90000
             assertThat(textDoc.isText()).isTrue(); // GH-90000
             assertThat(textDoc.isJson()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("soft delete and restore lifecycle [GH-90000]")
+        @DisplayName("soft delete and restore lifecycle")
         void softDeleteRestore() { // GH-90000
             DocumentRecord doc = DocumentRecord.builder() // GH-90000
-                    .tenantId("t1 [GH-90000]").collectionName("kb [GH-90000]").build();
+                    .tenantId("t1").collectionName("kb").build();
 
             assertThat(doc.isDeleted()).isFalse(); // GH-90000
-            doc.softDelete("admin [GH-90000]");
+            doc.softDelete("admin");
             assertThat(doc.isDeleted()).isTrue(); // GH-90000
-            doc.restore("admin [GH-90000]");
+            doc.restore("admin");
             assertThat(doc.isDeleted()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("language field [GH-90000]")
+        @DisplayName("language field")
         void languageField() { // GH-90000
             DocumentRecord doc = DocumentRecord.builder() // GH-90000
-                    .tenantId("t1 [GH-90000]").collectionName("kb [GH-90000]")
-                    .language("ja [GH-90000]")
+                    .tenantId("t1").collectionName("kb")
+                    .language("ja")
                     .build(); // GH-90000
-            assertThat(doc.getLanguage()).isEqualTo("ja [GH-90000]");
+            assertThat(doc.getLanguage()).isEqualTo("ja");
         }
     }
 
@@ -240,66 +240,66 @@ class GraphDocumentRecordTest {
     // ═══════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("FullGraphRecord (trait-based) [GH-90000]")
+    @DisplayName("FullGraphRecord (trait-based)")
     class FullGraphRecordTests {
 
         @Test
-        @DisplayName("node builder creates valid node [GH-90000]")
+        @DisplayName("node builder creates valid node")
         void nodeBuilder() { // GH-90000
             FullGraphRecord node = FullGraphRecord.nodeBuilder() // GH-90000
-                    .tenantId("acme [GH-90000]")
-                    .collectionName("social [GH-90000]")
-                    .label("Person [GH-90000]")
+                    .tenantId("acme")
+                    .collectionName("social")
+                    .label("Person")
                     .data("name", "Alice") // GH-90000
                     .build(); // GH-90000
 
             assertThat(node.recordType()).isEqualTo(com.ghatana.datacloud.record.Record.RecordType.GRAPH); // GH-90000
             assertThat(node.elementType()).isEqualTo(GraphElement.NODE); // GH-90000
             assertThat(node.isNode()).isTrue(); // GH-90000
-            assertThat(node.label()).isEqualTo("Person [GH-90000]");
+            assertThat(node.label()).isEqualTo("Person");
             assertThat(node.data()).containsEntry("name", "Alice"); // GH-90000
             assertThat(node.weight()).isEqualTo(1.0); // GH-90000
         }
 
         @Test
-        @DisplayName("edge builder creates valid edge [GH-90000]")
+        @DisplayName("edge builder creates valid edge")
         void edgeBuilder() { // GH-90000
             FullGraphRecord edge = FullGraphRecord.edgeBuilder() // GH-90000
-                    .tenantId("acme [GH-90000]")
-                    .collectionName("social [GH-90000]")
-                    .label("KNOWS [GH-90000]")
-                    .sourceNodeId("A [GH-90000]")
-                    .targetNodeId("B [GH-90000]")
+                    .tenantId("acme")
+                    .collectionName("social")
+                    .label("KNOWS")
+                    .sourceNodeId("A")
+                    .targetNodeId("B")
                     .weight(0.9) // GH-90000
                     .direction(FullGraphRecord.EdgeDirection.BIDIRECTIONAL) // GH-90000
                     .build(); // GH-90000
 
             assertThat(edge.isEdge()).isTrue(); // GH-90000
-            assertThat(edge.sourceNodeId()).isEqualTo("A [GH-90000]");
-            assertThat(edge.targetNodeId()).isEqualTo("B [GH-90000]");
+            assertThat(edge.sourceNodeId()).isEqualTo("A");
+            assertThat(edge.targetNodeId()).isEqualTo("B");
             assertThat(edge.weight()).isEqualTo(0.9); // GH-90000
             assertThat(edge.direction()).isEqualTo(FullGraphRecord.EdgeDirection.BIDIRECTIONAL); // GH-90000
         }
 
         @Test
-        @DisplayName("withData returns new immutable instance [GH-90000]")
+        @DisplayName("withData returns new immutable instance")
         void withData() { // GH-90000
             FullGraphRecord original = FullGraphRecord.nodeBuilder() // GH-90000
-                    .tenantId("t [GH-90000]").collectionName("c [GH-90000]").label("L [GH-90000]")
+                    .tenantId("t").collectionName("c").label("L")
                     .data("x", 1) // GH-90000
                     .build(); // GH-90000
 
             var updated = (FullGraphRecord) original.withData(Map.of("y", 2)); // GH-90000
             assertThat(updated.data()).containsEntry("y", 2); // GH-90000
-            assertThat(updated.data()).doesNotContainKey("x [GH-90000]");
+            assertThat(updated.data()).doesNotContainKey("x");
             assertThat(original.data()).containsEntry("x", 1); // unchanged // GH-90000
         }
 
         @Test
-        @DisplayName("incrementVersion increments and updates timestamp [GH-90000]")
+        @DisplayName("incrementVersion increments and updates timestamp")
         void incrementVersion() { // GH-90000
             FullGraphRecord v0 = FullGraphRecord.nodeBuilder() // GH-90000
-                    .tenantId("t [GH-90000]").collectionName("c [GH-90000]").label("L [GH-90000]").build();
+                    .tenantId("t").collectionName("c").label("L").build();
 
             FullGraphRecord v1 = v0.incrementVersion(); // GH-90000
             assertThat(v1.version()).isEqualTo(v0.version() + 1); // GH-90000
@@ -307,16 +307,16 @@ class GraphDocumentRecordTest {
         }
 
         @Test
-        @DisplayName("connectsNode on edge [GH-90000]")
+        @DisplayName("connectsNode on edge")
         void connectsNode() { // GH-90000
             FullGraphRecord edge = FullGraphRecord.edgeBuilder() // GH-90000
-                    .tenantId("t [GH-90000]").collectionName("c [GH-90000]").label("L [GH-90000]")
-                    .sourceNodeId("S [GH-90000]").targetNodeId("T [GH-90000]")
+                    .tenantId("t").collectionName("c").label("L")
+                    .sourceNodeId("S").targetNodeId("T")
                     .build(); // GH-90000
 
-            assertThat(edge.connectsNode("S [GH-90000]")).isTrue();
-            assertThat(edge.connectsNode("T [GH-90000]")).isTrue();
-            assertThat(edge.connectsNode("X [GH-90000]")).isFalse();
+            assertThat(edge.connectsNode("S")).isTrue();
+            assertThat(edge.connectsNode("T")).isTrue();
+            assertThat(edge.connectsNode("X")).isFalse();
         }
     }
 
@@ -325,52 +325,52 @@ class GraphDocumentRecordTest {
     // ═══════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("FullDocumentRecord (trait-based) [GH-90000]")
+    @DisplayName("FullDocumentRecord (trait-based)")
     class FullDocumentRecordTests {
 
         @Test
-        @DisplayName("builder creates valid document [GH-90000]")
+        @DisplayName("builder creates valid document")
         void builderDefaults() { // GH-90000
             FullDocumentRecord doc = FullDocumentRecord.builder() // GH-90000
-                    .tenantId("acme [GH-90000]")
-                    .collectionName("articles [GH-90000]")
-                    .title("Welcome [GH-90000]")
-                    .slug("welcome [GH-90000]")
-                    .contentType("text/markdown [GH-90000]")
-                    .language("en [GH-90000]")
-                    .tag("guide [GH-90000]")
-                    .tag("onboarding [GH-90000]")
+                    .tenantId("acme")
+                    .collectionName("articles")
+                    .title("Welcome")
+                    .slug("welcome")
+                    .contentType("text/markdown")
+                    .language("en")
+                    .tag("guide")
+                    .tag("onboarding")
                     .data("body", "# Welcome") // GH-90000
                     .build(); // GH-90000
 
             assertThat(doc.recordType()).isEqualTo(com.ghatana.datacloud.record.Record.RecordType.DOCUMENT); // GH-90000
-            assertThat(doc.title()).isEqualTo("Welcome [GH-90000]");
-            assertThat(doc.slug()).isEqualTo("welcome [GH-90000]");
-            assertThat(doc.contentType()).isEqualTo("text/markdown [GH-90000]");
-            assertThat(doc.language()).isEqualTo("en [GH-90000]");
+            assertThat(doc.title()).isEqualTo("Welcome");
+            assertThat(doc.slug()).isEqualTo("welcome");
+            assertThat(doc.contentType()).isEqualTo("text/markdown");
+            assertThat(doc.language()).isEqualTo("en");
             assertThat(doc.tags()).containsExactly("guide", "onboarding"); // GH-90000
             assertThat(doc.isText()).isTrue(); // GH-90000
             assertThat(doc.isJson()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("hasTag is case-insensitive [GH-90000]")
+        @DisplayName("hasTag is case-insensitive")
         void hasTag() { // GH-90000
             FullDocumentRecord doc = FullDocumentRecord.builder() // GH-90000
-                    .tenantId("t [GH-90000]").collectionName("c [GH-90000]")
+                    .tenantId("t").collectionName("c")
                     .tags(List.of("Guide", "API")) // GH-90000
                     .build(); // GH-90000
 
-            assertThat(doc.hasTag("guide [GH-90000]")).isTrue();
-            assertThat(doc.hasTag("api [GH-90000]")).isTrue();
-            assertThat(doc.hasTag("missing [GH-90000]")).isFalse();
+            assertThat(doc.hasTag("guide")).isTrue();
+            assertThat(doc.hasTag("api")).isTrue();
+            assertThat(doc.hasTag("missing")).isFalse();
         }
 
         @Test
-        @DisplayName("withData is immutable [GH-90000]")
+        @DisplayName("withData is immutable")
         void withData() { // GH-90000
             FullDocumentRecord original = FullDocumentRecord.builder() // GH-90000
-                    .tenantId("t [GH-90000]").collectionName("c [GH-90000]")
+                    .tenantId("t").collectionName("c")
                     .data("k", "v") // GH-90000
                     .build(); // GH-90000
 
@@ -380,10 +380,10 @@ class GraphDocumentRecordTest {
         }
 
         @Test
-        @DisplayName("incrementVersion and touch [GH-90000]")
+        @DisplayName("incrementVersion and touch")
         void versioning() { // GH-90000
             FullDocumentRecord doc = FullDocumentRecord.builder() // GH-90000
-                    .tenantId("t [GH-90000]").collectionName("c [GH-90000]").build();
+                    .tenantId("t").collectionName("c").build();
 
             FullDocumentRecord v1 = doc.incrementVersion(); // GH-90000
             assertThat(v1.version()).isEqualTo(doc.version() + 1); // GH-90000
@@ -394,26 +394,26 @@ class GraphDocumentRecordTest {
         }
 
         @Test
-        @DisplayName("schemaVersion optional [GH-90000]")
+        @DisplayName("schemaVersion optional")
         void schemaVersion() { // GH-90000
             FullDocumentRecord noSchema = FullDocumentRecord.builder() // GH-90000
-                    .tenantId("t [GH-90000]").collectionName("c [GH-90000]").build();
+                    .tenantId("t").collectionName("c").build();
             assertThat(noSchema.schemaVersion()).isEmpty(); // GH-90000
 
             FullDocumentRecord withSchema = FullDocumentRecord.builder() // GH-90000
-                    .tenantId("t [GH-90000]").collectionName("c [GH-90000]")
-                    .schemaVersion("2.1 [GH-90000]")
+                    .tenantId("t").collectionName("c")
+                    .schemaVersion("2.1")
                     .build(); // GH-90000
-            assertThat(withSchema.schemaVersion()).contains("2.1 [GH-90000]");
+            assertThat(withSchema.schemaVersion()).contains("2.1");
         }
 
         @Test
-        @DisplayName("default contentType is application/json [GH-90000]")
+        @DisplayName("default contentType is application/json")
         void defaultContentType() { // GH-90000
             FullDocumentRecord doc = FullDocumentRecord.builder() // GH-90000
-                    .tenantId("t [GH-90000]").collectionName("c [GH-90000]").build();
+                    .tenantId("t").collectionName("c").build();
 
-            assertThat(doc.contentType()).isEqualTo("application/json [GH-90000]");
+            assertThat(doc.contentType()).isEqualTo("application/json");
             assertThat(doc.isJson()).isTrue(); // GH-90000
         }
     }
@@ -423,22 +423,22 @@ class GraphDocumentRecordTest {
     // ═══════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("SimpleRecord graph() factory [GH-90000]")
+    @DisplayName("SimpleRecord graph() factory")
     class SimpleRecordGraphTests {
 
         @Test
-        @DisplayName("graph factory creates GRAPH type [GH-90000]")
+        @DisplayName("graph factory creates GRAPH type")
         void graphFactory() { // GH-90000
-            SimpleRecord graph = SimpleRecord.graph(TenantId.of("t [GH-90000]"), "social");
+            SimpleRecord graph = SimpleRecord.graph(TenantId.of("t"), "social");
             assertThat(graph.recordType()).isEqualTo(com.ghatana.datacloud.record.Record.RecordType.GRAPH); // GH-90000
-            assertThat(graph.tenantId()).isEqualTo("t [GH-90000]");
-            assertThat(graph.collectionName()).isEqualTo("social [GH-90000]");
+            assertThat(graph.tenantId()).isEqualTo("t");
+            assertThat(graph.collectionName()).isEqualTo("social");
         }
 
         @Test
-        @DisplayName("document factory creates DOCUMENT type [GH-90000]")
+        @DisplayName("document factory creates DOCUMENT type")
         void documentFactory() { // GH-90000
-            SimpleRecord doc = SimpleRecord.document(TenantId.of("t [GH-90000]"), "articles");
+            SimpleRecord doc = SimpleRecord.document(TenantId.of("t"), "articles");
             assertThat(doc.recordType()).isEqualTo(com.ghatana.datacloud.record.Record.RecordType.DOCUMENT); // GH-90000
         }
     }
@@ -448,7 +448,7 @@ class GraphDocumentRecordTest {
     // ═══════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("InMemoryGraphOperations [GH-90000]")
+    @DisplayName("InMemoryGraphOperations")
     class InMemoryGraphTests {
 
         private InMemoryGraphOperations graph;
@@ -461,51 +461,51 @@ class GraphDocumentRecordTest {
             graph = new InMemoryGraphOperations(); // GH-90000
 
             alice = FullGraphRecord.nodeBuilder() // GH-90000
-                    .tenantId("t [GH-90000]").collectionName("social [GH-90000]").label("Person [GH-90000]")
+                    .tenantId("t").collectionName("social").label("Person")
                     .data("name", "Alice").build(); // GH-90000
             bob = FullGraphRecord.nodeBuilder() // GH-90000
-                    .tenantId("t [GH-90000]").collectionName("social [GH-90000]").label("Person [GH-90000]")
+                    .tenantId("t").collectionName("social").label("Person")
                     .data("name", "Bob").build(); // GH-90000
             charlie = FullGraphRecord.nodeBuilder() // GH-90000
-                    .tenantId("t [GH-90000]").collectionName("social [GH-90000]").label("Product [GH-90000]")
+                    .tenantId("t").collectionName("social").label("Product")
                     .data("name", "Widget").build(); // GH-90000
         }
 
         @Test
-        @DisplayName("add and retrieve nodes [GH-90000]")
+        @DisplayName("add and retrieve nodes")
         void addAndGetNodes() { // GH-90000
             graph.addNode(alice); // GH-90000
             graph.addNode(bob); // GH-90000
 
             assertThat(graph.nodeCount()).isEqualTo(2); // GH-90000
             assertThat(graph.getNode(alice.id().toString())).isPresent(); // GH-90000
-            assertThat(graph.getNode("missing [GH-90000]")).isEmpty();
+            assertThat(graph.getNode("missing")).isEmpty();
         }
 
         @Test
-        @DisplayName("addNode rejects edges [GH-90000]")
+        @DisplayName("addNode rejects edges")
         void addNodeRejectsEdge() { // GH-90000
             FullGraphRecord edge = FullGraphRecord.edgeBuilder() // GH-90000
-                    .tenantId("t [GH-90000]").collectionName("c [GH-90000]").label("E [GH-90000]")
-                    .sourceNodeId("A [GH-90000]").targetNodeId("B [GH-90000]").build();
+                    .tenantId("t").collectionName("c").label("E")
+                    .sourceNodeId("A").targetNodeId("B").build();
 
             assertThatIllegalArgumentException().isThrownBy(() -> graph.addNode(edge)); // GH-90000
         }
 
         @Test
-        @DisplayName("addEdge rejects nodes [GH-90000]")
+        @DisplayName("addEdge rejects nodes")
         void addEdgeRejectsNode() { // GH-90000
             assertThatIllegalArgumentException().isThrownBy(() -> graph.addEdge(alice)); // GH-90000
         }
 
         @Test
-        @DisplayName("directed edge traversal [GH-90000]")
+        @DisplayName("directed edge traversal")
         void directedEdge() { // GH-90000
             graph.addNode(alice); // GH-90000
             graph.addNode(bob); // GH-90000
 
             FullGraphRecord knows = FullGraphRecord.edgeBuilder() // GH-90000
-                    .tenantId("t [GH-90000]").collectionName("social [GH-90000]").label("KNOWS [GH-90000]")
+                    .tenantId("t").collectionName("social").label("KNOWS")
                     .sourceNodeId(alice.id().toString()) // GH-90000
                     .targetNodeId(bob.id().toString()) // GH-90000
                     .direction(FullGraphRecord.EdgeDirection.DIRECTED) // GH-90000
@@ -529,13 +529,13 @@ class GraphDocumentRecordTest {
         }
 
         @Test
-        @DisplayName("bidirectional edge traversal [GH-90000]")
+        @DisplayName("bidirectional edge traversal")
         void bidirectionalEdge() { // GH-90000
             graph.addNode(alice); // GH-90000
             graph.addNode(bob); // GH-90000
 
             FullGraphRecord friends = FullGraphRecord.edgeBuilder() // GH-90000
-                    .tenantId("t [GH-90000]").collectionName("social [GH-90000]").label("FRIENDS [GH-90000]")
+                    .tenantId("t").collectionName("social").label("FRIENDS")
                     .sourceNodeId(alice.id().toString()) // GH-90000
                     .targetNodeId(bob.id().toString()) // GH-90000
                     .direction(FullGraphRecord.EdgeDirection.BIDIRECTIONAL) // GH-90000
@@ -548,29 +548,29 @@ class GraphDocumentRecordTest {
         }
 
         @Test
-        @DisplayName("getNodesByLabel filters correctly [GH-90000]")
+        @DisplayName("getNodesByLabel filters correctly")
         void getNodesByLabel() { // GH-90000
             graph.addNode(alice); // GH-90000
             graph.addNode(bob); // GH-90000
             graph.addNode(charlie); // GH-90000
 
-            assertThat(graph.getNodesByLabel("Person [GH-90000]")).hasSize(2);
-            assertThat(graph.getNodesByLabel("Product [GH-90000]")).hasSize(1);
-            assertThat(graph.getNodesByLabel("Missing [GH-90000]")).isEmpty();
+            assertThat(graph.getNodesByLabel("Person")).hasSize(2);
+            assertThat(graph.getNodesByLabel("Product")).hasSize(1);
+            assertThat(graph.getNodesByLabel("Missing")).isEmpty();
         }
 
         @Test
-        @DisplayName("getEdgesBetween finds edges in both directions [GH-90000]")
+        @DisplayName("getEdgesBetween finds edges in both directions")
         void getEdgesBetween() { // GH-90000
             graph.addNode(alice); // GH-90000
             graph.addNode(bob); // GH-90000
 
             FullGraphRecord e1 = FullGraphRecord.edgeBuilder() // GH-90000
-                    .tenantId("t [GH-90000]").collectionName("c [GH-90000]").label("KNOWS [GH-90000]")
+                    .tenantId("t").collectionName("c").label("KNOWS")
                     .sourceNodeId(alice.id().toString()).targetNodeId(bob.id().toString()) // GH-90000
                     .build(); // GH-90000
             FullGraphRecord e2 = FullGraphRecord.edgeBuilder() // GH-90000
-                    .tenantId("t [GH-90000]").collectionName("c [GH-90000]").label("FOLLOWS [GH-90000]")
+                    .tenantId("t").collectionName("c").label("FOLLOWS")
                     .sourceNodeId(bob.id().toString()).targetNodeId(alice.id().toString()) // GH-90000
                     .build(); // GH-90000
             graph.addEdge(e1); // GH-90000
@@ -581,12 +581,12 @@ class GraphDocumentRecordTest {
         }
 
         @Test
-        @DisplayName("removeNode removes node and incident edges [GH-90000]")
+        @DisplayName("removeNode removes node and incident edges")
         void removeNode() { // GH-90000
             graph.addNode(alice); // GH-90000
             graph.addNode(bob); // GH-90000
             FullGraphRecord edge = FullGraphRecord.edgeBuilder() // GH-90000
-                    .tenantId("t [GH-90000]").collectionName("c [GH-90000]").label("E [GH-90000]")
+                    .tenantId("t").collectionName("c").label("E")
                     .sourceNodeId(alice.id().toString()).targetNodeId(bob.id().toString()) // GH-90000
                     .build(); // GH-90000
             graph.addEdge(edge); // GH-90000
@@ -594,16 +594,16 @@ class GraphDocumentRecordTest {
             assertThat(graph.removeNode(alice.id().toString())).isTrue(); // GH-90000
             assertThat(graph.nodeCount()).isEqualTo(1); // GH-90000
             assertThat(graph.edgeCount()).isZero(); // GH-90000
-            assertThat(graph.removeNode("missing [GH-90000]")).isFalse();
+            assertThat(graph.removeNode("missing")).isFalse();
         }
 
         @Test
-        @DisplayName("removeEdge cleans up adjacency lists [GH-90000]")
+        @DisplayName("removeEdge cleans up adjacency lists")
         void removeEdge() { // GH-90000
             graph.addNode(alice); // GH-90000
             graph.addNode(bob); // GH-90000
             FullGraphRecord edge = FullGraphRecord.edgeBuilder() // GH-90000
-                    .tenantId("t [GH-90000]").collectionName("c [GH-90000]").label("E [GH-90000]")
+                    .tenantId("t").collectionName("c").label("E")
                     .sourceNodeId(alice.id().toString()).targetNodeId(bob.id().toString()) // GH-90000
                     .build(); // GH-90000
             graph.addEdge(edge); // GH-90000
@@ -611,22 +611,22 @@ class GraphDocumentRecordTest {
             assertThat(graph.removeEdge(edge.id().toString())).isTrue(); // GH-90000
             assertThat(graph.edgeCount()).isZero(); // GH-90000
             assertThat(graph.outgoing(alice.id().toString())).isEmpty(); // GH-90000
-            assertThat(graph.removeEdge("missing [GH-90000]")).isFalse();
+            assertThat(graph.removeEdge("missing")).isFalse();
         }
 
         @Test
-        @DisplayName("degree counts all incident edges [GH-90000]")
+        @DisplayName("degree counts all incident edges")
         void degree() { // GH-90000
             graph.addNode(alice); // GH-90000
             graph.addNode(bob); // GH-90000
             graph.addNode(charlie); // GH-90000
 
             graph.addEdge(FullGraphRecord.edgeBuilder() // GH-90000
-                    .tenantId("t [GH-90000]").collectionName("c [GH-90000]").label("E1 [GH-90000]")
+                    .tenantId("t").collectionName("c").label("E1")
                     .sourceNodeId(alice.id().toString()).targetNodeId(bob.id().toString()) // GH-90000
                     .build()); // GH-90000
             graph.addEdge(FullGraphRecord.edgeBuilder() // GH-90000
-                    .tenantId("t [GH-90000]").collectionName("c [GH-90000]").label("E2 [GH-90000]")
+                    .tenantId("t").collectionName("c").label("E2")
                     .sourceNodeId(charlie.id().toString()).targetNodeId(alice.id().toString()) // GH-90000
                     .build()); // GH-90000
 
@@ -636,10 +636,10 @@ class GraphDocumentRecordTest {
         }
 
         @Test
-        @DisplayName("BFS traversal respects max depth [GH-90000]")
+        @DisplayName("BFS traversal respects max depth")
         void bfsTraversal() { // GH-90000
             // A → B → C → D
-            var a = node("A [GH-90000]"); var b = node("B [GH-90000]"); var c = node("C [GH-90000]"); var d = node("D [GH-90000]");
+            var a = node("A"); var b = node("B"); var c = node("C"); var d = node("D");
             graph.addNode(a); graph.addNode(b); graph.addNode(c); graph.addNode(d); // GH-90000
             graph.addEdge(edge(a, b, "NEXT")); // GH-90000
             graph.addEdge(edge(b, c, "NEXT")); // GH-90000
@@ -659,10 +659,10 @@ class GraphDocumentRecordTest {
         }
 
         @Test
-        @DisplayName("shortestPath finds correct path [GH-90000]")
+        @DisplayName("shortestPath finds correct path")
         void shortestPath() { // GH-90000
             // A → B → D, A → C → D  (both length 2) // GH-90000
-            var a = node("A [GH-90000]"); var b = node("B [GH-90000]"); var c = node("C [GH-90000]"); var d = node("D [GH-90000]");
+            var a = node("A"); var b = node("B"); var c = node("C"); var d = node("D");
             graph.addNode(a); graph.addNode(b); graph.addNode(c); graph.addNode(d); // GH-90000
             graph.addEdge(edge(a, b, "E")); graph.addEdge(edge(b, d, "E")); // GH-90000
             graph.addEdge(edge(a, c, "E")); graph.addEdge(edge(c, d, "E")); // GH-90000
@@ -674,16 +674,16 @@ class GraphDocumentRecordTest {
         }
 
         @Test
-        @DisplayName("shortestPath returns empty for unreachable nodes [GH-90000]")
+        @DisplayName("shortestPath returns empty for unreachable nodes")
         void shortestPathUnreachable() { // GH-90000
-            var a = node("A [GH-90000]"); var b = node("B [GH-90000]");
+            var a = node("A"); var b = node("B");
             graph.addNode(a); graph.addNode(b); // GH-90000
             // No edge between them
             assertThat(graph.shortestPath(a.id().toString(), b.id().toString())).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("shortestPath same node returns singleton [GH-90000]")
+        @DisplayName("shortestPath same node returns singleton")
         void shortestPathSameNode() { // GH-90000
             graph.addNode(alice); // GH-90000
             var path = graph.shortestPath(alice.id().toString(), alice.id().toString()); // GH-90000
@@ -692,7 +692,7 @@ class GraphDocumentRecordTest {
         }
 
         @Test
-        @DisplayName("neighbours combines outgoing and incoming [GH-90000]")
+        @DisplayName("neighbours combines outgoing and incoming")
         void neighbours() { // GH-90000
             graph.addNode(alice); // GH-90000
             graph.addNode(bob); // GH-90000
@@ -708,12 +708,12 @@ class GraphDocumentRecordTest {
 
         private FullGraphRecord node(String label) { // GH-90000
             return FullGraphRecord.nodeBuilder() // GH-90000
-                    .tenantId("t [GH-90000]").collectionName("g [GH-90000]").label(label).build();
+                    .tenantId("t").collectionName("g").label(label).build();
         }
 
         private FullGraphRecord edge(FullGraphRecord from, FullGraphRecord to, String label) { // GH-90000
             return FullGraphRecord.edgeBuilder() // GH-90000
-                    .tenantId("t [GH-90000]").collectionName("g [GH-90000]").label(label)
+                    .tenantId("t").collectionName("g").label(label)
                     .sourceNodeId(from.id().toString()) // GH-90000
                     .targetNodeId(to.id().toString()) // GH-90000
                     .build(); // GH-90000
@@ -725,11 +725,11 @@ class GraphDocumentRecordTest {
     // ═══════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("RecordType capabilities for GRAPH & DOCUMENT [GH-90000]")
+    @DisplayName("RecordType capabilities for GRAPH & DOCUMENT")
     class RecordTypeCapabilitiesTests {
 
         @Test
-        @DisplayName("GRAPH supports CRUD, soft delete, versioning [GH-90000]")
+        @DisplayName("GRAPH supports CRUD, soft delete, versioning")
         void graphCapabilities() { // GH-90000
             var graphType = com.ghatana.datacloud.RecordType.GRAPH;
             assertThat(graphType.isMutable()).isTrue(); // GH-90000
@@ -741,7 +741,7 @@ class GraphDocumentRecordTest {
         }
 
         @Test
-        @DisplayName("DOCUMENT supports CRUD, soft delete, versioning [GH-90000]")
+        @DisplayName("DOCUMENT supports CRUD, soft delete, versioning")
         void documentCapabilities() { // GH-90000
             var docType = com.ghatana.datacloud.RecordType.DOCUMENT;
             assertThat(docType.isMutable()).isTrue(); // GH-90000
@@ -753,7 +753,7 @@ class GraphDocumentRecordTest {
 
         @ParameterizedTest
         @EnumSource(com.ghatana.datacloud.RecordType.class) // GH-90000
-        @DisplayName("all RecordType values have non-null description [GH-90000]")
+        @DisplayName("all RecordType values have non-null description")
         void allTypesHaveDescription(com.ghatana.datacloud.RecordType type) { // GH-90000
             assertThat(type.getDescription()).isNotNull().isNotBlank(); // GH-90000
         }

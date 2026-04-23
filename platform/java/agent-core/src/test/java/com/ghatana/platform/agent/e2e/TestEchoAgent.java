@@ -32,7 +32,7 @@ public class TestEchoAgent implements TypedAgent<String, String> {
     public @NotNull AgentDescriptor descriptor() { // GH-90000
         return AgentDescriptor.builder() // GH-90000
                 .agentId(agentId) // GH-90000
-                .name("Test Echo Agent [GH-90000]")
+                .name("Test Echo Agent")
                 .type(AgentType.DETERMINISTIC) // GH-90000
                 .determinism(DeterminismGuarantee.FULL) // GH-90000
                 .build(); // GH-90000
@@ -52,7 +52,7 @@ public class TestEchoAgent implements TypedAgent<String, String> {
 
     @Override
     public @NotNull Promise<HealthStatus> healthCheck() { // GH-90000
-        return Promise.of(HealthStatus.healthy("Agent is healthy [GH-90000]"));
+        return Promise.of(HealthStatus.healthy("Agent is healthy"));
     }
 
     @Override

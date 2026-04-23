@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AepHttpServer – Analytics & Deployment Endpoints [GH-90000]")
+@DisplayName("AepHttpServer – Analytics & Deployment Endpoints")
 class AepHttpServerAnalyticsDeploymentTest {
 
     private AepEngine engine;
@@ -55,11 +55,11 @@ class AepHttpServerAnalyticsDeploymentTest {
     // ==================== POST /api/v1/analytics/anomalies ====================
 
     @Nested
-    @DisplayName("POST /api/v1/analytics/anomalies [GH-90000]")
+    @DisplayName("POST /api/v1/analytics/anomalies")
     class DetectAnomaliesTests {
 
         @Test
-        @DisplayName("returns 200 with empty anomalies for empty input [GH-90000]")
+        @DisplayName("returns 200 with empty anomalies for empty input")
         void detectAnomalies_emptyEvents_returns200() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -72,12 +72,12 @@ class AepHttpServerAnalyticsDeploymentTest {
             HttpResponse<String> resp = post("/api/v1/analytics/anomalies", body); // GH-90000
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]") Map<String, Object> respBody = (Map<String, Object>) mapper.readValue(resp.body(), Map.class);
-            assertThat(respBody).containsKey("anomalies [GH-90000]");
+            @SuppressWarnings("unchecked") Map<String, Object> respBody = (Map<String, Object>) mapper.readValue(resp.body(), Map.class);
+            assertThat(respBody).containsKey("anomalies");
         }
 
         @Test
-        @DisplayName("returns 200 with anomaly results for valid events [GH-90000]")
+        @DisplayName("returns 200 with anomaly results for valid events")
         void detectAnomalies_withEvents_returns200() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -93,13 +93,13 @@ class AepHttpServerAnalyticsDeploymentTest {
             HttpResponse<String> resp = post("/api/v1/analytics/anomalies", body); // GH-90000
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]") Map<String, Object> respBody = (Map<String, Object>) mapper.readValue(resp.body(), Map.class);
-            assertThat(respBody).containsKey("anomalies [GH-90000]");
-            assertThat(respBody).containsKey("count [GH-90000]");
+            @SuppressWarnings("unchecked") Map<String, Object> respBody = (Map<String, Object>) mapper.readValue(resp.body(), Map.class);
+            assertThat(respBody).containsKey("anomalies");
+            assertThat(respBody).containsKey("count");
         }
 
         @Test
-        @DisplayName("returns 400 on malformed JSON body [GH-90000]")
+        @DisplayName("returns 400 on malformed JSON body")
         void detectAnomalies_malformedJson_returns400() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -114,11 +114,11 @@ class AepHttpServerAnalyticsDeploymentTest {
     // ==================== POST /api/v1/analytics/forecast ====================
 
     @Nested
-    @DisplayName("POST /api/v1/analytics/forecast [GH-90000]")
+    @DisplayName("POST /api/v1/analytics/forecast")
     class ForecastTests {
 
         @Test
-        @DisplayName("returns 200 with forecast for valid time-series data [GH-90000]")
+        @DisplayName("returns 200 with forecast for valid time-series data")
         void forecast_validData_returns200() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -139,13 +139,13 @@ class AepHttpServerAnalyticsDeploymentTest {
             HttpResponse<String> resp = post("/api/v1/analytics/forecast", body); // GH-90000
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]") Map<String, Object> respBody = (Map<String, Object>) mapper.readValue(resp.body(), Map.class);
-            assertThat(respBody).containsKey("metric [GH-90000]");
-            assertThat(respBody.get("metric [GH-90000]")).isEqualTo("cpu_usage [GH-90000]");
+            @SuppressWarnings("unchecked") Map<String, Object> respBody = (Map<String, Object>) mapper.readValue(resp.body(), Map.class);
+            assertThat(respBody).containsKey("metric");
+            assertThat(respBody.get("metric")).isEqualTo("cpu_usage");
         }
 
         @Test
-        @DisplayName("returns 400 on malformed JSON body [GH-90000]")
+        @DisplayName("returns 400 on malformed JSON body")
         void forecast_malformedJson_returns400() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -160,11 +160,11 @@ class AepHttpServerAnalyticsDeploymentTest {
     // ==================== POST /api/v1/deployments ====================
 
     @Nested
-    @DisplayName("POST /api/v1/deployments [GH-90000]")
+    @DisplayName("POST /api/v1/deployments")
     class CreateDeploymentTests {
 
         @Test
-        @DisplayName("returns 200 for valid deployment request [GH-90000]")
+        @DisplayName("returns 200 for valid deployment request")
         void createDeployment_validRequest_returns200() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -183,7 +183,7 @@ class AepHttpServerAnalyticsDeploymentTest {
         }
 
         @Test
-        @DisplayName("returns 400 on malformed JSON body [GH-90000]")
+        @DisplayName("returns 400 on malformed JSON body")
         void createDeployment_malformedJson_returns400() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -198,21 +198,21 @@ class AepHttpServerAnalyticsDeploymentTest {
     // ==================== DELETE /api/v1/deployments/:deploymentId ====================
 
     @Nested
-    @DisplayName("DELETE /api/v1/deployments/:deploymentId [GH-90000]")
+    @DisplayName("DELETE /api/v1/deployments/:deploymentId")
     class DeleteDeploymentTests {
 
         @Test
-        @DisplayName("returns 400 when tenantId query parameter is missing [GH-90000]")
+        @DisplayName("returns 400 when tenantId query parameter is missing")
         void deleteDeployment_missingTenantId_returns400() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
-            HttpResponse<String> resp = delete("/api/v1/deployments/dep-1 [GH-90000]");
+            HttpResponse<String> resp = delete("/api/v1/deployments/dep-1");
 
             assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]") Map<String, Object> body = (Map<String, Object>) mapper.readValue(resp.body(), Map.class);
-            assertThat(body.get("message [GH-90000]").toString()).contains("tenantId [GH-90000]");
+            @SuppressWarnings("unchecked") Map<String, Object> body = (Map<String, Object>) mapper.readValue(resp.body(), Map.class);
+            assertThat(body.get("message").toString()).contains("tenantId");
         }
     }
 

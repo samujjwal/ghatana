@@ -25,7 +25,11 @@ import java.util.Objects;
  * </ul>
  *
  * @since 2.0
- */
+  * @doc.type class
+ * @doc.purpose Provides exponential backoff policy functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 public final class ExponentialBackoffPolicy implements ReconnectionPolicy {
 
     private final long initialDelayMs;

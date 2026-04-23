@@ -43,10 +43,10 @@ class AuditEntryTest {
 
         // When
         AuditEntry entry = AuditEntry.builder() // GH-90000
-            .action("UPDATE [GH-90000]")
-            .resourceType("USER [GH-90000]")
-            .resourceId("123 [GH-90000]")
-            .performedBy("test-user [GH-90000]")
+            .action("UPDATE")
+            .resourceType("USER")
+            .resourceId("123")
+            .performedBy("test-user")
             .timestamp(System.currentTimeMillis()) // GH-90000
             .notes(notes) // GH-90000
             .build(); // GH-90000
@@ -60,9 +60,9 @@ class AuditEntryTest {
         // When/Then
         assertThrows(NullPointerException.class, () -> // GH-90000
             AuditEntry.builder() // GH-90000
-                .resourceType("USER [GH-90000]")
-                .resourceId("123 [GH-90000]")
-                .performedBy("test-user [GH-90000]")
+                .resourceType("USER")
+                .resourceId("123")
+                .performedBy("test-user")
                 .timestamp(System.currentTimeMillis()) // GH-90000
                 .build(), // GH-90000
             "Action should be required"
@@ -70,9 +70,9 @@ class AuditEntryTest {
 
         assertThrows(NullPointerException.class, () -> // GH-90000
             AuditEntry.builder() // GH-90000
-                .action("CREATE [GH-90000]")
-                .resourceId("123 [GH-90000]")
-                .performedBy("test-user [GH-90000]")
+                .action("CREATE")
+                .resourceId("123")
+                .performedBy("test-user")
                 .timestamp(System.currentTimeMillis()) // GH-90000
                 .build(), // GH-90000
             "Resource type should be required"
@@ -80,9 +80,9 @@ class AuditEntryTest {
 
         assertThrows(NullPointerException.class, () -> // GH-90000
             AuditEntry.builder() // GH-90000
-                .action("CREATE [GH-90000]")
-                .resourceType("USER [GH-90000]")
-                .performedBy("test-user [GH-90000]")
+                .action("CREATE")
+                .resourceType("USER")
+                .performedBy("test-user")
                 .timestamp(System.currentTimeMillis()) // GH-90000
                 .build(), // GH-90000
             "Resource ID should be required"
@@ -90,9 +90,9 @@ class AuditEntryTest {
 
         assertThrows(NullPointerException.class, () -> // GH-90000
             AuditEntry.builder() // GH-90000
-                .action("CREATE [GH-90000]")
-                .resourceType("USER [GH-90000]")
-                .resourceId("123 [GH-90000]")
+                .action("CREATE")
+                .resourceType("USER")
+                .resourceId("123")
                 .timestamp(System.currentTimeMillis()) // GH-90000
                 .build(), // GH-90000
             "Performed by should be required"
@@ -103,10 +103,10 @@ class AuditEntryTest {
     void shouldHandleNullNotes() { // GH-90000
         // When
         AuditEntry entry = AuditEntry.builder() // GH-90000
-            .action("DELETE [GH-90000]")
-            .resourceType("USER [GH-90000]")
-            .resourceId("123 [GH-90000]")
-            .performedBy("test-user [GH-90000]")
+            .action("DELETE")
+            .resourceType("USER")
+            .resourceId("123")
+            .performedBy("test-user")
             .timestamp(System.currentTimeMillis()) // GH-90000
             .notes(null) // GH-90000
             .build(); // GH-90000
@@ -119,12 +119,12 @@ class AuditEntryTest {
     void shouldHandleEmptyNotes() { // GH-90000
         // When
         AuditEntry entry = AuditEntry.builder() // GH-90000
-            .action("VIEW [GH-90000]")
-            .resourceType("USER [GH-90000]")
-            .resourceId("123 [GH-90000]")
-            .performedBy("test-user [GH-90000]")
+            .action("VIEW")
+            .resourceType("USER")
+            .resourceId("123")
+            .performedBy("test-user")
             .timestamp(System.currentTimeMillis()) // GH-90000
-            .notes(" [GH-90000]")
+            .notes("")
             .build(); // GH-90000
 
         // Then
@@ -135,18 +135,18 @@ class AuditEntryTest {
     void shouldBeImmutable() { // GH-90000
         // Given
         AuditEntry entry = AuditEntry.builder() // GH-90000
-            .action("UPDATE [GH-90000]")
-            .resourceType("USER [GH-90000]")
-            .resourceId("123 [GH-90000]")
-            .performedBy("test-user [GH-90000]")
+            .action("UPDATE")
+            .resourceType("USER")
+            .resourceId("123")
+            .performedBy("test-user")
             .timestamp(System.currentTimeMillis()) // GH-90000
-            .notes("Original notes [GH-90000]")
+            .notes("Original notes")
             .build(); // GH-90000
 
         // When/Then - Verify that the class is immutable by checking for mutator methods
         assertThat(entry.getClass().getMethods()) // GH-90000
-            .filteredOn(method -> method.getName().startsWith("set [GH-90000]"))
-            .describedAs("AuditEntry should not have any setter methods [GH-90000]")
+            .filteredOn(method -> method.getName().startsWith("set"))
+            .describedAs("AuditEntry should not have any setter methods")
             .isEmpty(); // GH-90000
     }
 
@@ -155,18 +155,18 @@ class AuditEntryTest {
         // Given
         long now = System.currentTimeMillis(); // GH-90000
         AuditEntry earlier = AuditEntry.builder() // GH-90000
-            .action("CREATE [GH-90000]")
-            .resourceType("USER [GH-90000]")
-            .resourceId("123 [GH-90000]")
-            .performedBy("test-user [GH-90000]")
+            .action("CREATE")
+            .resourceType("USER")
+            .resourceId("123")
+            .performedBy("test-user")
             .timestamp(now - 1000) // GH-90000
             .build(); // GH-90000
 
         AuditEntry later = AuditEntry.builder() // GH-90000
-            .action("UPDATE [GH-90000]")
-            .resourceType("USER [GH-90000]")
-            .resourceId("123 [GH-90000]")
-            .performedBy("test-user [GH-90000]")
+            .action("UPDATE")
+            .resourceType("USER")
+            .resourceId("123")
+            .performedBy("test-user")
             .timestamp(now) // GH-90000
             .build(); // GH-90000
 
@@ -180,12 +180,12 @@ class AuditEntryTest {
     void shouldHaveUsefulToString() { // GH-90000
         // Given
         AuditEntry entry = AuditEntry.builder() // GH-90000
-            .action("CREATE [GH-90000]")
-            .resourceType("USER [GH-90000]")
-            .resourceId("123 [GH-90000]")
-            .performedBy("test-user [GH-90000]")
+            .action("CREATE")
+            .resourceType("USER")
+            .resourceId("123")
+            .performedBy("test-user")
             .timestamp(1234567890L) // GH-90000
-            .notes("User created [GH-90000]")
+            .notes("User created")
             .build(); // GH-90000
 
         // When
@@ -193,32 +193,32 @@ class AuditEntryTest {
 
         // Then
         assertThat(toString) // GH-90000
-            .contains("action=CREATE [GH-90000]")
-            .contains("resourceType=USER [GH-90000]")
-            .contains("resourceId=123 [GH-90000]")
-            .contains("performedBy=test-user [GH-90000]")
-            .contains("timestamp=1234567890 [GH-90000]")
-            .contains("notes=User created [GH-90000]");
+            .contains("action=CREATE")
+            .contains("resourceType=USER")
+            .contains("resourceId=123")
+            .contains("performedBy=test-user")
+            .contains("timestamp=1234567890")
+            .contains("notes=User created");
     }
 
     @Test
     void shouldCreateCopyWithNewNotes() { // GH-90000
         // Given
         AuditEntry original = AuditEntry.builder() // GH-90000
-            .action("CREATE [GH-90000]")
-            .resourceType("USER [GH-90000]")
-            .resourceId("123 [GH-90000]")
-            .performedBy("test-user [GH-90000]")
+            .action("CREATE")
+            .resourceType("USER")
+            .resourceId("123")
+            .performedBy("test-user")
             .timestamp(System.currentTimeMillis()) // GH-90000
-            .notes("Original notes [GH-90000]")
+            .notes("Original notes")
             .build(); // GH-90000
 
         // When
-        AuditEntry updated = original.withNotes("Updated notes [GH-90000]");
+        AuditEntry updated = original.withNotes("Updated notes");
 
         // Then
-        assertThat(original.getNotes()).isEqualTo("Original notes [GH-90000]");
-        assertThat(updated.getNotes()).isEqualTo("Updated notes [GH-90000]");
+        assertThat(original.getNotes()).isEqualTo("Original notes");
+        assertThat(updated.getNotes()).isEqualTo("Updated notes");
 
         // Verify other fields remain the same
         assertThat(updated.getAction()).isEqualTo(original.getAction()); // GH-90000

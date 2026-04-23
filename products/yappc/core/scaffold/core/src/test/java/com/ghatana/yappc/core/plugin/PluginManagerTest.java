@@ -33,8 +33,8 @@ class PluginManagerTest {
     void setUp() { // GH-90000
         manager = new PluginManager(); // GH-90000
 
-        Path workspace = Paths.get("/tmp/test-workspace [GH-90000]");
-        Path packs = workspace.resolve("packs [GH-90000]");
+        Path workspace = Paths.get("/tmp/test-workspace");
+        Path packs = workspace.resolve("packs");
 
         context = new PluginContext( // GH-90000
                 workspace,

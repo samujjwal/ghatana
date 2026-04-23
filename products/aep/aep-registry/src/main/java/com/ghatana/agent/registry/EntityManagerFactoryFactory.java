@@ -12,7 +12,11 @@ import java.util.Map;
  * Factory class for creating and managing the JPA EntityManagerFactory.
  * This class ensures that the EntityManagerFactory is properly initialized
  * and closed when the application shuts down.
- */
+  * @doc.type class
+ * @doc.purpose Provides entity manager factory factory functionality.
+ * @doc.layer product
+ * @doc.pattern Factory
+*/
 public class EntityManagerFactoryFactory {
     private static final Logger log = LoggerFactory.getLogger(EntityManagerFactoryFactory.class);
     private static EntityManagerFactory instance;

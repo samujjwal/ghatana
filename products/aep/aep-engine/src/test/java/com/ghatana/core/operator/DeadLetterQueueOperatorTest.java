@@ -30,7 +30,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DeadLetterQueueOperator [GH-90000]")
+@DisplayName("DeadLetterQueueOperator")
 class DeadLetterQueueOperatorTest extends EventloopTestBase {
 
     private static UnifiedOperator delegateThatSucceeds() { // GH-90000
@@ -56,11 +56,11 @@ class DeadLetterQueueOperatorTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Success path [GH-90000]")
+    @DisplayName("Success path")
     class SuccessPath {
 
         @Test
-        @DisplayName("passes through result when delegate succeeds [GH-90000]")
+        @DisplayName("passes through result when delegate succeeds")
         void shouldPassThroughOnSuccess() { // GH-90000
             DeadLetterQueue dlq = buildDlq(); // GH-90000
             DeadLetterQueueOperator op = DeadLetterQueueOperator.builder() // GH-90000
@@ -76,15 +76,15 @@ class DeadLetterQueueOperatorTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Failure routing [GH-90000]")
+    @DisplayName("Failure routing")
     class FailurePath {
 
         @Test
-        @DisplayName("stores event in DLQ when delegate throws [GH-90000]")
+        @DisplayName("stores event in DLQ when delegate throws")
         void shouldStoreToDlqOnDelegateFailure() { // GH-90000
             DeadLetterQueue dlq = buildDlq(); // GH-90000
             DeadLetterQueueOperator op = DeadLetterQueueOperator.builder() // GH-90000
-                .operator(delegateThatFails("downstream-error [GH-90000]"))
+                .operator(delegateThatFails("downstream-error"))
                 .deadLetterQueue(dlq) // GH-90000
                 .build(); // GH-90000
 
@@ -94,15 +94,15 @@ class DeadLetterQueueOperatorTest extends EventloopTestBase {
             assertThat(result.isSuccess()).isTrue(); // GH-90000
             // But the event is stored in the DLQ
             assertThat(dlq.size()).isEqualTo(1); // GH-90000
-            assertThat(dlq.getAll().get(0).getErrorMessage()).contains("downstream-error [GH-90000]");
+            assertThat(dlq.getAll().get(0).getErrorMessage()).contains("downstream-error");
         }
 
         @Test
-        @DisplayName("multiple failures each create a DLQ entry [GH-90000]")
+        @DisplayName("multiple failures each create a DLQ entry")
         void shouldStoreMultipleFailures() { // GH-90000
             DeadLetterQueue dlq = buildDlq(); // GH-90000
             DeadLetterQueueOperator op = DeadLetterQueueOperator.builder() // GH-90000
-                .operator(delegateThatFails("retry-exhausted [GH-90000]"))
+                .operator(delegateThatFails("retry-exhausted"))
                 .deadLetterQueue(dlq) // GH-90000
                 .build(); // GH-90000
 
@@ -115,16 +115,16 @@ class DeadLetterQueueOperatorTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Metrics [GH-90000]")
+    @DisplayName("Metrics")
     class MetricsTests {
 
         @Test
-        @DisplayName("increments aep.dlq.events.stored counter on each DLQ store [GH-90000]")
+        @DisplayName("increments aep.dlq.events.stored counter on each DLQ store")
         void shouldIncrementMetricOnDlqStore() { // GH-90000
             SimpleMeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
             DeadLetterQueue dlq = buildDlq(); // GH-90000
             DeadLetterQueueOperator op = DeadLetterQueueOperator.builder() // GH-90000
-                .operator(delegateThatFails("enrichment-timeout [GH-90000]"))
+                .operator(delegateThatFails("enrichment-timeout"))
                 .deadLetterQueue(dlq) // GH-90000
                 .meterRegistry(registry) // GH-90000
                 .build(); // GH-90000
@@ -137,12 +137,12 @@ class DeadLetterQueueOperatorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("aep.dlq.events.pending gauge reflects current DLQ size [GH-90000]")
+        @DisplayName("aep.dlq.events.pending gauge reflects current DLQ size")
         void shouldExposePendingGauge() { // GH-90000
             SimpleMeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
             DeadLetterQueue dlq = buildDlq(); // GH-90000
             DeadLetterQueueOperator op = DeadLetterQueueOperator.builder() // GH-90000
-                .operator(delegateThatFails("timeout [GH-90000]"))
+                .operator(delegateThatFails("timeout"))
                 .deadLetterQueue(dlq) // GH-90000
                 .meterRegistry(registry) // GH-90000
                 .build(); // GH-90000
@@ -157,7 +157,7 @@ class DeadLetterQueueOperatorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("does not increment metric when delegate succeeds [GH-90000]")
+        @DisplayName("does not increment metric when delegate succeeds")
         void shouldNotIncrementMetricOnSuccess() { // GH-90000
             SimpleMeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
             DeadLetterQueue dlq = buildDlq(); // GH-90000

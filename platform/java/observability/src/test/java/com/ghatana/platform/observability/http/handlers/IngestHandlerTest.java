@@ -20,7 +20,7 @@ import java.nio.charset.StandardCharsets;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(EventloopExtension.class) // GH-90000
-@DisplayName("IngestHandler Tests [GH-90000]")
+@DisplayName("IngestHandler Tests")
 class IngestHandlerTest {
 
     private MockTraceStorage storage;
@@ -43,7 +43,7 @@ class IngestHandlerTest {
     }
 
     @Test
-    @DisplayName("Should ingest single span successfully [GH-90000]")
+    @DisplayName("Should ingest single span successfully")
     void shouldIngestSingleSpan(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         String jsonBody = """
                 {
@@ -69,7 +69,7 @@ class IngestHandlerTest {
     }
 
     @Test
-    @DisplayName("Should ingest batch spans successfully [GH-90000]")
+    @DisplayName("Should ingest batch spans successfully")
     void shouldIngestBatchSpans(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         String jsonBody = """
                 {
@@ -112,7 +112,7 @@ class IngestHandlerTest {
     }
 
     @Test
-    @DisplayName("Should return 400 for invalid JSON [GH-90000]")
+    @DisplayName("Should return 400 for invalid JSON")
     void shouldReturn400ForInvalidJson(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest req = HttpRequest.builder(HttpMethod.POST, "http://localhost/api/v1/traces/spans") // GH-90000
                 .withBody("{ invalid }".getBytes(StandardCharsets.UTF_8)) // GH-90000
@@ -126,7 +126,7 @@ class IngestHandlerTest {
     }
 
     @Test
-    @DisplayName("Should return 400 for empty body [GH-90000]")
+    @DisplayName("Should return 400 for empty body")
     void shouldReturn400ForEmptyBody(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest req = HttpRequest.builder(HttpMethod.POST, "http://localhost/api/v1/traces/spans") // GH-90000
                 .withBody(new byte[0]) // GH-90000
@@ -140,17 +140,17 @@ class IngestHandlerTest {
     }
 
     @Test
-    @DisplayName("Should handle large batch of 50 spans [GH-90000]")
+    @DisplayName("Should handle large batch of 50 spans")
     void shouldHandleLargeBatch(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
-        StringBuilder spansJson = new StringBuilder("[ [GH-90000]");
+        StringBuilder spansJson = new StringBuilder("[");
         for (int i = 0; i < 50; i++) { // GH-90000
-            if (i > 0) spansJson.append(", [GH-90000]");
+            if (i > 0) spansJson.append(",");
             spansJson.append(String.format( // GH-90000
                     "{\"spanId\":\"span-%d\",\"traceId\":\"trace-1\",\"operationName\":\"op-%d\"," +
                     "\"serviceName\":\"service1\",\"startTime\":\"2024-01-01T00:00:00Z\"," +
                     "\"endTime\":\"2024-01-01T00:00:01Z\",\"status\":\"OK\"}", i, i));
         }
-        spansJson.append("] [GH-90000]");
+        spansJson.append("]");
 
         HttpRequest req = HttpRequest.builder(HttpMethod.POST, "http://localhost/api/v1/traces/spans/batch") // GH-90000
                 .withBody(("{\"spans\":" + spansJson + "}").getBytes(StandardCharsets.UTF_8)) // GH-90000

@@ -44,7 +44,8 @@ import java.util.regex.Pattern;
  * @doc.type class
  * @doc.purpose Content redaction for memory items with pluggable pattern sources
  * @doc.layer agent-memory
- */
+  * @doc.pattern Filter
+*/
 public class MemoryRedactionFilter {
 
     private static final Logger log = LoggerFactory.getLogger(MemoryRedactionFilter.class);

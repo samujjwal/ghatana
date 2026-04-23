@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * Unit tests for all Audio-Video ToolHandler implementations and the factory.
  */
-@DisplayName("AudioVideo ToolHandlers [GH-90000]")
+@DisplayName("AudioVideo ToolHandlers")
 class AudioVideoToolHandlersTest {
 
     private ToolContract dummyContract;
@@ -60,7 +60,7 @@ class AudioVideoToolHandlersTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("SpeechToTextToolHandler [GH-90000]")
+    @DisplayName("SpeechToTextToolHandler")
     class SttTests {
 
         private SpeechToTextToolHandler handler;
@@ -71,7 +71,7 @@ class AudioVideoToolHandlersTest {
         }
 
         @Test
-        @DisplayName("succeeds with mediaArtifactId in audioSource [GH-90000]")
+        @DisplayName("succeeds with mediaArtifactId in audioSource")
         void succeedsWithArtifactSource() { // GH-90000
             Map<String, Object> audioSource = Map.of("mediaArtifactId", "artifact-42"); // GH-90000
             ToolExecutionEnvelope env = envelope("av.speech-to-text", Map.of("audioSource", audioSource)); // GH-90000
@@ -80,7 +80,7 @@ class AudioVideoToolHandlersTest {
         }
 
         @Test
-        @DisplayName("succeeds with audioBytes in audioSource [GH-90000]")
+        @DisplayName("succeeds with audioBytes in audioSource")
         void succeedsWithBytesSource() { // GH-90000
             Map<String, Object> audioSource = Map.of("audioBytes", "BASE64=="); // GH-90000
             ToolExecutionEnvelope env = envelope("av.speech-to-text", Map.of("audioSource", audioSource)); // GH-90000
@@ -89,16 +89,16 @@ class AudioVideoToolHandlersTest {
         }
 
         @Test
-        @DisplayName("fails when audioSource is missing [GH-90000]")
+        @DisplayName("fails when audioSource is missing")
         void failsWhenAudioSourceMissing() { // GH-90000
             ToolExecutionEnvelope env = envelope("av.speech-to-text", Map.of()); // GH-90000
             ToolExecutionResult result = await(handler.handle(env, dummyContract)); // GH-90000
             assertThat(result.status()).isEqualTo(ToolExecutionStatus.FAILED); // GH-90000
-            assertThat(result.errorMessage()).contains("audioSource [GH-90000]");
+            assertThat(result.errorMessage()).contains("audioSource");
         }
 
         @Test
-        @DisplayName("output contains required fields [GH-90000]")
+        @DisplayName("output contains required fields")
         void outputContainsRequiredFields() { // GH-90000
             Map<String, Object> input = new LinkedHashMap<>(); // GH-90000
             input.put("audioSource", Map.of("mediaArtifactId", "artifact-1")); // GH-90000
@@ -106,10 +106,10 @@ class AudioVideoToolHandlersTest {
             ToolExecutionEnvelope env = envelope("av.speech-to-text", input); // GH-90000
             ToolExecutionResult result = await(handler.handle(env, dummyContract)); // GH-90000
             assertThat(result.status()).isEqualTo(ToolExecutionStatus.SUCCESS); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, Object> output = (Map<String, Object>) result.output(); // GH-90000
-            assertThat(output).containsKey("transcript [GH-90000]").containsKey("confidence [GH-90000]").containsKey("languageDetected [GH-90000]");
-            assertThat(output.get("languageDetected [GH-90000]")).isEqualTo("fr-FR [GH-90000]");
+            assertThat(output).containsKey("transcript").containsKey("confidence").containsKey("languageDetected");
+            assertThat(output.get("languageDetected")).isEqualTo("fr-FR");
         }
     }
 
@@ -118,7 +118,7 @@ class AudioVideoToolHandlersTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("TextToSpeechToolHandler [GH-90000]")
+    @DisplayName("TextToSpeechToolHandler")
     class TtsTests {
 
         private TextToSpeechToolHandler handler;
@@ -129,7 +129,7 @@ class AudioVideoToolHandlersTest {
         }
 
         @Test
-        @DisplayName("succeeds with valid text [GH-90000]")
+        @DisplayName("succeeds with valid text")
         void succeedsWithValidText() { // GH-90000
             ToolExecutionEnvelope env = envelope("av.text-to-speech", Map.of("text", "Hello world")); // GH-90000
             ToolExecutionResult result = await(handler.handle(env, dummyContract)); // GH-90000
@@ -137,24 +137,24 @@ class AudioVideoToolHandlersTest {
         }
 
         @Test
-        @DisplayName("fails when text is missing [GH-90000]")
+        @DisplayName("fails when text is missing")
         void failsWhenTextMissing() { // GH-90000
             ToolExecutionEnvelope env = envelope("av.text-to-speech", Map.of()); // GH-90000
             ToolExecutionResult result = await(handler.handle(env, dummyContract)); // GH-90000
             assertThat(result.status()).isEqualTo(ToolExecutionStatus.FAILED); // GH-90000
-            assertThat(result.errorMessage()).contains("text [GH-90000]");
+            assertThat(result.errorMessage()).contains("text");
         }
 
         @Test
-        @DisplayName("storeAsArtifact flag is reflected in output [GH-90000]")
+        @DisplayName("storeAsArtifact flag is reflected in output")
         void storeAsArtifactFlagReflected() { // GH-90000
             Map<String, Object> input = Map.of("text", "Synthesize this", "storeAsArtifact", true); // GH-90000
             ToolExecutionEnvelope env = envelope("av.text-to-speech", input); // GH-90000
             ToolExecutionResult result = await(handler.handle(env, dummyContract)); // GH-90000
             assertThat(result.status()).isEqualTo(ToolExecutionStatus.SUCCESS); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, Object> output = (Map<String, Object>) result.output(); // GH-90000
-            assertThat(output).containsKey("mediaArtifactId [GH-90000]").containsKey("audioEncoding [GH-90000]");
+            assertThat(output).containsKey("mediaArtifactId").containsKey("audioEncoding");
         }
     }
 
@@ -163,7 +163,7 @@ class AudioVideoToolHandlersTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("VisionAnalysisToolHandler [GH-90000]")
+    @DisplayName("VisionAnalysisToolHandler")
     class VisionTests {
 
         private VisionAnalysisToolHandler handler;
@@ -174,36 +174,36 @@ class AudioVideoToolHandlersTest {
         }
 
         @Test
-        @DisplayName("succeeds with mediaArtifactId source [GH-90000]")
+        @DisplayName("succeeds with mediaArtifactId source")
         void succeedsWithArtifact() { // GH-90000
             Map<String, Object> input = Map.of( // GH-90000
                     "mediaSource", Map.of("mediaArtifactId", "img-artifact-1"), // GH-90000
-                    "analysisTypes", List.of("OBJECT_DETECTION [GH-90000]"));
+                    "analysisTypes", List.of("OBJECT_DETECTION"));
             ToolExecutionEnvelope env = envelope("av.vision-analysis", input); // GH-90000
             ToolExecutionResult result = await(handler.handle(env, dummyContract)); // GH-90000
             assertThat(result.status()).isEqualTo(ToolExecutionStatus.SUCCESS); // GH-90000
         }
 
         @Test
-        @DisplayName("fails when mediaSource is absent [GH-90000]")
+        @DisplayName("fails when mediaSource is absent")
         void failsWhenMediaSourceAbsent() { // GH-90000
-            ToolExecutionEnvelope env = envelope("av.vision-analysis", Map.of("analysisTypes", List.of("OCR [GH-90000]")));
+            ToolExecutionEnvelope env = envelope("av.vision-analysis", Map.of("analysisTypes", List.of("OCR")));
             ToolExecutionResult result = await(handler.handle(env, dummyContract)); // GH-90000
             assertThat(result.status()).isEqualTo(ToolExecutionStatus.FAILED); // GH-90000
-            assertThat(result.errorMessage()).contains("mediaSource [GH-90000]");
+            assertThat(result.errorMessage()).contains("mediaSource");
         }
 
         @Test
-        @DisplayName("output contains requested analysis type keys [GH-90000]")
+        @DisplayName("output contains requested analysis type keys")
         void outputContainsRequestedAnalysisKeys() { // GH-90000
             Map<String, Object> input = Map.of( // GH-90000
                     "mediaSource", Map.of("mediaArtifactId", "img-42"), // GH-90000
                     "analysisTypes", List.of("OBJECT_DETECTION", "OCR")); // GH-90000
             ToolExecutionEnvelope env = envelope("av.vision-analysis", input); // GH-90000
             ToolExecutionResult result = await(handler.handle(env, dummyContract)); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, Object> output = (Map<String, Object>) result.output(); // GH-90000
-            assertThat(output).containsKey("objects [GH-90000]").containsKey("texts [GH-90000]");
+            assertThat(output).containsKey("objects").containsKey("texts");
         }
     }
 
@@ -212,7 +212,7 @@ class AudioVideoToolHandlersTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("MultimodalInferenceToolHandler [GH-90000]")
+    @DisplayName("MultimodalInferenceToolHandler")
     class MultimodalTests {
 
         private MultimodalInferenceToolHandler handler;
@@ -223,7 +223,7 @@ class AudioVideoToolHandlersTest {
         }
 
         @Test
-        @DisplayName("succeeds with mediaArtifactId [GH-90000]")
+        @DisplayName("succeeds with mediaArtifactId")
         void succeedsWithArtifact() { // GH-90000
             Map<String, Object> input = Map.of("mediaArtifactId", "video-artifact-1"); // GH-90000
             ToolExecutionEnvelope env = envelope("av.multimodal-inference", input); // GH-90000
@@ -232,7 +232,7 @@ class AudioVideoToolHandlersTest {
         }
 
         @Test
-        @DisplayName("fails when mediaArtifactId is missing [GH-90000]")
+        @DisplayName("fails when mediaArtifactId is missing")
         void failsWhenArtifactMissing() { // GH-90000
             ToolExecutionEnvelope env = envelope("av.multimodal-inference", Map.of()); // GH-90000
             ToolExecutionResult result = await(handler.handle(env, dummyContract)); // GH-90000
@@ -240,14 +240,14 @@ class AudioVideoToolHandlersTest {
         }
 
         @Test
-        @DisplayName("output includes processingMetadata [GH-90000]")
+        @DisplayName("output includes processingMetadata")
         void outputIncludesProcessingMetadata() { // GH-90000
             Map<String, Object> input = Map.of("mediaArtifactId", "v-1", "inferenceMode", "FULL"); // GH-90000
             ToolExecutionEnvelope env = envelope("av.multimodal-inference", input); // GH-90000
             ToolExecutionResult result = await(handler.handle(env, dummyContract)); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, Object> output = (Map<String, Object>) result.output(); // GH-90000
-            assertThat(output).containsKey("summary [GH-90000]").containsKey("processingMetadata [GH-90000]");
+            assertThat(output).containsKey("summary").containsKey("processingMetadata");
         }
     }
 
@@ -256,7 +256,7 @@ class AudioVideoToolHandlersTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("AudioVideoToolHandlerFactory [GH-90000]")
+    @DisplayName("AudioVideoToolHandlerFactory")
     class FactoryTests {
 
         private AudioVideoToolHandlerFactory factory;
@@ -267,39 +267,39 @@ class AudioVideoToolHandlersTest {
         }
 
         @Test
-        @DisplayName("creates STT handler [GH-90000]")
+        @DisplayName("creates STT handler")
         void createsSttHandler() { // GH-90000
-            assertThat(factory.create("av.speech-to-text [GH-90000]")).isInstanceOf(SpeechToTextToolHandler.class);
+            assertThat(factory.create("av.speech-to-text")).isInstanceOf(SpeechToTextToolHandler.class);
         }
 
         @Test
-        @DisplayName("creates TTS handler [GH-90000]")
+        @DisplayName("creates TTS handler")
         void createsTtsHandler() { // GH-90000
-            assertThat(factory.create("av.text-to-speech [GH-90000]")).isInstanceOf(TextToSpeechToolHandler.class);
+            assertThat(factory.create("av.text-to-speech")).isInstanceOf(TextToSpeechToolHandler.class);
         }
 
         @Test
-        @DisplayName("creates vision handler [GH-90000]")
+        @DisplayName("creates vision handler")
         void createsVisionHandler() { // GH-90000
-            assertThat(factory.create("av.vision-analysis [GH-90000]")).isInstanceOf(VisionAnalysisToolHandler.class);
+            assertThat(factory.create("av.vision-analysis")).isInstanceOf(VisionAnalysisToolHandler.class);
         }
 
         @Test
-        @DisplayName("creates multimodal handler [GH-90000]")
+        @DisplayName("creates multimodal handler")
         void createsMultimodalHandler() { // GH-90000
-            assertThat(factory.create("av.multimodal-inference [GH-90000]")).isInstanceOf(MultimodalInferenceToolHandler.class);
+            assertThat(factory.create("av.multimodal-inference")).isInstanceOf(MultimodalInferenceToolHandler.class);
         }
 
         @Test
-        @DisplayName("throws for unknown toolId [GH-90000]")
+        @DisplayName("throws for unknown toolId")
         void throwsForUnknownToolId() { // GH-90000
-            assertThatThrownBy(() -> factory.create("av.unknown [GH-90000]"))
+            assertThatThrownBy(() -> factory.create("av.unknown"))
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("av.unknown [GH-90000]");
+                    .hasMessageContaining("av.unknown");
         }
 
         @Test
-        @DisplayName("toolIds returns all four capabilities [GH-90000]")
+        @DisplayName("toolIds returns all four capabilities")
         void toolIdsReturnsAllFour() { // GH-90000
             assertThat(factory.toolIds()).containsExactlyInAnyOrder( // GH-90000
                     "av.speech-to-text", "av.text-to-speech",

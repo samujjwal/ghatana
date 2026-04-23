@@ -25,29 +25,29 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern Unit Test
  */
-@DisplayName("DataCloudEnvConfig [GH-90000]")
+@DisplayName("DataCloudEnvConfig")
 class DataCloudEnvConfigTest {
 
     @Nested
-    @DisplayName("get() [GH-90000]")
+    @DisplayName("get()")
     class Get {
 
         @Test
         void returnsDefaultWhenKeyAbsent() { // GH-90000
             DataCloudEnvConfig config = DataCloudEnvConfig.fromMap(Map.of()); // GH-90000
-            assertThat(config.get("SOME_KEY", "fallback")).isEqualTo("fallback [GH-90000]");
+            assertThat(config.get("SOME_KEY", "fallback")).isEqualTo("fallback");
         }
 
         @Test
         void returnsValueWhenKeyPresent() { // GH-90000
             DataCloudEnvConfig config = DataCloudEnvConfig.fromMap(Map.of("KEY", "value")); // GH-90000
-            assertThat(config.get("KEY", "fallback")).isEqualTo("value [GH-90000]");
+            assertThat(config.get("KEY", "fallback")).isEqualTo("value");
         }
 
         @Test
         void returnsDefaultWhenValueIsBlank() { // GH-90000
             DataCloudEnvConfig config = DataCloudEnvConfig.fromMap(Map.of("KEY", "   ")); // GH-90000
-            assertThat(config.get("KEY", "fallback")).isEqualTo("fallback [GH-90000]");
+            assertThat(config.get("KEY", "fallback")).isEqualTo("fallback");
         }
 
         @Test
@@ -55,12 +55,12 @@ class DataCloudEnvConfigTest {
             Map<String, String> env = new HashMap<>(); // GH-90000
             env.put("KEY", ""); // GH-90000
             DataCloudEnvConfig config = DataCloudEnvConfig.fromMap(env); // GH-90000
-            assertThat(config.get("KEY", "fallback")).isEqualTo("fallback [GH-90000]");
+            assertThat(config.get("KEY", "fallback")).isEqualTo("fallback");
         }
     }
 
     @Nested
-    @DisplayName("getInt() [GH-90000]")
+    @DisplayName("getInt()")
     class GetInt {
 
         @Test
@@ -80,8 +80,8 @@ class DataCloudEnvConfigTest {
             DataCloudEnvConfig config = DataCloudEnvConfig.fromMap(Map.of("PORT", "not-a-number")); // GH-90000
             assertThatThrownBy(() -> config.getInt("PORT", 9090)) // GH-90000
                 .isInstanceOf(IllegalStateException.class) // GH-90000
-                .hasMessageContaining("PORT [GH-90000]")
-                .hasMessageContaining("not-a-number [GH-90000]");
+                .hasMessageContaining("PORT")
+                .hasMessageContaining("not-a-number");
         }
 
         @Test
@@ -92,22 +92,22 @@ class DataCloudEnvConfigTest {
     }
 
     @Nested
-    @DisplayName("require() [GH-90000]")
+    @DisplayName("require()")
     class Require {
 
         @Test
         void returnsValueWhenPresent() { // GH-90000
             DataCloudEnvConfig config = DataCloudEnvConfig.fromMap( // GH-90000
                 Map.of("DC_SERVER_URL", "https://dc.example.com")); // GH-90000
-            assertThat(config.require("DC_SERVER_URL [GH-90000]")).isEqualTo("https://dc.example.com [GH-90000]");
+            assertThat(config.require("DC_SERVER_URL")).isEqualTo("https://dc.example.com");
         }
 
         @Test
         void throwsWhenKeyAbsent() { // GH-90000
             DataCloudEnvConfig config = DataCloudEnvConfig.fromMap(Map.of()); // GH-90000
-            assertThatThrownBy(() -> config.require("DC_SERVER_URL [GH-90000]"))
+            assertThatThrownBy(() -> config.require("DC_SERVER_URL"))
                 .isInstanceOf(IllegalStateException.class) // GH-90000
-                .hasMessageContaining("DC_SERVER_URL [GH-90000]");
+                .hasMessageContaining("DC_SERVER_URL");
         }
 
         @Test
@@ -115,21 +115,21 @@ class DataCloudEnvConfigTest {
             Map<String, String> env = new HashMap<>(); // GH-90000
             env.put("DC_SERVER_URL", "   "); // GH-90000
             DataCloudEnvConfig config = DataCloudEnvConfig.fromMap(env); // GH-90000
-            assertThatThrownBy(() -> config.require("DC_SERVER_URL [GH-90000]"))
+            assertThatThrownBy(() -> config.require("DC_SERVER_URL"))
                 .isInstanceOf(IllegalStateException.class) // GH-90000
-                .hasMessageContaining("DC_SERVER_URL [GH-90000]");
+                .hasMessageContaining("DC_SERVER_URL");
         }
     }
 
     @Nested
-    @DisplayName("typed accessors (defaults) [GH-90000]")
+    @DisplayName("typed accessors (defaults)")
     class TypedAccessorDefaults {
 
         private final DataCloudEnvConfig config = DataCloudEnvConfig.fromMap(Map.of()); // GH-90000
 
         @Test
         void deploymentModeDefaultsToEmbedded() { // GH-90000
-            assertThat(config.deploymentMode()).isEqualTo("EMBEDDED [GH-90000]");
+            assertThat(config.deploymentMode()).isEqualTo("EMBEDDED");
         }
 
         @Test
@@ -144,12 +144,12 @@ class DataCloudEnvConfigTest {
 
         @Test
         void pgUrlHasDefaultJdbcUrl() { // GH-90000
-            assertThat(config.pgUrl()).contains("postgresql [GH-90000]").contains("5432 [GH-90000]");
+            assertThat(config.pgUrl()).contains("postgresql").contains("5432");
         }
 
         @Test
         void pgUserDefaultsToDatacloud() { // GH-90000
-            assertThat(config.pgUser()).isEqualTo("datacloud [GH-90000]");
+            assertThat(config.pgUser()).isEqualTo("datacloud");
         }
 
         @Test
@@ -169,7 +169,7 @@ class DataCloudEnvConfigTest {
 
         @Test
         void pgConnectionTestQueryDefaultsToSelectOne() { // GH-90000
-            assertThat(config.pgConnectionTestQuery()).isEqualTo("SELECT 1 [GH-90000]");
+            assertThat(config.pgConnectionTestQuery()).isEqualTo("SELECT 1");
         }
 
         @Test
@@ -179,7 +179,7 @@ class DataCloudEnvConfigTest {
 
         @Test
         void redisHostDefaultsToLocalhost() { // GH-90000
-            assertThat(config.redisHost()).isEqualTo("localhost [GH-90000]");
+            assertThat(config.redisHost()).isEqualTo("localhost");
         }
 
         @Test
@@ -189,7 +189,7 @@ class DataCloudEnvConfigTest {
 
         @Test
         void s3RegionDefaultsToUsEast1() { // GH-90000
-            assertThat(config.s3Region()).isEqualTo("us-east-1 [GH-90000]");
+            assertThat(config.s3Region()).isEqualTo("us-east-1");
         }
 
         @Test
@@ -204,21 +204,21 @@ class DataCloudEnvConfigTest {
     }
 
     @Nested
-    @DisplayName("typed accessors (with env overrides) [GH-90000]")
+    @DisplayName("typed accessors (with env overrides)")
     class TypedAccessorOverrides {
 
         @Test
         void deploymentModeNormalisedToUpperCase() { // GH-90000
             DataCloudEnvConfig config = DataCloudEnvConfig.fromMap( // GH-90000
                 Map.of(DataCloudEnvConfig.DC_DEPLOYMENT_MODE, "standalone")); // GH-90000
-            assertThat(config.deploymentMode()).isEqualTo("STANDALONE [GH-90000]");
+            assertThat(config.deploymentMode()).isEqualTo("STANDALONE");
         }
 
         @Test
         void serverUrlFromEnv() { // GH-90000
             DataCloudEnvConfig config = DataCloudEnvConfig.fromMap( // GH-90000
                 Map.of(DataCloudEnvConfig.DC_SERVER_URL, "https://dc.prod.example.com")); // GH-90000
-            assertThat(config.serverUrl()).isEqualTo("https://dc.prod.example.com [GH-90000]");
+            assertThat(config.serverUrl()).isEqualTo("https://dc.prod.example.com");
         }
 
         @Test
@@ -239,7 +239,7 @@ class DataCloudEnvConfigTest {
         void pgConnectionTestQueryParsedFromEnv() { // GH-90000
             DataCloudEnvConfig config = DataCloudEnvConfig.fromMap( // GH-90000
                 Map.of(DataCloudEnvConfig.DATACLOUD_PG_CONNECTION_TEST_QUERY, "SELECT current_database()")); // GH-90000
-            assertThat(config.pgConnectionTestQuery()).isEqualTo("SELECT current_database() [GH-90000]");
+            assertThat(config.pgConnectionTestQuery()).isEqualTo("SELECT current_database()");
         }
 
         @Test
@@ -274,7 +274,7 @@ class DataCloudEnvConfigTest {
         void authTokenFromEnv() { // GH-90000
             DataCloudEnvConfig config = DataCloudEnvConfig.fromMap( // GH-90000
                 Map.of(DataCloudEnvConfig.DATACLOUD_HTTP_AUTH_TOKEN, "bearer-tok-abc")); // GH-90000
-            assertThat(config.authToken()).isEqualTo("bearer-tok-abc [GH-90000]");
+            assertThat(config.authToken()).isEqualTo("bearer-tok-abc");
         }
     }
 }

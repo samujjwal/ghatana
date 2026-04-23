@@ -18,7 +18,8 @@ import java.time.Instant;
  * @doc.type value-object
  * @doc.purpose Memory item validity and confidence tracking
  * @doc.layer agent-memory
- */
+  * @doc.pattern Component
+*/
 @Value
 @Builder
 @Jacksonized

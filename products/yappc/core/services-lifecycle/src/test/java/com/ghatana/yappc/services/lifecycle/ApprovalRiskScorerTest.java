@@ -30,7 +30,7 @@ import static org.mockito.Mockito.when;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("ApprovalRiskScorer [GH-90000]")
+@DisplayName("ApprovalRiskScorer")
 class ApprovalRiskScorerTest extends EventloopTestBase {
 
     @Mock
@@ -51,7 +51,7 @@ class ApprovalRiskScorerTest extends EventloopTestBase {
                 "agent-x",
                 ApprovalRequest.ApprovalType.PHASE_ADVANCE,
                 new ApprovalRequest.ApprovalContext( // GH-90000
-                        "INTENT", "SHAPE", "required", List.of("crit-1 [GH-90000]"), List.of()),
+                        "INTENT", "SHAPE", "required", List.of("crit-1"), List.of()),
                 ApprovalRequest.ApprovalStatus.PENDING,
                 "tenant-abc",
                 Instant.now(), // GH-90000
@@ -71,7 +71,7 @@ class ApprovalRiskScorerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("score returns HIGH when LLM responds with RISK: HIGH [GH-90000]")
+    @DisplayName("score returns HIGH when LLM responds with RISK: HIGH")
     void scoreReturnsHighWhenLlmSaysHigh() { // GH-90000
         when(completionService.complete(any(CompletionRequest.class))) // GH-90000
                 .thenReturn(Promise.of(CompletionResult.of( // GH-90000
@@ -82,11 +82,11 @@ class ApprovalRiskScorerTest extends EventloopTestBase {
         assertThat(result.level()).isEqualTo(ApprovalRiskScorer.RiskLevel.HIGH); // GH-90000
         assertThat(result.score()).isEqualTo(0.9); // GH-90000
         assertThat(result.requiredApproverCount()).isEqualTo(2); // GH-90000
-        assertThat(result.reasoning()).contains("Production deployment [GH-90000]");
+        assertThat(result.reasoning()).contains("Production deployment");
     }
 
     @Test
-    @DisplayName("score returns LOW when LLM responds with RISK: LOW [GH-90000]")
+    @DisplayName("score returns LOW when LLM responds with RISK: LOW")
     void scoreReturnsLowWhenLlmSaysLow() { // GH-90000
         when(completionService.complete(any(CompletionRequest.class))) // GH-90000
                 .thenReturn(Promise.of(CompletionResult.of( // GH-90000
@@ -100,7 +100,7 @@ class ApprovalRiskScorerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("score returns MEDIUM when LLM responds with RISK: MEDIUM [GH-90000]")
+    @DisplayName("score returns MEDIUM when LLM responds with RISK: MEDIUM")
     void scoreReturnsMediumWhenLlmSaysMedium() { // GH-90000
         when(completionService.complete(any(CompletionRequest.class))) // GH-90000
                 .thenReturn(Promise.of(CompletionResult.of( // GH-90000
@@ -113,10 +113,10 @@ class ApprovalRiskScorerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("score falls back to heuristic when LLM call fails [GH-90000]")
+    @DisplayName("score falls back to heuristic when LLM call fails")
     void scoreFallsBackToHeuristicOnLlmFailure() { // GH-90000
         when(completionService.complete(any(CompletionRequest.class))) // GH-90000
-                .thenReturn(Promise.ofException(new RuntimeException("LLM timeout [GH-90000]")));
+                .thenReturn(Promise.ofException(new RuntimeException("LLM timeout")));
 
         // DEPLOYMENT type → heuristic returns HIGH
         ApprovalRiskScorer.RiskScore result = runPromise(() -> scorer.score(deploymentRequest)); // GH-90000
@@ -126,10 +126,10 @@ class ApprovalRiskScorerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("score falls back to heuristic when LLM response is empty [GH-90000]")
+    @DisplayName("score falls back to heuristic when LLM response is empty")
     void scoreFallsBackToMediumOnEmptyLlmResponse() { // GH-90000
         when(completionService.complete(any(CompletionRequest.class))) // GH-90000
-                .thenReturn(Promise.of(CompletionResult.of(" [GH-90000]")));
+                .thenReturn(Promise.of(CompletionResult.of("")));
 
         ApprovalRiskScorer.RiskScore result = runPromise(() -> scorer.score(phaseAdvanceRequest)); // GH-90000
 
@@ -140,7 +140,7 @@ class ApprovalRiskScorerTest extends EventloopTestBase {
     // ─── Heuristic tests (direct) ───────────────────────────────────────────── // GH-90000
 
     @Test
-    @DisplayName("heuristicScore returns HIGH for DEPLOYMENT type [GH-90000]")
+    @DisplayName("heuristicScore returns HIGH for DEPLOYMENT type")
     void heuristicReturnsHighForDeployment() { // GH-90000
         ApprovalRiskScorer.RiskScore score = scorer.heuristicScore(deploymentRequest); // GH-90000
         assertThat(score.level()).isEqualTo(ApprovalRiskScorer.RiskLevel.HIGH); // GH-90000
@@ -148,7 +148,7 @@ class ApprovalRiskScorerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("heuristicScore returns HIGH for RISK_ACCEPTANCE type [GH-90000]")
+    @DisplayName("heuristicScore returns HIGH for RISK_ACCEPTANCE type")
     void heuristicReturnsHighForRiskAcceptance() { // GH-90000
         ApprovalRequest riskAcceptance = new ApprovalRequest( // GH-90000
                 "req-risk", "proj-001", "agent-x",
@@ -162,7 +162,7 @@ class ApprovalRiskScorerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("heuristicScore returns MEDIUM when more than 2 unmet criteria [GH-90000]")
+    @DisplayName("heuristicScore returns MEDIUM when more than 2 unmet criteria")
     void heuristicReturnsMediumForManyUnmetCriteria() { // GH-90000
         ApprovalRequest manyUnmet = new ApprovalRequest( // GH-90000
                 "req-unmet", "proj-001", "agent-x",
@@ -177,7 +177,7 @@ class ApprovalRiskScorerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("heuristicScore returns LOW for routine phase advance with few criteria [GH-90000]")
+    @DisplayName("heuristicScore returns LOW for routine phase advance with few criteria")
     void heuristicReturnsLowForRoutineAdvance() { // GH-90000
         ApprovalRiskScorer.RiskScore score = scorer.heuristicScore(phaseAdvanceRequest); // GH-90000
         assertThat(score.level()).isEqualTo(ApprovalRiskScorer.RiskLevel.LOW); // GH-90000

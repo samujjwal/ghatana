@@ -29,7 +29,7 @@ import static org.mockito.Mockito.when;
 /**
  * Tests for {@link EventChannelRegistry}.
  */
-@DisplayName("EventChannelRegistry [GH-90000]")
+@DisplayName("EventChannelRegistry")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class EventChannelRegistryTest extends EventloopTestBase {
 
@@ -95,7 +95,7 @@ class EventChannelRegistryTest extends EventloopTestBase {
         // GIVEN
         registry.registerChannel(EventChannel.EVENTS_INTAKE); // GH-90000
         when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) // GH-90000
-            .thenReturn(Promise.of(Offset.of("1 [GH-90000]")));
+            .thenReturn(Promise.of(Offset.of("1")));
 
         byte[] payload = "{\"data\":\"test\"}".getBytes(StandardCharsets.UTF_8); // GH-90000
 
@@ -110,8 +110,8 @@ class EventChannelRegistryTest extends EventloopTestBase {
 
         EventEntry entry = entryCaptor.getValue(); // GH-90000
         assertThat(entry.eventType()) // GH-90000
-            .isEqualTo("aep.events.intake.order.created [GH-90000]");
-        assertThat(entry.headers().get("channel [GH-90000]"))
+            .isEqualTo("aep.events.intake.order.created");
+        assertThat(entry.headers().get("channel"))
             .isEqualTo(EventChannel.EVENTS_INTAKE.name()); // GH-90000
     }
 
@@ -122,7 +122,7 @@ class EventChannelRegistryTest extends EventloopTestBase {
             runPromise(() -> // GH-90000
                 registry.publish("nonexistent", "t1", "event", new byte[0])); // GH-90000
         } catch (Exception e) { // GH-90000
-            assertThat(e).hasMessageContaining("Channel not registered: nonexistent [GH-90000]");
+            assertThat(e).hasMessageContaining("Channel not registered: nonexistent");
         }
         clearFatalError(); // GH-90000
     }
@@ -143,7 +143,7 @@ class EventChannelRegistryTest extends EventloopTestBase {
 
     @Test
     void shouldReturnFalseWhenRemovingNonexistentChannel() { // GH-90000
-        assertThat(registry.removeChannel("nonexistent [GH-90000]")).isFalse();
+        assertThat(registry.removeChannel("nonexistent")).isFalse();
     }
 
     @Test
@@ -168,8 +168,8 @@ class EventChannelRegistryTest extends EventloopTestBase {
         registry.registerChannel(custom); // GH-90000
 
         // THEN
-        assertThat(registry.getChannel("custom.channel [GH-90000]")).isPresent();
-        assertThat(registry.getChannel("custom.channel [GH-90000]").get().description())
-            .isEqualTo("Custom events [GH-90000]");
+        assertThat(registry.getChannel("custom.channel")).isPresent();
+        assertThat(registry.getChannel("custom.channel").get().description())
+            .isEqualTo("Custom events");
     }
 }

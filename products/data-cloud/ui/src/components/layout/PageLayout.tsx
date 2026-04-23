@@ -12,7 +12,7 @@
 
 import React from 'react';
 import { ChevronRight, Sparkles } from 'lucide-react';
-import { AILabel, ConfidenceBadge } from '@ghatana/design-system';
+import { ConfidenceBadge } from '@ghatana/design-system';
 import { cn, bgStyles, borderStyles, textStyles } from '../../lib/theme';
 
 // =============================================================================

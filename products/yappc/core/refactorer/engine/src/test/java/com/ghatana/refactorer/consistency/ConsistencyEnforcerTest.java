@@ -48,7 +48,7 @@ class ConsistencyEnforcerTest extends EventloopTestBase {
 
     @Test
     void testCheckFilesWithNonExistentFile() { // GH-90000
-        Path nonExistentFile = tempDir.resolve("nonexistent.txt [GH-90000]");
+        Path nonExistentFile = tempDir.resolve("nonexistent.txt");
         var diagnostics = runPromise(() -> enforcer.checkFiles(List.of(nonExistentFile))); // GH-90000
         assertTrue(diagnostics.isEmpty(), "Should handle non-existent files gracefully"); // GH-90000
     }
@@ -56,14 +56,14 @@ class ConsistencyEnforcerTest extends EventloopTestBase {
     @Test
     void testFixFiles() { // GH-90000
         assertDoesNotThrow(() -> // GH-90000
-            runPromise(() -> enforcer.fixFiles(List.of(tempDir.resolve("test.sh [GH-90000]"))))
+            runPromise(() -> enforcer.fixFiles(List.of(tempDir.resolve("test.sh"))))
         );
     }
 
     @Test
     void testFormatFiles() { // GH-90000
         assertDoesNotThrow(() -> // GH-90000
-            runPromise(() -> enforcer.formatFiles(List.of(tempDir.resolve("test.sh [GH-90000]"))))
+            runPromise(() -> enforcer.formatFiles(List.of(tempDir.resolve("test.sh"))))
         );
     }
 

@@ -10,7 +10,8 @@ package com.ghatana.products.finance.domains.sanctions.domain;
  *   <li>LOW         — score < 0.70: auto-dismissed, no block</li>
  * </ul>
  * @doc.layer   Domain
- */
+  * @doc.pattern Component
+*/
 public enum ScreeningDecision {
     AUTO_BLOCK,
     HIGH,

@@ -23,7 +23,11 @@ import org.slf4j.LoggerFactory;
 /**
  * Day 39: Enhanced execution queue with checkpoint store integration.
  * Provides exactly-once semantics through idempotency guards and persistent checkpoints.
- */
+  * @doc.type class
+ * @doc.purpose Provides checkpoint aware execution queue functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 public class CheckpointAwareExecutionQueue implements ExecutionQueue {
 
     private static final Logger logger = LoggerFactory.getLogger(CheckpointAwareExecutionQueue.class);

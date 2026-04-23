@@ -20,14 +20,14 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Unit Test
  */
-@DisplayName("H2 sovereign entity store [GH-90000]")
+@DisplayName("H2 sovereign entity store")
 class H2SovereignEntityStoreTest extends EventloopTestBase {
 
     @TempDir
     Path tempDir;
 
     @Test
-    @DisplayName("delete creates tombstones that compaction removes [GH-90000]")
+    @DisplayName("delete creates tombstones that compaction removes")
     void deleteCreatesTombstonesThatCompactionRemoves() throws Exception { // GH-90000
         H2SovereignEntityStore store = new H2SovereignEntityStore(tempDir); // GH-90000
         TenantContext tenant = TenantContext.of("tenant-a", Map.of()); // GH-90000
@@ -36,26 +36,26 @@ class H2SovereignEntityStoreTest extends EventloopTestBase {
             runPromise(() -> store.save( // GH-90000
                 tenant,
                 EntityStore.Entity.builder() // GH-90000
-                    .id("entity-1 [GH-90000]")
-                    .collection("documents [GH-90000]")
+                    .id("entity-1")
+                    .collection("documents")
                     .data(Map.of("title", "One")) // GH-90000
                     .build())); // GH-90000
-            runPromise(() -> store.delete(tenant, EntityStore.EntityId.of("entity-1 [GH-90000]")));
+            runPromise(() -> store.delete(tenant, EntityStore.EntityId.of("entity-1")));
 
             Map<String, Long> tombstones = runPromise(store::countTombstones); // GH-90000
-            int removed = runPromise(() -> store.compactTenant("tenant-a [GH-90000]"));
+            int removed = runPromise(() -> store.compactTenant("tenant-a"));
 
             assertThat(tombstones).containsEntry("tenant-a", 1L); // GH-90000
             assertThat(removed).isEqualTo(1); // GH-90000
-            assertThat(runPromise(store::countTombstones)).doesNotContainKey("tenant-a [GH-90000]");
-            assertThat(runPromise(() -> store.findById(tenant, EntityStore.EntityId.of("entity-1 [GH-90000]")))).isEmpty();
+            assertThat(runPromise(store::countTombstones)).doesNotContainKey("tenant-a");
+            assertThat(runPromise(() -> store.findById(tenant, EntityStore.EntityId.of("entity-1")))).isEmpty();
         } finally {
             store.close(); // GH-90000
         }
     }
 
     @Test
-    @DisplayName("deleteBatch soft-deletes a small batch of entities [GH-90000]")
+    @DisplayName("deleteBatch soft-deletes a small batch of entities")
     void deleteBatchSoftDeletesSmallBatch() throws Exception { // GH-90000
         H2SovereignEntityStore store = new H2SovereignEntityStore(tempDir); // GH-90000
         TenantContext tenant = TenantContext.of("tenant-a", Map.of()); // GH-90000
@@ -64,7 +64,7 @@ class H2SovereignEntityStoreTest extends EventloopTestBase {
             List<EntityStore.Entity> entities = IntStream.range(0, 10) // GH-90000
                 .mapToObj(index -> EntityStore.Entity.builder() // GH-90000
                     .id("entity-" + index) // GH-90000
-                    .collection("documents [GH-90000]")
+                    .collection("documents")
                     .data(Map.of("index", index)) // GH-90000
                     .build()) // GH-90000
                 .toList(); // GH-90000
@@ -77,7 +77,7 @@ class H2SovereignEntityStoreTest extends EventloopTestBase {
             assertThat(result.totalCount()).isEqualTo(10); // GH-90000
             assertThat(result.successCount()).isEqualTo(10); // GH-90000
             assertThat(result.failureCount()).isZero(); // GH-90000
-            assertThat(runPromise(() -> store.count(tenant, EntityStore.QuerySpec.builder().collection("documents [GH-90000]").build())))
+            assertThat(runPromise(() -> store.count(tenant, EntityStore.QuerySpec.builder().collection("documents").build())))
                 .isZero(); // GH-90000
             assertThat(runPromise(store::countTombstones)).containsEntry("tenant-a", 10L); // GH-90000
         } finally {

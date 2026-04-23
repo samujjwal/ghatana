@@ -22,24 +22,24 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@Tag("integration [GH-90000]")
+@Tag("integration")
 @Testcontainers(disabledWithoutDocker = true) // GH-90000
-@DisplayName("RedisIntegrationTest [GH-90000]")
+@DisplayName("RedisIntegrationTest")
 class RedisIntegrationTest {
 
     @Container
-    @SuppressWarnings("resource [GH-90000]")
+    @SuppressWarnings("resource")
     private static final GenericContainer<?> REDIS =
-        new GenericContainer<>("redis:7-alpine [GH-90000]")
+        new GenericContainer<>("redis:7-alpine")
             .withExposedPorts(6379); // GH-90000
 
     @Test
-    @DisplayName("can ping and round-trip a key [GH-90000]")
+    @DisplayName("can ping and round-trip a key")
     void canPingAndRoundTripKey() { // GH-90000
         try (Jedis jedis = new Jedis(REDIS.getHost(), REDIS.getMappedPort(6379))) { // GH-90000
-            assertThat(jedis.ping()).isEqualTo("PONG [GH-90000]");
+            assertThat(jedis.ping()).isEqualTo("PONG");
             jedis.set("aep:probe", "ok"); // GH-90000
-            assertThat(jedis.get("aep:probe [GH-90000]")).isEqualTo("ok [GH-90000]");
+            assertThat(jedis.get("aep:probe")).isEqualTo("ok");
         }
     }
 }

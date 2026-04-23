@@ -27,7 +27,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("SseStreamingHandler [GH-90000]")
+@DisplayName("SseStreamingHandler")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class SseStreamingHandlerTest extends EventloopTestBase {
 
@@ -65,7 +65,7 @@ class SseStreamingHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("entity CDC rejects missing tenant before event log access [GH-90000]")
+    @DisplayName("entity CDC rejects missing tenant before event log access")
     void entityCdcRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
@@ -76,7 +76,7 @@ class SseStreamingHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("general SSE rejects missing tenant before event log access [GH-90000]")
+    @DisplayName("general SSE rejects missing tenant before event log access")
     void generalSseRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
@@ -87,7 +87,7 @@ class SseStreamingHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("brain workspace SSE rejects missing tenant before workspace access [GH-90000]")
+    @DisplayName("brain workspace SSE rejects missing tenant before workspace access")
     void brainWorkspaceRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
@@ -98,7 +98,7 @@ class SseStreamingHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("learning SSE rejects missing tenant before stream setup [GH-90000]")
+    @DisplayName("learning SSE rejects missing tenant before stream setup")
     void learningStreamRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
@@ -109,10 +109,10 @@ class SseStreamingHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("streaming query SSE rejects missing tenant before query execution [GH-90000]")
+    @DisplayName("streaming query SSE rejects missing tenant before query execution")
     void streamingQueryRejectsMissingTenant() { // GH-90000
-        when(request.getPathParameter("collection [GH-90000]")).thenReturn("orders [GH-90000]");
-        when(request.getQueryParameter("q [GH-90000]")).thenReturn("status:open [GH-90000]");
+        when(request.getPathParameter("collection")).thenReturn("orders");
+        when(request.getQueryParameter("q")).thenReturn("status:open");
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
         HttpResponse response = runPromise(() -> handler.handleStreamingQuerySse(request)); // GH-90000

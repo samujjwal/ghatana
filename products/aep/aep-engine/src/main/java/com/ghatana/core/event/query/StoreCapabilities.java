@@ -4,7 +4,11 @@ import java.util.Set;
 
 /**
  * Describes the query capabilities of the underlying event store.
- */
+  * @doc.type class
+ * @doc.purpose Provides store capabilities functionality.
+ * @doc.layer product
+ * @doc.pattern Repository
+*/
 public class StoreCapabilities {
     private final boolean supportsStreaming;
     private final boolean supportsIndexing;

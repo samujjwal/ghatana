@@ -6,7 +6,11 @@ import java.util.Objects;
 /**
  * Configuration for checkpoint coordinator.
  * Controls checkpoint behavior: intervals, timeouts, alignment mode, retention.
- */
+  * @doc.type class
+ * @doc.purpose Provides checkpoint config functionality.
+ * @doc.layer product
+ * @doc.pattern Configuration
+*/
 public final class CheckpointConfig {
 
     private final boolean periodicCheckpointsEnabled;

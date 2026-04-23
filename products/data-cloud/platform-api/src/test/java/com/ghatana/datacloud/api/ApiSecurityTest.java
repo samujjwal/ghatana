@@ -32,11 +32,11 @@ import static org.mockito.Mockito.when;
  *
  * Test API security, authentication, authorization, and rate limiting.
  */
-@DisplayName("API Security Tests [GH-90000]")
+@DisplayName("API Security Tests")
 class ApiSecurityTest {
 
     @Test
-    @DisplayName("Should enforce authentication - missing tenant ID returns 400 [GH-90000]")
+    @DisplayName("Should enforce authentication - missing tenant ID returns 400")
     void shouldEnforceAuthentication() { // GH-90000
         CollectionService collectionService = mock(CollectionService.class); // GH-90000
         MetricsCollector metrics = mock(MetricsCollector.class); // GH-90000
@@ -45,7 +45,7 @@ class ApiSecurityTest {
 
         CollectionController controller = new CollectionController(collectionService, metrics, mapper, dtoMapper); // GH-90000
 
-        HttpRequest request = HttpRequest.get("http://localhost/api/v1/collections [GH-90000]").build();
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/collections").build();
         Promise<io.activej.http.HttpResponse> response = controller.handle(request); // GH-90000
 
         response.whenResult(httpResponse -> { // GH-90000
@@ -54,7 +54,7 @@ class ApiSecurityTest {
     }
 
     @Test
-    @DisplayName("Should enforce authorization - valid tenant ID allows access [GH-90000]")
+    @DisplayName("Should enforce authorization - valid tenant ID allows access")
     void shouldEnforceAuthorization() { // GH-90000
         CollectionService collectionService = mock(CollectionService.class); // GH-90000
         MetricsCollector metrics = mock(MetricsCollector.class); // GH-90000
@@ -66,8 +66,8 @@ class ApiSecurityTest {
 
         CollectionController controller = new CollectionController(collectionService, metrics, mapper, dtoMapper); // GH-90000
 
-        HttpRequest request = HttpRequest.get("http://localhost/api/v1/collections [GH-90000]")
-            .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-123")
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/collections")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-123")
             .build(); // GH-90000
         Promise<io.activej.http.HttpResponse> response = controller.handle(request); // GH-90000
 
@@ -77,7 +77,7 @@ class ApiSecurityTest {
     }
 
     @Test
-    @DisplayName("Should enforce rate limiting [GH-90000]")
+    @DisplayName("Should enforce rate limiting")
     void shouldEnforceRateLimiting() { // GH-90000
         CollectionService collectionService = mock(CollectionService.class); // GH-90000
         MetricsCollector metrics = mock(MetricsCollector.class); // GH-90000
@@ -90,7 +90,7 @@ class ApiSecurityTest {
     }
 
     @Test
-    @DisplayName("Should prevent injection attacks [GH-90000]")
+    @DisplayName("Should prevent injection attacks")
     void shouldPreventInjectionAttacks() { // GH-90000
         CollectionService collectionService = mock(CollectionService.class); // GH-90000
         MetricsCollector metrics = mock(MetricsCollector.class); // GH-90000
@@ -103,9 +103,9 @@ class ApiSecurityTest {
         CollectionController controller = new CollectionController(collectionService, metrics, mapper, dtoMapper); // GH-90000
 
         String maliciousJson = "{\"name\":\"test'; DROP TABLE users; --\"}";
-        HttpRequest request = HttpRequest.post("http://localhost/api/v1/collections [GH-90000]")
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/collections")
             .withBody(maliciousJson.getBytes(StandardCharsets.UTF_8)) // GH-90000
-            .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-123")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-123")
             .build(); // GH-90000
 
         Promise<io.activej.http.HttpResponse> response = controller.handle(request); // GH-90000
@@ -116,7 +116,7 @@ class ApiSecurityTest {
     }
 
     @Test
-    @DisplayName("Should handle secure headers [GH-90000]")
+    @DisplayName("Should handle secure headers")
     void shouldHandleSecureHeaders() { // GH-90000
         CollectionService collectionService = mock(CollectionService.class); // GH-90000
         MetricsCollector metrics = mock(MetricsCollector.class); // GH-90000
@@ -125,9 +125,9 @@ class ApiSecurityTest {
 
         CollectionController controller = new CollectionController(collectionService, metrics, mapper, dtoMapper); // GH-90000
 
-        HttpRequest request = HttpRequest.get("http://localhost/api/v1/collections [GH-90000]")
-            .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-123")
-            .withHeader(HttpHeaders.of("X-User-ID [GH-90000]"), "user-123")
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/collections")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-123")
+            .withHeader(HttpHeaders.of("X-User-ID"), "user-123")
             .build(); // GH-90000
 
         Promise<io.activej.http.HttpResponse> response = controller.handle(request); // GH-90000
@@ -136,7 +136,7 @@ class ApiSecurityTest {
     }
 
     @Test
-    @DisplayName("Should handle CORS policies [GH-90000]")
+    @DisplayName("Should handle CORS policies")
     void shouldHandleCorsPolicies() { // GH-90000
         CollectionService collectionService = mock(CollectionService.class); // GH-90000
         MetricsCollector metrics = mock(MetricsCollector.class); // GH-90000
@@ -145,9 +145,9 @@ class ApiSecurityTest {
 
         CollectionController controller = new CollectionController(collectionService, metrics, mapper, dtoMapper); // GH-90000
 
-        HttpRequest request = HttpRequest.get("http://localhost/api/v1/collections [GH-90000]")
-            .withHeader(HttpHeaders.of("Origin [GH-90000]"), "https://example.com")
-            .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-123")
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/collections")
+            .withHeader(HttpHeaders.of("Origin"), "https://example.com")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-123")
             .build(); // GH-90000
 
         Promise<io.activej.http.HttpResponse> response = controller.handle(request); // GH-90000

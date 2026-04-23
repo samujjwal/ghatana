@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Validates complete event processing payloads and multi-tenant isolation
  * without requiring a live server.
  */
-@DisplayName("AEP API E2E Tests [GH-90000]")
+@DisplayName("AEP API E2E Tests")
 class AepApiE2ETest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper(); // GH-90000
@@ -35,7 +35,7 @@ class AepApiE2ETest {
     // ── Single Event Processing Flow ──────────────────────────────────────────
 
     @Test
-    @DisplayName("Single event processing flow — valid request shape [GH-90000]")
+    @DisplayName("Single event processing flow — valid request shape")
     void singleEventProcessingFlow_requestShape() throws Exception { // GH-90000
         ObjectNode request = MAPPER.createObjectNode(); // GH-90000
         request.put("type", "user.login"); // GH-90000
@@ -45,32 +45,32 @@ class AepApiE2ETest {
         payload.put("browser", "Chrome"); // GH-90000
         request.set("payload", payload); // GH-90000
 
-        assertThat(request.has("type [GH-90000]")).isTrue();
-        assertThat(request.get("type [GH-90000]").asText()).isEqualTo("user.login [GH-90000]");
-        assertThat(request.has("payload [GH-90000]")).isTrue();
-        assertThat(request.get("payload [GH-90000]").get("userId [GH-90000]").asText()).isEqualTo("user-123 [GH-90000]");
+        assertThat(request.has("type")).isTrue();
+        assertThat(request.get("type").asText()).isEqualTo("user.login");
+        assertThat(request.has("payload")).isTrue();
+        assertThat(request.get("payload").get("userId").asText()).isEqualTo("user-123");
     }
 
     @Test
-    @DisplayName("Single event success response has required fields [GH-90000]")
+    @DisplayName("Single event success response has required fields")
     void singleEventProcessingFlow_successResponseShape() throws Exception { // GH-90000
         String json = """
                 {"eventId":"evt-abc","success":true,"detections":[],"timestamp":"2026-04-12T12:00:00Z"}
                 """;
         JsonNode response = MAPPER.readTree(json); // GH-90000
 
-        assertThat(response.has("eventId [GH-90000]")).isTrue();
-        assertThat(response.has("success [GH-90000]")).isTrue();
-        assertThat(response.get("success [GH-90000]").booleanValue()).isTrue();
-        assertThat(response.has("detections [GH-90000]")).isTrue();
-        assertThat(response.get("detections [GH-90000]").isArray()).isTrue();
-        assertThat(response.has("timestamp [GH-90000]")).isTrue();
+        assertThat(response.has("eventId")).isTrue();
+        assertThat(response.has("success")).isTrue();
+        assertThat(response.get("success").booleanValue()).isTrue();
+        assertThat(response.has("detections")).isTrue();
+        assertThat(response.get("detections").isArray()).isTrue();
+        assertThat(response.has("timestamp")).isTrue();
     }
 
     // ── Batch Event Processing Flow ───────────────────────────────────────────
 
     @Test
-    @DisplayName("Batch event processing flow — valid request shape [GH-90000]")
+    @DisplayName("Batch event processing flow — valid request shape")
     void batchEventProcessingFlow_requestShape() throws Exception { // GH-90000
         ObjectNode request = MAPPER.createObjectNode(); // GH-90000
         ArrayNode events = MAPPER.createArrayNode(); // GH-90000
@@ -87,13 +87,13 @@ class AepApiE2ETest {
 
         request.set("events", events); // GH-90000
 
-        assertThat(request.has("events [GH-90000]")).isTrue();
-        assertThat(request.get("events [GH-90000]").isArray()).isTrue();
-        assertThat(request.get("events [GH-90000]").size()).isEqualTo(2);
+        assertThat(request.has("events")).isTrue();
+        assertThat(request.get("events").isArray()).isTrue();
+        assertThat(request.get("events").size()).isEqualTo(2);
     }
 
     @Test
-    @DisplayName("Batch event success response has required fields [GH-90000]")
+    @DisplayName("Batch event success response has required fields")
     void batchEventProcessingFlow_successResponseShape() throws Exception { // GH-90000
         String json = """
                 {
@@ -108,21 +108,21 @@ class AepApiE2ETest {
                 """;
         JsonNode response = MAPPER.readTree(json); // GH-90000
 
-        assertThat(response.has("tenantId [GH-90000]")).isTrue();
-        assertThat(response.has("total [GH-90000]")).isTrue();
-        assertThat(response.get("total [GH-90000]").asInt()).isEqualTo(2);
-        assertThat(response.has("successCount [GH-90000]")).isTrue();
-        assertThat(response.has("failureCount [GH-90000]")).isTrue();
-        assertThat(response.has("totalDetections [GH-90000]")).isTrue();
-        assertThat(response.has("events [GH-90000]")).isTrue();
-        assertThat(response.get("events [GH-90000]").isArray()).isTrue();
-        assertThat(response.has("timestamp [GH-90000]")).isTrue();
+        assertThat(response.has("tenantId")).isTrue();
+        assertThat(response.has("total")).isTrue();
+        assertThat(response.get("total").asInt()).isEqualTo(2);
+        assertThat(response.has("successCount")).isTrue();
+        assertThat(response.has("failureCount")).isTrue();
+        assertThat(response.has("totalDetections")).isTrue();
+        assertThat(response.has("events")).isTrue();
+        assertThat(response.get("events").isArray()).isTrue();
+        assertThat(response.has("timestamp")).isTrue();
     }
 
     // ── Pattern Registration Flow ─────────────────────────────────────────────
 
     @Test
-    @DisplayName("Pattern registration flow — valid request shape [GH-90000]")
+    @DisplayName("Pattern registration flow — valid request shape")
     void patternRegistrationFlow_requestShape() { // GH-90000
         ObjectNode request = MAPPER.createObjectNode(); // GH-90000
         request.put("name", "Brute Force Detection"); // GH-90000
@@ -133,15 +133,15 @@ class AepApiE2ETest {
             .put("threshold", 5) // GH-90000
             .put("windowSeconds", 60)); // GH-90000
 
-        assertThat(request.has("name [GH-90000]")).isTrue();
-        assertThat(request.has("type [GH-90000]")).isTrue();
-        assertThat(request.get("type [GH-90000]").asText()).isIn("ANOMALY", "SEQUENCE", "AGGREGATION");
-        assertThat(request.has("specification [GH-90000]")).isTrue();
-        assertThat(request.has("config [GH-90000]")).isTrue();
+        assertThat(request.has("name")).isTrue();
+        assertThat(request.has("type")).isTrue();
+        assertThat(request.get("type").asText()).isIn("ANOMALY", "SEQUENCE", "AGGREGATION");
+        assertThat(request.has("specification")).isTrue();
+        assertThat(request.has("config")).isTrue();
     }
 
     @Test
-    @DisplayName("Pattern registration success response has required fields [GH-90000]")
+    @DisplayName("Pattern registration success response has required fields")
     void patternRegistrationFlow_successResponseShape() throws Exception { // GH-90000
         String json = """
                 {
@@ -151,111 +151,111 @@ class AepApiE2ETest {
                 """;
         JsonNode response = MAPPER.readTree(json); // GH-90000
 
-        assertThat(response.has("pattern [GH-90000]")).isTrue();
-        assertThat(response.get("pattern [GH-90000]").has("patternId [GH-90000]")).isTrue();
-        assertThat(response.get("pattern [GH-90000]").has("name [GH-90000]")).isTrue();
-        assertThat(response.has("timestamp [GH-90000]")).isTrue();
+        assertThat(response.has("pattern")).isTrue();
+        assertThat(response.get("pattern").has("patternId")).isTrue();
+        assertThat(response.get("pattern").has("name")).isTrue();
+        assertThat(response.has("timestamp")).isTrue();
     }
 
     // ── Pattern Listing Flow ──────────────────────────────────────────────────
 
     @Test
-    @DisplayName("Pattern listing response has required fields [GH-90000]")
+    @DisplayName("Pattern listing response has required fields")
     void patternListingFlow_responseShape() throws Exception { // GH-90000
         String json = """
                 {"patterns":[{"patternId":"pat-1","name":"Test","status":"ACTIVE"}],"count":1,"timestamp":"2026-04-12T12:00:00Z"}
                 """;
         JsonNode response = MAPPER.readTree(json); // GH-90000
 
-        assertThat(response.has("patterns [GH-90000]")).isTrue();
-        assertThat(response.get("patterns [GH-90000]").isArray()).isTrue();
-        assertThat(response.has("count [GH-90000]")).isTrue();
-        assertThat(response.get("count [GH-90000]").asInt()).isEqualTo(1);
-        assertThat(response.has("timestamp [GH-90000]")).isTrue();
+        assertThat(response.has("patterns")).isTrue();
+        assertThat(response.get("patterns").isArray()).isTrue();
+        assertThat(response.has("count")).isTrue();
+        assertThat(response.get("count").asInt()).isEqualTo(1);
+        assertThat(response.has("timestamp")).isTrue();
     }
 
     @Test
-    @DisplayName("Pattern status filter values conform to contract enum [GH-90000]")
+    @DisplayName("Pattern status filter values conform to contract enum")
     void patternFilteringByStatusFlow_enumValues() { // GH-90000
         String[] validStatuses = {"ACTIVE", "INACTIVE", "DRAFT"};
         for (String status : validStatuses) { // GH-90000
-            assertThat(status).matches("ACTIVE|INACTIVE|DRAFT [GH-90000]");
+            assertThat(status).matches("ACTIVE|INACTIVE|DRAFT");
         }
     }
 
     // ── Validation Error Flows ────────────────────────────────────────────────
 
     @Test
-    @DisplayName("Missing tenant header error response has required fields [GH-90000]")
+    @DisplayName("Missing tenant header error response has required fields")
     void eventWithoutTenantHeaderFlow_errorResponseShape() throws Exception { // GH-90000
         String json = """
                 {"error":"MISSING_TENANT_HEADER","message":"X-Tenant-Id header is required"}
                 """;
         JsonNode response = MAPPER.readTree(json); // GH-90000
 
-        assertThat(response.has("error [GH-90000]")).isTrue();
-        assertThat(response.get("error [GH-90000]").asText()).isEqualTo("MISSING_TENANT_HEADER [GH-90000]");
-        assertThat(response.has("message [GH-90000]")).isTrue();
+        assertThat(response.has("error")).isTrue();
+        assertThat(response.get("error").asText()).isEqualTo("MISSING_TENANT_HEADER");
+        assertThat(response.has("message")).isTrue();
     }
 
     @Test
-    @DisplayName("Missing event type error response has required fields [GH-90000]")
+    @DisplayName("Missing event type error response has required fields")
     void eventValidationFlow_missingType_errorResponseShape() throws Exception { // GH-90000
         String json = """
                 {"error":"VALIDATION_ERROR","message":"Required field missing: type"}
                 """;
         JsonNode response = MAPPER.readTree(json); // GH-90000
 
-        assertThat(response.has("error [GH-90000]")).isTrue();
-        assertThat(response.get("error [GH-90000]").isTextual()).isTrue();
-        assertThat(response.has("message [GH-90000]")).isTrue();
+        assertThat(response.has("error")).isTrue();
+        assertThat(response.get("error").isTextual()).isTrue();
+        assertThat(response.has("message")).isTrue();
     }
 
     @Test
-    @DisplayName("Empty batch events error response has required fields [GH-90000]")
+    @DisplayName("Empty batch events error response has required fields")
     void batchEventValidationFlow_emptyEvents_errorResponseShape() throws Exception { // GH-90000
         String json = """
                 {"error":"EMPTY_BATCH","message":"events array must not be empty"}
                 """;
         JsonNode response = MAPPER.readTree(json); // GH-90000
 
-        assertThat(response.has("error [GH-90000]")).isTrue();
-        assertThat(response.get("error [GH-90000]").isTextual()).isTrue();
-        assertThat(response.has("message [GH-90000]")).isTrue();
+        assertThat(response.has("error")).isTrue();
+        assertThat(response.get("error").isTextual()).isTrue();
+        assertThat(response.has("message")).isTrue();
     }
 
     // ── Health Check Flow ─────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("Health check response conforms to contract [GH-90000]")
+    @DisplayName("Health check response conforms to contract")
     void healthCheckFlow_responseShape() throws Exception { // GH-90000
         String json = """
                 {"status":"UP","service":"aep","timestamp":"2026-04-12T12:00:00Z"}
                 """;
         JsonNode response = MAPPER.readTree(json); // GH-90000
 
-        assertThat(response.has("status [GH-90000]")).isTrue();
-        assertThat(response.get("status [GH-90000]").isTextual()).isTrue();
-        assertThat(response.get("service [GH-90000]").asText()).isEqualTo("aep [GH-90000]");
+        assertThat(response.has("status")).isTrue();
+        assertThat(response.get("status").isTextual()).isTrue();
+        assertThat(response.get("service").asText()).isEqualTo("aep");
     }
 
     // ── Multi-Tenant Isolation Flow ───────────────────────────────────────────
 
     @Test
-    @DisplayName("Multi-tenant event isolation — tenant IDs must be distinct [GH-90000]")
+    @DisplayName("Multi-tenant event isolation — tenant IDs must be distinct")
     void multiTenantEventIsolationFlow_tenantIdDistinct() { // GH-90000
         String tenant1 = "tenant-1";
         String tenant2 = "tenant-2";
 
         assertThat(tenant1).isNotEqualTo(tenant2); // GH-90000
-        assertThat(tenant1).matches("[a-zA-Z0-9-]+ [GH-90000]");
-        assertThat(tenant2).matches("[a-zA-Z0-9-]+ [GH-90000]");
+        assertThat(tenant1).matches("[a-zA-Z0-9-]+");
+        assertThat(tenant2).matches("[a-zA-Z0-9-]+");
     }
 
     // ── Large Batch Flow ──────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("Large batch request can be constructed with 50 events [GH-90000]")
+    @DisplayName("Large batch request can be constructed with 50 events")
     void largeBatchProcessingFlow_requestShape() { // GH-90000
         ArrayNode events = MAPPER.createArrayNode(); // GH-90000
         for (int i = 0; i < 50; i++) { // GH-90000
@@ -267,17 +267,17 @@ class AepApiE2ETest {
         ObjectNode request = MAPPER.createObjectNode(); // GH-90000
         request.set("events", events); // GH-90000
 
-        assertThat(request.get("events [GH-90000]").size()).isEqualTo(50);
-        for (JsonNode event : request.get("events [GH-90000]")) {
-            assertThat(event.has("type [GH-90000]")).isTrue();
-            assertThat(event.has("payload [GH-90000]")).isTrue();
+        assertThat(request.get("events").size()).isEqualTo(50);
+        for (JsonNode event : request.get("events")) {
+            assertThat(event.has("type")).isTrue();
+            assertThat(event.has("payload")).isTrue();
         }
     }
 
     // ── Pattern Types Flow ────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("All valid pattern type values conform to contract enum [GH-90000]")
+    @DisplayName("All valid pattern type values conform to contract enum")
     void patternTypesFlow_enumValues() { // GH-90000
         String[] patternTypes = {"ANOMALY", "SEQUENCE", "AGGREGATION"};
         for (String type : patternTypes) { // GH-90000

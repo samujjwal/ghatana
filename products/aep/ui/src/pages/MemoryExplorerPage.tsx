@@ -26,6 +26,8 @@ import { FactTable } from '@/components/memory/FactTable';
 import { PolicyCard } from '@/components/memory/PolicyCard';
 import type { AgentRegistration } from '@/api/aep.api';
 import { Button } from '@ghatana/design-system';
+import { EmptyState } from '@/components/core/EmptyState';
+import { ErrorState } from '@/components/core/ErrorState';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -103,63 +105,31 @@ function TabBar({ active, onChange }: TabBarProps) {
 
 // ─── Episodes tab ─────────────────────────────────────────────────────────────
 
-function EpisodesTab({ agentId }: { agentId?: string }) {
-  const { data: allData, isLoading, isError, error } = useAllEpisodes(100);
-
-  // Filter client-side when an agent is selected — avoids a separate endpoint
-  // whose AgentEpisodeRecord type is not compatible with EpisodeTimeline.
-  const data = agentId ? (allData ?? []).filter((e) => e.agentId === agentId) : (allData ?? []);
-
+function EpisodesTab({ episodes, isLoading, isError, refetch }: { episodes: Episode[]; isLoading: boolean; isError: boolean; refetch: () => void }) {
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-40">
-        <p className="text-sm text-gray-400 dark:text-gray-500 animate-pulse">Loading episodes…</p>
-      </div>
-    );
+    return <EmptyState title="Loading episodes…" description="Fetching agent episode history." />;
   }
-
   if (isError) {
-    return (
-      <div className="flex items-center justify-center h-40">
-        <p className="text-sm text-red-500 dark:text-red-400">
-          Failed to load episodes:{' '}
-          {error instanceof Error ? error.message : 'Unknown error'}
-        </p>
-      </div>
-    );
+    return <ErrorState title="Failed to load episodes" onRetry={() => void refetch()} />;
+  }
+  if (episodes.length === 0) {
+    return <EmptyState title="No episodes found" description="Episodes will appear once the agent records memory events." />;
   }
 
-  if (data.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-40">
-        <p className="text-sm text-gray-400 dark:text-gray-500">
-          No episodes recorded{agentId ? ' for this agent' : ''} yet.
-        </p>
-      </div>
-    );
-  }
-
-  return <EpisodeTimeline episodes={data} className="mt-4" />;
+  return <EpisodeTimeline episodes={episodes} />;
 }
 
 // ─── Facts tab ────────────────────────────────────────────────────────────────
 
-function FactsTab({ agentId }: { agentId?: string }) {
-  const { data, isLoading, isError } = useAgentFacts(agentId, 200);
+function FactsTab({ agentId }: { agentId: string | undefined }) {
+  const { data: facts = [], isLoading, isError, refetch } = useAgentFacts(agentId);
 
-  if (!agentId) {
-    return (
-      <div className="flex items-center justify-center h-40">
-        <p className="text-sm text-gray-400 dark:text-gray-500">
-          Select an agent above to view its semantic facts.
-        </p>
-      </div>
-    );
-  }
-
+  if (isLoading) return <EmptyState title="Loading facts…" description="Fetching semantic memory." />;
+  if (isError) return <ErrorState title="Failed to load facts" onRetry={() => void refetch()} />;
+  if (facts.length === 0) return <EmptyState title="No facts found" description="Semantic facts will be extracted once the agent accumulates observations." />;
   return (
     <FactTable
-      facts={data ?? []}
+      facts={facts}
       isLoading={isLoading}
       isError={isError}
     />
@@ -173,40 +143,19 @@ function FactsTab({ agentId }: { agentId?: string }) {
 // facts but not policies — all tenant policies are always shown.
 
 function PoliciesTab() {
-  const { data, isLoading, isError, error } = usePolicies();
+  const { data: policies = [], isLoading, isError, refetch } = usePolicies();
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-40">
-        <p className="text-sm text-gray-400 dark:text-gray-500 animate-pulse">Loading policies…</p>
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="flex items-center justify-center h-40">
-        <p className="text-sm text-red-500 dark:text-red-400">
-          Failed to load policies:{' '}
-          {error instanceof Error ? error.message : 'Unknown error'}
-        </p>
-      </div>
-    );
-  }
-
-  if (!data || data.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-40">
-        <p className="text-sm text-gray-400 dark:text-gray-500">
-          No policies found for this tenant.
-        </p>
-      </div>
-    );
-  }
-
+  if (isLoading) return <EmptyState title="Loading policies…" description="Fetching procedural policies." />;
+  if (isError) return <ErrorState title="Failed to load policies" onRetry={() => void refetch()} />;
+  if (policies.length === 0) return (
+    <EmptyState
+      title="No policies found for this tenant"
+      description="Policies will appear once the system generates candidate rules."
+    />
+  );
   return (
     <div className="grid gap-4 mt-4 sm:grid-cols-2 xl:grid-cols-3">
-      {data.map((policy) => (
+      {policies.map((policy) => (
         <PolicyCard key={policy.id} policy={policy} />
       ))}
     </div>

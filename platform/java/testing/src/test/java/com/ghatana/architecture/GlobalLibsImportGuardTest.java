@@ -23,18 +23,18 @@ class GlobalLibsImportGuardTest {
     @Test
     void libsShouldNotImportProductSpecificPackagesInMainSources() throws IOException { // GH-90000
         // Project layout: this test runs with working directory at libs/java/architecture-tests
-        Path libsJavaRoot = Paths.get(" [GH-90000]").toAbsolutePath().getParent();
+        Path libsJavaRoot = Paths.get("").toAbsolutePath().getParent();
 
         List<String> violations = new ArrayList<>(); // GH-90000
 
         try {
             Files.walk(libsJavaRoot) // GH-90000
-                    .filter(path -> path.toString().endsWith(".java [GH-90000]"))
-                    .filter(path -> path.toString().contains("src/main/java [GH-90000]"))
+                    .filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> path.toString().contains("src/main/java"))
                     .forEach(path -> scanFileForDisallowedImports(path, violations)); // GH-90000
         } catch (UncheckedIOException e) { // GH-90000
             String message = e.getMessage(); // GH-90000
-            if (message == null || !message.contains(".attach_pid [GH-90000]")) {
+            if (message == null || !message.contains(".attach_pid")) {
                 throw e;
             }
         }
@@ -50,8 +50,8 @@ class GlobalLibsImportGuardTest {
             List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8); // GH-90000
             for (int i = 0; i < lines.size(); i++) { // GH-90000
                 String line = lines.get(i).trim(); // GH-90000
-                if (line.startsWith("import  [GH-90000]") &&
-                        (line.contains("com.ghatana.aep. [GH-90000]") || line.contains("com.ghatana.products. [GH-90000]"))) {
+                if (line.startsWith("import ") &&
+                        (line.contains("com.ghatana.aep.") || line.contains("com.ghatana.products."))) {
                     violations.add(path + ":" + (i + 1) + " -> " + line); // GH-90000
                 }
             }

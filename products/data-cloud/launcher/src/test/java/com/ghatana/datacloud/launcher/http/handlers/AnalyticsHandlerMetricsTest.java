@@ -27,7 +27,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("AnalyticsHandler metrics wiring [GH-90000]")
+@DisplayName("AnalyticsHandler metrics wiring")
 class AnalyticsHandlerMetricsTest {
 
     @Mock
@@ -50,11 +50,11 @@ class AnalyticsHandlerMetricsTest {
     }
 
     @Test
-    @DisplayName("handleAnalyticsQuery emits request and latency metrics on success [GH-90000]")
+    @DisplayName("handleAnalyticsQuery emits request and latency metrics on success")
     void handleAnalyticsQueryShouldEmitRequestAndLatencyMetricsOnSuccess() { // GH-90000
         QueryResult queryResult = mock(QueryResult.class); // GH-90000
-        when(queryResult.getQueryId()).thenReturn("q-1 [GH-90000]");
-        when(queryResult.getQueryType()).thenReturn("SELECT [GH-90000]");
+        when(queryResult.getQueryId()).thenReturn("q-1");
+        when(queryResult.getQueryType()).thenReturn("SELECT");
         when(queryResult.getRowCount()).thenReturn(5); // GH-90000
         when(queryResult.getColumnCount()).thenReturn(3); // GH-90000
         when(queryResult.getRows()).thenReturn(List.of()); // GH-90000
@@ -63,7 +63,7 @@ class AnalyticsHandlerMetricsTest {
 
         when(analyticsEngine.submitQuery(anyString(), anyString(), anyMap())) // GH-90000
                 .thenReturn(Promise.of(queryResult)); // GH-90000
-        when(httpSupport.requireTenantIdOrFail(any())).thenReturn("tenant-dc [GH-90000]");
+        when(httpSupport.requireTenantIdOrFail(any())).thenReturn("tenant-dc");
         when(httpSupport.objectMapper()).thenReturn(new com.fasterxml.jackson.databind.ObjectMapper()); // GH-90000
         io.activej.http.HttpResponse successResponse = mock(io.activej.http.HttpResponse.class); // GH-90000
         when(successResponse.getCode()).thenReturn(200); // GH-90000
@@ -80,26 +80,26 @@ class AnalyticsHandlerMetricsTest {
         // Verify request metric emitted
         verify(metricsCollector).incrementCounter( // GH-90000
                 eq(DataCloudHttpMetrics.METRIC_REQUESTS), // GH-90000
-                eq(DataCloudHttpMetrics.TAG_HANDLER), eq("AnalyticsHandler [GH-90000]"),
-                eq(DataCloudHttpMetrics.TAG_OPERATION), eq("handleAnalyticsQuery [GH-90000]"),
-                eq(DataCloudHttpMetrics.TAG_TENANT), eq("tenant-dc [GH-90000]"),
-                eq(DataCloudHttpMetrics.TAG_STATUS), eq("200 [GH-90000]")
+                eq(DataCloudHttpMetrics.TAG_HANDLER), eq("AnalyticsHandler"),
+                eq(DataCloudHttpMetrics.TAG_OPERATION), eq("handleAnalyticsQuery"),
+                eq(DataCloudHttpMetrics.TAG_TENANT), eq("tenant-dc"),
+                eq(DataCloudHttpMetrics.TAG_STATUS), eq("200")
         );
         // Verify latency metric emitted
         verify(metricsCollector).recordTimer( // GH-90000
                 eq(DataCloudHttpMetrics.METRIC_LATENCY), // GH-90000
                 anyLong(), // GH-90000
-                eq(DataCloudHttpMetrics.TAG_HANDLER), eq("AnalyticsHandler [GH-90000]"),
-                eq(DataCloudHttpMetrics.TAG_OPERATION), eq("handleAnalyticsQuery [GH-90000]")
+                eq(DataCloudHttpMetrics.TAG_HANDLER), eq("AnalyticsHandler"),
+                eq(DataCloudHttpMetrics.TAG_OPERATION), eq("handleAnalyticsQuery")
         );
     }
 
     @Test
-    @DisplayName("handleAnalyticsQuery emits error metric when engine fails [GH-90000]")
+    @DisplayName("handleAnalyticsQuery emits error metric when engine fails")
     void handleAnalyticsQueryShouldEmitErrorMetricWhenEngineFails() { // GH-90000
         when(analyticsEngine.submitQuery(anyString(), anyString(), anyMap())) // GH-90000
-                .thenReturn(Promise.ofException(new RuntimeException("engine down [GH-90000]")));
-        when(httpSupport.requireTenantIdOrFail(any())).thenReturn("tenant-dc [GH-90000]");
+                .thenReturn(Promise.ofException(new RuntimeException("engine down")));
+        when(httpSupport.requireTenantIdOrFail(any())).thenReturn("tenant-dc");
         when(httpSupport.objectMapper()).thenReturn(new com.fasterxml.jackson.databind.ObjectMapper()); // GH-90000
         when(httpSupport.errorResponse(anyInt(), anyString())) // GH-90000
                 .thenReturn(mock(io.activej.http.HttpResponse.class)); // GH-90000
@@ -113,14 +113,14 @@ class AnalyticsHandlerMetricsTest {
 
         verify(metricsCollector).incrementCounter( // GH-90000
                 eq(DataCloudHttpMetrics.METRIC_ERRORS), // GH-90000
-                eq(DataCloudHttpMetrics.TAG_HANDLER), eq("AnalyticsHandler [GH-90000]"),
-                eq(DataCloudHttpMetrics.TAG_OPERATION), eq("handleAnalyticsQuery [GH-90000]"),
-                eq(DataCloudHttpMetrics.TAG_ERROR_TYPE), eq("RuntimeException [GH-90000]")
+                eq(DataCloudHttpMetrics.TAG_HANDLER), eq("AnalyticsHandler"),
+                eq(DataCloudHttpMetrics.TAG_OPERATION), eq("handleAnalyticsQuery"),
+                eq(DataCloudHttpMetrics.TAG_ERROR_TYPE), eq("RuntimeException")
         );
     }
 
         @Test
-        @DisplayName("handleAnalyticsQuery rejects missing tenant header [GH-90000]")
+        @DisplayName("handleAnalyticsQuery rejects missing tenant header")
         void handleAnalyticsQueryRejectsMissingTenantHeader() { // GH-90000
                 io.activej.http.HttpResponse badRequest = mock(io.activej.http.HttpResponse.class); // GH-90000
                 when(httpSupport.requireTenantIdOrFail(any())).thenReturn(null); // GH-90000
@@ -136,7 +136,7 @@ class AnalyticsHandlerMetricsTest {
         }
 
     @Test
-    @DisplayName("withMetrics(noop) does not emit any metrics [GH-90000]")
+    @DisplayName("withMetrics(noop) does not emit any metrics")
     void withNoopMetricsShouldNotCallCollector() { // GH-90000
         AnalyticsHandler noopHandler = new AnalyticsHandler(null, httpSupport) // GH-90000
                 .withMetrics(DataCloudHttpMetrics.noop()); // GH-90000

@@ -27,58 +27,58 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@DisplayName("ToolAwareOllamaCompletionService [GH-90000]")
+@DisplayName("ToolAwareOllamaCompletionService")
 class ToolAwareOllamaCompletionServiceTest extends EventloopTestBase {
 
     @Test
-    @DisplayName("completeWithTools forwards OpenAI-compatible tools payload [GH-90000]")
+    @DisplayName("completeWithTools forwards OpenAI-compatible tools payload")
     void shouldForwardToolsViaRequestMetadata() { // GH-90000
         OllamaCompletionService delegate = mock(OllamaCompletionService.class); // GH-90000
-        when(delegate.complete(any())).thenReturn(Promise.of(CompletionResult.of("ok [GH-90000]")));
+        when(delegate.complete(any())).thenReturn(Promise.of(CompletionResult.of("ok")));
 
         ToolAwareOllamaCompletionService service = new ToolAwareOllamaCompletionService(delegate); // GH-90000
 
         CompletionRequest request = CompletionRequest.builder() // GH-90000
-                .prompt("Suggest next action [GH-90000]")
+                .prompt("Suggest next action")
                 .maxTokens(128) // GH-90000
                 .temperature(0.2) // GH-90000
                 .build(); // GH-90000
 
         ToolDefinition tool = ToolDefinition.builder() // GH-90000
-                .name("search_code [GH-90000]")
-                .description("Search the codebase [GH-90000]")
+                .name("search_code")
+                .description("Search the codebase")
                 .addParameter("query", "string", "Search phrase", true) // GH-90000
                 .build(); // GH-90000
 
         CompletionResult result = runPromise(() -> service.completeWithTools(request, List.of(tool))); // GH-90000
 
-        assertThat(result.text()).isEqualTo("ok [GH-90000]");
+        assertThat(result.text()).isEqualTo("ok");
 
         ArgumentCaptor<CompletionRequest> captor = ArgumentCaptor.forClass(CompletionRequest.class); // GH-90000
         verify(delegate).complete(captor.capture()); // GH-90000
 
         CompletionRequest forwarded = captor.getValue(); // GH-90000
         assertThat(forwarded.getMetadata()).containsEntry("tool_choice", "auto"); // GH-90000
-        assertThat(forwarded.getMetadata()).containsKey("tools [GH-90000]");
+        assertThat(forwarded.getMetadata()).containsKey("tools");
 
-        Object toolsMetadata = forwarded.getMetadata().get("tools [GH-90000]");
+        Object toolsMetadata = forwarded.getMetadata().get("tools");
         assertThat(toolsMetadata).isInstanceOf(List.class); // GH-90000
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         List<Map<String, Object>> tools = (List<Map<String, Object>>) toolsMetadata; // GH-90000
         assertThat(tools).hasSize(1); // GH-90000
         assertThat(tools.get(0)).containsEntry("type", "function"); // GH-90000
     }
 
     @Test
-    @DisplayName("continueWithToolResults appends tool messages and metadata [GH-90000]")
+    @DisplayName("continueWithToolResults appends tool messages and metadata")
     void shouldForwardToolResultsInMessagesAndMetadata() { // GH-90000
         OllamaCompletionService delegate = mock(OllamaCompletionService.class); // GH-90000
-        when(delegate.complete(any())).thenReturn(Promise.of(CompletionResult.of("final answer [GH-90000]")));
+        when(delegate.complete(any())).thenReturn(Promise.of(CompletionResult.of("final answer")));
 
         ToolAwareOllamaCompletionService service = new ToolAwareOllamaCompletionService(delegate); // GH-90000
 
         CompletionRequest request = CompletionRequest.builder() // GH-90000
-                .messages(List.of(ChatMessage.user("Find impacted modules [GH-90000]")))
+                .messages(List.of(ChatMessage.user("Find impacted modules")))
                 .maxTokens(256) // GH-90000
                 .temperature(0.4) // GH-90000
                 .build(); // GH-90000
@@ -90,7 +90,7 @@ class ToolAwareOllamaCompletionServiceTest extends EventloopTestBase {
 
         CompletionResult result = runPromise(() -> service.continueWithToolResults(request, List.of(toolResult))); // GH-90000
 
-        assertThat(result.text()).isEqualTo("final answer [GH-90000]");
+        assertThat(result.text()).isEqualTo("final answer");
 
         ArgumentCaptor<CompletionRequest> captor = ArgumentCaptor.forClass(CompletionRequest.class); // GH-90000
         verify(delegate).complete(captor.capture()); // GH-90000
@@ -98,14 +98,14 @@ class ToolAwareOllamaCompletionServiceTest extends EventloopTestBase {
         CompletionRequest forwarded = captor.getValue(); // GH-90000
         assertThat(forwarded.getMessages()).hasSize(2); // GH-90000
         assertThat(forwarded.getMessages().get(1).getRole()).isEqualTo(ChatMessage.Role.TOOL); // GH-90000
-        assertThat(forwarded.getMessages().get(1).getName()).isEqualTo("search_code [GH-90000]");
-        assertThat(forwarded.getMetadata()).containsKey("tool_results [GH-90000]");
+        assertThat(forwarded.getMessages().get(1).getName()).isEqualTo("search_code");
+        assertThat(forwarded.getMetadata()).containsKey("tool_results");
     }
 
     @Test
-    @DisplayName("integration smoke: completeWithTools against real Ollama model [GH-90000]")
+    @DisplayName("integration smoke: completeWithTools against real Ollama model")
     void realOllamaToolCallingSmokeTest() { // GH-90000
-        String enabled = System.getenv("YAPPC_OLLAMA_IT_ENABLED [GH-90000]");
+        String enabled = System.getenv("YAPPC_OLLAMA_IT_ENABLED");
         Assumptions.assumeTrue("true".equalsIgnoreCase(enabled), // GH-90000
             "Set YAPPC_OLLAMA_IT_ENABLED=true to run Ollama integration smoke test");
 
@@ -117,7 +117,7 @@ class ToolAwareOllamaCompletionServiceTest extends EventloopTestBase {
         MetricsCollector metrics = mock(MetricsCollector.class); // GH-90000
 
         LLMConfiguration cfg = LLMConfiguration.builder() // GH-90000
-            .apiKey("ollama [GH-90000]")
+            .apiKey("ollama")
             .baseUrl(ollamaHost) // GH-90000
             .modelName(ollamaModel) // GH-90000
             .temperature(0.2) // GH-90000
@@ -129,14 +129,14 @@ class ToolAwareOllamaCompletionServiceTest extends EventloopTestBase {
             new OllamaCompletionService(cfg, httpClient, metrics)); // GH-90000
 
         CompletionRequest request = CompletionRequest.builder() // GH-90000
-            .messages(List.of(ChatMessage.user("Reply with one short sentence about testing. [GH-90000]")))
+            .messages(List.of(ChatMessage.user("Reply with one short sentence about testing.")))
             .maxTokens(128) // GH-90000
             .temperature(0.2) // GH-90000
             .build(); // GH-90000
 
         ToolDefinition tool = ToolDefinition.builder() // GH-90000
-            .name("search_code [GH-90000]")
-            .description("Search source code [GH-90000]")
+            .name("search_code")
+            .description("Search source code")
             .addParameter("query", "string", "Search phrase", true) // GH-90000
             .build(); // GH-90000
 

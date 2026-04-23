@@ -46,7 +46,7 @@ class MockPythonRenameRefactoringTest {
     @BeforeEach
     void setUp() throws IOException { // GH-90000
         refactoring = new MockPythonRenameRefactoring(); // GH-90000
-        testFile = tempDir.resolve("test_rename.py [GH-90000]");
+        testFile = tempDir.resolve("test_rename.py");
         executor = Executors.newSingleThreadExecutor(); // GH-90000
 
         // Create a minimal PolyfixConfig for testing
@@ -104,9 +104,9 @@ class MockPythonRenameRefactoringTest {
 
         // Verify the content was actually changed
         String content = readFileContent(testFile); // GH-90000
-        assertThat(content).contains("def new_method [GH-90000]");
-        assertThat(content).contains("return self.new_method() [GH-90000]");
-        assertThat(content).contains("print(obj.new_method()) [GH-90000]");
+        assertThat(content).contains("def new_method");
+        assertThat(content).contains("return self.new_method()");
+        assertThat(content).contains("print(obj.new_method())");
     }
 
     @Test
@@ -122,8 +122,8 @@ class MockPythonRenameRefactoringTest {
 
         // Verify the content was actually changed
         String content = readFileContent(testFile); // GH-90000
-        assertThat(content).contains("def renamed_function(): [GH-90000]");
-        assertThat(content).contains("print(renamed_function()) [GH-90000]");
+        assertThat(content).contains("def renamed_function():");
+        assertThat(content).contains("print(renamed_function())");
     }
 
     @Test
@@ -148,12 +148,12 @@ class MockPythonRenameRefactoringTest {
 
         // Non-existent file
         var invalidFileContext =
-                createContext(Path.of("non_existent.py [GH-90000]"), FUNCTION, "some_name", NEW_NAME);
+                createContext(Path.of("non_existent.py"), FUNCTION, "some_name", NEW_NAME);
 
         assertThat(refactoring.canApply(invalidFileContext)).isFalse(); // GH-90000
 
         // Non-Python file
-        var nonPythonFile = tempDir.resolve("not_python.txt [GH-90000]");
+        var nonPythonFile = tempDir.resolve("not_python.txt");
         try {
             Files.writeString(nonPythonFile, "Not a Python file"); // GH-90000
 
@@ -170,13 +170,13 @@ class MockPythonRenameRefactoringTest {
     void shouldHandleIOExceptionWhenReadingFile() throws IOException { // GH-90000
         // Create a mock file that will throw an IOException when read
         Path mockFile = mock(Path.class); // GH-90000
-        when(mockFile.toString()).thenReturn("/non/existent/file.py [GH-90000]");
+        when(mockFile.toString()).thenReturn("/non/existent/file.py");
 
         // Mock Files.readString to throw IOException
         try (var mockedFiles = mockStatic(Files.class)) { // GH-90000
             mockedFiles
                     .when(() -> Files.readString(mockFile)) // GH-90000
-                    .thenThrow(new IOException("Failed to read file [GH-90000]"));
+                    .thenThrow(new IOException("Failed to read file"));
 
             // Create a context with the mock file
             var context = createContext(mockFile, FUNCTION, "some_function", "new_function"); // GH-90000
@@ -187,8 +187,8 @@ class MockPythonRenameRefactoringTest {
             // Then
             assertThat(result.isSuccess()).isFalse(); // GH-90000
             assertThat(result.getErrorMessage()) // GH-90000
-                    .as("Error message should indicate file read failure [GH-90000]")
-                    .contains("Source file does not exist [GH-90000]");
+                    .as("Error message should indicate file read failure")
+                    .contains("Source file does not exist");
         }
     }
 
@@ -209,7 +209,7 @@ class MockPythonRenameRefactoringTest {
     @Test
     void shouldHandleEmptyFile() throws IOException { // GH-90000
         // Create an empty file
-        Path emptyFile = tempDir.resolve("empty.py [GH-90000]");
+        Path emptyFile = tempDir.resolve("empty.py");
         Files.writeString(emptyFile, ""); // GH-90000
 
         // Given
@@ -289,7 +289,7 @@ class MockPythonRenameRefactoringTest {
 
         // Then
         assertThat(result.isSuccess()).isFalse(); // GH-90000
-        assertThat(result.getErrorMessage()).contains("New name cannot be null [GH-90000]");
+        assertThat(result.getErrorMessage()).contains("New name cannot be null");
     }
 
     private String readFileContent(Path file) { // GH-90000

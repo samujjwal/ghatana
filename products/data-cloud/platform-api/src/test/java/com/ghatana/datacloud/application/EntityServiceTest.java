@@ -37,7 +37,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test, Service Implementation
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("EntityServiceImpl – Entity CRUD & Versioning [GH-90000]")
+@DisplayName("EntityServiceImpl – Entity CRUD & Versioning")
 class EntityServiceTest extends EventloopTestBase {
 
     private static final String TENANT_ID = "tenant-alpha";
@@ -62,11 +62,11 @@ class EntityServiceTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Create Entity Operations [GH-90000]")
+    @DisplayName("Create Entity Operations")
     class CreateEntityTests {
 
         @Test
-        @DisplayName("[DC-002-01]: createEntity_success_with_valid_inputs [GH-90000]")
+        @DisplayName("[DC-002-01]: createEntity_success_with_valid_inputs")
         void createEntitySuccessWithValidInputs() { // GH-90000
             // Given
             Map<String, Object> data = Map.of( // GH-90000
@@ -105,14 +105,14 @@ class EntityServiceTest extends EventloopTestBase {
             assertThat(result.getCreatedBy()).isEqualTo(USER_ID); // GH-90000
 
             verify(metrics).incrementCounter( // GH-90000
-                eq("entity.create.success [GH-90000]"),
-                eq("tenant [GH-90000]"), eq(TENANT_ID),
-                eq("collection [GH-90000]"), eq(COLLECTION_NAME)
+                eq("entity.create.success"),
+                eq("tenant"), eq(TENANT_ID),
+                eq("collection"), eq(COLLECTION_NAME)
             );
         }
 
         @Test
-        @DisplayName("[DC-002-02]: createEntity_rejects_null_tenantId [GH-90000]")
+        @DisplayName("[DC-002-02]: createEntity_rejects_null_tenantId")
         void createEntityRejectsNullTenantId() { // GH-90000
             // Given
             Map<String, Object> data = Map.of("name", "John"); // GH-90000
@@ -121,11 +121,11 @@ class EntityServiceTest extends EventloopTestBase {
             assertThatThrownBy(() -> // GH-90000
                 runPromise(() -> service.createEntity(null, COLLECTION_NAME, data, USER_ID)) // GH-90000
             ).isInstanceOf(IllegalArgumentException.class) // GH-90000
-             .hasMessageContaining("Tenant ID required [GH-90000]");
+             .hasMessageContaining("Tenant ID required");
         }
 
         @Test
-        @DisplayName("[DC-002-03]: createEntity_rejects_null_collectionName [GH-90000]")
+        @DisplayName("[DC-002-03]: createEntity_rejects_null_collectionName")
         void createEntityRejectsNullCollectionName() { // GH-90000
             // Given
             Map<String, Object> data = Map.of("name", "John"); // GH-90000
@@ -137,7 +137,7 @@ class EntityServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[DC-002-04]: createEntity_rejects_null_data [GH-90000]")
+        @DisplayName("[DC-002-04]: createEntity_rejects_null_data")
         void createEntityRejectsNullData() { // GH-90000
             // When & Then
             assertThatThrownBy(() -> // GH-90000
@@ -146,11 +146,11 @@ class EntityServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[DC-002-05]: createEntity_records_metrics_on_error [GH-90000]")
+        @DisplayName("[DC-002-05]: createEntity_records_metrics_on_error")
         void createEntityRecordsMetricsOnError() { // GH-90000
             // Given
             Map<String, Object> data = Map.of("name", "John"); // GH-90000
-            RuntimeException dbException = new RuntimeException("DB error [GH-90000]");
+            RuntimeException dbException = new RuntimeException("DB error");
 
             when(repository.save(eq(TENANT_ID), any(Entity.class))) // GH-90000
                 .thenReturn(Promise.ofException(dbException)); // GH-90000
@@ -161,14 +161,14 @@ class EntityServiceTest extends EventloopTestBase {
             ).isInstanceOf(RuntimeException.class); // GH-90000
 
             verify(metrics).incrementCounter( // GH-90000
-                eq("entity.create.error [GH-90000]"),
-                eq("tenant [GH-90000]"), eq(TENANT_ID),
-                contains("error [GH-90000]"), anyString()
+                eq("entity.create.error"),
+                eq("tenant"), eq(TENANT_ID),
+                contains("error"), anyString()
             );
         }
 
         @Test
-        @DisplayName("[DC-002-06]: createEntity_with_empty_data_mapping [GH-90000]")
+        @DisplayName("[DC-002-06]: createEntity_with_empty_data_mapping")
         void createEntityWithEmptyDataMapping() { // GH-90000
             // Given
             Map<String, Object> emptyData = Map.of(); // GH-90000
@@ -203,11 +203,11 @@ class EntityServiceTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Update Entity Operations [GH-90000]")
+    @DisplayName("Update Entity Operations")
     class UpdateEntityTests {
 
         @Test
-        @DisplayName("[DC-002-07]: updateEntity_success_increments_version [GH-90000]")
+        @DisplayName("[DC-002-07]: updateEntity_success_increments_version")
         void updateEntitySuccessIncrementsVersion() { // GH-90000
             // Given
             UUID entityId = UUID.randomUUID(); // GH-90000
@@ -256,14 +256,14 @@ class EntityServiceTest extends EventloopTestBase {
             assertThat(result.getCreatedBy()).isEqualTo(USER_ID); // GH-90000
 
             verify(metrics).incrementCounter( // GH-90000
-                eq("entity.update.success [GH-90000]"),
-                eq("tenant [GH-90000]"), eq(TENANT_ID),
-                eq("collection [GH-90000]"), eq(COLLECTION_NAME)
+                eq("entity.update.success"),
+                eq("tenant"), eq(TENANT_ID),
+                eq("collection"), eq(COLLECTION_NAME)
             );
         }
 
         @Test
-        @DisplayName("[DC-002-08]: updateEntity_not_found_throws_exception [GH-90000]")
+        @DisplayName("[DC-002-08]: updateEntity_not_found_throws_exception")
         void updateEntityNotFoundThrowsException() { // GH-90000
             // Given
             UUID entityId = UUID.randomUUID(); // GH-90000
@@ -278,21 +278,21 @@ class EntityServiceTest extends EventloopTestBase {
                     service.updateEntity(TENANT_ID, COLLECTION_NAME, entityId, newData, USER_ID) // GH-90000
                 )
             ).isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("not found [GH-90000]");
+                .hasMessageContaining("not found");
 
             verify(metrics).incrementCounter( // GH-90000
-                eq("entity.update.error [GH-90000]"),
-                eq("tenant [GH-90000]"), eq(TENANT_ID),
-                contains("error [GH-90000]"), anyString()
+                eq("entity.update.error"),
+                eq("tenant"), eq(TENANT_ID),
+                contains("error"), anyString()
             );
         }
 
         @Test
-        @DisplayName("[DC-002-09]: updateEntity_preserves_creation_metadata [GH-90000]")
+        @DisplayName("[DC-002-09]: updateEntity_preserves_creation_metadata")
         void updateEntityPreservesCreationMetadata() { // GH-90000
             // Given
             UUID entityId = UUID.randomUUID(); // GH-90000
-            Instant originalCreationTime = Instant.parse("2026-01-01T00:00:00Z [GH-90000]");
+            Instant originalCreationTime = Instant.parse("2026-01-01T00:00:00Z");
             String originalCreator = "original-user";
 
             Entity existingEntity = Entity.builder() // GH-90000
@@ -337,7 +337,7 @@ class EntityServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[DC-002-10]: updateEntity_with_null_entity_id_rejected [GH-90000]")
+        @DisplayName("[DC-002-10]: updateEntity_with_null_entity_id_rejected")
         void updateEntityWithNullEntityIdRejected() { // GH-90000
             // When & Then
             assertThatThrownBy(() -> // GH-90000
@@ -354,11 +354,11 @@ class EntityServiceTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Entity Query & Retrieval [GH-90000]")
+    @DisplayName("Entity Query & Retrieval")
     class QueryTests {
 
         @Test
-        @DisplayName("[DC-002-11]: findById_returns_entity [GH-90000]")
+        @DisplayName("[DC-002-11]: findById_returns_entity")
         void findByIdReturnsEntity() { // GH-90000
             // Given
             UUID entityId = UUID.randomUUID(); // GH-90000
@@ -386,7 +386,7 @@ class EntityServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[DC-002-12]: listByCollection_returns_paginated_results [GH-90000]")
+        @DisplayName("[DC-002-12]: listByCollection_returns_paginated_results")
         void listByCollectionReturnsPaginatedResults() { // GH-90000
             // Given: Multiple entities in collection
             List<Entity> entities = List.of( // GH-90000
@@ -427,11 +427,11 @@ class EntityServiceTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Delete Entity Operations [GH-90000]")
+    @DisplayName("Delete Entity Operations")
     class DeleteEntityTests {
 
         @Test
-        @DisplayName("[DC-002-13]: deleteEntity_removes_entity [GH-90000]")
+        @DisplayName("[DC-002-13]: deleteEntity_removes_entity")
         void deleteEntityRemovesEntity() { // GH-90000
             // Given
             UUID entityId = UUID.randomUUID(); // GH-90000
@@ -447,7 +447,7 @@ class EntityServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[DC-002-14]: deleteEntity_records_metrics [GH-90000]")
+        @DisplayName("[DC-002-14]: deleteEntity_records_metrics")
         void deleteEntityRecordsMetrics() { // GH-90000
             // Given
             UUID entityId = UUID.randomUUID(); // GH-90000
@@ -460,9 +460,9 @@ class EntityServiceTest extends EventloopTestBase {
 
             // Then - verify metrics recorded
             verify(metrics).incrementCounter( // GH-90000
-                eq("entity.delete.success [GH-90000]"),
-                eq("tenant [GH-90000]"), eq(TENANT_ID),
-                eq("collection [GH-90000]"), eq(COLLECTION_NAME)
+                eq("entity.delete.success"),
+                eq("tenant"), eq(TENANT_ID),
+                eq("collection"), eq(COLLECTION_NAME)
             );
         }
     }
@@ -472,11 +472,11 @@ class EntityServiceTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Tenant Isolation & Multi-Tenancy [GH-90000]")
+    @DisplayName("Tenant Isolation & Multi-Tenancy")
     class TenantIsolationTests {
 
         @Test
-        @DisplayName("[DC-002-15]: createEntity_isolates_data_by_tenant [GH-90000]")
+        @DisplayName("[DC-002-15]: createEntity_isolates_data_by_tenant")
         void createEntityIsolatesByTenant() { // GH-90000
             // Given: Two different tenants
             String tenantA = "tenant-alpha";
@@ -525,7 +525,7 @@ class EntityServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[DC-002-16]: updateEntity_respects_tenant_boundaries [GH-90000]")
+        @DisplayName("[DC-002-16]: updateEntity_respects_tenant_boundaries")
         void updateEntityRespectsTenantBoundaries() { // GH-90000
             // Given: Entity from tenant A
             UUID entityId = UUID.randomUUID(); // GH-90000
@@ -567,11 +567,11 @@ class EntityServiceTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Versioning & Concurrency Control [GH-90000]")
+    @DisplayName("Versioning & Concurrency Control")
     class VersioningTests {
 
         @Test
-        @DisplayName("[DC-002-17]: concurrent_updates_increment_version [GH-90000]")
+        @DisplayName("[DC-002-17]: concurrent_updates_increment_version")
         void concurrentUpdatesIncrementVersion() { // GH-90000
             // Given: Multiple sequential updates
             UUID entityId = UUID.randomUUID(); // GH-90000
@@ -626,7 +626,7 @@ class EntityServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[DC-002-18]: version_starts_at_one_for_new_entities [GH-90000]")
+        @DisplayName("[DC-002-18]: version_starts_at_one_for_new_entities")
         void versionStartsAtOneForNewEntities() { // GH-90000
             // Given
             Map<String, Object> data = Map.of("name", "New Entity"); // GH-90000
@@ -661,11 +661,11 @@ class EntityServiceTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Input Validation [GH-90000]")
+    @DisplayName("Input Validation")
     class ValidationTests {
 
         @Test
-        @DisplayName("[DC-002-19]: empty_collection_name_rejected [GH-90000]")
+        @DisplayName("[DC-002-19]: empty_collection_name_rejected")
         void emptyCollectionNameRejected() { // GH-90000
             // When & Then
             assertThatThrownBy(() -> // GH-90000
@@ -674,7 +674,7 @@ class EntityServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[DC-002-20]: whitespace_only_user_id_rejected [GH-90000]")
+        @DisplayName("[DC-002-20]: whitespace_only_user_id_rejected")
         void whitespaceOnlyUserIdRejected() { // GH-90000
             // When & Then
             assertThatThrownBy(() -> // GH-90000

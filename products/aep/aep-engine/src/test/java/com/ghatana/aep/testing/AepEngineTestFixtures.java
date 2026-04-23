@@ -99,7 +99,7 @@ public final class AepEngineTestFixtures {
 
     /** Returns an allowed decision with the standard event-processing purpose. */
     public static ConsentDecision allowAll() { // GH-90000
-        return ConsentDecision.allow(List.of("event_processing [GH-90000]"));
+        return ConsentDecision.allow(List.of("event_processing"));
     }
 
     /** Returns a denied decision with the supplied reason. */

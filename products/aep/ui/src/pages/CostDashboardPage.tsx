@@ -19,6 +19,9 @@ import {
 } from 'recharts';
 import { getCostSummary } from '@/api/aep.api';
 import { tenantIdAtom } from '@/stores/tenant.store';
+import { Link } from 'react-router';
+import { EmptyState } from '@/components/core/EmptyState';
+import { ErrorState } from '@/components/core/ErrorState';
 
 function Currency({ value }: { value: number }) {
   return <>{new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD' }).format(value)}</>;
@@ -43,14 +46,16 @@ export function CostDashboardPage() {
   });
 
   if (isLoading) {
-    return <div className="p-6 text-sm text-gray-500 dark:text-gray-400">Loading cost telemetry…</div>;
+    return <EmptyState title="Loading cost telemetry…" description="Fetching spend data for the current tenant." />;
   }
 
   if (isError || !data) {
     return (
-      <div className="p-6 text-sm text-red-600 dark:text-red-400">
-        Failed to load cost summary: {error instanceof Error ? error.message : 'Unknown error'}
-      </div>
+      <ErrorState
+        title="Failed to load cost summary"
+        message={error instanceof Error ? error.message : 'Unknown error'}
+        onRetry={() => window.location.reload()}
+      />
     );
   }
 
@@ -118,7 +123,7 @@ export function CostDashboardPage() {
           <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Alerts</h2>
           <div className="mt-4 space-y-3">
             {data.alerts.length === 0 ? (
-              <p className="text-sm text-gray-500 dark:text-gray-400">No cost alerts are active.</p>
+              <EmptyState title="No cost alerts" description="Budget thresholds are within limits." />
             ) : (
               data.alerts.map((alert) => (
                 <div
@@ -142,6 +147,20 @@ export function CostDashboardPage() {
                   <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
                     Current {alert.currentValue.toFixed(2)} • Threshold {alert.thresholdValue.toFixed(2)}
                   </p>
+                  <div className="mt-3 flex gap-2">
+                    <Link
+                      to="/build/pipelines"
+                      className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+                    >
+                      Review pipelines →
+                    </Link>
+                    <Link
+                      to="/operate"
+                      className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+                    >
+                      Check runs →
+                    </Link>
+                  </div>
                 </div>
               ))
             )}
@@ -168,7 +187,11 @@ export function CostDashboardPage() {
               <tbody className="divide-y divide-gray-100 dark:divide-gray-900">
                 {data.perPipeline.map((item) => (
                   <tr key={item.id}>
-                    <td className="py-3 pr-4 font-medium text-gray-900 dark:text-gray-100">{item.name}</td>
+                    <td className="py-3 pr-4 font-medium text-gray-900 dark:text-gray-100">
+                      <Link to={`/build/pipelines`} className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline transition-colors">
+                        {item.name}
+                      </Link>
+                    </td>
                     <td className="py-3 pr-4 text-gray-600 dark:text-gray-300"><Currency value={item.costUsd} /></td>
                     <td className="py-3 pr-4 text-gray-600 dark:text-gray-300">{item.sharePercent.toFixed(1)}%</td>
                     <td className="py-3 text-gray-600 dark:text-gray-300">{item.runCount}</td>
@@ -185,34 +208,37 @@ export function CostDashboardPage() {
             <span className="text-xs text-gray-500 dark:text-gray-400">{data.perAgent.length} agents</span>
           </div>
           <div className="mt-4 overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 text-sm dark:divide-gray-800">
-              <thead>
-                <tr className="text-left text-xs uppercase tracking-wide text-gray-400">
-                  <th className="pb-3 pr-4">Agent</th>
-                  <th className="pb-3 pr-4">Cost</th>
-                  <th className="pb-3 pr-4">Share</th>
-                  <th className="pb-3">Runs</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-900">
-                {data.perAgent.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
-                      No per-agent breakdown is available for the current tenant yet.
-                    </td>
+            {data.perAgent.length === 0 ? (
+              <EmptyState
+                title="No per-agent breakdown"
+                description="Agent cost data will appear once agents are assigned to pipeline runs."
+              />
+            ) : (
+              <table className="min-w-full divide-y divide-gray-200 text-sm dark:divide-gray-800">
+                <thead>
+                  <tr className="text-left text-xs uppercase tracking-wide text-gray-400">
+                    <th className="pb-3 pr-4">Agent</th>
+                    <th className="pb-3 pr-4">Cost</th>
+                    <th className="pb-3 pr-4">Share</th>
+                    <th className="pb-3">Runs</th>
                   </tr>
-                ) : (
-                  data.perAgent.map((item) => (
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-900">
+                  {data.perAgent.map((item) => (
                     <tr key={item.id}>
-                      <td className="py-3 pr-4 font-medium text-gray-900 dark:text-gray-100">{item.name}</td>
+                      <td className="py-3 pr-4 font-medium text-gray-900 dark:text-gray-100">
+                        <Link to="/catalog/agents" className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline transition-colors">
+                          {item.name}
+                        </Link>
+                      </td>
                       <td className="py-3 pr-4 text-gray-600 dark:text-gray-300"><Currency value={item.costUsd} /></td>
                       <td className="py-3 pr-4 text-gray-600 dark:text-gray-300">{item.sharePercent.toFixed(1)}%</td>
                       <td className="py-3 text-gray-600 dark:text-gray-300">{item.runCount}</td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </section>
       </div>

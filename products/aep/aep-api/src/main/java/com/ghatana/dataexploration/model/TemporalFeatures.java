@@ -8,7 +8,11 @@ import java.util.Map;
  * Temporal features extracted from event streams for pattern correlation.
  *
  * Day 28 Implementation: Time-based features for correlated group mining.
- */
+  * @doc.type class
+ * @doc.purpose Provides temporal features functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 public class TemporalFeatures {
 
     private final String eventType;

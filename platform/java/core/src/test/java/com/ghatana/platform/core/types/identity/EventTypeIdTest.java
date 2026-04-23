@@ -12,7 +12,7 @@ class EventTypeIdTest {
 
     @Test
     void testOf() { // GH-90000
-        EventTypeId id = EventTypeId.of("test-event-type [GH-90000]");
+        EventTypeId id = EventTypeId.of("test-event-type");
 
         assertEquals("test-event-type", id.value()); // GH-90000
         assertEquals("test-event-type", id.raw()); // GH-90000
@@ -38,15 +38,15 @@ class EventTypeIdTest {
     @Test
     void testBlankValueThrowsException() { // GH-90000
         assertThrows(IllegalArgumentException.class, () -> // GH-90000
-            new EventTypeId("   [GH-90000]")
+            new EventTypeId("  ")
         );
     }
 
     @Test
     void testEquals() { // GH-90000
-        EventTypeId id1 = EventTypeId.of("same-id [GH-90000]");
-        EventTypeId id2 = EventTypeId.of("same-id [GH-90000]");
-        EventTypeId id3 = EventTypeId.of("different-id [GH-90000]");
+        EventTypeId id1 = EventTypeId.of("same-id");
+        EventTypeId id2 = EventTypeId.of("same-id");
+        EventTypeId id3 = EventTypeId.of("different-id");
 
         assertEquals(id1, id2); // GH-90000
         assertNotEquals(id1, id3); // GH-90000

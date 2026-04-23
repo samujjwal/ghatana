@@ -30,7 +30,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("EventDurability – Contract Tests (D006) [GH-90000]")
+@DisplayName("EventDurability – Contract Tests (D006)")
 class EventDurabilityContractTest extends EventloopTestBase {
 
     @Mock
@@ -41,11 +41,11 @@ class EventDurabilityContractTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Durability Level Hierarchy [GH-90000]")
+    @DisplayName("Durability Level Hierarchy")
     class DurabilityLevelHierarchyTests {
 
         @Test
-        @DisplayName("[D006]: all_ack_meets_majority_ack [GH-90000]")
+        @DisplayName("[D006]: all_ack_meets_majority_ack")
         void allAckMeetsMajorityAck() { // GH-90000
             EventDurabilityService.DurabilityResult result =
                 new EventDurabilityService.DurabilityResult( // GH-90000
@@ -61,7 +61,7 @@ class EventDurabilityContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D006]: majority_ack_meets_leader_ack [GH-90000]")
+        @DisplayName("[D006]: majority_ack_meets_leader_ack")
         void majorityAckMeetsLeaderAck() { // GH-90000
             EventDurabilityService.DurabilityResult result =
                 new EventDurabilityService.DurabilityResult( // GH-90000
@@ -79,7 +79,7 @@ class EventDurabilityContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D006]: leader_ack_meets_none [GH-90000]")
+        @DisplayName("[D006]: leader_ack_meets_none")
         void leaderAckMeetsNone() { // GH-90000
             EventDurabilityService.DurabilityResult result =
                 new EventDurabilityService.DurabilityResult( // GH-90000
@@ -94,7 +94,7 @@ class EventDurabilityContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D006]: fsync_ack_meets_all_ack_if_replicated [GH-90000]")
+        @DisplayName("[D006]: fsync_ack_meets_all_ack_if_replicated")
         void fsyncAckMeetsAllAckIfReplicated() { // GH-90000
             EventDurabilityService.DurabilityResult result =
                 new EventDurabilityService.DurabilityResult( // GH-90000
@@ -109,7 +109,7 @@ class EventDurabilityContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D006]: none_meets_only_none [GH-90000]")
+        @DisplayName("[D006]: none_meets_only_none")
         void noneMeetsOnlyNone() { // GH-90000
             EventDurabilityService.DurabilityResult result =
                 new EventDurabilityService.DurabilityResult( // GH-90000
@@ -128,11 +128,11 @@ class EventDurabilityContractTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Durability Level Ordering [GH-90000]")
+    @DisplayName("Durability Level Ordering")
     class DurabilityLevelOrderingTests {
 
         @Test
-        @DisplayName("[D006]: durability_levels_ordered_correctly [GH-90000]")
+        @DisplayName("[D006]: durability_levels_ordered_correctly")
         void durabilityLevelsOrderedCorrectly() { // GH-90000
             // NONE < LEADER_ACK < MAJORITY_ACK < ALL_ACK < FSYNC_ACK
             assertThat(EventDurabilityService.DurabilityLevel.NONE.ordinal()).isEqualTo(0); // GH-90000
@@ -143,7 +143,7 @@ class EventDurabilityContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D006]: higher_level_ordinal_greater_than_lower [GH-90000]")
+        @DisplayName("[D006]: higher_level_ordinal_greater_than_lower")
         void higherLevelOrdinalGreaterThanLower() { // GH-90000
             assertThat(EventDurabilityService.DurabilityLevel.ALL_ACK.ordinal()) // GH-90000
                 .isGreaterThan(EventDurabilityService.DurabilityLevel.MAJORITY_ACK.ordinal()); // GH-90000
@@ -157,11 +157,11 @@ class EventDurabilityContractTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Durability Acknowledgment [GH-90000]")
+    @DisplayName("Durability Acknowledgment")
     class DurabilityAcknowledgmentTests {
 
         @Test
-        @DisplayName("[D006]: consumer_acknowledges_durability [GH-90000]")
+        @DisplayName("[D006]: consumer_acknowledges_durability")
         void consumerAcknowledgesDurability() { // GH-90000
             String eventId = "evt-001";
             String consumerId = "consumer-001";
@@ -175,7 +175,7 @@ class EventDurabilityContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D006]: acknowledged_consumers_tracked_in_status [GH-90000]")
+        @DisplayName("[D006]: acknowledged_consumers_tracked_in_status")
         void acknowledgedConsumersTrackedInStatus() { // GH-90000
             String eventId = "evt-001";
             List<String> acknowledged = List.of("consumer-1", "consumer-2", "consumer-3"); // GH-90000
@@ -203,11 +203,11 @@ class EventDurabilityContractTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Unsuccessful Durability [GH-90000]")
+    @DisplayName("Unsuccessful Durability")
     class UnsuccessfulDurabilityTests {
 
         @Test
-        @DisplayName("[D006]: unsuccessful_result_does_not_meet_any_level [GH-90000]")
+        @DisplayName("[D006]: unsuccessful_result_does_not_meet_any_level")
         void unsuccessfulResultDoesNotMeetAnyLevel() { // GH-90000
             EventDurabilityService.DurabilityResult failed =
                 new EventDurabilityService.DurabilityResult( // GH-90000
@@ -222,7 +222,7 @@ class EventDurabilityContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D006]: failed_write_reports_error [GH-90000]")
+        @DisplayName("[D006]: failed_write_reports_error")
         void failedWriteReportsError() { // GH-90000
             EventDurabilityService.DurabilityResult failed =
                 new EventDurabilityService.DurabilityResult( // GH-90000
@@ -248,11 +248,11 @@ class EventDurabilityContractTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Config-based Durability [GH-90000]")
+    @DisplayName("Config-based Durability")
     class ConfigBasedDurabilityTests {
 
         @Test
-        @DisplayName("[D006]: default_durability_level_is_majority_ack [GH-90000]")
+        @DisplayName("[D006]: default_durability_level_is_majority_ack")
         void defaultDurabilityLevelIsMajorityAck() { // GH-90000
             EventDurabilityConfig config = new EventDurabilityConfig(); // GH-90000
 
@@ -261,7 +261,7 @@ class EventDurabilityContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D006]: durability_timeout_configurable [GH-90000]")
+        @DisplayName("[D006]: durability_timeout_configurable")
         void durabilityTimeoutConfigurable() { // GH-90000
             EventDurabilityConfig config = new EventDurabilityConfig(); // GH-90000
             config.setDurabilityTimeout(Duration.ofSeconds(60)); // GH-90000
@@ -270,7 +270,7 @@ class EventDurabilityContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D006]: required_replica_count_configurable [GH-90000]")
+        @DisplayName("[D006]: required_replica_count_configurable")
         void requiredReplicaCountConfigurable() { // GH-90000
             EventDurabilityConfig config = new EventDurabilityConfig(); // GH-90000
             config.setRequiredReplicaCount(3); // GH-90000
@@ -279,7 +279,7 @@ class EventDurabilityContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D006]: fsync_enabled_by_default [GH-90000]")
+        @DisplayName("[D006]: fsync_enabled_by_default")
         void fsyncEnabledByDefault() { // GH-90000
             EventDurabilityConfig config = new EventDurabilityConfig(); // GH-90000
 
@@ -292,11 +292,11 @@ class EventDurabilityContractTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Latency Tracking [GH-90000]")
+    @DisplayName("Latency Tracking")
     class LatencyTrackingTests {
 
         @Test
-        @DisplayName("[D006]: fsync_latency_tracked [GH-90000]")
+        @DisplayName("[D006]: fsync_latency_tracked")
         void fsyncLatencyTracked() { // GH-90000
             EventDurabilityService.DurabilityResult result =
                 new EventDurabilityService.DurabilityResult( // GH-90000
@@ -309,7 +309,7 @@ class EventDurabilityContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D006]: replication_latency_tracked [GH-90000]")
+        @DisplayName("[D006]: replication_latency_tracked")
         void replicationLatencyTracked() { // GH-90000
             EventDurabilityService.DurabilityResult result =
                 new EventDurabilityService.DurabilityResult( // GH-90000
@@ -322,7 +322,7 @@ class EventDurabilityContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D006]: leader_ack_has_no_replication_latency [GH-90000]")
+        @DisplayName("[D006]: leader_ack_has_no_replication_latency")
         void leaderAckHasNoReplicationLatency() { // GH-90000
             EventDurabilityService.DurabilityResult result =
                 new EventDurabilityService.DurabilityResult( // GH-90000

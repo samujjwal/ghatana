@@ -44,7 +44,7 @@ public class ESLintSetupHelper {
             }
 
             // Create a basic ESLint config file if it doesn't exist
-            Path eslintConfig = projectRoot.resolve(".eslintrc.js [GH-90000]");
+            Path eslintConfig = projectRoot.resolve(".eslintrc.js");
             if (!Files.exists(eslintConfig)) { // GH-90000
                 String defaultConfig =
                         """
@@ -76,7 +76,7 @@ public class ESLintSetupHelper {
             }
 
             // Check if package.json exists, create one if it doesn't
-            Path packageJson = projectRoot.resolve("package.json [GH-90000]");
+            Path packageJson = projectRoot.resolve("package.json");
             if (!Files.exists(packageJson)) { // GH-90000
                 String defaultPackageJson =
                         """
@@ -99,22 +99,22 @@ public class ESLintSetupHelper {
 
             // Check if Node.js is available
             if (!isNodeAvailable()) { // GH-90000
-                logger.warn("Node.js is not available. ESLint setup will be incomplete. [GH-90000]");
+                logger.warn("Node.js is not available. ESLint setup will be incomplete.");
                 return false;
             }
 
             // Install dependencies if node_modules doesn't exist
-            Path nodeModules = projectRoot.resolve("node_modules [GH-90000]");
+            Path nodeModules = projectRoot.resolve("node_modules");
             if (!Files.exists(nodeModules)) { // GH-90000
                 if (!installDependencies(projectRoot)) { // GH-90000
-                    logger.warn("Failed to install npm dependencies. Some tests may fail. [GH-90000]");
+                    logger.warn("Failed to install npm dependencies. Some tests may fail.");
                     // Continue setup even if installation fails
                 }
             }
 
             // Create a minimal PolyfixConfig
             List<String> languages = List.of("typescript", "javascript"); // GH-90000
-            List<String> schemaPaths = List.of("schemas/ [GH-90000]");
+            List<String> schemaPaths = List.of("schemas/");
 
             // Create config with default values
             PolyfixConfig.Budgets budgets = new PolyfixConfig.Budgets(10, 100); // GH-90000
@@ -149,7 +149,7 @@ public class ESLintSetupHelper {
 
             // Create a simple PolyfixProjectContext for testing
             List<LanguageService> services = new ArrayList<>(); // GH-90000
-            Logger logger = LogManager.getLogger("test-eslint-setup [GH-90000]");
+            Logger logger = LogManager.getLogger("test-eslint-setup");
 
             // Verify ESLint can be created (don't fail if it can't) // GH-90000
             try (ExecutorService executor = Executors.newSingleThreadExecutor()) { // GH-90000
@@ -158,7 +158,7 @@ public class ESLintSetupHelper {
 
                 try {
                     ESLintService esLintService = new ESLintService(context); // GH-90000
-                    logger.info("ESLint service initialized successfully [GH-90000]");
+                    logger.info("ESLint service initialized successfully");
                     return true;
                 } catch (Exception e) { // GH-90000
                     logger.warn("Failed to initialize ESLint service: {}", e.getMessage()); // GH-90000
@@ -245,7 +245,7 @@ public class ESLintSetupHelper {
             // Wait for process to complete with timeout (5 minutes) // GH-90000
             boolean finished = process.waitFor(5, TimeUnit.MINUTES); // GH-90000
             if (!finished) { // GH-90000
-                logger.warn("npm install timed out after 5 minutes [GH-90000]");
+                logger.warn("npm install timed out after 5 minutes");
                 process.destroy(); // GH-90000
                 return false;
             }
@@ -256,7 +256,7 @@ public class ESLintSetupHelper {
                 return false;
             }
 
-            logger.info("Successfully installed npm dependencies [GH-90000]");
+            logger.info("Successfully installed npm dependencies");
             return true;
 
         } catch (Exception e) { // GH-90000

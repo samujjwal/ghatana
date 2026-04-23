@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Kernel Lifecycle Edge Case Tests [GH-90000]")
+@DisplayName("Kernel Lifecycle Edge Case Tests")
 class KernelLifecycleEdgeCaseTest extends EventloopTestBase {
 
     private KernelRegistryImpl registry;
@@ -42,7 +42,7 @@ class KernelLifecycleEdgeCaseTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle partial initialization failure [GH-90000]")
+    @DisplayName("Should handle partial initialization failure")
     void testPartialInitializationFailure() { // GH-90000
         // GIVEN: Three modules, one fails during initialization
         SuccessfulModule moduleA = new SuccessfulModule("module-a", "1.0.0"); // GH-90000
@@ -57,7 +57,7 @@ class KernelLifecycleEdgeCaseTest extends EventloopTestBase {
         moduleA.initialize(context); // GH-90000
         try {
             moduleB.initialize(context); // GH-90000
-            fail("Expected initialization to fail [GH-90000]");
+            fail("Expected initialization to fail");
         } catch (RuntimeException e) { // GH-90000
             // Expected
         }
@@ -70,7 +70,7 @@ class KernelLifecycleEdgeCaseTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle graceful shutdown with hanging modules [GH-90000]")
+    @DisplayName("Should handle graceful shutdown with hanging modules")
     void testGracefulShutdownWithHangingModules() { // GH-90000
         // GIVEN: Module that hangs during shutdown
         HangingModule hangingModule = new HangingModule("hanging-module", "1.0.0", Duration.ofSeconds(30)); // GH-90000
@@ -96,7 +96,7 @@ class KernelLifecycleEdgeCaseTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle start-stop-start cycle [GH-90000]")
+    @DisplayName("Should handle start-stop-start cycle")
     void testStartStopStartCycle() { // GH-90000
         // GIVEN: Module that supports restart
         RestartableModule module = new RestartableModule("restartable-module", "1.0.0"); // GH-90000
@@ -120,7 +120,7 @@ class KernelLifecycleEdgeCaseTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle initialization timeout [GH-90000]")
+    @DisplayName("Should handle initialization timeout")
     void testInitializationTimeout() { // GH-90000
         // GIVEN: Module with slow initialization
         SlowModule slowModule = new SlowModule("slow-module", "1.0.0", Duration.ofSeconds(15)); // GH-90000
@@ -136,7 +136,7 @@ class KernelLifecycleEdgeCaseTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle dependency failure cascade [GH-90000]")
+    @DisplayName("Should handle dependency failure cascade")
     void testDependencyFailureCascade() { // GH-90000
         // GIVEN: Module chain A → B → C, where B fails
         SuccessfulModule moduleC = new SuccessfulModule("module-c", "1.0.0"); // GH-90000
@@ -160,7 +160,7 @@ class KernelLifecycleEdgeCaseTest extends EventloopTestBase {
         // Module B fails during start
         assertThatThrownBy(() -> runPromise(() -> moduleB.start())) // GH-90000
             .isInstanceOf(RuntimeException.class) // GH-90000
-            .hasMessageContaining("Start failed [GH-90000]");
+            .hasMessageContaining("Start failed");
 
         // THEN: Module A cannot start because B failed
         moduleA.initialize(context); // GH-90000
@@ -168,7 +168,7 @@ class KernelLifecycleEdgeCaseTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle module state transitions correctly [GH-90000]")
+    @DisplayName("Should handle module state transitions correctly")
     void testModuleStateTransitions() { // GH-90000
         // GIVEN: Module tracking state transitions
         StateTrackingModule module = new StateTrackingModule("state-module", "1.0.0"); // GH-90000

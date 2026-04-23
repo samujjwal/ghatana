@@ -48,8 +48,8 @@ class PolyfixConfigLoaderTest {
     @BeforeEach
     void setUp() throws IOException { // GH-90000
         // Copy test config to temp directory
-        configFile = tempDir.resolve("polyfix.json [GH-90000]");
-        Files.copy(getClass().getResourceAsStream("/test-configs/valid-config.json [GH-90000]"), configFile);
+        configFile = tempDir.resolve("polyfix.json");
+        Files.copy(getClass().getResourceAsStream("/test-configs/valid-config.json"), configFile);
     }
 
     @Test
@@ -123,7 +123,7 @@ class PolyfixConfigLoaderTest {
                 assertThrows(IOException.class, () -> PolyfixConfigLoader.load(tempDir, null)); // GH-90000
         assertNotNull(exception); // GH-90000
         assertTrue( // GH-90000
-                exception.getMessage().contains("Invalid configuration format [GH-90000]")
+                exception.getMessage().contains("Invalid configuration format")
                         || exception.getCause() // GH-90000
                                 instanceof
                                 com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException);
@@ -150,7 +150,7 @@ class PolyfixConfigLoaderTest {
                         IllegalArgumentException.class,
                         () -> PolyfixConfigLoader.load(tempDir, null)); // GH-90000
         assertNotNull(exception); // GH-90000
-        assertTrue(exception.getMessage().contains("Unsupported language [GH-90000]"));
+        assertTrue(exception.getMessage().contains("Unsupported language"));
     }
 
     @Test
@@ -204,7 +204,7 @@ class PolyfixConfigLoaderTest {
                 assertThrows( // GH-90000
                         IllegalArgumentException.class,
                         () -> PolyfixConfigLoader.validateConfig(config)); // GH-90000
-        assertTrue(exception.getMessage().contains("languages cannot be null [GH-90000]"));
+        assertTrue(exception.getMessage().contains("languages cannot be null"));
     }
 
     @Test
@@ -235,7 +235,7 @@ class PolyfixConfigLoaderTest {
                 assertThrows( // GH-90000
                         IllegalArgumentException.class,
                         () -> PolyfixConfigLoader.validateConfig(config)); // GH-90000
-        assertTrue(exception.getMessage().contains("budgets cannot be null [GH-90000]"));
+        assertTrue(exception.getMessage().contains("budgets cannot be null"));
     }
 
     @Test
@@ -266,7 +266,7 @@ class PolyfixConfigLoaderTest {
                 assertThrows( // GH-90000
                         IllegalArgumentException.class,
                         () -> PolyfixConfigLoader.validateConfig(config)); // GH-90000
-        assertTrue(exception.getMessage().contains("policies cannot be null [GH-90000]"));
+        assertTrue(exception.getMessage().contains("policies cannot be null"));
     }
 
     @Test
@@ -286,7 +286,7 @@ class PolyfixConfigLoaderTest {
                 assertThrows( // GH-90000
                         IllegalArgumentException.class,
                         () -> PolyfixConfigLoader.validateConfig(config)); // GH-90000
-        assertTrue(exception.getMessage().contains("tools cannot be null [GH-90000]"));
+        assertTrue(exception.getMessage().contains("tools cannot be null"));
     }
 
     @Test
@@ -317,7 +317,7 @@ class PolyfixConfigLoaderTest {
                 assertThrows( // GH-90000
                         IllegalArgumentException.class,
                         () -> PolyfixConfigLoader.validateConfig(config)); // GH-90000
-        assertTrue(exception.getMessage().contains("maxPasses must be at least 1 [GH-90000]"));
+        assertTrue(exception.getMessage().contains("maxPasses must be at least 1"));
     }
 
     @Test
@@ -348,6 +348,6 @@ class PolyfixConfigLoaderTest {
                 assertThrows( // GH-90000
                         IllegalArgumentException.class,
                         () -> PolyfixConfigLoader.validateConfig(config)); // GH-90000
-        assertTrue(exception.getMessage().contains("maxEditsPerFile cannot be negative [GH-90000]"));
+        assertTrue(exception.getMessage().contains("maxEditsPerFile cannot be negative"));
     }
 }

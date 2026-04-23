@@ -7,7 +7,11 @@ import java.util.List;
  *
  * <p>Each alignment carries the estimated A/V sync offset (audio PTS − video PTS)
  * and a confidence score so consumers can flag problematic sync points.
- */
+  * @doc.type class
+ * @doc.purpose Provides temporal alignment functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 public class TemporalAlignment {
 
     private final long   timestampMs;

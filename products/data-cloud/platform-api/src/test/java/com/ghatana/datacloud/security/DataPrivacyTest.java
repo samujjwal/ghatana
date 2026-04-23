@@ -29,18 +29,18 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("DataPrivacy – Privacy Compliance (S005) [GH-90000]")
+@DisplayName("DataPrivacy – Privacy Compliance (S005)")
 class DataPrivacyTest extends EventloopTestBase {
 
     @Mock
     private RBACService rbacService;
 
     @Nested
-    @DisplayName("Data Access Controls [GH-90000]")
+    @DisplayName("Data Access Controls")
     class DataAccessControlsTests {
 
         @Test
-        @DisplayName("[S005]: pii_access_requires_permission [GH-90000]")
+        @DisplayName("[S005]: pii_access_requires_permission")
         void piiAccessRequiresPermission() { // GH-90000
             String userId = "user-001";
             String tenantId = "tenant-alpha";
@@ -57,7 +57,7 @@ class DataPrivacyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[S005]: unauthorized_pii_access_denied [GH-90000]")
+        @DisplayName("[S005]: unauthorized_pii_access_denied")
         void unauthorizedPiiAccessDenied() { // GH-90000
             String userId = "user-002";
             String tenantId = "tenant-alpha";
@@ -75,11 +75,11 @@ class DataPrivacyTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Data Export Controls [GH-90000]")
+    @DisplayName("Data Export Controls")
     class DataExportControlsTests {
 
         @Test
-        @DisplayName("[S005]: data_export_requires_export_permission [GH-90000]")
+        @DisplayName("[S005]: data_export_requires_export_permission")
         void dataExportRequiresExportPermission() { // GH-90000
             String userId = "user-001";
             String tenantId = "tenant-alpha";
@@ -95,7 +95,7 @@ class DataPrivacyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[S005]: bulk_export_requires_admin_permission [GH-90000]")
+        @DisplayName("[S005]: bulk_export_requires_admin_permission")
         void bulkExportRequiresAdminPermission() { // GH-90000
             String userId = "admin-user";
             String tenantId = "tenant-alpha";
@@ -112,11 +112,11 @@ class DataPrivacyTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Consent Management [GH-90000]")
+    @DisplayName("Consent Management")
     class ConsentManagementTests {
 
         @Test
-        @DisplayName("[S005]: consent_required_for_data_processing [GH-90000]")
+        @DisplayName("[S005]: consent_required_for_data_processing")
         void consentRequiredForDataProcessing() { // GH-90000
             // Simulate consent check
             boolean hasConsent = checkConsent("user-001", "data-processing"); // GH-90000
@@ -125,7 +125,7 @@ class DataPrivacyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[S005]: no_consent_blocks_processing [GH-90000]")
+        @DisplayName("[S005]: no_consent_blocks_processing")
         void noConsentBlocksProcessing() { // GH-90000
             boolean hasConsent = checkConsent("user-002", "marketing"); // GH-90000
 
@@ -139,11 +139,11 @@ class DataPrivacyTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Data Minimization [GH-90000]")
+    @DisplayName("Data Minimization")
     class DataMinimizationTests {
 
         @Test
-        @DisplayName("[S005]: only_necessary_fields_retrieved [GH-90000]")
+        @DisplayName("[S005]: only_necessary_fields_retrieved")
         void onlyNecessaryFieldsRetrieved() { // GH-90000
             // Simulate that queries only return necessary fields
             Set<String> necessaryFields = Set.of("id", "name", "email"); // GH-90000
@@ -156,7 +156,7 @@ class DataPrivacyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[S005]: pii_fields_filtered_by_default [GH-90000]")
+        @DisplayName("[S005]: pii_fields_filtered_by_default")
         void piiFieldsFilteredByDefault() { // GH-90000
             Map<String, Object> userData = Map.of( // GH-90000
                 "id", "user-001",
@@ -178,11 +178,11 @@ class DataPrivacyTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Right to Deletion [GH-90000]")
+    @DisplayName("Right to Deletion")
     class RightToDeletionTests {
 
         @Test
-        @DisplayName("[S005]: user_data_deletion_supported [GH-90000]")
+        @DisplayName("[S005]: user_data_deletion_supported")
         void userDataDeletionSupported() { // GH-90000
             String userId = "user-001";
 
@@ -193,7 +193,7 @@ class DataPrivacyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[S005]: deletion_removes_all_user_data [GH-90000]")
+        @DisplayName("[S005]: deletion_removes_all_user_data")
         void deletionRemovesAllUserData() { // GH-90000
             String userId = "user-001";
 
@@ -211,11 +211,11 @@ class DataPrivacyTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Privacy Audit [GH-90000]")
+    @DisplayName("Privacy Audit")
     class PrivacyAuditTests {
 
         @Test
-        @DisplayName("[S005]: privacy_access_logged [GH-90000]")
+        @DisplayName("[S005]: privacy_access_logged")
         void privacyAccessLogged() { // GH-90000
             // Simulate that PII access is logged
             boolean accessLogged = true;
@@ -224,7 +224,7 @@ class DataPrivacyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[S005]: privacy_violations_detected [GH-90000]")
+        @DisplayName("[S005]: privacy_violations_detected")
         void privacyViolationsDetected() { // GH-90000
             // Simulate violation detection
             boolean violationDetected = true;

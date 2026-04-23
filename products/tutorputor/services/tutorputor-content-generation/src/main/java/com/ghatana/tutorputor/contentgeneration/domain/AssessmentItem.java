@@ -2,6 +2,12 @@ package com.ghatana.tutorputor.contentgeneration.domain;
 
 import java.util.List;
 
+/**
+ * @doc.type class
+ * @doc.purpose Provides assessment item functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+ */
 public class AssessmentItem {
     private final String id;
     private final String question;

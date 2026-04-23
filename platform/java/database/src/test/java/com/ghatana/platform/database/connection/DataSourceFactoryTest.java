@@ -12,7 +12,7 @@ import javax.sql.DataSource;
 
 import static org.assertj.core.api.Assertions.*;
 
-@DisplayName("DataSourceFactory Tests [GH-90000]")
+@DisplayName("DataSourceFactory Tests")
 class DataSourceFactoryTest {
 
     @AfterEach
@@ -23,11 +23,11 @@ class DataSourceFactoryTest {
     @Test
     void shouldCreateDataSource() { // GH-90000
         DataSourceConfig config = DataSourceConfig.builder() // GH-90000
-            .jdbcUrl("jdbc:h2:mem:test-factory;DB_CLOSE_DELAY=-1 [GH-90000]")
-            .username("sa [GH-90000]")
-            .password(" [GH-90000]")
-            .driverClassName("org.h2.Driver [GH-90000]")
-            .poolName("factory-test [GH-90000]")
+            .jdbcUrl("jdbc:h2:mem:test-factory;DB_CLOSE_DELAY=-1")
+            .username("sa")
+            .password("")
+            .driverClassName("org.h2.Driver")
+            .poolName("factory-test")
             .build(); // GH-90000
 
         DataSource ds = DataSourceFactory.create(config); // GH-90000
@@ -39,17 +39,17 @@ class DataSourceFactoryTest {
     @Test
     void shouldTrackMultiplePools() { // GH-90000
         DataSourceConfig config1 = DataSourceConfig.builder() // GH-90000
-            .jdbcUrl("jdbc:h2:mem:test1;DB_CLOSE_DELAY=-1 [GH-90000]")
-            .username("sa [GH-90000]").password(" [GH-90000]")
-            .driverClassName("org.h2.Driver [GH-90000]")
-            .poolName("pool-1 [GH-90000]")
+            .jdbcUrl("jdbc:h2:mem:test1;DB_CLOSE_DELAY=-1")
+            .username("sa").password("")
+            .driverClassName("org.h2.Driver")
+            .poolName("pool-1")
             .build(); // GH-90000
 
         DataSourceConfig config2 = DataSourceConfig.builder() // GH-90000
-            .jdbcUrl("jdbc:h2:mem:test2;DB_CLOSE_DELAY=-1 [GH-90000]")
-            .username("sa [GH-90000]").password(" [GH-90000]")
-            .driverClassName("org.h2.Driver [GH-90000]")
-            .poolName("pool-2 [GH-90000]")
+            .jdbcUrl("jdbc:h2:mem:test2;DB_CLOSE_DELAY=-1")
+            .username("sa").password("")
+            .driverClassName("org.h2.Driver")
+            .poolName("pool-2")
             .build(); // GH-90000
 
         DataSourceFactory.create(config1); // GH-90000
@@ -61,10 +61,10 @@ class DataSourceFactoryTest {
     @Test
     void shouldCloseAllPools() { // GH-90000
         DataSourceConfig config = DataSourceConfig.builder() // GH-90000
-            .jdbcUrl("jdbc:h2:mem:closetest;DB_CLOSE_DELAY=-1 [GH-90000]")
-            .username("sa [GH-90000]").password(" [GH-90000]")
-            .driverClassName("org.h2.Driver [GH-90000]")
-            .poolName("close-test [GH-90000]")
+            .jdbcUrl("jdbc:h2:mem:closetest;DB_CLOSE_DELAY=-1")
+            .username("sa").password("")
+            .driverClassName("org.h2.Driver")
+            .poolName("close-test")
             .build(); // GH-90000
 
         DataSourceFactory.create(config); // GH-90000

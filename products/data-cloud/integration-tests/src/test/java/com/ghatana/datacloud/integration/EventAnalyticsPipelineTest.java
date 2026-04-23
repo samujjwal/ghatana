@@ -20,11 +20,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test event analytics pipeline and data flow.
  */
-@DisplayName("Event Analytics Pipeline Tests [GH-90000]")
+@DisplayName("Event Analytics Pipeline Tests")
 class EventAnalyticsPipelineTest {
 
     @Test
-    @DisplayName("Should handle event ingestion [GH-90000]")
+    @DisplayName("Should handle event ingestion")
     void shouldHandleEventIngestion() { // GH-90000
         Map<String, Object> eventData = Map.of( // GH-90000
             "eventId", "evt-123",
@@ -33,12 +33,12 @@ class EventAnalyticsPipelineTest {
         );
         
         assertThat(eventData).isNotNull(); // GH-90000
-        assertThat(eventData).containsKey("eventId [GH-90000]");
-        assertThat(eventData).containsKey("eventType [GH-90000]");
+        assertThat(eventData).containsKey("eventId");
+        assertThat(eventData).containsKey("eventType");
     }
 
     @Test
-    @DisplayName("Should handle event processing [GH-90000]")
+    @DisplayName("Should handle event processing")
     void shouldHandleEventProcessing() { // GH-90000
         String pipeline = "analytics-pipeline";
         String stage = "aggregation";
@@ -48,36 +48,36 @@ class EventAnalyticsPipelineTest {
     }
 
     @Test
-    @DisplayName("Should handle event aggregation [GH-90000]")
+    @DisplayName("Should handle event aggregation")
     void shouldHandleEventAggregation() { // GH-90000
         String aggregationType = "COUNT";
         String field = "user_id";
         
-        assertThat(aggregationType).isEqualTo("COUNT [GH-90000]");
+        assertThat(aggregationType).isEqualTo("COUNT");
         assertThat(field).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle event filtering [GH-90000]")
+    @DisplayName("Should handle event filtering")
     void shouldHandleEventFiltering() { // GH-90000
         String filter = "event_type = 'purchase'";
         
-        assertThat(filter).contains("event_type [GH-90000]");
-        assertThat(filter).contains("purchase [GH-90000]");
+        assertThat(filter).contains("event_type");
+        assertThat(filter).contains("purchase");
     }
 
     @Test
-    @DisplayName("Should handle pipeline failures [GH-90000]")
+    @DisplayName("Should handle pipeline failures")
     void shouldHandlePipelineFailures() { // GH-90000
         String stage = "failed";
         String error = "Processing timeout";
         
-        assertThat(stage).isEqualTo("failed [GH-90000]");
+        assertThat(stage).isEqualTo("failed");
         assertThat(error).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle metrics collection [GH-90000]")
+    @DisplayName("Should handle metrics collection")
     void shouldHandleMetricsCollection() { // GH-90000
         String metricName = "events_processed";
         long metricValue = 1000L;

@@ -18,11 +18,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test cross-tenant security, access control, and data protection.
  */
-@DisplayName("Cross-Tenant Security Tests [GH-90000]")
+@DisplayName("Cross-Tenant Security Tests")
 class CrossTenantSecurityTest {
 
     @Test
-    @DisplayName("Should prevent cross-tenant data access [GH-90000]")
+    @DisplayName("Should prevent cross-tenant data access")
     void shouldPreventCrossTenantDataAccess() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 
@@ -30,7 +30,7 @@ class CrossTenantSecurityTest {
     }
 
     @Test
-    @DisplayName("Should enforce tenant-specific permissions [GH-90000]")
+    @DisplayName("Should enforce tenant-specific permissions")
     void shouldEnforceTenantSpecificPermissions() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 
@@ -38,7 +38,7 @@ class CrossTenantSecurityTest {
     }
 
     @Test
-    @DisplayName("Should handle tenant context validation [GH-90000]")
+    @DisplayName("Should handle tenant context validation")
     void shouldHandleTenantContextValidation() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 
@@ -46,7 +46,7 @@ class CrossTenantSecurityTest {
     }
 
     @Test
-    @DisplayName("Should prevent privilege escalation [GH-90000]")
+    @DisplayName("Should prevent privilege escalation")
     void shouldPreventPrivilegeEscalation() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 
@@ -54,7 +54,7 @@ class CrossTenantSecurityTest {
     }
 
     @Test
-    @DisplayName("Should handle security audit logging [GH-90000]")
+    @DisplayName("Should handle security audit logging")
     void shouldHandleSecurityAuditLogging() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 
@@ -62,7 +62,7 @@ class CrossTenantSecurityTest {
     }
 
     @Test
-    @DisplayName("Should handle security violation detection [GH-90000]")
+    @DisplayName("Should handle security violation detection")
     void shouldHandleSecurityViolationDetection() { // GH-90000
         AepEngine engine = Aep.forTesting(); // GH-90000
 

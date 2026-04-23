@@ -22,8 +22,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Redis Connector Integration Tests [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("Redis Connector Integration Tests")
+@Tag("integration")
 class RedisConnectorIntegrationTest extends EventloopTestBase {
 
     // ── In-memory Redis simulation ────────────────────────────────────────────
@@ -65,7 +65,7 @@ class RedisConnectorIntegrationTest extends EventloopTestBase {
         }
 
         long incr(String key) { // GH-90000
-            String current = get(key).orElse("0 [GH-90000]");
+            String current = get(key).orElse("0");
             long next = Long.parseLong(current) + 1; // GH-90000
             set(key, String.valueOf(next)); // GH-90000
             return next;
@@ -86,113 +86,113 @@ class RedisConnectorIntegrationTest extends EventloopTestBase {
     // ── Basic get/set ─────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("basic get/set operations [GH-90000]")
+    @DisplayName("basic get/set operations")
     class BasicGetSet {
 
         @Test
-        @DisplayName("set then get returns the stored value [GH-90000]")
+        @DisplayName("set then get returns the stored value")
         void setThenGet_returnsStoredValue() { // GH-90000
             redis.set("user:123", "{\"name\":\"Alice\"}"); // GH-90000
 
-            Optional<String> result = redis.get("user:123 [GH-90000]");
+            Optional<String> result = redis.get("user:123");
 
             assertThat(result).isPresent(); // GH-90000
             assertThat(result.get()).isEqualTo("{\"name\":\"Alice\"}"); // GH-90000
         }
 
         @Test
-        @DisplayName("get non-existent key returns empty optional [GH-90000]")
+        @DisplayName("get non-existent key returns empty optional")
         void getNonExistentKey_returnsEmpty() { // GH-90000
-            Optional<String> result = redis.get("missing-key [GH-90000]");
+            Optional<String> result = redis.get("missing-key");
 
             assertThat(result).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("overwrite existing key with new value [GH-90000]")
+        @DisplayName("overwrite existing key with new value")
         void overwriteExistingKey_replacesValue() { // GH-90000
             redis.set("config:mode", "slow"); // GH-90000
             redis.set("config:mode", "fast"); // GH-90000
 
-            assertThat(redis.get("config:mode [GH-90000]")).hasValue("fast [GH-90000]");
+            assertThat(redis.get("config:mode")).hasValue("fast");
         }
 
         @Test
-        @DisplayName("delete removes key from store [GH-90000]")
+        @DisplayName("delete removes key from store")
         void delete_removesKeyFromStore() { // GH-90000
             redis.set("temp:key", "temp-value"); // GH-90000
-            redis.delete("temp:key [GH-90000]");
+            redis.delete("temp:key");
 
-            assertThat(redis.exists("temp:key [GH-90000]")).isFalse();
+            assertThat(redis.exists("temp:key")).isFalse();
         }
     }
 
     // ── TTL expiration ────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("TTL expiration [GH-90000]")
+    @DisplayName("TTL expiration")
     class TtlExpiration {
 
         @Test
-        @DisplayName("key is accessible before TTL expiry [GH-90000]")
+        @DisplayName("key is accessible before TTL expiry")
         void keyIsAccessible_beforeTtlExpiry() { // GH-90000
             redis.setEx("session:abc", "active", 1000L); // GH-90000
 
             redis.advanceTimeMs(500L); // GH-90000
 
-            assertThat(redis.get("session:abc [GH-90000]")).isPresent();
+            assertThat(redis.get("session:abc")).isPresent();
         }
 
         @Test
-        @DisplayName("key is evicted after TTL expiry [GH-90000]")
+        @DisplayName("key is evicted after TTL expiry")
         void keyIsEvicted_afterTtlExpiry() { // GH-90000
             redis.setEx("session:abc", "active", 1000L); // GH-90000
 
             redis.advanceTimeMs(1001L); // GH-90000
 
-            assertThat(redis.get("session:abc [GH-90000]")).isEmpty();
+            assertThat(redis.get("session:abc")).isEmpty();
         }
 
         @Test
-        @DisplayName("key without TTL persists indefinitely [GH-90000]")
+        @DisplayName("key without TTL persists indefinitely")
         void keyWithoutTtl_persistsIndefinitely() { // GH-90000
             redis.set("permanent:key", "forever"); // GH-90000
 
             redis.advanceTimeMs(Long.MAX_VALUE / 2); // GH-90000
 
-            assertThat(redis.get("permanent:key [GH-90000]")).isPresent();
+            assertThat(redis.get("permanent:key")).isPresent();
         }
     }
 
     // ── Atomic operations ─────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("atomic INCR operation [GH-90000]")
+    @DisplayName("atomic INCR operation")
     class AtomicOperations {
 
         @Test
-        @DisplayName("incr on new key starts at 1 [GH-90000]")
+        @DisplayName("incr on new key starts at 1")
         void incrOnNewKey_startsAt1() { // GH-90000
-            long result = redis.incr("counter:new [GH-90000]");
+            long result = redis.incr("counter:new");
 
             assertThat(result).isEqualTo(1); // GH-90000
         }
 
         @Test
-        @DisplayName("multiple incr operations accumulate correctly [GH-90000]")
+        @DisplayName("multiple incr operations accumulate correctly")
         void multipleIncr_accumulatesCorrectly() { // GH-90000
-            redis.incr("counter:hits [GH-90000]");
-            redis.incr("counter:hits [GH-90000]");
-            redis.incr("counter:hits [GH-90000]");
+            redis.incr("counter:hits");
+            redis.incr("counter:hits");
+            redis.incr("counter:hits");
 
-            assertThat(redis.get("counter:hits [GH-90000]")).hasValue("3 [GH-90000]");
+            assertThat(redis.get("counter:hits")).hasValue("3");
         }
 
         @Test
-        @DisplayName("incr on existing numeric value increments by 1 [GH-90000]")
+        @DisplayName("incr on existing numeric value increments by 1")
         void incrOnExistingNumericValue_incrementsBy1() { // GH-90000
             redis.set("counter:page", "10"); // GH-90000
-            long result = redis.incr("counter:page [GH-90000]");
+            long result = redis.incr("counter:page");
 
             assertThat(result).isEqualTo(11L); // GH-90000
         }
@@ -201,11 +201,11 @@ class RedisConnectorIntegrationTest extends EventloopTestBase {
     // ── Pub/sub simulation ────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("pub/sub message delivery [GH-90000]")
+    @DisplayName("pub/sub message delivery")
     class PubSubMessageDelivery {
 
         @Test
-        @DisplayName("published message is received by subscriber [GH-90000]")
+        @DisplayName("published message is received by subscriber")
         void publishedMessage_isReceivedBySubscriber() { // GH-90000
             java.util.List<String> received = new java.util.ArrayList<>(); // GH-90000
 
@@ -216,11 +216,11 @@ class RedisConnectorIntegrationTest extends EventloopTestBase {
             String message = "event:user_logged_in";
             subscriber.accept(message); // GH-90000
 
-            assertThat(received).containsExactly("event:user_logged_in [GH-90000]");
+            assertThat(received).containsExactly("event:user_logged_in");
         }
 
         @Test
-        @DisplayName("multiple subscribers each receive the published message [GH-90000]")
+        @DisplayName("multiple subscribers each receive the published message")
         void multipleSubscribers_eachReceivePublishedMessage() { // GH-90000
             java.util.List<String> sub1Received = new java.util.ArrayList<>(); // GH-90000
             java.util.List<String> sub2Received = new java.util.ArrayList<>(); // GH-90000

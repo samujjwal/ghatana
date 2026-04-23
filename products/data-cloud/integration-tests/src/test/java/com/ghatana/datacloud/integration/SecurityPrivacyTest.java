@@ -38,28 +38,28 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@DisplayName("Security and Privacy Tests [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("Security and Privacy Tests")
+@Tag("integration")
 class SecurityPrivacyTest {
 
     @Test
-    @DisplayName("Should redact PII from log messages [GH-90000]")
+    @DisplayName("Should redact PII from log messages")
     void shouldRedactPIIFromLogMessages() { // GH-90000
         PIIRedactor redactor = new PIIRedactor(); // GH-90000
         
         String logMessage = "User john.doe@example.com with phone 555-123-4567 and SSN 123-45-6789 logged in from IP 192.168.1.100";
         String redacted = redactor.redact(logMessage); // GH-90000
         
-        assertThat(redacted).doesNotContain("john.doe@example.com [GH-90000]");
-        assertThat(redacted).doesNotContain("555-123-4567 [GH-90000]");
-        assertThat(redacted).doesNotContain("123-45-6789 [GH-90000]");
-        assertThat(redacted).doesNotContain("192.168.1.100 [GH-90000]");
-        assertThat(redacted).contains("***@***.*** [GH-90000]");
-        assertThat(redacted).contains("**** [GH-90000]");
+        assertThat(redacted).doesNotContain("john.doe@example.com");
+        assertThat(redacted).doesNotContain("555-123-4567");
+        assertThat(redacted).doesNotContain("123-45-6789");
+        assertThat(redacted).doesNotContain("192.168.1.100");
+        assertThat(redacted).contains("***@***.***");
+        assertThat(redacted).contains("****");
     }
 
     @Test
-    @DisplayName("Should redact PII from API responses [GH-90000]")
+    @DisplayName("Should redact PII from API responses")
     void shouldRedactPIIFromAPIResponses() { // GH-90000
         PIIRedactor redactor = new PIIRedactor(); // GH-90000
         
@@ -71,60 +71,60 @@ class SecurityPrivacyTest {
         
         Map<String, Object> redactedResponse = redactor.redactMap(userResponse); // GH-90000
         
-        assertThat(redactedResponse.get("email [GH-90000]")).isNotEqualTo("user@example.com [GH-90000]");
-        assertThat(redactedResponse.get("phone [GH-90000]")).isNotEqualTo("555-987-6543 [GH-90000]");
-        assertThat(redactedResponse.get("address [GH-90000]")).isNotEqualTo("123 Main St, Anytown, CA 12345 [GH-90000]");
+        assertThat(redactedResponse.get("email")).isNotEqualTo("user@example.com");
+        assertThat(redactedResponse.get("phone")).isNotEqualTo("555-987-6543");
+        assertThat(redactedResponse.get("address")).isNotEqualTo("123 Main St, Anytown, CA 12345");
     }
 
     @Test
-    @DisplayName("Should detect and redact credit card numbers [GH-90000]")
+    @DisplayName("Should detect and redact credit card numbers")
     void shouldDetectAndRedactCreditCardNumbers() { // GH-90000
         PIIRedactor redactor = new PIIRedactor(); // GH-90000
         
         String paymentData = "Payment with card 4111-1111-1111-1111 succeeded";
         String redacted = redactor.redact(paymentData); // GH-90000
         
-        assertThat(redacted).doesNotContain("4111-1111-1111-1111 [GH-90000]");
-        assertThat(redacted).contains("****-1111 [GH-90000]");
+        assertThat(redacted).doesNotContain("4111-1111-1111-1111");
+        assertThat(redacted).contains("****-1111");
     }
 
     @Test
-    @DisplayName("Should detect and redact API keys and tokens [GH-90000]")
+    @DisplayName("Should detect and redact API keys and tokens")
     void shouldDetectAndRedactApiKeysAndTokens() { // GH-90000
         PIIRedactor redactor = new PIIRedactor(); // GH-90000
         
         String configData = "api_key=sk_live_1234567890abcdef&token=xyza987654321";
         String redacted = redactor.redact(configData); // GH-90000
         
-        assertThat(redacted).doesNotContain("sk_live_1234567890abcdef [GH-90000]");
-        assertThat(redacted).doesNotContain("xyza987654321 [GH-90000]");
-        assertThat(redacted).contains("**** [GH-90000]");
+        assertThat(redacted).doesNotContain("sk_live_1234567890abcdef");
+        assertThat(redacted).doesNotContain("xyza987654321");
+        assertThat(redacted).contains("****");
     }
 
     @Test
-    @DisplayName("Should log audit events for sensitive operations [GH-90000]")
+    @DisplayName("Should log audit events for sensitive operations")
     void shouldLogAuditEventsForSensitiveOperations() { // GH-90000
         AuditLogger auditLogger = new AuditLogger(); // GH-90000
         
         AuditEvent loginEvent = new AuditEvent.Builder() // GH-90000
-            .eventType("USER_LOGIN [GH-90000]")
-            .userId("user-123 [GH-90000]")
-            .tenantId("tenant-456 [GH-90000]")
-            .resourceType("USER [GH-90000]")
-            .resourceId("user-123 [GH-90000]")
-            .action("LOGIN [GH-90000]")
-            .outcome("SUCCESS [GH-90000]")
+            .eventType("USER_LOGIN")
+            .userId("user-123")
+            .tenantId("tenant-456")
+            .resourceType("USER")
+            .resourceId("user-123")
+            .action("LOGIN")
+            .outcome("SUCCESS")
             .timestamp(Instant.now()) // GH-90000
             .build(); // GH-90000
         
         auditLogger.log(loginEvent); // GH-90000
         
         assertThat(auditLogger.getEventCount()).isEqualTo(1); // GH-90000
-        assertThat(auditLogger.getLastEvent().getEventType()).isEqualTo("USER_LOGIN [GH-90000]");
+        assertThat(auditLogger.getLastEvent().getEventType()).isEqualTo("USER_LOGIN");
     }
 
     @Test
-    @DisplayName("Should log audit events with proper metadata [GH-90000]")
+    @DisplayName("Should log audit events with proper metadata")
     void shouldLogAuditEventsWithProperMetadata() { // GH-90000
         AuditLogger auditLogger = new AuditLogger(); // GH-90000
         
@@ -134,13 +134,13 @@ class SecurityPrivacyTest {
         metadata.put("session_id", UUID.randomUUID().toString()); // GH-90000
         
         AuditEvent event = new AuditEvent.Builder() // GH-90000
-            .eventType("DATA_ACCESS [GH-90000]")
-            .userId("user-123 [GH-90000]")
-            .tenantId("tenant-456 [GH-90000]")
-            .resourceType("COLLECTION [GH-90000]")
-            .resourceId("collection-789 [GH-90000]")
-            .action("READ [GH-90000]")
-            .outcome("SUCCESS [GH-90000]")
+            .eventType("DATA_ACCESS")
+            .userId("user-123")
+            .tenantId("tenant-456")
+            .resourceType("COLLECTION")
+            .resourceId("collection-789")
+            .action("READ")
+            .outcome("SUCCESS")
             .metadata(metadata) // GH-90000
             .timestamp(Instant.now()) // GH-90000
             .build(); // GH-90000
@@ -148,44 +148,44 @@ class SecurityPrivacyTest {
         auditLogger.log(event); // GH-90000
         
         AuditEvent loggedEvent = auditLogger.getLastEvent(); // GH-90000
-        assertThat(loggedEvent.getMetadata()).containsKey("ip_address [GH-90000]");
-        assertThat(loggedEvent.getMetadata()).containsKey("user_agent [GH-90000]");
-        assertThat(loggedEvent.getMetadata()).containsKey("session_id [GH-90000]");
+        assertThat(loggedEvent.getMetadata()).containsKey("ip_address");
+        assertThat(loggedEvent.getMetadata()).containsKey("user_agent");
+        assertThat(loggedEvent.getMetadata()).containsKey("session_id");
     }
 
     @Test
-    @DisplayName("Should log failed authorization attempts [GH-90000]")
+    @DisplayName("Should log failed authorization attempts")
     void shouldLogFailedAuthorizationAttempts() { // GH-90000
         AuditLogger auditLogger = new AuditLogger(); // GH-90000
         
         AuditEvent authFailureEvent = new AuditEvent.Builder() // GH-90000
-            .eventType("AUTHORIZATION_FAILED [GH-90000]")
-            .userId("user-123 [GH-90000]")
-            .tenantId("tenant-456 [GH-90000]")
-            .resourceType("COLLECTION [GH-90000]")
-            .resourceId("sensitive-collection [GH-90000]")
-            .action("DELETE [GH-90000]")
-            .outcome("FAILURE [GH-90000]")
-            .failureReason("INSUFFICIENT_PERMISSIONS [GH-90000]")
+            .eventType("AUTHORIZATION_FAILED")
+            .userId("user-123")
+            .tenantId("tenant-456")
+            .resourceType("COLLECTION")
+            .resourceId("sensitive-collection")
+            .action("DELETE")
+            .outcome("FAILURE")
+            .failureReason("INSUFFICIENT_PERMISSIONS")
             .timestamp(Instant.now()) // GH-90000
             .build(); // GH-90000
         
         auditLogger.log(authFailureEvent); // GH-90000
         
         AuditEvent loggedEvent = auditLogger.getLastEvent(); // GH-90000
-        assertThat(loggedEvent.getOutcome()).isEqualTo("FAILURE [GH-90000]");
-        assertThat(loggedEvent.getFailureReason()).isEqualTo("INSUFFICIENT_PERMISSIONS [GH-90000]");
+        assertThat(loggedEvent.getOutcome()).isEqualTo("FAILURE");
+        assertThat(loggedEvent.getFailureReason()).isEqualTo("INSUFFICIENT_PERMISSIONS");
     }
 
     @Test
-    @DisplayName("Should enforce RBAC permissions correctly [GH-90000]")
+    @DisplayName("Should enforce RBAC permissions correctly")
     void shouldEnforceRBACPermissionsCorrectly() { // GH-90000
         RBACEnforcer rbac = new RBACEnforcer(); // GH-90000
         
         // Define roles and permissions
         rbac.addRole("admin", List.of("READ", "WRITE", "DELETE", "ADMIN")); // GH-90000
         rbac.addRole("editor", List.of("READ", "WRITE")); // GH-90000
-        rbac.addRole("viewer", List.of("READ [GH-90000]"));
+        rbac.addRole("viewer", List.of("READ"));
         
         // Assign user to role
         rbac.assignRole("user-123", "editor"); // GH-90000
@@ -198,7 +198,7 @@ class SecurityPrivacyTest {
     }
 
     @Test
-    @DisplayName("Should enforce resource-level RBAC permissions [GH-90000]")
+    @DisplayName("Should enforce resource-level RBAC permissions")
     void shouldEnforceResourceLevelRBACPermissions() { // GH-90000
         RBACEnforcer rbac = new RBACEnforcer(); // GH-90000
         
@@ -213,7 +213,7 @@ class SecurityPrivacyTest {
     }
 
     @Test
-    @DisplayName("Should deny access when role is not assigned [GH-90000]")
+    @DisplayName("Should deny access when role is not assigned")
     void shouldDenyAccessWhenRoleIsNotAssigned() { // GH-90000
         RBACEnforcer rbac = new RBACEnforcer(); // GH-90000
         
@@ -225,17 +225,17 @@ class SecurityPrivacyTest {
     }
 
     @Test
-    @DisplayName("Should support role hierarchy [GH-90000]")
+    @DisplayName("Should support role hierarchy")
     void shouldSupportRoleHierarchy() { // GH-90000
         RBACEnforcer rbac = new RBACEnforcer(); // GH-90000
         
         // Define role hierarchy
         rbac.addRoleHierarchy("admin", List.of("editor", "viewer")); // GH-90000
-        rbac.addRoleHierarchy("editor", List.of("viewer [GH-90000]"));
+        rbac.addRoleHierarchy("editor", List.of("viewer"));
         
-        rbac.addRole("viewer", List.of("READ [GH-90000]"));
+        rbac.addRole("viewer", List.of("READ"));
         rbac.addRole("editor", List.of("READ", "WRITE")); // GH-90000
-        rbac.addRole("admin", List.of("DELETE [GH-90000]"));
+        rbac.addRole("admin", List.of("DELETE"));
         
         // Assign user to admin role
         rbac.assignRole("user-123", "admin"); // GH-90000
@@ -247,7 +247,7 @@ class SecurityPrivacyTest {
     }
 
     @Test
-    @DisplayName("Should encrypt sensitive data at rest [GH-90000]")
+    @DisplayName("Should encrypt sensitive data at rest")
     void shouldEncryptSensitiveDataAtRest() { // GH-90000
         EncryptionService encryption = new EncryptionService(); // GH-90000
         
@@ -255,11 +255,11 @@ class SecurityPrivacyTest {
         String encrypted = encryption.encrypt(sensitiveData); // GH-90000
         
         assertThat(encrypted).isNotEqualTo(sensitiveData); // GH-90000
-        assertThat(encrypted).doesNotContain("sensitive [GH-90000]");
+        assertThat(encrypted).doesNotContain("sensitive");
     }
 
     @Test
-    @DisplayName("Should decrypt encrypted data correctly [GH-90000]")
+    @DisplayName("Should decrypt encrypted data correctly")
     void shouldDecryptEncryptedDataCorrectly() { // GH-90000
         EncryptionService encryption = new EncryptionService(); // GH-90000
         
@@ -271,7 +271,7 @@ class SecurityPrivacyTest {
     }
 
     @Test
-    @DisplayName("Should generate secure random tokens [GH-90000]")
+    @DisplayName("Should generate secure random tokens")
     void shouldGenerateSecureRandomTokens() { // GH-90000
         TokenGenerator tokenGenerator = new TokenGenerator(); // GH-90000
         
@@ -284,14 +284,14 @@ class SecurityPrivacyTest {
     }
 
     @Test
-    @DisplayName("Should validate token format and strength [GH-90000]")
+    @DisplayName("Should validate token format and strength")
     void shouldValidateTokenFormatAndStrength() { // GH-90000
         TokenGenerator tokenGenerator = new TokenGenerator(); // GH-90000
         
         String token = tokenGenerator.generateSecureToken(32); // GH-90000
         
         // Should be valid hex
-        assertThat(token).matches("^[a-f0-9]{64}$ [GH-90000]");
+        assertThat(token).matches("^[a-f0-9]{64}$");
         
         // Should have sufficient entropy (not all same characters) // GH-90000
         boolean hasVariation = false;
@@ -305,7 +305,7 @@ class SecurityPrivacyTest {
     }
 
     @Test
-    @DisplayName("Should enforce rate limits per user [GH-90000]")
+    @DisplayName("Should enforce rate limits per user")
     void shouldEnforceRateLimitsPerUser() { // GH-90000
         RateLimiter rateLimiter = new RateLimiter(10, Duration.ofSeconds(1)); // 10 requests per second // GH-90000
         
@@ -321,7 +321,7 @@ class SecurityPrivacyTest {
     }
 
     @Test
-    @DisplayName("Should reset rate limits after time window expires [GH-90000]")
+    @DisplayName("Should reset rate limits after time window expires")
     void shouldResetRateLimitsAfterTimeWindowExpires() throws Exception { // GH-90000
         RateLimiter rateLimiter = new RateLimiter(5, Duration.ofMillis(500)); // 5 requests per 500ms // GH-90000
         
@@ -342,7 +342,7 @@ class SecurityPrivacyTest {
     }
 
     @Test
-    @DisplayName("Should validate and sanitize user input [GH-90000]")
+    @DisplayName("Should validate and sanitize user input")
     void shouldValidateAndSanitizeUserInput() { // GH-90000
         InputValidator validator = new InputValidator(); // GH-90000
         
@@ -350,27 +350,27 @@ class SecurityPrivacyTest {
         String maliciousInput = "<script>alert('xss')</script>"; // GH-90000
         String sanitized = validator.sanitize(maliciousInput); // GH-90000
         
-        assertThat(sanitized).doesNotContain("<script> [GH-90000]");
-        assertThat(sanitized).doesNotContain("alert [GH-90000]");
+        assertThat(sanitized).doesNotContain("<script>");
+        assertThat(sanitized).doesNotContain("alert");
     }
 
     @Test
-    @DisplayName("Should detect SQL injection attempts [GH-90000]")
+    @DisplayName("Should detect SQL injection attempts")
     void shouldDetectSQLInjectionAttempts() { // GH-90000
         InputValidator validator = new InputValidator(); // GH-90000
         
         String sqlInjection = "1' OR '1'='1";
         
         assertThat(validator.isSQLInjection(sqlInjection)).isTrue(); // GH-90000
-        assertThat(validator.isSQLInjection("normal input [GH-90000]")).isFalse();
+        assertThat(validator.isSQLInjection("normal input")).isFalse();
     }
 
     @Test
-    @DisplayName("Should enforce session timeout [GH-90000]")
+    @DisplayName("Should enforce session timeout")
     void shouldEnforceSessionTimeout() throws Exception { // GH-90000
         SessionManager sessionManager = new SessionManager(Duration.ofMillis(100)); // 100ms timeout // GH-90000
         
-        String sessionId = sessionManager.createSession("user-123 [GH-90000]");
+        String sessionId = sessionManager.createSession("user-123");
         
         // Session should be valid immediately
         assertThat(sessionManager.isSessionValid(sessionId)).isTrue(); // GH-90000
@@ -383,11 +383,11 @@ class SecurityPrivacyTest {
     }
 
     @Test
-    @DisplayName("Should invalidate session on logout [GH-90000]")
+    @DisplayName("Should invalidate session on logout")
     void shouldInvalidateSessionOnLogout() { // GH-90000
         SessionManager sessionManager = new SessionManager(Duration.ofMinutes(30)); // GH-90000
         
-        String sessionId = sessionManager.createSession("user-123 [GH-90000]");
+        String sessionId = sessionManager.createSession("user-123");
         
         assertThat(sessionManager.isSessionValid(sessionId)).isTrue(); // GH-90000
         
@@ -397,40 +397,40 @@ class SecurityPrivacyTest {
     }
 
     @Test
-    @DisplayName("Should track concurrent sessions per user [GH-90000]")
+    @DisplayName("Should track concurrent sessions per user")
     void shouldTrackConcurrentSessionsPerUser() { // GH-90000
         SessionManager sessionManager = new SessionManager(Duration.ofMinutes(30)); // GH-90000
         
-        String sessionId1 = sessionManager.createSession("user-123 [GH-90000]");
-        String sessionId2 = sessionManager.createSession("user-123 [GH-90000]");
-        String sessionId3 = sessionManager.createSession("user-456 [GH-90000]");
+        String sessionId1 = sessionManager.createSession("user-123");
+        String sessionId2 = sessionManager.createSession("user-123");
+        String sessionId3 = sessionManager.createSession("user-456");
         
-        assertThat(sessionManager.getActiveSessionCount("user-123 [GH-90000]")).isEqualTo(2);
-        assertThat(sessionManager.getActiveSessionCount("user-456 [GH-90000]")).isEqualTo(1);
+        assertThat(sessionManager.getActiveSessionCount("user-123")).isEqualTo(2);
+        assertThat(sessionManager.getActiveSessionCount("user-456")).isEqualTo(1);
     }
 
     @Test
-    @DisplayName("Should enforce maximum concurrent sessions [GH-90000]")
+    @DisplayName("Should enforce maximum concurrent sessions")
     void shouldEnforceMaximumConcurrentSessions() { // GH-90000
         SessionManager sessionManager = new SessionManager(Duration.ofMinutes(30), 2); // Max 2 sessions per user // GH-90000
         
-        String sessionId1 = sessionManager.createSession("user-123 [GH-90000]");
-        String sessionId2 = sessionManager.createSession("user-123 [GH-90000]");
+        String sessionId1 = sessionManager.createSession("user-123");
+        String sessionId2 = sessionManager.createSession("user-123");
         
         // Third session should be rejected
-        String sessionId3 = sessionManager.createSession("user-123 [GH-90000]");
+        String sessionId3 = sessionManager.createSession("user-123");
         
         assertThat(sessionId3).isNull(); // GH-90000
-        assertThat(sessionManager.getActiveSessionCount("user-123 [GH-90000]")).isEqualTo(2);
+        assertThat(sessionManager.getActiveSessionCount("user-123")).isEqualTo(2);
     }
 
     @Test
-    @DisplayName("Should validate data retention policies [GH-90000]")
+    @DisplayName("Should validate data retention policies")
     void shouldValidateDataRetentionPolicies() { // GH-90000
         RetentionPolicy policy = new RetentionPolicy.Builder() // GH-90000
-            .dataCategory("USER_DATA [GH-90000]")
+            .dataCategory("USER_DATA")
             .retentionPeriod(Duration.ofDays(365)) // GH-90000
-            .deletionMethod("SECURE_DELETE [GH-90000]")
+            .deletionMethod("SECURE_DELETE")
             .build(); // GH-90000
         
         Instant now = Instant.now(); // GH-90000
@@ -443,19 +443,19 @@ class SecurityPrivacyTest {
     }
 
     @Test
-    @DisplayName("Should log data access for compliance [GH-90000]")
+    @DisplayName("Should log data access for compliance")
     void shouldLogDataAccessForCompliance() { // GH-90000
         AuditLogger auditLogger = new AuditLogger(); // GH-90000
         
         AuditEvent dataAccessEvent = new AuditEvent.Builder() // GH-90000
-            .eventType("DATA_ACCESS [GH-90000]")
-            .userId("user-123 [GH-90000]")
-            .tenantId("tenant-456 [GH-90000]")
-            .resourceType("USER_RECORD [GH-90000]")
-            .resourceId("user-789 [GH-90000]")
-            .action("READ [GH-90000]")
-            .outcome("SUCCESS [GH-90000]")
-            .complianceCategory("GDPR [GH-90000]")
+            .eventType("DATA_ACCESS")
+            .userId("user-123")
+            .tenantId("tenant-456")
+            .resourceType("USER_RECORD")
+            .resourceId("user-789")
+            .action("READ")
+            .outcome("SUCCESS")
+            .complianceCategory("GDPR")
             .dataCategories(List.of("PERSONAL_DATA", "CONTACT_INFO")) // GH-90000
             .timestamp(Instant.now()) // GH-90000
             .build(); // GH-90000
@@ -463,12 +463,12 @@ class SecurityPrivacyTest {
         auditLogger.log(dataAccessEvent); // GH-90000
         
         AuditEvent loggedEvent = auditLogger.getLastEvent(); // GH-90000
-        assertThat(loggedEvent.getComplianceCategory()).isEqualTo("GDPR [GH-90000]");
-        assertThat(loggedEvent.getDataCategories()).contains("PERSONAL_DATA [GH-90000]");
+        assertThat(loggedEvent.getComplianceCategory()).isEqualTo("GDPR");
+        assertThat(loggedEvent.getDataCategories()).contains("PERSONAL_DATA");
     }
 
     @Test
-    @DisplayName("Should enforce data minimization principles [GH-90000]")
+    @DisplayName("Should enforce data minimization principles")
     void shouldEnforceDataMinimizationPrinciples() { // GH-90000
         DataMinimizer minimizer = new DataMinimizer(); // GH-90000
         
@@ -484,37 +484,37 @@ class SecurityPrivacyTest {
         // Minimize for public API response
         Map<String, Object> minimized = minimizer.minimizeForPublicAPI(fullUserData); // GH-90000
         
-        assertThat(minimized).containsKey("id [GH-90000]");
-        assertThat(minimized).containsKey("name [GH-90000]");
-        assertThat(minimized).doesNotContainKey("email [GH-90000]");
-        assertThat(minimized).doesNotContainKey("phone [GH-90000]");
-        assertThat(minimized).doesNotContainKey("ssn [GH-90000]");
-        assertThat(minimized).doesNotContainKey("address [GH-90000]");
-        assertThat(minimized).doesNotContainKey("internal_notes [GH-90000]");
+        assertThat(minimized).containsKey("id");
+        assertThat(minimized).containsKey("name");
+        assertThat(minimized).doesNotContainKey("email");
+        assertThat(minimized).doesNotContainKey("phone");
+        assertThat(minimized).doesNotContainKey("ssn");
+        assertThat(minimized).doesNotContainKey("address");
+        assertThat(minimized).doesNotContainKey("internal_notes");
     }
 
     // Helper classes for security and privacy testing
 
     static class PIIRedactor {
-        private static final Pattern EMAIL_PATTERN = Pattern.compile("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,} [GH-90000]");
-        private static final Pattern PHONE_PATTERN = Pattern.compile("\\d{3}[-.]?\\d{3}[-.]?\\d{4} [GH-90000]");
-        private static final Pattern SSN_PATTERN = Pattern.compile("\\d{3}[-.]?\\d{2}[-.]?\\d{4} [GH-90000]");
-        private static final Pattern IP_PATTERN = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3} [GH-90000]");
-        private static final Pattern CREDIT_CARD_PATTERN = Pattern.compile("\\b\\d{4}[-\\s]?\\d{4}[-\\s]?\\d{4}[-\\s]?\\d{4}\\b [GH-90000]");
-        private static final Pattern API_KEY_PATTERN = Pattern.compile("(api[_-]?key|password|token)\\s*=\\s*[\\w-]+ [GH-90000]");
-        private static final Pattern UUID_PATTERN = Pattern.compile("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} [GH-90000]");
+        private static final Pattern EMAIL_PATTERN = Pattern.compile("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}");
+        private static final Pattern PHONE_PATTERN = Pattern.compile("\\d{3}[-.]?\\d{3}[-.]?\\d{4}");
+        private static final Pattern SSN_PATTERN = Pattern.compile("\\d{3}[-.]?\\d{2}[-.]?\\d{4}");
+        private static final Pattern IP_PATTERN = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
+        private static final Pattern CREDIT_CARD_PATTERN = Pattern.compile("\\b\\d{4}[-\\s]?\\d{4}[-\\s]?\\d{4}[-\\s]?\\d{4}\\b");
+        private static final Pattern API_KEY_PATTERN = Pattern.compile("(api[_-]?key|password|token)\\s*=\\s*[\\w-]+");
+        private static final Pattern UUID_PATTERN = Pattern.compile("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");
 
         String redact(String input) { // GH-90000
             if (input == null) return null; // GH-90000
             
             String result = input;
-            result = EMAIL_PATTERN.matcher(result).replaceAll("***@***.*** [GH-90000]");
-            result = PHONE_PATTERN.matcher(result).replaceAll("**** [GH-90000]");
-            result = SSN_PATTERN.matcher(result).replaceAll("**** [GH-90000]");
-            result = IP_PATTERN.matcher(result).replaceAll("***.***.***.*** [GH-90000]");
-            result = CREDIT_CARD_PATTERN.matcher(result).replaceAll("****-1111 [GH-90000]");
-            result = API_KEY_PATTERN.matcher(result).replaceAll("$1=**** [GH-90000]");
-            result = UUID_PATTERN.matcher(result).replaceAll("**** [GH-90000]");
+            result = EMAIL_PATTERN.matcher(result).replaceAll("***@***.***");
+            result = PHONE_PATTERN.matcher(result).replaceAll("****");
+            result = SSN_PATTERN.matcher(result).replaceAll("****");
+            result = IP_PATTERN.matcher(result).replaceAll("***.***.***.***");
+            result = CREDIT_CARD_PATTERN.matcher(result).replaceAll("****-1111");
+            result = API_KEY_PATTERN.matcher(result).replaceAll("$1=****");
+            result = UUID_PATTERN.matcher(result).replaceAll("****");
             
             return result;
         }
@@ -523,10 +523,10 @@ class SecurityPrivacyTest {
             Map<String, Object> redacted = new HashMap<>(); // GH-90000
             for (Map.Entry<String, Object> entry : input.entrySet()) { // GH-90000
                 String value = entry.getValue() != null ? entry.getValue().toString() : null; // GH-90000
-                if (value != null && (entry.getKey().toLowerCase().contains("email [GH-90000]") ||
-                    entry.getKey().toLowerCase().contains("phone [GH-90000]") ||
-                    entry.getKey().toLowerCase().contains("ssn [GH-90000]") ||
-                    entry.getKey().toLowerCase().contains("address [GH-90000]"))) {
+                if (value != null && (entry.getKey().toLowerCase().contains("email") ||
+                    entry.getKey().toLowerCase().contains("phone") ||
+                    entry.getKey().toLowerCase().contains("ssn") ||
+                    entry.getKey().toLowerCase().contains("address"))) {
                     redacted.put(entry.getKey(), "****"); // GH-90000
                 } else {
                     redacted.put(entry.getKey(), entry.getValue()); // GH-90000

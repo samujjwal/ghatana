@@ -6,7 +6,11 @@ import java.time.Duration;
  * Represents a transition between NFA states.
  *
  * Day 26 Implementation: NFA transition with event conditions and constraints
- */
+  * @doc.type class
+ * @doc.purpose Provides nfatransition functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 public class NFATransition {
     private final NFAState fromState;
     private final NFAState toState;

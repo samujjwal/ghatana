@@ -25,7 +25,8 @@ import java.util.Objects;
  * @doc.type class
  * @doc.purpose Episodic → Semantic consolidation
  * @doc.layer agent-learning
- */
+  * @doc.pattern Component
+*/
 public class EpisodicToSemanticConsolidator implements ConsolidationStage {
 
     private static final Logger log = LoggerFactory.getLogger(EpisodicToSemanticConsolidator.class);

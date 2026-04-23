@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.*;
  *
  * All tests use actual Redis, not mocks.
  */
-@DisplayName("RedisDistributedCacheBackend Integration Tests [GH-90000]")
+@DisplayName("RedisDistributedCacheBackend Integration Tests")
 class RedisDistributedCacheBackendIntegrationTest extends PlatformIntegrationTestBase {
 
     private RedisDistributedCacheBackend backend;
@@ -58,40 +58,40 @@ class RedisDistributedCacheBackendIntegrationTest extends PlatformIntegrationTes
     }
 
     @Nested
-    @DisplayName("Connection Management [GH-90000]")
+    @DisplayName("Connection Management")
     class ConnectionManagementTests {
         
         @Test
-        @DisplayName("should establish Redis connection successfully [GH-90000]")
+        @DisplayName("should establish Redis connection successfully")
         void shouldEstablishConnection() { // GH-90000
             assertThat(backend).isNotNull(); // GH-90000
             // Connection verified by backend constructor (ping) // GH-90000
         }
 
         @Test
-        @DisplayName("should close connection without errors [GH-90000]")
+        @DisplayName("should close connection without errors")
         void shouldCloseConnection() { // GH-90000
             assertThatCode(() -> backend.close()).doesNotThrowAnyException(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Get/Put Operations [GH-90000]")
+    @DisplayName("Get/Put Operations")
     class GetPutOperationsTests {
 
         @Test
-        @DisplayName("should store and retrieve simple string value [GH-90000]")
+        @DisplayName("should store and retrieve simple string value")
         void shouldStoreAndRetrieveString() { // GH-90000
             backend.setValue("test:string", "hello world", 3600); // GH-90000
             Optional<String> value = readValue("test:string", String.class); // GH-90000
 
             assertThat(value) // GH-90000
                 .isPresent() // GH-90000
-                .contains("hello world [GH-90000]");
+                .contains("hello world");
         }
 
         @Test
-        @DisplayName("should store and retrieve POJO with Jackson [GH-90000]")
+        @DisplayName("should store and retrieve POJO with Jackson")
         void shouldStoreAndRetrievePojo() { // GH-90000
             TestObject obj = new TestObject("test-id", 42, "test-data"); // GH-90000
             backend.setValue("test:pojo", backend.serialize(obj), 3600); // GH-90000
@@ -101,14 +101,14 @@ class RedisDistributedCacheBackendIntegrationTest extends PlatformIntegrationTes
             assertThat(retrieved) // GH-90000
                 .isPresent() // GH-90000
                 .hasValueSatisfying(value -> { // GH-90000
-                    assertThat(value.id).isEqualTo("test-id [GH-90000]");
+                    assertThat(value.id).isEqualTo("test-id");
                     assertThat(value.count).isEqualTo(42); // GH-90000
-                    assertThat(value.data).isEqualTo("test-data [GH-90000]");
+                    assertThat(value.data).isEqualTo("test-data");
                 });
         }
 
         @Test
-        @DisplayName("should return empty Optional for non-existent key [GH-90000]")
+        @DisplayName("should return empty Optional for non-existent key")
         void shouldReturnEmptyForMissingKey() { // GH-90000
             Optional<String> value = readValue("test:nonexistent", String.class); // GH-90000
 
@@ -116,7 +116,7 @@ class RedisDistributedCacheBackendIntegrationTest extends PlatformIntegrationTes
         }
 
         @Test
-        @DisplayName("should handle null values gracefully [GH-90000]")
+        @DisplayName("should handle null values gracefully")
         void shouldHandleNullValue() { // GH-90000
             backend.setValue("test:null", "", 3600); // GH-90000
             Optional<String> value = readValue("test:null", String.class); // GH-90000
@@ -125,7 +125,7 @@ class RedisDistributedCacheBackendIntegrationTest extends PlatformIntegrationTes
         }
 
         @Test
-        @DisplayName("should respect TTL and expire keys automatically [GH-90000]")
+        @DisplayName("should respect TTL and expire keys automatically")
         void shouldRespectTtlAndExpire() throws InterruptedException { // GH-90000
             backend.setValue("test:ttl", "short-lived", 1);  // 1 second TTL // GH-90000
             
@@ -140,35 +140,35 @@ class RedisDistributedCacheBackendIntegrationTest extends PlatformIntegrationTes
     }
 
     @Nested
-    @DisplayName("Delete Operations [GH-90000]")
+    @DisplayName("Delete Operations")
     class DeleteOperationsTests {
 
         @Test
-        @DisplayName("should delete existing key [GH-90000]")
+        @DisplayName("should delete existing key")
         void shouldDeleteKey() { // GH-90000
             backend.setValue("test:delete", "value", 3600); // GH-90000
-            backend.deleteKey("test:delete [GH-90000]");
+            backend.deleteKey("test:delete");
 
             assertThat(readValue("test:delete", String.class)).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("should return 0 when deleting non-existent key [GH-90000]")
+        @DisplayName("should return 0 when deleting non-existent key")
         void shouldReturnZeroForNonexistentKey() { // GH-90000
-            backend.deleteKey("test:nonexistent:delete [GH-90000]");
+            backend.deleteKey("test:nonexistent:delete");
 
             assertThat(readValue("test:nonexistent:delete", String.class)).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("should delete multiple keys with pattern [GH-90000]")
+        @DisplayName("should delete multiple keys with pattern")
         void shouldDeleteWithPattern() { // GH-90000
             backend.setValue("content:generated:1", "data1", 3600); // GH-90000
             backend.setValue("content:generated:2", "data2", 3600); // GH-90000
             backend.setValue("content:generated:3", "data3", 3600); // GH-90000
             backend.setValue("content:other", "other", 3600); // GH-90000
 
-            long deleted = backend.deletePattern("content:generated:* [GH-90000]");
+            long deleted = backend.deletePattern("content:generated:*");
 
             assertThat(deleted).isEqualTo(3); // GH-90000
             assertThat(readValue("content:generated:1", String.class)).isEmpty(); // GH-90000
@@ -178,22 +178,22 @@ class RedisDistributedCacheBackendIntegrationTest extends PlatformIntegrationTes
         }
 
         @Test
-        @DisplayName("should handle pattern delete with no matches [GH-90000]")
+        @DisplayName("should handle pattern delete with no matches")
         void shouldHandleEmptyPattern() { // GH-90000
-            long deleted = backend.deletePattern("nonexistent:* [GH-90000]");
+            long deleted = backend.deletePattern("nonexistent:*");
 
             assertThat(deleted).isEqualTo(0); // GH-90000
         }
 
         @Test
-        @DisplayName("should support tenant-scoped pattern deletion [GH-90000]")
+        @DisplayName("should support tenant-scoped pattern deletion")
         void shouldSupportTenantScopedDeletion() { // GH-90000
             // Simulate tenant isolation: tenant:1 and tenant:2 both have learning-path keys
             backend.setValue("tenant:1:learning-path:user:100:path1", "data", 3600); // GH-90000
             backend.setValue("tenant:1:learning-path:user:100:path2", "data", 3600); // GH-90000
             backend.setValue("tenant:2:learning-path:user:100:path1", "data", 3600); // GH-90000
 
-            long deletedTenant1 = backend.deletePattern("tenant:1:learning-path:user:100:* [GH-90000]");
+            long deletedTenant1 = backend.deletePattern("tenant:1:learning-path:user:100:*");
 
             assertThat(deletedTenant1).isEqualTo(2); // GH-90000
             assertThat(readValue("tenant:1:learning-path:user:100:path1", String.class)).isEmpty(); // GH-90000
@@ -202,11 +202,11 @@ class RedisDistributedCacheBackendIntegrationTest extends PlatformIntegrationTes
     }
 
     @Nested
-    @DisplayName("Serialization/Deserialization [GH-90000]")
+    @DisplayName("Serialization/Deserialization")
     class SerializationTests {
 
         @Test
-        @DisplayName("should handle complex objects with nested structures [GH-90000]")
+        @DisplayName("should handle complex objects with nested structures")
         void shouldHandleComplexObjects() { // GH-90000
             TestNestedObject nested = new TestNestedObject( // GH-90000
                 "outer",
@@ -220,15 +220,15 @@ class RedisDistributedCacheBackendIntegrationTest extends PlatformIntegrationTes
             assertThat(retrieved) // GH-90000
                 .isPresent() // GH-90000
                 .hasValueSatisfying(value -> { // GH-90000
-                    assertThat(value.name).isEqualTo("outer [GH-90000]");
-                    assertThat(value.inner.id).isEqualTo("inner-id [GH-90000]");
+                    assertThat(value.name).isEqualTo("outer");
+                    assertThat(value.inner.id).isEqualTo("inner-id");
                     assertThat(value.inner.count).isEqualTo(99); // GH-90000
                     assertThat(value.timestamp).isGreaterThan(0); // GH-90000
                 });
         }
 
         @Test
-        @DisplayName("should deserialize to wrong type gracefully [GH-90000]")
+        @DisplayName("should deserialize to wrong type gracefully")
         void shouldHandleDeserializationFailure() { // GH-90000
             backend.setValue("test:mismatch", "not a number", 3600); // GH-90000
 
@@ -237,11 +237,11 @@ class RedisDistributedCacheBackendIntegrationTest extends PlatformIntegrationTes
         }
 
         @Test
-        @DisplayName("should handle large objects [GH-90000]")
+        @DisplayName("should handle large objects")
         void shouldHandleLargeObjects() { // GH-90000
             StringBuilder sb = new StringBuilder(); // GH-90000
             for (int i = 0; i < 10000; i++) { // GH-90000
-                sb.append("large data content  [GH-90000]");
+                sb.append("large data content ");
             }
             String largeData = sb.toString(); // GH-90000
 
@@ -258,39 +258,39 @@ class RedisDistributedCacheBackendIntegrationTest extends PlatformIntegrationTes
     }
 
     @Nested
-    @DisplayName("Statistics Operations [GH-90000]")
+    @DisplayName("Statistics Operations")
     class StatisticsTests {
 
         @Test
-        @DisplayName("should retrieve statistics for pattern [GH-90000]")
+        @DisplayName("should retrieve statistics for pattern")
         void shouldGetStatistics() { // GH-90000
             backend.setValue("stat:key1", "value1", 3600); // GH-90000
             backend.setValue("stat:key2", "value2 with more data", 3600); // GH-90000
             backend.setValue("stat:key3", "value3", 3600); // GH-90000
             backend.setValue("other:key", "different pattern", 3600); // GH-90000
 
-            CacheStatistics stats = getStatistics("stat:* [GH-90000]");
+            CacheStatistics stats = getStatistics("stat:*");
 
             assertThat(stats.totalKeys).isEqualTo(3); // GH-90000
             assertThat(stats.totalSize).isGreaterThan(0); // GH-90000
         }
 
         @Test
-        @DisplayName("should return zero statistics for non-matching pattern [GH-90000]")
+        @DisplayName("should return zero statistics for non-matching pattern")
         void shouldReturnZeroStatsForEmptyPattern() { // GH-90000
-            CacheStatistics stats = getStatistics("nonexistent:* [GH-90000]");
+            CacheStatistics stats = getStatistics("nonexistent:*");
 
             assertThat(stats.totalKeys).isEqualTo(0); // GH-90000
             assertThat(stats.totalSize).isEqualTo(0); // GH-90000
         }
 
         @Test
-        @DisplayName("should calculate size across multiple keys [GH-90000]")
+        @DisplayName("should calculate size across multiple keys")
         void shouldCalculateTotalSize() { // GH-90000
             backend.setValue("size:small", "x", 3600); // GH-90000
             backend.setValue("size:large", "x".repeat(1000), 3600); // GH-90000
 
-            CacheStatistics stats = getStatistics("size:* [GH-90000]");
+            CacheStatistics stats = getStatistics("size:*");
 
             assertThat(stats.totalKeys).isEqualTo(2); // GH-90000
             assertThat(stats.totalSize).isGreaterThan(1000); // GH-90000
@@ -298,11 +298,11 @@ class RedisDistributedCacheBackendIntegrationTest extends PlatformIntegrationTes
     }
 
     @Nested
-    @DisplayName("Error Handling (Non-Blocking) [GH-90000]")
+    @DisplayName("Error Handling (Non-Blocking)")
     class ErrorHandlingTests {
 
         @Test
-        @DisplayName("should log warning on failed get and return Optional.empty [GH-90000]")
+        @DisplayName("should log warning on failed get and return Optional.empty")
         void shouldHandleGetFailureNonBlocking() { // GH-90000
             // Simulate failure by using invalid UTF-8 (won't actually fail with a real connection) // GH-90000
             Optional<String> value = readValue("test:any:key", String.class); // GH-90000
@@ -311,7 +311,7 @@ class RedisDistributedCacheBackendIntegrationTest extends PlatformIntegrationTes
         }
 
         @Test
-        @DisplayName("should log warning on failed put and continue [GH-90000]")
+        @DisplayName("should log warning on failed put and continue")
         void shouldHandlePutFailureNonBlocking() { // GH-90000
             // Should not throw even if put fails
             assertThatCode(() -> backend.setValue("test:any", "value", 3600)) // GH-90000
@@ -319,21 +319,21 @@ class RedisDistributedCacheBackendIntegrationTest extends PlatformIntegrationTes
         }
 
         @Test
-        @DisplayName("should log warning on failed delete and return 0 [GH-90000]")
+        @DisplayName("should log warning on failed delete and return 0")
         void shouldHandleDeleteFailureNonBlocking() { // GH-90000
-            assertThatCode(() -> backend.deleteKey("test:any:key [GH-90000]"))
+            assertThatCode(() -> backend.deleteKey("test:any:key"))
                 .doesNotThrowAnyException(); // GH-90000
 
-            assertThat(backend.getKeyCount("test:any:key [GH-90000]")).isGreaterThanOrEqualTo(0);
+            assertThat(backend.getKeyCount("test:any:key")).isGreaterThanOrEqualTo(0);
         }
     }
 
     @Nested
-    @DisplayName("Concurrent Operations [GH-90000]")
+    @DisplayName("Concurrent Operations")
     class ConcurrentOperationsTests {
 
         @Test
-        @DisplayName("should handle concurrent writes safely [GH-90000]")
+        @DisplayName("should handle concurrent writes safely")
         void shouldHandleConcurrentWrites() throws InterruptedException { // GH-90000
             int threadCount = 10;
             Thread[] threads = new Thread[threadCount];
@@ -352,12 +352,12 @@ class RedisDistributedCacheBackendIntegrationTest extends PlatformIntegrationTes
                 t.join(); // GH-90000
             }
 
-            CacheStatistics stats = getStatistics("concurrent:* [GH-90000]");
+            CacheStatistics stats = getStatistics("concurrent:*");
             assertThat(stats.totalKeys).isGreaterThanOrEqualTo(threadCount * 100L); // GH-90000
         }
 
         @Test
-        @DisplayName("should handle concurrent reads safely [GH-90000]")
+        @DisplayName("should handle concurrent reads safely")
         void shouldHandleConcurrentReads() throws InterruptedException { // GH-90000
             backend.setValue("concurrent:read:test", "test value", 3600); // GH-90000
 
@@ -380,7 +380,7 @@ class RedisDistributedCacheBackendIntegrationTest extends PlatformIntegrationTes
         }
 
         @Test
-        @DisplayName("should handle concurrent deletes safely [GH-90000]")
+        @DisplayName("should handle concurrent deletes safely")
         void shouldHandleConcurrentDeletes() throws InterruptedException { // GH-90000
             // Pre-populate keys
             for (int i = 0; i < 100; i++) { // GH-90000
@@ -404,17 +404,17 @@ class RedisDistributedCacheBackendIntegrationTest extends PlatformIntegrationTes
                 t.join(); // GH-90000
             }
 
-            CacheStatistics stats = getStatistics("concurrent:delete:* [GH-90000]");
+            CacheStatistics stats = getStatistics("concurrent:delete:*");
             assertThat(stats.totalKeys).isEqualTo(0); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Performance Characteristics [GH-90000]")
+    @DisplayName("Performance Characteristics")
     class PerformanceTests {
 
         @Test
-        @DisplayName("should complete get operation within timeout [GH-90000]")
+        @DisplayName("should complete get operation within timeout")
         void shouldCompleteGetWithinTimeout() { // GH-90000
             backend.setValue("perf:test", "value", 3600); // GH-90000
             
@@ -427,7 +427,7 @@ class RedisDistributedCacheBackendIntegrationTest extends PlatformIntegrationTes
         }
 
         @Test
-        @DisplayName("should complete put operation within timeout [GH-90000]")
+        @DisplayName("should complete put operation within timeout")
         void shouldCompletePutWithinTimeout() { // GH-90000
             long startTime = System.nanoTime(); // GH-90000
             backend.setValue("perf:put", "value", 3600); // GH-90000
@@ -437,12 +437,12 @@ class RedisDistributedCacheBackendIntegrationTest extends PlatformIntegrationTes
         }
 
         @Test
-        @DisplayName("should complete delete operation within timeout [GH-90000]")
+        @DisplayName("should complete delete operation within timeout")
         void shouldCompleteDeleteWithinTimeout() { // GH-90000
             backend.setValue("perf:delete", "value", 3600); // GH-90000
             
             long startTime = System.nanoTime(); // GH-90000
-            backend.deleteKey("perf:delete [GH-90000]");
+            backend.deleteKey("perf:delete");
             long elapsedMs = (System.nanoTime() - startTime) / 1_000_000; // GH-90000
 
             assertThat(elapsedMs).isLessThan(1000);  // Should be much faster (typically < 5ms) // GH-90000

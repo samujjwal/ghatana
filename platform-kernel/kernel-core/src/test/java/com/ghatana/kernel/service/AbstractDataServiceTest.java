@@ -27,7 +27,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer kernel
  * @doc.pattern Test
  */
-@DisplayName("AbstractDataService Contract Tests [GH-90000]")
+@DisplayName("AbstractDataService Contract Tests")
 class AbstractDataServiceTest extends EventloopTestBase {
 
     private DataCloudKernelAdapter mockDataCloud;
@@ -51,7 +51,7 @@ class AbstractDataServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Service starts successfully and initializes datasets [GH-90000]")
+    @DisplayName("Service starts successfully and initializes datasets")
     void testServiceStart() { // GH-90000
         when(mockDataCloud.createSchema(any(SchemaCreateRequest.class))) // GH-90000
             .thenReturn(Promise.complete()); // GH-90000
@@ -64,7 +64,7 @@ class AbstractDataServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Service stops successfully and cleans up [GH-90000]")
+    @DisplayName("Service stops successfully and cleans up")
     void testServiceStop() { // GH-90000
         when(mockDataCloud.createSchema(any(SchemaCreateRequest.class))) // GH-90000
             .thenReturn(Promise.complete()); // GH-90000
@@ -77,7 +77,7 @@ class AbstractDataServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("createRecord creates and audits record successfully [GH-90000]")
+    @DisplayName("createRecord creates and audits record successfully")
     void testCreateRecord() { // GH-90000
         when(mockDataCloud.createSchema(any(SchemaCreateRequest.class))) // GH-90000
             .thenReturn(Promise.complete()); // GH-90000
@@ -96,7 +96,7 @@ class AbstractDataServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("readRecord reads record successfully [GH-90000]")
+    @DisplayName("readRecord reads record successfully")
     void testReadRecord() { // GH-90000
         when(mockDataCloud.createSchema(any(SchemaCreateRequest.class))) // GH-90000
             .thenReturn(Promise.complete()); // GH-90000
@@ -106,7 +106,7 @@ class AbstractDataServiceTest extends EventloopTestBase {
                 Map.of(), System.currentTimeMillis()))); // GH-90000
         runPromise(() -> service.start()); // GH-90000
 
-        Promise<Optional<TestEntity>> readPromise = service.testReadRecord("test-id [GH-90000]");
+        Promise<Optional<TestEntity>> readPromise = service.testReadRecord("test-id");
         Optional<TestEntity> result = runPromise(() -> readPromise); // GH-90000
 
         assertTrue(result.isPresent()); // GH-90000
@@ -114,7 +114,7 @@ class AbstractDataServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("updateRecord updates and audits record successfully [GH-90000]")
+    @DisplayName("updateRecord updates and audits record successfully")
     void testUpdateRecord() { // GH-90000
         when(mockDataCloud.createSchema(any(SchemaCreateRequest.class))) // GH-90000
             .thenReturn(Promise.complete()); // GH-90000
@@ -133,7 +133,7 @@ class AbstractDataServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("deleteRecord deletes record successfully [GH-90000]")
+    @DisplayName("deleteRecord deletes record successfully")
     void testDeleteRecord() { // GH-90000
         when(mockDataCloud.createSchema(any(SchemaCreateRequest.class))) // GH-90000
             .thenReturn(Promise.complete()); // GH-90000
@@ -142,14 +142,14 @@ class AbstractDataServiceTest extends EventloopTestBase {
 
         runPromise(() -> service.start()); // GH-90000
 
-        Promise<Void> deletePromise = service.testDeleteRecord("test-id [GH-90000]");
+        Promise<Void> deletePromise = service.testDeleteRecord("test-id");
         runPromise(() -> deletePromise); // GH-90000
 
         verify(mockDataCloud).deleteData(any(DataDeleteRequest.class)); // GH-90000
     }
 
     @Test
-    @DisplayName("queryRecords queries and deserializes records successfully [GH-90000]")
+    @DisplayName("queryRecords queries and deserializes records successfully")
     void testQueryRecords() { // GH-90000
         when(mockDataCloud.createSchema(any(SchemaCreateRequest.class))) // GH-90000
             .thenReturn(Promise.complete()); // GH-90000
@@ -172,42 +172,42 @@ class AbstractDataServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("ensureRunning throws when service not started [GH-90000]")
+    @DisplayName("ensureRunning throws when service not started")
     void testEnsureRunningThrows() { // GH-90000
         assertThrows(IllegalStateException.class, () -> service.testEnsureRunning()); // GH-90000
     }
 
     @Test
-    @DisplayName("validateRequired throws for null value [GH-90000]")
+    @DisplayName("validateRequired throws for null value")
     void testValidateRequiredThrowsForNull() { // GH-90000
         assertThrows(IllegalArgumentException.class, // GH-90000
             () -> service.testValidateRequired(null, "testField")); // GH-90000
     }
 
     @Test
-    @DisplayName("validateRequired throws for blank string [GH-90000]")
+    @DisplayName("validateRequired throws for blank string")
     void testValidateRequiredThrowsForBlank() { // GH-90000
         assertThrows(IllegalArgumentException.class, // GH-90000
             () -> service.testValidateRequired("", "testField")); // GH-90000
     }
 
     @Test
-    @DisplayName("validateRequired passes for valid value [GH-90000]")
+    @DisplayName("validateRequired passes for valid value")
     void testValidateRequiredPasses() { // GH-90000
         assertDoesNotThrow(() -> service.testValidateRequired("valid", "testField")); // GH-90000
     }
 
     @Test
-    @DisplayName("generateId with prefix creates valid ID [GH-90000]")
+    @DisplayName("generateId with prefix creates valid ID")
     void testGenerateIdWithPrefix() { // GH-90000
-        String id = service.testGenerateId("test [GH-90000]");
+        String id = service.testGenerateId("test");
         assertNotNull(id); // GH-90000
-        assertTrue(id.startsWith("test- [GH-90000]"));
+        assertTrue(id.startsWith("test-"));
         assertEquals(21, id.length()); // "test-" + 16 chars // GH-90000
     }
 
     @Test
-    @DisplayName("generateId without prefix creates valid ID [GH-90000]")
+    @DisplayName("generateId without prefix creates valid ID")
     void testGenerateIdWithoutPrefix() { // GH-90000
         String id = service.testGenerateId(); // GH-90000
         assertNotNull(id); // GH-90000
@@ -215,7 +215,7 @@ class AbstractDataServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("audit records event with kernel audit service [GH-90000]")
+    @DisplayName("audit records event with kernel audit service")
     void testAudit() { // GH-90000
         when(mockDataCloud.createSchema(any(SchemaCreateRequest.class))) // GH-90000
             .thenReturn(Promise.complete()); // GH-90000
@@ -226,25 +226,25 @@ class AbstractDataServiceTest extends EventloopTestBase {
         runPromise(() -> auditPromise); // GH-90000
 
         verify(mockAuditService).recordAuditEvent( // GH-90000
-            eq("TEST_ACTION [GH-90000]"),
-            eq("test-service [GH-90000]"),
-            eq("entity-id [GH-90000]"),
-            eq("Test details [GH-90000]"),
+            eq("TEST_ACTION"),
+            eq("test-service"),
+            eq("entity-id"),
+            eq("Test details"),
             any() // GH-90000
         );
     }
 
     @Test
-    @DisplayName("createAuditMetadata creates proper metadata map [GH-90000]")
+    @DisplayName("createAuditMetadata creates proper metadata map")
     void testCreateAuditMetadata() { // GH-90000
         Map<String, String> metadata = service.testCreateAuditMetadata("key1", "value1", "key2", "value2"); // GH-90000
 
         assertNotNull(metadata); // GH-90000
-        assertTrue(metadata.containsKey("timestamp [GH-90000]"));
-        assertTrue(metadata.containsKey("service [GH-90000]"));
-        assertEquals("value1", metadata.get("key1 [GH-90000]"));
-        assertEquals("value2", metadata.get("key2 [GH-90000]"));
-        assertEquals("test-service", metadata.get("service [GH-90000]"));
+        assertTrue(metadata.containsKey("timestamp"));
+        assertTrue(metadata.containsKey("service"));
+        assertEquals("value1", metadata.get("key1"));
+        assertEquals("value2", metadata.get("key2"));
+        assertEquals("test-service", metadata.get("service"));
     }
 
     // ==================== Test Implementation ====================

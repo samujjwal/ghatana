@@ -17,7 +17,8 @@ import java.util.Map;
  * @doc.type value-object
  * @doc.purpose Decision artifact for memory
  * @doc.layer agent-memory
- */
+  * @doc.pattern Component
+*/
 @Value
 @Builder
 public class Decision implements TypedArtifact {

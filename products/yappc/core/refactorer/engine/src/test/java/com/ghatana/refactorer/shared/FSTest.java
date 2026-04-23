@@ -26,7 +26,7 @@ class FSTest {
     @Test
     void atomicWrite_shouldWriteContentToFile(@TempDir Path tempDir) throws IOException { // GH-90000
         // Given
-        Path targetFile = tempDir.resolve("subdir [GH-90000]").resolve("test.txt [GH-90000]");
+        Path targetFile = tempDir.resolve("subdir").resolve("test.txt");
         String content = "Test content for atomic write";
 
         // When
@@ -40,7 +40,7 @@ class FSTest {
     @Test
     void atomicWrite_shouldOverwriteExistingFile(@TempDir Path tempDir) throws IOException { // GH-90000
         // Given
-        Path targetFile = tempDir.resolve("test.txt [GH-90000]");
+        Path targetFile = tempDir.resolve("test.txt");
         String initialContent = "Initial content";
         String newContent = "New content";
         Files.writeString(targetFile, initialContent); // GH-90000

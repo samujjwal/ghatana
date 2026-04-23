@@ -13,11 +13,11 @@ import org.junit.jupiter.api.Test;
  * @doc.layer test
  * @doc.pattern Unit Test
  */
-@DisplayName("Budget Tests [GH-90000]")
+@DisplayName("Budget Tests")
 class BudgetTest {
 
   @Test
-  @DisplayName("should create Budget with all fields [GH-90000]")
+  @DisplayName("should create Budget with all fields")
   void shouldCreateBudget() { // GH-90000
     long maxTokens = 1000L;
     double maxCostUsd = 5.0;
@@ -31,7 +31,7 @@ class BudgetTest {
   }
 
   @Test
-  @DisplayName("should handle zero values [GH-90000]")
+  @DisplayName("should handle zero values")
   void shouldHandleZeroValues() { // GH-90000
     Budget budget = new Budget(0L, 0.0, 0L); // GH-90000
 
@@ -41,7 +41,7 @@ class BudgetTest {
   }
 
   @Test
-  @DisplayName("should handle negative values [GH-90000]")
+  @DisplayName("should handle negative values")
   void shouldHandleNegativeValues() { // GH-90000
     Budget budget = new Budget(-1L, -1.0, -1L); // GH-90000
 
@@ -51,7 +51,7 @@ class BudgetTest {
   }
 
   @Test
-  @DisplayName("should implement equals and hashCode correctly [GH-90000]")
+  @DisplayName("should implement equals and hashCode correctly")
   void shouldImplementEqualsAndHashCode() { // GH-90000
     Budget budget1 = new Budget(100L, 1.0, 1000L); // GH-90000
     Budget budget2 = new Budget(100L, 1.0, 1000L); // GH-90000
@@ -63,14 +63,14 @@ class BudgetTest {
   }
 
   @Test
-  @DisplayName("should have correct toString [GH-90000]")
+  @DisplayName("should have correct toString")
   void shouldHaveCorrectToString() { // GH-90000
     Budget budget = new Budget(100L, 1.0, 1000L); // GH-90000
 
     String str = budget.toString(); // GH-90000
 
-    assertThat(str).contains("maxTokens=100 [GH-90000]");
-    assertThat(str).contains("maxCostUsd=1.0 [GH-90000]");
-    assertThat(str).contains("maxWallTimeMs=1000 [GH-90000]");
+    assertThat(str).contains("maxTokens=100");
+    assertThat(str).contains("maxCostUsd=1.0");
+    assertThat(str).contains("maxWallTimeMs=1000");
   }
 }

@@ -19,30 +19,30 @@ class DomainValidationTest {
     @Test
     void shouldRejectBlankIntentIdentityAndCoreFields() { // GH-90000
         assertThrows(IllegalArgumentException.class, () -> IntentSpec.builder() // GH-90000
-            .id("  [GH-90000]")
-            .productName("Valid Product [GH-90000]")
-            .description("Valid description [GH-90000]")
+            .id(" ")
+            .productName("Valid Product")
+            .description("Valid description")
             .build()); // GH-90000
 
         assertThrows(IllegalArgumentException.class, () -> IntentSpec.builder() // GH-90000
-            .id("intent-1 [GH-90000]")
-            .productName("  [GH-90000]")
-            .description("Valid description [GH-90000]")
+            .id("intent-1")
+            .productName(" ")
+            .description("Valid description")
             .build()); // GH-90000
 
         assertThrows(IllegalArgumentException.class, () -> IntentSpec.builder() // GH-90000
-            .id("intent-1 [GH-90000]")
-            .productName("Valid Product [GH-90000]")
-            .description("  [GH-90000]")
+            .id("intent-1")
+            .productName("Valid Product")
+            .description(" ")
             .build()); // GH-90000
     }
 
     @Test
     void shouldInitializeNullCollectionsToSafeDefaults() { // GH-90000
         IntentSpec intentSpec = assertDoesNotThrow(() -> IntentSpec.builder() // GH-90000
-            .id("intent-1 [GH-90000]")
-            .productName("Product [GH-90000]")
-            .description("Description [GH-90000]")
+            .id("intent-1")
+            .productName("Product")
+            .description("Description")
             .goals(null) // GH-90000
             .personas(null) // GH-90000
             .constraints(null) // GH-90000
@@ -58,7 +58,7 @@ class DomainValidationTest {
     @Test
     void shouldRejectBlankShapeIdentity() { // GH-90000
         assertThrows(IllegalArgumentException.class, () -> ShapeSpec.builder() // GH-90000
-            .id("\t [GH-90000]")
+            .id("\t")
             .build()); // GH-90000
     }
 }

@@ -10,7 +10,11 @@ import java.util.zip.CRC32;
  * Minimal domain wrapper around contracts.event.v1.Event for storage operations.
  * Invariants (to be validated by callers where applicable):
  *  - occurredAt <= ingestedAt (if both available)
- */
+  * @doc.type class
+ * @doc.purpose Provides event record functionality.
+ * @doc.layer product
+ * @doc.pattern Event
+*/
 public final class EventRecord {
     private final EventProto envelope;
 

@@ -53,7 +53,7 @@ import static org.assertj.core.api.Assertions.*;
  * @author Ghatana Kernel Team
  * @since 1.2.0
  */
-@DisplayName("Kernel Deployment Mode Validation (Backlog D3) [GH-90000]")
+@DisplayName("Kernel Deployment Mode Validation (Backlog D3)")
 class KernelDeploymentModeValidationTest {
 
     // ── Core capabilities (domain-agnostic) ───────────────────────────────── // GH-90000
@@ -152,7 +152,7 @@ class KernelDeploymentModeValidationTest {
     // ═════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Mode 1 — Healthcare-only (independent deployment) [GH-90000]")
+    @DisplayName("Mode 1 — Healthcare-only (independent deployment)")
     class HealthcareOnlyMode {
 
         private KernelRegistryImpl registry;
@@ -165,60 +165,60 @@ class KernelDeploymentModeValidationTest {
                 "phr-core",
                 Set.of(PHR_PATIENT_RECORDS, PHR_CONSENT_MANAGEMENT, PHR_FHIR_INTEROP, // GH-90000
                        CORE_USER_AUTH, CORE_DATA_STORAGE, CORE_WORKFLOW),
-                Set.of(capDep("data.storage [GH-90000]"), capDep("user.authentication [GH-90000]"), capDep("workflow.engine [GH-90000]"))
+                Set.of(capDep("data.storage"), capDep("user.authentication"), capDep("workflow.engine"))
             );
             registry.registerModule(healthcareModule); // GH-90000
         }
 
         @Test
-        @DisplayName("PHR module registers without any finance module present [GH-90000]")
+        @DisplayName("PHR module registers without any finance module present")
         void phrModuleRegistersWithoutFinance() { // GH-90000
-            assertThat(registry.isModuleRegistered("phr-core [GH-90000]"))
-                .as("healthcare module must be registered [GH-90000]")
+            assertThat(registry.isModuleRegistered("phr-core"))
+                .as("healthcare module must be registered")
                 .isTrue(); // GH-90000
 
-            assertThat(registry.isModuleRegistered("finance-core [GH-90000]"))
-                .as("finance module must NOT be present in healthcare-only deployment [GH-90000]")
+            assertThat(registry.isModuleRegistered("finance-core"))
+                .as("finance module must NOT be present in healthcare-only deployment")
                 .isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("All PHR capabilities are discoverable by ID [GH-90000]")
+        @DisplayName("All PHR capabilities are discoverable by ID")
         void allPhrCapabilitiesAreDiscoverable() { // GH-90000
-            assertThat(registry.isCapabilityAvailable("phr.patient-records [GH-90000]")).isTrue();
-            assertThat(registry.isCapabilityAvailable("phr.consent-management [GH-90000]")).isTrue();
-            assertThat(registry.isCapabilityAvailable("phr.fhir-interop [GH-90000]")).isTrue();
+            assertThat(registry.isCapabilityAvailable("phr.patient-records")).isTrue();
+            assertThat(registry.isCapabilityAvailable("phr.consent-management")).isTrue();
+            assertThat(registry.isCapabilityAvailable("phr.fhir-interop")).isTrue();
         }
 
         @Test
-        @DisplayName("No finance capabilities leak into healthcare-only registry [GH-90000]")
+        @DisplayName("No finance capabilities leak into healthcare-only registry")
         void noFinanceCapabilitiesLeakIntoHealthcareOnlyRegistry() { // GH-90000
-            assertThat(registry.isCapabilityAvailable("finance.trade-processing [GH-90000]")).isFalse();
-            assertThat(registry.isCapabilityAvailable("finance.risk-management [GH-90000]")).isFalse();
-            assertThat(registry.isCapabilityAvailable("finance.compliance-checking [GH-90000]")).isFalse();
+            assertThat(registry.isCapabilityAvailable("finance.trade-processing")).isFalse();
+            assertThat(registry.isCapabilityAvailable("finance.risk-management")).isFalse();
+            assertThat(registry.isCapabilityAvailable("finance.compliance-checking")).isFalse();
         }
 
         @Test
-        @DisplayName("Module-by-capability search returns only PHR module [GH-90000]")
+        @DisplayName("Module-by-capability search returns only PHR module")
         void capabilitySearchReturnsPhrModuleOnly() { // GH-90000
             List<KernelModule> modules = registry.getModulesByCapability(PHR_PATIENT_RECORDS); // GH-90000
             assertThat(modules) // GH-90000
                 .hasSize(1) // GH-90000
                 .extracting(KernelModule::getModuleId) // GH-90000
-                .containsExactly("phr-core [GH-90000]");
+                .containsExactly("phr-core");
         }
 
         @Test
-        @DisplayName("Dependency validation passes with core capabilities pre-registered [GH-90000]")
+        @DisplayName("Dependency validation passes with core capabilities pre-registered")
         void dependencyValidationPassesWithCorePrereg() { // GH-90000
             // Validate a fresh PHR module (not yet registered) against the current registry state // GH-90000
             KernelModule candidate = stubModule( // GH-90000
                 "phr-imaging",
                 Set.of(PHR_FHIR_INTEROP), // GH-90000
-                Set.of(capDep("data.storage [GH-90000]"), capDep("user.authentication [GH-90000]"))
+                Set.of(capDep("data.storage"), capDep("user.authentication"))
             );
             assertThat(registry.validateDependencies(candidate)) // GH-90000
-                .as("PHR imaging module must validate — core capabilities are present [GH-90000]")
+                .as("PHR imaging module must validate — core capabilities are present")
                 .isTrue(); // GH-90000
         }
     }
@@ -228,7 +228,7 @@ class KernelDeploymentModeValidationTest {
     // ═════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Mode 2 — Finance-only (independent deployment) [GH-90000]")
+    @DisplayName("Mode 2 — Finance-only (independent deployment)")
     class FinanceOnlyMode {
 
         private KernelRegistryImpl registry;
@@ -241,49 +241,49 @@ class KernelDeploymentModeValidationTest {
                 "finance-core",
                 Set.of(FINANCE_TRADE_PROCESSING, FINANCE_RISK_MANAGEMENT, FINANCE_COMPLIANCE, // GH-90000
                        CORE_USER_AUTH, CORE_DATA_STORAGE, CORE_WORKFLOW),
-                Set.of(capDep("data.storage [GH-90000]"), capDep("user.authentication [GH-90000]"), capDep("workflow.engine [GH-90000]"))
+                Set.of(capDep("data.storage"), capDep("user.authentication"), capDep("workflow.engine"))
             );
             registry.registerModule(financeModule); // GH-90000
         }
 
         @Test
-        @DisplayName("Finance module registers without any PHR module present [GH-90000]")
+        @DisplayName("Finance module registers without any PHR module present")
         void financeModuleRegistersWithoutPhr() { // GH-90000
-            assertThat(registry.isModuleRegistered("finance-core [GH-90000]"))
-                .as("finance module must be registered [GH-90000]")
+            assertThat(registry.isModuleRegistered("finance-core"))
+                .as("finance module must be registered")
                 .isTrue(); // GH-90000
 
-            assertThat(registry.isModuleRegistered("phr-core [GH-90000]"))
-                .as("PHR module must NOT be present in finance-only deployment [GH-90000]")
+            assertThat(registry.isModuleRegistered("phr-core"))
+                .as("PHR module must NOT be present in finance-only deployment")
                 .isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("All finance capabilities are discoverable by ID [GH-90000]")
+        @DisplayName("All finance capabilities are discoverable by ID")
         void allFinanceCapabilitiesAreDiscoverable() { // GH-90000
-            assertThat(registry.isCapabilityAvailable("finance.trade-processing [GH-90000]")).isTrue();
-            assertThat(registry.isCapabilityAvailable("finance.risk-management [GH-90000]")).isTrue();
-            assertThat(registry.isCapabilityAvailable("finance.compliance-checking [GH-90000]")).isTrue();
+            assertThat(registry.isCapabilityAvailable("finance.trade-processing")).isTrue();
+            assertThat(registry.isCapabilityAvailable("finance.risk-management")).isTrue();
+            assertThat(registry.isCapabilityAvailable("finance.compliance-checking")).isTrue();
         }
 
         @Test
-        @DisplayName("No PHR capabilities leak into finance-only registry [GH-90000]")
+        @DisplayName("No PHR capabilities leak into finance-only registry")
         void noPhrCapabilitiesLeakIntoFinanceOnlyRegistry() { // GH-90000
-            assertThat(registry.isCapabilityAvailable("phr.patient-records [GH-90000]")).isFalse();
-            assertThat(registry.isCapabilityAvailable("phr.consent-management [GH-90000]")).isFalse();
-            assertThat(registry.isCapabilityAvailable("phr.fhir-interop [GH-90000]")).isFalse();
+            assertThat(registry.isCapabilityAvailable("phr.patient-records")).isFalse();
+            assertThat(registry.isCapabilityAvailable("phr.consent-management")).isFalse();
+            assertThat(registry.isCapabilityAvailable("phr.fhir-interop")).isFalse();
         }
 
         @Test
-        @DisplayName("Finance domain capability validation passes with core pre-registered [GH-90000]")
+        @DisplayName("Finance domain capability validation passes with core pre-registered")
         void financeDomainValidationPassesWithCorePrereg() { // GH-90000
             KernelModule candidate = stubModule( // GH-90000
                 "finance-reconciliation",
                 Set.of(FINANCE_COMPLIANCE), // GH-90000
-                Set.of(capDep("data.storage [GH-90000]"), capDep("workflow.engine [GH-90000]"))
+                Set.of(capDep("data.storage"), capDep("workflow.engine"))
             );
             assertThat(registry.validateDependencies(candidate)) // GH-90000
-                .as("finance reconciliation module must validate — core capabilities are present [GH-90000]")
+                .as("finance reconciliation module must validate — core capabilities are present")
                 .isTrue(); // GH-90000
         }
     }
@@ -293,7 +293,7 @@ class KernelDeploymentModeValidationTest {
     // ═════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Mode 3 — Shared-kernel (PHR + Finance coexist) [GH-90000]")
+    @DisplayName("Mode 3 — Shared-kernel (PHR + Finance coexist)")
     class SharedKernelMode {
 
         private KernelRegistryImpl registry;
@@ -306,13 +306,13 @@ class KernelDeploymentModeValidationTest {
                 "phr-core",
                 Set.of(PHR_PATIENT_RECORDS, PHR_CONSENT_MANAGEMENT, PHR_FHIR_INTEROP, // GH-90000
                        CORE_USER_AUTH, CORE_DATA_STORAGE, CORE_WORKFLOW),
-                Set.of(capDep("data.storage [GH-90000]"), capDep("user.authentication [GH-90000]"), capDep("workflow.engine [GH-90000]"))
+                Set.of(capDep("data.storage"), capDep("user.authentication"), capDep("workflow.engine"))
             );
             KernelModule financeModule = stubModule( // GH-90000
                 "finance-core",
                 Set.of(FINANCE_TRADE_PROCESSING, FINANCE_RISK_MANAGEMENT, FINANCE_COMPLIANCE, // GH-90000
                        CORE_USER_AUTH, CORE_DATA_STORAGE, CORE_WORKFLOW),
-                Set.of(capDep("data.storage [GH-90000]"), capDep("user.authentication [GH-90000]"), capDep("workflow.engine [GH-90000]"))
+                Set.of(capDep("data.storage"), capDep("user.authentication"), capDep("workflow.engine"))
             );
 
             registry.registerModule(healthcareModule); // GH-90000
@@ -320,33 +320,33 @@ class KernelDeploymentModeValidationTest {
         }
 
         @Test
-        @DisplayName("Both modules coexist in the same registry without conflict [GH-90000]")
+        @DisplayName("Both modules coexist in the same registry without conflict")
         void bothModulesCoexistWithoutConflict() { // GH-90000
-            assertThat(registry.isModuleRegistered("phr-core [GH-90000]")).isTrue();
-            assertThat(registry.isModuleRegistered("finance-core [GH-90000]")).isTrue();
+            assertThat(registry.isModuleRegistered("phr-core")).isTrue();
+            assertThat(registry.isModuleRegistered("finance-core")).isTrue();
         }
 
         @Test
-        @DisplayName("All domain capabilities are simultaneously discoverable [GH-90000]")
+        @DisplayName("All domain capabilities are simultaneously discoverable")
         void allDomainCapabilitiesAreSimultaneouslyDiscoverable() { // GH-90000
             // PHR capabilities
-            assertThat(registry.isCapabilityAvailable("phr.patient-records [GH-90000]")).isTrue();
-            assertThat(registry.isCapabilityAvailable("phr.consent-management [GH-90000]")).isTrue();
-            assertThat(registry.isCapabilityAvailable("phr.fhir-interop [GH-90000]")).isTrue();
+            assertThat(registry.isCapabilityAvailable("phr.patient-records")).isTrue();
+            assertThat(registry.isCapabilityAvailable("phr.consent-management")).isTrue();
+            assertThat(registry.isCapabilityAvailable("phr.fhir-interop")).isTrue();
 
             // Finance capabilities
-            assertThat(registry.isCapabilityAvailable("finance.trade-processing [GH-90000]")).isTrue();
-            assertThat(registry.isCapabilityAvailable("finance.risk-management [GH-90000]")).isTrue();
-            assertThat(registry.isCapabilityAvailable("finance.compliance-checking [GH-90000]")).isTrue();
+            assertThat(registry.isCapabilityAvailable("finance.trade-processing")).isTrue();
+            assertThat(registry.isCapabilityAvailable("finance.risk-management")).isTrue();
+            assertThat(registry.isCapabilityAvailable("finance.compliance-checking")).isTrue();
 
             // Core capabilities remain present
-            assertThat(registry.isCapabilityAvailable("data.storage [GH-90000]")).isTrue();
-            assertThat(registry.isCapabilityAvailable("user.authentication [GH-90000]")).isTrue();
-            assertThat(registry.isCapabilityAvailable("workflow.engine [GH-90000]")).isTrue();
+            assertThat(registry.isCapabilityAvailable("data.storage")).isTrue();
+            assertThat(registry.isCapabilityAvailable("user.authentication")).isTrue();
+            assertThat(registry.isCapabilityAvailable("workflow.engine")).isTrue();
         }
 
         @Test
-        @DisplayName("PHR capability IDs do not collide with finance capability IDs [GH-90000]")
+        @DisplayName("PHR capability IDs do not collide with finance capability IDs")
         void phrAndFinanceCapabilityIdNamespacesDoNotCollide() { // GH-90000
             // Every registered capability must have a unique ID
             List<KernelCapability> allCapabilities = registry.getAllCapabilities(); // GH-90000
@@ -357,32 +357,32 @@ class KernelDeploymentModeValidationTest {
                 .count(); // GH-90000
 
             assertThat(uniqueCount) // GH-90000
-                .as("All capability IDs must be unique — no namespace collision between PHR and Finance [GH-90000]")
+                .as("All capability IDs must be unique — no namespace collision between PHR and Finance")
                 .isEqualTo(allCapabilities.size()); // GH-90000
         }
 
         @Test
-        @DisplayName("PHR capability search returns only PHR module, not finance [GH-90000]")
+        @DisplayName("PHR capability search returns only PHR module, not finance")
         void phrCapabilitySearchReturnsPhrModuleOnly() { // GH-90000
             List<KernelModule> modules = registry.getModulesByCapability(PHR_PATIENT_RECORDS); // GH-90000
             assertThat(modules) // GH-90000
                 .extracting(KernelModule::getModuleId) // GH-90000
-                .containsExactly("phr-core [GH-90000]")
-                .doesNotContain("finance-core [GH-90000]");
+                .containsExactly("phr-core")
+                .doesNotContain("finance-core");
         }
 
         @Test
-        @DisplayName("Finance capability search returns only finance module, not PHR [GH-90000]")
+        @DisplayName("Finance capability search returns only finance module, not PHR")
         void financeCapabilitySearchReturnsFinanceModuleOnly() { // GH-90000
             List<KernelModule> modules = registry.getModulesByCapability(FINANCE_TRADE_PROCESSING); // GH-90000
             assertThat(modules) // GH-90000
                 .extracting(KernelModule::getModuleId) // GH-90000
-                .containsExactly("finance-core [GH-90000]")
-                .doesNotContain("phr-core [GH-90000]");
+                .containsExactly("finance-core")
+                .doesNotContain("phr-core");
         }
 
         @Test
-        @DisplayName("Duplicate module registration is rejected in shared-kernel mode [GH-90000]")
+        @DisplayName("Duplicate module registration is rejected in shared-kernel mode")
         void duplicateModuleRegistrationRejectedInSharedKernel() { // GH-90000
             KernelModule duplicate = stubModule( // GH-90000
                 "phr-core",   // same ID as already-registered module
@@ -391,7 +391,7 @@ class KernelDeploymentModeValidationTest {
             );
             assertThatThrownBy(() -> registry.registerModule(duplicate)) // GH-90000
                 .isInstanceOf(IllegalStateException.class) // GH-90000
-                .hasMessageContaining("already registered [GH-90000]");
+                .hasMessageContaining("already registered");
         }
     }
 
@@ -400,11 +400,11 @@ class KernelDeploymentModeValidationTest {
     // ═════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Capability namespace isolation contract [GH-90000]")
+    @DisplayName("Capability namespace isolation contract")
     class CapabilityNamespaceContract {
 
         @Test
-        @DisplayName("PHR capability IDs must be prefixed with 'phr.' [GH-90000]")
+        @DisplayName("PHR capability IDs must be prefixed with 'phr.'")
         void phrCapabilityIdsMustHavePhrPrefix() { // GH-90000
             Set<KernelCapability> phrCaps = Set.of( // GH-90000
                 PHR_PATIENT_RECORDS, PHR_CONSENT_MANAGEMENT, PHR_FHIR_INTEROP);
@@ -414,11 +414,11 @@ class KernelDeploymentModeValidationTest {
                     assertThat(cap.getCapabilityId()) // GH-90000
                         .as("PHR capability '%s' must start with 'phr.' per namespace contract", // GH-90000
                             cap.getCapabilityId()) // GH-90000
-                        .startsWith("phr. [GH-90000]"));
+                        .startsWith("phr."));
         }
 
         @Test
-        @DisplayName("Finance capability IDs must be prefixed with 'finance.' [GH-90000]")
+        @DisplayName("Finance capability IDs must be prefixed with 'finance.'")
         void financeCapabilityIdsMustHaveFinancePrefix() { // GH-90000
             Set<KernelCapability> financeCaps = Set.of( // GH-90000
                 FINANCE_TRADE_PROCESSING, FINANCE_RISK_MANAGEMENT, FINANCE_COMPLIANCE);
@@ -428,11 +428,11 @@ class KernelDeploymentModeValidationTest {
                     assertThat(cap.getCapabilityId()) // GH-90000
                         .as("Finance capability '%s' must start with 'finance.' per namespace contract", // GH-90000
                             cap.getCapabilityId()) // GH-90000
-                        .startsWith("finance. [GH-90000]"));
+                        .startsWith("finance."));
         }
 
         @Test
-        @DisplayName("Core capability IDs must NOT be prefixed with any product domain name [GH-90000]")
+        @DisplayName("Core capability IDs must NOT be prefixed with any product domain name")
         void coreCapabilityIdsMustBeGeneric() { // GH-90000
             Set<KernelCapability> coreCaps = Set.of( // GH-90000
                 CORE_DATA_STORAGE, CORE_USER_AUTH, CORE_WORKFLOW);
@@ -448,7 +448,7 @@ class KernelDeploymentModeValidationTest {
         }
 
         @Test
-        @DisplayName("Missing required module dependency detected by validator [GH-90000]")
+        @DisplayName("Missing required module dependency detected by validator")
         void missingRequiredModuleFailsValidation() { // GH-90000
             KernelRegistryImpl registry = freshRegistry(); // GH-90000
 
@@ -463,14 +463,14 @@ class KernelDeploymentModeValidationTest {
 
             List<String> errors = registry.getDependencyValidationErrors(moduleA); // GH-90000
             assertThat(errors) // GH-90000
-                .as("Validator must report missing required MODULE dependency [GH-90000]")
+                .as("Validator must report missing required MODULE dependency")
                 .hasSize(1) // GH-90000
                 .first().asString() // GH-90000
-                .contains("module-b [GH-90000]");
+                .contains("module-b");
         }
 
         @Test
-        @DisplayName("Optional module dependency silently absent is allowed by validator [GH-90000]")
+        @DisplayName("Optional module dependency silently absent is allowed by validator")
         void optionalMissingModulePassesValidation() { // GH-90000
             KernelRegistryImpl registry = freshRegistry(); // GH-90000
 
@@ -484,7 +484,7 @@ class KernelDeploymentModeValidationTest {
 
             // Optional dependency is absent → validation must still pass (no errors) // GH-90000
             assertThat(registry.validateDependencies(moduleA)) // GH-90000
-                .as("Optional dependency absent must not block registration [GH-90000]")
+                .as("Optional dependency absent must not block registration")
                 .isTrue(); // GH-90000
         }
     }

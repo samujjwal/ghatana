@@ -7,7 +7,11 @@ import java.util.Map;
  * Statistics about a state store's current status and performance metrics.
  *
  * Day 27 Implementation: Provides monitoring data for state store health and performance.
- */
+  * @doc.type class
+ * @doc.purpose Provides state store stats functionality.
+ * @doc.layer product
+ * @doc.pattern Repository
+*/
 public class StateStoreStats {
 
     private final long totalKeys;

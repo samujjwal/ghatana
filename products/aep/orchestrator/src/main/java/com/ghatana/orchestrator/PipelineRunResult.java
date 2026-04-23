@@ -7,7 +7,11 @@ import java.util.List;
  * PipelineRunResult represents the result of a single pipeline run.
  * It contains the timestamp, status, error message (if any), and a list of steps executed.
  * Each step records the agent name and its output.
- */
+  * @doc.type class
+ * @doc.purpose Provides pipeline run result functionality.
+ * @doc.layer product
+ * @doc.pattern ValueObject
+*/
 public class PipelineRunResult {
     /** Timestamp of when the pipeline run started (ISO-8601 format). */
     public String timestamp;

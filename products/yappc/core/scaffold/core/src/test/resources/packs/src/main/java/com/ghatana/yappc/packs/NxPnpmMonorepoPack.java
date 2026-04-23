@@ -27,14 +27,14 @@ final class NxPnpmMonorepoPack implements PackTemplate {
     public List<ScaffoldFile> render(WorkspaceSpec spec) { // GH-90000
         String name = spec.getName(); // GH-90000
         return List.of( // GH-90000
-                new ScaffoldFile(Path.of("nx.json [GH-90000]"), nxJson(name)),
-                new ScaffoldFile(Path.of("workspace.json [GH-90000]"), workspaceJson(name)),
-                new ScaffoldFile(Path.of("package.json [GH-90000]"), packageJson(name)),
-                new ScaffoldFile(Path.of("pnpm-workspace.yaml [GH-90000]"), pnpmWorkspace()),
-                new ScaffoldFile(Path.of("apps/.gitkeep [GH-90000]"), ""),
-                new ScaffoldFile(Path.of("libs/.gitkeep [GH-90000]"), ""),
-                new ScaffoldFile(Path.of(".gitignore [GH-90000]"), gitignore()),
-                new ScaffoldFile(Path.of("README.md [GH-90000]"), readme(name)));
+                new ScaffoldFile(Path.of("nx.json"), nxJson(name)),
+                new ScaffoldFile(Path.of("workspace.json"), workspaceJson(name)),
+                new ScaffoldFile(Path.of("package.json"), packageJson(name)),
+                new ScaffoldFile(Path.of("pnpm-workspace.yaml"), pnpmWorkspace()),
+                new ScaffoldFile(Path.of("apps/.gitkeep"), ""),
+                new ScaffoldFile(Path.of("libs/.gitkeep"), ""),
+                new ScaffoldFile(Path.of(".gitignore"), gitignore()),
+                new ScaffoldFile(Path.of("README.md"), readme(name)));
     }
 
     private String nxJson(String name) { // GH-90000

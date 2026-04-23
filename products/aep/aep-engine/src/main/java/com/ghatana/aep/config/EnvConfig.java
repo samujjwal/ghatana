@@ -10,7 +10,11 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Environment configuration for AEP components.
- */
+  * @doc.type class
+ * @doc.purpose Provides env config functionality.
+ * @doc.layer product
+ * @doc.pattern Configuration
+*/
 public class EnvConfig {
 
     private static final Logger logger = LoggerFactory.getLogger(EnvConfig.class);

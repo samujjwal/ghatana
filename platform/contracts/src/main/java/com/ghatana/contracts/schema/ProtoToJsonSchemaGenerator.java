@@ -60,7 +60,11 @@ import java.util.stream.Collectors;
  *   --messages=ghatana.contracts.v1.EventRecord,ghatana.contracts.v1.EventType \
  *   --bundleName=bundle.schema.json
  * </pre>
- */
+  * @doc.type enum
+ * @doc.purpose Provides proto to json schema generator functionality.
+ * @doc.layer platform
+ * @doc.pattern Component
+*/
 public final class ProtoToJsonSchemaGenerator {
 
     // Constants for duplicate literals

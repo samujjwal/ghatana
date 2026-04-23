@@ -37,7 +37,7 @@ class ShellcheckRunnerTest {
         shellcheckRunner = new ShellcheckRunner(context); // GH-90000
 
         // Create a test bash script
-        testScript = tempDir.resolve("test.sh [GH-90000]");
+        testScript = tempDir.resolve("test.sh");
         String scriptContent =
                 "#!/bin/bash\n"
                         + "echo $1\n"
@@ -51,7 +51,7 @@ class ShellcheckRunnerTest {
     void testRun_WithValidScript_ReturnsDiagnostics() throws Exception { // GH-90000
         // Check if shellcheck is available
         if (!shellcheckRunner.isShellcheckAvailable()) { // GH-90000
-            System.out.println("Skipping test: shellcheck not available [GH-90000]");
+            System.out.println("Skipping test: shellcheck not available");
             return;
         }
 
@@ -61,7 +61,7 @@ class ShellcheckRunnerTest {
 
         // Make the script executable
         if (!testScript.toFile().setExecutable(true)) { // GH-90000
-            fail("Could not set execute permission on test script [GH-90000]");
+            fail("Could not set execute permission on test script");
         }
 
         // Verify the script exists and is executable
@@ -99,7 +99,7 @@ class ShellcheckRunnerTest {
             System.out.println( // GH-90000
                     "No diagnostics found. This might indicate an issue with shellcheck"
                             + " execution.");
-            System.out.println("Trying to run shellcheck directly for more info... [GH-90000]");
+            System.out.println("Trying to run shellcheck directly for more info...");
             try {
                 Process process =
                         new ProcessBuilder("shellcheck", testScript.toString()) // GH-90000
@@ -144,7 +144,7 @@ class ShellcheckRunnerTest {
 
     @Test
     void testRun_WithNonExistentFile_ReturnsEmptyList() { // GH-90000
-        Path nonExistentFile = tempDir.resolve("nonexistent.sh [GH-90000]");
+        Path nonExistentFile = tempDir.resolve("nonexistent.sh");
         List<UnifiedDiagnostic> diagnostics = shellcheckRunner.run(nonExistentFile); // GH-90000
 
         assertTrue(diagnostics.isEmpty(), "Expected no diagnostics for non-existent file"); // GH-90000

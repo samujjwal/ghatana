@@ -21,13 +21,13 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("CircuitBreakerConnector [GH-90000]")
+@DisplayName("CircuitBreakerConnector")
 class CircuitBreakerConnectorTest {
 
     private static final QueueMessage MESSAGE = new QueueMessage("key", "body", Map.of()); // GH-90000
 
     @Test
-    @DisplayName("opens after repeated send failures and fails fast afterwards [GH-90000]")
+    @DisplayName("opens after repeated send failures and fails fast afterwards")
     void opensAfterRepeatedFailures() { // GH-90000
         AtomicInteger calls = new AtomicInteger(); // GH-90000
         QueueProducerStrategy delegate = new StubProducer() { // GH-90000
@@ -40,7 +40,7 @@ class CircuitBreakerConnectorTest {
 
         CircuitBreakerConnector connector = CircuitBreakerConnector.builder() // GH-90000
             .delegate(delegate) // GH-90000
-            .name("test-cb [GH-90000]")
+            .name("test-cb")
             .failureThreshold(2) // GH-90000
             .successThreshold(1) // GH-90000
             .resetTimeout(Duration.ofMinutes(1)) // GH-90000
@@ -54,7 +54,7 @@ class CircuitBreakerConnectorTest {
     }
 
     @Test
-    @DisplayName("delegates successful sends while circuit is closed [GH-90000]")
+    @DisplayName("delegates successful sends while circuit is closed")
     void delegatesSuccessfulSends() { // GH-90000
         AtomicInteger calls = new AtomicInteger(); // GH-90000
         QueueProducerStrategy delegate = new StubProducer() { // GH-90000
@@ -67,7 +67,7 @@ class CircuitBreakerConnectorTest {
 
         CircuitBreakerConnector connector = CircuitBreakerConnector.builder() // GH-90000
             .delegate(delegate) // GH-90000
-            .name("test-cb-success [GH-90000]")
+            .name("test-cb-success")
             .build(); // GH-90000
 
         assertThat(connector.send(MESSAGE)).isTrue(); // GH-90000

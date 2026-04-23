@@ -30,18 +30,18 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("DataFabricSync – Sync Operations (PF002) [GH-90000]")
+@DisplayName("DataFabricSync – Sync Operations (PF002)")
 class DataFabricSyncTest extends EventloopTestBase {
 
     @Mock
     private DataFabricConnector connector;
 
     @Nested
-    @DisplayName("Sync Operations [GH-90000]")
+    @DisplayName("Sync Operations")
     class SyncOperationsTests {
 
         @Test
-        @DisplayName("[PF002]: sync_starts_data_synchronization [GH-90000]")
+        @DisplayName("[PF002]: sync_starts_data_synchronization")
         void syncStartsDataSynchronization() { // GH-90000
             String connectionId = "conn-to-sync";
 
@@ -70,7 +70,7 @@ class DataFabricSyncTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[PF002]: sync_reports_failures [GH-90000]")
+        @DisplayName("[PF002]: sync_reports_failures")
         void syncReportsFailures() { // GH-90000
             String connectionId = "conn-with-failures";
 
@@ -93,11 +93,11 @@ class DataFabricSyncTest extends EventloopTestBase {
 
             assertThat(syncResult.success()).isFalse(); // GH-90000
             assertThat(syncResult.recordsFailed()).isEqualTo(50); // GH-90000
-            assertThat(syncResult.errorMessage()).contains("timeout [GH-90000]");
+            assertThat(syncResult.errorMessage()).contains("timeout");
         }
 
         @Test
-        @DisplayName("[PF002]: get_sync_status_returns_progress [GH-90000]")
+        @DisplayName("[PF002]: get_sync_status_returns_progress")
         void getSyncStatusReturnsProgress() { // GH-90000
             String connectionId = "syncing-conn";
 
@@ -114,14 +114,14 @@ class DataFabricSyncTest extends EventloopTestBase {
                 connector.getSyncStatus(connectionId) // GH-90000
             );
 
-            assertThat(result.state()).isEqualTo("RUNNING [GH-90000]");
+            assertThat(result.state()).isEqualTo("RUNNING");
             assertThat(result.progressPercent()).isEqualTo(65.0); // GH-90000
             assertThat(result.totalRecords()).isEqualTo(10000); // GH-90000
             assertThat(result.syncedRecords()).isEqualTo(6500); // GH-90000
         }
 
         @Test
-        @DisplayName("[PF002]: sync_status_shows_completed_sync [GH-90000]")
+        @DisplayName("[PF002]: sync_status_shows_completed_sync")
         void syncStatusShowsCompletedSync() { // GH-90000
             String connectionId = "completed-sync";
 
@@ -138,17 +138,17 @@ class DataFabricSyncTest extends EventloopTestBase {
                 connector.getSyncStatus(connectionId) // GH-90000
             );
 
-            assertThat(result.state()).isEqualTo("COMPLETED [GH-90000]");
+            assertThat(result.state()).isEqualTo("COMPLETED");
             assertThat(result.progressPercent()).isEqualTo(100.0); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Sync Configuration [GH-90000]")
+    @DisplayName("Sync Configuration")
     class SyncConfigurationTests {
 
         @Test
-        @DisplayName("[PF002]: incremental_sync_configured_correctly [GH-90000]")
+        @DisplayName("[PF002]: incremental_sync_configured_correctly")
         void incrementalSyncConfiguredCorrectly() { // GH-90000
             DataFabricConnector.SyncConfig config = new DataFabricConnector.SyncConfig( // GH-90000
                 "incremental", "entities", "0 */4 * * *",
@@ -157,13 +157,13 @@ class DataFabricSyncTest extends EventloopTestBase {
                 List.of("id", "name", "status") // GH-90000
             );
 
-            assertThat(config.syncMode()).isEqualTo("incremental [GH-90000]");
+            assertThat(config.syncMode()).isEqualTo("incremental");
             assertThat(config.incremental()).isTrue(); // GH-90000
-            assertThat(config.targetCollection()).isEqualTo("entities [GH-90000]");
+            assertThat(config.targetCollection()).isEqualTo("entities");
         }
 
         @Test
-        @DisplayName("[PF002]: full_sync_configured_correctly [GH-90000]")
+        @DisplayName("[PF002]: full_sync_configured_correctly")
         void fullSyncConfiguredCorrectly() { // GH-90000
             DataFabricConnector.SyncConfig config = new DataFabricConnector.SyncConfig( // GH-90000
                 "full", "all-entities", "0 0 * * 0", // Weekly
@@ -172,12 +172,12 @@ class DataFabricSyncTest extends EventloopTestBase {
                 List.of() // All columns // GH-90000
             );
 
-            assertThat(config.syncMode()).isEqualTo("full [GH-90000]");
+            assertThat(config.syncMode()).isEqualTo("full");
             assertThat(config.incremental()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("[PF002]: sync_with_column_selection [GH-90000]")
+        @DisplayName("[PF002]: sync_with_column_selection")
         void syncWithColumnSelection() { // GH-90000
             List<String> selectedColumns = List.of("id", "email", "created_at"); // GH-90000
 
@@ -190,7 +190,7 @@ class DataFabricSyncTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[PF002]: sync_with_filters [GH-90000]")
+        @DisplayName("[PF002]: sync_with_filters")
         void syncWithFilters() { // GH-90000
             Map<String, Object> filters = Map.of( // GH-90000
                 "status", "active",
@@ -208,11 +208,11 @@ class DataFabricSyncTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Sync Performance [GH-90000]")
+    @DisplayName("Sync Performance")
     class SyncPerformanceTests {
 
         @Test
-        @DisplayName("[PF002]: sync_result_includes_timing [GH-90000]")
+        @DisplayName("[PF002]: sync_result_includes_timing")
         void syncResultIncludesTiming() { // GH-90000
             Instant start = Instant.now(); // GH-90000
             Instant end = start.plusSeconds(120); // GH-90000
@@ -229,7 +229,7 @@ class DataFabricSyncTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[PF002]: large_sync_tracks_progress [GH-90000]")
+        @DisplayName("[PF002]: large_sync_tracks_progress")
         void largeSyncTracksProgress() { // GH-90000
             DataFabricConnector.SyncStatus status = new DataFabricConnector.SyncStatus( // GH-90000
                 "large-sync", "RUNNING", 1000000, 250000, 0, 25.0,
@@ -244,11 +244,11 @@ class DataFabricSyncTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Sync Error Handling [GH-90000]")
+    @DisplayName("Sync Error Handling")
     class SyncErrorHandlingTests {
 
         @Test
-        @DisplayName("[PF002]: sync_handles_partial_failures [GH-90000]")
+        @DisplayName("[PF002]: sync_handles_partial_failures")
         void syncHandlesPartialFailures() { // GH-90000
             DataFabricConnector.SyncResult result = new DataFabricConnector.SyncResult( // GH-90000
                 "conn-partial", true, 950, 50,
@@ -262,7 +262,7 @@ class DataFabricSyncTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[PF002]: sync_reports_connection_errors [GH-90000]")
+        @DisplayName("[PF002]: sync_reports_connection_errors")
         void syncReportsConnectionErrors() { // GH-90000
             DataFabricConnector.SyncResult result = new DataFabricConnector.SyncResult( // GH-90000
                 "conn-error", false, 0, 0,
@@ -270,11 +270,11 @@ class DataFabricSyncTest extends EventloopTestBase {
             );
 
             assertThat(result.success()).isFalse(); // GH-90000
-            assertThat(result.errorMessage()).contains("refused [GH-90000]");
+            assertThat(result.errorMessage()).contains("refused");
         }
 
         @Test
-        @DisplayName("[PF002]: sync_status_shows_error_state [GH-90000]")
+        @DisplayName("[PF002]: sync_status_shows_error_state")
         void syncStatusShowsErrorState() { // GH-90000
             DataFabricConnector.SyncStatus status = new DataFabricConnector.SyncStatus( // GH-90000
                 "error-sync", "FAILED", 1000, 400, 600, 40.0,
@@ -282,17 +282,17 @@ class DataFabricSyncTest extends EventloopTestBase {
                 null
             );
 
-            assertThat(status.state()).isEqualTo("FAILED [GH-90000]");
+            assertThat(status.state()).isEqualTo("FAILED");
             assertThat(status.failedRecords()).isEqualTo(600); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Sync Scheduling [GH-90000]")
+    @DisplayName("Sync Scheduling")
     class SyncSchedulingTests {
 
         @Test
-        @DisplayName("[PF002]: cron_schedule_parsed_correctly [GH-90000]")
+        @DisplayName("[PF002]: cron_schedule_parsed_correctly")
         void cronScheduleParsedCorrectly() { // GH-90000
             String hourlySchedule = "0 * * * *";
             String dailySchedule = "0 0 * * *";

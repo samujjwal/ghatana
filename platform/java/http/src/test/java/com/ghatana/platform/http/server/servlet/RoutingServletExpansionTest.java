@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("RoutingServlet - Phase 3 Expansion [GH-90000]")
+@DisplayName("RoutingServlet - Phase 3 Expansion")
 class RoutingServletExpansionTest extends EventloopTestBase {
 
     private RoutingServlet servlet;
@@ -39,11 +39,11 @@ class RoutingServletExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Many Routes Handling [GH-90000]")
+    @DisplayName("Many Routes Handling")
     class ManyRoutesTests {
 
         @Test
-        @DisplayName("Registers and dispatches 100 routes correctly [GH-90000]")
+        @DisplayName("Registers and dispatches 100 routes correctly")
         void manyRoutesRegistration() { // GH-90000
             // Register 100 routes
             for (int i = 0; i < 100; i++) { // GH-90000
@@ -56,7 +56,7 @@ class RoutingServletExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Handles multiple HTTP methods on different paths [GH-90000]")
+        @DisplayName("Handles multiple HTTP methods on different paths")
         void multipleMethodsMultiplePaths() { // GH-90000
             // Add various method/path combinations
             servlet.addRoute(HttpMethod.GET, "/users", req -> HttpResponse.ok200().build()); // GH-90000
@@ -74,11 +74,11 @@ class RoutingServletExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Async Route Handling [GH-90000]")
+    @DisplayName("Async Route Handling")
     class AsyncRouteTests {
 
         @Test
-        @DisplayName("Handles async routes with promise-based responses [GH-90000]")
+        @DisplayName("Handles async routes with promise-based responses")
         void asyncRoutesWithPromises() { // GH-90000
             servlet.addAsyncRoute(HttpMethod.GET, "/status", // GH-90000
                     req -> Promise.of(HttpResponse.ok200().build())); // GH-90000
@@ -89,7 +89,7 @@ class RoutingServletExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Executes many async routes sequentially [GH-90000]")
+        @DisplayName("Executes many async routes sequentially")
         void manyAsyncRoutes() { // GH-90000
             for (int i = 0; i < 50; i++) { // GH-90000
                 final int index = i;
@@ -106,11 +106,11 @@ class RoutingServletExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Mixed Sync/Async Routes [GH-90000]")
+    @DisplayName("Mixed Sync/Async Routes")
     class MixedRoutesTests {
 
         @Test
-        @DisplayName("Handles mixture of sync and async routes [GH-90000]")
+        @DisplayName("Handles mixture of sync and async routes")
         void mixedSyncAsyncRoutes() { // GH-90000
             servlet.addRoute(HttpMethod.GET, "/sync/1", req -> HttpResponse.ok200().build()); // GH-90000
             servlet.addAsyncRoute(HttpMethod.GET, "/async/1", // GH-90000
@@ -123,7 +123,7 @@ class RoutingServletExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Maintains route count with alternating sync/async additions [GH-90000]")
+        @DisplayName("Maintains route count with alternating sync/async additions")
         void alternatingAdditions() { // GH-90000
             for (int i = 0; i < 25; i++) { // GH-90000
                 servlet.addRoute(HttpMethod.GET, "/sync/" + i, // GH-90000

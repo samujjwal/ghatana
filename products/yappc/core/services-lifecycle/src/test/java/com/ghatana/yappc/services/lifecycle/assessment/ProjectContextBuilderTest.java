@@ -27,7 +27,7 @@ import static org.mockito.Mockito.when;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("ProjectContextBuilder Tests [GH-90000]")
+@DisplayName("ProjectContextBuilder Tests")
 class ProjectContextBuilderTest extends EventloopTestBase {
 
     @Mock
@@ -45,16 +45,16 @@ class ProjectContextBuilderTest extends EventloopTestBase {
     // ─── No adapters (all defaults) ─────────────────────────────────────────── // GH-90000
 
     @Test
-    @DisplayName("should build context with all defaults when no adapters configured [GH-90000]")
+    @DisplayName("should build context with all defaults when no adapters configured")
     void shouldBuildContextWithDefaults() { // GH-90000
         ProjectContextBuilder builder = ProjectContextBuilder.builder().build(); // GH-90000
 
         ProjectContext ctx = runPromise(() -> // GH-90000
                 builder.buildContext("proj-1", "tenant-1", "intent")); // GH-90000
 
-        assertThat(ctx.projectId()).isEqualTo("proj-1 [GH-90000]");
-        assertThat(ctx.tenantId()).isEqualTo("tenant-1 [GH-90000]");
-        assertThat(ctx.currentPhase()).isEqualTo("intent [GH-90000]");
+        assertThat(ctx.projectId()).isEqualTo("proj-1");
+        assertThat(ctx.tenantId()).isEqualTo("tenant-1");
+        assertThat(ctx.currentPhase()).isEqualTo("intent");
         assertThat(ctx.requirementCount()).isZero(); // GH-90000
         assertThat(ctx.averageClarityScore()).isEqualTo(0.0); // GH-90000
         assertThat(ctx.codeCommitCount()).isZero(); // GH-90000
@@ -67,7 +67,7 @@ class ProjectContextBuilderTest extends EventloopTestBase {
     // ─── All adapters ─────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("should aggregate values from all adapters [GH-90000]")
+    @DisplayName("should aggregate values from all adapters")
     void shouldAggregateAllAdapters() { // GH-90000
         when(requirementsAdapter.requirementCount(anyString(), anyString())).thenReturn(Promise.of(5)); // GH-90000
         when(requirementsAdapter.averageClarityScore(anyString(), anyString())).thenReturn(Promise.of(0.85)); // GH-90000
@@ -87,9 +87,9 @@ class ProjectContextBuilderTest extends EventloopTestBase {
         ProjectContext ctx = runPromise(() -> // GH-90000
                 builder.buildContext("proj-2", "tenant-2", "shape")); // GH-90000
 
-        assertThat(ctx.projectId()).isEqualTo("proj-2 [GH-90000]");
-        assertThat(ctx.tenantId()).isEqualTo("tenant-2 [GH-90000]");
-        assertThat(ctx.currentPhase()).isEqualTo("shape [GH-90000]");
+        assertThat(ctx.projectId()).isEqualTo("proj-2");
+        assertThat(ctx.tenantId()).isEqualTo("tenant-2");
+        assertThat(ctx.currentPhase()).isEqualTo("shape");
         assertThat(ctx.requirementCount()).isEqualTo(5); // GH-90000
         assertThat(ctx.averageClarityScore()).isEqualTo(0.85); // GH-90000
         assertThat(ctx.codeCommitCount()).isEqualTo(42); // GH-90000
@@ -102,14 +102,14 @@ class ProjectContextBuilderTest extends EventloopTestBase {
     // ─── Adapter failures (graceful fallback) ───────────────────────────────── // GH-90000
 
     @Nested
-    @DisplayName("Graceful fallback on adapter failure [GH-90000]")
+    @DisplayName("Graceful fallback on adapter failure")
     class GracefulFallback {
 
         @Test
-        @DisplayName("should use default 0 when requirementsAdapter.requirementCount fails [GH-90000]")
+        @DisplayName("should use default 0 when requirementsAdapter.requirementCount fails")
         void shouldFallbackRequirementCount() { // GH-90000
             when(requirementsAdapter.requirementCount(anyString(), anyString())) // GH-90000
-                    .thenReturn(Promise.ofException(new RuntimeException("DB unavailable [GH-90000]")));
+                    .thenReturn(Promise.ofException(new RuntimeException("DB unavailable")));
             when(requirementsAdapter.averageClarityScore(anyString(), anyString())) // GH-90000
                     .thenReturn(Promise.of(0.7)); // GH-90000
 
@@ -125,12 +125,12 @@ class ProjectContextBuilderTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should use default 0.0 when averageClarityScore fails [GH-90000]")
+        @DisplayName("should use default 0.0 when averageClarityScore fails")
         void shouldFallbackAverageClarityScore() { // GH-90000
             when(requirementsAdapter.requirementCount(anyString(), anyString())) // GH-90000
                     .thenReturn(Promise.of(3)); // GH-90000
             when(requirementsAdapter.averageClarityScore(anyString(), anyString())) // GH-90000
-                    .thenReturn(Promise.ofException(new RuntimeException("timeout [GH-90000]")));
+                    .thenReturn(Promise.ofException(new RuntimeException("timeout")));
 
             ProjectContextBuilder builder = ProjectContextBuilder.builder() // GH-90000
                     .requirementsAdapter(requirementsAdapter) // GH-90000
@@ -144,12 +144,12 @@ class ProjectContextBuilderTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should use null for buildPassing when codeRepoAdapter fails [GH-90000]")
+        @DisplayName("should use null for buildPassing when codeRepoAdapter fails")
         void shouldFallbackBuildPassing() { // GH-90000
             when(codeRepoAdapter.commitCount(anyString(), anyString())).thenReturn(Promise.of(5)); // GH-90000
             when(codeRepoAdapter.testCoveragePercent(anyString(), anyString())).thenReturn(Promise.of(60)); // GH-90000
             when(codeRepoAdapter.buildPassing(anyString(), anyString())) // GH-90000
-                    .thenReturn(Promise.ofException(new RuntimeException("CI unavailable [GH-90000]")));
+                    .thenReturn(Promise.ofException(new RuntimeException("CI unavailable")));
 
             ProjectContextBuilder builder = ProjectContextBuilder.builder() // GH-90000
                     .codeRepoAdapter(codeRepoAdapter) // GH-90000
@@ -163,10 +163,10 @@ class ProjectContextBuilderTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should use 0 for decisionCount when kgAdapter fails [GH-90000]")
+        @DisplayName("should use 0 for decisionCount when kgAdapter fails")
         void shouldFallbackDecisionCount() { // GH-90000
             when(kgAdapter.decisionCount(anyString(), anyString())) // GH-90000
-                    .thenReturn(Promise.ofException(new RuntimeException("KG offline [GH-90000]")));
+                    .thenReturn(Promise.ofException(new RuntimeException("KG offline")));
 
             ProjectContextBuilder builder = ProjectContextBuilder.builder() // GH-90000
                     .kgAdapter(kgAdapter) // GH-90000
@@ -179,10 +179,10 @@ class ProjectContextBuilderTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should use 0 for activeAgentCount when agentAdapter fails [GH-90000]")
+        @DisplayName("should use 0 for activeAgentCount when agentAdapter fails")
         void shouldFallbackActiveAgentCount() { // GH-90000
             when(agentAdapter.activeAgentCount(anyString(), anyString())) // GH-90000
-                    .thenReturn(Promise.ofException(new RuntimeException("agent runtime unavailable [GH-90000]")));
+                    .thenReturn(Promise.ofException(new RuntimeException("agent runtime unavailable")));
 
             ProjectContextBuilder builder = ProjectContextBuilder.builder() // GH-90000
                     .agentAdapter(agentAdapter) // GH-90000
@@ -198,7 +198,7 @@ class ProjectContextBuilderTest extends EventloopTestBase {
     // ─── Partial adapters ─────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("should use requirements adapter only and default others [GH-90000]")
+    @DisplayName("should use requirements adapter only and default others")
     void shouldUseRequirementsAdapterOnly() { // GH-90000
         when(requirementsAdapter.requirementCount(anyString(), anyString())).thenReturn(Promise.of(7)); // GH-90000
         when(requirementsAdapter.averageClarityScore(anyString(), anyString())).thenReturn(Promise.of(0.9)); // GH-90000
@@ -222,7 +222,7 @@ class ProjectContextBuilderTest extends EventloopTestBase {
     // ─── Null argument guards ─────────────────────────────────────────────────
 
     @Test
-    @DisplayName("should throw NullPointerException when projectId is null [GH-90000]")
+    @DisplayName("should throw NullPointerException when projectId is null")
     void shouldThrowOnNullProjectId() { // GH-90000
         ProjectContextBuilder builder = ProjectContextBuilder.builder().build(); // GH-90000
         assertThatThrownBy(() -> runPromise(() -> // GH-90000
@@ -231,7 +231,7 @@ class ProjectContextBuilderTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should throw NullPointerException when tenantId is null [GH-90000]")
+    @DisplayName("should throw NullPointerException when tenantId is null")
     void shouldThrowOnNullTenantId() { // GH-90000
         ProjectContextBuilder builder = ProjectContextBuilder.builder().build(); // GH-90000
         assertThatThrownBy(() -> runPromise(() -> // GH-90000
@@ -240,7 +240,7 @@ class ProjectContextBuilderTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should throw NullPointerException when currentPhase is null [GH-90000]")
+    @DisplayName("should throw NullPointerException when currentPhase is null")
     void shouldThrowOnNullCurrentPhase() { // GH-90000
         ProjectContextBuilder builder = ProjectContextBuilder.builder().build(); // GH-90000
         assertThatThrownBy(() -> runPromise(() -> // GH-90000
@@ -251,11 +251,11 @@ class ProjectContextBuilderTest extends EventloopTestBase {
     // ─── ProjectContext helper methods ────────────────────────────────────────
 
     @Nested
-    @DisplayName("ProjectContext helper methods [GH-90000]")
+    @DisplayName("ProjectContext helper methods")
     class ProjectContextHelpers {
 
         @Test
-        @DisplayName("hasRequirements() should return false when requirementCount is 0 [GH-90000]")
+        @DisplayName("hasRequirements() should return false when requirementCount is 0")
         void hasRequirements_falseWhenZero() { // GH-90000
             ProjectContext ctx = new ProjectContext("p", "t", "intent", // GH-90000
                     0, 0.0, 0, -1, null, 0, 0);
@@ -263,7 +263,7 @@ class ProjectContextBuilderTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("hasRequirements() should return true when requirementCount > 0 [GH-90000]")
+        @DisplayName("hasRequirements() should return true when requirementCount > 0")
         void hasRequirements_trueWhenPositive() { // GH-90000
             ProjectContext ctx = new ProjectContext("p", "t", "intent", // GH-90000
                     1, 0.0, 0, -1, null, 0, 0);
@@ -271,7 +271,7 @@ class ProjectContextBuilderTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("meetsClarity() should return true when score meets threshold [GH-90000]")
+        @DisplayName("meetsClarity() should return true when score meets threshold")
         void meetsClarity_trueAboveThreshold() { // GH-90000
             ProjectContext ctx = new ProjectContext("p", "t", "shape", // GH-90000
                     3, 0.8, 0, -1, null, 0, 0);
@@ -279,7 +279,7 @@ class ProjectContextBuilderTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("meetsClarity() should return false when score below threshold [GH-90000]")
+        @DisplayName("meetsClarity() should return false when score below threshold")
         void meetsClarity_falseBelowThreshold() { // GH-90000
             ProjectContext ctx = new ProjectContext("p", "t", "shape", // GH-90000
                     3, 0.5, 0, -1, null, 0, 0);
@@ -287,7 +287,7 @@ class ProjectContextBuilderTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("hasCoverage() should return true when coverage meets minimum [GH-90000]")
+        @DisplayName("hasCoverage() should return true when coverage meets minimum")
         void hasCoverage_trueAboveMin() { // GH-90000
             ProjectContext ctx = new ProjectContext("p", "t", "run", // GH-90000
                     3, 0.9, 10, 70, true, 0, 0);
@@ -295,7 +295,7 @@ class ProjectContextBuilderTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("hasCoverage() should return false when coverage below minimum [GH-90000]")
+        @DisplayName("hasCoverage() should return false when coverage below minimum")
         void hasCoverage_falseBelowMin() { // GH-90000
             ProjectContext ctx = new ProjectContext("p", "t", "run", // GH-90000
                     3, 0.9, 10, 40, true, 0, 0);

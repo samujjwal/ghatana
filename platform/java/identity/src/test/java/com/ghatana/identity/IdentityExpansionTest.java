@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Identity - Phase 3 Expansion [GH-90000]")
+@DisplayName("Identity - Phase 3 Expansion")
 class IdentityExpansionTest extends EventloopTestBase {
 
     private DefaultTokenProvider tokenProvider;
@@ -54,11 +54,11 @@ class IdentityExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Multi-Tenant Isolation [GH-90000]")
+    @DisplayName("Multi-Tenant Isolation")
     class MultiTenantTests {
 
         @Test
-        @DisplayName("Many tenants operate independently [GH-90000]")
+        @DisplayName("Many tenants operate independently")
         void manyTenantsIndependent() { // GH-90000
             // Register 100 agents across 20 tenants
             for (int t = 0; t < 20; t++) { // GH-90000
@@ -80,19 +80,19 @@ class IdentityExpansionTest extends EventloopTestBase {
                 identityService.resolve("tenant-5", "agent-2")); // GH-90000
 
             assertThat(result).isPresent(); // GH-90000
-            assertThat(result.get().tenantId()).isEqualTo("tenant-5 [GH-90000]");
-            assertThat(result.get().agentId()).isEqualTo("agent-2 [GH-90000]");
+            assertThat(result.get().tenantId()).isEqualTo("tenant-5");
+            assertThat(result.get().agentId()).isEqualTo("agent-2");
         }
 
         @Test
-        @DisplayName("Failed attempts isolated per tenant [GH-90000]")
+        @DisplayName("Failed attempts isolated per tenant")
         void failedAttemptsIsolated() { // GH-90000
             String tenantA = "tenant-a";
             String tenantB = "tenant-b";
             String agent = "agent-1";
 
-            AgentIdentity agentA = new AgentIdentity(tenantA, agent, "spiffe://a", Set.of("read [GH-90000]"), Instant.now());
-            AgentIdentity agentB = new AgentIdentity(tenantB, agent, "spiffe://b", Set.of("read [GH-90000]"), Instant.now());
+            AgentIdentity agentA = new AgentIdentity(tenantA, agent, "spiffe://a", Set.of("read"), Instant.now());
+            AgentIdentity agentB = new AgentIdentity(tenantB, agent, "spiffe://b", Set.of("read"), Instant.now());
             resolver.register(agentA); // GH-90000
             resolver.register(agentB); // GH-90000
 
@@ -109,7 +109,7 @@ class IdentityExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Tokens from different tenants do not interfere [GH-90000]")
+        @DisplayName("Tokens from different tenants do not interfere")
         void tokenTenantIsolation() { // GH-90000
             String tenantA = "tenant-a";
             String tenantB = "tenant-b";
@@ -127,14 +127,14 @@ class IdentityExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("1000 agents across 100 tenants [GH-90000]")
+        @DisplayName("1000 agents across 100 tenants")
         void scalingManyTenantsAndAgents() { // GH-90000
             for (int t = 0; t < 100; t++) { // GH-90000
                 final int tenantIdx = t;
                 AgentIdentity agent = new AgentIdentity( // GH-90000
                     "tenant-" + tenantIdx, "agent-0",
                     "spiffe://ghatana.io/tenant-" + tenantIdx + "/agent-0",
-                    Set.of("read [GH-90000]"), Instant.now());
+                    Set.of("read"), Instant.now());
                 resolver.register(agent); // GH-90000
             }
 
@@ -150,11 +150,11 @@ class IdentityExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Token Lifecycle Concurrency [GH-90000]")
+    @DisplayName("Token Lifecycle Concurrency")
     class TokenConcurrencyTests {
 
         @Test
-        @DisplayName("Many concurrent token creations [GH-90000]")
+        @DisplayName("Many concurrent token creations")
         void concurrentTokenCreation() throws Exception { // GH-90000
             int threadCount = 25;
             CountDownLatch latch = new CountDownLatch(threadCount); // GH-90000
@@ -183,7 +183,7 @@ class IdentityExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Concurrent creation and verification [GH-90000]")
+        @DisplayName("Concurrent creation and verification")
         void concurrentCreateAndVerify() throws Exception { // GH-90000
             int threadCount = 20;
             CountDownLatch latch = new CountDownLatch(threadCount); // GH-90000
@@ -216,7 +216,7 @@ class IdentityExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Many tokens for same agent [GH-90000]")
+        @DisplayName("Many tokens for same agent")
         void manyTokensSameAgent() { // GH-90000
             for (int i = 0; i < 50; i++) { // GH-90000
                 final int idx = i;
@@ -227,7 +227,7 @@ class IdentityExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Token creation at scale [GH-90000]")
+        @DisplayName("Token creation at scale")
         void tokenCreationScale() { // GH-90000
             for (int i = 0; i < 30; i++) { // GH-90000
                 final int idx = i;
@@ -247,15 +247,15 @@ class IdentityExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Lockout Mechanisms [GH-90000]")
+    @DisplayName("Lockout Mechanisms")
     class LockoutTests {
 
         @Test
-        @DisplayName("Progressive lockout with many attempts [GH-90000]")
+        @DisplayName("Progressive lockout with many attempts")
         void progressiveLockout() { // GH-90000
             String tenant = "t1";
             String agent = "a1";
-            AgentIdentity identity = new AgentIdentity(tenant, agent, "spiffe://test", Set.of("read [GH-90000]"), Instant.now());
+            AgentIdentity identity = new AgentIdentity(tenant, agent, "spiffe://test", Set.of("read"), Instant.now());
             resolver.register(identity); // GH-90000
 
             // Record 4 attempts
@@ -275,11 +275,11 @@ class IdentityExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Concurrent failed attempt recording [GH-90000]")
+        @DisplayName("Concurrent failed attempt recording")
         void concurrentFailedAttempts() throws Exception { // GH-90000
             String tenant = "t1";
             String agent = "a1";
-            AgentIdentity identity = new AgentIdentity(tenant, agent, "spiffe://test", Set.of("read [GH-90000]"), Instant.now());
+            AgentIdentity identity = new AgentIdentity(tenant, agent, "spiffe://test", Set.of("read"), Instant.now());
             resolver.register(identity); // GH-90000
 
             int threadCount = 15;
@@ -307,14 +307,14 @@ class IdentityExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Lockout across many agents [GH-90000]")
+        @DisplayName("Lockout across many agents")
         void manyAgentsLockout() { // GH-90000
             String tenant = "t1";
 
             for (int a = 0; a < 50; a++) { // GH-90000
                 final int agentIdx = a;
                 String agentId = "agent-" + agentIdx;
-                AgentIdentity identity = new AgentIdentity(tenant, agentId, "spiffe://test/" + agentIdx, Set.of("read [GH-90000]"), Instant.now());
+                AgentIdentity identity = new AgentIdentity(tenant, agentId, "spiffe://test/" + agentIdx, Set.of("read"), Instant.now());
                 resolver.register(identity); // GH-90000
 
                 // Lock each agent
@@ -337,7 +337,7 @@ class IdentityExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Permission validation in locked state [GH-90000]")
+        @DisplayName("Permission validation in locked state")
         void permissionsInLockout() { // GH-90000
             String tenant = "t1";
             String agent = "a1";
@@ -360,18 +360,18 @@ class IdentityExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Delegation Tokens [GH-90000]")
+    @DisplayName("Delegation Tokens")
     class DelegationTests {
 
         @Test
-        @DisplayName("Delegate from principal to delegate agent [GH-90000]")
+        @DisplayName("Delegate from principal to delegate agent")
         void simpleDelegation() { // GH-90000
             String tenant = "t1";
             String principal = "principal-1";
             String delegate = "delegate-1";
 
-            AgentIdentity principalId = new AgentIdentity(tenant, principal, "spiffe://p1", Set.of("delegate [GH-90000]"), Instant.now());
-            AgentIdentity delegateId = new AgentIdentity(tenant, delegate, "spiffe://d1", Set.of("read [GH-90000]"), Instant.now());
+            AgentIdentity principalId = new AgentIdentity(tenant, principal, "spiffe://p1", Set.of("delegate"), Instant.now());
+            AgentIdentity delegateId = new AgentIdentity(tenant, delegate, "spiffe://d1", Set.of("read"), Instant.now());
             resolver.register(principalId); // GH-90000
             resolver.register(delegateId); // GH-90000
 
@@ -380,7 +380,7 @@ class IdentityExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Many delegation chains [GH-90000]")
+        @DisplayName("Many delegation chains")
         void manyDelegationChains() { // GH-90000
             String tenant = "t1";
 
@@ -403,13 +403,13 @@ class IdentityExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Delegation with restricted permissions [GH-90000]")
+        @DisplayName("Delegation with restricted permissions")
         void restrictedDelegation() { // GH-90000
             String tenant = "t1";
             AgentIdentity agent = new AgentIdentity( // GH-90000
                 tenant, "limited-agent",
                 "spiffe://limited",
-                Set.of("read [GH-90000]"), Instant.now());
+                Set.of("read"), Instant.now());
             resolver.register(agent); // GH-90000
 
             String token = runPromise(() -> tokenProvider.createToken(tenant, "limited-agent", Duration.ofMinutes(10))); // GH-90000
@@ -424,11 +424,11 @@ class IdentityExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Edge Cases [GH-90000]")
+    @DisplayName("Edge Cases")
     class EdgeCaseTests {
 
         @Test
-        @DisplayName("Very long tenant and agent IDs [GH-90000]")
+        @DisplayName("Very long tenant and agent IDs")
         void veryLongIds() { // GH-90000
             String longTenant = "t" + "a".repeat(200); // GH-90000
             String longAgent = "a" + "b".repeat(200); // GH-90000
@@ -436,7 +436,7 @@ class IdentityExpansionTest extends EventloopTestBase {
             AgentIdentity identity = new AgentIdentity( // GH-90000
                 longTenant, longAgent,
                 "spiffe://" + longTenant + "/" + longAgent,
-                Set.of("read [GH-90000]"), Instant.now());
+                Set.of("read"), Instant.now());
             resolver.register(identity); // GH-90000
 
             String token = runPromise(() -> tokenProvider.createToken(longTenant, longAgent, Duration.ofMinutes(10))); // GH-90000
@@ -444,7 +444,7 @@ class IdentityExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Unicode in agent identities [GH-90000]")
+        @DisplayName("Unicode in agent identities")
         void unicodeIdentities() { // GH-90000
             String tenant = "tenant-🚀";
             String agent = "agent-🌟";
@@ -452,7 +452,7 @@ class IdentityExpansionTest extends EventloopTestBase {
             AgentIdentity identity = new AgentIdentity( // GH-90000
                 tenant, agent,
                 "spiffe://test",
-                Set.of("read [GH-90000]"), Instant.now());
+                Set.of("read"), Instant.now());
             resolver.register(identity); // GH-90000
 
             Optional<AgentIdentity> resolved = runPromise(() -> // GH-90000
@@ -462,7 +462,7 @@ class IdentityExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Tokens with reasonable TTL [GH-90000]")
+        @DisplayName("Tokens with reasonable TTL")
         void reasonableTTL() { // GH-90000
             String token = runPromise(() -> // GH-90000
                 tokenProvider.createToken("t1", "a1", Duration.ofHours(1))); // GH-90000
@@ -471,7 +471,7 @@ class IdentityExpansionTest extends EventloopTestBase {
                 tokenProvider.verifyToken(token)); // GH-90000
 
             assertThat(claims).isPresent(); // GH-90000
-            assertThat(claims.get().tenantId()).isEqualTo("t1 [GH-90000]");
+            assertThat(claims.get().tenantId()).isEqualTo("t1");
         }
     }
 }

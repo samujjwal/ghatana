@@ -13,19 +13,19 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("TaskValidator [GH-90000]")
+@DisplayName("TaskValidator")
 class TaskValidatorTest {
 
     private final TaskValidator validator = new TaskValidator(); // GH-90000
 
     private TaskDefinition validDefinition() { // GH-90000
         return TaskDefinition.builder() // GH-90000
-                .id("task-1 [GH-90000]")
-                .name("Task [GH-90000]")
-                .description("desc [GH-90000]")
-                .domain("testing [GH-90000]")
+                .id("task-1")
+                .name("Task")
+                .description("desc")
+                .domain("testing")
                 .phase(SDLCPhase.IMPLEMENTATION) // GH-90000
-                .requiredCapabilities(List.of("cap [GH-90000]"))
+                .requiredCapabilities(List.of("cap"))
                 .parameters(Map.of()) // GH-90000
                 .complexity(TaskComplexity.SIMPLE) // GH-90000
                 .dependencies(List.of()) // GH-90000
@@ -34,15 +34,15 @@ class TaskValidatorTest {
     }
 
     @Test
-    @DisplayName("validateTaskDefinition: blank id and name → reports both violations [GH-90000]")
+    @DisplayName("validateTaskDefinition: blank id and name → reports both violations")
     void validateTaskDefinitionShouldFailWhenRequiredFieldsAreMissing() { // GH-90000
         TaskDefinition invalidDefinition = TaskDefinition.builder() // GH-90000
-                .id("  [GH-90000]")
-                .name(" [GH-90000]")
-                .description("desc [GH-90000]")
-                .domain("testing [GH-90000]")
+                .id(" ")
+                .name("")
+                .description("desc")
+                .domain("testing")
                 .phase(SDLCPhase.IMPLEMENTATION) // GH-90000
-                .requiredCapabilities(List.of("cap [GH-90000]"))
+                .requiredCapabilities(List.of("cap"))
                 .parameters(Map.of()) // GH-90000
                 .complexity(TaskComplexity.SIMPLE) // GH-90000
                 .dependencies(List.of()) // GH-90000
@@ -57,13 +57,13 @@ class TaskValidatorTest {
     }
 
     @Test
-    @DisplayName("validateTaskDefinition: empty requiredCapabilities → capability violation [GH-90000]")
+    @DisplayName("validateTaskDefinition: empty requiredCapabilities → capability violation")
     void validateTaskDefinitionShouldFailWhenNoCapabilitiesProvided() { // GH-90000
         TaskDefinition definition = TaskDefinition.builder() // GH-90000
-                .id("task-1 [GH-90000]")
-                .name("My Task [GH-90000]")
-                .description("desc [GH-90000]")
-                .domain("testing [GH-90000]")
+                .id("task-1")
+                .name("My Task")
+                .description("desc")
+                .domain("testing")
                 .phase(SDLCPhase.IMPLEMENTATION) // GH-90000
                 .requiredCapabilities(List.of()) // GH-90000
                 .parameters(Map.of()) // GH-90000
@@ -76,11 +76,11 @@ class TaskValidatorTest {
 
         assertThat(result.isValid()).isFalse(); // GH-90000
         assertThat(result.violations()).extracting(ValidationResult.Violation::message) // GH-90000
-                .contains("Task must require at least one capability [GH-90000]");
+                .contains("Task must require at least one capability");
     }
 
     @Test
-    @DisplayName("validateTaskDefinition: valid definition → no violations [GH-90000]")
+    @DisplayName("validateTaskDefinition: valid definition → no violations")
     void validateTaskDefinitionShouldSucceedForValidDefinition() { // GH-90000
         ValidationResult result = validator.validateTaskDefinition(validDefinition()); // GH-90000
 
@@ -89,15 +89,15 @@ class TaskValidatorTest {
     }
 
     @Test
-    @DisplayName("validateInput: missing required param and wrong type → two violations [GH-90000]")
+    @DisplayName("validateInput: missing required param and wrong type → two violations")
     void validateInputShouldFailForMissingRequiredAndInvalidType() { // GH-90000
         TaskDefinition definition = TaskDefinition.builder() // GH-90000
-                .id("task-1 [GH-90000]")
-                .name("Task [GH-90000]")
-                .description("desc [GH-90000]")
-                .domain("testing [GH-90000]")
+                .id("task-1")
+                .name("Task")
+                .description("desc")
+                .domain("testing")
                 .phase(SDLCPhase.IMPLEMENTATION) // GH-90000
-                .requiredCapabilities(List.of("cap [GH-90000]"))
+                .requiredCapabilities(List.of("cap"))
                 .parameters(Map.of( // GH-90000
                         "title", ParameterSpec.required("string", "required title"), // GH-90000
                         "count", ParameterSpec.optional("number", "optional number", null) // GH-90000
@@ -115,15 +115,15 @@ class TaskValidatorTest {
     }
 
     @Test
-    @DisplayName("validateInput: valid map input → passes [GH-90000]")
+    @DisplayName("validateInput: valid map input → passes")
     void validateInputShouldSucceedForValidInput() { // GH-90000
         TaskDefinition definition = TaskDefinition.builder() // GH-90000
-                .id("task-1 [GH-90000]")
-                .name("Task [GH-90000]")
-                .description("desc [GH-90000]")
-                .domain("testing [GH-90000]")
+                .id("task-1")
+                .name("Task")
+                .description("desc")
+                .domain("testing")
                 .phase(SDLCPhase.IMPLEMENTATION) // GH-90000
-                .requiredCapabilities(List.of("cap [GH-90000]"))
+                .requiredCapabilities(List.of("cap"))
                 .parameters(Map.of("title", ParameterSpec.required("string", "required title"))) // GH-90000
                 .complexity(TaskComplexity.SIMPLE) // GH-90000
                 .dependencies(List.of()) // GH-90000
@@ -137,7 +137,7 @@ class TaskValidatorTest {
     }
 
     @Test
-    @DisplayName("validateInput: non-Map input → skips map checks, returns valid [GH-90000]")
+    @DisplayName("validateInput: non-Map input → skips map checks, returns valid")
     void validateInputShouldSucceedForNonMapInput() { // GH-90000
         ValidationResult result = validator.validateInput(validDefinition(), "plain string input"); // GH-90000
 
@@ -146,15 +146,15 @@ class TaskValidatorTest {
     }
 
     @Test
-    @DisplayName("validateInput: boolean value for boolean param → passes type check [GH-90000]")
+    @DisplayName("validateInput: boolean value for boolean param → passes type check")
     void validateInputShouldAcceptBooleanForBooleanType() { // GH-90000
         TaskDefinition definition = TaskDefinition.builder() // GH-90000
-                .id("task-bool [GH-90000]")
-                .name("Bool Task [GH-90000]")
-                .description("desc [GH-90000]")
-                .domain("testing [GH-90000]")
+                .id("task-bool")
+                .name("Bool Task")
+                .description("desc")
+                .domain("testing")
                 .phase(SDLCPhase.IMPLEMENTATION) // GH-90000
-                .requiredCapabilities(List.of("cap [GH-90000]"))
+                .requiredCapabilities(List.of("cap"))
                 .parameters(Map.of("flag", ParameterSpec.required("boolean", "a boolean flag"))) // GH-90000
                 .complexity(TaskComplexity.SIMPLE) // GH-90000
                 .dependencies(List.of()) // GH-90000
@@ -167,15 +167,15 @@ class TaskValidatorTest {
     }
 
     @Test
-    @DisplayName("validateInput: string value for boolean param → fails type check [GH-90000]")
+    @DisplayName("validateInput: string value for boolean param → fails type check")
     void validateInputShouldRejectWrongTypeForBooleanParam() { // GH-90000
         TaskDefinition definition = TaskDefinition.builder() // GH-90000
-                .id("task-bool [GH-90000]")
-                .name("Bool Task [GH-90000]")
-                .description("desc [GH-90000]")
-                .domain("testing [GH-90000]")
+                .id("task-bool")
+                .name("Bool Task")
+                .description("desc")
+                .domain("testing")
                 .phase(SDLCPhase.IMPLEMENTATION) // GH-90000
-                .requiredCapabilities(List.of("cap [GH-90000]"))
+                .requiredCapabilities(List.of("cap"))
                 .parameters(Map.of("flag", ParameterSpec.required("boolean", "a boolean flag"))) // GH-90000
                 .complexity(TaskComplexity.SIMPLE) // GH-90000
                 .dependencies(List.of()) // GH-90000
@@ -186,19 +186,19 @@ class TaskValidatorTest {
 
         assertThat(result.isValid()).isFalse(); // GH-90000
         assertThat(result.violations()).extracting(ValidationResult.Violation::message) // GH-90000
-                .contains("Parameter flag has invalid type. Expected: boolean [GH-90000]");
+                .contains("Parameter flag has invalid type. Expected: boolean");
     }
 
     @Test
-    @DisplayName("validateInput: Map value for object param → passes type check [GH-90000]")
+    @DisplayName("validateInput: Map value for object param → passes type check")
     void validateInputShouldAcceptMapForObjectType() { // GH-90000
         TaskDefinition definition = TaskDefinition.builder() // GH-90000
-                .id("task-obj [GH-90000]")
-                .name("Object Task [GH-90000]")
-                .description("desc [GH-90000]")
-                .domain("testing [GH-90000]")
+                .id("task-obj")
+                .name("Object Task")
+                .description("desc")
+                .domain("testing")
                 .phase(SDLCPhase.IMPLEMENTATION) // GH-90000
-                .requiredCapabilities(List.of("cap [GH-90000]"))
+                .requiredCapabilities(List.of("cap"))
                 .parameters(Map.of("config", ParameterSpec.optional("object", "config object", null))) // GH-90000
                 .complexity(TaskComplexity.SIMPLE) // GH-90000
                 .dependencies(List.of()) // GH-90000

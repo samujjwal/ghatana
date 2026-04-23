@@ -26,7 +26,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer test
  * @doc.pattern Test
  */
-@DisplayName("TriggerListenerBootstrap — Tenant Isolation Regression [GH-90000]")
+@DisplayName("TriggerListenerBootstrap — Tenant Isolation Regression")
 class TriggerListenerBootstrapTenantTest extends EventloopTestBase {
 
     private TriggerListener triggerListener;
@@ -45,11 +45,11 @@ class TriggerListenerBootstrapTenantTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Tenant ID Validation [GH-90000]")
+    @DisplayName("Tenant ID Validation")
     class TenantIdValidation {
 
         @Test
-        @DisplayName("should fail with IllegalStateException when no tenant IDs are configured [GH-90000]")
+        @DisplayName("should fail with IllegalStateException when no tenant IDs are configured")
         void shouldFailWithEmptyTenantIds() { // GH-90000
             // GIVEN — bootstrap with empty tenant list (default constructor) // GH-90000
             TriggerListenerBootstrap bootstrap = new TriggerListenerBootstrap( // GH-90000
@@ -58,12 +58,12 @@ class TriggerListenerBootstrapTenantTest extends EventloopTestBase {
             // WHEN/THEN — start() should fail // GH-90000
             assertThatThrownBy(() -> runPromise(() -> bootstrap.start())) // GH-90000
                     .isInstanceOf(IllegalStateException.class) // GH-90000
-                    .hasMessageContaining("requires at least one tenant ID [GH-90000]");
+                    .hasMessageContaining("requires at least one tenant ID");
             clearFatalError(); // GH-90000
         }
 
         @Test
-        @DisplayName("should fail with IllegalStateException when explicit empty list is provided [GH-90000]")
+        @DisplayName("should fail with IllegalStateException when explicit empty list is provided")
         void shouldFailWithExplicitEmptyList() { // GH-90000
             // GIVEN — bootstrap with explicit empty list
             TriggerListenerBootstrap bootstrap = new TriggerListenerBootstrap( // GH-90000
@@ -73,12 +73,12 @@ class TriggerListenerBootstrapTenantTest extends EventloopTestBase {
             // WHEN/THEN
             assertThatThrownBy(() -> runPromise(() -> bootstrap.start())) // GH-90000
                     .isInstanceOf(IllegalStateException.class) // GH-90000
-                    .hasMessageContaining("YAPPC_LIFECYCLE_TENANT_IDS [GH-90000]");
+                    .hasMessageContaining("YAPPC_LIFECYCLE_TENANT_IDS");
             clearFatalError(); // GH-90000
         }
 
         @Test
-        @DisplayName("should subscribe per-tenant when tenant IDs are configured [GH-90000]")
+        @DisplayName("should subscribe per-tenant when tenant IDs are configured")
         void shouldSubscribePerTenant() { // GH-90000
             // GIVEN — bootstrap with two tenants
             EventCloud.Subscription mockSub = mock(EventCloud.Subscription.class); // GH-90000
@@ -92,8 +92,8 @@ class TriggerListenerBootstrapTenantTest extends EventloopTestBase {
             runPromise(() -> bootstrap.start()); // GH-90000
 
             // THEN — one subscription per tenant
-            verify(eventCloud).subscribe(eq("tenant-a [GH-90000]"), eq("phase.transition.requested [GH-90000]"), any());
-            verify(eventCloud).subscribe(eq("tenant-b [GH-90000]"), eq("phase.transition.requested [GH-90000]"), any());
+            verify(eventCloud).subscribe(eq("tenant-a"), eq("phase.transition.requested"), any());
+            verify(eventCloud).subscribe(eq("tenant-b"), eq("phase.transition.requested"), any());
             verify(eventCloud, times(2)).subscribe(anyString(), anyString(), any()); // GH-90000
         }
     }

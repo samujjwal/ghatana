@@ -29,10 +29,10 @@ class DomainServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should create domain model from specification [GH-90000]")
+    @DisplayName("Should create domain model from specification")
     void testCreateDomainModel() throws Exception { // GH-90000
         DomainSpec spec = DomainSpec.builder() // GH-90000
-                .name("User [GH-90000]")
+                .name("User")
                 .attributes(Map.of("id", "Long", "email", "String", "name", "String")) // GH-90000
                 .relationships(Map.of("orders", "OneToMany")) // GH-90000
                 .build(); // GH-90000
@@ -41,16 +41,16 @@ class DomainServiceTest extends EventloopTestBase {
         DomainModel model = runPromise(() -> promise); // GH-90000
 
         assertThat(model).isNotNull(); // GH-90000
-        assertThat(model.name()).isEqualTo("User [GH-90000]");
+        assertThat(model.name()).isEqualTo("User");
         assertThat(model.attributes()).hasSize(3); // GH-90000
-        assertThat(model.attributes()).containsKey("email [GH-90000]");
+        assertThat(model.attributes()).containsKey("email");
     }
 
     @Test
-    @DisplayName("Should validate domain model [GH-90000]")
+    @DisplayName("Should validate domain model")
     void testValidateDomainModel() throws Exception { // GH-90000
         DomainModel model = DomainModel.builder() // GH-90000
-                .name("Order [GH-90000]")
+                .name("Order")
                 .attributes(Map.of("id", "Long", "total", "BigDecimal")) // GH-90000
                 .build(); // GH-90000
 
@@ -63,10 +63,10 @@ class DomainServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should reject invalid domain model [GH-90000]")
+    @DisplayName("Should reject invalid domain model")
     void testRejectInvalidModel() throws Exception { // GH-90000
         DomainModel model = DomainModel.builder() // GH-90000
-                .name(" [GH-90000]") // Invalid: empty name
+                .name("") // Invalid: empty name
                 .attributes(Map.of()) // Invalid: no attributes // GH-90000
                 .build(); // GH-90000
 
@@ -78,30 +78,30 @@ class DomainServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should retrieve domain model by name [GH-90000]")
+    @DisplayName("Should retrieve domain model by name")
     void testGetModelByName() throws Exception { // GH-90000
         // First create a model
         DomainSpec spec = DomainSpec.builder() // GH-90000
-                .name("Product [GH-90000]")
+                .name("Product")
                 .attributes(Map.of("sku", "String", "price", "BigDecimal")) // GH-90000
                 .build(); // GH-90000
 
         DomainModel created = runPromise(() -> domainService.createModel(spec)); // GH-90000
         repository.save(created); // GH-90000
 
-        Promise<DomainModel> promise = domainService.getModel("Product [GH-90000]");
+        Promise<DomainModel> promise = domainService.getModel("Product");
         DomainModel retrieved = runPromise(() -> promise); // GH-90000
 
         assertThat(retrieved).isNotNull(); // GH-90000
-        assertThat(retrieved.name()).isEqualTo("Product [GH-90000]");
+        assertThat(retrieved.name()).isEqualTo("Product");
     }
 
     @Test
-    @DisplayName("Should list all domain models [GH-90000]")
+    @DisplayName("Should list all domain models")
     void testListAllModels() throws Exception { // GH-90000
         // Create multiple models
-        DomainSpec spec1 = DomainSpec.builder().name("User [GH-90000]").attributes(Map.of("id", "Long")).build();
-        DomainSpec spec2 = DomainSpec.builder().name("Order [GH-90000]").attributes(Map.of("id", "Long")).build();
+        DomainSpec spec1 = DomainSpec.builder().name("User").attributes(Map.of("id", "Long")).build();
+        DomainSpec spec2 = DomainSpec.builder().name("Order").attributes(Map.of("id", "Long")).build();
 
         DomainModel model1 = runPromise(() -> domainService.createModel(spec1)); // GH-90000
         DomainModel model2 = runPromise(() -> domainService.createModel(spec2)); // GH-90000
@@ -116,10 +116,10 @@ class DomainServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should update existing domain model [GH-90000]")
+    @DisplayName("Should update existing domain model")
     void testUpdateModel() throws Exception { // GH-90000
         DomainSpec spec = DomainSpec.builder() // GH-90000
-                .name("Customer [GH-90000]")
+                .name("Customer")
                 .attributes(Map.of("id", "Long")) // GH-90000
                 .build(); // GH-90000
 
@@ -128,35 +128,35 @@ class DomainServiceTest extends EventloopTestBase {
 
         // Update with new attributes
         DomainSpec updateSpec = DomainSpec.builder() // GH-90000
-                .name("Customer [GH-90000]")
+                .name("Customer")
                 .attributes(Map.of("id", "Long", "loyaltyPoints", "Integer")) // GH-90000
                 .build(); // GH-90000
 
         Promise<DomainModel> promise = domainService.updateModel("Customer", updateSpec); // GH-90000
         DomainModel updated = runPromise(() -> promise); // GH-90000
 
-        assertThat(updated.attributes()).containsKey("loyaltyPoints [GH-90000]");
+        assertThat(updated.attributes()).containsKey("loyaltyPoints");
     }
 
     @Test
-    @DisplayName("Should delete domain model [GH-90000]")
+    @DisplayName("Should delete domain model")
     void testDeleteModel() throws Exception { // GH-90000
-        DomainSpec spec = DomainSpec.builder().name("TempModel [GH-90000]").attributes(Map.of("id", "Long")).build();
+        DomainSpec spec = DomainSpec.builder().name("TempModel").attributes(Map.of("id", "Long")).build();
         DomainModel model = runPromise(() -> domainService.createModel(spec)); // GH-90000
         repository.save(model); // GH-90000
 
-        Promise<Boolean> promise = domainService.deleteModel("TempModel [GH-90000]");
+        Promise<Boolean> promise = domainService.deleteModel("TempModel");
         Boolean deleted = runPromise(() -> promise); // GH-90000
 
         assertThat(deleted).isTrue(); // GH-90000
-        assertThat(repository.findByName("TempModel [GH-90000]")).isNull();
+        assertThat(repository.findByName("TempModel")).isNull();
     }
 
     @Test
-    @DisplayName("Should generate SQL DDL from domain model [GH-90000]")
+    @DisplayName("Should generate SQL DDL from domain model")
     void testGenerateSqlDdl() throws Exception { // GH-90000
         DomainModel model = DomainModel.builder() // GH-90000
-                .name("Invoice [GH-90000]")
+                .name("Invoice")
                 .attributes(Map.of( // GH-90000
                     "id", "Long",
                     "amount", "BigDecimal",
@@ -167,17 +167,17 @@ class DomainServiceTest extends EventloopTestBase {
         Promise<String> promise = domainService.generateSqlDdl(model); // GH-90000
         String ddl = runPromise(() -> promise); // GH-90000
 
-        assertThat(ddl).contains("CREATE TABLE [GH-90000]");
-        assertThat(ddl).contains("Invoice [GH-90000]");
-        assertThat(ddl).contains("id [GH-90000]");
-        assertThat(ddl).contains("amount [GH-90000]");
+        assertThat(ddl).contains("CREATE TABLE");
+        assertThat(ddl).contains("Invoice");
+        assertThat(ddl).contains("id");
+        assertThat(ddl).contains("amount");
     }
 
     @Test
-    @DisplayName("Should handle complex domain with multiple relationships [GH-90000]")
+    @DisplayName("Should handle complex domain with multiple relationships")
     void testComplexDomainWithRelationships() throws Exception { // GH-90000
         DomainSpec spec = DomainSpec.builder() // GH-90000
-                .name("Organization [GH-90000]")
+                .name("Organization")
                 .attributes(Map.of("id", "Long", "name", "String")) // GH-90000
                 .relationships(Map.of( // GH-90000
                     "departments", "OneToMany",
@@ -290,10 +290,10 @@ class DomainServiceTest extends EventloopTestBase {
                 java.util.List<String> errors = new java.util.ArrayList<>(); // GH-90000
 
                 if (model.name() == null || model.name().isEmpty()) { // GH-90000
-                    errors.add("Model name is required [GH-90000]");
+                    errors.add("Model name is required");
                 }
                 if (model.attributes() == null || model.attributes().isEmpty()) { // GH-90000
-                    errors.add("Model must have at least one attribute [GH-90000]");
+                    errors.add("Model must have at least one attribute");
                 }
 
                 return errors.isEmpty() ? ValidationResult.success() : ValidationResult.failure(errors); // GH-90000
@@ -329,14 +329,14 @@ class DomainServiceTest extends EventloopTestBase {
         public Promise<String> generateSqlDdl(DomainModel model) { // GH-90000
             return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
                 StringBuilder ddl = new StringBuilder(); // GH-90000
-                ddl.append("CREATE TABLE  [GH-90000]").append(model.name()).append(" (\n [GH-90000]");
+                ddl.append("CREATE TABLE ").append(model.name()).append(" (\n");
 
                 model.attributes().forEach((attr, type) -> { // GH-90000
-                    ddl.append("   [GH-90000]").append(attr).append("  [GH-90000]").append(mapToSqlType(type)).append(",\n [GH-90000]");
+                    ddl.append("  ").append(attr).append(" ").append(mapToSqlType(type)).append(",\n");
                 });
 
-                ddl.append("  PRIMARY KEY (id)\n [GH-90000]");
-                ddl.append("); [GH-90000]");
+                ddl.append("  PRIMARY KEY (id)\n");
+                ddl.append(");");
 
                 return ddl.toString(); // GH-90000
             });

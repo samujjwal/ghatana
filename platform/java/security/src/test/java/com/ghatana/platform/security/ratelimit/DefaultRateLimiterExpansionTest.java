@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("DefaultRateLimiter - Phase 3 Expansion [GH-90000]")
+@DisplayName("DefaultRateLimiter - Phase 3 Expansion")
 class DefaultRateLimiterExpansionTest {
 
     private DefaultRateLimiter limiter;
@@ -41,11 +41,11 @@ class DefaultRateLimiterExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Quota Exhaustion and Recovery [GH-90000]")
+    @DisplayName("Quota Exhaustion and Recovery")
     class QuotaTests {
 
         @Test
-        @DisplayName("After quota exhaustion, subsequent requests are rejected [GH-90000]")
+        @DisplayName("After quota exhaustion, subsequent requests are rejected")
         void quotaExhaustionBlocks() { // GH-90000
             String tenant = "tenant-exhausted";
 
@@ -63,7 +63,7 @@ class DefaultRateLimiterExpansionTest {
         }
 
         @Test
-        @DisplayName("Reset quota allows same tenant to acquire again [GH-90000]")
+        @DisplayName("Reset quota allows same tenant to acquire again")
         void quotaResetAllowsRecovery() { // GH-90000
             String tenant = "tenant-reset";
 
@@ -85,11 +85,11 @@ class DefaultRateLimiterExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Concurrent Request Handling [GH-90000]")
+    @DisplayName("Concurrent Request Handling")
     class ConcurrencyTests {
 
         @Test
-        @DisplayName("Concurrent requests from same tenant properly enforce quota [GH-90000]")
+        @DisplayName("Concurrent requests from same tenant properly enforce quota")
         void concurrentRequestsEnforceQuota() throws InterruptedException { // GH-90000
             String tenant = "tenant-concurrent";
             int threadCount = 10;
@@ -126,11 +126,11 @@ class DefaultRateLimiterExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Multi-Tenant Isolation [GH-90000]")
+    @DisplayName("Multi-Tenant Isolation")
     class MultiTenantTests {
 
         @Test
-        @DisplayName("Different tenants have independent quotas [GH-90000]")
+        @DisplayName("Different tenants have independent quotas")
         void tenantQuotasAreIndependent() { // GH-90000
             String tenant1 = "tenant-1";
             String tenant2 = "tenant-2";
@@ -154,16 +154,16 @@ class DefaultRateLimiterExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Reset Behavior [GH-90000]")
+    @DisplayName("Reset Behavior")
     class ResetTests {
 
         @Test
-        @DisplayName("resetAll() clears quotas for all tracked tenants [GH-90000]")
+        @DisplayName("resetAll() clears quotas for all tracked tenants")
         void resetAllClearsAllTenants() { // GH-90000
             // Create quota usage across multiple tenants
-            limiter.tryAcquire("tenant-1 [GH-90000]");
-            limiter.tryAcquire("tenant-2 [GH-90000]");
-            limiter.tryAcquire("tenant-3 [GH-90000]");
+            limiter.tryAcquire("tenant-1");
+            limiter.tryAcquire("tenant-2");
+            limiter.tryAcquire("tenant-3");
 
             long trackedBefore = limiter.getTrackedKeyCount(); // GH-90000
             assertThat(trackedBefore).isGreaterThan(0); // GH-90000
@@ -173,8 +173,8 @@ class DefaultRateLimiterExpansionTest {
             assertThat(limiter.getTrackedKeyCount()).isZero(); // GH-90000
 
             // All tenants should be able to start fresh
-            assertThat(limiter.tryAcquire("tenant-1 [GH-90000]").allowed()).isTrue();
-            assertThat(limiter.tryAcquire("tenant-1 [GH-90000]").allowed()).isTrue();
+            assertThat(limiter.tryAcquire("tenant-1").allowed()).isTrue();
+            assertThat(limiter.tryAcquire("tenant-1").allowed()).isTrue();
         }
     }
 }

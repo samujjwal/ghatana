@@ -33,13 +33,13 @@ class AuthGatewayIntegrationTest extends EventloopTestBase {
 
     @Test
     @Order(1) // GH-90000
-    @DisplayName("Integration: Should complete full authentication flow with MFA [GH-90000]")
+    @DisplayName("Integration: Should complete full authentication flow with MFA")
     void testFullAuthenticationFlowWithMfa() throws Exception { // GH-90000
         // Step 1: Enroll user in MFA
         MfaService.EnrollmentData enrollment = runPromise(() -> mfaService.enrollUser(TEST_USERNAME, "Ghatana")); // GH-90000
 
         assertThat(enrollment.secret()).isNotBlank(); // GH-90000
-        assertThat(enrollment.qrCodeUri()).contains("otpauth://totp/ [GH-90000]");
+        assertThat(enrollment.qrCodeUri()).contains("otpauth://totp/");
         assertThat(enrollment.backupCodes()).hasSize(10); // GH-90000
 
         // Step 2: Verify enrollment (in real scenario, user would scan QR and enter code) // GH-90000
@@ -60,7 +60,7 @@ class AuthGatewayIntegrationTest extends EventloopTestBase {
 
     @Test
     @Order(2) // GH-90000
-    @DisplayName("Integration: Should log authentication attempts [GH-90000]")
+    @DisplayName("Integration: Should log authentication attempts")
     void testAuthenticationAuditLogging() throws Exception { // GH-90000
         // Log successful login
         runPromise(() -> auditLogger.logLoginSuccess(TEST_USERNAME, TEST_TENANT, "192.168.1.1", "Mozilla/5.0")); // GH-90000
@@ -89,7 +89,7 @@ class AuthGatewayIntegrationTest extends EventloopTestBase {
 
     @Test
     @Order(3) // GH-90000
-    @DisplayName("Integration: Should handle MFA validation with rate limiting [GH-90000]")
+    @DisplayName("Integration: Should handle MFA validation with rate limiting")
     void testMfaValidationWithRateLimiting() throws Exception { // GH-90000
         // Enroll user
         runPromise(() -> mfaService.enrollUser(TEST_USERNAME, "Ghatana")); // GH-90000
@@ -118,7 +118,7 @@ class AuthGatewayIntegrationTest extends EventloopTestBase {
 
     @Test
     @Order(4) // GH-90000
-    @DisplayName("Integration: Should validate backup codes and invalidate after use [GH-90000]")
+    @DisplayName("Integration: Should validate backup codes and invalidate after use")
     void testBackupCodeValidation() throws Exception { // GH-90000
         // Enroll user
         MfaService.EnrollmentData enrollment = runPromise(() -> mfaService.enrollUser(TEST_USERNAME + "-backup", "Ghatana")); // GH-90000
@@ -135,7 +135,7 @@ class AuthGatewayIntegrationTest extends EventloopTestBase {
 
     @Test
     @Order(5) // GH-90000
-    @DisplayName("Integration: Should track authorization decisions in audit log [GH-90000]")
+    @DisplayName("Integration: Should track authorization decisions in audit log")
     void testAuthorizationAuditLogging() throws Exception { // GH-90000
         // Log access granted
         runPromise(() -> auditLogger.logAuthorizationDecision( // GH-90000
@@ -167,7 +167,7 @@ class AuthGatewayIntegrationTest extends EventloopTestBase {
 
     @Test
     @Order(6) // GH-90000
-    @DisplayName("Integration: Should log rate limiting events [GH-90000]")
+    @DisplayName("Integration: Should log rate limiting events")
     void testRateLimitingAuditLogging() throws Exception { // GH-90000
         runPromise(() -> auditLogger.logRateLimited(TEST_USERNAME, TEST_TENANT, "192.168.1.1", "/auth/login")); // GH-90000
 
@@ -186,7 +186,7 @@ class AuthGatewayIntegrationTest extends EventloopTestBase {
 
     @Test
     @Order(7) // GH-90000
-    @DisplayName("Integration: Should log account lockout events [GH-90000]")
+    @DisplayName("Integration: Should log account lockout events")
     void testAccountLockoutAuditLogging() throws Exception { // GH-90000
         runPromise(() -> auditLogger.logAccountLocked(TEST_USERNAME, TEST_TENANT, "Too many failed login attempts")); // GH-90000
 
@@ -205,7 +205,7 @@ class AuthGatewayIntegrationTest extends EventloopTestBase {
 
     @Test
     @Order(8) // GH-90000
-    @DisplayName("Integration: Should handle complete login-logout cycle with audit trail [GH-90000]")
+    @DisplayName("Integration: Should handle complete login-logout cycle with audit trail")
     void testCompleteAuthenticationCycle() throws Exception { // GH-90000
         String sessionId = "test-session-" + System.currentTimeMillis(); // GH-90000
 
@@ -250,7 +250,7 @@ class AuthGatewayIntegrationTest extends EventloopTestBase {
 
     @Test
     @Order(9) // GH-90000
-    @DisplayName("Integration: Should parse login request with complex JSON using Jackson [GH-90000]")
+    @DisplayName("Integration: Should parse login request with complex JSON using Jackson")
     void testLoginRequestParsingWithComplexJson() throws Exception { // GH-90000
         // Test with complex JSON including escaped quotes, nested objects, and special characters
         String complexJson = """
@@ -259,7 +259,7 @@ class AuthGatewayIntegrationTest extends EventloopTestBase {
                 "password": "p@$$w0rd!@#",
                 "metadata": {
                     "ip": "192.168.1.1",
-                    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" // GH-90000
+                    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
                 },
                 "rememberMe": true
             }
@@ -276,16 +276,16 @@ class AuthGatewayIntegrationTest extends EventloopTestBase {
 
         // Extract password with special characters
         String password = (String) method.invoke(null, complexJson, "password"); // GH-90000
-        assertThat(password).isEqualTo("p@$$w0rd!@# [GH-90000]");
+        assertThat(password).isEqualTo("p@$$w0rd!@#");
 
         // Extract nested object as string
         String metadata = (String) method.invoke(null, complexJson, "metadata"); // GH-90000
         assertThat(metadata).isNotNull(); // GH-90000
-        assertThat(metadata).contains("192.168.1.1 [GH-90000]");
+        assertThat(metadata).contains("192.168.1.1");
 
         // Extract boolean field
         String rememberMe = (String) method.invoke(null, complexJson, "rememberMe"); // GH-90000
-        assertThat(rememberMe).isEqualTo("true [GH-90000]");
+        assertThat(rememberMe).isEqualTo("true");
 
         // Log successful parsing
         runPromise(() -> auditLogger.logLoginSuccess(username, TEST_TENANT, "192.168.1.1", "Mozilla/5.0")); // GH-90000

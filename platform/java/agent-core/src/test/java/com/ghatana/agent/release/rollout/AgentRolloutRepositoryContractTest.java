@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  *
  * <p>All repository implementations must pass these tests to ensure behavioral consistency.
  */
-@DisplayName("AgentRolloutRepository Contract [GH-90000]")
+@DisplayName("AgentRolloutRepository Contract")
 class AgentRolloutRepositoryContractTest extends EventloopTestBase {
 
     private AgentRolloutRepository repo;
@@ -52,38 +52,38 @@ class AgentRolloutRepositoryContractTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("save and findById [GH-90000]")
+    @DisplayName("save and findById")
     class SaveAndFind {
 
         @Test
-        @DisplayName("saves and retrieves by ID [GH-90000]")
+        @DisplayName("saves and retrieves by ID")
         void savesAndRetrievesById() { // GH-90000
             AgentRolloutRecord r = pendingRollout("rollout-1", "release-100"); // GH-90000
             runPromise(() -> repo.save(r)); // GH-90000
 
-            Optional<AgentRolloutRecord> found = runPromise(() -> repo.findById("rollout-1 [GH-90000]"));
+            Optional<AgentRolloutRecord> found = runPromise(() -> repo.findById("rollout-1"));
 
             assertThat(found).isPresent(); // GH-90000
-            assertThat(found.get().rolloutId()).isEqualTo("rollout-1 [GH-90000]");
+            assertThat(found.get().rolloutId()).isEqualTo("rollout-1");
             assertThat(found.get().approvalState()).isEqualTo(AgentRolloutApprovalState.PENDING); // GH-90000
         }
 
         @Test
-        @DisplayName("returns empty for unknown rollout ID [GH-90000]")
+        @DisplayName("returns empty for unknown rollout ID")
         void emptyForUnknownId() { // GH-90000
-            Optional<AgentRolloutRecord> found = runPromise(() -> repo.findById("no-such-id [GH-90000]"));
+            Optional<AgentRolloutRecord> found = runPromise(() -> repo.findById("no-such-id"));
             assertThat(found).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("save is idempotent — last write wins [GH-90000]")
+        @DisplayName("save is idempotent — last write wins")
         void saveIsIdempotent() { // GH-90000
             AgentRolloutRecord r1 = pendingRollout("rollout-idem", "release-200"); // GH-90000
             AgentRolloutRecord r2 = r1.withApproved("admin@ghatana.ai", Instant.now()); // GH-90000
             runPromise(() -> repo.save(r1)); // GH-90000
             runPromise(() -> repo.save(r2)); // GH-90000
 
-            Optional<AgentRolloutRecord> found = runPromise(() -> repo.findById("rollout-idem [GH-90000]"));
+            Optional<AgentRolloutRecord> found = runPromise(() -> repo.findById("rollout-idem"));
             assertThat(found).isPresent(); // GH-90000
             assertThat(found.get().approvalState()).isEqualTo(AgentRolloutApprovalState.APPROVED); // GH-90000
         }
@@ -94,24 +94,24 @@ class AgentRolloutRepositoryContractTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("findByReleaseId [GH-90000]")
+    @DisplayName("findByReleaseId")
     class FindByReleaseId {
 
         @Test
-        @DisplayName("returns all rollouts for a release [GH-90000]")
+        @DisplayName("returns all rollouts for a release")
         void returnsAllForRelease() { // GH-90000
             runPromise(() -> repo.save(pendingRollout("r1", "rel-A"))); // GH-90000
             runPromise(() -> repo.save(pendingRollout("r2", "rel-A"))); // GH-90000
             runPromise(() -> repo.save(pendingRollout("r3", "rel-B"))); // GH-90000
 
-            List<AgentRolloutRecord> found = runPromise(() -> repo.findByReleaseId("rel-A [GH-90000]"));
+            List<AgentRolloutRecord> found = runPromise(() -> repo.findByReleaseId("rel-A"));
             assertThat(found).hasSize(2).allMatch(r -> "rel-A".equals(r.agentReleaseId())); // GH-90000
         }
 
         @Test
-        @DisplayName("returns empty for unknown release [GH-90000]")
+        @DisplayName("returns empty for unknown release")
         void emptyForUnknownRelease() { // GH-90000
-            List<AgentRolloutRecord> found = runPromise(() -> repo.findByReleaseId("no-such-release [GH-90000]"));
+            List<AgentRolloutRecord> found = runPromise(() -> repo.findByReleaseId("no-such-release"));
             assertThat(found).isEmpty(); // GH-90000
         }
     }
@@ -121,11 +121,11 @@ class AgentRolloutRepositoryContractTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("findByTenantAndEnvironment [GH-90000]")
+    @DisplayName("findByTenantAndEnvironment")
     class FindByTenantAndEnvironment {
 
         @Test
-        @DisplayName("returns rollouts scoped to tenant and environment [GH-90000]")
+        @DisplayName("returns rollouts scoped to tenant and environment")
         void returnsScopedRollouts() { // GH-90000
             runPromise(() -> repo.save(pendingRollout("env-1", "rel-X"))); // GH-90000
 
@@ -147,11 +147,11 @@ class AgentRolloutRepositoryContractTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("approve [GH-90000]")
+    @DisplayName("approve")
     class Approve {
 
         @Test
-        @DisplayName("transitions PENDING to APPROVED [GH-90000]")
+        @DisplayName("transitions PENDING to APPROVED")
         void approvesFromPending() { // GH-90000
             AgentRolloutRecord r = pendingRollout("approve-1", "rel-300"); // GH-90000
             runPromise(() -> repo.save(r)); // GH-90000
@@ -160,13 +160,13 @@ class AgentRolloutRepositoryContractTest extends EventloopTestBase {
                     repo.approve("approve-1", "manager@ghatana.ai")); // GH-90000
 
             assertThat(approved.approvalState()).isEqualTo(AgentRolloutApprovalState.APPROVED); // GH-90000
-            assertThat(approved.approvedBy()).isEqualTo("manager@ghatana.ai [GH-90000]");
+            assertThat(approved.approvedBy()).isEqualTo("manager@ghatana.ai");
             assertThat(approved.decidedAt()).isNotNull(); // GH-90000
             assertThat(approved.isActive()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("fails when already APPROVED [GH-90000]")
+        @DisplayName("fails when already APPROVED")
         void failsWhenAlreadyApproved() { // GH-90000
             AgentRolloutRecord r = pendingRollout("approve-2", "rel-301"); // GH-90000
             runPromise(() -> repo.save(r)); // GH-90000
@@ -174,15 +174,15 @@ class AgentRolloutRepositoryContractTest extends EventloopTestBase {
 
             assertThatThrownBy(() -> runPromise(() -> // GH-90000
                     repo.approve("approve-2", "manager@ghatana.ai"))) // GH-90000
-                    .hasMessageContaining("PENDING [GH-90000]");
+                    .hasMessageContaining("PENDING");
         }
 
         @Test
-        @DisplayName("fails for unknown rollout ID [GH-90000]")
+        @DisplayName("fails for unknown rollout ID")
         void failsForUnknown() { // GH-90000
             assertThatThrownBy(() -> runPromise(() -> // GH-90000
                     repo.approve("no-such", "manager@ghatana.ai"))) // GH-90000
-                    .hasMessageContaining("no-such [GH-90000]");
+                    .hasMessageContaining("no-such");
         }
     }
 
@@ -191,11 +191,11 @@ class AgentRolloutRepositoryContractTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("reject [GH-90000]")
+    @DisplayName("reject")
     class Reject {
 
         @Test
-        @DisplayName("transitions PENDING to REJECTED with reason [GH-90000]")
+        @DisplayName("transitions PENDING to REJECTED with reason")
         void rejectsFromPending() { // GH-90000
             AgentRolloutRecord r = pendingRollout("reject-1", "rel-400"); // GH-90000
             runPromise(() -> repo.save(r)); // GH-90000
@@ -204,13 +204,13 @@ class AgentRolloutRepositoryContractTest extends EventloopTestBase {
                     repo.reject("reject-1", "security@ghatana.ai", "Policy violation")); // GH-90000
 
             assertThat(rejected.approvalState()).isEqualTo(AgentRolloutApprovalState.REJECTED); // GH-90000
-            assertThat(rejected.rejectedBy()).isEqualTo("security@ghatana.ai [GH-90000]");
-            assertThat(rejected.rejectedReason()).isEqualTo("Policy violation [GH-90000]");
+            assertThat(rejected.rejectedBy()).isEqualTo("security@ghatana.ai");
+            assertThat(rejected.rejectedReason()).isEqualTo("Policy violation");
             assertThat(rejected.isActive()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("fails when not PENDING [GH-90000]")
+        @DisplayName("fails when not PENDING")
         void failsWhenNotPending() { // GH-90000
             AgentRolloutRecord r = pendingRollout("reject-2", "rel-401"); // GH-90000
             runPromise(() -> repo.save(r)); // GH-90000
@@ -218,7 +218,7 @@ class AgentRolloutRepositoryContractTest extends EventloopTestBase {
 
             assertThatThrownBy(() -> runPromise(() -> // GH-90000
                     repo.reject("reject-2", "security@ghatana.ai", "late rejection"))) // GH-90000
-                    .hasMessageContaining("PENDING [GH-90000]");
+                    .hasMessageContaining("PENDING");
         }
     }
 
@@ -227,11 +227,11 @@ class AgentRolloutRepositoryContractTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("rollback [GH-90000]")
+    @DisplayName("rollback")
     class Rollback {
 
         @Test
-        @DisplayName("transitions APPROVED to ROLLED_BACK [GH-90000]")
+        @DisplayName("transitions APPROVED to ROLLED_BACK")
         void rollsBackApproved() { // GH-90000
             AgentRolloutRecord r = pendingRollout("rollback-1", "rel-500"); // GH-90000
             runPromise(() -> repo.save(r)); // GH-90000
@@ -241,27 +241,27 @@ class AgentRolloutRepositoryContractTest extends EventloopTestBase {
                     repo.rollback("rollback-1", "oncall@ghatana.ai")); // GH-90000
 
             assertThat(rolled.approvalState()).isEqualTo(AgentRolloutApprovalState.ROLLED_BACK); // GH-90000
-            assertThat(rolled.rejectedBy()).isEqualTo("oncall@ghatana.ai [GH-90000]");
+            assertThat(rolled.rejectedBy()).isEqualTo("oncall@ghatana.ai");
             assertThat(rolled.isActive()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("fails when not APPROVED [GH-90000]")
+        @DisplayName("fails when not APPROVED")
         void failsWhenNotApproved() { // GH-90000
             AgentRolloutRecord r = pendingRollout("rollback-2", "rel-501"); // GH-90000
             runPromise(() -> repo.save(r)); // GH-90000
 
             assertThatThrownBy(() -> runPromise(() -> // GH-90000
                     repo.rollback("rollback-2", "oncall@ghatana.ai"))) // GH-90000
-                    .hasMessageContaining("APPROVED [GH-90000]");
+                    .hasMessageContaining("APPROVED");
         }
 
         @Test
-        @DisplayName("fails for unknown rollout ID [GH-90000]")
+        @DisplayName("fails for unknown rollout ID")
         void failsForUnknown() { // GH-90000
             assertThatThrownBy(() -> runPromise(() -> // GH-90000
                     repo.rollback("no-such", "oncall@ghatana.ai"))) // GH-90000
-                    .hasMessageContaining("no-such [GH-90000]");
+                    .hasMessageContaining("no-such");
         }
     }
 }

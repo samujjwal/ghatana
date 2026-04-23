@@ -13,11 +13,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Tests for {@link StorageTier}.
  */
-@DisplayName("StorageTier [GH-90000]")
+@DisplayName("StorageTier")
 class StorageTierTest {
 
     @Nested
-    @DisplayName("isHigherThan() [GH-90000]")
+    @DisplayName("isHigherThan()")
     class IsHigherThan {
 
         @Test
@@ -42,7 +42,7 @@ class StorageTierTest {
     }
 
     @Nested
-    @DisplayName("isLowerThan() [GH-90000]")
+    @DisplayName("isLowerThan()")
     class IsLowerThan {
 
         @Test
@@ -62,7 +62,7 @@ class StorageTierTest {
     }
 
     @Nested
-    @DisplayName("nextLowerTier() [GH-90000]")
+    @DisplayName("nextLowerTier()")
     class NextLowerTier {
 
         @Test
@@ -87,7 +87,7 @@ class StorageTierTest {
     }
 
     @Nested
-    @DisplayName("nextHigherTier() [GH-90000]")
+    @DisplayName("nextHigherTier()")
     class NextHigherTier {
 
         @Test
@@ -112,13 +112,13 @@ class StorageTierTest {
     }
 
     @Test
-    @DisplayName("defaultTier() returns WARM [GH-90000]")
+    @DisplayName("defaultTier() returns WARM")
     void defaultTier() { // GH-90000
         assertThat(StorageTier.defaultTier()).isEqualTo(StorageTier.WARM); // GH-90000
     }
 
     @Nested
-    @DisplayName("isColdest() / isHottest() [GH-90000]")
+    @DisplayName("isColdest() / isHottest()")
     class TierChecks {
 
         @Test
@@ -143,16 +143,16 @@ class StorageTierTest {
     }
 
     @Test
-    @DisplayName("all four tiers present in values() [GH-90000]")
+    @DisplayName("all four tiers present in values()")
     void allTiersPresent() { // GH-90000
         assertThat(StorageTier.values()) // GH-90000
                 .containsExactly(StorageTier.HOT, StorageTier.WARM, StorageTier.COOL, StorageTier.COLD); // GH-90000
     }
 
     @Test
-    @DisplayName("valueOf() by name [GH-90000]")
+    @DisplayName("valueOf() by name")
     void valueOf() { // GH-90000
-        assertThat(StorageTier.valueOf("HOT [GH-90000]")).isSameAs(StorageTier.HOT);
-        assertThat(StorageTier.valueOf("COLD [GH-90000]")).isSameAs(StorageTier.COLD);
+        assertThat(StorageTier.valueOf("HOT")).isSameAs(StorageTier.HOT);
+        assertThat(StorageTier.valueOf("COLD")).isSameAs(StorageTier.COLD);
     }
 }

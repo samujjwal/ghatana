@@ -9,7 +9,11 @@ import java.util.List;
 
 /**
  * Represents an agent step in the pipeline execution.
- */
+  * @doc.type class
+ * @doc.purpose Provides agent step functionality.
+ * @doc.layer product
+ * @doc.pattern Agent
+*/
 public class AgentStep {
     private String stepId;
     private String agentId;

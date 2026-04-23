@@ -23,18 +23,18 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Query Performance Tests [GH-90000]")
-@Tag("performance [GH-90000]")
+@DisplayName("Query Performance Tests")
+@Tag("performance")
 class QueryPerformanceTest extends EventloopTestBase {
 
     // ── Baseline timing ───────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("execution time baselines [GH-90000]")
+    @DisplayName("execution time baselines")
     class ExecutionTimeBaselines {
 
         @Test
-        @DisplayName("simple SELECT by primary key completes within threshold [GH-90000]")
+        @DisplayName("simple SELECT by primary key completes within threshold")
         void simpleSelectByPrimaryKey_completesWithinThreshold() { // GH-90000
             Duration threshold = Duration.ofMillis(100); // GH-90000
 
@@ -48,7 +48,7 @@ class QueryPerformanceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("full table scan on 10K rows completes within 1 second [GH-90000]")
+        @DisplayName("full table scan on 10K rows completes within 1 second")
         void fullTableScan_10kRows_completesWithin1Second() { // GH-90000
             Duration threshold = Duration.ofSeconds(1); // GH-90000
 
@@ -62,7 +62,7 @@ class QueryPerformanceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("full table scan on 100K rows completes within 5 seconds [GH-90000]")
+        @DisplayName("full table scan on 100K rows completes within 5 seconds")
         void fullTableScan_100kRows_completesWithin5Seconds() { // GH-90000
             Duration threshold = Duration.ofSeconds(5); // GH-90000
 
@@ -79,11 +79,11 @@ class QueryPerformanceTest extends EventloopTestBase {
     // ── N+1 detection ─────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("N+1 query detection [GH-90000]")
+    @DisplayName("N+1 query detection")
     class NPlus1Detection {
 
         @Test
-        @DisplayName("loading related data in single query avoids N+1 anti-pattern [GH-90000]")
+        @DisplayName("loading related data in single query avoids N+1 anti-pattern")
         void loadingRelatedData_inSingleQuery_avoidsNPlus1() { // GH-90000
             List<Integer> queryCount = new ArrayList<>(); // GH-90000
 
@@ -98,7 +98,7 @@ class QueryPerformanceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("batch loading produces O(1) queries not O(N) [GH-90000]")
+        @DisplayName("batch loading produces O(1) queries not O(N)")
         void batchLoading_producesConstantQueryCount() { // GH-90000
             int ENTITY_COUNT = 500;
             List<Integer> queryCalls = new ArrayList<>(); // GH-90000
@@ -114,11 +114,11 @@ class QueryPerformanceTest extends EventloopTestBase {
     // ── Index usage indicators ─────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("index usage indicators [GH-90000]")
+    @DisplayName("index usage indicators")
     class IndexUsageIndicators {
 
         @Test
-        @DisplayName("indexed column lookup is faster than full-scan equivalent [GH-90000]")
+        @DisplayName("indexed column lookup is faster than full-scan equivalent")
         void indexedColumnLookup_isFasterThanFullScan() { // GH-90000
             List<Integer> data = IntStream.rangeClosed(1, 100_000).boxed().toList(); // GH-90000
 
@@ -139,24 +139,24 @@ class QueryPerformanceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("composite index on (dept, salary) supports range query efficiently [GH-90000]")
+        @DisplayName("composite index on (dept, salary) supports range query efficiently")
         void compositeIndex_onDeptAndSalary_supportsRangeQueryEfficiently() { // GH-90000
             // Mimic EXPLAIN output: verify query plan would use index
             // In real test this would inspect the EXPLAIN plan from the DB adapter
             String simulatedQueryPlan = "Using index on (department, salary)"; // GH-90000
 
-            assertThat(simulatedQueryPlan).contains("index [GH-90000]");
+            assertThat(simulatedQueryPlan).contains("index");
         }
     }
 
     // ── Large dataset handling ─────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("large dataset handling [GH-90000]")
+    @DisplayName("large dataset handling")
     class LargeDatasetHandling {
 
         @Test
-        @DisplayName("streaming 100K rows does not exhaust heap [GH-90000]")
+        @DisplayName("streaming 100K rows does not exhaust heap")
         void streaming_100kRows_doesNotExhaustHeap() { // GH-90000
             Runtime runtime = Runtime.getRuntime(); // GH-90000
             long memBefore = runtime.totalMemory() - runtime.freeMemory(); // GH-90000
@@ -172,7 +172,7 @@ class QueryPerformanceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("paging through 10K rows returns complete dataset across pages [GH-90000]")
+        @DisplayName("paging through 10K rows returns complete dataset across pages")
         void paging_through10kRows_returnsCompleteDataset() { // GH-90000
             List<Integer> allData = IntStream.rangeClosed(1, 10_000).boxed().toList(); // GH-90000
             int pageSize = 100;

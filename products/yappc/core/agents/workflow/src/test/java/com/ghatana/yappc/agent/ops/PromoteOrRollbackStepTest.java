@@ -11,7 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Ops PromoteOrRollbackStep Tests [GH-90000]")
+@DisplayName("Ops PromoteOrRollbackStep Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles promote or rollback step test operations
@@ -32,8 +32,8 @@ class PromoteOrRollbackStepTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should return correct step ID [GH-90000]")
+  @DisplayName("Should return correct step ID")
   void shouldReturnCorrectStepId() { // GH-90000
-    assertThat(step.getStepId()).isEqualTo("ops.promoteorrollback [GH-90000]");
+    assertThat(step.getStepId()).isEqualTo("ops.promoteorrollback");
   }
 }

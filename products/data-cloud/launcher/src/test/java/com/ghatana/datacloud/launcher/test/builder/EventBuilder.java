@@ -18,11 +18,11 @@ import java.util.UUID;
  * <p><strong>Example:</strong>
  * <pre>
  * {@code
- * Map<String, Object> event = EventBuilder.create("entity.created [GH-90000]")
- *     .withEntityId("prod-001 [GH-90000]")
- *     .withCollection("products [GH-90000]")
+ * Map<String, Object> event = EventBuilder.create("entity.created")
+ *     .withEntityId("prod-001")
+ *     .withCollection("products")
  *     .withPayload(Map.of("name", "Widget", "price", 19.99)) // GH-90000
- *     .withTenant("tenant-alpha [GH-90000]")
+ *     .withTenant("tenant-alpha")
  *     .withOffset(42) // GH-90000
  *     .build(); // GH-90000
  * }
@@ -48,7 +48,7 @@ public final class EventBuilder {
     private EventBuilder(String type) { // GH-90000
         this.type = type;
         this.id = UUID.randomUUID().toString(); // GH-90000
-        this.timestamp = Instant.parse("2026-01-01T00:00:00Z [GH-90000]");
+        this.timestamp = Instant.parse("2026-01-01T00:00:00Z");
         this.correlationId = "corr-" + UUID.randomUUID().toString().substring(0, 8); // GH-90000
     }
 
@@ -192,7 +192,7 @@ public final class EventBuilder {
      * @return event builder
      */
     public static EventBuilder entityCreated(String collection, String entityId) { // GH-90000
-        return EventBuilder.create("entity.created [GH-90000]")
+        return EventBuilder.create("entity.created")
             .withCollection(collection) // GH-90000
             .withEntityId(entityId) // GH-90000
             .withPayload("action", "create"); // GH-90000
@@ -206,7 +206,7 @@ public final class EventBuilder {
      * @return event builder
      */
     public static EventBuilder entityUpdated(String collection, String entityId) { // GH-90000
-        return EventBuilder.create("entity.updated [GH-90000]")
+        return EventBuilder.create("entity.updated")
             .withCollection(collection) // GH-90000
             .withEntityId(entityId) // GH-90000
             .withPayload("action", "update"); // GH-90000
@@ -220,7 +220,7 @@ public final class EventBuilder {
      * @return event builder
      */
     public static EventBuilder entityDeleted(String collection, String entityId) { // GH-90000
-        return EventBuilder.create("entity.deleted [GH-90000]")
+        return EventBuilder.create("entity.deleted")
             .withCollection(collection) // GH-90000
             .withEntityId(entityId) // GH-90000
             .withPayload("action", "delete"); // GH-90000
@@ -233,7 +233,7 @@ public final class EventBuilder {
      * @return event builder
      */
     public static EventBuilder pipelineCompleted(String pipelineId) { // GH-90000
-        return EventBuilder.create("pipeline.completed [GH-90000]")
+        return EventBuilder.create("pipeline.completed")
             .withEntityId(pipelineId) // GH-90000
             .withPayload("pipelineId", pipelineId) // GH-90000
             .withPayload("status", "completed"); // GH-90000
@@ -246,7 +246,7 @@ public final class EventBuilder {
      * @return event builder
      */
     public static EventBuilder featureIngested(String featureId) { // GH-90000
-        return EventBuilder.create("feature.ingested [GH-90000]")
+        return EventBuilder.create("feature.ingested")
             .withEntityId(featureId) // GH-90000
             .withPayload("featureId", featureId) // GH-90000
             .withPayload("ingestedAt", Instant.now().toString()); // GH-90000

@@ -9,12 +9,12 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("ContractValidator ValidationResult Tests [GH-90000]")
-@SuppressWarnings("deprecation [GH-90000]")
+@DisplayName("ContractValidator ValidationResult Tests")
+@SuppressWarnings("deprecation")
 class ContractValidatorValidationResultTest {
 
     @Test
-    @DisplayName("failed string errors should preserve compatibility view and create typed core errors [GH-90000]")
+    @DisplayName("failed string errors should preserve compatibility view and create typed core errors")
     void failedStringErrorsShouldPreserveCompatibilityView() { // GH-90000
         ContractValidator.ValidationResult result = ContractValidator.ValidationResult.failed( // GH-90000
             List.of("missing schema", "invalid version")); // GH-90000
@@ -30,7 +30,7 @@ class ContractValidatorValidationResultTest {
     }
 
     @Test
-    @DisplayName("typed core results should round-trip through kernel validation results [GH-90000]")
+    @DisplayName("typed core results should round-trip through kernel validation results")
     void typedCoreResultsShouldRoundTrip() { // GH-90000
         ValidationResult coreResult = ValidationResult.invalid("subjects", "Schema must not be empty"); // GH-90000
 
@@ -38,10 +38,10 @@ class ContractValidatorValidationResultTest {
             ContractValidator.ValidationResult.fromCoreValidationResult(coreResult); // GH-90000
 
         assertThat(result.valid()).isFalse(); // GH-90000
-        assertThat(result.errors()).containsExactly("Schema must not be empty [GH-90000]");
+        assertThat(result.errors()).containsExactly("Schema must not be empty");
         assertThat(result.getErrors()).singleElement().satisfies(error -> { // GH-90000
-            assertThat(error.field()).isEqualTo("subjects [GH-90000]");
-            assertThat(error.message()).isEqualTo("Schema must not be empty [GH-90000]");
+            assertThat(error.field()).isEqualTo("subjects");
+            assertThat(error.message()).isEqualTo("Schema must not be empty");
         });
         assertThat(result.toCoreValidationResult()).isSameAs(coreResult); // GH-90000
     }

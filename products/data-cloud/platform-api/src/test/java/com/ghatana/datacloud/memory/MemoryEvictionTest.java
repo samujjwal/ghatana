@@ -32,7 +32,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("MemoryEviction – LRU Eviction Logic (D010) [GH-90000]")
+@DisplayName("MemoryEviction – LRU Eviction Logic (D010)")
 class MemoryEvictionTest extends EventloopTestBase {
 
     @Mock
@@ -43,11 +43,11 @@ class MemoryEvictionTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("LRU Eviction [GH-90000]")
+    @DisplayName("LRU Eviction")
     class LRUEvictionTests {
 
         @Test
-        @DisplayName("[D010]: least_recently_used_evicted_first [GH-90000]")
+        @DisplayName("[D010]: least_recently_used_evicted_first")
         void leastRecentlyUsedEvictedFirst() { // GH-90000
             String agentId = "agent-001";
             long now = System.currentTimeMillis(); // GH-90000
@@ -65,13 +65,13 @@ class MemoryEvictionTest extends EventloopTestBase {
                 .sorted(Comparator.comparingLong(MemoryService.MemoryEntry::lastAccessed)) // GH-90000
                 .toList(); // GH-90000
 
-            assertThat(lruOrder.get(0).id()).isEqualTo("mem-3 [GH-90000]"); // Very old
-            assertThat(lruOrder.get(1).id()).isEqualTo("mem-1 [GH-90000]"); // Old
-            assertThat(lruOrder.get(2).id()).isEqualTo("mem-2 [GH-90000]"); // Recent
+            assertThat(lruOrder.get(0).id()).isEqualTo("mem-3"); // Very old
+            assertThat(lruOrder.get(1).id()).isEqualTo("mem-1"); // Old
+            assertThat(lruOrder.get(2).id()).isEqualTo("mem-2"); // Recent
         }
 
         @Test
-        @DisplayName("[D010]: find_lru_returns_oldest_accessed [GH-90000]")
+        @DisplayName("[D010]: find_lru_returns_oldest_accessed")
         void findLruReturnsOldestAccessed() { // GH-90000
             String agentId = "agent-001";
 
@@ -94,7 +94,7 @@ class MemoryEvictionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D010]: evict_to_target_removes_lru_memories [GH-90000]")
+        @DisplayName("[D010]: evict_to_target_removes_lru_memories")
         void evictToTargetRemovesLRUMemories() { // GH-90000
             String agentId = "agent-001";
             long targetSize = 1024L * 1024; // 1MB
@@ -110,7 +110,7 @@ class MemoryEvictionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D010]: accessed_memory_moves_to_front [GH-90000]")
+        @DisplayName("[D010]: accessed_memory_moves_to_front")
         void accessedMemoryMovesToFront() { // GH-90000
             long now = System.currentTimeMillis(); // GH-90000
 
@@ -132,11 +132,11 @@ class MemoryEvictionTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Eviction Policy [GH-90000]")
+    @DisplayName("Eviction Policy")
     class EvictionPolicyTests {
 
         @Test
-        @DisplayName("[D010]: high_importance_memories_not_evicted [GH-90000]")
+        @DisplayName("[D010]: high_importance_memories_not_evicted")
         void highImportanceMemoriesNotEvicted() { // GH-90000
             List<MemoryService.MemoryEntry> memories = List.of( // GH-90000
                 MemoryService.MemoryEntry.create("agent-001", MemoryService.MemoryTier.SEMANTIC, // GH-90000
@@ -150,11 +150,11 @@ class MemoryEvictionTest extends EventloopTestBase {
                 .toList(); // GH-90000
 
             assertThat(evictable).hasSize(1); // GH-90000
-            assertThat(evictable.get(0).content()).isEqualTo("Old memory [GH-90000]");
+            assertThat(evictable.get(0).content()).isEqualTo("Old memory");
         }
 
         @Test
-        @DisplayName("[D010]: recent_memories_not_evicted [GH-90000]")
+        @DisplayName("[D010]: recent_memories_not_evicted")
         void recentMemoriesNotEvicted() { // GH-90000
             long now = System.currentTimeMillis(); // GH-90000
 
@@ -170,11 +170,11 @@ class MemoryEvictionTest extends EventloopTestBase {
                 .toList(); // GH-90000
 
             assertThat(evictable).hasSize(1); // GH-90000
-            assertThat(evictable.get(0).content()).isEqualTo("Old [GH-90000]");
+            assertThat(evictable.get(0).content()).isEqualTo("Old");
         }
 
         @Test
-        @DisplayName("[D010]: frequently_accessed_memories_not_evicted [GH-90000]")
+        @DisplayName("[D010]: frequently_accessed_memories_not_evicted")
         void frequentlyAccessedMemoriesNotEvicted() { // GH-90000
             List<MemoryService.MemoryEntry> memories = List.of( // GH-90000
                 new MemoryService.MemoryEntry("mem-1", "agent-001", MemoryService.MemoryTier.EPISODIC, // GH-90000
@@ -188,7 +188,7 @@ class MemoryEvictionTest extends EventloopTestBase {
                 .toList(); // GH-90000
 
             assertThat(evictable).hasSize(1); // GH-90000
-            assertThat(evictable.get(0).content()).isEqualTo("Unpopular [GH-90000]");
+            assertThat(evictable.get(0).content()).isEqualTo("Unpopular");
         }
     }
 
@@ -197,11 +197,11 @@ class MemoryEvictionTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Size-based Eviction [GH-90000]")
+    @DisplayName("Size-based Eviction")
     class SizeBasedEvictionTests {
 
         @Test
-        @DisplayName("[D010]: count_returns_memory_count [GH-90000]")
+        @DisplayName("[D010]: count_returns_memory_count")
         void countReturnsMemoryCount() { // GH-90000
             String agentId = "agent-001";
 
@@ -213,7 +213,7 @@ class MemoryEvictionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D010]: size_returns_total_bytes [GH-90000]")
+        @DisplayName("[D010]: size_returns_total_bytes")
         void sizeReturnsTotalBytes() { // GH-90000
             String agentId = "agent-001";
 
@@ -225,7 +225,7 @@ class MemoryEvictionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D010]: evict_when_size_exceeds_limit [GH-90000]")
+        @DisplayName("[D010]: evict_when_size_exceeds_limit")
         void evictWhenSizeExceedsLimit() { // GH-90000
             String agentId = "agent-001";
             long currentSize = 15 * 1024 * 1024; // 15MB
@@ -243,11 +243,11 @@ class MemoryEvictionTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Time-based Eviction [GH-90000]")
+    @DisplayName("Time-based Eviction")
     class TimeBasedEvictionTests {
 
         @Test
-        @DisplayName("[D010]: delete_older_than_removes_expired [GH-90000]")
+        @DisplayName("[D010]: delete_older_than_removes_expired")
         void deleteOlderThanRemovesExpired() { // GH-90000
             long cutoffTime = System.currentTimeMillis() - 86400000; // 24 hours ago // GH-90000
 
@@ -262,7 +262,7 @@ class MemoryEvictionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D010]: memories_older_than_ttl_are_expired [GH-90000]")
+        @DisplayName("[D010]: memories_older_than_ttl_are_expired")
         void memoriesOlderThanTtlAreExpired() { // GH-90000
             long now = System.currentTimeMillis(); // GH-90000
             long ttlMs = 3600000; // 1 hour
@@ -279,7 +279,7 @@ class MemoryEvictionTest extends EventloopTestBase {
                 .toList(); // GH-90000
 
             assertThat(expired).hasSize(1); // GH-90000
-            assertThat(expired.get(0).id()).isEqualTo("mem-2 [GH-90000]");
+            assertThat(expired.get(0).id()).isEqualTo("mem-2");
         }
     }
 
@@ -288,11 +288,11 @@ class MemoryEvictionTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Batch Eviction [GH-90000]")
+    @DisplayName("Batch Eviction")
     class BatchEvictionTests {
 
         @Test
-        @DisplayName("[D010]: batch_evict_deletes_multiple [GH-90000]")
+        @DisplayName("[D010]: batch_evict_deletes_multiple")
         void batchEvictDeletesMultiple() { // GH-90000
             String agentId = "agent-001";
             List<String> memoryIds = List.of("mem-1", "mem-2", "mem-3"); // GH-90000
@@ -311,15 +311,15 @@ class MemoryEvictionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D010]: partial_eviction_continues_on_failure [GH-90000]")
+        @DisplayName("[D010]: partial_eviction_continues_on_failure")
         void partialEvictionContinuesOnFailure() { // GH-90000
             String agentId = "agent-001";
             List<String> memoryIds = List.of("mem-1", "mem-2", "mem-3"); // GH-90000
 
             // Middle delete fails
-            when(episodicRepository.delete("mem-1 [GH-90000]")).thenReturn(Promise.of(true));
-            when(episodicRepository.delete("mem-2 [GH-90000]")).thenReturn(Promise.of(false));
-            when(episodicRepository.delete("mem-3 [GH-90000]")).thenReturn(Promise.of(true));
+            when(episodicRepository.delete("mem-1")).thenReturn(Promise.of(true));
+            when(episodicRepository.delete("mem-2")).thenReturn(Promise.of(false));
+            when(episodicRepository.delete("mem-3")).thenReturn(Promise.of(true));
 
             int deletedCount = 0;
             for (String id : memoryIds) { // GH-90000
@@ -336,11 +336,11 @@ class MemoryEvictionTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Eviction Statistics [GH-90000]")
+    @DisplayName("Eviction Statistics")
     class EvictionStatisticsTests {
 
         @Test
-        @DisplayName("[D010]: eviction_count_tracked [GH-90000]")
+        @DisplayName("[D010]: eviction_count_tracked")
         void evictionCountTracked() { // GH-90000
             int evictionCount = 150;
 
@@ -352,7 +352,7 @@ class MemoryEvictionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D010]: hit_rate_affected_by_eviction [GH-90000]")
+        @DisplayName("[D010]: hit_rate_affected_by_eviction")
         void hitRateAffectedByEviction() { // GH-90000
             // After evicting frequently accessed memories, hit rate drops
             double hitRateBefore = 0.90;
@@ -367,11 +367,11 @@ class MemoryEvictionTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Tier-specific Eviction [GH-90000]")
+    @DisplayName("Tier-specific Eviction")
     class TierSpecificEvictionTests {
 
         @Test
-        @DisplayName("[D010]: episodic_evicted_before_semantic [GH-90000]")
+        @DisplayName("[D010]: episodic_evicted_before_semantic")
         void episodicEvictedBeforeSemantic() { // GH-90000
             // Episodic is short-term, semantic is long-term
             // Eviction should prefer episodic
@@ -389,7 +389,7 @@ class MemoryEvictionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D010]: procedural_skills_protected [GH-90000]")
+        @DisplayName("[D010]: procedural_skills_protected")
         void proceduralSkillsProtected() { // GH-90000
             // Procedural memories (skills) should be heavily protected // GH-90000
             MemoryService.MemoryEntry procedural = MemoryService.MemoryEntry.create( // GH-90000

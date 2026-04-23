@@ -13,11 +13,11 @@ import org.junit.jupiter.api.Test;
  * @doc.layer test
  * @doc.pattern Unit Test
  */
-@DisplayName("StepContext Tests [GH-90000]")
+@DisplayName("StepContext Tests")
 class StepContextTest {
 
   @Test
-  @DisplayName("should create StepContext with full constructor [GH-90000]")
+  @DisplayName("should create StepContext with full constructor")
   void shouldCreateWithFullConstructor() { // GH-90000
     String tenantId = "tenant-1";
     String runId = "run-1";
@@ -39,7 +39,7 @@ class StepContextTest {
   }
 
   @Test
-  @DisplayName("should create StepContext with convenience constructor (5 params) [GH-90000]")
+  @DisplayName("should create StepContext with convenience constructor (5 params)")
   void shouldCreateWithConvenienceConstructor() { // GH-90000
     String runId = "run-1";
     String tenantId = "tenant-1";
@@ -59,7 +59,7 @@ class StepContextTest {
   }
 
   @Test
-  @DisplayName("should create StepContext with StepBudget constructor [GH-90000]")
+  @DisplayName("should create StepContext with StepBudget constructor")
   void shouldCreateWithStepBudgetConstructor() { // GH-90000
     String runId = "run-1";
     String tenantId = "tenant-1";
@@ -76,7 +76,7 @@ class StepContextTest {
   }
 
   @Test
-  @DisplayName("should handle null StepBudget [GH-90000]")
+  @DisplayName("should handle null StepBudget")
   void shouldHandleNullStepBudget() { // GH-90000
     StepContext context = new StepContext("run-1", "tenant-1", "phase", "config", (StepBudget) null); // GH-90000
 

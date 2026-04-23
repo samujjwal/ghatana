@@ -11,7 +11,11 @@ import java.util.Objects;
  * </p>
  *
  * @since 2.0
- */
+  * @doc.type class
+ * @doc.purpose Provides event cloud subscription config functionality.
+ * @doc.layer product
+ * @doc.pattern Configuration
+*/
 public final class EventCloudSubscriptionConfig {
 
     private final String tenantId;

@@ -17,7 +17,8 @@ import org.jetbrains.annotations.NotNull;
  * @doc.type interface
  * @doc.purpose Memory access control
  * @doc.layer agent-memory
- */
+  * @doc.pattern Manager
+*/
 public interface MemorySecurityManager {
 
     /**

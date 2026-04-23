@@ -11,7 +11,11 @@ import com.ghatana.platform.core.util.JsonUtils;
  * This is a lightweight mapper that serializes framework objects to JSON for
  * now; in Phase 2 this can be upgraded to proto-based serialization when proto
  * mappings are finalized.
- */
+  * @doc.type class
+ * @doc.purpose Provides task event factory functionality.
+ * @doc.layer product
+ * @doc.pattern Factory
+*/
 public class TaskEventFactory {
 
     private static final ObjectMapper mapper = JsonUtils.getDefaultMapper();

@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern Benchmark Test
  */
 @Timeout(value = 60, unit = TimeUnit.SECONDS) // GH-90000
-@DisplayName("EntityQueryBenchmark – Performance < 200ms p99 [GH-90000]")
+@DisplayName("EntityQueryBenchmark – Performance < 200ms p99")
 class EntityQueryBenchmark extends EventloopTestBase {
 
     private static final int WARMUP_ITERATIONS = 50;
@@ -30,7 +30,7 @@ class EntityQueryBenchmark extends EventloopTestBase {
     private static final long P99_THRESHOLD_MS = 200;
 
     @Test
-    @DisplayName("[TEST-088]: simple_query_p99_under_200ms [GH-90000]")
+    @DisplayName("[TEST-088]: simple_query_p99_under_200ms")
     void simpleQueryP99Under200ms() { // GH-90000
         // Warmup
         for (int i = 0; i < WARMUP_ITERATIONS; i++) { // GH-90000
@@ -57,7 +57,7 @@ class EntityQueryBenchmark extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[TEST-088]: complex_query_with_joins_performance [GH-90000]")
+    @DisplayName("[TEST-088]: complex_query_with_joins_performance")
     void complexQueryWithJoinsPerformance() { // GH-90000
         long[] latencies = new long[100];
 
@@ -77,7 +77,7 @@ class EntityQueryBenchmark extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[TEST-088]: aggregation_query_performance [GH-90000]")
+    @DisplayName("[TEST-088]: aggregation_query_performance")
     void aggregationQueryPerformance() { // GH-90000
         long[] latencies = new long[100];
 

@@ -36,7 +36,7 @@ import static org.mockito.Mockito.when;
 /**
  * Unit tests for RequirementAIService.
  */
-@DisplayName("RequirementAI Service Tests [GH-90000]")
+@DisplayName("RequirementAI Service Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles requirement ai service test operations
@@ -68,13 +68,13 @@ class RequirementAIServiceTest extends EventloopTestBase {
 
         // Default mocks
         when(personaRepository.findById(anyString())).thenReturn(Promise.of(Optional.of(Persona.DEFAULT))); // GH-90000
-        when(promptTemplateManager.getTemplate(anyString())).thenReturn(new PromptTemplate("template [GH-90000]"));
+        when(promptTemplateManager.getTemplate(anyString())).thenReturn(new PromptTemplate("template"));
 
         // Mock LLM response
         CompletionResult mockResult = CompletionResult.builder() // GH-90000
-                .text("Mock response [GH-90000]")
+                .text("Mock response")
                 .tokensUsed(10) // GH-90000
-                .modelUsed("test-model [GH-90000]")
+                .modelUsed("test-model")
                 .build(); // GH-90000
         when(completionService.complete(any(CompletionRequest.class))).thenReturn(Promise.of(mockResult)); // GH-90000
 
@@ -86,12 +86,12 @@ class RequirementAIServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should generate requirements (mocked) [GH-90000]")
+    @DisplayName("Should generate requirements (mocked)")
     void shouldGenerateRequirements() { // GH-90000
         // GIVEN: Valid request
         RequirementGenerationRequest request = RequirementGenerationRequest.builder() // GH-90000
-                .featureDescription("User authentication system [GH-90000]")
-                .context("Mobile banking application [GH-90000]")
+                .featureDescription("User authentication system")
+                .context("Mobile banking application")
                 .build(); // GH-90000
 
         // WHEN: Generate requirements
@@ -104,7 +104,7 @@ class RequirementAIServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should search similar requirements (mocked) [GH-90000]")
+    @DisplayName("Should search similar requirements (mocked)")
     void shouldSearchSimilarRequirements() { // GH-90000
         // GIVEN: Search query
         String query = "user authentication";
@@ -118,7 +118,7 @@ class RequirementAIServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should improve requirement (mocked) [GH-90000]")
+    @DisplayName("Should improve requirement (mocked)")
     void shouldImproveRequirement() { // GH-90000
         // GIVEN: Simple requirement
         String requirement = "User can login";
@@ -132,7 +132,7 @@ class RequirementAIServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should extract acceptance criteria (mocked) [GH-90000]")
+    @DisplayName("Should extract acceptance criteria (mocked)")
     void shouldExtractAcceptanceCriteria() { // GH-90000
         // GIVEN: Requirement
         String requirement = "Users must be able to reset their password";
@@ -146,7 +146,7 @@ class RequirementAIServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should classify requirement (mocked) [GH-90000]")
+    @DisplayName("Should classify requirement (mocked)")
     void shouldClassifyRequirement() { // GH-90000
         // GIVEN: Requirement
         String requirement = "System must validate user credentials";
@@ -160,7 +160,7 @@ class RequirementAIServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should validate quality (mocked) [GH-90000]")
+    @DisplayName("Should validate quality (mocked)")
     void shouldValidateQuality() { // GH-90000
         // GIVEN: Requirement
         String requirement = "User can login";
@@ -175,7 +175,7 @@ class RequirementAIServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should return health status [GH-90000]")
+    @DisplayName("Should return health status")
     void shouldReturnHealthStatus() { // GH-90000
         // WHEN: Check health
         Boolean isHealthy = runPromise(() -> service.healthCheck()); // GH-90000

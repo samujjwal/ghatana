@@ -34,9 +34,9 @@ class ShellLanguageServiceTest extends EventloopTestBase {
 
     @Test
     void supportsShouldRecogniseCommonExtensions() { // GH-90000
-        assertThat(service.supports(Path.of("script.sh [GH-90000]"))).isTrue();
-        assertThat(service.supports(Path.of("script.bash [GH-90000]"))).isTrue();
-        assertThat(service.supports(Path.of("script.txt [GH-90000]"))).isFalse();
+        assertThat(service.supports(Path.of("script.sh"))).isTrue();
+        assertThat(service.supports(Path.of("script.bash"))).isTrue();
+        assertThat(service.supports(Path.of("script.txt"))).isFalse();
     }
 
     @Test

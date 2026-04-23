@@ -26,12 +26,12 @@ class DefaultAuditTrailServiceTest {
         );
 
         AuditTrailService.AuditEvent event = AuditTrailService.AuditEvent.builder() // GH-90000
-            .eventId("audit-duplicate-1 [GH-90000]")
-            .eventType("patient.read [GH-90000]")
-            .entityId("patient-1 [GH-90000]")
-            .userId("provider-1 [GH-90000]")
-            .tenantId("tenant-1 [GH-90000]")
-            .action("read [GH-90000]")
+            .eventId("audit-duplicate-1")
+            .eventType("patient.read")
+            .entityId("patient-1")
+            .userId("provider-1")
+            .tenantId("tenant-1")
+            .action("read")
             .data(Map.of("source", "test")) // GH-90000
             .build(); // GH-90000
 
@@ -39,7 +39,7 @@ class DefaultAuditTrailServiceTest {
         service.recordAuditEvent(event); // GH-90000
 
         List<AuditTrailService.AuditEvent> events = service.queryAuditEvents( // GH-90000
-            AuditTrailService.AuditQuery.builder().entityId("patient-1 [GH-90000]").limit(10).build()
+            AuditTrailService.AuditQuery.builder().entityId("patient-1").limit(10).build()
         );
 
         assertEquals(1, events.size()); // GH-90000

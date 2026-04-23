@@ -9,11 +9,11 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@DisplayName("MappedEventSchema Tests [GH-90000]")
+@DisplayName("MappedEventSchema Tests")
 class MappedEventSchemaTest {
 
     @Test
-    @DisplayName("mapped schema combines field groups and exposes qualified class name [GH-90000]")
+    @DisplayName("mapped schema combines field groups and exposes qualified class name")
     void mappedSchemaCombinesFieldGroupsAndExposesQualifiedClassName() { // GH-90000
         FieldDefinition header = new FieldDefinition("tenant_id", "tenantId", String.class, true, FieldCategory.HEADER, "tenant"); // GH-90000
         FieldDefinition payload = new FieldDefinition("amount", "amount", Double.class, true, FieldCategory.PAYLOAD, "amount"); // GH-90000
@@ -37,7 +37,7 @@ class MappedEventSchemaTest {
     }
 
     @Test
-    @DisplayName("mapped schema tolerates null field lists but not null key metadata [GH-90000]")
+    @DisplayName("mapped schema tolerates null field lists but not null key metadata")
     void mappedSchemaToleratesNullFieldListsButNotNullKeyMetadata() { // GH-90000
         MappedEventSchema schema = new MappedEventSchema( // GH-90000
                 new GeneratedTypeKey("tenant", "Order.Created", "1.0", "pattern-1", "hash-1"), // GH-90000

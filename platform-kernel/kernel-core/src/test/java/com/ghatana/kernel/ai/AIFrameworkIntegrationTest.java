@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("AI Framework Integration Tests [GH-90000]")
+@DisplayName("AI Framework Integration Tests")
 class AIFrameworkIntegrationTest extends EventloopTestBase {
 
     private KernelRegistryImpl registry;
@@ -38,7 +38,7 @@ class AIFrameworkIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should register and execute AI agent [GH-90000]")
+    @DisplayName("Should register and execute AI agent")
     void testAIAgentRegistrationAndExecution() { // GH-90000
         // GIVEN: AI agent
         TestAIAgent agent = new TestAIAgent("test-agent", "classification"); // GH-90000
@@ -46,7 +46,7 @@ class AIFrameworkIntegrationTest extends EventloopTestBase {
         // WHEN: Register and execute
         orchestrator.registerAgent(agent); // GH-90000
         AIResponse response = runPromise(() -> // GH-90000
-            orchestrator.executeAgent("test-agent", new AIRequest("test input [GH-90000]"))
+            orchestrator.executeAgent("test-agent", new AIRequest("test input"))
         );
 
         // THEN: Agent executes successfully
@@ -55,7 +55,7 @@ class AIFrameworkIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should orchestrate multi-agent workflow [GH-90000]")
+    @DisplayName("Should orchestrate multi-agent workflow")
     void testMultiAgentWorkflow() { // GH-90000
         // GIVEN: Multiple agents in workflow
         TestAIAgent classificationAgent = new TestAIAgent("classifier", "classification"); // GH-90000
@@ -67,13 +67,13 @@ class AIFrameworkIntegrationTest extends EventloopTestBase {
         orchestrator.registerAgent(validationAgent); // GH-90000
 
         // WHEN: Execute workflow
-        AIWorkflow workflow = new AIWorkflow("multi-agent-workflow [GH-90000]");
-        workflow.addStep("classifier [GH-90000]");
-        workflow.addStep("enricher [GH-90000]");
-        workflow.addStep("validator [GH-90000]");
+        AIWorkflow workflow = new AIWorkflow("multi-agent-workflow");
+        workflow.addStep("classifier");
+        workflow.addStep("enricher");
+        workflow.addStep("validator");
 
         WorkflowResult result = runPromise(() -> // GH-90000
-            orchestrator.executeWorkflow(workflow, new AIRequest("input data [GH-90000]"))
+            orchestrator.executeWorkflow(workflow, new AIRequest("input data"))
         );
 
         // THEN: All agents executed in order
@@ -82,12 +82,12 @@ class AIFrameworkIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should enforce AI governance policies [GH-90000]")
+    @DisplayName("Should enforce AI governance policies")
     void testAIGovernancePolicies() { // GH-90000
         // GIVEN: AI agent with governance policy
         TestAIAgent agent = new TestAIAgent("governed-agent", "sensitive-classification"); // GH-90000
 
-        AIGovernancePolicy policy = new AIGovernancePolicy("sensitive-data-policy [GH-90000]");
+        AIGovernancePolicy policy = new AIGovernancePolicy("sensitive-data-policy");
         policy.addRule("max-tokens", "1000"); // GH-90000
         policy.addRule("require-audit", "true"); // GH-90000
         policy.addRule("pii-detection", "enabled"); // GH-90000
@@ -96,7 +96,7 @@ class AIFrameworkIntegrationTest extends EventloopTestBase {
         orchestrator.registerGovernancePolicy("governed-agent", policy); // GH-90000
 
         // WHEN: Execute with governance
-        AIRequest request = new AIRequest("sensitive data [GH-90000]");
+        AIRequest request = new AIRequest("sensitive data");
         AIResponse response = runPromise(() -> // GH-90000
             orchestrator.executeAgent("governed-agent", request) // GH-90000
         );
@@ -104,29 +104,29 @@ class AIFrameworkIntegrationTest extends EventloopTestBase {
         // THEN: Governance enforced
         assertThat(response.isSuccess()).isTrue(); // GH-90000
         assertThat(orchestrator.getAuditLog()).isNotEmpty(); // GH-90000
-        assertThat(orchestrator.getAuditLog().get(0)).contains("governed-agent [GH-90000]");
+        assertThat(orchestrator.getAuditLog().get(0)).contains("governed-agent");
     }
 
     @Test
-    @DisplayName("Should handle AI agent failures gracefully [GH-90000]")
+    @DisplayName("Should handle AI agent failures gracefully")
     void testAIAgentFailureHandling() { // GH-90000
         // GIVEN: Failing AI agent
-        FailingAIAgent failingAgent = new FailingAIAgent("failing-agent [GH-90000]");
+        FailingAIAgent failingAgent = new FailingAIAgent("failing-agent");
 
         orchestrator.registerAgent(failingAgent); // GH-90000
 
         // WHEN: Execute failing agent
         AIResponse response = runPromise(() -> // GH-90000
-            orchestrator.executeAgent("failing-agent", new AIRequest("input [GH-90000]"))
+            orchestrator.executeAgent("failing-agent", new AIRequest("input"))
         );
 
         // THEN: Failure handled gracefully
         assertThat(response.isSuccess()).isFalse(); // GH-90000
-        assertThat(response.getError()).contains("Agent execution failed [GH-90000]");
+        assertThat(response.getError()).contains("Agent execution failed");
     }
 
     @Test
-    @DisplayName("Should track AI agent metrics [GH-90000]")
+    @DisplayName("Should track AI agent metrics")
     void testAIAgentMetricsTracking() { // GH-90000
         // GIVEN: AI agent with metrics
         TestAIAgent agent = new TestAIAgent("metrics-agent", "classification"); // GH-90000
@@ -139,30 +139,30 @@ class AIFrameworkIntegrationTest extends EventloopTestBase {
         });
 
         // THEN: Metrics tracked
-        AIAgentMetrics metrics = orchestrator.getMetrics("metrics-agent [GH-90000]");
+        AIAgentMetrics metrics = orchestrator.getMetrics("metrics-agent");
         assertThat(metrics.getExecutionCount()).isEqualTo(executionCount); // GH-90000
         assertThat(metrics.getAverageLatencyMs()).isGreaterThan(0); // GH-90000
     }
 
     @Test
-    @DisplayName("Should support AI agent versioning [GH-90000]")
+    @DisplayName("Should support AI agent versioning")
     void testAIAgentVersioning() { // GH-90000
         // GIVEN: Multiple versions of same agent
         TestAIAgent agentV1 = new TestAIAgent("classifier", "classification"); // GH-90000
-        agentV1.setVersion("1.0.0 [GH-90000]");
+        agentV1.setVersion("1.0.0");
 
         TestAIAgent agentV2 = new TestAIAgent("classifier", "classification"); // GH-90000
-        agentV2.setVersion("2.0.0 [GH-90000]");
+        agentV2.setVersion("2.0.0");
 
         orchestrator.registerAgent(agentV1); // GH-90000
         orchestrator.registerAgent(agentV2); // GH-90000
 
         // WHEN: Execute specific version
         AIResponse responseV1 = runPromise(() -> // GH-90000
-            orchestrator.executeAgentVersion("classifier", "1.0.0", new AIRequest("input [GH-90000]"))
+            orchestrator.executeAgentVersion("classifier", "1.0.0", new AIRequest("input"))
         );
         AIResponse responseV2 = runPromise(() -> // GH-90000
-            orchestrator.executeAgentVersion("classifier", "2.0.0", new AIRequest("input [GH-90000]"))
+            orchestrator.executeAgentVersion("classifier", "2.0.0", new AIRequest("input"))
         );
 
         // THEN: Correct versions executed
@@ -171,7 +171,7 @@ class AIFrameworkIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle concurrent AI agent executions [GH-90000]")
+    @DisplayName("Should handle concurrent AI agent executions")
     void testConcurrentAIAgentExecutions() { // GH-90000
         // GIVEN: AI agent
         TestAIAgent agent = new TestAIAgent("concurrent-agent", "classification"); // GH-90000
@@ -197,24 +197,24 @@ class AIFrameworkIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should validate AI agent input and output [GH-90000]")
+    @DisplayName("Should validate AI agent input and output")
     void testAIAgentInputOutputValidation() { // GH-90000
         // GIVEN: Agent with validation
-        ValidatingAIAgent agent = new ValidatingAIAgent("validating-agent [GH-90000]");
+        ValidatingAIAgent agent = new ValidatingAIAgent("validating-agent");
         orchestrator.registerAgent(agent); // GH-90000
 
         // WHEN: Execute with invalid input
-        AIRequest invalidRequest = new AIRequest(" [GH-90000]"); // Empty input
+        AIRequest invalidRequest = new AIRequest(""); // Empty input
         AIResponse invalidResponse = runPromise(() -> // GH-90000
             orchestrator.executeAgent("validating-agent", invalidRequest) // GH-90000
         );
 
         // THEN: Validation fails
         assertThat(invalidResponse.isSuccess()).isFalse(); // GH-90000
-        assertThat(invalidResponse.getError()).contains("Input validation failed [GH-90000]");
+        assertThat(invalidResponse.getError()).contains("Input validation failed");
 
         // WHEN: Execute with valid input
-        AIRequest validRequest = new AIRequest("valid input [GH-90000]");
+        AIRequest validRequest = new AIRequest("valid input");
         AIResponse validResponse = runPromise(() -> // GH-90000
             orchestrator.executeAgent("validating-agent", validRequest) // GH-90000
         );

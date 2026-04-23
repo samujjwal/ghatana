@@ -13,7 +13,8 @@ import java.util.List;
  * @doc.type value-object
  * @doc.purpose Reconciliation result for task resume
  * @doc.layer agent-memory
- */
+  * @doc.pattern ValueObject
+*/
 @Value
 @Builder
 public class ReconcileResult {

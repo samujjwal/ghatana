@@ -34,7 +34,7 @@ import static org.mockito.Mockito.mock;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataCloudHttpServer – Plugin Management Endpoints (B6) [GH-90000]")
+@DisplayName("DataCloudHttpServer – Plugin Management Endpoints (B6)")
 class DataCloudHttpServerPluginInstallTest {
 
     private DataCloudClient mockClient;
@@ -110,81 +110,81 @@ class DataCloudHttpServerPluginInstallTest {
     // ─── tests ───────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("GET /api/v1/plugins [GH-90000]")
+    @DisplayName("GET /api/v1/plugins")
     class ListPluginsTests {
 
         @Test
-        @DisplayName("returns 200 with plugins array and total count [GH-90000]")
+        @DisplayName("returns 200 with plugins array and total count")
         void listPlugins_returns200WithPluginsArray() throws Exception { // GH-90000
             startServer(); // GH-90000
 
-            HttpResponse<String> response = get("/api/v1/plugins [GH-90000]");
+            HttpResponse<String> response = get("/api/v1/plugins");
 
             assertThat(response.statusCode()).isEqualTo(200); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, Object> body = mapper.readValue(response.body(), Map.class); // GH-90000
             assertThat(body).containsKeys("plugins", "total"); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("GET /api/v1/plugins/:id [GH-90000]")
+    @DisplayName("GET /api/v1/plugins/:id")
     class GetPluginTests {
 
         @Test
-        @DisplayName("returns 404 for an unknown plugin id [GH-90000]")
+        @DisplayName("returns 404 for an unknown plugin id")
         void getPlugin_unknownId_returns404() throws Exception { // GH-90000
             startServer(); // GH-90000
 
-            HttpResponse<String> response = get("/api/v1/plugins/unknown-plugin-xyz [GH-90000]");
+            HttpResponse<String> response = get("/api/v1/plugins/unknown-plugin-xyz");
 
             assertThat(response.statusCode()).isEqualTo(404); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             Map<String, Object> body = mapper.readValue(response.body(), Map.class); // GH-90000
-            assertThat(body).containsKey("error [GH-90000]");
+            assertThat(body).containsKey("error");
         }
     }
 
     @Nested
-    @DisplayName("POST /api/v1/plugins/:id/enable [GH-90000]")
+    @DisplayName("POST /api/v1/plugins/:id/enable")
     class EnablePluginTests {
 
         @Test
-        @DisplayName("returns 404 for an unknown plugin id [GH-90000]")
+        @DisplayName("returns 404 for an unknown plugin id")
         void enablePlugin_unknownId_returns404() throws Exception { // GH-90000
             startServer(); // GH-90000
 
-            HttpResponse<String> response = post("/api/v1/plugins/unknown-plugin-xyz/enable [GH-90000]");
+            HttpResponse<String> response = post("/api/v1/plugins/unknown-plugin-xyz/enable");
 
             assertThat(response.statusCode()).isEqualTo(404); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("POST /api/v1/plugins/:id/disable [GH-90000]")
+    @DisplayName("POST /api/v1/plugins/:id/disable")
     class DisablePluginTests {
 
         @Test
-        @DisplayName("returns 404 for an unknown plugin id [GH-90000]")
+        @DisplayName("returns 404 for an unknown plugin id")
         void disablePlugin_unknownId_returns404() throws Exception { // GH-90000
             startServer(); // GH-90000
 
-            HttpResponse<String> response = post("/api/v1/plugins/unknown-plugin-xyz/disable [GH-90000]");
+            HttpResponse<String> response = post("/api/v1/plugins/unknown-plugin-xyz/disable");
 
             assertThat(response.statusCode()).isEqualTo(404); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("POST /api/v1/plugins/:id/upgrade [GH-90000]")
+    @DisplayName("POST /api/v1/plugins/:id/upgrade")
     class UpgradePluginTests {
 
         @Test
-        @DisplayName("reloads runtime plugins without restarting the launcher [GH-90000]")
+        @DisplayName("reloads runtime plugins without restarting the launcher")
         void upgradePlugin_reloadRuntimePlugin() throws Exception { // GH-90000
             startServer(); // GH-90000
 
-            HttpResponse<String> response = post("/api/v1/plugins/workflow-execution/upgrade [GH-90000]");
+            HttpResponse<String> response = post("/api/v1/plugins/workflow-execution/upgrade");
 
             assertThat(response.statusCode()).isEqualTo(200); // GH-90000
         }

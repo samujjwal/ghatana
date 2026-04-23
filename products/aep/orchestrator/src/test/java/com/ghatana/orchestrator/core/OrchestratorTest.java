@@ -31,7 +31,7 @@ import org.mockito.MockitoAnnotations;
  * {@link EventloopTestBase#runPromise(java.util.concurrent.Callable)} to prevent // GH-90000
  * NPE from unresolved Promises.
  */
-@DisplayName("Orchestrator [GH-90000]")
+@DisplayName("Orchestrator")
 class OrchestratorTest extends EventloopTestBase {
 
     @Mock
@@ -67,7 +67,7 @@ class OrchestratorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("start() loads pipelines and records startup timer [GH-90000]")
+    @DisplayName("start() loads pipelines and records startup timer")
     void testStart() { // GH-90000
         when(pipelineRegistryClient.listAllPipelines()).thenReturn(Promise.of(Collections.emptyList())); // GH-90000
         when(pipelineCache.putAll(any())).thenReturn(Promise.of(null)); // GH-90000
@@ -79,7 +79,7 @@ class OrchestratorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("stop() clears pipeline cache [GH-90000]")
+    @DisplayName("stop() clears pipeline cache")
     void testStop() { // GH-90000
         // Must start before stop will do anything
         when(pipelineRegistryClient.listAllPipelines()).thenReturn(Promise.of(Collections.emptyList())); // GH-90000
@@ -93,7 +93,7 @@ class OrchestratorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("isHealthy() delegates to registry and agent clients [GH-90000]")
+    @DisplayName("isHealthy() delegates to registry and agent clients")
     void testHealthCheck() { // GH-90000
         when(agentRegistryClient.isHealthy()).thenReturn(Promise.of(true)); // GH-90000
         when(pipelineRegistryClient.isHealthy()).thenReturn(Promise.of(true)); // GH-90000
@@ -104,7 +104,7 @@ class OrchestratorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("getStatus() reflects cached pipeline count [GH-90000]")
+    @DisplayName("getStatus() reflects cached pipeline count")
     void testGetStatus() { // GH-90000
         when(pipelineCache.size()).thenReturn(5); // GH-90000
 
@@ -115,7 +115,7 @@ class OrchestratorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("getPipeline() retrieves entity from cache [GH-90000]")
+    @DisplayName("getPipeline() retrieves entity from cache")
     void testGetPipeline() { // GH-90000
         String pipelineId = "test-pipeline";
         OrchestratorPipelineEntity mockPipeline = new OrchestratorPipelineEntity(); // GH-90000
@@ -130,7 +130,7 @@ class OrchestratorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("listPipelines() returns all cached pipelines [GH-90000]")
+    @DisplayName("listPipelines() returns all cached pipelines")
     void testListPipelines() { // GH-90000
         when(pipelineCache.getAllPipelines()).thenReturn(Promise.of(Collections.emptyList())); // GH-90000
 

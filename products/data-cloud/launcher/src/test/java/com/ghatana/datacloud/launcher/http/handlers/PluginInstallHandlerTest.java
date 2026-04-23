@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("PluginInstallHandler [GH-90000]")
+@DisplayName("PluginInstallHandler")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class PluginInstallHandlerTest extends EventloopTestBase {
 
@@ -55,7 +55,7 @@ class PluginInstallHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("list rejects missing tenant before plugin registry access [GH-90000]")
+    @DisplayName("list rejects missing tenant before plugin registry access")
     void listRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
@@ -67,22 +67,22 @@ class PluginInstallHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("get rejects missing tenant before plugin lookup [GH-90000]")
+    @DisplayName("get rejects missing tenant before plugin lookup")
     void getRejectsMissingTenant() { // GH-90000
-        when(request.getPathParameter("id [GH-90000]")).thenReturn("plugin-1 [GH-90000]");
+        when(request.getPathParameter("id")).thenReturn("plugin-1");
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
         HttpResponse response = runPromise(() -> handler.handleGetPlugin(request)); // GH-90000
 
         assertThat(response).isSameAs(errorResponse); // GH-90000
-        verify(pluginRegistry, never()).getPlugin("plugin-1 [GH-90000]");
-        verify(runtimePluginManager, never()).getPlugin("plugin-1 [GH-90000]");
+        verify(pluginRegistry, never()).getPlugin("plugin-1");
+        verify(runtimePluginManager, never()).getPlugin("plugin-1");
     }
 
     @Test
-    @DisplayName("upgrade rejects missing tenant before reading body [GH-90000]")
+    @DisplayName("upgrade rejects missing tenant before reading body")
     void upgradeRejectsMissingTenant() { // GH-90000
-        when(request.getPathParameter("id [GH-90000]")).thenReturn("plugin-1 [GH-90000]");
+        when(request.getPathParameter("id")).thenReturn("plugin-1");
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
         HttpResponse response = runPromise(() -> handler.handleUpgradePlugin(request)); // GH-90000

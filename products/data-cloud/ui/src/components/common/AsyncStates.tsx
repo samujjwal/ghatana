@@ -4,6 +4,10 @@
  * Unified loading, empty, error, and unavailable state components
  * for consistent presentation across all async pages.
  *
+ * Migrated to @ghatana/design-system:
+ * - LoadingState uses Spinner (DS-006)
+ * - EmptyState uses EmptyState from design system (DS-006)
+ *
  * @doc.type component
  * @doc.purpose Standardized async state presentation
  * @doc.layer shared
@@ -12,17 +16,19 @@
 
 import React from 'react';
 import {
-  Loader2,
   AlertTriangle,
   Database,
+  Loader2,
   Search,
   WifiOff,
   Shield,
 } from 'lucide-react';
+import { Spinner } from '@ghatana/design-system';
+import { EmptyState as DesignSystemEmptyState } from '@ghatana/design-system';
 import { cn } from '../../lib/theme';
 
 // ---------------------------------------------------------------------------
-// Loading State
+// Loading State — migrated to @ghatana/design-system Spinner
 // ---------------------------------------------------------------------------
 
 interface LoadingStateProps {
@@ -46,7 +52,7 @@ export const LoadingState = React.memo(function LoadingState({
       aria-live="polite"
       data-testid={testId}
     >
-      <Loader2 className="h-8 w-8 animate-spin text-primary-500" aria-hidden="true" />
+      <Spinner size="lg" color="var(--color-primary-500, #1976d2)" aria-hidden="true" />
       <p className="text-sm text-gray-500 dark:text-gray-400">{message}</p>
     </div>
   );
@@ -55,7 +61,7 @@ export const LoadingState = React.memo(function LoadingState({
 LoadingState.displayName = 'LoadingState';
 
 // ---------------------------------------------------------------------------
-// Empty State
+// Empty State — migrated to @ghatana/design-system EmptyState
 // ---------------------------------------------------------------------------
 
 interface EmptyStateProps {
@@ -67,33 +73,16 @@ interface EmptyStateProps {
   'data-testid'?: string;
 }
 
-export const EmptyState = React.memo(function EmptyState({
-  title,
-  description,
-  icon,
-  action,
-  className,
-  'data-testid': testId,
-}: EmptyStateProps) {
+export const EmptyState = React.memo(function EmptyState(props: EmptyStateProps) {
   return (
-    <div
-      className={cn(
-        'flex flex-col items-center justify-center py-12 text-center',
-        className
-      )}
-      role="status"
-      aria-live="polite"
-      data-testid={testId}
-    >
-      {icon ?? <Database className="h-12 w-12 text-gray-400 mb-4" aria-hidden="true" />}
-      <h3 className="text-lg font-medium text-gray-900 dark:text-white">{title}</h3>
-      {description && (
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 max-w-md">
-          {description}
-        </p>
-      )}
-      {action && <div className="mt-4">{action}</div>}
-    </div>
+    <DesignSystemEmptyState
+      title={props.title}
+      description={props.description}
+      icon={props.icon ?? <Database className="h-12 w-12 text-gray-400" aria-hidden="true" />}
+      action={props.action}
+      className={props.className}
+      size="md"
+    />
   );
 });
 

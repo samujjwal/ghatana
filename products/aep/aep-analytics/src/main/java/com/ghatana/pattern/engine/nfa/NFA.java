@@ -7,7 +7,11 @@ import java.util.*;
  * Represents a complete Non-deterministic Finite Automaton for pattern matching.
  *
  * Day 26 Implementation: Core NFA structure with state management
- */
+  * @doc.type class
+ * @doc.purpose Provides nfa functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 public class NFA {
     private final NFAState startState;
     private final Set<NFAState> acceptingStates;

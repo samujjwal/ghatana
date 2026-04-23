@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("Data Cloud Launcher Startup Performance Tier [GH-90000]")
+@DisplayName("Data Cloud Launcher Startup Performance Tier")
 class DataCloudLauncherStartupPerformanceTierTest extends EventloopTestBase {
 
     @Test

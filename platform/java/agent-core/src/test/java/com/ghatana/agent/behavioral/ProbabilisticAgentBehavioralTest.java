@@ -30,7 +30,7 @@ import static org.mockito.Mockito.*;
  * Focus: Actual ML processing correctness, confidence calibration, fallback chains,
  * and probabilistic reasoning patterns.
  */
-@DisplayName("ProbabilisticAgent Behavioral Tests [GH-90000]")
+@DisplayName("ProbabilisticAgent Behavioral Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class ProbabilisticAgentBehavioralTest {
 
@@ -52,9 +52,9 @@ class ProbabilisticAgentBehavioralTest {
     @BeforeEach
     void setUp() { // GH-90000
         agentContext = AgentContext.builder() // GH-90000
-                .turnId("turn-1 [GH-90000]")
-                .agentId("prob-agent [GH-90000]")
-                .tenantId("tenant-1 [GH-90000]")
+                .turnId("turn-1")
+                .agentId("prob-agent")
+                .tenantId("tenant-1")
                 .memoryStore(memoryStore) // GH-90000
                 .build(); // GH-90000
 
@@ -66,11 +66,11 @@ class ProbabilisticAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Processing Logic [GH-90000]")
+    @DisplayName("Processing Logic")
     class ProcessingTests {
 
         @Test
-        @DisplayName("Agent invokes model inference for input [GH-90000]")
+        @DisplayName("Agent invokes model inference for input")
         void modelInvocation() { // GH-90000
             ModelInference.InferenceResult inferenceResult = new ModelInference.InferenceResult(Map.of("prediction", "class-A"), 0.82, "v1", 0L); // GH-90000
 
@@ -78,7 +78,7 @@ class ProbabilisticAgentBehavioralTest {
 
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
                     .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
-                    .modelVersion("v1 [GH-90000]")
+                    .modelVersion("v1")
                     .confidenceThreshold(0.5) // GH-90000
                     .build(); // GH-90000
 
@@ -93,7 +93,7 @@ class ProbabilisticAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Agent produces output from model prediction [GH-90000]")
+        @DisplayName("Agent produces output from model prediction")
         void predictionOutput() { // GH-90000
             ModelInference.InferenceResult inferenceResult = new ModelInference.InferenceResult(Map.of("label", "positive", "probability", 0.88), 0.88, "v2", 0L); // GH-90000
 
@@ -101,7 +101,7 @@ class ProbabilisticAgentBehavioralTest {
 
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
                     .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
-                    .modelVersion("v2 [GH-90000]")
+                    .modelVersion("v2")
                     .build(); // GH-90000
 
             runPromise(() -> agent.initialize(config)); // GH-90000
@@ -113,11 +113,11 @@ class ProbabilisticAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Agent handles model timeout gracefully with fallback [GH-90000]")
+        @DisplayName("Agent handles model timeout gracefully with fallback")
         void modelTimeoutFallback() { // GH-90000
             // Primary model times out
             when(primaryModel.infer(anyMap())) // GH-90000
-                    .thenReturn(Promise.ofException(new TimeoutException("Model timeout [GH-90000]")));
+                    .thenReturn(Promise.ofException(new TimeoutException("Model timeout")));
 
             ModelInference.InferenceResult fallbackResult = new ModelInference.InferenceResult(Map.of("prediction", "fallback-output"), 0.5, "fallback-v1", 0L); // GH-90000
 
@@ -125,7 +125,7 @@ class ProbabilisticAgentBehavioralTest {
 
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
                     .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
-                    .modelVersion("v1 [GH-90000]")
+                    .modelVersion("v1")
                     .confidenceThreshold(0.5) // GH-90000
                     .build(); // GH-90000
 
@@ -141,14 +141,14 @@ class ProbabilisticAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Agent handles model error gracefully [GH-90000]")
+        @DisplayName("Agent handles model error gracefully")
         void modelErrorHandling() { // GH-90000
             when(primaryModel.infer(anyMap())) // GH-90000
-                    .thenReturn(Promise.ofException(new RuntimeException("Model error [GH-90000]")));
+                    .thenReturn(Promise.ofException(new RuntimeException("Model error")));
 
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
                     .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
-                    .modelVersion("v1 [GH-90000]")
+                    .modelVersion("v1")
                     .confidenceThreshold(0.5) // GH-90000
                     .build(); // GH-90000
 
@@ -162,7 +162,7 @@ class ProbabilisticAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Batch inference processes multiple inputs [GH-90000]")
+        @DisplayName("Batch inference processes multiple inputs")
         void batchInference() { // GH-90000
             ModelInference.InferenceResult result1 = new ModelInference.InferenceResult(Map.of("prediction", "A"), 0.75, "v1", 0L); // GH-90000
             ModelInference.InferenceResult result2 = new ModelInference.InferenceResult(Map.of("prediction", "B"), 0.82, "v1", 0L); // GH-90000
@@ -173,7 +173,7 @@ class ProbabilisticAgentBehavioralTest {
 
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
                     .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
-                    .modelVersion("v1 [GH-90000]")
+                    .modelVersion("v1")
                     .confidenceThreshold(0.5) // GH-90000
                     .build(); // GH-90000
 
@@ -196,11 +196,11 @@ class ProbabilisticAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Confidence Scoring [GH-90000]")
+    @DisplayName("Confidence Scoring")
     class ConfidenceScoringTests {
 
         @Test
-        @DisplayName("Confidence scores are in valid range [0.0, 1.0] [GH-90000]")
+        @DisplayName("Confidence scores are in valid range [0.0, 1.0]")
         void confidenceRangeValidation() { // GH-90000
             for (double score = 0.0; score <= 1.0; score += 0.1) { // GH-90000
                 ModelInference.InferenceResult inferenceResult = new ModelInference.InferenceResult(Map.of("prediction", "class"), score, "v1", 0L); // GH-90000
@@ -209,7 +209,7 @@ class ProbabilisticAgentBehavioralTest {
 
                 ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
                         .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
-                        .modelVersion("v1 [GH-90000]")
+                        .modelVersion("v1")
                         .build(); // GH-90000
 
                 runPromise(() -> agent.initialize(config)); // GH-90000
@@ -224,7 +224,7 @@ class ProbabilisticAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("High-confidence cases have confidence > 0.7 [GH-90000]")
+        @DisplayName("High-confidence cases have confidence > 0.7")
         void highConfidenceDetection() { // GH-90000
             ModelInference.InferenceResult highConfResult = new ModelInference.InferenceResult(Map.of("prediction", "confident-class"), 0.92, "v1", 0L); // GH-90000
 
@@ -232,7 +232,7 @@ class ProbabilisticAgentBehavioralTest {
 
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
                     .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
-                    .modelVersion("v1 [GH-90000]")
+                    .modelVersion("v1")
                     .confidenceThreshold(0.5) // GH-90000
                     .build(); // GH-90000
 
@@ -248,7 +248,7 @@ class ProbabilisticAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Low-confidence cases have confidence < 0.3 [GH-90000]")
+        @DisplayName("Low-confidence cases have confidence < 0.3")
         void lowConfidenceDetection() { // GH-90000
             ModelInference.InferenceResult lowConfResult = new ModelInference.InferenceResult(Map.of("prediction", "uncertain-class"), 0.25, "v1", 0L); // GH-90000
 
@@ -256,7 +256,7 @@ class ProbabilisticAgentBehavioralTest {
 
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
                     .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
-                    .modelVersion("v1 [GH-90000]")
+                    .modelVersion("v1")
                     .confidenceThreshold(0.5) // GH-90000
                     .build(); // GH-90000
 
@@ -271,7 +271,7 @@ class ProbabilisticAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Confidence calibration adjusts raw scores [GH-90000]")
+        @DisplayName("Confidence calibration adjusts raw scores")
         void confidenceCalibration() { // GH-90000
             double rawScore = 0.7;
             double calibratedScore = 0.75;  // Slightly adjusted
@@ -282,7 +282,7 @@ class ProbabilisticAgentBehavioralTest {
 
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
                     .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
-                    .modelVersion("v1 [GH-90000]")
+                    .modelVersion("v1")
                     .confidenceThreshold(0.5) // GH-90000
                     .build(); // GH-90000
 
@@ -298,7 +298,7 @@ class ProbabilisticAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Multiple predictions show varying confidence levels [GH-90000]")
+        @DisplayName("Multiple predictions show varying confidence levels")
         void varyingConfidenceLevels() { // GH-90000
             double[] scores = {0.15, 0.45, 0.75, 0.95};
 
@@ -309,7 +309,7 @@ class ProbabilisticAgentBehavioralTest {
 
                 ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
                         .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
-                        .modelVersion("v1 [GH-90000]")
+                        .modelVersion("v1")
                         .build(); // GH-90000
 
                 runPromise(() -> agent.initialize(config)); // GH-90000
@@ -329,11 +329,11 @@ class ProbabilisticAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Explanation Generation [GH-90000]")
+    @DisplayName("Explanation Generation")
     class ExplanationTests {
 
         @Test
-        @DisplayName("Explanation is non-empty for results [GH-90000]")
+        @DisplayName("Explanation is non-empty for results")
         void explanationNonEmpty() { // GH-90000
             ModelInference.InferenceResult inferenceResult = new ModelInference.InferenceResult(Map.of("prediction", "positive"), 0.85, "sentiment-v2", 0L); // GH-90000
 
@@ -341,7 +341,7 @@ class ProbabilisticAgentBehavioralTest {
 
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
                     .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
-                    .modelVersion("sentiment-v2 [GH-90000]")
+                    .modelVersion("sentiment-v2")
                     .build(); // GH-90000
 
             runPromise(() -> agent.initialize(config)); // GH-90000
@@ -355,7 +355,7 @@ class ProbabilisticAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Explanation mentions confidence level [GH-90000]")
+        @DisplayName("Explanation mentions confidence level")
         void explanationMentionsConfidence() { // GH-90000
             ModelInference.InferenceResult inferenceResult = new ModelInference.InferenceResult(Map.of("prediction", "class-A"), 0.87, "v1", 0L); // GH-90000
 
@@ -363,7 +363,7 @@ class ProbabilisticAgentBehavioralTest {
 
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
                     .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
-                    .modelVersion("v1 [GH-90000]")
+                    .modelVersion("v1")
                     .build(); // GH-90000
 
             agent.setFallbackModels(List.of(fallbackModel)); // GH-90000
@@ -380,7 +380,7 @@ class ProbabilisticAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Explanation references prediction [GH-90000]")
+        @DisplayName("Explanation references prediction")
         void explanationReferencesPrediction() { // GH-90000
             ModelInference.InferenceResult inferenceResult = new ModelInference.InferenceResult(Map.of("prediction", "ANOMALY_DETECTED"), 0.91, "anomaly-v3", 0L); // GH-90000
 
@@ -388,7 +388,7 @@ class ProbabilisticAgentBehavioralTest {
 
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
                     .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
-                    .modelVersion("anomaly-v3 [GH-90000]")
+                    .modelVersion("anomaly-v3")
                     .build(); // GH-90000
 
             runPromise(() -> agent.initialize(config)); // GH-90000
@@ -407,11 +407,11 @@ class ProbabilisticAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Fallback Chain Logic [GH-90000]")
+    @DisplayName("Fallback Chain Logic")
     class FallbackChainTests {
 
         @Test
-        @DisplayName("Primary model success produces result without fallback [GH-90000]")
+        @DisplayName("Primary model success produces result without fallback")
         void primaryModelSuccess() { // GH-90000
             ModelInference.InferenceResult primaryResult = new ModelInference.InferenceResult(Map.of("prediction", "primary-output"), 0.88, "v1", 0L); // GH-90000
 
@@ -419,7 +419,7 @@ class ProbabilisticAgentBehavioralTest {
 
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
                     .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
-                    .modelVersion("v1 [GH-90000]")
+                    .modelVersion("v1")
                     .build(); // GH-90000
 
             runPromise(() -> agent.initialize(config)); // GH-90000
@@ -433,10 +433,10 @@ class ProbabilisticAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Fallback invoked when primary model fails [GH-90000]")
+        @DisplayName("Fallback invoked when primary model fails")
         void fallbackOnPrimaryFailure() { // GH-90000
             when(primaryModel.infer(anyMap())) // GH-90000
-                    .thenReturn(Promise.ofException(new RuntimeException("Primary failed [GH-90000]")));
+                    .thenReturn(Promise.ofException(new RuntimeException("Primary failed")));
 
             ModelInference.InferenceResult fallbackResult = new ModelInference.InferenceResult(Map.of("prediction", "fallback-output"), 0.60, "fallback-v1", 0L); // GH-90000
 
@@ -444,7 +444,7 @@ class ProbabilisticAgentBehavioralTest {
 
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
                     .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
-                    .modelVersion("v1 [GH-90000]")
+                    .modelVersion("v1")
                     .confidenceThreshold(0.5) // GH-90000
                     .build(); // GH-90000
 
@@ -465,11 +465,11 @@ class ProbabilisticAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Model Versioning [GH-90000]")
+    @DisplayName("Model Versioning")
     class ModelVersioningTests {
 
         @Test
-        @DisplayName("Agent tracks model version in result [GH-90000]")
+        @DisplayName("Agent tracks model version in result")
         void modelVersionTracking() { // GH-90000
             String modelVersion = "sentiment-classifier-v2.1.0";
 
@@ -488,11 +488,11 @@ class ProbabilisticAgentBehavioralTest {
             Map<String, Object> input = Map.of("text", "great"); // GH-90000
             AgentResult<?> agentResult = runPromise(() -> agent.process(agentContext, input)); // GH-90000
 
-            assertThat(agentResult.getMetrics()).containsKey("modelVersion [GH-90000]");
+            assertThat(agentResult.getMetrics()).containsKey("modelVersion");
         }
 
         @Test
-        @DisplayName("Different model versions produce consistent predictions [GH-90000]")
+        @DisplayName("Different model versions produce consistent predictions")
         void modelVersionConsistency() { // GH-90000
             ModelInference.InferenceResult v1Result = new ModelInference.InferenceResult(Map.of("prediction", "A"), 0.75, "v1", 0L); // GH-90000
 
@@ -507,7 +507,7 @@ class ProbabilisticAgentBehavioralTest {
             // Test with v1
             ProbabilisticAgentConfig configV1 = ProbabilisticAgentConfig.builder() // GH-90000
                     .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
-                    .modelVersion("v1 [GH-90000]")
+                    .modelVersion("v1")
                     .confidenceThreshold(0.5) // GH-90000
                     .build(); // GH-90000
 
@@ -518,7 +518,7 @@ class ProbabilisticAgentBehavioralTest {
             ProbabilisticAgent agentV2 = new ProbabilisticAgent("prob-agent-v2", primaryModel); // GH-90000
             ProbabilisticAgentConfig configV2 = ProbabilisticAgentConfig.builder() // GH-90000
                     .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
-                    .modelVersion("v2 [GH-90000]")
+                    .modelVersion("v2")
                     .confidenceThreshold(0.5) // GH-90000
                     .build(); // GH-90000
 
@@ -536,11 +536,11 @@ class ProbabilisticAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Performance [GH-90000]")
+    @DisplayName("Performance")
     class PerformanceTests {
 
         @Test
-        @DisplayName("High throughput inference [GH-90000]")
+        @DisplayName("High throughput inference")
         void highThroughputInference() { // GH-90000
             ModelInference.InferenceResult inferenceResult = new ModelInference.InferenceResult(Map.of("prediction", "result"), 0.75, "v1", 0L); // GH-90000
 
@@ -548,7 +548,7 @@ class ProbabilisticAgentBehavioralTest {
 
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
                     .subtype(ProbabilisticSubtype.ML_MODEL) // GH-90000
-                    .modelVersion("v1 [GH-90000]")
+                    .modelVersion("v1")
                     .confidenceThreshold(0.5) // GH-90000
                     .build(); // GH-90000
 

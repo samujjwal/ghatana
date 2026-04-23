@@ -11,7 +11,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("SpanRequest Tests [GH-90000]")
+@DisplayName("SpanRequest Tests")
 class SpanRequestTest {
 
     private ObjectMapper objectMapper;
@@ -23,7 +23,7 @@ class SpanRequestTest {
     }
 
     @Test
-    @DisplayName("Should serialize to JSON [GH-90000]")
+    @DisplayName("Should serialize to JSON")
     void shouldSerializeToJson() throws Exception { // GH-90000
         // Given
         SpanRequest span = new SpanRequest( // GH-90000
@@ -32,8 +32,8 @@ class SpanRequestTest {
                 "parent-1",
                 "http.request",
                 "api-service",
-                Instant.parse("2024-01-01T00:00:00Z [GH-90000]"),
-                Instant.parse("2024-01-01T00:00:01Z [GH-90000]"),
+                Instant.parse("2024-01-01T00:00:00Z"),
+                Instant.parse("2024-01-01T00:00:01Z"),
                 1000L,
                 "OK",
                 Map.of("http.method", "GET"), // GH-90000
@@ -44,13 +44,13 @@ class SpanRequestTest {
         String json = objectMapper.writeValueAsString(span); // GH-90000
 
         // Then
-        assertThat(json).contains("span-1 [GH-90000]");
-        assertThat(json).contains("trace-1 [GH-90000]");
-        assertThat(json).contains("http.request [GH-90000]");
+        assertThat(json).contains("span-1");
+        assertThat(json).contains("trace-1");
+        assertThat(json).contains("http.request");
     }
 
     @Test
-    @DisplayName("Should deserialize from JSON [GH-90000]")
+    @DisplayName("Should deserialize from JSON")
     void shouldDeserializeFromJson() throws Exception { // GH-90000
         // Given
         String json = """
@@ -73,18 +73,18 @@ class SpanRequestTest {
         SpanRequest span = objectMapper.readValue(json, SpanRequest.class); // GH-90000
 
         // Then
-        assertThat(span.getSpanId()).isEqualTo("span-1 [GH-90000]");
-        assertThat(span.getTraceId()).isEqualTo("trace-1 [GH-90000]");
-        assertThat(span.getParentSpanId()).isEqualTo("parent-1 [GH-90000]");
-        assertThat(span.getOperationName()).isEqualTo("http.request [GH-90000]");
-        assertThat(span.getServiceName()).isEqualTo("api-service [GH-90000]");
-        assertThat(span.getStatus()).isEqualTo("OK [GH-90000]");
+        assertThat(span.getSpanId()).isEqualTo("span-1");
+        assertThat(span.getTraceId()).isEqualTo("trace-1");
+        assertThat(span.getParentSpanId()).isEqualTo("parent-1");
+        assertThat(span.getOperationName()).isEqualTo("http.request");
+        assertThat(span.getServiceName()).isEqualTo("api-service");
+        assertThat(span.getStatus()).isEqualTo("OK");
         assertThat(span.getTags()).containsEntry("http.method", "GET"); // GH-90000
         assertThat(span.getLogs()).containsEntry("event", "request_started"); // GH-90000
     }
 
     @Test
-    @DisplayName("Should deserialize with null parentSpanId [GH-90000]")
+    @DisplayName("Should deserialize with null parentSpanId")
     void shouldDeserializeWithNullParentSpanId() throws Exception { // GH-90000
         // Given
         String json = """
@@ -105,11 +105,11 @@ class SpanRequestTest {
 
         // Then
         assertThat(span.getParentSpanId()).isNull(); // GH-90000
-        assertThat(span.getSpanId()).isEqualTo("span-1 [GH-90000]");
+        assertThat(span.getSpanId()).isEqualTo("span-1");
     }
 
     @Test
-    @DisplayName("Should deserialize with empty tags and logs [GH-90000]")
+    @DisplayName("Should deserialize with empty tags and logs")
     void shouldDeserializeWithEmptyTagsAndLogs() throws Exception { // GH-90000
         // Given
         String json = """
@@ -135,7 +135,7 @@ class SpanRequestTest {
     }
 
     @Test
-    @DisplayName("Should handle different status values [GH-90000]")
+    @DisplayName("Should handle different status values")
     void shouldHandleDifferentStatusValues() throws Exception { // GH-90000
         // Test ERROR status
         String jsonError = """
@@ -151,7 +151,7 @@ class SpanRequestTest {
                 """;
 
         SpanRequest spanError = objectMapper.readValue(jsonError, SpanRequest.class); // GH-90000
-        assertThat(spanError.getStatus()).isEqualTo("ERROR [GH-90000]");
+        assertThat(spanError.getStatus()).isEqualTo("ERROR");
 
         // Test UNSET status
         String jsonUnset = """
@@ -167,11 +167,11 @@ class SpanRequestTest {
                 """;
 
         SpanRequest spanUnset = objectMapper.readValue(jsonUnset, SpanRequest.class); // GH-90000
-        assertThat(spanUnset.getStatus()).isEqualTo("UNSET [GH-90000]");
+        assertThat(spanUnset.getStatus()).isEqualTo("UNSET");
     }
 
     @Test
-    @DisplayName("Should create with constructor [GH-90000]")
+    @DisplayName("Should create with constructor")
     void shouldCreateWithConstructor() { // GH-90000
         // When
         SpanRequest span = new SpanRequest( // GH-90000
@@ -189,15 +189,15 @@ class SpanRequestTest {
         );
 
         // Then
-        assertThat(span.getSpanId()).isEqualTo("span-1 [GH-90000]");
-        assertThat(span.getTraceId()).isEqualTo("trace-1 [GH-90000]");
+        assertThat(span.getSpanId()).isEqualTo("span-1");
+        assertThat(span.getTraceId()).isEqualTo("trace-1");
         assertThat(span.getParentSpanId()).isNull(); // GH-90000
         assertThat(span.getTags()).isEmpty(); // GH-90000
         assertThat(span.getLogs()).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle tags with special characters [GH-90000]")
+    @DisplayName("Should handle tags with special characters")
     void shouldHandleTagsWithSpecialCharacters() throws Exception { // GH-90000
         // Given
         String json = """
@@ -227,7 +227,7 @@ class SpanRequestTest {
     }
 
     @Test
-    @DisplayName("Should round-trip correctly [GH-90000]")
+    @DisplayName("Should round-trip correctly")
     void shouldRoundTripCorrectly() throws Exception { // GH-90000
         // Given
         SpanRequest original = new SpanRequest( // GH-90000
@@ -236,8 +236,8 @@ class SpanRequestTest {
                 "parent-1",
                 "http.request",
                 "api-service",
-                Instant.parse("2024-01-01T00:00:00Z [GH-90000]"),
-                Instant.parse("2024-01-01T00:00:01Z [GH-90000]"),
+                Instant.parse("2024-01-01T00:00:00Z"),
+                Instant.parse("2024-01-01T00:00:01Z"),
                 1000L,
                 "OK",
                 Map.of("key1", "value1"), // GH-90000
@@ -260,7 +260,7 @@ class SpanRequestTest {
     }
 
     @Test
-    @DisplayName("Should calculate duration from timestamps if null [GH-90000]")
+    @DisplayName("Should calculate duration from timestamps if null")
     void shouldCalculateDurationFromTimestamps() throws Exception { // GH-90000
         // Given
         String json = """
@@ -280,6 +280,6 @@ class SpanRequestTest {
 
         // Then - duration should be null if not provided (calculated later) // GH-90000
         // This is expected behavior - duration is optional in the request
-        assertThat(span.getSpanId()).isEqualTo("span-1 [GH-90000]");
+        assertThat(span.getSpanId()).isEqualTo("span-1");
     }
 }

@@ -37,7 +37,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AepHttpServer – Learning Endpoints [GH-90000]")
+@DisplayName("AepHttpServer – Learning Endpoints")
 class AepHttpServerLearningTest {
 
     private AepEngine engine;
@@ -64,25 +64,25 @@ class AepHttpServerLearningTest {
     // ==================== GET /api/v1/learning/episodes ====================
 
     @Nested
-    @DisplayName("GET /api/v1/learning/episodes [GH-90000]")
+    @DisplayName("GET /api/v1/learning/episodes")
     class ListEpisodesTests {
 
         @Test
-        @DisplayName("returns 503 when DataCloudClient not configured [GH-90000]")
+        @DisplayName("returns 503 when DataCloudClient not configured")
         void listEpisodes_whenNoDc_returns503() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/learning/episodes [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/learning/episodes");
 
             assertThat(resp.statusCode()).isEqualTo(503); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]") Map<String, Object> body = (Map<String, Object>) mapper.readValue(resp.body(), Map.class);
-            assertThat(body.get("message [GH-90000]").toString()).contains("not available [GH-90000]");
+            @SuppressWarnings("unchecked") Map<String, Object> body = (Map<String, Object>) mapper.readValue(resp.body(), Map.class);
+            assertThat(body.get("message").toString()).contains("not available");
         }
 
         @Test
-        @DisplayName("returns 200 with episodes when DC configured [GH-90000]")
+        @DisplayName("returns 200 with episodes when DC configured")
         void listEpisodes_withDc_returns200() throws Exception { // GH-90000
             when(mockDc.query(anyString(), anyString(), any(DataCloudClient.Query.class))) // GH-90000
                 .thenReturn(Promise.of(List.of())); // GH-90000
@@ -91,39 +91,39 @@ class AepHttpServerLearningTest {
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/learning/episodes [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/learning/episodes");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]") Map<String, Object> body = (Map<String, Object>) mapper.readValue(resp.body(), Map.class);
-            assertThat(body).containsKey("episodes [GH-90000]");
-            assertThat(body.get("count [GH-90000]")).isEqualTo(0);
+            @SuppressWarnings("unchecked") Map<String, Object> body = (Map<String, Object>) mapper.readValue(resp.body(), Map.class);
+            assertThat(body).containsKey("episodes");
+            assertThat(body.get("count")).isEqualTo(0);
         }
     }
 
     // ==================== GET /api/v1/learning/policies ====================
 
     @Nested
-    @DisplayName("GET /api/v1/learning/policies [GH-90000]")
+    @DisplayName("GET /api/v1/learning/policies")
     class ListPoliciesTests {
 
         @Test
-        @DisplayName("returns 200 truthful unconfigured response when HumanReviewQueue not configured [GH-90000]")
+        @DisplayName("returns 200 truthful unconfigured response when HumanReviewQueue not configured")
         void listPolicies_whenNoQueue_returnsTruthfulUnconfiguredResponse() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/learning/policies [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/learning/policies");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]") Map<String, Object> body = (Map<String, Object>) mapper.readValue(resp.body(), Map.class);
-            assertThat(body.get("configured [GH-90000]")).isEqualTo(false);
-            assertThat(body.get("count [GH-90000]")).isEqualTo(0);
-            assertThat(body.get("message [GH-90000]").toString()).contains("Policy store not available [GH-90000]");
+            @SuppressWarnings("unchecked") Map<String, Object> body = (Map<String, Object>) mapper.readValue(resp.body(), Map.class);
+            assertThat(body.get("configured")).isEqualTo(false);
+            assertThat(body.get("count")).isEqualTo(0);
+            assertThat(body.get("message").toString()).contains("Policy store not available");
         }
 
         @Test
-        @DisplayName("returns 200 with policies when queue configured [GH-90000]")
+        @DisplayName("returns 200 with policies when queue configured")
         void listPolicies_withQueue_returns200() throws Exception { // GH-90000
             InMemoryHumanReviewQueue queue =
                 new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP); // GH-90000
@@ -131,22 +131,22 @@ class AepHttpServerLearningTest {
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/learning/policies [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/learning/policies");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]") Map<String, Object> body = (Map<String, Object>) mapper.readValue(resp.body(), Map.class);
-            assertThat(body).containsKey("policies [GH-90000]");
+            @SuppressWarnings("unchecked") Map<String, Object> body = (Map<String, Object>) mapper.readValue(resp.body(), Map.class);
+            assertThat(body).containsKey("policies");
         }
     }
 
     // ==================== POST /api/v1/learning/policies/:policyId/approve ====================
 
     @Nested
-    @DisplayName("POST /api/v1/learning/policies/:policyId/approve [GH-90000]")
+    @DisplayName("POST /api/v1/learning/policies/:policyId/approve")
     class ApprovePolicyTests {
 
         @Test
-        @DisplayName("returns 501 when HumanReviewQueue not configured [GH-90000]")
+        @DisplayName("returns 501 when HumanReviewQueue not configured")
         void approvePolicy_whenNoQueue_returns501() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -161,7 +161,7 @@ class AepHttpServerLearningTest {
         }
 
         @Test
-        @DisplayName("returns 404 when policy not found [GH-90000]")
+        @DisplayName("returns 404 when policy not found")
         void approvePolicy_notFound_returns404() throws Exception { // GH-90000
             InMemoryHumanReviewQueue queue =
                 new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP); // GH-90000
@@ -181,11 +181,11 @@ class AepHttpServerLearningTest {
     // ==================== POST /api/v1/learning/policies/:policyId/reject ====================
 
     @Nested
-    @DisplayName("POST /api/v1/learning/policies/:policyId/reject [GH-90000]")
+    @DisplayName("POST /api/v1/learning/policies/:policyId/reject")
     class RejectPolicyTests {
 
         @Test
-        @DisplayName("returns 501 when HumanReviewQueue not configured [GH-90000]")
+        @DisplayName("returns 501 when HumanReviewQueue not configured")
         void rejectPolicy_whenNoQueue_returns501() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -200,7 +200,7 @@ class AepHttpServerLearningTest {
         }
 
         @Test
-        @DisplayName("returns 404 when policy not found [GH-90000]")
+        @DisplayName("returns 404 when policy not found")
         void rejectPolicy_notFound_returns404() throws Exception { // GH-90000
             InMemoryHumanReviewQueue queue =
                 new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP); // GH-90000
@@ -220,11 +220,11 @@ class AepHttpServerLearningTest {
     // ==================== POST /api/v1/learning/reflect ====================
 
     @Nested
-    @DisplayName("POST /api/v1/learning/reflect [GH-90000]")
+    @DisplayName("POST /api/v1/learning/reflect")
     class TriggerReflectionTests {
 
         @Test
-        @DisplayName("returns 202 Accepted; triggered=false when pipeline not configured [GH-90000]")
+        @DisplayName("returns 202 Accepted; triggered=false when pipeline not configured")
         void triggerReflection_returns202() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -233,10 +233,10 @@ class AepHttpServerLearningTest {
             HttpResponse<String> resp = post("/api/v1/learning/reflect", "{}"); // GH-90000
 
             assertThat(resp.statusCode()).isEqualTo(202); // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]") Map<String, Object> body = (Map<String, Object>) mapper.readValue(resp.body(), Map.class);
+            @SuppressWarnings("unchecked") Map<String, Object> body = (Map<String, Object>) mapper.readValue(resp.body(), Map.class);
             // When DataCloud is not configured the pipeline is null — triggered=false is correct
-            assertThat(body).containsKey("triggered [GH-90000]");
-            assertThat(body).containsKey("timestamp [GH-90000]");
+            assertThat(body).containsKey("triggered");
+            assertThat(body).containsKey("timestamp");
         }
     }
 

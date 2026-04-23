@@ -17,8 +17,8 @@ import java.util.List;
  * @doc.pattern Utility
 */
 public final class DebugTestUtils {
-    private static final Path TEST_RESOURCES = Paths.get("src/test/resources [GH-90000]");
-    private static final Path FIXTURES_DIR = TEST_RESOURCES.resolve("fixtures [GH-90000]");
+    private static final Path TEST_RESOURCES = Paths.get("src/test/resources");
+    private static final Path FIXTURES_DIR = TEST_RESOURCES.resolve("fixtures");
 
     private DebugTestUtils() {} // GH-90000
 

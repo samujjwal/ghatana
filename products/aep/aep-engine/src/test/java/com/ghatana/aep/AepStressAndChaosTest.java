@@ -35,8 +35,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@Tag("stress [GH-90000]")
-@DisplayName("AEP stress and chaos engineering [GH-90000]")
+@Tag("stress")
+@DisplayName("AEP stress and chaos engineering")
 class AepStressAndChaosTest extends EventloopTestBase {
 
     private static final String TENANT = "tenant-stress";
@@ -54,7 +54,7 @@ class AepStressAndChaosTest extends EventloopTestBase {
     // ─── AEP-003.2: Stress tests ──────────────────────────────────────────────
 
     @Test
-    @DisplayName("stress: processes 5 000 events in a single burst without errors [GH-90000]")
+    @DisplayName("stress: processes 5 000 events in a single burst without errors")
     void stress_5000EventBurst_noErrors() { // GH-90000
         int eventCount = 5_000;
         engine = Aep.forTesting(); // GH-90000
@@ -81,7 +81,7 @@ class AepStressAndChaosTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("stress: consecutive bursts maintain correctness across 3 rounds × 1 000 events [GH-90000]")
+    @DisplayName("stress: consecutive bursts maintain correctness across 3 rounds × 1 000 events")
     void stress_consecutiveBursts_correctnessPreserved() { // GH-90000
         int rounds = 3;
         int eventsPerRound = 1_000;
@@ -108,7 +108,7 @@ class AepStressAndChaosTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("stress: multi-type event mix — 10 event types × 200 events each [GH-90000]")
+    @DisplayName("stress: multi-type event mix — 10 event types × 200 events each")
     void stress_mixedEventTypes_allProcessed() { // GH-90000
         int typesCount = 10;
         int eventsPerType = 200;
@@ -134,7 +134,7 @@ class AepStressAndChaosTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("stress: large payload events — 1 000 events with 1 KB payload each [GH-90000]")
+    @DisplayName("stress: large payload events — 1 000 events with 1 KB payload each")
     void stress_largePayloadEvents_noErrors() { // GH-90000
         int eventCount = 1_000;
         engine = Aep.forTesting(); // GH-90000
@@ -157,14 +157,14 @@ class AepStressAndChaosTest extends EventloopTestBase {
         runPromise(() -> Promises.toList(promises)); // GH-90000
 
         assertThat(errorCount.get()) // GH-90000
-                .as("zero errors expected for large-payload events [GH-90000]")
+                .as("zero errors expected for large-payload events")
                 .isZero(); // GH-90000
     }
 
     // ─── AEP-003.3: Chaos engineering tests ──────────────────────────────────
 
     @Test
-    @DisplayName("chaos: mixed valid/invalid events — engine processes valid ones without crashing [GH-90000]")
+    @DisplayName("chaos: mixed valid/invalid events — engine processes valid ones without crashing")
     void chaos_mixedValidInvalidEvents_engineSurvives() { // GH-90000
         engine = Aep.forTesting(); // GH-90000
         AtomicInteger successCount = new AtomicInteger(); // GH-90000
@@ -199,12 +199,12 @@ class AepStressAndChaosTest extends EventloopTestBase {
         // Engine must remain operational — at least 80% valid events processed
         int validEventsCount = 200 - (200 / 5); // GH-90000
         assertThat(successCount.get() + errorCount.get()) // GH-90000
-                .as("all 200 attempts must complete [GH-90000]")
+                .as("all 200 attempts must complete")
                 .isEqualTo(200); // GH-90000
     }
 
     @Test
-    @DisplayName("chaos: rapid tenant switches — 20 tenants interleaved across 500 events [GH-90000]")
+    @DisplayName("chaos: rapid tenant switches — 20 tenants interleaved across 500 events")
     void chaos_rapidTenantSwitching_noIsolationViolations() { // GH-90000
         int tenantCount = 20;
         int totalEvents = 500;
@@ -245,7 +245,7 @@ class AepStressAndChaosTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("chaos: duplicate event IDs — idempotency holds under repeated injection [GH-90000]")
+    @DisplayName("chaos: duplicate event IDs — idempotency holds under repeated injection")
     void chaos_duplicateEventIds_idempotencyPreserved() { // GH-90000
         engine = Aep.forTesting(); // GH-90000
         String idemKey = "chaos-idem-" + System.nanoTime(); // GH-90000
@@ -264,7 +264,7 @@ class AepStressAndChaosTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("chaos: bursty-then-quiet pattern — engine handles spiky throughput [GH-90000]")
+    @DisplayName("chaos: bursty-then-quiet pattern — engine handles spiky throughput")
     void chaos_burstyThenQuiet_engineStable() { // GH-90000
         engine = Aep.forTesting(); // GH-90000
         AtomicInteger totalProcessed = new AtomicInteger(); // GH-90000

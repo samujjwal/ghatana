@@ -8,7 +8,11 @@ import java.util.List;
 /**
  * PersonaRef is the domain-level representation of a DevSecOps persona
  * involved in an agent.
- */
+  * @doc.type class
+ * @doc.purpose Provides persona ref functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 @Value
 @Builder
 public class PersonaRef {

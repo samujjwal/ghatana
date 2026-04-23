@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.purpose Validate AES-GCM encryption correctness, security properties, and error handling
  * @doc.layer infrastructure
  */
-@DisplayName("SimpleEncryptionService Tests [GH-90000]")
+@DisplayName("SimpleEncryptionService Tests")
 class SimpleEncryptionServiceTest {
 
     private String validKey;
@@ -36,37 +36,37 @@ class SimpleEncryptionServiceTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Construction [GH-90000]")
+    @DisplayName("Construction")
     class Construction {
 
         @Test
-        @DisplayName("should create service with valid key [GH-90000]")
+        @DisplayName("should create service with valid key")
         void shouldCreateWithValidKey() { // GH-90000
             assertThatCode(() -> new SimpleEncryptionService(validKey)).doesNotThrowAnyException(); // GH-90000
         }
 
         @Test
-        @DisplayName("should throw NullPointerException for null key [GH-90000]")
+        @DisplayName("should throw NullPointerException for null key")
         void shouldThrowForNullKey() { // GH-90000
             assertThatThrownBy(() -> new SimpleEncryptionService(null)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("should throw IllegalArgumentException for key with wrong length [GH-90000]")
+        @DisplayName("should throw IllegalArgumentException for key with wrong length")
         void shouldThrowForWrongKeyLength() { // GH-90000
             // 16-byte key (AES-128), not 32-byte (AES-256) // GH-90000
             byte[] shortKey = new byte[16];
             String shortBase64 = Base64.getEncoder().encodeToString(shortKey); // GH-90000
             assertThatThrownBy(() -> new SimpleEncryptionService(shortBase64)) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("Invalid key length [GH-90000]");
+                    .hasMessageContaining("Invalid key length");
         }
 
         @Test
-        @DisplayName("should throw IllegalArgumentException for invalid base64 key [GH-90000]")
+        @DisplayName("should throw IllegalArgumentException for invalid base64 key")
         void shouldThrowForInvalidBase64Key() { // GH-90000
-            assertThatThrownBy(() -> new SimpleEncryptionService("not-valid-base64!!! [GH-90000]"))
+            assertThatThrownBy(() -> new SimpleEncryptionService("not-valid-base64!!!"))
                     .isInstanceOf(IllegalArgumentException.class); // GH-90000
         }
     }
@@ -76,11 +76,11 @@ class SimpleEncryptionServiceTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Key Generation [GH-90000]")
+    @DisplayName("Key Generation")
     class KeyGeneration {
 
         @Test
-        @DisplayName("should generate a valid base64-encoded 32-byte key [GH-90000]")
+        @DisplayName("should generate a valid base64-encoded 32-byte key")
         void shouldGenerateValidKey() { // GH-90000
             String key = SimpleEncryptionService.generateKey(); // GH-90000
             byte[] keyBytes = Base64.getDecoder().decode(key); // GH-90000
@@ -88,7 +88,7 @@ class SimpleEncryptionServiceTest {
         }
 
         @Test
-        @DisplayName("should generate unique keys on each call [GH-90000]")
+        @DisplayName("should generate unique keys on each call")
         void shouldGenerateUniqueKeys() { // GH-90000
             String key1 = SimpleEncryptionService.generateKey(); // GH-90000
             String key2 = SimpleEncryptionService.generateKey(); // GH-90000
@@ -96,7 +96,7 @@ class SimpleEncryptionServiceTest {
         }
 
         @Test
-        @DisplayName("generated key should be usable with service constructor [GH-90000]")
+        @DisplayName("generated key should be usable with service constructor")
         void generatedKeyShouldBeUsable() { // GH-90000
             String key = SimpleEncryptionService.generateKey(); // GH-90000
             assertThatCode(() -> new SimpleEncryptionService(key)).doesNotThrowAnyException(); // GH-90000
@@ -108,11 +108,11 @@ class SimpleEncryptionServiceTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Encrypt and Decrypt [GH-90000]")
+    @DisplayName("Encrypt and Decrypt")
     class EncryptDecrypt {
 
         @Test
-        @DisplayName("should encrypt and decrypt plaintext correctly [GH-90000]")
+        @DisplayName("should encrypt and decrypt plaintext correctly")
         void shouldEncryptAndDecrypt() { // GH-90000
             byte[] plaintext = "Hello, Data-Cloud!".getBytes(StandardCharsets.UTF_8); // GH-90000
             byte[] encrypted = service.encrypt(plaintext); // GH-90000
@@ -121,7 +121,7 @@ class SimpleEncryptionServiceTest {
         }
 
         @Test
-        @DisplayName("should encrypt empty byte array [GH-90000]")
+        @DisplayName("should encrypt empty byte array")
         void shouldEncryptEmptyArray() { // GH-90000
             byte[] plaintext = new byte[0];
             byte[] encrypted = service.encrypt(plaintext); // GH-90000
@@ -130,7 +130,7 @@ class SimpleEncryptionServiceTest {
         }
 
         @ParameterizedTest
-        @DisplayName("should encrypt and decrypt various payloads [GH-90000]")
+        @DisplayName("should encrypt and decrypt various payloads")
         @ValueSource(strings = {"a", "short", "medium-length payload for testing", "1234567890"}) // GH-90000
         void shouldEncryptVariousPayloads(String text) { // GH-90000
             byte[] plaintext = text.getBytes(StandardCharsets.UTF_8); // GH-90000
@@ -140,7 +140,7 @@ class SimpleEncryptionServiceTest {
         }
 
         @Test
-        @DisplayName("should encrypt large payload correctly [GH-90000]")
+        @DisplayName("should encrypt large payload correctly")
         void shouldEncryptLargePayload() { // GH-90000
             byte[] bigPayload = new byte[1_000_000];
             new java.util.Random(42L).nextBytes(bigPayload); // GH-90000
@@ -150,7 +150,7 @@ class SimpleEncryptionServiceTest {
         }
 
         @Test
-        @DisplayName("encrypted output should differ from plaintext [GH-90000]")
+        @DisplayName("encrypted output should differ from plaintext")
         void encryptedShouldDifferFromPlaintext() { // GH-90000
             byte[] plaintext = "sensitive data".getBytes(StandardCharsets.UTF_8); // GH-90000
             byte[] encrypted = service.encrypt(plaintext); // GH-90000
@@ -158,7 +158,7 @@ class SimpleEncryptionServiceTest {
         }
 
         @Test
-        @DisplayName("same plaintext encrypted twice should produce different ciphertexts (IV randomness) [GH-90000]")
+        @DisplayName("same plaintext encrypted twice should produce different ciphertexts (IV randomness)")
         void sameTextShouldProduceDifferentCiphertexts() { // GH-90000
             byte[] plaintext = "same data".getBytes(StandardCharsets.UTF_8); // GH-90000
             byte[] enc1 = service.encrypt(plaintext); // GH-90000
@@ -167,14 +167,14 @@ class SimpleEncryptionServiceTest {
         }
 
         @Test
-        @DisplayName("should throw NullPointerException when encrypting null [GH-90000]")
+        @DisplayName("should throw NullPointerException when encrypting null")
         void shouldThrowForNullEncryptInput() { // GH-90000
             assertThatThrownBy(() -> service.encrypt(null)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("should throw NullPointerException when decrypting null [GH-90000]")
+        @DisplayName("should throw NullPointerException when decrypting null")
         void shouldThrowForNullDecryptInput() { // GH-90000
             assertThatThrownBy(() -> service.decrypt(null)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
@@ -186,11 +186,11 @@ class SimpleEncryptionServiceTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Tamper Detection [GH-90000]")
+    @DisplayName("Tamper Detection")
     class TamperDetection {
 
         @Test
-        @DisplayName("should throw EncryptionException when ciphertext is too short [GH-90000]")
+        @DisplayName("should throw EncryptionException when ciphertext is too short")
         void shouldRejectTooShortCiphertext() { // GH-90000
             byte[] tooShort = new byte[5];
             assertThatThrownBy(() -> service.decrypt(tooShort)) // GH-90000
@@ -198,7 +198,7 @@ class SimpleEncryptionServiceTest {
         }
 
         @Test
-        @DisplayName("should throw EncryptionException when ciphertext is tampered [GH-90000]")
+        @DisplayName("should throw EncryptionException when ciphertext is tampered")
         void shouldDetectTamperedCiphertext() { // GH-90000
             byte[] plaintext = "important data".getBytes(StandardCharsets.UTF_8); // GH-90000
             byte[] encrypted = service.encrypt(plaintext); // GH-90000
@@ -209,7 +209,7 @@ class SimpleEncryptionServiceTest {
         }
 
         @Test
-        @DisplayName("should throw EncryptionException when decrypting with a different key [GH-90000]")
+        @DisplayName("should throw EncryptionException when decrypting with a different key")
         void shouldRejectDifferentKey() { // GH-90000
             byte[] plaintext = "secret".getBytes(StandardCharsets.UTF_8); // GH-90000
             byte[] encrypted = service.encrypt(plaintext); // GH-90000
@@ -226,14 +226,14 @@ class SimpleEncryptionServiceTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("fromEnvironment factory [GH-90000]")
+    @DisplayName("fromEnvironment factory")
     class FromEnvironment {
 
         @Test
-        @DisplayName("should create service when env var is absent (ephemeral key fallback) [GH-90000]")
+        @DisplayName("should create service when env var is absent (ephemeral key fallback)")
         void shouldCreateServiceWithEphemeralKeyWhenEnvVarAbsent() { // GH-90000
             // Non-existent env var → ephemeral key path
-            assertThatCode(() -> SimpleEncryptionService.fromEnvironment("__NONEXISTENT_TEST_VAR_XYZ__ [GH-90000]"))
+            assertThatCode(() -> SimpleEncryptionService.fromEnvironment("__NONEXISTENT_TEST_VAR_XYZ__"))
                     .doesNotThrowAnyException(); // GH-90000
         }
     }

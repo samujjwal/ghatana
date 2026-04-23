@@ -18,11 +18,11 @@ import org.junit.jupiter.api.Test;
  * @doc.layer test
  * @doc.pattern Test
  */
-@DisplayName("YappcAgentSystem AI Runtime Mode Tests [GH-90000]")
+@DisplayName("YappcAgentSystem AI Runtime Mode Tests")
 class YappcAgentSystemAiRuntimeModeTest extends EventloopTestBase {
 
     @Test
-    @DisplayName("build rejects missing gateway when AI runtime mode is required [GH-90000]")
+    @DisplayName("build rejects missing gateway when AI runtime mode is required")
     void buildRejectsMissingGatewayWhenRequired() { // GH-90000
         MemoryStore memoryStore = mock(MemoryStore.class); // GH-90000
 
@@ -32,11 +32,11 @@ class YappcAgentSystemAiRuntimeModeTest extends EventloopTestBase {
                 .aiRuntimeMode(YappcAgentSystem.AiRuntimeMode.REQUIRED) // GH-90000
                 .build()) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("aiRuntimeMode=REQUIRED [GH-90000]");
+                .hasMessageContaining("aiRuntimeMode=REQUIRED");
     }
 
     @Test
-    @DisplayName("build allows explicit stub mode without gateway [GH-90000]")
+    @DisplayName("build allows explicit stub mode without gateway")
     void buildAllowsExplicitStubModeWithoutGateway() { // GH-90000
         MemoryStore memoryStore = mock(MemoryStore.class); // GH-90000
 
@@ -51,7 +51,7 @@ class YappcAgentSystemAiRuntimeModeTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("build allows required mode when gateway is supplied [GH-90000]")
+    @DisplayName("build allows required mode when gateway is supplied")
     void buildAllowsRequiredModeWhenGatewaySupplied() { // GH-90000
         MemoryStore memoryStore = mock(MemoryStore.class); // GH-90000
         LLMGenerator.LLMGateway llmGateway = mock(LLMGenerator.LLMGateway.class); // GH-90000

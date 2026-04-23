@@ -35,21 +35,21 @@ class MemoryTierTest {
         "0.9,  HOT",
         "1.0,  HOT"
     })
-    @DisplayName("fromSalienceScore maps score to correct tier [GH-90000]")
+    @DisplayName("fromSalienceScore maps score to correct tier")
     void fromSalienceScore_mapsCorrectly(double score, MemoryTier expected) { // GH-90000
         assertThat(MemoryTier.fromSalienceScore(score)).isEqualTo(expected); // GH-90000
     }
 
     @Test
-    @DisplayName("fromSalienceScore rejects negative score [GH-90000]")
+    @DisplayName("fromSalienceScore rejects negative score")
     void fromSalienceScore_rejectsNegative() { // GH-90000
         assertThatThrownBy(() -> MemoryTier.fromSalienceScore(-0.1)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("between 0.0 and 1.0 [GH-90000]");
+                .hasMessageContaining("between 0.0 and 1.0");
     }
 
     @Test
-    @DisplayName("fromSalienceScore rejects score > 1.0 [GH-90000]")
+    @DisplayName("fromSalienceScore rejects score > 1.0")
     void fromSalienceScore_rejectsAboveOne() { // GH-90000
         assertThatThrownBy(() -> MemoryTier.fromSalienceScore(1.01)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class); // GH-90000
@@ -58,7 +58,7 @@ class MemoryTierTest {
     // ═══ acceptsSalience ═══
 
     @Test
-    @DisplayName("HOT accepts [0.8, 1.0) [GH-90000]")
+    @DisplayName("HOT accepts [0.8, 1.0)")
     void hotAcceptsSalience() { // GH-90000
         assertThat(MemoryTier.HOT.acceptsSalience(0.8)).isTrue(); // GH-90000
         assertThat(MemoryTier.HOT.acceptsSalience(0.9)).isTrue(); // GH-90000
@@ -67,7 +67,7 @@ class MemoryTierTest {
     }
 
     @Test
-    @DisplayName("ARCHIVE accepts [0.0, 0.2) [GH-90000]")
+    @DisplayName("ARCHIVE accepts [0.0, 0.2)")
     void archiveAcceptsSalience() { // GH-90000
         assertThat(MemoryTier.ARCHIVE.acceptsSalience(0.0)).isTrue(); // GH-90000
         assertThat(MemoryTier.ARCHIVE.acceptsSalience(0.1)).isTrue(); // GH-90000
@@ -77,7 +77,7 @@ class MemoryTierTest {
     // ═══ Promotion / Demotion ═══
 
     @Test
-    @DisplayName("Demotion chain: HOT→WARM→COLD→ARCHIVE→ARCHIVE [GH-90000]")
+    @DisplayName("Demotion chain: HOT→WARM→COLD→ARCHIVE→ARCHIVE")
     void demotionChain() { // GH-90000
         assertThat(MemoryTier.HOT.demote()).isEqualTo(MemoryTier.WARM); // GH-90000
         assertThat(MemoryTier.WARM.demote()).isEqualTo(MemoryTier.COLD); // GH-90000
@@ -86,7 +86,7 @@ class MemoryTierTest {
     }
 
     @Test
-    @DisplayName("Promotion chain: ARCHIVE→COLD→WARM→HOT→HOT [GH-90000]")
+    @DisplayName("Promotion chain: ARCHIVE→COLD→WARM→HOT→HOT")
     void promotionChain() { // GH-90000
         assertThat(MemoryTier.ARCHIVE.promote()).isEqualTo(MemoryTier.COLD); // GH-90000
         assertThat(MemoryTier.COLD.promote()).isEqualTo(MemoryTier.WARM); // GH-90000
@@ -97,7 +97,7 @@ class MemoryTierTest {
     // ═══ shouldPromote / shouldDemote ═══
 
     @Test
-    @DisplayName("shouldPromote returns true when salience exceeds max threshold [GH-90000]")
+    @DisplayName("shouldPromote returns true when salience exceeds max threshold")
     void shouldPromote_exceedsMaxThreshold() { // GH-90000
         assertThat(MemoryTier.WARM.shouldPromote(0.85)).isTrue(); // 0.85 >= WARM.max(0.8) // GH-90000
         assertThat(MemoryTier.COLD.shouldPromote(0.6)).isTrue();  // 0.6 >= COLD.max(0.5) // GH-90000
@@ -105,21 +105,21 @@ class MemoryTierTest {
     }
 
     @Test
-    @DisplayName("shouldPromote returns false when salience within tier range [GH-90000]")
+    @DisplayName("shouldPromote returns false when salience within tier range")
     void shouldPromote_withinRange() { // GH-90000
         assertThat(MemoryTier.WARM.shouldPromote(0.6)).isFalse(); // GH-90000
         assertThat(MemoryTier.COLD.shouldPromote(0.3)).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("shouldPromote returns false for HOT (already highest) [GH-90000]")
+    @DisplayName("shouldPromote returns false for HOT (already highest)")
     void shouldPromote_falseForHot() { // GH-90000
         assertThat(MemoryTier.HOT.shouldPromote(1.0)).isFalse(); // GH-90000
         assertThat(MemoryTier.HOT.shouldPromote(0.99)).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("shouldDemote returns true when salience below min threshold [GH-90000]")
+    @DisplayName("shouldDemote returns true when salience below min threshold")
     void shouldDemote_belowMinThreshold() { // GH-90000
         assertThat(MemoryTier.HOT.shouldDemote(0.7)).isTrue(); // 0.7 < HOT.min(0.8) // GH-90000
         assertThat(MemoryTier.WARM.shouldDemote(0.4)).isTrue(); // 0.4 < WARM.min(0.5) // GH-90000
@@ -127,7 +127,7 @@ class MemoryTierTest {
     }
 
     @Test
-    @DisplayName("shouldDemote returns false for ARCHIVE (already lowest) [GH-90000]")
+    @DisplayName("shouldDemote returns false for ARCHIVE (already lowest)")
     void shouldDemote_falseForArchive() { // GH-90000
         assertThat(MemoryTier.ARCHIVE.shouldDemote(0.0)).isFalse(); // GH-90000
     }
@@ -135,7 +135,7 @@ class MemoryTierTest {
     // ═══ Priority comparison ═══
 
     @Test
-    @DisplayName("HOT has highest priority [GH-90000]")
+    @DisplayName("HOT has highest priority")
     void hotHasHighestPriority() { // GH-90000
         assertThat(MemoryTier.HOT.isHigherPriorityThan(MemoryTier.WARM)).isTrue(); // GH-90000
         assertThat(MemoryTier.HOT.isHigherPriorityThan(MemoryTier.COLD)).isTrue(); // GH-90000
@@ -143,7 +143,7 @@ class MemoryTierTest {
     }
 
     @Test
-    @DisplayName("ARCHIVE has lowest priority [GH-90000]")
+    @DisplayName("ARCHIVE has lowest priority")
     void archiveHasLowestPriority() { // GH-90000
         assertThat(MemoryTier.ARCHIVE.isHigherPriorityThan(MemoryTier.HOT)).isFalse(); // GH-90000
         assertThat(MemoryTier.ARCHIVE.isHigherPriorityThan(MemoryTier.WARM)).isFalse(); // GH-90000
@@ -151,7 +151,7 @@ class MemoryTierTest {
     }
 
     @Test
-    @DisplayName("Same tier is not higher priority than itself [GH-90000]")
+    @DisplayName("Same tier is not higher priority than itself")
     void sameTierNotHigherPriority() { // GH-90000
         for (MemoryTier tier : MemoryTier.values()) { // GH-90000
             assertThat(tier.isHigherPriorityThan(tier)).isFalse(); // GH-90000
@@ -161,7 +161,7 @@ class MemoryTierTest {
     // ═══ Comparators ═══
 
     @Test
-    @DisplayName("BY_EVICTION_PRIORITY sorts HOT first, ARCHIVE last [GH-90000]")
+    @DisplayName("BY_EVICTION_PRIORITY sorts HOT first, ARCHIVE last")
     void byEvictionPriority_order() { // GH-90000
         List<MemoryTier> sorted = Arrays.stream(MemoryTier.values()) // GH-90000
                 .sorted(MemoryTier.BY_EVICTION_PRIORITY) // GH-90000
@@ -171,7 +171,7 @@ class MemoryTierTest {
     }
 
     @Test
-    @DisplayName("BY_SALIENCE_ASC sorts ARCHIVE first, HOT last [GH-90000]")
+    @DisplayName("BY_SALIENCE_ASC sorts ARCHIVE first, HOT last")
     void bySalienceAsc_order() { // GH-90000
         List<MemoryTier> sorted = Arrays.stream(MemoryTier.values()) // GH-90000
                 .sorted(MemoryTier.BY_SALIENCE_ASC) // GH-90000
@@ -184,14 +184,14 @@ class MemoryTierTest {
 
     @ParameterizedTest
     @EnumSource(MemoryTier.class) // GH-90000
-    @DisplayName("Every tier has non-null positive defaultTtl [GH-90000]")
+    @DisplayName("Every tier has non-null positive defaultTtl")
     void everyTierHasPositiveTtl(MemoryTier tier) { // GH-90000
         assertThat(tier.getDefaultTtl()).isNotNull(); // GH-90000
         assertThat(tier.getDefaultTtl()).isPositive(); // GH-90000
     }
 
     @Test
-    @DisplayName("HOT has shortest TTL, ARCHIVE has longest [GH-90000]")
+    @DisplayName("HOT has shortest TTL, ARCHIVE has longest")
     void ttlOrdering() { // GH-90000
         assertThat(MemoryTier.HOT.getDefaultTtl()).isLessThan(MemoryTier.WARM.getDefaultTtl()); // GH-90000
         assertThat(MemoryTier.WARM.getDefaultTtl()).isLessThan(MemoryTier.COLD.getDefaultTtl()); // GH-90000
@@ -199,7 +199,7 @@ class MemoryTierTest {
     }
 
     @Test
-    @DisplayName("Storage prefixes are unique across tiers [GH-90000]")
+    @DisplayName("Storage prefixes are unique across tiers")
     void storagePrefixesAreUnique() { // GH-90000
         List<String> prefixes = Arrays.stream(MemoryTier.values()) // GH-90000
                 .map(MemoryTier::getStoragePrefix) // GH-90000
@@ -210,13 +210,13 @@ class MemoryTierTest {
     // ═══ Enum completeness ═══
 
     @Test
-    @DisplayName("Exactly 4 memory tiers exist [GH-90000]")
+    @DisplayName("Exactly 4 memory tiers exist")
     void exactlyFourTiers() { // GH-90000
         assertThat(MemoryTier.values()).hasSize(4); // GH-90000
     }
 
     @Test
-    @DisplayName("Salience thresholds cover [0.0, 1.0] without gaps [GH-90000]")
+    @DisplayName("Salience thresholds cover [0.0, 1.0] without gaps")
     void salienceThresholdsCoverEntireRange() { // GH-90000
         // Every value from 0.0 to 1.0 in increments of 0.01 should map to some tier
         for (int i = 0; i <= 100; i++) { // GH-90000
@@ -228,9 +228,9 @@ class MemoryTierTest {
     }
 
     @Test
-    @DisplayName("toString contains tier name and priority [GH-90000]")
+    @DisplayName("toString contains tier name and priority")
     void toStringContainsInfo() { // GH-90000
         String s = MemoryTier.HOT.toString(); // GH-90000
-        assertThat(s).contains("HOT [GH-90000]").contains("1 [GH-90000]");
+        assertThat(s).contains("HOT").contains("1");
     }
 }

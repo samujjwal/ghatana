@@ -35,7 +35,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("DurableBillingLedgerPlugin contract tests [GH-90000]")
+@DisplayName("DurableBillingLedgerPlugin contract tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class DurableBillingLedgerPluginTest extends EventloopTestBase {
 
@@ -67,17 +67,17 @@ class DurableBillingLedgerPluginTest extends EventloopTestBase {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("KP-012 — posting the same transaction twice must return the same entry ID [GH-90000]")
+    @DisplayName("KP-012 — posting the same transaction twice must return the same entry ID")
     void testIdempotentPosting() { // GH-90000
         BillingTransaction tx = BillingTransaction.builder() // GH-90000
-                .transactionId("txn-idem-001 [GH-90000]")
-                .sourceProductId("finance [GH-90000]")
-                .debitAccount("acct-debit [GH-90000]")
-                .creditAccount("acct-credit [GH-90000]")
-                .amount(new BigDecimal("100.00 [GH-90000]"))
-                .currency("USD [GH-90000]")
+                .transactionId("txn-idem-001")
+                .sourceProductId("finance")
+                .debitAccount("acct-debit")
+                .creditAccount("acct-credit")
+                .amount(new BigDecimal("100.00"))
+                .currency("USD")
                 .type(BillingTransaction.TransactionType.CHARGE) // GH-90000
-                .description("Idempotency test [GH-90000]")
+                .description("Idempotency test")
                 .build(); // GH-90000
 
         String entryId1 = runPromise(() -> plugin.postTransaction(tx)); // GH-90000
@@ -88,15 +88,15 @@ class DurableBillingLedgerPluginTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("KP-012 — idempotent post must return POSTED status [GH-90000]")
+    @DisplayName("KP-012 — idempotent post must return POSTED status")
     void testIdempotentPostingStatus() { // GH-90000
         BillingTransaction tx = BillingTransaction.builder() // GH-90000
-                .transactionId("txn-status-001 [GH-90000]")
-                .sourceProductId("finance [GH-90000]")
-                .debitAccount("acct-d [GH-90000]")
-                .creditAccount("acct-c [GH-90000]")
-                .amount(new BigDecimal("50.00 [GH-90000]"))
-                .currency("USD [GH-90000]")
+                .transactionId("txn-status-001")
+                .sourceProductId("finance")
+                .debitAccount("acct-d")
+                .creditAccount("acct-c")
+                .amount(new BigDecimal("50.00"))
+                .currency("USD")
                 .type(BillingTransaction.TransactionType.CHARGE) // GH-90000
                 .build(); // GH-90000
 
@@ -104,7 +104,7 @@ class DurableBillingLedgerPluginTest extends EventloopTestBase {
         runPromise(() -> plugin.postTransaction(tx)); // second post // GH-90000
 
         BillingLedgerPlugin.PostingStatus status =
-                runPromise(() -> plugin.getPostingStatus("txn-status-001 [GH-90000]"));
+                runPromise(() -> plugin.getPostingStatus("txn-status-001"));
 
         assertThat(status).isEqualTo(BillingLedgerPlugin.PostingStatus.POSTED); // GH-90000
     }
@@ -114,17 +114,17 @@ class DurableBillingLedgerPluginTest extends EventloopTestBase {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("Posting a new transaction must create an entry retrievable by getEntry [GH-90000]")
+    @DisplayName("Posting a new transaction must create an entry retrievable by getEntry")
     void testPostAndRetrieve() { // GH-90000
         BillingTransaction tx = BillingTransaction.builder() // GH-90000
-                .transactionId("txn-retrieve-001 [GH-90000]")
-                .sourceProductId("phr [GH-90000]")
-                .debitAccount("phr-debit-acct [GH-90000]")
-                .creditAccount("phr-credit-acct [GH-90000]")
-                .amount(new BigDecimal("200.50 [GH-90000]"))
-                .currency("NPR [GH-90000]")
+                .transactionId("txn-retrieve-001")
+                .sourceProductId("phr")
+                .debitAccount("phr-debit-acct")
+                .creditAccount("phr-credit-acct")
+                .amount(new BigDecimal("200.50"))
+                .currency("NPR")
                 .type(BillingTransaction.TransactionType.CHARGE) // GH-90000
-                .description("PHR billing charge [GH-90000]")
+                .description("PHR billing charge")
                 .build(); // GH-90000
 
         String entryId = runPromise(() -> plugin.postTransaction(tx)); // GH-90000
@@ -133,18 +133,18 @@ class DurableBillingLedgerPluginTest extends EventloopTestBase {
                 runPromise(() -> plugin.getEntry(entryId)); // GH-90000
 
         assertThat(entry).isPresent(); // GH-90000
-        assertThat(entry.get().transactionId()).isEqualTo("txn-retrieve-001 [GH-90000]");
-        assertThat(entry.get().debitAccount()).isEqualTo("phr-debit-acct [GH-90000]");
-        assertThat(entry.get().creditAccount()).isEqualTo("phr-credit-acct [GH-90000]");
-        assertThat(entry.get().amount()).isEqualByComparingTo(new BigDecimal("200.50 [GH-90000]"));
-        assertThat(entry.get().currency()).isEqualTo("NPR [GH-90000]");
+        assertThat(entry.get().transactionId()).isEqualTo("txn-retrieve-001");
+        assertThat(entry.get().debitAccount()).isEqualTo("phr-debit-acct");
+        assertThat(entry.get().creditAccount()).isEqualTo("phr-credit-acct");
+        assertThat(entry.get().amount()).isEqualByComparingTo(new BigDecimal("200.50"));
+        assertThat(entry.get().currency()).isEqualTo("NPR");
     }
 
     @Test
-    @DisplayName("Unknown transaction must have PostingStatus.NOT_FOUND [GH-90000]")
+    @DisplayName("Unknown transaction must have PostingStatus.NOT_FOUND")
     void testNotFoundStatus() { // GH-90000
         BillingLedgerPlugin.PostingStatus status =
-                runPromise(() -> plugin.getPostingStatus("txn-nonexistent [GH-90000]"));
+                runPromise(() -> plugin.getPostingStatus("txn-nonexistent"));
 
         assertThat(status).isEqualTo(BillingLedgerPlugin.PostingStatus.NOT_FOUND); // GH-90000
     }
@@ -154,15 +154,15 @@ class DurableBillingLedgerPluginTest extends EventloopTestBase {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("Reversing a posted transaction must produce a reversal entry and update status [GH-90000]")
+    @DisplayName("Reversing a posted transaction must produce a reversal entry and update status")
     void testReversal() { // GH-90000
         BillingTransaction tx = BillingTransaction.builder() // GH-90000
-                .transactionId("txn-reversal-001 [GH-90000]")
-                .sourceProductId("finance [GH-90000]")
-                .debitAccount("rev-debit [GH-90000]")
-                .creditAccount("rev-credit [GH-90000]")
-                .amount(new BigDecimal("300.00 [GH-90000]"))
-                .currency("USD [GH-90000]")
+                .transactionId("txn-reversal-001")
+                .sourceProductId("finance")
+                .debitAccount("rev-debit")
+                .creditAccount("rev-credit")
+                .amount(new BigDecimal("300.00"))
+                .currency("USD")
                 .type(BillingTransaction.TransactionType.CHARGE) // GH-90000
                 .build(); // GH-90000
 
@@ -176,17 +176,17 @@ class DurableBillingLedgerPluginTest extends EventloopTestBase {
                 runPromise(() -> plugin.getEntry(reversalId)); // GH-90000
         assertThat(reversalEntry).isPresent(); // GH-90000
         // Reversal swaps debit and credit accounts
-        assertThat(reversalEntry.get().debitAccount()).isEqualTo("rev-credit [GH-90000]");
-        assertThat(reversalEntry.get().creditAccount()).isEqualTo("rev-debit [GH-90000]");
+        assertThat(reversalEntry.get().debitAccount()).isEqualTo("rev-credit");
+        assertThat(reversalEntry.get().creditAccount()).isEqualTo("rev-debit");
     }
 
     @Test
-    @DisplayName("Reversing a non-existent transaction must throw IllegalArgumentException [GH-90000]")
+    @DisplayName("Reversing a non-existent transaction must throw IllegalArgumentException")
     void testReverseNonExistentTransaction() { // GH-90000
         assertThatThrownBy(() -> // GH-90000
                 runPromise(() -> plugin.reverseTransaction("txn-nonexistent-reversal", "reason"))) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("txn-nonexistent-reversal [GH-90000]");
+                .hasMessageContaining("txn-nonexistent-reversal");
     }
 
     // -------------------------------------------------------------------------
@@ -194,14 +194,14 @@ class DurableBillingLedgerPluginTest extends EventloopTestBase {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("Creating an account that already exists must return IllegalArgumentException [GH-90000]")
+    @DisplayName("Creating an account that already exists must return IllegalArgumentException")
     void testCreateDuplicateAccount() { // GH-90000
         runPromise(() -> plugin.createAccount("acct-dup", BillingLedgerPlugin.AccountType.ASSET)); // GH-90000
 
         assertThatThrownBy(() -> // GH-90000
                 runPromise(() -> plugin.createAccount("acct-dup", BillingLedgerPlugin.AccountType.ASSET))) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("acct-dup [GH-90000]");
+                .hasMessageContaining("acct-dup");
     }
 
     // -------------------------------------------------------------------------
@@ -209,16 +209,16 @@ class DurableBillingLedgerPluginTest extends EventloopTestBase {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("queryEntries must return only entries within the specified time range [GH-90000]")
+    @DisplayName("queryEntries must return only entries within the specified time range")
     void testQueryEntriesTimeRange() { // GH-90000
         // Post with timestamps
         BillingTransaction tx1 = BillingTransaction.builder() // GH-90000
-                .transactionId("txn-q1 [GH-90000]")
-                .sourceProductId("finance [GH-90000]")
-                .debitAccount("query-debit [GH-90000]")
-                .creditAccount("query-credit [GH-90000]")
-                .amount(new BigDecimal("10.00 [GH-90000]"))
-                .currency("USD [GH-90000]")
+                .transactionId("txn-q1")
+                .sourceProductId("finance")
+                .debitAccount("query-debit")
+                .creditAccount("query-credit")
+                .amount(new BigDecimal("10.00"))
+                .currency("USD")
                 .type(BillingTransaction.TransactionType.CHARGE) // GH-90000
                 .build(); // GH-90000
 
@@ -232,19 +232,19 @@ class DurableBillingLedgerPluginTest extends EventloopTestBase {
                         new BillingLedgerPlugin.TimeRange(start, end))); // GH-90000
 
         assertThat(entries).hasSize(1); // GH-90000
-        assertThat(entries.get(0).transactionId()).isEqualTo("txn-q1 [GH-90000]");
+        assertThat(entries.get(0).transactionId()).isEqualTo("txn-q1");
     }
 
     @Test
-    @DisplayName("queryEntries outside time range must return empty list [GH-90000]")
+    @DisplayName("queryEntries outside time range must return empty list")
     void testQueryEntriesOutsideRange() { // GH-90000
         BillingTransaction tx = BillingTransaction.builder() // GH-90000
-                .transactionId("txn-q-out [GH-90000]")
-                .sourceProductId("finance [GH-90000]")
-                .debitAccount("acct-out [GH-90000]")
-                .creditAccount("acct-out-cr [GH-90000]")
-                .amount(new BigDecimal("1.00 [GH-90000]"))
-                .currency("USD [GH-90000]")
+                .transactionId("txn-q-out")
+                .sourceProductId("finance")
+                .debitAccount("acct-out")
+                .creditAccount("acct-out-cr")
+                .amount(new BigDecimal("1.00"))
+                .currency("USD")
                 .type(BillingTransaction.TransactionType.CHARGE) // GH-90000
                 .build(); // GH-90000
 

@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Unit tests for {@link DefaultPlanCompiler} and {@link PlanCompilationException}.
  */
-@DisplayName("DefaultPlanCompiler tests [GH-90000]")
+@DisplayName("DefaultPlanCompiler tests")
 class DefaultPlanCompilerTest extends EventloopTestBase {
 
     private DefaultPlanCompiler compiler;
@@ -35,32 +35,32 @@ class DefaultPlanCompilerTest extends EventloopTestBase {
     // ── Happy-path ─────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Successful compilation [GH-90000]")
+    @DisplayName("Successful compilation")
     class SuccessfulCompilation {
 
         @Test
-        @DisplayName("compiles objective with no context actions → stub action [GH-90000]")
+        @DisplayName("compiles objective with no context actions → stub action")
         void compilesWithNoContextActions() { // GH-90000
             PlanGraph graph = runPromise(() -> compiler.compile("agent-1", "tenant-1", "Do something")); // GH-90000
-            assertThat(graph.agentId()).isEqualTo("agent-1 [GH-90000]");
-            assertThat(graph.objective()).isEqualTo("Do something [GH-90000]");
+            assertThat(graph.agentId()).isEqualTo("agent-1");
+            assertThat(graph.objective()).isEqualTo("Do something");
             assertThat(graph.actions()).hasSize(1); // GH-90000
             assertThat(graph.actions().get(0).actionClass()).isEqualTo(ActionClass.DRAFT); // GH-90000
         }
 
         @Test
-        @DisplayName("compiles with supplied actions in context [GH-90000]")
+        @DisplayName("compiles with supplied actions in context")
         void compilesWithContextActions() { // GH-90000
             List<PlannedAction> actions = List.of( // GH-90000
                     PlannedAction.simple("a1", "Read data", ActionClass.READ), // GH-90000
-                    new PlannedAction("a2", "Write result", null, Set.of("a1 [GH-90000]"), ActionClass.WRITE_REVERSIBLE, false));
+                    new PlannedAction("a2", "Write result", null, Set.of("a1"), ActionClass.WRITE_REVERSIBLE, false));
             PlanGraph graph = runPromise(() -> compiler.compile( // GH-90000
                     "agent-1", "tenant-1", "Multi-step", Map.of("actions", actions))); // GH-90000
             assertThat(graph.actions()).hasSize(2); // GH-90000
         }
 
         @Test
-        @DisplayName("returns unique planId on each compile [GH-90000]")
+        @DisplayName("returns unique planId on each compile")
         void returnsUniquePlanId() { // GH-90000
             PlanGraph g1 = runPromise(() -> compiler.compile("a", "t", "Obj")); // GH-90000
             PlanGraph g2 = runPromise(() -> compiler.compile("a", "t", "Obj")); // GH-90000
@@ -68,15 +68,15 @@ class DefaultPlanCompilerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("convenience overload (no context) delegates correctly [GH-90000]")
+        @DisplayName("convenience overload (no context) delegates correctly")
         void convenienceOverloadDelegates() { // GH-90000
             PlanGraph graph = runPromise(() -> compiler.compile("agent-1", "tenant-1", "Obj")); // GH-90000
             assertThat(graph).isNotNull(); // GH-90000
-            assertThat(graph.agentId()).isEqualTo("agent-1 [GH-90000]");
+            assertThat(graph.agentId()).isEqualTo("agent-1");
         }
 
         @Test
-        @DisplayName("empty actions list in context produces stub action [GH-90000]")
+        @DisplayName("empty actions list in context produces stub action")
         void emptyActionsListProducesStub() { // GH-90000
             PlanGraph graph = runPromise(() -> compiler.compile( // GH-90000
                     "agent-1", "tenant-1", "Objective", Map.of("actions", List.of()))); // GH-90000
@@ -88,11 +88,11 @@ class DefaultPlanCompilerTest extends EventloopTestBase {
     // ── Approval enrichment ────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Approval enrichment [GH-90000]")
+    @DisplayName("Approval enrichment")
     class ApprovalEnrichment {
 
         @Test
-        @DisplayName("WRITE_IRREVERSIBLE action gets requiresApproval=true [GH-90000]")
+        @DisplayName("WRITE_IRREVERSIBLE action gets requiresApproval=true")
         void irreversibleActionForcesApproval() { // GH-90000
             List<PlannedAction> actions = List.of( // GH-90000
                     new PlannedAction("a1", "Send email", "email-tool", Set.of(), // GH-90000
@@ -103,7 +103,7 @@ class DefaultPlanCompilerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("CALL_EXTERNAL action gets requiresApproval=true [GH-90000]")
+        @DisplayName("CALL_EXTERNAL action gets requiresApproval=true")
         void externalCallForcesApproval() { // GH-90000
             List<PlannedAction> actions = List.of( // GH-90000
                     new PlannedAction("a1", "Call payment API", "payment-tool", Set.of(), // GH-90000
@@ -114,7 +114,7 @@ class DefaultPlanCompilerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("READ action keeps requiresApproval=false [GH-90000]")
+        @DisplayName("READ action keeps requiresApproval=false")
         void readActionKeepsFalse() { // GH-90000
             List<PlannedAction> actions = List.of( // GH-90000
                     PlannedAction.simple("a1", "Read doc", ActionClass.READ)); // GH-90000
@@ -124,7 +124,7 @@ class DefaultPlanCompilerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("POLICY_CHANGE action gets requiresApproval=true [GH-90000]")
+        @DisplayName("POLICY_CHANGE action gets requiresApproval=true")
         void policyChangeForcesApproval() { // GH-90000
             List<PlannedAction> actions = List.of( // GH-90000
                     new PlannedAction("a1", "Update policy", null, Set.of(), // GH-90000
@@ -138,46 +138,46 @@ class DefaultPlanCompilerTest extends EventloopTestBase {
     // ── Validation failures ────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Validation failures [GH-90000]")
+    @DisplayName("Validation failures")
     class ValidationFailures {
 
         @Test
-        @DisplayName("rejects blank agentId [GH-90000]")
+        @DisplayName("rejects blank agentId")
         void rejectsBlankAgentId() { // GH-90000
             assertThatThrownBy(() -> // GH-90000
                     runPromise(() -> compiler.compile("  ", "tenant-1", "Obj"))) // GH-90000
                     .isInstanceOf(PlanCompilationException.class) // GH-90000
-                    .hasMessageContaining("agentId [GH-90000]");
+                    .hasMessageContaining("agentId");
         }
 
         @Test
-        @DisplayName("rejects blank tenantId [GH-90000]")
+        @DisplayName("rejects blank tenantId")
         void rejectsBlankTenantId() { // GH-90000
             assertThatThrownBy(() -> // GH-90000
                     runPromise(() -> compiler.compile("agent-1", "", "Obj"))) // GH-90000
                     .isInstanceOf(PlanCompilationException.class) // GH-90000
-                    .hasMessageContaining("tenantId [GH-90000]");
+                    .hasMessageContaining("tenantId");
         }
 
         @Test
-        @DisplayName("rejects blank objective [GH-90000]")
+        @DisplayName("rejects blank objective")
         void rejectsBlankObjective() { // GH-90000
             assertThatThrownBy(() -> // GH-90000
                     runPromise(() -> compiler.compile("agent-1", "tenant-1", "   "))) // GH-90000
                     .isInstanceOf(PlanCompilationException.class) // GH-90000
-                    .hasMessageContaining("objective [GH-90000]");
+                    .hasMessageContaining("objective");
         }
 
         @Test
-        @DisplayName("rejects non-PlannedAction elements in actions list [GH-90000]")
+        @DisplayName("rejects non-PlannedAction elements in actions list")
         void rejectsNonPlannedActionElement() { // GH-90000
             assertThatThrownBy(() -> // GH-90000
-                    runPromise(() -> compiler.compile("a", "t", "O", Map.of("actions", List.of("bad-element [GH-90000]")))))
+                    runPromise(() -> compiler.compile("a", "t", "O", Map.of("actions", List.of("bad-element")))))
                     .isInstanceOf(PlanCompilationException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("rejects non-list actions context value [GH-90000]")
+        @DisplayName("rejects non-list actions context value")
         void rejectsNonListContextValue() { // GH-90000
             assertThatThrownBy(() -> // GH-90000
                     runPromise(() -> compiler.compile("a", "t", "O", Map.of("actions", "not-a-list")))) // GH-90000
@@ -188,22 +188,22 @@ class DefaultPlanCompilerTest extends EventloopTestBase {
     // ── PlanCompilationException ────────────────────────────────────────────
 
     @Nested
-    @DisplayName("PlanCompilationException [GH-90000]")
+    @DisplayName("PlanCompilationException")
     class PlanCompilationExceptionTests {
 
         @Test
-        @DisplayName("includes action ID in message when provided [GH-90000]")
+        @DisplayName("includes action ID in message when provided")
         void includesActionIdInMessage() { // GH-90000
             PlanCompilationException ex = new PlanCompilationException("invalid class", "a1"); // GH-90000
-            assertThat(ex.getMessage()).contains("a1 [GH-90000]");
-            assertThat(ex.offendingActionId()).isEqualTo("a1 [GH-90000]");
+            assertThat(ex.getMessage()).contains("a1");
+            assertThat(ex.offendingActionId()).isEqualTo("a1");
         }
 
         @Test
-        @DisplayName("message has no action ID placeholder when null [GH-90000]")
+        @DisplayName("message has no action ID placeholder when null")
         void messageWithoutActionId() { // GH-90000
-            PlanCompilationException ex = new PlanCompilationException("bad input [GH-90000]");
-            assertThat(ex.getMessage()).contains("bad input [GH-90000]");
+            PlanCompilationException ex = new PlanCompilationException("bad input");
+            assertThat(ex.getMessage()).contains("bad input");
             assertThat(ex.offendingActionId()).isNull(); // GH-90000
         }
     }

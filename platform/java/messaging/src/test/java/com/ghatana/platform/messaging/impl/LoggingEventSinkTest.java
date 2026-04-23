@@ -29,7 +29,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer core
  * @doc.pattern Test
  */
-@DisplayName("LoggingEventSink Tests [GH-90000]")
+@DisplayName("LoggingEventSink Tests")
 class LoggingEventSinkTest extends EventloopTestBase {
 
     private LoggingEventSink sink;
@@ -47,10 +47,10 @@ class LoggingEventSinkTest extends EventloopTestBase {
         return EventLogStore.EventEntry.builder() // GH-90000
                 .eventId(UUID.randomUUID()) // GH-90000
                 .eventType(eventType) // GH-90000
-                .eventVersion("1.0.0 [GH-90000]")
+                .eventVersion("1.0.0")
                 .timestamp(Instant.now()) // GH-90000
                 .payload(ByteBuffer.wrap("{\"test\":true}".getBytes())) // GH-90000
-                .contentType("application/json [GH-90000]")
+                .contentType("application/json")
                 .headers(Map.of()) // GH-90000
                 .build(); // GH-90000
     }
@@ -58,18 +58,18 @@ class LoggingEventSinkTest extends EventloopTestBase {
     // --- Lifecycle ---
 
     @Nested
-    @DisplayName("Lifecycle [GH-90000]")
+    @DisplayName("Lifecycle")
     class Lifecycle {
 
         @Test
-        @DisplayName("should start successfully [GH-90000]")
+        @DisplayName("should start successfully")
         void shouldStart() { // GH-90000
             runPromise(() -> sink.start()); // GH-90000
             // No exception implies success
         }
 
         @Test
-        @DisplayName("should stop successfully after start [GH-90000]")
+        @DisplayName("should stop successfully after start")
         void shouldStopAfterStart() { // GH-90000
             runPromise(() -> sink.start()); // GH-90000
             runPromise(() -> sink.stop()); // GH-90000
@@ -80,65 +80,65 @@ class LoggingEventSinkTest extends EventloopTestBase {
     // --- Send ---
 
     @Nested
-    @DisplayName("Send [GH-90000]")
+    @DisplayName("Send")
     class Send {
 
         @Test
-        @DisplayName("should send event successfully when started [GH-90000]")
+        @DisplayName("should send event successfully when started")
         void shouldSendEvent() { // GH-90000
             runPromise(() -> sink.start()); // GH-90000
 
-            EventLogStore.EventEntry entry = createTestEntry("user.created [GH-90000]");
-            TenantContext tenant = TenantContext.of("test-tenant [GH-90000]");
+            EventLogStore.EventEntry entry = createTestEntry("user.created");
+            TenantContext tenant = TenantContext.of("test-tenant");
             runPromise(() -> sink.send(tenant, entry)); // GH-90000
 
             verify(metricsCollector).incrementCounter("event.sink.logged", "type", "user.created"); // GH-90000
         }
 
         @Test
-        @DisplayName("should reject send when not started [GH-90000]")
+        @DisplayName("should reject send when not started")
         void shouldRejectSendWhenNotStarted() { // GH-90000
-            EventLogStore.EventEntry entry = createTestEntry("user.created [GH-90000]");
-            TenantContext tenant = TenantContext.of("test-tenant [GH-90000]");
+            EventLogStore.EventEntry entry = createTestEntry("user.created");
+            TenantContext tenant = TenantContext.of("test-tenant");
 
             try {
                 runPromise(() -> sink.send(tenant, entry)); // GH-90000
-                org.junit.jupiter.api.Assertions.fail("Expected exception for send() on non-started sink [GH-90000]");
+                org.junit.jupiter.api.Assertions.fail("Expected exception for send() on non-started sink");
             } catch (Exception e) { // GH-90000
                 assertThat(e) // GH-90000
                         .isInstanceOf(IllegalStateException.class) // GH-90000
-                        .hasMessageContaining("sink not started [GH-90000]");
+                        .hasMessageContaining("sink not started");
             }
         }
 
         @Test
-        @DisplayName("should reject send after stop [GH-90000]")
+        @DisplayName("should reject send after stop")
         void shouldRejectSendAfterStop() { // GH-90000
             runPromise(() -> sink.start()); // GH-90000
             runPromise(() -> sink.stop()); // GH-90000
 
-            EventLogStore.EventEntry entry = createTestEntry("user.created [GH-90000]");
-            TenantContext tenant = TenantContext.of("test-tenant [GH-90000]");
+            EventLogStore.EventEntry entry = createTestEntry("user.created");
+            TenantContext tenant = TenantContext.of("test-tenant");
 
             try {
                 runPromise(() -> sink.send(tenant, entry)); // GH-90000
-                org.junit.jupiter.api.Assertions.fail("Expected exception for send() on stopped sink [GH-90000]");
+                org.junit.jupiter.api.Assertions.fail("Expected exception for send() on stopped sink");
             } catch (Exception e) { // GH-90000
                 assertThat(e) // GH-90000
                         .isInstanceOf(IllegalStateException.class) // GH-90000
-                        .hasMessageContaining("sink not started [GH-90000]");
+                        .hasMessageContaining("sink not started");
             }
         }
 
         @Test
-        @DisplayName("should send multiple events and track metrics for each [GH-90000]")
+        @DisplayName("should send multiple events and track metrics for each")
         void shouldSendMultipleEvents() { // GH-90000
             runPromise(() -> sink.start()); // GH-90000
 
-            TenantContext tenant = TenantContext.of("test-tenant [GH-90000]");
-            runPromise(() -> sink.send(tenant, createTestEntry("order.placed [GH-90000]")));
-            runPromise(() -> sink.send(tenant, createTestEntry("order.shipped [GH-90000]")));
-            runPromise(() -> sink.send(tenant, createTestEntry("order.placed [GH-90000]")));
+            TenantContext tenant = TenantContext.of("test-tenant");
+            runPromise(() -> sink.send(tenant, createTestEntry("order.placed")));
+            runPromise(() -> sink.send(tenant, createTestEntry("order.shipped")));
+            runPromise(() -> sink.send(tenant, createTestEntry("order.placed")));
 
             verify(metricsCollector, times(2)) // GH-90000
                     .incrementCounter("event.sink.logged", "type", "order.placed"); // GH-90000
@@ -150,11 +150,11 @@ class LoggingEventSinkTest extends EventloopTestBase {
     // --- Flush ---
 
     @Nested
-    @DisplayName("Flush [GH-90000]")
+    @DisplayName("Flush")
     class Flush {
 
         @Test
-        @DisplayName("flush should complete successfully (default no-op) [GH-90000]")
+        @DisplayName("flush should complete successfully (default no-op)")
         void shouldFlush() { // GH-90000
             runPromise(() -> sink.start()); // GH-90000
             runPromise(() -> sink.flush()); // GH-90000
@@ -165,11 +165,11 @@ class LoggingEventSinkTest extends EventloopTestBase {
     // --- Constructor validation ---
 
     @Nested
-    @DisplayName("Constructor Validation [GH-90000]")
+    @DisplayName("Constructor Validation")
     class ConstructorValidation {
 
         @Test
-        @DisplayName("should reject null metrics collector [GH-90000]")
+        @DisplayName("should reject null metrics collector")
         void shouldRejectNullMetrics() { // GH-90000
             assertThatThrownBy(() -> new LoggingEventSink(null)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000

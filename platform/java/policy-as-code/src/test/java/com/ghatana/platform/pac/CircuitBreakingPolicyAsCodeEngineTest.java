@@ -18,18 +18,18 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("CircuitBreakingPolicyAsCodeEngine [GH-90000]")
+@DisplayName("CircuitBreakingPolicyAsCodeEngine")
 class CircuitBreakingPolicyAsCodeEngineTest extends EventloopTestBase {
 
     @Test
-    @DisplayName("returns deny decision after delegate failure and opens circuit for subsequent calls [GH-90000]")
+    @DisplayName("returns deny decision after delegate failure and opens circuit for subsequent calls")
     void failsClosedAndOpensCircuit() { // GH-90000
         AtomicInteger calls = new AtomicInteger(); // GH-90000
         PolicyAsCodeEngine failingDelegate = (tenantId, policyName, input) -> { // GH-90000
             calls.incrementAndGet(); // GH-90000
-            return Promise.ofException(new RuntimeException("policy store unavailable [GH-90000]"));
+            return Promise.ofException(new RuntimeException("policy store unavailable"));
         };
-        CircuitBreaker breaker = CircuitBreaker.builder("pac-test [GH-90000]")
+        CircuitBreaker breaker = CircuitBreaker.builder("pac-test")
                 .failureThreshold(1) // GH-90000
                 .resetTimeout(Duration.ofMinutes(5)) // GH-90000
                 .build(); // GH-90000
@@ -44,14 +44,14 @@ class CircuitBreakingPolicyAsCodeEngineTest extends EventloopTestBase {
                 engine.evaluate("tenant-1", "tool_execution_policy", Map.of("toolName", "delete"))); // GH-90000
 
         assertThat(first.allowed()).isFalse(); // GH-90000
-        assertThat(first.reasons()).contains("Policy engine unavailable; failing closed [GH-90000]");
+        assertThat(first.reasons()).contains("Policy engine unavailable; failing closed");
         assertThat(second.allowed()).isFalse(); // GH-90000
         assertThat(calls).hasValue(1); // GH-90000
         assertThat(engine.circuitState()).isEqualTo(CircuitBreaker.State.OPEN); // GH-90000
     }
 
     @Test
-    @DisplayName("passes through successful policy decisions [GH-90000]")
+    @DisplayName("passes through successful policy decisions")
     void delegatesSuccessfulEvaluations() { // GH-90000
         PolicyAsCodeEngine allowDelegate = (tenantId, policyName, input) -> // GH-90000
                 Promise.of(PolicyEvalResult.allow(policyName)); // GH-90000

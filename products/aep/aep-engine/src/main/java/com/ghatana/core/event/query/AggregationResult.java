@@ -13,7 +13,11 @@ import java.util.Map;
  * Contains aggregated values grouped by the specified field.
  *
  * @param <T> The type of the aggregation result
- */
+  * @doc.type class
+ * @doc.purpose Provides aggregation result functionality.
+ * @doc.layer product
+ * @doc.pattern ValueObject
+*/
 @Builder(setterPrefix = "with")
 @Getter
 public class AggregationResult<T> implements Serializable {

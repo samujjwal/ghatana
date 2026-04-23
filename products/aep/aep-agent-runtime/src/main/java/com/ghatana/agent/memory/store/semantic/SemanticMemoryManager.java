@@ -27,7 +27,8 @@ import java.util.*;
  * @doc.type class
  * @doc.purpose Semantic memory management
  * @doc.layer agent-memory
- */
+  * @doc.pattern Manager
+*/
 public class SemanticMemoryManager {
 
     private static final Logger log = LoggerFactory.getLogger(SemanticMemoryManager.class);

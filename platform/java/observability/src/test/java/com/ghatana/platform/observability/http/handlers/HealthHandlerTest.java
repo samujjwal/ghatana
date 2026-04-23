@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * </p>
  */
 @ExtendWith(EventloopExtension.class) // GH-90000
-@DisplayName("HealthHandler Tests [GH-90000]")
+@DisplayName("HealthHandler Tests")
 class HealthHandlerTest {
 
     private MockTraceStorage storage;
@@ -49,7 +49,7 @@ class HealthHandlerTest {
     }
 
     @Test
-    @DisplayName("GET /health - should return 200 for liveness check [GH-90000]")
+    @DisplayName("GET /health - should return 200 for liveness check")
     void shouldReturnHealthyStatusForLivenessCheck(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/health") // GH-90000
                 .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
@@ -64,7 +64,7 @@ class HealthHandlerTest {
     }
 
     @Test
-    @DisplayName("GET /health - should include health components [GH-90000]")
+    @DisplayName("GET /health - should include health components")
     void shouldIncludeHealthComponents(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/health") // GH-90000
                 .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
@@ -81,7 +81,7 @@ class HealthHandlerTest {
     }
 
     @Test
-    @DisplayName("GET /health - should check storage connectivity [GH-90000]")
+    @DisplayName("GET /health - should check storage connectivity")
     void shouldCheckStorageConnectivity(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/health") // GH-90000
                 .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
@@ -97,7 +97,7 @@ class HealthHandlerTest {
     }
 
     @Test
-    @DisplayName("GET /health - should include timestamp [GH-90000]")
+    @DisplayName("GET /health - should include timestamp")
     void shouldIncludeTimestamp(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/health") // GH-90000
                 .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
@@ -112,7 +112,7 @@ class HealthHandlerTest {
     }
 
     @Test
-    @DisplayName("GET /health/ready - should return 200 for readiness check [GH-90000]")
+    @DisplayName("GET /health/ready - should return 200 for readiness check")
     void shouldReturnHealthyStatusForReadinessCheck(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/health/ready") // GH-90000
                 .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
@@ -127,7 +127,7 @@ class HealthHandlerTest {
     }
 
     @Test
-    @DisplayName("GET /health/ready - should check database availability [GH-90000]")
+    @DisplayName("GET /health/ready - should check database availability")
     void shouldCheckDatabaseAvailability(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/health/ready") // GH-90000
                 .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
@@ -140,7 +140,7 @@ class HealthHandlerTest {
     }
 
     @Test
-    @DisplayName("GET /health/ready - should indicate readiness status [GH-90000]")
+    @DisplayName("GET /health/ready - should indicate readiness status")
     void shouldIndicateReadinessStatus(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/health/ready") // GH-90000
                 .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
@@ -155,7 +155,7 @@ class HealthHandlerTest {
     }
 
     @Test
-    @DisplayName("GET /health - should respond to Accept header [GH-90000]")
+    @DisplayName("GET /health - should respond to Accept header")
     void shouldRespondToAcceptHeader(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/health") // GH-90000
                 .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
@@ -165,11 +165,11 @@ class HealthHandlerTest {
                 req -> handler.handleLiveness(req), request, runner); // GH-90000
 
         assertThat(response.getCode()).isEqualTo(200); // GH-90000
-        assertThat(response.getHeader(HttpHeaders.CONTENT_TYPE)).contains("application/json [GH-90000]");
+        assertThat(response.getHeader(HttpHeaders.CONTENT_TYPE)).contains("application/json");
     }
 
     @Test
-    @DisplayName("GET /health/ready - should respond to Accept header [GH-90000]")
+    @DisplayName("GET /health/ready - should respond to Accept header")
     void shouldRespondToAcceptHeaderForReadiness(com.ghatana.platform.testing.activej.EventloopTestUtil.EventloopRunner runner) { // GH-90000
         HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/health/ready") // GH-90000
                 .withHeader(HttpHeaders.ACCEPT, "application/json") // GH-90000
@@ -179,6 +179,6 @@ class HealthHandlerTest {
                 req -> handler.handleReadiness(req), request, runner); // GH-90000
 
         assertThat(response.getCode()).isIn(200, 503); // GH-90000
-        assertThat(response.getHeader(HttpHeaders.CONTENT_TYPE)).contains("application/json [GH-90000]");
+        assertThat(response.getHeader(HttpHeaders.CONTENT_TYPE)).contains("application/json");
     }
 }

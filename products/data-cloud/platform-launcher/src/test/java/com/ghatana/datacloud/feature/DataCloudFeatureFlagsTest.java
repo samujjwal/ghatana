@@ -11,7 +11,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Tests for {@link DataCloudFeatureFlags} — evaluation, override, and fallback behaviour.
  */
-@DisplayName("DataCloudFeatureFlags [GH-90000]")
+@DisplayName("DataCloudFeatureFlags")
 class DataCloudFeatureFlagsTest {
 
     @BeforeEach
@@ -30,7 +30,7 @@ class DataCloudFeatureFlagsTest {
     // Default values (no env, no override, no global) // GH-90000
     // ────────────────────────────────────────────────────────────────────────
     @Nested
-    @DisplayName("Safe defaults before initialisation [GH-90000]")
+    @DisplayName("Safe defaults before initialisation")
     class SafeDefaults {
 
         @Test
@@ -55,7 +55,7 @@ class DataCloudFeatureFlagsTest {
     // Test overrides
     // ────────────────────────────────────────────────────────────────────────
     @Nested
-    @DisplayName("Test overrides take highest precedence [GH-90000]")
+    @DisplayName("Test overrides take highest precedence")
     class Overrides {
 
         @Test
@@ -94,7 +94,7 @@ class DataCloudFeatureFlagsTest {
     // Global instance
     // ────────────────────────────────────────────────────────────────────────
     @Nested
-    @DisplayName("Global instance is consulted after overrides [GH-90000]")
+    @DisplayName("Global instance is consulted after overrides")
     class GlobalInstance {
 
         @Test
@@ -129,7 +129,7 @@ class DataCloudFeatureFlagsTest {
     // All features have a defined default
     // ────────────────────────────────────────────────────────────────────────
     @Test
-    @DisplayName("All DataCloudFeature values have a consistent default [GH-90000]")
+    @DisplayName("All DataCloudFeature values have a consistent default")
     void allFeaturesHaveConsistentDefault() { // GH-90000
         for (DataCloudFeature feature : DataCloudFeature.values()) { // GH-90000
             boolean enumDefault = feature.defaultEnabled(); // GH-90000

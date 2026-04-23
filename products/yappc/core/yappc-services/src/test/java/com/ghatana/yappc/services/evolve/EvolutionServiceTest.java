@@ -35,8 +35,8 @@ class EvolutionServiceTest extends EventloopTestBase {
 
         when(aiService.complete(any(CompletionRequest.class))) // GH-90000
                 .thenReturn(Promise.of(CompletionResult.builder() // GH-90000
-                        .text("Recommendation: Optimize database queries [GH-90000]")
-                        .modelUsed("gpt-4 [GH-90000]")
+                        .text("Recommendation: Optimize database queries")
+                        .modelUsed("gpt-4")
                         .build())); // GH-90000
 
         when(auditLogger.log(any(Map.class))) // GH-90000
@@ -44,8 +44,8 @@ class EvolutionServiceTest extends EventloopTestBase {
 
         EvolutionService service = new EvolutionServiceImpl(aiService, auditLogger, metrics); // GH-90000
         Insights insights = Insights.builder() // GH-90000
-                .id("insights-123 [GH-90000]")
-                .observationRef("obs-123 [GH-90000]")
+                .id("insights-123")
+                .observationRef("obs-123")
                 .patterns(List.of()) // GH-90000
                 .anomalies(List.of()) // GH-90000
                 .recommendations(List.of()) // GH-90000
@@ -74,8 +74,8 @@ class EvolutionServiceTest extends EventloopTestBase {
 
         when(aiService.complete(any(CompletionRequest.class))) // GH-90000
                 .thenReturn(Promise.of(CompletionResult.builder() // GH-90000
-                        .text("High priority: Fix memory leak\nMedium priority: Optimize queries [GH-90000]")
-                        .modelUsed("gpt-4 [GH-90000]")
+                        .text("High priority: Fix memory leak\nMedium priority: Optimize queries")
+                        .modelUsed("gpt-4")
                         .build())); // GH-90000
 
         when(auditLogger.log(any(Map.class))) // GH-90000
@@ -83,8 +83,8 @@ class EvolutionServiceTest extends EventloopTestBase {
 
         EvolutionService service = new EvolutionServiceImpl(aiService, auditLogger, metrics); // GH-90000
         Insights insights = Insights.builder() // GH-90000
-                .id("insights-123 [GH-90000]")
-                .observationRef("obs-123 [GH-90000]")
+                .id("insights-123")
+                .observationRef("obs-123")
                 .patterns(List.of()) // GH-90000
                 .anomalies(List.of()) // GH-90000
                 .recommendations(List.of()) // GH-90000
@@ -107,15 +107,15 @@ class EvolutionServiceTest extends EventloopTestBase {
         MetricsCollector metrics = mock(MetricsCollector.class); // GH-90000
 
         when(aiService.complete(any(CompletionRequest.class))) // GH-90000
-                .thenReturn(Promise.ofException(new RuntimeException("Proposal failed [GH-90000]")));
+                .thenReturn(Promise.ofException(new RuntimeException("Proposal failed")));
 
         when(auditLogger.log(any(Map.class))) // GH-90000
                 .thenReturn(Promise.complete()); // GH-90000
 
         EvolutionService service = new EvolutionServiceImpl(aiService, auditLogger, metrics); // GH-90000
         Insights insights = Insights.builder() // GH-90000
-                .id("insights-123 [GH-90000]")
-                .observationRef("obs-123 [GH-90000]")
+                .id("insights-123")
+                .observationRef("obs-123")
                 .build(); // GH-90000
 
                 // WHEN
@@ -125,6 +125,6 @@ class EvolutionServiceTest extends EventloopTestBase {
                 assertNotNull(result); // GH-90000
                 assertEquals("insights-123", result.insightsRef()); // GH-90000
 
-                verify(metrics, times(1)).incrementCounter(eq("yappc.ai.evolve.propose.fallback [GH-90000]"), any(Map.class));
+                verify(metrics, times(1)).incrementCounter(eq("yappc.ai.evolve.propose.fallback"), any(Map.class));
     }
 }

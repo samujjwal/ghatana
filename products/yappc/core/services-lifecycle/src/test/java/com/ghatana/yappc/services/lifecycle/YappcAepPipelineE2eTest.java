@@ -20,7 +20,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import org.mockito.ArgumentCaptor;
 
-@DisplayName("YAPPC AEP Pipeline E2E Tests (Item 7.2) [GH-90000]")
+@DisplayName("YAPPC AEP Pipeline E2E Tests (Item 7.2)")
 class YappcAepPipelineE2eTest {
 
     private static final String PIPELINE_ID = "lifecycle-management-v1";
@@ -78,16 +78,16 @@ class YappcAepPipelineE2eTest {
             mockPipelineBootstrapper,
             mockDlqPublisher,
             objectMapper,
-            List.of("test-tenant [GH-90000]")
+            List.of("test-tenant")
         );
     }
 
     @Nested
-    @DisplayName("Bootstrap Lifecycle [GH-90000]")
+    @DisplayName("Bootstrap Lifecycle")
     class BootstrapLifecycleTests {
 
         @Test
-        @DisplayName("Should start successfully and subscribe to events [GH-90000]")
+        @DisplayName("Should start successfully and subscribe to events")
         void shouldStartSuccessfully() { // GH-90000
             Promise<Void> result = triggerListenerBootstrap.start(); // GH-90000
 
@@ -103,7 +103,7 @@ class YappcAepPipelineE2eTest {
         }
 
         @Test
-        @DisplayName("Should be idempotent on multiple start() calls [GH-90000]")
+        @DisplayName("Should be idempotent on multiple start() calls")
         void shouldBeIdempotentOnMultipleStarts() { // GH-90000
             triggerListenerBootstrap.start(); // GH-90000
             triggerListenerBootstrap.start(); // GH-90000
@@ -120,7 +120,7 @@ class YappcAepPipelineE2eTest {
         }
 
         @Test
-        @DisplayName("Should stop successfully and cancel subscriptions [GH-90000]")
+        @DisplayName("Should stop successfully and cancel subscriptions")
         void shouldStopSuccessfully() { // GH-90000
             triggerListenerBootstrap.start(); // GH-90000
             assertThat(triggerListenerBootstrap.isRunning()).isTrue(); // GH-90000
@@ -135,7 +135,7 @@ class YappcAepPipelineE2eTest {
         }
 
         @Test
-        @DisplayName("Should be idempotent on multiple stop() calls [GH-90000]")
+        @DisplayName("Should be idempotent on multiple stop() calls")
         void shouldBeIdempotentOnMultipleStops() { // GH-90000
             triggerListenerBootstrap.start(); // GH-90000
             triggerListenerBootstrap.stop(); // GH-90000
@@ -149,11 +149,11 @@ class YappcAepPipelineE2eTest {
     }
 
     @Nested
-    @DisplayName("Event Processing [GH-90000]")
+    @DisplayName("Event Processing")
     class EventProcessingTests {
 
         @Test
-        @DisplayName("Should process valid phase transition event [GH-90000]")
+        @DisplayName("Should process valid phase transition event")
         void shouldProcessValidEvent() throws Exception { // GH-90000
             triggerListenerBootstrap.start(); // GH-90000
 
@@ -174,15 +174,15 @@ class YappcAepPipelineE2eTest {
 
             // Verify TriggerListener was called
             verify(mockTriggerListener, times(1)).handlePatternMatch( // GH-90000
-                eq("tenant-123 [GH-90000]"),
+                eq("tenant-123"),
                 eq(PIPELINE_ID), // GH-90000
                 eq(eventId), // GH-90000
-                argThat(data -> data instanceof Map && ((Map<?, ?>) data).containsKey("projectId [GH-90000]"))
+                argThat(data -> data instanceof Map && ((Map<?, ?>) data).containsKey("projectId"))
             );
         }
 
         @Test
-        @DisplayName("Should handle null payload and publish to DLQ [GH-90000]")
+        @DisplayName("Should handle null payload and publish to DLQ")
         void shouldHandleNullPayload() { // GH-90000
             triggerListenerBootstrap.start(); // GH-90000
 
@@ -194,13 +194,13 @@ class YappcAepPipelineE2eTest {
             verify(mockDlqPublisher, times(1)).publishErrorEvent( // GH-90000
                 eq(eventId), // GH-90000
                 eq(PHASE_TRANSITION_REQUESTED), // GH-90000
-                eq("EMPTY_PAYLOAD [GH-90000]"),
+                eq("EMPTY_PAYLOAD"),
                 any(String.class) // GH-90000
             );
         }
 
         @Test
-        @DisplayName("Should handle empty payload and publish to DLQ [GH-90000]")
+        @DisplayName("Should handle empty payload and publish to DLQ")
         void shouldHandleEmptyPayload() { // GH-90000
             triggerListenerBootstrap.start(); // GH-90000
 
@@ -212,13 +212,13 @@ class YappcAepPipelineE2eTest {
             verify(mockDlqPublisher, times(1)).publishErrorEvent( // GH-90000
                 eq(eventId), // GH-90000
                 eq(PHASE_TRANSITION_REQUESTED), // GH-90000
-                eq("EMPTY_PAYLOAD [GH-90000]"),
+                eq("EMPTY_PAYLOAD"),
                 any(String.class) // GH-90000
             );
         }
 
         @Test
-        @DisplayName("Should handle malformed JSON payload and publish to DLQ [GH-90000]")
+        @DisplayName("Should handle malformed JSON payload and publish to DLQ")
         void shouldHandleMalformedJson() { // GH-90000
             triggerListenerBootstrap.start(); // GH-90000
 
@@ -231,17 +231,17 @@ class YappcAepPipelineE2eTest {
             verify(mockDlqPublisher, times(1)).publishErrorEvent( // GH-90000
                 eq(eventId), // GH-90000
                 eq(PHASE_TRANSITION_REQUESTED), // GH-90000
-                eq("PROCESSING_ERROR [GH-90000]"),
+                eq("PROCESSING_ERROR"),
                 any(String.class) // GH-90000
             );
         }
 
         @Test
-        @DisplayName("Should handle pipeline processing errors and publish to DLQ [GH-90000]")
+        @DisplayName("Should handle pipeline processing errors and publish to DLQ")
         void shouldHandlePipelineErrors() throws Exception { // GH-90000
             // Setup TriggerListener to fail
             when(mockTriggerListener.handlePatternMatch(any(), any(), any(), any())) // GH-90000
-                .thenReturn(Promise.ofException(new RuntimeException("Pipeline error [GH-90000]")));
+                .thenReturn(Promise.ofException(new RuntimeException("Pipeline error")));
 
             triggerListenerBootstrap.start(); // GH-90000
 
@@ -260,18 +260,18 @@ class YappcAepPipelineE2eTest {
             verify(mockDlqPublisher, times(1)).publishErrorEvent( // GH-90000
                 eq(eventId), // GH-90000
                 eq(PHASE_TRANSITION_REQUESTED), // GH-90000
-                eq("PIPELINE_ERROR [GH-90000]"),
+                eq("PIPELINE_ERROR"),
                 any(String.class) // GH-90000
             );
         }
     }
 
     @Nested
-    @DisplayName("Multi-Event Processing [GH-90000]")
+    @DisplayName("Multi-Event Processing")
     class MultiEventProcessingTests {
 
         @Test
-        @DisplayName("Should handle multiple concurrent events [GH-90000]")
+        @DisplayName("Should handle multiple concurrent events")
         void shouldHandleMultipleConcurrentEvents() throws Exception { // GH-90000
             triggerListenerBootstrap.start(); // GH-90000
 
@@ -317,7 +317,7 @@ class YappcAepPipelineE2eTest {
         }
 
         @Test
-        @DisplayName("Should maintain subscription after processing multiple events [GH-90000]")
+        @DisplayName("Should maintain subscription after processing multiple events")
         void shouldMaintainSubscriptionAfterMultipleEvents() throws Exception { // GH-90000
             triggerListenerBootstrap.start(); // GH-90000
             EventCloud.EventHandler handler = captureEventHandler(); // GH-90000
@@ -338,11 +338,11 @@ class YappcAepPipelineE2eTest {
     }
 
     @Nested
-    @DisplayName("Integration Tests [GH-90000]")
+    @DisplayName("Integration Tests")
     class IntegrationTests {
 
         @Test
-        @DisplayName("Should execute full flow: start → subscribe → process → stop [GH-90000]")
+        @DisplayName("Should execute full flow: start → subscribe → process → stop")
         void shouldExecuteFullFlow() throws Exception { // GH-90000
             // GIVEN: Bootstrap not started
             assertThat(triggerListenerBootstrap.isRunning()).isFalse(); // GH-90000
@@ -375,7 +375,7 @@ class YappcAepPipelineE2eTest {
         }
 
         @Test
-        @DisplayName("Should gracefully handle stop without start [GH-90000]")
+        @DisplayName("Should gracefully handle stop without start")
         void shouldGracefullyHandleStopWithoutStart() { // GH-90000
             Promise<Void> result = triggerListenerBootstrap.stop(); // GH-90000
 

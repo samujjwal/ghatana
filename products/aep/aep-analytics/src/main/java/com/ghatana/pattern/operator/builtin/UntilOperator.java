@@ -70,7 +70,10 @@ import java.util.Map;
  *                 Runtime execution logic (partial match buffering, termination detection, time window
  *                 enforcement, inclusive/exclusive terminator handling) is handled by the pattern engine's
  *                 execution layer. Does not provide runtime matching logic.
- */
+  * @doc.type class
+ * @doc.purpose Provides until operator functionality.
+ * @doc.layer product
+*/
 public class UntilOperator implements Operator {
 
     private static final String TYPE = "UNTIL";

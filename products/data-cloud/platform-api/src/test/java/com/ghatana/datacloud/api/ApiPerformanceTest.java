@@ -16,46 +16,46 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test API performance, latency, throughput, and scalability.
  */
-@DisplayName("API Performance Tests [GH-90000]")
+@DisplayName("API Performance Tests")
 class ApiPerformanceTest {
 
     @Test
-    @DisplayName("Should measure API latency [GH-90000]")
+    @DisplayName("Should measure API latency")
     void shouldMeasureApiLatency() { // GH-90000
         long latency = 100;
         assertThat(latency).isPositive(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle API throughput [GH-90000]")
+    @DisplayName("Should handle API throughput")
     void shouldHandleApiThroughput() { // GH-90000
         int requests = 1000;
         assertThat(requests).isPositive(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle concurrent requests [GH-90000]")
+    @DisplayName("Should handle concurrent requests")
     void shouldHandleConcurrentRequests() { // GH-90000
         int threads = 10;
         assertThat(threads).isPositive(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle resource optimization [GH-90000]")
+    @DisplayName("Should handle resource optimization")
     void shouldHandleResourceOptimization() { // GH-90000
         String resource = "memory";
         assertThat(resource).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle performance degradation [GH-90000]")
+    @DisplayName("Should handle performance degradation")
     void shouldHandlePerformanceDegradation() { // GH-90000
         boolean degraded = false;
         assertThat(degraded).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle performance monitoring [GH-90000]")
+    @DisplayName("Should handle performance monitoring")
     void shouldHandlePerformanceMonitoring() { // GH-90000
         String metric = "response_time";
         assertThat(metric).isNotNull(); // GH-90000

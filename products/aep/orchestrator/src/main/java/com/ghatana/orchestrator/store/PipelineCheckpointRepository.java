@@ -21,7 +21,11 @@ import org.slf4j.LoggerFactory;
 /**
  * ActiveJ-friendly JPA repository for pipeline checkpoint persistence.
  * Replaces Spring Data dependencies with manual EntityManager usage.
- */
+  * @doc.type class
+ * @doc.purpose Provides pipeline checkpoint repository functionality.
+ * @doc.layer product
+ * @doc.pattern Repository
+*/
 public class PipelineCheckpointRepository {
     private static final Logger logger = LoggerFactory.getLogger(PipelineCheckpointRepository.class);
 

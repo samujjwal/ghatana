@@ -31,80 +31,80 @@ import static org.mockito.Mockito.*;
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
 @Timeout(value = 30, unit = TimeUnit.SECONDS) // GH-90000
-@DisplayName("ConnectionTimeout – Timeout Handling (IE001) [GH-90000]")
+@DisplayName("ConnectionTimeout – Timeout Handling (IE001)")
 class ConnectionTimeoutTest extends EventloopTestBase {
 
     @Mock
     private DatabaseService databaseService;
 
     @Nested
-    @DisplayName("Query Timeout [GH-90000]")
+    @DisplayName("Query Timeout")
     class QueryTimeoutTests {
 
         @Test
-        @DisplayName("[IE001]: slow_query_times_out [GH-90000]")
+        @DisplayName("[IE001]: slow_query_times_out")
         void slowQueryTimesOut() { // GH-90000
             // Query taking longer than timeout should fail
             when(databaseService.executeQuery(anyString())) // GH-90000
-                .thenReturn(Promise.ofException(new java.util.concurrent.TimeoutException("Query timeout [GH-90000]")));
+                .thenReturn(Promise.ofException(new java.util.concurrent.TimeoutException("Query timeout")));
 
             try {
-                runPromise(() -> databaseService.executeQuery("SELECT SLOW(*) FROM large_table [GH-90000]"));
+                runPromise(() -> databaseService.executeQuery("SELECT SLOW(*) FROM large_table"));
             } catch (Exception e) { // GH-90000
-                assertThat(e).hasMessageContaining("timeout [GH-90000]");
+                assertThat(e).hasMessageContaining("timeout");
             }
         }
 
         @Test
-        @DisplayName("[IE001]: query_completes_before_timeout [GH-90000]")
+        @DisplayName("[IE001]: query_completes_before_timeout")
         void queryCompletesBeforeTimeout() { // GH-90000
             // Fast query should succeed
-            when(databaseService.executeQuery("SELECT 1 [GH-90000]"))
-                .thenReturn(Promise.of("result [GH-90000]"));
+            when(databaseService.executeQuery("SELECT 1"))
+                .thenReturn(Promise.of("result"));
 
-            String result = runPromise(() -> databaseService.executeQuery("SELECT 1 [GH-90000]"));
+            String result = runPromise(() -> databaseService.executeQuery("SELECT 1"));
 
-            assertThat(result).isEqualTo("result [GH-90000]");
+            assertThat(result).isEqualTo("result");
         }
     }
 
     @Nested
-    @DisplayName("Connection Timeout [GH-90000]")
+    @DisplayName("Connection Timeout")
     class ConnectionTimeoutTests {
 
         @Test
-        @DisplayName("[IE001]: connection_establishment_timeout [GH-90000]")
+        @DisplayName("[IE001]: connection_establishment_timeout")
         void connectionEstablishmentTimeout() { // GH-90000
             // Unreachable database should timeout
             when(databaseService.connect(anyString())) // GH-90000
-                .thenReturn(Promise.ofException(new java.net.SocketTimeoutException("Connection timeout [GH-90000]")));
+                .thenReturn(Promise.ofException(new java.net.SocketTimeoutException("Connection timeout")));
 
             assertThatThrownBy(() -> // GH-90000
-                runPromise(() -> databaseService.connect("slow-db:5432 [GH-90000]"))
+                runPromise(() -> databaseService.connect("slow-db:5432"))
             ).cause().isInstanceOf(java.net.SocketTimeoutException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("[IE001]: connection_pool_exhaustion_timeout [GH-90000]")
+        @DisplayName("[IE001]: connection_pool_exhaustion_timeout")
         void connectionPoolExhaustionTimeout() { // GH-90000
             // Pool exhaustion should return quickly
             when(databaseService.getConnection()) // GH-90000
-                .thenReturn(Promise.ofException(new IllegalStateException("Pool exhausted [GH-90000]")));
+                .thenReturn(Promise.ofException(new IllegalStateException("Pool exhausted")));
 
             try {
                 runPromise(() -> databaseService.getConnection()); // GH-90000
             } catch (Exception e) { // GH-90000
-                assertThat(e).hasMessageContaining("Pool [GH-90000]");
+                assertThat(e).hasMessageContaining("Pool");
             }
         }
     }
 
     @Nested
-    @DisplayName("HTTP Timeout [GH-90000]")
+    @DisplayName("HTTP Timeout")
     class HttpTimeoutTests {
 
         @Test
-        @DisplayName("[IE001]: http_request_timeout [GH-90000]")
+        @DisplayName("[IE001]: http_request_timeout")
         void httpRequestTimeout() { // GH-90000
             long timeoutMs = 5000;
 
@@ -113,7 +113,7 @@ class ConnectionTimeoutTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[IE001]: http_response_timeout [GH-90000]")
+        @DisplayName("[IE001]: http_response_timeout")
         void httpResponseTimeout() { // GH-90000
             // Slow response should trigger timeout
             boolean timeoutOccurred = true;
@@ -122,11 +122,11 @@ class ConnectionTimeoutTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Timeout Configuration [GH-90000]")
+    @DisplayName("Timeout Configuration")
     class TimeoutConfigurationTests {
 
         @Test
-        @DisplayName("[IE001]: timeout_configurable_per_operation [GH-90000]")
+        @DisplayName("[IE001]: timeout_configurable_per_operation")
         void timeoutConfigurablePerOperation() { // GH-90000
             // Different operations can have different timeouts
             int queryTimeout = 30;
@@ -138,7 +138,7 @@ class ConnectionTimeoutTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[IE001]: timeout_grace_period_respected [GH-90000]")
+        @DisplayName("[IE001]: timeout_grace_period_respected")
         void timeoutGracePeriodRespected() { // GH-90000
             // Some operations get grace period before timeout
             int timeoutSeconds = 30;

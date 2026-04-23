@@ -19,6 +19,12 @@ import java.time.Instant;
                     columnList = "tenant_id, consumer_group, partition_id",
                     unique = true)
         })
+/**
+ * @doc.type class
+ * @doc.purpose Provides consumer offset entity functionality.
+ * @doc.layer product
+ * @doc.pattern Entity
+ */
 public class ConsumerOffsetEntity {
 
     @Id

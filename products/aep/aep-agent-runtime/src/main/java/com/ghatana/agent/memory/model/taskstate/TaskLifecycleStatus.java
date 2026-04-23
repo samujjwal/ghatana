@@ -6,7 +6,8 @@ package com.ghatana.agent.memory.model.taskstate;
  * @doc.type enum
  * @doc.purpose Task lifecycle states
  * @doc.layer agent-memory
- */
+  * @doc.pattern Enum
+*/
 public enum TaskLifecycleStatus {
     CREATED,
     PLANNING,

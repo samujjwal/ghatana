@@ -30,7 +30,7 @@ import static org.mockito.Mockito.*;
  * Tests for {@link LLMAgent} — LLM-backed agent with caching, token management, and fallback.
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("LLM Agent [GH-90000]")
+@DisplayName("LLM Agent")
 class LLMAgentTest extends EventloopTestBase {
 
     @Mock
@@ -45,16 +45,16 @@ class LLMAgentTest extends EventloopTestBase {
     void setUp() { // GH-90000
         ctx = AgentContext.builder() // GH-90000
                 .turnId(UUID.randomUUID().toString()) // GH-90000
-                .agentId("test-agent [GH-90000]")
-                .tenantId("test-tenant [GH-90000]")
+                .agentId("test-agent")
+                .tenantId("test-tenant")
                 .memoryStore(memoryStore) // GH-90000
                 .build(); // GH-90000
     }
 
     private LLMAgentConfig.LLMAgentConfigBuilder defaultConfig() { // GH-90000
         return LLMAgentConfig.builder() // GH-90000
-                .systemPrompt("You are a test classifier. [GH-90000]")
-                .modelName("test-model [GH-90000]")
+                .systemPrompt("You are a test classifier.")
+                .modelName("test-model")
                 .maxTokens(2048); // GH-90000
     }
 
@@ -68,23 +68,23 @@ class LLMAgentTest extends EventloopTestBase {
     // ─────────────────── Descriptor ───────────────────
 
     @Nested
-    @DisplayName("Descriptor [GH-90000]")
+    @DisplayName("Descriptor")
     class DescriptorTests {
 
         @Test
-        @DisplayName("descriptor has correct agent type and subtype [GH-90000]")
+        @DisplayName("descriptor has correct agent type and subtype")
         void descriptorTypeAndSubtype() { // GH-90000
             LLMAgent agent = new LLMAgent("classify-1", chatModel, defaultConfig().build()); // GH-90000
             AgentDescriptor desc = agent.descriptor(); // GH-90000
 
-            assertThat(desc.getAgentId()).isEqualTo("classify-1 [GH-90000]");
+            assertThat(desc.getAgentId()).isEqualTo("classify-1");
             assertThat(desc.getType()).isEqualTo(AgentType.PROBABILISTIC); // GH-90000
-            assertThat(desc.getSubtype()).isEqualTo("LLM [GH-90000]");
-            assertThat(desc.getName()).contains("classify-1 [GH-90000]");
+            assertThat(desc.getSubtype()).isEqualTo("LLM");
+            assertThat(desc.getName()).contains("classify-1");
         }
 
         @Test
-        @DisplayName("descriptor declares NLP capabilities [GH-90000]")
+        @DisplayName("descriptor declares NLP capabilities")
         void descriptorCapabilities() { // GH-90000
             LLMAgent agent = new LLMAgent("nlp-1", chatModel, defaultConfig().build()); // GH-90000
             Set<String> caps = agent.descriptor().getCapabilities(); // GH-90000
@@ -95,7 +95,7 @@ class LLMAgentTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("descriptor has FALLBACK failure mode [GH-90000]")
+        @DisplayName("descriptor has FALLBACK failure mode")
         void descriptorFailureMode() { // GH-90000
             LLMAgent agent = new LLMAgent("fb-1", chatModel, defaultConfig().build()); // GH-90000
             assertThat(agent.descriptor().getFailureMode()) // GH-90000
@@ -106,39 +106,39 @@ class LLMAgentTest extends EventloopTestBase {
     // ─────────────────── Processing ───────────────────
 
     @Nested
-    @DisplayName("Processing [GH-90000]")
+    @DisplayName("Processing")
     class ProcessingTests {
 
         @Test
-        @DisplayName("calls LLM and returns result [GH-90000]")
+        @DisplayName("calls LLM and returns result")
         void callsLlmAndReturns() { // GH-90000
             when(chatModel.chat(any(ChatRequest.class))) // GH-90000
-                    .thenReturn(mockResponse("classified: HIGH_SEVERITY [GH-90000]"));
+                    .thenReturn(mockResponse("classified: HIGH_SEVERITY"));
 
             LLMAgent agent = new LLMAgent("test-1", chatModel, defaultConfig().build()); // GH-90000
             agent.initialize(AgentConfig.builder() // GH-90000
-                    .agentId("test-1 [GH-90000]").type(AgentType.PROBABILISTIC).build());
+                    .agentId("test-1").type(AgentType.PROBABILISTIC).build());
 
             AgentResult<String> result = runPromise(() -> agent.process(ctx, "CPU at 99%")); // GH-90000
 
             assertThat(result.isSuccess()).isTrue(); // GH-90000
-            assertThat(result.getOutput()).isEqualTo("classified: HIGH_SEVERITY [GH-90000]");
+            assertThat(result.getOutput()).isEqualTo("classified: HIGH_SEVERITY");
             verify(chatModel).chat(any(ChatRequest.class)); // GH-90000
         }
 
         @Test
-        @DisplayName("uses prompt template with {{input}} placeholder [GH-90000]")
+        @DisplayName("uses prompt template with {{input}} placeholder")
         void promptTemplate() { // GH-90000
             when(chatModel.chat(any(ChatRequest.class))) // GH-90000
-                    .thenReturn(mockResponse("result [GH-90000]"));
+                    .thenReturn(mockResponse("result"));
 
             LLMAgentConfig config = defaultConfig() // GH-90000
-                    .userPromptTemplate("Classify this event: {{input}} [GH-90000]")
+                    .userPromptTemplate("Classify this event: {{input}}")
                     .build(); // GH-90000
 
             LLMAgent agent = new LLMAgent("tmpl-1", chatModel, config); // GH-90000
             agent.initialize(AgentConfig.builder() // GH-90000
-                    .agentId("tmpl-1 [GH-90000]").type(AgentType.PROBABILISTIC).build());
+                    .agentId("tmpl-1").type(AgentType.PROBABILISTIC).build());
 
             runPromise(() -> agent.process(ctx, "disk full")); // GH-90000
 
@@ -147,20 +147,20 @@ class LLMAgentTest extends EventloopTestBase {
             String userMsg = cap.getValue().messages().stream() // GH-90000
                     .filter(m -> m instanceof dev.langchain4j.data.message.UserMessage) // GH-90000
                     .map(m -> ((dev.langchain4j.data.message.UserMessage) m).singleText()) // GH-90000
-                    .findFirst().orElse(" [GH-90000]");
-            assertThat(userMsg).isEqualTo("Classify this event: disk full [GH-90000]");
+                    .findFirst().orElse("");
+            assertThat(userMsg).isEqualTo("Classify this event: disk full");
         }
 
         @Test
-        @DisplayName("returns confidence from config base [GH-90000]")
+        @DisplayName("returns confidence from config base")
         void confidenceFromConfig() { // GH-90000
             when(chatModel.chat(any(ChatRequest.class))) // GH-90000
-                    .thenReturn(mockResponse("ok [GH-90000]"));
+                    .thenReturn(mockResponse("ok"));
 
             LLMAgentConfig config = defaultConfig().baseConfidence(0.85).build(); // GH-90000
             LLMAgent agent = new LLMAgent("conf-1", chatModel, config); // GH-90000
             agent.initialize(AgentConfig.builder() // GH-90000
-                    .agentId("conf-1 [GH-90000]").type(AgentType.PROBABILISTIC).build());
+                    .agentId("conf-1").type(AgentType.PROBABILISTIC).build());
 
             AgentResult<String> result = runPromise(() -> agent.process(ctx, "test")); // GH-90000
             assertThat(result.getConfidence()).isEqualTo(0.85); // GH-90000
@@ -170,19 +170,19 @@ class LLMAgentTest extends EventloopTestBase {
     // ─────────────────── Caching ───────────────────
 
     @Nested
-    @DisplayName("Response caching [GH-90000]")
+    @DisplayName("Response caching")
     class CachingTests {
 
         @Test
-        @DisplayName("cache hit avoids second LLM call [GH-90000]")
+        @DisplayName("cache hit avoids second LLM call")
         void cacheHitSkipsLlm() { // GH-90000
             when(chatModel.chat(any(ChatRequest.class))) // GH-90000
-                    .thenReturn(mockResponse("cached result [GH-90000]"));
+                    .thenReturn(mockResponse("cached result"));
 
             LLMAgentConfig config = defaultConfig().cacheEnabled(true).cacheTtlSeconds(60).build(); // GH-90000
             LLMAgent agent = new LLMAgent("cache-1", chatModel, config); // GH-90000
             agent.initialize(AgentConfig.builder() // GH-90000
-                    .agentId("cache-1 [GH-90000]").type(AgentType.PROBABILISTIC).build());
+                    .agentId("cache-1").type(AgentType.PROBABILISTIC).build());
 
             // First call — LLM invoked
             runPromise(() -> agent.process(ctx, "same input")); // GH-90000
@@ -190,21 +190,21 @@ class LLMAgentTest extends EventloopTestBase {
             AgentResult<String> result = runPromise(() -> agent.process(ctx, "same input")); // GH-90000
 
             assertThat(result.isSuccess()).isTrue(); // GH-90000
-            assertThat(result.getOutput()).isEqualTo("cached result [GH-90000]");
+            assertThat(result.getOutput()).isEqualTo("cached result");
             verify(chatModel, times(1)).chat(any(ChatRequest.class)); // GH-90000
         }
 
         @Test
-        @DisplayName("different inputs are cached separately [GH-90000]")
+        @DisplayName("different inputs are cached separately")
         void differentInputsCachedSeparately() { // GH-90000
             when(chatModel.chat(any(ChatRequest.class))) // GH-90000
-                    .thenReturn(mockResponse("result-1 [GH-90000]"))
-                    .thenReturn(mockResponse("result-2 [GH-90000]"));
+                    .thenReturn(mockResponse("result-1"))
+                    .thenReturn(mockResponse("result-2"));
 
             LLMAgentConfig config = defaultConfig().cacheEnabled(true).build(); // GH-90000
             LLMAgent agent = new LLMAgent("cache-2", chatModel, config); // GH-90000
             agent.initialize(AgentConfig.builder() // GH-90000
-                    .agentId("cache-2 [GH-90000]").type(AgentType.PROBABILISTIC).build());
+                    .agentId("cache-2").type(AgentType.PROBABILISTIC).build());
 
             runPromise(() -> agent.process(ctx, "input-A")); // GH-90000
             runPromise(() -> agent.process(ctx, "input-B")); // GH-90000
@@ -214,15 +214,15 @@ class LLMAgentTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("cache disabled skips caching [GH-90000]")
+        @DisplayName("cache disabled skips caching")
         void cacheDisabled() { // GH-90000
             when(chatModel.chat(any(ChatRequest.class))) // GH-90000
-                    .thenReturn(mockResponse("no cache [GH-90000]"));
+                    .thenReturn(mockResponse("no cache"));
 
             LLMAgentConfig config = defaultConfig().cacheEnabled(false).build(); // GH-90000
             LLMAgent agent = new LLMAgent("nocache-1", chatModel, config); // GH-90000
             agent.initialize(AgentConfig.builder() // GH-90000
-                    .agentId("nocache-1 [GH-90000]").type(AgentType.PROBABILISTIC).build());
+                    .agentId("nocache-1").type(AgentType.PROBABILISTIC).build());
 
             runPromise(() -> agent.process(ctx, "input")); // GH-90000
             runPromise(() -> agent.process(ctx, "input")); // GH-90000
@@ -232,15 +232,15 @@ class LLMAgentTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("clearCache empties the cache [GH-90000]")
+        @DisplayName("clearCache empties the cache")
         void clearCacheWorks() { // GH-90000
             when(chatModel.chat(any(ChatRequest.class))) // GH-90000
-                    .thenReturn(mockResponse("result [GH-90000]"));
+                    .thenReturn(mockResponse("result"));
 
             LLMAgentConfig config = defaultConfig().cacheEnabled(true).build(); // GH-90000
             LLMAgent agent = new LLMAgent("clear-1", chatModel, config); // GH-90000
             agent.initialize(AgentConfig.builder() // GH-90000
-                    .agentId("clear-1 [GH-90000]").type(AgentType.PROBABILISTIC).build());
+                    .agentId("clear-1").type(AgentType.PROBABILISTIC).build());
 
             runPromise(() -> agent.process(ctx, "input")); // GH-90000
             assertThat(agent.cacheSize()).isEqualTo(1); // GH-90000
@@ -253,34 +253,34 @@ class LLMAgentTest extends EventloopTestBase {
     // ─────────────────── Token Budget ───────────────────
 
     @Nested
-    @DisplayName("Token budget management [GH-90000]")
+    @DisplayName("Token budget management")
     class TokenBudgetTests {
 
         @Test
-        @DisplayName("estimateTokens uses 4-char heuristic [GH-90000]")
+        @DisplayName("estimateTokens uses 4-char heuristic")
         void tokenEstimation() { // GH-90000
             LLMAgent agent = new LLMAgent("tok-1", chatModel, defaultConfig().build()); // GH-90000
-            assertThat(agent.estimateTokens(" [GH-90000]")).isZero();
+            assertThat(agent.estimateTokens("")).isZero();
             assertThat(agent.estimateTokens(null)).isZero(); // GH-90000
-            assertThat(agent.estimateTokens("1234 [GH-90000]")).isEqualTo(1);
-            assertThat(agent.estimateTokens("12345678 [GH-90000]")).isEqualTo(2);
-            assertThat(agent.estimateTokens("123 [GH-90000]")).isEqualTo(1); // ceil
+            assertThat(agent.estimateTokens("1234")).isEqualTo(1);
+            assertThat(agent.estimateTokens("12345678")).isEqualTo(2);
+            assertThat(agent.estimateTokens("123")).isEqualTo(1); // ceil
         }
 
         @Test
-        @DisplayName("long input is truncated to token budget [GH-90000]")
+        @DisplayName("long input is truncated to token budget")
         void longInputTruncated() { // GH-90000
             when(chatModel.chat(any(ChatRequest.class))) // GH-90000
-                    .thenReturn(mockResponse("result [GH-90000]"));
+                    .thenReturn(mockResponse("result"));
 
             LLMAgentConfig config = defaultConfig() // GH-90000
                     .maxTokens(20) // Very small budget // GH-90000
-                    .systemPrompt("Be brief. [GH-90000]")
+                    .systemPrompt("Be brief.")
                     .build(); // GH-90000
 
             LLMAgent agent = new LLMAgent("trunc-1", chatModel, config); // GH-90000
             agent.initialize(AgentConfig.builder() // GH-90000
-                    .agentId("trunc-1 [GH-90000]").type(AgentType.PROBABILISTIC).build());
+                    .agentId("trunc-1").type(AgentType.PROBABILISTIC).build());
 
             // Very long input
             String longInput = "x".repeat(10000); // GH-90000
@@ -292,47 +292,47 @@ class LLMAgentTest extends EventloopTestBase {
             String userMsg = cap.getValue().messages().stream() // GH-90000
                     .filter(m -> m instanceof dev.langchain4j.data.message.UserMessage) // GH-90000
                     .map(m -> ((dev.langchain4j.data.message.UserMessage) m).singleText()) // GH-90000
-                    .findFirst().orElse(" [GH-90000]");
+                    .findFirst().orElse("");
 
             // Should be truncated
             assertThat(userMsg.length()).isLessThan(longInput.length()); // GH-90000
-            assertThat(userMsg).endsWith("[truncated] [GH-90000]");
+            assertThat(userMsg).endsWith("[truncated]");
         }
     }
 
     // ─────────────────── Fallback ───────────────────
 
     @Nested
-    @DisplayName("Fallback on LLM failure [GH-90000]")
+    @DisplayName("Fallback on LLM failure")
     class FallbackTests {
 
         @Test
-        @DisplayName("returns fallback response when LLM throws [GH-90000]")
+        @DisplayName("returns fallback response when LLM throws")
         void fallbackOnException() { // GH-90000
             when(chatModel.chat(any(ChatRequest.class))) // GH-90000
-                    .thenThrow(new RuntimeException("API rate limited [GH-90000]"));
+                    .thenThrow(new RuntimeException("API rate limited"));
 
             LLMAgentConfig config = defaultConfig() // GH-90000
-                    .fallbackResponse("Unable to classify — please retry later [GH-90000]")
+                    .fallbackResponse("Unable to classify — please retry later")
                     .build(); // GH-90000
 
             LLMAgent agent = new LLMAgent("fb-1", chatModel, config); // GH-90000
             agent.initialize(AgentConfig.builder() // GH-90000
-                    .agentId("fb-1 [GH-90000]").type(AgentType.PROBABILISTIC).build());
+                    .agentId("fb-1").type(AgentType.PROBABILISTIC).build());
 
             AgentResult<String> result = runPromise(() -> agent.process(ctx, "input")); // GH-90000
 
             // Fallback has low confidence → LOW_CONFIDENCE status, not FAILED
             assertThat(result.isFailed()).isFalse(); // GH-90000
-            assertThat(result.getOutput()).contains("Unable to classify [GH-90000]");
+            assertThat(result.getOutput()).contains("Unable to classify");
             assertThat(result.getConfidence()).isLessThan(0.2); // GH-90000
         }
 
         @Test
-        @DisplayName("propagates failure when no fallback configured [GH-90000]")
+        @DisplayName("propagates failure when no fallback configured")
         void failureWithoutFallback() { // GH-90000
             when(chatModel.chat(any(ChatRequest.class))) // GH-90000
-                    .thenThrow(new RuntimeException("timeout [GH-90000]"));
+                    .thenThrow(new RuntimeException("timeout"));
 
             LLMAgentConfig config = defaultConfig() // GH-90000
                     .fallbackResponse(null) // GH-90000
@@ -340,7 +340,7 @@ class LLMAgentTest extends EventloopTestBase {
 
             LLMAgent agent = new LLMAgent("nofb-1", chatModel, config); // GH-90000
             agent.initialize(AgentConfig.builder() // GH-90000
-                    .agentId("nofb-1 [GH-90000]").type(AgentType.PROBABILISTIC).build());
+                    .agentId("nofb-1").type(AgentType.PROBABILISTIC).build());
 
             AgentResult<String> result = runPromise(() -> agent.process(ctx, "input")); // GH-90000
 
@@ -351,11 +351,11 @@ class LLMAgentTest extends EventloopTestBase {
     // ─────────────────── LLMAgentConfig ───────────────────
 
     @Nested
-    @DisplayName("LLMAgentConfig [GH-90000]")
+    @DisplayName("LLMAgentConfig")
     class ConfigTests {
 
         @Test
-        @DisplayName("defaults are sensible [GH-90000]")
+        @DisplayName("defaults are sensible")
         void configDefaults() { // GH-90000
             LLMAgentConfig config = LLMAgentConfig.builder().build(); // GH-90000
 
@@ -368,25 +368,25 @@ class LLMAgentTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("builder overrides work [GH-90000]")
+        @DisplayName("builder overrides work")
         void configOverrides() { // GH-90000
             LLMAgentConfig config = LLMAgentConfig.builder() // GH-90000
                     .maxTokens(4096) // GH-90000
                     .timeoutSeconds(60) // GH-90000
                     .baseConfidence(0.9) // GH-90000
                     .temperature(0.7) // GH-90000
-                    .modelName("gpt-4o [GH-90000]")
+                    .modelName("gpt-4o")
                     .build(); // GH-90000
 
             assertThat(config.getMaxTokens()).isEqualTo(4096); // GH-90000
             assertThat(config.getTimeoutSeconds()).isEqualTo(60); // GH-90000
             assertThat(config.getBaseConfidence()).isEqualTo(0.9); // GH-90000
             assertThat(config.getTemperature()).isEqualTo(0.7); // GH-90000
-            assertThat(config.getModelName()).isEqualTo("gpt-4o [GH-90000]");
+            assertThat(config.getModelName()).isEqualTo("gpt-4o");
         }
 
         @Test
-        @DisplayName("toBuilder creates modified copy [GH-90000]")
+        @DisplayName("toBuilder creates modified copy")
         void toBuilderWorks() { // GH-90000
             LLMAgentConfig original = LLMAgentConfig.builder() // GH-90000
                     .maxTokens(1024).build(); // GH-90000
@@ -401,25 +401,25 @@ class LLMAgentTest extends EventloopTestBase {
     // ─────────────────── Constructor Validation ───────────────────
 
     @Nested
-    @DisplayName("Constructor validation [GH-90000]")
+    @DisplayName("Constructor validation")
     class ValidationTests {
 
         @Test
-        @DisplayName("null agentId throws [GH-90000]")
+        @DisplayName("null agentId throws")
         void nullAgentId() { // GH-90000
             assertThatThrownBy(() -> new LLMAgent(null, chatModel, defaultConfig().build())) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("null chatModel throws [GH-90000]")
+        @DisplayName("null chatModel throws")
         void nullChatModel() { // GH-90000
             assertThatThrownBy(() -> new LLMAgent("id", null, defaultConfig().build())) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("null config throws [GH-90000]")
+        @DisplayName("null config throws")
         void nullConfig() { // GH-90000
             assertThatThrownBy(() -> new LLMAgent("id", chatModel, null)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000

@@ -12,7 +12,8 @@ import java.time.Instant;
  * @doc.type class
  * @doc.purpose Retention operation result
  * @doc.layer agent-learning
- */
+  * @doc.pattern ValueObject
+*/
 @Value
 @Builder
 public class RetentionResult {

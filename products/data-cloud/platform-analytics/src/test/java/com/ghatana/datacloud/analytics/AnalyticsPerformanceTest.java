@@ -16,11 +16,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test analytics performance, throughput, and latency.
  */
-@DisplayName("Analytics Performance Tests [GH-90000]")
+@DisplayName("Analytics Performance Tests")
 class AnalyticsPerformanceTest {
 
     @Test
-    @DisplayName("Should measure query throughput [GH-90000]")
+    @DisplayName("Should measure query throughput")
     void shouldMeasureQueryThroughput() { // GH-90000
         int queriesPerSecond = 1000;
         int targetThroughput = 500;
@@ -29,7 +29,7 @@ class AnalyticsPerformanceTest {
     }
 
     @Test
-    @DisplayName("Should measure query latency [GH-90000]")
+    @DisplayName("Should measure query latency")
     void shouldMeasureQueryLatency() { // GH-90000
         long latencyMs = 50L;
         long maxLatencyMs = 100L;
@@ -38,7 +38,7 @@ class AnalyticsPerformanceTest {
     }
 
     @Test
-    @DisplayName("Should handle concurrent queries [GH-90000]")
+    @DisplayName("Should handle concurrent queries")
     void shouldHandleConcurrentQueries() { // GH-90000
         int concurrentQueries = 10;
         int maxConcurrency = 20;
@@ -47,7 +47,7 @@ class AnalyticsPerformanceTest {
     }
 
     @Test
-    @DisplayName("Should measure resource utilization [GH-90000]")
+    @DisplayName("Should measure resource utilization")
     void shouldMeasureResourceUtilization() { // GH-90000
         double cpuUtilization = 0.75;
         double memoryUtilization = 0.60;
@@ -57,7 +57,7 @@ class AnalyticsPerformanceTest {
     }
 
     @Test
-    @DisplayName("Should handle performance degradation [GH-90000]")
+    @DisplayName("Should handle performance degradation")
     void shouldHandlePerformanceDegradation() { // GH-90000
         long baselineLatency = 50L;
         long degradedLatency = 200L;
@@ -66,7 +66,7 @@ class AnalyticsPerformanceTest {
     }
 
     @Test
-    @DisplayName("Should handle performance optimization [GH-90000]")
+    @DisplayName("Should handle performance optimization")
     void shouldHandlePerformanceOptimization() { // GH-90000
         long optimizedLatency = 30L;
         long baselineLatency = 50L;

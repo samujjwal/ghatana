@@ -6,7 +6,11 @@ import java.util.Objects;
 
 /**
  * Domain representation of an individual step checkpoint within a pipeline execution.
- */
+  * @doc.type class
+ * @doc.purpose Provides step checkpoint functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 public class StepCheckpoint {
     private final String stepId;
     private final String stepName;

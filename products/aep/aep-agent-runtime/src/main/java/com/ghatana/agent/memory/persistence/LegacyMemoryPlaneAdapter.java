@@ -32,7 +32,8 @@ import java.util.stream.Collectors;
  * @doc.type class
  * @doc.purpose Forward-compat adapter (MemoryStore → MemoryPlane)
  * @doc.layer agent-memory
- */
+  * @doc.pattern Adapter
+*/
 public class LegacyMemoryPlaneAdapter implements MemoryPlane {
 
     private static final Logger log = LoggerFactory.getLogger(LegacyMemoryPlaneAdapter.class);

@@ -2,7 +2,11 @@ package com.ghatana.orchestrator.store;
 
 /**
  * Checkpoint status enumeration.
- */
+  * @doc.type enum
+ * @doc.purpose Provides pipeline checkpoint status functionality.
+ * @doc.layer product
+ * @doc.pattern Enum
+*/
 public enum PipelineCheckpointStatus {
     CREATED, // Initial state
     RUNNING, // Execution in progress

@@ -28,37 +28,37 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Token File Tests [GH-90000]")
+@DisplayName("Token File Tests")
 class TokenFileTest {
 
     @Test
-    @DisplayName("should set and get schema [GH-90000]")
+    @DisplayName("should set and get schema")
     void shouldSetAndGetSchema() { // GH-90000
         TokenFile tokenFile = new TokenFile(); // GH-90000
-        tokenFile.setSchema("https://example.com/schema.json [GH-90000]");
+        tokenFile.setSchema("https://example.com/schema.json");
 
-        assertThat(tokenFile.getSchema()).isEqualTo("https://example.com/schema.json [GH-90000]");
+        assertThat(tokenFile.getSchema()).isEqualTo("https://example.com/schema.json");
     }
 
     @Test
-    @DisplayName("should default version to 1.0.0 [GH-90000]")
+    @DisplayName("should default version to 1.0.0")
     void shouldDefaultVersionTo1_0_0() { // GH-90000
         TokenFile tokenFile = new TokenFile(); // GH-90000
 
-        assertThat(tokenFile.getVersion()).isEqualTo("1.0.0 [GH-90000]");
+        assertThat(tokenFile.getVersion()).isEqualTo("1.0.0");
     }
 
     @Test
-    @DisplayName("should set and get custom version [GH-90000]")
+    @DisplayName("should set and get custom version")
     void shouldSetAndGetCustomVersion() { // GH-90000
         TokenFile tokenFile = new TokenFile(); // GH-90000
-        tokenFile.setVersion("2.0.0 [GH-90000]");
+        tokenFile.setVersion("2.0.0");
 
-        assertThat(tokenFile.getVersion()).isEqualTo("2.0.0 [GH-90000]");
+        assertThat(tokenFile.getVersion()).isEqualTo("2.0.0");
     }
 
     @Test
-    @DisplayName("should set and get tokens via any setter [GH-90000]")
+    @DisplayName("should set and get tokens via any setter")
     void shouldSetAndGetTokensViaAnySetter() { // GH-90000
         TokenFile tokenFile = new TokenFile(); // GH-90000
         tokenFile.setToken("color-primary", "#000000"); // GH-90000
@@ -70,7 +70,7 @@ class TokenFileTest {
     }
 
     @Test
-    @DisplayName("should maintain token order [GH-90000]")
+    @DisplayName("should maintain token order")
     void shouldMaintainTokenOrder() { // GH-90000
         TokenFile tokenFile = new TokenFile(); // GH-90000
         tokenFile.setToken("z-token", "value1"); // GH-90000
@@ -78,8 +78,8 @@ class TokenFileTest {
         tokenFile.setToken("m-token", "value3"); // GH-90000
 
         var keys = tokenFile.getTokens().keySet().toArray(); // GH-90000
-        assertThat(keys[0]).isEqualTo("z-token [GH-90000]");
-        assertThat(keys[1]).isEqualTo("a-token [GH-90000]");
-        assertThat(keys[2]).isEqualTo("m-token [GH-90000]");
+        assertThat(keys[0]).isEqualTo("z-token");
+        assertThat(keys[1]).isEqualTo("a-token");
+        assertThat(keys[2]).isEqualTo("m-token");
     }
 }

@@ -5,10 +5,12 @@
  * @doc.purpose Display pipeline execution runs with status and metrics
  * @doc.layer frontend
  */
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router';
 import type { PipelineRun } from '@/api/aep.api';
+import type { AiSuggestion } from './AiSuggestionsPanel';
 import { Button } from '@ghatana/design-system';
+import { Zap } from 'lucide-react';
 
 interface RunTableProps {
   runs: PipelineRun[];
@@ -20,6 +22,7 @@ interface RunTableProps {
   onSelectAll?: () => void;
   isAllSelected?: boolean;
   isIndeterminate?: boolean;
+  aiSuggestions?: AiSuggestion[];
   className?: string;
 }
 
@@ -34,17 +37,35 @@ function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
-export function RunTable({ 
-  runs, 
-  onCancel, 
-  onApprove, 
-  onReject, 
-  selectedIds, 
-  onSelectToggle, 
-  onSelectAll, 
-  isAllSelected, 
-  isIndeterminate, 
-  className = '' 
+function AiSuggestionPill({ suggestion }: { suggestion: AiSuggestion }) {
+  return (
+    <span
+      className={[
+        'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium',
+        suggestion.severity === 'critical' || suggestion.severity === 'high'
+          ? 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300'
+          : 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
+      ].join(' ')}
+      aria-label={`${suggestion.type} suggestion: ${suggestion.message}`}
+    >
+      <Zap className="h-3 w-3" aria-hidden="true" />
+      {suggestion.message.length > 40 ? suggestion.message.slice(0, 38) + '…' : suggestion.message}
+    </span>
+  );
+}
+
+export function RunTable({
+  runs,
+  onCancel,
+  onApprove,
+  onReject,
+  selectedIds,
+  onSelectToggle,
+  onSelectAll,
+  isAllSelected,
+  isIndeterminate,
+  aiSuggestions = [],
+  className = ''
 }: RunTableProps) {
   if (runs.length === 0) {
     return (
@@ -54,11 +75,12 @@ export function RunTable({
 
   return (
     <div className={['overflow-x-auto', className].join(' ')}>
-      <table className="w-full text-sm border-collapse">
+      <table className="w-full text-sm border-collapse" role="table" aria-label="Pipeline runs">
+        <caption className="sr-only">Pipeline execution runs with status, metrics, and actions</caption>
         <thead className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide bg-gray-50 dark:bg-gray-900">
           <tr>
             {onSelectToggle && (
-              <th className="px-3 py-2 w-10">
+              <th className="px-3 py-2 w-10" scope="col">
                 <input
                   type="checkbox"
                   checked={isAllSelected ?? false}
@@ -73,15 +95,15 @@ export function RunTable({
                 />
               </th>
             )}
-            <th className="px-3 py-2 text-left font-medium">Pipeline</th>
-            <th className="px-3 py-2 text-left font-medium">Status</th>
-            <th className="px-3 py-2 text-left font-medium">Started</th>
-            <th className="px-3 py-2 text-right font-medium">Events</th>
-            <th className="px-3 py-2 text-right font-medium">Errors</th>
+            <th className="px-3 py-2 text-left font-medium" scope="col">Pipeline</th>
+            <th className="px-3 py-2 text-left font-medium" scope="col">Status</th>
+            <th className="px-3 py-2 text-left font-medium" scope="col">Started</th>
+            <th className="px-3 py-2 text-right font-medium" scope="col">Events</th>
+            <th className="px-3 py-2 text-right font-medium" scope="col">Errors</th>
             {(onApprove || onReject) && (
-              <th className="px-3 py-2 text-right font-medium">Actions</th>
+              <th className="px-3 py-2 text-right font-medium" scope="col">Actions</th>
             )}
-            <th className="px-3 py-2" />
+            <th className="px-3 py-2" scope="col" aria-label="Details" />
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -110,14 +132,32 @@ export function RunTable({
                 </Link>
               </td>
               <td className="px-3 py-2">
-                <span
-                  className={[
-                    'inline-block px-2 py-0.5 rounded-full text-xs font-medium',
-                    STATUS_STYLES[run.status],
-                  ].join(' ')}
-                >
-                  {run.status}
-                </span>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span
+                    className={[
+                      'inline-block px-2 py-0.5 rounded-full text-xs font-medium',
+                      STATUS_STYLES[run.status],
+                    ].join(' ')}
+                  >
+                    {run.status}
+                  </span>
+                  {(() => {
+                    const runSuggestions = aiSuggestions.filter(
+                      (s) => s.resourceId === run.id || s.resourceId === run.pipelineId
+                    );
+                    if (runSuggestions.length === 0) return null;
+                    return (
+                      <div className="flex flex-wrap gap-1">
+                        {runSuggestions.slice(0, 2).map((s) => (
+                          <AiSuggestionPill key={s.id} suggestion={s} />
+                        ))}
+                        {runSuggestions.length > 2 && (
+                          <span className="text-[10px] text-gray-400 dark:text-gray-500">+{runSuggestions.length - 2}</span>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
               </td>
               <td className="px-3 py-2 text-gray-500 dark:text-gray-400 tabular-nums">
                 {formatTime(run.startedAt)}
@@ -168,6 +208,7 @@ export function RunTable({
                       onClick={() => onCancel(run.id)}
                       variant="text"
                       className="text-xs text-red-500 hover:text-red-700 font-medium"
+                      aria-label={`Cancel running pipeline ${run.pipelineName}`}
                     >
                       Cancel
                     </Button>
@@ -178,6 +219,7 @@ export function RunTable({
                 <Link
                   to={`/operate/runs/${run.id}`}
                   className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+                  aria-label={`View details for run ${run.id}`}
                 >
                   View
                 </Link>

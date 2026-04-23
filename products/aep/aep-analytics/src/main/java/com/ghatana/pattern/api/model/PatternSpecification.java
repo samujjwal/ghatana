@@ -84,7 +84,10 @@ import java.util.UUID;
  * <p><b>Design Reference:</b>
  * This specification format implements the pattern model from WORLD_CLASS_DESIGN_MASTER.md.
  * See .github/copilot-instructions.md "Contracts-first" for schema evolution patterns.
- */
+  * @doc.type class
+ * @doc.purpose Provides pattern specification functionality.
+ * @doc.layer product
+*/
 public class PatternSpecification {
 
     @JsonProperty("id")

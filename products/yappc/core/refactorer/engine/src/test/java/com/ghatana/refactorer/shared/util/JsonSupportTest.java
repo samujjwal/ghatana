@@ -22,7 +22,7 @@ class JsonSupportTest {
 
         assertThatThrownBy(() -> JsonSupport.toPrettyJson(selfReferential)) // GH-90000
                 .isInstanceOf(RefactorerOperationException.class) // GH-90000
-                .hasMessageContaining("Error converting object to JSON [GH-90000]")
+                .hasMessageContaining("Error converting object to JSON")
                 .hasCauseInstanceOf(com.fasterxml.jackson.core.JsonProcessingException.class); // GH-90000
     }
 }

@@ -13,19 +13,19 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("AdvancedQueryBuilder [GH-90000]")
+@DisplayName("AdvancedQueryBuilder")
 class AdvancedQueryBuilderTest extends EventloopTestBase {
 
     @Test
-    @DisplayName("executes filters sorting and pagination against supplied dataset [GH-90000]")
+    @DisplayName("executes filters sorting and pagination against supplied dataset")
     void executesFiltersSortingAndPaginationAgainstSuppliedDataset() { // GH-90000
         MetaCollection collection = MetaCollection.builder() // GH-90000
-            .tenantId("tenant-a [GH-90000]")
-            .name("orders [GH-90000]")
+            .tenantId("tenant-a")
+            .name("orders")
             .fields(List.of( // GH-90000
-                MetaField.builder().collectionId(UUID.randomUUID()).name("customerId [GH-90000]").type(DataType.STRING).uniqueConstraint(true).build(),
-                MetaField.builder().collectionId(UUID.randomUUID()).name("amount [GH-90000]").type(DataType.NUMBER).build(),
-                MetaField.builder().collectionId(UUID.randomUUID()).name("status [GH-90000]").type(DataType.STRING).build()))
+                MetaField.builder().collectionId(UUID.randomUUID()).name("customerId").type(DataType.STRING).uniqueConstraint(true).build(),
+                MetaField.builder().collectionId(UUID.randomUUID()).name("amount").type(DataType.NUMBER).build(),
+                MetaField.builder().collectionId(UUID.randomUUID()).name("status").type(DataType.STRING).build()))
             .build(); // GH-90000
 
         AdvancedQueryBuilder builder = new AdvancedQueryBuilder(collection) // GH-90000
@@ -43,19 +43,19 @@ class AdvancedQueryBuilderTest extends EventloopTestBase {
         AdvancedQueryBuilder.QueryResults results = runPromise(builder::buildAndExecute); // GH-90000
 
         assertThat(results.totalCount()).isEqualTo(3); // GH-90000
-        assertThat(results.rows()).extracting(row -> row.get("customerId [GH-90000]"))
+        assertThat(results.rows()).extracting(row -> row.get("customerId"))
             .containsExactly("cust-4", "cust-1"); // GH-90000
     }
 
     @Test
-    @DisplayName("uses collection metadata to generate index hints [GH-90000]")
+    @DisplayName("uses collection metadata to generate index hints")
     void usesCollectionMetadataToGenerateIndexHints() { // GH-90000
         MetaCollection collection = MetaCollection.builder() // GH-90000
-            .tenantId("tenant-a [GH-90000]")
-            .name("profiles [GH-90000]")
+            .tenantId("tenant-a")
+            .name("profiles")
             .fields(List.of( // GH-90000
-                MetaField.builder().collectionId(UUID.randomUUID()).name("email [GH-90000]").type(DataType.STRING).uniqueConstraint(true).build(),
-                MetaField.builder().collectionId(UUID.randomUUID()).name("managerId [GH-90000]").type(DataType.REFERENCE).build()))
+                MetaField.builder().collectionId(UUID.randomUUID()).name("email").type(DataType.STRING).uniqueConstraint(true).build(),
+                MetaField.builder().collectionId(UUID.randomUUID()).name("managerId").type(DataType.REFERENCE).build()))
             .build(); // GH-90000
 
         AdvancedQueryBuilder.QueryPlan plan = new AdvancedQueryBuilder(collection) // GH-90000

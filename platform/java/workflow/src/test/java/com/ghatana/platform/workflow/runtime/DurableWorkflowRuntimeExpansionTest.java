@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("DurableWorkflowRuntime - Phase 3 Expansion [GH-90000]")
+@DisplayName("DurableWorkflowRuntime - Phase 3 Expansion")
 class DurableWorkflowRuntimeExpansionTest extends EventloopTestBase {
 
     private InMemoryWorkflowDefinitionRegistry definitionRegistry;
@@ -70,11 +70,11 @@ class DurableWorkflowRuntimeExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Definition Registry Scalability [GH-90000]")
+    @DisplayName("Definition Registry Scalability")
     class RegistryScalabilityTests {
 
         @Test
-        @DisplayName("Registers and executes 50 workflow definitions [GH-90000]")
+        @DisplayName("Registers and executes 50 workflow definitions")
         void manyWorkflowDefinitions() { // GH-90000
             // Register 50 workflow definitions
             for (int i = 0; i < 50; i++) { // GH-90000
@@ -101,7 +101,7 @@ class DurableWorkflowRuntimeExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Executes workflows with different registered operators [GH-90000]")
+        @DisplayName("Executes workflows with different registered operators")
         void multipleOperatorDefinitions() { // GH-90000
             AtomicInteger op1Runs = new AtomicInteger(0); // GH-90000
             AtomicInteger op2Runs = new AtomicInteger(0); // GH-90000
@@ -128,9 +128,9 @@ class DurableWorkflowRuntimeExpansionTest extends EventloopTestBase {
 
             WorkflowDefinition def = WorkflowDefinition.builder("multi-op-wf", "Multi Op") // GH-90000
                     .addStep(WorkflowStepDefinition.action("validate", "Validate", "validate-op") // GH-90000
-                            .withNextStep("transform [GH-90000]"))
+                            .withNextStep("transform"))
                     .addStep(WorkflowStepDefinition.action("transform", "Transform", "transform-op") // GH-90000
-                            .withNextStep("save [GH-90000]"))
+                            .withNextStep("save"))
                     .addStep(WorkflowStepDefinition.action("save", "Save", "save-op") // GH-90000
                             .withNextStep(null)) // GH-90000
                     .build(); // GH-90000
@@ -152,11 +152,11 @@ class DurableWorkflowRuntimeExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Operator Chaining [GH-90000]")
+    @DisplayName("Operator Chaining")
     class OperatorChainingTests {
 
         @Test
-        @DisplayName("Chains operators with context propagation [GH-90000]")
+        @DisplayName("Chains operators with context propagation")
         void operatorChaining() { // GH-90000
             operatorRegistry.register("op-a", (ctx, cfg) -> { // GH-90000
                 ctx.put("op-a-output", "data-from-a"); // GH-90000
@@ -174,8 +174,8 @@ class DurableWorkflowRuntimeExpansionTest extends EventloopTestBase {
             });
 
             WorkflowDefinition def = WorkflowDefinition.builder("chain-wf", "Chain") // GH-90000
-                    .addStep(WorkflowStepDefinition.action("a", "A", "op-a").withNextStep("b [GH-90000]"))
-                    .addStep(WorkflowStepDefinition.action("b", "B", "op-b").withNextStep("c [GH-90000]"))
+                    .addStep(WorkflowStepDefinition.action("a", "A", "op-a").withNextStep("b"))
+                    .addStep(WorkflowStepDefinition.action("b", "B", "op-b").withNextStep("c"))
                     .addStep(WorkflowStepDefinition.action("c", "C", "op-c").withNextStep(null)) // GH-90000
                     .build(); // GH-90000
 
@@ -188,7 +188,7 @@ class DurableWorkflowRuntimeExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Long operator chains maintain correct execution order [GH-90000]")
+        @DisplayName("Long operator chains maintain correct execution order")
         void longOperatorChain() { // GH-90000
             List<Integer> executionOrder = new CopyOnWriteArrayList<>(); // GH-90000
 
@@ -225,11 +225,11 @@ class DurableWorkflowRuntimeExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Context Management [GH-90000]")
+    @DisplayName("Context Management")
     class ContextManagementTests {
 
         @Test
-        @DisplayName("Maintains context isolation between workflow runs [GH-90000]")
+        @DisplayName("Maintains context isolation between workflow runs")
         void contextIsolation() { // GH-90000
             operatorRegistry.register("context-op", (ctx, cfg) -> { // GH-90000
                 ctx.put("tenant-data", "sensitive-info"); // GH-90000
@@ -258,11 +258,11 @@ class DurableWorkflowRuntimeExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Lifecycle Events [GH-90000]")
+    @DisplayName("Lifecycle Events")
     class LifecycleEventTests {
 
         @Test
-        @DisplayName("Captures and orders lifecycle events for workflow execution [GH-90000]")
+        @DisplayName("Captures and orders lifecycle events for workflow execution")
         void lifecycleEventCapture() { // GH-90000
             operatorRegistry.register("simple-op", (ctx, cfg) -> Promise.of(ctx)); // GH-90000
 

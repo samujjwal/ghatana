@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Tests for {@link IdentityResolutionService} and {@link AepLocalIdentityResolver}.
  */
-@DisplayName("AEP Identity [GH-90000]")
+@DisplayName("AEP Identity")
 class AepIdentityTest extends EventloopTestBase {
 
     private AepLocalIdentityResolver localResolver;
@@ -40,16 +40,16 @@ class AepIdentityTest extends EventloopTestBase {
         return new AgentIdentity( // GH-90000
             tenantId, agentId,
             "spiffe://ghatana/" + tenantId + "/" + agentId,
-            Set.of("aep:execute [GH-90000]"),
+            Set.of("aep:execute"),
             Instant.now()); // GH-90000
     }
 
     @Nested
-    @DisplayName("AepLocalIdentityResolver [GH-90000]")
+    @DisplayName("AepLocalIdentityResolver")
     class ResolverTests {
 
         @Test
-        @DisplayName("register and resolve returns the identity [GH-90000]")
+        @DisplayName("register and resolve returns the identity")
         void registerAndResolve() { // GH-90000
             AgentIdentity id = identity("t1", "agent1"); // GH-90000
             localResolver.register(id); // GH-90000
@@ -59,7 +59,7 @@ class AepIdentityTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("resolve for unknown agent returns empty [GH-90000]")
+        @DisplayName("resolve for unknown agent returns empty")
         void resolveUnknownReturnsEmpty() { // GH-90000
             Optional<AgentIdentity> result = runPromise(() -> // GH-90000
                 localResolver.resolve("t1", "unknown")); // GH-90000
@@ -67,7 +67,7 @@ class AepIdentityTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("supports returns true only for registered agents [GH-90000]")
+        @DisplayName("supports returns true only for registered agents")
         void supportsOnlyRegistered() { // GH-90000
             localResolver.register(identity("t1", "agent1")); // GH-90000
             assertThat(localResolver.supports("t1", "agent1")).isTrue(); // GH-90000
@@ -75,7 +75,7 @@ class AepIdentityTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("deregister removes the identity [GH-90000]")
+        @DisplayName("deregister removes the identity")
         void deregisterRemovesIdentity() { // GH-90000
             localResolver.register(identity("t1", "agent1")); // GH-90000
             localResolver.deregister("t1", "agent1"); // GH-90000
@@ -83,7 +83,7 @@ class AepIdentityTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("tenants are isolated [GH-90000]")
+        @DisplayName("tenants are isolated")
         void tenantsAreIsolated() { // GH-90000
             localResolver.register(identity("tenantA", "agent1")); // GH-90000
             Optional<AgentIdentity> result = runPromise(() -> // GH-90000
@@ -93,11 +93,11 @@ class AepIdentityTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("IdentityResolutionService [GH-90000]")
+    @DisplayName("IdentityResolutionService")
     class ServiceTests {
 
         @Test
-        @DisplayName("resolveIdentity returns empty when no resolver knows the agent [GH-90000]")
+        @DisplayName("resolveIdentity returns empty when no resolver knows the agent")
         void resolveUnknownReturnsEmpty() { // GH-90000
             Optional<AgentIdentity> result = runPromise(() -> // GH-90000
                 service.resolveIdentity("t1", "ghost-agent")); // GH-90000
@@ -105,7 +105,7 @@ class AepIdentityTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("resolveIdentity delegates to local resolver [GH-90000]")
+        @DisplayName("resolveIdentity delegates to local resolver")
         void resolveDelegatesToLocalResolver() { // GH-90000
             AgentIdentity id = identity("t1", "agent1"); // GH-90000
             localResolver.register(id); // GH-90000
@@ -115,20 +115,20 @@ class AepIdentityTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("issueCredential returns a non-null token with correct metadata [GH-90000]")
+        @DisplayName("issueCredential returns a non-null token with correct metadata")
         void issueCredentialReturnsToken() { // GH-90000
             localResolver.register(identity("t1", "agent1")); // GH-90000
             CredentialToken token = runPromise(() -> // GH-90000
                 service.issueCredential("t1", "agent1")); // GH-90000
             assertThat(token.tokenId()).isNotNull(); // GH-90000
-            assertThat(token.agentId()).isEqualTo("agent1 [GH-90000]");
-            assertThat(token.tenantId()).isEqualTo("t1 [GH-90000]");
+            assertThat(token.agentId()).isEqualTo("agent1");
+            assertThat(token.tenantId()).isEqualTo("t1");
             assertThat(token.isExpired()).isFalse(); // GH-90000
             assertThat(runPromise(() -> service.isCredentialValid(token.tokenId()))).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("revoke then isCredentialValid returns false [GH-90000]")
+        @DisplayName("revoke then isCredentialValid returns false")
         void revokeInvalidatesToken() { // GH-90000
             localResolver.register(identity("t1", "agent1")); // GH-90000
             CredentialToken token = runPromise(() -> service.issueCredential("t1", "agent1")); // GH-90000
@@ -138,7 +138,7 @@ class AepIdentityTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("withResolvers chains until one resolver finds the identity [GH-90000]")
+        @DisplayName("withResolvers chains until one resolver finds the identity")
         void withResolversChainsResolvers() { // GH-90000
             IdentityResolver miss = (tenantId, agentId) -> Promise.of(Optional.empty()); // GH-90000
             AepLocalIdentityResolver hit = new AepLocalIdentityResolver(); // GH-90000

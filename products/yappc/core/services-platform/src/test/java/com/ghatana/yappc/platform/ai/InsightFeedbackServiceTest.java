@@ -15,11 +15,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("InsightFeedbackService Tests [GH-90000]")
+@DisplayName("InsightFeedbackService Tests")
 class InsightFeedbackServiceTest extends EventloopTestBase {
 
   @Test
-  @DisplayName("recordFeedback raises threshold when dismissals are high [GH-90000]")
+  @DisplayName("recordFeedback raises threshold when dismissals are high")
   void recordFeedbackRaisesThresholdWhenDismissalsAreHigh() { // GH-90000
     AtomicReference<InsightFeedback> captured = new AtomicReference<>(); // GH-90000
     InsightFeedbackService service =
@@ -36,7 +36,7 @@ class InsightFeedbackServiceTest extends EventloopTestBase {
                 return Promise.of(new FeedbackStats(tenantId, insightType, 2, 5, 0.7)); // GH-90000
               }
             },
-            Clock.fixed(Instant.parse("2026-04-06T12:00:00Z [GH-90000]"), ZoneOffset.UTC));
+            Clock.fixed(Instant.parse("2026-04-06T12:00:00Z"), ZoneOffset.UTC));
 
     InsightFeedbackService.ThresholdRecommendation recommendation =
         runPromise( // GH-90000
@@ -49,12 +49,12 @@ class InsightFeedbackServiceTest extends EventloopTestBase {
                         FeedbackDecision.DISMISSED,
                         null)));
 
-    assertThat(captured.get().recordedAt()).isEqualTo(Instant.parse("2026-04-06T12:00:00Z [GH-90000]"));
+    assertThat(captured.get().recordedAt()).isEqualTo(Instant.parse("2026-04-06T12:00:00Z"));
     assertThat(recommendation.recommendedThreshold()).isEqualTo(0.75); // GH-90000
   }
 
   @Test
-  @DisplayName("recordFeedback lowers threshold when approvals are strong [GH-90000]")
+  @DisplayName("recordFeedback lowers threshold when approvals are strong")
   void recordFeedbackLowersThresholdWhenApprovalsAreStrong() { // GH-90000
     InsightFeedbackService service =
         new InsightFeedbackService( // GH-90000
@@ -79,9 +79,9 @@ class InsightFeedbackServiceTest extends EventloopTestBase {
                         "insight-2",
                         AIInsight.InsightType.PERFORMANCE,
                         FeedbackDecision.APPROVED,
-                        Instant.parse("2026-04-06T12:00:00Z [GH-90000]"))));
+                        Instant.parse("2026-04-06T12:00:00Z"))));
 
     assertThat(recommendation.recommendedThreshold()).isEqualTo(0.65); // GH-90000
-    assertThat(recommendation.rationale()).contains("Approval rate is strong [GH-90000]");
+    assertThat(recommendation.rationale()).contains("Approval rate is strong");
   }
 }

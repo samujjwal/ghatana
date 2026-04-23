@@ -12,7 +12,11 @@ import java.util.Optional;
 /**
  * Day 39: Interface for storing and retrieving pipeline execution checkpoints.
  * Provides exactly-once semantics and enables pipeline restart from last successful checkpoint.
- */
+  * @doc.type interface
+ * @doc.purpose Provides checkpoint store functionality.
+ * @doc.layer product
+ * @doc.pattern Repository
+*/
 public interface CheckpointStore {
 
     /**

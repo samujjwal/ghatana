@@ -8,7 +8,11 @@ import java.util.Map;
  * Statistical metrics for event stream analysis.
  *
  * Day 28 Implementation: Stream statistics for pattern exploration.
- */
+  * @doc.type class
+ * @doc.purpose Provides event stream statistics functionality.
+ * @doc.layer product
+ * @doc.pattern Event
+*/
 public class EventStreamStatistics {
 
     private final long totalEvents;

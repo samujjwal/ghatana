@@ -52,7 +52,7 @@ class EventloopManagerTest {
 
     @Test
     void testCreate_withCustomThreadName() { // GH-90000
-        Eventloop eventloop = EventloopManager.create("custom-loop [GH-90000]");
+        Eventloop eventloop = EventloopManager.create("custom-loop");
 
         assertThat(eventloop).isNotNull(); // GH-90000
         // Thread name is set internally, we can't directly verify it here
@@ -156,7 +156,7 @@ class EventloopManagerTest {
 
         assertThatThrownBy(() -> EventloopManager.create()) // GH-90000
             .isInstanceOf(IllegalStateException.class) // GH-90000
-            .hasMessageContaining("shutting down [GH-90000]");
+            .hasMessageContaining("shutting down");
     }
 
     @Test
@@ -165,7 +165,7 @@ class EventloopManagerTest {
 
         assertThatThrownBy(() -> EventloopManager.getCurrentEventloop()) // GH-90000
             .isInstanceOf(IllegalStateException.class) // GH-90000
-            .hasMessageContaining("shutting down [GH-90000]");
+            .hasMessageContaining("shutting down");
     }
 
     @Test

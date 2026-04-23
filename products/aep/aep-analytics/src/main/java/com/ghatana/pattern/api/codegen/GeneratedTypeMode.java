@@ -11,7 +11,11 @@ package com.ghatana.pattern.api.codegen;
  *
  * <p>Modes are intentionally explicit so call sites can enforce invariants
  * (e.g., record mode for analytics pipelines that prefer value semantics).</p>
- */
+  * @doc.type enum
+ * @doc.purpose Provides generated type mode functionality.
+ * @doc.layer product
+ * @doc.pattern Enum
+*/
 public enum GeneratedTypeMode {
     CLASS,
     RECORD;

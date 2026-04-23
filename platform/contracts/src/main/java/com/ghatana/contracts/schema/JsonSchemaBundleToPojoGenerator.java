@@ -35,7 +35,11 @@ import java.util.*;
  *
  * <p>Usage (via Gradle JavaExec): args: <bundlePath> <outputDir> [--root=com]
  * [--override=fromFqn=toFqn[,..]] [--include-prefix=prefix1,prefix2]
- */
+  * @doc.type enum
+ * @doc.purpose Provides json schema bundle to pojo generator functionality.
+ * @doc.layer platform
+ * @doc.pattern Component
+*/
 public class JsonSchemaBundleToPojoGenerator {
 
     private static final ObjectMapper M = new ObjectMapper();

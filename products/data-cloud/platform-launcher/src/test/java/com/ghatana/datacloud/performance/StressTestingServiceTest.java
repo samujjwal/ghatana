@@ -30,7 +30,7 @@ import static org.mockito.Mockito.*;
  * Focus: Peak load handling, resource exhaustion, cascading failures, extended stress
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("StressTestingService - DC-F-022 [GH-90000]")
+@DisplayName("StressTestingService - DC-F-022")
 class StressTestingServiceTest {
 
     @Mock private ResourceMonitor resourceMonitor;
@@ -45,11 +45,11 @@ class StressTestingServiceTest {
     }
 
     @Nested
-    @DisplayName("Extreme Peak Load Scenarios [GH-90000]")
+    @DisplayName("Extreme Peak Load Scenarios")
     class ExtremePeakLoadScenarios {
 
         @Test
-        @DisplayName("shouldHandleSuddenTrafficSpike_when10xNormalLoadArrives_thenSystemResponds [GH-90000]")
+        @DisplayName("shouldHandleSuddenTrafficSpike_when10xNormalLoadArrives_thenSystemResponds")
         void shouldHandleSuddenTrafficSpike_when10xNormalLoadArrives_thenSystemResponds() { // GH-90000
             long normalLoad = 1000L;
             long spikeLoad = 10_000L;
@@ -62,7 +62,7 @@ class StressTestingServiceTest {
         }
 
         @Test
-        @DisplayName("shouldPreserveDataConsistency_whenConcurrentLimitReached_thenQueueAbsorption [GH-90000]")
+        @DisplayName("shouldPreserveDataConsistency_whenConcurrentLimitReached_thenQueueAbsorption")
         void shouldPreserveDataConsistency_whenConcurrentLimitReached_thenQueueAbsorption() { // GH-90000
             when(resourceMonitor.getQueueDepth()).thenReturn(5000L); // GH-90000
 
@@ -73,7 +73,7 @@ class StressTestingServiceTest {
         }
 
         @Test
-        @DisplayName("shouldImplementBackpressure_whenSystemSaturated_thenRequestsQueued [GH-90000]")
+        @DisplayName("shouldImplementBackpressure_whenSystemSaturated_thenRequestsQueued")
         void shouldImplementBackpressure_whenSystemSaturated_thenRequestsQueued() { // GH-90000
             when(resourceMonitor.isBackpressureActive()).thenReturn(true); // GH-90000
 
@@ -83,7 +83,7 @@ class StressTestingServiceTest {
         }
 
         @Test
-        @DisplayName("shouldDetectSystemSaturation_whenLoadExceedsCapacity_thenSaturationPoint [GH-90000]")
+        @DisplayName("shouldDetectSystemSaturation_whenLoadExceedsCapacity_thenSaturationPoint")
         void shouldDetectSystemSaturation_whenLoadExceedsCapacity_thenSaturationPoint() { // GH-90000
             when(exhaustionTester.detectSaturationPoint()).thenReturn(15_000L); // GH-90000
 
@@ -93,7 +93,7 @@ class StressTestingServiceTest {
         }
 
         @Test
-        @DisplayName("shouldRejectRequestsGracefully_whenQueueFull_thenRateLimitingActivates [GH-90000]")
+        @DisplayName("shouldRejectRequestsGracefully_whenQueueFull_thenRateLimitingActivates")
         void shouldRejectRequestsGracefully_whenQueueFull_thenRateLimitingActivates() { // GH-90000
             when(resourceMonitor.getRateLimitRejectionCount()).thenReturn(250L); // GH-90000
 
@@ -103,7 +103,7 @@ class StressTestingServiceTest {
         }
 
         @Test
-        @DisplayName("shouldRecoverAfterSpike_whenLoadReturnsToNormal_thenSystemRecalibrates [GH-90000]")
+        @DisplayName("shouldRecoverAfterSpike_whenLoadReturnsToNormal_thenSystemRecalibrates")
         void shouldRecoverAfterSpike_whenLoadReturnsToNormal_thenSystemRecalibrates() { // GH-90000
             when(resourceMonitor.getRecoveryTimeMs()).thenReturn(3000L); // GH-90000
 
@@ -113,7 +113,7 @@ class StressTestingServiceTest {
         }
 
         @Test
-        @DisplayName("shouldMaintainSLAsUnderSpike_whereFeatureUnusuallyMissed_thenAlert [GH-90000]")
+        @DisplayName("shouldMaintainSLAsUnderSpike_whereFeatureUnusuallyMissed_thenAlert")
         void shouldMaintainSLAsUnderSpike_whereFeatureUnusuallyMissed_thenAlert() { // GH-90000
             when(resourceMonitor.computeP99Latency()).thenReturn(5000L); // GH-90000
 
@@ -124,11 +124,11 @@ class StressTestingServiceTest {
     }
 
     @Nested
-    @DisplayName("Resource Exhaustion Boundaries [GH-90000]")
+    @DisplayName("Resource Exhaustion Boundaries")
     class ResourceExhaustionBoundaries {
 
         @Test
-        @DisplayName("shouldDetectThreadPoolExhaustion_whenMaxThreadsReached_thenQueuingBegins [GH-90000]")
+        @DisplayName("shouldDetectThreadPoolExhaustion_whenMaxThreadsReached_thenQueuingBegins")
         void shouldDetectThreadPoolExhaustion_whenMaxThreadsReached_thenQueuingBegins() { // GH-90000
             when(exhaustionTester.getActiveThreads()).thenReturn(1024); // GH-90000
 
@@ -138,7 +138,7 @@ class StressTestingServiceTest {
         }
 
         @Test
-        @DisplayName("shouldDetectConnectionPoolExhaustion_whenAllConnectionsInUse_thenWaitingBegins [GH-90000]")
+        @DisplayName("shouldDetectConnectionPoolExhaustion_whenAllConnectionsInUse_thenWaitingBegins")
         void shouldDetectConnectionPoolExhaustion_whenAllConnectionsInUse_thenWaitingBegins() { // GH-90000
             when(exhaustionTester.getConnectionPoolSize()).thenReturn(500); // GH-90000
             when(exhaustionTester.getActiveConnections()).thenReturn(500); // GH-90000
@@ -150,7 +150,7 @@ class StressTestingServiceTest {
         }
 
         @Test
-        @DisplayName("shouldDetectMemoryBoundary_whenHeapNearMax_thenGCDelay [GH-90000]")
+        @DisplayName("shouldDetectMemoryBoundary_whenHeapNearMax_thenGCDelay")
         void shouldDetectMemoryBoundary_whenHeapNearMax_thenGCDelay() { // GH-90000
             when(resourceMonitor.getHeapUsagePercent()).thenReturn(95.0); // GH-90000
 
@@ -161,7 +161,7 @@ class StressTestingServiceTest {
         }
 
         @Test
-        @DisplayName("shouldDetectDiskBandwidthLimit_whenIOMaxReached_thenLatencySpikes [GH-90000]")
+        @DisplayName("shouldDetectDiskBandwidthLimit_whenIOMaxReached_thenLatencySpikes")
         void shouldDetectDiskBandwidthLimit_whenIOMaxReached_thenLatencySpikes() { // GH-90000
             when(exhaustionTester.measureDiskBandwidth()).thenReturn(500_000_000L); // GH-90000
 
@@ -171,7 +171,7 @@ class StressTestingServiceTest {
         }
 
         @Test
-        @DisplayName("shouldDetectNetworkBandwidthLimit_whenNetworkSaturated_thenPacketLoss [GH-90000]")
+        @DisplayName("shouldDetectNetworkBandwidthLimit_whenNetworkSaturated_thenPacketLoss")
         void shouldDetectNetworkBandwidthLimit_whenNetworkSaturated_thenPacketLoss() { // GH-90000
             when(exhaustionTester.measureNetworkBandwidth()).thenReturn(10_000_000_000L); // GH-90000
 
@@ -181,7 +181,7 @@ class StressTestingServiceTest {
         }
 
         @Test
-        @DisplayName("shouldDetectCacheCapacityLimit_whenCacheFull_thenEvictionRate [GH-90000]")
+        @DisplayName("shouldDetectCacheCapacityLimit_whenCacheFull_thenEvictionRate")
         void shouldDetectCacheCapacityLimit_whenCacheFull_thenEvictionRate() { // GH-90000
             when(resourceMonitor.getCacheEvictionRate()).thenReturn(0.15); // GH-90000
 
@@ -191,7 +191,7 @@ class StressTestingServiceTest {
         }
 
         @Test
-        @DisplayName("shouldDetectCPUThrottling_whenCPUUtilizationMaxed_thenLatencyIncreases [GH-90000]")
+        @DisplayName("shouldDetectCPUThrottling_whenCPUUtilizationMaxed_thenLatencyIncreases")
         void shouldDetectCPUThrottling_whenCPUUtilizationMaxed_thenLatencyIncreases() { // GH-90000
             when(resourceMonitor.getCPUUtilization()).thenReturn(99.5); // GH-90000
 
@@ -202,11 +202,11 @@ class StressTestingServiceTest {
     }
 
     @Nested
-    @DisplayName("Cascading Failure Scenarios [GH-90000]")
+    @DisplayName("Cascading Failure Scenarios")
     class CascadingFailureScenarios {
 
         @Test
-        @DisplayName("shouldHandleDownstreamServiceFailure_whenDependencyBecomesUnavailable_thenCircuitOpens [GH-90000]")
+        @DisplayName("shouldHandleDownstreamServiceFailure_whenDependencyBecomesUnavailable_thenCircuitOpens")
         void shouldHandleDownstreamServiceFailure_whenDependencyBecomesUnavailable_thenCircuitOpens() { // GH-90000
             when(failureInjector.injectDownstreamFailure()).thenReturn(true); // GH-90000
             when(resourceMonitor.isCircuitBreakerOpen()).thenReturn(true); // GH-90000
@@ -218,20 +218,20 @@ class StressTestingServiceTest {
         }
 
         @Test
-        @DisplayName("shouldPreventCascadeFailure_whenOneServiceSlows_thenOthersNotAffected [GH-90000]")
+        @DisplayName("shouldPreventCascadeFailure_whenOneServiceSlows_thenOthersNotAffected")
         void shouldPreventCascadeFailure_whenOneServiceSlows_thenOthersNotAffected() { // GH-90000
-            when(resourceMonitor.getServiceHealthStatus("ServiceA [GH-90000]")).thenReturn("DEGRADED [GH-90000]");
-            when(resourceMonitor.getServiceHealthStatus("ServiceB [GH-90000]")).thenReturn("HEALTHY [GH-90000]");
+            when(resourceMonitor.getServiceHealthStatus("ServiceA")).thenReturn("DEGRADED");
+            when(resourceMonitor.getServiceHealthStatus("ServiceB")).thenReturn("HEALTHY");
 
-            String statusA = resourceMonitor.getServiceHealthStatus("ServiceA [GH-90000]");
-            String statusB = resourceMonitor.getServiceHealthStatus("ServiceB [GH-90000]");
+            String statusA = resourceMonitor.getServiceHealthStatus("ServiceA");
+            String statusB = resourceMonitor.getServiceHealthStatus("ServiceB");
 
             assertEquals("DEGRADED", statusA); // GH-90000
             assertEquals("HEALTHY", statusB); // GH-90000
         }
 
         @Test
-        @DisplayName("shouldLimitFailurePropagation_whenMultipleServicesSlowdown_thenIsolationHolds [GH-90000]")
+        @DisplayName("shouldLimitFailurePropagation_whenMultipleServicesSlowdown_thenIsolationHolds")
         void shouldLimitFailurePropagation_whenMultipleServicesSlowdown_thenIsolationHolds() { // GH-90000
             AtomicLong failureCount = new AtomicLong(0); // GH-90000
             when(resourceMonitor.getFailureCount()).thenAnswer(inv -> failureCount.get()); // GH-90000
@@ -242,7 +242,7 @@ class StressTestingServiceTest {
         }
 
         @Test
-        @DisplayName("shouldRecoverFromCascade_whenDownstreamRecovered_thenCircuitCloses [GH-90000]")
+        @DisplayName("shouldRecoverFromCascade_whenDownstreamRecovered_thenCircuitCloses")
         void shouldRecoverFromCascade_whenDownstreamRecovered_thenCircuitCloses() { // GH-90000
             when(resourceMonitor.isCircuitBreakerOpen()).thenReturn(false); // GH-90000
 
@@ -252,7 +252,7 @@ class StressTestingServiceTest {
         }
 
         @Test
-        @DisplayName("shouldMaintainHeartbeats_DuringFailure_thenHealthChecksEnabled [GH-90000]")
+        @DisplayName("shouldMaintainHeartbeats_DuringFailure_thenHealthChecksEnabled")
         void shouldMaintainHeartbeats_DuringFailure_thenHealthChecksEnabled() { // GH-90000
             when(resourceMonitor.getLastHealthCheckTime()).thenReturn(System.currentTimeMillis()); // GH-90000
 
@@ -262,7 +262,7 @@ class StressTestingServiceTest {
         }
 
         @Test
-        @DisplayName("shouldDetectPartialFailure_whenSubsetOfNodesDown_thenQuorumMaintained [GH-90000]")
+        @DisplayName("shouldDetectPartialFailure_whenSubsetOfNodesDown_thenQuorumMaintained")
         void shouldDetectPartialFailure_whenSubsetOfNodesDown_thenQuorumMaintained() { // GH-90000
             when(resourceMonitor.getHealthyNodeCount()).thenReturn(3); // GH-90000
             when(resourceMonitor.getTotalNodeCount()).thenReturn(5); // GH-90000
@@ -275,11 +275,11 @@ class StressTestingServiceTest {
     }
 
     @Nested
-    @DisplayName("Extended Stress Duration [GH-90000]")
+    @DisplayName("Extended Stress Duration")
     class ExtendedStressDuration {
 
         @Test
-        @DisplayName("shouldMaintainStabilityUnder24hStress_whenLoadRuns_thenNoMemoryLeak [GH-90000]")
+        @DisplayName("shouldMaintainStabilityUnder24hStress_whenLoadRuns_thenNoMemoryLeak")
         void shouldMaintainStabilityUnder24hStress_whenLoadRuns_thenNoMemoryLeak() { // GH-90000
             long memoryStart = 500_000_000L;
             long memoryEnd = 520_000_000L;
@@ -289,7 +289,7 @@ class StressTestingServiceTest {
         }
 
         @Test
-        @DisplayName("shouldMaintainAccuracyOfMeasurements_when24hStressCompletes_thenDataValid [GH-90000]")
+        @DisplayName("shouldMaintainAccuracyOfMeasurements_when24hStressCompletes_thenDataValid")
         void shouldMaintainAccuracyOfMeasurements_when24hStressCompletes_thenDataValid() { // GH-90000
             when(resourceMonitor.getRecordedMeasurementCount()).thenReturn(86_400_000L); // GH-90000
 
@@ -299,7 +299,7 @@ class StressTestingServiceTest {
         }
 
         @Test
-        @DisplayName("shouldRotateLogs_duringExtendedStress_thenDiskNotExhausted [GH-90000]")
+        @DisplayName("shouldRotateLogs_duringExtendedStress_thenDiskNotExhausted")
         void shouldRotateLogs_duringExtendedStress_thenDiskNotExhausted() { // GH-90000
             when(resourceMonitor.getDiskUsagePercent()).thenReturn(45.0); // GH-90000
 
@@ -309,7 +309,7 @@ class StressTestingServiceTest {
         }
 
         @Test
-        @DisplayName("shouldManageLongRunningConnections_whileStressedFor24h_thenConnectionsClean [GH-90000]")
+        @DisplayName("shouldManageLongRunningConnections_whileStressedFor24h_thenConnectionsClean")
         void shouldManageLongRunningConnections_whileStressedFor24h_thenConnectionsClean() { // GH-90000
             when(resourceMonitor.getConnectionLeakCount()).thenReturn(0L); // GH-90000
 
@@ -319,7 +319,7 @@ class StressTestingServiceTest {
         }
 
         @Test
-        @DisplayName("shouldDetectSlowDegradation_overExtendedStress_thenSLADrift [GH-90000]")
+        @DisplayName("shouldDetectSlowDegradation_overExtendedStress_thenSLADrift")
         void shouldDetectSlowDegradation_overExtendedStress_thenSLADrift() { // GH-90000
             List<Long> p95Measurements = new ArrayList<>(); // GH-90000
             p95Measurements.add(500L); // GH-90000
@@ -331,7 +331,7 @@ class StressTestingServiceTest {
         }
 
         @Test
-        @DisplayName("shouldValidateFairnessUnder ExtendedStress_thenRandomQueuePositionHeld [GH-90000]")
+        @DisplayName("shouldValidateFairnessUnder ExtendedStress_thenRandomQueuePositionHeld")
         void shouldValidateFairnessUnderExtendedStress_thenRandomQueuePositionHeld() { // GH-90000
             when(resourceMonitor.validateQueueFairness()).thenReturn(true); // GH-90000
 
@@ -341,9 +341,9 @@ class StressTestingServiceTest {
         }
 
         @Test
-        @DisplayName("shouldDetectLeaksInExtendedRun_whenStressContinues_thenGrowthTrendAnalyzed [GH-90000]")
+        @DisplayName("shouldDetectLeaksInExtendedRun_whenStressContinues_thenGrowthTrendAnalyzed")
         void shouldDetectLeaksInExtendedRun_whenStressContinues_thenGrowthTrendAnalyzed() { // GH-90000
-            when(resourceMonitor.analyzeMemoryGrowthTrend()).thenReturn("STABLE [GH-90000]");
+            when(resourceMonitor.analyzeMemoryGrowthTrend()).thenReturn("STABLE");
 
             String trend = resourceMonitor.analyzeMemoryGrowthTrend(); // GH-90000
 

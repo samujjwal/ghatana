@@ -22,7 +22,8 @@ import java.util.Objects;
  * @doc.type class
  * @doc.purpose Hybrid dense+sparse memory retrieval
  * @doc.layer agent-memory
- */
+  * @doc.pattern Component
+*/
 public class HybridRetriever implements RetrievalPipeline {
 
     private static final Logger log = LoggerFactory.getLogger(HybridRetriever.class);

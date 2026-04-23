@@ -2,6 +2,12 @@ package com.ghatana.tutorputor.contentgeneration.domain;
 
 import java.util.Map;
 
+/**
+ * @doc.type class
+ * @doc.purpose Provides simulation manifest functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+ */
 public class SimulationManifest {
     private final String id;
     private final String title;

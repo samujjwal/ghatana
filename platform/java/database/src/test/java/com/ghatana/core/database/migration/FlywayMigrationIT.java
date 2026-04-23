@@ -24,18 +24,18 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer core
  * @doc.pattern Integration Test
  */
-@Tag("integration [GH-90000]")
+@Tag("integration")
 @Testcontainers
-@DisplayName("FlywayMigration Integration Tests [GH-90000]")
+@DisplayName("FlywayMigration Integration Tests")
 class FlywayMigrationIT {
 
     @Container
-    @SuppressWarnings("resource [GH-90000]")
+    @SuppressWarnings("resource")
     static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>("postgres:15-alpine [GH-90000]")
-                    .withDatabaseName("testdb [GH-90000]")
-                    .withUsername("test [GH-90000]")
-                    .withPassword("test [GH-90000]");
+            new PostgreSQLContainer<>("postgres:15-alpine")
+                    .withDatabaseName("testdb")
+                    .withUsername("test")
+                    .withPassword("test");
 
     private HikariDataSource dataSource;
 
@@ -56,7 +56,7 @@ class FlywayMigrationIT {
             try {
                 FlywayMigration cleaner = FlywayMigration.builder() // GH-90000
                         .dataSource(dataSource) // GH-90000
-                        .locations("classpath:db/migration [GH-90000]")
+                        .locations("classpath:db/migration")
                         .cleanDisabled(false) // GH-90000
                         .build(); // GH-90000
                 cleaner.clean(); // GH-90000
@@ -68,11 +68,11 @@ class FlywayMigrationIT {
     }
 
     @Test
-    @DisplayName("migrate applies all pending SQL scripts [GH-90000]")
+    @DisplayName("migrate applies all pending SQL scripts")
     void migrateAppliesAllScripts() { // GH-90000
         FlywayMigration migration = FlywayMigration.builder() // GH-90000
                 .dataSource(dataSource) // GH-90000
-                .locations("classpath:db/migration [GH-90000]")
+                .locations("classpath:db/migration")
                 .build(); // GH-90000
 
         FlywayMigration.MigrationResult result = migration.migrate(); // GH-90000
@@ -82,27 +82,27 @@ class FlywayMigrationIT {
     }
 
     @Test
-    @DisplayName("migration creates the expected table in the database [GH-90000]")
+    @DisplayName("migration creates the expected table in the database")
     void migrationCreatesTable() throws Exception { // GH-90000
         FlywayMigration migration = FlywayMigration.builder() // GH-90000
                 .dataSource(dataSource) // GH-90000
-                .locations("classpath:db/migration [GH-90000]")
+                .locations("classpath:db/migration")
                 .build(); // GH-90000
         migration.migrate(); // GH-90000
 
         try (Connection conn = dataSource.getConnection(); // GH-90000
              ResultSet rs = conn.getMetaData().getTables(null, "public", "test_items", null)) { // GH-90000
             assertThat(rs.next()).isTrue(); // GH-90000
-            assertThat(rs.getString("TABLE_NAME [GH-90000]")).isEqualTo("test_items [GH-90000]");
+            assertThat(rs.getString("TABLE_NAME")).isEqualTo("test_items");
         }
     }
 
     @Test
-    @DisplayName("second migrate call is idempotent — no migrations re-applied [GH-90000]")
+    @DisplayName("second migrate call is idempotent — no migrations re-applied")
     void secondMigrateIsIdempotent() { // GH-90000
         FlywayMigration migration = FlywayMigration.builder() // GH-90000
                 .dataSource(dataSource) // GH-90000
-                .locations("classpath:db/migration [GH-90000]")
+                .locations("classpath:db/migration")
                 .build(); // GH-90000
 
         migration.migrate(); // GH-90000
@@ -113,11 +113,11 @@ class FlywayMigrationIT {
     }
 
     @Test
-    @DisplayName("validate passes after successful migration [GH-90000]")
+    @DisplayName("validate passes after successful migration")
     void validateAfterMigration() { // GH-90000
         FlywayMigration migration = FlywayMigration.builder() // GH-90000
                 .dataSource(dataSource) // GH-90000
-                .locations("classpath:db/migration [GH-90000]")
+                .locations("classpath:db/migration")
                 .build(); // GH-90000
         migration.migrate(); // GH-90000
 
@@ -128,27 +128,27 @@ class FlywayMigrationIT {
     }
 
     @Test
-    @DisplayName("getStatus returns current version after migration [GH-90000]")
+    @DisplayName("getStatus returns current version after migration")
     void statusAfterMigration() { // GH-90000
         FlywayMigration migration = FlywayMigration.builder() // GH-90000
                 .dataSource(dataSource) // GH-90000
-                .locations("classpath:db/migration [GH-90000]")
+                .locations("classpath:db/migration")
                 .build(); // GH-90000
         migration.migrate(); // GH-90000
 
         FlywayMigration.MigrationStatus status = migration.getStatus(); // GH-90000
 
         assertThat(status.getCurrentVersion()).isNotNull(); // GH-90000
-        assertThat(status.getCurrentVersion()).contains("2 [GH-90000]"); // V2 is latest
+        assertThat(status.getCurrentVersion()).contains("2"); // V2 is latest
         assertThat(status.getTotalMigrations()).isGreaterThanOrEqualTo(2); // GH-90000
     }
 
     @Test
-    @DisplayName("migrate with invalid location raises MigrationException [GH-90000]")
+    @DisplayName("migrate with invalid location raises MigrationException")
     void migrateInvalidLocation() { // GH-90000
         FlywayMigration migration = FlywayMigration.builder() // GH-90000
                 .dataSource(dataSource) // GH-90000
-                .locations("classpath:db/nonexistent [GH-90000]")
+                .locations("classpath:db/nonexistent")
                 .build(); // GH-90000
 
         // With no scripts found, Flyway migrates successfully with 0 migrations
@@ -163,11 +163,11 @@ class FlywayMigrationIT {
     }
 
     @Test
-    @DisplayName("getFlyway returns non-null Flyway instance [GH-90000]")
+    @DisplayName("getFlyway returns non-null Flyway instance")
     void getFlywayIsNonNull() { // GH-90000
         FlywayMigration migration = FlywayMigration.builder() // GH-90000
                 .dataSource(dataSource) // GH-90000
-                .locations("classpath:db/migration [GH-90000]")
+                .locations("classpath:db/migration")
                 .build(); // GH-90000
 
         assertThat(migration.getFlyway()).isNotNull(); // GH-90000

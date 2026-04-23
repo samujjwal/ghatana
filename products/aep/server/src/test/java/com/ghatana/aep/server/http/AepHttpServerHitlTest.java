@@ -38,7 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern Test
  * @doc.gaa.lifecycle act
  */
-@DisplayName("AepHttpServer – HITL Endpoints [GH-90000]")
+@DisplayName("AepHttpServer – HITL Endpoints")
 class AepHttpServerHitlTest {
 
     private AepEngine engine;
@@ -63,51 +63,51 @@ class AepHttpServerHitlTest {
     // ==================== GET /api/v1/hitl/pending ====================
 
     @Nested
-    @DisplayName("GET /api/v1/hitl/pending [GH-90000]")
+    @DisplayName("GET /api/v1/hitl/pending")
     class ListPendingTests {
 
         @Test
-        @DisplayName("returns 200 truthful unconfigured response when humanReviewQueue is not configured [GH-90000]")
+        @DisplayName("returns 200 truthful unconfigured response when humanReviewQueue is not configured")
         void listPending_whenQueueNull_returnsTruthfulUnconfiguredResponse() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/hitl/pending [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/hitl/pending");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("configured [GH-90000]")).isEqualTo(false);
-            assertThat(body.get("count [GH-90000]")).isEqualTo(0);
-            assertThat(body.get("message [GH-90000]").toString()).contains("HITL queue not configured [GH-90000]");
+            assertThat(body.get("configured")).isEqualTo(false);
+            assertThat(body.get("count")).isEqualTo(0);
+            assertThat(body.get("message").toString()).contains("HITL queue not configured");
         }
 
         @Test
-        @DisplayName("returns 200 with empty list when queue has no pending items [GH-90000]")
+        @DisplayName("returns 200 with empty list when queue has no pending items")
         void listPending_whenQueueEmpty_returns200WithEmptyList() throws Exception { // GH-90000
             InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP); // GH-90000
             server = new AepHttpServer(engine, port, queue); // GH-90000
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/hitl/pending [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/hitl/pending");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("count [GH-90000]")).isEqualTo(0);
-            assertThat((List<?>) body.get("pending [GH-90000]")).isEmpty();
-            assertThat(body.get("timestamp [GH-90000]")).isNotNull();
+            assertThat(body.get("count")).isEqualTo(0);
+            assertThat((List<?>) body.get("pending")).isEmpty();
+            assertThat(body.get("timestamp")).isNotNull();
         }
 
         @Test
-        @DisplayName("returns 200 with pending items and correct field mapping [GH-90000]")
+        @DisplayName("returns 200 with pending items and correct field mapping")
         void listPending_withEnqueuedItem_returns200WithItemSummary() throws Exception { // GH-90000
             InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP); // GH-90000
             ReviewItem item = ReviewItem.builder() // GH-90000
-                .reviewId("review-xyz [GH-90000]")
-                .tenantId("tenant-a [GH-90000]")
-                .skillId("agent-skill-1 [GH-90000]")
-                .proposedVersion("v2.0 [GH-90000]")
+                .reviewId("review-xyz")
+                .tenantId("tenant-a")
+                .skillId("agent-skill-1")
+                .proposedVersion("v2.0")
                 .itemType(ReviewItemType.POLICY) // GH-90000
                 .confidenceScore(0.55) // GH-90000
                 .build(); // GH-90000
@@ -117,39 +117,39 @@ class AepHttpServerHitlTest {
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/hitl/pending?tenantId=tenant-a [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/hitl/pending?tenantId=tenant-a");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("count [GH-90000]")).isEqualTo(1);
+            assertThat(body.get("count")).isEqualTo(1);
 
-            List<?> pending = (List<?>) body.get("pending [GH-90000]");
+            List<?> pending = (List<?>) body.get("pending");
             assertThat(pending).hasSize(1); // GH-90000
 
             Map<?, ?> itemMap = (Map<?, ?>) pending.get(0); // GH-90000
-            assertThat(itemMap.get("reviewId [GH-90000]")).isEqualTo("review-xyz [GH-90000]");
-            assertThat(itemMap.get("agentId [GH-90000]")).isEqualTo("agent-skill-1 [GH-90000]");
-            assertThat(itemMap.get("type [GH-90000]")).isEqualTo("POLICY [GH-90000]");
-            assertThat(itemMap.get("status [GH-90000]")).isEqualTo("PENDING [GH-90000]");
-            assertThat(itemMap.get("createdAt [GH-90000]")).isNotNull();
+            assertThat(itemMap.get("reviewId")).isEqualTo("review-xyz");
+            assertThat(itemMap.get("agentId")).isEqualTo("agent-skill-1");
+            assertThat(itemMap.get("type")).isEqualTo("POLICY");
+            assertThat(itemMap.get("status")).isEqualTo("PENDING");
+            assertThat(itemMap.get("createdAt")).isNotNull();
         }
 
         @Test
-        @DisplayName("returns only PENDING items (approved items excluded from list) [GH-90000]")
+        @DisplayName("returns only PENDING items (approved items excluded from list)")
         void listPending_afterApproval_excludesApprovedItems() throws Exception { // GH-90000
             InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP); // GH-90000
             ReviewItem pending = ReviewItem.builder() // GH-90000
-                .reviewId("review-pending [GH-90000]")
-                .tenantId("t1 [GH-90000]")
-                .skillId("skill-a [GH-90000]")
-                .proposedVersion("v1 [GH-90000]")
+                .reviewId("review-pending")
+                .tenantId("t1")
+                .skillId("skill-a")
+                .proposedVersion("v1")
                 .itemType(ReviewItemType.POLICY) // GH-90000
                 .build(); // GH-90000
             ReviewItem toApprove = ReviewItem.builder() // GH-90000
-                .reviewId("review-approved [GH-90000]")
-                .tenantId("t1 [GH-90000]")
-                .skillId("skill-b [GH-90000]")
-                .proposedVersion("v1 [GH-90000]")
+                .reviewId("review-approved")
+                .tenantId("t1")
+                .skillId("skill-b")
+                .proposedVersion("v1")
                 .itemType(ReviewItemType.POLICY) // GH-90000
                 .build(); // GH-90000
             queue.enqueue(pending); // synchronous — ConcurrentHashMap populated immediately // GH-90000
@@ -165,27 +165,27 @@ class AepHttpServerHitlTest {
             server.start(); // GH-90000
             waitForServerReady(port); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/hitl/pending?tenantId=t1 [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/hitl/pending?tenantId=t1");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
             // Only the PENDING item should appear in the list
-            assertThat(body.get("count [GH-90000]")).isEqualTo(1);
-            List<?> items = (List<?>) body.get("pending [GH-90000]");
+            assertThat(body.get("count")).isEqualTo(1);
+            List<?> items = (List<?>) body.get("pending");
             assertThat(items).hasSize(1); // GH-90000
             Map<?, ?> itemMap = (Map<?, ?>) items.get(0); // GH-90000
-            assertThat(itemMap.get("reviewId [GH-90000]")).isEqualTo("review-pending [GH-90000]");
+            assertThat(itemMap.get("reviewId")).isEqualTo("review-pending");
         }
     }
 
     // ==================== POST /api/v1/hitl/:reviewId/approve ====================
 
     @Nested
-    @DisplayName("POST /api/v1/hitl/:reviewId/approve [GH-90000]")
+    @DisplayName("POST /api/v1/hitl/:reviewId/approve")
     class ApproveTests {
 
         @Test
-        @DisplayName("returns 501 when humanReviewQueue is not configured [GH-90000]")
+        @DisplayName("returns 501 when humanReviewQueue is not configured")
         void approve_whenQueueNull_returns501() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -197,18 +197,18 @@ class AepHttpServerHitlTest {
 
             assertThat(resp.statusCode()).isEqualTo(501); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("message [GH-90000]").toString()).contains("HITL queue not configured [GH-90000]");
+            assertThat(body.get("message").toString()).contains("HITL queue not configured");
         }
 
         @Test
-        @DisplayName("returns 200 with APPROVED status on successful approve [GH-90000]")
+        @DisplayName("returns 200 with APPROVED status on successful approve")
         void approve_withValidReviewId_returns200WithApprovedStatus() throws Exception { // GH-90000
             InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP); // GH-90000
             ReviewItem item = ReviewItem.builder() // GH-90000
-                .reviewId("review-42 [GH-90000]")
-                .tenantId("tenant-1 [GH-90000]")
-                .skillId("skill-x [GH-90000]")
-                .proposedVersion("v1 [GH-90000]")
+                .reviewId("review-42")
+                .tenantId("tenant-1")
+                .skillId("skill-x")
+                .proposedVersion("v1")
                 .itemType(ReviewItemType.POLICY) // GH-90000
                 .build(); // GH-90000
             queue.enqueue(item); // synchronous — ConcurrentHashMap populated immediately // GH-90000
@@ -226,20 +226,20 @@ class AepHttpServerHitlTest {
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> respBody = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(respBody.get("reviewId [GH-90000]")).isEqualTo("review-42 [GH-90000]");
-            assertThat(respBody.get("status [GH-90000]")).isEqualTo("APPROVED [GH-90000]");
-            assertThat(respBody.get("decidedAt [GH-90000]")).isNotNull();
+            assertThat(respBody.get("reviewId")).isEqualTo("review-42");
+            assertThat(respBody.get("status")).isEqualTo("APPROVED");
+            assertThat(respBody.get("decidedAt")).isNotNull();
         }
 
         @Test
-        @DisplayName("returns 200 with defaults when body is empty JSON object [GH-90000]")
+        @DisplayName("returns 200 with defaults when body is empty JSON object")
         void approve_withEmptyBody_returns200WithDefaults() throws Exception { // GH-90000
             InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP); // GH-90000
             ReviewItem item = ReviewItem.builder() // GH-90000
-                .reviewId("review-empty [GH-90000]")
-                .tenantId("tenant-1 [GH-90000]")
-                .skillId("skill-y [GH-90000]")
-                .proposedVersion("v1 [GH-90000]")
+                .reviewId("review-empty")
+                .tenantId("tenant-1")
+                .skillId("skill-y")
+                .proposedVersion("v1")
                 .itemType(ReviewItemType.POLICY) // GH-90000
                 .build(); // GH-90000
             queue.enqueue(item); // synchronous — ConcurrentHashMap populated immediately // GH-90000
@@ -252,11 +252,11 @@ class AepHttpServerHitlTest {
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> respBody = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(respBody.get("status [GH-90000]")).isEqualTo("APPROVED [GH-90000]");
+            assertThat(respBody.get("status")).isEqualTo("APPROVED");
         }
 
         @Test
-        @DisplayName("returns 404 when reviewId is not in the queue [GH-90000]")
+        @DisplayName("returns 404 when reviewId is not in the queue")
         void approve_whenReviewIdNotFound_returns404() throws Exception { // GH-90000
             InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP); // GH-90000
 
@@ -270,18 +270,18 @@ class AepHttpServerHitlTest {
 
             assertThat(resp.statusCode()).isEqualTo(404); // GH-90000
             Map<?, ?> respBody = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(respBody.get("message [GH-90000]").toString()).contains("not found [GH-90000]");
+            assertThat(respBody.get("message").toString()).contains("not found");
         }
 
         @Test
-        @DisplayName("returns 400 on malformed JSON body [GH-90000]")
+        @DisplayName("returns 400 on malformed JSON body")
         void approve_withMalformedJson_returns400() throws Exception { // GH-90000
             InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP); // GH-90000
             ReviewItem item = ReviewItem.builder() // GH-90000
-                .reviewId("review-bad-json [GH-90000]")
-                .tenantId("tenant-1 [GH-90000]")
-                .skillId("skill-z [GH-90000]")
-                .proposedVersion("v1 [GH-90000]")
+                .reviewId("review-bad-json")
+                .tenantId("tenant-1")
+                .skillId("skill-z")
+                .proposedVersion("v1")
                 .itemType(ReviewItemType.POLICY) // GH-90000
                 .build(); // GH-90000
             queue.enqueue(item); // synchronous — ConcurrentHashMap populated immediately // GH-90000
@@ -299,11 +299,11 @@ class AepHttpServerHitlTest {
     // ==================== POST /api/v1/hitl/:reviewId/reject ====================
 
     @Nested
-    @DisplayName("POST /api/v1/hitl/:reviewId/reject [GH-90000]")
+    @DisplayName("POST /api/v1/hitl/:reviewId/reject")
     class RejectTests {
 
         @Test
-        @DisplayName("returns 501 when humanReviewQueue is not configured [GH-90000]")
+        @DisplayName("returns 501 when humanReviewQueue is not configured")
         void reject_whenQueueNull_returns501() throws Exception { // GH-90000
             server = new AepHttpServer(engine, port); // GH-90000
             server.start(); // GH-90000
@@ -315,18 +315,18 @@ class AepHttpServerHitlTest {
 
             assertThat(resp.statusCode()).isEqualTo(501); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("message [GH-90000]").toString()).contains("HITL queue not configured [GH-90000]");
+            assertThat(body.get("message").toString()).contains("HITL queue not configured");
         }
 
         @Test
-        @DisplayName("returns 200 with REJECTED status on successful reject [GH-90000]")
+        @DisplayName("returns 200 with REJECTED status on successful reject")
         void reject_withValidReviewId_returns200WithRejectedStatus() throws Exception { // GH-90000
             InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP); // GH-90000
             ReviewItem item = ReviewItem.builder() // GH-90000
-                .reviewId("review-rej-1 [GH-90000]")
-                .tenantId("tenant-2 [GH-90000]")
-                .skillId("skill-r [GH-90000]")
-                .proposedVersion("v1 [GH-90000]")
+                .reviewId("review-rej-1")
+                .tenantId("tenant-2")
+                .skillId("skill-r")
+                .proposedVersion("v1")
                 .itemType(ReviewItemType.POLICY) // GH-90000
                 .build(); // GH-90000
             queue.enqueue(item); // synchronous — ConcurrentHashMap populated immediately // GH-90000
@@ -344,20 +344,20 @@ class AepHttpServerHitlTest {
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> respBody = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(respBody.get("reviewId [GH-90000]")).isEqualTo("review-rej-1 [GH-90000]");
-            assertThat(respBody.get("status [GH-90000]")).isEqualTo("REJECTED [GH-90000]");
-            assertThat(respBody.get("decidedAt [GH-90000]")).isNotNull();
+            assertThat(respBody.get("reviewId")).isEqualTo("review-rej-1");
+            assertThat(respBody.get("status")).isEqualTo("REJECTED");
+            assertThat(respBody.get("decidedAt")).isNotNull();
         }
 
         @Test
-        @DisplayName("returns 200 with defaults when body is empty JSON object [GH-90000]")
+        @DisplayName("returns 200 with defaults when body is empty JSON object")
         void reject_withEmptyBody_returns200WithDefaults() throws Exception { // GH-90000
             InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP); // GH-90000
             ReviewItem item = ReviewItem.builder() // GH-90000
-                .reviewId("review-rej-empty [GH-90000]")
-                .tenantId("tenant-2 [GH-90000]")
-                .skillId("skill-s [GH-90000]")
-                .proposedVersion("v1 [GH-90000]")
+                .reviewId("review-rej-empty")
+                .tenantId("tenant-2")
+                .skillId("skill-s")
+                .proposedVersion("v1")
                 .itemType(ReviewItemType.POLICY) // GH-90000
                 .build(); // GH-90000
             queue.enqueue(item); // synchronous — ConcurrentHashMap populated immediately // GH-90000
@@ -370,11 +370,11 @@ class AepHttpServerHitlTest {
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> respBody = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(respBody.get("status [GH-90000]")).isEqualTo("REJECTED [GH-90000]");
+            assertThat(respBody.get("status")).isEqualTo("REJECTED");
         }
 
         @Test
-        @DisplayName("returns 404 when reviewId is not in the queue [GH-90000]")
+        @DisplayName("returns 404 when reviewId is not in the queue")
         void reject_whenReviewIdNotFound_returns404() throws Exception { // GH-90000
             InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP); // GH-90000
 
@@ -388,18 +388,18 @@ class AepHttpServerHitlTest {
 
             assertThat(resp.statusCode()).isEqualTo(404); // GH-90000
             Map<?, ?> respBody = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(respBody.get("message [GH-90000]").toString()).contains("not found [GH-90000]");
+            assertThat(respBody.get("message").toString()).contains("not found");
         }
 
         @Test
-        @DisplayName("returns 400 on malformed JSON body [GH-90000]")
+        @DisplayName("returns 400 on malformed JSON body")
         void reject_withMalformedJson_returns400() throws Exception { // GH-90000
             InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP); // GH-90000
             ReviewItem item = ReviewItem.builder() // GH-90000
-                .reviewId("review-rej-bad [GH-90000]")
-                .tenantId("tenant-2 [GH-90000]")
-                .skillId("skill-t [GH-90000]")
-                .proposedVersion("v1 [GH-90000]")
+                .reviewId("review-rej-bad")
+                .tenantId("tenant-2")
+                .skillId("skill-t")
+                .proposedVersion("v1")
                 .itemType(ReviewItemType.POLICY) // GH-90000
                 .build(); // GH-90000
             queue.enqueue(item); // synchronous — ConcurrentHashMap populated immediately // GH-90000

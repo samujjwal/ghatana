@@ -38,7 +38,7 @@ import static org.mockito.Mockito.verify;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("DataCloudKernelExtension [GH-90000]")
+@DisplayName("DataCloudKernelExtension")
 class DataCloudKernelExtensionTest extends EventloopTestBase {
 
     @Mock
@@ -59,34 +59,34 @@ class DataCloudKernelExtensionTest extends EventloopTestBase {
     // ==================== Identity ====================
 
     @Test
-    @DisplayName("extension ID is 'data-cloud-kernel-bridge' [GH-90000]")
+    @DisplayName("extension ID is 'data-cloud-kernel-bridge'")
     void extensionIdIsCorrect() { // GH-90000
-        assertThat(extension.getExtensionId()).isEqualTo("data-cloud-kernel-bridge [GH-90000]");
+        assertThat(extension.getExtensionId()).isEqualTo("data-cloud-kernel-bridge");
     }
 
     @Test
-    @DisplayName("extension name is human-readable [GH-90000]")
+    @DisplayName("extension name is human-readable")
     void extensionNameIsHumanReadable() { // GH-90000
-        assertThat(extension.getName()).isEqualTo("Data-Cloud Kernel Bridge [GH-90000]");
+        assertThat(extension.getName()).isEqualTo("Data-Cloud Kernel Bridge");
     }
 
     @Test
-    @DisplayName("extension version follows semver [GH-90000]")
+    @DisplayName("extension version follows semver")
     void extensionVersionIsSemver() { // GH-90000
-        assertThat(extension.getVersion()).matches("\\d+\\.\\d+\\.\\d+.* [GH-90000]");
+        assertThat(extension.getVersion()).matches("\\d+\\.\\d+\\.\\d+.*");
     }
 
     // ==================== Descriptor ====================
 
     @Test
-    @DisplayName("descriptor type is EXTENSION [GH-90000]")
+    @DisplayName("descriptor type is EXTENSION")
     void descriptorTypeIsExtension() { // GH-90000
         KernelDescriptor descriptor = extension.getDescriptor(); // GH-90000
         assertThat(descriptor.getType()).isEqualTo(KernelDescriptor.DescriptorType.EXTENSION); // GH-90000
     }
 
     @Test
-    @DisplayName("descriptor ID matches extension ID [GH-90000]")
+    @DisplayName("descriptor ID matches extension ID")
     void descriptorIdMatchesExtensionId() { // GH-90000
         assertThat(extension.getDescriptor().getDescriptorId()).isEqualTo(extension.getExtensionId()); // GH-90000
     }
@@ -94,46 +94,46 @@ class DataCloudKernelExtensionTest extends EventloopTestBase {
     // ==================== Capabilities ====================
 
     @Test
-    @DisplayName("contributes three Data-Cloud capabilities [GH-90000]")
+    @DisplayName("contributes three Data-Cloud capabilities")
     void contributesThreeCapabilities() { // GH-90000
         Set<KernelCapability> caps = extension.getContributedCapabilities(); // GH-90000
         assertThat(caps).hasSize(3); // GH-90000
     }
 
     @Test
-    @DisplayName("contributes data-cloud.storage capability [GH-90000]")
+    @DisplayName("contributes data-cloud.storage capability")
     void contributesStorageCapability() { // GH-90000
         Set<KernelCapability> caps = extension.getContributedCapabilities(); // GH-90000
         assertThat(caps) // GH-90000
-            .anyMatch(c -> c.getCapabilityId().equals("data-cloud.storage [GH-90000]"));
+            .anyMatch(c -> c.getCapabilityId().equals("data-cloud.storage"));
     }
 
     @Test
-    @DisplayName("contributes data-cloud.transactions capability [GH-90000]")
+    @DisplayName("contributes data-cloud.transactions capability")
     void contributesTransactionCapability() { // GH-90000
         Set<KernelCapability> caps = extension.getContributedCapabilities(); // GH-90000
         assertThat(caps) // GH-90000
-            .anyMatch(c -> c.getCapabilityId().equals("data-cloud.transactions [GH-90000]"));
+            .anyMatch(c -> c.getCapabilityId().equals("data-cloud.transactions"));
     }
 
     @Test
-    @DisplayName("contributes data-cloud.streaming capability [GH-90000]")
+    @DisplayName("contributes data-cloud.streaming capability")
     void contributesStreamingCapability() { // GH-90000
         Set<KernelCapability> caps = extension.getContributedCapabilities(); // GH-90000
         assertThat(caps) // GH-90000
-            .anyMatch(c -> c.getCapabilityId().equals("data-cloud.streaming [GH-90000]"));
+            .anyMatch(c -> c.getCapabilityId().equals("data-cloud.streaming"));
     }
 
     // ==================== Compatibility ====================
 
     @Test
-    @DisplayName("is compatible with any non-null module [GH-90000]")
+    @DisplayName("is compatible with any non-null module")
     void isCompatibleWithAnyModule() { // GH-90000
         assertThat(extension.isCompatible(hostModule)).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("is not compatible with null module [GH-90000]")
+    @DisplayName("is not compatible with null module")
     void isNotCompatibleWithNullModule() { // GH-90000
         assertThat(extension.isCompatible(null)).isFalse(); // GH-90000
     }
@@ -141,7 +141,7 @@ class DataCloudKernelExtensionTest extends EventloopTestBase {
     // ==================== Lifecycle ====================
 
     @Test
-    @DisplayName("onModuleInitialized registers DataCloudKernelAdapter into context [GH-90000]")
+    @DisplayName("onModuleInitialized registers DataCloudKernelAdapter into context")
     void onModuleInitializedRegistersAdapter() { // GH-90000
         extension.onModuleInitialized(context); // GH-90000
 
@@ -149,7 +149,7 @@ class DataCloudKernelExtensionTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("onModuleInitialized is idempotent — second call is no-op [GH-90000]")
+    @DisplayName("onModuleInitialized is idempotent — second call is no-op")
     void onModuleInitializedIsIdempotent() { // GH-90000
         extension.onModuleInitialized(context); // GH-90000
         extension.onModuleInitialized(context);  // second call must be silent no-op // GH-90000
@@ -159,7 +159,7 @@ class DataCloudKernelExtensionTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("full lifecycle runs without error [GH-90000]")
+    @DisplayName("full lifecycle runs without error")
     void fullLifecycleRunsWithoutError() { // GH-90000
         extension.onModuleInitialized(context); // GH-90000
         extension.onModuleStarted(context); // GH-90000
@@ -169,7 +169,7 @@ class DataCloudKernelExtensionTest extends EventloopTestBase {
     // ==================== Construction guard ====================
 
     @Test
-    @DisplayName("null client is rejected at construction [GH-90000]")
+    @DisplayName("null client is rejected at construction")
     void nullClientIsRejected() { // GH-90000
         assertThatThrownBy(() -> new DataCloudKernelExtension(null)) // GH-90000
             .isInstanceOf(NullPointerException.class); // GH-90000
@@ -219,7 +219,7 @@ class DataCloudKernelExtensionTest extends EventloopTestBase {
 
         @Override
         public CompletableFuture<Object> beginTransaction() { // GH-90000
-            return CompletableFuture.completedFuture("tx-stub [GH-90000]");
+            return CompletableFuture.completedFuture("tx-stub");
         }
 
         @Override
@@ -234,12 +234,12 @@ class DataCloudKernelExtensionTest extends EventloopTestBase {
 
         @Override
         public CompletableFuture<Object> openReadStream(String datasetId, Map<String, String> options) { // GH-90000
-            return CompletableFuture.completedFuture("read-stream-stub [GH-90000]");
+            return CompletableFuture.completedFuture("read-stream-stub");
         }
 
         @Override
         public CompletableFuture<Object> openWriteStream(String datasetId, Map<String, String> options) { // GH-90000
-            return CompletableFuture.completedFuture("write-stream-stub [GH-90000]");
+            return CompletableFuture.completedFuture("write-stream-stub");
         }
 
         @Override

@@ -11,7 +11,8 @@ import org.jetbrains.annotations.NotNull;
  * @doc.type interface
  * @doc.purpose Canonical Workflow definition
  * @doc.layer core
- */
+  * @doc.pattern Workflow
+*/
 public interface Workflow {
 
     /**

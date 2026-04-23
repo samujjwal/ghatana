@@ -64,17 +64,17 @@ class DataCloudHttpMetricsTest {
         MetricsCollector collector = new MetricsCollector() { // GH-90000
             @Override
             public void increment(String metricName, double amount, java.util.Map<String, String> tags) { // GH-90000
-                throw new RuntimeException("boom [GH-90000]");
+                throw new RuntimeException("boom");
             }
 
             @Override
             public void recordError(String metricName, Exception e, java.util.Map<String, String> tags) { // GH-90000
-                throw new RuntimeException("boom [GH-90000]");
+                throw new RuntimeException("boom");
             }
 
             @Override
             public void incrementCounter(String metricName, String... keyValues) { // GH-90000
-                throw new RuntimeException("boom [GH-90000]");
+                throw new RuntimeException("boom");
             }
 
             @Override
@@ -84,7 +84,7 @@ class DataCloudHttpMetricsTest {
 
             @Override
             public void recordTimer(String name, long durationMs, String... keyValues) { // GH-90000
-                throw new RuntimeException("boom [GH-90000]");
+                throw new RuntimeException("boom");
             }
         };
         DataCloudHttpMetrics metrics = new DataCloudHttpMetrics(collector); // GH-90000

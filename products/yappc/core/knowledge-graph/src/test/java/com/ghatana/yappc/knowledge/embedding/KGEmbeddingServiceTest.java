@@ -28,7 +28,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("KGEmbeddingService Tests [GH-90000]")
+@DisplayName("KGEmbeddingService Tests")
 class KGEmbeddingServiceTest extends EventloopTestBase {
 
     @Mock
@@ -46,7 +46,7 @@ class KGEmbeddingServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("indexNode stores a vector with tenant-scoped metadata [GH-90000]")
+    @DisplayName("indexNode stores a vector with tenant-scoped metadata")
     void indexNodeStoresVector() { // GH-90000
         YAPPCGraphNode node = node(); // GH-90000
         float[] embedding = new float[] {0.1f, 0.2f, 0.3f};
@@ -69,21 +69,21 @@ class KGEmbeddingServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("deleteNode removes vectors by node id [GH-90000]")
+    @DisplayName("deleteNode removes vectors by node id")
     void deleteNodeRemovesVector() { // GH-90000
-        when(vectorStore.delete("node-1 [GH-90000]")).thenReturn(Promise.of((Void) null));
+        when(vectorStore.delete("node-1")).thenReturn(Promise.of((Void) null));
 
-        runPromise(() -> service.deleteNode("node-1 [GH-90000]"));
+        runPromise(() -> service.deleteNode("node-1"));
 
-        verify(vectorStore).delete("node-1 [GH-90000]");
+        verify(vectorStore).delete("node-1");
     }
 
     private static YAPPCGraphNode node() { // GH-90000
         return YAPPCGraphNode.builder() // GH-90000
-                .id("node-1 [GH-90000]")
+                .id("node-1")
                 .type(YAPPCGraphNode.YAPPCNodeType.SERVICE) // GH-90000
-                .name("BillingService [GH-90000]")
-                .description("Handles billing operations [GH-90000]")
+                .name("BillingService")
+                .description("Handles billing operations")
                 .properties(Map.of("language", "java")) // GH-90000
                 .tags(Set.of("backend", "critical")) // GH-90000
                 .metadata(new YAPPCGraphMetadata( // GH-90000
@@ -91,8 +91,8 @@ class KGEmbeddingServiceTest extends EventloopTestBase {
                         "proj-1",
                         "ws-1",
                         "tester",
-                        Instant.parse("2026-04-06T00:00:00Z [GH-90000]"),
-                        Instant.parse("2026-04-06T01:00:00Z [GH-90000]"),
+                        Instant.parse("2026-04-06T00:00:00Z"),
+                        Instant.parse("2026-04-06T01:00:00Z"),
                         "1.0",
                         Map.of("domain", "payments"))) // GH-90000
                 .build(); // GH-90000

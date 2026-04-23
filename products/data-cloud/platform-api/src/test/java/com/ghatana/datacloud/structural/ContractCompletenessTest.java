@@ -26,15 +26,15 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern Structural Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("ContractCompleteness – Contract Verification (SC003) [GH-90000]")
+@DisplayName("ContractCompleteness – Contract Verification (SC003)")
 class ContractCompletenessTest extends EventloopTestBase {
 
     @Nested
-    @DisplayName("API Contracts [GH-90000]")
+    @DisplayName("API Contracts")
     class ApiContractsTests {
 
         @Test
-        @DisplayName("[SC003]: all_endpoints_documented [GH-90000]")
+        @DisplayName("[SC003]: all_endpoints_documented")
         void allEndpointsDocumented() { // GH-90000
             // Every HTTP endpoint should have documentation
             Map<String, String> endpointDocs = Map.of( // GH-90000
@@ -48,7 +48,7 @@ class ContractCompletenessTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[SC003]: request_response_schemas_defined [GH-90000]")
+        @DisplayName("[SC003]: request_response_schemas_defined")
         void requestResponseSchemasDefined() { // GH-90000
             // All API inputs/outputs should have schemas
             Set<String> schemas = Set.of( // GH-90000
@@ -57,11 +57,11 @@ class ContractCompletenessTest extends EventloopTestBase {
                 "EventRequest", "EventResponse"
             );
 
-            assertThat(schemas).allMatch(s -> s.endsWith("Request [GH-90000]") || s.endsWith("Response [GH-90000]") || s.endsWith("Result [GH-90000]"));
+            assertThat(schemas).allMatch(s -> s.endsWith("Request") || s.endsWith("Response") || s.endsWith("Result"));
         }
 
         @Test
-        @DisplayName("[SC003]: error_responses_consistent [GH-90000]")
+        @DisplayName("[SC003]: error_responses_consistent")
         void errorResponsesConsistent() { // GH-90000
             // Error responses should follow consistent format
             Map<String, Object> errorFormat = Map.of( // GH-90000
@@ -72,16 +72,16 @@ class ContractCompletenessTest extends EventloopTestBase {
                 )
             );
 
-            assertThat(errorFormat).containsKey("error [GH-90000]");
+            assertThat(errorFormat).containsKey("error");
         }
     }
 
     @Nested
-    @DisplayName("Service Contracts [GH-90000]")
+    @DisplayName("Service Contracts")
     class ServiceContractsTests {
 
         @Test
-        @DisplayName("[SC003]: all_service_methods_tested [GH-90000]")
+        @DisplayName("[SC003]: all_service_methods_tested")
         void allServiceMethodsTested() { // GH-90000
             // Every public service method should have a test
             Map<String, Integer> serviceTestCoverage = Map.of( // GH-90000
@@ -95,7 +95,7 @@ class ContractCompletenessTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[SC003]: async_contracts_honored [GH-90000]")
+        @DisplayName("[SC003]: async_contracts_honored")
         void asyncContractsHonored() { // GH-90000
             // Async methods should handle errors via Promise
             boolean asyncErrorsInPromise = true;
@@ -103,7 +103,7 @@ class ContractCompletenessTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[SC003]: null_handling_documented [GH-90000]")
+        @DisplayName("[SC003]: null_handling_documented")
         void nullHandlingDocumented() { // GH-90000
             // Parameter nullability should be documented
             Map<String, Boolean> nullability = Map.of( // GH-90000
@@ -117,11 +117,11 @@ class ContractCompletenessTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Repository Contracts [GH-90000]")
+    @DisplayName("Repository Contracts")
     class RepositoryContractsTests {
 
         @Test
-        @DisplayName("[SC003]: crud_operations_complete [GH-90000]")
+        @DisplayName("[SC003]: crud_operations_complete")
         void crudOperationsComplete() { // GH-90000
             // Repositories should have all CRUD operations
             List<String> requiredOperations = List.of("save", "findById", "findAll", "update", "delete"); // GH-90000
@@ -132,7 +132,7 @@ class ContractCompletenessTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[SC003]: pagination_supported [GH-90000]")
+        @DisplayName("[SC003]: pagination_supported")
         void paginationSupported() { // GH-90000
             // List operations should support pagination
             boolean paginationImplemented = true;
@@ -141,11 +141,11 @@ class ContractCompletenessTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Event Contracts [GH-90000]")
+    @DisplayName("Event Contracts")
     class EventContractsTests {
 
         @Test
-        @DisplayName("[SC003]: event_schema_versioned [GH-90000]")
+        @DisplayName("[SC003]: event_schema_versioned")
         void eventSchemaVersioned() { // GH-90000
             // Event schemas should have version
             Map<String, Integer> eventVersions = Map.of( // GH-90000
@@ -158,7 +158,7 @@ class ContractCompletenessTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[SC003]: event_ordering_guaranteed [GH-90000]")
+        @DisplayName("[SC003]: event_ordering_guaranteed")
         void eventOrderingGuaranteed() { // GH-90000
             // Events should have ordering information
             boolean orderingGuaranteed = true;
@@ -167,11 +167,11 @@ class ContractCompletenessTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Configuration Contracts [GH-90000]")
+    @DisplayName("Configuration Contracts")
     class ConfigurationContractsTests {
 
         @Test
-        @DisplayName("[SC003]: all_configs_have_defaults [GH-90000]")
+        @DisplayName("[SC003]: all_configs_have_defaults")
         void allConfigsHaveDefaults() { // GH-90000
             // Configuration values should have sensible defaults
             Map<String, Object> defaults = Map.of( // GH-90000
@@ -184,7 +184,7 @@ class ContractCompletenessTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[SC003]: required_configs_validated [GH-90000]")
+        @DisplayName("[SC003]: required_configs_validated")
         void requiredConfigsValidated() { // GH-90000
             // Required configuration should be validated at startup
             boolean startupValidation = true;
@@ -193,11 +193,11 @@ class ContractCompletenessTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Security Contracts [GH-90000]")
+    @DisplayName("Security Contracts")
     class SecurityContractsTests {
 
         @Test
-        @DisplayName("[SC003]: all_endpoints_secured [GH-90000]")
+        @DisplayName("[SC003]: all_endpoints_secured")
         void allEndpointsSecured() { // GH-90000
             // Every endpoint should have security
             Set<String> publicEndpoints = Set.of("/health", "/version"); // GH-90000
@@ -207,7 +207,7 @@ class ContractCompletenessTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[SC003]: audit_logging_complete [GH-90000]")
+        @DisplayName("[SC003]: audit_logging_complete")
         void auditLoggingComplete() { // GH-90000
             // Security-relevant operations should be audited
             List<String> auditedOperations = List.of( // GH-90000

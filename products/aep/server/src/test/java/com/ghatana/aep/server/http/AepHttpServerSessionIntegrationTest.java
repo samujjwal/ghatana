@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@DisplayName("AepHttpServer Session Integration [GH-90000]")
+@DisplayName("AepHttpServer Session Integration")
 class AepHttpServerSessionIntegrationTest {
 
     private static final String SESSION_HEADER = "X-AEP-Session";
@@ -64,7 +64,7 @@ class AepHttpServerSessionIntegrationTest {
     }
 
     @Test
-    @DisplayName("POST /api/v1/session issues a reusable session token [GH-90000]")
+    @DisplayName("POST /api/v1/session issues a reusable session token")
     void postSessionIssuesReusableToken() throws Exception { // GH-90000
         HttpResponse<String> sessionResponse = post("/api/v1/session", ""); // GH-90000
 
@@ -72,10 +72,10 @@ class AepHttpServerSessionIntegrationTest {
         String sessionToken = sessionResponse.headers().firstValue(SESSION_HEADER).orElse(null); // GH-90000
         assertThat(sessionToken).isNotBlank(); // GH-90000
 
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         Map<String, Object> sessionBody = mapper.readValue(sessionResponse.body(), Map.class); // GH-90000
         assertThat(sessionBody).containsEntry("session", sessionToken); // GH-90000
-        assertThat(sessionBody).containsKey("expiresInSeconds [GH-90000]");
+        assertThat(sessionBody).containsKey("expiresInSeconds");
 
         HttpRequest agentsRequest = HttpRequest.newBuilder() // GH-90000
             .GET() // GH-90000

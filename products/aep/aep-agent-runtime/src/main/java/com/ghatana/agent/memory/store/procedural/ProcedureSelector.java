@@ -26,7 +26,8 @@ import java.util.*;
  * @doc.type class
  * @doc.purpose Procedure selection by situation
  * @doc.layer agent-memory
- */
+  * @doc.pattern Component
+*/
 public class ProcedureSelector {
 
     private static final Logger log = LoggerFactory.getLogger(ProcedureSelector.class);

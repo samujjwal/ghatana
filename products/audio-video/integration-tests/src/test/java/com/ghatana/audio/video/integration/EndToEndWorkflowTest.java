@@ -19,11 +19,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test end-to-end audio-video workflows from input to output.
  */
-@DisplayName("End-to-End Workflow Tests [GH-90000]")
+@DisplayName("End-to-End Workflow Tests")
 class EndToEndWorkflowTest {
 
     @Test
-    @DisplayName("Should handle complete audio processing workflow [GH-90000]")
+    @DisplayName("Should handle complete audio processing workflow")
     void shouldHandleCompleteAudioProcessingWorkflow() { // GH-90000
         String inputFormat = "WAV";
         String outputFormat = "MP3";
@@ -37,7 +37,7 @@ class EndToEndWorkflowTest {
     }
 
     @Test
-    @DisplayName("Should handle complete video processing workflow [GH-90000]")
+    @DisplayName("Should handle complete video processing workflow")
     void shouldHandleCompleteVideoProcessingWorkflow() { // GH-90000
         String inputFormat = "MOV";
         String outputFormat = "MP4";
@@ -51,7 +51,7 @@ class EndToEndWorkflowTest {
     }
 
     @Test
-    @DisplayName("Should handle mixed audio-video workflow [GH-90000]")
+    @DisplayName("Should handle mixed audio-video workflow")
     void shouldHandleMixedAudioVideoWorkflow() { // GH-90000
         String videoFormat = "MP4";
         String audioFormat = "AAC";
@@ -63,7 +63,7 @@ class EndToEndWorkflowTest {
     }
 
     @Test
-    @DisplayName("Should handle workflow with failures [GH-90000]")
+    @DisplayName("Should handle workflow with failures")
     void shouldHandleWorkflowWithFailures() { // GH-90000
         boolean failed = false;
         String error = null;
@@ -73,7 +73,7 @@ class EndToEndWorkflowTest {
     }
 
     @Test
-    @DisplayName("Should handle workflow rollback [GH-90000]")
+    @DisplayName("Should handle workflow rollback")
     void shouldHandleWorkflowRollback() { // GH-90000
         boolean rolledBack = false;
         String rollbackReason = null;
@@ -83,12 +83,12 @@ class EndToEndWorkflowTest {
     }
 
     @Test
-    @DisplayName("Should handle workflow monitoring [GH-90000]")
+    @DisplayName("Should handle workflow monitoring")
     void shouldHandleWorkflowMonitoring() { // GH-90000
         String workflowId = "workflow-123";
         String status = "COMPLETED";
         
         assertThat(workflowId).isNotNull(); // GH-90000
-        assertThat(status).isEqualTo("COMPLETED [GH-90000]");
+        assertThat(status).isEqualTo("COMPLETED");
     }
 }

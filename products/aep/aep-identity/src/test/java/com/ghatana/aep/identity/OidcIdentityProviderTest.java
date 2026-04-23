@@ -26,7 +26,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("OidcIdentityProvider [GH-90000]")
+@DisplayName("OidcIdentityProvider")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class OidcIdentityProviderTest extends EventloopTestBase {
 
@@ -34,7 +34,7 @@ class OidcIdentityProviderTest extends EventloopTestBase {
     private TokenIntrospector tokenIntrospector;
 
     @Test
-    @DisplayName("resolve returns federated agent identity when introspected subject matches registration [GH-90000]")
+    @DisplayName("resolve returns federated agent identity when introspected subject matches registration")
     void resolveReturnsFederatedAgentIdentity() { // GH-90000
         OidcIdentityProvider provider = new OidcIdentityProvider( // GH-90000
             tokenIntrospector,
@@ -44,27 +44,27 @@ class OidcIdentityProviderTest extends EventloopTestBase {
                 "agent-1",
                 "oidc-subject-1",
                 "token-1",
-                Set.of("aep:capability:routing [GH-90000]"))));
+                Set.of("aep:capability:routing"))));
 
-        when(tokenIntrospector.introspect("token-1 [GH-90000]")).thenReturn(Promise.of(User.builder()
-            .userId("oidc-subject-1 [GH-90000]")
-            .username("agent-1 [GH-90000]")
-            .email("agent-1@example.com [GH-90000]")
+        when(tokenIntrospector.introspect("token-1")).thenReturn(Promise.of(User.builder()
+            .userId("oidc-subject-1")
+            .username("agent-1")
+            .email("agent-1@example.com")
             .build())); // GH-90000
 
         Optional<AgentIdentity> identity = runPromise(() -> provider.resolve("tenant-a", "agent-1")); // GH-90000
 
         assertThat(identity).isPresent(); // GH-90000
-        assertThat(identity.orElseThrow().tenantId()).isEqualTo("tenant-a [GH-90000]");
-        assertThat(identity.orElseThrow().agentId()).isEqualTo("agent-1 [GH-90000]");
+        assertThat(identity.orElseThrow().tenantId()).isEqualTo("tenant-a");
+        assertThat(identity.orElseThrow().agentId()).isEqualTo("agent-1");
         assertThat(identity.orElseThrow().spiffeId()) // GH-90000
-            .isEqualTo("https://issuer.example.com/subject/oidc-subject-1 [GH-90000]");
+            .isEqualTo("https://issuer.example.com/subject/oidc-subject-1");
         assertThat(identity.orElseThrow().scopes()) // GH-90000
             .contains("aep:execute", "aep:capability:routing"); // GH-90000
     }
 
     @Test
-    @DisplayName("resolve returns empty when the OIDC subject does not match the registration [GH-90000]")
+    @DisplayName("resolve returns empty when the OIDC subject does not match the registration")
     void resolveReturnsEmptyWhenSubjectDoesNotMatch() { // GH-90000
         OidcIdentityProvider provider = new OidcIdentityProvider( // GH-90000
             tokenIntrospector,
@@ -76,10 +76,10 @@ class OidcIdentityProviderTest extends EventloopTestBase {
                 "token-1",
                 Set.of()))); // GH-90000
 
-        when(tokenIntrospector.introspect("token-1 [GH-90000]")).thenReturn(Promise.of(User.builder()
-            .userId("unexpected-subject [GH-90000]")
-            .username("agent-1 [GH-90000]")
-            .email("agent-1@example.com [GH-90000]")
+        when(tokenIntrospector.introspect("token-1")).thenReturn(Promise.of(User.builder()
+            .userId("unexpected-subject")
+            .username("agent-1")
+            .email("agent-1@example.com")
             .build())); // GH-90000
 
         Optional<AgentIdentity> identity = runPromise(() -> provider.resolve("tenant-a", "agent-1")); // GH-90000
@@ -88,7 +88,7 @@ class OidcIdentityProviderTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("supports and resolve return negative results for unregistered agents [GH-90000]")
+    @DisplayName("supports and resolve return negative results for unregistered agents")
     void unregisteredAgentsAreNotSupported() { // GH-90000
         OidcIdentityProvider provider = new OidcIdentityProvider( // GH-90000
             tokenIntrospector,

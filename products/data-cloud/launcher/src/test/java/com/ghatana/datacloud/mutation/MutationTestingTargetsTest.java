@@ -45,7 +45,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.pattern Unit Test, Quality Gate
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("Mutation Testing Targets [GH-90000]")
+@DisplayName("Mutation Testing Targets")
 class MutationTestingTargetsTest {
 
     private MutationTestSubject subject;
@@ -56,11 +56,11 @@ class MutationTestingTargetsTest {
     }
 
     @Nested
-    @DisplayName("Off-by-One Mutation Detection [GH-90000]")
+    @DisplayName("Off-by-One Mutation Detection")
     class OffByOneMutationTests {
 
         @Test
-        @DisplayName("Should detect mutation in loop boundary [GH-90000]")
+        @DisplayName("Should detect mutation in loop boundary")
         void shouldDetectLoopBoundaryMutation() { // GH-90000
             // PIT might mutate: i < 10 to i <= 10 or i < 11
             List<Integer> result = subject.generateRange(1, 10); // GH-90000
@@ -71,7 +71,7 @@ class MutationTestingTargetsTest {
         }
 
         @Test
-        @DisplayName("Should detect mutations in array indexing [GH-90000]")
+        @DisplayName("Should detect mutations in array indexing")
         void shouldDetectArrayIndexMutation() { // GH-90000
             // PIT might mutate: i + 1 to i or i + 2
             int[] arr = {10, 20, 30, 40, 50};
@@ -83,19 +83,19 @@ class MutationTestingTargetsTest {
         }
 
         @Test
-        @DisplayName("Should validate substring boundaries precisely [GH-90000]")
+        @DisplayName("Should validate substring boundaries precisely")
         void shouldValidateSubstringBoundaries() { // GH-90000
             // PIT might mutate substring indices
             String result = subject.extractSubstring("Hello World", 0, 5); // GH-90000
 
-            assertThat(result).isEqualTo("Hello [GH-90000]");
+            assertThat(result).isEqualTo("Hello");
             assertThat(result).hasSize(5); // GH-90000
-            assertThat(result).isNotEqualTo("Hell [GH-90000]");   // Off by one
-            assertThat(result).isNotEqualTo("Hello  [GH-90000]");  // Off by one
+            assertThat(result).isNotEqualTo("Hell");   // Off by one
+            assertThat(result).isNotEqualTo("Hello ");  // Off by one
         }
 
         @Test
-        @DisplayName("Should detect increment mutations [GH-90000]")
+        @DisplayName("Should detect increment mutations")
         void shouldDetectIncrementMutations() { // GH-90000
             // PIT might mutate i++ to i or i+=2
             int result = subject.countToN(5); // GH-90000
@@ -107,11 +107,11 @@ class MutationTestingTargetsTest {
     }
 
     @Nested
-    @DisplayName("Boundary Operator Mutations [GH-90000]")
+    @DisplayName("Boundary Operator Mutations")
     class BoundaryOperatorMutationTests {
 
         @Test
-        @DisplayName("Should detect < vs <= mutation [GH-90000]")
+        @DisplayName("Should detect < vs <= mutation")
         void shouldDetectLessThanMutation() { // GH-90000
             // PIT might mutate: value < 100 to value <= 100
             boolean lessThan = subject.isValueBelowThreshold(99); // GH-90000
@@ -122,7 +122,7 @@ class MutationTestingTargetsTest {
         }
 
         @Test
-        @DisplayName("Should detect > vs >= mutation [GH-90000]")
+        @DisplayName("Should detect > vs >= mutation")
         void shouldDetectGreaterThanMutation() { // GH-90000
             // PIT might mutate: value > 0 to value >= 0
             boolean greaterThan = subject.isValueAboveZero(1); // GH-90000
@@ -134,7 +134,7 @@ class MutationTestingTargetsTest {
 
         @ParameterizedTest
         @ValueSource(ints = {-1, 0, 1, 49, 50, 51, 99, 100, 101}) // GH-90000
-        @DisplayName("Should catch all boundary mutations [GH-90000]")
+        @DisplayName("Should catch all boundary mutations")
         void shouldCatchBoundaryMutations(int value) { // GH-90000
             boolean inRange = subject.isInRange(value); // GH-90000
 
@@ -147,11 +147,11 @@ class MutationTestingTargetsTest {
     }
 
     @Nested
-    @DisplayName("Logical Operator Mutations [GH-90000]")
+    @DisplayName("Logical Operator Mutations")
     class LogicalOperatorMutationTests {
 
         @Test
-        @DisplayName("Should detect && becoming || mutation [GH-90000]")
+        @DisplayName("Should detect && becoming || mutation")
         void shouldDetectAndOperatorMutation() { // GH-90000
             // PIT might mutate: a && b to a || b
             boolean result1 = subject.checkBothConditions(true, true); // GH-90000
@@ -164,7 +164,7 @@ class MutationTestingTargetsTest {
         }
 
         @Test
-        @DisplayName("Should detect || becoming && mutation [GH-90000]")
+        @DisplayName("Should detect || becoming && mutation")
         void shouldDetectOrOperatorMutation() { // GH-90000
             // PIT might mutate: a || b to a && b
             boolean result1 = subject.checkEitherCondition(true, false); // GH-90000
@@ -177,7 +177,7 @@ class MutationTestingTargetsTest {
         }
 
         @Test
-        @DisplayName("Should detect ! mutation [GH-90000]")
+        @DisplayName("Should detect ! mutation")
         void shouldDetectNotOperatorMutation() { // GH-90000
             // PIT might mutate: !condition to condition
             boolean negated = subject.invertCondition(true); // GH-90000
@@ -189,11 +189,11 @@ class MutationTestingTargetsTest {
     }
 
     @Nested
-    @DisplayName("Arithmetic Operator Mutations [GH-90000]")
+    @DisplayName("Arithmetic Operator Mutations")
     class ArithmeticOperatorMutationTests {
 
         @Test
-        @DisplayName("Should detect + vs - mutation [GH-90000]")
+        @DisplayName("Should detect + vs - mutation")
         void shouldDetectAdditionMutation() { // GH-90000
             // PIT might mutate: a + b to a - b
             int result = subject.add(5, 3); // GH-90000
@@ -203,7 +203,7 @@ class MutationTestingTargetsTest {
         }
 
         @Test
-        @DisplayName("Should detect * vs / mutation [GH-90000]")
+        @DisplayName("Should detect * vs / mutation")
         void shouldDetectMultiplicationMutation() { // GH-90000
             // PIT might mutate: a * b to a / b
             int result = subject.multiply(4, 5); // GH-90000
@@ -213,7 +213,7 @@ class MutationTestingTargetsTest {
         }
 
         @Test
-        @DisplayName("Should detect % vs * mutation [GH-90000]")
+        @DisplayName("Should detect % vs * mutation")
         void shouldDetectModuloMutation() { // GH-90000
             // PIT might mutate: a % b to a * b
             int result = subject.remainder(10, 3); // GH-90000
@@ -223,7 +223,7 @@ class MutationTestingTargetsTest {
         }
 
         @Test
-        @DisplayName("Should validate increment operator precisely [GH-90000]")
+        @DisplayName("Should validate increment operator precisely")
         void shouldValidateIncrementPrecisely() { // GH-90000
             // PIT might mutate: i++ to i or ++i (in context of assignment) // GH-90000
             int before = 5;
@@ -235,39 +235,39 @@ class MutationTestingTargetsTest {
     }
 
     @Nested
-    @DisplayName("Return Value Mutations [GH-90000]")
+    @DisplayName("Return Value Mutations")
     class ReturnValueMutationTests {
 
         @Test
-        @DisplayName("Should detect true -> false mutation [GH-90000]")
+        @DisplayName("Should detect true -> false mutation")
         void shouldDetectTrueFalseMutation() { // GH-90000
             // PIT might mutate: return true to return false
-            boolean isValid = subject.validateInput("valid [GH-90000]");
+            boolean isValid = subject.validateInput("valid");
 
             assertThat(isValid).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("Should detect false -> true mutation [GH-90000]")
+        @DisplayName("Should detect false -> true mutation")
         void shouldDetectFalseTrueMutation() { // GH-90000
             // PIT might mutate: return false to return true
-            boolean isInvalid = subject.validateInput("invalid [GH-90000]");
+            boolean isInvalid = subject.validateInput("invalid");
 
             assertThat(isInvalid).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("Should detect null return mutations [GH-90000]")
+        @DisplayName("Should detect null return mutations")
         void shouldDetectNullReturnMutation() { // GH-90000
             // PIT might mutate: return value to return null
             String result = subject.computeValue(42); // GH-90000
 
             assertThat(result).isNotNull(); // GH-90000
-            assertThat(result).isEqualTo("42 [GH-90000]");
+            assertThat(result).isEqualTo("42");
         }
 
         @Test
-        @DisplayName("Should detect missing return statements [GH-90000]")
+        @DisplayName("Should detect missing return statements")
         void shouldDetectMissingReturn() { // GH-90000
             // PIT might remove return statement entirely
             Optional<Integer> result = subject.findValue(5); // GH-90000
@@ -278,11 +278,11 @@ class MutationTestingTargetsTest {
     }
 
     @Nested
-    @DisplayName("Loop Termination Mutations [GH-90000]")
+    @DisplayName("Loop Termination Mutations")
     class LoopTerminationMutationTests {
 
         @Test
-        @DisplayName("Should validate loop termination condition strictly [GH-90000]")
+        @DisplayName("Should validate loop termination condition strictly")
         void shouldValidateLoopTermination() { // GH-90000
             // PIT might mutate: condition or i++
             List<Integer> results = subject.loopUntilCondition(3); // GH-90000
@@ -294,7 +294,7 @@ class MutationTestingTargetsTest {
         }
 
         @Test
-        @DisplayName("Should prevent infinite loops from mutations [GH-90000]")
+        @DisplayName("Should prevent infinite loops from mutations")
         void shouldPreventInfiniteLoops() { // GH-90000
             // PIT might mutate: i++ to i or condition
             List<Integer> results = subject.safeLoop(5); // GH-90000
@@ -305,19 +305,19 @@ class MutationTestingTargetsTest {
     }
 
     @Nested
-    @DisplayName("Null Check Mutations [GH-90000]")
+    @DisplayName("Null Check Mutations")
     class NullCheckMutationTests {
 
         @Test
-        @DisplayName("Should not skip null checks [GH-90000]")
+        @DisplayName("Should not skip null checks")
         void shouldNotSkipNullChecks() { // GH-90000
             // PIT might remove: if (obj == null) return false; // GH-90000
             assertThat(subject.processNullSafely(null)).isFalse(); // GH-90000
-            assertThat(subject.processNullSafely("value [GH-90000]")).isTrue();
+            assertThat(subject.processNullSafely("value")).isTrue();
         }
 
         @Test
-        @DisplayName("Should detect null != mutation [GH-90000]")
+        @DisplayName("Should detect null != mutation")
         void shouldDetectNullNotEqualsMutation() { // GH-90000
             // PIT might mutate: obj != null to obj == null
             Object obj = new Object(); // GH-90000
@@ -333,11 +333,11 @@ class MutationTestingTargetsTest {
     }
 
     @Nested
-    @DisplayName("Collection Mutations [GH-90000]")
+    @DisplayName("Collection Mutations")
     class CollectionMutationTests {
 
         @Test
-        @DisplayName("Should detect list.size() == 0 mutations [GH-90000]")
+        @DisplayName("Should detect list.size() == 0 mutations")
         void shouldDetectEmptyListCheck() { // GH-90000
             // PIT might mutate size check
             List<Integer> empty = new ArrayList<>(); // GH-90000
@@ -348,7 +348,7 @@ class MutationTestingTargetsTest {
         }
 
         @Test
-        @DisplayName("Should detect contains() mutations [GH-90000]")
+        @DisplayName("Should detect contains() mutations")
         void shouldDetectContainsMutation() { // GH-90000
             // PIT might mutate: list.contains(item) to !list.contains(item) // GH-90000
             List<String> list = List.of("a", "b", "c"); // GH-90000
@@ -358,7 +358,7 @@ class MutationTestingTargetsTest {
         }
 
         @Test
-        @DisplayName("Should validate collection iteration mutations [GH-90000]")
+        @DisplayName("Should validate collection iteration mutations")
         void shouldValidateIterationMutation() { // GH-90000
             // PIT might mutate loop or condition in collection processing
             List<Integer> items = List.of(1, 2, 3, 4, 5); // GH-90000
@@ -371,20 +371,20 @@ class MutationTestingTargetsTest {
     }
 
     @Nested
-    @DisplayName("Exception Handling Mutations [GH-90000]")
+    @DisplayName("Exception Handling Mutations")
     class ExceptionHandlingMutationTests {
 
         @Test
-        @DisplayName("Should not swallow exceptions via mutations [GH-90000]")
+        @DisplayName("Should not swallow exceptions via mutations")
         void shouldNotSwallowExceptions() { // GH-90000
             // PIT might remove: throw new RuntimeException(...) // GH-90000
             assertThatThrownBy(() -> subject.throwIfNegative(-1)) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessage("Value must be non-negative [GH-90000]");
+                    .hasMessage("Value must be non-negative");
         }
 
         @Test
-        @DisplayName("Should execute finally blocks even with mutations [GH-90000]")
+        @DisplayName("Should execute finally blocks even with mutations")
         void shouldExecuteFinallyBlock() { // GH-90000
             // PIT might remove finally or early return
             boolean finallyExecuted = subject.checkFinallyExecution(); // GH-90000
@@ -524,7 +524,7 @@ class MutationTestingTargetsTest {
         // Exception handling
         void throwIfNegative(int value) { // GH-90000
             if (value < 0) { // GH-90000
-                throw new IllegalArgumentException("Value must be non-negative [GH-90000]");
+                throw new IllegalArgumentException("Value must be non-negative");
             }
         }
 

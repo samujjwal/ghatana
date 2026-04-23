@@ -29,7 +29,7 @@ import org.junit.jupiter.api.Test;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AgentEvalRunner Tests [GH-90000]")
+@DisplayName("AgentEvalRunner Tests")
 class AgentEvalRunnerTest extends EventloopTestBase {
 
   private AgentRuntimePort dispatcher;
@@ -41,10 +41,10 @@ class AgentEvalRunnerTest extends EventloopTestBase {
     dispatcher = mock(AgentRuntimePort.class); // GH-90000
     runner = new AgentEvalRunner(dispatcher); // GH-90000
     ctx = AgentContext.builder() // GH-90000
-        .agentId("eval-runner [GH-90000]")
-        .turnId("eval-turn-001 [GH-90000]")
-        .tenantId("tenant-1 [GH-90000]")
-        .sessionId("eval-session [GH-90000]")
+        .agentId("eval-runner")
+        .turnId("eval-turn-001")
+        .tenantId("tenant-1")
+        .sessionId("eval-session")
         .memoryStore(MemoryStore.noOp()) // GH-90000
         .build(); // GH-90000
   }
@@ -52,49 +52,49 @@ class AgentEvalRunnerTest extends EventloopTestBase {
   // ===== Constructor Tests =====
 
   @Nested
-  @DisplayName("Constructor [GH-90000]")
+  @DisplayName("Constructor")
   class Constructor {
 
     @Test
-    @DisplayName("Should reject null dispatcher [GH-90000]")
+    @DisplayName("Should reject null dispatcher")
     void shouldRejectNullDispatcher() { // GH-90000
       assertThatThrownBy(() -> new AgentEvalRunner(null)) // GH-90000
           .isInstanceOf(NullPointerException.class) // GH-90000
-          .hasMessageContaining("dispatcher [GH-90000]");
+          .hasMessageContaining("dispatcher");
     }
   }
 
   // ===== RunAll Tests =====
 
   @Nested
-  @DisplayName("Run All Tasks [GH-90000]")
+  @DisplayName("Run All Tasks")
   class RunAll {
 
     @Test
-    @DisplayName("Should produce report with all tasks passing [GH-90000]")
+    @DisplayName("Should produce report with all tasks passing")
     void shouldProduceAllPassingReport() { // GH-90000
       AgentResult<Object> successResult = AgentResult.<Object>builder() // GH-90000
-          .output("expected-output [GH-90000]")
+          .output("expected-output")
           .status(AgentResultStatus.SUCCESS) // GH-90000
           .confidence(0.95) // GH-90000
-          .explanation("All good [GH-90000]")
+          .explanation("All good")
           .build(); // GH-90000
 
-      when(dispatcher.<Object, Object>dispatch(eq("test-agent [GH-90000]"), any(), any()))
+      when(dispatcher.<Object, Object>dispatch(eq("test-agent"), any(), any()))
           .thenReturn(Promise.of(successResult)); // GH-90000
 
       AgentEvalTask task = AgentEvalTask.builder() // GH-90000
-          .id("eval-001 [GH-90000]")
-          .description("Test task [GH-90000]")
-          .agentId("test-agent [GH-90000]")
-          .category("unit [GH-90000]")
-          .input("test-input [GH-90000]")
+          .id("eval-001")
+          .description("Test task")
+          .agentId("test-agent")
+          .category("unit")
+          .input("test-input")
           .maxLatencyMs(30000) // GH-90000
           .assertions(List.of( // GH-90000
               EvalAssertion.builder() // GH-90000
-                  .type("CONTAINS [GH-90000]")
-                  .expected("expected [GH-90000]")
-                  .description("Should contain expected [GH-90000]")
+                  .type("CONTAINS")
+                  .expected("expected")
+                  .description("Should contain expected")
                   .build())) // GH-90000
           .build(); // GH-90000
 
@@ -108,30 +108,30 @@ class AgentEvalRunnerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should produce report with failing assertion [GH-90000]")
+    @DisplayName("Should produce report with failing assertion")
     void shouldProduceFailingReport() { // GH-90000
       AgentResult<Object> result = AgentResult.<Object>builder() // GH-90000
-          .output("actual-output [GH-90000]")
+          .output("actual-output")
           .status(AgentResultStatus.SUCCESS) // GH-90000
           .confidence(0.8) // GH-90000
-          .explanation("Done [GH-90000]")
+          .explanation("Done")
           .build(); // GH-90000
 
-      when(dispatcher.<Object, Object>dispatch(eq("test-agent [GH-90000]"), any(), any()))
+      when(dispatcher.<Object, Object>dispatch(eq("test-agent"), any(), any()))
           .thenReturn(Promise.of(result)); // GH-90000
 
       AgentEvalTask task = AgentEvalTask.builder() // GH-90000
-          .id("eval-002 [GH-90000]")
-          .description("Failing task [GH-90000]")
-          .agentId("test-agent [GH-90000]")
-          .category("unit [GH-90000]")
-          .input("test-input [GH-90000]")
+          .id("eval-002")
+          .description("Failing task")
+          .agentId("test-agent")
+          .category("unit")
+          .input("test-input")
           .maxLatencyMs(30000) // GH-90000
           .assertions(List.of( // GH-90000
               EvalAssertion.builder() // GH-90000
-                  .type("EXACT_MATCH [GH-90000]")
-                  .expected("something-else [GH-90000]")
-                  .description("Should match exactly [GH-90000]")
+                  .type("EXACT_MATCH")
+                  .expected("something-else")
+                  .description("Should match exactly")
                   .build())) // GH-90000
           .build(); // GH-90000
 
@@ -141,11 +141,11 @@ class AgentEvalRunnerTest extends EventloopTestBase {
       assertThat(report.getFailed()).isEqualTo(1); // GH-90000
       assertThat(report.isAllPassed()).isFalse(); // GH-90000
       assertThat(report.getResults().get(0).getFailures()) // GH-90000
-          .anyMatch(f -> f.contains("EXACT_MATCH failed [GH-90000]"));
+          .anyMatch(f -> f.contains("EXACT_MATCH failed"));
     }
 
     @Test
-    @DisplayName("Should handle empty task list [GH-90000]")
+    @DisplayName("Should handle empty task list")
     void shouldHandleEmptyTaskList() { // GH-90000
       AgentEvalReport report = runPromise(() -> runner.runAll(List.of(), ctx)); // GH-90000
 
@@ -159,14 +159,14 @@ class AgentEvalRunnerTest extends EventloopTestBase {
   // ===== Assertion Type Tests =====
 
   @Nested
-  @DisplayName("Assertion Types [GH-90000]")
+  @DisplayName("Assertion Types")
   class AssertionTypes {
 
     @Test
-    @DisplayName("Should pass CONTAINS assertion when output contains expected [GH-90000]")
+    @DisplayName("Should pass CONTAINS assertion when output contains expected")
     void shouldPassContains() { // GH-90000
       AgentResult<Object> result = AgentResult.<Object>builder() // GH-90000
-          .output("Hello World from agent [GH-90000]")
+          .output("Hello World from agent")
           .status(AgentResultStatus.SUCCESS) // GH-90000
           .confidence(0.9) // GH-90000
           .build(); // GH-90000
@@ -182,10 +182,10 @@ class AgentEvalRunnerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should pass REGEX assertion when output matches pattern [GH-90000]")
+    @DisplayName("Should pass REGEX assertion when output matches pattern")
     void shouldPassRegex() { // GH-90000
       AgentResult<Object> result = AgentResult.<Object>builder() // GH-90000
-          .output("Error code: 42 [GH-90000]")
+          .output("Error code: 42")
           .status(AgentResultStatus.SUCCESS) // GH-90000
           .confidence(0.9) // GH-90000
           .build(); // GH-90000
@@ -201,10 +201,10 @@ class AgentEvalRunnerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should pass CONFIDENCE_MIN assertion when confidence is sufficient [GH-90000]")
+    @DisplayName("Should pass CONFIDENCE_MIN assertion when confidence is sufficient")
     void shouldPassConfidenceMin() { // GH-90000
       AgentResult<Object> result = AgentResult.<Object>builder() // GH-90000
-          .output("output [GH-90000]")
+          .output("output")
           .status(AgentResultStatus.SUCCESS) // GH-90000
           .confidence(0.85) // GH-90000
           .build(); // GH-90000
@@ -220,10 +220,10 @@ class AgentEvalRunnerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should fail CONFIDENCE_MIN when confidence is below threshold [GH-90000]")
+    @DisplayName("Should fail CONFIDENCE_MIN when confidence is below threshold")
     void shouldFailConfidenceMin() { // GH-90000
       AgentResult<Object> result = AgentResult.<Object>builder() // GH-90000
-          .output("output [GH-90000]")
+          .output("output")
           .status(AgentResultStatus.SUCCESS) // GH-90000
           .confidence(0.5) // GH-90000
           .build(); // GH-90000
@@ -237,14 +237,14 @@ class AgentEvalRunnerTest extends EventloopTestBase {
 
       assertThat(report.isAllPassed()).isFalse(); // GH-90000
       assertThat(report.getResults().get(0).getFailures()) // GH-90000
-          .anyMatch(f -> f.contains("CONFIDENCE_MIN failed [GH-90000]"));
+          .anyMatch(f -> f.contains("CONFIDENCE_MIN failed"));
     }
 
     @Test
-    @DisplayName("Should pass STATUS assertion when status matches [GH-90000]")
+    @DisplayName("Should pass STATUS assertion when status matches")
     void shouldPassStatus() { // GH-90000
       AgentResult<Object> result = AgentResult.<Object>builder() // GH-90000
-          .output("output [GH-90000]")
+          .output("output")
           .status(AgentResultStatus.SUCCESS) // GH-90000
           .confidence(0.9) // GH-90000
           .build(); // GH-90000
@@ -260,24 +260,24 @@ class AgentEvalRunnerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should fail when agent returns FAILED status [GH-90000]")
+    @DisplayName("Should fail when agent returns FAILED status")
     void shouldFailOnAgentFailure() { // GH-90000
       AgentResult<Object> result = AgentResult.<Object>builder() // GH-90000
-          .output("error [GH-90000]")
+          .output("error")
           .status(AgentResultStatus.FAILED) // GH-90000
           .confidence(0.0) // GH-90000
-          .explanation("Agent crashed [GH-90000]")
+          .explanation("Agent crashed")
           .build(); // GH-90000
 
       when(dispatcher.<Object, Object>dispatch(any(), any(), any())) // GH-90000
           .thenReturn(Promise.of(result)); // GH-90000
 
       AgentEvalTask task = AgentEvalTask.builder() // GH-90000
-          .id("fail-test [GH-90000]")
-          .description("Agent failure test [GH-90000]")
-          .agentId("test-agent [GH-90000]")
-          .category("unit [GH-90000]")
-          .input("input [GH-90000]")
+          .id("fail-test")
+          .description("Agent failure test")
+          .agentId("test-agent")
+          .category("unit")
+          .input("input")
           .maxLatencyMs(30000) // GH-90000
           .assertions(List.of()) // GH-90000
           .build(); // GH-90000
@@ -286,21 +286,21 @@ class AgentEvalRunnerTest extends EventloopTestBase {
 
       assertThat(report.isAllPassed()).isFalse(); // GH-90000
       assertThat(report.getResults().get(0).getFailures()) // GH-90000
-          .anyMatch(f -> f.contains("FAILED status [GH-90000]"));
+          .anyMatch(f -> f.contains("FAILED status"));
     }
   }
 
   // ===== Filtering Tests =====
 
   @Nested
-  @DisplayName("Filtering [GH-90000]")
+  @DisplayName("Filtering")
   class Filtering {
 
     @Test
-    @DisplayName("Should filter tasks by category [GH-90000]")
+    @DisplayName("Should filter tasks by category")
     void shouldFilterByCategory() { // GH-90000
       AgentResult<Object> result = AgentResult.<Object>builder() // GH-90000
-          .output("ok [GH-90000]")
+          .output("ok")
           .status(AgentResultStatus.SUCCESS) // GH-90000
           .confidence(0.9) // GH-90000
           .build(); // GH-90000
@@ -309,13 +309,13 @@ class AgentEvalRunnerTest extends EventloopTestBase {
           .thenReturn(Promise.of(result)); // GH-90000
 
       AgentEvalTask unitTask = AgentEvalTask.builder() // GH-90000
-          .id("unit-001 [GH-90000]").description("Unit test [GH-90000]").agentId("agent-a [GH-90000]")
-          .category("unit [GH-90000]").input("input [GH-90000]").maxLatencyMs(30000)
+          .id("unit-001").description("Unit test").agentId("agent-a")
+          .category("unit").input("input").maxLatencyMs(30000)
           .assertions(List.of()).build(); // GH-90000
 
       AgentEvalTask integrationTask = AgentEvalTask.builder() // GH-90000
-          .id("int-001 [GH-90000]").description("Integration test [GH-90000]").agentId("agent-b [GH-90000]")
-          .category("integration [GH-90000]").input("input [GH-90000]").maxLatencyMs(30000)
+          .id("int-001").description("Integration test").agentId("agent-b")
+          .category("integration").input("input").maxLatencyMs(30000)
           .assertions(List.of()).build(); // GH-90000
 
       AgentEvalReport report = runPromise( // GH-90000
@@ -325,10 +325,10 @@ class AgentEvalRunnerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should filter tasks by agent ID [GH-90000]")
+    @DisplayName("Should filter tasks by agent ID")
     void shouldFilterByAgentId() { // GH-90000
       AgentResult<Object> result = AgentResult.<Object>builder() // GH-90000
-          .output("ok [GH-90000]")
+          .output("ok")
           .status(AgentResultStatus.SUCCESS) // GH-90000
           .confidence(0.9) // GH-90000
           .build(); // GH-90000
@@ -337,13 +337,13 @@ class AgentEvalRunnerTest extends EventloopTestBase {
           .thenReturn(Promise.of(result)); // GH-90000
 
       AgentEvalTask taskA = AgentEvalTask.builder() // GH-90000
-          .id("a-001 [GH-90000]").description("Task A [GH-90000]").agentId("agent-a [GH-90000]")
-          .category("unit [GH-90000]").input("input [GH-90000]").maxLatencyMs(30000)
+          .id("a-001").description("Task A").agentId("agent-a")
+          .category("unit").input("input").maxLatencyMs(30000)
           .assertions(List.of()).build(); // GH-90000
 
       AgentEvalTask taskB = AgentEvalTask.builder() // GH-90000
-          .id("b-001 [GH-90000]").description("Task B [GH-90000]").agentId("agent-b [GH-90000]")
-          .category("unit [GH-90000]").input("input [GH-90000]").maxLatencyMs(30000)
+          .id("b-001").description("Task B").agentId("agent-b")
+          .category("unit").input("input").maxLatencyMs(30000)
           .assertions(List.of()).build(); // GH-90000
 
       AgentEvalReport report = runPromise( // GH-90000
@@ -356,14 +356,14 @@ class AgentEvalRunnerTest extends EventloopTestBase {
   // ===== Report Structure Tests =====
 
   @Nested
-  @DisplayName("Report Structure [GH-90000]")
+  @DisplayName("Report Structure")
   class ReportStructure {
 
     @Test
-    @DisplayName("Should track duration in report [GH-90000]")
+    @DisplayName("Should track duration in report")
     void shouldTrackDuration() { // GH-90000
       AgentResult<Object> result = AgentResult.<Object>builder() // GH-90000
-          .output("ok [GH-90000]")
+          .output("ok")
           .status(AgentResultStatus.SUCCESS) // GH-90000
           .confidence(0.9) // GH-90000
           .build(); // GH-90000
@@ -372,8 +372,8 @@ class AgentEvalRunnerTest extends EventloopTestBase {
           .thenReturn(Promise.of(result)); // GH-90000
 
       AgentEvalTask task = AgentEvalTask.builder() // GH-90000
-          .id("dur-001 [GH-90000]").description("Duration test [GH-90000]").agentId("test-agent [GH-90000]")
-          .category("unit [GH-90000]").input("input [GH-90000]").maxLatencyMs(30000)
+          .id("dur-001").description("Duration test").agentId("test-agent")
+          .category("unit").input("input").maxLatencyMs(30000)
           .assertions(List.of()).build(); // GH-90000
 
       AgentEvalReport report = runPromise(() -> runner.runAll(List.of(task), ctx)); // GH-90000
@@ -391,9 +391,9 @@ class AgentEvalRunnerTest extends EventloopTestBase {
     return AgentEvalTask.builder() // GH-90000
         .id("task-" + assertionType) // GH-90000
         .description("Test " + assertionType) // GH-90000
-        .agentId("test-agent [GH-90000]")
-        .category("unit [GH-90000]")
-        .input("test-input [GH-90000]")
+        .agentId("test-agent")
+        .category("unit")
+        .input("test-input")
         .maxLatencyMs(30000) // GH-90000
         .assertions(List.of( // GH-90000
             EvalAssertion.builder() // GH-90000

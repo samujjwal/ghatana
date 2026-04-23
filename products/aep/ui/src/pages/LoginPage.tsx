@@ -11,7 +11,11 @@
 import React, { useMemo, useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '@/context/AuthContext';
-import { Button, TextArea } from '@ghatana/design-system';
+import { TextArea } from '@/components/core/TextArea';
+import { Button } from '@/components/core/Button';
+import { isFeatureEnabled } from '@/lib/feature-flags';
+
+const PLATFORM_SSO_URL = import.meta.env.VITE_PLATFORM_SSO_URL ?? '/api/auth/sso/redirect';
 
 interface LoginLocationState {
   from?: string;
@@ -94,48 +98,75 @@ export function LoginPage() {
             <div className="space-y-2">
               <h2 className="text-2xl font-semibold text-white">Sign in</h2>
               <p className="text-sm leading-6 text-slate-300">
-                Paste the JWT issued by the platform identity provider. No username or password
-                exchange is implemented inside the AEP UI.
+                Sign in through the platform identity provider for secure single sign-on, or use a legacy token when enabled.
               </p>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-200" htmlFor="jwt-token">
-                JWT access token
-              </label>
-              <TextArea
-                id="jwt-token"
-                value={token}
-                onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setToken(event.target.value)}
-                rows={8}
-                spellCheck={false}
-                autoCapitalize="off"
-                autoCorrect="off"
-                placeholder="eyJhbGciOi..."
-                className="w-full rounded-2xl border border-slate-700 bg-slate-950/70 px-4 py-3 font-mono text-sm text-slate-100 outline-none transition focus:border-cyan-400"
-              />
-            </div>
-
-            {error ? (
-              <div className="rounded-2xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
-                {error}
-              </div>
-            ) : null}
-
             <Button
-              type="submit"
+              type="button"
               disabled={isSubmitting}
               variant="primary"
               fullWidth
+              onClick={() => {
+                window.location.href = PLATFORM_SSO_URL;
+              }}
             >
-              {isSubmitting ? 'Signing in…' : 'Sign in'}
+              Sign in with Platform
             </Button>
 
-            <p className="text-xs leading-5 text-slate-400">
-              {isBootstrappingSession
-                ? 'Issuing AEP session token…'
-                : 'AEP will request an X-AEP-Session token after sign-in when the backend allows it.'}
-            </p>
+            {isFeatureEnabled('LEGACY_JWT_PASTE') && (
+              <>
+                <div className="relative flex items-center py-2">
+                  <div className="flex-grow border-t border-white/10" />
+                  <span className="mx-3 text-xs text-slate-500 uppercase tracking-wider">Legacy</span>
+                  <div className="flex-grow border-t border-white/10" />
+                </div>
+
+                <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3">
+                  <p className="text-xs text-amber-200">
+                    JWT paste is deprecated. Enable only for recovery scenarios.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-200" htmlFor="jwt-token">
+                    JWT access token
+                  </label>
+                  <TextArea
+                    id="jwt-token"
+                    value={token}
+                    onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setToken(event.target.value)}
+                    rows={8}
+                    spellCheck={false}
+                    autoCapitalize="off"
+                    autoCorrect="off"
+                    placeholder="eyJhbGciOi..."
+                    className="w-full rounded-2xl border border-slate-700 bg-slate-950/70 px-4 py-3 font-mono text-sm text-slate-100 outline-none transition focus:border-cyan-400"
+                  />
+                </div>
+
+                {error ? (
+                  <div className="rounded-2xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+                    {error}
+                  </div>
+                ) : null}
+
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  variant="secondary"
+                  fullWidth
+                >
+                  {isSubmitting ? 'Signing in…' : 'Sign in with Token'}
+                </Button>
+
+                <p className="text-xs leading-5 text-slate-400">
+                  {isBootstrappingSession
+                    ? 'Issuing AEP session token…'
+                    : 'AEP will request an X-AEP-Session token after sign-in when the backend allows it.'}
+                </p>
+              </>
+            )}
           </form>
         </section>
       </div>

@@ -15,7 +15,11 @@ import java.util.Map;
 
 /**
  * Models for load balancing operations.
- */
+  * @doc.type enum
+ * @doc.purpose Provides load balancer models functionality.
+ * @doc.layer product
+ * @doc.pattern Enum
+*/
 public final class LoadBalancerModels {
 
     private LoadBalancerModels() {

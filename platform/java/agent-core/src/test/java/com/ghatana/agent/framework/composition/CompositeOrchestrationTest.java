@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("CompositeOrchestration (P8-T7) [GH-90000]")
+@DisplayName("CompositeOrchestration (P8-T7)")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class CompositeOrchestrationTest extends EventloopTestBase {
 
@@ -43,9 +43,9 @@ class CompositeOrchestrationTest extends EventloopTestBase {
     @BeforeEach
     void setUp() { // GH-90000
         ctx = AgentContext.builder() // GH-90000
-                .turnId("turn-1 [GH-90000]")
-                .agentId("orchestrator [GH-90000]")
-                .tenantId("tenant-1 [GH-90000]")
+                .turnId("turn-1")
+                .agentId("orchestrator")
+                .tenantId("tenant-1")
                 .memoryStore(memoryStore) // GH-90000
                 .build(); // GH-90000
     }
@@ -53,11 +53,11 @@ class CompositeOrchestrationTest extends EventloopTestBase {
     // ─── CompositionPolicy ───────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("CompositionPolicy [GH-90000]")
+    @DisplayName("CompositionPolicy")
     class CompositionPolicyTests {
 
         @Test
-        @DisplayName("valid VOTING policy is constructed [GH-90000]")
+        @DisplayName("valid VOTING policy is constructed")
         void validVotingPolicy() { // GH-90000
             CompositionPolicy p = new CompositionPolicy( // GH-90000
                     "c1", CompositionPattern.VOTING, List.of("a", "b", "c"), // GH-90000
@@ -67,38 +67,38 @@ class CompositeOrchestrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("VOTING without votingPolicy is rejected [GH-90000]")
+        @DisplayName("VOTING without votingPolicy is rejected")
         void votingWithoutPolicyRejected() { // GH-90000
             assertThatThrownBy(() -> new CompositionPolicy( // GH-90000
-                    "c2", CompositionPattern.VOTING, List.of("a [GH-90000]"), "t", null, null, 0))
+                    "c2", CompositionPattern.VOTING, List.of("a"), "t", null, null, 0))
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("votingPolicy [GH-90000]");
+                    .hasMessageContaining("votingPolicy");
         }
 
         @Test
-        @DisplayName("SCATTER_GATHER without aggregation is rejected [GH-90000]")
+        @DisplayName("SCATTER_GATHER without aggregation is rejected")
         void scatterGatherWithoutAggregationRejected() { // GH-90000
             assertThatThrownBy(() -> new CompositionPolicy( // GH-90000
-                    "c3", CompositionPattern.SCATTER_GATHER, List.of("a [GH-90000]"), "t", null, null, 0))
+                    "c3", CompositionPattern.SCATTER_GATHER, List.of("a"), "t", null, null, 0))
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("aggregation [GH-90000]");
+                    .hasMessageContaining("aggregation");
         }
 
         @Test
-        @DisplayName("empty memberAgentIds is rejected [GH-90000]")
+        @DisplayName("empty memberAgentIds is rejected")
         void emptyMembersRejected() { // GH-90000
             assertThatThrownBy(() -> new CompositionPolicy( // GH-90000
                     "c4", CompositionPattern.PIPELINE, List.of(), "t", null, null, 0)) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("memberAgentIds [GH-90000]");
+                    .hasMessageContaining("memberAgentIds");
         }
 
         @Test
-        @DisplayName("memberAgentIds is immutable [GH-90000]")
+        @DisplayName("memberAgentIds is immutable")
         void memberAgentIdsImmutable() { // GH-90000
             CompositionPolicy p = new CompositionPolicy( // GH-90000
-                    "c5", CompositionPattern.PIPELINE, List.of("x [GH-90000]"), "t", null, null, 0);
-            assertThatThrownBy(() -> p.memberAgentIds().add("y [GH-90000]"))
+                    "c5", CompositionPattern.PIPELINE, List.of("x"), "t", null, null, 0);
+            assertThatThrownBy(() -> p.memberAgentIds().add("y"))
                     .isInstanceOf(UnsupportedOperationException.class); // GH-90000
         }
     }
@@ -106,7 +106,7 @@ class CompositeOrchestrationTest extends EventloopTestBase {
     // ─── VotingOrchestration ─────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("VotingOrchestration [GH-90000]")
+    @DisplayName("VotingOrchestration")
     class VotingTests {
 
         private AgentInvoker buildInvoker(AgentResultStatus statusForAll) { // GH-90000
@@ -120,7 +120,7 @@ class CompositeOrchestrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("MAJORITY: 2 of 3 succeed → returns success [GH-90000]")
+        @DisplayName("MAJORITY: 2 of 3 succeed → returns success")
         void majorityQuorumMet() { // GH-90000
             int[] callCount = {0};
             AgentInvoker invoker = (agentId, input, context) -> { // GH-90000
@@ -144,7 +144,7 @@ class CompositeOrchestrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("MAJORITY: 1 of 3 succeeds → quorum not met → FAILED [GH-90000]")
+        @DisplayName("MAJORITY: 1 of 3 succeeds → quorum not met → FAILED")
         void majorityQuorumNotMet() { // GH-90000
             int[] callCount = {0};
             AgentInvoker invoker = (agentId, input, context) -> { // GH-90000
@@ -167,11 +167,11 @@ class CompositeOrchestrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("ANY_ONE: at least one success is sufficient [GH-90000]")
+        @DisplayName("ANY_ONE: at least one success is sufficient")
         void anyOnePolicy() { // GH-90000
             AgentInvoker invoker = buildInvoker(AgentResultStatus.SUCCESS); // GH-90000
             CompositionPolicy policy = new CompositionPolicy( // GH-90000
-                    "vote-3", CompositionPattern.VOTING, List.of("x [GH-90000]"),
+                    "vote-3", CompositionPattern.VOTING, List.of("x"),
                     "tenant-1", VotingPolicy.ANY_ONE, null, 0);
             VotingOrchestration voting = new VotingOrchestration(invoker); // GH-90000
             AgentResult<?> result = runPromise(() -> voting.execute(policy, "in", ctx)); // GH-90000
@@ -179,11 +179,11 @@ class CompositeOrchestrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("wrong pattern throws IllegalArgumentException [GH-90000]")
+        @DisplayName("wrong pattern throws IllegalArgumentException")
         void wrongPatternThrows() { // GH-90000
             AgentInvoker invoker = buildInvoker(AgentResultStatus.SUCCESS); // GH-90000
             CompositionPolicy policy = new CompositionPolicy( // GH-90000
-                    "sg-1", CompositionPattern.SCATTER_GATHER, List.of("a [GH-90000]"),
+                    "sg-1", CompositionPattern.SCATTER_GATHER, List.of("a"),
                     "tenant-1", null, AggregationStrategy.FIRST_SUCCESS, 0);
             VotingOrchestration voting = new VotingOrchestration(invoker); // GH-90000
             assertThatThrownBy(() -> runPromise(() -> voting.execute(policy, "in", ctx))) // GH-90000
@@ -194,7 +194,7 @@ class CompositeOrchestrationTest extends EventloopTestBase {
     // ─── ScatterGatherOrchestration ───────────────────────────────────────────
 
     @Nested
-    @DisplayName("ScatterGatherOrchestration [GH-90000]")
+    @DisplayName("ScatterGatherOrchestration")
     class ScatterGatherTests {
 
         private AgentInvoker successInvoker(double confidence) { // GH-90000
@@ -208,7 +208,7 @@ class CompositeOrchestrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("FIRST_SUCCESS returns first successful result [GH-90000]")
+        @DisplayName("FIRST_SUCCESS returns first successful result")
         void firstSuccess() { // GH-90000
             AgentInvoker invoker = successInvoker(0.8); // GH-90000
             CompositionPolicy policy = new CompositionPolicy( // GH-90000
@@ -220,7 +220,7 @@ class CompositeOrchestrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("HIGHEST_CONFIDENCE returns the result with highest confidence [GH-90000]")
+        @DisplayName("HIGHEST_CONFIDENCE returns the result with highest confidence")
         void highestConfidence() { // GH-90000
             int[] call = {0};
             AgentInvoker invoker = (agentId, input, context) -> { // GH-90000
@@ -243,7 +243,7 @@ class CompositeOrchestrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("COLLECT_ALL returns all results as output [GH-90000]")
+        @DisplayName("COLLECT_ALL returns all results as output")
         void collectAll() { // GH-90000
             AgentInvoker invoker = successInvoker(0.7); // GH-90000
             CompositionPolicy policy = new CompositionPolicy( // GH-90000

@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Ghatana Kernel Team
  * @since 1.0.0
  */
-@DisplayName("Contract Validation Integration Tests [GH-90000]")
+@DisplayName("Contract Validation Integration Tests")
 class ContractValidationIntegrationTest {
 
     private ContractValidationGate validationGate;
@@ -33,7 +33,7 @@ class ContractValidationIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should validate API contract successfully [GH-90000]")
+    @DisplayName("Should validate API contract successfully")
     void testValidateAPIContract() { // GH-90000
         // Use concrete ApiContract type
         ApiContract contract = ApiContract.builder("api.user.login", "User Login API", "1.0.0") // GH-90000
@@ -51,7 +51,7 @@ class ContractValidationIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should validate Autonomy contract successfully [GH-90000]")
+    @DisplayName("Should validate Autonomy contract successfully")
     void testValidateAutonomyContract() { // GH-90000
         AutonomyContract contract = AutonomyContract.builder("autonomy.fraud.detection", "Fraud Detection Agent", "1.0.0") // GH-90000
             .metadata(Map.of( // GH-90000
@@ -66,7 +66,7 @@ class ContractValidationIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should test AutonomousContractValidator [GH-90000]")
+    @DisplayName("Should test AutonomousContractValidator")
     void testAutonomousContractValidator() { // GH-90000
         AutonomyContract contract = AutonomyContract.builder("autonomy.test", "Test Autonomy", "1.0.0") // GH-90000
             .metadata(Map.of()) // GH-90000

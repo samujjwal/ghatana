@@ -8,6 +8,12 @@ import java.util.Set;
  * Default implementation of SecurityContext for agent execution security.
  */
 @SuppressWarnings("removal") // Implements deprecated AEP SecurityContext; migration to platform SecurityContext tracked separately
+/**
+ * @doc.type record
+ * @doc.purpose Provides default security context functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+ */
 public record DefaultSecurityContext(
         String principal,
         Set<String> roles,

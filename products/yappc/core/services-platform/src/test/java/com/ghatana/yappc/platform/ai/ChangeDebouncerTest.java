@@ -9,11 +9,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("ChangeDebouncer Tests [GH-90000]")
+@DisplayName("ChangeDebouncer Tests")
 class ChangeDebouncerTest {
 
   @Test
-  @DisplayName("debounce replaces existing scheduled action for the same key [GH-90000]")
+  @DisplayName("debounce replaces existing scheduled action for the same key")
   void debounceReplacesExistingScheduledActionForSameKey() { // GH-90000
     List<FakeCancellation> scheduled = new ArrayList<>(); // GH-90000
     ChangeDebouncer debouncer =
@@ -35,7 +35,7 @@ class ChangeDebouncerTest {
   }
 
   @Test
-  @DisplayName("debounce executes action and removes pending key [GH-90000]")
+  @DisplayName("debounce executes action and removes pending key")
   void debounceExecutesActionAndRemovesPendingKey() { // GH-90000
     AtomicInteger executions = new AtomicInteger(); // GH-90000
     List<FakeCancellation> scheduled = new ArrayList<>(); // GH-90000

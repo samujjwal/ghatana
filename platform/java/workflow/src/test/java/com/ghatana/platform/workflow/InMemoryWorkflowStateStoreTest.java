@@ -16,7 +16,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 
-@DisplayName("InMemoryWorkflowStateStore Tests [GH-90000]")
+@DisplayName("InMemoryWorkflowStateStore Tests")
 class InMemoryWorkflowStateStoreTest extends EventloopTestBase {
 
     private InMemoryWorkflowStateStore store;
@@ -38,16 +38,16 @@ class InMemoryWorkflowStateStoreTest extends EventloopTestBase {
         WorkflowRun run = newRun("run-1", WorkflowRunStatus.PENDING); // GH-90000
 
         runPromise(() -> store.save(run) // GH-90000
-            .then(v -> store.findByRunId("run-1 [GH-90000]"))
+            .then(v -> store.findByRunId("run-1"))
             .whenResult(opt -> { // GH-90000
                 assertThat(opt).isPresent(); // GH-90000
-                assertThat(opt.get().runId()).isEqualTo("run-1 [GH-90000]");
+                assertThat(opt.get().runId()).isEqualTo("run-1");
             }));
     }
 
     @Test
     void shouldReturnEmptyForMissingRunId() { // GH-90000
-        Optional<WorkflowRun> result = runPromise(() -> store.findByRunId("nope [GH-90000]"));
+        Optional<WorkflowRun> result = runPromise(() -> store.findByRunId("nope"));
         assertThat(result).isEmpty(); // GH-90000
     }
 
@@ -61,7 +61,7 @@ class InMemoryWorkflowStateStoreTest extends EventloopTestBase {
 
         runPromise(() -> store.save(run1).then(v -> store.save(run2))); // GH-90000
 
-        List<WorkflowRun> found = runPromise(() -> store.findByWorkflowId("wf-1 [GH-90000]"));
+        List<WorkflowRun> found = runPromise(() -> store.findByWorkflowId("wf-1"));
         assertThat(found).hasSize(2); // GH-90000
     }
 
@@ -80,7 +80,7 @@ class InMemoryWorkflowStateStoreTest extends EventloopTestBase {
         runPromise(() -> store.save(newRun("run-1", WorkflowRunStatus.RUNNING)) // GH-90000
             .then(v -> store.updateStatus("run-1", WorkflowRunStatus.COMPLETED))); // GH-90000
 
-        Optional<WorkflowRun> updated = runPromise(() -> store.findByRunId("run-1 [GH-90000]"));
+        Optional<WorkflowRun> updated = runPromise(() -> store.findByRunId("run-1"));
         assertThat(updated).isPresent(); // GH-90000
         assertThat(updated.get().status()).isEqualTo(WorkflowRunStatus.COMPLETED); // GH-90000
     }
@@ -88,9 +88,9 @@ class InMemoryWorkflowStateStoreTest extends EventloopTestBase {
     @Test
     void shouldDelete() { // GH-90000
         runPromise(() -> store.save(newRun("run-1", WorkflowRunStatus.RUNNING))); // GH-90000
-        store.delete("run-1 [GH-90000]");
+        store.delete("run-1");
 
-        Optional<WorkflowRun> deleted = runPromise(() -> store.findByRunId("run-1 [GH-90000]"));
+        Optional<WorkflowRun> deleted = runPromise(() -> store.findByRunId("run-1"));
         assertThat(deleted).isEmpty(); // GH-90000
     }
 

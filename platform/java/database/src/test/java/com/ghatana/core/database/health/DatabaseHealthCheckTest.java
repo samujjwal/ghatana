@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("DatabaseHealthCheck — health check with H2 in-memory database [GH-90000]")
+@DisplayName("DatabaseHealthCheck — health check with H2 in-memory database")
 class DatabaseHealthCheckTest {
 
     private DataSource workingDataSource;
@@ -24,28 +24,28 @@ class DatabaseHealthCheckTest {
     @BeforeEach
     void setUp() { // GH-90000
         JdbcDataSource ds = new JdbcDataSource(); // GH-90000
-        ds.setURL("jdbc:h2:mem:healthcheck-test;DB_CLOSE_DELAY=-1 [GH-90000]");
-        ds.setUser("sa [GH-90000]");
-        ds.setPassword(" [GH-90000]");
+        ds.setURL("jdbc:h2:mem:healthcheck-test;DB_CLOSE_DELAY=-1");
+        ds.setUser("sa");
+        ds.setPassword("");
         workingDataSource = ds;
     }
 
     // ── builder ───────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("builder() creates a valid check with defaults [GH-90000]")
+    @DisplayName("builder() creates a valid check with defaults")
     void builderCreatesCheckWithDefaults() { // GH-90000
         DatabaseHealthCheck check = DatabaseHealthCheck.builder() // GH-90000
                 .dataSource(workingDataSource) // GH-90000
                 .build(); // GH-90000
 
-        assertThat(check.getValidationQuery()).isEqualTo("SELECT 1 [GH-90000]");
+        assertThat(check.getValidationQuery()).isEqualTo("SELECT 1");
         assertThat(check.getTimeout()).isEqualTo(Duration.ofSeconds(5)); // GH-90000
         assertThat(check.getDataSource()).isSameAs(workingDataSource); // GH-90000
     }
 
     @Test
-    @DisplayName("builder() throws NullPointerException when dataSource is null [GH-90000]")
+    @DisplayName("builder() throws NullPointerException when dataSource is null")
     void builderThrowsForNullDataSource() { // GH-90000
         assertThatThrownBy(() -> DatabaseHealthCheck.builder() // GH-90000
                 .dataSource(null) // GH-90000
@@ -54,11 +54,11 @@ class DatabaseHealthCheckTest {
     }
 
     @Test
-    @DisplayName("builder() throws when validationQuery is blank [GH-90000]")
+    @DisplayName("builder() throws when validationQuery is blank")
     void builderThrowsForBlankValidationQuery() { // GH-90000
         assertThatThrownBy(() -> DatabaseHealthCheck.builder() // GH-90000
                 .dataSource(workingDataSource) // GH-90000
-                .validationQuery("    [GH-90000]")
+                .validationQuery("   ")
                 .build()) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class); // GH-90000
     }
@@ -66,11 +66,11 @@ class DatabaseHealthCheckTest {
     // ── check() with working database ──────────────────────────────────────── // GH-90000
 
     @Test
-    @DisplayName("check() returns HEALTHY status for a working H2 database [GH-90000]")
+    @DisplayName("check() returns HEALTHY status for a working H2 database")
     void checkReturnsHealthyForWorkingDatabase() { // GH-90000
         DatabaseHealthCheck check = DatabaseHealthCheck.builder() // GH-90000
                 .dataSource(workingDataSource) // GH-90000
-                .validationQuery("SELECT 1 [GH-90000]")
+                .validationQuery("SELECT 1")
                 .timeout(Duration.ofSeconds(5)) // GH-90000
                 .build(); // GH-90000
 
@@ -81,7 +81,7 @@ class DatabaseHealthCheckTest {
     }
 
     @Test
-    @DisplayName("check() result message is non-null for healthy database [GH-90000]")
+    @DisplayName("check() result message is non-null for healthy database")
     void checkHealthyStatusHasNonNullMessage() { // GH-90000
         DatabaseHealthCheck check = DatabaseHealthCheck.builder() // GH-90000
                 .dataSource(workingDataSource) // GH-90000
@@ -93,7 +93,7 @@ class DatabaseHealthCheckTest {
     }
 
     @Test
-    @DisplayName("check() response time is non-negative for healthy database [GH-90000]")
+    @DisplayName("check() response time is non-negative for healthy database")
     void checkHealthyStatusHasNonNegativeResponseTime() { // GH-90000
         DatabaseHealthCheck check = DatabaseHealthCheck.builder() // GH-90000
                 .dataSource(workingDataSource) // GH-90000
@@ -105,7 +105,7 @@ class DatabaseHealthCheckTest {
     }
 
     @Test
-    @DisplayName("check() has no exception for healthy database [GH-90000]")
+    @DisplayName("check() has no exception for healthy database")
     void checkHealthyStatusHasNoException() { // GH-90000
         DatabaseHealthCheck check = DatabaseHealthCheck.builder() // GH-90000
                 .dataSource(workingDataSource) // GH-90000
@@ -119,17 +119,17 @@ class DatabaseHealthCheckTest {
     // ── check() with broken datasource ──────────────────────────────────────── // GH-90000
 
     @Test
-    @DisplayName("check() returns UNHEALTHY status for an invalid datasource URL [GH-90000]")
+    @DisplayName("check() returns UNHEALTHY status for an invalid datasource URL")
     void checkReturnsUnhealthyForBrokenDatabase() { // GH-90000
         JdbcDataSource broken = new JdbcDataSource(); // GH-90000
-        broken.setURL("jdbc:h2:mem:nonexistent-forced-fail;OPEN_NEW=false [GH-90000]");
-        broken.setUser("invalid_user [GH-90000]");
-        broken.setPassword("wrong_password [GH-90000]");
+        broken.setURL("jdbc:h2:mem:nonexistent-forced-fail;OPEN_NEW=false");
+        broken.setUser("invalid_user");
+        broken.setPassword("wrong_password");
 
         // Use a very short timeout to fail fast
         DatabaseHealthCheck check = DatabaseHealthCheck.builder() // GH-90000
                 .dataSource(broken) // GH-90000
-                .validationQuery("SELECT invalid_column FROM nonexistent_table [GH-90000]")
+                .validationQuery("SELECT invalid_column FROM nonexistent_table")
                 .timeout(Duration.ofSeconds(2)) // GH-90000
                 .build(); // GH-90000
 
@@ -141,7 +141,7 @@ class DatabaseHealthCheckTest {
     // ── HealthStatus value object checks ────────────────────────────────────
 
     @Test
-    @DisplayName("HealthStatus.healthy() is healthy and not unhealthy [GH-90000]")
+    @DisplayName("HealthStatus.healthy() is healthy and not unhealthy")
     void healthyStatusIsHealthy() { // GH-90000
         HealthStatus status = HealthStatus.healthy("OK", Duration.ofMillis(10), null); // GH-90000
 
@@ -151,7 +151,7 @@ class DatabaseHealthCheckTest {
     }
 
     @Test
-    @DisplayName("HealthStatus.unhealthy() is unhealthy and not healthy [GH-90000]")
+    @DisplayName("HealthStatus.unhealthy() is unhealthy and not healthy")
     void unhealthyStatusIsUnhealthy() { // GH-90000
         HealthStatus status = HealthStatus.unhealthy("Failed", Duration.ofMillis(5000), null); // GH-90000
 
@@ -161,7 +161,7 @@ class DatabaseHealthCheckTest {
     }
 
     @Test
-    @DisplayName("HealthStatus.unknown() has UNKNOWN state [GH-90000]")
+    @DisplayName("HealthStatus.unknown() has UNKNOWN state")
     void unknownStatusHasUnknownState() { // GH-90000
         HealthStatus status = HealthStatus.unknown("Indeterminate", Duration.ofMillis(100)); // GH-90000
 
@@ -171,12 +171,12 @@ class DatabaseHealthCheckTest {
     }
 
     @Test
-    @DisplayName("HealthStatus preserves message and response time [GH-90000]")
+    @DisplayName("HealthStatus preserves message and response time")
     void healthStatusPreservesFields() { // GH-90000
         Duration responseTime = Duration.ofMillis(42); // GH-90000
         HealthStatus status = HealthStatus.healthy("Database up", responseTime, null); // GH-90000
 
-        assertThat(status.getMessage()).isEqualTo("Database up [GH-90000]");
+        assertThat(status.getMessage()).isEqualTo("Database up");
         assertThat(status.getResponseTime()).isEqualTo(responseTime); // GH-90000
         assertThat(status.getTimestamp()).isNotNull(); // GH-90000
     }

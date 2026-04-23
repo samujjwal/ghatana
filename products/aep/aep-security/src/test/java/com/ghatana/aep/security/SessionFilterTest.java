@@ -34,7 +34,7 @@ import static org.mockito.Mockito.verify;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("SessionFilter [GH-90000]")
+@DisplayName("SessionFilter")
 class SessionFilterTest extends EventloopTestBase {
 
     @Mock
@@ -50,7 +50,7 @@ class SessionFilterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("POST /api/v1/session issues a token and returns it in body and header [GH-90000]")
+    @DisplayName("POST /api/v1/session issues a token and returns it in body and header")
     void postToSessionPath_issuesToken() { // GH-90000
         SessionFilter filter = new SessionFilter(next, Duration.ofHours(1)); // GH-90000
 
@@ -67,7 +67,7 @@ class SessionFilterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("valid session token in X-AEP-Session header delegates to downstream [GH-90000]")
+    @DisplayName("valid session token in X-AEP-Session header delegates to downstream")
     void validSessionToken_delegatesToNext() throws Exception { // GH-90000
         SessionFilter filter = new SessionFilter(next, Duration.ofHours(1)); // GH-90000
 
@@ -78,7 +78,7 @@ class SessionFilterTest extends EventloopTestBase {
         assertThat(token).isNotNull(); // GH-90000
 
         // Then: use that session on a regular request
-        HttpRequest apiRequest = HttpRequest.get("http://localhost/api/v1/agents [GH-90000]")
+        HttpRequest apiRequest = HttpRequest.get("http://localhost/api/v1/agents")
                 .withHeader(HttpHeaders.of(SessionFilter.SESSION_HEADER), token) // GH-90000
                 .build(); // GH-90000
         HttpResponse apiResponse = serve(filter, apiRequest); // GH-90000
@@ -88,11 +88,11 @@ class SessionFilterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("request without session header still delegates to downstream (session is optional) [GH-90000]")
+    @DisplayName("request without session header still delegates to downstream (session is optional)")
     void noSessionHeader_stillDelegates() throws Exception { // GH-90000
         SessionFilter filter = new SessionFilter(next, Duration.ofHours(1)); // GH-90000
 
-        HttpRequest request = HttpRequest.get("http://localhost/api/v1/agents [GH-90000]").build();
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/agents").build();
         HttpResponse response = serve(filter, request); // GH-90000
 
         assertThat(response.getCode()).isEqualTo(200); // GH-90000
@@ -100,7 +100,7 @@ class SessionFilterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("expired session token still delegates (session is optional, not a hard gate) [GH-90000]")
+    @DisplayName("expired session token still delegates (session is optional, not a hard gate)")
     void expiredSessionToken_stillDelegates() throws Exception { // GH-90000
         // Use a negative TTL so the issued token is immediately expired
         SessionFilter filter = new SessionFilter(next, Duration.ofSeconds(-100)); // GH-90000
@@ -112,7 +112,7 @@ class SessionFilterTest extends EventloopTestBase {
         assertThat(expiredToken).isNotNull(); // GH-90000
 
         // Use the expired token — filter should not hard-reject, just delegate without session context
-        HttpRequest apiRequest = HttpRequest.get("http://localhost/api/v1/agents [GH-90000]")
+        HttpRequest apiRequest = HttpRequest.get("http://localhost/api/v1/agents")
                 .withHeader(HttpHeaders.of(SessionFilter.SESSION_HEADER), expiredToken) // GH-90000
                 .build(); // GH-90000
         HttpResponse apiResponse = serve(filter, apiRequest); // GH-90000
@@ -122,11 +122,11 @@ class SessionFilterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("unknown session token is treated as no-session and delegates [GH-90000]")
+    @DisplayName("unknown session token is treated as no-session and delegates")
     void unknownSessionToken_treatedAsNoSession() throws Exception { // GH-90000
         SessionFilter filter = new SessionFilter(next, Duration.ofHours(1)); // GH-90000
 
-        HttpRequest request = HttpRequest.get("http://localhost/api/v1/agents [GH-90000]")
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/agents")
                 .withHeader(HttpHeaders.of(SessionFilter.SESSION_HEADER), "not-a-real-token") // GH-90000
                 .build(); // GH-90000
         HttpResponse response = serve(filter, request); // GH-90000

@@ -13,7 +13,11 @@ import org.slf4j.LoggerFactory;
 
 /**
  * ActiveJ-friendly JPA repository for consumer offset persistence.
- */
+  * @doc.type class
+ * @doc.purpose Provides consumer offset repository functionality.
+ * @doc.layer product
+ * @doc.pattern Repository
+*/
 public class ConsumerOffsetRepository extends AbstractRepository<ConsumerOffsetEntity> {
     private static final Logger logger = LoggerFactory.getLogger(ConsumerOffsetRepository.class);
 

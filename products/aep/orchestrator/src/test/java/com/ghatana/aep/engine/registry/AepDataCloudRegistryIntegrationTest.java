@@ -29,66 +29,66 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("AEP Registry Integration [GH-90000]")
+@DisplayName("AEP Registry Integration")
 class AepDataCloudRegistryIntegrationTest extends EventloopTestBase {
 
     @Test
-    @DisplayName("register + resolve returns typed agent [GH-90000]")
+    @DisplayName("register + resolve returns typed agent")
     void shouldRegisterAndResolve() { // GH-90000
         InMemoryRegistry registry = new InMemoryRegistry(); // GH-90000
         TypedAgent<String, String> agent = new MockAgent(descriptor("agent-001", Set.of("read", "write"))); // GH-90000
 
-        runPromise(() -> registry.register(agent, config("agent-001 [GH-90000]")));
+        runPromise(() -> registry.register(agent, config("agent-001")));
 
-        Optional<TypedAgent<String, String>> resolved = runPromise(() -> registry.resolve("agent-001 [GH-90000]"));
+        Optional<TypedAgent<String, String>> resolved = runPromise(() -> registry.resolve("agent-001"));
         assertTrue(resolved.isPresent()); // GH-90000
         assertEquals("agent-001", resolved.get().descriptor().getAgentId()); // GH-90000
     }
 
     @Test
-    @DisplayName("findByCapability filters registered agents [GH-90000]")
+    @DisplayName("findByCapability filters registered agents")
     void shouldFindByCapability() { // GH-90000
         InMemoryRegistry registry = new InMemoryRegistry(); // GH-90000
 
         runPromise(() -> registry.register( // GH-90000
-                        new MockAgent(descriptor("read-agent", Set.of("read [GH-90000]"))), config("read-agent [GH-90000]"))
+                        new MockAgent(descriptor("read-agent", Set.of("read"))), config("read-agent"))
                 .then(() -> registry.register( // GH-90000
-                        new MockAgent(descriptor("write-agent", Set.of("write [GH-90000]"))), config("write-agent [GH-90000]")))
+                        new MockAgent(descriptor("write-agent", Set.of("write"))), config("write-agent")))
                 .then(() -> registry.register( // GH-90000
-                        new MockAgent(descriptor("both-agent", Set.of("read", "write"))), config("both-agent [GH-90000]"))));
+                        new MockAgent(descriptor("both-agent", Set.of("read", "write"))), config("both-agent"))));
 
-        List<String> readAgents = runPromise(() -> registry.findByCapability("read [GH-90000]"));
+        List<String> readAgents = runPromise(() -> registry.findByCapability("read"));
 
         assertEquals(2, readAgents.size()); // GH-90000
-        assertTrue(readAgents.contains("read-agent [GH-90000]"));
-        assertTrue(readAgents.contains("both-agent [GH-90000]"));
+        assertTrue(readAgents.contains("read-agent"));
+        assertTrue(readAgents.contains("both-agent"));
     }
 
     @Test
-    @DisplayName("resolve + process executes through registry [GH-90000]")
+    @DisplayName("resolve + process executes through registry")
     void shouldExecuteResolvedAgent() { // GH-90000
         InMemoryRegistry registry = new InMemoryRegistry(); // GH-90000
-        TypedAgent<String, String> agent = new MockAgent(descriptor("exec-agent", Set.of("execute [GH-90000]")));
-        runPromise(() -> registry.register(agent, config("exec-agent [GH-90000]")));
+        TypedAgent<String, String> agent = new MockAgent(descriptor("exec-agent", Set.of("execute")));
+        runPromise(() -> registry.register(agent, config("exec-agent")));
 
-        String output = runPromise(() -> registry.<String, String>resolve("exec-agent [GH-90000]")
+        String output = runPromise(() -> registry.<String, String>resolve("exec-agent")
                 .then(opt -> opt.map(typed -> typed.process(AgentContext.empty(), "test-input") // GH-90000
                                 .map(AgentResult::getOutput)) // GH-90000
-                        .orElseGet(() -> Promise.of("not-found [GH-90000]"))));
+                        .orElseGet(() -> Promise.of("not-found"))));
 
         assertEquals("exec-agent processed: test-input", output); // GH-90000
     }
 
     @Test
-    @DisplayName("deregister removes the agent [GH-90000]")
+    @DisplayName("deregister removes the agent")
     void shouldDeregisterAgent() { // GH-90000
         InMemoryRegistry registry = new InMemoryRegistry(); // GH-90000
-        TypedAgent<String, String> agent = new MockAgent(descriptor("dereg-agent", Set.of("read [GH-90000]")));
+        TypedAgent<String, String> agent = new MockAgent(descriptor("dereg-agent", Set.of("read")));
 
         runPromise( // GH-90000
-                () -> registry.register(agent, config("dereg-agent [GH-90000]")).then(() -> registry.deregister("dereg-agent [GH-90000]")));
+                () -> registry.register(agent, config("dereg-agent")).then(() -> registry.deregister("dereg-agent")));
 
-        Optional<TypedAgent<String, String>> resolved = runPromise(() -> registry.resolve("dereg-agent [GH-90000]"));
+        Optional<TypedAgent<String, String>> resolved = runPromise(() -> registry.resolve("dereg-agent"));
         assertFalse(resolved.isPresent()); // GH-90000
     }
 
@@ -96,7 +96,7 @@ class AepDataCloudRegistryIntegrationTest extends EventloopTestBase {
         return AgentDescriptor.builder() // GH-90000
                 .agentId(id) // GH-90000
                 .name("Test " + id) // GH-90000
-                .description("Test descriptor [GH-90000]")
+                .description("Test descriptor")
                 .type(AgentType.DETERMINISTIC) // GH-90000
                 .capabilities(capabilities) // GH-90000
                 .build(); // GH-90000
@@ -135,7 +135,7 @@ class AepDataCloudRegistryIntegrationTest extends EventloopTestBase {
 
         @Override
         public Promise<HealthStatus> healthCheck() { // GH-90000
-            return Promise.of(HealthStatus.healthy("Agent is healthy [GH-90000]"));
+            return Promise.of(HealthStatus.healthy("Agent is healthy"));
         }
 
         @Override
@@ -166,7 +166,7 @@ class AepDataCloudRegistryIntegrationTest extends EventloopTestBase {
 
         @Override
         public <I, O> Promise<Optional<TypedAgent<I, O>>> resolve(String agentId) { // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             TypedAgent<I, O> typedAgent = (TypedAgent<I, O>) agents.get(agentId); // GH-90000
             return Promise.of(Optional.ofNullable(typedAgent)); // GH-90000
         }

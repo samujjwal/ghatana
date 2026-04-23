@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-@DisplayName("AgentOperatorFactory Canonical Types [GH-90000]")
+@DisplayName("AgentOperatorFactory Canonical Types")
 class AgentOperatorFactoryCanonicalTypeTest {
 
     private AgentContext context;

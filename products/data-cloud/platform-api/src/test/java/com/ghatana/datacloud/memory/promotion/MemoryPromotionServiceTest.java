@@ -37,7 +37,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DefaultMemoryPromotionService [GH-90000]")
+@DisplayName("DefaultMemoryPromotionService")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class MemoryPromotionServiceTest extends EventloopTestBase {
 
@@ -45,7 +45,7 @@ class MemoryPromotionServiceTest extends EventloopTestBase {
     private static final String TENANT_ID   = "tenant-promote-test";
     private static final String MEMORY_ID   = "ep-memory-001";
     private static final String NS_ID       = "ns-procedural-001";
-    private static final Instant NOW        = Instant.parse("2026-04-01T10:00:00Z [GH-90000]");
+    private static final Instant NOW        = Instant.parse("2026-04-01T10:00:00Z");
 
     @Mock
     private MemoryService memoryService;
@@ -85,18 +85,18 @@ class MemoryPromotionServiceTest extends EventloopTestBase {
     // ─────────────────── constructor validation ────────────────────────────────
 
     @Nested
-    @DisplayName("constructor [GH-90000]")
+    @DisplayName("constructor")
     class Constructor {
 
         @Test
-        @DisplayName("rejects null memoryService [GH-90000]")
+        @DisplayName("rejects null memoryService")
         void rejectsNullMemoryService() { // GH-90000
             assertThatThrownBy(() -> new DefaultMemoryPromotionService(null, namespaceRepository)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("rejects null namespaceRepository [GH-90000]")
+        @DisplayName("rejects null namespaceRepository")
         void rejectsNullNamespaceRepository() { // GH-90000
             assertThatThrownBy(() -> new DefaultMemoryPromotionService(memoryService, null)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
@@ -106,11 +106,11 @@ class MemoryPromotionServiceTest extends EventloopTestBase {
     // ─────────────────── PromotionRequest record ──────────────────────────────
 
     @Nested
-    @DisplayName("PromotionRequest [GH-90000]")
+    @DisplayName("PromotionRequest")
     class PromotionRequestTests {
 
         @Test
-        @DisplayName("effectiveThreshold returns default when null [GH-90000]")
+        @DisplayName("effectiveThreshold returns default when null")
         void effectiveThresholdDefault() { // GH-90000
             MemoryPromotionService.PromotionRequest req = MemoryPromotionService.PromotionRequest.of( // GH-90000
                     AGENT_ID, TENANT_ID, MEMORY_ID, "content", 0.8);
@@ -119,7 +119,7 @@ class MemoryPromotionServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("effectiveThreshold returns caller-supplied value [GH-90000]")
+        @DisplayName("effectiveThreshold returns caller-supplied value")
         void effectiveThresholdCustom() { // GH-90000
             MemoryPromotionService.PromotionRequest req = new MemoryPromotionService.PromotionRequest( // GH-90000
                     AGENT_ID, TENANT_ID, MEMORY_ID, "content", 0.8, 0.60);
@@ -130,11 +130,11 @@ class MemoryPromotionServiceTest extends EventloopTestBase {
     // ─────────────────── PromotionEvidence record ─────────────────────────────
 
     @Nested
-    @DisplayName("PromotionEvidence [GH-90000]")
+    @DisplayName("PromotionEvidence")
     class PromotionEvidenceTests {
 
         @Test
-        @DisplayName("passing() factory creates passed evidence with no rejection reason [GH-90000]")
+        @DisplayName("passing() factory creates passed evidence with no rejection reason")
         void passingFactory() { // GH-90000
             PromotionEvidence e = PromotionEvidence.passing( // GH-90000
                     "ev-1", TENANT_ID, AGENT_ID, NS_ID, MEMORY_ID, "EVALUATE", 1, NOW);
@@ -144,38 +144,38 @@ class MemoryPromotionServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("rejected() factory creates failed evidence with rejection reason [GH-90000]")
+        @DisplayName("rejected() factory creates failed evidence with rejection reason")
         void rejectedFactory() { // GH-90000
             PromotionEvidence e = PromotionEvidence.rejected( // GH-90000
                     "ev-2", TENANT_ID, AGENT_ID, NS_ID, MEMORY_ID, "ASSESS_QUALITY", 2, "score too low", NOW);
             assertThat(e.passed()).isFalse(); // GH-90000
-            assertThat(e.rejectedReason()).isEqualTo("score too low [GH-90000]");
+            assertThat(e.rejectedReason()).isEqualTo("score too low");
         }
 
         @Test
-        @DisplayName("stepOrdinal below 1 is rejected [GH-90000]")
+        @DisplayName("stepOrdinal below 1 is rejected")
         void stepOrdinalBelowOneRejected() { // GH-90000
             assertThatThrownBy(() -> PromotionEvidence.passing( // GH-90000
                     "ev", TENANT_ID, AGENT_ID, NS_ID, MEMORY_ID, "STEP", 0, NOW))
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("stepOrdinal [GH-90000]");
+                    .hasMessageContaining("stepOrdinal");
         }
 
         @Test
-        @DisplayName("score outside [0,1] is rejected [GH-90000]")
+        @DisplayName("score outside [0,1] is rejected")
         void scoreOutOfRangeRejected() { // GH-90000
             assertThatThrownBy(() -> new PromotionEvidence( // GH-90000
                     "ev", TENANT_ID, AGENT_ID, NS_ID, MEMORY_ID, null, "STEP",
                     1, 1.5, true, null, null, null, NOW, Map.of())) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("score [GH-90000]");
+                    .hasMessageContaining("score");
         }
     }
 
     // ─────────────────── Full success path ────────────────────────────────────
 
     @Nested
-    @DisplayName("successful promotion (7 steps) [GH-90000]")
+    @DisplayName("successful promotion (7 steps)")
     class SuccessPath {
 
         @BeforeEach
@@ -186,11 +186,11 @@ class MemoryPromotionServiceTest extends EventloopTestBase {
             lenient().when(memoryService.store(eq(AGENT_ID), eq(MemoryService.MemoryTier.EPISODIC), any())) // GH-90000
                     .thenReturn(Promise.of(episodicMarkerEntry())); // GH-90000
             lenient().when(memoryService.store(eq(AGENT_ID), eq(MemoryService.MemoryTier.PROCEDURAL), any())) // GH-90000
-                    .thenReturn(Promise.of(storedEntry("target-id-001 [GH-90000]")));
+                    .thenReturn(Promise.of(storedEntry("target-id-001")));
         }
 
         @Test
-        @DisplayName("returns succeeded=true result [GH-90000]")
+        @DisplayName("returns succeeded=true result")
         void returnsSucceededTrue() { // GH-90000
             MemoryPromotionService.PromotionResult result =
                     runPromise(() -> service.promote(promotionRequest(0.90))); // GH-90000
@@ -198,15 +198,15 @@ class MemoryPromotionServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("returns targetMemoryId from procedural write [GH-90000]")
+        @DisplayName("returns targetMemoryId from procedural write")
         void returnsTargetMemoryId() { // GH-90000
             MemoryPromotionService.PromotionResult result =
                     runPromise(() -> service.promote(promotionRequest(0.90))); // GH-90000
-            assertThat(result.targetMemoryId()).isEqualTo("target-id-001 [GH-90000]");
+            assertThat(result.targetMemoryId()).isEqualTo("target-id-001");
         }
 
         @Test
-        @DisplayName("produces 7 evidence records (one per step) [GH-90000]")
+        @DisplayName("produces 7 evidence records (one per step)")
         void produces7EvidenceRecords() { // GH-90000
             MemoryPromotionService.PromotionResult result =
                     runPromise(() -> service.promote(promotionRequest(0.90))); // GH-90000
@@ -214,7 +214,7 @@ class MemoryPromotionServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("all 7 evidence records are marked passed [GH-90000]")
+        @DisplayName("all 7 evidence records are marked passed")
         void allEvidenceRecordsPassed() { // GH-90000
             MemoryPromotionService.PromotionResult result =
                     runPromise(() -> service.promote(promotionRequest(0.90))); // GH-90000
@@ -222,7 +222,7 @@ class MemoryPromotionServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("evidence records have sequential step ordinals 1–7 [GH-90000]")
+        @DisplayName("evidence records have sequential step ordinals 1–7")
         void evidenceOrdinalsAreSequential() { // GH-90000
             MemoryPromotionService.PromotionResult result =
                     runPromise(() -> service.promote(promotionRequest(0.90))); // GH-90000
@@ -233,22 +233,22 @@ class MemoryPromotionServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("procedural write is called with PROMOTED content prefix [GH-90000]")
+        @DisplayName("procedural write is called with PROMOTED content prefix")
         void proceduralWriteHasPromotedPrefix() { // GH-90000
             runPromise(() -> service.promote(promotionRequest(0.90))); // GH-90000
             verify(memoryService).store(eq(AGENT_ID), eq(MemoryService.MemoryTier.PROCEDURAL), // GH-90000
-                    argThat(e -> e.content().startsWith("[PROMOTED] [GH-90000]")));
+                    argThat(e -> e.content().startsWith("[PROMOTED]")));
         }
     }
 
     // ─────────────────── Gate failure: ASSESS_QUALITY ─────────────────────────
 
     @Nested
-    @DisplayName("gate failure at ASSESS_QUALITY step [GH-90000]")
+    @DisplayName("gate failure at ASSESS_QUALITY step")
     class QualityGateFailure {
 
         @Test
-        @DisplayName("returns succeeded=false when score below threshold [GH-90000]")
+        @DisplayName("returns succeeded=false when score below threshold")
         void returnsFalseWhenScoreBelowThreshold() { // GH-90000
             // importance 0.10 is below default threshold 0.75
             MemoryPromotionService.PromotionResult result =
@@ -257,7 +257,7 @@ class MemoryPromotionServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("rejectedAtStep is ASSESS_QUALITY [GH-90000]")
+        @DisplayName("rejectedAtStep is ASSESS_QUALITY")
         void rejectedAtAssessQualityStep() { // GH-90000
             MemoryPromotionService.PromotionResult result =
                     runPromise(() -> service.promote(promotionRequest(0.10))); // GH-90000
@@ -265,14 +265,14 @@ class MemoryPromotionServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("no namespace lookup when quality gate fails [GH-90000]")
+        @DisplayName("no namespace lookup when quality gate fails")
         void noNamespaceLookupWhenQualityFails() { // GH-90000
             runPromise(() -> service.promote(promotionRequest(0.10))); // GH-90000
             verifyNoInteractions(namespaceRepository); // GH-90000
         }
 
         @Test
-        @DisplayName("no memory writes when quality gate fails [GH-90000]")
+        @DisplayName("no memory writes when quality gate fails")
         void noMemoryWritesWhenQualityFails() { // GH-90000
             runPromise(() -> service.promote(promotionRequest(0.10))); // GH-90000
             verifyNoInteractions(memoryService); // GH-90000
@@ -282,7 +282,7 @@ class MemoryPromotionServiceTest extends EventloopTestBase {
     // ─────────────────── Gate failure: CHECK_NAMESPACE ────────────────────────
 
     @Nested
-    @DisplayName("gate failure at CHECK_NAMESPACE step [GH-90000]")
+    @DisplayName("gate failure at CHECK_NAMESPACE step")
     class NamespaceGateFailure {
 
         @BeforeEach
@@ -292,7 +292,7 @@ class MemoryPromotionServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("returns succeeded=false when no namespace found [GH-90000]")
+        @DisplayName("returns succeeded=false when no namespace found")
         void returnsFalseWhenNoNamespace() { // GH-90000
             MemoryPromotionService.PromotionResult result =
                     runPromise(() -> service.promote(promotionRequest(0.90))); // GH-90000
@@ -300,7 +300,7 @@ class MemoryPromotionServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("rejectedAtStep is CHECK_NAMESPACE [GH-90000]")
+        @DisplayName("rejectedAtStep is CHECK_NAMESPACE")
         void rejectedAtNamespaceStep() { // GH-90000
             MemoryPromotionService.PromotionResult result =
                     runPromise(() -> service.promote(promotionRequest(0.90))); // GH-90000
@@ -308,7 +308,7 @@ class MemoryPromotionServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("no memory writes when namespace check fails [GH-90000]")
+        @DisplayName("no memory writes when namespace check fails")
         void noMemoryWritesWhenNamespaceFails() { // GH-90000
             runPromise(() -> service.promote(promotionRequest(0.90))); // GH-90000
             verifyNoInteractions(memoryService); // GH-90000
@@ -318,11 +318,11 @@ class MemoryPromotionServiceTest extends EventloopTestBase {
     // ─────────────────── promote() null guard ───────────────────────────────── // GH-90000
 
     @Nested
-    @DisplayName("null guard [GH-90000]")
+    @DisplayName("null guard")
     class NullGuard {
 
         @Test
-        @DisplayName("null request throws NullPointerException [GH-90000]")
+        @DisplayName("null request throws NullPointerException")
         void nullRequestThrows() { // GH-90000
             assertThatThrownBy(() -> runPromise(() -> service.promote(null))) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000

@@ -11,7 +11,11 @@ import java.util.Objects;
 /**
  * Represents the result of a windowed query, containing the events within a specific window
  * and any computed aggregations.
- */
+  * @doc.type class
+ * @doc.purpose Provides windowed result functionality.
+ * @doc.layer product
+ * @doc.pattern ValueObject
+*/
 public class WindowedResult {
     private final Instant windowStart;
     private final Instant windowEnd;

@@ -8,11 +8,11 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("BatchResult [GH-90000]")
+@DisplayName("BatchResult")
 class BatchResultTest {
 
     @Test
-    @DisplayName("success result is fully successful and immutable [GH-90000]")
+    @DisplayName("success result is fully successful and immutable")
     void successResultIsFullySuccessfulAndImmutable() { // GH-90000
         BatchResult<String> result = BatchResult.success(3); // GH-90000
 
@@ -25,7 +25,7 @@ class BatchResultTest {
     }
 
     @Test
-    @DisplayName("failure result preserves typed item identifiers [GH-90000]")
+    @DisplayName("failure result preserves typed item identifiers")
     void failureResultPreservesTypedItemIdentifiers() { // GH-90000
         UUID failedId = UUID.randomUUID(); // GH-90000
         BatchError<UUID> error = new BatchError<>(1, failedId, "INSERT_ERROR", "duplicate key"); // GH-90000
@@ -40,7 +40,7 @@ class BatchResultTest {
     }
 
     @Test
-    @DisplayName("partial result reports partial success [GH-90000]")
+    @DisplayName("partial result reports partial success")
     void partialResultReportsPartialSuccess() { // GH-90000
         BatchResult<String> result = new BatchResult<>(3, 2, 1, // GH-90000
             List.of(new BatchError<>(0, "entity-1", "UPDATE_ERROR", "validation failed"))); // GH-90000

@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("HotReloadPluginManager Classloader Release [GH-90000]")
+@DisplayName("HotReloadPluginManager Classloader Release")
 class HotReloadPluginManagerClassLoaderReleaseTest {
 
     @Test

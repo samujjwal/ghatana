@@ -42,10 +42,10 @@ public class FormatterTest {
 
         // For now, just verify the test files contain the expected content
         assertTrue( // GH-90000
-                expectedContent.contains("export function calculateTotal [GH-90000]"),
+                expectedContent.contains("export function calculateTotal"),
                 "Expected content not found in: " + expectedPath);
 
-        logger.info("Test files are accessible. Formatting test is a placeholder. [GH-90000]");
+        logger.info("Test files are accessible. Formatting test is a placeholder.");
     }
 
     /** Helper method to get the path to a test resource file. */
@@ -70,7 +70,7 @@ public class FormatterTest {
     }
 
     // This would be implemented to actually format the code in a real implementation
-    @SuppressWarnings("unused [GH-90000]")
+    @SuppressWarnings("unused")
     private String formatCode(String source) { // GH-90000
         // Note: Actual formatting logic using Prettier or similar not yet implemented
         return source;

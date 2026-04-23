@@ -94,6 +94,7 @@ export const DecisionForm: React.FC<DecisionFormProps> = ({ data, onChange, read
                 onChange={(e) => handleUpdateCondition(condition.id, 'label', e.target.value)}
                 disabled={readOnly}
                 placeholder="Condition label"
+                aria-label="Condition label"
                 className="w-full px-2 py-1 border border-gray-300 rounded text-sm mb-2 disabled:bg-gray-100"
               />
               <textarea
@@ -101,6 +102,7 @@ export const DecisionForm: React.FC<DecisionFormProps> = ({ data, onChange, read
                 onChange={(e) => handleUpdateCondition(condition.id, 'expression', e.target.value)}
                 disabled={readOnly}
                 placeholder="Expression (e.g., status == 'approved')"
+                aria-label="Condition expression"
                 className="w-full px-2 py-1 border border-gray-300 rounded text-sm disabled:bg-gray-100"
                 rows={2}
               />

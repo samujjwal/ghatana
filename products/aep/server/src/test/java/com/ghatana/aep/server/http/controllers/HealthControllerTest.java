@@ -28,7 +28,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("HealthController [GH-90000]")
+@DisplayName("HealthController")
 class HealthControllerTest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper(); // GH-90000
@@ -37,7 +37,7 @@ class HealthControllerTest {
 
     @BeforeEach
     void setUp() { // GH-90000
-        controller = new HealthController("1.0.0-test [GH-90000]");
+        controller = new HealthController("1.0.0-test");
     }
 
     private Map<String, Object> getHealth() throws Exception { // GH-90000
@@ -59,109 +59,109 @@ class HealthControllerTest {
     }
 
     @Nested
-    @DisplayName("handleHealth with no checks [GH-90000]")
+    @DisplayName("handleHealth with no checks")
     class NoChecks {
 
         @Test
-        @DisplayName("returns 'healthy' with version when no checks registered [GH-90000]")
+        @DisplayName("returns 'healthy' with version when no checks registered")
         void returnsHealthyWithVersion() throws Exception { // GH-90000
             Map<String, Object> body = getHealth(); // GH-90000
-            assertThat(body.get("status [GH-90000]")).isEqualTo("healthy [GH-90000]");
-            assertThat(body.get("version [GH-90000]")).isEqualTo("1.0.0-test [GH-90000]");
-            assertThat(body).containsKey("timestamp [GH-90000]");
-            assertThat(body).doesNotContainKey("components [GH-90000]");
+            assertThat(body.get("status")).isEqualTo("healthy");
+            assertThat(body.get("version")).isEqualTo("1.0.0-test");
+            assertThat(body).containsKey("timestamp");
+            assertThat(body).doesNotContainKey("components");
         }
     }
 
     @Nested
-    @DisplayName("handleHealth with dependency checks [GH-90000]")
+    @DisplayName("handleHealth with dependency checks")
     class WithChecks {
 
         @Test
-        @DisplayName("reports 'healthy' when all checks return 'ok' [GH-90000]")
+        @DisplayName("reports 'healthy' when all checks return 'ok'")
         void reportsHealthyWhenAllOk() throws Exception { // GH-90000
             controller.addDependencyCheck("data-cloud", () -> "ok"); // GH-90000
             controller.addDependencyCheck("review-queue", () -> "ok"); // GH-90000
 
             Map<String, Object> body = getHealth(); // GH-90000
-            assertThat(body.get("status [GH-90000]")).isEqualTo("healthy [GH-90000]");
-            @SuppressWarnings("unchecked [GH-90000]")
-            Map<String, Object> components = (Map<String, Object>) body.get("components [GH-90000]");
+            assertThat(body.get("status")).isEqualTo("healthy");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> components = (Map<String, Object>) body.get("components");
             assertThat(components).containsEntry("data-cloud", "ok"); // GH-90000
             assertThat(components).containsEntry("review-queue", "ok"); // GH-90000
         }
 
         @Test
-        @DisplayName("reports 'degraded' when one check returns non-ok status [GH-90000]")
+        @DisplayName("reports 'degraded' when one check returns non-ok status")
         void reportsDegradedWhenOneNotOk() throws Exception { // GH-90000
             controller.addDependencyCheck("data-cloud", () -> "disabled"); // GH-90000
             controller.addDependencyCheck("review-queue", () -> "ok"); // GH-90000
 
             Map<String, Object> body = getHealth(); // GH-90000
-            assertThat(body.get("status [GH-90000]")).isEqualTo("degraded [GH-90000]");
-            @SuppressWarnings("unchecked [GH-90000]")
-            Map<String, Object> components = (Map<String, Object>) body.get("components [GH-90000]");
+            assertThat(body.get("status")).isEqualTo("degraded");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> components = (Map<String, Object>) body.get("components");
             assertThat(components).containsEntry("data-cloud", "disabled"); // GH-90000
         }
 
         @Test
-        @DisplayName("reports 'degraded' and captures error message when check throws [GH-90000]")
+        @DisplayName("reports 'degraded' and captures error message when check throws")
         void capturesErrorFromThrowingCheck() throws Exception { // GH-90000
             controller.addDependencyCheck("bad-dep", () -> { // GH-90000
-                throw new RuntimeException("connection refused [GH-90000]");
+                throw new RuntimeException("connection refused");
             });
 
             Map<String, Object> body = getHealth(); // GH-90000
-            assertThat(body.get("status [GH-90000]")).isEqualTo("degraded [GH-90000]");
-            @SuppressWarnings("unchecked [GH-90000]")
-            Map<String, Object> components = (Map<String, Object>) body.get("components [GH-90000]");
-            assertThat(components.get("bad-dep [GH-90000]").toString()).contains("connection refused [GH-90000]");
+            assertThat(body.get("status")).isEqualTo("degraded");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> components = (Map<String, Object>) body.get("components");
+            assertThat(components.get("bad-dep").toString()).contains("connection refused");
         }
 
         @Test
-        @DisplayName("multiple checks all ok → healthy [GH-90000]")
+        @DisplayName("multiple checks all ok → healthy")
         void multipleChecksAllOkIsHealthy() throws Exception { // GH-90000
             controller.addDependencyCheck("dep-a", () -> "ok"); // GH-90000
             controller.addDependencyCheck("dep-b", () -> "ok"); // GH-90000
             controller.addDependencyCheck("dep-c", () -> "ok"); // GH-90000
 
-            assertThat(getHealth().get("status [GH-90000]")).isEqualTo("healthy [GH-90000]");
+            assertThat(getHealth().get("status")).isEqualTo("healthy");
         }
 
         @Test
-        @DisplayName("deep probe includes deep-only checks and probe marker [GH-90000]")
+        @DisplayName("deep probe includes deep-only checks and probe marker")
         void deepProbeIncludesDeepChecks() throws Exception { // GH-90000
             controller.addDependencyCheck("dep-a", () -> "ok"); // GH-90000
             controller.addDeepDependencyCheck("dep-deep", () -> "misconfigured"); // GH-90000
 
             Map<String, Object> parsed = getDeepHealth(); // GH-90000
 
-            assertThat(parsed.get("status [GH-90000]")).isEqualTo("degraded [GH-90000]");
-            assertThat(parsed.get("probe [GH-90000]")).isEqualTo("deep [GH-90000]");
-            @SuppressWarnings("unchecked [GH-90000]")
-            Map<String, Object> components = (Map<String, Object>) parsed.get("components [GH-90000]");
+            assertThat(parsed.get("status")).isEqualTo("degraded");
+            assertThat(parsed.get("probe")).isEqualTo("deep");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> components = (Map<String, Object>) parsed.get("components");
             assertThat(components).containsEntry("dep-a", "ok"); // GH-90000
             assertThat(components).containsEntry("dep-deep", "misconfigured"); // GH-90000
         }
 
         @Test
-        @DisplayName("deep probe includes async dependency checks [GH-90000]")
+        @DisplayName("deep probe includes async dependency checks")
         void deepProbeIncludesAsyncChecks() throws Exception { // GH-90000
             controller.addDependencyCheck("dep-a", () -> "ok"); // GH-90000
-            controller.addAsyncDeepDependencyCheck("dep-connectivity", () -> Promise.of("ok [GH-90000]"));
+            controller.addAsyncDeepDependencyCheck("dep-connectivity", () -> Promise.of("ok"));
 
             Map<String, Object> parsed = getDeepHealth(); // GH-90000
 
-            assertThat(parsed.get("status [GH-90000]")).isEqualTo("healthy [GH-90000]");
-            assertThat(parsed.get("probe [GH-90000]")).isEqualTo("deep [GH-90000]");
-            @SuppressWarnings("unchecked [GH-90000]")
-            Map<String, Object> components = (Map<String, Object>) parsed.get("components [GH-90000]");
+            assertThat(parsed.get("status")).isEqualTo("healthy");
+            assertThat(parsed.get("probe")).isEqualTo("deep");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> components = (Map<String, Object>) parsed.get("components");
             assertThat(components).containsEntry("dep-a", "ok"); // GH-90000
             assertThat(components).containsEntry("dep-connectivity", "ok"); // GH-90000
         }
 
         @Test
-        @DisplayName("deep probe includes structured runtime metadata when supplied [GH-90000]")
+        @DisplayName("deep probe includes structured runtime metadata when supplied")
         void deepProbeIncludesStructuredRuntimeMetadata() throws Exception { // GH-90000
             controller.addDependencyCheck("dep-a", () -> "ok"); // GH-90000
             controller.setDeepResponseMetadataSupplier(() -> Map.of( // GH-90000
@@ -174,19 +174,19 @@ class HealthControllerTest {
 
             Map<String, Object> parsed = getDeepHealth(); // GH-90000
 
-            @SuppressWarnings("unchecked [GH-90000]")
-            Map<String, Object> durability = (Map<String, Object>) parsed.get("durability [GH-90000]");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> durability = (Map<String, Object>) parsed.get("durability");
             assertThat(durability).containsEntry("mode", "ephemeral"); // GH-90000
             assertThat(durability).containsEntry("title", "Ephemeral runtime state"); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("markReady / markNotReady [GH-90000]")
+    @DisplayName("markReady / markNotReady")
     class Readiness {
 
         @Test
-        @DisplayName("handleReady returns not-ready before markReady [GH-90000]")
+        @DisplayName("handleReady returns not-ready before markReady")
         void returnsNotReadyInitially() throws Exception { // GH-90000
             HttpRequest request = mock(HttpRequest.class); // GH-90000
             when(request.getMethod()).thenReturn(HttpMethod.GET); // GH-90000
@@ -195,11 +195,11 @@ class HealthControllerTest {
             String body = response.getBody().getString(java.nio.charset.StandardCharsets.UTF_8); // GH-90000
             Map<String, Object> parsed = MAPPER.readValue(body, // GH-90000
                 new com.fasterxml.jackson.core.type.TypeReference<>() {}); // GH-90000
-            assertThat(parsed.get("ready [GH-90000]")).isEqualTo(false);
+            assertThat(parsed.get("ready")).isEqualTo(false);
         }
 
         @Test
-        @DisplayName("handleReady returns ready after markReady [GH-90000]")
+        @DisplayName("handleReady returns ready after markReady")
         void returnsReadyAfterMark() throws Exception { // GH-90000
             controller.markReady(); // GH-90000
             HttpRequest request = mock(HttpRequest.class); // GH-90000
@@ -209,7 +209,7 @@ class HealthControllerTest {
             String body = response.getBody().getString(java.nio.charset.StandardCharsets.UTF_8); // GH-90000
             Map<String, Object> parsed = MAPPER.readValue(body, // GH-90000
                 new com.fasterxml.jackson.core.type.TypeReference<>() {}); // GH-90000
-            assertThat(parsed.get("ready [GH-90000]")).isEqualTo(true);
+            assertThat(parsed.get("ready")).isEqualTo(true);
         }
     }
 }

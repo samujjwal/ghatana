@@ -111,7 +111,7 @@ class PostgresJsonbConnectorTest extends EventloopTestBase {
 
         resolve(connector.create(input)); // GH-90000
 
-        verify(auditLogger).logDataModification(eq(TENANT), eq("CREATE [GH-90000]"), eq(COLLECTION), any(), eq(true));
+        verify(auditLogger).logDataModification(eq(TENANT), eq("CREATE"), eq(COLLECTION), any(), eq(true));
     }
 
     // ── read ─────────────────────────────────────────────────────────────────
@@ -207,7 +207,7 @@ class PostgresJsonbConnectorTest extends EventloopTestBase {
 
     @Test
     void getMetadata_returnsRelationalBackendType() { // GH-90000
-        assertThat(connector.getMetadata().backendType().name()).isEqualTo("RELATIONAL [GH-90000]");
+        assertThat(connector.getMetadata().backendType().name()).isEqualTo("RELATIONAL");
     }
 
     @Test

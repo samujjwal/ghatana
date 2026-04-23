@@ -36,18 +36,18 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@Tag("integration [GH-90000]")
+@Tag("integration")
 @Testcontainers(disabledWithoutDocker = true) // GH-90000
-@DisplayName("Durable Workflow Execution – Real Provider Integration Tests [GH-90000]")
+@DisplayName("Durable Workflow Execution – Real Provider Integration Tests")
 class DurableWorkflowIntegrationTest extends EventloopTestBase {
 
     @Container
-    @SuppressWarnings("resource [GH-90000]")
+    @SuppressWarnings("resource")
     private static final PostgreSQLContainer<?> POSTGRES =
-        new PostgreSQLContainer<>("postgres:15-alpine [GH-90000]")
-            .withDatabaseName("datacloud_integration [GH-90000]")
-            .withUsername("testuser [GH-90000]")
-            .withPassword("testpass [GH-90000]");
+        new PostgreSQLContainer<>("postgres:15-alpine")
+            .withDatabaseName("datacloud_integration")
+            .withUsername("testuser")
+            .withPassword("testpass");
 
     private Connection connection;
 
@@ -122,7 +122,7 @@ class DurableWorkflowIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[DW-001]: workflow execution persists to real database [GH-90000]")
+    @DisplayName("[DW-001]: workflow execution persists to real database")
     void workflowExecutionPersistsToRealDatabase() throws SQLException { // GH-90000
         // Arrange
         String tenantId = "tenant-dw-001";
@@ -175,7 +175,7 @@ class DurableWorkflowIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[DW-002]: workflow recovery after connection failure [GH-90000]")
+    @DisplayName("[DW-002]: workflow recovery after connection failure")
     void workflowRecoveryAfterConnectionFailure() throws SQLException { // GH-90000
         // Arrange
         String tenantId = "tenant-dw-002";
@@ -229,7 +229,7 @@ class DurableWorkflowIntegrationTest extends EventloopTestBase {
             stmt.setString(1, executionId); // GH-90000
             ResultSet rs = stmt.executeQuery(); // GH-90000
             assertThat(rs.next()).isTrue(); // GH-90000
-            assertThat(rs.getString("status [GH-90000]")).isEqualTo("running [GH-90000]");
+            assertThat(rs.getString("status")).isEqualTo("running");
         }
 
         // Simulate recovery by updating status
@@ -244,7 +244,7 @@ class DurableWorkflowIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[DW-003]: tenant isolation at database level [GH-90000]")
+    @DisplayName("[DW-003]: tenant isolation at database level")
     void tenantIsolationAtDatabaseLevel() throws SQLException { // GH-90000
         // Arrange
         String tenantA = "tenant-dw-003-a";
@@ -320,7 +320,7 @@ class DurableWorkflowIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[DW-004]: transaction rollback on workflow failure [GH-90000]")
+    @DisplayName("[DW-004]: transaction rollback on workflow failure")
     void transactionRollbackOnWorkflowFailure() throws SQLException { // GH-90000
         // Arrange
         String tenantId = "tenant-dw-004";
@@ -380,7 +380,7 @@ class DurableWorkflowIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[DW-005]: concurrent multi-tenant operations with real database [GH-90000]")
+    @DisplayName("[DW-005]: concurrent multi-tenant operations with real database")
     void concurrentMultiTenantOperationsWithRealDatabase() throws Exception { // GH-90000
         // Arrange
         int tenantCount = 5;

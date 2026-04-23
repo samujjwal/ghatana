@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("RequirementService Tests [GH-90000]")
+@DisplayName("RequirementService Tests")
 class RequirementServiceTest extends EventloopTestBase {
 
   @Mock private RequirementEmbeddingService embeddingService;
@@ -63,7 +63,7 @@ class RequirementServiceTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("createRequirement returns enrichment, quality score, and duplicate warnings [GH-90000]")
+  @DisplayName("createRequirement returns enrichment, quality score, and duplicate warnings")
   void createRequirementReturnsEnrichmentQualityAndDuplicates() { // GH-90000
     UUID projectId = UUID.randomUUID(); // GH-90000
     when(embeddingService.findSimilarRequirements(anyString(), anyString(), anyInt(), anyFloat())) // GH-90000
@@ -95,7 +95,7 @@ class RequirementServiceTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("updateRequirement re-runs enrichment and quality evaluation [GH-90000]")
+  @DisplayName("updateRequirement re-runs enrichment and quality evaluation")
   void updateRequirementRerunsEnrichment() { // GH-90000
     UUID projectId = UUID.randomUUID(); // GH-90000
 
@@ -110,7 +110,7 @@ class RequirementServiceTest extends EventloopTestBase {
             "tester"));
 
     assertThat(updated.requirement().getDescription()) // GH-90000
-        .isEqualTo("User must log in with MFA when accessing billing settings. [GH-90000]");
+        .isEqualTo("User must log in with MFA when accessing billing settings.");
     assertThat(updated.qualityResult().getOverallScore()) // GH-90000
         .isGreaterThan(created.qualityResult().getOverallScore()); // GH-90000
 
@@ -120,7 +120,7 @@ class RequirementServiceTest extends EventloopTestBase {
   }
 
     @Test
-    @DisplayName("createRequirement triggers traceability linking when tenant context is available [GH-90000]")
+    @DisplayName("createRequirement triggers traceability linking when tenant context is available")
     void createRequirementTriggersTraceabilityLinking() { // GH-90000
         UUID projectId = UUID.randomUUID(); // GH-90000
 

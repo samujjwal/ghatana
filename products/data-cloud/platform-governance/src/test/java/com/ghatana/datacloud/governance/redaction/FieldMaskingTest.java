@@ -24,8 +24,8 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("FieldMaskingTest [GH-90000]")
-@Tag("governance [GH-90000]")
+@DisplayName("FieldMaskingTest")
+@Tag("governance")
 class FieldMaskingTest {
 
     private FieldMasker masker;
@@ -43,48 +43,48 @@ class FieldMaskingTest {
     // ── Full masking ──────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("SSN is fully masked [GH-90000]")
+    @DisplayName("SSN is fully masked")
     void ssnIsFullyMasked() { // GH-90000
         String masked = masker.mask("ssn", "123-45-6789"); // GH-90000
-        assertThat(masked).doesNotContain("123 [GH-90000]");
+        assertThat(masked).doesNotContain("123");
         assertThat(masked).isNotBlank(); // GH-90000
     }
 
     @Test
-    @DisplayName("password is redacted with placeholder [GH-90000]")
+    @DisplayName("password is redacted with placeholder")
     void passwordIsRedacted() { // GH-90000
         String masked = masker.mask("password", "SuperSecret1!"); // GH-90000
-        assertThat(masked).isEqualTo("[REDACTED] [GH-90000]");
-        assertThat(masked).doesNotContain("Secret [GH-90000]");
+        assertThat(masked).isEqualTo("[REDACTED]");
+        assertThat(masked).doesNotContain("Secret");
     }
 
     // ── Partial masking ───────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("email is partially masked but domain is preserved [GH-90000]")
+    @DisplayName("email is partially masked but domain is preserved")
     void emailIsPartiallyMasked() { // GH-90000
         String masked = masker.mask("email", "user@example.com"); // GH-90000
-        assertThat(masked).contains("@example.com [GH-90000]");
-        assertThat(masked).doesNotStartWith("user [GH-90000]");
+        assertThat(masked).contains("@example.com");
+        assertThat(masked).doesNotStartWith("user");
     }
 
     @Test
-    @DisplayName("credit card shows only last 4 digits [GH-90000]")
+    @DisplayName("credit card shows only last 4 digits")
     void creditCardShowsLastFourDigits() { // GH-90000
         String masked = masker.mask("creditCard", "1234 5678 9012 3456"); // GH-90000
-        assertThat(masked).endsWith("3456 [GH-90000]");
-        assertThat(masked).doesNotContain("1234 [GH-90000]");
-        assertThat(masked).doesNotContain("5678 [GH-90000]");
-        assertThat(masked).doesNotContain("9012 [GH-90000]");
+        assertThat(masked).endsWith("3456");
+        assertThat(masked).doesNotContain("1234");
+        assertThat(masked).doesNotContain("5678");
+        assertThat(masked).doesNotContain("9012");
     }
 
     // ── Unregistered fields ───────────────────────────────────────────────────
 
     @Test
-    @DisplayName("unregistered field is returned as-is by default [GH-90000]")
+    @DisplayName("unregistered field is returned as-is by default")
     void unregisteredFieldReturnedAsIs() { // GH-90000
         String masked = masker.mask("username", "john_doe"); // GH-90000
-        assertThat(masked).isEqualTo("john_doe [GH-90000]");
+        assertThat(masked).isEqualTo("john_doe");
     }
 
     // ── Parameterized ─────────────────────────────────────────────────────────
@@ -94,7 +94,7 @@ class FieldMaskingTest {
         "email,  a@b.com,            @b.com",
         "password, secret,           [REDACTED]"
     })
-    @DisplayName("masking rules produce expected patterns [GH-90000]")
+    @DisplayName("masking rules produce expected patterns")
     void maskingRules(String field, String input, String expectedFragment) { // GH-90000
         String masked = masker.mask(field, input.trim()); // GH-90000
         assertThat(masked).contains(expectedFragment.trim()); // GH-90000
@@ -103,14 +103,14 @@ class FieldMaskingTest {
     // ── Null and edge cases ───────────────────────────────────────────────────
 
     @Test
-    @DisplayName("masking null value returns a safe placeholder [GH-90000]")
+    @DisplayName("masking null value returns a safe placeholder")
     void nullValueReturnsSafePlaceholder() { // GH-90000
         String masked = masker.mask("email", null); // GH-90000
         assertThat(masked).isNotNull().isNotEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("masking empty string returns safe placeholder [GH-90000]")
+    @DisplayName("masking empty string returns safe placeholder")
     void emptyStringReturnsSafePlaceholder() { // GH-90000
         String masked = masker.mask("email", ""); // GH-90000
         assertThat(masked).isNotNull(); // GH-90000
@@ -119,7 +119,7 @@ class FieldMaskingTest {
     // ── Batch masking (record-level) ────────────────────────────────────────── // GH-90000
 
     @Test
-    @DisplayName("maskRecord masks all registered fields in a map [GH-90000]")
+    @DisplayName("maskRecord masks all registered fields in a map")
     void maskRecordMasksAllRegisteredFields() { // GH-90000
         Map<String, String> record = new LinkedHashMap<>(); // GH-90000
         record.put("email", "person@example.com"); // GH-90000
@@ -128,14 +128,14 @@ class FieldMaskingTest {
 
         Map<String, String> masked = masker.maskRecord(record); // GH-90000
 
-        assertThat(masked.get("email [GH-90000]")).doesNotStartWith("person [GH-90000]");
-        assertThat(masked.get("email [GH-90000]")).contains("@example.com [GH-90000]");
-        assertThat(masked.get("password [GH-90000]")).isEqualTo("[REDACTED] [GH-90000]");
-        assertThat(masked.get("username [GH-90000]")).isEqualTo("jdoe [GH-90000]");    // pass-through
+        assertThat(masked.get("email")).doesNotStartWith("person");
+        assertThat(masked.get("email")).contains("@example.com");
+        assertThat(masked.get("password")).isEqualTo("[REDACTED]");
+        assertThat(masked.get("username")).isEqualTo("jdoe");    // pass-through
     }
 
     @Test
-    @DisplayName("maskRecord on empty map returns empty map [GH-90000]")
+    @DisplayName("maskRecord on empty map returns empty map")
     void maskRecordEmptyMapReturnsEmpty() { // GH-90000
         assertThat(masker.maskRecord(Map.of())).isEmpty(); // GH-90000
     }

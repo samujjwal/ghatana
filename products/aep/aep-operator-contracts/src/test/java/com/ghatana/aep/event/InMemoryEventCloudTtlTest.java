@@ -15,13 +15,13 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("InMemoryEventCloud TTL enforcement [GH-90000]")
+@DisplayName("InMemoryEventCloud TTL enforcement")
 class InMemoryEventCloudTtlTest {
 
     private static final String TENANT = "tenant-1";
 
     @Test
-    @DisplayName("events survive when TTL has not elapsed [GH-90000]")
+    @DisplayName("events survive when TTL has not elapsed")
     void shouldRetainEventsWithinTtl() { // GH-90000
         InMemoryEventCloud cloud = new InMemoryEventCloud(Duration.ofHours(1)); // GH-90000
 
@@ -32,7 +32,7 @@ class InMemoryEventCloudTtlTest {
     }
 
     @Test
-    @DisplayName("purgeExpired() with zero TTL removes nothing [GH-90000]")
+    @DisplayName("purgeExpired() with zero TTL removes nothing")
     void zeroTtlShouldRemoveNothing() { // GH-90000
         InMemoryEventCloud cloud = new InMemoryEventCloud(Duration.ZERO); // GH-90000
 
@@ -44,7 +44,7 @@ class InMemoryEventCloudTtlTest {
     }
 
     @Test
-    @DisplayName("purgeExpired() removes events older than TTL [GH-90000]")
+    @DisplayName("purgeExpired() removes events older than TTL")
     void shouldEvictExpiredEvents() throws InterruptedException { // GH-90000
         // Use a very short TTL so we can test eviction without waiting long
         InMemoryEventCloud cloud = new InMemoryEventCloud(Duration.ofMillis(50)); // GH-90000
@@ -61,7 +61,7 @@ class InMemoryEventCloudTtlTest {
     }
 
     @Test
-    @DisplayName("append() triggers automatic purge when TTL is configured [GH-90000]")
+    @DisplayName("append() triggers automatic purge when TTL is configured")
     void appendShouldAutoPurgeExpiredEvents() throws InterruptedException { // GH-90000
         InMemoryEventCloud cloud = new InMemoryEventCloud(Duration.ofMillis(50)); // GH-90000
 
@@ -73,11 +73,11 @@ class InMemoryEventCloudTtlTest {
         cloud.append(TENANT, "order.shipped", "{}".getBytes()); // GH-90000
 
         assertThat(cloud.getEvents(TENANT)).hasSize(1); // GH-90000
-        assertThat(cloud.getEvents(TENANT).get(0).eventType()).isEqualTo("order.shipped [GH-90000]");
+        assertThat(cloud.getEvents(TENANT).get(0).eventType()).isEqualTo("order.shipped");
     }
 
     @Test
-    @DisplayName("no TTL instance never evicts events [GH-90000]")
+    @DisplayName("no TTL instance never evicts events")
     void noTtlShouldNeverEvict() { // GH-90000
         InMemoryEventCloud cloud = new InMemoryEventCloud(); // GH-90000
 
@@ -90,7 +90,7 @@ class InMemoryEventCloudTtlTest {
     }
 
     @Test
-    @DisplayName("size() returns total event count across all tenants [GH-90000]")
+    @DisplayName("size() returns total event count across all tenants")
     void sizeShouldCountAllTenants() { // GH-90000
         InMemoryEventCloud cloud = new InMemoryEventCloud(); // GH-90000
 

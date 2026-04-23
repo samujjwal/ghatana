@@ -17,14 +17,14 @@ import static org.assertj.core.api.Assertions.assertThatCode;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("AepPipelineMetrics [GH-90000]")
+@DisplayName("AepPipelineMetrics")
 class AepPipelineMetricsTest {
 
     @Mock
     private MetricsCollector collector;
 
     @Test
-    @DisplayName("recordStarted emits pipeline started counter with correct tags [GH-90000]")
+    @DisplayName("recordStarted emits pipeline started counter with correct tags")
     void recordStartedShouldEmitStartedCounterWithPipelineAndTenantTags() { // GH-90000
         AepPipelineMetrics metrics = AepPipelineMetrics.of(collector); // GH-90000
 
@@ -39,7 +39,7 @@ class AepPipelineMetricsTest {
     }
 
     @Test
-    @DisplayName("recordSucceeded emits succeeded counter, latency timer, and per-stage counters [GH-90000]")
+    @DisplayName("recordSucceeded emits succeeded counter, latency timer, and per-stage counters")
     void recordSucceededShouldEmitSucceededCounterLatencyAndStageCounters() { // GH-90000
         AepPipelineMetrics metrics = AepPipelineMetrics.of(collector); // GH-90000
 
@@ -63,7 +63,7 @@ class AepPipelineMetricsTest {
     }
 
     @Test
-    @DisplayName("recordFailed emits failed counter and latency timer with correct tags [GH-90000]")
+    @DisplayName("recordFailed emits failed counter and latency timer with correct tags")
     void recordFailedShouldEmitFailedCounterAndLatencyTimer() { // GH-90000
         AepPipelineMetrics metrics = AepPipelineMetrics.of(collector); // GH-90000
 
@@ -83,7 +83,7 @@ class AepPipelineMetricsTest {
     }
 
     @Test
-    @DisplayName("noop does not emit any metrics [GH-90000]")
+    @DisplayName("noop does not emit any metrics")
     void noopShouldNeverCallCollector() { // GH-90000
         AepPipelineMetrics noop = AepPipelineMetrics.noop(); // GH-90000
 
@@ -95,7 +95,7 @@ class AepPipelineMetricsTest {
     }
 
     @Test
-    @DisplayName("recordStarted with null values uses 'unknown' tag fallback and does not throw [GH-90000]")
+    @DisplayName("recordStarted with null values uses 'unknown' tag fallback and does not throw")
     void recordStartedShouldUseUnknownFallbackForNullValues() { // GH-90000
         AepPipelineMetrics metrics = AepPipelineMetrics.of(collector); // GH-90000
 
@@ -109,9 +109,9 @@ class AepPipelineMetricsTest {
     }
 
     @Test
-    @DisplayName("never throws even when the collector itself throws [GH-90000]")
+    @DisplayName("never throws even when the collector itself throws")
     void shouldNeverPropagateExceptionsFromCollector() { // GH-90000
-        doThrow(new RuntimeException("collector failure [GH-90000]"))
+        doThrow(new RuntimeException("collector failure"))
                 .when(collector) // GH-90000
                 .incrementCounter(anyString(), any(String[].class)); // GH-90000
 

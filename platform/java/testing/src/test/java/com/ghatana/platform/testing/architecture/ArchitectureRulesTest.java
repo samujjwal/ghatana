@@ -26,24 +26,24 @@ public class ArchitectureRulesTest {
     static void setup() { // GH-90000
         ClassFileImporter importer = new ClassFileImporter(); // GH-90000
         // Import packages - ArchUnit will return empty set if packages don't exist
-        platformClasses = importer.importPackages("com.ghatana.platform [GH-90000]");
-        productClasses = importer.importPackages("com.ghatana.products [GH-90000]");
+        platformClasses = importer.importPackages("com.ghatana.platform");
+        productClasses = importer.importPackages("com.ghatana.products");
     }
 
     @Test
-    @DisplayName("No circular dependencies in platform modules [GH-90000]")
+    @DisplayName("No circular dependencies in platform modules")
     void noCircularDependencies() { // GH-90000
         SlicesRuleDefinition.slices() // GH-90000
-                .matching("com.ghatana.platform.(*).. [GH-90000]")
+                .matching("com.ghatana.platform.(*)..")
                 .should().beFreeOfCycles() // GH-90000
                 .check(platformClasses); // GH-90000
     }
 
     @Test
-    @DisplayName("Products depend only on platform, not other products [GH-90000]")
+    @DisplayName("Products depend only on platform, not other products")
     void productDependencies() { // GH-90000
         ArchRule rule = ArchRuleDefinition.classes() // GH-90000
-                .that().resideInAPackage("com.ghatana.products.. [GH-90000]")
+                .that().resideInAPackage("com.ghatana.products..")
                 .should().onlyDependOnClassesThat() // GH-90000
                 .resideInAnyPackage( // GH-90000
                         "com.ghatana.platform..",
@@ -59,10 +59,10 @@ public class ArchitectureRulesTest {
     }
 
     @Test
-    @DisplayName("Platform foundation has minimal dependencies [GH-90000]")
+    @DisplayName("Platform foundation has minimal dependencies")
     void platformFoundationIndependence() { // GH-90000
         ArchRule rule = ArchRuleDefinition.classes() // GH-90000
-                .that().resideInAPackage("com.ghatana.platform.core.. [GH-90000]")
+                .that().resideInAPackage("com.ghatana.platform.core..")
                 .should().onlyDependOnClassesThat() // GH-90000
                 .resideInAnyPackage( // GH-90000
                         "com.ghatana.platform.core..",
@@ -79,13 +79,13 @@ public class ArchitectureRulesTest {
     }
 
     @Test
-    @DisplayName("Plugins depend only on platform, used by products [GH-90000]")
+    @DisplayName("Plugins depend only on platform, used by products")
     void pluginDependencyDirection() { // GH-90000
         JavaClasses pluginClasses = new ClassFileImporter() // GH-90000
-                .importPackages("com.ghatana.platform.plugins [GH-90000]");
+                .importPackages("com.ghatana.platform.plugins");
 
         ArchRule rule = ArchRuleDefinition.classes() // GH-90000
-                .that().resideInAPackage("com.ghatana.platform.plugins.. [GH-90000]")
+                .that().resideInAPackage("com.ghatana.platform.plugins..")
                 .should().onlyDependOnClassesThat() // GH-90000
                 .resideInAnyPackage( // GH-90000
                         "com.ghatana.platform..",
@@ -98,13 +98,13 @@ public class ArchitectureRulesTest {
     }
 
     @Test
-    @DisplayName("Shared services depend on platform and kernel [GH-90000]")
+    @DisplayName("Shared services depend on platform and kernel")
     void sharedServiceDependencies() { // GH-90000
         JavaClasses sharedClasses = new ClassFileImporter() // GH-90000
-                .importPackages("com.ghatana.shared [GH-90000]");
+                .importPackages("com.ghatana.shared");
 
         ArchRule rule = ArchRuleDefinition.classes() // GH-90000
-                .that().resideInAPackage("com.ghatana.shared.. [GH-90000]")
+                .that().resideInAPackage("com.ghatana.shared..")
                 .should().onlyDependOnClassesThat() // GH-90000
                 .resideInAnyPackage( // GH-90000
                         "com.ghatana.platform..",

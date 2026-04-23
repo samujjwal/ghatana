@@ -18,11 +18,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test event cloud architecture and event management.
  */
-@DisplayName("Event Cloud Tests [GH-90000]")
+@DisplayName("Event Cloud Tests")
 class EventCloudTest {
 
     @Test
-    @DisplayName("Should manage event cloud [GH-90000]")
+    @DisplayName("Should manage event cloud")
     void shouldManageEventCloud() { // GH-90000
         String cloudId = "cloud-123";
         String tenantId = "tenant-123";
@@ -32,7 +32,7 @@ class EventCloudTest {
     }
 
     @Test
-    @DisplayName("Should handle event persistence [GH-90000]")
+    @DisplayName("Should handle event persistence")
     void shouldHandleEventPersistence() { // GH-90000
         boolean persisted = true;
         String storageType = "PostgreSQL";
@@ -42,7 +42,7 @@ class EventCloudTest {
     }
 
     @Test
-    @DisplayName("Should handle event TTL [GH-90000]")
+    @DisplayName("Should handle event TTL")
     void shouldHandleEventTtl() { // GH-90000
         Duration ttl = Duration.ofDays(7); // GH-90000
         Duration maxTtl = Duration.ofDays(30); // GH-90000
@@ -51,7 +51,7 @@ class EventCloudTest {
     }
 
     @Test
-    @DisplayName("Should handle event partitioning [GH-90000]")
+    @DisplayName("Should handle event partitioning")
     void shouldHandleEventPartitioning() { // GH-90000
         int partitionCount = 10;
         int minPartitions = 1;
@@ -60,7 +60,7 @@ class EventCloudTest {
     }
 
     @Test
-    @DisplayName("Should handle cloud failures [GH-90000]")
+    @DisplayName("Should handle cloud failures")
     void shouldHandleCloudFailures() { // GH-90000
         boolean failed = false;
         String error = null;
@@ -70,7 +70,7 @@ class EventCloudTest {
     }
 
     @Test
-    @DisplayName("Should handle cloud recovery [GH-90000]")
+    @DisplayName("Should handle cloud recovery")
     void shouldHandleCloudRecovery() { // GH-90000
         boolean recovered = true;
         long recoveryTimeMs = 5000L;

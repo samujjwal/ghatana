@@ -20,19 +20,19 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.purpose Error scenario integration — failure propagation and recovery
  * @doc.layer integration
  */
-@Tag("error-scenarios [GH-90000]")
-@DisplayName("Audio-Video Error Scenario Integration Tests (AV-012.4) [GH-90000]")
+@Tag("error-scenarios")
+@DisplayName("Audio-Video Error Scenario Integration Tests (AV-012.4)")
 class ErrorScenarioIntegrationTest {
 
     @Test
-    @DisplayName("Service unavailable: request fails with recognizable error and does not hang [GH-90000]")
+    @DisplayName("Service unavailable: request fails with recognizable error and does not hang")
     void serviceUnavailableFailsFast() { // GH-90000
         // Simulates a gRPC UNAVAILABLE status
         long start = System.currentTimeMillis(); // GH-90000
         try {
             simulateServiceCall(ServiceBehavior.UNAVAILABLE); // GH-90000
         } catch (RuntimeException e) { // GH-90000
-            assertThat(e.getMessage()).containsIgnoringCase("unavailable [GH-90000]");
+            assertThat(e.getMessage()).containsIgnoringCase("unavailable");
         }
         long elapsed = System.currentTimeMillis() - start; // GH-90000
         // Should fail fast (< 500ms), not hang for minutes // GH-90000
@@ -40,15 +40,15 @@ class ErrorScenarioIntegrationTest {
     }
 
     @Test
-    @DisplayName("Request timeout: call times out gracefully with TimeoutException [GH-90000]")
+    @DisplayName("Request timeout: call times out gracefully with TimeoutException")
     void requestTimesOutGracefully() { // GH-90000
         assertThatThrownBy(() -> simulateServiceCall(ServiceBehavior.TIMEOUT)) // GH-90000
                 .isInstanceOf(TimeoutException.class) // GH-90000
-                .hasMessageContaining("timed out [GH-90000]");
+                .hasMessageContaining("timed out");
     }
 
     @Test
-    @DisplayName("Transient failure: auto-retry succeeds within 3 attempts [GH-90000]")
+    @DisplayName("Transient failure: auto-retry succeeds within 3 attempts")
     void transientFailureRetriesAndSucceeds() throws Exception { // GH-90000
         AtomicInteger attempts = new AtomicInteger(0); // GH-90000
 
@@ -61,12 +61,12 @@ class ErrorScenarioIntegrationTest {
             return "success";
         });
 
-        assertThat(result).isEqualTo("success [GH-90000]");
+        assertThat(result).isEqualTo("success");
         assertThat(attempts.get()).isEqualTo(3); // GH-90000
     }
 
     @Test
-    @DisplayName("Circuit breaker: opens after 5 consecutive failures [GH-90000]")
+    @DisplayName("Circuit breaker: opens after 5 consecutive failures")
     void circuitBreakerOpensAfterFailures() { // GH-90000
         SimpleCircuitBreaker breaker = new SimpleCircuitBreaker(5); // GH-90000
         AtomicInteger calls = new AtomicInteger(0); // GH-90000
@@ -75,7 +75,7 @@ class ErrorScenarioIntegrationTest {
             try {
                 breaker.execute(() -> { // GH-90000
                     calls.incrementAndGet(); // GH-90000
-                    throw new RuntimeException("service failure [GH-90000]");
+                    throw new RuntimeException("service failure");
                 });
             } catch (RuntimeException ignored) {} // GH-90000
         }
@@ -87,13 +87,13 @@ class ErrorScenarioIntegrationTest {
         try {
             breaker.execute(() -> { calls.incrementAndGet(); return "should not reach"; }); // GH-90000
         } catch (RuntimeException e) { // GH-90000
-            assertThat(e.getMessage()).contains("circuit is open [GH-90000]");
+            assertThat(e.getMessage()).contains("circuit is open");
         }
         assertThat(calls.get()).isEqualTo(callsBefore); // GH-90000
     }
 
     @Test
-    @DisplayName("Partial failure: Vision service failure does not cascade to STT [GH-90000]")
+    @DisplayName("Partial failure: Vision service failure does not cascade to STT")
     void visionFailureDoesNotCascadeToStt() throws Exception { // GH-90000
         // Vision fails, but STT should still return a result
         String sttResult = simulateSttCall(); // GH-90000
@@ -109,7 +109,7 @@ class ErrorScenarioIntegrationTest {
     }
 
     @Test
-    @DisplayName("Empty input: STT returns empty transcript without crashing [GH-90000]")
+    @DisplayName("Empty input: STT returns empty transcript without crashing")
     void emptyInputReturnsSafeResult() { // GH-90000
         String result = processAudio(new byte[0]); // GH-90000
         assertThat(result).isNotNull(); // GH-90000
@@ -117,13 +117,13 @@ class ErrorScenarioIntegrationTest {
     }
 
     @Test
-    @DisplayName("Oversized input: rejected before sending to service [GH-90000]")
+    @DisplayName("Oversized input: rejected before sending to service")
     void oversizedInputIsRejectedEarly() { // GH-90000
         // 100MB of zeros — should be rejected at the input validation layer
         byte[] hugeInput = new byte[100 * 1024 * 1024];
         assertThatThrownBy(() -> validateAndProcessAudio(hugeInput)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("exceeds maximum [GH-90000]");
+                .hasMessageContaining("exceeds maximum");
     }
 
     // ── Stubs and helpers ─────────────────────────────────────────────────────
@@ -132,8 +132,8 @@ class ErrorScenarioIntegrationTest {
 
     private void simulateServiceCall(ServiceBehavior behavior) throws TimeoutException { // GH-90000
         switch (behavior) { // GH-90000
-            case UNAVAILABLE -> throw new RuntimeException("service unavailable: connection refused [GH-90000]");
-            case TIMEOUT     -> throw new TimeoutException("call timed out after 5000ms [GH-90000]");
+            case UNAVAILABLE -> throw new RuntimeException("service unavailable: connection refused");
+            case TIMEOUT     -> throw new TimeoutException("call timed out after 5000ms");
             case SUCCESS     -> { /* no-op */ }
         }
     }
@@ -180,7 +180,7 @@ class ErrorScenarioIntegrationTest {
         }
 
         <T> T execute(java.util.concurrent.Callable<T> task) { // GH-90000
-            if (open) throw new RuntimeException("circuit is open — fast-fail [GH-90000]");
+            if (open) throw new RuntimeException("circuit is open — fast-fail");
             try {
                 T result = task.call(); // GH-90000
                 failures = 0;

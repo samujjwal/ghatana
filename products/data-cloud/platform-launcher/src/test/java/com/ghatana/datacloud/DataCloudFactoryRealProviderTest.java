@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern Integration Test
  */
 @Testcontainers(disabledWithoutDocker = true) // GH-90000
-@DisplayName("DataCloud Factory Real Provider Tests [GH-90000]")
+@DisplayName("DataCloud Factory Real Provider Tests")
 class DataCloudFactoryRealProviderTest extends EventloopTestBase {
 
     private static final DataCloudConfig PRODUCTION_CONFIG = DataCloudConfig.builder() // GH-90000
@@ -37,16 +37,16 @@ class DataCloudFactoryRealProviderTest extends EventloopTestBase {
         .build(); // GH-90000
 
     @Container
-    @SuppressWarnings("resource [GH-90000]")
-    private static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine [GH-90000]")
-        .withDatabaseName("datacloud_factory_it [GH-90000]")
-        .withUsername("dc_factory [GH-90000]")
-        .withPassword("dc_factory_secret [GH-90000]");
+    @SuppressWarnings("resource")
+    private static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine")
+        .withDatabaseName("datacloud_factory_it")
+        .withUsername("dc_factory")
+        .withPassword("dc_factory_secret");
 
     @Container
-    @SuppressWarnings("resource [GH-90000]")
+    @SuppressWarnings("resource")
     private static final KafkaContainer KAFKA = new KafkaContainer( // GH-90000
-        DockerImageName.parse("confluentinc/cp-kafka:7.5.0 [GH-90000]")
+        DockerImageName.parse("confluentinc/cp-kafka:7.5.0")
     ).withEmbeddedZookeeper(); // GH-90000
 
     @BeforeAll
@@ -54,7 +54,7 @@ class DataCloudFactoryRealProviderTest extends EventloopTestBase {
         Flyway.configure() // GH-90000
             .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword()) // GH-90000
             .locations("filesystem:" + Path.of( // GH-90000
-                System.getProperty("user.dir [GH-90000]"),
+                System.getProperty("user.dir"),
                 "products",
                 "data-cloud",
                 "platform-launcher",
@@ -75,31 +75,31 @@ class DataCloudFactoryRealProviderTest extends EventloopTestBase {
 
     @AfterEach
     void truncateEntities() throws Exception { // GH-90000
-        try (var connection = POSTGRES.createConnection(" [GH-90000]");
+        try (var connection = POSTGRES.createConnection("");
              var statement = connection.createStatement()) { // GH-90000
-            statement.execute("TRUNCATE TABLE entities CASCADE [GH-90000]");
+            statement.execute("TRUNCATE TABLE entities CASCADE");
         }
     }
 
     @AfterEach
     void clearOptionalProviderOverrides() { // GH-90000
-        System.clearProperty("datacloud.db.poolMaxSize [GH-90000]");
-        System.clearProperty("datacloud.db.poolMinIdle [GH-90000]");
-        System.clearProperty("datacloud.db.connectionTimeoutMs [GH-90000]");
-        System.clearProperty("datacloud.db.idleTimeoutMs [GH-90000]");
-        System.clearProperty("datacloud.db.maxLifetimeMs [GH-90000]");
+        System.clearProperty("datacloud.db.poolMaxSize");
+        System.clearProperty("datacloud.db.poolMinIdle");
+        System.clearProperty("datacloud.db.connectionTimeoutMs");
+        System.clearProperty("datacloud.db.idleTimeoutMs");
+        System.clearProperty("datacloud.db.maxLifetimeMs");
     }
 
     @AfterAll
     static void clearProviderBootstrapProperties() { // GH-90000
-        System.clearProperty("datacloud.db.url [GH-90000]");
-        System.clearProperty("datacloud.db.user [GH-90000]");
-        System.clearProperty("datacloud.db.password [GH-90000]");
-        System.clearProperty("datacloud.kafka.bootstrapServers [GH-90000]");
+        System.clearProperty("datacloud.db.url");
+        System.clearProperty("datacloud.db.user");
+        System.clearProperty("datacloud.db.password");
+        System.clearProperty("datacloud.kafka.bootstrapServers");
     }
 
     @Test
-    @DisplayName("production profile persists entities and events across restart with service-loaded providers [GH-90000]")
+    @DisplayName("production profile persists entities and events across restart with service-loaded providers")
     void productionProfilePersistsEntitiesAndEventsAcrossRestartWithServiceLoadedProviders() { // GH-90000
         String tenantId = "tenant-provider-" + UUID.randomUUID(); // GH-90000
         String entityId = UUID.randomUUID().toString(); // GH-90000
@@ -107,8 +107,8 @@ class DataCloudFactoryRealProviderTest extends EventloopTestBase {
 
         DataCloudClient firstClient = DataCloud.create(PRODUCTION_CONFIG); // GH-90000
         try {
-            assertThat(firstClient.entityStore().getClass().getName()).contains("PostgresEntityStore [GH-90000]");
-            assertThat(firstClient.eventLogStore().getClass().getName()).doesNotContain("InMemoryEventLogStore [GH-90000]");
+            assertThat(firstClient.entityStore().getClass().getName()).contains("PostgresEntityStore");
+            assertThat(firstClient.eventLogStore().getClass().getName()).doesNotContain("InMemoryEventLogStore");
 
             runPromise(() -> firstClient.save( // GH-90000
                 tenantId,
@@ -144,7 +144,7 @@ class DataCloudFactoryRealProviderTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("production profile keeps Postgres and Kafka provider data tenant-isolated across restart [GH-90000]")
+    @DisplayName("production profile keeps Postgres and Kafka provider data tenant-isolated across restart")
     void productionProfileKeepsProviderDataTenantIsolatedAcrossRestart() { // GH-90000
         String tenantA = "tenant-a-" + UUID.randomUUID(); // GH-90000
         String tenantB = "tenant-b-" + UUID.randomUUID(); // GH-90000
@@ -176,11 +176,11 @@ class DataCloudFactoryRealProviderTest extends EventloopTestBase {
 
             assertThat(runPromise(() -> secondClient.queryEvents(tenantA, DataCloudClient.EventQuery.byType(eventType)))) // GH-90000
                 .singleElement() // GH-90000
-                .extracting(event -> event.payload().get("entityId [GH-90000]"))
+                .extracting(event -> event.payload().get("entityId"))
                 .isEqualTo(entityA); // GH-90000
             assertThat(runPromise(() -> secondClient.queryEvents(tenantB, DataCloudClient.EventQuery.byType(eventType)))) // GH-90000
                 .singleElement() // GH-90000
-                .extracting(event -> event.payload().get("entityId [GH-90000]"))
+                .extracting(event -> event.payload().get("entityId"))
                 .isEqualTo(entityB); // GH-90000
         } finally {
             secondClient.close(); // GH-90000

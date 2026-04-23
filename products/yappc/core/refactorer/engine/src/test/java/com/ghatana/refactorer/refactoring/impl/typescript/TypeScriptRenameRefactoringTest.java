@@ -27,7 +27,7 @@ import org.junit.jupiter.api.io.TempDir;
  * <p>Example: {@code ./gradlew test -Dtest.typescript.enabled=true}
  */
 @EnabledIfSystemProperty(named = "test.typescript.enabled", matches = "true") // GH-90000
-@Tag("integration [GH-90000]")
+@Tag("integration")
 /**
  * @doc.type class
  * @doc.purpose Handles type script rename refactoring test operations
@@ -56,7 +56,7 @@ class TypeScriptRenameRefactoringTest {
         }
 
         refactoring = new TypeScriptRenameRefactoring(); // GH-90000
-        testFile = tempDir.resolve("test_rename.ts [GH-90000]");
+        testFile = tempDir.resolve("test_rename.ts");
         executor = Executors.newSingleThreadExecutor(); // GH-90000
         projectContext = new PolyfixProjectContext(tempDir, null, List.of(), executor, null); // GH-90000
 
@@ -83,9 +83,9 @@ class TypeScriptRenameRefactoringTest {
                     return param.toUpperCase(); // GH-90000
                 }
 
-                const obj = new MyClass("test [GH-90000]");
+                const obj = new MyClass("test");
                 console.log(obj.oldMethod()); // GH-90000
-                console.log(functionToRename("hello [GH-90000]"));
+                console.log(functionToRename("hello"));
                 """;
 
         Files.writeString(testFile, testCode); // GH-90000
@@ -117,9 +117,9 @@ class TypeScriptRenameRefactoringTest {
 
             // Verify the content was actually changed
             String content = readFileContent(testFile); // GH-90000
-            assertThat(content).contains("newMethod(): string { [GH-90000]");
-            assertThat(content).contains("return this.newMethod() [GH-90000]");
-            assertThat(content).contains("console.log(obj.newMethod()) [GH-90000]");
+            assertThat(content).contains("newMethod(): string {");
+            assertThat(content).contains("return this.newMethod()");
+            assertThat(content).contains("console.log(obj.newMethod())");
         } catch (Exception e) { // GH-90000
             throw new AssertionError(TEST_FAILED + e.getMessage(), e); // GH-90000
         }
@@ -144,7 +144,7 @@ class TypeScriptRenameRefactoringTest {
 
             // Verify the content was actually changed
             String content = readFileContent(testFile); // GH-90000
-            assertThat(content).contains("function renamedFunction(param: string): string [GH-90000]");
+            assertThat(content).contains("function renamedFunction(param: string): string");
             assertThat(content).contains("console.log(renamedFunction(\"hello\"));"); // GH-90000
         } catch (Exception e) { // GH-90000
             throw new AssertionError(TEST_FAILED + e.getMessage(), e); // GH-90000
@@ -169,9 +169,9 @@ class TypeScriptRenameRefactoringTest {
 
             // Verify the content was actually changed
             String content = readFileContent(testFile); // GH-90000
-            assertThat(content).contains("private newProperty: string; [GH-90000]");
-            assertThat(content).contains("this.newProperty = value; [GH-90000]");
-            assertThat(content).contains("return this.newProperty; [GH-90000]");
+            assertThat(content).contains("private newProperty: string;");
+            assertThat(content).contains("this.newProperty = value;");
+            assertThat(content).contains("return this.newProperty;");
         } catch (Exception e) { // GH-90000
             throw new AssertionError(TEST_FAILED + e.getMessage(), e); // GH-90000
         }
@@ -210,17 +210,17 @@ class TypeScriptRenameRefactoringTest {
 
         try {
             // Test valid names
-            assertThat(refactoring.isNewNameValid("validName [GH-90000]")).isTrue();
-            assertThat(refactoring.isNewNameValid("validName123 [GH-90000]")).isTrue();
-            assertThat(refactoring.isNewNameValid("_privateName [GH-90000]")).isTrue();
-            assertThat(refactoring.isNewNameValid("$name [GH-90000]")).isTrue();
+            assertThat(refactoring.isNewNameValid("validName")).isTrue();
+            assertThat(refactoring.isNewNameValid("validName123")).isTrue();
+            assertThat(refactoring.isNewNameValid("_privateName")).isTrue();
+            assertThat(refactoring.isNewNameValid("$name")).isTrue();
 
             // Test invalid names
             assertThat(refactoring.isNewNameValid(null)).isFalse(); // GH-90000
-            assertThat(refactoring.isNewNameValid(" [GH-90000]")).isFalse();
-            assertThat(refactoring.isNewNameValid("123invalid [GH-90000]")).isFalse();
-            assertThat(refactoring.isNewNameValid("invalid-name [GH-90000]")).isFalse();
-            assertThat(refactoring.isNewNameValid("invalid.name [GH-90000]")).isFalse();
+            assertThat(refactoring.isNewNameValid("")).isFalse();
+            assertThat(refactoring.isNewNameValid("123invalid")).isFalse();
+            assertThat(refactoring.isNewNameValid("invalid-name")).isFalse();
+            assertThat(refactoring.isNewNameValid("invalid.name")).isFalse();
         } catch (Exception e) { // GH-90000
             throw new AssertionError(TEST_FAILED + e.getMessage(), e); // GH-90000
         }
@@ -240,11 +240,11 @@ class TypeScriptRenameRefactoringTest {
             // Non-existent file
             var invalidFileContext =
                     createContext( // GH-90000
-                            tempDir.resolve("non_existent.ts [GH-90000]"), FUNCTION, "someName", NEW_NAME);
+                            tempDir.resolve("non_existent.ts"), FUNCTION, "someName", NEW_NAME);
             assertThat(refactoring.canApply(invalidFileContext)).isFalse(); // GH-90000
 
             // Non-TypeScript file
-            var nonTsFile = tempDir.resolve("not_typescript.txt [GH-90000]");
+            var nonTsFile = tempDir.resolve("not_typescript.txt");
             try {
                 Files.writeString(nonTsFile, "Not a TypeScript file"); // GH-90000
                 var nonTsContext = createContext(nonTsFile, FUNCTION, "someName", NEW_NAME); // GH-90000

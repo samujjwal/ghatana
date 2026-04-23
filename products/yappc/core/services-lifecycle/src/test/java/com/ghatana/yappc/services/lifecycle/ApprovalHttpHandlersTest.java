@@ -31,7 +31,7 @@ import static org.mockito.Mockito.lenient;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("ApprovalHttpHandlers [GH-90000]")
+@DisplayName("ApprovalHttpHandlers")
 class ApprovalHttpHandlersTest extends EventloopTestBase {
 
     @Mock
@@ -50,9 +50,9 @@ class ApprovalHttpHandlersTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("listPending rejects requests without tenant header [GH-90000]")
+    @DisplayName("listPending rejects requests without tenant header")
     void listPendingRejectsMissingTenantHeader() { // GH-90000
-        HttpRequest request = HttpRequest.get("http://localhost/api/v1/approvals/pending [GH-90000]").build();
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/approvals/pending").build();
 
         HttpResponse response = runPromise(() -> handlers.listPending(request)); // GH-90000
 
@@ -60,18 +60,18 @@ class ApprovalHttpHandlersTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("listPending returns pending approvals for tenant [GH-90000]")
+    @DisplayName("listPending returns pending approvals for tenant")
     void listPendingReturnsPendingApprovals() { // GH-90000
         ApprovalRequest created = runPromise(() -> humanApprovalService.requestApproval( // GH-90000
                 "tenant-1",
                 "project-1",
                 "agent-1",
                 ApprovalRequest.ApprovalType.PHASE_ADVANCE,
-                new ApprovalRequest.ApprovalContext("INTENT", "SHAPE", "blocked", List.of("criteria [GH-90000]"), List.of())
+                new ApprovalRequest.ApprovalContext("INTENT", "SHAPE", "blocked", List.of("criteria"), List.of())
         ));
 
-        HttpRequest request = HttpRequest.get("http://localhost/api/v1/approvals/pending [GH-90000]")
-                .withHeader(HttpHeaders.of("X-Tenant-Id [GH-90000]"), "tenant-1")
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/approvals/pending")
+                .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant-1")
                 .build(); // GH-90000
 
         HttpResponse response = runPromise(() -> handlers.listPending(request)); // GH-90000
@@ -79,22 +79,22 @@ class ApprovalHttpHandlersTest extends EventloopTestBase {
 
         assertThat(response.getCode()).isEqualTo(200); // GH-90000
         assertThat(body).contains(created.id()); // GH-90000
-        assertThat(body).contains("PENDING [GH-90000]");
+        assertThat(body).contains("PENDING");
     }
 
     @Test
-    @DisplayName("approve transitions request to approved [GH-90000]")
+    @DisplayName("approve transitions request to approved")
     void approveTransitionsRequest() { // GH-90000
         ApprovalRequest created = runPromise(() -> humanApprovalService.requestApproval( // GH-90000
                 "tenant-1",
                 "project-1",
                 "agent-1",
                 ApprovalRequest.ApprovalType.PHASE_ADVANCE,
-                new ApprovalRequest.ApprovalContext("INTENT", "SHAPE", "blocked", List.of("criteria [GH-90000]"), List.of())
+                new ApprovalRequest.ApprovalContext("INTENT", "SHAPE", "blocked", List.of("criteria"), List.of())
         ));
 
         HttpRequest request = HttpRequest.post("http://localhost/api/v1/approvals/" + created.id() + "/approve") // GH-90000
-                .withHeader(HttpHeaders.of("X-Tenant-Id [GH-90000]"), "tenant-1")
+                .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant-1")
                 .withBody(ByteBuf.wrapForReading("{\"decidedBy\":\"reviewer-1\"}".getBytes(StandardCharsets.UTF_8))) // GH-90000
                 .build(); // GH-90000
 
@@ -102,15 +102,15 @@ class ApprovalHttpHandlersTest extends EventloopTestBase {
         String body = response.getBody().getString(StandardCharsets.UTF_8); // GH-90000
 
         assertThat(response.getCode()).isEqualTo(200); // GH-90000
-        assertThat(body).contains("APPROVED [GH-90000]");
-        assertThat(body).contains("reviewer-1 [GH-90000]");
+        assertThat(body).contains("APPROVED");
+        assertThat(body).contains("reviewer-1");
     }
 
     @Test
-    @DisplayName("reject returns conflict when approval request is missing [GH-90000]")
+    @DisplayName("reject returns conflict when approval request is missing")
     void rejectReturnsConflictWhenRequestMissing() { // GH-90000
-        HttpRequest request = HttpRequest.post("http://localhost/api/v1/approvals/missing/reject [GH-90000]")
-                .withHeader(HttpHeaders.of("X-Tenant-Id [GH-90000]"), "tenant-1")
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/approvals/missing/reject")
+                .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant-1")
                 .withBody(ByteBuf.wrapForReading("{\"decidedBy\":\"reviewer-1\"}".getBytes(StandardCharsets.UTF_8))) // GH-90000
                 .build(); // GH-90000
 
@@ -118,14 +118,14 @@ class ApprovalHttpHandlersTest extends EventloopTestBase {
         String body = response.getBody().getString(StandardCharsets.UTF_8); // GH-90000
 
         assertThat(response.getCode()).isEqualTo(409); // GH-90000
-        assertThat(body).contains("Approval request not found [GH-90000]");
+        assertThat(body).contains("Approval request not found");
     }
 
     @Test
-    @DisplayName("approve rejects malformed payload [GH-90000]")
+    @DisplayName("approve rejects malformed payload")
     void approveRejectsMalformedPayload() { // GH-90000
-        HttpRequest request = HttpRequest.post("http://localhost/api/v1/approvals/request-1/approve [GH-90000]")
-                .withHeader(HttpHeaders.of("X-Tenant-Id [GH-90000]"), "tenant-1")
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/approvals/request-1/approve")
+                .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant-1")
                 .withBody(ByteBuf.wrapForReading("not-json".getBytes(StandardCharsets.UTF_8))) // GH-90000
                 .build(); // GH-90000
 
@@ -135,9 +135,9 @@ class ApprovalHttpHandlersTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("create returns 400 when missing tenant header [GH-90000]")
+    @DisplayName("create returns 400 when missing tenant header")
     void createRejectsMissingTenantHeader() { // GH-90000
-        HttpRequest request = HttpRequest.post("http://localhost/api/v1/approvals [GH-90000]")
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/approvals")
                 .withBody(ByteBuf.wrapForReading("{}".getBytes(StandardCharsets.UTF_8))) // GH-90000
                 .build(); // GH-90000
 
@@ -147,43 +147,43 @@ class ApprovalHttpHandlersTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("create returns 400 when projectId is missing [GH-90000]")
+    @DisplayName("create returns 400 when projectId is missing")
     void createRejectsMissingProjectId() { // GH-90000
         String body = "{\"approvalType\":\"PHASE_ADVANCE\"}";
-        HttpRequest request = HttpRequest.post("http://localhost/api/v1/approvals [GH-90000]")
-                .withHeader(HttpHeaders.of("X-Tenant-Id [GH-90000]"), "tenant-1")
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/approvals")
+                .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant-1")
                 .withBody(ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8))) // GH-90000
                 .build(); // GH-90000
 
         HttpResponse response = runPromise(() -> handlers.create(request)); // GH-90000
 
         assertThat(response.getCode()).isEqualTo(400); // GH-90000
-        assertThat(response.getBody().getString(StandardCharsets.UTF_8)).contains("projectId [GH-90000]");
+        assertThat(response.getBody().getString(StandardCharsets.UTF_8)).contains("projectId");
     }
 
     @Test
-    @DisplayName("create returns 400 for unknown approvalType [GH-90000]")
+    @DisplayName("create returns 400 for unknown approvalType")
     void createRejectsUnknownApprovalType() { // GH-90000
         String body = "{\"projectId\":\"p1\",\"approvalType\":\"NONEXISTENT\"}";
-        HttpRequest request = HttpRequest.post("http://localhost/api/v1/approvals [GH-90000]")
-                .withHeader(HttpHeaders.of("X-Tenant-Id [GH-90000]"), "tenant-1")
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/approvals")
+                .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant-1")
                 .withBody(ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8))) // GH-90000
                 .build(); // GH-90000
 
         HttpResponse response = runPromise(() -> handlers.create(request)); // GH-90000
 
         assertThat(response.getCode()).isEqualTo(400); // GH-90000
-        assertThat(response.getBody().getString(StandardCharsets.UTF_8)).contains("NONEXISTENT [GH-90000]");
+        assertThat(response.getBody().getString(StandardCharsets.UTF_8)).contains("NONEXISTENT");
     }
 
     @Test
-    @DisplayName("create returns 201 and persists a new PENDING approval request [GH-90000]")
+    @DisplayName("create returns 201 and persists a new PENDING approval request")
     void createPersistsNewPendingApprovalRequest() { // GH-90000
         String body = "{\"projectId\":\"p1\",\"approvalType\":\"PHASE_ADVANCE\","
                 + "\"context\":{\"fromPhase\":\"INTENT\",\"toPhase\":\"SHAPE\","
                 + "\"blockReason\":\"criteria not met\",\"unmetCriteria\":[],\"missingArtifacts\":[]}}";
-        HttpRequest request = HttpRequest.post("http://localhost/api/v1/approvals [GH-90000]")
-                .withHeader(HttpHeaders.of("X-Tenant-Id [GH-90000]"), "tenant-1")
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/approvals")
+                .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant-1")
                 .withBody(ByteBuf.wrapForReading(body.getBytes(StandardCharsets.UTF_8))) // GH-90000
                 .build(); // GH-90000
 
@@ -191,15 +191,15 @@ class ApprovalHttpHandlersTest extends EventloopTestBase {
         String responseBody = response.getBody().getString(StandardCharsets.UTF_8); // GH-90000
 
         assertThat(response.getCode()).isEqualTo(201); // GH-90000
-        assertThat(responseBody).contains("PENDING [GH-90000]");
-        assertThat(responseBody).contains("p1 [GH-90000]");
-        assertThat(responseBody).contains("PHASE_ADVANCE [GH-90000]");
+        assertThat(responseBody).contains("PENDING");
+        assertThat(responseBody).contains("p1");
+        assertThat(responseBody).contains("PHASE_ADVANCE");
     }
 
     @Test
-    @DisplayName("getById returns 400 when missing tenant header [GH-90000]")
+    @DisplayName("getById returns 400 when missing tenant header")
     void getByIdRejectsMissingTenantHeader() { // GH-90000
-        HttpRequest request = HttpRequest.get("http://localhost/api/v1/approvals/some-id [GH-90000]").build();
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/approvals/some-id").build();
 
         HttpResponse response = runPromise(() -> handlers.getById(request, "some-id")); // GH-90000
 
@@ -207,20 +207,20 @@ class ApprovalHttpHandlersTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("getById returns 404 when request does not exist [GH-90000]")
+    @DisplayName("getById returns 404 when request does not exist")
     void getByIdReturnsNotFoundForMissingRequest() { // GH-90000
-        HttpRequest request = HttpRequest.get("http://localhost/api/v1/approvals/missing [GH-90000]")
-                .withHeader(HttpHeaders.of("X-Tenant-Id [GH-90000]"), "tenant-1")
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/approvals/missing")
+                .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant-1")
                 .build(); // GH-90000
 
         HttpResponse response = runPromise(() -> handlers.getById(request, "missing")); // GH-90000
 
         assertThat(response.getCode()).isEqualTo(404); // GH-90000
-        assertThat(response.getBody().getString(StandardCharsets.UTF_8)).contains("not found [GH-90000]");
+        assertThat(response.getBody().getString(StandardCharsets.UTF_8)).contains("not found");
     }
 
     @Test
-    @DisplayName("getById returns the approval request when it exists [GH-90000]")
+    @DisplayName("getById returns the approval request when it exists")
     void getByIdReturnsExistingApprovalRequest() { // GH-90000
         ApprovalRequest created = runPromise(() -> humanApprovalService.requestApproval( // GH-90000
                 "tenant-1",
@@ -231,7 +231,7 @@ class ApprovalHttpHandlersTest extends EventloopTestBase {
         ));
 
         HttpRequest request = HttpRequest.get("http://localhost/api/v1/approvals/" + created.id()) // GH-90000
-                .withHeader(HttpHeaders.of("X-Tenant-Id [GH-90000]"), "tenant-1")
+                .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant-1")
                 .build(); // GH-90000
 
         HttpResponse response = runPromise(() -> handlers.getById(request, created.id())); // GH-90000
@@ -239,7 +239,7 @@ class ApprovalHttpHandlersTest extends EventloopTestBase {
 
         assertThat(response.getCode()).isEqualTo(200); // GH-90000
         assertThat(responseBody).contains(created.id()); // GH-90000
-        assertThat(responseBody).contains("DEPLOYMENT [GH-90000]");
-        assertThat(responseBody).contains("PENDING [GH-90000]");
+        assertThat(responseBody).contains("DEPLOYMENT");
+        assertThat(responseBody).contains("PENDING");
     }
 }

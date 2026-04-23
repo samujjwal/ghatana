@@ -46,7 +46,10 @@ import java.util.Map;
  *   throw new PatternValidationException("Event type not found");
  * }
  * </pre>
- */
+  * @doc.type interface
+ * @doc.purpose Provides validation context functionality.
+ * @doc.layer product
+*/
 public class ValidationContext {
 
     private final String patternId;

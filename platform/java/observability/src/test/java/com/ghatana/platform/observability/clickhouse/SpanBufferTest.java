@@ -75,7 +75,7 @@ class SpanBufferTest {
 
     @Test
     void shouldFlush_belowMaxSize_returnsFalse() { // GH-90000
-        buffer.add(makeSpan("x [GH-90000]"));
+        buffer.add(makeSpan("x"));
         assertThat(buffer.shouldFlush()).isFalse(); // GH-90000
     }
 
@@ -86,7 +86,7 @@ class SpanBufferTest {
     @Test
     void shouldFlush_afterIntervalElapsed_returnsTrueEvenIfEmpty() throws InterruptedException { // GH-90000
         SpanBuffer shortBuffer = new SpanBuffer(1000, Duration.ofMillis(50)); // GH-90000
-        shortBuffer.add(makeSpan("t1 [GH-90000]"));
+        shortBuffer.add(makeSpan("t1"));
         Thread.sleep(60); // GH-90000
         assertThat(shortBuffer.shouldFlush()).isTrue(); // GH-90000
     }
@@ -97,9 +97,9 @@ class SpanBufferTest {
 
     @Test
     void flush_returnsAllBufferedSpans() { // GH-90000
-        buffer.add(makeSpan("a [GH-90000]"));
-        buffer.add(makeSpan("b [GH-90000]"));
-        buffer.add(makeSpan("c [GH-90000]"));
+        buffer.add(makeSpan("a"));
+        buffer.add(makeSpan("b"));
+        buffer.add(makeSpan("c"));
 
         List<SpanData> flushed = buffer.flush(); // GH-90000
 
@@ -125,10 +125,10 @@ class SpanBufferTest {
 
     @Test
     void flush_returnedList_isIndependentCopy() { // GH-90000
-        buffer.add(makeSpan("orig [GH-90000]"));
+        buffer.add(makeSpan("orig"));
         List<SpanData> flushed = buffer.flush(); // GH-90000
 
-        buffer.add(makeSpan("new [GH-90000]"));
+        buffer.add(makeSpan("new"));
         assertThat(flushed).hasSize(1); // GH-90000
     }
 
@@ -237,10 +237,10 @@ class SpanBufferTest {
 
     private SpanData makeSpan(String traceId) { // GH-90000
         return SpanData.builder() // GH-90000
-                .withServiceName("test-service [GH-90000]")
+                .withServiceName("test-service")
                 .withTraceId(traceId) // GH-90000
                 .withSpanId(traceId + "-span") // GH-90000
-                .withOperationName("test-op [GH-90000]")
+                .withOperationName("test-op")
                 .withStartTime(Instant.now()) // GH-90000
                 .withEndTime(Instant.now().plusMillis(10)) // GH-90000
                 .build(); // GH-90000

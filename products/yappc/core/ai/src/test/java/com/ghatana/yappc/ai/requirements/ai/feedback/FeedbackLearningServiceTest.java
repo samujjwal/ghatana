@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("FeedbackLearningService Tests [GH-90000]")
+@DisplayName("FeedbackLearningService Tests")
 class FeedbackLearningServiceTest extends EventloopTestBase {
 
   private FeedbackLearningService service;
@@ -36,11 +36,11 @@ class FeedbackLearningServiceTest extends EventloopTestBase {
   // ===== Feedback Processing Tests =====
 
   @Nested
-  @DisplayName("Feedback Processing [GH-90000]")
+  @DisplayName("Feedback Processing")
   class FeedbackProcessing {
 
     @Test
-    @DisplayName("Should increase relevance score for HELPFUL feedback [GH-90000]")
+    @DisplayName("Should increase relevance score for HELPFUL feedback")
     void shouldIncreaseRelevanceForHelpful() { // GH-90000
       AISuggestion suggestion = createSuggestion(0.5f, 0.5f); // GH-90000
       SuggestionFeedback feedback = new SuggestionFeedback( // GH-90000
@@ -53,7 +53,7 @@ class FeedbackLearningServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should decrease relevance score for NOT_HELPFUL feedback [GH-90000]")
+    @DisplayName("Should decrease relevance score for NOT_HELPFUL feedback")
     void shouldDecreaseRelevanceForNotHelpful() { // GH-90000
       AISuggestion suggestion = createSuggestion(0.5f, 0.5f); // GH-90000
       SuggestionFeedback feedback = new SuggestionFeedback( // GH-90000
@@ -66,7 +66,7 @@ class FeedbackLearningServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should decrease relevance more for DUPLICATE feedback [GH-90000]")
+    @DisplayName("Should decrease relevance more for DUPLICATE feedback")
     void shouldDecreaseRelevanceMoreForDuplicate() { // GH-90000
       AISuggestion suggestion = createSuggestion(0.5f, 0.5f); // GH-90000
       SuggestionFeedback duplicate = new SuggestionFeedback( // GH-90000
@@ -84,7 +84,7 @@ class FeedbackLearningServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should clamp relevance score to [0, 1] [GH-90000]")
+    @DisplayName("Should clamp relevance score to [0, 1]")
     void shouldClampRelevanceScore() { // GH-90000
       // Start at 0.05 — INVALID feedback should reduce but not go below 0
       AISuggestion lowScore = createSuggestion(0.05f, 0.5f); // GH-90000
@@ -98,7 +98,7 @@ class FeedbackLearningServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should clamp relevance score at upper bound [GH-90000]")
+    @DisplayName("Should clamp relevance score at upper bound")
     void shouldClampRelevanceAtUpperBound() { // GH-90000
       AISuggestion highScore = createSuggestion(0.98f, 0.5f); // GH-90000
       SuggestionFeedback feedback = new SuggestionFeedback( // GH-90000
@@ -114,11 +114,11 @@ class FeedbackLearningServiceTest extends EventloopTestBase {
   // ===== Priority Score Tests =====
 
   @Nested
-  @DisplayName("Priority Score Adjustment [GH-90000]")
+  @DisplayName("Priority Score Adjustment")
   class PriorityAdjustment {
 
     @Test
-    @DisplayName("Should increase priority for positive feedback [GH-90000]")
+    @DisplayName("Should increase priority for positive feedback")
     void shouldIncreasePriorityForPositive() { // GH-90000
       AISuggestion suggestion = createSuggestion(0.5f, 0.5f); // GH-90000
       SuggestionFeedback feedback = new SuggestionFeedback( // GH-90000
@@ -131,7 +131,7 @@ class FeedbackLearningServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should decrease priority for negative feedback [GH-90000]")
+    @DisplayName("Should decrease priority for negative feedback")
     void shouldDecreasePriorityForNegative() { // GH-90000
       AISuggestion suggestion = createSuggestion(0.5f, 0.5f); // GH-90000
       SuggestionFeedback feedback = new SuggestionFeedback( // GH-90000
@@ -147,11 +147,11 @@ class FeedbackLearningServiceTest extends EventloopTestBase {
   // ===== Null Handling Tests =====
 
   @Nested
-  @DisplayName("Null Handling [GH-90000]")
+  @DisplayName("Null Handling")
   class NullHandling {
 
     @Test
-    @DisplayName("Should reject null suggestion [GH-90000]")
+    @DisplayName("Should reject null suggestion")
     void shouldRejectNullSuggestion() { // GH-90000
       SuggestionFeedback feedback = new SuggestionFeedback( // GH-90000
           "sug-1", FeedbackType.HELPFUL, "Good", null, "user-1");
@@ -162,7 +162,7 @@ class FeedbackLearningServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should reject null feedback [GH-90000]")
+    @DisplayName("Should reject null feedback")
     void shouldRejectNullFeedback() { // GH-90000
       AISuggestion suggestion = createSuggestion(0.5f, 0.5f); // GH-90000
 
@@ -175,11 +175,11 @@ class FeedbackLearningServiceTest extends EventloopTestBase {
   // ===== Learning Metrics Tests =====
 
   @Nested
-  @DisplayName("Learning Metrics [GH-90000]")
+  @DisplayName("Learning Metrics")
   class LearningMetrics {
 
     @Test
-    @DisplayName("Should return learning metrics [GH-90000]")
+    @DisplayName("Should return learning metrics")
     void shouldReturnMetrics() { // GH-90000
       Map<String, Object> metrics = runPromise(service::getLearningMetrics); // GH-90000
 
@@ -191,11 +191,11 @@ class FeedbackLearningServiceTest extends EventloopTestBase {
   // ===== Persona Analysis Tests =====
 
   @Nested
-  @DisplayName("Persona Analysis [GH-90000]")
+  @DisplayName("Persona Analysis")
   class PersonaAnalysis {
 
     @Test
-    @DisplayName("Should return persona performance analysis [GH-90000]")
+    @DisplayName("Should return persona performance analysis")
     void shouldReturnPersonaAnalysis() { // GH-90000
       var result = runPromise( // GH-90000
           () -> service.analyzePersonaPerformance(List.of())); // GH-90000

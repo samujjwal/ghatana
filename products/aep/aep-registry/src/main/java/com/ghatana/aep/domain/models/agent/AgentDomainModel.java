@@ -8,7 +8,11 @@ import com.ghatana.agent.registry.domain.AgentInfo;
 /**
  * Domain model for agent information.
  * This is a wrapper around the AgentInfo domain class for compatibility.
- */
+  * @doc.type class
+ * @doc.purpose Provides agent domain model functionality.
+ * @doc.layer product
+ * @doc.pattern Agent
+*/
 public class AgentDomainModel {
     private final AgentInfo agentInfo;
 

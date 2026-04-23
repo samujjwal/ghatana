@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer test
  * @doc.pattern Test
  */
-@DisplayName("Agent Execution E2E Tests [GH-90000]")
+@DisplayName("Agent Execution E2E Tests")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class) // GH-90000
 class AgentExecutionE2ETest extends EventloopTestBase {
 
@@ -43,56 +43,56 @@ class AgentExecutionE2ETest extends EventloopTestBase {
 
     @Test
     @Order(1) // GH-90000
-    @DisplayName("E2E: Should register Java expert agent from YAML config [GH-90000]")
+    @DisplayName("E2E: Should register Java expert agent from YAML config")
     void testRegisterJavaExpertAgent() { // GH-90000
         AgentRegistrationRequest request = AgentRegistrationRequest.builder() // GH-90000
                 .tenantId(tenantId) // GH-90000
-                .agentConfigPath("agents/java-expert.yaml [GH-90000]")
+                .agentConfigPath("agents/java-expert.yaml")
                 .build(); // GH-90000
 
         AgentRegistrationResult result = runPromise(() -> platform.registerAgent(request)); // GH-90000
 
         assertThat(result).isNotNull(); // GH-90000
         assertThat(result.agentId()).isNotNull(); // GH-90000
-        assertThat(result.agentName()).isEqualTo("Java Expert [GH-90000]");
+        assertThat(result.agentName()).isEqualTo("Java Expert");
         assertThat(result.capabilities()).contains("code-analysis", "architecture-review"); // GH-90000
-        assertThat(result.inputEventTypes()).contains("code.analysis.requested [GH-90000]");
-        assertThat(result.outputEventTypes()).contains("code.analysis.completed [GH-90000]");
+        assertThat(result.inputEventTypes()).contains("code.analysis.requested");
+        assertThat(result.outputEventTypes()).contains("code.analysis.completed");
 
         javaExpertAgentId = result.agentId(); // GH-90000
     }
 
     @Test
     @Order(2) // GH-90000
-    @DisplayName("E2E: Should register code reviewer agent from YAML config [GH-90000]")
+    @DisplayName("E2E: Should register code reviewer agent from YAML config")
     void testRegisterCodeReviewerAgent() { // GH-90000
         AgentRegistrationRequest request = AgentRegistrationRequest.builder() // GH-90000
                 .tenantId(tenantId) // GH-90000
-                .agentConfigPath("agents/code-reviewer.yaml [GH-90000]")
+                .agentConfigPath("agents/code-reviewer.yaml")
                 .build(); // GH-90000
 
         AgentRegistrationResult result = runPromise(() -> platform.registerAgent(request)); // GH-90000
 
         assertThat(result).isNotNull(); // GH-90000
         assertThat(result.agentId()).isNotNull(); // GH-90000
-        assertThat(result.agentName()).isEqualTo("Code Reviewer [GH-90000]");
+        assertThat(result.agentName()).isEqualTo("Code Reviewer");
         assertThat(result.capabilities()).containsAnyOf("review", "analysis"); // GH-90000
-        assertThat(result.inputEventTypes()).contains("code.review.requested [GH-90000]");
-        assertThat(result.outputEventTypes()).contains("code.review.completed [GH-90000]");
+        assertThat(result.inputEventTypes()).contains("code.review.requested");
+        assertThat(result.outputEventTypes()).contains("code.review.completed");
 
         codeReviewerAgentId = result.agentId(); // GH-90000
     }
 
     @Test
     @Order(3) // GH-90000
-    @DisplayName("E2E: Should list registered agents for tenant [GH-90000]")
+    @DisplayName("E2E: Should list registered agents for tenant")
     void testListAgentsForTenant() { // GH-90000
         List<AgentInfo> agents = runPromise(() -> platform.listAgents(tenantId)); // GH-90000
 
         assertThat(agents).isNotNull(); // GH-90000
         assertThat(agents.size()).isGreaterThanOrEqualTo(2); // GH-90000
-        assertThat(agents).anyMatch(a -> a.name().equals("Java Expert [GH-90000]"));
-        assertThat(agents).anyMatch(a -> a.name().equals("Code Reviewer [GH-90000]"));
+        assertThat(agents).anyMatch(a -> a.name().equals("Java Expert"));
+        assertThat(agents).anyMatch(a -> a.name().equals("Code Reviewer"));
     }
 
     // -------------------------------------------------------------------------
@@ -101,14 +101,14 @@ class AgentExecutionE2ETest extends EventloopTestBase {
 
     @Test
     @Order(4) // GH-90000
-    @DisplayName("E2E: Should execute code generation for Java service [GH-90000]")
+    @DisplayName("E2E: Should execute code generation for Java service")
     void testCodeGenerationJavaService() { // GH-90000
         CodeGenerationRequest request = CodeGenerationRequest.builder() // GH-90000
                 .tenantId(tenantId) // GH-90000
                 .agentId(javaExpertAgentId) // GH-90000
-                .language("java [GH-90000]")
-                .framework("spring-boot [GH-90000]")
-                .description("Build a REST API for user management with CRUD operations [GH-90000]")
+                .language("java")
+                .framework("spring-boot")
+                .description("Build a REST API for user management with CRUD operations")
                 .requirements(List.of( // GH-90000
                         "User entity with id, name, email, createdAt",
                         "CRUD endpoints: GET /users, POST /users, PUT /users/{id}, DELETE /users/{id}",
@@ -122,14 +122,14 @@ class AgentExecutionE2ETest extends EventloopTestBase {
         assertThat(result).isNotNull(); // GH-90000
         assertThat(result.success()).isTrue(); // GH-90000
         assertThat(result.generatedFiles()).isNotEmpty(); // GH-90000
-        assertThat(result.generatedFiles()).containsKey("UserController.java [GH-90000]");
-        assertThat(result.language()).isEqualTo("java [GH-90000]");
+        assertThat(result.generatedFiles()).containsKey("UserController.java");
+        assertThat(result.language()).isEqualTo("java");
         assertThat(result.executionTimeMs()).isGreaterThan(0); // GH-90000
     }
 
     @Test
     @Order(5) // GH-90000
-    @DisplayName("E2E: Should perform code review on generated code [GH-90000]")
+    @DisplayName("E2E: Should perform code review on generated code")
     void testCodeReviewOnGeneratedCode() { // GH-90000
         String codeToReview = """
                 public class UserController {
@@ -145,8 +145,8 @@ class AgentExecutionE2ETest extends EventloopTestBase {
                 .tenantId(tenantId) // GH-90000
                 .agentId(codeReviewerAgentId) // GH-90000
                 .code(codeToReview) // GH-90000
-                .language("java [GH-90000]")
-                .reviewType("quality [GH-90000]")
+                .language("java")
+                .reviewType("quality")
                 .build(); // GH-90000
 
         CodeReviewResult result = runPromise(() -> platform.reviewCode(request)); // GH-90000
@@ -160,10 +160,10 @@ class AgentExecutionE2ETest extends EventloopTestBase {
 
     @Test
     @Order(6) // GH-90000
-    @DisplayName("E2E: Should execute agent via AEP event routing [GH-90000]")
+    @DisplayName("E2E: Should execute agent via AEP event routing")
     void testAgentExecutionViaAepEvent() { // GH-90000
         AepEvent inputEvent = AepEvent.builder() // GH-90000
-                .eventType("code.analysis.requested [GH-90000]")
+                .eventType("code.analysis.requested")
                 .tenantId(tenantId) // GH-90000
                 .correlationId(UUID.randomUUID().toString()) // GH-90000
                 .payload(Map.of( // GH-90000
@@ -175,18 +175,18 @@ class AgentExecutionE2ETest extends EventloopTestBase {
         AepEvent outputEvent = runPromise(() -> platform.routeEvent(inputEvent)); // GH-90000
 
         assertThat(outputEvent).isNotNull(); // GH-90000
-        assertThat(outputEvent.eventType()).isEqualTo("code.analysis.completed [GH-90000]");
+        assertThat(outputEvent.eventType()).isEqualTo("code.analysis.completed");
         assertThat(outputEvent.tenantId()).isEqualTo(tenantId); // GH-90000
         assertThat(outputEvent.correlationId()).isEqualTo(inputEvent.correlationId()); // GH-90000
-        assertThat(outputEvent.payload()).containsKey("analysis [GH-90000]");
+        assertThat(outputEvent.payload()).containsKey("analysis");
     }
 
     @Test
     @Order(7) // GH-90000
-    @DisplayName("E2E: Should route events to dead letter queue on failure [GH-90000]")
+    @DisplayName("E2E: Should route events to dead letter queue on failure")
     void testDeadLetterQueueOnAgentFailure() { // GH-90000
         AepEvent badEvent = AepEvent.builder() // GH-90000
-                .eventType("code.analysis.requested [GH-90000]")
+                .eventType("code.analysis.requested")
                 .tenantId(tenantId) // GH-90000
                 .correlationId(UUID.randomUUID().toString()) // GH-90000
                 .payload(Map.of()) // Missing required fields — should trigger failure // GH-90000
@@ -195,14 +195,14 @@ class AgentExecutionE2ETest extends EventloopTestBase {
         DeadLetterResult dlqResult = runPromise(() -> platform.routeEventExpectingFailure(badEvent)); // GH-90000
 
         assertThat(dlqResult).isNotNull(); // GH-90000
-        assertThat(dlqResult.dlqName()).isEqualTo("yappc.dlq.java-expert [GH-90000]");
+        assertThat(dlqResult.dlqName()).isEqualTo("yappc.dlq.java-expert");
         assertThat(dlqResult.originalEvent()).isEqualTo(badEvent); // GH-90000
         assertThat(dlqResult.failureReason()).isNotBlank(); // GH-90000
     }
 
     @Test
     @Order(8) // GH-90000
-    @DisplayName("E2E: Should enforce tenant isolation — agent from tenant A not accessible to tenant B [GH-90000]")
+    @DisplayName("E2E: Should enforce tenant isolation — agent from tenant A not accessible to tenant B")
     void testAgentTenantIsolation() { // GH-90000
         String otherTenant = "other-tenant-" + UUID.randomUUID(); // GH-90000
         List<AgentInfo> otherTenantAgents = runPromise(() -> platform.listAgents(otherTenant)); // GH-90000
@@ -388,7 +388,7 @@ class AgentExecutionE2ETest extends EventloopTestBase {
         public Promise<AepEvent> routeEvent(AepEvent event) { // GH-90000
             return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
                 if (event.payload().isEmpty()) { // GH-90000
-                    throw new IllegalArgumentException("Empty payload [GH-90000]");
+                    throw new IllegalArgumentException("Empty payload");
                 }
                 String outputType = event.eventType().replace(".requested", ".completed"); // GH-90000
                 return new AepEvent(outputType, event.tenantId(), event.correlationId(), // GH-90000

@@ -12,6 +12,12 @@ import java.util.UUID;
  * context information for agent execution.
  */
 @SuppressWarnings("removal") // Uses deprecated AEP SecurityContext; migration to platform SecurityContext tracked separately
+/**
+ * @doc.type record
+ * @doc.purpose Provides default agent execution context functionality.
+ * @doc.layer product
+ * @doc.pattern Agent
+ */
 public record DefaultAgentExecutionContext(
         String tenantId,
         String userId,

@@ -32,15 +32,15 @@ public final class GrpcProtoFactory {
     /** Creates a sample DiagnoseRequest for testing. */
     public static DiagnoseRequest sampleDiagnoseRequest() { // GH-90000
         return DiagnoseRequest.newBuilder() // GH-90000
-                .setRepoRoot("/tmp/test-repo [GH-90000]")
-                .addIncludeGlobs("**/*.java [GH-90000]")
-                .addIncludeGlobs("**/*.ts [GH-90000]")
-                .addLanguages(Language.newBuilder().setId("java [GH-90000]").build())
-                .addLanguages(Language.newBuilder().setId("typescript [GH-90000]").build())
+                .setRepoRoot("/tmp/test-repo")
+                .addIncludeGlobs("**/*.java")
+                .addIncludeGlobs("**/*.ts")
+                .addLanguages(Language.newBuilder().setId("java").build())
+                .addLanguages(Language.newBuilder().setId("typescript").build())
                 .addPolicies( // GH-90000
                         PolicyKV.newBuilder() // GH-90000
-                                .setKey("java.allowTemporaryAny [GH-90000]")
-                                .setValue("false [GH-90000]")
+                                .setKey("java.allowTemporaryAny")
+                                .setValue("false")
                                 .build()) // GH-90000
                 .setBudget( // GH-90000
                         Budget.newBuilder() // GH-90000
@@ -49,22 +49,22 @@ public final class GrpcProtoFactory {
                                 .setTimeoutSeconds(300) // GH-90000
                                 .build()) // GH-90000
                 .setFormatters(true) // GH-90000
-                .setTenantId("test-tenant [GH-90000]")
+                .setTenantId("test-tenant")
                 .build(); // GH-90000
     }
 
     /** Creates a sample UnifiedDiagnostic for testing. */
     public static UnifiedDiagnostic sampleDiagnostic() { // GH-90000
         return UnifiedDiagnostic.newBuilder() // GH-90000
-                .setTool("javac [GH-90000]")
-                .setRule("missing-import [GH-90000]")
-                .setMessage("Cannot find symbol: List [GH-90000]")
-                .setFile("/tmp/test-repo/src/Main.java [GH-90000]")
+                .setTool("javac")
+                .setRule("missing-import")
+                .setMessage("Cannot find symbol: List")
+                .setFile("/tmp/test-repo/src/Main.java")
                 .setLine(10) // GH-90000
                 .setColumn(5) // GH-90000
-                .setSeverity("ERROR [GH-90000]")
-                .setSuggestion("import java.util.List [GH-90000]")
-                .setCategory("symbol:List [GH-90000]")
+                .setSeverity("ERROR")
+                .setSuggestion("import java.util.List")
+                .setCategory("symbol:List")
                 .setTimestamp(Instant.now().toEpochMilli()) // GH-90000
                 .build(); // GH-90000
     }
@@ -73,7 +73,7 @@ public final class GrpcProtoFactory {
     public static DiagnoseResponse sampleDiagnoseResponse() { // GH-90000
         return DiagnoseResponse.newBuilder() // GH-90000
                 .addDiagnostics(sampleDiagnostic()) // GH-90000
-                .setExecutionId("exec-123 [GH-90000]")
+                .setExecutionId("exec-123")
                 .setTimestamp(Instant.now().toEpochMilli()) // GH-90000
                 .build(); // GH-90000
     }
@@ -82,21 +82,21 @@ public final class GrpcProtoFactory {
     public static RunRequest sampleRunRequest() { // GH-90000
         return RunRequest.newBuilder() // GH-90000
                 .setConfig(sampleDiagnoseRequest()) // GH-90000
-                .setIdempotencyKey("idem-key-123 [GH-90000]")
+                .setIdempotencyKey("idem-key-123")
                 .setDryRun(false) // GH-90000
                 .build(); // GH-90000
     }
 
     /** Creates a sample JobId for testing. */
     public static JobId sampleJobId() { // GH-90000
-        return JobId.newBuilder().setId("job-123 [GH-90000]").build();
+        return JobId.newBuilder().setId("job-123").build();
     }
 
     /** Creates a sample RunStatus for testing. */
     public static RunStatus sampleRunStatus() { // GH-90000
         return RunStatus.newBuilder() // GH-90000
-                .setJobId("job-123 [GH-90000]")
-                .setState("RUNNING [GH-90000]")
+                .setJobId("job-123")
+                .setState("RUNNING")
                 .setPass(1) // GH-90000
                 .setStartedAt(Instant.now().toString()) // GH-90000
                 .setUpdatedAt(Instant.now().toString()) // GH-90000
@@ -108,9 +108,9 @@ public final class GrpcProtoFactory {
     /** Creates a sample Report for testing. */
     public static Report sampleReport() { // GH-90000
         return Report.newBuilder() // GH-90000
-                .setJobId("job-123 [GH-90000]")
+                .setJobId("job-123")
                 .setSummaryJson("{\"diagnostics_found\": 5, \"fixes_applied\": 3}") // GH-90000
-                .setDetailsJson("{} [GH-90000]")
+                .setDetailsJson("{}")
                 .setGeneratedAt(Instant.now().toString()) // GH-90000
                 .build(); // GH-90000
     }
@@ -118,9 +118,9 @@ public final class GrpcProtoFactory {
     /** Creates a sample ProgressEvent for testing. */
     public static ProgressEvent sampleProgressEvent() { // GH-90000
         return ProgressEvent.newBuilder() // GH-90000
-                .setJobId("job-123 [GH-90000]")
-                .setEventType("diagnostic [GH-90000]")
-                .setMessage("Found missing import [GH-90000]")
+                .setJobId("job-123")
+                .setEventType("diagnostic")
+                .setMessage("Found missing import")
                 .setCurrentPass(1) // GH-90000
                 .setTotalPasses(3) // GH-90000
                 .setTimestamp(Instant.now().toEpochMilli()) // GH-90000
@@ -130,7 +130,7 @@ public final class GrpcProtoFactory {
     /** Creates a sample HealthResponse for testing. */
     public static HealthResponse sampleHealthResponse() { // GH-90000
         return HealthResponse.newBuilder() // GH-90000
-                .setStatus("UP [GH-90000]")
+                .setStatus("UP")
                 .putDetails("version", "1.0.0") // GH-90000
                 .putDetails("uptime", "3600") // GH-90000
                 .setTimestamp(Instant.now().toEpochMilli()) // GH-90000

@@ -14,9 +14,9 @@ class PipelineEdgeSpecTest {
     void shouldSerializeAndDeserializeFromYaml() throws Exception { // GH-90000
         // Given
         PipelineEdgeSpec original = PipelineEdgeSpec.builder() // GH-90000
-            .fromStageId("stage-1 [GH-90000]")
-            .toStageId("stage-2 [GH-90000]")
-            .label("primary [GH-90000]")
+            .fromStageId("stage-1")
+            .toStageId("stage-2")
+            .label("primary")
             .build(); // GH-90000
 
         // When
@@ -25,9 +25,9 @@ class PipelineEdgeSpecTest {
 
         // Then
         assertThat(deserialized).isEqualTo(original); // GH-90000
-        assertThat(deserialized.getFromStageId()).isEqualTo("stage-1 [GH-90000]");
-        assertThat(deserialized.getToStageId()).isEqualTo("stage-2 [GH-90000]");
-        assertThat(deserialized.getLabel()).isEqualTo("primary [GH-90000]");
+        assertThat(deserialized.getFromStageId()).isEqualTo("stage-1");
+        assertThat(deserialized.getToStageId()).isEqualTo("stage-2");
+        assertThat(deserialized.getLabel()).isEqualTo("primary");
     }
 
     @Test

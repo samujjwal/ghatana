@@ -7,7 +7,11 @@ import java.util.Map;
  * Configuration for data preprocessing operations.
  *
  * Day 28 Implementation: Configurable preprocessing parameters for pattern exploration.
- */
+  * @doc.type class
+ * @doc.purpose Provides preprocessing config functionality.
+ * @doc.layer product
+ * @doc.pattern Configuration
+*/
 public class PreprocessingConfig {
 
     private final Duration timeWindow;

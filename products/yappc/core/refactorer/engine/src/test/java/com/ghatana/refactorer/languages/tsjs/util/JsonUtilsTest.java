@@ -77,7 +77,7 @@ class JsonUtilsTest {
 
         // Assert
         assertThat(result).isNotNull(); // GH-90000
-        assertThat(result.getName()).isEqualTo("test [GH-90000]");
+        assertThat(result.getName()).isEqualTo("test");
         assertThat(result.getValue()).isEqualTo(42); // GH-90000
     }
 
@@ -104,7 +104,7 @@ class JsonUtilsTest {
 
         // Assert
         assertThat(result).isNotNull(); // GH-90000
-        assertThat(result.getName()).isEqualTo("test [GH-90000]");
+        assertThat(result.getName()).isEqualTo("test");
         assertThat(result.getValue()).isEqualTo(42); // GH-90000
     }
 

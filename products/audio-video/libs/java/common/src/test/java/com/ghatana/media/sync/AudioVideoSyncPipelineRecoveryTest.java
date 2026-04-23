@@ -29,7 +29,7 @@ class AudioVideoSyncPipelineRecoveryTest {
     }
 
     @Test
-    @DisplayName("Should recover from sync errors with exponential backoff [GH-90000]")
+    @DisplayName("Should recover from sync errors with exponential backoff")
     void testExponentialBackoffRecovery() throws Exception { // GH-90000
         TestSyncCallback errorCallback = new TestSyncCallback() { // GH-90000
             @Override
@@ -38,7 +38,7 @@ class AudioVideoSyncPipelineRecoveryTest {
             }
             @Override
             public void onSyncedFrame(SyncedFrame frame) { // GH-90000
-                throw new RuntimeException("Simulated sync error [GH-90000]");
+                throw new RuntimeException("Simulated sync error");
             }
         };
         AudioVideoSyncPipeline errorPipeline = new AudioVideoSyncPipeline(errorCallback, 500, 200, 40); // GH-90000
@@ -61,12 +61,12 @@ class AudioVideoSyncPipelineRecoveryTest {
     }
 
     @Test
-    @DisplayName("Should degrade to async mode after max recovery attempts [GH-90000]")
+    @DisplayName("Should degrade to async mode after max recovery attempts")
     void testAsyncModeDegradation() throws Exception { // GH-90000
         TestSyncCallback errorCallback = new TestSyncCallback() { // GH-90000
             @Override
             public void onSyncedFrame(SyncedFrame frame) { // GH-90000
-                throw new RuntimeException("Simulated sync error [GH-90000]");
+                throw new RuntimeException("Simulated sync error");
             }
         };
         AudioVideoSyncPipeline errorPipeline = new AudioVideoSyncPipeline(errorCallback, 500, 200, 40); // GH-90000
@@ -91,7 +91,7 @@ class AudioVideoSyncPipelineRecoveryTest {
     }
 
     @Test
-    @DisplayName("Should track sync quality metrics [GH-90000]")
+    @DisplayName("Should track sync quality metrics")
     void testSyncQualityMetrics() throws Exception { // GH-90000
         long baseTime = System.currentTimeMillis() * 1000; // GH-90000
         for (int i = 0; i < 150; i++) { // GH-90000
@@ -111,7 +111,7 @@ class AudioVideoSyncPipelineRecoveryTest {
     }
 
     @Test
-    @DisplayName("Should reset recovery counter on successful sync [GH-90000]")
+    @DisplayName("Should reset recovery counter on successful sync")
     void testRecoveryCounterReset() throws Exception { // GH-90000
         long baseTime = System.currentTimeMillis() * 1000; // GH-90000
         for (int i = 0; i < 10; i++) { // GH-90000
@@ -127,7 +127,7 @@ class AudioVideoSyncPipelineRecoveryTest {
     }
 
     @Test
-    @DisplayName("Should manually trigger recovery [GH-90000]")
+    @DisplayName("Should manually trigger recovery")
     void testManualRecoveryTrigger() throws Exception { // GH-90000
         pipeline.close(); // GH-90000
         pipeline = new AudioVideoSyncPipeline(callback, 500, 200, 40); // GH-90000
@@ -137,7 +137,7 @@ class AudioVideoSyncPipelineRecoveryTest {
     }
 
     @Test
-    @DisplayName("Should emit quality change callbacks [GH-90000]")
+    @DisplayName("Should emit quality change callbacks")
     void testQualityChangeCallbacks() throws Exception { // GH-90000
         long baseTime = System.currentTimeMillis() * 1000; // GH-90000
         for (int i = 0; i < 50; i++) { // GH-90000
@@ -153,14 +153,14 @@ class AudioVideoSyncPipelineRecoveryTest {
     }
 
     @Test
-    @DisplayName("Should handle async mode frame emission [GH-90000]")
+    @DisplayName("Should handle async mode frame emission")
     void testAsyncModeFrameEmission() throws Exception { // GH-90000
         TestSyncCallback errorCallback = new TestSyncCallback() { // GH-90000
             private int callCount = 0;
             @Override
             public void onSyncedFrame(SyncedFrame frame) { // GH-90000
                 if (callCount++ < 10) { // GH-90000
-                    throw new RuntimeException("Force async mode [GH-90000]");
+                    throw new RuntimeException("Force async mode");
                 }
                 super.onSyncedFrame(frame); // GH-90000
             }
@@ -184,7 +184,7 @@ class AudioVideoSyncPipelineRecoveryTest {
     }
 
     @Test
-    @DisplayName("Should provide buffer statistics [GH-90000]")
+    @DisplayName("Should provide buffer statistics")
     void testBufferStatistics() throws Exception { // GH-90000
         long baseTime = System.currentTimeMillis() * 1000; // GH-90000
         for (int i = 0; i < 5; i++) { // GH-90000

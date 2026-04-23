@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Health Check Performance Tests [GH-90000]")
+@DisplayName("Health Check Performance Tests")
 class HealthCheckPerformanceTest extends EventloopTestBase {
 
     private KernelRegistryImpl registry;
@@ -45,7 +45,7 @@ class HealthCheckPerformanceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should aggregate health checks for 100 modules within 500ms [GH-90000]")
+    @DisplayName("Should aggregate health checks for 100 modules within 500ms")
     void testHealthCheckAggregationWith100Modules() { // GH-90000
         // GIVEN: 100 registered modules
         int moduleCount = 100;
@@ -76,7 +76,7 @@ class HealthCheckPerformanceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle parallel health check execution efficiently [GH-90000]")
+    @DisplayName("Should handle parallel health check execution efficiently")
     void testParallelHealthCheckExecution() { // GH-90000
         // GIVEN: 50 modules with varying health check durations
         int moduleCount = 50;
@@ -110,7 +110,7 @@ class HealthCheckPerformanceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle concurrent health check requests [GH-90000]")
+    @DisplayName("Should handle concurrent health check requests")
     void testConcurrentHealthCheckRequests() { // GH-90000
         // GIVEN: 20 modules
         int moduleCount = 20;
@@ -154,7 +154,7 @@ class HealthCheckPerformanceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle health check timeout gracefully [GH-90000]")
+    @DisplayName("Should handle health check timeout gracefully")
     void testHealthCheckTimeout() { // GH-90000
         // GIVEN: Module with slow health check
         SlowHealthCheckModule slowModule = new SlowHealthCheckModule( // GH-90000
@@ -190,7 +190,7 @@ class HealthCheckPerformanceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should cache health check results efficiently [GH-90000]")
+    @DisplayName("Should cache health check results efficiently")
     void testHealthCheckCaching() { // GH-90000
         // GIVEN: Module that tracks health check invocations
         CountingHealthCheckModule module = new CountingHealthCheckModule("counting-module", "1.0.0"); // GH-90000
@@ -216,7 +216,7 @@ class HealthCheckPerformanceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle unhealthy modules in aggregation [GH-90000]")
+    @DisplayName("Should handle unhealthy modules in aggregation")
     void testUnhealthyModulesInAggregation() { // GH-90000
         // GIVEN: Mix of healthy and unhealthy modules
         int healthyCount = 80;
@@ -352,7 +352,7 @@ class HealthCheckPerformanceTest extends EventloopTestBase {
 
         @Override
         public HealthStatus getHealthStatus() { // GH-90000
-            return HealthStatus.unhealthy("Module is unhealthy [GH-90000]");
+            return HealthStatus.unhealthy("Module is unhealthy");
         }
     }
 }

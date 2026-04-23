@@ -35,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("AudioVideo - Phase 3 Expansion [GH-90000]")
+@DisplayName("AudioVideo - Phase 3 Expansion")
 class AudioVideoExpansionTest {
 
     private AudioVideoLibrary library;
@@ -44,16 +44,16 @@ class AudioVideoExpansionTest {
     void setUp() { // GH-90000
         library = AudioVideoLibrary.builder() // GH-90000
                 .withSttConfig(SttConfig.builder() // GH-90000
-                        .modelPath(Paths.get("/models/whisper-base.onnx [GH-90000]"))
-                        .modelId("whisper-base [GH-90000]")
+                        .modelPath(Paths.get("/models/whisper-base.onnx"))
+                        .modelId("whisper-base")
                         .build()) // GH-90000
                 .withTtsConfig(TtsConfig.builder() // GH-90000
-                        .voiceModelPath(Paths.get("/models/piper-en.onnx [GH-90000]"))
-                        .defaultVoiceId("piper-en [GH-90000]")
+                        .voiceModelPath(Paths.get("/models/piper-en.onnx"))
+                        .defaultVoiceId("piper-en")
                         .build()) // GH-90000
                 .withVisionConfig(VisionConfig.builder() // GH-90000
-                        .modelPath(Paths.get("/models/yolov8n.onnx [GH-90000]"))
-                        .modelId("yolov8n [GH-90000]")
+                        .modelPath(Paths.get("/models/yolov8n.onnx"))
+                        .modelId("yolov8n")
                         .build()) // GH-90000
                 .build(); // GH-90000
     }
@@ -70,11 +70,11 @@ class AudioVideoExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Library Engine Management [GH-90000]")
+    @DisplayName("Library Engine Management")
     class EngineManagementTests {
 
         @Test
-        @DisplayName("Library reports all enabled engines [GH-90000]")
+        @DisplayName("Library reports all enabled engines")
         void allEnginesEnabled() { // GH-90000
             assertThat(library.isSttEnabled()).isTrue(); // GH-90000
             assertThat(library.isTtsEnabled()).isTrue(); // GH-90000
@@ -82,7 +82,7 @@ class AudioVideoExpansionTest {
         }
 
         @Test
-        @DisplayName("Engine caching consistency [GH-90000]")
+        @DisplayName("Engine caching consistency")
         void engineCaching() { // GH-90000
             SttEngine sttEngine1 = library.getSttEngine(); // GH-90000
             SttEngine sttEngine2 = library.getSttEngine(); // GH-90000
@@ -98,12 +98,12 @@ class AudioVideoExpansionTest {
         }
 
         @Test
-        @DisplayName("Selective engine enabling [GH-90000]")
+        @DisplayName("Selective engine enabling")
         void selectiveEngineEnabling() { // GH-90000
             AudioVideoLibrary sttOnly = AudioVideoLibrary.builder() // GH-90000
                     .withSttConfig(SttConfig.builder() // GH-90000
-                            .modelPath(Paths.get("/models/whisper.onnx [GH-90000]"))
-                            .modelId("whisper [GH-90000]")
+                            .modelPath(Paths.get("/models/whisper.onnx"))
+                            .modelId("whisper")
                             .build()) // GH-90000
                     .build(); // GH-90000
 
@@ -115,7 +115,7 @@ class AudioVideoExpansionTest {
         }
 
         @Test
-        @DisplayName("Multiple library instances [GH-90000]")
+        @DisplayName("Multiple library instances")
         void multipleInstances() { // GH-90000
             List<AudioVideoLibrary> libraries = new ArrayList<>(); // GH-90000
 
@@ -123,7 +123,7 @@ class AudioVideoExpansionTest {
                 final int idx = i;
                 AudioVideoLibrary lib = AudioVideoLibrary.builder() // GH-90000
                         .withSttConfig(SttConfig.builder() // GH-90000
-                                .modelPath(Paths.get("/models/whisper.onnx [GH-90000]"))
+                                .modelPath(Paths.get("/models/whisper.onnx"))
                                 .modelId("whisper-" + idx) // GH-90000
                                 .build()) // GH-90000
                         .build(); // GH-90000
@@ -142,11 +142,11 @@ class AudioVideoExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Speech-to-Text Operations [GH-90000]")
+    @DisplayName("Speech-to-Text Operations")
     class SttOperationsTests {
 
         @Test
-        @DisplayName("Process many audio inputs [GH-90000]")
+        @DisplayName("Process many audio inputs")
         void manyAudioInputs() { // GH-90000
             SttEngine engine = library.getSttEngine(); // GH-90000
 
@@ -159,7 +159,7 @@ class AudioVideoExpansionTest {
         }
 
         @Test
-        @DisplayName("Various audio configurations [GH-90000]")
+        @DisplayName("Various audio configurations")
         void variousAudioConfigs() { // GH-90000
             SttEngine engine = library.getSttEngine(); // GH-90000
 
@@ -178,7 +178,7 @@ class AudioVideoExpansionTest {
         }
 
         @Test
-        @DisplayName("Language variety support [GH-90000]")
+        @DisplayName("Language variety support")
         void languageVariety() { // GH-90000
             SttEngine engine = library.getSttEngine(); // GH-90000
 
@@ -199,11 +199,11 @@ class AudioVideoExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Text-to-Speech Operations [GH-90000]")
+    @DisplayName("Text-to-Speech Operations")
     class TtsOperationsTests {
 
         @Test
-        @DisplayName("Synthesize many text inputs [GH-90000]")
+        @DisplayName("Synthesize many text inputs")
         void synthesizeManyTexts() { // GH-90000
             TtsEngine engine = library.getTtsEngine(); // GH-90000
 
@@ -218,7 +218,7 @@ class AudioVideoExpansionTest {
         }
 
         @Test
-        @DisplayName("Various voice configurations and speeds [GH-90000]")
+        @DisplayName("Various voice configurations and speeds")
         void voiceVariations() { // GH-90000
             TtsEngine engine = library.getTtsEngine(); // GH-90000
 
@@ -243,11 +243,11 @@ class AudioVideoExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Vision Engine Operations [GH-90000]")
+    @DisplayName("Vision Engine Operations")
     class VisionOperationsTests {
 
         @Test
-        @DisplayName("Process many images [GH-90000]")
+        @DisplayName("Process many images")
         void processManyImages() { // GH-90000
             VisionEngine engine = library.getVisionEngine(); // GH-90000
 
@@ -257,12 +257,12 @@ class AudioVideoExpansionTest {
 
                 // Simulate image processing
                 assertThat(imagePath).isNotNull(); // GH-90000
-                assertThat(imagePath.endsWith(".jpg [GH-90000]")).isTrue();
+                assertThat(imagePath.endsWith(".jpg")).isTrue();
             }
         }
 
         @Test
-        @DisplayName("Various image dimensions and formats [GH-90000]")
+        @DisplayName("Various image dimensions and formats")
         void imageDimensions() { // GH-90000
             VisionEngine engine = library.getVisionEngine(); // GH-90000
 
@@ -294,11 +294,11 @@ class AudioVideoExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Concurrent Operations [GH-90000]")
+    @DisplayName("Concurrent Operations")
     class ConcurrencyTests {
 
         @Test
-        @DisplayName("Concurrent audio processing [GH-90000]")
+        @DisplayName("Concurrent audio processing")
         void concurrentAudioProcessing() throws Exception { // GH-90000
             SttEngine engine = library.getSttEngine(); // GH-90000
 
@@ -336,7 +336,7 @@ class AudioVideoExpansionTest {
         }
 
         @Test
-        @DisplayName("Concurrent mixed media operations [GH-90000]")
+        @DisplayName("Concurrent mixed media operations")
         void concurrentMixedOperations() throws Exception { // GH-90000
             int threadCount = 25;
             CountDownLatch latch = new CountDownLatch(threadCount); // GH-90000
@@ -389,11 +389,11 @@ class AudioVideoExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Edge Cases [GH-90000]")
+    @DisplayName("Edge Cases")
     class EdgeCaseTests {
 
         @Test
-        @DisplayName("Extreme media scenarios [GH-90000]")
+        @DisplayName("Extreme media scenarios")
         void extremeScenarios() { // GH-90000
             // Very large audio files
             long[] fileSizes = {1024 * 1024, 100 * 1024 * 1024, 1000 * 1024 * 1024};

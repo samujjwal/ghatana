@@ -9,24 +9,24 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@DisplayName("Codegen Model Tests [GH-90000]")
+@DisplayName("Codegen Model Tests")
 class CodegenModelTest {
 
     private final SanitizedFieldNamingStrategy strategy = new SanitizedFieldNamingStrategy(); // GH-90000
 
     @Test
-    @DisplayName("sanitized naming strategy normalizes mixed input into java-safe field names [GH-90000]")
+    @DisplayName("sanitized naming strategy normalizes mixed input into java-safe field names")
     void sanitizedNamingStrategyNormalizesMixedInputIntoJavaSafeFieldNames() { // GH-90000
-        assertEquals("customerId", strategy.toFieldName("Customer ID [GH-90000]"));
-                assertEquals("f123Status", strategy.toFieldName("123-status [GH-90000]"));
-        assertEquals("classValue", strategy.toFieldName("class [GH-90000]"));
+        assertEquals("customerId", strategy.toFieldName("Customer ID"));
+                assertEquals("f123Status", strategy.toFieldName("123-status"));
+        assertEquals("classValue", strategy.toFieldName("class"));
         assertEquals("field", strategy.toFieldName(null)); // GH-90000
-        assertEquals("field", strategy.toFieldName("    [GH-90000]"));
-        assertEquals("field", strategy.toFieldName("--- [GH-90000]"));
+        assertEquals("field", strategy.toFieldName("   "));
+        assertEquals("field", strategy.toFieldName("---"));
     }
 
     @Test
-    @DisplayName("field definition preserves values and derives getter name [GH-90000]")
+    @DisplayName("field definition preserves values and derives getter name")
     void fieldDefinitionPreservesValuesAndDerivesGetterName() { // GH-90000
         FieldDefinition definition = new FieldDefinition( // GH-90000
                 "event_id",
@@ -57,7 +57,7 @@ class CodegenModelTest {
     }
 
     @Test
-    @DisplayName("field definition rejects required null constructor arguments [GH-90000]")
+    @DisplayName("field definition rejects required null constructor arguments")
     void fieldDefinitionRejectsRequiredNullConstructorArguments() { // GH-90000
         assertThrows(NullPointerException.class, // GH-90000
                 () -> new FieldDefinition(null, "field", String.class, true, FieldCategory.PAYLOAD, "desc")); // GH-90000

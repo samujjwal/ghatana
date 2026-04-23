@@ -14,7 +14,8 @@ import org.jetbrains.annotations.Nullable;
  * @doc.type value-object
  * @doc.purpose Memory item provenance tracking
  * @doc.layer agent-memory
- */
+  * @doc.pattern Component
+*/
 @Value
 @Builder
 @Jacksonized

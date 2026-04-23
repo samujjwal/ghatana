@@ -10,7 +10,11 @@ import java.util.List;
  * Serializes generated event types to/from EventCloud records.
  *
  * @param <T> concrete event type handled by this serializer
- */
+  * @doc.type interface
+ * @doc.purpose Provides event cloud serializer functionality.
+ * @doc.layer product
+ * @doc.pattern Event
+*/
 public interface EventCloudSerializer<T> {
 
     /**

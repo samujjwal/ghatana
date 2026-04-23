@@ -27,7 +27,8 @@ import java.util.concurrent.TimeUnit;
  * @doc.type class
  * @doc.purpose Combined audio-visual analysis pipeline
  * @doc.layer intelligence
- */
+  * @doc.pattern Component
+*/
 public class MultimodalAnalysisEngine implements AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(MultimodalAnalysisEngine.class);

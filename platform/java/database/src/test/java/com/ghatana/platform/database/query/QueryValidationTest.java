@@ -21,11 +21,11 @@ import static org.mockito.Mockito.*;
  * Test complex queries, joins, pagination, sorting, and performance
  * with large datasets.
  */
-@DisplayName("Query Validation Tests [GH-90000]")
+@DisplayName("Query Validation Tests")
 class QueryValidationTest {
 
     @Test
-    @DisplayName("Should handle complex join queries [GH-90000]")
+    @DisplayName("Should handle complex join queries")
     void shouldHandleComplexJoinQueries() { // GH-90000
         DataSource mockDataSource = mock(DataSource.class); // GH-90000
         JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
@@ -34,7 +34,7 @@ class QueryValidationTest {
     }
 
     @Test
-    @DisplayName("Should handle query pagination correctly [GH-90000]")
+    @DisplayName("Should handle query pagination correctly")
     void shouldHandleQueryPaginationCorrectly() { // GH-90000
         DataSource mockDataSource = mock(DataSource.class); // GH-90000
         JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
@@ -43,7 +43,7 @@ class QueryValidationTest {
     }
 
     @Test
-    @DisplayName("Should handle query sorting correctly [GH-90000]")
+    @DisplayName("Should handle query sorting correctly")
     void shouldHandleQuerySortingCorrectly() { // GH-90000
         DataSource mockDataSource = mock(DataSource.class); // GH-90000
         JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
@@ -52,7 +52,7 @@ class QueryValidationTest {
     }
 
     @Test
-    @DisplayName("Should handle large dataset queries efficiently [GH-90000]")
+    @DisplayName("Should handle large dataset queries efficiently")
     void shouldHandleLargeDatasetQueriesEfficiently() { // GH-90000
         DataSource mockDataSource = mock(DataSource.class); // GH-90000
         JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
@@ -61,7 +61,7 @@ class QueryValidationTest {
     }
 
     @Test
-    @DisplayName("Should handle aggregate functions correctly [GH-90000]")
+    @DisplayName("Should handle aggregate functions correctly")
     void shouldHandleAggregateFunctionsCorrectly() { // GH-90000
         DataSource mockDataSource = mock(DataSource.class); // GH-90000
         JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
@@ -70,7 +70,7 @@ class QueryValidationTest {
     }
 
     @Test
-    @DisplayName("Should handle subqueries correctly [GH-90000]")
+    @DisplayName("Should handle subqueries correctly")
     void shouldHandleSubqueriesCorrectly() { // GH-90000
         DataSource mockDataSource = mock(DataSource.class); // GH-90000
         JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000

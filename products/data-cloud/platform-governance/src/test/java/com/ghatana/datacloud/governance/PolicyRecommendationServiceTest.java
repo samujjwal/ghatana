@@ -19,8 +19,8 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("PolicyRecommendationServiceTest [GH-90000]")
-@Tag("governance [GH-90000]")
+@DisplayName("PolicyRecommendationServiceTest")
+@Tag("governance")
 class PolicyRecommendationServiceTest {
 
     private PolicyRecommendationService service;
@@ -33,7 +33,7 @@ class PolicyRecommendationServiceTest {
     // ─── Violation-based recommendations ─────────────────────────────────────────
 
     @Test
-    @DisplayName("generates recommendation for high violation rate [GH-90000]")
+    @DisplayName("generates recommendation for high violation rate")
     void generatesRecommendationForHighViolationRate() { // GH-90000
         List<PolicyViolation> violations = new ArrayList<>(); // GH-90000
         for (int i = 0; i < 15; i++) { // GH-90000
@@ -51,11 +51,11 @@ class PolicyRecommendationServiceTest {
         PolicyRecommendationService.Recommendation rec = recommendations.getFirst(); // GH-90000
         assertThat(rec.type()).isEqualTo(PolicyRecommendationService.RecommendationType.POLICY_MODIFICATION); // GH-90000
         assertThat(rec.priority()).isEqualTo(PolicyRecommendationService.RecommendationPriority.HIGH); // GH-90000
-        assertThat(rec.description()).contains("15 violations [GH-90000]");
+        assertThat(rec.description()).contains("15 violations");
     }
 
     @Test
-    @DisplayName("generates recommendation for repeated user violations [GH-90000]")
+    @DisplayName("generates recommendation for repeated user violations")
     void generatesRecommendationForUserViolations() { // GH-90000
         List<PolicyViolation> violations = new ArrayList<>(); // GH-90000
         for (int i = 0; i < 6; i++) { // GH-90000
@@ -72,11 +72,11 @@ class PolicyRecommendationServiceTest {
         assertThat(recommendations).hasSize(1); // GH-90000
         PolicyRecommendationService.Recommendation rec = recommendations.getFirst(); // GH-90000
         assertThat(rec.type()).isEqualTo(PolicyRecommendationService.RecommendationType.ACCESS_CONTROL_IMPROVEMENT); // GH-90000
-        assertThat(rec.description()).contains("problematic-user [GH-90000]");
+        assertThat(rec.description()).contains("problematic-user");
     }
 
     @Test
-    @DisplayName("no recommendation for low violation count [GH-90000]")
+    @DisplayName("no recommendation for low violation count")
     void noRecommendationForLowViolationCount() { // GH-90000
         List<PolicyViolation> violations = new ArrayList<>(); // GH-90000
         for (int i = 0; i < 5; i++) { // GH-90000
@@ -96,7 +96,7 @@ class PolicyRecommendationServiceTest {
     // ─── Access pattern recommendations ─────────────────────────────────────────
 
     @Test
-    @DisplayName("generates recommendation for frequently accessed resources [GH-90000]")
+    @DisplayName("generates recommendation for frequently accessed resources")
     void generatesRecommendationForFrequentAccess() { // GH-90000
         List<PolicyRecommendationService.AccessPattern> patterns = new ArrayList<>(); // GH-90000
         for (int i = 0; i < 10; i++) { // GH-90000
@@ -112,11 +112,11 @@ class PolicyRecommendationServiceTest {
         assertThat(recommendations).hasSize(1); // GH-90000
         PolicyRecommendationService.Recommendation rec = recommendations.getFirst(); // GH-90000
         assertThat(rec.type()).isEqualTo(PolicyRecommendationService.RecommendationType.POLICY_CREATION); // GH-90000
-        assertThat(rec.description()).contains("frequently accessed [GH-90000]");
+        assertThat(rec.description()).contains("frequently accessed");
     }
 
     @Test
-    @DisplayName("generates recommendation for orphaned access patterns [GH-90000]")
+    @DisplayName("generates recommendation for orphaned access patterns")
     void generatesRecommendationForOrphanedPatterns() { // GH-90000
         List<PolicyRecommendationService.AccessPattern> patterns = new ArrayList<>(); // GH-90000
         patterns.add(new PolicyRecommendationService.AccessPattern( // GH-90000
@@ -130,13 +130,13 @@ class PolicyRecommendationServiceTest {
         assertThat(recommendations).hasSize(1); // GH-90000
         PolicyRecommendationService.Recommendation rec = recommendations.getFirst(); // GH-90000
         assertThat(rec.type()).isEqualTo(PolicyRecommendationService.RecommendationType.POLICY_DELETION); // GH-90000
-        assertThat(rec.description()).contains("90 days [GH-90000]");
+        assertThat(rec.description()).contains("90 days");
     }
 
     // ─── Compliance gap recommendations ─────────────────────────────────────────
 
     @Test
-    @DisplayName("generates recommendation for missing required policy types [GH-90000]")
+    @DisplayName("generates recommendation for missing required policy types")
     void generatesRecommendationForMissingPolicyTypes() { // GH-90000
         List<PolicyService.Policy> currentPolicies = List.of( // GH-90000
                 new PolicyService.Policy( // GH-90000
@@ -160,11 +160,11 @@ class PolicyRecommendationServiceTest {
         PolicyRecommendationService.Recommendation rec = recommendations.getFirst(); // GH-90000
         assertThat(rec.type()).isEqualTo(PolicyRecommendationService.RecommendationType.COMPLIANCE_REMEDIATION); // GH-90000
         assertThat(rec.priority()).isEqualTo(PolicyRecommendationService.RecommendationPriority.CRITICAL); // GH-90000
-        assertThat(rec.description()).contains("ACCESS_CONTROL [GH-90000]");
+        assertThat(rec.description()).contains("ACCESS_CONTROL");
     }
 
     @Test
-    @DisplayName("generates recommendation for disabled policies [GH-90000]")
+    @DisplayName("generates recommendation for disabled policies")
     void generatesRecommendationForDisabledPolicies() { // GH-90000
         List<PolicyService.Policy> currentPolicies = List.of( // GH-90000
                 new PolicyService.Policy( // GH-90000
@@ -181,7 +181,7 @@ class PolicyRecommendationServiceTest {
 
         PolicyRecommendationService.ComplianceRequirements requirements =
                 new PolicyRecommendationService.ComplianceRequirements( // GH-90000
-                        Set.of("DATA_RETENTION [GH-90000]"),
+                        Set.of("DATA_RETENTION"),
                         Map.of(), // GH-90000
                         Set.of() // GH-90000
                 );
@@ -192,11 +192,11 @@ class PolicyRecommendationServiceTest {
         assertThat(recommendations).hasSize(1); // GH-90000
         PolicyRecommendationService.Recommendation rec = recommendations.getFirst(); // GH-90000
         assertThat(rec.type()).isEqualTo(PolicyRecommendationService.RecommendationType.PRIORITY_ADJUSTMENT); // GH-90000
-        assertThat(rec.description()).contains("disabled [GH-90000]");
+        assertThat(rec.description()).contains("disabled");
     }
 
     @Test
-    @DisplayName("no recommendation when compliance is met [GH-90000]")
+    @DisplayName("no recommendation when compliance is met")
     void noRecommendationWhenComplianceMet() { // GH-90000
         List<PolicyService.Policy> currentPolicies = List.of( // GH-90000
                 new PolicyService.Policy( // GH-90000
@@ -227,7 +227,7 @@ class PolicyRecommendationServiceTest {
     // ─── Recommendation ordering ─────────────────────────────────────────────────
 
     @Test
-    @DisplayName("recommendations are sorted by priority descending [GH-90000]")
+    @DisplayName("recommendations are sorted by priority descending")
     void recommendationsAreSortedByPriority() { // GH-90000
         List<PolicyViolation> violations = new ArrayList<>(); // GH-90000
         // Generate 15 violations for HIGH priority
@@ -258,7 +258,7 @@ class PolicyRecommendationServiceTest {
     // ─── Recommendation record validation ───────────────────────────────────────
 
     @Test
-    @DisplayName("recommendation record has required fields [GH-90000]")
+    @DisplayName("recommendation record has required fields")
     void recommendationHasRequiredFields() { // GH-90000
         PolicyRecommendationService.Recommendation rec = new PolicyRecommendationService.Recommendation( // GH-90000
                 "id-1",
@@ -271,17 +271,17 @@ class PolicyRecommendationServiceTest {
                 Instant.now() // GH-90000
         );
 
-        assertThat(rec.id()).isEqualTo("id-1 [GH-90000]");
+        assertThat(rec.id()).isEqualTo("id-1");
         assertThat(rec.type()).isEqualTo(PolicyRecommendationService.RecommendationType.POLICY_CREATION); // GH-90000
-        assertThat(rec.title()).isEqualTo("Test Title [GH-90000]");
-        assertThat(rec.description()).isEqualTo("Test Description [GH-90000]");
+        assertThat(rec.title()).isEqualTo("Test Title");
+        assertThat(rec.description()).isEqualTo("Test Description");
         assertThat(rec.priority()).isEqualTo(PolicyRecommendationService.RecommendationPriority.HIGH); // GH-90000
-        assertThat(rec.suggestedPolicyId()).isEqualTo("policy-1 [GH-90000]");
+        assertThat(rec.suggestedPolicyId()).isEqualTo("policy-1");
         assertThat(rec.parameters()).containsEntry("key", "value"); // GH-90000
     }
 
     @Test
-    @DisplayName("priority levels are correctly ordered [GH-90000]")
+    @DisplayName("priority levels are correctly ordered")
     void priorityLevelsAreOrdered() { // GH-90000
         assertThat(PolicyRecommendationService.RecommendationPriority.CRITICAL.level()) // GH-90000
                 .isGreaterThan(PolicyRecommendationService.RecommendationPriority.HIGH.level()); // GH-90000

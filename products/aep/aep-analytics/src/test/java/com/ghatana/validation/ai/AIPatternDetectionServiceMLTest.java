@@ -39,7 +39,7 @@ import static org.mockito.Mockito.when;
  * @doc.purpose Unit tests for ML-based pattern detection
  * @doc.layer test
  */
-@DisplayName("AI Pattern Detection Service ML Tests [GH-90000]")
+@DisplayName("AI Pattern Detection Service ML Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class AIPatternDetectionServiceMLTest extends EventloopTestBase {
 
@@ -47,7 +47,7 @@ class AIPatternDetectionServiceMLTest extends EventloopTestBase {
     private LLMGateway llmGateway;
 
     @Test
-    @DisplayName("uses ML when LLM gateway is provided and useML is true [GH-90000]")
+    @DisplayName("uses ML when LLM gateway is provided and useML is true")
     void usesMLWhenGatewayProvided() { // GH-90000
         Metrics metrics = new Metrics(new SimpleMeterRegistry()); // GH-90000
         AIPatternDetectionServiceImpl service = new AIPatternDetectionServiceImpl(metrics, llmGateway); // GH-90000
@@ -56,12 +56,12 @@ class AIPatternDetectionServiceMLTest extends EventloopTestBase {
         PatternAnalysisConfig config = new PatternAnalysisConfig(0, 0.5, 0, Map.of("useML", true)); // GH-90000
 
         CompletionResult mockResult = CompletionResult.builder() // GH-90000
-            .text("[] [GH-90000]")
+            .text("[]")
             .tokensUsed(10) // GH-90000
             .promptTokens(5) // GH-90000
             .completionTokens(5) // GH-90000
-            .finishReason("stop [GH-90000]")
-            .modelUsed("gpt-4 [GH-90000]")
+            .finishReason("stop")
+            .modelUsed("gpt-4")
             .build(); // GH-90000
 
         when(llmGateway.complete(any(CompletionRequest.class))) // GH-90000
@@ -73,7 +73,7 @@ class AIPatternDetectionServiceMLTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("falls back to heuristic when useML is false [GH-90000]")
+    @DisplayName("falls back to heuristic when useML is false")
     void fallsBackToHeuristicWhenUseMLFalse() { // GH-90000
         Metrics metrics = new Metrics(new SimpleMeterRegistry()); // GH-90000
         AIPatternDetectionServiceImpl service = new AIPatternDetectionServiceImpl(metrics, llmGateway); // GH-90000
@@ -87,7 +87,7 @@ class AIPatternDetectionServiceMLTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("falls back to heuristic when LLM gateway is null [GH-90000]")
+    @DisplayName("falls back to heuristic when LLM gateway is null")
     void fallsBackToHeuristicWhenGatewayNull() { // GH-90000
         Metrics metrics = new Metrics(new SimpleMeterRegistry()); // GH-90000
         AIPatternDetectionServiceImpl service = new AIPatternDetectionServiceImpl(metrics, null); // GH-90000
@@ -101,7 +101,7 @@ class AIPatternDetectionServiceMLTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("converts operator spec to detected pattern [GH-90000]")
+    @DisplayName("converts operator spec to detected pattern")
     void convertsOperatorSpecToDetectedPattern() { // GH-90000
         Metrics metrics = new Metrics(new SimpleMeterRegistry()); // GH-90000
         AIPatternDetectionServiceImpl service = new AIPatternDetectionServiceImpl(metrics, llmGateway); // GH-90000
@@ -110,12 +110,12 @@ class AIPatternDetectionServiceMLTest extends EventloopTestBase {
         PatternAnalysisConfig config = new PatternAnalysisConfig(0, 0.5, 0, Map.of("useML", true)); // GH-90000
 
         CompletionResult mockResult = CompletionResult.builder() // GH-90000
-            .text("[] [GH-90000]")
+            .text("[]")
             .tokensUsed(10) // GH-90000
             .promptTokens(5) // GH-90000
             .completionTokens(5) // GH-90000
-            .finishReason("stop [GH-90000]")
-            .modelUsed("gpt-4 [GH-90000]")
+            .finishReason("stop")
+            .modelUsed("gpt-4")
             .build(); // GH-90000
 
         when(llmGateway.complete(any(CompletionRequest.class))) // GH-90000

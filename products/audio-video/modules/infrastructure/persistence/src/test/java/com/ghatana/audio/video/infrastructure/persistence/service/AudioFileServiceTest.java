@@ -27,7 +27,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer test
  * @doc.pattern Test
  */
-@DisplayName("AudioFileService Tests [GH-90000]")
+@DisplayName("AudioFileService Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class AudioFileServiceTest extends EventloopTestBase {
 
@@ -43,7 +43,7 @@ class AudioFileServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("GIVEN valid entity WHEN save THEN returns saved entity async [GH-90000]")
+    @DisplayName("GIVEN valid entity WHEN save THEN returns saved entity async")
     void testSave() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -60,7 +60,7 @@ class AudioFileServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("GIVEN existing entity WHEN findById THEN returns entity async [GH-90000]")
+    @DisplayName("GIVEN existing entity WHEN findById THEN returns entity async")
     void testFindById() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -76,7 +76,7 @@ class AudioFileServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("GIVEN non-existent entity WHEN findById THEN returns empty async [GH-90000]")
+    @DisplayName("GIVEN non-existent entity WHEN findById THEN returns empty async")
     void testFindByIdNotFound() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -91,7 +91,7 @@ class AudioFileServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("GIVEN multiple entities WHEN findByTenantId THEN returns list async [GH-90000]")
+    @DisplayName("GIVEN multiple entities WHEN findByTenantId THEN returns list async")
     void testFindByTenantId() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -107,7 +107,7 @@ class AudioFileServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("GIVEN entity WHEN softDelete THEN returns true async [GH-90000]")
+    @DisplayName("GIVEN entity WHEN softDelete THEN returns true async")
     void testSoftDelete() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -123,7 +123,7 @@ class AudioFileServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("GIVEN non-existent entity WHEN softDelete THEN returns false async [GH-90000]")
+    @DisplayName("GIVEN non-existent entity WHEN softDelete THEN returns false async")
     void testSoftDeleteNotFound() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -138,7 +138,7 @@ class AudioFileServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("GIVEN entity WHEN hardDelete THEN returns true async [GH-90000]")
+    @DisplayName("GIVEN entity WHEN hardDelete THEN returns true async")
     void testHardDelete() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -154,7 +154,7 @@ class AudioFileServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("GIVEN existing entity WHEN existsById THEN returns true async [GH-90000]")
+    @DisplayName("GIVEN existing entity WHEN existsById THEN returns true async")
     void testExistsById() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -169,7 +169,7 @@ class AudioFileServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("GIVEN entities WHEN countByTenantId THEN returns count async [GH-90000]")
+    @DisplayName("GIVEN entities WHEN countByTenantId THEN returns count async")
     void testCountByTenantId() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";

@@ -26,7 +26,7 @@ import static org.mockito.Mockito.*;
  * @doc.purpose Validate ConfigRegistry cache invalidation, version tracking, and collection listing
  * @doc.layer product
  */
-@DisplayName("ConfigRegistry Tests [GH-90000]")
+@DisplayName("ConfigRegistry Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class ConfigRegistryTest extends EventloopTestBase {
 
@@ -54,32 +54,32 @@ class ConfigRegistryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Construction [GH-90000]")
+    @DisplayName("Construction")
     class Construction {
 
         @Test
-        @DisplayName("should throw NullPointerException for null loader [GH-90000]")
+        @DisplayName("should throw NullPointerException for null loader")
         void shouldThrowForNullLoader() { // GH-90000
             assertThatThrownBy(() -> new ConfigRegistry(null, validator, compiler, metrics)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("should throw NullPointerException for null validator [GH-90000]")
+        @DisplayName("should throw NullPointerException for null validator")
         void shouldThrowForNullValidator() { // GH-90000
             assertThatThrownBy(() -> new ConfigRegistry(loader, null, compiler, metrics)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("should throw NullPointerException for null compiler [GH-90000]")
+        @DisplayName("should throw NullPointerException for null compiler")
         void shouldThrowForNullCompiler() { // GH-90000
             assertThatThrownBy(() -> new ConfigRegistry(loader, validator, null, metrics)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("should throw NullPointerException for null metrics [GH-90000]")
+        @DisplayName("should throw NullPointerException for null metrics")
         void shouldThrowForNullMetrics() { // GH-90000
             assertThatThrownBy(() -> new ConfigRegistry(loader, validator, compiler, null)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
@@ -91,11 +91,11 @@ class ConfigRegistryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Version tracking [GH-90000]")
+    @DisplayName("Version tracking")
     class VersionTracking {
 
         @Test
-        @DisplayName("initial version should be zero [GH-90000]")
+        @DisplayName("initial version should be zero")
         void initialVersionShouldBeZero() { // GH-90000
             assertThat(registry.getVersion()).isEqualTo(0L); // GH-90000
         }
@@ -106,24 +106,24 @@ class ConfigRegistryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Cache [GH-90000]")
+    @DisplayName("Cache")
     class Cache {
 
         @Test
-        @DisplayName("getCollectionIfCached should return null before any load [GH-90000]")
+        @DisplayName("getCollectionIfCached should return null before any load")
         void shouldReturnNullBeforeLoad() { // GH-90000
             assertThat(registry.getCollectionIfCached("tenant-1", "products")).isNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("invalidate should not throw even when cache is empty [GH-90000]")
+        @DisplayName("invalidate should not throw even when cache is empty")
         void shouldNotThrowOnInvalidateWhenEmpty() { // GH-90000
             assertThatCode(() -> registry.invalidate("tenant-1", "products")) // GH-90000
                     .doesNotThrowAnyException(); // GH-90000
         }
 
         @Test
-        @DisplayName("invalidateAll should not throw when cache is empty [GH-90000]")
+        @DisplayName("invalidateAll should not throw when cache is empty")
         void shouldNotThrowOnInvalidateAllWhenEmpty() { // GH-90000
             assertThatCode(() -> registry.invalidateAll()) // GH-90000
                     .doesNotThrowAnyException(); // GH-90000
@@ -135,14 +135,14 @@ class ConfigRegistryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("getCollectionNames [GH-90000]")
+    @DisplayName("getCollectionNames")
     class GetCollectionNames {
 
         @Test
-        @DisplayName("should return empty list when no collections cached for tenant [GH-90000]")
+        @DisplayName("should return empty list when no collections cached for tenant")
         void shouldReturnEmptyListForUnknownTenant() { // GH-90000
-            when(loader.listCollectionsAsync("unknown-tenant [GH-90000]")).thenReturn(Promise.of(List.of()));
-            List<String> names = runPromise(() -> registry.getCollectionNames("unknown-tenant [GH-90000]"));
+            when(loader.listCollectionsAsync("unknown-tenant")).thenReturn(Promise.of(List.of()));
+            List<String> names = runPromise(() -> registry.getCollectionNames("unknown-tenant"));
             assertThat(names).isEmpty(); // GH-90000
         }
     }
@@ -152,11 +152,11 @@ class ConfigRegistryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("reloadAllAsync [GH-90000]")
+    @DisplayName("reloadAllAsync")
     class ReloadAllAsync {
 
         @Test
-        @DisplayName("should complete reload when cache is empty (no-op) [GH-90000]")
+        @DisplayName("should complete reload when cache is empty (no-op)")
         void shouldCompleteWhenCacheEmpty() { // GH-90000
             assertThatCode(() -> runPromise(() -> registry.reloadAllAsync())) // GH-90000
                     .doesNotThrowAnyException(); // GH-90000
@@ -168,14 +168,14 @@ class ConfigRegistryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("getPluginNames [GH-90000]")
+    @DisplayName("getPluginNames")
     class GetPluginNames {
 
         @Test
-        @DisplayName("should return empty list when no plugins cached for tenant [GH-90000]")
+        @DisplayName("should return empty list when no plugins cached for tenant")
         void shouldReturnEmptyPluginListForUnknownTenant() { // GH-90000
-            when(loader.listPluginsAsync("unknown-tenant [GH-90000]")).thenReturn(Promise.of(List.of()));
-            List<String> names = runPromise(() -> registry.getPluginNames("unknown-tenant [GH-90000]"));
+            when(loader.listPluginsAsync("unknown-tenant")).thenReturn(Promise.of(List.of()));
+            List<String> names = runPromise(() -> registry.getPluginNames("unknown-tenant"));
             assertThat(names).isEmpty(); // GH-90000
         }
     }

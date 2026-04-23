@@ -32,7 +32,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer test
  * @doc.pattern Test
  */
-@DisplayName("PluginRegistry Enable/Disable Tests [GH-90000]")
+@DisplayName("PluginRegistry Enable/Disable Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class PluginRegistryEnableDisableTest extends EventloopTestBase {
 
@@ -48,48 +48,48 @@ class PluginRegistryEnableDisableTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Newly registered plugin is enabled by default [GH-90000]")
+    @DisplayName("Newly registered plugin is enabled by default")
     void newPluginIsEnabledByDefault() { // GH-90000
-        StubPlugin plugin = new StubPlugin("plugin-a [GH-90000]");
+        StubPlugin plugin = new StubPlugin("plugin-a");
         pluginRegistry.registerPlugin(plugin); // GH-90000
 
-        assertThat(pluginRegistry.isPluginEnabled("plugin-a [GH-90000]")).isTrue();
+        assertThat(pluginRegistry.isPluginEnabled("plugin-a")).isTrue();
     }
 
     @Test
-    @DisplayName("disablePlugin marks plugin as disabled [GH-90000]")
+    @DisplayName("disablePlugin marks plugin as disabled")
     void disablePluginMarksAsDisabled() { // GH-90000
-        StubPlugin plugin = new StubPlugin("plugin-a [GH-90000]");
+        StubPlugin plugin = new StubPlugin("plugin-a");
         pluginRegistry.registerPlugin(plugin); // GH-90000
 
-        runPromise(() -> pluginRegistry.disablePlugin("plugin-a [GH-90000]"));
+        runPromise(() -> pluginRegistry.disablePlugin("plugin-a"));
 
-        assertThat(pluginRegistry.isPluginEnabled("plugin-a [GH-90000]")).isFalse();
-        assertThat(pluginRegistry.getDisabledPluginIds()).contains("plugin-a [GH-90000]");
+        assertThat(pluginRegistry.isPluginEnabled("plugin-a")).isFalse();
+        assertThat(pluginRegistry.getDisabledPluginIds()).contains("plugin-a");
     }
 
     @Test
-    @DisplayName("enablePlugin re-enables a disabled plugin [GH-90000]")
+    @DisplayName("enablePlugin re-enables a disabled plugin")
     void enablePluginReEnablesDisabled() { // GH-90000
-        StubPlugin plugin = new StubPlugin("plugin-a [GH-90000]");
+        StubPlugin plugin = new StubPlugin("plugin-a");
         pluginRegistry.registerPlugin(plugin); // GH-90000
-        runPromise(() -> pluginRegistry.disablePlugin("plugin-a [GH-90000]"));
+        runPromise(() -> pluginRegistry.disablePlugin("plugin-a"));
 
-        pluginRegistry.enablePlugin("plugin-a [GH-90000]");
+        pluginRegistry.enablePlugin("plugin-a");
 
-        assertThat(pluginRegistry.isPluginEnabled("plugin-a [GH-90000]")).isTrue();
-        assertThat(pluginRegistry.getDisabledPluginIds()).doesNotContain("plugin-a [GH-90000]");
+        assertThat(pluginRegistry.isPluginEnabled("plugin-a")).isTrue();
+        assertThat(pluginRegistry.getDisabledPluginIds()).doesNotContain("plugin-a");
     }
 
     @Test
-    @DisplayName("startAllPlugins skips disabled plugins [GH-90000]")
+    @DisplayName("startAllPlugins skips disabled plugins")
     void startAllSkipsDisabledPlugin() { // GH-90000
-        StubPlugin enabled = new StubPlugin("plugin-enabled [GH-90000]");
-        StubPlugin disabled = new StubPlugin("plugin-disabled [GH-90000]");
+        StubPlugin enabled = new StubPlugin("plugin-enabled");
+        StubPlugin disabled = new StubPlugin("plugin-disabled");
 
         pluginRegistry.registerPlugin(enabled); // GH-90000
         pluginRegistry.registerPlugin(disabled); // GH-90000
-        runPromise(() -> pluginRegistry.disablePlugin("plugin-disabled [GH-90000]"));
+        runPromise(() -> pluginRegistry.disablePlugin("plugin-disabled"));
 
         runPromise(pluginRegistry::startAllPlugins); // GH-90000
 
@@ -98,42 +98,42 @@ class PluginRegistryEnableDisableTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("disablePlugin calls stop() on a running plugin [GH-90000]")
+    @DisplayName("disablePlugin calls stop() on a running plugin")
     void disablePluginStopsRunningPlugin() { // GH-90000
-        StubPlugin plugin = new StubPlugin("plugin-a [GH-90000]");
+        StubPlugin plugin = new StubPlugin("plugin-a");
         pluginRegistry.registerPlugin(plugin); // GH-90000
         runPromise(plugin::start); // GH-90000
 
-        runPromise(() -> pluginRegistry.disablePlugin("plugin-a [GH-90000]"));
+        runPromise(() -> pluginRegistry.disablePlugin("plugin-a"));
 
         assertThat(plugin.stopped.get()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("disablePlugin throws for unregistered plugin id [GH-90000]")
+    @DisplayName("disablePlugin throws for unregistered plugin id")
     void disableUnregisteredPluginThrows() { // GH-90000
-        assertThatThrownBy(() -> pluginRegistry.disablePlugin("ghost [GH-90000]"))
+        assertThatThrownBy(() -> pluginRegistry.disablePlugin("ghost"))
             .isInstanceOf(IllegalArgumentException.class) // GH-90000
-            .hasMessageContaining("not registered [GH-90000]");
+            .hasMessageContaining("not registered");
     }
 
     @Test
-    @DisplayName("enablePlugin throws for unregistered plugin id [GH-90000]")
+    @DisplayName("enablePlugin throws for unregistered plugin id")
     void enableUnregisteredPluginThrows() { // GH-90000
-        assertThatThrownBy(() -> pluginRegistry.enablePlugin("ghost [GH-90000]"))
+        assertThatThrownBy(() -> pluginRegistry.enablePlugin("ghost"))
             .isInstanceOf(IllegalArgumentException.class) // GH-90000
-            .hasMessageContaining("not registered [GH-90000]");
+            .hasMessageContaining("not registered");
     }
 
     @Test
-    @DisplayName("getDisabledPluginIds returns unmodifiable view [GH-90000]")
+    @DisplayName("getDisabledPluginIds returns unmodifiable view")
     void disabledIdsViewIsUnmodifiable() { // GH-90000
-        StubPlugin plugin = new StubPlugin("plugin-a [GH-90000]");
+        StubPlugin plugin = new StubPlugin("plugin-a");
         pluginRegistry.registerPlugin(plugin); // GH-90000
-        runPromise(() -> pluginRegistry.disablePlugin("plugin-a [GH-90000]"));
+        runPromise(() -> pluginRegistry.disablePlugin("plugin-a"));
 
         Set<String> disabled = pluginRegistry.getDisabledPluginIds(); // GH-90000
-        assertThatThrownBy(() -> disabled.add("other [GH-90000]"))
+        assertThatThrownBy(() -> disabled.add("other"))
             .isInstanceOf(UnsupportedOperationException.class); // GH-90000
     }
 

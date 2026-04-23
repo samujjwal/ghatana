@@ -4,7 +4,11 @@ import java.util.List;
 
 /**
  * Detection results for a single video frame.
- */
+  * @doc.type class
+ * @doc.purpose Provides frame result functionality.
+ * @doc.layer product
+ * @doc.pattern ValueObject
+*/
 public class FrameResult {
 
     private final int frameNumber;

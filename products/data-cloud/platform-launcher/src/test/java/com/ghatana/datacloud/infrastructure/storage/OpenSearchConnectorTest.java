@@ -33,14 +33,14 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern Testcontainers, EventloopTestBase
  */
 @Testcontainers(disabledWithoutDocker = true) // GH-90000
-@DisplayName("OpenSearchConnector — Integration Tests (Testcontainers) [GH-90000]")
+@DisplayName("OpenSearchConnector — Integration Tests (Testcontainers)")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class) // GH-90000
 class OpenSearchConnectorTest extends EventloopTestBase {
 
-    @SuppressWarnings("resource [GH-90000]")
+    @SuppressWarnings("resource")
     @Container
     static final GenericContainer<?> OPENSEARCH =
-            new GenericContainer<>("opensearchproject/opensearch:1 [GH-90000]")
+            new GenericContainer<>("opensearchproject/opensearch:1")
                     .withEnv("discovery.type",          "single-node") // GH-90000
                     // DISABLE_SECURITY_PLUGIN=true causes the demo installer to add
                     // plugins.security.disabled=true to opensearch.yml automatically.
@@ -50,7 +50,7 @@ class OpenSearchConnectorTest extends EventloopTestBase {
                     .withEnv("OPENSEARCH_JAVA_OPTS",    "-Xms512m -Xmx512m") // GH-90000
                     .withExposedPorts(9200) // GH-90000
                     .waitingFor(new HttpWaitStrategy() // GH-90000
-                            .forPath("/_cluster/health [GH-90000]")
+                            .forPath("/_cluster/health")
                             .forStatusCode(200) // GH-90000
                             .withStartupTimeout(Duration.ofMinutes(3))); // GH-90000
 
@@ -68,7 +68,7 @@ class OpenSearchConnectorTest extends EventloopTestBase {
         OpenSearchConfig config = OpenSearchConfig.builder() // GH-90000
                 .host(host) // GH-90000
                 .port(port) // GH-90000
-                .scheme("http [GH-90000]")
+                .scheme("http")
                 .build(); // GH-90000
 
         connector = new OpenSearchConnector(config, NoopMetricsCollector.getInstance()); // GH-90000
@@ -80,7 +80,7 @@ class OpenSearchConnectorTest extends EventloopTestBase {
 
     @Test
     @Order(1) // GH-90000
-    @DisplayName("healthCheck — succeeds when OpenSearch is reachable [GH-90000]")
+    @DisplayName("healthCheck — succeeds when OpenSearch is reachable")
     void healthCheck_succeeds() { // GH-90000
         Void result = runPromise(() -> connector.healthCheck()); // GH-90000
         assertThat(result).isNull(); // no exception thrown // GH-90000
@@ -92,7 +92,7 @@ class OpenSearchConnectorTest extends EventloopTestBase {
 
     @Test
     @Order(2) // GH-90000
-    @DisplayName("create — indexes document and returns entity with ID [GH-90000]")
+    @DisplayName("create — indexes document and returns entity with ID")
     void create_indexesDocument() { // GH-90000
         Entity entity = entity(null, Map.of( // GH-90000
                 "title",   "OpenSearch Integration Test",
@@ -101,10 +101,10 @@ class OpenSearchConnectorTest extends EventloopTestBase {
 
         Entity saved = runPromise(() -> connector.create(entity)); // GH-90000
 
-        assertThat(saved.getId()).as("saved entity must have an ID [GH-90000]").isNotNull();
+        assertThat(saved.getId()).as("saved entity must have an ID").isNotNull();
         assertThat(saved.getTenantId()).isEqualTo(TENANT); // GH-90000
         assertThat(saved.getCollectionName()).isEqualTo(COLLECTION); // GH-90000
-        assertThat(saved.getData()).containsKey("title [GH-90000]");
+        assertThat(saved.getData()).containsKey("title");
     }
 
     // ──────────────────────────────────────────────────────────────────────
@@ -113,7 +113,7 @@ class OpenSearchConnectorTest extends EventloopTestBase {
 
     @Test
     @Order(3) // GH-90000
-    @DisplayName("read — retrieves indexed document by ID [GH-90000]")
+    @DisplayName("read — retrieves indexed document by ID")
     void read_retrievesDocument() { // GH-90000
         Entity saved = runPromise(() -> connector.create( // GH-90000
                 entity(null, Map.of("title", "Readable Article", "tag", "read-test")))); // GH-90000
@@ -131,7 +131,7 @@ class OpenSearchConnectorTest extends EventloopTestBase {
 
     @Test
     @Order(4) // GH-90000
-    @DisplayName("read — returns empty Optional for non-existent ID [GH-90000]")
+    @DisplayName("read — returns empty Optional for non-existent ID")
     void read_nonExistentId_returnsEmpty() { // GH-90000
         Optional<Entity> found = runPromise(() -> // GH-90000
                 connector.read(COLLECTION_ID, TENANT, UUID.randomUUID())); // GH-90000
@@ -145,7 +145,7 @@ class OpenSearchConnectorTest extends EventloopTestBase {
 
     @Test
     @Order(5) // GH-90000
-    @DisplayName("update — re-indexes document with new data [GH-90000]")
+    @DisplayName("update — re-indexes document with new data")
     void update_reIndexesDocument() { // GH-90000
         Entity saved = runPromise(() -> connector.create( // GH-90000
                 entity(null, Map.of("title", "Original Title", "version", 1)))); // GH-90000
@@ -170,7 +170,7 @@ class OpenSearchConnectorTest extends EventloopTestBase {
 
     @Test
     @Order(6) // GH-90000
-    @DisplayName("delete — removes document; subsequent read returns empty [GH-90000]")
+    @DisplayName("delete — removes document; subsequent read returns empty")
     void delete_removesDocument() { // GH-90000
         Entity saved = runPromise(() -> connector.create( // GH-90000
                 entity(null, Map.of("title", "To Be Deleted")))); // GH-90000
@@ -191,7 +191,7 @@ class OpenSearchConnectorTest extends EventloopTestBase {
 
     @Test
     @Order(7) // GH-90000
-    @DisplayName("query — returns paginated results within limit [GH-90000]")
+    @DisplayName("query — returns paginated results within limit")
     void query_returnsPaginatedResults() { // GH-90000
         for (int i = 0; i < 5; i++) { // GH-90000
             final int idx = i;
@@ -214,7 +214,7 @@ class OpenSearchConnectorTest extends EventloopTestBase {
 
     @Test
     @Order(8) // GH-90000
-    @DisplayName("count — returns the number of indexed documents for tenant+collection [GH-90000]")
+    @DisplayName("count — returns the number of indexed documents for tenant+collection")
     void count_returnsCorrectCount() { // GH-90000
         // Use a unique tenant per test to avoid interference
         String tenant = "count-tenant-" + UUID.randomUUID(); // GH-90000
@@ -240,7 +240,7 @@ class OpenSearchConnectorTest extends EventloopTestBase {
 
     @Test
     @Order(9) // GH-90000
-    @DisplayName("bulkCreate — indexes multiple entities in one request [GH-90000]")
+    @DisplayName("bulkCreate — indexes multiple entities in one request")
     void bulkCreate_indexesAll() { // GH-90000
         List<Entity> batch = List.of( // GH-90000
                 entity(null, Map.of("title", "Bulk A", "batch", true)), // GH-90000
@@ -272,7 +272,7 @@ class OpenSearchConnectorTest extends EventloopTestBase {
      * Forces an index refresh so immediately-following reads can see new documents.
      * OpenSearch's default refresh interval is 1 s — too slow for fast unit tests.
      */
-    @SuppressWarnings("deprecation [GH-90000]")
+    @SuppressWarnings("deprecation")
     private void refreshIndex(String tenantId) { // GH-90000
         String indexName = "datacloud-" + tenantId.toLowerCase(); // GH-90000
         try {

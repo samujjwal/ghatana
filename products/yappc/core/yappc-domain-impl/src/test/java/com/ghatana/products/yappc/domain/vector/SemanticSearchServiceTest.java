@@ -26,7 +26,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("SemanticSearchService Tests [GH-90000]")
+@DisplayName("SemanticSearchService Tests")
 class SemanticSearchServiceTest extends EventloopTestBase {
 
     private VectorStore vectorStore;
@@ -41,11 +41,11 @@ class SemanticSearchServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Semantic Search [GH-90000]")
+    @DisplayName("Semantic Search")
     class SemanticSearchTests {
 
         @Test
-        @DisplayName("should search with embedding generation [GH-90000]")
+        @DisplayName("should search with embedding generation")
         void shouldSearchWithEmbeddingGeneration() { // GH-90000
             // GIVEN
             float[] embedding = new float[]{0.1f, 0.2f, 0.3f};
@@ -73,20 +73,20 @@ class SemanticSearchServiceTest extends EventloopTestBase {
             assertThat(result).isNotNull(); // GH-90000
             assertThat(result.isSuccess()).isTrue(); // GH-90000
             assertThat(result.hits()).hasSize(1); // GH-90000
-            assertThat(result.hits().get(0).id()).isEqualTo("doc-1 [GH-90000]");
+            assertThat(result.hits().get(0).id()).isEqualTo("doc-1");
             assertThat(result.hits().get(0).score()).isEqualTo(0.95); // GH-90000
-            verify(embeddingService).createEmbedding("test query [GH-90000]");
+            verify(embeddingService).createEmbedding("test query");
         }
 
         @Test
-        @DisplayName("should return empty results on search failure [GH-90000]")
+        @DisplayName("should return empty results on search failure")
         void shouldReturnEmptyOnFailure() { // GH-90000
             // GIVEN
             when(embeddingService.createEmbedding(anyString())) // GH-90000
-                    .thenReturn(Promise.ofException(new RuntimeException("Embedding error [GH-90000]")));
+                    .thenReturn(Promise.ofException(new RuntimeException("Embedding error")));
 
             SemanticSearchService.SemanticSearchRequest request =
-                    SemanticSearchService.SemanticSearchRequest.of("failing query [GH-90000]");
+                    SemanticSearchService.SemanticSearchRequest.of("failing query");
 
             // WHEN
             SemanticSearchService.SemanticSearchResult result = runPromise( // GH-90000
@@ -102,11 +102,11 @@ class SemanticSearchServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Hybrid Search [GH-90000]")
+    @DisplayName("Hybrid Search")
     class HybridSearchTests {
 
         @Test
-        @DisplayName("should combine semantic and keyword search [GH-90000]")
+        @DisplayName("should combine semantic and keyword search")
         void shouldCombineKeywordAndSemanticSearch() { // GH-90000
             // GIVEN
             float[] embedding = new float[]{0.1f, 0.2f, 0.3f};
@@ -123,7 +123,7 @@ class SemanticSearchServiceTest extends EventloopTestBase {
             SemanticSearchService.HybridSearchRequest request =
                     new SemanticSearchService.HybridSearchRequest( // GH-90000
                             "test query", 10, 0.7, null,
-                            List.of("keyword [GH-90000]"), 0.5
+                            List.of("keyword"), 0.5
                     );
 
             // WHEN
@@ -137,11 +137,11 @@ class SemanticSearchServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Indexing Operations [GH-90000]")
+    @DisplayName("Indexing Operations")
     class IndexingTests {
 
         @Test
-        @DisplayName("should index document with embeddings [GH-90000]")
+        @DisplayName("should index document with embeddings")
         void shouldIndexDocumentWithEmbeddings() { // GH-90000
             // GIVEN
             float[] embedding = new float[]{0.1f, 0.2f, 0.3f};
@@ -163,14 +163,14 @@ class SemanticSearchServiceTest extends EventloopTestBase {
 
             // THEN
             assertThat(result.success()).isTrue(); // GH-90000
-            assertThat(result.id()).isEqualTo("doc-1 [GH-90000]");
+            assertThat(result.id()).isEqualTo("doc-1");
             assertThat(result.vectorDimension()).isEqualTo(3); // GH-90000
-            verify(embeddingService).createEmbedding("Test document content [GH-90000]");
-            verify(vectorStore).store(eq("doc-1 [GH-90000]"), eq("Test document content [GH-90000]"), any(float[].class), anyMap());
+            verify(embeddingService).createEmbedding("Test document content");
+            verify(vectorStore).store(eq("doc-1"), eq("Test document content"), any(float[].class), anyMap());
         }
 
         @Test
-        @DisplayName("should batch index multiple documents [GH-90000]")
+        @DisplayName("should batch index multiple documents")
         void shouldBatchIndexMultipleDocuments() { // GH-90000
             // GIVEN
             float[] embedding = new float[]{0.1f, 0.2f, 0.3f};
@@ -197,7 +197,7 @@ class SemanticSearchServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should delete document from index [GH-90000]")
+        @DisplayName("should delete document from index")
         void shouldDeleteDocumentFromIndex() { // GH-90000
             // GIVEN
             when(vectorStore.delete(anyString())) // GH-90000
@@ -205,21 +205,21 @@ class SemanticSearchServiceTest extends EventloopTestBase {
 
             // WHEN
             boolean result = runPromise( // GH-90000
-                    () -> service.delete("doc-1 [GH-90000]")
+                    () -> service.delete("doc-1")
             );
 
             // THEN
             assertThat(result).isTrue(); // GH-90000
-            verify(vectorStore).delete("doc-1 [GH-90000]");
+            verify(vectorStore).delete("doc-1");
         }
     }
 
     @Nested
-    @DisplayName("Find Similar [GH-90000]")
+    @DisplayName("Find Similar")
     class FindSimilarTests {
 
         @Test
-        @DisplayName("should find similar documents excluding self [GH-90000]")
+        @DisplayName("should find similar documents excluding self")
         void shouldFindSimilarDocuments() { // GH-90000
             // GIVEN
             float[] embedding = new float[]{0.1f, 0.2f, 0.3f};
@@ -237,7 +237,7 @@ class SemanticSearchServiceTest extends EventloopTestBase {
 
             // THEN
             assertThat(result).hasSize(1); // Excludes the reference document // GH-90000
-            assertThat(result.get(0).id()).isEqualTo("similar-1 [GH-90000]");
+            assertThat(result.get(0).id()).isEqualTo("similar-1");
         }
     }
 }

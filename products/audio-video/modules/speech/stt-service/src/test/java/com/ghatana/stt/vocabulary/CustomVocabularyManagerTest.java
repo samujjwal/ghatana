@@ -18,13 +18,13 @@ import static org.assertj.core.api.Assertions.assertThatNullPointerException;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("CustomVocabularyManager [GH-90000]")
+@DisplayName("CustomVocabularyManager")
 class CustomVocabularyManagerTest {
 
     // ─── empty / of ───────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("empty(): no terms, size 0 [GH-90000]")
+    @DisplayName("empty(): no terms, size 0")
     void empty_noTerms() { // GH-90000
         CustomVocabularyManager mgr = CustomVocabularyManager.empty(); // GH-90000
         assertThat(mgr.isEmpty()).isTrue(); // GH-90000
@@ -32,16 +32,16 @@ class CustomVocabularyManagerTest {
     }
 
     @Test
-    @DisplayName("of(List): pre-populates terms [GH-90000]")
+    @DisplayName("of(List): pre-populates terms")
     void of_list_populatesTerms() { // GH-90000
         CustomVocabularyManager mgr = CustomVocabularyManager.of(List.of("Ghatana", "ActiveJ")); // GH-90000
         assertThat(mgr.size()).isEqualTo(2); // GH-90000
-        assertThat(mgr.contains("ghatana [GH-90000]")).isTrue();
-        assertThat(mgr.contains("activej [GH-90000]")).isTrue();
+        assertThat(mgr.contains("ghatana")).isTrue();
+        assertThat(mgr.contains("activej")).isTrue();
     }
 
     @Test
-    @DisplayName("of(null) throws NullPointerException [GH-90000]")
+    @DisplayName("of(null) throws NullPointerException")
     void of_null_throwsNPE() { // GH-90000
         assertThatNullPointerException() // GH-90000
                 .isThrownBy(() -> CustomVocabularyManager.of(null)); // GH-90000
@@ -50,28 +50,28 @@ class CustomVocabularyManagerTest {
     // ─── addTerm ──────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("addTerm() [GH-90000]")
+    @DisplayName("addTerm()")
     class AddTerm {
 
         @Test
-        @DisplayName("adds a single term and makes it findable [GH-90000]")
+        @DisplayName("adds a single term and makes it findable")
         void addTerm_singleTerm() { // GH-90000
             CustomVocabularyManager mgr = CustomVocabularyManager.empty(); // GH-90000
-            mgr.addTerm("hyperparameter [GH-90000]");
-            assertThat(mgr.contains("Hyperparameter [GH-90000]")).isTrue(); // case-insensitive
+            mgr.addTerm("hyperparameter");
+            assertThat(mgr.contains("Hyperparameter")).isTrue(); // case-insensitive
         }
 
         @Test
-        @DisplayName("duplicate terms are deduplicated [GH-90000]")
+        @DisplayName("duplicate terms are deduplicated")
         void addTerm_deduplication() { // GH-90000
             CustomVocabularyManager mgr = CustomVocabularyManager.empty(); // GH-90000
-            mgr.addTerm("Ghatana [GH-90000]");
-            mgr.addTerm("ghatana [GH-90000]"); // same after normalisation
+            mgr.addTerm("Ghatana");
+            mgr.addTerm("ghatana"); // same after normalisation
             assertThat(mgr.size()).isEqualTo(1); // GH-90000
         }
 
         @Test
-        @DisplayName("adding same term with new weight updates the weight [GH-90000]")
+        @DisplayName("adding same term with new weight updates the weight")
         void addTerm_updateWeight() { // GH-90000
             CustomVocabularyManager mgr = CustomVocabularyManager.empty(); // GH-90000
             mgr.addTerm("eventloop", 1.0); // GH-90000
@@ -81,15 +81,15 @@ class CustomVocabularyManagerTest {
         }
 
         @Test
-        @DisplayName("blank term throws IllegalArgumentException [GH-90000]")
+        @DisplayName("blank term throws IllegalArgumentException")
         void addTerm_blank_throwsIAE() { // GH-90000
             CustomVocabularyManager mgr = CustomVocabularyManager.empty(); // GH-90000
             assertThatIllegalArgumentException() // GH-90000
-                    .isThrownBy(() -> mgr.addTerm("    [GH-90000]"));
+                    .isThrownBy(() -> mgr.addTerm("   "));
         }
 
         @Test
-        @DisplayName("null term throws NullPointerException [GH-90000]")
+        @DisplayName("null term throws NullPointerException")
         void addTerm_null_throwsNPE() { // GH-90000
             CustomVocabularyManager mgr = CustomVocabularyManager.empty(); // GH-90000
             assertThatNullPointerException() // GH-90000
@@ -97,7 +97,7 @@ class CustomVocabularyManagerTest {
         }
 
         @Test
-        @DisplayName("weight < 0.1 throws IllegalArgumentException [GH-90000]")
+        @DisplayName("weight < 0.1 throws IllegalArgumentException")
         void addTerm_invalidWeightLow_throwsIAE() { // GH-90000
             CustomVocabularyManager mgr = CustomVocabularyManager.empty(); // GH-90000
             assertThatIllegalArgumentException() // GH-90000
@@ -105,7 +105,7 @@ class CustomVocabularyManagerTest {
         }
 
         @Test
-        @DisplayName("weight > 10.0 throws IllegalArgumentException [GH-90000]")
+        @DisplayName("weight > 10.0 throws IllegalArgumentException")
         void addTerm_invalidWeightHigh_throwsIAE() { // GH-90000
             CustomVocabularyManager mgr = CustomVocabularyManager.empty(); // GH-90000
             assertThatIllegalArgumentException() // GH-90000
@@ -116,26 +116,26 @@ class CustomVocabularyManagerTest {
     // ─── removeTerm ───────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("removeTerm() [GH-90000]")
+    @DisplayName("removeTerm()")
     class RemoveTerm {
 
         @Test
-        @DisplayName("removes existing term and returns true [GH-90000]")
+        @DisplayName("removes existing term and returns true")
         void removeTerm_existing_returnsTrue() { // GH-90000
-            CustomVocabularyManager mgr = CustomVocabularyManager.of(List.of("eventloop [GH-90000]"));
-            assertThat(mgr.removeTerm("EventLoop [GH-90000]")).isTrue();
-            assertThat(mgr.contains("eventloop [GH-90000]")).isFalse();
+            CustomVocabularyManager mgr = CustomVocabularyManager.of(List.of("eventloop"));
+            assertThat(mgr.removeTerm("EventLoop")).isTrue();
+            assertThat(mgr.contains("eventloop")).isFalse();
         }
 
         @Test
-        @DisplayName("removing non-existing term returns false [GH-90000]")
+        @DisplayName("removing non-existing term returns false")
         void removeTerm_nonExisting_returnsFalse() { // GH-90000
             CustomVocabularyManager mgr = CustomVocabularyManager.empty(); // GH-90000
-            assertThat(mgr.removeTerm("nonexistent [GH-90000]")).isFalse();
+            assertThat(mgr.removeTerm("nonexistent")).isFalse();
         }
 
         @Test
-        @DisplayName("null term throws NullPointerException [GH-90000]")
+        @DisplayName("null term throws NullPointerException")
         void removeTerm_null_throwsNPE() { // GH-90000
             CustomVocabularyManager mgr = CustomVocabularyManager.empty(); // GH-90000
             assertThatNullPointerException() // GH-90000
@@ -146,15 +146,15 @@ class CustomVocabularyManagerTest {
     // ─── apply ────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("apply: returns transcript unchanged (model applies hints internally) [GH-90000]")
+    @DisplayName("apply: returns transcript unchanged (model applies hints internally)")
     void apply_returnsTranscriptUnchanged() { // GH-90000
-        CustomVocabularyManager mgr = CustomVocabularyManager.of(List.of("Ghatana [GH-90000]"));
+        CustomVocabularyManager mgr = CustomVocabularyManager.of(List.of("Ghatana"));
         String transcript = "Welcome to Ghatana platform";
         assertThat(mgr.apply(transcript)).isEqualTo(transcript); // GH-90000
     }
 
     @Test
-    @DisplayName("apply: null transcript throws NullPointerException [GH-90000]")
+    @DisplayName("apply: null transcript throws NullPointerException")
     void apply_null_throwsNPE() { // GH-90000
         CustomVocabularyManager mgr = CustomVocabularyManager.empty(); // GH-90000
         assertThatNullPointerException() // GH-90000
@@ -164,7 +164,7 @@ class CustomVocabularyManagerTest {
     // ─── exportTermStrings ────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("exportTermStrings: returns normalised lowercase terms [GH-90000]")
+    @DisplayName("exportTermStrings: returns normalised lowercase terms")
     void exportTermStrings_normalised() { // GH-90000
         CustomVocabularyManager mgr = CustomVocabularyManager.of(List.of("Ghatana", "ActiveJ")); // GH-90000
         List<String> exported = mgr.exportTermStrings(); // GH-90000
@@ -174,12 +174,12 @@ class CustomVocabularyManagerTest {
     // ─── terms() snapshot ──────────────────────────────────────────────────── // GH-90000
 
     @Test
-    @DisplayName("terms(): returns unmodifiable snapshot [GH-90000]")
+    @DisplayName("terms(): returns unmodifiable snapshot")
     void terms_unmodifiableSnapshot() { // GH-90000
-        CustomVocabularyManager mgr = CustomVocabularyManager.of(List.of("a [GH-90000]"));
+        CustomVocabularyManager mgr = CustomVocabularyManager.of(List.of("a"));
         var snap = mgr.terms(); // GH-90000
         assertThat(snap).hasSize(1); // GH-90000
-        mgr.addTerm("b [GH-90000]");
+        mgr.addTerm("b");
         assertThat(snap).hasSize(1); // snapshot unchanged // GH-90000
     }
 }

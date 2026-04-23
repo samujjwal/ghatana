@@ -31,7 +31,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("EventIdempotency – Idempotent Apply (D007) [GH-90000]")
+@DisplayName("EventIdempotency – Idempotent Apply (D007)")
 class EventIdempotencyTest extends EventloopTestBase {
 
     @Mock
@@ -44,11 +44,11 @@ class EventIdempotencyTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Idempotent Apply [GH-90000]")
+    @DisplayName("Idempotent Apply")
     class IdempotentApplyTests {
 
         @Test
-        @DisplayName("[D007]: first_apply_succeeds [GH-90000]")
+        @DisplayName("[D007]: first_apply_succeeds")
         void firstApplySucceeds() { // GH-90000
             String eventId = "evt-001";
             EventReplayService.ReplayedEvent event = new EventReplayService.ReplayedEvent( // GH-90000
@@ -63,7 +63,7 @@ class EventIdempotencyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D007]: second_apply_is_idempotent [GH-90000]")
+        @DisplayName("[D007]: second_apply_is_idempotent")
         void secondApplyIsIdempotent() { // GH-90000
             String eventId = "evt-001";
             String dedupKey = eventId + ":" + "entity.created";
@@ -81,7 +81,7 @@ class EventIdempotencyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D007]: same_event_multiple_replays_processed_once [GH-90000]")
+        @DisplayName("[D007]: same_event_multiple_replays_processed_once")
         void sameEventMultipleReplaysProcessedOnce() { // GH-90000
             String eventId = "evt-001";
             List<EventReplayService.ReplayedEvent> replays = List.of( // GH-90000
@@ -102,7 +102,7 @@ class EventIdempotencyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D007]: different_events_same_id_processed_separately [GH-90000]")
+        @DisplayName("[D007]: different_events_same_id_processed_separately")
         void differentEventsSameIdProcessedSeparately() { // GH-90000
             // Different events with same ID but different types
             String eventId = "evt-001";
@@ -121,11 +121,11 @@ class EventIdempotencyTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Deduplication [GH-90000]")
+    @DisplayName("Deduplication")
     class DeduplicationTests {
 
         @Test
-        @DisplayName("[D007]: deduplication_by_event_id_prevents_reprocessing [GH-90000]")
+        @DisplayName("[D007]: deduplication_by_event_id_prevents_reprocessing")
         void deduplicationByEventIdPreventsReprocessing() { // GH-90000
             ConcurrentHashMap<String, String> idempotencyStore = new ConcurrentHashMap<>(); // GH-90000
             String eventId = "evt-dedup-001";
@@ -136,12 +136,12 @@ class EventIdempotencyTest extends EventloopTestBase {
             // Second processing - should return existing
             String secondResult = idempotencyStore.computeIfAbsent(eventId, k -> "REPROCESSED"); // GH-90000
 
-            assertThat(firstResult).isEqualTo("PROCESSED [GH-90000]");
-            assertThat(secondResult).isEqualTo("PROCESSED [GH-90000]"); // Same value, not reprocessed
+            assertThat(firstResult).isEqualTo("PROCESSED");
+            assertThat(secondResult).isEqualTo("PROCESSED"); // Same value, not reprocessed
         }
 
         @Test
-        @DisplayName("[D007]: deduplication_includes_offset_for_uniqueness [GH-90000]")
+        @DisplayName("[D007]: deduplication_includes_offset_for_uniqueness")
         void deduplicationIncludesOffsetForUniqueness() { // GH-90000
             String eventId = "evt-001";
 
@@ -153,7 +153,7 @@ class EventIdempotencyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D007]: tenant_isolated_deduplication [GH-90000]")
+        @DisplayName("[D007]: tenant_isolated_deduplication")
         void tenantIsolatedDeduplication() { // GH-90000
             String eventId = "evt-001";
             String tenantAlpha = "tenant-alpha";
@@ -172,11 +172,11 @@ class EventIdempotencyTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("State Consistency [GH-90000]")
+    @DisplayName("State Consistency")
     class StateConsistencyTests {
 
         @Test
-        @DisplayName("[D007]: idempotent_update_produces_same_state [GH-90000]")
+        @DisplayName("[D007]: idempotent_update_produces_same_state")
         void idempotentUpdateProducesSameState() { // GH-90000
             // Simulate state machine
             class EntityState {
@@ -202,10 +202,10 @@ class EventIdempotencyTest extends EventloopTestBase {
             EntityState state = new EntityState(); // GH-90000
 
             // Apply same create multiple times
-            state.applyCreate("evt-create [GH-90000]");
+            state.applyCreate("evt-create");
             int versionAfterFirst = state.version;
 
-            state.applyCreate("evt-create [GH-90000]");
+            state.applyCreate("evt-create");
             int versionAfterSecond = state.version;
 
             assertThat(versionAfterFirst).isEqualTo(1); // GH-90000
@@ -213,7 +213,7 @@ class EventIdempotencyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D007]: conditional_update_checks_version [GH-90000]")
+        @DisplayName("[D007]: conditional_update_checks_version")
         void conditionalUpdateChecksVersion() { // GH-90000
             // Simulate optimistic locking
             int currentVersion = 5;
@@ -238,11 +238,11 @@ class EventIdempotencyTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Replay Count [GH-90000]")
+    @DisplayName("Replay Count")
     class ReplayCountTests {
 
         @Test
-        @DisplayName("[D007]: replay_count_tracks_number_of_replays [GH-90000]")
+        @DisplayName("[D007]: replay_count_tracks_number_of_replays")
         void replayCountTracksNumberOfReplays() { // GH-90000
             EventReplayService.ReplayedEvent first =
                 new EventReplayService.ReplayedEvent("evt-001", "test", "tenant", 1, 0, null, 1); // GH-90000
@@ -257,7 +257,7 @@ class EventIdempotencyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D007]: is_first_replay_true_only_on_first [GH-90000]")
+        @DisplayName("[D007]: is_first_replay_true_only_on_first")
         void isFirstReplayTrueOnlyOnFirst() { // GH-90000
             EventReplayService.ReplayedEvent first =
                 new EventReplayService.ReplayedEvent("evt-001", "test", "tenant", 1, 0, null, 1); // GH-90000
@@ -274,11 +274,11 @@ class EventIdempotencyTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Concurrent Replay [GH-90000]")
+    @DisplayName("Concurrent Replay")
     class ConcurrentReplayTests {
 
         @Test
-        @DisplayName("[D007]: concurrent_replays_maintain_idempotency [GH-90000]")
+        @DisplayName("[D007]: concurrent_replays_maintain_idempotency")
         void concurrentReplaysMaintainIdempotency() { // GH-90000
             String eventId = "evt-concurrent-001";
             ConcurrentHashMap<String, String> processed = new ConcurrentHashMap<>(); // GH-90000
@@ -288,11 +288,11 @@ class EventIdempotencyTest extends EventloopTestBase {
             String result2 = processed.putIfAbsent(eventId, "PROCESSING"); // GH-90000
 
             assertThat(result1).isNull(); // First succeeds // GH-90000
-            assertThat(result2).isEqualTo("PROCESSING [GH-90000]"); // Second sees existing
+            assertThat(result2).isEqualTo("PROCESSING"); // Second sees existing
         }
 
         @Test
-        @DisplayName("[D007]: atomic_check_and_set_for_idempotency [GH-90000]")
+        @DisplayName("[D007]: atomic_check_and_set_for_idempotency")
         void atomicCheckAndSetForIdempotency() { // GH-90000
             ConcurrentHashMap<String, String> state = new ConcurrentHashMap<>(); // GH-90000
             String eventId = "evt-atomic-001";
@@ -313,11 +313,11 @@ class EventIdempotencyTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Error Handling [GH-90000]")
+    @DisplayName("Error Handling")
     class ErrorHandlingTests {
 
         @Test
-        @DisplayName("[D007]: failed_apply_can_be_retried [GH-90000]")
+        @DisplayName("[D007]: failed_apply_can_be_retried")
         void failedApplyCanBeRetried() { // GH-90000
             // Simulate transient failure
             AtomicInteger attempts = new AtomicInteger(0); // GH-90000
@@ -327,7 +327,7 @@ class EventIdempotencyTest extends EventloopTestBase {
                 try {
                     // Simulate processing that fails first 2 times
                     if (attempts.get() < 3) { // GH-90000
-                        throw new RuntimeException("Transient error [GH-90000]");
+                        throw new RuntimeException("Transient error");
                     }
                     result = "SUCCESS";
                 } catch (RuntimeException e) { // GH-90000
@@ -335,12 +335,12 @@ class EventIdempotencyTest extends EventloopTestBase {
                 }
             }
 
-            assertThat(result).isEqualTo("SUCCESS [GH-90000]");
+            assertThat(result).isEqualTo("SUCCESS");
             assertThat(attempts.get()).isEqualTo(3); // GH-90000
         }
 
         @Test
-        @DisplayName("[D007]: non_retryable_error_stops_processing [GH-90000]")
+        @DisplayName("[D007]: non_retryable_error_stops_processing")
         void nonRetryableErrorStopsProcessing() { // GH-90000
             EventReplayService.ReplayError error = new EventReplayService.ReplayError( // GH-90000
                 42, "evt-001", "VALIDATION_ERROR", "Invalid data format", false
@@ -350,7 +350,7 @@ class EventIdempotencyTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D007]: retryable_error_allows_retry [GH-90000]")
+        @DisplayName("[D007]: retryable_error_allows_retry")
         void retryableErrorAllowsRetry() { // GH-90000
             EventReplayService.ReplayError error = new EventReplayService.ReplayError( // GH-90000
                 42, "evt-001", "TIMEOUT_ERROR", "Connection timeout", true
@@ -365,26 +365,26 @@ class EventIdempotencyTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Handler [GH-90000]")
+    @DisplayName("Handler")
     class HandlerTests {
 
         @Test
-        @DisplayName("[D007]: handler_receives_event_data [GH-90000]")
+        @DisplayName("[D007]: handler_receives_event_data")
         void handlerReceivesEventData() { // GH-90000
             EventReplayService.ReplayedEvent event = new EventReplayService.ReplayedEvent( // GH-90000
                 "evt-001", "entity.created", "tenant-alpha",
                 42, 1704067200000L, "{\"id\":\"123\"}".getBytes(), 1 // GH-90000
             );
 
-            assertThat(event.id()).isEqualTo("evt-001 [GH-90000]");
-            assertThat(event.type()).isEqualTo("entity.created [GH-90000]");
-            assertThat(event.tenantId()).isEqualTo("tenant-alpha [GH-90000]");
+            assertThat(event.id()).isEqualTo("evt-001");
+            assertThat(event.type()).isEqualTo("entity.created");
+            assertThat(event.tenantId()).isEqualTo("tenant-alpha");
             assertThat(event.offset()).isEqualTo(42); // GH-90000
             assertThat(event.timestamp()).isEqualTo(1704067200000L); // GH-90000
         }
 
         @Test
-        @DisplayName("[D007]: handler_returns_promise [GH-90000]")
+        @DisplayName("[D007]: handler_returns_promise")
         void handlerReturnsPromise() { // GH-90000
             EventReplayService.EventHandler handler = e -> Promise.of((Void) null); // GH-90000
 

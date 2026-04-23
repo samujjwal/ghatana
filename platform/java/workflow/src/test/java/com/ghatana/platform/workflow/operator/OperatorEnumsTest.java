@@ -14,15 +14,15 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer core
  * @doc.pattern Unit Test
  */
-@DisplayName("Operator Enums [GH-90000]")
+@DisplayName("Operator Enums")
 class OperatorEnumsTest {
 
     @Nested
-    @DisplayName("OperatorState [GH-90000]")
+    @DisplayName("OperatorState")
     class OperatorStateTests {
 
         @Test
-        @DisplayName("should have all expected states [GH-90000]")
+        @DisplayName("should have all expected states")
         void shouldHaveAllStates() { // GH-90000
             assertThat(OperatorState.values()) // GH-90000
                     .extracting(OperatorState::name) // GH-90000
@@ -31,11 +31,11 @@ class OperatorEnumsTest {
     }
 
     @Nested
-    @DisplayName("OperatorType [GH-90000]")
+    @DisplayName("OperatorType")
     class OperatorTypeTests {
 
         @Test
-        @DisplayName("should have all expected types [GH-90000]")
+        @DisplayName("should have all expected types")
         void shouldHaveAllTypes() { // GH-90000
             assertThat(OperatorType.values()) // GH-90000
                     .extracting(OperatorType::name) // GH-90000

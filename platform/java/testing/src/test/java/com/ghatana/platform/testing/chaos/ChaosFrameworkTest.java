@@ -18,21 +18,21 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer core
  * @doc.pattern UnitTest
  */
-@DisplayName("Chaos Testing Framework Tests [GH-90000]")
+@DisplayName("Chaos Testing Framework Tests")
 class ChaosFrameworkTest {
 
     @Nested
-    @DisplayName("ChaosType Tests [GH-90000]")
+    @DisplayName("ChaosType Tests")
     class ChaosTypeTests {
 
         @Test
-        @DisplayName("should have all expected chaos types [GH-90000]")
+        @DisplayName("should have all expected chaos types")
         void shouldHaveAllExpectedTypes() { // GH-90000
             assertThat(ChaosType.values()).hasSize(10); // GH-90000
         }
 
         @Test
-        @DisplayName("NETWORK should be network-related [GH-90000]")
+        @DisplayName("NETWORK should be network-related")
         void networkShouldBeNetworkRelated() { // GH-90000
             assertThat(ChaosType.NETWORK.isNetworkRelated()).isTrue(); // GH-90000
             assertThat(ChaosType.NETWORK.isDataRelated()).isFalse(); // GH-90000
@@ -40,21 +40,21 @@ class ChaosFrameworkTest {
         }
 
         @Test
-        @DisplayName("DATA_CORRUPTION should be data-related [GH-90000]")
+        @DisplayName("DATA_CORRUPTION should be data-related")
         void dataCorruptionShouldBeDataRelated() { // GH-90000
             assertThat(ChaosType.DATA_CORRUPTION.isDataRelated()).isTrue(); // GH-90000
             assertThat(ChaosType.DATA_CORRUPTION.isNetworkRelated()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("RESOURCE_EXHAUSTION should be resource-related [GH-90000]")
+        @DisplayName("RESOURCE_EXHAUSTION should be resource-related")
         void resourceExhaustionShouldBeResourceRelated() { // GH-90000
             assertThat(ChaosType.RESOURCE_EXHAUSTION.isResourceRelated()).isTrue(); // GH-90000
             assertThat(ChaosType.RESOURCE_EXHAUSTION.isNetworkRelated()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("all types should have descriptions [GH-90000]")
+        @DisplayName("all types should have descriptions")
         void allTypesShouldHaveDescriptions() { // GH-90000
             for (ChaosType type : ChaosType.values()) { // GH-90000
                 assertThat(type.getDescription()).isNotBlank(); // GH-90000
@@ -63,11 +63,11 @@ class ChaosFrameworkTest {
     }
 
     @Nested
-    @DisplayName("ChaosContext Tests [GH-90000]")
+    @DisplayName("ChaosContext Tests")
     class ChaosContextTests {
 
         @Test
-        @DisplayName("should initialize with correct values [GH-90000]")
+        @DisplayName("should initialize with correct values")
         void shouldInitializeWithCorrectValues() { // GH-90000
             ChaosContext context = new ChaosContext(ChaosType.NETWORK, 0.5, 5000); // GH-90000
 
@@ -78,7 +78,7 @@ class ChaosFrameworkTest {
         }
 
         @Test
-        @DisplayName("should clamp probability to valid range [GH-90000]")
+        @DisplayName("should clamp probability to valid range")
         void shouldClampProbability() { // GH-90000
             ChaosContext tooHigh = new ChaosContext(ChaosType.RANDOM, 1.5, 1000); // GH-90000
             ChaosContext tooLow = new ChaosContext(ChaosType.RANDOM, -0.5, 1000); // GH-90000
@@ -88,7 +88,7 @@ class ChaosFrameworkTest {
         }
 
         @Test
-        @DisplayName("should track injection and failure counts [GH-90000]")
+        @DisplayName("should track injection and failure counts")
         void shouldTrackCounts() { // GH-90000
             ChaosContext context = new ChaosContext(ChaosType.RANDOM, 1.0, 5000); // GH-90000
 
@@ -101,7 +101,7 @@ class ChaosFrameworkTest {
         }
 
         @Test
-        @DisplayName("shouldInjectFailure respects probability 0 [GH-90000]")
+        @DisplayName("shouldInjectFailure respects probability 0")
         void shouldNotInjectWhenProbabilityZero() { // GH-90000
             ChaosContext context = new ChaosContext(ChaosType.RANDOM, 0.0, 5000); // GH-90000
 
@@ -111,7 +111,7 @@ class ChaosFrameworkTest {
         }
 
         @Test
-        @DisplayName("shouldInjectFailure respects probability 1 [GH-90000]")
+        @DisplayName("shouldInjectFailure respects probability 1")
         void shouldAlwaysInjectWhenProbabilityOne() { // GH-90000
             ChaosContext context = new ChaosContext(ChaosType.RANDOM, 1.0, 5000); // GH-90000
 
@@ -122,18 +122,18 @@ class ChaosFrameworkTest {
     }
 
     @Nested
-    @DisplayName("ChaosInjector Tests [GH-90000]")
+    @DisplayName("ChaosInjector Tests")
     class ChaosInjectorTests {
 
         @Test
-        @DisplayName("should be inactive by default [GH-90000]")
+        @DisplayName("should be inactive by default")
         void shouldBeInactiveByDefault() { // GH-90000
             assertThat(ChaosInjector.isActive()).isFalse(); // GH-90000
             assertThat(ChaosInjector.getContext()).isNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("should activate and deactivate [GH-90000]")
+        @DisplayName("should activate and deactivate")
         void shouldActivateAndDeactivate() { // GH-90000
             ChaosContext context = new ChaosContext(ChaosType.NETWORK, 0.5, 5000); // GH-90000
 
@@ -147,7 +147,7 @@ class ChaosFrameworkTest {
         }
 
         @Test
-        @DisplayName("maybeCorruptData returns original when inactive [GH-90000]")
+        @DisplayName("maybeCorruptData returns original when inactive")
         void maybeCorruptDataReturnsOriginalWhenInactive() { // GH-90000
             String original = "test data";
             String result = ChaosInjector.maybeCorruptData(original); // GH-90000
@@ -155,13 +155,13 @@ class ChaosFrameworkTest {
         }
 
         @Test
-        @DisplayName("maybeCorruptData can corrupt data when active [GH-90000]")
+        @DisplayName("maybeCorruptData can corrupt data when active")
         void maybeCorruptDataCanCorruptWhenActive() { // GH-90000
             ChaosContext context = new ChaosContext(ChaosType.DATA_CORRUPTION, 1.0, 5000); // GH-90000
             ChaosInjector.activate(context); // GH-90000
 
             try {
-                String result = ChaosInjector.maybeCorruptData("test [GH-90000]");
+                String result = ChaosInjector.maybeCorruptData("test");
                 assertThat(result).isNull(); // Corruption returns null // GH-90000
             } finally {
                 ChaosInjector.deactivate(); // GH-90000
@@ -170,11 +170,11 @@ class ChaosFrameworkTest {
     }
 
     @Nested
-    @DisplayName("ChaosScenario Tests [GH-90000]")
+    @DisplayName("ChaosScenario Tests")
     class ChaosScenarioTests {
 
         @Test
-        @DisplayName("should execute operations successfully without chaos [GH-90000]")
+        @DisplayName("should execute operations successfully without chaos")
         void shouldExecuteWithoutChaos() { // GH-90000
             AtomicInteger counter = new AtomicInteger(0); // GH-90000
 
@@ -190,7 +190,7 @@ class ChaosFrameworkTest {
         }
 
         @Test
-        @DisplayName("should track failures when operation throws [GH-90000]")
+        @DisplayName("should track failures when operation throws")
         void shouldTrackFailures() { // GH-90000
             AtomicInteger counter = new AtomicInteger(0); // GH-90000
 
@@ -199,7 +199,7 @@ class ChaosFrameworkTest {
                     .withIterations(10) // GH-90000
                     .execute(() -> { // GH-90000
                         if (counter.incrementAndGet() % 2 == 0) { // GH-90000
-                            throw new RuntimeException("Simulated failure [GH-90000]");
+                            throw new RuntimeException("Simulated failure");
                         }
                     });
 
@@ -209,22 +209,22 @@ class ChaosFrameworkTest {
         }
 
         @Test
-        @DisplayName("assertAllSucceeded throws when failures exist [GH-90000]")
+        @DisplayName("assertAllSucceeded throws when failures exist")
         void assertAllSucceededThrowsOnFailures() { // GH-90000
             ChaosScenario.ChaosExecutionResult<Void> result = ChaosScenario.builder() // GH-90000
                     .withFailureProbability(0.0) // GH-90000
                     .withIterations(1) // GH-90000
                     .execute(() -> { // GH-90000
-                        throw new RuntimeException("fail [GH-90000]");
+                        throw new RuntimeException("fail");
                     });
 
             assertThatThrownBy(result::assertAllSucceeded) // GH-90000
                     .isInstanceOf(AssertionError.class) // GH-90000
-                    .hasMessageContaining("1 failed [GH-90000]");
+                    .hasMessageContaining("1 failed");
         }
 
         @Test
-        @DisplayName("assertSuccessRate validates minimum rate [GH-90000]")
+        @DisplayName("assertSuccessRate validates minimum rate")
         void assertSuccessRateValidatesMinRate() { // GH-90000
             AtomicInteger counter = new AtomicInteger(0); // GH-90000
 
@@ -235,7 +235,7 @@ class ChaosFrameworkTest {
                         if (counter.incrementAndGet() <= 8) { // GH-90000
                             // 8 successes
                         } else {
-                            throw new RuntimeException("fail [GH-90000]");
+                            throw new RuntimeException("fail");
                         }
                     });
 
@@ -247,7 +247,7 @@ class ChaosFrameworkTest {
         }
 
         @Test
-        @DisplayName("should calculate average duration [GH-90000]")
+        @DisplayName("should calculate average duration")
         void shouldCalculateAverageDuration() { // GH-90000
             ChaosScenario.ChaosExecutionResult<Void> result = ChaosScenario.builder() // GH-90000
                     .withFailureProbability(0.0) // GH-90000
@@ -265,7 +265,7 @@ class ChaosFrameworkTest {
         }
 
         @Test
-        @DisplayName("should support concurrent execution [GH-90000]")
+        @DisplayName("should support concurrent execution")
         void shouldSupportConcurrentExecution() { // GH-90000
             AtomicInteger counter = new AtomicInteger(0); // GH-90000
 

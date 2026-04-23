@@ -23,11 +23,11 @@ import static org.mockito.Mockito.mock;
  *
  * Test agent registration, lifecycle, and state management.
  */
-@DisplayName("Agent Registration Tests [GH-90000]")
+@DisplayName("Agent Registration Tests")
 class AgentRegistrationTest {
 
     @Test
-    @DisplayName("Should register agents [GH-90000]")
+    @DisplayName("Should register agents")
     void shouldRegisterAgents() { // GH-90000
         TypedAgent<?, ?> agent = mock(TypedAgent.class); // GH-90000
         AgentConfig config = mock(AgentConfig.class); // GH-90000
@@ -37,7 +37,7 @@ class AgentRegistrationTest {
     }
 
     @Test
-    @DisplayName("Should deregister agents [GH-90000]")
+    @DisplayName("Should deregister agents")
     void shouldDeregisterAgents() { // GH-90000
         String agentId = UUID.randomUUID().toString(); // GH-90000
 
@@ -46,7 +46,7 @@ class AgentRegistrationTest {
     }
 
     @Test
-    @DisplayName("Should handle agent lifecycle [GH-90000]")
+    @DisplayName("Should handle agent lifecycle")
     void shouldHandleAgentLifecycle() { // GH-90000
         String state = "ACTIVE";
         String[] states = {"REGISTERED", "ACTIVE", "INACTIVE", "DEREGISTERED"};
@@ -55,7 +55,7 @@ class AgentRegistrationTest {
     }
 
     @Test
-    @DisplayName("Should handle agent state [GH-90000]")
+    @DisplayName("Should handle agent state")
     void shouldHandleAgentState() { // GH-90000
         boolean active = true;
         boolean registered = true;
@@ -65,7 +65,7 @@ class AgentRegistrationTest {
     }
 
     @Test
-    @DisplayName("Should handle registration failures [GH-90000]")
+    @DisplayName("Should handle registration failures")
     void shouldHandleRegistrationFailures() { // GH-90000
         TypedAgent<?, ?> agent = null;
         AgentConfig config = null;
@@ -75,16 +75,16 @@ class AgentRegistrationTest {
     }
 
     @Test
-    @DisplayName("Should handle agent metadata [GH-90000]")
+    @DisplayName("Should handle agent metadata")
     void shouldHandleAgentMetadata() { // GH-90000
         Map<String, Object> metadata = Map.of( // GH-90000
             "version", "1.0.0",
             "namespace", "data-cloud",
-            "capabilities", Set.of("anomaly-detection [GH-90000]")
+            "capabilities", Set.of("anomaly-detection")
         );
 
         assertThat(metadata).isNotEmpty(); // GH-90000
-        assertThat(metadata).containsKey("version [GH-90000]");
-        assertThat(metadata).containsKey("namespace [GH-90000]");
+        assertThat(metadata).containsKey("version");
+        assertThat(metadata).containsKey("namespace");
     }
 }

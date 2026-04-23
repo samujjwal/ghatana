@@ -9,7 +9,11 @@ import java.util.UUID;
  * This is intentionally small: it demonstrates the pattern for
  * declaring/assigning/completing tasks and emits events via the injected
  * {@link EventPublisher}.
- */
+  * @doc.type class
+ * @doc.purpose Provides task orchestrator functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 public class TaskOrchestrator {
 
     private final EventPublisher publisher;

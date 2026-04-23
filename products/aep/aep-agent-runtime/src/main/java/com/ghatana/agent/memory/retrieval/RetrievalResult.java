@@ -14,7 +14,8 @@ import java.util.List;
  * @doc.type value-object
  * @doc.purpose Retrieval result container
  * @doc.layer agent-memory
- */
+  * @doc.pattern ValueObject
+*/
 @Value
 @Builder
 public class RetrievalResult {

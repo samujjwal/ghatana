@@ -46,13 +46,13 @@ import org.slf4j.Logger;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataCloudHttpLauncherBootstrap [GH-90000]")
+@DisplayName("DataCloudHttpLauncherBootstrap")
 class DataCloudHttpLauncherBootstrapTest {
 
     private static final String TEST_JWT_SECRET = "0123456789abcdef0123456789abcdef";
 
     @Test
-    @DisplayName("buildJwtProvider returns null when JWT auth is not configured [GH-90000]")
+    @DisplayName("buildJwtProvider returns null when JWT auth is not configured")
     void buildJwtProviderReturnsNullWhenNotConfigured() { // GH-90000
         Logger log = mock(Logger.class); // GH-90000
 
@@ -62,7 +62,7 @@ class DataCloudHttpLauncherBootstrapTest {
     }
 
     @Test
-    @DisplayName("buildApiKeyResolver returns null for empty keys in local profile [GH-90000]")
+    @DisplayName("buildApiKeyResolver returns null for empty keys in local profile")
     void buildApiKeyResolverReturnsNullForEmptyKeysInLocalProfile() { // GH-90000
         Logger log = mock(Logger.class); // GH-90000
 
@@ -75,7 +75,7 @@ class DataCloudHttpLauncherBootstrapTest {
     }
 
     @Test
-    @DisplayName("buildApiKeyResolver fails for empty keys in production profile [GH-90000]")
+    @DisplayName("buildApiKeyResolver fails for empty keys in production profile")
     void buildApiKeyResolverFailsForEmptyKeysInProductionProfile() { // GH-90000
         Logger log = mock(Logger.class); // GH-90000
 
@@ -85,11 +85,11 @@ class DataCloudHttpLauncherBootstrapTest {
                     "DATACLOUD_API_KEYS", " , , "),
                 log))
             .isInstanceOf(IllegalStateException.class) // GH-90000
-            .hasMessageContaining("must contain at least one non-blank API key [GH-90000]");
+            .hasMessageContaining("must contain at least one non-blank API key");
     }
 
     @Test
-    @DisplayName("buildJwtProvider creates shared-secret provider when JWT auth is configured [GH-90000]")
+    @DisplayName("buildJwtProvider creates shared-secret provider when JWT auth is configured")
     void buildJwtProviderCreatesSharedSecretProvider() { // GH-90000
         Logger log = mock(Logger.class); // GH-90000
 
@@ -101,14 +101,14 @@ class DataCloudHttpLauncherBootstrapTest {
                 log);
 
         assertThat(provider).isNotNull(); // GH-90000
-        String token = provider.createToken("svc-user", java.util.List.of("reader [GH-90000]"), Map.of("tenant_id", "tenant-a"));
+        String token = provider.createToken("svc-user", java.util.List.of("reader"), Map.of("tenant_id", "tenant-a"));
         assertThat(provider.validateToken(token)).isTrue(); // GH-90000
-        assertThat(provider.getUserIdFromToken(token)).contains("svc-user [GH-90000]");
+        assertThat(provider.getUserIdFromToken(token)).contains("svc-user");
         assertThat(provider.extractClaims(token).orElseThrow()).containsEntry("tenant_id", "tenant-a"); // GH-90000
     }
 
     @Test
-    @DisplayName("buildJwtProvider creates JWKS-backed provider when JWKS URL is configured [GH-90000]")
+    @DisplayName("buildJwtProvider creates JWKS-backed provider when JWKS URL is configured")
     void buildJwtProviderCreatesJwksProvider() throws Exception { // GH-90000
         Logger log = mock(Logger.class); // GH-90000
 
@@ -120,15 +120,15 @@ class DataCloudHttpLauncherBootstrapTest {
                     log);
 
             assertThat(provider).isNotNull(); // GH-90000
-            String token = fixture.createToken("svc-jwks", java.util.List.of("reader [GH-90000]"), Map.of("tenant_id", "tenant-jwks"));
+            String token = fixture.createToken("svc-jwks", java.util.List.of("reader"), Map.of("tenant_id", "tenant-jwks"));
             assertThat(provider.validateToken(token)).isTrue(); // GH-90000
-            assertThat(provider.getUserIdFromToken(token)).contains("svc-jwks [GH-90000]");
+            assertThat(provider.getUserIdFromToken(token)).contains("svc-jwks");
             assertThat(provider.extractClaims(token).orElseThrow()).containsEntry("tenant_id", "tenant-jwks"); // GH-90000
         }
     }
 
     @Test
-    @DisplayName("trace sampling defaults to full coverage in local and staging profiles [GH-90000]")
+    @DisplayName("trace sampling defaults to full coverage in local and staging profiles")
     void traceSamplingDefaultsToFullCoverageInLocalAndStaging() { // GH-90000
         assertThat(DataCloudHttpLauncherBootstrap.resolveTraceSamplingRate(Map.of("DATACLOUD_PROFILE", "local"))) // GH-90000
                 .isEqualTo(1.0); // GH-90000
@@ -137,14 +137,14 @@ class DataCloudHttpLauncherBootstrapTest {
     }
 
     @Test
-    @DisplayName("trace sampling defaults to one percent outside local and staging [GH-90000]")
+    @DisplayName("trace sampling defaults to one percent outside local and staging")
     void traceSamplingDefaultsToOnePercentOutsideLocalAndStaging() { // GH-90000
         assertThat(DataCloudHttpLauncherBootstrap.resolveTraceSamplingRate(Map.of("DATACLOUD_PROFILE", "production"))) // GH-90000
                 .isEqualTo(0.01); // GH-90000
     }
 
     @Test
-    @DisplayName("trace sampling honors explicit environment override [GH-90000]")
+    @DisplayName("trace sampling honors explicit environment override")
     void traceSamplingHonorsExplicitOverride() { // GH-90000
         assertThat(DataCloudHttpLauncherBootstrap.resolveTraceSamplingRate( // GH-90000
                 Map.of("DATACLOUD_PROFILE", "production", "DATACLOUD_TRACE_SAMPLING_RATIO", "0.25"))) // GH-90000
@@ -152,15 +152,15 @@ class DataCloudHttpLauncherBootstrapTest {
     }
 
     @Test
-    @DisplayName("wires database health subsystem and shutdown hook on successful startup [GH-90000]")
+    @DisplayName("wires database health subsystem and shutdown hook on successful startup")
     void wiresDatabaseHealthSubsystemAndShutdownHook() throws Exception { // GH-90000
         DataCloudHttpServer httpServer = mock(DataCloudHttpServer.class); // GH-90000
         DataSource dataSource = mock(DataSource.class); // GH-90000
         Logger log = mock(Logger.class); // GH-90000
         AtomicReference<Thread> registeredHook = new AtomicReference<>(); // GH-90000
 
-        when(httpServer.withHealthSubsystem(eq("database [GH-90000]"), any())).thenReturn(httpServer);
-        when(httpServer.withHealthSubsystem(eq("ai_inference [GH-90000]"), any())).thenReturn(httpServer);
+        when(httpServer.withHealthSubsystem(eq("database"), any())).thenReturn(httpServer);
+        when(httpServer.withHealthSubsystem(eq("ai_inference"), any())).thenReturn(httpServer);
 
         DataCloudHttpLauncherBootstrap.startTransport( // GH-90000
                 httpServer,
@@ -171,14 +171,14 @@ class DataCloudHttpLauncherBootstrapTest {
                 log,
                 registeredHook::set);
 
-        verify(httpServer).withHealthSubsystem(eq("database [GH-90000]"), any());
-        verify(httpServer).withHealthSubsystem(eq("ai_inference [GH-90000]"), any());
+        verify(httpServer).withHealthSubsystem(eq("database"), any());
+        verify(httpServer).withHealthSubsystem(eq("ai_inference"), any());
         verify(httpServer).start(); // GH-90000
         assertThat(registeredHook.get()).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("does not wire database health subsystem when database is disabled [GH-90000]")
+    @DisplayName("does not wire database health subsystem when database is disabled")
     void skipsDatabaseHealthSubsystemWhenDatabaseDisabled() throws Exception { // GH-90000
         DataCloudHttpServer httpServer = mock(DataCloudHttpServer.class); // GH-90000
         Logger log = mock(Logger.class); // GH-90000
@@ -192,17 +192,17 @@ class DataCloudHttpLauncherBootstrapTest {
                 log,
                 hook -> {});
 
-        verify(httpServer, never()).withHealthSubsystem(eq("database [GH-90000]"), any());
-        verify(httpServer, never()).withHealthSubsystem(eq("ai_inference [GH-90000]"), any());
+        verify(httpServer, never()).withHealthSubsystem(eq("database"), any());
+        verify(httpServer, never()).withHealthSubsystem(eq("ai_inference"), any());
         verify(httpServer).start(); // GH-90000
     }
 
     @Test
-    @DisplayName("wraps server startup failures in typed transport exception [GH-90000]")
+    @DisplayName("wraps server startup failures in typed transport exception")
     void wrapsServerStartupFailuresInTypedTransportException() throws Exception { // GH-90000
         DataCloudHttpServer httpServer = mock(DataCloudHttpServer.class); // GH-90000
         Logger log = mock(Logger.class); // GH-90000
-        doThrow(new IllegalStateException("boom [GH-90000]")).when(httpServer).start();
+        doThrow(new IllegalStateException("boom")).when(httpServer).start();
 
         assertThatThrownBy(() -> DataCloudHttpLauncherBootstrap.startTransport( // GH-90000
                 httpServer,
@@ -213,14 +213,14 @@ class DataCloudHttpLauncherBootstrapTest {
                 log,
                 hook -> {}))
                 .isInstanceOf(DataCloudTransportStartupException.class) // GH-90000
-                .hasMessage("Failed to start HTTP server on port 8082 [GH-90000]")
+                .hasMessage("Failed to start HTTP server on port 8082")
                 .hasCauseInstanceOf(IllegalStateException.class); // GH-90000
 
-        verify(log).error(eq("Failed to start HTTP server on port {} [GH-90000]"), eq(8082), any(IllegalStateException.class));
+        verify(log).error(eq("Failed to start HTTP server on port {}"), eq(8082), any(IllegalStateException.class));
     }
 
     @Test
-    @DisplayName("ai inference health probe reports startup-initialized services as up [GH-90000]")
+    @DisplayName("ai inference health probe reports startup-initialized services as up")
     void aiInferenceHealthProbeReportsStartupInitializedServicesAsUp() { // GH-90000
         Map<String, Object> snapshot = DataCloudHttpLauncherBootstrap.buildAiInferenceHealthProbe( // GH-90000
                 new DataCloudHttpLauncherBootstrap.AiServices( // GH-90000
@@ -235,7 +235,7 @@ class DataCloudHttpLauncherBootstrapTest {
     }
 
     @Test
-    @DisplayName("ai inference health probe reports incomplete services as down [GH-90000]")
+    @DisplayName("ai inference health probe reports incomplete services as down")
     void aiInferenceHealthProbeReportsIncompleteServicesAsDown() { // GH-90000
         Map<String, Object> snapshot = DataCloudHttpLauncherBootstrap.buildAiInferenceHealthProbe( // GH-90000
                 new DataCloudHttpLauncherBootstrap.AiServices(mock(AIModelManager.class), null)) // GH-90000
@@ -248,41 +248,41 @@ class DataCloudHttpLauncherBootstrapTest {
     }
 
     @Test
-    @DisplayName("fails fast when required database datasource startup fails [GH-90000]")
+    @DisplayName("fails fast when required database datasource startup fails")
     void failsFastWhenRequiredDatabaseDatasourceStartupFails() { // GH-90000
         Logger log = mock(Logger.class); // GH-90000
 
         assertThatThrownBy(() -> DataCloudHttpLauncherBootstrap.startRequiredDatabaseDataSource( // GH-90000
                 log,
                 () -> { // GH-90000
-                    throw new IllegalStateException("db unavailable [GH-90000]");
+                    throw new IllegalStateException("db unavailable");
                 }))
                 .isInstanceOf(DataCloudTransportStartupException.class) // GH-90000
-                .hasMessage("Failed to create standalone database DataSource for enabled DB-backed features [GH-90000]")
+                .hasMessage("Failed to create standalone database DataSource for enabled DB-backed features")
                 .hasCauseInstanceOf(IllegalStateException.class); // GH-90000
 
-        verify(log).error(eq("Failed to create standalone database DataSource for enabled DB-backed features [GH-90000]"), any(IllegalStateException.class));
+        verify(log).error(eq("Failed to create standalone database DataSource for enabled DB-backed features"), any(IllegalStateException.class));
     }
 
     @Test
-    @DisplayName("fails fast when required AI services startup fails [GH-90000]")
+    @DisplayName("fails fast when required AI services startup fails")
     void failsFastWhenRequiredAiServicesStartupFails() { // GH-90000
         Logger log = mock(Logger.class); // GH-90000
 
         assertThatThrownBy(() -> DataCloudHttpLauncherBootstrap.startRequiredAiServices( // GH-90000
                 log,
                 () -> { // GH-90000
-                    throw new IllegalStateException("ai unavailable [GH-90000]");
+                    throw new IllegalStateException("ai unavailable");
                 }))
                 .isInstanceOf(DataCloudTransportStartupException.class) // GH-90000
-                .hasMessage("Failed to start AI services while DATACLOUD_AI_ENABLED=true [GH-90000]")
+                .hasMessage("Failed to start AI services while DATACLOUD_AI_ENABLED=true")
                 .hasCauseInstanceOf(IllegalStateException.class); // GH-90000
 
-        verify(log).error(eq("Failed to start AI services while DATACLOUD_AI_ENABLED=true [GH-90000]"), any(IllegalStateException.class));
+        verify(log).error(eq("Failed to start AI services while DATACLOUD_AI_ENABLED=true"), any(IllegalStateException.class));
     }
 
     @Test
-    @DisplayName("starts brain services and registers a shutdown hook when brain is enabled [GH-90000]")
+    @DisplayName("starts brain services and registers a shutdown hook when brain is enabled")
     void startsBrainServicesAndRegistersShutdownHook() { // GH-90000
         DataCloudBrain brain = mock(DataCloudBrain.class); // GH-90000
         DataCloudLearningBridge learningBridge = mock(DataCloudLearningBridge.class); // GH-90000
@@ -302,12 +302,12 @@ class DataCloudHttpLauncherBootstrapTest {
     }
 
     @Test
-    @DisplayName("disables brain services when learning bridge startup fails [GH-90000]")
+    @DisplayName("disables brain services when learning bridge startup fails")
     void disablesBrainServicesWhenStartupFails() { // GH-90000
         DataCloudBrain brain = mock(DataCloudBrain.class); // GH-90000
         DataCloudLearningBridge learningBridge = mock(DataCloudLearningBridge.class); // GH-90000
         Logger log = mock(Logger.class); // GH-90000
-        doThrow(new IllegalStateException("bridge failed [GH-90000]")).when(learningBridge).start();
+        doThrow(new IllegalStateException("bridge failed")).when(learningBridge).start();
 
         DataCloudHttpLauncherBootstrap.BrainServices services = DataCloudHttpLauncherBootstrap.startBrainServices( // GH-90000
                 log,
@@ -318,13 +318,13 @@ class DataCloudHttpLauncherBootstrapTest {
         assertThat(services.brain()).isNull(); // GH-90000
         assertThat(services.learningBridge()).isNull(); // GH-90000
         verify(log).warn( // GH-90000
-                eq("Failed to start brain/learning bridge, continuing without: {} [GH-90000]"),
-                eq("bridge failed [GH-90000]"),
+                eq("Failed to start brain/learning bridge, continuing without: {}"),
+                eq("bridge failed"),
                 any(IllegalStateException.class)); // GH-90000
     }
 
     @Test
-    @DisplayName("starts analytics and report services when analytics is enabled [GH-90000]")
+    @DisplayName("starts analytics and report services when analytics is enabled")
     void startsAnalyticsAndReportServices() { // GH-90000
         AnalyticsQueryEngine analyticsEngine = mock(AnalyticsQueryEngine.class); // GH-90000
         ReportService reportService = mock(ReportService.class); // GH-90000
@@ -340,7 +340,7 @@ class DataCloudHttpLauncherBootstrapTest {
     }
 
     @Test
-    @DisplayName("keeps analytics engine when report service startup fails [GH-90000]")
+    @DisplayName("keeps analytics engine when report service startup fails")
     void keepsAnalyticsEngineWhenReportStartupFails() { // GH-90000
         AnalyticsQueryEngine analyticsEngine = mock(AnalyticsQueryEngine.class); // GH-90000
         Logger log = mock(Logger.class); // GH-90000
@@ -349,34 +349,34 @@ class DataCloudHttpLauncherBootstrapTest {
                 log,
                 () -> analyticsEngine, // GH-90000
                 ignored -> {
-                    throw new IllegalStateException("report failed [GH-90000]");
+                    throw new IllegalStateException("report failed");
                 });
 
         assertThat(services.analyticsEngine()).isSameAs(analyticsEngine); // GH-90000
         assertThat(services.reportService()).isNull(); // GH-90000
         verify(log).warn( // GH-90000
-                eq("Failed to start report service, continuing without: {} [GH-90000]"),
-                eq("report failed [GH-90000]"),
+                eq("Failed to start report service, continuing without: {}"),
+                eq("report failed"),
                 any(IllegalStateException.class)); // GH-90000
     }
 
     @Test
-    @DisplayName("disables analytics services when analytics engine startup fails [GH-90000]")
+    @DisplayName("disables analytics services when analytics engine startup fails")
     void disablesAnalyticsServicesWhenAnalyticsStartupFails() { // GH-90000
         Logger log = mock(Logger.class); // GH-90000
 
         DataCloudHttpLauncherBootstrap.AnalyticsServices services = DataCloudHttpLauncherBootstrap.startAnalyticsServices( // GH-90000
                 log,
                 () -> { // GH-90000
-                    throw new IllegalStateException("analytics failed [GH-90000]");
+                    throw new IllegalStateException("analytics failed");
                 },
                 ReportService::new);
 
         assertThat(services.analyticsEngine()).isNull(); // GH-90000
         assertThat(services.reportService()).isNull(); // GH-90000
         verify(log).warn( // GH-90000
-                eq("Failed to start analytics engine, continuing without: {} [GH-90000]"),
-                eq("analytics failed [GH-90000]"),
+                eq("Failed to start analytics engine, continuing without: {}"),
+                eq("analytics failed"),
                 any(IllegalStateException.class)); // GH-90000
     }
 

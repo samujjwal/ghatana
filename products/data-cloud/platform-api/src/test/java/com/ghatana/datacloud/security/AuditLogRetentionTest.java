@@ -31,18 +31,18 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("AuditLogRetention – Retention Policies (S002) [GH-90000]")
+@DisplayName("AuditLogRetention – Retention Policies (S002)")
 class AuditLogRetentionTest extends EventloopTestBase {
 
     @Mock
     private AuditLogService auditLogService;
 
     @Nested
-    @DisplayName("Log Retention [GH-90000]")
+    @DisplayName("Log Retention")
     class LogRetentionTests {
 
         @Test
-        @DisplayName("[S002]: purge_old_logs_removes_expired_logs [GH-90000]")
+        @DisplayName("[S002]: purge_old_logs_removes_expired_logs")
         void purgeOldLogsRemovesExpiredLogs() { // GH-90000
             String tenantId = "tenant-alpha";
             Instant cutoff = Instant.now().minusSeconds(86400 * 90); // 90 days ago // GH-90000
@@ -56,7 +56,7 @@ class AuditLogRetentionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[S002]: retention_stats_calculated_correctly [GH-90000]")
+        @DisplayName("[S002]: retention_stats_calculated_correctly")
         void retentionStatsCalculatedCorrectly() { // GH-90000
             String tenantId = "tenant-alpha";
 
@@ -82,7 +82,7 @@ class AuditLogRetentionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[S002]: recent_logs_preserved [GH-90000]")
+        @DisplayName("[S002]: recent_logs_preserved")
         void recentLogsPreserved() { // GH-90000
             String tenantId = "tenant-alpha";
             Instant now = Instant.now(); // GH-90000
@@ -98,7 +98,7 @@ class AuditLogRetentionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[S002]: old_logs_removed [GH-90000]")
+        @DisplayName("[S002]: old_logs_removed")
         void oldLogsRemoved() { // GH-90000
             String tenantId = "tenant-alpha";
             Instant now = Instant.now(); // GH-90000
@@ -115,11 +115,11 @@ class AuditLogRetentionTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Log Querying [GH-90000]")
+    @DisplayName("Log Querying")
     class LogQueryingTests {
 
         @Test
-        @DisplayName("[S002]: query_by_type_filters_correctly [GH-90000]")
+        @DisplayName("[S002]: query_by_type_filters_correctly")
         void queryByTypeFiltersCorrectly() { // GH-90000
             String tenantId = "tenant-alpha";
             AuditLogService.AuditQuery query = AuditLogService.AuditQuery.builder() // GH-90000
@@ -129,12 +129,12 @@ class AuditLogRetentionTest extends EventloopTestBase {
 
             List<AuditLogService.AuditEvent> events = List.of( // GH-90000
                 AuditLogService.AuditEvent.builder() // GH-90000
-                    .id("e1 [GH-90000]")
+                    .id("e1")
                     .tenantId(tenantId) // GH-90000
                     .type(AuditLogService.EventType.ACCESS) // GH-90000
                     .build(), // GH-90000
                 AuditLogService.AuditEvent.builder() // GH-90000
-                    .id("e2 [GH-90000]")
+                    .id("e2")
                     .tenantId(tenantId) // GH-90000
                     .type(AuditLogService.EventType.CREATE) // GH-90000
                     .build() // GH-90000
@@ -152,7 +152,7 @@ class AuditLogRetentionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[S002]: query_by_time_range_filters_by_date [GH-90000]")
+        @DisplayName("[S002]: query_by_time_range_filters_by_date")
         void queryByTimeRangeFiltersByDate() { // GH-90000
             String tenantId = "tenant-alpha";
             Instant start = Instant.now().minusSeconds(86400 * 7); // 7 days ago // GH-90000
@@ -176,7 +176,7 @@ class AuditLogRetentionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[S002]: query_by_user_filters_by_user_id [GH-90000]")
+        @DisplayName("[S002]: query_by_user_filters_by_user_id")
         void queryByUserFiltersByUserId() { // GH-90000
             String tenantId = "tenant-alpha";
             String userId = "user-001";
@@ -198,11 +198,11 @@ class AuditLogRetentionTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Log Export [GH-90000]")
+    @DisplayName("Log Export")
     class LogExportTests {
 
         @Test
-        @DisplayName("[S002]: export_logs_returns_data [GH-90000]")
+        @DisplayName("[S002]: export_logs_returns_data")
         void exportLogsReturnsData() { // GH-90000
             String tenantId = "tenant-alpha";
             Instant start = Instant.now().minusSeconds(86400 * 30); // GH-90000
@@ -220,7 +220,7 @@ class AuditLogRetentionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[S002]: export_supports_multiple_formats [GH-90000]")
+        @DisplayName("[S002]: export_supports_multiple_formats")
         void exportSupportsMultipleFormats() { // GH-90000
             String tenantId = "tenant-alpha";
             Instant start = Instant.now().minusSeconds(86400 * 7); // GH-90000
@@ -240,23 +240,23 @@ class AuditLogRetentionTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Event Logging [GH-90000]")
+    @DisplayName("Event Logging")
     class EventLoggingTests {
 
         @Test
-        @DisplayName("[S002]: log_event_stores_event [GH-90000]")
+        @DisplayName("[S002]: log_event_stores_event")
         void logEventStoresEvent() { // GH-90000
             AuditLogService.AuditEvent event = AuditLogService.AuditEvent.builder() // GH-90000
-                .id("event-001 [GH-90000]")
-                .tenantId("tenant-alpha [GH-90000]")
-                .userId("user-001 [GH-90000]")
+                .id("event-001")
+                .tenantId("tenant-alpha")
+                .userId("user-001")
                 .type(AuditLogService.EventType.CREATE) // GH-90000
-                .action("create-entity [GH-90000]")
-                .resource("Entity [GH-90000]")
-                .resourceId("entity-123 [GH-90000]")
+                .action("create-entity")
+                .resource("Entity")
+                .resourceId("entity-123")
                 .success(true) // GH-90000
-                .ipAddress("192.168.1.1 [GH-90000]")
-                .userAgent("Mozilla/5.0 [GH-90000]")
+                .ipAddress("192.168.1.1")
+                .userAgent("Mozilla/5.0")
                 .build(); // GH-90000
 
             when(auditLogService.log(event)) // GH-90000
@@ -268,27 +268,27 @@ class AuditLogRetentionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[S002]: logged_event_contains_all_metadata [GH-90000]")
+        @DisplayName("[S002]: logged_event_contains_all_metadata")
         void loggedEventContainsAllMetadata() { // GH-90000
             Instant now = Instant.now(); // GH-90000
 
             AuditLogService.AuditEvent event = AuditLogService.AuditEvent.builder() // GH-90000
-                .id("event-001 [GH-90000]")
-                .tenantId("tenant-alpha [GH-90000]")
-                .userId("user-001 [GH-90000]")
+                .id("event-001")
+                .tenantId("tenant-alpha")
+                .userId("user-001")
                 .type(AuditLogService.EventType.ACCESS) // GH-90000
-                .action("read [GH-90000]")
-                .resource("Report [GH-90000]")
-                .resourceId("report-123 [GH-90000]")
+                .action("read")
+                .resource("Report")
+                .resourceId("report-123")
                 .success(true) // GH-90000
                 .details(Map.of("filter", "sales")) // GH-90000
-                .ipAddress("10.0.0.1 [GH-90000]")
-                .userAgent("TestAgent/1.0 [GH-90000]")
+                .ipAddress("10.0.0.1")
+                .userAgent("TestAgent/1.0")
                 .build(); // GH-90000
 
-            assertThat(event.id()).isEqualTo("event-001 [GH-90000]");
-            assertThat(event.tenantId()).isEqualTo("tenant-alpha [GH-90000]");
-            assertThat(event.userId()).isEqualTo("user-001 [GH-90000]");
+            assertThat(event.id()).isEqualTo("event-001");
+            assertThat(event.tenantId()).isEqualTo("tenant-alpha");
+            assertThat(event.userId()).isEqualTo("user-001");
             assertThat(event.type()).isEqualTo(AuditLogService.EventType.ACCESS); // GH-90000
             assertThat(event.success()).isTrue(); // GH-90000
             assertThat(java.time.Duration.between(event.timestamp(), now).toMillis()).isLessThan(100); // GH-90000
@@ -296,11 +296,11 @@ class AuditLogRetentionTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Compliance [GH-90000]")
+    @DisplayName("Compliance")
     class ComplianceTests {
 
         @Test
-        @DisplayName("[S002]: retention_policy_compliance_calculated [GH-90000]")
+        @DisplayName("[S002]: retention_policy_compliance_calculated")
         void retentionPolicyComplianceCalculated() { // GH-90000
             String tenantId = "tenant-alpha";
 

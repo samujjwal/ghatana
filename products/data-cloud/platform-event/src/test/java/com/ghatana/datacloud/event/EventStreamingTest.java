@@ -17,11 +17,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test event streaming, processing, and delivery.
  */
-@DisplayName("Event Streaming Tests [GH-90000]")
+@DisplayName("Event Streaming Tests")
 class EventStreamingTest {
 
     @Test
-    @DisplayName("Should stream events [GH-90000]")
+    @DisplayName("Should stream events")
     void shouldStreamEvents() { // GH-90000
         String streamId = "stream-123";
         String eventType = "USER_ACTION";
@@ -31,7 +31,7 @@ class EventStreamingTest {
     }
 
     @Test
-    @DisplayName("Should handle event processing [GH-90000]")
+    @DisplayName("Should handle event processing")
     void shouldHandleEventProcessing() { // GH-90000
         String processorId = "processor-123";
         boolean processed = true;
@@ -41,7 +41,7 @@ class EventStreamingTest {
     }
 
     @Test
-    @DisplayName("Should handle event delivery [GH-90000]")
+    @DisplayName("Should handle event delivery")
     void shouldHandleEventDelivery() { // GH-90000
         String consumerId = "consumer-123";
         boolean delivered = true;
@@ -51,16 +51,16 @@ class EventStreamingTest {
     }
 
     @Test
-    @DisplayName("Should handle event filtering [GH-90000]")
+    @DisplayName("Should handle event filtering")
     void shouldHandleEventFiltering() { // GH-90000
         String filter = "event_type = 'purchase'";
 
-        assertThat(filter).contains("event_type [GH-90000]");
-        assertThat(filter).contains("purchase [GH-90000]");
+        assertThat(filter).contains("event_type");
+        assertThat(filter).contains("purchase");
     }
 
     @Test
-    @DisplayName("Should handle streaming failures [GH-90000]")
+    @DisplayName("Should handle streaming failures")
     void shouldHandleStreamingFailures() { // GH-90000
         boolean failed = false;
         String error = null;
@@ -70,7 +70,7 @@ class EventStreamingTest {
     }
 
     @Test
-    @DisplayName("Should handle event backpressure [GH-90000]")
+    @DisplayName("Should handle event backpressure")
     void shouldHandleEventBackpressure() { // GH-90000
         int bufferCapacity = 1000;
         int currentSize = 500;

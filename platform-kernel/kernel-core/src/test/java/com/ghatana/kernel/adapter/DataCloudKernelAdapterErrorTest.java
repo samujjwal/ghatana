@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("DataCloud Kernel Adapter Error Tests [GH-90000]")
+@DisplayName("DataCloud Kernel Adapter Error Tests")
 class DataCloudKernelAdapterErrorTest extends EventloopTestBase {
 
     private KernelRegistryImpl registry;
@@ -35,7 +35,7 @@ class DataCloudKernelAdapterErrorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle service unavailable with retry [GH-90000]")
+    @DisplayName("Should handle service unavailable with retry")
     void testServiceUnavailableWithRetry() { // GH-90000
         // GIVEN: Adapter with failing service that recovers
         FailingDataCloudAdapter adapter = new FailingDataCloudAdapter(3); // Fail 3 times, then succeed // GH-90000
@@ -49,7 +49,7 @@ class DataCloudKernelAdapterErrorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should fail after max retries exceeded [GH-90000]")
+    @DisplayName("Should fail after max retries exceeded")
     void testMaxRetriesExceeded() { // GH-90000
         // GIVEN: Adapter that always fails
         FailingDataCloudAdapter adapter = new FailingDataCloudAdapter(10); // Fail 10 times // GH-90000
@@ -60,11 +60,11 @@ class DataCloudKernelAdapterErrorTest extends EventloopTestBase {
         // THEN: Fails after max retries
         assertThatThrownBy(() -> runPromise(() -> initPromise)) // GH-90000
             .isInstanceOf(RuntimeException.class) // GH-90000
-            .hasMessageContaining("Max retries exceeded [GH-90000]");
+            .hasMessageContaining("Max retries exceeded");
     }
 
     @Test
-    @DisplayName("Should handle timeout gracefully [GH-90000]")
+    @DisplayName("Should handle timeout gracefully")
     void testTimeoutHandling() { // GH-90000
         // GIVEN: Adapter with slow initialization
         SlowDataCloudAdapter adapter = new SlowDataCloudAdapter(Duration.ofSeconds(10)); // GH-90000
@@ -78,7 +78,7 @@ class DataCloudKernelAdapterErrorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle connection errors with exponential backoff [GH-90000]")
+    @DisplayName("Should handle connection errors with exponential backoff")
     void testExponentialBackoff() { // GH-90000
         // GIVEN: Adapter with intermittent failures
         IntermittentFailureAdapter adapter = new IntermittentFailureAdapter(); // GH-90000
@@ -96,7 +96,7 @@ class DataCloudKernelAdapterErrorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle partial initialization failure [GH-90000]")
+    @DisplayName("Should handle partial initialization failure")
     void testPartialInitializationFailure() { // GH-90000
         // GIVEN: Adapter that fails during component initialization
         PartialFailureAdapter adapter = new PartialFailureAdapter(); // GH-90000
@@ -104,14 +104,14 @@ class DataCloudKernelAdapterErrorTest extends EventloopTestBase {
         // WHEN: Initialize
         assertThatThrownBy(() -> adapter.initialize(context)) // GH-90000
             .isInstanceOf(RuntimeException.class) // GH-90000
-            .hasMessageContaining("Component initialization failed [GH-90000]");
+            .hasMessageContaining("Component initialization failed");
 
         // THEN: Cleanup was performed
         assertThat(adapter.isCleanedUp()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle circuit breaker pattern [GH-90000]")
+    @DisplayName("Should handle circuit breaker pattern")
     void testCircuitBreakerPattern() { // GH-90000
         // GIVEN: Adapter with circuit breaker
         CircuitBreakerAdapter adapter = new CircuitBreakerAdapter(3); // Open after 3 failures // GH-90000
@@ -127,11 +127,11 @@ class DataCloudKernelAdapterErrorTest extends EventloopTestBase {
 
         assertThatThrownBy(() -> runPromise(() -> adapter.callService())) // GH-90000
             .isInstanceOf(RuntimeException.class) // GH-90000
-            .hasMessageContaining("Circuit breaker is open [GH-90000]");
+            .hasMessageContaining("Circuit breaker is open");
     }
 
     @Test
-    @DisplayName("Should handle network errors with fallback [GH-90000]")
+    @DisplayName("Should handle network errors with fallback")
     void testNetworkErrorWithFallback() { // GH-90000
         // GIVEN: Adapter with network issues
         NetworkErrorAdapter adapter = new NetworkErrorAdapter(); // GH-90000
@@ -140,12 +140,12 @@ class DataCloudKernelAdapterErrorTest extends EventloopTestBase {
         String result = runPromise(() -> adapter.callServiceWithFallback()); // GH-90000
 
         // THEN: Fallback value is returned
-        assertThat(result).isEqualTo("fallback-value [GH-90000]");
+        assertThat(result).isEqualTo("fallback-value");
         assertThat(adapter.isFallbackUsed()).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should log errors for monitoring [GH-90000]")
+    @DisplayName("Should log errors for monitoring")
     void testErrorLogging() { // GH-90000
         // GIVEN: Adapter with error logging
         LoggingAdapter adapter = new LoggingAdapter(); // GH-90000
@@ -157,7 +157,7 @@ class DataCloudKernelAdapterErrorTest extends EventloopTestBase {
         // THEN: Error is logged
         assertThat(adapter.getErrorLogs()).isNotEmpty(); // GH-90000
         assertThat(adapter.getErrorLogs().get(0)) // GH-90000
-            .contains("Initialization failed [GH-90000]");
+            .contains("Initialization failed");
     }
 
     // Test adapter implementations
@@ -187,7 +187,7 @@ class DataCloudKernelAdapterErrorTest extends EventloopTestBase {
         private Promise<Void> attemptInitialize() { // GH-90000
             attemptCount++;
             if (attemptCount <= failureCount) { // GH-90000
-                return Promise.ofException(new RuntimeException("Service unavailable [GH-90000]"));
+                return Promise.ofException(new RuntimeException("Service unavailable"));
             }
             return Promise.complete(); // GH-90000
         }
@@ -242,7 +242,7 @@ class DataCloudKernelAdapterErrorTest extends EventloopTestBase {
         private Promise<Void> attemptInitialize() { // GH-90000
             attemptCount++;
             if (attemptCount < 3) { // GH-90000
-                return Promise.ofException(new RuntimeException("Connection failed [GH-90000]"));
+                return Promise.ofException(new RuntimeException("Connection failed"));
             }
             return Promise.complete(); // GH-90000
         }
@@ -267,7 +267,7 @@ class DataCloudKernelAdapterErrorTest extends EventloopTestBase {
         }
 
         private void initializeComponent2() { // GH-90000
-            throw new RuntimeException("Component 2 failed [GH-90000]");
+            throw new RuntimeException("Component 2 failed");
         }
 
         private void cleanup() { // GH-90000
@@ -290,7 +290,7 @@ class DataCloudKernelAdapterErrorTest extends EventloopTestBase {
 
         Promise<String> callService() { // GH-90000
             if (circuitOpen) { // GH-90000
-                return Promise.ofException(new RuntimeException("Circuit breaker is open [GH-90000]"));
+                return Promise.ofException(new RuntimeException("Circuit breaker is open"));
             }
 
             return Promise.ofCallback(cb -> { // GH-90000
@@ -299,7 +299,7 @@ class DataCloudKernelAdapterErrorTest extends EventloopTestBase {
                 if (failureCount >= failureThreshold) { // GH-90000
                     circuitOpen = true;
                 }
-                cb.setException(new RuntimeException("Service call failed [GH-90000]"));
+                cb.setException(new RuntimeException("Service call failed"));
             });
         }
 
@@ -317,13 +317,13 @@ class DataCloudKernelAdapterErrorTest extends EventloopTestBase {
                     result -> Promise.of(result), // GH-90000
                     error -> {
                         fallbackUsed = true;
-                        return Promise.of("fallback-value [GH-90000]");
+                        return Promise.of("fallback-value");
                     }
                 );
         }
 
         private Promise<String> callService() { // GH-90000
-            return Promise.ofException(new RuntimeException("Network error [GH-90000]"));
+            return Promise.ofException(new RuntimeException("Network error"));
         }
 
         boolean isFallbackUsed() { // GH-90000
@@ -336,7 +336,7 @@ class DataCloudKernelAdapterErrorTest extends EventloopTestBase {
 
         void initialize(KernelContext context) { // GH-90000
             try {
-                throw new RuntimeException("Initialization failed [GH-90000]");
+                throw new RuntimeException("Initialization failed");
             } catch (Exception e) { // GH-90000
                 logError("Initialization failed: " + e.getMessage()); // GH-90000
                 throw e;

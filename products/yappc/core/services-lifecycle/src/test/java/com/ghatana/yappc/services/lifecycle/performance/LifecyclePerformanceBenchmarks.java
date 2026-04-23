@@ -257,7 +257,7 @@ public class LifecyclePerformanceBenchmarks {
      * Usage:
      * <pre>{@code
      * @Test
-     * @Tag("benchmark [GH-90000]")
+     * @Tag("benchmark")
      * public void runBenchmarks() throws Exception { // GH-90000
      *     LifecyclePerformanceBenchmarks.main(new String[0]); // GH-90000
      * }

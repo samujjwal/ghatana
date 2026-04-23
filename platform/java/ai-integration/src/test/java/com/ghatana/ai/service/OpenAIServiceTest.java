@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
  * @doc.layer core
  * @doc.pattern Test
  */
-@DisplayName("OpenAIService Schema Validation Tests [GH-90000]")
+@DisplayName("OpenAIService Schema Validation Tests")
 class OpenAIServiceTest {
 
     /**
@@ -34,7 +34,7 @@ class OpenAIServiceTest {
     }
 
     @Test
-    @DisplayName("Should parse valid JSON response matching schema [GH-90000]")
+    @DisplayName("Should parse valid JSON response matching schema")
     void shouldParseValidJsonResponse() { // GH-90000
         assertDoesNotThrow(() -> { // GH-90000
             // Placeholder until HTTP client mocking is added for structured output parsing.
@@ -42,7 +42,7 @@ class OpenAIServiceTest {
     }
 
     @Test
-    @DisplayName("Should throw exception for invalid JSON [GH-90000]")
+    @DisplayName("Should throw exception for invalid JSON")
     void shouldThrowExceptionForInvalidJson() { // GH-90000
         // Test that invalid JSON throws RuntimeException
         // The implementation catches Jackson exceptions and wraps them
@@ -50,7 +50,7 @@ class OpenAIServiceTest {
     }
 
     @Test
-    @DisplayName("Should throw exception for JSON missing required fields [GH-90000]")
+    @DisplayName("Should throw exception for JSON missing required fields")
     void shouldThrowExceptionForMissingRequiredFields() { // GH-90000
         // Test that JSON missing required schema fields throws RuntimeException
         // For example, if schema requires "name" and "value" but JSON only has "name"
@@ -58,7 +58,7 @@ class OpenAIServiceTest {
     }
 
     @Test
-    @DisplayName("Should throw exception for JSON with wrong field types [GH-90000]")
+    @DisplayName("Should throw exception for JSON with wrong field types")
     void shouldThrowExceptionForWrongFieldTypes() { // GH-90000
         // Test that JSON with wrong field types throws RuntimeException
         // For example, if schema expects "value" as int but JSON provides a string

@@ -12,7 +12,11 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Deployment event publisher backed by the AEP EventCloud facade.
- */
+  * @doc.type class
+ * @doc.purpose Provides event cloud deployment event publisher functionality.
+ * @doc.layer product
+ * @doc.pattern Event
+*/
 @Slf4j
 public class EventCloudDeploymentEventPublisher implements DeploymentEventPublisher {
 

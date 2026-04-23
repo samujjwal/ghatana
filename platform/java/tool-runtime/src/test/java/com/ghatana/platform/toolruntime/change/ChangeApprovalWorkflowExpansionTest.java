@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("ChangeApprovalWorkflow - Phase 3 Expansion [GH-90000]")
+@DisplayName("ChangeApprovalWorkflow - Phase 3 Expansion")
 class ChangeApprovalWorkflowExpansionTest extends EventloopTestBase {
 
     private InMemoryChangeApprovalWorkflow workflow;
@@ -41,11 +41,11 @@ class ChangeApprovalWorkflowExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Risk Scoring [GH-90000]")
+    @DisplayName("Risk Scoring")
     class RiskScoringTests {
 
         @Test
-        @DisplayName("All change types have consistent risk scores [GH-90000]")
+        @DisplayName("All change types have consistent risk scores")
         void riskScoresConsistent() { // GH-90000
             ChangeType[] types = {
                 ChangeType.FEATURE_FLAG,
@@ -63,7 +63,7 @@ class ChangeApprovalWorkflowExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Low-risk changes auto-approve, high-risk require review [GH-90000]")
+        @DisplayName("Low-risk changes auto-approve, high-risk require review")
         void thresholdBasedApproval() { // GH-90000
             // Low-risk auto-approves
             ChangeRequest lowRisk = runPromise(() -> workflow.submitChange( // GH-90000
@@ -77,17 +77,17 @@ class ChangeApprovalWorkflowExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Low-risk changes skip review and go directly to APPROVED [GH-90000]")
+        @DisplayName("Low-risk changes skip review and go directly to APPROVED")
         void autoApprovedBypassReview() { // GH-90000
             ChangeRequest req = runPromise(() -> workflow.submitChange( // GH-90000
                 "tenant-1", "agent-1", ChangeType.FEATURE_FLAG, "Enable FF", Map.of())); // GH-90000
 
             assertThat(req.status()).isEqualTo(ChangeStatus.APPROVED); // GH-90000
-            assertThat(req.reviewerId()).isEqualTo("system [GH-90000]"); // Auto-approved by system
+            assertThat(req.reviewerId()).isEqualTo("system"); // Auto-approved by system
         }
 
         @Test
-        @DisplayName("Custom threshold changes approval behavior [GH-90000]")
+        @DisplayName("Custom threshold changes approval behavior")
         void customThreshold() { // GH-90000
             // Threshold = 0: all require review
             InMemoryChangeApprovalWorkflow strict = new InMemoryChangeApprovalWorkflow(0); // GH-90000
@@ -108,11 +108,11 @@ class ChangeApprovalWorkflowExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Review Workflow [GH-90000]")
+    @DisplayName("Review Workflow")
     class ReviewWorkflowTests {
 
         @Test
-        @DisplayName("Pending changes transition to APPROVED when approved [GH-90000]")
+        @DisplayName("Pending changes transition to APPROVED when approved")
         void approvePendingChange() { // GH-90000
             ChangeRequest pending = runPromise(() -> workflow.submitChange( // GH-90000
                 "tenant-1", "agent-1", ChangeType.POLICY_UPDATE, "description", Map.of())); // GH-90000
@@ -122,12 +122,12 @@ class ChangeApprovalWorkflowExpansionTest extends EventloopTestBase {
                 pending.changeId(), "reviewer-1", "Looks good")); // GH-90000
 
             assertThat(approved.status()).isEqualTo(ChangeStatus.APPROVED); // GH-90000
-            assertThat(approved.reviewerId()).isEqualTo("reviewer-1 [GH-90000]");
-            assertThat(approved.reviewNotes()).isEqualTo("Looks good [GH-90000]");
+            assertThat(approved.reviewerId()).isEqualTo("reviewer-1");
+            assertThat(approved.reviewNotes()).isEqualTo("Looks good");
         }
 
         @Test
-        @DisplayName("Pending changes transition to REJECTED when rejected [GH-90000]")
+        @DisplayName("Pending changes transition to REJECTED when rejected")
         void rejectPendingChange() { // GH-90000
             ChangeRequest pending = runPromise(() -> workflow.submitChange( // GH-90000
                 "tenant-1", "agent-1", ChangeType.AGENT_DEPLOYMENT, "description", Map.of())); // GH-90000
@@ -136,11 +136,11 @@ class ChangeApprovalWorkflowExpansionTest extends EventloopTestBase {
                 pending.changeId(), "reviewer-2", "Fails security check")); // GH-90000
 
             assertThat(rejected.status()).isEqualTo(ChangeStatus.REJECTED); // GH-90000
-            assertThat(rejected.reviewNotes()).isEqualTo("Fails security check [GH-90000]");
+            assertThat(rejected.reviewNotes()).isEqualTo("Fails security check");
         }
 
         @Test
-        @DisplayName("Pending changes can be withdrawn by requester [GH-90000]")
+        @DisplayName("Pending changes can be withdrawn by requester")
         void withdrawPendingChange() { // GH-90000
             ChangeRequest pending = runPromise(() -> workflow.submitChange( // GH-90000
                 "tenant-1", "agent-1", ChangeType.POLICY_UPDATE, "description", Map.of())); // GH-90000
@@ -151,7 +151,7 @@ class ChangeApprovalWorkflowExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Cannot approve already-approved changes [GH-90000]")
+        @DisplayName("Cannot approve already-approved changes")
         void preventDoubleApproval() { // GH-90000
             ChangeRequest pending = runPromise(() -> workflow.submitChange( // GH-90000
                 "tenant-1", "agent-1", ChangeType.POLICY_UPDATE, "description", Map.of())); // GH-90000
@@ -165,7 +165,7 @@ class ChangeApprovalWorkflowExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Cannot approve already-rejected changes [GH-90000]")
+        @DisplayName("Cannot approve already-rejected changes")
         void preventApproveAfterReject() { // GH-90000
             ChangeRequest pending = runPromise(() -> workflow.submitChange( // GH-90000
                 "tenant-1", "agent-1", ChangeType.POLICY_UPDATE, "description", Map.of())); // GH-90000
@@ -184,11 +184,11 @@ class ChangeApprovalWorkflowExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Multi-Tenant Isolation [GH-90000]")
+    @DisplayName("Multi-Tenant Isolation")
     class MultiTenantTests {
 
         @Test
-        @DisplayName("Changes are isolated by tenant [GH-90000]")
+        @DisplayName("Changes are isolated by tenant")
         void tenantIsolation() { // GH-90000
             ChangeRequest t1Change = runPromise(() -> workflow.submitChange( // GH-90000
                 "tenant-1", "agent-1", ChangeType.FEATURE_FLAG, "Feature A", Map.of())); // GH-90000
@@ -197,12 +197,12 @@ class ChangeApprovalWorkflowExpansionTest extends EventloopTestBase {
                 "tenant-2", "agent-2", ChangeType.FEATURE_FLAG, "Feature A", Map.of())); // GH-90000
 
             assertThat(t1Change.changeId()).isNotEqualTo(t2Change.changeId()); // GH-90000
-            assertThat(t1Change.tenantId()).isEqualTo("tenant-1 [GH-90000]");
-            assertThat(t2Change.tenantId()).isEqualTo("tenant-2 [GH-90000]");
+            assertThat(t1Change.tenantId()).isEqualTo("tenant-1");
+            assertThat(t2Change.tenantId()).isEqualTo("tenant-2");
         }
 
         @Test
-        @DisplayName("listPending returns only tenant's pending changes [GH-90000]")
+        @DisplayName("listPending returns only tenant's pending changes")
         void pendingListIsolated() { // GH-90000
             // Tenant-1: 2 pending + 1 approved
             runPromise(() -> workflow.submitChange("tenant-1", "a1", ChangeType.POLICY_UPDATE, "d1", Map.of())); // GH-90000
@@ -212,20 +212,20 @@ class ChangeApprovalWorkflowExpansionTest extends EventloopTestBase {
             // Tenant-2: 1 pending
             runPromise(() -> workflow.submitChange("tenant-2", "a4", ChangeType.POLICY_UPDATE, "d4", Map.of())); // GH-90000
 
-            List<ChangeRequest> t1Pending = runPromise(() -> workflow.listPending("tenant-1 [GH-90000]"));
-            List<ChangeRequest> t2Pending = runPromise(() -> workflow.listPending("tenant-2 [GH-90000]"));
+            List<ChangeRequest> t1Pending = runPromise(() -> workflow.listPending("tenant-1"));
+            List<ChangeRequest> t2Pending = runPromise(() -> workflow.listPending("tenant-2"));
 
             // Tenant-1 has 2 pending
             assertThat(t1Pending).hasSize(2); // GH-90000
-            assertThat(t1Pending).allMatch(r -> r.tenantId().equals("tenant-1 [GH-90000]"));
+            assertThat(t1Pending).allMatch(r -> r.tenantId().equals("tenant-1"));
 
             // Tenant-2 has 1 pending
             assertThat(t2Pending).hasSize(1); // GH-90000
-            assertThat(t2Pending).allMatch(r -> r.tenantId().equals("tenant-2 [GH-90000]"));
+            assertThat(t2Pending).allMatch(r -> r.tenantId().equals("tenant-2"));
         }
 
         @Test
-        @DisplayName("Approvals in one tenant don't affect another's pending list [GH-90000]")
+        @DisplayName("Approvals in one tenant don't affect another's pending list")
         void approvalIsolation() { // GH-90000
             ChangeRequest t1Pending = runPromise(() -> workflow.submitChange( // GH-90000
                 "tenant-1", "agent-1", ChangeType.POLICY_UPDATE, "description", Map.of())); // GH-90000
@@ -237,7 +237,7 @@ class ChangeApprovalWorkflowExpansionTest extends EventloopTestBase {
             runPromise(() -> workflow.approve(t1Pending.changeId(), "reviewer-1", "ok")); // GH-90000
 
             // Tenant-2's pending should be unaffected
-            List<ChangeRequest> t2List = runPromise(() -> workflow.listPending("tenant-2 [GH-90000]"));
+            List<ChangeRequest> t2List = runPromise(() -> workflow.listPending("tenant-2"));
             assertThat(t2List).hasSize(1); // GH-90000
             assertThat(t2List.get(0).changeId()).isEqualTo(t2Pending.changeId()); // GH-90000
         }
@@ -248,11 +248,11 @@ class ChangeApprovalWorkflowExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Concurrent Operations [GH-90000]")
+    @DisplayName("Concurrent Operations")
     class ConcurrentTests {
 
         @Test
-        @DisplayName("Multiple agents can submit changes concurrently [GH-90000]")
+        @DisplayName("Multiple agents can submit changes concurrently")
         void concurrentSubmissions() { // GH-90000
             AtomicInteger successCount = new AtomicInteger(0); // GH-90000
             int threadCount = 10;
@@ -287,7 +287,7 @@ class ChangeApprovalWorkflowExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Concurrent reviews don't corrupt state [GH-90000]")
+        @DisplayName("Concurrent reviews don't corrupt state")
         void concurrentReviews() { // GH-90000
             // Create 5 pending changes
             String[] changeIds = new String[5];
@@ -326,10 +326,10 @@ class ChangeApprovalWorkflowExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Listing pending concurrent with submissions stays consistent [GH-90000]")
+        @DisplayName("Listing pending concurrent with submissions stays consistent")
         void listDuringSubmissions() { // GH-90000
             // Initial pending list
-            List<ChangeRequest> initial = runPromise(() -> workflow.listPending("tenant-1 [GH-90000]"));
+            List<ChangeRequest> initial = runPromise(() -> workflow.listPending("tenant-1"));
             assertThat(initial).isEmpty(); // GH-90000
 
             // Submit 3 high-risk changes concurrently
@@ -340,7 +340,7 @@ class ChangeApprovalWorkflowExpansionTest extends EventloopTestBase {
             }
 
             // Check pending list after
-            List<ChangeRequest> after = runPromise(() -> workflow.listPending("tenant-1 [GH-90000]"));
+            List<ChangeRequest> after = runPromise(() -> workflow.listPending("tenant-1"));
             assertThat(after).hasSize(3); // GH-90000
             assertThat(after).allMatch(r -> r.status() == ChangeStatus.PENDING_REVIEW); // GH-90000
         }
@@ -351,11 +351,11 @@ class ChangeApprovalWorkflowExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Change Retrieval [GH-90000]")
+    @DisplayName("Change Retrieval")
     class RetrievalTests {
 
         @Test
-        @DisplayName("Can retrieve change by ID [GH-90000]")
+        @DisplayName("Can retrieve change by ID")
         void getChangeById() { // GH-90000
             ChangeRequest created = runPromise(() -> workflow.submitChange( // GH-90000
                 "tenant-1", "agent-1", ChangeType.FEATURE_FLAG, "Enable feature", Map.of())); // GH-90000
@@ -364,13 +364,13 @@ class ChangeApprovalWorkflowExpansionTest extends EventloopTestBase {
 
             assertThat(retrieved.changeId()).isEqualTo(created.changeId()); // GH-90000
             assertThat(retrieved.status()).isEqualTo(created.status()); // GH-90000
-            assertThat(retrieved.tenantId()).isEqualTo("tenant-1 [GH-90000]");
+            assertThat(retrieved.tenantId()).isEqualTo("tenant-1");
         }
 
         @Test
-        @DisplayName("Retrieving non-existent change throws error [GH-90000]")
+        @DisplayName("Retrieving non-existent change throws error")
         void getUnknownChangeThrows() { // GH-90000
-            assertThatThrownBy(() -> runPromise(() -> workflow.getChange("no-such-id [GH-90000]")))
+            assertThatThrownBy(() -> runPromise(() -> workflow.getChange("no-such-id")))
                 .isInstanceOf(IllegalArgumentException.class); // GH-90000
         }
     }
@@ -380,24 +380,24 @@ class ChangeApprovalWorkflowExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Change Request Properties [GH-90000]")
+    @DisplayName("Change Request Properties")
     class PropertyTests {
 
         @Test
-        @DisplayName("ChangeRequest has correct core properties [GH-90000]")
+        @DisplayName("ChangeRequest has correct core properties")
         void requestStaticProperties() { // GH-90000
             ChangeRequest req = runPromise(() -> workflow.submitChange( // GH-90000
                 "tenant-1", "agent-1", ChangeType.CONFIG_CHANGE,
                 "Update config", Map.of())); // GH-90000
 
-            assertThat(req.tenantId()).isEqualTo("tenant-1 [GH-90000]");
+            assertThat(req.tenantId()).isEqualTo("tenant-1");
             assertThat(req.riskScore()).isBetween(0, 100); // GH-90000
             assertThat(req.status()).isNotNull(); // GH-90000
             assertThat(req.changeId()).isNotEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("Review notes are captured correctly [GH-90000]")
+        @DisplayName("Review notes are captured correctly")
         void reviewNotesPreserved() { // GH-90000
             ChangeRequest pending = runPromise(() -> workflow.submitChange( // GH-90000
                 "tenant-1", "agent-1", ChangeType.POLICY_UPDATE, "description", Map.of())); // GH-90000
@@ -407,7 +407,7 @@ class ChangeApprovalWorkflowExpansionTest extends EventloopTestBase {
                 pending.changeId(), "reviewer-1", reviewNotes)); // GH-90000
 
             assertThat(reviewed.reviewNotes()).isEqualTo(reviewNotes); // GH-90000
-            assertThat(reviewed.reviewerId()).isEqualTo("reviewer-1 [GH-90000]");
+            assertThat(reviewed.reviewerId()).isEqualTo("reviewer-1");
         }
     }
 }

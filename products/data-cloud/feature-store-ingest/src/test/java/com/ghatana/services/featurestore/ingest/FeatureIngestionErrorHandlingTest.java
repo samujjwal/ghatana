@@ -26,8 +26,8 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("FeatureIngestionErrorHandlingTest [GH-90000]")
-@Tag("feature-store [GH-90000]")
+@DisplayName("FeatureIngestionErrorHandlingTest")
+@Tag("feature-store")
 class FeatureIngestionErrorHandlingTest {
 
     private FaultInjectionIngestPipeline pipeline;
@@ -42,7 +42,7 @@ class FeatureIngestionErrorHandlingTest {
     // ── Extraction failures ───────────────────────────────────────────────────
 
     @Test
-    @DisplayName("null payload causes FeatureExtractionException [GH-90000]")
+    @DisplayName("null payload causes FeatureExtractionException")
     void nullPayloadCausesExtractionException() { // GH-90000
         assertThatThrownBy(() -> // GH-90000
                 pipeline.ingestStrict("entity-1", null, Instant.now())) // GH-90000
@@ -50,7 +50,7 @@ class FeatureIngestionErrorHandlingTest {
     }
 
     @Test
-    @DisplayName("empty payload causes FeatureExtractionException [GH-90000]")
+    @DisplayName("empty payload causes FeatureExtractionException")
     void emptyPayloadCausesExtractionException() { // GH-90000
         assertThatThrownBy(() -> // GH-90000
                 pipeline.ingestStrict("entity-1", Map.of(), Instant.now())) // GH-90000
@@ -58,16 +58,16 @@ class FeatureIngestionErrorHandlingTest {
     }
 
     @Test
-    @DisplayName("payload with only non-numeric values is routed to DLQ [GH-90000]")
+    @DisplayName("payload with only non-numeric values is routed to DLQ")
     void nonNumericPayloadRoutedToDlq() { // GH-90000
         Map<String, Object> payload = Map.of("name", "Alice", "label", "premium"); // GH-90000
         pipeline.ingestFault("entity-1", payload, Instant.now()); // GH-90000
         assertThat(deadLetterQueue).hasSize(1); // GH-90000
-        assertThat(deadLetterQueue.get(0)).contains("entity-1 [GH-90000]");
+        assertThat(deadLetterQueue.get(0)).contains("entity-1");
     }
 
     @Test
-    @DisplayName("payload with mixed valid and invalid keys extracts valid numeric features [GH-90000]")
+    @DisplayName("payload with mixed valid and invalid keys extracts valid numeric features")
     void mixedPayloadExtractsNumericFeatures() { // GH-90000
         Map<String, Object> payload = new HashMap<>(); // GH-90000
         payload.put("score", 0.95); // GH-90000
@@ -81,17 +81,17 @@ class FeatureIngestionErrorHandlingTest {
     // ── Write failures ────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("write failure routes record to DLQ and does not throw [GH-90000]")
+    @DisplayName("write failure routes record to DLQ and does not throw")
     void writeFailureRoutesToDlq() { // GH-90000
         pipeline.simulateWriteFailure(true); // GH-90000
         Map<String, Object> payload = Map.of("score", 0.9); // GH-90000
         pipeline.ingestFault("entity-1", payload, Instant.now()); // GH-90000
         assertThat(deadLetterQueue).hasSize(1); // GH-90000
-        assertThat(deadLetterQueue.get(0)).contains("WRITE_FAILURE [GH-90000]");
+        assertThat(deadLetterQueue.get(0)).contains("WRITE_FAILURE");
     }
 
     @Test
-    @DisplayName("FeatureStoreWriteException is not swallowed on strict path [GH-90000]")
+    @DisplayName("FeatureStoreWriteException is not swallowed on strict path")
     void writeExceptionNotSwallowedOnStrictPath() { // GH-90000
         pipeline.simulateWriteFailure(true); // GH-90000
         Map<String, Object> payload = Map.of("score", 0.9); // GH-90000
@@ -103,7 +103,7 @@ class FeatureIngestionErrorHandlingTest {
     // ── Partial batch failures ────────────────────────────────────────────────
 
     @Test
-    @DisplayName("batch ingest continues for valid records despite one failure [GH-90000]")
+    @DisplayName("batch ingest continues for valid records despite one failure")
     void batchIngestContinuesOnPartialFailure() { // GH-90000
         List<Map<String, Object>> batch = List.of( // GH-90000
                 Map.of("score", 0.9), // GH-90000
@@ -116,7 +116,7 @@ class FeatureIngestionErrorHandlingTest {
     }
 
     @Test
-    @DisplayName("batch DLQ entries correspond to failed records [GH-90000]")
+    @DisplayName("batch DLQ entries correspond to failed records")
     void batchFailuresAreRecordedInDlq() { // GH-90000
         List<Map<String, Object>> batch = List.of( // GH-90000
                 Map.of(),               // will fail // GH-90000
@@ -129,17 +129,17 @@ class FeatureIngestionErrorHandlingTest {
     // ── Entity ID validation ──────────────────────────────────────────────────
 
     @Test
-    @DisplayName("null entity ID causes FeatureIngestException [GH-90000]")
+    @DisplayName("null entity ID causes FeatureIngestException")
     void nullEntityIdCausesIngestException() { // GH-90000
         Map<String, Object> payload = Map.of("score", 0.9); // GH-90000
         assertThatThrownBy(() -> // GH-90000
                 pipeline.ingestStrict(null, payload, Instant.now())) // GH-90000
                 .isInstanceOf(FeatureIngestException.class) // GH-90000
-                .hasMessageContaining("entity [GH-90000]");
+                .hasMessageContaining("entity");
     }
 
     @Test
-    @DisplayName("blank entity ID causes FeatureIngestException [GH-90000]")
+    @DisplayName("blank entity ID causes FeatureIngestException")
     void blankEntityIdCausesIngestException() { // GH-90000
         Map<String, Object> payload = Map.of("score", 0.9); // GH-90000
         assertThatThrownBy(() -> // GH-90000

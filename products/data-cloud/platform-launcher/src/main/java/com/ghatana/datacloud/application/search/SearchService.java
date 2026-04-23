@@ -301,7 +301,6 @@ public final class SearchService {
      * @param query search query with filters and facets
      * @return Promise with SearchResultsWithFacets
      */
-    @SuppressWarnings("unchecked")
     public Promise<SearchResultsWithFacets> searchWithFacets(SearchQuery query) {
         Objects.requireNonNull(query, "query cannot be null");
 
@@ -311,10 +310,8 @@ public final class SearchService {
                 ? getBatchFacets(query.getTenantId(), query.getFacets())
                 : Promise.of(List.of());
 
-        return Promises.toList(List.of(searchPromise, facetsPromise))
-                .map(list -> new SearchResultsWithFacets(
-                        (List<SearchResult>) list.get(0),
-                        (List<SearchFacet>) list.get(1)));
+        return searchPromise.then(results ->
+                facetsPromise.map(facets -> new SearchResultsWithFacets(results, facets)));
     }
 
     /**

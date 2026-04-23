@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("ClickHouseTraceStorage - Phase 3 Expansion [GH-90000]")
+@DisplayName("ClickHouseTraceStorage - Phase 3 Expansion")
 class ClickHouseTraceStorageExpansionTest {
 
     private ClickHouseTraceStorage storage;
@@ -33,9 +33,9 @@ class ClickHouseTraceStorageExpansionTest {
     @BeforeEach
     void setUp() { // GH-90000
         storage = ClickHouseTraceStorage.builder() // GH-90000
-                .withHost("localhost [GH-90000]")
+                .withHost("localhost")
                 .withPort(8123) // GH-90000
-                .withDatabase("observability [GH-90000]")
+                .withDatabase("observability")
                 .withBatchSize(1000) // GH-90000
                 .withFlushInterval(Duration.ofSeconds(5)) // GH-90000
                 .build(); // GH-90000
@@ -48,11 +48,11 @@ class ClickHouseTraceStorageExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Large Batch Persistence [GH-90000]")
+    @DisplayName("Large Batch Persistence")
     class BatchPersistenceTests {
 
         @Test
-        @DisplayName("Store and retrieve large batch of spans (5000+) [GH-90000]")
+        @DisplayName("Store and retrieve large batch of spans (5000+)")
         void storeLargeBatch() { // GH-90000
             List<SpanData> largeBatch = new ArrayList<>(); // GH-90000
             for (int i = 0; i < 5000; i++) { // GH-90000
@@ -69,7 +69,7 @@ class ClickHouseTraceStorageExpansionTest {
             // Storage should handle large batch
             assertThat(largeBatch).hasSize(5000); // GH-90000
             // Verify span structure
-            assertThat(largeBatch.get(0).traceId()).startsWith("trace-batch- [GH-90000]");
+            assertThat(largeBatch.get(0).traceId()).startsWith("trace-batch-");
         }
     }
 
@@ -78,11 +78,11 @@ class ClickHouseTraceStorageExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Batch Size Boundary Handling [GH-90000]")
+    @DisplayName("Batch Size Boundary Handling")
     class BoundaryTests {
 
         @Test
-        @DisplayName("Handle batches exactly at configured size limit [GH-90000]")
+        @DisplayName("Handle batches exactly at configured size limit")
         void batchSizeAtBoundary() { // GH-90000
             List<SpanData> exactBatch = new ArrayList<>(); // GH-90000
             // Create exactly 1000 spans (configured batch size) // GH-90000
@@ -98,7 +98,7 @@ class ClickHouseTraceStorageExpansionTest {
             }
 
             assertThat(exactBatch).hasSize(1000); // GH-90000
-            assertThat(exactBatch.get(999).spanId()).isEqualTo("span-boundary-999 [GH-90000]");
+            assertThat(exactBatch.get(999).spanId()).isEqualTo("span-boundary-999");
         }
     }
 
@@ -107,11 +107,11 @@ class ClickHouseTraceStorageExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Concurrent Write Safety [GH-90000]")
+    @DisplayName("Concurrent Write Safety")
     class ConcurrencyTests {
 
         @Test
-        @DisplayName("Concurrent span writes maintain data integrity [GH-90000]")
+        @DisplayName("Concurrent span writes maintain data integrity")
         void concurrentWrites() throws InterruptedException { // GH-90000
             int threadCount = 4;
             int spansPerThread = 250;
@@ -144,7 +144,7 @@ class ClickHouseTraceStorageExpansionTest {
         }
 
         @Test
-        @DisplayName("Storage remains consistent under concurrent batch operations [GH-90000]")
+        @DisplayName("Storage remains consistent under concurrent batch operations")
         void concurrentBatchOperations() throws InterruptedException { // GH-90000
             int batchCount = 10;
             int spansPerBatch = 100;

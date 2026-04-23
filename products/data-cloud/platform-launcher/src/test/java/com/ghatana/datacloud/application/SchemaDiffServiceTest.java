@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.purpose Validate schema diff computation, versioning recommendations, and version string increments
  * @doc.layer application
  */
-@DisplayName("SchemaDiffService Tests [GH-90000]")
+@DisplayName("SchemaDiffService Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class SchemaDiffServiceTest {
 
@@ -46,8 +46,8 @@ class SchemaDiffServiceTest {
     private MetaCollection buildCollection(String version, MetaField... fields) { // GH-90000
         return MetaCollection.builder() // GH-90000
                 .id(UUID.randomUUID()) // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .name("orders [GH-90000]")
+                .tenantId("tenant-1")
+                .name("orders")
                 .schemaVersion(version) // GH-90000
                 .fields(List.of(fields)) // GH-90000
                 .build(); // GH-90000
@@ -62,11 +62,11 @@ class SchemaDiffServiceTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("compareSchemas [GH-90000]")
+    @DisplayName("compareSchemas")
     class CompareSchemas {
 
         @Test
-        @DisplayName("should detect no changes when schemas are identical [GH-90000]")
+        @DisplayName("should detect no changes when schemas are identical")
         void shouldDetectNoChanges() { // GH-90000
             MetaField f = field("name", DataType.STRING); // GH-90000
             MetaCollection old = buildCollection("1.0.0", f); // GH-90000
@@ -79,7 +79,7 @@ class SchemaDiffServiceTest {
         }
 
         @Test
-        @DisplayName("should detect field addition as non-breaking change [GH-90000]")
+        @DisplayName("should detect field addition as non-breaking change")
         void shouldDetectAddedField() { // GH-90000
             MetaCollection old = buildCollection("1.0.0", field("id", DataType.STRING)); // GH-90000
             MetaCollection now = buildCollection("1.0.0", // GH-90000
@@ -93,7 +93,7 @@ class SchemaDiffServiceTest {
         }
 
         @Test
-        @DisplayName("should detect field removal as breaking change [GH-90000]")
+        @DisplayName("should detect field removal as breaking change")
         void shouldDetectRemovedField() { // GH-90000
             MetaCollection old = buildCollection("1.0.0", // GH-90000
                     field("id", DataType.STRING), // GH-90000
@@ -107,7 +107,7 @@ class SchemaDiffServiceTest {
         }
 
         @Test
-        @DisplayName("should detect field type change as breaking [GH-90000]")
+        @DisplayName("should detect field type change as breaking")
         void shouldDetectTypeChange() { // GH-90000
             MetaCollection old = buildCollection("1.0.0", field("count", DataType.STRING)); // GH-90000
             MetaCollection now = buildCollection("1.0.0", field("count", DataType.NUMBER)); // GH-90000
@@ -118,19 +118,19 @@ class SchemaDiffServiceTest {
         }
 
         @Test
-        @DisplayName("should return old and new version in diff [GH-90000]")
+        @DisplayName("should return old and new version in diff")
         void shouldCaptureVersions() { // GH-90000
             MetaCollection old = buildCollection("1.0.0", field("id", DataType.STRING)); // GH-90000
             MetaCollection now = buildCollection("2.0.0", field("id", DataType.STRING)); // GH-90000
 
             SchemaDiffService.SchemaDiff diff = service.compareSchemas(old, now); // GH-90000
 
-            assertThat(diff.getOldVersion()).isEqualTo("1.0.0 [GH-90000]");
-            assertThat(diff.getNewVersion()).isEqualTo("2.0.0 [GH-90000]");
+            assertThat(diff.getOldVersion()).isEqualTo("1.0.0");
+            assertThat(diff.getNewVersion()).isEqualTo("2.0.0");
         }
 
         @Test
-        @DisplayName("should throw NullPointerException for null old schema [GH-90000]")
+        @DisplayName("should throw NullPointerException for null old schema")
         void shouldHandleNullOldSchema() { // GH-90000
             MetaCollection now = buildCollection("1.0.0", field("id", DataType.STRING)); // GH-90000
             assertThatThrownBy(() -> service.compareSchemas(null, now)) // GH-90000
@@ -143,11 +143,11 @@ class SchemaDiffServiceTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("recommendVersionBump [GH-90000]")
+    @DisplayName("recommendVersionBump")
     class RecommendVersionBump {
 
         @Test
-        @DisplayName("should recommend MAJOR when diff has breaking changes [GH-90000]")
+        @DisplayName("should recommend MAJOR when diff has breaking changes")
         void shouldRecommendMajorForBreakingChanges() { // GH-90000
             MetaCollection old = buildCollection("1.0.0", // GH-90000
                     field("id", DataType.STRING), field("name", DataType.STRING)); // GH-90000
@@ -160,7 +160,7 @@ class SchemaDiffServiceTest {
         }
 
         @Test
-        @DisplayName("should recommend MINOR when diff has non-breaking additions [GH-90000]")
+        @DisplayName("should recommend MINOR when diff has non-breaking additions")
         void shouldRecommendMinorForNonBreakingChanges() { // GH-90000
             MetaCollection old = buildCollection("1.0.0", field("id", DataType.STRING)); // GH-90000
             MetaCollection now = buildCollection("1.0.0", // GH-90000
@@ -173,10 +173,10 @@ class SchemaDiffServiceTest {
         }
 
         @Test
-        @DisplayName("should recommend PATCH when diff has metadata-only changes (label change) [GH-90000]")
+        @DisplayName("should recommend PATCH when diff has metadata-only changes (label change)")
         void shouldRecommendPatchForMetadataChanges() { // GH-90000
             MetaField old = field("name", DataType.STRING); // GH-90000
-            MetaField updated = MetaField.builder().name("name [GH-90000]").type(DataType.STRING).label("Full Name [GH-90000]").build();
+            MetaField updated = MetaField.builder().name("name").type(DataType.STRING).label("Full Name").build();
             SchemaDiffService.SchemaDiff metaOnlyDiff = new SchemaDiffService.SchemaDiff("1.0.0", "1.0.1"); // GH-90000
             metaOnlyDiff.addChange(SchemaDiffService.FieldChange.labelChanged(old, updated)); // GH-90000
             SchemaDiffService.VersionBump bump = service.recommendVersionBump(metaOnlyDiff); // GH-90000
@@ -189,11 +189,11 @@ class SchemaDiffServiceTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("incrementVersion [GH-90000]")
+    @DisplayName("incrementVersion")
     class IncrementVersion {
 
         @ParameterizedTest
-        @DisplayName("should increment version correctly [GH-90000]")
+        @DisplayName("should increment version correctly")
         @CsvSource({ // GH-90000
             "1.2.3, MAJOR, 2.0.0",
             "1.2.3, MINOR, 1.3.0",
@@ -208,14 +208,14 @@ class SchemaDiffServiceTest {
         }
 
         @Test
-        @DisplayName("should throw for invalid version format [GH-90000]")
+        @DisplayName("should throw for invalid version format")
         void shouldThrowForInvalidFormat() { // GH-90000
             assertThatThrownBy(() -> service.incrementVersion("invalid", SchemaDiffService.VersionBump.PATCH)) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("should throw NullPointerException for null version [GH-90000]")
+        @DisplayName("should throw NullPointerException for null version")
         void shouldThrowForNullVersion() { // GH-90000
             assertThatThrownBy(() -> service.incrementVersion(null, SchemaDiffService.VersionBump.PATCH)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000

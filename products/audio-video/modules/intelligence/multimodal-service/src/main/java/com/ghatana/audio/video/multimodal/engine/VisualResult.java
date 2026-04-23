@@ -5,7 +5,11 @@ import java.util.List;
 
 /**
  * Result from vision analysis (image or video).
- */
+  * @doc.type class
+ * @doc.purpose Provides visual result functionality.
+ * @doc.layer product
+ * @doc.pattern ValueObject
+*/
 public class VisualResult {
 
     private final String sceneDescription;

@@ -51,7 +51,7 @@ class A2aWebSocketHandlerIntegrationTest {
                                 "repoRoot",
                                 "/tmp/a2a-repo",
                                 "languages",
-                                List.of("java [GH-90000]"),
+                                List.of("java"),
                                 "formatters",
                                 Boolean.TRUE));
 
@@ -59,29 +59,29 @@ class A2aWebSocketHandlerIntegrationTest {
                 handler.handleMessage(objectMapper.writeValueAsString(runEnvelope)); // GH-90000
         Envelope runResponse = objectMapper.readValue(runResponseJson, Envelope.class); // GH-90000
         assertThat(runResponse.type()).isEqualTo(EnvelopeTypes.TASK_RESULT); // GH-90000
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         Map<String, Object> runPayload = (Map<String, Object>) runResponse.payload(); // GH-90000
-        assertThat(runPayload.get("status [GH-90000]")).isEqualTo("ACCEPTED [GH-90000]");
-        String jobId = (String) runPayload.get("jobId [GH-90000]");
+        assertThat(runPayload.get("status")).isEqualTo("ACCEPTED");
+        String jobId = (String) runPayload.get("jobId");
         assertThat(jobId).isNotBlank(); // GH-90000
 
         Envelope statusEnvelope =
                 Envelope.request("req-status", correlationId, Map.of("operation", "status")); // GH-90000
         String statusJson = handler.handleMessage(objectMapper.writeValueAsString(statusEnvelope)); // GH-90000
         Envelope statusResponse = objectMapper.readValue(statusJson, Envelope.class); // GH-90000
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         Map<String, Object> statusPayload = (Map<String, Object>) statusResponse.payload(); // GH-90000
-        assertThat(statusPayload.get("jobId [GH-90000]")).isEqualTo(jobId);
-        assertThat(statusPayload.get("state [GH-90000]")).isEqualTo("QUEUED [GH-90000]");
+        assertThat(statusPayload.get("jobId")).isEqualTo(jobId);
+        assertThat(statusPayload.get("state")).isEqualTo("QUEUED");
 
         Envelope reportEnvelope =
                 Envelope.request("req-report", correlationId, Map.of("operation", "report")); // GH-90000
         String reportJson = handler.handleMessage(objectMapper.writeValueAsString(reportEnvelope)); // GH-90000
         Envelope reportResponse = objectMapper.readValue(reportJson, Envelope.class); // GH-90000
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         Map<String, Object> reportPayload = (Map<String, Object>) reportResponse.payload(); // GH-90000
-        assertThat(reportPayload.get("jobId [GH-90000]")).isEqualTo(jobId);
-        assertThat(reportPayload.get("summaryJson [GH-90000]").toString()).contains("QUEUED [GH-90000]");
+        assertThat(reportPayload.get("jobId")).isEqualTo(jobId);
+        assertThat(reportPayload.get("summaryJson").toString()).contains("QUEUED");
     }
 
     @Test
@@ -99,9 +99,9 @@ class A2aWebSocketHandlerIntegrationTest {
                 handler.handleMessage(objectMapper.writeValueAsString(diagnoseEnvelope)); // GH-90000
         Envelope response = objectMapper.readValue(responseJson, Envelope.class); // GH-90000
 
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         Map<String, Object> payload = (Map<String, Object>) response.payload(); // GH-90000
-        assertThat(payload.get("status [GH-90000]")).isEqualTo("COMPLETED [GH-90000]");
-        assertThat(payload).containsKey("diagnostics [GH-90000]");
+        assertThat(payload.get("status")).isEqualTo("COMPLETED");
+        assertThat(payload).containsKey("diagnostics");
     }
 }

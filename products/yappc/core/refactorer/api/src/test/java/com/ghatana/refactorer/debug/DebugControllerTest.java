@@ -76,7 +76,7 @@ class DebugControllerTest {
     @Test
     void parse_emptyInput_returnsEmptyFrames() { // GH-90000
         // Act
-        var result = controller.parse(" [GH-90000]");
+        var result = controller.parse("");
 
         // Assert
         assertFalse(result.success(), "Expected unsuccessful parse"); // GH-90000
@@ -93,8 +93,8 @@ class DebugControllerTest {
 
         // Create a mock ErrorPattern
         var errorPattern = mock(ErrorPatternManager.ErrorPattern.class); // GH-90000
-        when(errorPattern.getName()).thenReturn("test:error [GH-90000]");
-        when(errorPattern.getSuggestion()).thenReturn("Test suggestion [GH-90000]");
+        when(errorPattern.getName()).thenReturn("test:error");
+        when(errorPattern.getSuggestion()).thenReturn("Test suggestion");
 
         // Create MatchedPattern with correct constructor
         var matchedPattern = new ErrorPatternManager.MatchedPattern(errorPattern, "matched text"); // GH-90000
@@ -118,7 +118,7 @@ class DebugControllerTest {
         var defaultController = DebugController.createDefault(); // GH-90000
 
         // Assert - Should have all standard parsers
-        var result = defaultController.parse(" [GH-90000]");
+        var result = defaultController.parse("");
         assertFalse(result.success(), "Expected unsuccessful parse for empty input"); // GH-90000
     }
 

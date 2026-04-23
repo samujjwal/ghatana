@@ -32,7 +32,7 @@ public class TestPluginContext implements PluginContext {
         return new PluginInteractionBus() { // GH-90000
             @Override
             public <Req, Res> @NotNull io.activej.promise.Promise<Res> request(@NotNull String targetPluginId, @NotNull Req request, @NotNull Class<Res> responseType, @NotNull java.time.Duration timeout) { // GH-90000
-                return io.activej.promise.Promise.ofException(new UnsupportedOperationException("Not implemented [GH-90000]"));
+                return io.activej.promise.Promise.ofException(new UnsupportedOperationException("Not implemented"));
             }
 
             @Override

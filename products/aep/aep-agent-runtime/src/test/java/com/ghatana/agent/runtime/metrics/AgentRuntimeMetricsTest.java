@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * Unit tests for {@link AgentRuntimeMetrics}.
  */
-@DisplayName("AgentRuntimeMetrics [GH-90000]")
+@DisplayName("AgentRuntimeMetrics")
 class AgentRuntimeMetricsTest {
 
     private MeterRegistry registry;
@@ -42,11 +42,11 @@ class AgentRuntimeMetricsTest {
     // ── Constant inventory ───────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("metric name constants [GH-90000]")
+    @DisplayName("metric name constants")
     class MetricNameConstants {
 
         @Test
-        @DisplayName("all 11 metric name constants are non-blank [GH-90000]")
+        @DisplayName("all 11 metric name constants are non-blank")
         void allMetricNamesNonBlank() { // GH-90000
             assertThat(AgentRuntimeMetrics.METRIC_DISPATCH_TOTAL).isNotBlank(); // GH-90000
             assertThat(AgentRuntimeMetrics.METRIC_DISPATCH_DENIED).isNotBlank(); // GH-90000
@@ -62,7 +62,7 @@ class AgentRuntimeMetricsTest {
         }
 
         @Test
-        @DisplayName("all metric names use ghatana.agent prefix [GH-90000]")
+        @DisplayName("all metric names use ghatana.agent prefix")
         void allMetricNamesHaveGhatanaPrefix() { // GH-90000
             String prefix = "ghatana.agent";
             assertThat(AgentRuntimeMetrics.METRIC_DISPATCH_TOTAL).startsWith(prefix); // GH-90000
@@ -79,7 +79,7 @@ class AgentRuntimeMetricsTest {
         }
 
         @Test
-        @DisplayName("null registry throws NullPointerException [GH-90000]")
+        @DisplayName("null registry throws NullPointerException")
         void nullRegistryThrows() { // GH-90000
             assertThatThrownBy(() -> new AgentRuntimeMetrics(null)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
@@ -89,11 +89,11 @@ class AgentRuntimeMetricsTest {
     // ── Dispatch metrics ─────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("dispatch metrics [GH-90000]")
+    @DisplayName("dispatch metrics")
     class DispatchMetrics {
 
         @Test
-        @DisplayName("recordDispatch increments dispatch.total counter and records timer [GH-90000]")
+        @DisplayName("recordDispatch increments dispatch.total counter and records timer")
         void recordDispatchIncrements() { // GH-90000
             metrics.recordDispatch("agent-1", "tenant-1", "SUCCESS", Duration.ofMillis(100)); // GH-90000
 
@@ -109,7 +109,7 @@ class AgentRuntimeMetricsTest {
         }
 
         @Test
-        @DisplayName("recordDispatchDenied increments dispatch.denied counter [GH-90000]")
+        @DisplayName("recordDispatchDenied increments dispatch.denied counter")
         void recordDispatchDeniedIncrements() { // GH-90000
             metrics.recordDispatchDenied("agent-1", "tenant-1"); // GH-90000
             metrics.recordDispatchDenied("agent-1", "tenant-1"); // GH-90000
@@ -124,11 +124,11 @@ class AgentRuntimeMetricsTest {
     // ── Policy eval metrics ──────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("policy eval metrics [GH-90000]")
+    @DisplayName("policy eval metrics")
     class PolicyEvalMetrics {
 
         @Test
-        @DisplayName("recordPolicyEval increments total and NOT denied when allowed [GH-90000]")
+        @DisplayName("recordPolicyEval increments total and NOT denied when allowed")
         void recordPolicyEvalAllowedDoesNotIncrementDenied() { // GH-90000
             metrics.recordPolicyEval("agent-1", "tenant-1", true); // GH-90000
 
@@ -144,7 +144,7 @@ class AgentRuntimeMetricsTest {
         }
 
         @Test
-        @DisplayName("recordPolicyEval increments both total and denied when denied [GH-90000]")
+        @DisplayName("recordPolicyEval increments both total and denied when denied")
         void recordPolicyEvalDeniedIncrementsTwo() { // GH-90000
             metrics.recordPolicyEval("agent-2", "tenant-2", false); // GH-90000
 
@@ -163,11 +163,11 @@ class AgentRuntimeMetricsTest {
     // ── Invariant violation metrics ──────────────────────────────────────────
 
     @Nested
-    @DisplayName("invariant violation metrics [GH-90000]")
+    @DisplayName("invariant violation metrics")
     class InvariantViolationMetrics {
 
         @Test
-        @DisplayName("recordInvariantViolation increments by count [GH-90000]")
+        @DisplayName("recordInvariantViolation increments by count")
         void recordInvariantViolationByCount() { // GH-90000
             metrics.recordInvariantViolation("agent-1", "tenant-1", 3); // GH-90000
 
@@ -181,11 +181,11 @@ class AgentRuntimeMetricsTest {
     // ── Tool execution metrics ───────────────────────────────────────────────
 
     @Nested
-    @DisplayName("tool execution metrics [GH-90000]")
+    @DisplayName("tool execution metrics")
     class ToolExecutionMetrics {
 
         @Test
-        @DisplayName("recordToolExecution increments total and records timer [GH-90000]")
+        @DisplayName("recordToolExecution increments total and records timer")
         void recordToolExecutionIncrements() { // GH-90000
             metrics.recordToolExecution("agent-1", "tenant-1", "search-tool", "SUCCESS", Duration.ofMillis(50)); // GH-90000
 
@@ -201,7 +201,7 @@ class AgentRuntimeMetricsTest {
         }
 
         @Test
-        @DisplayName("recordToolExecutionDenied increments tool.execution.denied counter [GH-90000]")
+        @DisplayName("recordToolExecutionDenied increments tool.execution.denied counter")
         void recordToolExecutionDeniedIncrements() { // GH-90000
             metrics.recordToolExecutionDenied("agent-1", "tenant-1", "danger-tool"); // GH-90000
 
@@ -215,11 +215,11 @@ class AgentRuntimeMetricsTest {
     // ── Memory access metrics ────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("memory access metrics [GH-90000]")
+    @DisplayName("memory access metrics")
     class MemoryAccessMetrics {
 
         @Test
-        @DisplayName("recordMemoryAccess increments memory.access.total counter [GH-90000]")
+        @DisplayName("recordMemoryAccess increments memory.access.total counter")
         void recordMemoryAccessIncrements() { // GH-90000
             metrics.recordMemoryAccess("agent-1", "tenant-1", "READ"); // GH-90000
             metrics.recordMemoryAccess("agent-1", "tenant-1", "READ"); // GH-90000
@@ -234,11 +234,11 @@ class AgentRuntimeMetricsTest {
     // ── Turn completed metrics ───────────────────────────────────────────────
 
     @Nested
-    @DisplayName("turn completed metrics [GH-90000]")
+    @DisplayName("turn completed metrics")
     class TurnCompletedMetrics {
 
         @Test
-        @DisplayName("recordTurnCompleted increments turn.completed.total counter [GH-90000]")
+        @DisplayName("recordTurnCompleted increments turn.completed.total counter")
         void recordTurnCompletedIncrements() { // GH-90000
             metrics.recordTurnCompleted("agent-1", "tenant-1", "SUCCESS"); // GH-90000
 
@@ -252,7 +252,7 @@ class AgentRuntimeMetricsTest {
     // ── Registry access ──────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("registry() returns the underlying MeterRegistry [GH-90000]")
+    @DisplayName("registry() returns the underlying MeterRegistry")
     void registryReturnsUnderlyingRegistry() { // GH-90000
         assertThat(metrics.registry()).isSameAs(registry); // GH-90000
     }

@@ -12,7 +12,7 @@ import java.time.Duration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
-@DisplayName("eBPF Eventloop Stall Tracer Tests [GH-90000]")
+@DisplayName("eBPF Eventloop Stall Tracer Tests")
 class EbpfEventloopStallTracerTest {
 
     private MeterRegistry registry;
@@ -34,7 +34,7 @@ class EbpfEventloopStallTracerTest {
         tracer.onUpdateSelectedKeyDuration(sw); // GH-90000
 
         // Then
-        assertThat(registry.counter("eventloop.stall.count [GH-90000]").count()).isEqualTo(1.0);
+        assertThat(registry.counter("eventloop.stall.count").count()).isEqualTo(1.0);
     }
 
     @Test
@@ -48,7 +48,7 @@ class EbpfEventloopStallTracerTest {
 
         // Then
         // The counter might not exist yet, or it's 0.
-        assertThat(registry.find("eventloop.stall.count [GH-90000]").counter())
+        assertThat(registry.find("eventloop.stall.count").counter())
                 .satisfiesAnyOf( // GH-90000
                         counter -> assertThat(counter).isNull(), // GH-90000
                         counter -> assertThat(counter.count()).isEqualTo(0.0) // GH-90000
@@ -61,6 +61,6 @@ class EbpfEventloopStallTracerTest {
         tracer.onScheduledTaskOverdue(150L, false); // GH-90000
 
         // Then
-        assertThat(registry.counter("eventloop.stall.count [GH-90000]").count()).isEqualTo(1.0);
+        assertThat(registry.counter("eventloop.stall.count").count()).isEqualTo(1.0);
     }
 }

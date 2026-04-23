@@ -84,7 +84,7 @@ import redis.clients.jedis.JedisPool;
  *   <li>Named bindings resolve correctly for connectors</li>
  * </ul>
  */
-@DisplayName("AEP ActiveJ DI Modules [GH-90000]")
+@DisplayName("AEP ActiveJ DI Modules")
 class AepDiModulesTest {
 
     // ═══════════════════════════════════════════════════════════════
@@ -92,11 +92,11 @@ class AepDiModulesTest {
     // ═══════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("AepCoreModule [GH-90000]")
+    @DisplayName("AepCoreModule")
     class AepCoreModuleTests {
 
         @Test
-        @DisplayName("provides PipelineExecutionEngine as singleton [GH-90000]")
+        @DisplayName("provides PipelineExecutionEngine as singleton")
         void providesPipelineExecutionEngine() { // GH-90000
             Injector injector = Injector.of(new AepCoreModule()); // GH-90000
 
@@ -104,12 +104,12 @@ class AepDiModulesTest {
 
             assertThat(engine).isNotNull(); // GH-90000
             assertThat(injector.getInstance(PipelineExecutionEngine.class)) // GH-90000
-                    .as("should return same singleton instance [GH-90000]")
+                    .as("should return same singleton instance")
                     .isSameAs(engine); // GH-90000
         }
 
         @Test
-        @DisplayName("provides OperatorCatalog bound to UnifiedOperatorCatalog [GH-90000]")
+        @DisplayName("provides OperatorCatalog bound to UnifiedOperatorCatalog")
         void providesOperatorCatalog() { // GH-90000
             Injector injector = Injector.of(new AepCoreModule()); // GH-90000
 
@@ -120,7 +120,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides Eventloop [GH-90000]")
+        @DisplayName("provides Eventloop")
         void providesEventloop() { // GH-90000
             Injector injector = Injector.of(new AepCoreModule()); // GH-90000
 
@@ -130,7 +130,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides ExecutorService with daemon threads [GH-90000]")
+        @DisplayName("provides ExecutorService with daemon threads")
         void providesExecutorService() { // GH-90000
             Injector injector = Injector.of(new AepCoreModule()); // GH-90000
 
@@ -143,7 +143,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides ScheduledExecutorService with daemon threads [GH-90000]")
+        @DisplayName("provides ScheduledExecutorService with daemon threads")
         void providesScheduledExecutorService() { // GH-90000
             Injector injector = Injector.of(new AepCoreModule()); // GH-90000
 
@@ -156,7 +156,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides all 5 bindings [GH-90000]")
+        @DisplayName("provides all 5 bindings")
         void providesAllBindings() { // GH-90000
             Injector injector = Injector.of(new AepCoreModule()); // GH-90000
 
@@ -171,7 +171,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("Eventloop is singleton across injections [GH-90000]")
+        @DisplayName("Eventloop is singleton across injections")
         void eventloopIsSingleton() { // GH-90000
             Injector injector = Injector.of(new AepCoreModule()); // GH-90000
 
@@ -187,7 +187,7 @@ class AepDiModulesTest {
     // ═══════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("AepOrchestrationModule [GH-90000]")
+    @DisplayName("AepOrchestrationModule")
     class AepOrchestrationModuleTests {
 
         private Injector createOrchestrationInjector() { // GH-90000
@@ -195,7 +195,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides OrchestratorConfig with defaults [GH-90000]")
+        @DisplayName("provides OrchestratorConfig with defaults")
         void providesOrchestratorConfig() { // GH-90000
             Injector injector = createOrchestrationInjector(); // GH-90000
 
@@ -205,26 +205,26 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("fails fast when no LLM provider env is configured [GH-90000]")
+        @DisplayName("fails fast when no LLM provider env is configured")
         void failsFastWhenNoLlmProviderEnvConfigured() { // GH-90000
             assertThatCode(() -> AepOrchestrationModule.createLlmProvider(Map.of(), mock(MetricsCollector.class))) // GH-90000
                     .isInstanceOf(IllegalStateException.class) // GH-90000
-                    .hasMessageContaining("No LLM provider configured for AEP [GH-90000]");
+                    .hasMessageContaining("No LLM provider configured for AEP");
         }
 
         @Test
-        @DisplayName("fails fast when Ollama host is not a valid absolute URL [GH-90000]")
+        @DisplayName("fails fast when Ollama host is not a valid absolute URL")
         void failsFastWhenOllamaHostIsInvalid() { // GH-90000
             assertThatCode(() -> AepOrchestrationModule.createLlmProvider( // GH-90000
                     Map.of("AEP_OLLAMA_HOST", "not-a-url"), // GH-90000
                     mock(MetricsCollector.class))) // GH-90000
                     .isInstanceOf(IllegalStateException.class) // GH-90000
-                    .hasMessageContaining("AEP_OLLAMA_HOST [GH-90000]")
-                    .hasMessageContaining("valid absolute URL [GH-90000]");
+                    .hasMessageContaining("AEP_OLLAMA_HOST")
+                    .hasMessageContaining("valid absolute URL");
         }
 
         @Test
-        @DisplayName("creates LLM provider when OpenAI config is valid [GH-90000]")
+        @DisplayName("creates LLM provider when OpenAI config is valid")
         void createsLlmProviderWhenOpenAiConfigIsValid() { // GH-90000
             LlmProvider provider = AepOrchestrationModule.createLlmProvider( // GH-90000
                     Map.of( // GH-90000
@@ -237,7 +237,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides PipelineCache with MetricsCollector dependency [GH-90000]")
+        @DisplayName("provides PipelineCache with MetricsCollector dependency")
         void providesPipelineCache() { // GH-90000
             Injector injector = createOrchestrationInjector(); // GH-90000
 
@@ -247,7 +247,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides ExecutionQueue bound to CheckpointAwareExecutionQueue [GH-90000]")
+        @DisplayName("provides ExecutionQueue bound to CheckpointAwareExecutionQueue")
         void providesExecutionQueue() { // GH-90000
             Injector injector = createOrchestrationInjector(); // GH-90000
 
@@ -258,7 +258,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides Orchestrator with all 6 dependencies wired [GH-90000]")
+        @DisplayName("provides Orchestrator with all 6 dependencies wired")
         void providesOrchestrator() { // GH-90000
             Injector injector = createOrchestrationInjector(); // GH-90000
 
@@ -268,7 +268,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("Orchestrator is singleton [GH-90000]")
+        @DisplayName("Orchestrator is singleton")
         void orchestratorIsSingleton() { // GH-90000
             Injector injector = createOrchestrationInjector(); // GH-90000
 
@@ -284,7 +284,7 @@ class AepDiModulesTest {
     // ═══════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("AepPatternModule [GH-90000]")
+    @DisplayName("AepPatternModule")
     class AepPatternModuleTests {
 
         private Injector createPatternInjector() { // GH-90000
@@ -292,7 +292,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides OperatorRegistry as singleton [GH-90000]")
+        @DisplayName("provides OperatorRegistry as singleton")
         void providesOperatorRegistry() { // GH-90000
             Injector injector = createPatternInjector(); // GH-90000
 
@@ -303,7 +303,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides PatternCompiler with registry and meter dependencies [GH-90000]")
+        @DisplayName("provides PatternCompiler with registry and meter dependencies")
         void providesPatternCompiler() { // GH-90000
             Injector injector = createPatternInjector(); // GH-90000
 
@@ -313,7 +313,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("PatternCompiler receives OperatorRegistry from same injector [GH-90000]")
+        @DisplayName("PatternCompiler receives OperatorRegistry from same injector")
         void patternCompilerUsesInjectedRegistry() { // GH-90000
             Injector injector = createPatternInjector(); // GH-90000
 
@@ -326,7 +326,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("MeterRegistry is resolved from ObservabilityModule [GH-90000]")
+        @DisplayName("MeterRegistry is resolved from ObservabilityModule")
         void meterRegistryFromObservabilityModule() { // GH-90000
             Injector injector = createPatternInjector(); // GH-90000
 
@@ -341,7 +341,7 @@ class AepDiModulesTest {
     // ═══════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("AepConnectorModule [GH-90000]")
+    @DisplayName("AepConnectorModule")
     @org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable(named = "RABBITMQ_USERNAME", matches = ".+") // GH-90000
     class AepConnectorModuleTests {
 
@@ -352,30 +352,30 @@ class AepDiModulesTest {
         // ─── Config bindings ────────────────────────────────────
 
         @Test
-        @DisplayName("provides KafkaConsumerConfig with defaults [GH-90000]")
+        @DisplayName("provides KafkaConsumerConfig with defaults")
         void providesKafkaConsumerConfig() { // GH-90000
             Injector injector = createConnectorInjector(); // GH-90000
 
             KafkaConsumerConfig config = injector.getInstance(KafkaConsumerConfig.class); // GH-90000
 
             assertThat(config).isNotNull(); // GH-90000
-            assertThat(config.getBootstrapServers()).isEqualTo("localhost:9092 [GH-90000]");
-            assertThat(config.getGroupId()).isEqualTo("aep-consumer-group [GH-90000]");
+            assertThat(config.getBootstrapServers()).isEqualTo("localhost:9092");
+            assertThat(config.getGroupId()).isEqualTo("aep-consumer-group");
         }
 
         @Test
-        @DisplayName("provides KafkaProducerConfig with defaults [GH-90000]")
+        @DisplayName("provides KafkaProducerConfig with defaults")
         void providesKafkaProducerConfig() { // GH-90000
             Injector injector = createConnectorInjector(); // GH-90000
 
             KafkaProducerConfig config = injector.getInstance(KafkaProducerConfig.class); // GH-90000
 
             assertThat(config).isNotNull(); // GH-90000
-            assertThat(config.getBootstrapServers()).isEqualTo("localhost:9092 [GH-90000]");
+            assertThat(config.getBootstrapServers()).isEqualTo("localhost:9092");
         }
 
         @Test
-        @DisplayName("provides RabbitMQConfig with defaults [GH-90000]")
+        @DisplayName("provides RabbitMQConfig with defaults")
         void providesRabbitMQConfig() { // GH-90000
             Injector injector = createConnectorInjector(); // GH-90000
 
@@ -385,7 +385,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides SqsConfig with defaults [GH-90000]")
+        @DisplayName("provides SqsConfig with defaults")
         void providesSqsConfig() { // GH-90000
             Injector injector = createConnectorInjector(); // GH-90000
 
@@ -395,7 +395,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides S3Config with defaults [GH-90000]")
+        @DisplayName("provides S3Config with defaults")
         void providesS3Config() { // GH-90000
             Injector injector = createConnectorInjector(); // GH-90000
 
@@ -405,20 +405,20 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides HttpIngressConfig with defaults [GH-90000]")
+        @DisplayName("provides HttpIngressConfig with defaults")
         void providesHttpIngressConfig() { // GH-90000
             Injector injector = createConnectorInjector(); // GH-90000
 
             HttpIngressConfig config = injector.getInstance(HttpIngressConfig.class); // GH-90000
 
             assertThat(config).isNotNull(); // GH-90000
-            assertThat(config.getEndpoint()).isEqualTo("http://localhost:8080/events [GH-90000]");
+            assertThat(config.getEndpoint()).isEqualTo("http://localhost:8080/events");
         }
 
         // ─── Strategy bindings ──────────────────────────────────
 
         @Test
-        @DisplayName("provides Kafka consumer via @Named('kafka') [GH-90000]")
+        @DisplayName("provides Kafka consumer via @Named('kafka')")
         void providesKafkaConsumer() { // GH-90000
             Injector injector = createConnectorInjector(); // GH-90000
 
@@ -429,7 +429,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides Kafka producer via @Named('kafka') [GH-90000]")
+        @DisplayName("provides Kafka producer via @Named('kafka')")
         void providesKafkaProducer() { // GH-90000
             Injector injector = createConnectorInjector(); // GH-90000
 
@@ -440,7 +440,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides RabbitMQ consumer via @Named('rabbitmq') [GH-90000]")
+        @DisplayName("provides RabbitMQ consumer via @Named('rabbitmq')")
         void providesRabbitMQConsumer() { // GH-90000
             Injector injector = createConnectorInjector(); // GH-90000
 
@@ -451,7 +451,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides SQS consumer via @Named('sqs') [GH-90000]")
+        @DisplayName("provides SQS consumer via @Named('sqs')")
         void providesSqsConsumer() { // GH-90000
             Injector injector = createConnectorInjector(); // GH-90000
 
@@ -462,7 +462,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides SQS producer via @Named('sqs') [GH-90000]")
+        @DisplayName("provides SQS producer via @Named('sqs')")
         void providesSqsProducer() { // GH-90000
             Injector injector = createConnectorInjector(); // GH-90000
 
@@ -473,7 +473,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides S3StorageStrategy bound to DefaultS3StorageStrategy [GH-90000]")
+        @DisplayName("provides S3StorageStrategy bound to DefaultS3StorageStrategy")
         void providesS3StorageStrategy() { // GH-90000
             Injector injector = createConnectorInjector(); // GH-90000
 
@@ -488,7 +488,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides HttpIngressStrategy [GH-90000]")
+        @DisplayName("provides HttpIngressStrategy")
         void providesHttpIngressStrategy() { // GH-90000
             Injector injector = createConnectorInjector(); // GH-90000
 
@@ -502,7 +502,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("all strategies share same Eventloop [GH-90000]")
+        @DisplayName("all strategies share same Eventloop")
         void strategiesShareEventloop() { // GH-90000
             Injector injector = createConnectorInjector(); // GH-90000
 
@@ -513,7 +513,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("all 6 configs and 7 strategies are provided [GH-90000]")
+        @DisplayName("all 6 configs and 7 strategies are provided")
         void allBindingsPresent() { // GH-90000
             Injector injector = createConnectorInjector(); // GH-90000
 
@@ -550,7 +550,7 @@ class AepDiModulesTest {
     // ═══════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("AepIngressModule [GH-90000]")
+    @DisplayName("AepIngressModule")
     class AepIngressModuleTests {
 
         /**
@@ -569,12 +569,12 @@ class AepDiModulesTest {
             } catch (Exception e) { // GH-90000
                 Assumptions.assumeTrue( // GH-90000
                         false, "Skipping: Redis unavailable for AepIngressModule test — " + e.getMessage()); // GH-90000
-                throw new AssertionError("unreachable [GH-90000]"); // satisfies compiler
+                throw new AssertionError("unreachable"); // satisfies compiler
             }
         }
 
         @Test
-        @DisplayName("provides JedisPool [GH-90000]")
+        @DisplayName("provides JedisPool")
         void providesJedisPool() { // GH-90000
             Injector injector = createIngressInjector(); // GH-90000
             JedisPool pool = injector.getInstance(JedisPool.class); // GH-90000
@@ -583,7 +583,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides RateLimitStorage bound to RedisRateLimitStorage [GH-90000]")
+        @DisplayName("provides RateLimitStorage bound to RedisRateLimitStorage")
         void providesRateLimitStorage() { // GH-90000
             Injector injector = createIngressInjector(); // GH-90000
             RateLimitStorage storage = injector.getInstance(RateLimitStorage.class); // GH-90000
@@ -593,7 +593,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides IdempotencyService [GH-90000]")
+        @DisplayName("provides IdempotencyService")
         void providesIdempotencyService() { // GH-90000
             Injector injector = createIngressInjector(); // GH-90000
             IdempotencyService service = injector.getInstance(IdempotencyService.class); // GH-90000
@@ -602,7 +602,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides HealthController with Eventloop [GH-90000]")
+        @DisplayName("provides HealthController with Eventloop")
         void providesHealthController() { // GH-90000
             Injector injector = createIngressInjector(); // GH-90000
             HealthController controller = injector.getInstance(HealthController.class); // GH-90000
@@ -611,17 +611,17 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("RateLimitStorage and IdempotencyService share same JedisPool [GH-90000]")
+        @DisplayName("RateLimitStorage and IdempotencyService share same JedisPool")
         void shareJedisPool() { // GH-90000
             Injector injector = createIngressInjector(); // GH-90000
             JedisPool pool1 = injector.getInstance(JedisPool.class); // GH-90000
             JedisPool pool2 = injector.getInstance(JedisPool.class); // GH-90000
-            assertThat(pool1).as("JedisPool should be singleton [GH-90000]").isSameAs(pool2);
+            assertThat(pool1).as("JedisPool should be singleton").isSameAs(pool2);
             pool1.close(); // GH-90000
         }
 
         @Test
-        @DisplayName("all 4 bindings are provided [GH-90000]")
+        @DisplayName("all 4 bindings are provided")
         void allBindingsPresent() { // GH-90000
             Injector injector = createIngressInjector(); // GH-90000
             assertThat(injector.getInstance(JedisPool.class)).isNotNull(); // GH-90000
@@ -637,11 +637,11 @@ class AepDiModulesTest {
     // ═══════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("AepObservabilityModule [GH-90000]")
+    @DisplayName("AepObservabilityModule")
     class AepObservabilityModuleTests {
 
         @Test
-        @DisplayName("provides BusinessIntelligenceService [GH-90000]")
+        @DisplayName("provides BusinessIntelligenceService")
         void providesBusinessIntelligenceService() { // GH-90000
             Injector injector = createMinimalObservabilityInjector(); // GH-90000
 
@@ -651,7 +651,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides PredictiveAnalyticsEngine [GH-90000]")
+        @DisplayName("provides PredictiveAnalyticsEngine")
         void providesPredictiveAnalyticsEngine() { // GH-90000
             Injector injector = createMinimalObservabilityInjector(); // GH-90000
 
@@ -661,7 +661,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides PatternPerformanceAnalyzer [GH-90000]")
+        @DisplayName("provides PatternPerformanceAnalyzer")
         void providesPatternPerformanceAnalyzer() { // GH-90000
             Injector injector = createMinimalObservabilityInjector(); // GH-90000
 
@@ -671,7 +671,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides KPIAggregator [GH-90000]")
+        @DisplayName("provides KPIAggregator")
         void providesKPIAggregator() { // GH-90000
             Injector injector = createMinimalObservabilityInjector(); // GH-90000
 
@@ -681,7 +681,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides RealTimeAnomalyDetectionEngine [GH-90000]")
+        @DisplayName("provides RealTimeAnomalyDetectionEngine")
         void providesRealTimeAnomalyDetectionEngine() { // GH-90000
             Injector injector = createMinimalObservabilityInjector(); // GH-90000
 
@@ -691,7 +691,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides IntelligentPredictiveAlerting [GH-90000]")
+        @DisplayName("provides IntelligentPredictiveAlerting")
         void providesIntelligentPredictiveAlerting() { // GH-90000
             Injector injector = createMinimalObservabilityInjector(); // GH-90000
 
@@ -701,7 +701,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides AdvancedTimeSeriesForecaster [GH-90000]")
+        @DisplayName("provides AdvancedTimeSeriesForecaster")
         void providesAdvancedTimeSeriesForecaster() { // GH-90000
             Injector injector = createMinimalObservabilityInjector(); // GH-90000
 
@@ -711,7 +711,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("all 7 analytics sub-services are provided as singletons [GH-90000]")
+        @DisplayName("all 7 analytics sub-services are provided as singletons")
         void allAnalyticsSubservicesAreSingletons() { // GH-90000
             Injector injector = createMinimalObservabilityInjector(); // GH-90000
 
@@ -731,7 +731,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides AnalyticsEngine with all sub-services wired [GH-90000]")
+        @DisplayName("provides AnalyticsEngine with all sub-services wired")
         void providesAnalyticsEngine() { // GH-90000
             Injector injector = createMinimalObservabilityInjector(); // GH-90000
 
@@ -760,11 +760,11 @@ class AepDiModulesTest {
     // ═══════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Module Composition [GH-90000]")
+    @DisplayName("Module Composition")
     class ModuleCompositionTests {
 
         @Test
-        @DisplayName("AepCoreModule + AepPatternModule compose correctly [GH-90000]")
+        @DisplayName("AepCoreModule + AepPatternModule compose correctly")
         void coreAndPatternCompose() { // GH-90000
             Injector injector = Injector.of(new ObservabilityModule(), new AepCoreModule(), new AepPatternModule()); // GH-90000
 
@@ -782,7 +782,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("AepCoreModule + AepConnectorModule compose correctly [GH-90000]")
+        @DisplayName("AepCoreModule + AepConnectorModule compose correctly")
         void coreAndConnectorCompose() { // GH-90000
             Injector injector = Injector.of(new AepCoreModule(), new AepConnectorModule()); // GH-90000
 
@@ -799,7 +799,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("AepCoreModule + AepIngressModule compose correctly [GH-90000]")
+        @DisplayName("AepCoreModule + AepIngressModule compose correctly")
         void coreAndIngressCompose() { // GH-90000
             // AepIngressModule performs a Redis startup health check — skip if Redis is unavailable.
             Injector injector;
@@ -824,7 +824,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("full module stack creates valid injector [GH-90000]")
+        @DisplayName("full module stack creates valid injector")
         void fullModuleStack() { // GH-90000
             // External stubs for orchestration — MetricsCollector comes from ObservabilityModule
             Module orchExternalStubs = ModuleBuilder.create() // GH-90000
@@ -869,11 +869,11 @@ class AepDiModulesTest {
     // ═══════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Edge Cases [GH-90000]")
+    @DisplayName("Edge Cases")
     class EdgeCaseTests {
 
         @Test
-        @DisplayName("modules can be instantiated multiple times [GH-90000]")
+        @DisplayName("modules can be instantiated multiple times")
         void multipleInstances() { // GH-90000
             AepCoreModule m1 = new AepCoreModule(); // GH-90000
             AepCoreModule m2 = new AepCoreModule(); // GH-90000
@@ -896,12 +896,12 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("connector config can be overridden by custom module [GH-90000]")
+        @DisplayName("connector config can be overridden by custom module")
         void configOverride() { // GH-90000
             KafkaConsumerConfig custom = KafkaConsumerConfig.builder() // GH-90000
-                    .bootstrapServers("custom-broker:9093 [GH-90000]")
-                    .groupId("custom-group [GH-90000]")
-                    .topics(java.util.List.of("custom-topic [GH-90000]"))
+                    .bootstrapServers("custom-broker:9093")
+                    .groupId("custom-group")
+                    .topics(java.util.List.of("custom-topic"))
                     .batchSize(50) // GH-90000
                     .build(); // GH-90000
 
@@ -914,12 +914,12 @@ class AepDiModulesTest {
             Injector injector = Injector.of(customModule); // GH-90000
 
             KafkaConsumerConfig config = injector.getInstance(KafkaConsumerConfig.class); // GH-90000
-            assertThat(config.getBootstrapServers()).isEqualTo("custom-broker:9093 [GH-90000]");
-            assertThat(config.getGroupId()).isEqualTo("custom-group [GH-90000]");
+            assertThat(config.getBootstrapServers()).isEqualTo("custom-broker:9093");
+            assertThat(config.getGroupId()).isEqualTo("custom-group");
         }
 
         @Test
-        @DisplayName("OperatorCatalog and OperatorRegistry are distinct types [GH-90000]")
+        @DisplayName("OperatorCatalog and OperatorRegistry are distinct types")
         void catalogAndRegistryDistinct() { // GH-90000
             Injector injector = Injector.of(new ObservabilityModule(), new AepCoreModule(), new AepPatternModule()); // GH-90000
 
@@ -938,7 +938,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("AepObservabilityModule analytics sub-services have correct interface bindings [GH-90000]")
+        @DisplayName("AepObservabilityModule analytics sub-services have correct interface bindings")
         void analyticsInterfaceBindings() { // GH-90000
             Module stubs = ModuleBuilder.create() // GH-90000
                     .bind(EventCloud.class) // GH-90000
@@ -972,7 +972,7 @@ class AepDiModulesTest {
     // ═══════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("AepLearningModule [GH-90000]")
+    @DisplayName("AepLearningModule")
     class AepLearningModuleTests {
 
         private Injector buildInjector() { // GH-90000
@@ -984,7 +984,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides HumanReviewQueue bound to InMemoryHumanReviewQueue [GH-90000]")
+        @DisplayName("provides HumanReviewQueue bound to InMemoryHumanReviewQueue")
         void providesHumanReviewQueue() { // GH-90000
             var injector = buildInjector(); // GH-90000
             var queue = injector.getInstance(com.ghatana.agent.learning.review.HumanReviewQueue.class); // GH-90000
@@ -993,7 +993,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides ConflictResolver bound to EntrenchmentConflictResolver [GH-90000]")
+        @DisplayName("provides ConflictResolver bound to EntrenchmentConflictResolver")
         void providesConflictResolver() { // GH-90000
             var injector = buildInjector(); // GH-90000
             var resolver = injector.getInstance(com.ghatana.agent.learning.consolidation.ConflictResolver.class); // GH-90000
@@ -1003,7 +1003,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides ConsolidationPipeline [GH-90000]")
+        @DisplayName("provides ConsolidationPipeline")
         void providesConsolidationPipeline() { // GH-90000
             var injector = buildInjector(); // GH-90000
             var pipeline = injector.getInstance(com.ghatana.agent.learning.consolidation.ConsolidationPipeline.class); // GH-90000
@@ -1011,7 +1011,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("provides ConsolidationScheduler with AEP_SYSTEM agent id [GH-90000]")
+        @DisplayName("provides ConsolidationScheduler with AEP_SYSTEM agent id")
         void providesConsolidationScheduler() { // GH-90000
             var injector = buildInjector(); // GH-90000
             var scheduler = injector.getInstance(com.ghatana.agent.learning.consolidation.ConsolidationScheduler.class); // GH-90000
@@ -1019,7 +1019,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("singleton semantics: same HumanReviewQueue instance returned twice [GH-90000]")
+        @DisplayName("singleton semantics: same HumanReviewQueue instance returned twice")
         void humanReviewQueueIsSingleton() { // GH-90000
             var injector = buildInjector(); // GH-90000
             var type = com.ghatana.agent.learning.review.HumanReviewQueue.class;
@@ -1027,7 +1027,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("singleton semantics: same ConsolidationPipeline instance returned twice [GH-90000]")
+        @DisplayName("singleton semantics: same ConsolidationPipeline instance returned twice")
         void consolidationPipelineIsSingleton() { // GH-90000
             var injector = buildInjector(); // GH-90000
             var type = com.ghatana.agent.learning.consolidation.ConsolidationPipeline.class;
@@ -1035,7 +1035,7 @@ class AepDiModulesTest {
         }
 
         @Test
-        @DisplayName("all learning bindings can be instantiated without exception [GH-90000]")
+        @DisplayName("all learning bindings can be instantiated without exception")
         void allBindingsInstantiateCleanly() { // GH-90000
             assertThatCode(() -> { // GH-90000
                         var injector = buildInjector(); // GH-90000

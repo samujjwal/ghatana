@@ -26,9 +26,9 @@ class PythonBuildSpecTest {
     @Test
     void testBuilderCreatesValidSpec() { // GH-90000
         PythonBuildSpec spec = PythonBuildSpec.builder() // GH-90000
-                .projectName("test-project [GH-90000]")
-                .version("0.1.0 [GH-90000]")
-                .pythonVersion(">=3.11 [GH-90000]")
+                .projectName("test-project")
+                .version("0.1.0")
+                .pythonVersion(">=3.11")
                 .projectType(PythonBuildSpec.PythonProjectType.SERVICE) // GH-90000
                 .buildTool(PythonBuildSpec.PythonBuildTool.UV) // GH-90000
                 .build(); // GH-90000
@@ -44,7 +44,7 @@ class PythonBuildSpecTest {
     void testBuilderRequiresProjectName() { // GH-90000
         assertThrows(IllegalStateException.class, () -> { // GH-90000
             PythonBuildSpec.builder() // GH-90000
-                    .version("0.1.0 [GH-90000]")
+                    .version("0.1.0")
                     .build(); // GH-90000
         });
     }
@@ -56,7 +56,7 @@ class PythonBuildSpecTest {
                 new PythonBuildSpec.PythonDependency("uvicorn", ">=0.24.0")); // GH-90000
 
         PythonBuildSpec spec = PythonBuildSpec.builder() // GH-90000
-                .projectName("test-project [GH-90000]")
+                .projectName("test-project")
                 .dependencies(deps) // GH-90000
                 .build(); // GH-90000
 

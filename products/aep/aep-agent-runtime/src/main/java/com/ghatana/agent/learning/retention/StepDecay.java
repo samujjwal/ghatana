@@ -7,7 +7,8 @@ package com.ghatana.agent.learning.retention;
  * @doc.type class
  * @doc.purpose Step decay function
  * @doc.layer agent-learning
- */
+  * @doc.pattern Component
+*/
 public class StepDecay implements DecayFunction {
 
     private final double[] thresholdHours;

@@ -22,7 +22,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-@DisplayName("DataCloudHumanReviewQueue Performance [GH-90000]")
+@DisplayName("DataCloudHumanReviewQueue Performance")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class DataCloudHumanReviewQueuePerformanceTest extends EventloopTestBase {
 
@@ -37,22 +37,22 @@ class DataCloudHumanReviewQueuePerformanceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("enqueue completes within the latency budget [GH-90000]")
+    @DisplayName("enqueue completes within the latency budget")
     void enqueueCompletesWithinLatencyBudget() { // GH-90000
-        ReviewItem item = reviewItem("review-latency [GH-90000]");
+        ReviewItem item = reviewItem("review-latency");
         when(dataCloudClient.save(eq(DataCloudHumanReviewQueue.STORAGE_TENANT), // GH-90000
             eq(DataCloudHumanReviewQueue.COLLECTION), any())) // GH-90000
             .thenReturn(Promise.of(entityFrom(item))); // GH-90000
 
         ReviewItem persisted = runPromise(() -> queue.enqueue(item)); // GH-90000
-        long medianMillis = medianMillis(() -> runPromise(() -> queue.enqueue(reviewItem("review-latency [GH-90000]"))), 5);
+        long medianMillis = medianMillis(() -> runPromise(() -> queue.enqueue(reviewItem("review-latency"))), 5);
 
-        assertThat(persisted.getReviewId()).isEqualTo("review-latency [GH-90000]");
+        assertThat(persisted.getReviewId()).isEqualTo("review-latency");
         assertThat(medianMillis).isLessThan(50L); // GH-90000
     }
 
     @Test
-    @DisplayName("getPending returns 1000 pending items within the latency budget [GH-90000]")
+    @DisplayName("getPending returns 1000 pending items within the latency budget")
     void getPendingReturnsThousandItemsWithinLatencyBudget() { // GH-90000
         List<DataCloudClient.Entity> entities = IntStream.range(0, 1_000) // GH-90000
             .mapToObj(index -> entityFrom(reviewItem("review-" + index))) // GH-90000
@@ -85,13 +85,13 @@ class DataCloudHumanReviewQueuePerformanceTest extends EventloopTestBase {
     private ReviewItem reviewItem(String reviewId) { // GH-90000
         return ReviewItem.builder() // GH-90000
             .reviewId(reviewId) // GH-90000
-            .tenantId("tenant-a [GH-90000]")
-            .skillId("skill-1 [GH-90000]")
-            .proposedVersion("v2 [GH-90000]")
+            .tenantId("tenant-a")
+            .skillId("skill-1")
+            .proposedVersion("v2")
             .itemType(ReviewItemType.POLICY) // GH-90000
             .confidenceScore(0.25) // GH-90000
             .context(Map.of("reason", "latency-check")) // GH-90000
-            .createdAt(Instant.parse("2026-04-17T00:00:00Z [GH-90000]"))
+            .createdAt(Instant.parse("2026-04-17T00:00:00Z"))
             .build(); // GH-90000
     }
 

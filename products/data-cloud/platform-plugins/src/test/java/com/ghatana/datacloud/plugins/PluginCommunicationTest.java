@@ -18,11 +18,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test plugin communication, messaging, and events.
  */
-@DisplayName("Plugin Communication Tests [GH-90000]")
+@DisplayName("Plugin Communication Tests")
 class PluginCommunicationTest {
 
     @Test
-    @DisplayName("Should handle plugin messaging [GH-90000]")
+    @DisplayName("Should handle plugin messaging")
     void shouldHandlePluginMessaging() { // GH-90000
         String fromPlugin = "plugin-a";
         String toPlugin = "plugin-b";
@@ -34,7 +34,7 @@ class PluginCommunicationTest {
     }
 
     @Test
-    @DisplayName("Should handle plugin events [GH-90000]")
+    @DisplayName("Should handle plugin events")
     void shouldHandlePluginEvents() { // GH-90000
         String eventType = "PLUGIN_STARTED";
         String pluginId = "plugin-123";
@@ -44,7 +44,7 @@ class PluginCommunicationTest {
     }
 
     @Test
-    @DisplayName("Should handle plugin RPC [GH-90000]")
+    @DisplayName("Should handle plugin RPC")
     void shouldHandlePluginRpc() { // GH-90000
         String method = "processData";
         Map<String, Object> params = Map.of("input", "test"); // GH-90000
@@ -54,7 +54,7 @@ class PluginCommunicationTest {
     }
 
     @Test
-    @DisplayName("Should handle message queuing [GH-90000]")
+    @DisplayName("Should handle message queuing")
     void shouldHandleMessageQueuing() { // GH-90000
         int queueSize = 10;
         int maxSize = 1000;
@@ -63,7 +63,7 @@ class PluginCommunicationTest {
     }
 
     @Test
-    @DisplayName("Should handle communication failures [GH-90000]")
+    @DisplayName("Should handle communication failures")
     void shouldHandleCommunicationFailures() { // GH-90000
         boolean failed = false;
         String error = null;
@@ -73,7 +73,7 @@ class PluginCommunicationTest {
     }
 
     @Test
-    @DisplayName("Should handle plugin discovery [GH-90000]")
+    @DisplayName("Should handle plugin discovery")
     void shouldHandlePluginDiscovery() { // GH-90000
         String[] plugins = {"plugin-a", "plugin-b", "plugin-c"};
 
@@ -82,7 +82,7 @@ class PluginCommunicationTest {
     }
 
     @Test
-    @DisplayName("Should handle communication monitoring [GH-90000]")
+    @DisplayName("Should handle communication monitoring")
     void shouldHandleCommunicationMonitoring() { // GH-90000
         String metric = "message_count";
         assertThat(metric).isNotNull(); // GH-90000

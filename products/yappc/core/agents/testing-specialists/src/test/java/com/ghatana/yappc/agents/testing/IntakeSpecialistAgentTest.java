@@ -24,7 +24,7 @@ import com.ghatana.yappc.agents.code.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("IntakeSpecialistAgent Tests [GH-90000]")
+@DisplayName("IntakeSpecialistAgent Tests")
 class IntakeSpecialistAgentTest extends EventloopTestBase {
 
   private MemoryStore memoryStore;
@@ -40,11 +40,11 @@ class IntakeSpecialistAgentTest extends EventloopTestBase {
   }
 
   @Nested
-  @DisplayName("Input Validation [GH-90000]")
+  @DisplayName("Input Validation")
   class InputValidation {
 
     @Test
-    @DisplayName("Should accept valid requirements [GH-90000]")
+    @DisplayName("Should accept valid requirements")
     void shouldAcceptValidRequirements() { // GH-90000
       IntakeInput input = new IntakeInput( // GH-90000
           "The system must support user authentication and role-based access control", "manual");
@@ -53,14 +53,14 @@ class IntakeSpecialistAgentTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should reject empty requirements [GH-90000]")
+    @DisplayName("Should reject empty requirements")
     void shouldRejectEmpty() { // GH-90000
       assertThatThrownBy(() -> new IntakeInput("", "manual")) // GH-90000
           .isInstanceOf(IllegalArgumentException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("Should reject too-short requirements [GH-90000]")
+    @DisplayName("Should reject too-short requirements")
     void shouldRejectTooShort() { // GH-90000
       IntakeInput input = new IntakeInput("Too short", "manual"); // GH-90000
       ValidationResult result = agent.validateInput(input); // GH-90000
@@ -69,11 +69,11 @@ class IntakeSpecialistAgentTest extends EventloopTestBase {
   }
 
   @Nested
-  @DisplayName("Rule-Based Extraction [GH-90000]")
+  @DisplayName("Rule-Based Extraction")
   class RuleBasedExtraction {
 
     @Test
-    @DisplayName("Should extract functional requirements from MUST keywords [GH-90000]")
+    @DisplayName("Should extract functional requirements from MUST keywords")
     void shouldExtractMustRequirements() { // GH-90000
       IntakeInput input = new IntakeInput( // GH-90000
           "The system must handle 1000 concurrent users and should support REST API",
@@ -87,7 +87,7 @@ class IntakeSpecialistAgentTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should extract security NFRs [GH-90000]")
+    @DisplayName("Should extract security NFRs")
     void shouldExtractSecurityNfrs() { // GH-90000
       IntakeInput input = new IntakeInput( // GH-90000
           "The system must be secure and support encryption for data at rest",
@@ -102,17 +102,17 @@ class IntakeSpecialistAgentTest extends EventloopTestBase {
   }
 
   @Nested
-  @DisplayName("Contract [GH-90000]")
+  @DisplayName("Contract")
   class ContractTests {
 
     @Test
-    @DisplayName("Should expose architecture.intake step name [GH-90000]")
+    @DisplayName("Should expose architecture.intake step name")
     void shouldExposeStepName() { // GH-90000
-      assertThat(agent.stepName()).isEqualTo("architecture.intake [GH-90000]");
+      assertThat(agent.stepName()).isEqualTo("architecture.intake");
     }
 
     @Test
-    @DisplayName("Should expose intake contract capabilities [GH-90000]")
+    @DisplayName("Should expose intake contract capabilities")
     void shouldExposeContract() { // GH-90000
       StepContract contract = agent.contract(); // GH-90000
       assertThat(contract.requiredCapabilities()) // GH-90000

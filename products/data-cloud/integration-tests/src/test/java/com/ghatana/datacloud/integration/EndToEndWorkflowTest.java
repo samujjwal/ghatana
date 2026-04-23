@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@DisplayName("End-to-End Workflow Integration Tests [GH-90000]")
+@DisplayName("End-to-End Workflow Integration Tests")
 class EndToEndWorkflowTest extends EventloopTestBase {
 
     private static final String TENANT_A = "workflow-tenant-a";
@@ -44,7 +44,7 @@ class EndToEndWorkflowTest extends EventloopTestBase {
     void setUp() { // GH-90000
         config = DataCloudConfig.builder() // GH-90000
             .profile(DataCloudProfile.SOVEREIGN) // GH-90000
-            .customConfig(Map.of("sovereign.dataDir", tempDir.resolve("sovereign-store [GH-90000]").toString()))
+            .customConfig(Map.of("sovereign.dataDir", tempDir.resolve("sovereign-store").toString()))
             .build(); // GH-90000
         startRuntime(); // GH-90000
     }
@@ -55,7 +55,7 @@ class EndToEndWorkflowTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("workflow execution snapshot and logs survive plugin and client restart [GH-90000]")
+    @DisplayName("workflow execution snapshot and logs survive plugin and client restart")
     void workflowExecutionSnapshotAndLogsSurvivePluginAndClientRestart() { // GH-90000
         String pipelineId = "pipeline-" + UUID.randomUUID(); // GH-90000
         savePipeline(TENANT_A, pipelineId, "Orders workflow"); // GH-90000
@@ -73,7 +73,7 @@ class EndToEndWorkflowTest extends EventloopTestBase {
             "dc_workflow_execution_logs",
             snapshot.id())); // GH-90000
 
-        assertThat(snapshot.status()).isEqualTo("COMPLETED [GH-90000]");
+        assertThat(snapshot.status()).isEqualTo("COMPLETED");
         assertThat(snapshot.nodeStatuses()).hasSize(3); // GH-90000
         assertThat(persistedExecution).isPresent(); // GH-90000
         assertThat(persistedLogs).isPresent(); // GH-90000
@@ -91,16 +91,16 @@ class EndToEndWorkflowTest extends EventloopTestBase {
             snapshot.id())); // GH-90000
 
         assertThat(reloaded).isPresent(); // GH-90000
-        assertThat(reloaded.orElseThrow().status()).isEqualTo("COMPLETED [GH-90000]");
+        assertThat(reloaded.orElseThrow().status()).isEqualTo("COMPLETED");
         assertThat(executions).extracting(WorkflowExecutionCapability.ExecutionSnapshot::id).contains(snapshot.id()); // GH-90000
         assertThat(logs) // GH-90000
             .isNotEmpty() // GH-90000
             .extracting(WorkflowExecutionCapability.ExecutionLogEntry::message) // GH-90000
-            .contains("Workflow execution started [GH-90000]");
+            .contains("Workflow execution started");
     }
 
     @Test
-    @DisplayName("workflow execution records remain tenant scoped [GH-90000]")
+    @DisplayName("workflow execution records remain tenant scoped")
     void workflowExecutionRecordsRemainTenantScoped() { // GH-90000
         String pipelineId = "pipeline-" + UUID.randomUUID(); // GH-90000
         savePipeline(TENANT_A, pipelineId, "Tenant A workflow"); // GH-90000
@@ -128,7 +128,7 @@ class EndToEndWorkflowTest extends EventloopTestBase {
 
     private WorkflowExecutionCapability workflowExecution() { // GH-90000
         return runtimePluginManager.findCapability(WorkflowExecutionCapability.class) // GH-90000
-            .orElseThrow(() -> new AssertionError("workflow execution capability missing [GH-90000]"));
+            .orElseThrow(() -> new AssertionError("workflow execution capability missing"));
     }
 
     private void savePipeline(String tenantId, String pipelineId, String workflowName) { // GH-90000

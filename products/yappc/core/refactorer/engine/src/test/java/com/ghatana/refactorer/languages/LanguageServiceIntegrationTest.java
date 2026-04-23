@@ -48,14 +48,14 @@ class LanguageServiceIntegrationTest extends AbstractLanguageTest {
     @Test
     void shouldDiscoverJavaLanguageService() { // GH-90000
         assertThat(languageServices) // GH-90000
-                .as("Should discover Java language service [GH-90000]")
+                .as("Should discover Java language service")
                 .anyMatch(service -> "java".equals(service.id())); // GH-90000
     }
 
     @Test
     void shouldDiscoverPythonLanguageService() { // GH-90000
         assertThat(languageServices) // GH-90000
-                .as("Should discover Python language service [GH-90000]")
+                .as("Should discover Python language service")
                 .anyMatch(service -> "python".equals(service.id())); // GH-90000
     }
 
@@ -67,9 +67,9 @@ class LanguageServiceIntegrationTest extends AbstractLanguageTest {
                         .findFirst() // GH-90000
                         .orElseThrow(); // GH-90000
 
-        assertThat(javaService.supports(Path.of("Test.java [GH-90000]"))).isTrue();
-        assertThat(javaService.supports(Path.of("src/main/java/com/example/Test.java [GH-90000]"))).isTrue();
-        assertThat(javaService.supports(Path.of("pom.xml [GH-90000]"))).isFalse();
+        assertThat(javaService.supports(Path.of("Test.java"))).isTrue();
+        assertThat(javaService.supports(Path.of("src/main/java/com/example/Test.java"))).isTrue();
+        assertThat(javaService.supports(Path.of("pom.xml"))).isFalse();
     }
 
     @Test
@@ -80,8 +80,8 @@ class LanguageServiceIntegrationTest extends AbstractLanguageTest {
                         .findFirst() // GH-90000
                         .orElseThrow(); // GH-90000
 
-        assertThat(pythonService.supports(Path.of("script.py [GH-90000]"))).isTrue();
-        assertThat(pythonService.supports(Path.of("src/main/python/module/__init__.py [GH-90000]"))).isTrue();
-        assertThat(pythonService.supports(Path.of("requirements.txt [GH-90000]"))).isFalse();
+        assertThat(pythonService.supports(Path.of("script.py"))).isTrue();
+        assertThat(pythonService.supports(Path.of("src/main/python/module/__init__.py"))).isTrue();
+        assertThat(pythonService.supports(Path.of("requirements.txt"))).isFalse();
     }
 }

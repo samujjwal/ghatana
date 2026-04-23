@@ -24,7 +24,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("RagService Tests [GH-90000]")
+@DisplayName("RagService Tests")
 class RagServiceTest extends EventloopTestBase {
 
     private SemanticSearchService searchService;
@@ -39,11 +39,11 @@ class RagServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("RAG Generation [GH-90000]")
+    @DisplayName("RAG Generation")
     class RagGenerationTests {
 
         @Test
-        @DisplayName("should generate response with context retrieval [GH-90000]")
+        @DisplayName("should generate response with context retrieval")
         void shouldGenerateResponseWithContextRetrieval() { // GH-90000
             // GIVEN
             String query = "How do I create a workflow?";
@@ -89,15 +89,15 @@ class RagServiceTest extends EventloopTestBase {
             // THEN
             assertThat(response).isNotNull(); // GH-90000
             assertThat(response.success()).isTrue(); // GH-90000
-            assertThat(response.response()).contains("AiWorkflowService [GH-90000]");
+            assertThat(response.response()).contains("AiWorkflowService");
             assertThat(response.contexts()).hasSize(2); // GH-90000
-            assertThat(response.contexts().get(0).id()).isEqualTo("doc-1 [GH-90000]");
+            assertThat(response.contexts().get(0).id()).isEqualTo("doc-1");
             verify(searchService).search(any(SemanticSearchService.SemanticSearchRequest.class)); // GH-90000
             verify(llmGateway).complete(any()); // GH-90000
         }
 
         @Test
-        @DisplayName("should handle empty search results [GH-90000]")
+        @DisplayName("should handle empty search results")
         void shouldHandleEmptySearchResults() { // GH-90000
             // GIVEN
             String query = "Completely unrelated query";
@@ -131,11 +131,11 @@ class RagServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Conversational RAG [GH-90000]")
+    @DisplayName("Conversational RAG")
     class ConversationalRagTests {
 
         @Test
-        @DisplayName("should maintain conversation context [GH-90000]")
+        @DisplayName("should maintain conversation context")
         void shouldMaintainConversationContext() { // GH-90000
             // GIVEN
             List<RagService.ConversationTurn> history = List.of( // GH-90000
@@ -190,11 +190,11 @@ class RagServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Usage Statistics [GH-90000]")
+    @DisplayName("Usage Statistics")
     class UsageStatisticsTests {
 
         @Test
-        @DisplayName("should track usage stats [GH-90000]")
+        @DisplayName("should track usage stats")
         void shouldTrackUsageStats() { // GH-90000
             // GIVEN
             SemanticSearchService.SemanticSearchResult searchResult =
@@ -213,11 +213,11 @@ class RagServiceTest extends EventloopTestBase {
             when(searchService.search(any(SemanticSearchService.SemanticSearchRequest.class))) // GH-90000
                     .thenReturn(Promise.of(searchResult)); // GH-90000
 
-            CompletionResult completionResult = CompletionResult.of("Answer with some length to it [GH-90000]");
+            CompletionResult completionResult = CompletionResult.of("Answer with some length to it");
             when(llmGateway.complete(any())) // GH-90000
                     .thenReturn(Promise.of(completionResult)); // GH-90000
 
-            RagService.RagRequest request = RagService.RagRequest.of("test query [GH-90000]");
+            RagService.RagRequest request = RagService.RagRequest.of("test query");
 
             // WHEN
             RagService.RagResponse response = runPromise(() -> service.generate(request)); // GH-90000

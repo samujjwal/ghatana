@@ -19,18 +19,18 @@ import org.junit.jupiter.api.Test;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("TenantContextFilter [GH-90000]")
+@DisplayName("TenantContextFilter")
 class TenantContextFilterTest extends EventloopTestBase {
 
     @Test
-    @DisplayName("extracts tenant from attached context before delegating [GH-90000]")
+    @DisplayName("extracts tenant from attached context before delegating")
     void extractsTenantFromAttachedContextBeforeDelegating() { // GH-90000
         TenantContextFilter filter = new TenantContextFilter(request -> Promise.of(HttpResponse.ok200().build())); // GH-90000
-        HttpRequest request = HttpRequest.get("http://localhost/api/v1/jobs [GH-90000]").build();
-        TenantResolver.attach(request, TenantContext.of("tenant-ctx", "user-1", Set.of("admin [GH-90000]"), Map.of()));
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/jobs").build();
+        TenantResolver.attach(request, TenantContext.of("tenant-ctx", "user-1", Set.of("admin"), Map.of()));
         AsyncServlet next = ignoredRequest -> {
             assertThat(com.ghatana.platform.governance.security.TenantContext.getCurrentTenantId()) // GH-90000
-                    .isEqualTo("tenant-ctx [GH-90000]");
+                    .isEqualTo("tenant-ctx");
             return Promise.of(HttpResponse.ok200().build()); // GH-90000
         };
 
@@ -43,15 +43,15 @@ class TenantContextFilterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("falls back to header tenant id when no attached context exists [GH-90000]")
+    @DisplayName("falls back to header tenant id when no attached context exists")
     void fallsBackToHeaderTenantId() { // GH-90000
         TenantContextFilter filter = new TenantContextFilter(request -> Promise.of(HttpResponse.ok200().build())); // GH-90000
-        HttpRequest request = HttpRequest.get("http://localhost/api/v1/jobs [GH-90000]")
-            .withHeader(HttpHeaders.of("X-Tenant-ID [GH-90000]"), "tenant-header")
+        HttpRequest request = HttpRequest.get("http://localhost/api/v1/jobs")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-header")
                 .build(); // GH-90000
         AsyncServlet next = ignoredRequest -> {
             assertThat(com.ghatana.platform.governance.security.TenantContext.getCurrentTenantId()) // GH-90000
-                    .isEqualTo("tenant-header [GH-90000]");
+                    .isEqualTo("tenant-header");
             return Promise.of(HttpResponse.ok200().build()); // GH-90000
         };
 

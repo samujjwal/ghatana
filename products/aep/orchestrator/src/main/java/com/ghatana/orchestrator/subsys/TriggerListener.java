@@ -11,7 +11,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * pipeline execution jobs in the orchestrator.
  *
  * Day 25 Implementation: Pattern match to pipeline execution bridge
- */
+  * @doc.type class
+ * @doc.purpose Provides trigger listener functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 public class TriggerListener implements Service {
 
     private final ExecutionQueue executionQueue;

@@ -30,18 +30,18 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("ContextWindow – Context Management (AI005) [GH-90000]")
+@DisplayName("ContextWindow – Context Management (AI005)")
 class ContextWindowTest extends EventloopTestBase {
 
     @Mock
     private ContextWindowManager contextManager;
 
     @Nested
-    @DisplayName("Context Window Retrieval [GH-90000]")
+    @DisplayName("Context Window Retrieval")
     class ContextWindowRetrievalTests {
 
         @Test
-        @DisplayName("[AI005]: get_context_window_returns_window [GH-90000]")
+        @DisplayName("[AI005]: get_context_window_returns_window")
         void getContextWindowReturnsWindow() { // GH-90000
             String conversationId = "conv-001";
 
@@ -76,11 +76,11 @@ class ContextWindowTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Content Management [GH-90000]")
+    @DisplayName("Content Management")
     class ContentManagementTests {
 
         @Test
-        @DisplayName("[AI005]: add_content_increases_window [GH-90000]")
+        @DisplayName("[AI005]: add_content_increases_window")
         void addContentIncreasesWindow() { // GH-90000
             String conversationId = "conv-001";
             ContextWindowManager.ContextContent content = new ContextWindowManager.ContextContent( // GH-90000
@@ -110,7 +110,7 @@ class ContextWindowTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[AI005]: clear_removes_all_content [GH-90000]")
+        @DisplayName("[AI005]: clear_removes_all_content")
         void clearRemovesAllContent() { // GH-90000
             String conversationId = "conv-001";
 
@@ -124,11 +124,11 @@ class ContextWindowTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Context Trimming [GH-90000]")
+    @DisplayName("Context Trimming")
     class ContextTrimmingTests {
 
         @Test
-        @DisplayName("[AI005]: trim_to_fit_reduces_tokens [GH-90000]")
+        @DisplayName("[AI005]: trim_to_fit_reduces_tokens")
         void trimToFitReducesTokens() { // GH-90000
             String conversationId = "conv-large";
             int maxTokens = 1000;
@@ -157,7 +157,7 @@ class ContextWindowTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[AI005]: remaining_tokens_calculated_correctly [GH-90000]")
+        @DisplayName("[AI005]: remaining_tokens_calculated_correctly")
         void remainingTokensCalculatedCorrectly() { // GH-90000
             ContextWindowManager.ContextWindow window = new ContextWindowManager.ContextWindow( // GH-90000
                 "conv-001", List.of(), 100, 4000, false, Instant.now(), Instant.now() // GH-90000
@@ -168,7 +168,7 @@ class ContextWindowTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[AI005]: over_limit_detected [GH-90000]")
+        @DisplayName("[AI005]: over_limit_detected")
         void overLimitDetected() { // GH-90000
             ContextWindowManager.ContextWindow window = new ContextWindowManager.ContextWindow( // GH-90000
                 "conv-001", List.of(), 4500, 4000, true, Instant.now(), Instant.now() // GH-90000
@@ -180,11 +180,11 @@ class ContextWindowTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Context Summarization [GH-90000]")
+    @DisplayName("Context Summarization")
     class ContextSummarizationTests {
 
         @Test
-        @DisplayName("[AI005]: summarize_compresses_context [GH-90000]")
+        @DisplayName("[AI005]: summarize_compresses_context")
         void summarizeCompressesContext() { // GH-90000
             String conversationId = "conv-001";
 
@@ -210,7 +210,7 @@ class ContextWindowTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[AI005]: compression_ratio_calculated [GH-90000]")
+        @DisplayName("[AI005]: compression_ratio_calculated")
         void compressionRatioCalculated() { // GH-90000
             ContextWindowManager.ContextSummary summary = new ContextWindowManager.ContextSummary( // GH-90000
                 "conv-001", "Summary", 1000, 250, 0.25, List.of(), Instant.now() // GH-90000
@@ -221,11 +221,11 @@ class ContextWindowTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Token Usage [GH-90000]")
+    @DisplayName("Token Usage")
     class TokenUsageTests {
 
         @Test
-        @DisplayName("[AI005]: get_token_usage_returns_stats [GH-90000]")
+        @DisplayName("[AI005]: get_token_usage_returns_stats")
         void getTokenUsageReturnsStats() { // GH-90000
             String conversationId = "conv-001";
 
@@ -253,11 +253,11 @@ class ContextWindowTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Query Optimization [GH-90000]")
+    @DisplayName("Query Optimization")
     class QueryOptimizationTests {
 
         @Test
-        @DisplayName("[AI005]: optimize_for_query_prioritizes_relevant [GH-90000]")
+        @DisplayName("[AI005]: optimize_for_query_prioritizes_relevant")
         void optimizeForQueryPrioritizesRelevant() { // GH-90000
             String conversationId = "conv-001";
             String query = "sales data";
@@ -291,11 +291,11 @@ class ContextWindowTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Content Types [GH-90000]")
+    @DisplayName("Content Types")
     class ContentTypesTests {
 
         @Test
-        @DisplayName("[AI005]: all_content_types_supported [GH-90000]")
+        @DisplayName("[AI005]: all_content_types_supported")
         void allContentTypesSupported() { // GH-90000
             for (ContextWindowManager.ContextContent.ContentType type : ContextWindowManager.ContextContent.ContentType.values()) { // GH-90000
                 ContextWindowManager.ContextContent content = new ContextWindowManager.ContextContent( // GH-90000

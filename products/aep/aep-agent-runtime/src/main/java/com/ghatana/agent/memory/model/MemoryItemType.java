@@ -25,7 +25,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * @doc.type enum
  * @doc.purpose Extensible memory tier classification
  * @doc.layer agent-memory
- */
+  * @doc.pattern Enum
+*/
 public enum MemoryItemType {
 
     /** Episodic memory: what happened during agent interactions. */

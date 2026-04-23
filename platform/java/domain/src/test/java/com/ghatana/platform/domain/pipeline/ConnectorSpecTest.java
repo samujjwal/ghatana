@@ -17,11 +17,11 @@ class ConnectorSpecTest {
     void shouldSerializeAndDeserializeEventCloudSource() throws Exception { // GH-90000
         // Given
         ConnectorSpec original = ConnectorSpec.builder() // GH-90000
-            .id("event-cloud-source-1 [GH-90000]")
+            .id("event-cloud-source-1")
             .type(ConnectorSpec.ConnectorType.EVENT_CLOUD_SOURCE) // GH-90000
-            .endpoint("eventcloud-cluster-1 [GH-90000]")
-            .topicOrStream("events-stream [GH-90000]")
-            .tenantId("tenant-test [GH-90000]")
+            .endpoint("eventcloud-cluster-1")
+            .topicOrStream("events-stream")
+            .tenantId("tenant-test")
             .durable(true) // GH-90000
             .ordered(true) // GH-90000
             .maxInFlight(128) // GH-90000
@@ -35,11 +35,11 @@ class ConnectorSpecTest {
 
         // Then
         assertThat(deserialized).isEqualTo(original); // GH-90000
-        assertThat(deserialized.getId()).isEqualTo("event-cloud-source-1 [GH-90000]");
+        assertThat(deserialized.getId()).isEqualTo("event-cloud-source-1");
         assertThat(deserialized.getType()).isEqualTo(ConnectorSpec.ConnectorType.EVENT_CLOUD_SOURCE); // GH-90000
-        assertThat(deserialized.getEndpoint()).isEqualTo("eventcloud-cluster-1 [GH-90000]");
-        assertThat(deserialized.getTopicOrStream()).isEqualTo("events-stream [GH-90000]");
-        assertThat(deserialized.getTenantId()).isEqualTo("tenant-test [GH-90000]");
+        assertThat(deserialized.getEndpoint()).isEqualTo("eventcloud-cluster-1");
+        assertThat(deserialized.getTopicOrStream()).isEqualTo("events-stream");
+        assertThat(deserialized.getTenantId()).isEqualTo("tenant-test");
         assertThat(deserialized.getDurable()).isTrue(); // GH-90000
         assertThat(deserialized.getOrdered()).isTrue(); // GH-90000
         assertThat(deserialized.getMaxInFlight()).isEqualTo(128); // GH-90000

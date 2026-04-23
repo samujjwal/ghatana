@@ -36,7 +36,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern ChaosTest
  */
-@DisplayName("Event Processing – Chaos Tests [GH-90000]")
+@DisplayName("Event Processing – Chaos Tests")
 class EventProcessingChaosTest extends EventloopTestBase {
 
     private AepEngine engine;
@@ -54,11 +54,11 @@ class EventProcessingChaosTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Timeout Scenarios [GH-90000]")
+    @DisplayName("Timeout Scenarios")
     class TimeoutTests {
 
         @Test
-        @DisplayName("handles long-running operations with timeout [GH-90000]")
+        @DisplayName("handles long-running operations with timeout")
         void handlesLongRunningOperationsWithTimeout() { // GH-90000
             String tenantId = "tenant-timeout";
             
@@ -90,7 +90,7 @@ class EventProcessingChaosTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("gracefully handles concurrent pipeline submissions [GH-90000]")
+        @DisplayName("gracefully handles concurrent pipeline submissions")
         void gracefullyHandlesConcurrentPipelineSubmissions() { // GH-90000
             String tenantId = "tenant-concurrent";
             
@@ -128,21 +128,21 @@ class EventProcessingChaosTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Invalid Input Scenarios [GH-90000]")
+    @DisplayName("Invalid Input Scenarios")
     class InvalidInputTests {
 
         @Test
-        @DisplayName("handles null pipeline gracefully [GH-90000]")
+        @DisplayName("handles null pipeline gracefully")
         void handlesNullPipelineGracefully() { // GH-90000
             String tenantId = "tenant-null";
 
             assertThatThrownBy(() -> engine.submitPipeline(tenantId, null)) // GH-90000
                 .isInstanceOf(NullPointerException.class) // GH-90000
-                .hasMessageContaining("null [GH-90000]");
+                .hasMessageContaining("null");
         }
 
         @Test
-        @DisplayName("handles pipeline with invalid step type [GH-90000]")
+        @DisplayName("handles pipeline with invalid step type")
         void handlesPipelineWithInvalidStepType() { // GH-90000
             String tenantId = "tenant-invalid";
             
@@ -161,7 +161,7 @@ class EventProcessingChaosTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("handles pipeline with circular dependencies [GH-90000]")
+        @DisplayName("handles pipeline with circular dependencies")
         void handlesPipelineWithCircularDependencies() { // GH-90000
             String tenantId = "tenant-circular";
             
@@ -174,23 +174,23 @@ class EventProcessingChaosTest extends EventloopTestBase {
                         "patternType", "THRESHOLD",
                         "field", "value",
                         "threshold", 10.0
-                    ), List.of("step2 [GH-90000]")), // Depends on step2
+                    ), List.of("step2")), // Depends on step2
                     new AepEngine.PipelineStep("step2", "register_pattern", Map.of( // GH-90000
                         "name", "pattern-2",
                         "patternType", "THRESHOLD",
                         "field", "value",
                         "threshold", 20.0
-                    ), List.of("step1 [GH-90000]")) // Depends on step1 - circular!
+                    ), List.of("step1")) // Depends on step1 - circular!
                 )
             );
 
             assertThatThrownBy(() -> engine.submitPipeline(tenantId, pipeline)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("cycles [GH-90000]");
+                .hasMessageContaining("cycles");
         }
 
         @Test
-        @DisplayName("handles malformed pattern configuration [GH-90000]")
+        @DisplayName("handles malformed pattern configuration")
         void handlesMalformedPatternConfiguration() { // GH-90000
             String tenantId = "tenant-malformed";
             
@@ -213,11 +213,11 @@ class EventProcessingChaosTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Resource Exhaustion Scenarios [GH-90000]")
+    @DisplayName("Resource Exhaustion Scenarios")
     class ResourceExhaustionTests {
 
         @Test
-        @DisplayName("handles high volume of pattern registrations [GH-90000]")
+        @DisplayName("handles high volume of pattern registrations")
         void handlesHighVolumeOfPatternRegistrations() { // GH-90000
             String tenantId = "tenant-volume";
             
@@ -245,7 +245,7 @@ class EventProcessingChaosTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("handles very long pipeline chains [GH-90000]")
+        @DisplayName("handles very long pipeline chains")
         void handlesVeryLongPipelineChains() { // GH-90000
             String tenantId = "tenant-long-chain";
             
@@ -282,11 +282,11 @@ class EventProcessingChaosTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("State Recovery Scenarios [GH-90000]")
+    @DisplayName("State Recovery Scenarios")
     class StateRecoveryTests {
 
         @Test
-        @DisplayName("recovers from partial pipeline failure [GH-90000]")
+        @DisplayName("recovers from partial pipeline failure")
         void recoversFromPartialPipelineFailure() { // GH-90000
             String tenantId = "tenant-recovery";
             
@@ -344,7 +344,7 @@ class EventProcessingChaosTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("handles engine restart gracefully [GH-90000]")
+        @DisplayName("handles engine restart gracefully")
         void handlesEngineRestartGracefully() { // GH-90000
             String tenantId = "tenant-restart";
             

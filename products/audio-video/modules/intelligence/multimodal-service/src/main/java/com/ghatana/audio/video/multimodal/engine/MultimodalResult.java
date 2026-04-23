@@ -2,7 +2,11 @@ package com.ghatana.audio.video.multimodal.engine;
 
 /**
  * Fused result from multimodal analysis.
- */
+  * @doc.type class
+ * @doc.purpose Provides multimodal result functionality.
+ * @doc.layer product
+ * @doc.pattern ValueObject
+*/
 public class MultimodalResult {
 
     private final AudioResult audioResult;

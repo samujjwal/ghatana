@@ -27,7 +27,8 @@ import java.util.*;
  * @doc.type class
  * @doc.purpose Procedural memory management
  * @doc.layer agent-memory
- */
+  * @doc.pattern Manager
+*/
 public class ProceduralMemoryManager {
 
     private static final Logger log = LoggerFactory.getLogger(ProceduralMemoryManager.class);

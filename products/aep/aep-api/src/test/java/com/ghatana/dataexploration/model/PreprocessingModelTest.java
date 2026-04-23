@@ -12,11 +12,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("Preprocessing Model Tests [GH-90000]")
+@DisplayName("Preprocessing Model Tests")
 class PreprocessingModelTest {
 
     @Test
-    @DisplayName("PreprocessingConfig builder provides documented defaults [GH-90000]")
+    @DisplayName("PreprocessingConfig builder provides documented defaults")
     void preprocessingConfigBuilderProvidesDocumentedDefaults() { // GH-90000
         PreprocessingConfig config = PreprocessingConfig.builder().build(); // GH-90000
 
@@ -29,7 +29,7 @@ class PreprocessingModelTest {
     }
 
     @Test
-    @DisplayName("PreprocessingConfig builder applies overrides [GH-90000]")
+    @DisplayName("PreprocessingConfig builder applies overrides")
     void preprocessingConfigBuilderAppliesOverrides() { // GH-90000
         Map<String, Object> customParameters = Map.of("mode", "strict"); // GH-90000
 
@@ -51,27 +51,27 @@ class PreprocessingModelTest {
     }
 
     @Test
-    @DisplayName("PreprocessedEventBatch exposes convenience accessors [GH-90000]")
+    @DisplayName("PreprocessedEventBatch exposes convenience accessors")
     void preprocessedEventBatchExposesConvenienceAccessors() { // GH-90000
         PreprocessedEventBatch nonEmptyBatch = new PreprocessedEventBatch( // GH-90000
                 List.of(new NormalizedEvent( // GH-90000
                         "evt-1",
                         "click",
-                        Instant.parse("2026-04-02T00:00:00Z [GH-90000]"),
+                        Instant.parse("2026-04-02T00:00:00Z"),
                         Map.of("page", "home"), // GH-90000
                         "tenant-1",
                         1.0
                 )),
                 Map.of(), // GH-90000
                 EventStreamStatistics.builder().totalEvents(1).build(), // GH-90000
-                Instant.parse("2026-04-02T00:05:00Z [GH-90000]"),
+                Instant.parse("2026-04-02T00:05:00Z"),
                 "batch-1"
         );
         PreprocessedEventBatch emptyBatch = new PreprocessedEventBatch( // GH-90000
                 List.of(), // GH-90000
                 Map.of(), // GH-90000
                 EventStreamStatistics.builder().totalEvents(0).build(), // GH-90000
-                Instant.parse("2026-04-02T00:05:00Z [GH-90000]"),
+                Instant.parse("2026-04-02T00:05:00Z"),
                 "batch-2"
         );
 

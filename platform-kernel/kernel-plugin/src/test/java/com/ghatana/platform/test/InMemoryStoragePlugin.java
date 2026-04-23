@@ -33,7 +33,7 @@ public class InMemoryStoragePlugin implements StoragePlugin<String> {
             Set.of(), // GH-90000
             Map.of(), // GH-90000
             Set.of(), // GH-90000
-            PluginCompatibility.dataCloudVersion("1.0.0 [GH-90000]")
+            PluginCompatibility.dataCloudVersion("1.0.0")
         );
     }
 

@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @doc.layer kernel
  * @doc.pattern Test
  */
-@DisplayName("Kernel Purity Enforcement Tests [GH-90000]")
+@DisplayName("Kernel Purity Enforcement Tests")
 class KernelPurityEnforcementTest {
 
     private static final String KERNEL_SOURCE_PATH = "platform/java/kernel/src/main/java";
@@ -58,7 +58,7 @@ class KernelPurityEnforcementTest {
     };
 
     @Test
-    @DisplayName("Kernel code contains no product-specific imports [GH-90000]")
+    @DisplayName("Kernel code contains no product-specific imports")
     void testNoProductImports() throws IOException { // GH-90000
         List<String> violations = new ArrayList<>(); // GH-90000
         Path kernelPath = Paths.get(KERNEL_SOURCE_PATH); // GH-90000
@@ -70,7 +70,7 @@ class KernelPurityEnforcementTest {
 
         try (Stream<Path> paths = Files.walk(kernelPath)) { // GH-90000
             paths.filter(Files::isRegularFile) // GH-90000
-                 .filter(p -> p.toString().endsWith(".java [GH-90000]"))
+                 .filter(p -> p.toString().endsWith(".java"))
                  .forEach(file -> { // GH-90000
                      try {
                          String content = Files.readString(file); // GH-90000
@@ -91,7 +91,7 @@ class KernelPurityEnforcementTest {
     }
 
     @Test
-    @DisplayName("Kernel code contains no product-specific class references [GH-90000]")
+    @DisplayName("Kernel code contains no product-specific class references")
     void testNoProductClassReferences() throws IOException { // GH-90000
         List<String> violations = new ArrayList<>(); // GH-90000
         Path kernelPath = Paths.get(KERNEL_SOURCE_PATH); // GH-90000
@@ -102,17 +102,17 @@ class KernelPurityEnforcementTest {
 
         try (Stream<Path> paths = Files.walk(kernelPath)) { // GH-90000
             paths.filter(Files::isRegularFile) // GH-90000
-                 .filter(p -> p.toString().endsWith(".java [GH-90000]"))
+                 .filter(p -> p.toString().endsWith(".java"))
                  .forEach(file -> { // GH-90000
                      try {
                          String content = Files.readString(file); // GH-90000
                          for (String forbidden : FORBIDDEN_TERMS) { // GH-90000
                              // Check for class references (not in comments) // GH-90000
-                             String[] lines = content.split("\n [GH-90000]");
+                             String[] lines = content.split("\n");
                              for (int i = 0; i < lines.length; i++) { // GH-90000
                                  String line = lines[i].trim(); // GH-90000
                                  // Skip comments and JavaDoc
-                                 if (line.startsWith("// [GH-90000]") || line.startsWith("* [GH-90000]") || line.startsWith("/* [GH-90000]")) {
+                                 if (line.startsWith("//") || line.startsWith("*") || line.startsWith("/*")) {
                                      continue;
                                  }
                                  if (line.contains(forbidden)) { // GH-90000
@@ -132,7 +132,7 @@ class KernelPurityEnforcementTest {
     }
 
     @Test
-    @DisplayName("Kernel capabilities contain no product-specific constants [GH-90000]")
+    @DisplayName("Kernel capabilities contain no product-specific constants")
     void testKernelCapabilitiesPurity() throws IOException { // GH-90000
         Path capabilitiesFile = Paths.get(KERNEL_SOURCE_PATH, // GH-90000
             "com/ghatana/kernel/descriptor/KernelCapability.java");
@@ -150,16 +150,16 @@ class KernelPurityEnforcementTest {
         }
 
         // Verify no nested Products class
-        assertFalse(content.contains("class Products [GH-90000]"),
+        assertFalse(content.contains("class Products"),
             "KernelCapability contains deprecated Products inner class");
 
         // Verify no product-specific comments
-        assertFalse(content.contains("Product-specific capability constants [GH-90000]"),
+        assertFalse(content.contains("Product-specific capability constants"),
             "KernelCapability contains product-specific comments");
     }
 
     @Test
-    @DisplayName("Kernel adapter interfaces contain no product-specific methods [GH-90000]")
+    @DisplayName("Kernel adapter interfaces contain no product-specific methods")
     void testAdapterInterfacesPurity() throws IOException { // GH-90000
         Path adapterPath = Paths.get(KERNEL_SOURCE_PATH, "com/ghatana/kernel/adapter"); // GH-90000
 
@@ -171,7 +171,7 @@ class KernelPurityEnforcementTest {
 
         try (Stream<Path> paths = Files.walk(adapterPath)) { // GH-90000
             paths.filter(Files::isRegularFile) // GH-90000
-                 .filter(p -> p.toString().endsWith(".java [GH-90000]"))
+                 .filter(p -> p.toString().endsWith(".java"))
                  .forEach(file -> { // GH-90000
                      try {
                          String content = Files.readString(file); // GH-90000
@@ -191,7 +191,7 @@ class KernelPurityEnforcementTest {
     }
 
     @Test
-    @DisplayName("Kernel service base classes contain no product-specific logic [GH-90000]")
+    @DisplayName("Kernel service base classes contain no product-specific logic")
     void testServiceBaseClassesPurity() throws IOException { // GH-90000
         Path servicePath = Paths.get(KERNEL_SOURCE_PATH, "com/ghatana/kernel/service"); // GH-90000
 
@@ -203,7 +203,7 @@ class KernelPurityEnforcementTest {
 
         try (Stream<Path> paths = Files.walk(servicePath)) { // GH-90000
             paths.filter(Files::isRegularFile) // GH-90000
-                 .filter(p -> p.toString().endsWith(".java [GH-90000]"))
+                 .filter(p -> p.toString().endsWith(".java"))
                  .forEach(file -> { // GH-90000
                      try {
                          String content = Files.readString(file); // GH-90000
@@ -228,7 +228,7 @@ class KernelPurityEnforcementTest {
     }
 
     @Test
-    @DisplayName("AbstractDataService contains no product-specific code [GH-90000]")
+    @DisplayName("AbstractDataService contains no product-specific code")
     void testAbstractDataServicePurity() throws IOException { // GH-90000
         Path abstractDataService = Paths.get(KERNEL_SOURCE_PATH, // GH-90000
             "com/ghatana/kernel/service/AbstractDataService.java");
@@ -252,12 +252,12 @@ class KernelPurityEnforcementTest {
         }
 
         // Verify it's in kernel package
-        assertTrue(content.contains("package com.ghatana.kernel.service [GH-90000]"),
+        assertTrue(content.contains("package com.ghatana.kernel.service"),
             "AbstractDataService not in kernel package");
     }
 
     @Test
-    @DisplayName("DataCloud adapter classes contain no product-specific code [GH-90000]")
+    @DisplayName("DataCloud adapter classes contain no product-specific code")
     void testDataCloudAdapterPurity() throws IOException { // GH-90000
         Path dataCloudPath = Paths.get(KERNEL_SOURCE_PATH, // GH-90000
             "com/ghatana/kernel/adapter/datacloud");
@@ -270,7 +270,7 @@ class KernelPurityEnforcementTest {
 
         try (Stream<Path> paths = Files.walk(dataCloudPath)) { // GH-90000
             paths.filter(Files::isRegularFile) // GH-90000
-                 .filter(p -> p.toString().endsWith(".java [GH-90000]"))
+                 .filter(p -> p.toString().endsWith(".java"))
                  .forEach(file -> { // GH-90000
                      try {
                          String content = Files.readString(file); // GH-90000

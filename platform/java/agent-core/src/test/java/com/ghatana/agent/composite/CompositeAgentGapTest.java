@@ -34,7 +34,7 @@ import static org.mockito.Mockito.mock;
  *   <li>Processing with zero sub-agents → FAILED</li>
  * </ul>
  */
-@DisplayName("Composite Agent — Gap Tests [GH-90000]")
+@DisplayName("Composite Agent — Gap Tests")
 class CompositeAgentGapTest {
 
     private AgentContext ctx;
@@ -42,9 +42,9 @@ class CompositeAgentGapTest {
     @BeforeEach
     void setUp() { // GH-90000
         ctx = AgentContext.builder() // GH-90000
-                .turnId("turn-1 [GH-90000]")
-                .agentId("composite-gap [GH-90000]")
-                .tenantId("test-tenant [GH-90000]")
+                .turnId("turn-1")
+                .agentId("composite-gap")
+                .tenantId("test-tenant")
                 .memoryStore(mock(MemoryStore.class)) // GH-90000
                 .build(); // GH-90000
     }
@@ -75,7 +75,7 @@ class CompositeAgentGapTest {
 
         StubAgent(String id, Map<String, Object> output, double confidence, boolean shouldFail) { // GH-90000
             this.desc = AgentDescriptor.builder() // GH-90000
-                    .agentId(id).name(id).version("1.0 [GH-90000]")
+                    .agentId(id).name(id).version("1.0")
                     .type(AgentType.DETERMINISTIC).build(); // GH-90000
             this.output = output;
             this.confidence = confidence;
@@ -114,7 +114,7 @@ class CompositeAgentGapTest {
             configBuilder.weight(w); // GH-90000
         }
 
-        AgentConfig stubConfig = AgentConfig.builder().agentId("s [GH-90000]").type(AgentType.DETERMINISTIC).build();
+        AgentConfig stubConfig = AgentConfig.builder().agentId("s").type(AgentType.DETERMINISTIC).build();
         for (StubAgent s : subs) { // GH-90000
             runOnEventloop(() -> s.initialize(stubConfig)); // GH-90000
         }
@@ -129,7 +129,7 @@ class CompositeAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("All Sub-Agents Fail [GH-90000]")
+    @DisplayName("All Sub-Agents Fail")
     class AllFailTests {
 
         @Test
@@ -145,7 +145,7 @@ class CompositeAgentGapTest {
             var result = runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
 
             assertThat(result.isFailed()).isTrue(); // GH-90000
-            assertThat(result.getExplanation()).containsIgnoringCase("all sub-agents failed [GH-90000]");
+            assertThat(result.getExplanation()).containsIgnoringCase("all sub-agents failed");
         }
 
         @Test
@@ -167,7 +167,7 @@ class CompositeAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Weighted Average — edge cases [GH-90000]")
+    @DisplayName("Weighted Average — edge cases")
     class WeightedAverageEdgeCases {
 
         @Test
@@ -183,7 +183,7 @@ class CompositeAgentGapTest {
 
             assertThat(result.isSuccess()).isTrue(); // GH-90000
             // Non-numeric values should be skipped → weighted sum = 0 / 0 → 0
-            double score = ((Number) result.getOutput().get("score [GH-90000]")).doubleValue();
+            double score = ((Number) result.getOutput().get("score")).doubleValue();
             assertThat(score).isCloseTo(0.0, within(0.001)); // GH-90000
         }
 
@@ -199,7 +199,7 @@ class CompositeAgentGapTest {
             var result = runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
 
             // Only agent a's value used: 80.0 * 0.6 / 0.6 = 80.0
-            double score = ((Number) result.getOutput().get("score [GH-90000]")).doubleValue();
+            double score = ((Number) result.getOutput().get("score")).doubleValue();
             assertThat(score).isCloseTo(80.0, within(0.1)); // GH-90000
         }
     }
@@ -209,7 +209,7 @@ class CompositeAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("UNANIMOUS Confidence [GH-90000]")
+    @DisplayName("UNANIMOUS Confidence")
     class UnanimousConfidenceTests {
 
         @Test
@@ -250,7 +250,7 @@ class CompositeAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("MAJORITY_VOTE — missing voting field [GH-90000]")
+    @DisplayName("MAJORITY_VOTE — missing voting field")
     class MajorityVoteMissingField {
 
         @Test
@@ -274,7 +274,7 @@ class CompositeAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Strategy Metadata [GH-90000]")
+    @DisplayName("Strategy Metadata")
     class StrategyMetadataTests {
 
         @Test
@@ -301,7 +301,7 @@ class CompositeAgentGapTest {
 
             var result = runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
             assertThat(result.getOutput()).containsEntry("_composite.strategy", "MAJORITY_VOTE"); // GH-90000
-            assertThat(result.getOutput()).containsKey("_composite.votes [GH-90000]");
+            assertThat(result.getOutput()).containsKey("_composite.votes");
             assertThat(result.getOutput()).containsEntry("_composite.voteCount", 3); // GH-90000
         }
     }

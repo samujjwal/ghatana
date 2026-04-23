@@ -34,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("DurableWorkflowEngine - Phase 3 Expansion [GH-90000]")
+@DisplayName("DurableWorkflowEngine - Phase 3 Expansion")
 class DurableWorkflowEngineExpansionTest extends EventloopTestBase {
 
     private DurableWorkflowEngine engine;
@@ -64,11 +64,11 @@ class DurableWorkflowEngineExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Concurrent Workflow Execution [GH-90000]")
+    @DisplayName("Concurrent Workflow Execution")
     class ConcurrentExecutionTests {
 
         @Test
-        @DisplayName("Executes multiple workflows without state interference [GH-90000]")
+        @DisplayName("Executes multiple workflows without state interference")
         void multipleWorkflowsWithStateIsolation() { // GH-90000
             AtomicInteger counter1 = new AtomicInteger(0); // GH-90000
             AtomicInteger counter2 = new AtomicInteger(0); // GH-90000
@@ -96,7 +96,7 @@ class DurableWorkflowEngineExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Handles mixed workflow durations concurrently [GH-90000]")
+        @DisplayName("Handles mixed workflow durations concurrently")
         void mixedWorkflowDurations() { // GH-90000
             List<Integer> executionTimes = new CopyOnWriteArrayList<>(); // GH-90000
 
@@ -129,49 +129,49 @@ class DurableWorkflowEngineExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Multi-Step Workflow Chains [GH-90000]")
+    @DisplayName("Multi-Step Workflow Chains")
     class MultiStepChainTests {
 
         @Test
-        @DisplayName("Executes long step chains in correct order [GH-90000]")
+        @DisplayName("Executes long step chains in correct order")
         void longStepChainExecution() { // GH-90000
             List<String> executionOrder = new ArrayList<>(); // GH-90000
 
             StepDefinition step1 = StepDefinition.of("Step1", ctx -> { // GH-90000
-                executionOrder.add("step1 [GH-90000]");
+                executionOrder.add("step1");
                 return Promise.of(ctx); // GH-90000
             });
 
             StepDefinition step2 = StepDefinition.of("Step2", ctx -> { // GH-90000
-                executionOrder.add("step2 [GH-90000]");
+                executionOrder.add("step2");
                 return Promise.of(ctx); // GH-90000
             });
 
             StepDefinition step3 = StepDefinition.of("Step3", ctx -> { // GH-90000
-                executionOrder.add("step3 [GH-90000]");
+                executionOrder.add("step3");
                 return Promise.of(ctx); // GH-90000
             });
 
             StepDefinition step4 = StepDefinition.of("Step4", ctx -> { // GH-90000
-                executionOrder.add("step4 [GH-90000]");
+                executionOrder.add("step4");
                 return Promise.of(ctx); // GH-90000
             });
 
             StepDefinition step5 = StepDefinition.of("Step5", ctx -> { // GH-90000
-                executionOrder.add("step5 [GH-90000]");
+                executionOrder.add("step5");
                 return Promise.of(ctx); // GH-90000
             });
 
             List<StepDefinition> steps = List.of(step1, step2, step3, step4, step5); // GH-90000
 
-            runPromise(() -> engine.submit("long-chain", context("long-chain [GH-90000]"), steps).result());
+            runPromise(() -> engine.submit("long-chain", context("long-chain"), steps).result());
 
             // Verify strict ordering
             assertThat(executionOrder).containsExactly("step1", "step2", "step3", "step4", "step5"); // GH-90000
         }
 
         @Test
-        @DisplayName("Maintains context through multi-step execution [GH-90000]")
+        @DisplayName("Maintains context through multi-step execution")
         void contextPropagationThroughSteps() { // GH-90000
             StepDefinition step1 = StepDefinition.of("Setup", ctx -> { // GH-90000
                 ctx.put("shared-key", "initial-value"); // GH-90000
@@ -190,7 +190,7 @@ class DurableWorkflowEngineExpansionTest extends EventloopTestBase {
             });
 
             WorkflowContext result = runPromise(() -> // GH-90000
-                engine.submit("context-propagation", context("context-propagation [GH-90000]"),
+                engine.submit("context-propagation", context("context-propagation"),
                     List.of(step1, step2, step3)).result()); // GH-90000
 
             assertThat(result).isNotNull(); // GH-90000
@@ -202,11 +202,11 @@ class DurableWorkflowEngineExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("State Store Persistence [GH-90000]")
+    @DisplayName("State Store Persistence")
     class StatePersistenceTests {
 
         @Test
-        @DisplayName("Persists workflow state across multiple executions [GH-90000]")
+        @DisplayName("Persists workflow state across multiple executions")
         void statePersistenceAcrossRuns() { // GH-90000
             AtomicInteger executionCount = new AtomicInteger(0); // GH-90000
 
@@ -218,7 +218,7 @@ class DurableWorkflowEngineExpansionTest extends EventloopTestBase {
                     return Promise.of(ctx); // GH-90000
                 });
 
-                runPromise(() -> engine.submit("persistent-wf", context("persistent-wf [GH-90000]"),
+                runPromise(() -> engine.submit("persistent-wf", context("persistent-wf"),
                         List.of(step)).result()); // GH-90000
             }
 
@@ -226,7 +226,7 @@ class DurableWorkflowEngineExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Handles state store with many concurrent workflows [GH-90000]")
+        @DisplayName("Handles state store with many concurrent workflows")
         void largeNumberOfConcurrentWorkflows() { // GH-90000
             int workflowCount = 20;
             AtomicInteger completedCount = new AtomicInteger(0); // GH-90000
@@ -252,17 +252,17 @@ class DurableWorkflowEngineExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Lifecycle Event Tracking [GH-90000]")
+    @DisplayName("Lifecycle Event Tracking")
     class LifecycleEventTests {
 
         @Test
-        @DisplayName("Emits lifecycle events in correct order [GH-90000]")
+        @DisplayName("Emits lifecycle events in correct order")
         void lifecycleEventOrdering() { // GH-90000
             StepDefinition step = StepDefinition.of("Work", ctx -> { // GH-90000
                 return Promise.of(ctx); // GH-90000
             });
 
-            runPromise(() -> engine.submit("event-tracking", context("event-tracking [GH-90000]"),
+            runPromise(() -> engine.submit("event-tracking", context("event-tracking"),
                     List.of(step)).result()); // GH-90000
 
             // Listener should have received events

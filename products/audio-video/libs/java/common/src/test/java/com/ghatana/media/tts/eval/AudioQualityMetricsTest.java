@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.within;
  * @doc.layer platform
  * @doc.pattern TestCase
  */
-@DisplayName("AudioQualityMetrics [GH-90000]")
+@DisplayName("AudioQualityMetrics")
 class AudioQualityMetricsTest {
 
     private static final int SR = 22050;
@@ -25,7 +25,7 @@ class AudioQualityMetricsTest {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("SNR: perfect copy → +∞ [GH-90000]")
+    @DisplayName("SNR: perfect copy → +∞")
     void snr_perfectCopy_infinity() { // GH-90000
         float[] sig = sine(440, 0.5f, 1000); // GH-90000
         assertThat(AudioQualityMetrics.computeSnr(sig, sig.clone())) // GH-90000
@@ -33,7 +33,7 @@ class AudioQualityMetricsTest {
     }
 
     @Test
-    @DisplayName("SNR: silence reference → -∞ [GH-90000]")
+    @DisplayName("SNR: silence reference → -∞")
     void snr_silenceReference_negativeInfinity() { // GH-90000
         float[] ref = new float[1000]; // all zeros
         float[] deg = sine(440, 0.5f, 1000); // GH-90000
@@ -42,7 +42,7 @@ class AudioQualityMetricsTest {
     }
 
     @Test
-    @DisplayName("SNR: added white noise → finite positive dB [GH-90000]")
+    @DisplayName("SNR: added white noise → finite positive dB")
     void snr_withNoise_finitePositive() { // GH-90000
         float[] ref = sine(440, 0.5f, SR); // GH-90000
         float[] deg = addNoise(ref, 0.01f); // GH-90000
@@ -51,7 +51,7 @@ class AudioQualityMetricsTest {
     }
 
     @Test
-    @DisplayName("SNR: mismatched length → IllegalArgumentException [GH-90000]")
+    @DisplayName("SNR: mismatched length → IllegalArgumentException")
     void snr_mismatchedLength_throws() { // GH-90000
         assertThatThrownBy(() -> AudioQualityMetrics.computeSnr(new float[10], new float[9])) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class); // GH-90000
@@ -62,7 +62,7 @@ class AudioQualityMetricsTest {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("STOI: perfect copy → ≈ 1.0 [GH-90000]")
+    @DisplayName("STOI: perfect copy → ≈ 1.0")
     void stoi_perfectCopy_nearOne() { // GH-90000
         float[] sig = sine(440, 0.5f, SR); // GH-90000
         double stoi = AudioQualityMetrics.computeStoi(sig, sig.clone(), SR); // GH-90000
@@ -70,7 +70,7 @@ class AudioQualityMetricsTest {
     }
 
     @Test
-    @DisplayName("STOI: heavily corrupted signal → low score [GH-90000]")
+    @DisplayName("STOI: heavily corrupted signal → low score")
     void stoi_heavyNoise_lowScore() { // GH-90000
         float[] ref = sine(440, 0.3f, SR); // GH-90000
         float[] deg = addNoise(ref, 0.9f); // SNR ≈ −9 dB // GH-90000
@@ -79,7 +79,7 @@ class AudioQualityMetricsTest {
     }
 
     @Test
-    @DisplayName("STOI: result in [0, 1] [GH-90000]")
+    @DisplayName("STOI: result in [0, 1]")
     void stoi_resultBounded() { // GH-90000
         float[] ref = sine(880, 0.4f, SR); // GH-90000
         float[] deg = addNoise(ref, 0.3f); // GH-90000
@@ -88,7 +88,7 @@ class AudioQualityMetricsTest {
     }
 
     @Test
-    @DisplayName("STOI: degraded longer than reference → truncated safely [GH-90000]")
+    @DisplayName("STOI: degraded longer than reference → truncated safely")
     void stoi_longerDegraded_safe() { // GH-90000
         float[] ref = sine(440, 0.5f, SR); // GH-90000
         float[] deg = sine(440, 0.5f, SR * 2); // twice as long // GH-90000
@@ -101,7 +101,7 @@ class AudioQualityMetricsTest {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("computeAll: result record fields populated [GH-90000]")
+    @DisplayName("computeAll: result record fields populated")
     void computeAll_fieldsPopulated() { // GH-90000
         float[] ref = sine(440, 0.5f, SR); // GH-90000
         float[] deg = addNoise(ref, 0.05f); // GH-90000

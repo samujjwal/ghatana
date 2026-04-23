@@ -23,8 +23,8 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("AuditLoggingTest [GH-90000]")
-@Tag("governance [GH-90000]")
+@DisplayName("AuditLoggingTest")
+@Tag("governance")
 class AuditLoggingTest {
 
     private AuditLogger logger;
@@ -39,31 +39,31 @@ class AuditLoggingTest {
     // ── Event emission ────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("data read event is recorded [GH-90000]")
+    @DisplayName("data read event is recorded")
     void dataReadEventIsRecorded() { // GH-90000
         logger.log(AuditEvent.read("tenant-1", "user-a", "record-42")); // GH-90000
-        assertThat(store.getEvents("tenant-1 [GH-90000]")).hasSize(1);
+        assertThat(store.getEvents("tenant-1")).hasSize(1);
     }
 
     @Test
-    @DisplayName("data write event is recorded [GH-90000]")
+    @DisplayName("data write event is recorded")
     void dataWriteEventIsRecorded() { // GH-90000
         logger.log(AuditEvent.write("tenant-1", "user-a", "record-42")); // GH-90000
-        assertThat(store.getEvents("tenant-1 [GH-90000]")).hasSize(1);
+        assertThat(store.getEvents("tenant-1")).hasSize(1);
     }
 
     @Test
-    @DisplayName("data delete event is recorded [GH-90000]")
+    @DisplayName("data delete event is recorded")
     void dataDeleteEventIsRecorded() { // GH-90000
         logger.log(AuditEvent.delete("tenant-1", "admin-a", "record-42")); // GH-90000
-        assertThat(store.getEvents("tenant-1 [GH-90000]")).hasSize(1);
+        assertThat(store.getEvents("tenant-1")).hasSize(1);
     }
 
     @Test
-    @DisplayName("policy change event is recorded [GH-90000]")
+    @DisplayName("policy change event is recorded")
     void policyChangeEventIsRecorded() { // GH-90000
         logger.log(AuditEvent.policyChange("tenant-1", "admin-a", "retention-policy")); // GH-90000
-        List<AuditEvent> events = store.getEvents("tenant-1 [GH-90000]");
+        List<AuditEvent> events = store.getEvents("tenant-1");
         assertThat(events).hasSize(1); // GH-90000
         assertThat(events.get(0).action()).isEqualTo(AuditAction.POLICY_CHANGE); // GH-90000
     }
@@ -71,67 +71,67 @@ class AuditLoggingTest {
     // ── Required metadata ─────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("each event has a non-null timestamp [GH-90000]")
+    @DisplayName("each event has a non-null timestamp")
     void eventHasTimestamp() { // GH-90000
         logger.log(AuditEvent.read("tenant-1", "user-a", "r1")); // GH-90000
-        AuditEvent event = store.getEvents("tenant-1 [GH-90000]").get(0);
+        AuditEvent event = store.getEvents("tenant-1").get(0);
         assertThat(event.timestamp()).isNotNull(); // GH-90000
         assertThat(event.timestamp()).isBefore(Instant.now().plusSeconds(1)); // GH-90000
     }
 
     @Test
-    @DisplayName("each event has a unique ID [GH-90000]")
+    @DisplayName("each event has a unique ID")
     void eventHasUniqueId() { // GH-90000
         logger.log(AuditEvent.read("tenant-1", "user-a", "r1")); // GH-90000
         logger.log(AuditEvent.read("tenant-1", "user-a", "r2")); // GH-90000
-        List<AuditEvent> events = store.getEvents("tenant-1 [GH-90000]");
+        List<AuditEvent> events = store.getEvents("tenant-1");
         assertThat(events).extracting(AuditEvent::eventId).doesNotHaveDuplicates(); // GH-90000
     }
 
     @Test
-    @DisplayName("event captures the acting principal (userId) [GH-90000]")
+    @DisplayName("event captures the acting principal (userId)")
     void eventCapturesPrincipal() { // GH-90000
         logger.log(AuditEvent.write("tenant-1", "alice", "r1")); // GH-90000
-        AuditEvent event = store.getEvents("tenant-1 [GH-90000]").get(0);
-        assertThat(event.actorId()).isEqualTo("alice [GH-90000]");
+        AuditEvent event = store.getEvents("tenant-1").get(0);
+        assertThat(event.actorId()).isEqualTo("alice");
     }
 
     @Test
-    @DisplayName("event captures the resource identifier [GH-90000]")
+    @DisplayName("event captures the resource identifier")
     void eventCapturesResource() { // GH-90000
         logger.log(AuditEvent.delete("tenant-1", "admin", "record-99")); // GH-90000
-        AuditEvent event = store.getEvents("tenant-1 [GH-90000]").get(0);
-        assertThat(event.resourceId()).isEqualTo("record-99 [GH-90000]");
+        AuditEvent event = store.getEvents("tenant-1").get(0);
+        assertThat(event.resourceId()).isEqualTo("record-99");
     }
 
     // ── Tenant isolation ──────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("events for different tenants are stored separately [GH-90000]")
+    @DisplayName("events for different tenants are stored separately")
     void eventsAreTenantIsolated() { // GH-90000
         logger.log(AuditEvent.read("tenant-a", "u1", "r1")); // GH-90000
         logger.log(AuditEvent.read("tenant-b", "u2", "r2")); // GH-90000
-        assertThat(store.getEvents("tenant-a [GH-90000]")).hasSize(1);
-        assertThat(store.getEvents("tenant-b [GH-90000]")).hasSize(1);
-        assertThat(store.getEvents("tenant-a [GH-90000]").get(0).actorId()).isEqualTo("u1 [GH-90000]");
-        assertThat(store.getEvents("tenant-b [GH-90000]").get(0).actorId()).isEqualTo("u2 [GH-90000]");
+        assertThat(store.getEvents("tenant-a")).hasSize(1);
+        assertThat(store.getEvents("tenant-b")).hasSize(1);
+        assertThat(store.getEvents("tenant-a").get(0).actorId()).isEqualTo("u1");
+        assertThat(store.getEvents("tenant-b").get(0).actorId()).isEqualTo("u2");
     }
 
     @Test
-    @DisplayName("querying unknown tenant returns empty list [GH-90000]")
+    @DisplayName("querying unknown tenant returns empty list")
     void unknownTenantReturnsEmptyList() { // GH-90000
-        assertThat(store.getEvents("ghost-tenant [GH-90000]")).isEmpty();
+        assertThat(store.getEvents("ghost-tenant")).isEmpty();
     }
 
     // ── Ordering ──────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("events are returned in chronological order [GH-90000]")
+    @DisplayName("events are returned in chronological order")
     void eventsAreChronological() { // GH-90000
         logger.log(AuditEvent.read("tenant-1", "u1", "r1")); // GH-90000
         logger.log(AuditEvent.write("tenant-1", "u1", "r2")); // GH-90000
         logger.log(AuditEvent.delete("tenant-1", "admin", "r3")); // GH-90000
-        List<AuditEvent> events = store.getEvents("tenant-1 [GH-90000]");
+        List<AuditEvent> events = store.getEvents("tenant-1");
         for (int i = 1; i < events.size(); i++) { // GH-90000
             boolean ordered = !events.get(i).timestamp().isBefore(events.get(i - 1).timestamp()); // GH-90000
             assertThat(ordered).isTrue(); // GH-90000
@@ -141,7 +141,7 @@ class AuditLoggingTest {
     // ── Filtering ─────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("events can be filtered by action type [GH-90000]")
+    @DisplayName("events can be filtered by action type")
     void filterByAction() { // GH-90000
         logger.log(AuditEvent.read("tenant-1", "u1", "r1")); // GH-90000
         logger.log(AuditEvent.write("tenant-1", "u1", "r2")); // GH-90000

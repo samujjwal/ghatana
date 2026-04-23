@@ -32,11 +32,11 @@ class ConfidenceScorerTest {
     void testCalculateConfidence_WithPerfectMatch() { // GH-90000
         FixSuggestion suggestion =
                 FixSuggestion.builder() // GH-90000
-                        .id("test.id [GH-90000]")
-                        .description("Test suggestion [GH-90000]")
-                        .fixPattern("${statement} [GH-90000]")
-                        .language("java [GH-90000]")
-                        .errorPattern("NullPointerException [GH-90000]")
+                        .id("test.id")
+                        .description("Test suggestion")
+                        .fixPattern("${statement}")
+                        .language("java")
+                        .errorPattern("NullPointerException")
                         .confidence(0.8) // GH-90000
                         .build(); // GH-90000
 
@@ -54,11 +54,11 @@ class ConfidenceScorerTest {
     void testCalculateConfidence_WithNoMatch() { // GH-90000
         FixSuggestion suggestion =
                 FixSuggestion.builder() // GH-90000
-                        .id("test.id [GH-90000]")
-                        .description("Test suggestion [GH-90000]")
-                        .fixPattern("${statement} [GH-90000]")
-                        .language("java [GH-90000]")
-                        .errorPattern("PatternThatWontMatch [GH-90000]")
+                        .id("test.id")
+                        .description("Test suggestion")
+                        .fixPattern("${statement}")
+                        .language("java")
+                        .errorPattern("PatternThatWontMatch")
                         .confidence(0.8) // GH-90000
                         .build(); // GH-90000
 
@@ -113,11 +113,11 @@ class ConfidenceScorerTest {
     void testLanguageMismatch() { // GH-90000
         FixSuggestion suggestion =
                 FixSuggestion.builder() // GH-90000
-                        .id("test.language [GH-90000]")
-                        .description("Test suggestion [GH-90000]")
-                        .fixPattern("${statement} [GH-90000]")
-                        .language("python [GH-90000]") // Different from context language (java)
-                        .errorPattern(".* [GH-90000]")
+                        .id("test.language")
+                        .description("Test suggestion")
+                        .fixPattern("${statement}")
+                        .language("python") // Different from context language (java)
+                        .errorPattern(".*")
                         .confidence(0.8) // GH-90000
                         .build(); // GH-90000
 
@@ -130,11 +130,11 @@ class ConfidenceScorerTest {
     void testParsedStackTraceContextImprovesConfidence() { // GH-90000
         FixSuggestion suggestion =
                 FixSuggestion.builder() // GH-90000
-                        .id("test.node [GH-90000]")
-                        .description("Node suggestion [GH-90000]")
-                        .fixPattern("${statement} [GH-90000]")
-                        .language("node [GH-90000]")
-                        .errorPattern("TypeError [GH-90000]")
+                        .id("test.node")
+                        .description("Node suggestion")
+                        .fixPattern("${statement}")
+                        .language("node")
+                        .errorPattern("TypeError")
                         .confidence(0.8) // GH-90000
                         .build(); // GH-90000
 
@@ -164,11 +164,11 @@ class ConfidenceScorerTest {
     void testNodeTypeScriptModuleExtensionsAreTreatedAsMatchingContext() { // GH-90000
         FixSuggestion suggestion =
                 FixSuggestion.builder() // GH-90000
-                        .id("test.node.ts [GH-90000]")
-                        .description("Node TypeScript suggestion [GH-90000]")
-                        .fixPattern("${statement} [GH-90000]")
-                        .language("node [GH-90000]")
-                        .errorPattern("TypeError [GH-90000]")
+                        .id("test.node.ts")
+                        .description("Node TypeScript suggestion")
+                        .fixPattern("${statement}")
+                        .language("node")
+                        .errorPattern("TypeError")
                         .confidence(0.8) // GH-90000
                         .build(); // GH-90000
 
@@ -203,10 +203,10 @@ class ConfidenceScorerTest {
     private FixSuggestion createTestSuggestion(String id) { // GH-90000
         return FixSuggestion.builder() // GH-90000
                 .id(id) // GH-90000
-                .description("Test suggestion [GH-90000]")
-                .fixPattern("${statement} [GH-90000]")
-                .language("java [GH-90000]")
-                .errorPattern(".* [GH-90000]")
+                .description("Test suggestion")
+                .fixPattern("${statement}")
+                .language("java")
+                .errorPattern(".*")
                 .confidence(0.5) // GH-90000
                 .build(); // GH-90000
     }

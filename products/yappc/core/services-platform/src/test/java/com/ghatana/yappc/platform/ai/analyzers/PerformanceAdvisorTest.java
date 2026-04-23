@@ -19,20 +19,20 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-@DisplayName("PerformanceAdvisor Tests [GH-90000]")
+@DisplayName("PerformanceAdvisor Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class PerformanceAdvisorTest extends EventloopTestBase {
 
   @Mock private YAPPCAIService aiService;
 
   @Test
-  @DisplayName("analyze emits deterministic warning for await inside loop [GH-90000]")
+  @DisplayName("analyze emits deterministic warning for await inside loop")
   void analyzeEmitsDeterministicWarningForAwaitInsideLoop() { // GH-90000
     PerformanceAdvisor advisor =
         new PerformanceAdvisor( // GH-90000
             aiService,
             new ObjectMapper(), // GH-90000
-            Clock.fixed(Instant.parse("2026-04-06T12:00:00Z [GH-90000]"), ZoneOffset.UTC));
+            Clock.fixed(Instant.parse("2026-04-06T12:00:00Z"), ZoneOffset.UTC));
 
     List<AIInsight> insights =
         runPromise( // GH-90000
@@ -46,11 +46,11 @@ class PerformanceAdvisorTest extends EventloopTestBase {
 
     assertThat(insights).hasSize(1); // GH-90000
     assertThat(insights.getFirst().type()).isEqualTo(AIInsight.InsightType.PERFORMANCE); // GH-90000
-    assertThat(insights.getFirst().title()).contains("Await inside iterative path [GH-90000]");
+    assertThat(insights.getFirst().title()).contains("Await inside iterative path");
   }
 
   @Test
-  @DisplayName("analyze parses structured AI response when deterministic checks are clean [GH-90000]")
+  @DisplayName("analyze parses structured AI response when deterministic checks are clean")
   void analyzeParsesStructuredAiResponseWhenDeterministicChecksAreClean() { // GH-90000
     when(aiService.reason(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyMap())) // GH-90000
         .thenReturn( // GH-90000
@@ -70,15 +70,15 @@ class PerformanceAdvisorTest extends EventloopTestBase {
                         "const content = rows.map(renderRow);"))); // GH-90000
 
     assertThat(insights).hasSize(1); // GH-90000
-    assertThat(insights.getFirst().title()).isEqualTo("Expensive serialization [GH-90000]");
+    assertThat(insights.getFirst().title()).isEqualTo("Expensive serialization");
     assertThat(insights.getFirst().severity()).isEqualTo(AIInsight.InsightSeverity.WARNING); // GH-90000
   }
 
   @Test
-  @DisplayName("analyze returns empty list on malformed AI response [GH-90000]")
+  @DisplayName("analyze returns empty list on malformed AI response")
   void analyzeReturnsEmptyListOnMalformedAiResponse() { // GH-90000
     when(aiService.reason(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyMap())) // GH-90000
-        .thenReturn(Promise.of("not-json [GH-90000]"));
+        .thenReturn(Promise.of("not-json"));
 
     PerformanceAdvisor advisor = new PerformanceAdvisor(aiService); // GH-90000
 

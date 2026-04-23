@@ -23,7 +23,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("EventHandler tenant enforcement [GH-90000]")
+@DisplayName("EventHandler tenant enforcement")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class EventHandlerTenantEnforcementTest extends EventloopTestBase {
 
@@ -48,7 +48,7 @@ class EventHandlerTenantEnforcementTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("append rejects missing tenant before reading body [GH-90000]")
+    @DisplayName("append rejects missing tenant before reading body")
     void appendRejectsMissingTenantBeforeReadingBody() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
@@ -60,7 +60,7 @@ class EventHandlerTenantEnforcementTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("query rejects missing tenant before querying events [GH-90000]")
+    @DisplayName("query rejects missing tenant before querying events")
     void queryRejectsMissingTenantBeforeQueryingEvents() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
@@ -71,7 +71,7 @@ class EventHandlerTenantEnforcementTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("get-by-offset rejects missing tenant before querying events [GH-90000]")
+    @DisplayName("get-by-offset rejects missing tenant before querying events")
     void getByOffsetRejectsMissingTenantBeforeQueryingEvents() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 

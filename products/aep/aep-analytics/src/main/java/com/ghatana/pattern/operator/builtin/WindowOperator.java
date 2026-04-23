@@ -79,7 +79,10 @@ import java.util.Map;
  *                 Runtime execution logic (window lifecycle management, event buffering, window triggering,
  *                 slide scheduling, session gap detection) is handled by the pattern engine's execution layer.
  *                 Does not provide runtime matching or aggregation logic.
- */
+  * @doc.type class
+ * @doc.purpose Provides window operator functionality.
+ * @doc.layer product
+*/
 public class WindowOperator implements Operator {
 
     private static final String TYPE = "WINDOW";

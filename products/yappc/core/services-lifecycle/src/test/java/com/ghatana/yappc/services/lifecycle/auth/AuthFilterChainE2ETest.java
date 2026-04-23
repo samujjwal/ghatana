@@ -53,7 +53,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("Auth Filter Chain — E2E Integration Tests [GH-90000]")
+@DisplayName("Auth Filter Chain — E2E Integration Tests")
 class AuthFilterChainE2ETest extends EventloopTestBase {
 
     // ── Test Principals ───────────────────────────────────────────────────────
@@ -67,10 +67,10 @@ class AuthFilterChainE2ETest extends EventloopTestBase {
     private static final String BETA_KEY   = "admin-key-beta";
 
     private static final ApiKeyResolver RESOLVER = key -> switch (key) { // GH-90000
-        case ADMIN_KEY  -> Optional.of(new Principal("admin-user",  List.of("admin [GH-90000]"),  TENANT_ALPHA));
-        case WRITER_KEY -> Optional.of(new Principal("writer-user", List.of("writer [GH-90000]"), TENANT_ALPHA));
-        case VIEWER_KEY -> Optional.of(new Principal("viewer-user", List.of("viewer [GH-90000]"), TENANT_ALPHA));
-        case BETA_KEY   -> Optional.of(new Principal("admin-beta",  List.of("admin [GH-90000]"),  TENANT_BETA));
+        case ADMIN_KEY  -> Optional.of(new Principal("admin-user",  List.of("admin"),  TENANT_ALPHA));
+        case WRITER_KEY -> Optional.of(new Principal("writer-user", List.of("writer"), TENANT_ALPHA));
+        case VIEWER_KEY -> Optional.of(new Principal("viewer-user", List.of("viewer"), TENANT_ALPHA));
+        case BETA_KEY   -> Optional.of(new Principal("admin-beta",  List.of("admin"),  TENANT_BETA));
         default         -> Optional.empty(); // GH-90000
     };
 
@@ -84,7 +84,7 @@ class AuthFilterChainE2ETest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Full four-filter chain [GH-90000]")
+    @DisplayName("Full four-filter chain")
     class FullFilterChain {
 
         /**
@@ -109,11 +109,11 @@ class AuthFilterChainE2ETest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("admin with write access traverses all four filters and reaches delegate [GH-90000]")
+        @DisplayName("admin with write access traverses all four filters and reaches delegate")
         void adminWritePassesAllFilters() { // GH-90000
             PolicyService policyService = new PolicyService(new InMemoryPolicyRepository()); // GH-90000
             policyService.createPolicy("admin-write", "admin write policy", "admin", // GH-90000
-                    "yappc:lifecycle-api", java.util.Set.of("write [GH-90000]"));
+                    "yappc:lifecycle-api", java.util.Set.of("write"));
 
             AtomicReference<String> capturedTenant = new AtomicReference<>(); // GH-90000
             AsyncServlet delegate = req -> {
@@ -127,15 +127,15 @@ class AuthFilterChainE2ETest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> chain.serve(request)); // GH-90000
 
             assertThat(response.getCode()) // GH-90000
-                    .as("Admin with write policy must reach the delegate [GH-90000]")
+                    .as("Admin with write policy must reach the delegate")
                     .isEqualTo(200); // GH-90000
             assertThat(capturedTenant.get()) // GH-90000
-                    .as("TenantContext must be populated with the admin's tenant [GH-90000]")
+                    .as("TenantContext must be populated with the admin's tenant")
                     .isEqualTo(TENANT_ALPHA); // GH-90000
         }
 
         @Test
-        @DisplayName("missing API key short-circuits at first filter — downstream not reached [GH-90000]")
+        @DisplayName("missing API key short-circuits at first filter — downstream not reached")
         void missingApiKeyShortCircuitsAtFirstFilter() { // GH-90000
             PolicyService policyService = new PolicyService(new InMemoryPolicyRepository()); // GH-90000
             AtomicReference<Boolean> delegateReached = new AtomicReference<>(false); // GH-90000
@@ -152,15 +152,15 @@ class AuthFilterChainE2ETest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> chain.serve(request)); // GH-90000
 
             assertThat(response.getCode()) // GH-90000
-                    .as("Missing API key must be rejected with 401 [GH-90000]")
+                    .as("Missing API key must be rejected with 401")
                     .isEqualTo(401); // GH-90000
             assertThat(delegateReached.get()) // GH-90000
-                    .as("Delegate must not be reached when API key is missing [GH-90000]")
+                    .as("Delegate must not be reached when API key is missing")
                     .isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("invalid API key short-circuits at first filter — downstream not reached [GH-90000]")
+        @DisplayName("invalid API key short-circuits at first filter — downstream not reached")
         void invalidApiKeyShortCircuitsAtFirstFilter() { // GH-90000
             PolicyService policyService = new PolicyService(new InMemoryPolicyRepository()); // GH-90000
             AtomicReference<Boolean> delegateReached = new AtomicReference<>(false); // GH-90000
@@ -175,19 +175,19 @@ class AuthFilterChainE2ETest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> chain.serve(request)); // GH-90000
 
             assertThat(response.getCode()) // GH-90000
-                    .as("Invalid API key must be rejected with 401 [GH-90000]")
+                    .as("Invalid API key must be rejected with 401")
                     .isEqualTo(401); // GH-90000
             assertThat(delegateReached.get()) // GH-90000
-                    .as("Delegate must not be reached when API key is invalid [GH-90000]")
+                    .as("Delegate must not be reached when API key is invalid")
                     .isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("viewer role rejected at RBAC filter when write action required [GH-90000]")
+        @DisplayName("viewer role rejected at RBAC filter when write action required")
         void viewerRejectedByRbacOnWriteAction() { // GH-90000
             PolicyService policyService = new PolicyService(new InMemoryPolicyRepository()); // GH-90000
             policyService.createPolicy("viewer-read", "viewer read policy", "viewer", // GH-90000
-                    "yappc:lifecycle-api", java.util.Set.of("read [GH-90000]")); // only read granted
+                    "yappc:lifecycle-api", java.util.Set.of("read")); // only read granted
 
             AtomicReference<Boolean> delegateReached = new AtomicReference<>(false); // GH-90000
             AsyncServlet delegate = req -> {
@@ -201,10 +201,10 @@ class AuthFilterChainE2ETest extends EventloopTestBase {
             HttpResponse response = runPromise(() -> chain.serve(request)); // GH-90000
 
             assertThat(response.getCode()) // GH-90000
-                    .as("Viewer lacking write permission must be rejected with 403 [GH-90000]")
+                    .as("Viewer lacking write permission must be rejected with 403")
                     .isEqualTo(403); // GH-90000
             assertThat(delegateReached.get()) // GH-90000
-                    .as("Delegate must not be reached when RBAC denies access [GH-90000]")
+                    .as("Delegate must not be reached when RBAC denies access")
                     .isFalse(); // GH-90000
         }
     }
@@ -214,15 +214,15 @@ class AuthFilterChainE2ETest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Rate limit integration with auth [GH-90000]")
+    @DisplayName("Rate limit integration with auth")
     class RateLimitIntegration {
 
         @Test
-        @DisplayName("requests within the limit all pass through the full chain [GH-90000]")
+        @DisplayName("requests within the limit all pass through the full chain")
         void requestsWithinLimitAllPass() { // GH-90000
             PolicyService policyService = new PolicyService(new InMemoryPolicyRepository()); // GH-90000
             policyService.createPolicy("writer-write", "writer write policy", "writer", // GH-90000
-                    "yappc:lifecycle-api", java.util.Set.of("write [GH-90000]"));
+                    "yappc:lifecycle-api", java.util.Set.of("write"));
 
             // High limit so no requests are throttled during this test
             ApiKeyAuthFilter apiKeyFilter    = new ApiKeyAuthFilter(RESOLVER); // GH-90000
@@ -244,11 +244,11 @@ class AuthFilterChainE2ETest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("requests exceeding the per-second rate cap are rejected with 429 [GH-90000]")
+        @DisplayName("requests exceeding the per-second rate cap are rejected with 429")
         void requestsExceedingRateLimitRejected() { // GH-90000
             PolicyService policyService = new PolicyService(new InMemoryPolicyRepository()); // GH-90000
             policyService.createPolicy("writer-write-ratelimit", "writer write policy", "writer", // GH-90000
-                    "yappc:lifecycle-api", java.util.Set.of("write [GH-90000]"));
+                    "yappc:lifecycle-api", java.util.Set.of("write"));
 
             // Extremely low limit: 2 requests allowed per window
             ApiKeyAuthFilter apiKeyFilter    = new ApiKeyAuthFilter(RESOLVER); // GH-90000
@@ -273,7 +273,7 @@ class AuthFilterChainE2ETest extends EventloopTestBase {
             HttpRequest req = requestWithApiKey(HttpMethod.POST, "/api/v1/lifecycle/advance", WRITER_KEY); // GH-90000
             HttpResponse rateLimited = runPromise(() -> chain.serve(req)); // GH-90000
             assertThat(rateLimited.getCode()) // GH-90000
-                    .as("Third request must be rejected with 429 (rate limit exceeded) [GH-90000]")
+                    .as("Third request must be rejected with 429 (rate limit exceeded)")
                     .isEqualTo(429); // GH-90000
         }
     }
@@ -283,11 +283,11 @@ class AuthFilterChainE2ETest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Concurrent request TenantContext isolation [GH-90000]")
+    @DisplayName("Concurrent request TenantContext isolation")
     class ConcurrentTenantIsolation {
 
         @Test
-        @DisplayName("concurrent requests for different tenants maintain isolated TenantContext [GH-90000]")
+        @DisplayName("concurrent requests for different tenants maintain isolated TenantContext")
         void concurrentRequestsDoNotLeakTenantContext() throws Exception { // GH-90000
             AtomicReference<String> tenantCapturedByAlpha = new AtomicReference<>(); // GH-90000
             AtomicReference<String> tenantCapturedByBeta  = new AtomicReference<>(); // GH-90000
@@ -331,15 +331,15 @@ class AuthFilterChainE2ETest extends EventloopTestBase {
                 HttpResponse alphaResp = alphaFuture.get(2, java.util.concurrent.TimeUnit.SECONDS); // GH-90000
                 HttpResponse betaResp  = betaFuture.get(2, java.util.concurrent.TimeUnit.SECONDS); // GH-90000
 
-                assertThat(alphaResp.getCode()).as("Alpha request must succeed [GH-90000]").isEqualTo(200);
-                assertThat(betaResp.getCode()).as("Beta request must succeed [GH-90000]").isEqualTo(200);
+                assertThat(alphaResp.getCode()).as("Alpha request must succeed").isEqualTo(200);
+                assertThat(betaResp.getCode()).as("Beta request must succeed").isEqualTo(200);
 
                 // Each request must have seen only its own tenant
                 assertThat(tenantCapturedByAlpha.get()) // GH-90000
-                        .as("Alpha request delegate saw tenant-alpha, not tenant-beta [GH-90000]")
+                        .as("Alpha request delegate saw tenant-alpha, not tenant-beta")
                         .isEqualTo(TENANT_ALPHA); // GH-90000
                 assertThat(tenantCapturedByBeta.get()) // GH-90000
-                        .as("Beta request delegate saw tenant-beta, not tenant-alpha [GH-90000]")
+                        .as("Beta request delegate saw tenant-beta, not tenant-alpha")
                         .isEqualTo(TENANT_BETA); // GH-90000
             } finally {
                 executor.shutdownNow(); // GH-90000
@@ -347,7 +347,7 @@ class AuthFilterChainE2ETest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("TenantContext is cleared after each request — no carryover to next request [GH-90000]")
+        @DisplayName("TenantContext is cleared after each request — no carryover to next request")
         void tenantContextDoesNotCarryOverBetweenSequentialRequests() { // GH-90000
             ApiKeyAuthFilter filter = new ApiKeyAuthFilter(RESOLVER); // GH-90000
             AsyncServlet delegate   = req -> HttpResponse.ok200().toPromise(); // GH-90000
@@ -359,8 +359,8 @@ class AuthFilterChainE2ETest extends EventloopTestBase {
 
             // After the request the context must revert to the default
             assertThat(TenantContext.getCurrentTenantId()) // GH-90000
-                    .as("TenantContext must revert to default after first request [GH-90000]")
-                    .isEqualTo("default-tenant [GH-90000]");
+                    .as("TenantContext must revert to default after first request")
+                    .isEqualTo("default-tenant");
 
             // Second request for tenant-beta — must see its own context, not alpha's
             AtomicReference<String> capturedInSecond = new AtomicReference<>(); // GH-90000
@@ -374,7 +374,7 @@ class AuthFilterChainE2ETest extends EventloopTestBase {
             runPromise(() -> betaChain.serve(betaRequest)); // GH-90000
 
             assertThat(capturedInSecond.get()) // GH-90000
-                    .as("Second request for tenant-beta must not see tenant-alpha's context [GH-90000]")
+                    .as("Second request for tenant-beta must not see tenant-alpha's context")
                     .isEqualTo(TENANT_BETA); // GH-90000
         }
     }
@@ -385,8 +385,8 @@ class AuthFilterChainE2ETest extends EventloopTestBase {
 
     private static HttpRequest requestWithApiKey(HttpMethod method, String path, String apiKey) { // GH-90000
         return HttpRequest.builder(method, "http://localhost" + path) // GH-90000
-                .withHeader(HttpHeaders.of("X-API-Key [GH-90000]"), apiKey)
-                                .withHeader(HttpHeaders.of("X-Forwarded-For [GH-90000]"), "127.0.0.1")
+                .withHeader(HttpHeaders.of("X-API-Key"), apiKey)
+                                .withHeader(HttpHeaders.of("X-Forwarded-For"), "127.0.0.1")
                 .build(); // GH-90000
     }
 }

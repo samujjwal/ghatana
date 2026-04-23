@@ -30,21 +30,21 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer launcher
  * @doc.pattern Test
  */
-@DisplayName("AepLauncher [GH-90000]")
+@DisplayName("AepLauncher")
 class AepLauncherTest extends EventloopTestBase {
 
     @Test
-    @DisplayName("production bootstrap fails when database configuration is missing [GH-90000]")
+    @DisplayName("production bootstrap fails when database configuration is missing")
     void productionBootstrapFailsWithoutDatabase() { // GH-90000
         assertThatThrownBy(() -> AepLauncher.createGovernanceInjector(Map.of( // GH-90000
             "AEP_PROFILE", "production",
             "AEP_JWT_SECRET", "test-secret")))
             .isInstanceOf(IllegalStateException.class) // GH-90000
-            .hasMessageContaining("AEP_DB_URL [GH-90000]");
+            .hasMessageContaining("AEP_DB_URL");
     }
 
     @Test
-    @DisplayName("non-production bootstrap allows missing database configuration [GH-90000]")
+    @DisplayName("non-production bootstrap allows missing database configuration")
     void nonProductionBootstrapAllowsMissingDatabase() { // GH-90000
         Injector injector = AepLauncher.createGovernanceInjector(Map.of( // GH-90000
             "AEP_PROFILE", "development"));
@@ -53,16 +53,16 @@ class AepLauncherTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("production gRPC registry bootstrap fails when Data Cloud connection is missing [GH-90000]")
+    @DisplayName("production gRPC registry bootstrap fails when Data Cloud connection is missing")
     void productionGrpcRegistryBootstrapFailsWithoutDataCloud() { // GH-90000
         assertThatThrownBy(() -> AepLauncher.createGrpcRegistryRuntime(Map.of( // GH-90000
             "AEP_PROFILE", "production")))
             .isInstanceOf(IllegalStateException.class) // GH-90000
-            .hasMessageContaining("DATACLOUD_URL [GH-90000]");
+            .hasMessageContaining("DATACLOUD_URL");
     }
 
     @Test
-    @DisplayName("non-production gRPC registry bootstrap uses durable Data Cloud registry [GH-90000]")
+    @DisplayName("non-production gRPC registry bootstrap uses durable Data Cloud registry")
     void nonProductionGrpcRegistryBootstrapUsesDurableRegistry() { // GH-90000
         AepLauncher.GrpcRegistryRuntime runtime = AepLauncher.createGrpcRegistryRuntime(Map.of( // GH-90000
             "AEP_PROFILE", "development"));
@@ -76,7 +76,7 @@ class AepLauncherTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("production gRPC registry bootstrap accepts explicit Data Cloud URL [GH-90000]")
+    @DisplayName("production gRPC registry bootstrap accepts explicit Data Cloud URL")
     void productionGrpcRegistryBootstrapAcceptsExplicitDataCloudUrl() { // GH-90000
         AepLauncher.GrpcRegistryRuntime runtime = AepLauncher.createGrpcRegistryRuntime(Map.of( // GH-90000
             "AEP_PROFILE", "production",
@@ -90,7 +90,7 @@ class AepLauncherTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("durable registry metadata survives registry recreation on the same Data Cloud backend [GH-90000]")
+    @DisplayName("durable registry metadata survives registry recreation on the same Data Cloud backend")
     void registryMetadataSurvivesRegistryRecreation() { // GH-90000
         AepLauncher.GrpcRegistryRuntime runtime = AepLauncher.createGrpcRegistryRuntime(Map.of( // GH-90000
             "AEP_PROFILE", "development"));
@@ -105,21 +105,21 @@ class AepLauncherTest extends EventloopTestBase {
         );
 
         try {
-            TestAgent agent = new TestAgent("durable-agent-1 [GH-90000]");
+            TestAgent agent = new TestAgent("durable-agent-1");
             AgentConfig config = AgentConfig.builder() // GH-90000
-                .agentId("durable-agent-1 [GH-90000]")
+                .agentId("durable-agent-1")
                 .type(AgentType.DETERMINISTIC) // GH-90000
-                .version("1.0.0 [GH-90000]")
+                .version("1.0.0")
                 .timeout(Duration.ofSeconds(5)) // GH-90000
                 .build(); // GH-90000
 
             runPromise(() -> firstRegistry.register(agent, config)); // GH-90000
 
             Map<String, Object> stats = runPromise(secondRegistry::getStats); // GH-90000
-            Optional<TypedAgent<String, String>> rehydrated = runPromise(() -> secondRegistry.resolve("durable-agent-1 [GH-90000]"));
+            Optional<TypedAgent<String, String>> rehydrated = runPromise(() -> secondRegistry.resolve("durable-agent-1"));
 
-            assertThat(stats.get("persistedAgents [GH-90000]")).isEqualTo(1L);
-            assertThat(stats.get("registeredAgents [GH-90000]")).isEqualTo(0);
+            assertThat(stats.get("persistedAgents")).isEqualTo(1L);
+            assertThat(stats.get("registeredAgents")).isEqualTo(0);
             assertThat(rehydrated).isEmpty(); // GH-90000
         } finally {
             secondRegistry.close(); // GH-90000
@@ -135,10 +135,10 @@ class AepLauncherTest extends EventloopTestBase {
             this.descriptor = AgentDescriptor.builder() // GH-90000
                 .agentId(agentId) // GH-90000
                 .name("Test " + agentId) // GH-90000
-                .description("Launcher durability test agent [GH-90000]")
+                .description("Launcher durability test agent")
                 .type(AgentType.DETERMINISTIC) // GH-90000
-                .version("1.0.0 [GH-90000]")
-                .capabilities(Set.of("registry-test [GH-90000]"))
+                .version("1.0.0")
+                .capabilities(Set.of("registry-test"))
                 .build(); // GH-90000
         }
 
@@ -159,7 +159,7 @@ class AepLauncherTest extends EventloopTestBase {
 
         @Override
         public Promise<HealthStatus> healthCheck() { // GH-90000
-            return Promise.of(HealthStatus.healthy("ok [GH-90000]"));
+            return Promise.of(HealthStatus.healthy("ok"));
         }
 
         @Override

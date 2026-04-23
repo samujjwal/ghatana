@@ -23,8 +23,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Policy Compilation Tests [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("Policy Compilation Tests")
+@Tag("integration")
 class PolicyCompilationTest extends EventloopTestBase {
 
     private InMemoryPolicyEngine engine;
@@ -37,38 +37,38 @@ class PolicyCompilationTest extends EventloopTestBase {
     // ── Policy registration ───────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("policy registration [GH-90000]")
+    @DisplayName("policy registration")
     class PolicyRegistration {
 
         @Test
-        @DisplayName("registered policy is evaluatable by name [GH-90000]")
+        @DisplayName("registered policy is evaluatable by name")
         void registeredPolicy_isEvaluatableByName() { // GH-90000
-            engine.register("allow-all", input -> PolicyEvalResult.allow("allow-all [GH-90000]"));
+            engine.register("allow-all", input -> PolicyEvalResult.allow("allow-all"));
 
             PolicyEvalResult result = runPromise( // GH-90000
                     () -> engine.evaluate("tenant-a", "allow-all", Map.of())); // GH-90000
 
             assertThat(result.allowed()).isTrue(); // GH-90000
-            assertThat(result.policyName()).isEqualTo("allow-all [GH-90000]");
+            assertThat(result.policyName()).isEqualTo("allow-all");
         }
 
         @Test
-        @DisplayName("unregistered policy defaults to DENY with clear reason [GH-90000]")
+        @DisplayName("unregistered policy defaults to DENY with clear reason")
         void unregisteredPolicy_defaultsToDenyWithClearReason() { // GH-90000
             PolicyEvalResult result = runPromise( // GH-90000
                     () -> engine.evaluate("tenant-a", "unknown-policy", Map.of())); // GH-90000
 
             assertThat(result.allowed()).isFalse(); // GH-90000
             assertThat(result.reasons()).isNotEmpty(); // GH-90000
-            assertThat(result.reasons().getFirst()).contains("unknown-policy [GH-90000]");
+            assertThat(result.reasons().getFirst()).contains("unknown-policy");
         }
 
         @Test
-        @DisplayName("overwriting a policy replaces the old rule [GH-90000]")
+        @DisplayName("overwriting a policy replaces the old rule")
         void overwritingPolicy_replacesOldRule() { // GH-90000
-            engine.register("my-policy", input -> PolicyEvalResult.allow("my-policy [GH-90000]"));
+            engine.register("my-policy", input -> PolicyEvalResult.allow("my-policy"));
             engine.register("my-policy", input -> PolicyEvalResult.deny("my-policy", // GH-90000
-                    java.util.List.of("explicit deny [GH-90000]"), 80));
+                    java.util.List.of("explicit deny"), 80));
 
             PolicyEvalResult result = runPromise( // GH-90000
                     () -> engine.evaluate("tenant-a", "my-policy", Map.of())); // GH-90000
@@ -77,11 +77,11 @@ class PolicyCompilationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("multiple policies are registered independently [GH-90000]")
+        @DisplayName("multiple policies are registered independently")
         void multiplePolicies_registeredIndependently() { // GH-90000
-            engine.register("policy-a", input -> PolicyEvalResult.allow("policy-a [GH-90000]"));
+            engine.register("policy-a", input -> PolicyEvalResult.allow("policy-a"));
             engine.register("policy-b", input -> PolicyEvalResult.deny("policy-b", // GH-90000
-                    java.util.List.of("denied [GH-90000]"), 50));
+                    java.util.List.of("denied"), 50));
 
             PolicyEvalResult a = runPromise(() -> engine.evaluate("tenant-a", "policy-a", Map.of())); // GH-90000
             PolicyEvalResult b = runPromise(() -> engine.evaluate("tenant-a", "policy-b", Map.of())); // GH-90000
@@ -94,29 +94,29 @@ class PolicyCompilationTest extends EventloopTestBase {
     // ── PolicyEvalResult construction ─────────────────────────────────────────
 
     @Nested
-    @DisplayName("PolicyEvalResult construction validation [GH-90000]")
+    @DisplayName("PolicyEvalResult construction validation")
     class PolicyEvalResultConstruction {
 
         @Test
-        @DisplayName("risk score below 0 throws IllegalArgumentException [GH-90000]")
+        @DisplayName("risk score below 0 throws IllegalArgumentException")
         void riskScoreBelow0_throwsIllegalArgumentException() { // GH-90000
-            assertThatThrownBy(() -> PolicyEvalResult.deny("policy", java.util.List.of("reason [GH-90000]"), -1))
+            assertThatThrownBy(() -> PolicyEvalResult.deny("policy", java.util.List.of("reason"), -1))
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("riskScore [GH-90000]");
+                    .hasMessageContaining("riskScore");
         }
 
         @Test
-        @DisplayName("risk score above 100 throws IllegalArgumentException [GH-90000]")
+        @DisplayName("risk score above 100 throws IllegalArgumentException")
         void riskScoreAbove100_throwsIllegalArgumentException() { // GH-90000
-            assertThatThrownBy(() -> PolicyEvalResult.deny("policy", java.util.List.of("reason [GH-90000]"), 101))
+            assertThatThrownBy(() -> PolicyEvalResult.deny("policy", java.util.List.of("reason"), 101))
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("riskScore [GH-90000]");
+                    .hasMessageContaining("riskScore");
         }
 
         @Test
-        @DisplayName("allow factory produces result with riskScore 0 and empty reasons [GH-90000]")
+        @DisplayName("allow factory produces result with riskScore 0 and empty reasons")
         void allowFactory_producesResultWithRiskScore0AndEmptyReasons() { // GH-90000
-            PolicyEvalResult result = PolicyEvalResult.allow("test-policy [GH-90000]");
+            PolicyEvalResult result = PolicyEvalResult.allow("test-policy");
 
             assertThat(result.allowed()).isTrue(); // GH-90000
             assertThat(result.riskScore()).isEqualTo(0); // GH-90000
@@ -124,11 +124,11 @@ class PolicyCompilationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("deny factory produces immutable reasons list [GH-90000]")
+        @DisplayName("deny factory produces immutable reasons list")
         void denyFactory_producesImmutableReasonsList() { // GH-90000
-            PolicyEvalResult result = PolicyEvalResult.deny("p", java.util.List.of("r1 [GH-90000]"), 50);
+            PolicyEvalResult result = PolicyEvalResult.deny("p", java.util.List.of("r1"), 50);
 
-            assertThatThrownBy(() -> result.reasons().add("r2 [GH-90000]"))
+            assertThatThrownBy(() -> result.reasons().add("r2"))
                     .isInstanceOf(UnsupportedOperationException.class); // GH-90000
         }
     }

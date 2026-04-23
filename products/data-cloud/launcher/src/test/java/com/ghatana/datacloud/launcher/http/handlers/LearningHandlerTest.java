@@ -22,7 +22,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("LearningHandler [GH-90000]")
+@DisplayName("LearningHandler")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class LearningHandlerTest extends EventloopTestBase {
 
@@ -47,7 +47,7 @@ class LearningHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("learning trigger rejects missing tenant before bridge execution [GH-90000]")
+    @DisplayName("learning trigger rejects missing tenant before bridge execution")
     void learningTriggerRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 

@@ -41,8 +41,8 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer core
  * @doc.pattern Integration Test
  */
-@DisplayName("ActiveJ Database Integration Tests [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("ActiveJ Database Integration Tests")
+@Tag("integration")
 @Execution(ExecutionMode.SAME_THREAD) // Force sequential execution to avoid schema conflicts // GH-90000
 public class ActiveJDatabaseIntegrationTest extends EventloopTestBase {
 
@@ -62,10 +62,10 @@ public class ActiveJDatabaseIntegrationTest extends EventloopTestBase {
         Assumptions.assumeTrue(dockerAvailable, // GH-90000
                 () -> "Skipping ActiveJDatabaseIntegrationTest because Docker is unavailable"); // GH-90000
 
-        POSTGRES = new PostgreSQLContainer<>("postgres:15-alpine [GH-90000]")
-                .withDatabaseName("testdb [GH-90000]")
-                .withUsername("test [GH-90000]")
-                .withPassword("test [GH-90000]")
+        POSTGRES = new PostgreSQLContainer<>("postgres:15-alpine")
+                .withDatabaseName("testdb")
+                .withUsername("test")
+                .withPassword("test")
                 .waitingFor(Wait.forListeningPort()) // GH-90000
                 .withStartupTimeout(Duration.ofMinutes(2)); // GH-90000
 
@@ -145,11 +145,11 @@ public class ActiveJDatabaseIntegrationTest extends EventloopTestBase {
     private void createTestSchema(DataSource dataSource) { // GH-90000
         try (var conn = dataSource.getConnection(); var stmt = conn.createStatement()) { // GH-90000
             // Drop and recreate to avoid parallel test conflicts
-            stmt.execute("DROP TABLE IF EXISTS test_entity CASCADE [GH-90000]");
+            stmt.execute("DROP TABLE IF EXISTS test_entity CASCADE");
             stmt.execute("""
-                CREATE TABLE test_entity ( // GH-90000
+                CREATE TABLE test_entity (
                     id BIGINT PRIMARY KEY,
-                    name VARCHAR(255) // GH-90000
+                    name VARCHAR(255)
                 )""");
         } catch (Exception e) { // GH-90000
             throw new RuntimeException("Failed to create test schema", e); // GH-90000
@@ -195,12 +195,12 @@ public class ActiveJDatabaseIntegrationTest extends EventloopTestBase {
      * retrieved by ID
      */
     @Test
-    @DisplayName("Should save and retrieve entity [GH-90000]")
+    @DisplayName("Should save and retrieve entity")
     void shouldSaveAndRetrieveEntity() { // GH-90000
         // GIVEN: Test entity
         var entity = new TestEntity(); // GH-90000
         entity.setId(1L); // GH-90000
-        entity.setName("Test [GH-90000]");
+        entity.setName("Test");
 
         // WHEN: Entity is persisted in transaction
         EntityManager em = entityManagerFactory.createEntityManager(); // GH-90000
@@ -217,11 +217,11 @@ public class ActiveJDatabaseIntegrationTest extends EventloopTestBase {
         try {
             var foundEntity = em2.find(TestEntity.class, 1L); // GH-90000
             assertThat(foundEntity) // GH-90000
-                    .as("Retrieved entity should not be null [GH-90000]")
+                    .as("Retrieved entity should not be null")
                     .isNotNull(); // GH-90000
             assertThat(foundEntity.getName()) // GH-90000
-                    .as("Entity name should match [GH-90000]")
-                    .isEqualTo("Test [GH-90000]");
+                    .as("Entity name should match")
+                    .isEqualTo("Test");
         } finally {
             em2.close(); // GH-90000
         }
@@ -234,12 +234,12 @@ public class ActiveJDatabaseIntegrationTest extends EventloopTestBase {
      * persisted
      */
     @Test
-    @DisplayName("Should handle transaction rollback [GH-90000]")
+    @DisplayName("Should handle transaction rollback")
     void shouldHandleTransactionRollback() { // GH-90000
         // GIVEN: Test entity
         var entity = new TestEntity(); // GH-90000
         entity.setId(2L); // GH-90000
-        entity.setName("Rollback Test [GH-90000]");
+        entity.setName("Rollback Test");
 
         // WHEN: Transaction is rolled back
         EntityManager em = entityManagerFactory.createEntityManager(); // GH-90000
@@ -256,7 +256,7 @@ public class ActiveJDatabaseIntegrationTest extends EventloopTestBase {
         try {
             var foundEntity = em2.find(TestEntity.class, 2L); // GH-90000
             assertThat(foundEntity) // GH-90000
-                    .as("Rolled back entity should not exist [GH-90000]")
+                    .as("Rolled back entity should not exist")
                     .isNull(); // GH-90000
         } finally {
             em2.close(); // GH-90000
@@ -270,7 +270,7 @@ public class ActiveJDatabaseIntegrationTest extends EventloopTestBase {
      * is returned
      */
     @Test
-    @DisplayName("Should execute queries [GH-90000]")
+    @DisplayName("Should execute queries")
     void shouldExecuteQueries() { // GH-90000
         // GIVEN: Multiple entities
         EntityManager em = entityManagerFactory.createEntityManager(); // GH-90000
@@ -296,7 +296,7 @@ public class ActiveJDatabaseIntegrationTest extends EventloopTestBase {
 
             // THEN: Count should be correct
             assertThat(count) // GH-90000
-                    .as("Entity count should be at least 3 [GH-90000]")
+                    .as("Entity count should be at least 3")
                     .isGreaterThanOrEqualTo(3L); // GH-90000
         } finally {
             em2.close(); // GH-90000

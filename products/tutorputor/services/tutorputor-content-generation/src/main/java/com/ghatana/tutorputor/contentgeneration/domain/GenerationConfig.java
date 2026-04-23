@@ -1,5 +1,11 @@
 package com.ghatana.tutorputor.contentgeneration.domain;
 
+/**
+ * @doc.type class
+ * @doc.purpose Provides generation config functionality.
+ * @doc.layer product
+ * @doc.pattern Configuration
+ */
 public class GenerationConfig {
     private final boolean includeExamples;
     private final boolean includeSimulations;

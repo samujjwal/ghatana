@@ -18,11 +18,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.purpose Unit tests for template marketplace
  * @doc.layer test
  */
-@DisplayName("Template Marketplace Tests [GH-90000]")
+@DisplayName("Template Marketplace Tests")
 class TemplateMarketplaceTest {
 
     @Test
-    @DisplayName("initializes with default curated templates [GH-90000]")
+    @DisplayName("initializes with default curated templates")
     void initializesWithDefaultTemplates() { // GH-90000
         TemplateMarketplace marketplace = new TemplateMarketplace(); // GH-90000
 
@@ -30,30 +30,30 @@ class TemplateMarketplaceTest {
     }
 
     @Test
-    @DisplayName("searches templates by query [GH-90000]")
+    @DisplayName("searches templates by query")
     void searchesTemplatesByQuery() { // GH-90000
         TemplateMarketplace marketplace = new TemplateMarketplace(); // GH-90000
 
-        List<TemplateMarketplace.TemplateListing> results = marketplace.search("fraud [GH-90000]");
+        List<TemplateMarketplace.TemplateListing> results = marketplace.search("fraud");
 
         assertThat(results).isNotEmpty(); // GH-90000
-        assertThat(results.stream().allMatch(l -> l.name().toLowerCase().contains("fraud [GH-90000]") ||
-                                              l.description().toLowerCase().contains("fraud [GH-90000]"))).isTrue();
+        assertThat(results.stream().allMatch(l -> l.name().toLowerCase().contains("fraud") ||
+                                              l.description().toLowerCase().contains("fraud"))).isTrue();
     }
 
     @Test
-    @DisplayName("gets templates by category [GH-90000]")
+    @DisplayName("gets templates by category")
     void getsTemplatesByCategory() { // GH-90000
         TemplateMarketplace marketplace = new TemplateMarketplace(); // GH-90000
 
-        List<TemplateMarketplace.TemplateListing> results = marketplace.getByCategory("security [GH-90000]");
+        List<TemplateMarketplace.TemplateListing> results = marketplace.getByCategory("security");
 
         assertThat(results).isNotEmpty(); // GH-90000
-        assertThat(results.stream().allMatch(l -> l.category().equalsIgnoreCase("security [GH-90000]"))).isTrue();
+        assertThat(results.stream().allMatch(l -> l.category().equalsIgnoreCase("security"))).isTrue();
     }
 
     @Test
-    @DisplayName("gets popular templates [GH-90000]")
+    @DisplayName("gets popular templates")
     void getsPopularTemplates() { // GH-90000
         TemplateMarketplace marketplace = new TemplateMarketplace(); // GH-90000
 
@@ -67,7 +67,7 @@ class TemplateMarketplaceTest {
     }
 
     @Test
-    @DisplayName("gets new templates [GH-90000]")
+    @DisplayName("gets new templates")
     void getsNewTemplates() { // GH-90000
         TemplateMarketplace marketplace = new TemplateMarketplace(); // GH-90000
 
@@ -77,69 +77,69 @@ class TemplateMarketplaceTest {
     }
 
     @Test
-    @DisplayName("rates a template [GH-90000]")
+    @DisplayName("rates a template")
     void ratesTemplate() { // GH-90000
         TemplateMarketplace marketplace = new TemplateMarketplace(); // GH-90000
 
-        TemplateMarketplace.TemplateListing original = marketplace.getListing("fraud-detection [GH-90000]").orElseThrow();
+        TemplateMarketplace.TemplateListing original = marketplace.getListing("fraud-detection").orElseThrow();
         double originalRating = original.averageRating(); // GH-90000
 
         marketplace.rateTemplate("fraud-detection", 5); // GH-90000
 
-        TemplateMarketplace.TemplateListing updated = marketplace.getListing("fraud-detection [GH-90000]").orElseThrow();
+        TemplateMarketplace.TemplateListing updated = marketplace.getListing("fraud-detection").orElseThrow();
         assertThat(updated.averageRating()).isNotEqualTo(originalRating); // GH-90000
         assertThat(updated.ratingCount()).isEqualTo(original.ratingCount() + 1); // GH-90000
     }
 
     @Test
-    @DisplayName("records template usage [GH-90000]")
+    @DisplayName("records template usage")
     void recordsTemplateUsage() { // GH-90000
         TemplateMarketplace marketplace = new TemplateMarketplace(); // GH-90000
 
-        TemplateMarketplace.TemplateListing original = marketplace.getListing("fraud-detection [GH-90000]").orElseThrow();
+        TemplateMarketplace.TemplateListing original = marketplace.getListing("fraud-detection").orElseThrow();
         int originalUsage = original.usageCount(); // GH-90000
 
-        marketplace.recordUsage("fraud-detection [GH-90000]");
+        marketplace.recordUsage("fraud-detection");
 
-        TemplateMarketplace.TemplateListing updated = marketplace.getListing("fraud-detection [GH-90000]").orElseThrow();
+        TemplateMarketplace.TemplateListing updated = marketplace.getListing("fraud-detection").orElseThrow();
         assertThat(updated.usageCount()).isEqualTo(originalUsage + 1); // GH-90000
         assertThat(updated.popularity()).isGreaterThan(original.popularity()); // GH-90000
     }
 
     @Test
-    @DisplayName("gets usage statistics [GH-90000]")
+    @DisplayName("gets usage statistics")
     void getsUsageStatistics() { // GH-90000
         TemplateMarketplace marketplace = new TemplateMarketplace(); // GH-90000
 
-        marketplace.recordUsage("fraud-detection [GH-90000]");
+        marketplace.recordUsage("fraud-detection");
 
-        var stats = marketplace.getUsageStats("fraud-detection [GH-90000]");
+        var stats = marketplace.getUsageStats("fraud-detection");
         assertThat(stats).isPresent(); // GH-90000
         assertThat(stats.get().usageCount()).isGreaterThan(0); // GH-90000
     }
 
     @Test
-    @DisplayName("gets spec builder for template [GH-90000]")
+    @DisplayName("gets spec builder for template")
     void getsSpecBuilderForTemplate() { // GH-90000
         TemplateMarketplace marketplace = new TemplateMarketplace(); // GH-90000
 
-        var specBuilder = marketplace.getSpecBuilder("fraud-detection [GH-90000]");
+        var specBuilder = marketplace.getSpecBuilder("fraud-detection");
         assertThat(specBuilder).isPresent(); // GH-90000
     }
 
     @Test
-    @DisplayName("gets all categories [GH-90000]")
+    @DisplayName("gets all categories")
     void getsAllCategories() { // GH-90000
         TemplateMarketplace marketplace = new TemplateMarketplace(); // GH-90000
 
         List<TemplateMarketplace.TemplateCategory> categories = marketplace.getCategories(); // GH-90000
 
         assertThat(categories).isNotEmpty(); // GH-90000
-        assertThat(categories.stream().anyMatch(c -> c.id().equals("security [GH-90000]"))).isTrue();
+        assertThat(categories.stream().anyMatch(c -> c.id().equals("security"))).isTrue();
     }
 
     @Test
-    @DisplayName("lists custom template [GH-90000]")
+    @DisplayName("lists custom template")
     void listsCustomTemplate() { // GH-90000
         TemplateMarketplace marketplace = new TemplateMarketplace(); // GH-90000
 
@@ -152,7 +152,7 @@ class TemplateMarketplaceTest {
             "user",
             "1.0.0",
             specBuilder,
-            List.of("custom [GH-90000]"),
+            List.of("custom"),
             "beginner",
             5.0,
             1,
@@ -167,13 +167,13 @@ class TemplateMarketplaceTest {
     }
 
     @Test
-    @DisplayName("searches by tags [GH-90000]")
+    @DisplayName("searches by tags")
     void searchesByTags() { // GH-90000
         TemplateMarketplace marketplace = new TemplateMarketplace(); // GH-90000
 
-        List<TemplateMarketplace.TemplateListing> results = marketplace.search("ml [GH-90000]");
+        List<TemplateMarketplace.TemplateListing> results = marketplace.search("ml");
 
         assertThat(results).isNotEmpty(); // GH-90000
-        assertThat(results.stream().anyMatch(l -> l.tags().contains("ml [GH-90000]"))).isTrue();
+        assertThat(results.stream().anyMatch(l -> l.tags().contains("ml"))).isTrue();
     }
 }

@@ -8,7 +8,11 @@ import java.util.Set;
  * Represents a group of correlated event types discovered through pattern mining.
  *
  * Day 28 Implementation: Correlated event groups for pattern exploration.
- */
+  * @doc.type class
+ * @doc.purpose Provides correlated event group functionality.
+ * @doc.layer product
+ * @doc.pattern Event
+*/
 public class CorrelatedEventGroup {
 
     private final Set<String> eventTypes;

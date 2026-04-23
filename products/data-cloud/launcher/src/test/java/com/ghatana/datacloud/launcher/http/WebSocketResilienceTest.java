@@ -59,7 +59,7 @@ import static org.mockito.Mockito.mock;
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
 @Timeout(value = 20, unit = TimeUnit.SECONDS) // GH-90000
-@DisplayName("WebSocket – Connection Resilience [GH-90000]")
+@DisplayName("WebSocket – Connection Resilience")
 class WebSocketResilienceTest {
 
     private DataCloudClient mockClient;
@@ -95,11 +95,11 @@ class WebSocketResilienceTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Connection handshake [GH-90000]")
+    @DisplayName("Connection handshake")
     class ConnectionHandshakeTests {
 
         @Test
-        @DisplayName("connecting to /ws succeeds and server sends greeting frame [GH-90000]")
+        @DisplayName("connecting to /ws succeeds and server sends greeting frame")
         void connect_serverSendsGreetingFrame() throws Exception { // GH-90000
             List<String> received = new CopyOnWriteArrayList<>(); // GH-90000
             CountDownLatch greetingLatch = new CountDownLatch(1); // GH-90000
@@ -111,20 +111,20 @@ class WebSocketResilienceTest {
 
             // Server must send an initial greeting within 3 seconds
             boolean gotGreeting = greetingLatch.await(3, TimeUnit.SECONDS); // GH-90000
-            assertThat(gotGreeting).as("Server must send greeting within 3 s [GH-90000]").isTrue();
+            assertThat(gotGreeting).as("Server must send greeting within 3 s").isTrue();
 
             // Parse the greeting frame
             assertThat(received).isNotEmpty(); // GH-90000
             JsonNode greeting = mapper.readTree(received.get(0)); // GH-90000
-            assertThat(greeting.has("type [GH-90000]")).isTrue();
-            assertThat(greeting.get("type [GH-90000]").asText()).isEqualTo("system.notification [GH-90000]");
-            assertThat(greeting.has("data [GH-90000]")).isTrue();
+            assertThat(greeting.has("type")).isTrue();
+            assertThat(greeting.get("type").asText()).isEqualTo("system.notification");
+            assertThat(greeting.has("data")).isTrue();
 
             ws.sendClose(WebSocket.NORMAL_CLOSURE, "test done").get(3, TimeUnit.SECONDS); // GH-90000
         }
 
         @Test
-        @DisplayName("greeting frame data contains serverTime and message fields [GH-90000]")
+        @DisplayName("greeting frame data contains serverTime and message fields")
         void connect_greetingHasRequiredFields() throws Exception { // GH-90000
             List<String> received = new CopyOnWriteArrayList<>(); // GH-90000
             CountDownLatch latch = new CountDownLatch(1); // GH-90000
@@ -138,10 +138,10 @@ class WebSocketResilienceTest {
             assertThat(got).isTrue(); // GH-90000
 
             JsonNode greeting = mapper.readTree(received.get(0)); // GH-90000
-            JsonNode data = greeting.get("data [GH-90000]");
+            JsonNode data = greeting.get("data");
             assertThat(data).isNotNull(); // GH-90000
-            assertThat(data.has("serverTime [GH-90000]")).as("data.serverTime must be present [GH-90000]").isTrue();
-            assertThat(data.has("message [GH-90000]")).as("data.message must be present [GH-90000]").isTrue();
+            assertThat(data.has("serverTime")).as("data.serverTime must be present").isTrue();
+            assertThat(data.has("message")).as("data.message must be present").isTrue();
 
             ws.sendClose(WebSocket.NORMAL_CLOSURE, "done").get(3, TimeUnit.SECONDS); // GH-90000
         }
@@ -152,11 +152,11 @@ class WebSocketResilienceTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Client disconnection [GH-90000]")
+    @DisplayName("Client disconnection")
     class ClientDisconnectionTests {
 
         @Test
-        @DisplayName("client sends CLOSE frame → server accepts without error [GH-90000]")
+        @DisplayName("client sends CLOSE frame → server accepts without error")
         void clientClose_serverAcceptsGracefully() throws Exception { // GH-90000
             CountDownLatch greetingLatch = new CountDownLatch(1); // GH-90000
             WebSocket ws = httpClient.newWebSocketBuilder() // GH-90000
@@ -180,7 +180,7 @@ class WebSocketResilienceTest {
         }
 
         @Test
-        @DisplayName("repeated connect-disconnect cycles do not degrade server [GH-90000]")
+        @DisplayName("repeated connect-disconnect cycles do not degrade server")
         void repeatedConnectDisconnect_serverRemainsHealthy() throws Exception { // GH-90000
             for (int i = 0; i < 5; i++) { // GH-90000
                 CountDownLatch latch = new CountDownLatch(1); // GH-90000
@@ -209,11 +209,11 @@ class WebSocketResilienceTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Concurrent connections [GH-90000]")
+    @DisplayName("Concurrent connections")
     class ConcurrentConnectionTests {
 
         @Test
-        @DisplayName("3 concurrent WebSocket clients all receive greeting frames [GH-90000]")
+        @DisplayName("3 concurrent WebSocket clients all receive greeting frames")
         void concurrentClients_allReceiveGreeting() throws Exception { // GH-90000
             int clientCount = 3;
             List<CountDownLatch> latches = new ArrayList<>(); // GH-90000
@@ -232,7 +232,7 @@ class WebSocketResilienceTest {
             // All clients must receive a greeting
             for (CountDownLatch latch : latches) { // GH-90000
                 assertThat(latch.await(4, TimeUnit.SECONDS)) // GH-90000
-                    .as("Each concurrent client must receive a greeting [GH-90000]").isTrue();
+                    .as("Each concurrent client must receive a greeting").isTrue();
             }
 
             // Clean up
@@ -242,7 +242,7 @@ class WebSocketResilienceTest {
         }
 
         @Test
-        @DisplayName("server sends /health 200 while WebSocket clients are connected [GH-90000]")
+        @DisplayName("server sends /health 200 while WebSocket clients are connected")
         void httpHealthCheck_worksWhileWsClientsConnected() throws Exception { // GH-90000
             CountDownLatch latch = new CountDownLatch(1); // GH-90000
             WebSocket ws = httpClient.newWebSocketBuilder() // GH-90000
@@ -269,11 +269,11 @@ class WebSocketResilienceTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Server shutdown cleanup [GH-90000]")
+    @DisplayName("Server shutdown cleanup")
     class ServerShutdownCleanupTests {
 
         @Test
-        @DisplayName("server.stop() closes active WebSocket connections without deadlock [GH-90000]")
+        @DisplayName("server.stop() closes active WebSocket connections without deadlock")
         void serverStop_closesActiveWebSocketConnections() throws Exception { // GH-90000
             CountDownLatch latch = new CountDownLatch(1); // GH-90000
             AtomicInteger closeCallbacks = new AtomicInteger(0); // GH-90000
@@ -319,11 +319,11 @@ class WebSocketResilienceTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("WebSocket message frame structure [GH-90000]")
+    @DisplayName("WebSocket message frame structure")
     class MessageFrameStructureTests {
 
         @Test
-        @DisplayName("all server frames are valid JSON objects with 'type' and 'data' fields [GH-90000]")
+        @DisplayName("all server frames are valid JSON objects with 'type' and 'data' fields")
         void serverFrames_areValidJsonWithTypeAndData() throws Exception { // GH-90000
             List<String> received = new CopyOnWriteArrayList<>(); // GH-90000
             CountDownLatch latch = new CountDownLatch(1); // GH-90000
@@ -338,8 +338,8 @@ class WebSocketResilienceTest {
             for (String frame : received) { // GH-90000
                 JsonNode node = mapper.readTree(frame); // GH-90000
                 assertThat(node.isObject()).as("Frame must be JSON object: " + frame).isTrue(); // GH-90000
-                assertThat(node.has("type [GH-90000]")).as("Frame must have 'type' field: " + frame).isTrue();
-                assertThat(node.has("data [GH-90000]")).as("Frame must have 'data' field: " + frame).isTrue();
+                assertThat(node.has("type")).as("Frame must have 'type' field: " + frame).isTrue();
+                assertThat(node.has("data")).as("Frame must have 'data' field: " + frame).isTrue();
             }
 
             ws.sendClose(WebSocket.NORMAL_CLOSURE, "done").get(3, TimeUnit.SECONDS); // GH-90000

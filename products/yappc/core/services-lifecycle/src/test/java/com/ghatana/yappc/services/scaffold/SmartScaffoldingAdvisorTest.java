@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-@DisplayName("SmartScaffoldingAdvisor Tests [GH-90000]")
+@DisplayName("SmartScaffoldingAdvisor Tests")
 class SmartScaffoldingAdvisorTest extends EventloopTestBase {
 
     private CompletionService completionService = mock(CompletionService.class); // GH-90000
@@ -32,7 +32,7 @@ class SmartScaffoldingAdvisorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("returns parsed recommendations sorted by confidence descending [GH-90000]")
+    @DisplayName("returns parsed recommendations sorted by confidence descending")
     void returnsParsedRecommendationsSortedByConfidence() { // GH-90000
         String llmResponse =
                 "docker-compose-postgres|Docker Compose with PostgreSQL|0.80|Common backend setup\n" +
@@ -47,15 +47,15 @@ class SmartScaffoldingAdvisorTest extends EventloopTestBase {
         assertThat(recs).hasSize(3); // GH-90000
         // Sorted descending by confidence
         assertThat(recs.get(0).confidence()).isEqualTo(0.95); // GH-90000
-        assertThat(recs.get(0).name()).isEqualTo("gradle-java-ci [GH-90000]");
+        assertThat(recs.get(0).name()).isEqualTo("gradle-java-ci");
         assertThat(recs.get(1).confidence()).isEqualTo(0.80); // GH-90000
         assertThat(recs.get(2).confidence()).isEqualTo(0.70); // GH-90000
     }
 
     @Test
-    @DisplayName("returns empty list when LLM response is blank [GH-90000]")
+    @DisplayName("returns empty list when LLM response is blank")
     void returnsEmptyListForBlankResponse() { // GH-90000
-        stubCompletionWith("    [GH-90000]");
+        stubCompletionWith("   ");
 
         List<SmartScaffoldingAdvisor.TemplateRecommendation> recs =
                 runPromise(() -> advisor.recommendTemplates(javaProjectContext())); // GH-90000
@@ -64,7 +64,7 @@ class SmartScaffoldingAdvisorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("returns empty list for null context [GH-90000]")
+    @DisplayName("returns empty list for null context")
     void returnsEmptyListForNullContext() { // GH-90000
         List<SmartScaffoldingAdvisor.TemplateRecommendation> recs =
                 runPromise(() -> advisor.recommendTemplates(null)); // GH-90000
@@ -73,7 +73,7 @@ class SmartScaffoldingAdvisorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("skips malformed lines missing pipe separators [GH-90000]")
+    @DisplayName("skips malformed lines missing pipe separators")
     void skipsMalformedLinesWithoutPipes() { // GH-90000
         String llmResponse =
                 "This is a malformed line without pipes\n" +
@@ -85,11 +85,11 @@ class SmartScaffoldingAdvisorTest extends EventloopTestBase {
                 runPromise(() -> advisor.recommendTemplates(javaProjectContext())); // GH-90000
 
         assertThat(recs).hasSize(1); // GH-90000
-        assertThat(recs.get(0).name()).isEqualTo("gradle-java-ci [GH-90000]");
+        assertThat(recs.get(0).name()).isEqualTo("gradle-java-ci");
     }
 
     @Test
-    @DisplayName("skips lines with non-numeric confidence [GH-90000]")
+    @DisplayName("skips lines with non-numeric confidence")
     void skipsLinesWithNonNumericConfidence() { // GH-90000
         String llmResponse =
                 "gradle-java-ci|CI pipeline|high|Matches stack\n" +
@@ -101,11 +101,11 @@ class SmartScaffoldingAdvisorTest extends EventloopTestBase {
                 runPromise(() -> advisor.recommendTemplates(javaProjectContext())); // GH-90000
 
         assertThat(recs).hasSize(1); // GH-90000
-        assertThat(recs.get(0).name()).isEqualTo("docker-compose [GH-90000]");
+        assertThat(recs.get(0).name()).isEqualTo("docker-compose");
     }
 
     @Test
-    @DisplayName("skips lines with confidence outside [0,1] [GH-90000]")
+    @DisplayName("skips lines with confidence outside [0,1]")
     void skipsLinesWithConfidenceOutOfRange() { // GH-90000
         String llmResponse =
                 "template-a|Description A|1.5|Too high confidence\n" +
@@ -118,16 +118,16 @@ class SmartScaffoldingAdvisorTest extends EventloopTestBase {
                 runPromise(() -> advisor.recommendTemplates(javaProjectContext())); // GH-90000
 
         assertThat(recs).hasSize(1); // GH-90000
-        assertThat(recs.get(0).name()).isEqualTo("template-c [GH-90000]");
+        assertThat(recs.get(0).name()).isEqualTo("template-c");
     }
 
     @Test
-    @DisplayName("respects maximum recommendation count of 5 [GH-90000]")
+    @DisplayName("respects maximum recommendation count of 5")
     void respectsMaxRecommendationCount() { // GH-90000
         StringBuilder llmResponse = new StringBuilder(); // GH-90000
         for (int i = 1; i <= 8; i++) { // GH-90000
-            llmResponse.append("template- [GH-90000]").append(i).append("|Description  [GH-90000]")
-                    .append(i).append("|0. [GH-90000]").append(50 + i).append("|Rationale  [GH-90000]").append(i).append("\n [GH-90000]");
+            llmResponse.append("template-").append(i).append("|Description ")
+                    .append(i).append("|0.").append(50 + i).append("|Rationale ").append(i).append("\n");
         }
 
         stubCompletionWith(llmResponse.toString()); // GH-90000
@@ -139,29 +139,29 @@ class SmartScaffoldingAdvisorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("constructs with null completionService throws IllegalArgumentException [GH-90000]")
+    @DisplayName("constructs with null completionService throws IllegalArgumentException")
     void constructorRejectsNullCompletionService() { // GH-90000
         assertThatThrownBy(() -> new SmartScaffoldingAdvisor(null)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("completionService [GH-90000]");
+                .hasMessageContaining("completionService");
     }
 
     @Test
-    @DisplayName("ProjectContext.of creates context with empty language and framework sets [GH-90000]")
+    @DisplayName("ProjectContext.of creates context with empty language and framework sets")
     void projectContextOfFactoryCreatesMinimalContext() { // GH-90000
         SmartScaffoldingAdvisor.ProjectContext ctx =
                 SmartScaffoldingAdvisor.ProjectContext.of("A simple service", "Add logging config"); // GH-90000
 
-        assertThat(ctx.description()).isEqualTo("A simple service [GH-90000]");
-        assertThat(ctx.goal()).isEqualTo("Add logging config [GH-90000]");
+        assertThat(ctx.description()).isEqualTo("A simple service");
+        assertThat(ctx.goal()).isEqualTo("Add logging config");
         assertThat(ctx.languages()).isEmpty(); // GH-90000
         assertThat(ctx.frameworks()).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("recommendation result is immutable [GH-90000]")
+    @DisplayName("recommendation result is immutable")
     void recommendationListIsImmutable() { // GH-90000
-        stubCompletionWith("gradle-java-ci|CI pipeline|0.95|Matches stack\n [GH-90000]");
+        stubCompletionWith("gradle-java-ci|CI pipeline|0.95|Matches stack\n");
 
         List<SmartScaffoldingAdvisor.TemplateRecommendation> recs =
                 runPromise(() -> advisor.recommendTemplates(javaProjectContext())); // GH-90000
@@ -179,7 +179,7 @@ class SmartScaffoldingAdvisorTest extends EventloopTestBase {
         return new SmartScaffoldingAdvisor.ProjectContext( // GH-90000
                 "Payment processing microservice",
                 "Add CI/CD pipeline with security scanning",
-                Set.of("java [GH-90000]"),
+                Set.of("java"),
                 Set.of("gradle", "spring-boot") // GH-90000
         );
     }

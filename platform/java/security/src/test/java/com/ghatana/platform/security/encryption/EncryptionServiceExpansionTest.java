@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("EncryptionService - Phase 3 Expansion [GH-90000]")
+@DisplayName("EncryptionService - Phase 3 Expansion")
 class EncryptionServiceExpansionTest extends EventloopTestBase {
 
     private EncryptionService encryptionService;
@@ -40,11 +40,11 @@ class EncryptionServiceExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Large Data Encryption [GH-90000]")
+    @DisplayName("Large Data Encryption")
     class LargeDataTests {
 
         @Test
-        @DisplayName("Encrypt and decrypt large data (1MB) [GH-90000]")
+        @DisplayName("Encrypt and decrypt large data (1MB)")
         void largeMegabyteData() { // GH-90000
             byte[] plaintext = new byte[1024 * 1024]; // 1 MB
             for (int i = 0; i < plaintext.length; i++) { // GH-90000
@@ -59,7 +59,7 @@ class EncryptionServiceExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Encrypt very small data (single byte) [GH-90000]")
+        @DisplayName("Encrypt very small data (single byte)")
         void singleByteData() { // GH-90000
             byte[] plaintext = new byte[] { 42 };
 
@@ -76,11 +76,11 @@ class EncryptionServiceExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Structured Data Support [GH-90000]")
+    @DisplayName("Structured Data Support")
     class StructuredDataTests {
 
         @Test
-        @DisplayName("Encrypt and decrypt JSON data [GH-90000]")
+        @DisplayName("Encrypt and decrypt JSON data")
         void jsonDataEncryption() { // GH-90000
             String jsonData = "{\"userId\":\"user-123\",\"email\":\"user@example.com\",\"nested\":{\"field\":\"value\"}}";
             byte[] plaintext = jsonData.getBytes(StandardCharsets.UTF_8); // GH-90000
@@ -98,11 +98,11 @@ class EncryptionServiceExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Concurrent Encryption [GH-90000]")
+    @DisplayName("Concurrent Encryption")
     class ConcurrencyTests {
 
         @Test
-        @DisplayName("Concurrent encryption/decryption operations don't corrupt data [GH-90000]")
+        @DisplayName("Concurrent encryption/decryption operations don't corrupt data")
         void concurrentEncryptionIntegrity() throws InterruptedException { // GH-90000
             int threadCount = 5;
             String[] testData = new String[] {
@@ -149,11 +149,11 @@ class EncryptionServiceExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Binary Data Handling [GH-90000]")
+    @DisplayName("Binary Data Handling")
     class BinaryDataTests {
 
         @Test
-        @DisplayName("Encrypt and decrypt arbitrary binary data [GH-90000]")
+        @DisplayName("Encrypt and decrypt arbitrary binary data")
         void binaryDataRoundTrip() { // GH-90000
             // Test data with all byte values (0-255) // GH-90000
             byte[] plaintext = new byte[256];

@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.pattern Test
  * @doc.gaa.lifecycle perceive
  */
-@DisplayName("YAPPC-Ph9: Canonical Workflow Integration [GH-90000]")
+@DisplayName("YAPPC-Ph9: Canonical Workflow Integration")
 class WorkflowIntegrationTest extends EventloopTestBase {
 
     private DurableWorkflowEngine engine;
@@ -55,11 +55,11 @@ class WorkflowIntegrationTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("initialize() — template materialisation [GH-90000]")
+    @DisplayName("initialize() — template materialisation")
     class InitializeTests {
 
         @Test
-        @DisplayName("should load all templates from lifecycle-workflow-templates.yaml [GH-90000]")
+        @DisplayName("should load all templates from lifecycle-workflow-templates.yaml")
         void shouldLoadTemplatesFromYaml() { // GH-90000
             int count = workflowService.initialize(); // GH-90000
             // The classpath YAML defines at least 3 workflows: new-feature, bug-fix, security-remediation
@@ -67,7 +67,7 @@ class WorkflowIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should register all template IDs from YAML [GH-90000]")
+        @DisplayName("should register all template IDs from YAML")
         void shouldRegisterExpectedTemplateIds() { // GH-90000
             workflowService.initialize(); // GH-90000
             Set<String> templates = workflowService.registeredTemplates(); // GH-90000
@@ -75,7 +75,7 @@ class WorkflowIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("initialize() is idempotent — calling twice keeps same count [GH-90000]")
+        @DisplayName("initialize() is idempotent — calling twice keeps same count")
         void initializeIsIdempotent() { // GH-90000
             int first  = workflowService.initialize(); // GH-90000
             int second = workflowService.initialize(); // GH-90000
@@ -86,26 +86,26 @@ class WorkflowIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("isRegistered() returns true for known template IDs [GH-90000]")
+        @DisplayName("isRegistered() returns true for known template IDs")
         void isRegisteredReturnsTrueForKnownTemplates() { // GH-90000
             workflowService.initialize(); // GH-90000
-            assertThat(workflowService.isRegistered("new-feature [GH-90000]")).isTrue();
-            assertThat(workflowService.isRegistered("bug-fix [GH-90000]")).isTrue();
+            assertThat(workflowService.isRegistered("new-feature")).isTrue();
+            assertThat(workflowService.isRegistered("bug-fix")).isTrue();
         }
 
         @Test
-        @DisplayName("isRegistered() returns false for unknown template ID [GH-90000]")
+        @DisplayName("isRegistered() returns false for unknown template ID")
         void isRegisteredReturnsFalseForUnknown() { // GH-90000
             workflowService.initialize(); // GH-90000
-            assertThat(workflowService.isRegistered("non-existent-workflow [GH-90000]")).isFalse();
+            assertThat(workflowService.isRegistered("non-existent-workflow")).isFalse();
         }
 
         @Test
-        @DisplayName("registeredTemplates() returns immutable set [GH-90000]")
+        @DisplayName("registeredTemplates() returns immutable set")
         void registeredTemplatesIsImmutable() { // GH-90000
             workflowService.initialize(); // GH-90000
             Set<String> templates = workflowService.registeredTemplates(); // GH-90000
-            assertThatThrownBy(() -> templates.add("illegal [GH-90000]"))
+            assertThatThrownBy(() -> templates.add("illegal"))
                     .isInstanceOf(UnsupportedOperationException.class); // GH-90000
         }
     }
@@ -115,7 +115,7 @@ class WorkflowIntegrationTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("startWorkflow() — workflow execution [GH-90000]")
+    @DisplayName("startWorkflow() — workflow execution")
     class StartWorkflowTests {
 
         @BeforeEach
@@ -124,25 +124,25 @@ class WorkflowIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should start new-feature workflow and return execution handle [GH-90000]")
+        @DisplayName("should start new-feature workflow and return execution handle")
         void shouldStartNewFeatureWorkflow() { // GH-90000
             DurableWorkflowEngine.WorkflowExecution execution =
                     workflowService.startWorkflow("new-feature", "tenant-abc", Map.of()); // GH-90000
             assertThat(execution).isNotNull(); // GH-90000
-            assertThat(execution.workflowId()).startsWith("new-feature- [GH-90000]");
+            assertThat(execution.workflowId()).startsWith("new-feature-");
             assertThat(execution.run()).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("should start bug-fix workflow with tenant binding in context [GH-90000]")
+        @DisplayName("should start bug-fix workflow with tenant binding in context")
         void shouldStartBugFixWorkflowWithTenant() { // GH-90000
             DurableWorkflowEngine.WorkflowExecution execution =
                     workflowService.startWorkflow("bug-fix", "tenant-xyz", Map.of("priority", "P1")); // GH-90000
-            assertThat(execution.workflowId()).startsWith("bug-fix- [GH-90000]");
+            assertThat(execution.workflowId()).startsWith("bug-fix-");
         }
 
         @Test
-        @DisplayName("each startWorkflow() generates a unique run ID [GH-90000]")
+        @DisplayName("each startWorkflow() generates a unique run ID")
         void eachRunHasUniqueId() { // GH-90000
             DurableWorkflowEngine.WorkflowExecution exec1 =
                     workflowService.startWorkflow("bug-fix", "tenant-1", Map.of()); // GH-90000
@@ -152,16 +152,16 @@ class WorkflowIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should throw IllegalArgumentException for unknown template [GH-90000]")
+        @DisplayName("should throw IllegalArgumentException for unknown template")
         void shouldThrowForUnknownTemplate() { // GH-90000
             assertThatThrownBy(() -> // GH-90000
                     workflowService.startWorkflow("non-existent", "tenant-1", Map.of())) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("non-existent [GH-90000]");
+                    .hasMessageContaining("non-existent");
         }
 
         @Test
-        @DisplayName("should run new-feature workflow to completion [GH-90000]")
+        @DisplayName("should run new-feature workflow to completion")
         void shouldCompleteNewFeatureWorkflow() { // GH-90000
             DurableWorkflowEngine.WorkflowExecution execution =
                     workflowService.startWorkflow("new-feature", "tenant-1", Map.of()); // GH-90000
@@ -174,7 +174,7 @@ class WorkflowIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should run bug-fix workflow to completion [GH-90000]")
+        @DisplayName("should run bug-fix workflow to completion")
         void shouldCompleteBugFixWorkflow() { // GH-90000
             DurableWorkflowEngine.WorkflowExecution execution =
                     workflowService.startWorkflow("bug-fix", "tenant-1", Map.of()); // GH-90000
@@ -186,7 +186,7 @@ class WorkflowIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should run security-remediation workflow to completion [GH-90000]")
+        @DisplayName("should run security-remediation workflow to completion")
         void shouldCompleteSecurityRemediationWorkflow() { // GH-90000
             DurableWorkflowEngine.WorkflowExecution execution =
                     workflowService.startWorkflow("security-remediation", "sec-tenant", Map.of()); // GH-90000
@@ -203,7 +203,7 @@ class WorkflowIntegrationTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("getRunStatus() — run state queries [GH-90000]")
+    @DisplayName("getRunStatus() — run state queries")
     class RunStatusTests {
 
         @BeforeEach
@@ -212,7 +212,7 @@ class WorkflowIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("getRunStatus() returns present after startWorkflow() [GH-90000]")
+        @DisplayName("getRunStatus() returns present after startWorkflow()")
         void runStatusPresentAfterStart() { // GH-90000
             DurableWorkflowEngine.WorkflowExecution execution =
                     workflowService.startWorkflow("bug-fix", "tenant-1", Map.of()); // GH-90000
@@ -224,15 +224,15 @@ class WorkflowIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("getRunStatus() is empty for unknown run IDs [GH-90000]")
+        @DisplayName("getRunStatus() is empty for unknown run IDs")
         void runStatusEmptyForUnknownId() { // GH-90000
             Optional<DurableWorkflowEngine.WorkflowRun> status =
-                    workflowService.getRunStatus("definitely-not-a-run-id [GH-90000]");
+                    workflowService.getRunStatus("definitely-not-a-run-id");
             assertThat(status).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("completed run has COMPLETED status in getRunStatus() [GH-90000]")
+        @DisplayName("completed run has COMPLETED status in getRunStatus()")
         void completedRunShowsCompletedStatus() { // GH-90000
             DurableWorkflowEngine.WorkflowExecution execution =
                     workflowService.startWorkflow("bug-fix", "tenant-1", Map.of()); // GH-90000
@@ -247,7 +247,7 @@ class WorkflowIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("completed run has all steps marked COMPLETED [GH-90000]")
+        @DisplayName("completed run has all steps marked COMPLETED")
         void completedRunHasAllStepsCompleted() { // GH-90000
             DurableWorkflowEngine.WorkflowExecution execution =
                     workflowService.startWorkflow("bug-fix", "tenant-1", Map.of()); // GH-90000
@@ -262,7 +262,7 @@ class WorkflowIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("multiple concurrent runs tracked independently [GH-90000]")
+        @DisplayName("multiple concurrent runs tracked independently")
         void multipleConcurrentRunsTrackedIndependently() { // GH-90000
             DurableWorkflowEngine.WorkflowExecution e1 =
                     workflowService.startWorkflow("bug-fix", "tenant-1", Map.of()); // GH-90000
@@ -282,11 +282,11 @@ class WorkflowIntegrationTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("DurableWorkflowEngine direct usage [GH-90000]")
+    @DisplayName("DurableWorkflowEngine direct usage")
     class DurableEngineDirectTests {
 
         @Test
-        @DisplayName("engine builder produces non-null engine [GH-90000]")
+        @DisplayName("engine builder produces non-null engine")
         void builderProducesEngine() { // GH-90000
             DurableWorkflowEngine eng = DurableWorkflowEngine.builder() // GH-90000
                     .stateStore(new DurableWorkflowEngine.InMemoryWorkflowStateStore()) // GH-90000
@@ -296,7 +296,7 @@ class WorkflowIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("single-step workflow completes successfully [GH-90000]")
+        @DisplayName("single-step workflow completes successfully")
         void singleStepWorkflowCompletes() { // GH-90000
             var ctx = new com.ghatana.platform.workflow.DefaultWorkflowContext("wf-1", "t1"); // GH-90000
             var step = DurableWorkflowEngine.StepDefinition.of("my-step", // GH-90000

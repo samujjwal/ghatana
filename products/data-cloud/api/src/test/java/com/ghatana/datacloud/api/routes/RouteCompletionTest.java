@@ -23,9 +23,9 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer   product
  * @doc.pattern IntegrationTest
  */
-@DisplayName("RouteCompletionTest [GH-90000]")
-@Tag("api [GH-90000]")
-@Tag("routes [GH-90000]")
+@DisplayName("RouteCompletionTest")
+@Tag("api")
+@Tag("routes")
 class RouteCompletionTest extends BaseIntegrationTest {
 
     private MockApiRouter router;
@@ -56,7 +56,7 @@ class RouteCompletionTest extends BaseIntegrationTest {
     // ── Route existence ───────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("all dataset CRUD routes are registered [GH-90000]")
+    @DisplayName("all dataset CRUD routes are registered")
     void datasetCrudRoutesRegistered() { // GH-90000
         assertThat(router.isRegistered("GET",    "/api/v1/datasets")).isTrue(); // GH-90000
         assertThat(router.isRegistered("POST",   "/api/v1/datasets")).isTrue(); // GH-90000
@@ -65,7 +65,7 @@ class RouteCompletionTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("query execution and result routes are registered [GH-90000]")
+    @DisplayName("query execution and result routes are registered")
     void queryRoutesRegistered() { // GH-90000
         assertThat(router.isRegistered("POST", "/api/v1/queries/execute")).isTrue(); // GH-90000
         assertThat(router.isRegistered("GET",  "/api/v1/queries/{queryId}/results")).isTrue(); // GH-90000
@@ -74,7 +74,7 @@ class RouteCompletionTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("collection management routes are registered [GH-90000]")
+    @DisplayName("collection management routes are registered")
     void collectionRoutesRegistered() { // GH-90000
         assertThat(router.isRegistered("GET",    "/api/v1/collections")).isTrue(); // GH-90000
         assertThat(router.isRegistered("POST",   "/api/v1/collections")).isTrue(); // GH-90000
@@ -83,14 +83,14 @@ class RouteCompletionTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("agent execution routes are registered [GH-90000]")
+    @DisplayName("agent execution routes are registered")
     void agentRoutesRegistered() { // GH-90000
         assertThat(router.isRegistered("GET",  "/api/v1/agents")).isTrue(); // GH-90000
         assertThat(router.isRegistered("POST", "/api/v1/agents/{agentId}/execute")).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("health and metrics routes are registered [GH-90000]")
+    @DisplayName("health and metrics routes are registered")
     void systemRoutesRegistered() { // GH-90000
         assertThat(router.isRegistered("GET", "/health")).isTrue(); // GH-90000
         assertThat(router.isRegistered("GET", "/metrics")).isTrue(); // GH-90000
@@ -99,14 +99,14 @@ class RouteCompletionTest extends BaseIntegrationTest {
     // ── Method semantics ──────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("GET on list endpoint returns 200 [GH-90000]")
+    @DisplayName("GET on list endpoint returns 200")
     void getListReturns200() { // GH-90000
         MockResponse response = router.handle("GET", "/api/v1/datasets", Map.of()); // GH-90000
         assertThat(response.status()).isEqualTo(200); // GH-90000
     }
 
     @Test
-    @DisplayName("POST create returns 201 [GH-90000]")
+    @DisplayName("POST create returns 201")
     void postCreateReturns201() { // GH-90000
         MockResponse response = router.handle("POST", "/api/v1/datasets", // GH-90000
                 Map.of("name", "test-dataset", "schema", "{}")); // GH-90000
@@ -114,7 +114,7 @@ class RouteCompletionTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("DELETE returns 204 [GH-90000]")
+    @DisplayName("DELETE returns 204")
     void deleteReturns204() { // GH-90000
         MockResponse response = router.handle("DELETE", "/api/v1/datasets/{id}", // GH-90000
                 Map.of("id", "ds-1")); // GH-90000
@@ -122,14 +122,14 @@ class RouteCompletionTest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("route not found returns 404 [GH-90000]")
+    @DisplayName("route not found returns 404")
     void unknownRouteReturns404() { // GH-90000
         MockResponse response = router.handle("GET", "/api/v1/nonexistent", Map.of()); // GH-90000
         assertThat(response.status()).isEqualTo(404); // GH-90000
     }
 
     @Test
-    @DisplayName("wrong method returns 405 [GH-90000]")
+    @DisplayName("wrong method returns 405")
     void wrongMethodReturns405() { // GH-90000
         MockResponse response = router.handle("PATCH", "/api/v1/datasets", Map.of()); // GH-90000
         assertThat(response.status()).isEqualTo(405); // GH-90000
@@ -138,16 +138,16 @@ class RouteCompletionTest extends BaseIntegrationTest {
     // ── All registered routes use /api/v1 prefix ─────────────────────────────
 
     @Test
-    @DisplayName("all API routes start with /api/v1 (except system routes) [GH-90000]")
+    @DisplayName("all API routes start with /api/v1 (except system routes)")
     void allApiRoutesStartWithApiV1() { // GH-90000
         List<String> apiRoutes = router.allRoutes().stream() // GH-90000
-                .filter(r -> !r.startsWith("/health [GH-90000]") && !r.startsWith("/metrics [GH-90000]"))
+                .filter(r -> !r.startsWith("/health") && !r.startsWith("/metrics"))
                 .toList(); // GH-90000
-        assertThat(apiRoutes).allSatisfy(r -> assertThat(r).startsWith("/api/v1 [GH-90000]"));
+        assertThat(apiRoutes).allSatisfy(r -> assertThat(r).startsWith("/api/v1"));
     }
 
     @Test
-    @DisplayName("total registered routes matches expected count [GH-90000]")
+    @DisplayName("total registered routes matches expected count")
     void routeCountMatchesFull() { // GH-90000
         assertThat(router.routeCount()).isEqualTo(17); // GH-90000
     }

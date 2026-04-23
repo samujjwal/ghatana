@@ -24,8 +24,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer   service
  * @doc.pattern Test
  */
-@DisplayName("Concurrent Session Management Tests [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("Concurrent Session Management Tests")
+@Tag("integration")
 class ConcurrentSessionManagementTest extends EventloopTestBase {
 
     /** Simple in-memory session store used in tests. */
@@ -53,7 +53,7 @@ class ConcurrentSessionManagementTest extends EventloopTestBase {
     // ── Concurrent login ──────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("concurrent login attempts for different users all succeed [GH-90000]")
+    @DisplayName("concurrent login attempts for different users all succeed")
     void concurrentLoginForDifferentUsersAllSucceed() throws InterruptedException { // GH-90000
         int userCount = 20;
         CountDownLatch latch = new CountDownLatch(userCount); // GH-90000
@@ -82,7 +82,7 @@ class ConcurrentSessionManagementTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("concurrent logins for same user create separate sessions [GH-90000]")
+    @DisplayName("concurrent logins for same user create separate sessions")
     void concurrentLoginsForSameUserCreateSeparateSessions() throws InterruptedException { // GH-90000
         String userId = "user-multi-session";
         int loginCount = 5;
@@ -115,7 +115,7 @@ class ConcurrentSessionManagementTest extends EventloopTestBase {
     // ── Concurrent token refresh ──────────────────────────────────────────────
 
     @Test
-    @DisplayName("concurrent token refresh requests extend session expiry correctly [GH-90000]")
+    @DisplayName("concurrent token refresh requests extend session expiry correctly")
     void concurrentTokenRefreshExtendsSessionExpiry() throws InterruptedException { // GH-90000
         String sessionId = UUID.randomUUID().toString(); // GH-90000
         Session original = new Session( // GH-90000
@@ -153,7 +153,7 @@ class ConcurrentSessionManagementTest extends EventloopTestBase {
     // ── Concurrent session invalidation ──────────────────────────────────────
 
     @Test
-    @DisplayName("concurrent logout requests for same session result in session removal [GH-90000]")
+    @DisplayName("concurrent logout requests for same session result in session removal")
     void concurrentLogoutForSameSessionRemovesSession() throws InterruptedException { // GH-90000
         String sessionId = UUID.randomUUID().toString(); // GH-90000
         Session session = new Session( // GH-90000
@@ -186,7 +186,7 @@ class ConcurrentSessionManagementTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("session invalidation does not affect other active sessions [GH-90000]")
+    @DisplayName("session invalidation does not affect other active sessions")
     void sessionInvalidationDoesNotAffectOtherSessions() throws InterruptedException { // GH-90000
         // Seed 10 sessions
         List<String> allSessionIds = new ArrayList<>(); // GH-90000
@@ -219,7 +219,7 @@ class ConcurrentSessionManagementTest extends EventloopTestBase {
     // ── Session conflict resolution ───────────────────────────────────────────
 
     @Test
-    @DisplayName("simultaneous upsert of same session ID preserves exactly one session [GH-90000]")
+    @DisplayName("simultaneous upsert of same session ID preserves exactly one session")
     void simultaneousUpsertPreservesOneSession() throws InterruptedException { // GH-90000
         String sharedSessionId = UUID.randomUUID().toString(); // GH-90000
         int threadCount = 10;

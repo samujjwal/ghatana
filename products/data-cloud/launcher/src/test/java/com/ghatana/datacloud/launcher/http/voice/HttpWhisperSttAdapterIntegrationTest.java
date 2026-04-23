@@ -18,7 +18,7 @@ import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("HttpWhisperSttAdapter Integration [GH-90000]")
+@DisplayName("HttpWhisperSttAdapter Integration")
 class HttpWhisperSttAdapterIntegrationTest extends EventloopTestBase {
 
     private HttpServer server;
@@ -31,7 +31,7 @@ class HttpWhisperSttAdapterIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("transcription completes within two seconds against a responsive STT endpoint [GH-90000]")
+    @DisplayName("transcription completes within two seconds against a responsive STT endpoint")
     void transcriptionCompletesWithinTwoSeconds() throws Exception { // GH-90000
         server = HttpServer.create(new InetSocketAddress(0), 0); // GH-90000
         server.createContext("/v1/audio/transcriptions", this::handleTranscriptionRequest); // GH-90000
@@ -48,7 +48,7 @@ class HttpWhisperSttAdapterIntegrationTest extends EventloopTestBase {
         SttTranscription result = runPromise(() -> adapter.transcribe("audio".getBytes(StandardCharsets.UTF_8), "audio/wav", "en")); // GH-90000
         long elapsedMillis = Duration.between(startedAt, Instant.now()).toMillis(); // GH-90000
 
-        assertThat(result.text()).isEqualTo("list pipelines [GH-90000]");
+        assertThat(result.text()).isEqualTo("list pipelines");
         assertThat(result.fallback()).isFalse(); // GH-90000
         assertThat(elapsedMillis).isLessThan(2_000L); // GH-90000
     }

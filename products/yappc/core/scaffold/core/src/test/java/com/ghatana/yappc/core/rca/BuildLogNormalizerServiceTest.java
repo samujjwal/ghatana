@@ -83,7 +83,7 @@ class BuildLogNormalizerServiceTest {
     void testEmptyLogThrowsException() { // GH-90000
         BuildLogNormalizerService service = new BuildLogNormalizerService(); // GH-90000
 
-        assertThrows(IOException.class, () -> service.normalize(" [GH-90000]"));
+        assertThrows(IOException.class, () -> service.normalize(""));
         assertThrows(IOException.class, () -> service.normalize((String) null)); // GH-90000
     }
 }

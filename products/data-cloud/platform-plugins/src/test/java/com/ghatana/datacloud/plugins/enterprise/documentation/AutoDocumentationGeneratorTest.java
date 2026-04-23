@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.purpose Validate dataset documentation generation, versioning, search, and export
  * @doc.layer product
  */
-@DisplayName("AutoDocumentationGenerator Tests [GH-90000]")
+@DisplayName("AutoDocumentationGenerator Tests")
 class AutoDocumentationGeneratorTest extends EventloopTestBase {
 
     private AutoDocumentationGenerator generator;
@@ -35,8 +35,8 @@ class AutoDocumentationGeneratorTest extends EventloopTestBase {
         generator = new AutoDocumentationGenerator(); // GH-90000
         sampleSchema = SchemaDefinition.builder() // GH-90000
                 .columns(List.of( // GH-90000
-                        SchemaColumn.builder().name("id [GH-90000]").dataType("STRING [GH-90000]").build(),
-                        SchemaColumn.builder().name("amount [GH-90000]").dataType("DECIMAL [GH-90000]").build()
+                        SchemaColumn.builder().name("id").dataType("STRING").build(),
+                        SchemaColumn.builder().name("amount").dataType("DECIMAL").build()
                 ))
                 .build(); // GH-90000
     }
@@ -46,11 +46,11 @@ class AutoDocumentationGeneratorTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Construction [GH-90000]")
+    @DisplayName("Construction")
     class Construction {
 
         @Test
-        @DisplayName("should create generator without errors [GH-90000]")
+        @DisplayName("should create generator without errors")
         void shouldCreateGenerator() { // GH-90000
             assertThatCode(() -> new AutoDocumentationGenerator()).doesNotThrowAnyException(); // GH-90000
         }
@@ -61,21 +61,21 @@ class AutoDocumentationGeneratorTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("generateDocumentation [GH-90000]")
+    @DisplayName("generateDocumentation")
     class GenerateDocumentation {
 
         @Test
-        @DisplayName("should generate documentation for a valid dataset schema [GH-90000]")
+        @DisplayName("should generate documentation for a valid dataset schema")
         void shouldGenerateDocumentation() { // GH-90000
             DatasetDocumentation doc = runPromise(() -> // GH-90000
                     generator.generateDocumentation("dataset-1", "Orders", sampleSchema, Map.of())); // GH-90000
 
             assertThat(doc).isNotNull(); // GH-90000
-            assertThat(doc.getDatasetId()).isEqualTo("dataset-1 [GH-90000]");
+            assertThat(doc.getDatasetId()).isEqualTo("dataset-1");
         }
 
         @Test
-        @DisplayName("should include columns in generated documentation [GH-90000]")
+        @DisplayName("should include columns in generated documentation")
         void shouldIncludeColumns() { // GH-90000
             DatasetDocumentation doc = runPromise(() -> // GH-90000
                     generator.generateDocumentation("dataset-2", "Orders", sampleSchema, Map.of())); // GH-90000
@@ -84,7 +84,7 @@ class AutoDocumentationGeneratorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should set version to 1 on initial generation [GH-90000]")
+        @DisplayName("should set version to 1 on initial generation")
         void shouldSetInitialVersion() { // GH-90000
             DatasetDocumentation doc = runPromise(() -> // GH-90000
                     generator.generateDocumentation("dataset-3", "Orders", sampleSchema, Map.of())); // GH-90000
@@ -98,24 +98,24 @@ class AutoDocumentationGeneratorTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("getDocumentation [GH-90000]")
+    @DisplayName("getDocumentation")
     class GetDocumentation {
 
         @Test
-        @DisplayName("should retrieve previously generated documentation [GH-90000]")
+        @DisplayName("should retrieve previously generated documentation")
         void shouldRetrievePreviouslyGeneratedDoc() { // GH-90000
             runPromise(() -> generator.generateDocumentation("dataset-g", "Products", sampleSchema, Map.of())); // GH-90000
 
-            DatasetDocumentation doc = runPromise(() -> generator.getDocumentation("dataset-g [GH-90000]"));
+            DatasetDocumentation doc = runPromise(() -> generator.getDocumentation("dataset-g"));
             assertThat(doc).isNotNull(); // GH-90000
-            assertThat(doc.getDatasetId()).isEqualTo("dataset-g [GH-90000]");
+            assertThat(doc.getDatasetId()).isEqualTo("dataset-g");
         }
 
         @Test
-        @DisplayName("should return null when documentation does not exist [GH-90000]")
+        @DisplayName("should return null when documentation does not exist")
         void shouldReturnNullForUnknownDataset() { // GH-90000
             DatasetDocumentation doc = runPromise(() -> // GH-90000
-                    generator.getDocumentation("unknown-dataset [GH-90000]"));
+                    generator.getDocumentation("unknown-dataset"));
             assertThat(doc).isNull(); // GH-90000
         }
     }
@@ -125,16 +125,16 @@ class AutoDocumentationGeneratorTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("getVersionHistory [GH-90000]")
+    @DisplayName("getVersionHistory")
     class GetVersionHistory {
 
         @Test
-        @DisplayName("should return version history after documentation is created [GH-90000]")
+        @DisplayName("should return version history after documentation is created")
         void shouldReturnVersionHistory() { // GH-90000
             runPromise(() -> generator.generateDocumentation("dataset-h", "Orders", sampleSchema, Map.of())); // GH-90000
 
             List<DocumentationVersion> history = runPromise(() -> // GH-90000
-                    generator.getVersionHistory("dataset-h [GH-90000]"));
+                    generator.getVersionHistory("dataset-h"));
             assertThat(history).isNotEmpty(); // GH-90000
         }
     }
@@ -144,11 +144,11 @@ class AutoDocumentationGeneratorTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("search [GH-90000]")
+    @DisplayName("search")
     class Search {
 
         @Test
-        @DisplayName("should return matching datasets for query [GH-90000]")
+        @DisplayName("should return matching datasets for query")
         void shouldReturnMatchingDatasets() { // GH-90000
             runPromise(() -> generator.generateDocumentation("orders-2026", "Orders 2026", sampleSchema, Map.of())); // GH-90000
 
@@ -158,7 +158,7 @@ class AutoDocumentationGeneratorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should return empty list when no match found [GH-90000]")
+        @DisplayName("should return empty list when no match found")
         void shouldReturnEmptyForNoMatch() { // GH-90000
             List<SearchResult> results = runPromise(() -> // GH-90000
                     generator.search("zzz-nonexistent-xyz", 10)); // GH-90000
@@ -171,15 +171,15 @@ class AutoDocumentationGeneratorTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("exportAsMarkdown [GH-90000]")
+    @DisplayName("exportAsMarkdown")
     class ExportAsMarkdown {
 
         @Test
-        @DisplayName("should export documentation as non-empty Markdown string [GH-90000]")
+        @DisplayName("should export documentation as non-empty Markdown string")
         void shouldExportAsMarkdown() { // GH-90000
             runPromise(() -> generator.generateDocumentation("dataset-md", "Orders", sampleSchema, Map.of())); // GH-90000
 
-            String markdown = runPromise(() -> generator.exportAsMarkdown("dataset-md [GH-90000]"));
+            String markdown = runPromise(() -> generator.exportAsMarkdown("dataset-md"));
             assertThat(markdown).isNotBlank(); // GH-90000
         }
     }

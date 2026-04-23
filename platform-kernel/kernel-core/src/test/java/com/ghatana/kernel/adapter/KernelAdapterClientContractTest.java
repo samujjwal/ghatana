@@ -18,11 +18,11 @@ import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("Kernel adapter client contracts [GH-90000]")
+@DisplayName("Kernel adapter client contracts")
 class KernelAdapterClientContractTest extends EventloopTestBase {
 
     @Test
-    @DisplayName("DataCloud adapter client exposes AsyncClient lifecycle defaults [GH-90000]")
+    @DisplayName("DataCloud adapter client exposes AsyncClient lifecycle defaults")
     void dataCloudClientExposesAsyncClientDefaults() { // GH-90000
         DataCloudKernelAdapterImpl.DataCloudClient client = new DataCloudKernelAdapterImpl.DataCloudClient() { // GH-90000
             @Override
@@ -62,7 +62,7 @@ class KernelAdapterClientContractTest extends EventloopTestBase {
 
             @Override
             public CompletableFuture<Object> beginTransaction() { // GH-90000
-                return CompletableFuture.completedFuture("tx-1 [GH-90000]");
+                return CompletableFuture.completedFuture("tx-1");
             }
 
             @Override
@@ -77,12 +77,12 @@ class KernelAdapterClientContractTest extends EventloopTestBase {
 
             @Override
             public CompletableFuture<Object> openReadStream(String datasetId, Map<String, String> options) { // GH-90000
-                return CompletableFuture.completedFuture("read-stream [GH-90000]");
+                return CompletableFuture.completedFuture("read-stream");
             }
 
             @Override
             public CompletableFuture<Object> openWriteStream(String datasetId, Map<String, String> options) { // GH-90000
-                return CompletableFuture.completedFuture("write-stream [GH-90000]");
+                return CompletableFuture.completedFuture("write-stream");
             }
 
             @Override
@@ -108,7 +108,7 @@ class KernelAdapterClientContractTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("AEP adapter client exposes AsyncClient lifecycle defaults [GH-90000]")
+    @DisplayName("AEP adapter client exposes AsyncClient lifecycle defaults")
     void aepClientExposesAsyncClientDefaults() { // GH-90000
         AepKernelAdapterImpl.AepClient client = new AepKernelAdapterImpl.AepClient() { // GH-90000
             @Override
@@ -143,7 +143,7 @@ class KernelAdapterClientContractTest extends EventloopTestBase {
 
             @Override
             public CompletableFuture<AepKernelAdapterImpl.DeployResult> deployAgent(String agentId, String agentType, String version, Map<String, Object> config, int instanceCount) { // GH-90000
-                return CompletableFuture.completedFuture(new AepKernelAdapterImpl.DeployResult("in-memory [GH-90000]"));
+                return CompletableFuture.completedFuture(new AepKernelAdapterImpl.DeployResult("in-memory"));
             }
 
             @Override
@@ -168,7 +168,7 @@ class KernelAdapterClientContractTest extends EventloopTestBase {
 
             @Override
             public CompletableFuture<Object> createPipeline(String pipelineId, String pipelineType, List<AepKernelAdapter.PipelineStage> stages, Map<String, String> config) { // GH-90000
-                return CompletableFuture.completedFuture("pipeline-1 [GH-90000]");
+                return CompletableFuture.completedFuture("pipeline-1");
             }
 
             @Override

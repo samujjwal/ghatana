@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("RequestSizeLimitFilter — body size limit enforcement [GH-90000]")
+@DisplayName("RequestSizeLimitFilter — body size limit enforcement")
 class RequestSizeLimitFilterTest extends EventloopTestBase {
 
     private static final long LIMIT = 1024L; // 1 KB limit for tests
@@ -27,7 +27,7 @@ class RequestSizeLimitFilterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("constructor throws for non-positive max body size [GH-90000]")
+    @DisplayName("constructor throws for non-positive max body size")
     void constructorThrowsForNonPositiveSize() { // GH-90000
         assertThatThrownBy(() -> new RequestSizeLimitFilter(0)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class); // GH-90000
@@ -36,19 +36,19 @@ class RequestSizeLimitFilterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("getMaxBodySize returns configured limit [GH-90000]")
+    @DisplayName("getMaxBodySize returns configured limit")
     void getMaxBodySizeReturnsConfiguredLimit() { // GH-90000
         RequestSizeLimitFilter filter = new RequestSizeLimitFilter(LIMIT); // GH-90000
         assertThat(filter.getMaxBodySize()).isEqualTo(LIMIT); // GH-90000
     }
 
     @Test
-    @DisplayName("request within size limit is passed to delegate servlet [GH-90000]")
+    @DisplayName("request within size limit is passed to delegate servlet")
     void requestWithinLimitPassesToDelegate() throws Exception { // GH-90000
         RequestSizeLimitFilter filter = new RequestSizeLimitFilter(LIMIT); // GH-90000
         AsyncServlet wrapped = request -> filter.apply(request, okServlet()); // GH-90000
 
-        HttpRequest request = HttpRequest.post("http://example.com/api [GH-90000]")
+        HttpRequest request = HttpRequest.post("http://example.com/api")
                 .withHeader(HttpHeaders.CONTENT_LENGTH, "512") // GH-90000
                 .build(); // GH-90000
 
@@ -58,12 +58,12 @@ class RequestSizeLimitFilterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("request exactly at limit is passed to delegate servlet [GH-90000]")
+    @DisplayName("request exactly at limit is passed to delegate servlet")
     void requestAtExactLimitPasses() throws Exception { // GH-90000
         RequestSizeLimitFilter filter = new RequestSizeLimitFilter(LIMIT); // GH-90000
         AsyncServlet wrapped = request -> filter.apply(request, okServlet()); // GH-90000
 
-        HttpRequest request = HttpRequest.post("http://example.com/api [GH-90000]")
+        HttpRequest request = HttpRequest.post("http://example.com/api")
                 .withHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(LIMIT)) // GH-90000
                 .build(); // GH-90000
 
@@ -73,12 +73,12 @@ class RequestSizeLimitFilterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("request exceeding size limit returns 413 [GH-90000]")
+    @DisplayName("request exceeding size limit returns 413")
     void requestExceedingLimitReturns413() throws Exception { // GH-90000
         RequestSizeLimitFilter filter = new RequestSizeLimitFilter(LIMIT); // GH-90000
         AsyncServlet wrapped = request -> filter.apply(request, okServlet()); // GH-90000
 
-        HttpRequest request = HttpRequest.post("http://example.com/api [GH-90000]")
+        HttpRequest request = HttpRequest.post("http://example.com/api")
                 .withHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(LIMIT + 1)) // GH-90000
                 .build(); // GH-90000
 
@@ -88,12 +88,12 @@ class RequestSizeLimitFilterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("malformed Content-Length returns 400 [GH-90000]")
+    @DisplayName("malformed Content-Length returns 400")
     void malformedContentLengthReturns400() throws Exception { // GH-90000
         RequestSizeLimitFilter filter = new RequestSizeLimitFilter(LIMIT); // GH-90000
         AsyncServlet wrapped = request -> filter.apply(request, okServlet()); // GH-90000
 
-        HttpRequest request = HttpRequest.post("http://example.com/api [GH-90000]")
+        HttpRequest request = HttpRequest.post("http://example.com/api")
                 .withHeader(HttpHeaders.CONTENT_LENGTH, "not-a-number") // GH-90000
                 .build(); // GH-90000
 
@@ -103,12 +103,12 @@ class RequestSizeLimitFilterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("request without Content-Length is passed to delegate [GH-90000]")
+    @DisplayName("request without Content-Length is passed to delegate")
     void requestWithoutContentLengthPassesToDelegate() throws Exception { // GH-90000
         RequestSizeLimitFilter filter = new RequestSizeLimitFilter(LIMIT); // GH-90000
         AsyncServlet wrapped = request -> filter.apply(request, okServlet()); // GH-90000
 
-        HttpRequest request = HttpRequest.get("http://example.com/api [GH-90000]").build();
+        HttpRequest request = HttpRequest.get("http://example.com/api").build();
 
         HttpResponse response = runPromise(() -> wrapped.serve(request)); // GH-90000
 

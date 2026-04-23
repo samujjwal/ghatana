@@ -9,7 +9,11 @@ import java.util.Map;
 /**
  * Represents a message in a queue system.
  * Simplified for platform-connectors module.
- */
+  * @doc.type class
+ * @doc.purpose Provides queue message functionality.
+ * @doc.layer platform
+ * @doc.pattern Component
+*/
 public class QueueMessage {
     private final String id;
     private final String body;

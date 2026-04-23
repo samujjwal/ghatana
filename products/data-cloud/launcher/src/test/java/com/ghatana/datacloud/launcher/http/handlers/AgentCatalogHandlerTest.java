@@ -22,7 +22,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AgentCatalogHandler [GH-90000]")
+@DisplayName("AgentCatalogHandler")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class AgentCatalogHandlerTest extends EventloopTestBase {
 
@@ -47,7 +47,7 @@ class AgentCatalogHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("list rejects missing tenant before metrics or catalog work [GH-90000]")
+    @DisplayName("list rejects missing tenant before metrics or catalog work")
     void listRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
@@ -58,9 +58,9 @@ class AgentCatalogHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("get rejects missing tenant before metrics or catalog work [GH-90000]")
+    @DisplayName("get rejects missing tenant before metrics or catalog work")
     void getRejectsMissingTenant() { // GH-90000
-        when(request.getPathParameter("id [GH-90000]")).thenReturn("agent-1 [GH-90000]");
+        when(request.getPathParameter("id")).thenReturn("agent-1");
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
         HttpResponse response = runPromise(() -> handler.handleGetAgent(request)); // GH-90000

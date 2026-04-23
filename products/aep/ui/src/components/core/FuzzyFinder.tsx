@@ -46,35 +46,29 @@ interface FuzzyFinderProps {
 }
 
 /**
- * Default finder items
+ * Default finder items — using canonical AEP routes only.
+ * Non-existent routes (settings, old hash paths) have been removed.
  */
 export const DEFAULT_FINDER_ITEMS: FinderItem[] = [
   {
     id: 'monitoring',
     label: 'Monitoring Dashboard',
     icon: <BarChart3 className="h-4 w-4" />,
-    action: () => window.location.hash = '#/monitoring',
+    action: () => window.location.assign('/operate'),
     category: 'Pages',
   },
   {
     id: 'governance',
     label: 'Governance',
     icon: <Shield className="h-4 w-4" />,
-    action: () => window.location.hash = '#/governance',
+    action: () => window.location.assign('/govern'),
     category: 'Pages',
   },
   {
-    id: 'runs',
-    label: 'Pipeline Runs',
+    id: 'pipelines',
+    label: 'Pipelines',
     icon: <FileText className="h-4 w-4" />,
-    action: () => window.location.hash = '#/runs',
-    category: 'Pages',
-  },
-  {
-    id: 'settings',
-    label: 'Settings',
-    icon: <Settings className="h-4 w-4" />,
-    action: () => window.location.hash = '#/settings',
+    action: () => window.location.assign('/build/pipelines'),
     category: 'Pages',
   },
 ];
@@ -102,9 +96,9 @@ export const FuzzyFinder: React.FC<FuzzyFinderProps> = ({
    */
   const filteredItems = React.useMemo(() => {
     if (!query) return items;
-    
+
     const lowerQuery = query.toLowerCase();
-    return items.filter(item => 
+    return items.filter(item =>
       item.label.toLowerCase().includes(lowerQuery) ||
       item.category?.toLowerCase().includes(lowerQuery)
     );
@@ -115,7 +109,7 @@ export const FuzzyFinder: React.FC<FuzzyFinderProps> = ({
    */
   const groupedItems = React.useMemo(() => {
     const groups: Record<string, FinderItem[]> = {};
-    
+
     filteredItems.forEach(item => {
       const category = item.category || 'Other';
       if (!groups[category]) {
@@ -123,7 +117,7 @@ export const FuzzyFinder: React.FC<FuzzyFinderProps> = ({
       }
       groups[category].push(item);
     });
-    
+
     return groups;
   }, [filteredItems]);
 

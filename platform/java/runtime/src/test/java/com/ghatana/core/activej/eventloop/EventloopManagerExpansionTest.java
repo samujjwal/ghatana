@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.fail;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("EventloopManager - Phase 3 Expansion [GH-90000]")
+@DisplayName("EventloopManager - Phase 3 Expansion")
 class EventloopManagerExpansionTest {
 
     @AfterEach
@@ -43,11 +43,11 @@ class EventloopManagerExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Scalability & Capacity [GH-90000]")
+    @DisplayName("Scalability & Capacity")
     class ScalabilityTests {
 
         @Test
-        @DisplayName("Creates up to 50 eventloops without exhaustion [GH-90000]")
+        @DisplayName("Creates up to 50 eventloops without exhaustion")
         void manyEventloopsCreated() { // GH-90000
             int loopCount = 50;
             List<Eventloop> loops = new ArrayList<>(); // GH-90000
@@ -62,7 +62,7 @@ class EventloopManagerExpansionTest {
         }
 
         @Test
-        @DisplayName("Active count increments correctly with many sequential creates [GH-90000]")
+        @DisplayName("Active count increments correctly with many sequential creates")
         void activeCountTracksSequentialCreations() { // GH-90000
             for (int i = 1; i <= 25; i++) { // GH-90000
                 EventloopManager.create(); // GH-90000
@@ -71,7 +71,7 @@ class EventloopManagerExpansionTest {
         }
 
         @Test
-        @DisplayName("Rapid get/clear cycles maintain consistency [GH-90000]")
+        @DisplayName("Rapid get/clear cycles maintain consistency")
         void rapidGetClearCycles() { // GH-90000
             for (int i = 0; i < 100; i++) { // GH-90000
                 EventloopManager.getCurrentEventloop(); // GH-90000
@@ -84,7 +84,7 @@ class EventloopManagerExpansionTest {
         }
 
         @Test
-        @DisplayName("Bulk shutdown handles 30+ eventloops [GH-90000]")
+        @DisplayName("Bulk shutdown handles 30+ eventloops")
         void bulkShutdown() { // GH-90000
             for (int i = 0; i < 30; i++) { // GH-90000
                 EventloopManager.create(); // GH-90000
@@ -98,7 +98,7 @@ class EventloopManagerExpansionTest {
         }
 
         @Test
-        @DisplayName("Shutdown timeout parameter respected [GH-90000]")
+        @DisplayName("Shutdown timeout parameter respected")
         void shutdownTimeoutRespected() { // GH-90000
             EventloopManager.create(); // GH-90000
 
@@ -116,11 +116,11 @@ class EventloopManagerExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Multi-Thread Isolation [GH-90000]")
+    @DisplayName("Multi-Thread Isolation")
     class IsolationTests {
 
         @Test
-        @DisplayName("Each thread gets isolated eventloop via thread-local storage [GH-90000]")
+        @DisplayName("Each thread gets isolated eventloop via thread-local storage")
         void threadLocalIsolation() throws Exception { // GH-90000
             int threadCount = 10;
             Set<Long> threadIds = new HashSet<>(); // GH-90000
@@ -151,7 +151,7 @@ class EventloopManagerExpansionTest {
         }
 
         @Test
-        @DisplayName("Modified eventloop in one thread doesn't affect others [GH-90000]")
+        @DisplayName("Modified eventloop in one thread doesn't affect others")
         void noThreadCrossAffection() throws Exception { // GH-90000
             java.util.concurrent.CountDownLatch startLatch = new java.util.concurrent.CountDownLatch(1); // GH-90000
             java.util.concurrent.CountDownLatch doneLatch = new java.util.concurrent.CountDownLatch(3); // GH-90000
@@ -184,7 +184,7 @@ class EventloopManagerExpansionTest {
         }
 
         @Test
-        @DisplayName("Clear in one thread doesn't affect other threads' eventloops [GH-90000]")
+        @DisplayName("Clear in one thread doesn't affect other threads' eventloops")
         void clearIsolation() throws Exception { // GH-90000
             Eventloop mainThread = EventloopManager.getCurrentEventloop(); // GH-90000
             java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1); // GH-90000
@@ -208,7 +208,7 @@ class EventloopManagerExpansionTest {
         }
 
         @Test
-        @DisplayName("Concurrent creation across threads creates unique instances [GH-90000]")
+        @DisplayName("Concurrent creation across threads creates unique instances")
         void concurrentCreationUniqueness() throws Exception { // GH-90000
             int threadCount = 20;
             java.util.concurrent.CountDownLatch startLatch = new java.util.concurrent.CountDownLatch(1); // GH-90000
@@ -248,11 +248,11 @@ class EventloopManagerExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("State Transitions [GH-90000]")
+    @DisplayName("State Transitions")
     class StateTransitionTests {
 
         @Test
-        @DisplayName("Transitions from no-eventloop → has-eventloop → no-eventloop [GH-90000]")
+        @DisplayName("Transitions from no-eventloop → has-eventloop → no-eventloop")
         void simpleStateTransition() { // GH-90000
             assertThat(EventloopManager.hasEventloop()).isFalse(); // GH-90000
 
@@ -264,7 +264,7 @@ class EventloopManagerExpansionTest {
         }
 
         @Test
-        @DisplayName("Multiple creates keep state consistent [GH-90000]")
+        @DisplayName("Multiple creates keep state consistent")
         void multipleCreatesState() { // GH-90000
             EventloopManager.create(); // GH-90000
             assertThat(EventloopManager.hasEventloop()).isTrue(); // GH-90000
@@ -280,7 +280,7 @@ class EventloopManagerExpansionTest {
         }
 
         @Test
-        @DisplayName("Shutdown transitions to permanently unavailable state [GH-90000]")
+        @DisplayName("Shutdown transitions to permanently unavailable state")
         void shutdownPermanenceAfterFirstCall() { // GH-90000
             EventloopManager.create(); // GH-90000
             EventloopManager.shutdownAll(Duration.ofSeconds(1)); // GH-90000
@@ -292,7 +292,7 @@ class EventloopManagerExpansionTest {
         }
 
         @Test
-        @DisplayName("Reset from shutdown state restores functionality [GH-90000]")
+        @DisplayName("Reset from shutdown state restores functionality")
         void resetRestoresFunctionality() { // GH-90000
             EventloopManager.create(); // GH-90000
             EventloopManager.shutdownAll(Duration.ofSeconds(1)); // GH-90000
@@ -311,11 +311,11 @@ class EventloopManagerExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Getters & Queries [GH-90000]")
+    @DisplayName("Getters & Queries")
     class GetterTests {
 
         @Test
-        @DisplayName("GetEventloop by thread ID retrieves correct instance [GH-90000]")
+        @DisplayName("GetEventloop by thread ID retrieves correct instance")
         void getByThreadId() { // GH-90000
             long threadId = Thread.currentThread().getId(); // GH-90000
             Eventloop created = EventloopManager.create(); // GH-90000
@@ -326,7 +326,7 @@ class EventloopManagerExpansionTest {
         }
 
         @Test
-        @DisplayName("GetEventloop returns null for non-existent thread IDs [GH-90000]")
+        @DisplayName("GetEventloop returns null for non-existent thread IDs")
         void getByInvalidThreadIdReturnsNull() { // GH-90000
             Eventloop loop = EventloopManager.getEventloop(999999999L); // GH-90000
 
@@ -334,7 +334,7 @@ class EventloopManagerExpansionTest {
         }
 
         @Test
-        @DisplayName("GetCurrentEventloop is idempotent across many calls [GH-90000]")
+        @DisplayName("GetCurrentEventloop is idempotent across many calls")
         void idempotentGetCurrent() { // GH-90000
             Eventloop first = EventloopManager.getCurrentEventloop(); // GH-90000
             Eventloop second = EventloopManager.getCurrentEventloop(); // GH-90000
@@ -351,20 +351,20 @@ class EventloopManagerExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Edge Cases & Error Handling [GH-90000]")
+    @DisplayName("Edge Cases & Error Handling")
     class EdgeCaseTests {
 
         @Test
-        @DisplayName("Named creation with empty string creates eventloop [GH-90000]")
+        @DisplayName("Named creation with empty string creates eventloop")
         void namedCreationEmptyString() { // GH-90000
-            Eventloop loop = EventloopManager.create(" [GH-90000]");
+            Eventloop loop = EventloopManager.create("");
 
             assertThat(loop).isNotNull(); // GH-90000
             assertThat(EventloopManager.getActiveCount()).isEqualTo(1); // GH-90000
         }
 
         @Test
-        @DisplayName("Named creation with long names succeeds [GH-90000]")
+        @DisplayName("Named creation with long names succeeds")
         void namedCreationLongName() { // GH-90000
             String longName = "very-long-eventloop-name-" + "x".repeat(100); // GH-90000
             Eventloop loop = EventloopManager.create(longName); // GH-90000
@@ -374,7 +374,7 @@ class EventloopManagerExpansionTest {
         }
 
         @Test
-        @DisplayName("ShutdownAll with very short timeout completes [GH-90000]")
+        @DisplayName("ShutdownAll with very short timeout completes")
         void shutdownVeryShortTimeout() { // GH-90000
             EventloopManager.create(); // GH-90000
 
@@ -384,7 +384,7 @@ class EventloopManagerExpansionTest {
         }
 
         @Test
-        @DisplayName("ShutdownAll with zero duration handled [GH-90000]")
+        @DisplayName("ShutdownAll with zero duration handled")
         void shutdownZeroDuration() { // GH-90000
             EventloopManager.create(); // GH-90000
 
@@ -400,11 +400,11 @@ class EventloopManagerExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Concurrent Stress [GH-90000]")
+    @DisplayName("Concurrent Stress")
     class StressTests {
 
         @Test
-        @DisplayName("High thread contention on getCurrentEventloop [GH-90000]")
+        @DisplayName("High thread contention on getCurrentEventloop")
         void highContention() throws Exception { // GH-90000
             int threadCount = 50;
             java.util.concurrent.CountDownLatch startLatch = new java.util.concurrent.CountDownLatch(1); // GH-90000
@@ -439,7 +439,7 @@ class EventloopManagerExpansionTest {
         }
 
         @Test
-        @DisplayName("Rapid mixed operations maintain consistency [GH-90000]")
+        @DisplayName("Rapid mixed operations maintain consistency")
         void rapidMixedOps() throws Exception { // GH-90000
             int iterationCount = 100;
             java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1); // GH-90000
@@ -461,7 +461,7 @@ class EventloopManagerExpansionTest {
         }
 
         @Test
-        @DisplayName("Many threads repeatedly querying active count [GH-90000]")
+        @DisplayName("Many threads repeatedly querying active count")
         void activeCountQueryStress() throws Exception { // GH-90000
             int threadCount = 20;
             java.util.concurrent.CountDownLatch startLatch = new java.util.concurrent.CountDownLatch(1); // GH-90000
@@ -509,11 +509,11 @@ class EventloopManagerExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Naming Variations [GH-90000]")
+    @DisplayName("Naming Variations")
     class NamingTests {
 
         @Test
-        @DisplayName("Custom named eventloops are created correctly [GH-90000]")
+        @DisplayName("Custom named eventloops are created correctly")
         void customNaming() { // GH-90000
             String[] names = {
                 "io-loop",
@@ -532,7 +532,7 @@ class EventloopManagerExpansionTest {
         }
 
         @Test
-        @DisplayName("Many custom names don't cause collisions [GH-90000]")
+        @DisplayName("Many custom names don't cause collisions")
         void noNameCollisions() { // GH-90000
             int loopCount = 100;
             Set<Integer> hashes = new HashSet<>(); // GH-90000

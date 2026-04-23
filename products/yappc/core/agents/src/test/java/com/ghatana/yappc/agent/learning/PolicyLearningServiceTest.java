@@ -34,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("PolicyLearningService [GH-90000]")
+@DisplayName("PolicyLearningService")
 class PolicyLearningServiceTest extends EventloopTestBase {
 
     // In-memory repository for tests (no DB required) // GH-90000
@@ -53,11 +53,11 @@ class PolicyLearningServiceTest extends EventloopTestBase {
     // ─── 9.5.3 — High-confidence filtering ───────────────────────────────────
 
     @Nested
-    @DisplayName("High-confidence filtering (9.5.3) [GH-90000]")
+    @DisplayName("High-confidence filtering (9.5.3)")
     class HighConfidenceFiltering {
 
         @Test
-        @DisplayName("procedure at 0.95 confidence → stored as learned policy [GH-90000]")
+        @DisplayName("procedure at 0.95 confidence → stored as learned policy")
         void highConfidenceProcedureIsPersisted() { // GH-90000
             EnhancedProcedure proc = buildProcedure("proc-1", 0.95, List.of("step-1", "step-2")); // GH-90000
 
@@ -70,9 +70,9 @@ class PolicyLearningServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("procedure below threshold (0.85) → NOT stored [GH-90000]")
+        @DisplayName("procedure below threshold (0.85) → NOT stored")
         void lowConfidenceProcedureIsSkipped() { // GH-90000
-            EnhancedProcedure proc = buildProcedure("proc-low", 0.85, List.of("step-1 [GH-90000]"));
+            EnhancedProcedure proc = buildProcedure("proc-low", 0.85, List.of("step-1"));
 
             Integer saved = runSync(service.persistHighConfidence(List.of(proc), TENANT_ID)); // GH-90000
 
@@ -82,13 +82,13 @@ class PolicyLearningServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("mixed list: only above-threshold procedures are saved [GH-90000]")
+        @DisplayName("mixed list: only above-threshold procedures are saved")
         void mixedConfidenceListFilteredCorrectly() { // GH-90000
             List<EnhancedProcedure> procs = List.of( // GH-90000
-                    buildProcedure("proc-high-1", 0.95, List.of("a [GH-90000]")),
-                    buildProcedure("proc-low-1",  0.80, List.of("b [GH-90000]")),
+                    buildProcedure("proc-high-1", 0.95, List.of("a")),
+                    buildProcedure("proc-low-1",  0.80, List.of("b")),
                     buildProcedure("proc-high-2", 0.92, List.of("c", "d")), // GH-90000
-                    buildProcedure("proc-low-2",  0.50, List.of("e [GH-90000]"))
+                    buildProcedure("proc-low-2",  0.50, List.of("e"))
             );
 
             Integer saved = runSync(service.persistHighConfidence(procs, TENANT_ID)); // GH-90000
@@ -97,7 +97,7 @@ class PolicyLearningServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("empty input → returns 0 without error [GH-90000]")
+        @DisplayName("empty input → returns 0 without error")
         void emptyInputReturnsZero() { // GH-90000
             Integer saved = runSync(service.persistHighConfidence(List.of(), TENANT_ID)); // GH-90000
 
@@ -108,26 +108,26 @@ class PolicyLearningServiceTest extends EventloopTestBase {
     // ─── 9.5.6 — Full flow: high-confidence turn → stored → queried ──────────
 
     @Nested
-    @DisplayName("9.5.6 Full flow: high-confidence turn → policy active → queryable [GH-90000]")
+    @DisplayName("9.5.6 Full flow: high-confidence turn → policy active → queryable")
     class FullFlow {
 
         @Test
-        @DisplayName("high-confidence turn → policy stored → getPoliciesForAgent returns it [GH-90000]")
+        @DisplayName("high-confidence turn → policy stored → getPoliciesForAgent returns it")
         void policyStoredAndQueryable() { // GH-90000
             // GIVEN: A high-confidence procedure (simulates a successful agent turn at reflect phase) // GH-90000
             EnhancedProcedure highConfidenceResult = EnhancedProcedure.builder() // GH-90000
-                    .id("turn-episode-001 [GH-90000]")
+                    .id("turn-episode-001")
                     .agentId(AGENT_ID) // GH-90000
-                    .situation("Extract functional requirements from user story [GH-90000]")
-                    .action("Analyze user story → identify actors → list acceptance criteria [GH-90000]")
+                    .situation("Extract functional requirements from user story")
+                    .action("Analyze user story → identify actors → list acceptance criteria")
                     .confidence(0.94) // GH-90000
                     .version(1) // GH-90000
                     .steps(List.of( // GH-90000
-                            ProcedureStep.builder().ordinal(1).description("Parse user story text [GH-90000]").build(),
-                            ProcedureStep.builder().ordinal(2).description("Identify actors [GH-90000]").build(),
-                            ProcedureStep.builder().ordinal(3).description("List acceptance criteria [GH-90000]").build()
+                            ProcedureStep.builder().ordinal(1).description("Parse user story text").build(),
+                            ProcedureStep.builder().ordinal(2).description("Identify actors").build(),
+                            ProcedureStep.builder().ordinal(3).description("List acceptance criteria").build()
                     ))
-                    .provenance(Provenance.builder().source("agent_reflection [GH-90000]").build())
+                    .provenance(Provenance.builder().source("agent_reflection").build())
                     .build(); // GH-90000
 
             // WHEN: PolicyLearningService processes the turn result
@@ -146,16 +146,16 @@ class PolicyLearningServiceTest extends EventloopTestBase {
             assertThat(stored.getAgentId()).isEqualTo(AGENT_ID); // GH-90000
             assertThat(stored.getTenantId()).isEqualTo(TENANT_ID); // GH-90000
             assertThat(stored.getConfidence()).isEqualTo(0.94); // GH-90000
-            assertThat(stored.getProcedure()).contains("Extract functional requirements [GH-90000]");
-            assertThat(stored.getProcedure()).contains("steps [GH-90000]");
+            assertThat(stored.getProcedure()).contains("Extract functional requirements");
+            assertThat(stored.getProcedure()).contains("steps");
         }
 
         @Test
-        @DisplayName("getHighConfidencePolicies returns above-threshold policies only [GH-90000]")
+        @DisplayName("getHighConfidencePolicies returns above-threshold policies only")
         void highConfidenceQueryFiltersCorrectly() { // GH-90000
             // Store one high, one medium confidence policy
             EnhancedProcedure highProc = buildProcedure("proc-very-high", 0.95, List.of("a", "b")); // GH-90000
-            EnhancedProcedure medProc  = buildProcedure("proc-medium",    0.91, List.of("c [GH-90000]"));  // just above default threshold
+            EnhancedProcedure medProc  = buildProcedure("proc-medium",    0.91, List.of("c"));  // just above default threshold
 
             runSync(service.persistHighConfidence(List.of(highProc, medProc), TENANT_ID)); // GH-90000
 
@@ -168,7 +168,7 @@ class PolicyLearningServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("learned policy contains serialized procedure steps [GH-90000]")
+        @DisplayName("learned policy contains serialized procedure steps")
         void procedureStepsAreSerialized() { // GH-90000
             EnhancedProcedure proc = buildProcedure("proc-steps", 0.92, List.of("step-A", "step-B", "step-C")); // GH-90000
 
@@ -178,20 +178,20 @@ class PolicyLearningServiceTest extends EventloopTestBase {
             assertThat(policies).hasSize(1); // GH-90000
 
             String procedureJson = policies.get(0).getProcedure(); // GH-90000
-            assertThat(procedureJson).contains("steps [GH-90000]");
+            assertThat(procedureJson).contains("steps");
             // All three step actions must be serialized
-            assertThat(procedureJson).contains("step-A [GH-90000]");
-            assertThat(procedureJson).contains("step-B [GH-90000]");
-            assertThat(procedureJson).contains("step-C [GH-90000]");
+            assertThat(procedureJson).contains("step-A");
+            assertThat(procedureJson).contains("step-B");
+            assertThat(procedureJson).contains("step-C");
         }
     }
 
     // ─── Tenant isolation ─────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("policies are isolated by tenant — tenant-B cannot see tenant-A policies [GH-90000]")
+    @DisplayName("policies are isolated by tenant — tenant-B cannot see tenant-A policies")
     void tenantIsolation() { // GH-90000
-        EnhancedProcedure proc = buildProcedure("proc-isolated", 0.95, List.of("x [GH-90000]"));
+        EnhancedProcedure proc = buildProcedure("proc-isolated", 0.95, List.of("x"));
 
         runSync(service.persistHighConfidence(List.of(proc), "tenant-A")); // GH-90000
 

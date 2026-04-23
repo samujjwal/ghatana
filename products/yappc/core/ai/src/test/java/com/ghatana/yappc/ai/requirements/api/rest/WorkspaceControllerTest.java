@@ -29,7 +29,7 @@ import static org.mockito.Mockito.when;
 /**
  * Tests for WorkspaceController.
  */
-@DisplayName("WorkspaceController Tests [GH-90000]")
+@DisplayName("WorkspaceController Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles workspace controller test operations
@@ -53,20 +53,20 @@ class WorkspaceControllerTest extends EventloopTestBase {
         controller = new WorkspaceController(workspaceService, objectMapper, executor); // GH-90000
 
         testUser = User.builder() // GH-90000
-            .userId("user-123 [GH-90000]")
-            .email("test@example.com [GH-90000]")
-            .username("Test User [GH-90000]")
-            .roles(Set.of("USER [GH-90000]"))
-            .permissions(Set.of("WORKSPACE_CREATE [GH-90000]"))
+            .userId("user-123")
+            .email("test@example.com")
+            .username("Test User")
+            .roles(Set.of("USER"))
+            .permissions(Set.of("WORKSPACE_CREATE"))
             .build(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should create workspace when valid request [GH-90000]")
+    @DisplayName("Should create workspace when valid request")
     void shouldCreateWorkspaceWhenValidRequest() throws Exception { // GH-90000
         // Given
         Workspace mockWorkspace = createMockWorkspace(); // GH-90000
-        when(workspaceService.createWorkspace(eq(testUser), eq("Test Workspace [GH-90000]"), eq("Description [GH-90000]")))
+        when(workspaceService.createWorkspace(eq(testUser), eq("Test Workspace"), eq("Description")))
             .thenReturn(Promise.of(mockWorkspace)); // GH-90000
 
         // When/Then - Verify service integration works
@@ -76,12 +76,12 @@ class WorkspaceControllerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should get workspace when valid ID [GH-90000]")
+    @DisplayName("Should get workspace when valid ID")
     void shouldGetWorkspaceWhenValidId() { // GH-90000
         // Given
         // Skip HttpRequest creation for now - test the service integration directly
         Workspace mockWorkspace = createMockWorkspace(); // GH-90000
-        when(workspaceService.getWorkspace(eq("ws-123 [GH-90000]"), eq(testUser)))
+        when(workspaceService.getWorkspace(eq("ws-123"), eq(testUser)))
             .thenReturn(Promise.of(mockWorkspace)); // GH-90000
 
         // When/Then - Verify service integration works
@@ -90,11 +90,11 @@ class WorkspaceControllerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should return 400 when workspace not found [GH-90000]")
+    @DisplayName("Should return 400 when workspace not found")
     void shouldReturn400WhenWorkspaceNotFound() { // GH-90000
         // Given
-        when(workspaceService.getWorkspace(eq("invalid [GH-90000]"), eq(testUser)))
-            .thenReturn(Promise.ofException(new IllegalArgumentException("Workspace not found [GH-90000]")));
+        when(workspaceService.getWorkspace(eq("invalid"), eq(testUser)))
+            .thenReturn(Promise.ofException(new IllegalArgumentException("Workspace not found")));
 
         // When/Then - Verify mock setup works
         // The controller error handling is tested via integration tests
@@ -102,11 +102,11 @@ class WorkspaceControllerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should delete workspace when authorized [GH-90000]")
+    @DisplayName("Should delete workspace when authorized")
     void shouldDeleteWorkspaceWhenAuthorized() { // GH-90000
         // Given
         // Test service integration directly
-        when(workspaceService.deleteWorkspace(eq("ws-123 [GH-90000]"), eq(testUser)))
+        when(workspaceService.deleteWorkspace(eq("ws-123"), eq(testUser)))
             .thenReturn(Promise.of(null)); // GH-90000
 
         // When/Then - Verify service integration works
@@ -118,11 +118,11 @@ class WorkspaceControllerTest extends EventloopTestBase {
 
     private Workspace createMockWorkspace() { // GH-90000
         return Workspace.builder() // GH-90000
-            .workspaceId("ws-123 [GH-90000]")
-            .name("Test Workspace [GH-90000]")
-            .description("Test Description [GH-90000]")
-            .ownerId("user-123 [GH-90000]")
-            .orgUnitId("org-123 [GH-90000]")
+            .workspaceId("ws-123")
+            .name("Test Workspace")
+            .description("Test Description")
+            .ownerId("user-123")
+            .orgUnitId("org-123")
             .status(Workspace.WorkspaceStatus.ACTIVE) // GH-90000
             .settings(WorkspaceSettings.defaults()) // GH-90000
             .members(List.of(new WorkspaceMember("user-123", WorkspaceRole.OWNER, Instant.now()))) // GH-90000

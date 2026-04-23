@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern UnitTest
  */
-@DisplayName("PatternDetectionAgentAdapter [GH-90000]")
+@DisplayName("PatternDetectionAgentAdapter")
 class PatternDetectionAgentAdapterTest extends EventloopTestBase {
 
     private PatternDetectionAgent agent;
@@ -40,7 +40,7 @@ class PatternDetectionAgentAdapterTest extends EventloopTestBase {
         NFA nfa = createSimpleNFA("test-pattern", "login.attempt"); // GH-90000
         agent = PatternDetectionAgent.builder() // GH-90000
             .operatorId(com.ghatana.core.operator.OperatorId.of("test", "pattern", "detector", "1.0")) // GH-90000
-            .name("Test Pattern Detector [GH-90000]")
+            .name("Test Pattern Detector")
             .nfa(nfa) // GH-90000
             .confidenceThreshold(0.5) // GH-90000
             .windowDuration(Duration.ofMinutes(5)) // GH-90000
@@ -60,11 +60,11 @@ class PatternDetectionAgentAdapterTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("detect() [GH-90000]")
+    @DisplayName("detect()")
     class DetectTests {
 
         @Test
-        @DisplayName("returns empty list when agent produces no output [GH-90000]")
+        @DisplayName("returns empty list when agent produces no output")
         void returnsEmptyListWhenNoOutput() { // GH-90000
             AepEngine.Event event = new AepEngine.Event("unmatched.event",  // GH-90000
                 Map.of("key", "value"), Map.of(), Instant.now()); // GH-90000
@@ -78,7 +78,7 @@ class PatternDetectionAgentAdapterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("handles agent errors gracefully [GH-90000]")
+        @DisplayName("handles agent errors gracefully")
         void handlesAgentErrorsGracefully() { // GH-90000
             // Create a null agent to trigger error
             PatternDetectionAgentAdapter badAdapter = new PatternDetectionAgentAdapter(null, "bad-pattern"); // GH-90000
@@ -96,7 +96,7 @@ class PatternDetectionAgentAdapterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("converts AepEngine.Event to platform Event correctly [GH-90000]")
+        @DisplayName("converts AepEngine.Event to platform Event correctly")
         void convertsEventCorrectly() { // GH-90000
             Map<String, String> headers = Map.of("correlationId", "corr-123", "traceId", "trace-456"); // GH-90000
             Map<String, Object> payload = Map.of("userId", "user-123", "action", "login"); // GH-90000
@@ -112,7 +112,7 @@ class PatternDetectionAgentAdapterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("preserves tenantId in conversion [GH-90000]")
+        @DisplayName("preserves tenantId in conversion")
         void preservesTenantId() { // GH-90000
             AepEngine.Event event = new AepEngine.Event("test.event",  // GH-90000
                 Map.of(), Map.of(), Instant.now()); // GH-90000
@@ -126,11 +126,11 @@ class PatternDetectionAgentAdapterTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("wrap() [GH-90000]")
+    @DisplayName("wrap()")
     class WrapTests {
 
         @Test
-        @DisplayName("creates adapter with given agent and patternId [GH-90000]")
+        @DisplayName("creates adapter with given agent and patternId")
         void createsAdapterWithGivenParameters() { // GH-90000
             PatternDetectionAgentAdapter result = PatternDetectionAgentAdapter.wrap(agent, "pattern-x"); // GH-90000
             
@@ -138,7 +138,7 @@ class PatternDetectionAgentAdapterTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("throws on null agent [GH-90000]")
+        @DisplayName("throws on null agent")
         void throwsOnNullAgent() { // GH-90000
             // The wrap method should handle null gracefully or throw
             // Based on implementation, it creates the adapter which will fail at runtime

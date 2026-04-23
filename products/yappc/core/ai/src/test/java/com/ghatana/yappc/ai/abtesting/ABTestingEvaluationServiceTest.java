@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("ABTestingEvaluationService Tests [GH-90000]")
+@DisplayName("ABTestingEvaluationService Tests")
 class ABTestingEvaluationServiceTest extends EventloopTestBase {
 
   private ABTestingEvaluationService service;
@@ -37,11 +37,11 @@ class ABTestingEvaluationServiceTest extends EventloopTestBase {
   // ===== Experiment Evaluation Tests =====
 
   @Nested
-  @DisplayName("Experiment Evaluation [GH-90000]")
+  @DisplayName("Experiment Evaluation")
   class ExperimentEvaluation {
 
     @Test
-    @DisplayName("Should return non-significant result with fewer than 2 variants [GH-90000]")
+    @DisplayName("Should return non-significant result with fewer than 2 variants")
     void shouldReturnNonSignificantWithOneVariant() { // GH-90000
       VariantMetrics single = new VariantMetrics( // GH-90000
           "variant-a", AIModelProvider.GPT_4,
@@ -55,7 +55,7 @@ class ABTestingEvaluationServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should identify winner with clearly different satisfaction scores [GH-90000]")
+    @DisplayName("Should identify winner with clearly different satisfaction scores")
     void shouldIdentifyWinnerWithClearDifference() { // GH-90000
       VariantMetrics highSat = new VariantMetrics( // GH-90000
           "variant-a", AIModelProvider.GPT_4,
@@ -67,12 +67,12 @@ class ABTestingEvaluationServiceTest extends EventloopTestBase {
       StatisticalResult result = runPromise( // GH-90000
           () -> service.evaluateExperiment("exp-1", List.of(highSat, lowSat), 0.95)); // GH-90000
 
-      assertThat(result.winnerId()).isEqualTo("variant-a [GH-90000]");
+      assertThat(result.winnerId()).isEqualTo("variant-a");
       assertThat(result.confidence()).isGreaterThan(0.5); // GH-90000
     }
 
     @Test
-    @DisplayName("Should report low confidence with very similar variants [GH-90000]")
+    @DisplayName("Should report low confidence with very similar variants")
     void shouldReportLowConfidenceWithSimilarVariants() { // GH-90000
       VariantMetrics varA = new VariantMetrics( // GH-90000
           "variant-a", AIModelProvider.GPT_4,
@@ -92,11 +92,11 @@ class ABTestingEvaluationServiceTest extends EventloopTestBase {
   // ===== Cosine Similarity Tests =====
 
   @Nested
-  @DisplayName("Cosine Similarity [GH-90000]")
+  @DisplayName("Cosine Similarity")
   class CosineSimilarity {
 
     @Test
-    @DisplayName("Should return 1.0 for identical vectors [GH-90000]")
+    @DisplayName("Should return 1.0 for identical vectors")
     void shouldReturnOneForIdentical() { // GH-90000
       double[] vec = {1.0, 2.0, 3.0};
 
@@ -106,7 +106,7 @@ class ABTestingEvaluationServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should return 0.0 for orthogonal vectors [GH-90000]")
+    @DisplayName("Should return 0.0 for orthogonal vectors")
     void shouldReturnZeroForOrthogonal() { // GH-90000
       double[] vecA = {1.0, 0.0, 0.0};
       double[] vecB = {0.0, 1.0, 0.0};
@@ -117,7 +117,7 @@ class ABTestingEvaluationServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should return -1.0 for opposite vectors [GH-90000]")
+    @DisplayName("Should return -1.0 for opposite vectors")
     void shouldReturnNegativeOneForOpposite() { // GH-90000
       double[] vecA = {1.0, 0.0};
       double[] vecB = {-1.0, 0.0};
@@ -128,7 +128,7 @@ class ABTestingEvaluationServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle zero vectors [GH-90000]")
+    @DisplayName("Should handle zero vectors")
     void shouldHandleZeroVectors() { // GH-90000
       double[] zero = {0.0, 0.0, 0.0};
       double[] vec = {1.0, 2.0, 3.0};
@@ -139,7 +139,7 @@ class ABTestingEvaluationServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should reject vectors of different dimensions [GH-90000]")
+    @DisplayName("Should reject vectors of different dimensions")
     void shouldRejectDifferentDimensions() { // GH-90000
       double[] vecA = {1.0, 2.0};
       double[] vecB = {1.0, 2.0, 3.0};
@@ -152,11 +152,11 @@ class ABTestingEvaluationServiceTest extends EventloopTestBase {
   // ===== Percentile Tests =====
 
   @Nested
-  @DisplayName("Percentile Calculation [GH-90000]")
+  @DisplayName("Percentile Calculation")
   class PercentileCalculation {
 
     @Test
-    @DisplayName("Should calculate p50 correctly [GH-90000]")
+    @DisplayName("Should calculate p50 correctly")
     void shouldCalculateP50() { // GH-90000
       List<Double> values = List.of(10.0, 20.0, 30.0, 40.0, 50.0); // GH-90000
 
@@ -166,7 +166,7 @@ class ABTestingEvaluationServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should calculate p95 correctly [GH-90000]")
+    @DisplayName("Should calculate p95 correctly")
     void shouldCalculateP95() { // GH-90000
       List<Double> values = new ArrayList<>(); // GH-90000
       for (int i = 1; i <= 100; i++) { // GH-90000
@@ -179,7 +179,7 @@ class ABTestingEvaluationServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should return 0 for empty list [GH-90000]")
+    @DisplayName("Should return 0 for empty list")
     void shouldReturnZeroForEmpty() { // GH-90000
       double p50 = service.calculatePercentile(List.of(), 50); // GH-90000
 
@@ -187,7 +187,7 @@ class ABTestingEvaluationServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should return single value for single element [GH-90000]")
+    @DisplayName("Should return single value for single element")
     void shouldReturnSingleValue() { // GH-90000
       double p50 = service.calculatePercentile(List.of(42.0), 50); // GH-90000
 
@@ -198,11 +198,11 @@ class ABTestingEvaluationServiceTest extends EventloopTestBase {
   // ===== Variant Metrics Aggregation Tests =====
 
   @Nested
-  @DisplayName("Metrics Aggregation [GH-90000]")
+  @DisplayName("Metrics Aggregation")
   class MetricsAggregation {
 
     @Test
-    @DisplayName("Should aggregate metrics from recorded interactions [GH-90000]")
+    @DisplayName("Should aggregate metrics from recorded interactions")
     void shouldAggregateMetrics() { // GH-90000
       String experimentId = "exp-agg-1";
 
@@ -225,7 +225,7 @@ class ABTestingEvaluationServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should return zero metrics for unknown experiment [GH-90000]")
+    @DisplayName("Should return zero metrics for unknown experiment")
     void shouldReturnZeroForUnknownExperiment() { // GH-90000
       VariantMetrics metrics = runPromise( // GH-90000
           () -> service.aggregateVariantMetrics("nonexistent", "variant-a", AIModelProvider.GPT_4)); // GH-90000
@@ -238,11 +238,11 @@ class ABTestingEvaluationServiceTest extends EventloopTestBase {
   // ===== Thompson Sampling Tests =====
 
   @Nested
-  @DisplayName("Thompson Sampling [GH-90000]")
+  @DisplayName("Thompson Sampling")
   class ThompsonSampling {
 
     @Test
-    @DisplayName("Should select a variant from available options [GH-90000]")
+    @DisplayName("Should select a variant from available options")
     void shouldSelectVariant() { // GH-90000
       List<String> variants = List.of("variant-a", "variant-b", "variant-c"); // GH-90000
       Map<String, int[]> banditState = Map.of( // GH-90000
@@ -259,7 +259,7 @@ class ABTestingEvaluationServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should favor variant with higher success rate over many runs [GH-90000]")
+    @DisplayName("Should favor variant with higher success rate over many runs")
     void shouldFavorHighSuccessRate() { // GH-90000
       List<String> variants = List.of("winner", "loser"); // GH-90000
       Map<String, int[]> banditState = Map.of( // GH-90000
@@ -283,11 +283,11 @@ class ABTestingEvaluationServiceTest extends EventloopTestBase {
   // ===== Record Interaction Tests =====
 
   @Nested
-  @DisplayName("Record Interaction [GH-90000]")
+  @DisplayName("Record Interaction")
   class RecordInteraction {
 
     @Test
-    @DisplayName("Should update performance cache on interaction recording [GH-90000]")
+    @DisplayName("Should update performance cache on interaction recording")
     void shouldUpdatePerformanceCache() { // GH-90000
       service.recordInteraction("exp-1", new InteractionData( // GH-90000
           "variant-a", AIModelProvider.GPT_4, 200, true, 4.0, 100, 50, 0.01, Instant.now())); // GH-90000

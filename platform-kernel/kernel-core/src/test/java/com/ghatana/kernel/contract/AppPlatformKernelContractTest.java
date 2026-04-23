@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * focuses on the published OpenAPI document rather than spinning up an HTTP application
  * context that does not exist in this project.</p>
  */
-@DisplayName("App Platform Kernel Contract Tests [GH-90000]")
+@DisplayName("App Platform Kernel Contract Tests")
 public class AppPlatformKernelContractTest {
 
     private static final Path SPEC_PATH = Path.of( // GH-90000
@@ -48,7 +48,7 @@ public class AppPlatformKernelContractTest {
     private static final String API_VERSION = "1.0.0";
 
     @Test
-    @DisplayName("OpenAPI contract file exists and is readable [GH-90000]")
+    @DisplayName("OpenAPI contract file exists and is readable")
     void openApiContractFileExists() { // GH-90000
         assertThat(SPEC_PATH) // GH-90000
                 .as("Kernel OpenAPI contract should exist at %s", SPEC_PATH) // GH-90000
@@ -57,59 +57,59 @@ public class AppPlatformKernelContractTest {
     }
 
     @Test
-    @DisplayName("OpenAPI metadata matches expected kernel contract [GH-90000]")
+    @DisplayName("OpenAPI metadata matches expected kernel contract")
     void openApiMetadataIsConsistent() throws Exception { // GH-90000
         JsonNode root = readSpec(); // GH-90000
 
-        assertThat(root.path("openapi [GH-90000]").asText()).isEqualTo("3.1.0 [GH-90000]");
-        assertThat(root.path("info [GH-90000]").path("title [GH-90000]").asText()).isEqualTo("AppPlatform Kernel API [GH-90000]");
-        assertThat(root.path("info [GH-90000]").path("version [GH-90000]").asText()).isEqualTo(API_VERSION);
-        assertThat(root.path("servers [GH-90000]")).hasSizeGreaterThanOrEqualTo(2);
+        assertThat(root.path("openapi").asText()).isEqualTo("3.1.0");
+        assertThat(root.path("info").path("title").asText()).isEqualTo("AppPlatform Kernel API");
+        assertThat(root.path("info").path("version").asText()).isEqualTo(API_VERSION);
+        assertThat(root.path("servers")).hasSizeGreaterThanOrEqualTo(2);
     }
 
     @Test
-    @DisplayName("OpenAPI exposes all required kernel paths [GH-90000]")
+    @DisplayName("OpenAPI exposes all required kernel paths")
     void openApiContainsExpectedPaths() throws Exception { // GH-90000
-        JsonNode paths = readSpec().path("paths [GH-90000]");
+        JsonNode paths = readSpec().path("paths");
 
-        assertThat(paths.has("/health [GH-90000]")).isTrue();
-        assertThat(paths.has("/api/v1/rules/evaluate [GH-90000]")).isTrue();
-        assertThat(paths.has("/api/v1/rules/packs [GH-90000]")).isTrue();
-        assertThat(paths.has("/api/v1/plugins [GH-90000]")).isTrue();
-        assertThat(paths.has("/api/v1/plugins/register [GH-90000]")).isTrue();
-        assertThat(paths.has("/api/v1/calendar/bs-to-gregorian [GH-90000]")).isTrue();
-        assertThat(paths.has("/api/v1/calendar/gregorian-to-bs [GH-90000]")).isTrue();
-        assertThat(paths.has("/auth/token [GH-90000]")).isTrue();
+        assertThat(paths.has("/health")).isTrue();
+        assertThat(paths.has("/api/v1/rules/evaluate")).isTrue();
+        assertThat(paths.has("/api/v1/rules/packs")).isTrue();
+        assertThat(paths.has("/api/v1/plugins")).isTrue();
+        assertThat(paths.has("/api/v1/plugins/register")).isTrue();
+        assertThat(paths.has("/api/v1/calendar/bs-to-gregorian")).isTrue();
+        assertThat(paths.has("/api/v1/calendar/gregorian-to-bs")).isTrue();
+        assertThat(paths.has("/auth/token")).isTrue();
     }
 
     @Test
-    @DisplayName("OpenAPI defines bearer authentication and shared error schema [GH-90000]")
+    @DisplayName("OpenAPI defines bearer authentication and shared error schema")
     void openApiDefinesSharedSecurityAndErrorSchemas() throws Exception { // GH-90000
         JsonNode root = readSpec(); // GH-90000
-        JsonNode components = root.path("components [GH-90000]");
+        JsonNode components = root.path("components");
 
-        assertThat(components.path("securitySchemes [GH-90000]").has("BearerAuth [GH-90000]")).isTrue();
-        assertThat(components.path("securitySchemes [GH-90000]").path("BearerAuth [GH-90000]").path("type [GH-90000]").asText())
-                .isEqualTo("http [GH-90000]");
-        assertThat(components.path("schemas [GH-90000]").has("ErrorResponse [GH-90000]")).isTrue();
-        assertThat(components.path("schemas [GH-90000]").has("CalendarDate [GH-90000]")).isTrue();
+        assertThat(components.path("securitySchemes").has("BearerAuth")).isTrue();
+        assertThat(components.path("securitySchemes").path("BearerAuth").path("type").asText())
+                .isEqualTo("http");
+        assertThat(components.path("schemas").has("ErrorResponse")).isTrue();
+        assertThat(components.path("schemas").has("CalendarDate")).isTrue();
     }
 
     @Test
-    @DisplayName("OpenAPI request and response schemas cover key kernel capabilities [GH-90000]")
+    @DisplayName("OpenAPI request and response schemas cover key kernel capabilities")
     void openApiContainsExpectedSchemas() throws Exception { // GH-90000
-        JsonNode schemas = readSpec().path("components [GH-90000]").path("schemas [GH-90000]");
+        JsonNode schemas = readSpec().path("components").path("schemas");
 
-        assertThat(schemas.has("EvaluateRuleRequest [GH-90000]")).isTrue();
-        assertThat(schemas.has("EvaluateRuleResponse [GH-90000]")).isTrue();
-        assertThat(schemas.has("RulePackRequest [GH-90000]")).isTrue();
-        assertThat(schemas.has("RegisterPluginRequest [GH-90000]")).isTrue();
-        assertThat(schemas.has("RegisterPluginResponse [GH-90000]")).isTrue();
-        assertThat(schemas.has("InvokePluginRequest [GH-90000]")).isTrue();
-        assertThat(schemas.has("InvokePluginResponse [GH-90000]")).isTrue();
-        assertThat(schemas.has("TokenRequest [GH-90000]")).isTrue();
-        assertThat(schemas.has("TokenResponse [GH-90000]")).isTrue();
-        assertThat(schemas.has("HealthResponse [GH-90000]")).isTrue();
+        assertThat(schemas.has("EvaluateRuleRequest")).isTrue();
+        assertThat(schemas.has("EvaluateRuleResponse")).isTrue();
+        assertThat(schemas.has("RulePackRequest")).isTrue();
+        assertThat(schemas.has("RegisterPluginRequest")).isTrue();
+        assertThat(schemas.has("RegisterPluginResponse")).isTrue();
+        assertThat(schemas.has("InvokePluginRequest")).isTrue();
+        assertThat(schemas.has("InvokePluginResponse")).isTrue();
+        assertThat(schemas.has("TokenRequest")).isTrue();
+        assertThat(schemas.has("TokenResponse")).isTrue();
+        assertThat(schemas.has("HealthResponse")).isTrue();
     }
 
     private JsonNode readSpec() throws IOException { // GH-90000

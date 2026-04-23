@@ -26,7 +26,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("CapabilityRegistryHandler [GH-90000]")
+@DisplayName("CapabilityRegistryHandler")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class CapabilityRegistryHandlerTest extends EventloopTestBase {
 
@@ -51,10 +51,10 @@ class CapabilityRegistryHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("returns capability envelope when tenant header is present [GH-90000]")
+    @DisplayName("returns capability envelope when tenant header is present")
     void returnsCapabilityEnvelopeWhenTenantPresent() { // GH-90000
-        when(httpSupport.requireTenantIdOrFail(request)).thenReturn("tenant-capabilities [GH-90000]");
-        when(httpSupport.resolveCorrelationId(request)).thenReturn("req-1 [GH-90000]");
+        when(httpSupport.requireTenantIdOrFail(request)).thenReturn("tenant-capabilities");
+        when(httpSupport.resolveCorrelationId(request)).thenReturn("req-1");
         when(httpSupport.envelopeResponse(any(ApiResponse.class), any(ObjectMapper.class))).thenReturn(successResponse); // GH-90000
 
         HttpResponse response = runPromise(() -> handler.handleCapabilities(request)); // GH-90000
@@ -64,7 +64,7 @@ class CapabilityRegistryHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("returns 400 when tenant header is missing [GH-90000]")
+    @DisplayName("returns 400 when tenant header is missing")
     void returns400WhenTenantHeaderMissing() { // GH-90000
         when(httpSupport.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
         when(httpSupport.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); // GH-90000

@@ -34,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("YAPPC Lifecycle Integration [GH-90000]")
+@DisplayName("YAPPC Lifecycle Integration")
 class LifecycleIntegrationTest extends EventloopTestBase {
 
     private DurableWorkflowEngine    engine;
@@ -64,17 +64,17 @@ class LifecycleIntegrationTest extends EventloopTestBase {
     // ── Feature flag + workflow interaction ───────────────────────────────────
 
     @Nested
-    @DisplayName("feature flags drive workflow behaviour [GH-90000]")
+    @DisplayName("feature flags drive workflow behaviour")
     class FeatureFlagWorkflowIntegration {
 
         @Test
-        @DisplayName("AI_REQUIREMENT_EXTRACTION flag is disabled by default (safe default) [GH-90000]")
+        @DisplayName("AI_REQUIREMENT_EXTRACTION flag is disabled by default (safe default)")
         void aiRequirementExtractionIsOffByDefault() { // GH-90000
             assertThat(featureFlagService.isDisabled(FeatureFlag.AI_REQUIREMENT_EXTRACTION)).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("overriding flag to true is reflected in FeatureFlagService [GH-90000]")
+        @DisplayName("overriding flag to true is reflected in FeatureFlagService")
         void overrideFlagIsReflectedInService() { // GH-90000
             FeatureFlags.override(FeatureFlag.AI_CODE_REVIEW, true); // GH-90000
 
@@ -82,7 +82,7 @@ class LifecycleIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("clearing overrides restores default state [GH-90000]")
+        @DisplayName("clearing overrides restores default state")
         void clearingOverridesRestoresDefault() { // GH-90000
             FeatureFlags.override(FeatureFlag.PATTERN_LEARNING, true); // GH-90000
             FeatureFlags.clearOverrides(); // GH-90000
@@ -91,7 +91,7 @@ class LifecycleIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("snapshot returns all known flags [GH-90000]")
+        @DisplayName("snapshot returns all known flags")
         void snapshotReturnsAllKnownFlags() { // GH-90000
             Map<FeatureFlag, Boolean> snapshot = featureFlagService.snapshot(); // GH-90000
 
@@ -102,18 +102,18 @@ class LifecycleIntegrationTest extends EventloopTestBase {
     // ── Workflow service initialisation ───────────────────────────────────────
 
     @Nested
-    @DisplayName("workflow service initialisation [GH-90000]")
+    @DisplayName("workflow service initialisation")
     class WorkflowServiceInit {
 
         @Test
-        @DisplayName("workflowService initialises and registers templates [GH-90000]")
+        @DisplayName("workflowService initialises and registers templates")
         void workflowServiceInitialisesTemplates() { // GH-90000
             int count = workflowService.initialize(); // GH-90000
             assertThat(count).isGreaterThanOrEqualTo(3); // GH-90000
         }
 
         @Test
-        @DisplayName("registeredTemplates includes standard SDLC workflows [GH-90000]")
+        @DisplayName("registeredTemplates includes standard SDLC workflows")
         void registeredTemplatesContainsStandardWorkflows() { // GH-90000
             workflowService.initialize(); // GH-90000
             assertThat(workflowService.registeredTemplates()) // GH-90000
@@ -124,7 +124,7 @@ class LifecycleIntegrationTest extends EventloopTestBase {
     // ── Workflow execution ────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("workflow execution lifecycle [GH-90000]")
+    @DisplayName("workflow execution lifecycle")
     class WorkflowExecution {
 
         @BeforeEach
@@ -133,7 +133,7 @@ class LifecycleIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("starting a new-feature workflow returns a workflow ID [GH-90000]")
+        @DisplayName("starting a new-feature workflow returns a workflow ID")
         void startNewFeatureWorkflowReturnsId() { // GH-90000
             DurableWorkflowEngine.WorkflowExecution exec =
                     workflowService.startWorkflow("new-feature", "tenant-1", // GH-90000
@@ -143,7 +143,7 @@ class LifecycleIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("workflow status is accessible after start [GH-90000]")
+        @DisplayName("workflow status is accessible after start")
         void workflowStatusIsAccessibleAfterStart() { // GH-90000
             DurableWorkflowEngine.WorkflowExecution exec =
                     workflowService.startWorkflow("bug-fix", "tenant-1", // GH-90000
@@ -156,7 +156,7 @@ class LifecycleIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("different tenants get different workflow IDs for same template [GH-90000]")
+        @DisplayName("different tenants get different workflow IDs for same template")
         void differentTenantsGetIsolatedWorkflowIds() { // GH-90000
             DurableWorkflowEngine.WorkflowExecution exec1 =
                     workflowService.startWorkflow("bug-fix", "tenant-A", // GH-90000

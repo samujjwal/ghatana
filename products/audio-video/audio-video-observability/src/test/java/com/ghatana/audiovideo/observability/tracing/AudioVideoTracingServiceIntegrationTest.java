@@ -22,7 +22,7 @@ import static org.mockito.Mockito.mock;
  * @doc.pattern IntegrationTest
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("Audio-Video Tracing Service Integration Tests [GH-90000]")
+@DisplayName("Audio-Video Tracing Service Integration Tests")
 class AudioVideoTracingServiceIntegrationTest {
 
     @Mock
@@ -38,7 +38,7 @@ class AudioVideoTracingServiceIntegrationTest {
     }
 
     @Nested
-    @DisplayName("gRPC Streaming Tracing [GH-90000]")
+    @DisplayName("gRPC Streaming Tracing")
     class GrpcStreamingTracingTests {
 
         @Test
@@ -52,8 +52,8 @@ class AudioVideoTracingServiceIntegrationTest {
 
             // Then
             assertThat(span).isNotNull(); // GH-90000
-            assertThat(MDC.get("methodName [GH-90000]")).isEqualTo(methodName);
-            assertThat(MDC.get("correlationId [GH-90000]")).isNotNull();
+            assertThat(MDC.get("methodName")).isEqualTo(methodName);
+            assertThat(MDC.get("correlationId")).isNotNull();
 
             span.end(); // GH-90000
             MDC.clear(); // GH-90000
@@ -69,7 +69,7 @@ class AudioVideoTracingServiceIntegrationTest {
             Span span = tracingService.startGrpcStreamingSpan(methodName, tenantId); // GH-90000
 
             // Then
-            assertThat(MDC.get("methodName [GH-90000]")).isEqualTo(methodName);
+            assertThat(MDC.get("methodName")).isEqualTo(methodName);
 
             span.end(); // GH-90000
             MDC.clear(); // GH-90000
@@ -87,7 +87,7 @@ class AudioVideoTracingServiceIntegrationTest {
             Span span = tracingService.startGrpcStreamingSpan(methodName, tenantId); // GH-90000
 
             // Then
-            assertThat(MDC.get("correlationId [GH-90000]")).isEqualTo(correlationId);
+            assertThat(MDC.get("correlationId")).isEqualTo(correlationId);
 
             span.end(); // GH-90000
             MDC.clear(); // GH-90000
@@ -95,7 +95,7 @@ class AudioVideoTracingServiceIntegrationTest {
     }
 
     @Nested
-    @DisplayName("Video Processing Tracing [GH-90000]")
+    @DisplayName("Video Processing Tracing")
     class VideoProcessingTracingTests {
 
         @Test
@@ -109,8 +109,8 @@ class AudioVideoTracingServiceIntegrationTest {
 
             // Then
             assertThat(span).isNotNull(); // GH-90000
-            assertThat(MDC.get("processId [GH-90000]")).isEqualTo(processId);
-            assertThat(MDC.get("correlationId [GH-90000]")).isNotNull();
+            assertThat(MDC.get("processId")).isEqualTo(processId);
+            assertThat(MDC.get("correlationId")).isNotNull();
 
             span.end(); // GH-90000
             MDC.clear(); // GH-90000
@@ -126,7 +126,7 @@ class AudioVideoTracingServiceIntegrationTest {
             Span span = tracingService.startVideoProcessingSpan(processId, tenantId); // GH-90000
 
             // Then
-            assertThat(MDC.get("processId [GH-90000]")).isEqualTo(processId);
+            assertThat(MDC.get("processId")).isEqualTo(processId);
 
             span.end(); // GH-90000
             MDC.clear(); // GH-90000
@@ -141,12 +141,12 @@ class AudioVideoTracingServiceIntegrationTest {
 
             // When
             Span span1 = tracingService.startVideoProcessingSpan(processId1, tenantId); // GH-90000
-            String correlationId1 = MDC.get("correlationId [GH-90000]");
+            String correlationId1 = MDC.get("correlationId");
 
             MDC.clear(); // GH-90000
 
             Span span2 = tracingService.startVideoProcessingSpan(processId2, tenantId); // GH-90000
-            String correlationId2 = MDC.get("correlationId [GH-90000]");
+            String correlationId2 = MDC.get("correlationId");
 
             // Then
             assertThat(correlationId1).isNotNull(); // GH-90000
@@ -161,7 +161,7 @@ class AudioVideoTracingServiceIntegrationTest {
     }
 
     @Nested
-    @DisplayName("Audio Processing Tracing [GH-90000]")
+    @DisplayName("Audio Processing Tracing")
     class AudioProcessingTracingTests {
 
         @Test
@@ -175,8 +175,8 @@ class AudioVideoTracingServiceIntegrationTest {
 
             // Then
             assertThat(span).isNotNull(); // GH-90000
-            assertThat(MDC.get("processId [GH-90000]")).isEqualTo(processId);
-            assertThat(MDC.get("correlationId [GH-90000]")).isNotNull();
+            assertThat(MDC.get("processId")).isEqualTo(processId);
+            assertThat(MDC.get("correlationId")).isNotNull();
 
             span.end(); // GH-90000
             MDC.clear(); // GH-90000
@@ -192,7 +192,7 @@ class AudioVideoTracingServiceIntegrationTest {
             Span span = tracingService.startAudioProcessingSpan(processId, tenantId); // GH-90000
 
             // Then
-            assertThat(MDC.get("processId [GH-90000]")).isEqualTo("audio-transcode-001 [GH-90000]");
+            assertThat(MDC.get("processId")).isEqualTo("audio-transcode-001");
 
             span.end(); // GH-90000
             MDC.clear(); // GH-90000
@@ -200,7 +200,7 @@ class AudioVideoTracingServiceIntegrationTest {
     }
 
     @Nested
-    @DisplayName("Synthesis Operation Tracing [GH-90000]")
+    @DisplayName("Synthesis Operation Tracing")
     class SynthesisTracingTests {
 
         @Test
@@ -214,8 +214,8 @@ class AudioVideoTracingServiceIntegrationTest {
 
             // Then
             assertThat(span).isNotNull(); // GH-90000
-            assertThat(MDC.get("synthesisId [GH-90000]")).isEqualTo(synthesisId);
-            assertThat(MDC.get("correlationId [GH-90000]")).isNotNull();
+            assertThat(MDC.get("synthesisId")).isEqualTo(synthesisId);
+            assertThat(MDC.get("correlationId")).isNotNull();
 
             span.end(); // GH-90000
             MDC.clear(); // GH-90000
@@ -231,7 +231,7 @@ class AudioVideoTracingServiceIntegrationTest {
             Span span = tracingService.startSynthesisSpan(synthesisId, tenantId); // GH-90000
 
             // Then
-            assertThat(MDC.get("synthesisId [GH-90000]")).isEqualTo(synthesisId);
+            assertThat(MDC.get("synthesisId")).isEqualTo(synthesisId);
 
             span.end(); // GH-90000
             MDC.clear(); // GH-90000
@@ -239,13 +239,13 @@ class AudioVideoTracingServiceIntegrationTest {
     }
 
     @Nested
-    @DisplayName("SLA Threshold Validation [GH-90000]")
+    @DisplayName("SLA Threshold Validation")
     class SLAThresholdValidationTests {
 
         @Test
         void shouldRecordSuccessfulOperationWithinSLA() { // GH-90000
             // Given
-            Span span = tracer.spanBuilder("operations.within.sla [GH-90000]").startSpan();
+            Span span = tracer.spanBuilder("operations.within.sla").startSpan();
             long durationMs = 30; // Within 50ms SLA
 
             // When
@@ -258,7 +258,7 @@ class AudioVideoTracingServiceIntegrationTest {
         @Test
         void shouldWarnWhenOperationExceedsSLA() { // GH-90000
             // Given
-            Span span = tracer.spanBuilder("operation.exceed.sla [GH-90000]").startSpan();
+            Span span = tracer.spanBuilder("operation.exceed.sla").startSpan();
             long durationMs = 75; // Exceeds 50ms SLA
 
             // When
@@ -271,7 +271,7 @@ class AudioVideoTracingServiceIntegrationTest {
         @Test
         void shouldRecordDurationMetric() { // GH-90000
             // Given
-            Span span = tracer.spanBuilder("duration.test [GH-90000]").startSpan();
+            Span span = tracer.spanBuilder("duration.test").startSpan();
             long durationMs = 45;
 
             // When
@@ -284,7 +284,7 @@ class AudioVideoTracingServiceIntegrationTest {
         @Test
         void shouldHandleVeryShortOperations() { // GH-90000
             // Given
-            Span span = tracer.spanBuilder("fast.operation [GH-90000]").startSpan();
+            Span span = tracer.spanBuilder("fast.operation").startSpan();
             long durationMs = 5;
 
             // When
@@ -297,7 +297,7 @@ class AudioVideoTracingServiceIntegrationTest {
         @Test
         void shouldHandleOperationsAtSLABoundary() { // GH-90000
             // Given
-            Span span = tracer.spanBuilder("boundary.operation [GH-90000]").startSpan();
+            Span span = tracer.spanBuilder("boundary.operation").startSpan();
             long durationMs = 50; // Exactly at SLA threshold
 
             // When
@@ -310,14 +310,14 @@ class AudioVideoTracingServiceIntegrationTest {
     }
 
     @Nested
-    @DisplayName("Error Recording [GH-90000]")
+    @DisplayName("Error Recording")
     class ErrorRecordingTests {
 
         @Test
         void shouldRecordErrorWithException() { // GH-90000
             // Given
-            Span span = tracer.spanBuilder("error.operation [GH-90000]").startSpan();
-            Exception exception = new RuntimeException("Processing failed [GH-90000]");
+            Span span = tracer.spanBuilder("error.operation").startSpan();
+            Exception exception = new RuntimeException("Processing failed");
             long durationMs = 100;
 
             // When
@@ -330,7 +330,7 @@ class AudioVideoTracingServiceIntegrationTest {
         @Test
         void shouldHandleNullSpanInError() { // GH-90000
             // When + Then
-            Exception exception = new RuntimeException("Test error [GH-90000]");
+            Exception exception = new RuntimeException("Test error");
             tracingService.recordError(null, exception, 50); // GH-90000
             // Should not throw
         }
@@ -338,12 +338,12 @@ class AudioVideoTracingServiceIntegrationTest {
         @Test
         void shouldHandleDifferentExceptionTypes() { // GH-90000
             // Given
-            Span span1 = tracer.spanBuilder("io.error [GH-90000]").startSpan();
-            Span span2 = tracer.spanBuilder("timeout.error [GH-90000]").startSpan();
+            Span span1 = tracer.spanBuilder("io.error").startSpan();
+            Span span2 = tracer.spanBuilder("timeout.error").startSpan();
 
             // When
-            tracingService.recordError(span1, new java.io.IOException("IO failed [GH-90000]"), 100);
-            tracingService.recordError(span2, new java.util.concurrent.TimeoutException("Timeout [GH-90000]"), 120);
+            tracingService.recordError(span1, new java.io.IOException("IO failed"), 100);
+            tracingService.recordError(span2, new java.util.concurrent.TimeoutException("Timeout"), 120);
 
             // Then
             assertThat(span1).isNotNull(); // GH-90000
@@ -353,26 +353,26 @@ class AudioVideoTracingServiceIntegrationTest {
         @Test
         void shouldRecordExceptionDetails() { // GH-90000
             // Given
-            Span span = tracer.spanBuilder("exception.detail.test [GH-90000]").startSpan();
-            Exception exception = new IllegalStateException("Invalid audio format [GH-90000]");
+            Span span = tracer.spanBuilder("exception.detail.test").startSpan();
+            Exception exception = new IllegalStateException("Invalid audio format");
             long durationMs = 75;
 
             // When
             tracingService.recordError(span, exception, durationMs); // GH-90000
 
             // Then
-            assertThat(exception.getMessage()).isEqualTo("Invalid audio format [GH-90000]");
+            assertThat(exception.getMessage()).isEqualTo("Invalid audio format");
         }
     }
 
     @Nested
-    @DisplayName("Scope Management [GH-90000]")
+    @DisplayName("Scope Management")
     class ScopeManagementTests {
 
         @Test
         void shouldCreateScopeForSpan() { // GH-90000
             // Given
-            Span span = tracer.spanBuilder("scope.test [GH-90000]").startSpan();
+            Span span = tracer.spanBuilder("scope.test").startSpan();
 
             // When
             Scope scope = tracingService.createScope(span); // GH-90000
@@ -389,13 +389,13 @@ class AudioVideoTracingServiceIntegrationTest {
             String processId = "scope-context-test";
             String tenantId = "scope-tenant-test";
             Span span = tracingService.startVideoProcessingSpan(processId, tenantId); // GH-90000
-            String correlationId = MDC.get("correlationId [GH-90000]");
+            String correlationId = MDC.get("correlationId");
 
             // When
             Scope scope = tracingService.createScope(span); // GH-90000
 
             // Then
-            assertThat(MDC.get("correlationId [GH-90000]")).isEqualTo(correlationId);
+            assertThat(MDC.get("correlationId")).isEqualTo(correlationId);
             scope.close(); // GH-90000
             span.end(); // GH-90000
             MDC.clear(); // GH-90000
@@ -403,7 +403,7 @@ class AudioVideoTracingServiceIntegrationTest {
     }
 
     @Nested
-    @DisplayName("Context Clearing [GH-90000]")
+    @DisplayName("Context Clearing")
     class ContextClearingTests {
 
         @Test
@@ -437,7 +437,7 @@ class AudioVideoTracingServiceIntegrationTest {
     }
 
     @Nested
-    @DisplayName("Multi-Tenant Context Isolation [GH-90000]")
+    @DisplayName("Multi-Tenant Context Isolation")
     class MultiTenantContextIsolationTests {
 
         @Test
@@ -449,11 +449,11 @@ class AudioVideoTracingServiceIntegrationTest {
 
             // When
             Span span1 = tracingService.startVideoProcessingSpan(processId, tenant1); // GH-90000
-            String tenant1Context = MDC.get("processingTenant [GH-90000]");
+            String tenant1Context = MDC.get("processingTenant");
             tracingService.clearContext(); // GH-90000
 
             Span span2 = tracingService.startVideoProcessingSpan(processId, tenant2); // GH-90000
-            String tenant2Context = MDC.get("processingTenant [GH-90000]");
+            String tenant2Context = MDC.get("processingTenant");
 
             // Then
             // Contexts should be properly isolated
@@ -474,7 +474,7 @@ class AudioVideoTracingServiceIntegrationTest {
             Span span = tracingService.startVideoProcessingSpan(processId, tenant1); // GH-90000
 
             // Then
-            assertThat(MDC.get("correlationId [GH-90000]")).isEqualTo(correlationId);
+            assertThat(MDC.get("correlationId")).isEqualTo(correlationId);
 
             span.end(); // GH-90000
             MDC.clear(); // GH-90000
@@ -482,7 +482,7 @@ class AudioVideoTracingServiceIntegrationTest {
     }
 
     @Nested
-    @DisplayName("Concurrent Operations [GH-90000]")
+    @DisplayName("Concurrent Operations")
     class ConcurrentOperationsTests {
 
         @Test

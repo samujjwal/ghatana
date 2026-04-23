@@ -13,18 +13,18 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.*;
 
-@DisplayName("RepetitionPolicy value type [GH-90000]")
+@DisplayName("RepetitionPolicy value type")
 class RepetitionPolicyTest {
 
     @Nested
-    @DisplayName("singleShot factory [GH-90000]")
+    @DisplayName("singleShot factory")
     class SingleShot {
 
         @Test
-        @DisplayName("creates policy with correct defaults [GH-90000]")
+        @DisplayName("creates policy with correct defaults")
         void defaults() { // GH-90000
-            var p = RepetitionPolicy.singleShot("p1 [GH-90000]");
-            assertThat(p.policyId()).isEqualTo("p1 [GH-90000]");
+            var p = RepetitionPolicy.singleShot("p1");
+            assertThat(p.policyId()).isEqualTo("p1");
             assertThat(p.maxIterations()).isEqualTo(1); // GH-90000
             assertThat(p.maxRetries()).isEqualTo(0); // GH-90000
             assertThat(p.retryStrategy()).isEqualTo(RetryStrategy.NONE); // GH-90000
@@ -33,11 +33,11 @@ class RepetitionPolicyTest {
     }
 
     @Nested
-    @DisplayName("iterative factory [GH-90000]")
+    @DisplayName("iterative factory")
     class Iterative {
 
         @Test
-        @DisplayName("creates policy with given iterations and retries [GH-90000]")
+        @DisplayName("creates policy with given iterations and retries")
         void iterations() { // GH-90000
             var p = RepetitionPolicy.iterative("p2", 5, 3, Duration.ofSeconds(2)); // GH-90000
             assertThat(p.maxIterations()).isEqualTo(5); // GH-90000
@@ -48,20 +48,20 @@ class RepetitionPolicyTest {
     }
 
     @Nested
-    @DisplayName("validation [GH-90000]")
+    @DisplayName("validation")
     class Validation {
 
         @Test
-        @DisplayName("empty terminationConditions throws [GH-90000]")
+        @DisplayName("empty terminationConditions throws")
         void emptyConditions() { // GH-90000
             assertThatThrownBy(() -> new RepetitionPolicy("p", 1, 1, 0, // GH-90000
                     RetryStrategy.NONE, Duration.ZERO, Set.of(), 0.0)) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("terminationConditions [GH-90000]");
+                    .hasMessageContaining("terminationConditions");
         }
 
         @Test
-        @DisplayName("negative maxRetries throws [GH-90000]")
+        @DisplayName("negative maxRetries throws")
         void negativeRetries() { // GH-90000
             assertThatThrownBy(() -> new RepetitionPolicy("p", 1, 1, -1, // GH-90000
                     RetryStrategy.NONE, Duration.ZERO,
@@ -70,7 +70,7 @@ class RepetitionPolicyTest {
         }
 
         @Test
-        @DisplayName("maxRecursionDepth below 1 throws [GH-90000]")
+        @DisplayName("maxRecursionDepth below 1 throws")
         void recursionDepthMin() { // GH-90000
             assertThatThrownBy(() -> new RepetitionPolicy("p", 1, 0, 0, // GH-90000
                     RetryStrategy.NONE, Duration.ZERO,
@@ -79,7 +79,7 @@ class RepetitionPolicyTest {
         }
 
         @Test
-        @DisplayName("confidenceThreshold out of range throws [GH-90000]")
+        @DisplayName("confidenceThreshold out of range throws")
         void confidenceOutOfRange() { // GH-90000
             assertThatThrownBy(() -> new RepetitionPolicy("p", 1, 1, 0, // GH-90000
                     RetryStrategy.NONE, Duration.ZERO,
@@ -88,9 +88,9 @@ class RepetitionPolicyTest {
         }
 
         @Test
-        @DisplayName("terminationConditions are immutable [GH-90000]")
+        @DisplayName("terminationConditions are immutable")
         void conditionsImmutable() { // GH-90000
-            var p = RepetitionPolicy.singleShot("p3 [GH-90000]");
+            var p = RepetitionPolicy.singleShot("p3");
             assertThatThrownBy(() -> p.terminationConditions().add(TerminationCondition.ON_TIMEOUT)) // GH-90000
                     .isInstanceOf(UnsupportedOperationException.class); // GH-90000
         }

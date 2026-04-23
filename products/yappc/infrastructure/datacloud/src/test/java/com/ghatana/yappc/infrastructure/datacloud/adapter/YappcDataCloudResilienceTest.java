@@ -40,7 +40,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer infrastructure
  * @doc.pattern Integration Test
  */
-@DisplayName("YappcDataCloudRepository Resilience Tests [GH-90000]")
+@DisplayName("YappcDataCloudRepository Resilience Tests")
 class YappcDataCloudResilienceTest extends EventloopTestBase {
 
     @Mock
@@ -62,7 +62,7 @@ class YappcDataCloudResilienceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Retry policy retries on failure and succeeds on third attempt [GH-90000]")
+    @DisplayName("Retry policy retries on failure and succeeds on third attempt")
     void retryPolicy_retriesOnFailure_succeedsOnThirdAttempt() { // GH-90000
         AtomicInteger attemptCount = new AtomicInteger(0); // GH-90000
         
@@ -70,7 +70,7 @@ class YappcDataCloudResilienceTest extends EventloopTestBase {
                 .thenAnswer(invocation -> { // GH-90000
                     int attempt = attemptCount.incrementAndGet(); // GH-90000
                     if (attempt < 3) { // GH-90000
-                        return Promise.ofException(new RuntimeException("Simulated failure [GH-90000]"));
+                        return Promise.ofException(new RuntimeException("Simulated failure"));
                     }
                     return Promise.of(DataCloudClient.Entity.of("id-123", COLLECTION, Map.of("id", "id-123"))); // GH-90000
                 });
@@ -95,14 +95,14 @@ class YappcDataCloudResilienceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Retry policy fails after max retries exhausted [GH-90000]")
+    @DisplayName("Retry policy fails after max retries exhausted")
     void retryPolicy_failsAfterMaxRetries() { // GH-90000
         AtomicInteger attemptCount = new AtomicInteger(0); // GH-90000
         
         when(mockClient.save(anyString(), anyString(), any())) // GH-90000
                 .thenAnswer(invocation -> { // GH-90000
                     attemptCount.incrementAndGet(); // GH-90000
-                    return Promise.ofException(new RuntimeException("Simulated failure [GH-90000]"));
+                    return Promise.ofException(new RuntimeException("Simulated failure"));
                 });
 
         RetryPolicy retryPolicy = RetryPolicy.builder() // GH-90000
@@ -117,18 +117,18 @@ class YappcDataCloudResilienceTest extends EventloopTestBase {
             retryPolicy.execute(eventloop, () -> mockClient.save(TENANT_ID, COLLECTION, Map.of())) // GH-90000
         ))
                 .isInstanceOf(RuntimeException.class) // GH-90000
-                .hasMessageContaining("Simulated failure [GH-90000]");
+                .hasMessageContaining("Simulated failure");
 
         assertThat(attemptCount.get()).isEqualTo(3); // initial + 2 retries // GH-90000
     }
 
     @Test
-    @DisplayName("Circuit breaker opens after failure threshold [GH-90000]")
+    @DisplayName("Circuit breaker opens after failure threshold")
     void circuitBreaker_opensAfterFailureThreshold() { // GH-90000
         when(mockClient.findById(anyString(), anyString(), anyString())) // GH-90000
-                .thenReturn(Promise.ofException(new RuntimeException("Simulated failure [GH-90000]")));
+                .thenReturn(Promise.ofException(new RuntimeException("Simulated failure")));
 
-        CircuitBreaker circuitBreaker = CircuitBreaker.builder("test-circuit [GH-90000]")
+        CircuitBreaker circuitBreaker = CircuitBreaker.builder("test-circuit")
                 .failureThreshold(3) // GH-90000
                 .successThreshold(2) // GH-90000
                 .resetTimeout(Duration.ofSeconds(1)) // GH-90000
@@ -155,7 +155,7 @@ class YappcDataCloudResilienceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Circuit breaker transitions to CLOSED after successful probes [GH-90000]")
+    @DisplayName("Circuit breaker transitions to CLOSED after successful probes")
     void circuitBreaker_transitionsToClosedAfterSuccessfulProbes() { // GH-90000
         AtomicInteger callCount = new AtomicInteger(0); // GH-90000
         
@@ -163,12 +163,12 @@ class YappcDataCloudResilienceTest extends EventloopTestBase {
                 .thenAnswer(invocation -> { // GH-90000
                     int call = callCount.incrementAndGet(); // GH-90000
                     if (call <= 3) { // GH-90000
-                        return Promise.ofException(new RuntimeException("Simulated failure [GH-90000]"));
+                        return Promise.ofException(new RuntimeException("Simulated failure"));
                     }
                     return Promise.of(Optional.of(DataCloudClient.Entity.of("id-123", COLLECTION, Map.of()))); // GH-90000
                 });
 
-        CircuitBreaker circuitBreaker = CircuitBreaker.builder("test-circuit [GH-90000]")
+        CircuitBreaker circuitBreaker = CircuitBreaker.builder("test-circuit")
                 .failureThreshold(3) // GH-90000
                 .successThreshold(2) // GH-90000
                 .resetTimeout(Duration.ofMillis(100)) // GH-90000
@@ -207,7 +207,7 @@ class YappcDataCloudResilienceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Repository uses retry policy and circuit breaker together [GH-90000]")
+    @DisplayName("Repository uses retry policy and circuit breaker together")
     void repository_usesRetryAndCircuitBreaker() { // GH-90000
         AtomicInteger attemptCount = new AtomicInteger(0); // GH-90000
         
@@ -215,16 +215,16 @@ class YappcDataCloudResilienceTest extends EventloopTestBase {
                 .thenAnswer(invocation -> { // GH-90000
                     int attempt = attemptCount.incrementAndGet(); // GH-90000
                     if (attempt == 1) { // GH-90000
-                        return Promise.ofException(new RuntimeException("First failure [GH-90000]"));
+                        return Promise.ofException(new RuntimeException("First failure"));
                     }
                     if (attempt == 2) { // GH-90000
-                        return Promise.ofException(new RuntimeException("Second failure [GH-90000]"));
+                        return Promise.ofException(new RuntimeException("Second failure"));
                     }
                     return Promise.of(Optional.of(DataCloudClient.Entity.of("id-123", COLLECTION, Map.of("id", "id-123")))); // GH-90000
                 });
         when(mockMapper.fromEntity(any(), any())).thenReturn(testEntity); // GH-90000
 
-        CircuitBreaker circuitBreaker = CircuitBreaker.builder("test-circuit [GH-90000]")
+        CircuitBreaker circuitBreaker = CircuitBreaker.builder("test-circuit")
                 .failureThreshold(5) // GH-90000
                 .successThreshold(2) // GH-90000
                 .resetTimeout(Duration.ofSeconds(30)) // GH-90000

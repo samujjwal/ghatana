@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.*;
  *
  * <p>Also tests the shared {@link RecordCodec} serialization layer.
  */
-@DisplayName("Embedded Storage Backends [GH-90000]")
+@DisplayName("Embedded Storage Backends")
 class EmbeddedStorageBackendTest extends EventloopTestBase {
 
     @TempDir
@@ -63,11 +63,11 @@ class EmbeddedStorageBackendTest extends EventloopTestBase {
     // ─────────────────── RecordCodec ───────────────────
 
     @Nested
-    @DisplayName("RecordCodec [GH-90000]")
+    @DisplayName("RecordCodec")
     class RecordCodecTests {
 
         @Test
-        @DisplayName("round-trip serialization preserves all fields [GH-90000]")
+        @DisplayName("round-trip serialization preserves all fields")
         void roundTrip() { // GH-90000
             Record original = sampleEntity(); // GH-90000
             byte[] bytes = RecordCodec.serialize(original); // GH-90000
@@ -81,7 +81,7 @@ class EmbeddedStorageBackendTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("empty data map round-trips [GH-90000]")
+        @DisplayName("empty data map round-trips")
         void emptyData() { // GH-90000
             Record rec = testRecord( // GH-90000
                     "00000000-0000-0000-0000-000000000003",
@@ -92,7 +92,7 @@ class EmbeddedStorageBackendTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("all record types round-trip [GH-90000]")
+        @DisplayName("all record types round-trip")
         void allRecordTypes() { // GH-90000
             for (Record.RecordType type : Record.RecordType.values()) { // GH-90000
                 Record rec = testRecord( // GH-90000
@@ -108,7 +108,7 @@ class EmbeddedStorageBackendTest extends EventloopTestBase {
     // ─────────────────── H2Store (pure Java — most portable) ─────────────────── // GH-90000
 
     @Nested
-    @DisplayName("H2Store [GH-90000]")
+    @DisplayName("H2Store")
     class H2StoreTests {
 
         private H2Store store;
@@ -128,58 +128,58 @@ class EmbeddedStorageBackendTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("put and get round-trip [GH-90000]")
+        @DisplayName("put and get round-trip")
         void putAndGet() { // GH-90000
             Record entity = sampleEntity(); // GH-90000
             runPromise(() -> store.put("key-1", entity)); // GH-90000
 
-            Optional<Record> found = runPromise(() -> store.get("key-1 [GH-90000]"));
+            Optional<Record> found = runPromise(() -> store.get("key-1"));
             assertThat(found).isPresent(); // GH-90000
             assertThat(found.get().id()).isEqualTo(entity.id()); // GH-90000
-            assertThat(found.get().tenantId()).isEqualTo("tenant-1 [GH-90000]");
+            assertThat(found.get().tenantId()).isEqualTo("tenant-1");
             assertThat(found.get().data()).containsEntry("name", "Alice"); // GH-90000
         }
 
         @Test
-        @DisplayName("get returns empty for missing key [GH-90000]")
+        @DisplayName("get returns empty for missing key")
         void getMissing() { // GH-90000
-            assertThat(runPromise(() -> store.get("missing [GH-90000]"))).isEmpty();
+            assertThat(runPromise(() -> store.get("missing"))).isEmpty();
         }
 
         @Test
-        @DisplayName("put overwrites existing key [GH-90000]")
+        @DisplayName("put overwrites existing key")
         void putOverwrite() { // GH-90000
             runPromise(() -> store.put("key-1", sampleEntity())); // GH-90000
             runPromise(() -> store.put("key-1", sampleEvent())); // GH-90000
 
-            Record found = runPromise(() -> store.get("key-1 [GH-90000]")).orElseThrow();
-            assertThat(found.collectionName()).isEqualTo("clicks [GH-90000]");
+            Record found = runPromise(() -> store.get("key-1")).orElseThrow();
+            assertThat(found.collectionName()).isEqualTo("clicks");
         }
 
         @Test
-        @DisplayName("delete returns true for existing key [GH-90000]")
+        @DisplayName("delete returns true for existing key")
         void deleteExisting() { // GH-90000
             runPromise(() -> store.put("key-1", sampleEntity())); // GH-90000
-            assertThat(runPromise(() -> store.delete("key-1 [GH-90000]"))).isTrue();
-            assertThat(runPromise(() -> store.get("key-1 [GH-90000]"))).isEmpty();
+            assertThat(runPromise(() -> store.delete("key-1"))).isTrue();
+            assertThat(runPromise(() -> store.get("key-1"))).isEmpty();
         }
 
         @Test
-        @DisplayName("delete returns false for missing key [GH-90000]")
+        @DisplayName("delete returns false for missing key")
         void deleteMissing() { // GH-90000
-            assertThat(runPromise(() -> store.delete("missing [GH-90000]"))).isFalse();
+            assertThat(runPromise(() -> store.delete("missing"))).isFalse();
         }
 
         @Test
-        @DisplayName("exists checks correctly [GH-90000]")
+        @DisplayName("exists checks correctly")
         void existsCheck() { // GH-90000
-            assertThat(runPromise(() -> store.exists("key-1 [GH-90000]"))).isFalse();
+            assertThat(runPromise(() -> store.exists("key-1"))).isFalse();
             runPromise(() -> store.put("key-1", sampleEntity())); // GH-90000
-            assertThat(runPromise(() -> store.exists("key-1 [GH-90000]"))).isTrue();
+            assertThat(runPromise(() -> store.exists("key-1"))).isTrue();
         }
 
         @Test
-        @DisplayName("count tracks records [GH-90000]")
+        @DisplayName("count tracks records")
         void countTracks() { // GH-90000
             assertThat(runPromise(() -> store.count())).isZero(); // GH-90000
             runPromise(() -> store.put("k1", sampleEntity())); // GH-90000
@@ -188,7 +188,7 @@ class EmbeddedStorageBackendTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("clear removes all records [GH-90000]")
+        @DisplayName("clear removes all records")
         void clearAll() { // GH-90000
             runPromise(() -> store.put("k1", sampleEntity())); // GH-90000
             runPromise(() -> store.put("k2", sampleEvent())); // GH-90000
@@ -200,7 +200,7 @@ class EmbeddedStorageBackendTest extends EventloopTestBase {
     // ─────────────────── RocksDBStore ───────────────────
 
     @Nested
-    @DisplayName("RocksDBStore [GH-90000]")
+    @DisplayName("RocksDBStore")
     class RocksDBStoreTests {
 
         private RocksDBStore store;
@@ -208,7 +208,7 @@ class EmbeddedStorageBackendTest extends EventloopTestBase {
         @BeforeEach
         void setUp() { // GH-90000
             store = new RocksDBStore( // GH-90000
-                    tempDir.resolve("rocksdb-test [GH-90000]"),
+                    tempDir.resolve("rocksdb-test"),
                     NO_OP_EVENTS,
                     RocksDBStore.RocksDBConfig.defaults() // GH-90000
             );
@@ -220,44 +220,44 @@ class EmbeddedStorageBackendTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("put and get round-trip [GH-90000]")
+        @DisplayName("put and get round-trip")
         void putAndGet() { // GH-90000
             runPromise(() -> store.put("r-1", sampleEntity())); // GH-90000
-            Optional<Record> found = runPromise(() -> store.get("r-1 [GH-90000]"));
+            Optional<Record> found = runPromise(() -> store.get("r-1"));
             assertThat(found).isPresent(); // GH-90000
             assertThat(found.get().id()).isEqualTo(sampleEntity().id()); // GH-90000
         }
 
         @Test
-        @DisplayName("get returns empty for missing key [GH-90000]")
+        @DisplayName("get returns empty for missing key")
         void getMissing() { // GH-90000
-            assertThat(runPromise(() -> store.get("absent [GH-90000]"))).isEmpty();
+            assertThat(runPromise(() -> store.get("absent"))).isEmpty();
         }
 
         @Test
-        @DisplayName("delete removes record [GH-90000]")
+        @DisplayName("delete removes record")
         void deleteRemoves() { // GH-90000
             runPromise(() -> store.put("r-1", sampleEntity())); // GH-90000
-            assertThat(runPromise(() -> store.delete("r-1 [GH-90000]"))).isTrue();
-            assertThat(runPromise(() -> store.get("r-1 [GH-90000]"))).isEmpty();
+            assertThat(runPromise(() -> store.delete("r-1"))).isTrue();
+            assertThat(runPromise(() -> store.get("r-1"))).isEmpty();
         }
 
         @Test
-        @DisplayName("delete returns false for missing [GH-90000]")
+        @DisplayName("delete returns false for missing")
         void deleteFalse() { // GH-90000
-            assertThat(runPromise(() -> store.delete("absent [GH-90000]"))).isFalse();
+            assertThat(runPromise(() -> store.delete("absent"))).isFalse();
         }
 
         @Test
-        @DisplayName("exists checks correctly [GH-90000]")
+        @DisplayName("exists checks correctly")
         void existsCheck() { // GH-90000
-            assertThat(runPromise(() -> store.exists("r-1 [GH-90000]"))).isFalse();
+            assertThat(runPromise(() -> store.exists("r-1"))).isFalse();
             runPromise(() -> store.put("r-1", sampleEntity())); // GH-90000
-            assertThat(runPromise(() -> store.exists("r-1 [GH-90000]"))).isTrue();
+            assertThat(runPromise(() -> store.exists("r-1"))).isTrue();
         }
 
         @Test
-        @DisplayName("count and clear [GH-90000]")
+        @DisplayName("count and clear")
         void countAndClear() { // GH-90000
             runPromise(() -> store.put("a", sampleEntity())); // GH-90000
             runPromise(() -> store.put("b", sampleEvent())); // GH-90000
@@ -267,7 +267,7 @@ class EmbeddedStorageBackendTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("operations throw after close [GH-90000]")
+        @DisplayName("operations throw after close")
         void throwsAfterClose() { // GH-90000
             store.close(); // GH-90000
             assertThatThrownBy(() -> store.put("k", sampleEntity())) // GH-90000
@@ -278,7 +278,7 @@ class EmbeddedStorageBackendTest extends EventloopTestBase {
     // ─────────────────── SQLiteStore ───────────────────
 
     @Nested
-    @DisplayName("SQLiteStore [GH-90000]")
+    @DisplayName("SQLiteStore")
     class SQLiteStoreTests {
 
         private SQLiteStore store;
@@ -286,7 +286,7 @@ class EmbeddedStorageBackendTest extends EventloopTestBase {
         @BeforeEach
         void setUp() { // GH-90000
             store = new SQLiteStore( // GH-90000
-                    tempDir.resolve("sqlite-test.db [GH-90000]"),
+                    tempDir.resolve("sqlite-test.db"),
                     NO_OP_EVENTS,
                     SQLiteStore.SQLiteConfig.defaults() // GH-90000
             );
@@ -298,36 +298,36 @@ class EmbeddedStorageBackendTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("put and get round-trip [GH-90000]")
+        @DisplayName("put and get round-trip")
         void putAndGet() { // GH-90000
             runPromise(() -> store.put("s-1", sampleEntity())); // GH-90000
-            Optional<Record> found = runPromise(() -> store.get("s-1 [GH-90000]"));
+            Optional<Record> found = runPromise(() -> store.get("s-1"));
             assertThat(found).isPresent(); // GH-90000
             assertThat(found.get().id()).isEqualTo(sampleEntity().id()); // GH-90000
             assertThat(found.get().data()).containsEntry("name", "Alice"); // GH-90000
         }
 
         @Test
-        @DisplayName("get returns empty for missing key [GH-90000]")
+        @DisplayName("get returns empty for missing key")
         void getMissing() { // GH-90000
-            assertThat(runPromise(() -> store.get("absent [GH-90000]"))).isEmpty();
+            assertThat(runPromise(() -> store.get("absent"))).isEmpty();
         }
 
         @Test
-        @DisplayName("delete removes record [GH-90000]")
+        @DisplayName("delete removes record")
         void deleteRemoves() { // GH-90000
             runPromise(() -> store.put("s-1", sampleEntity())); // GH-90000
-            assertThat(runPromise(() -> store.delete("s-1 [GH-90000]"))).isTrue();
-            assertThat(runPromise(() -> store.get("s-1 [GH-90000]"))).isEmpty();
+            assertThat(runPromise(() -> store.delete("s-1"))).isTrue();
+            assertThat(runPromise(() -> store.get("s-1"))).isEmpty();
         }
 
         @Test
-        @DisplayName("exists, count, clear [GH-90000]")
+        @DisplayName("exists, count, clear")
         void existsCountClear() { // GH-90000
-            assertThat(runPromise(() -> store.exists("s-1 [GH-90000]"))).isFalse();
+            assertThat(runPromise(() -> store.exists("s-1"))).isFalse();
             runPromise(() -> store.put("s-1", sampleEntity())); // GH-90000
             runPromise(() -> store.put("s-2", sampleEvent())); // GH-90000
-            assertThat(runPromise(() -> store.exists("s-1 [GH-90000]"))).isTrue();
+            assertThat(runPromise(() -> store.exists("s-1"))).isTrue();
             assertThat(runPromise(() -> store.count())).isEqualTo(2); // GH-90000
             runPromise(() -> store.clear()); // GH-90000
             assertThat(runPromise(() -> store.count())).isZero(); // GH-90000
@@ -337,11 +337,11 @@ class EmbeddedStorageBackendTest extends EventloopTestBase {
     // ─────────────────── Config Presets ───────────────────
 
     @Nested
-    @DisplayName("Configuration Presets [GH-90000]")
+    @DisplayName("Configuration Presets")
     class ConfigTests {
 
         @Test
-        @DisplayName("RocksDB config presets are valid [GH-90000]")
+        @DisplayName("RocksDB config presets are valid")
         void rocksDbConfigs() { // GH-90000
             assertThat(RocksDBStore.RocksDBConfig.defaults().writeBufferSize()).isPositive(); // GH-90000
             assertThat(RocksDBStore.RocksDBConfig.highThroughput().maxWriteBufferNumber()).isEqualTo(5); // GH-90000
@@ -349,7 +349,7 @@ class EmbeddedStorageBackendTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("SQLite config presets are valid [GH-90000]")
+        @DisplayName("SQLite config presets are valid")
         void sqliteConfigs() { // GH-90000
             assertThat(SQLiteStore.SQLiteConfig.defaults().enableWAL()).isTrue(); // GH-90000
             assertThat(SQLiteStore.SQLiteConfig.highPerformance().cacheSize()).isEqualTo(10000); // GH-90000
@@ -357,10 +357,10 @@ class EmbeddedStorageBackendTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("H2 config presets are valid [GH-90000]")
+        @DisplayName("H2 config presets are valid")
         void h2Configs() { // GH-90000
-            assertThat(H2Store.H2Config.defaults().mode()).isEqualTo("EMBEDDED [GH-90000]");
-            assertThat(H2Store.H2Config.inMemory().mode()).isEqualTo("MEMORY [GH-90000]");
+            assertThat(H2Store.H2Config.defaults().mode()).isEqualTo("EMBEDDED");
+            assertThat(H2Store.H2Config.inMemory().mode()).isEqualTo("MEMORY");
             assertThat(H2Store.H2Config.highPerformance().cacheSize()).isEqualTo(65536); // GH-90000
             assertThat(H2Store.H2Config.lowMemory().compress()).isTrue(); // GH-90000
         }

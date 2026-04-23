@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * End-to-End tests for complete YAPPC full workflow.
  * Tests the complete lifecycle from Intent through Evolve with real service interactions.
  */
-@DisplayName("YAPPC Full Workflow E2E Tests [GH-90000]")
+@DisplayName("YAPPC Full Workflow E2E Tests")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class) // GH-90000
 class FullWorkflowE2ETest extends EventloopTestBase {
 
@@ -50,12 +50,12 @@ class FullWorkflowE2ETest extends EventloopTestBase {
 
     @Test
     @Order(1) // GH-90000
-    @DisplayName("Full Workflow: Should create project with intent [GH-90000]")
+    @DisplayName("Full Workflow: Should create project with intent")
     void testCreateProjectWithIntent() throws Exception { // GH-90000
         CreateProjectRequest request = CreateProjectRequest.builder() // GH-90000
                 .tenantId(tenantId) // GH-90000
-                .projectName("E2E Full Workflow Microservice [GH-90000]")
-                .intent("Build a user authentication microservice with JWT, OAuth2 integration, and role-based access control [GH-90000]")
+                .projectName("E2E Full Workflow Microservice")
+                .intent("Build a user authentication microservice with JWT, OAuth2 integration, and role-based access control")
                 .techStack(List.of("Java", "Spring Boot", "PostgreSQL", "Redis")) // GH-90000
                 .build(); // GH-90000
 
@@ -64,9 +64,9 @@ class FullWorkflowE2ETest extends EventloopTestBase {
 
         assertThat(project).isNotNull(); // GH-90000
         assertThat(project.id()).isNotNull(); // GH-90000
-        assertThat(project.name()).isEqualTo("E2E Full Workflow Microservice [GH-90000]");
-        assertThat(project.status()).isEqualTo("CREATED [GH-90000]");
-        assertThat(project.currentPhase()).isEqualTo("PLANNING [GH-90000]");
+        assertThat(project.name()).isEqualTo("E2E Full Workflow Microservice");
+        assertThat(project.status()).isEqualTo("CREATED");
+        assertThat(project.currentPhase()).isEqualTo("PLANNING");
         assertThat(project.techStack()).contains("Java", "Spring Boot"); // GH-90000
 
         projectId = project.id(); // GH-90000
@@ -74,26 +74,26 @@ class FullWorkflowE2ETest extends EventloopTestBase {
 
     @Test
     @Order(2) // GH-90000
-    @DisplayName("Full Workflow: Should register agents for the workflow [GH-90000]")
+    @DisplayName("Full Workflow: Should register agents for the workflow")
     void testRegisterAgentsForWorkflow() throws Exception { // GH-90000
         AgentRegistrationRequest javaRequest = AgentRegistrationRequest.builder() // GH-90000
                 .tenantId(tenantId) // GH-90000
-                .agentConfigPath("agents/java-expert.yaml [GH-90000]")
+                .agentConfigPath("agents/java-expert.yaml")
                 .build(); // GH-90000
 
         AgentRegistrationResult javaResult = runPromise(() -> platform.registerAgent(javaRequest)); // GH-90000
         assertThat(javaResult.agentId()).isNotNull(); // GH-90000
-        assertThat(javaResult.agentName()).isEqualTo("Java Expert [GH-90000]");
+        assertThat(javaResult.agentName()).isEqualTo("Java Expert");
         javaExpertAgentId = javaResult.agentId(); // GH-90000
 
         AgentRegistrationRequest reviewerRequest = AgentRegistrationRequest.builder() // GH-90000
                 .tenantId(tenantId) // GH-90000
-                .agentConfigPath("agents/code-reviewer.yaml [GH-90000]")
+                .agentConfigPath("agents/code-reviewer.yaml")
                 .build(); // GH-90000
 
         AgentRegistrationResult reviewerResult = runPromise(() -> platform.registerAgent(reviewerRequest)); // GH-90000
         assertThat(reviewerResult.agentId()).isNotNull(); // GH-90000
-        assertThat(reviewerResult.agentName()).isEqualTo("Code Reviewer [GH-90000]");
+        assertThat(reviewerResult.agentName()).isEqualTo("Code Reviewer");
         codeReviewerAgentId = reviewerResult.agentId(); // GH-90000
     }
 
@@ -101,11 +101,11 @@ class FullWorkflowE2ETest extends EventloopTestBase {
 
     @Test
     @Order(3) // GH-90000
-    @DisplayName("Full Workflow: Should complete PLANNING phase with AI-generated plan [GH-90000]")
+    @DisplayName("Full Workflow: Should complete PLANNING phase with AI-generated plan")
     void testCompletePlanningPhase() throws Exception { // GH-90000
         PhaseExecutionRequest request = PhaseExecutionRequest.builder() // GH-90000
                 .projectId(projectId) // GH-90000
-                .phase("PLANNING [GH-90000]")
+                .phase("PLANNING")
                 .tenantId(tenantId) // GH-90000
                 .agentId(javaExpertAgentId) // GH-90000
                 .build(); // GH-90000
@@ -115,23 +115,23 @@ class FullWorkflowE2ETest extends EventloopTestBase {
 
         assertThat(result).isNotNull(); // GH-90000
         assertThat(result.success()).isTrue(); // GH-90000
-        assertThat(result.phase()).isEqualTo("PLANNING [GH-90000]");
-        assertThat(result.artifacts()).containsKey("requirements [GH-90000]");
-        assertThat(result.artifacts()).containsKey("architecture [GH-90000]");
-        assertThat(result.artifacts()).containsKey("techStack [GH-90000]");
+        assertThat(result.phase()).isEqualTo("PLANNING");
+        assertThat(result.artifacts()).containsKey("requirements");
+        assertThat(result.artifacts()).containsKey("architecture");
+        assertThat(result.artifacts()).containsKey("techStack");
         assertThat(result.executionTimeMs()).isGreaterThan(0); // GH-90000
     }
 
     @Test
     @Order(4) // GH-90000
-    @DisplayName("Full Workflow: Should generate AI workflow plan [GH-90000]")
+    @DisplayName("Full Workflow: Should generate AI workflow plan")
     void testGenerateAiWorkflowPlan() throws Exception { // GH-90000
         CreateWorkflowRequest request = CreateWorkflowRequest.builder() // GH-90000
                 .tenantId(tenantId) // GH-90000
                 .projectId(projectId) // GH-90000
-                .name("Auth Microservice Workflow [GH-90000]")
-                .description("Complete workflow for auth microservice development [GH-90000]")
-                .objective("Implement JWT-based authentication with OAuth2 integration [GH-90000]")
+                .name("Auth Microservice Workflow")
+                .description("Complete workflow for auth microservice development")
+                .objective("Implement JWT-based authentication with OAuth2 integration")
                 .build(); // GH-90000
 
         Promise<AiWorkflow> promise = platform.createWorkflow(request); // GH-90000
@@ -139,13 +139,13 @@ class FullWorkflowE2ETest extends EventloopTestBase {
 
         assertThat(workflow).isNotNull(); // GH-90000
         assertThat(workflow.id()).isNotNull(); // GH-90000
-        assertThat(workflow.status()).isEqualTo("DRAFT [GH-90000]");
+        assertThat(workflow.status()).isEqualTo("DRAFT");
         workflowId = workflow.id(); // GH-90000
     }
 
     @Test
     @Order(5) // GH-90000
-    @DisplayName("Full Workflow: Should approve and start AI workflow [GH-90000]")
+    @DisplayName("Full Workflow: Should approve and start AI workflow")
     void testApproveAndStartAiWorkflow() throws Exception { // GH-90000
         // Generate plan
         AiPlan plan = runPromise(() -> platform.generatePlan(workflowId, tenantId, "Implement auth microservice")); // GH-90000
@@ -154,22 +154,22 @@ class FullWorkflowE2ETest extends EventloopTestBase {
 
         // Approve plan
         AiPlan approvedPlan = runPromise(() -> platform.approvePlan(plan.id(), tenantId)); // GH-90000
-        assertThat(approvedPlan.status()).isEqualTo("APPROVED [GH-90000]");
+        assertThat(approvedPlan.status()).isEqualTo("APPROVED");
 
         // Start workflow
         AiWorkflow startedWorkflow = runPromise(() -> platform.startWorkflow(workflowId, tenantId)); // GH-90000
-        assertThat(startedWorkflow.status()).isEqualTo("IN_PROGRESS [GH-90000]");
+        assertThat(startedWorkflow.status()).isEqualTo("IN_PROGRESS");
     }
 
     // ── Phase 3: Design ────────────────────────────────────────────────────────
 
     @Test
     @Order(6) // GH-90000
-    @DisplayName("Full Workflow: Should complete DESIGN phase with API spec and data model [GH-90000]")
+    @DisplayName("Full Workflow: Should complete DESIGN phase with API spec and data model")
     void testCompleteDesignPhase() throws Exception { // GH-90000
         PhaseExecutionRequest request = PhaseExecutionRequest.builder() // GH-90000
                 .projectId(projectId) // GH-90000
-                .phase("DESIGN [GH-90000]")
+                .phase("DESIGN")
                 .tenantId(tenantId) // GH-90000
                 .agentId(javaExpertAgentId) // GH-90000
                 .build(); // GH-90000
@@ -178,19 +178,19 @@ class FullWorkflowE2ETest extends EventloopTestBase {
         PhaseResult result = runPromise(() -> promise); // GH-90000
 
         assertThat(result.success()).isTrue(); // GH-90000
-        assertThat(result.phase()).isEqualTo("DESIGN [GH-90000]");
-        assertThat(result.artifacts()).containsKey("apiSpec [GH-90000]");
-        assertThat(result.artifacts()).containsKey("dataModel [GH-90000]");
-        assertThat(result.artifacts()).containsKey("sequenceDiagram [GH-90000]");
+        assertThat(result.phase()).isEqualTo("DESIGN");
+        assertThat(result.artifacts()).containsKey("apiSpec");
+        assertThat(result.artifacts()).containsKey("dataModel");
+        assertThat(result.artifacts()).containsKey("sequenceDiagram");
     }
 
     @Test
     @Order(7) // GH-90000
-    @DisplayName("Full Workflow: Should perform code review on design artifacts [GH-90000]")
+    @DisplayName("Full Workflow: Should perform code review on design artifacts")
     void testCodeReviewOnDesignArtifacts() throws Exception { // GH-90000
         String designCode = """
                 public class AuthController {
-                    @PostMapping("/login [GH-90000]")
+                    @PostMapping("/login")
                     public ResponseEntity<AuthToken> login(@RequestBody LoginRequest request) { // GH-90000
                         return authService.authenticate(request); // GH-90000
                     }
@@ -201,8 +201,8 @@ class FullWorkflowE2ETest extends EventloopTestBase {
                 .tenantId(tenantId) // GH-90000
                 .agentId(codeReviewerAgentId) // GH-90000
                 .code(designCode) // GH-90000
-                .language("java [GH-90000]")
-                .reviewType("security [GH-90000]")
+                .language("java")
+                .reviewType("security")
                 .build(); // GH-90000
 
         CodeReviewResult result = runPromise(() -> platform.reviewCode(request)); // GH-90000
@@ -217,14 +217,14 @@ class FullWorkflowE2ETest extends EventloopTestBase {
 
     @Test
     @Order(8) // GH-90000
-    @DisplayName("Full Workflow: Should complete IMPLEMENTATION phase with generated code [GH-90000]")
+    @DisplayName("Full Workflow: Should complete IMPLEMENTATION phase with generated code")
     void testCompleteImplementationPhase() throws Exception { // GH-90000
         CodeGenerationRequest codeRequest = CodeGenerationRequest.builder() // GH-90000
                 .tenantId(tenantId) // GH-90000
                 .agentId(javaExpertAgentId) // GH-90000
-                .language("java [GH-90000]")
-                .framework("spring-boot [GH-90000]")
-                .description("Generate authentication microservice implementation [GH-90000]")
+                .language("java")
+                .framework("spring-boot")
+                .description("Generate authentication microservice implementation")
                 .requirements(List.of( // GH-90000
                         "JWT token generation and validation",
                         "OAuth2 integration",
@@ -240,12 +240,12 @@ class FullWorkflowE2ETest extends EventloopTestBase {
         assertThat(codeResult).isNotNull(); // GH-90000
         assertThat(codeResult.success()).isTrue(); // GH-90000
         assertThat(codeResult.generatedFiles()).isNotEmpty(); // GH-90000
-        assertThat(codeResult.generatedFiles()).containsKey("AuthController.java [GH-90000]");
-        assertThat(codeResult.generatedFiles()).containsKey("AuthService.java [GH-90000]");
+        assertThat(codeResult.generatedFiles()).containsKey("AuthController.java");
+        assertThat(codeResult.generatedFiles()).containsKey("AuthService.java");
 
         PhaseExecutionRequest phaseRequest = PhaseExecutionRequest.builder() // GH-90000
                 .projectId(projectId) // GH-90000
-                .phase("IMPLEMENTATION [GH-90000]")
+                .phase("IMPLEMENTATION")
                 .tenantId(tenantId) // GH-90000
                 .agentId(javaExpertAgentId) // GH-90000
                 .artifacts(codeResult.generatedFiles()) // GH-90000
@@ -255,17 +255,17 @@ class FullWorkflowE2ETest extends EventloopTestBase {
         PhaseResult phaseResult = runPromise(() -> phasePromise); // GH-90000
 
         assertThat(phaseResult.success()).isTrue(); // GH-90000
-        assertThat(phaseResult.phase()).isEqualTo("IMPLEMENTATION [GH-90000]");
-        assertThat(phaseResult.artifacts()).containsKey("sourceCode [GH-90000]");
-        assertThat(phaseResult.artifacts()).containsKey("buildConfig [GH-90000]");
+        assertThat(phaseResult.phase()).isEqualTo("IMPLEMENTATION");
+        assertThat(phaseResult.artifacts()).containsKey("sourceCode");
+        assertThat(phaseResult.artifacts()).containsKey("buildConfig");
     }
 
     @Test
     @Order(9) // GH-90000
-    @DisplayName("Full Workflow: Should execute workflow steps via agent routing [GH-90000]")
+    @DisplayName("Full Workflow: Should execute workflow steps via agent routing")
     void testWorkflowStepsViaAgentRouting() throws Exception { // GH-90000
         AepEvent stepEvent = AepEvent.builder() // GH-90000
-                .eventType("workflow.step.requested [GH-90000]")
+                .eventType("workflow.step.requested")
                 .tenantId(tenantId) // GH-90000
                 .correlationId(UUID.randomUUID().toString()) // GH-90000
                 .payload(Map.of( // GH-90000
@@ -278,7 +278,7 @@ class FullWorkflowE2ETest extends EventloopTestBase {
         AepEvent result = runPromise(() -> platform.routeEvent(stepEvent)); // GH-90000
 
         assertThat(result).isNotNull(); // GH-90000
-        assertThat(result.eventType()).isEqualTo("workflow.step.completed [GH-90000]");
+        assertThat(result.eventType()).isEqualTo("workflow.step.completed");
         assertThat(result.tenantId()).isEqualTo(tenantId); // GH-90000
     }
 
@@ -286,11 +286,11 @@ class FullWorkflowE2ETest extends EventloopTestBase {
 
     @Test
     @Order(10) // GH-90000
-    @DisplayName("Full Workflow: Should complete TESTING phase with test results [GH-90000]")
+    @DisplayName("Full Workflow: Should complete TESTING phase with test results")
     void testCompleteTestingPhase() throws Exception { // GH-90000
         PhaseExecutionRequest request = PhaseExecutionRequest.builder() // GH-90000
                 .projectId(projectId) // GH-90000
-                .phase("TESTING [GH-90000]")
+                .phase("TESTING")
                 .tenantId(tenantId) // GH-90000
                 .agentId(javaExpertAgentId) // GH-90000
                 .build(); // GH-90000
@@ -299,15 +299,15 @@ class FullWorkflowE2ETest extends EventloopTestBase {
         PhaseResult result = runPromise(() -> promise); // GH-90000
 
         assertThat(result.success()).isTrue(); // GH-90000
-        assertThat(result.phase()).isEqualTo("TESTING [GH-90000]");
-        assertThat(result.artifacts()).containsKey("testResults [GH-90000]");
-        assertThat(result.artifacts()).containsKey("coverageReport [GH-90000]");
-        assertThat(result.artifacts()).containsKey("testMetrics [GH-90000]");
+        assertThat(result.phase()).isEqualTo("TESTING");
+        assertThat(result.artifacts()).containsKey("testResults");
+        assertThat(result.artifacts()).containsKey("coverageReport");
+        assertThat(result.artifacts()).containsKey("testMetrics");
     }
 
     @Test
     @Order(11) // GH-90000
-    @DisplayName("Full Workflow: Should verify test coverage meets threshold [GH-90000]")
+    @DisplayName("Full Workflow: Should verify test coverage meets threshold")
     void testVerifyTestCoverageThreshold() throws Exception { // GH-90000
         Promise<ProjectMetrics> promise = platform.getProjectMetrics(projectId, tenantId); // GH-90000
         ProjectMetrics metrics = runPromise(() -> promise); // GH-90000
@@ -321,11 +321,11 @@ class FullWorkflowE2ETest extends EventloopTestBase {
 
     @Test
     @Order(12) // GH-90000
-    @DisplayName("Full Workflow: Should complete DEPLOY phase with deployment artifacts [GH-90000]")
+    @DisplayName("Full Workflow: Should complete DEPLOY phase with deployment artifacts")
     void testCompleteDeployPhase() throws Exception { // GH-90000
         PhaseExecutionRequest request = PhaseExecutionRequest.builder() // GH-90000
                 .projectId(projectId) // GH-90000
-                .phase("DEPLOY [GH-90000]")
+                .phase("DEPLOY")
                 .tenantId(tenantId) // GH-90000
                 .agentId(javaExpertAgentId) // GH-90000
                 .build(); // GH-90000
@@ -334,15 +334,15 @@ class FullWorkflowE2ETest extends EventloopTestBase {
         PhaseResult result = runPromise(() -> promise); // GH-90000
 
         assertThat(result.success()).isTrue(); // GH-90000
-        assertThat(result.phase()).isEqualTo("DEPLOY [GH-90000]");
-        assertThat(result.artifacts()).containsKey("dockerImage [GH-90000]");
-        assertThat(result.artifacts()).containsKey("k8sManifest [GH-90000]");
-        assertThat(result.artifacts()).containsKey("deploymentConfig [GH-90000]");
+        assertThat(result.phase()).isEqualTo("DEPLOY");
+        assertThat(result.artifacts()).containsKey("dockerImage");
+        assertThat(result.artifacts()).containsKey("k8sManifest");
+        assertThat(result.artifacts()).containsKey("deploymentConfig");
     }
 
     @Test
     @Order(13) // GH-90000
-    @DisplayName("Full Workflow: Should verify deployment health check [GH-90000]")
+    @DisplayName("Full Workflow: Should verify deployment health check")
     void testVerifyDeploymentHealthCheck() throws Exception { // GH-90000
         DeploymentHealthCheck check = runPromise(() -> platform.checkDeploymentHealth(projectId, tenantId)); // GH-90000
 
@@ -356,7 +356,7 @@ class FullWorkflowE2ETest extends EventloopTestBase {
 
     @Test
     @Order(14) // GH-90000
-    @DisplayName("Full Workflow: Should handle EVOLVE phase with feature additions [GH-90000]")
+    @DisplayName("Full Workflow: Should handle EVOLVE phase with feature additions")
     void testCompleteEvolvePhase() throws Exception { // GH-90000
         EvolveRequest request = EvolveRequest.builder() // GH-90000
                 .projectId(projectId) // GH-90000
@@ -382,7 +382,7 @@ class FullWorkflowE2ETest extends EventloopTestBase {
 
     @Test
     @Order(15) // GH-90000
-    @DisplayName("Full Workflow: Should retrieve complete project with all phases [GH-90000]")
+    @DisplayName("Full Workflow: Should retrieve complete project with all phases")
     void testGetCompleteProject() throws Exception { // GH-90000
         Promise<Project> promise = platform.getProject(projectId, tenantId); // GH-90000
         Project project = runPromise(() -> promise); // GH-90000
@@ -393,12 +393,12 @@ class FullWorkflowE2ETest extends EventloopTestBase {
         assertThat(project.completedPhases()).contains( // GH-90000
                 "PLANNING", "DESIGN", "IMPLEMENTATION", "TESTING", "DEPLOY", "EVOLVE"
         );
-        assertThat(project.status()).isEqualTo("COMPLETED [GH-90000]");
+        assertThat(project.status()).isEqualTo("COMPLETED");
     }
 
     @Test
     @Order(16) // GH-90000
-    @DisplayName("Full Workflow: Should track complete workflow metrics [GH-90000]")
+    @DisplayName("Full Workflow: Should track complete workflow metrics")
     void testCompleteWorkflowMetrics() throws Exception { // GH-90000
         Promise<ProjectMetrics> promise = platform.getProjectMetrics(projectId, tenantId); // GH-90000
         ProjectMetrics metrics = runPromise(() -> promise); // GH-90000
@@ -414,13 +414,13 @@ class FullWorkflowE2ETest extends EventloopTestBase {
 
     @Test
     @Order(17) // GH-90000
-    @DisplayName("Full Workflow: Should verify AI workflow completion [GH-90000]")
+    @DisplayName("Full Workflow: Should verify AI workflow completion")
     void testVerifyAiWorkflowCompletion() throws Exception { // GH-90000
         Promise<AiWorkflow> promise = platform.getWorkflow(workflowId, tenantId); // GH-90000
         AiWorkflow workflow = runPromise(() -> promise); // GH-90000
 
         assertThat(workflow).isNotNull(); // GH-90000
-        assertThat(workflow.status()).isEqualTo("COMPLETED [GH-90000]");
+        assertThat(workflow.status()).isEqualTo("COMPLETED");
         assertThat(workflow.completedSteps()).isGreaterThan(0); // GH-90000
     }
 
@@ -428,15 +428,15 @@ class FullWorkflowE2ETest extends EventloopTestBase {
 
     @Test
     @Order(18) // GH-90000
-    @DisplayName("Full Workflow: Should handle workflow pause and resume [GH-90000]")
+    @DisplayName("Full Workflow: Should handle workflow pause and resume")
     void testWorkflowPauseAndResume() throws Exception { // GH-90000
         // Create new workflow for pause test
         CreateWorkflowRequest request = CreateWorkflowRequest.builder() // GH-90000
                 .tenantId(tenantId) // GH-90000
                 .projectId(projectId) // GH-90000
-                .name("Pause Test Workflow [GH-90000]")
-                .description("Test pause and resume [GH-90000]")
-                .objective("Test pause functionality [GH-90000]")
+                .name("Pause Test Workflow")
+                .description("Test pause and resume")
+                .objective("Test pause functionality")
                 .build(); // GH-90000
 
         AiWorkflow workflow = runPromise(() -> platform.createWorkflow(request)); // GH-90000
@@ -448,36 +448,36 @@ class FullWorkflowE2ETest extends EventloopTestBase {
 
         // Pause
         AiWorkflow paused = runPromise(() -> platform.pauseWorkflow(pauseWorkflowId, tenantId)); // GH-90000
-        assertThat(paused.status()).isEqualTo("PAUSED [GH-90000]");
+        assertThat(paused.status()).isEqualTo("PAUSED");
 
         // Resume
         AiWorkflow resumed = runPromise(() -> platform.resumeWorkflow(pauseWorkflowId, tenantId)); // GH-90000
-        assertThat(resumed.status()).isEqualTo("IN_PROGRESS [GH-90000]");
+        assertThat(resumed.status()).isEqualTo("IN_PROGRESS");
     }
 
     @Test
     @Order(19) // GH-90000
-    @DisplayName("Full Workflow: Should handle workflow cancellation [GH-90000]")
+    @DisplayName("Full Workflow: Should handle workflow cancellation")
     void testWorkflowCancellation() throws Exception { // GH-90000
         CreateWorkflowRequest request = CreateWorkflowRequest.builder() // GH-90000
                 .tenantId(tenantId) // GH-90000
                 .projectId(projectId) // GH-90000
-                .name("Cancel Test Workflow [GH-90000]")
-                .description("Test cancellation [GH-90000]")
-                .objective("Test cancel functionality [GH-90000]")
+                .name("Cancel Test Workflow")
+                .description("Test cancellation")
+                .objective("Test cancel functionality")
                 .build(); // GH-90000
 
         AiWorkflow workflow = runPromise(() -> platform.createWorkflow(request)); // GH-90000
         String cancelWorkflowId = workflow.id(); // GH-90000
 
         AiWorkflow cancelled = runPromise(() -> platform.cancelWorkflow(cancelWorkflowId, tenantId)); // GH-90000
-        assertThat(cancelled.status()).isEqualTo("CANCELLED [GH-90000]");
+        assertThat(cancelled.status()).isEqualTo("CANCELLED");
     }
 
     @ParameterizedTest(name = "concurrent={0}") // GH-90000
     @Order(20) // GH-90000
     @ValueSource(ints = {2, 5, 10}) // GH-90000
-    @DisplayName("Full Workflow: Should handle concurrent workflow executions [GH-90000]")
+    @DisplayName("Full Workflow: Should handle concurrent workflow executions")
     void testConcurrentWorkflowExecutions(int concurrentCount) throws Exception { // GH-90000
         AtomicInteger successCount = new AtomicInteger(0); // GH-90000
 
@@ -486,7 +486,7 @@ class FullWorkflowE2ETest extends EventloopTestBase {
                     .tenantId(tenantId) // GH-90000
                     .projectId(projectId) // GH-90000
                     .name("Concurrent Workflow " + i) // GH-90000
-                    .description("Test concurrent execution [GH-90000]")
+                    .description("Test concurrent execution")
                     .objective("Concurrent test " + i) // GH-90000
                     .build(); // GH-90000
 

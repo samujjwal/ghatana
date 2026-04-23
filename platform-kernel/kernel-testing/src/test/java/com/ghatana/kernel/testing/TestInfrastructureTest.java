@@ -17,11 +17,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Validates that the kernel testing module provides necessary utilities,
  * fixtures, and test data management capabilities for other kernel modules.
  */
-@DisplayName("Test Infrastructure Validation [GH-90000]")
+@DisplayName("Test Infrastructure Validation")
 class TestInfrastructureTest {
 
     @Test
-    @DisplayName("Should validate testing utilities are available [GH-90000]")
+    @DisplayName("Should validate testing utilities are available")
     void shouldValidateTestingUtilitiesAvailable() { // GH-90000
         // Validate that the testing module is properly configured
         // and provides necessary utilities for kernel module testing
@@ -33,11 +33,11 @@ class TestInfrastructureTest {
         // Validate JUnit 5 annotations are available
         assertThat(getClass().getAnnotation(DisplayName.class)).isNotNull(); // GH-90000
         assertThat(getClass().getAnnotation(DisplayName.class).value()) // GH-90000
-            .isEqualTo("Test Infrastructure Validation [GH-90000]");
+            .isEqualTo("Test Infrastructure Validation");
     }
 
     @Test
-    @DisplayName("Should validate test data management [GH-90000]")
+    @DisplayName("Should validate test data management")
     void shouldValidateTestDataManagement() { // GH-90000
         // Validates test data creation, cleanup, and isolation
 
@@ -48,7 +48,7 @@ class TestInfrastructureTest {
         // Validate test data creation
         assertThat(testDataKey).isNotEmpty(); // GH-90000
         assertThat(testDataValue).isNotEmpty(); // GH-90000
-        assertThat(testDataKey).startsWith("test-key- [GH-90000]");
+        assertThat(testDataKey).startsWith("test-key-");
 
         // Validate test data isolation (each test gets fresh data) // GH-90000
         String anotherTestKey = "another-key-" + System.currentTimeMillis(); // GH-90000
@@ -56,7 +56,7 @@ class TestInfrastructureTest {
     }
 
     @Test
-    @DisplayName("Should validate fixture management [GH-90000]")
+    @DisplayName("Should validate fixture management")
     void shouldValidateFixtureManagement() { // GH-90000
         // Validates test fixture lifecycle management
 

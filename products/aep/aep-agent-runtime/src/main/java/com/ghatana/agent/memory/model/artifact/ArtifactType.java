@@ -6,7 +6,8 @@ package com.ghatana.agent.memory.model.artifact;
  * @doc.type enum
  * @doc.purpose Artifact type classification
  * @doc.layer agent-memory
- */
+  * @doc.pattern Enum
+*/
 public enum ArtifactType {
 
     /** A decision made by the agent with rationale and alternatives. */

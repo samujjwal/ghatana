@@ -102,7 +102,7 @@ import java.lang.annotation.Target;
  *     void debugQuery(TransactionManager txManager) { // GH-90000
  *         // All SQL logged to console with formatting
  *         txManager.inTransaction(em -> { // GH-90000
- *             em.persist(new User("john@example.com [GH-90000]"));
+ *             em.persist(new User("john@example.com"));
  *             return null;
  *         });
  *     }
@@ -156,10 +156,10 @@ import java.lang.annotation.Target;
  *     @Test
  *     void shouldIsolateTenants(JdbcTemplate jdbc) { // GH-90000
  *         // Test tenant isolation logic
- *         jdbc.update("SET search_path TO tenant_1 [GH-90000]");
+ *         jdbc.update("SET search_path TO tenant_1");
  *         jdbc.update("INSERT INTO users (email) VALUES (?)", "user1@tenant1.com"); // GH-90000
  *
- *         jdbc.update("SET search_path TO tenant_2 [GH-90000]");
+ *         jdbc.update("SET search_path TO tenant_2");
  *         Integer count = jdbc.queryForObject( // GH-90000
  *             "SELECT COUNT(*) FROM users", // GH-90000
  *             (rs, rowNum) -> rs.getInt(1) // GH-90000

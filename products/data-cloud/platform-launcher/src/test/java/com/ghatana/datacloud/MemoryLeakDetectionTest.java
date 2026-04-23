@@ -36,7 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("Memory Leak Detection [GH-90000]")
+@DisplayName("Memory Leak Detection")
 class MemoryLeakDetectionTest extends EventloopTestBase {
 
     private static final String TENANT_ID  = "leak-tenant";
@@ -59,11 +59,11 @@ class MemoryLeakDetectionTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Client lifecycle [GH-90000]")
+    @DisplayName("Client lifecycle")
     class ClientLifecycleTests {
 
         @Test
-        @DisplayName("closed client is reclaimable by GC (no hard reference retained) [GH-90000]")
+        @DisplayName("closed client is reclaimable by GC (no hard reference retained)")
         void closedClient_isReclaimable() throws Exception { // GH-90000
             // Create and use the client in a helper method whose stack frame is fully
             // released on return, ensuring no variable slot retains the reference.
@@ -73,7 +73,7 @@ class MemoryLeakDetectionTest extends EventloopTestBase {
             forceGc(); // GH-90000
 
             // The client should be reclaimable (not pinned by internal caches) // GH-90000
-            assertThat(ref.get()).as("Closed DataCloudClient must not be held by internal caches [GH-90000]").isNull();
+            assertThat(ref.get()).as("Closed DataCloudClient must not be held by internal caches").isNull();
         }
 
         /** Creates a client, uses it once, closes it, and returns a WeakReference. */
@@ -87,7 +87,7 @@ class MemoryLeakDetectionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("multiple open+close cycles do not accumulate heap pressure [GH-90000]")
+        @DisplayName("multiple open+close cycles do not accumulate heap pressure")
         void multipleOpenCloseCycles_noHeapAccumulation() throws Exception { // GH-90000
             long heapBefore = usedHeap(); // GH-90000
 
@@ -114,11 +114,11 @@ class MemoryLeakDetectionTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Query result cleanup [GH-90000]")
+    @DisplayName("Query result cleanup")
     class QueryResultCleanupTests {
 
         @Test
-        @DisplayName("query result list is reclaimable after caller drops the reference [GH-90000]")
+        @DisplayName("query result list is reclaimable after caller drops the reference")
         void queryResultList_isReclaimableAfterCaller_dropsReference() throws Exception { // GH-90000
             // Pre-populate
             for (int i = 0; i < 100; i++) { // GH-90000
@@ -139,12 +139,12 @@ class MemoryLeakDetectionTest extends EventloopTestBase {
 
             // Result list must be reclaimable once the caller drops the reference
             assertThat(ref.get()) // GH-90000
-                .as("Query result list should be reclaimable after caller releases it [GH-90000]")
+                .as("Query result list should be reclaimable after caller releases it")
                 .isNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("repeated large queries do not retain results internally [GH-90000]")
+        @DisplayName("repeated large queries do not retain results internally")
         void repeatedLargeQueries_doNotRetainResultsInternally() throws Exception { // GH-90000
             for (int i = 0; i < 50; i++) { // GH-90000
                 final int idx = i;
@@ -174,11 +174,11 @@ class MemoryLeakDetectionTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Entity store cleanup [GH-90000]")
+    @DisplayName("Entity store cleanup")
     class EntityStoreCleanupTests {
 
         @Test
-        @DisplayName("deleted entities are removed from internal store (no memory accumulation) [GH-90000]")
+        @DisplayName("deleted entities are removed from internal store (no memory accumulation)")
         void deletedEntities_removedFromStore() throws Exception { // GH-90000
             List<String> ids = new ArrayList<>(); // GH-90000
             for (int i = 0; i < 100; i++) { // GH-90000

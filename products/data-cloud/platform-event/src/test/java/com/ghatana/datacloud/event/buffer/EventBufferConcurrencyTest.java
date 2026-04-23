@@ -42,7 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("EventBuffer — concurrency regression (DC-005) [GH-90000]")
+@DisplayName("EventBuffer — concurrency regression (DC-005)")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class EventBufferConcurrencyTest extends EventloopTestBase {
 
@@ -61,7 +61,7 @@ class EventBufferConcurrencyTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("buffer never exceeds capacity under concurrent offers from multiple threads [GH-90000]")
+    @DisplayName("buffer never exceeds capacity under concurrent offers from multiple threads")
     void bufferNeverExceedsCapacityUnderConcurrentOffers() throws InterruptedException { // GH-90000
         int threadCount   = 20;
         int offerPerThread = 10; // 20 × 10 = 200 total, capacity = 50 → plenty of rejections
@@ -93,7 +93,7 @@ class EventBufferConcurrencyTest extends EventloopTestBase {
 
         // The buffer MUST NOT exceed its declared capacity at any moment
         assertThat(buffer.size()) // GH-90000
-            .as("buffer.size() must be <= CAPACITY [GH-90000]")
+            .as("buffer.size() must be <= CAPACITY")
             .isLessThanOrEqualTo(CAPACITY); // GH-90000
 
         // accepted + rejected must equal total attempts
@@ -102,19 +102,19 @@ class EventBufferConcurrencyTest extends EventloopTestBase {
 
         // At most CAPACITY events can have been accepted
         assertThat(accepted.get()) // GH-90000
-            .as("accepted events must not exceed declared capacity [GH-90000]")
+            .as("accepted events must not exceed declared capacity")
             .isLessThanOrEqualTo(CAPACITY); // GH-90000
 
         // Stats must reflect actual rejections (totalRejected counter from DC-005 fix) // GH-90000
         Map<String, Object> stats = buffer.stats(); // GH-90000
-        long reportedRejected = (Long) stats.get("totalRejected [GH-90000]");
+        long reportedRejected = (Long) stats.get("totalRejected");
         assertThat(reportedRejected) // GH-90000
-            .as("stats().totalRejected must match actual rejections [GH-90000]")
+            .as("stats().totalRejected must match actual rejections")
             .isEqualTo(rejected.get()); // GH-90000
     }
 
     @Test
-    @DisplayName("concurrent offer and drain are mutually exclusive — no item is lost or duplicated [GH-90000]")
+    @DisplayName("concurrent offer and drain are mutually exclusive — no item is lost or duplicated")
     void concurrentOfferAndDrainAreConsistent() throws InterruptedException { // GH-90000
         // Fill buffer to exactly CAPACITY
         for (int i = 0; i < CAPACITY; i++) { // GH-90000
@@ -148,13 +148,13 @@ class EventBufferConcurrencyTest extends EventloopTestBase {
         // Total drained should equal CAPACITY; no item survives in the buffer
         int totalDrained = captured.stream().mapToInt(List::size).sum(); // GH-90000
         assertThat(totalDrained) // GH-90000
-            .as("total drained events must equal capacity (each item drained exactly once) [GH-90000]")
+            .as("total drained events must equal capacity (each item drained exactly once)")
             .isEqualTo(CAPACITY); // GH-90000
         assertThat(buffer.size()).isZero(); // GH-90000
     }
 
     @Test
-    @DisplayName("utilizationPct stat stays within [0, 100] at all times [GH-90000]")
+    @DisplayName("utilizationPct stat stays within [0, 100] at all times")
     void utilizationPctStatIsAlwaysInRange() throws InterruptedException { // GH-90000
         ExecutorService offerers = Executors.newFixedThreadPool(4); // GH-90000
         ExecutorService drainers = Executors.newFixedThreadPool(2); // GH-90000
@@ -186,7 +186,7 @@ class EventBufferConcurrencyTest extends EventloopTestBase {
         assertThat(done.await(15, TimeUnit.SECONDS)).isTrue(); // GH-90000
 
         Map<String, Object> stats = buffer.stats(); // GH-90000
-        int utilizationPct = (Integer) stats.get("utilizationPct [GH-90000]");
+        int utilizationPct = (Integer) stats.get("utilizationPct");
         assertThat(utilizationPct).isBetween(0, 100); // GH-90000
 
         offerers.shutdown(); // GH-90000
@@ -198,7 +198,7 @@ class EventBufferConcurrencyTest extends EventloopTestBase {
     private static EventEntry newEntry() { // GH-90000
         return EventEntry.builder() // GH-90000
             .eventId(UUID.randomUUID()) // GH-90000
-            .eventType("test.event [GH-90000]")
+            .eventType("test.event")
             .payload(ByteBuffer.wrap("{}".getBytes())) // GH-90000
             .headers(Map.of()) // GH-90000
             .build(); // GH-90000

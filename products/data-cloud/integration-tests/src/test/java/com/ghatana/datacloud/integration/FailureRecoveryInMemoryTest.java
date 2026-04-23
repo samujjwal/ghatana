@@ -41,7 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p><b>DC-P0-4 Note:</b> Renamed from FailureRecoveryTest to clarify this is a synthetic test
  * using in-memory storage, not a true integration test against real durable providers.</p>
  */
-@DisplayName("Failure Recovery In-Memory Tests (Synthetic) [GH-90000]")
+@DisplayName("Failure Recovery In-Memory Tests (Synthetic)")
 class FailureRecoveryInMemoryTest extends EventloopTestBase {
 
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {}; // GH-90000
@@ -63,7 +63,7 @@ class FailureRecoveryInMemoryTest extends EventloopTestBase {
     void setUp() throws Exception { // GH-90000
         config = DataCloudConfig.builder() // GH-90000
             .profile(DataCloudProfile.SOVEREIGN) // GH-90000
-            .customConfig(Map.of("sovereign.dataDir", tempDir.resolve("sovereign-store [GH-90000]").toString()))
+            .customConfig(Map.of("sovereign.dataDir", tempDir.resolve("sovereign-store").toString()))
             .build(); // GH-90000
         startServer(); // GH-90000
     }
@@ -74,11 +74,11 @@ class FailureRecoveryInMemoryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("entity and CDC event survive full launcher restart [GH-90000]")
+    @DisplayName("entity and CDC event survive full launcher restart")
     void entityAndCdcEventSurviveFullLauncherRestart() throws Exception { // GH-90000
         ParsedHttpResponse created = sendJson("POST", "/api/v1/entities/" + COLLECTION, // GH-90000
             Map.of("name", "survives restart", "phase", "created"), TENANT_ID); // GH-90000
-        String entityId = String.valueOf(created.body().get("id [GH-90000]"));
+        String entityId = String.valueOf(created.body().get("id"));
 
         Optional<DataCloudClient.Entity> beforeRestart = runPromise(() -> client.findById(TENANT_ID, COLLECTION, entityId)); // GH-90000
         assertThat(created.statusCode()).isEqualTo(200); // GH-90000
@@ -90,25 +90,25 @@ class FailureRecoveryInMemoryTest extends EventloopTestBase {
             null, TENANT_ID);
         List<DataCloudClient.Event> events = runPromise(() -> client.queryEvents( // GH-90000
             TENANT_ID,
-            DataCloudClient.EventQuery.byType("entity.saved [GH-90000]")));
+            DataCloudClient.EventQuery.byType("entity.saved")));
 
         assertThat(fetched.statusCode()).isEqualTo(200); // GH-90000
         assertThat(fetched.body()).containsEntry("id", entityId); // GH-90000
-        assertThat(asMap(fetched.body().get("data [GH-90000]"))).containsEntry("name", "survives restart");
+        assertThat(asMap(fetched.body().get("data"))).containsEntry("name", "survives restart");
         assertThat(events) // GH-90000
             .anySatisfy(event -> { // GH-90000
-                assertThat(event.type()).isEqualTo("entity.saved [GH-90000]");
+                assertThat(event.type()).isEqualTo("entity.saved");
                 assertThat(event.payload()).containsEntry("collection", COLLECTION); // GH-90000
                 assertThat(event.payload()).containsEntry("id", entityId); // GH-90000
             });
     }
 
     @Test
-    @DisplayName("delete after restart removes entity and appends durable deletion event [GH-90000]")
+    @DisplayName("delete after restart removes entity and appends durable deletion event")
     void deleteAfterRestartRemovesEntityAndAppendsDurableDeletionEvent() throws Exception { // GH-90000
         ParsedHttpResponse created = sendJson("POST", "/api/v1/entities/" + COLLECTION, // GH-90000
             Map.of("name", "delete me", "phase", "created"), TENANT_ID); // GH-90000
-        String entityId = String.valueOf(created.body().get("id [GH-90000]"));
+        String entityId = String.valueOf(created.body().get("id"));
 
         restartLauncher(); // GH-90000
 
@@ -117,14 +117,14 @@ class FailureRecoveryInMemoryTest extends EventloopTestBase {
         Optional<DataCloudClient.Entity> entityAfterDelete = runPromise(() -> client.findById(TENANT_ID, COLLECTION, entityId)); // GH-90000
         List<DataCloudClient.Event> deleteEvents = runPromise(() -> client.queryEvents( // GH-90000
             TENANT_ID,
-            DataCloudClient.EventQuery.byType("entity.deleted [GH-90000]")));
+            DataCloudClient.EventQuery.byType("entity.deleted")));
 
         assertThat(deleted.statusCode()).isEqualTo(200); // GH-90000
         assertThat(deleted.body()).containsEntry("deleted", true); // GH-90000
         assertThat(entityAfterDelete).isEmpty(); // GH-90000
         assertThat(deleteEvents) // GH-90000
             .anySatisfy(event -> { // GH-90000
-                assertThat(event.type()).isEqualTo("entity.deleted [GH-90000]");
+                assertThat(event.type()).isEqualTo("entity.deleted");
                 assertThat(event.payload()).containsEntry("collection", COLLECTION); // GH-90000
                 assertThat(event.payload()).containsEntry("id", entityId); // GH-90000
             });
@@ -185,7 +185,7 @@ class FailureRecoveryInMemoryTest extends EventloopTestBase {
         }
     }
 
-    @SuppressWarnings("unchecked [GH-90000]")
+    @SuppressWarnings("unchecked")
     private Map<String, Object> asMap(Object value) { // GH-90000
         return (Map<String, Object>) value; // GH-90000
     }

@@ -31,13 +31,13 @@ class TenantIsolationE2ETest extends EventloopTestBase {
 
     @Test
     @Order(1) // GH-90000
-    @DisplayName("E2E: Create projects in different tenants [GH-90000]")
+    @DisplayName("E2E: Create projects in different tenants")
     void testCreateProjectsInDifferentTenants() throws Exception { // GH-90000
         // Create project in Tenant A
         TenantProjectRequest requestA1 = TenantProjectRequest.builder() // GH-90000
                 .tenantId(tenantA) // GH-90000
-                .projectName("Tenant A Project 1 [GH-90000]")
-                .intent("Build API [GH-90000]")
+                .projectName("Tenant A Project 1")
+                .intent("Build API")
                 .build(); // GH-90000
 
         Promise<TenantProject> promiseA1 = platform.createProject(requestA1); // GH-90000
@@ -46,13 +46,13 @@ class TenantIsolationE2ETest extends EventloopTestBase {
 
         assertThat(projectA).isNotNull(); // GH-90000
         assertThat(projectA.tenantId()).isEqualTo(tenantA); // GH-90000
-        assertThat(projectA.name()).isEqualTo("Tenant A Project 1 [GH-90000]");
+        assertThat(projectA.name()).isEqualTo("Tenant A Project 1");
 
         // Create second project in Tenant A
         TenantProjectRequest requestA2 = TenantProjectRequest.builder() // GH-90000
                 .tenantId(tenantA) // GH-90000
-                .projectName("Tenant A Project 2 [GH-90000]")
-                .intent("Build Frontend [GH-90000]")
+                .projectName("Tenant A Project 2")
+                .intent("Build Frontend")
                 .build(); // GH-90000
 
         TenantProject projectA2Result = runPromise(() -> platform.createProject(requestA2)); // GH-90000
@@ -61,8 +61,8 @@ class TenantIsolationE2ETest extends EventloopTestBase {
         // Create project in Tenant B
         TenantProjectRequest requestB1 = TenantProjectRequest.builder() // GH-90000
                 .tenantId(tenantB) // GH-90000
-                .projectName("Tenant B Project 1 [GH-90000]")
-                .intent("Build Database [GH-90000]")
+                .projectName("Tenant B Project 1")
+                .intent("Build Database")
                 .build(); // GH-90000
 
         TenantProject projectB = runPromise(() -> platform.createProject(requestB1)); // GH-90000
@@ -73,7 +73,7 @@ class TenantIsolationE2ETest extends EventloopTestBase {
 
     @Test
     @Order(2) // GH-90000
-    @DisplayName("E2E: Tenant A cannot access Tenant B's projects [GH-90000]")
+    @DisplayName("E2E: Tenant A cannot access Tenant B's projects")
     void testTenantIsolationAccessControl() throws Exception { // GH-90000
         // Tenant A tries to access Tenant B's project
         Promise<TenantProject> promise = platform.getProject(projectB1, tenantA); // GH-90000
@@ -86,12 +86,12 @@ class TenantIsolationE2ETest extends EventloopTestBase {
         AccessLog[] accessLogs = runPromise(() -> logs); // GH-90000
 
         assertThat(accessLogs).anyMatch(log ->  // GH-90000
-            log.action().equals("ACCESS_DENIED [GH-90000]") && log.resource().contains(projectB1));
+            log.action().equals("ACCESS_DENIED") && log.resource().contains(projectB1));
     }
 
     @Test
     @Order(3) // GH-90000
-    @DisplayName("E2E: Each tenant only sees their own projects [GH-90000]")
+    @DisplayName("E2E: Each tenant only sees their own projects")
     void testTenantDataIsolation() throws Exception { // GH-90000
         // List projects for Tenant A
         Promise<TenantProject[]> promiseA = platform.listProjects(tenantA); // GH-90000
@@ -112,7 +112,7 @@ class TenantIsolationE2ETest extends EventloopTestBase {
 
     @Test
     @Order(4) // GH-90000
-    @DisplayName("E2E: Tenant data is isolated in events [GH-90000]")
+    @DisplayName("E2E: Tenant data is isolated in events")
     void testEventTenantIsolation() throws Exception { // GH-90000
         // Publish events from both tenants
         platform.publishEvent(tenantA, "PROJECT_UPDATED", Map.of("projectId", projectA1)).get(); // GH-90000
@@ -133,13 +133,13 @@ class TenantIsolationE2ETest extends EventloopTestBase {
 
     @Test
     @Order(5) // GH-90000
-    @DisplayName("E2E: User authentication is tenant-scoped [GH-90000]")
+    @DisplayName("E2E: User authentication is tenant-scoped")
     void testTenantScopedAuthentication() throws Exception { // GH-90000
         // Create user in Tenant A
         TenantUserRequest userRequest = TenantUserRequest.builder() // GH-90000
                 .tenantId(tenantA) // GH-90000
-                .username("user@example.com [GH-90000]")
-                .password("password123 [GH-90000]")
+                .username("user@example.com")
+                .password("password123")
                 .build(); // GH-90000
 
         Promise<TenantUser> userPromise = platform.createUser(userRequest); // GH-90000
@@ -150,20 +150,20 @@ class TenantIsolationE2ETest extends EventloopTestBase {
         // User from Tenant A cannot authenticate in Tenant B context
         TenantAuthRequest authRequest = TenantAuthRequest.builder() // GH-90000
                 .tenantId(tenantB) // Wrong tenant // GH-90000
-                .username("user@example.com [GH-90000]")
-                .password("password123 [GH-90000]")
+                .username("user@example.com")
+                .password("password123")
                 .build(); // GH-90000
 
         Promise<TenantAuthResponse> authPromise = platform.authenticate(authRequest); // GH-90000
         TenantAuthResponse authResponse = runPromise(() -> authPromise); // GH-90000
 
         assertThat(authResponse.success()).isFalse(); // GH-90000
-        assertThat(authResponse.error()).contains("Tenant mismatch [GH-90000]");
+        assertThat(authResponse.error()).contains("Tenant mismatch");
     }
 
     @Test
     @Order(6) // GH-90000
-    @DisplayName("E2E: Metrics are isolated per tenant [GH-90000]")
+    @DisplayName("E2E: Metrics are isolated per tenant")
     void testTenantIsolatedMetrics() throws Exception { // GH-90000
         // Record metrics for both tenants
         platform.recordMetric(tenantA, "api.calls", 100).get(); // GH-90000
@@ -184,7 +184,7 @@ class TenantIsolationE2ETest extends EventloopTestBase {
 
     @Test
     @Order(7) // GH-90000
-    @DisplayName("E2E: Audit logs are tenant-isolated [GH-90000]")
+    @DisplayName("E2E: Audit logs are tenant-isolated")
     void testTenantIsolatedAuditLogs() throws Exception { // GH-90000
         // Create audit events for both tenants
         platform.createAuditEvent(tenantA, "USER_LOGIN", "user-1").get(); // GH-90000
@@ -210,48 +210,48 @@ class TenantIsolationE2ETest extends EventloopTestBase {
 
     @Test
     @Order(8) // GH-90000
-    @DisplayName("E2E: Cross-tenant access attempts are blocked and logged [GH-90000]")
+    @DisplayName("E2E: Cross-tenant access attempts are blocked and logged")
     void testCrossTenantAccessBlocking() throws Exception { // GH-90000
         // Attempt cross-tenant access
         CrossTenantAccessRequest request = CrossTenantAccessRequest.builder() // GH-90000
                 .sourceTenant(tenantA) // GH-90000
                 .targetTenant(tenantB) // GH-90000
-                .resourceType("PROJECT [GH-90000]")
+                .resourceType("PROJECT")
                 .resourceId(projectB1) // GH-90000
-                .action("READ [GH-90000]")
+                .action("READ")
                 .build(); // GH-90000
 
         Promise<AccessControlResult> result = platform.attemptCrossTenantAccess(request); // GH-90000
         AccessControlResult accessResult = runPromise(() -> result); // GH-90000
 
         assertThat(accessResult.allowed()).isFalse(); // GH-90000
-        assertThat(accessResult.reason()).contains("Cross-tenant access denied [GH-90000]");
+        assertThat(accessResult.reason()).contains("Cross-tenant access denied");
 
         // Verify security event was logged
         Promise<SecurityEvent[]> securityLogs = platform.getSecurityEvents(); // GH-90000
         SecurityEvent[] events = runPromise(() -> securityLogs); // GH-90000
 
         assertThat(events).anyMatch(e ->  // GH-90000
-            e.eventType().equals("CROSS_TENANT_ACCESS_ATTEMPT [GH-90000]") &&
+            e.eventType().equals("CROSS_TENANT_ACCESS_ATTEMPT") &&
             e.sourceTenant().equals(tenantA) && // GH-90000
             e.targetTenant().equals(tenantB)); // GH-90000
     }
 
     @Test
     @Order(9) // GH-90000
-    @DisplayName("E2E: Resource names can be same across tenants [GH-90000]")
+    @DisplayName("E2E: Resource names can be same across tenants")
     void testResourceNameIsolation() throws Exception { // GH-90000
         // Create project with same name in both tenants
         TenantProjectRequest requestA = TenantProjectRequest.builder() // GH-90000
                 .tenantId(tenantA) // GH-90000
-                .projectName("Common Project Name [GH-90000]")
-                .intent("Build something [GH-90000]")
+                .projectName("Common Project Name")
+                .intent("Build something")
                 .build(); // GH-90000
 
         TenantProjectRequest requestB = TenantProjectRequest.builder() // GH-90000
                 .tenantId(tenantB) // GH-90000
-                .projectName("Common Project Name [GH-90000]")
-                .intent("Build something else [GH-90000]")
+                .projectName("Common Project Name")
+                .intent("Build something else")
                 .build(); // GH-90000
 
         TenantProject projectA = runPromise(() -> platform.createProject(requestA)); // GH-90000
@@ -441,7 +441,7 @@ class TenantIsolationE2ETest extends EventloopTestBase {
                 if (user == null) { // GH-90000
                     return TenantAuthResponse.builder() // GH-90000
                         .success(false) // GH-90000
-                        .error("User not found [GH-90000]")
+                        .error("User not found")
                         .build(); // GH-90000
                 }
 
@@ -449,7 +449,7 @@ class TenantIsolationE2ETest extends EventloopTestBase {
                 if (!user.tenantId().equals(request.tenantId())) { // GH-90000
                     return TenantAuthResponse.builder() // GH-90000
                         .success(false) // GH-90000
-                        .error("Tenant mismatch [GH-90000]")
+                        .error("Tenant mismatch")
                         .build(); // GH-90000
                 }
 

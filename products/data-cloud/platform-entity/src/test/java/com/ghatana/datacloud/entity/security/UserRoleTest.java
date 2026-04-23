@@ -59,39 +59,39 @@ class UserRoleTest {
     @Test
     void editorShouldHaveLimitedWritePermissions() { // GH-90000
         Set<String> editorPerms = UserRole.EDITOR.getDefaultPermissions(); // GH-90000
-        assertThat(editorPerms).contains("entity:write [GH-90000]");
-        assertThat(editorPerms).doesNotContain("entity:delete [GH-90000]");
-        assertThat(editorPerms).doesNotContain("collection:write [GH-90000]");
+        assertThat(editorPerms).contains("entity:write");
+        assertThat(editorPerms).doesNotContain("entity:delete");
+        assertThat(editorPerms).doesNotContain("collection:write");
     }
 
     @Test
     void fromRoleIdShouldReturnCorrectEnum() { // GH-90000
-        assertThat(UserRole.fromRoleId("admin [GH-90000]")).isEqualTo(UserRole.ADMIN);
-        assertThat(UserRole.fromRoleId("curator [GH-90000]")).isEqualTo(UserRole.CURATOR);
-        assertThat(UserRole.fromRoleId("editor [GH-90000]")).isEqualTo(UserRole.EDITOR);
-        assertThat(UserRole.fromRoleId("reviewer [GH-90000]")).isEqualTo(UserRole.REVIEWER);
-        assertThat(UserRole.fromRoleId("viewer [GH-90000]")).isEqualTo(UserRole.VIEWER);
+        assertThat(UserRole.fromRoleId("admin")).isEqualTo(UserRole.ADMIN);
+        assertThat(UserRole.fromRoleId("curator")).isEqualTo(UserRole.CURATOR);
+        assertThat(UserRole.fromRoleId("editor")).isEqualTo(UserRole.EDITOR);
+        assertThat(UserRole.fromRoleId("reviewer")).isEqualTo(UserRole.REVIEWER);
+        assertThat(UserRole.fromRoleId("viewer")).isEqualTo(UserRole.VIEWER);
     }
 
     @Test
     void fromRoleIdShouldBeCaseInsensitive() { // GH-90000
-        assertThat(UserRole.fromRoleId("ADMIN [GH-90000]")).isEqualTo(UserRole.ADMIN);
-        assertThat(UserRole.fromRoleId("Admin [GH-90000]")).isEqualTo(UserRole.ADMIN);
-        assertThat(UserRole.fromRoleId("EDITOR [GH-90000]")).isEqualTo(UserRole.EDITOR);
+        assertThat(UserRole.fromRoleId("ADMIN")).isEqualTo(UserRole.ADMIN);
+        assertThat(UserRole.fromRoleId("Admin")).isEqualTo(UserRole.ADMIN);
+        assertThat(UserRole.fromRoleId("EDITOR")).isEqualTo(UserRole.EDITOR);
     }
 
     @Test
     void fromRoleIdShouldThrowForNull() { // GH-90000
         assertThatThrownBy(() -> UserRole.fromRoleId(null)) // GH-90000
             .isInstanceOf(NullPointerException.class) // GH-90000
-            .hasMessageContaining("roleId cannot be null [GH-90000]");
+            .hasMessageContaining("roleId cannot be null");
     }
 
     @Test
     void fromRoleIdShouldThrowForUnknownRole() { // GH-90000
-        assertThatThrownBy(() -> UserRole.fromRoleId("unknown_role [GH-90000]"))
+        assertThatThrownBy(() -> UserRole.fromRoleId("unknown_role"))
             .isInstanceOf(IllegalArgumentException.class) // GH-90000
-            .hasMessageContaining("Unknown role ID [GH-90000]");
+            .hasMessageContaining("Unknown role ID");
     }
 
     @Test
@@ -130,13 +130,13 @@ class UserRoleTest {
     @Test
     void defaultPermissionsShouldBeImmutable() { // GH-90000
         Set<String> perms = UserRole.ADMIN.getDefaultPermissions(); // GH-90000
-        assertThatThrownBy(() -> perms.add("new:permission [GH-90000]"))
+        assertThatThrownBy(() -> perms.add("new:permission"))
             .isInstanceOf(UnsupportedOperationException.class); // GH-90000
     }
 
     @Test
     void valueOfShouldReturnCorrectEnum() { // GH-90000
-        assertThat(UserRole.valueOf("ADMIN [GH-90000]")).isEqualTo(UserRole.ADMIN);
-        assertThat(UserRole.valueOf("VIEWER [GH-90000]")).isEqualTo(UserRole.VIEWER);
+        assertThat(UserRole.valueOf("ADMIN")).isEqualTo(UserRole.ADMIN);
+        assertThat(UserRole.valueOf("VIEWER")).isEqualTo(UserRole.VIEWER);
     }
 }

@@ -35,7 +35,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("DataLifecycleManager [GH-90000]")
+@DisplayName("DataLifecycleManager")
 class DataLifecycleManagerTest {
 
     private static final String TENANT = "tenant-lifecycle";
@@ -63,11 +63,11 @@ class DataLifecycleManagerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Collection registration [GH-90000]")
+    @DisplayName("Collection registration")
     class RegistrationTests {
 
         @Test
-        @DisplayName("registerCollection: adds new collection to inventory [GH-90000]")
+        @DisplayName("registerCollection: adds new collection to inventory")
         void registerCollection_addsEntry() { // GH-90000
             assertThat(mgr.registeredCollectionCount()).isZero(); // GH-90000
             mgr.registerCollection(TENANT, COLL_1); // GH-90000
@@ -75,7 +75,7 @@ class DataLifecycleManagerTest {
         }
 
         @Test
-        @DisplayName("registerCollection: duplicate registration is idempotent [GH-90000]")
+        @DisplayName("registerCollection: duplicate registration is idempotent")
         void registerCollection_duplicateIsIdempotent() { // GH-90000
             mgr.registerCollection(TENANT, COLL_1); // GH-90000
             mgr.registerCollection(TENANT, COLL_1); // GH-90000
@@ -83,7 +83,7 @@ class DataLifecycleManagerTest {
         }
 
         @Test
-        @DisplayName("registerCollection: registers multiple distinct collections [GH-90000]")
+        @DisplayName("registerCollection: registers multiple distinct collections")
         void registerCollection_multipleCollections() { // GH-90000
             mgr.registerCollection(TENANT, COLL_1); // GH-90000
             mgr.registerCollection(TENANT, COLL_2); // GH-90000
@@ -92,7 +92,7 @@ class DataLifecycleManagerTest {
         }
 
         @Test
-        @DisplayName("deregisterCollection: removes collection from inventory [GH-90000]")
+        @DisplayName("deregisterCollection: removes collection from inventory")
         void deregisterCollection_removesEntry() { // GH-90000
             mgr.registerCollection(TENANT, COLL_1); // GH-90000
             mgr.deregisterCollection(TENANT, COLL_1); // GH-90000
@@ -105,7 +105,7 @@ class DataLifecycleManagerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("runLifecycleSweep() [GH-90000]")
+    @DisplayName("runLifecycleSweep()")
     class SweepTests {
 
         @BeforeEach
@@ -119,7 +119,7 @@ class DataLifecycleManagerTest {
         }
 
         @Test
-        @DisplayName("runLifecycleSweep: returns skipped=true when no collections registered [GH-90000]")
+        @DisplayName("runLifecycleSweep: returns skipped=true when no collections registered")
         void sweep_noCollections_returnsSkipped() { // GH-90000
             // mgr has no registered collections
             SweepReport report = mgr.runLifecycleSweep().getResult(); // GH-90000
@@ -128,7 +128,7 @@ class DataLifecycleManagerTest {
         }
 
         @Test
-        @DisplayName("runLifecycleSweep: processes all registered collections exactly once [GH-90000]")
+        @DisplayName("runLifecycleSweep: processes all registered collections exactly once")
         void sweep_oneCollection_callsTierManagerEachMethod() { // GH-90000
             mgr.registerCollection(TENANT, COLL_1); // GH-90000
 
@@ -143,7 +143,7 @@ class DataLifecycleManagerTest {
         }
 
         @Test
-        @DisplayName("runLifecycleSweep: aggregates demotions across multiple collections [GH-90000]")
+        @DisplayName("runLifecycleSweep: aggregates demotions across multiple collections")
         void sweep_multipleCollections_aggregatesResults() { // GH-90000
             mgr.registerCollection(TENANT, COLL_1); // GH-90000
             mgr.registerCollection(TENANT, COLL_2); // GH-90000
@@ -155,7 +155,7 @@ class DataLifecycleManagerTest {
         }
 
         @Test
-        @DisplayName("runLifecycleSweep: cascade order is COOL→COLD first, HOT→WARM last [GH-90000]")
+        @DisplayName("runLifecycleSweep: cascade order is COOL→COLD first, HOT→WARM last")
         void sweep_invocationsInCorrectCascadeOrder() { // GH-90000
             mgr.registerCollection(TENANT, COLL_1); // GH-90000
 
@@ -168,10 +168,10 @@ class DataLifecycleManagerTest {
         }
 
         @Test
-        @DisplayName("runLifecycleSweep: collection failure is absorbed; other collections continue [GH-90000]")
+        @DisplayName("runLifecycleSweep: collection failure is absorbed; other collections continue")
         void sweep_oneCollectionFails_othersComplete() { // GH-90000
             when(tierManager.demoteCoolToCold(eq(TENANT), eq(COLL_1), any())) // GH-90000
-                    .thenReturn(Promise.ofException(new RuntimeException("COLL_1 failed [GH-90000]")));
+                    .thenReturn(Promise.ofException(new RuntimeException("COLL_1 failed")));
             when(tierManager.demoteCoolToCold(eq(TENANT), eq(COLL_2), any())) // GH-90000
                     .thenReturn(Promise.of(3)); // GH-90000
 
@@ -192,11 +192,11 @@ class DataLifecycleManagerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("archiveCollection() [GH-90000]")
+    @DisplayName("archiveCollection()")
     class ArchiveTests {
 
         @Test
-        @DisplayName("archiveCollection: runs HOT→WARM, WARM→COOL, COOL→COLD in sequence [GH-90000]")
+        @DisplayName("archiveCollection: runs HOT→WARM, WARM→COOL, COOL→COLD in sequence")
         void archiveCollection_runsFullCascade() { // GH-90000
             when(tierManager.demoteIdleEntities(anyString(), anyString(), any(Instant.class))) // GH-90000
                     .thenReturn(Promise.of(4)); // GH-90000
@@ -211,7 +211,7 @@ class DataLifecycleManagerTest {
         }
 
         @Test
-        @DisplayName("archiveCollection: calls all three tier manager methods [GH-90000]")
+        @DisplayName("archiveCollection: calls all three tier manager methods")
         void archiveCollection_invokesAllThreeMethods() { // GH-90000
             when(tierManager.demoteIdleEntities(anyString(), anyString(), any())).thenReturn(Promise.of(0)); // GH-90000
             when(tierManager.demoteWarmToCool(anyString(), anyString(), any())).thenReturn(Promise.of(0)); // GH-90000
@@ -230,14 +230,14 @@ class DataLifecycleManagerTest {
     // =========================================================================
 
     @Test
-    @DisplayName("SweepReport.totalDemotions: sums all three demotion counts [GH-90000]")
+    @DisplayName("SweepReport.totalDemotions: sums all three demotion counts")
     void sweepReport_totalDemotions_sumsAll() { // GH-90000
         SweepReport r = new SweepReport(5, 3, 2, Duration.ZERO, false); // GH-90000
         assertThat(r.totalDemotions()).isEqualTo(10); // GH-90000
     }
 
     @Test
-    @DisplayName("SweepReport.skipped(): returns true when constructed as skipped [GH-90000]")
+    @DisplayName("SweepReport.skipped(): returns true when constructed as skipped")
     void sweepReport_skipped_returnsTrue() { // GH-90000
         SweepReport r = new SweepReport(0, 0, 0, Duration.ZERO, true); // GH-90000
         assertThat(r.skipped()).isTrue(); // GH-90000

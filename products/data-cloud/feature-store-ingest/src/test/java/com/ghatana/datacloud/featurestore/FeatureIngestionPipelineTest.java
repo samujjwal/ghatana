@@ -19,11 +19,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test feature ingestion pipeline, processing, and validation.
  */
-@DisplayName("Feature Ingestion Pipeline Tests [GH-90000]")
+@DisplayName("Feature Ingestion Pipeline Tests")
 class FeatureIngestionPipelineTest {
 
     @Test
-    @DisplayName("Should handle feature ingestion [GH-90000]")
+    @DisplayName("Should handle feature ingestion")
     void shouldHandleFeatureIngestion() { // GH-90000
         Map<String, Object> payload = Map.of("age", 25, "income", 50000.0); // GH-90000
 
@@ -32,43 +32,43 @@ class FeatureIngestionPipelineTest {
     }
 
     @Test
-    @DisplayName("Should handle feature processing [GH-90000]")
+    @DisplayName("Should handle feature processing")
     void shouldHandleFeatureProcessing() { // GH-90000
         Map<String, Object> payload = Map.of("name", "test", "value", 123); // GH-90000
 
         assertThat(payload).isNotEmpty(); // GH-90000
-        assertThat(payload).containsKey("value [GH-90000]");
+        assertThat(payload).containsKey("value");
     }
 
     @Test
-    @DisplayName("Should handle feature validation [GH-90000]")
+    @DisplayName("Should handle feature validation")
     void shouldHandleFeatureValidation() { // GH-90000
         Map<String, Object> payload = Map.of("age", 25, "name", "John Doe"); // GH-90000
 
         assertThat(payload).isNotEmpty(); // GH-90000
-        assertThat(payload.keySet()).allMatch(key -> key.matches("[a-z0-9_]+ [GH-90000]"));
+        assertThat(payload.keySet()).allMatch(key -> key.matches("[a-z0-9_]+"));
     }
 
     @Test
-    @DisplayName("Should handle feature transformation [GH-90000]")
+    @DisplayName("Should handle feature transformation")
     void shouldHandleFeatureTransformation() { // GH-90000
         Map<String, Object> payload = Map.of("status", "active"); // GH-90000
 
         assertThat(payload).isNotEmpty(); // GH-90000
-        assertThat(payload).containsKey("status [GH-90000]");
+        assertThat(payload).containsKey("status");
     }
 
     @Test
-    @DisplayName("Should handle ingestion failures [GH-90000]")
+    @DisplayName("Should handle ingestion failures")
     void shouldHandleIngestionFailures() { // GH-90000
         Map<String, Object> nullPayload = new HashMap<>(); // GH-90000
         nullPayload.put("null_field", null); // GH-90000
 
-        assertThat(nullPayload).containsKey("null_field [GH-90000]");
+        assertThat(nullPayload).containsKey("null_field");
     }
 
     @Test
-    @DisplayName("Should handle batch ingestion [GH-90000]")
+    @DisplayName("Should handle batch ingestion")
     void shouldHandleBatchIngestion() { // GH-90000
         int batchSize = 100;
         Map<String, Object> payload = Map.of("batch_id", 1); // GH-90000

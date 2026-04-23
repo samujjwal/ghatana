@@ -25,7 +25,7 @@ import static org.mockito.Mockito.when;
 /**
  * Integration tests for semantic similarity and RAG endpoints (P4.5.1). // GH-90000
  */
-@DisplayName("DataCloudHttpServer – semantic search API (P4.5.1) [GH-90000]")
+@DisplayName("DataCloudHttpServer – semantic search API (P4.5.1)")
 class DataCloudHttpServerSemanticSearchTest extends DataCloudHttpServerTestBase {
 
     private DataCloudClient mockClient;
@@ -44,7 +44,7 @@ class DataCloudHttpServerSemanticSearchTest extends DataCloudHttpServerTestBase 
     }
 
     @Test
-    @DisplayName("GET /api/v1/entities/:collection/similar returns indexed semantic neighbors [GH-90000]")
+    @DisplayName("GET /api/v1/entities/:collection/similar returns indexed semantic neighbors")
     void similarEntitiesReturnsSemanticMatches() throws Exception { // GH-90000
         DataCloudClient.Entity entityA = entity("11111111-1111-1111-1111-111111111111", "tickets", Map.of( // GH-90000
             "title", "login failure investigation",
@@ -55,12 +55,12 @@ class DataCloudHttpServerSemanticSearchTest extends DataCloudHttpServerTestBase 
             "summary", "reset token expired and user needs a new sign in link"
         ));
 
-        when(mockClient.save(anyString(), eq("tickets [GH-90000]"), any()))
+        when(mockClient.save(anyString(), eq("tickets"), any()))
             .thenAnswer(invocation -> { // GH-90000
-                @SuppressWarnings("unchecked [GH-90000]")
+                @SuppressWarnings("unchecked")
                 Map<String, Object> payload = invocation.getArgument(2, Map.class); // GH-90000
-                String title = String.valueOf(payload.get("title [GH-90000]"));
-                return Promise.of(title.contains("login failure [GH-90000]") ? entityA : entityB);
+                String title = String.valueOf(payload.get("title"));
+                return Promise.of(title.contains("login failure") ? entityA : entityB);
             });
         when(mockClient.appendEvent(anyString(), any())).thenReturn(Promise.of(DataCloudClient.Offset.of(1L))); // GH-90000
 
@@ -69,18 +69,18 @@ class DataCloudHttpServerSemanticSearchTest extends DataCloudHttpServerTestBase 
         assertStatusCode(postJson("/api/v1/entities/tickets", entityA.data()), 200); // GH-90000
         assertStatusCode(postJson("/api/v1/entities/tickets", entityB.data()), 200); // GH-90000
 
-        HttpResponse<String> response = get("/api/v1/entities/tickets/similar?id=11111111-1111-1111-1111-111111111111&k=3 [GH-90000]");
+        HttpResponse<String> response = get("/api/v1/entities/tickets/similar?id=11111111-1111-1111-1111-111111111111&k=3");
 
         assertStatusCode(response, 200); // GH-90000
         Map<String, Object> body = parseJsonResponse(response); // GH-90000
-        @SuppressWarnings("unchecked [GH-90000]")
-        List<Map<String, Object>> matches = (List<Map<String, Object>>) body.get("matches [GH-90000]");
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> matches = (List<Map<String, Object>>) body.get("matches");
         assertThat(matches).isNotEmpty(); // GH-90000
         assertThat(matches.getFirst()).containsEntry("id", "22222222-2222-2222-2222-222222222222"); // GH-90000
     }
 
     @Test
-    @DisplayName("POST /api/v1/context/:collection/rag returns grounded answer from indexed context [GH-90000]")
+    @DisplayName("POST /api/v1/context/:collection/rag returns grounded answer from indexed context")
     void ragEndpointReturnsGroundedAnswer() throws Exception { // GH-90000
         DataCloudClient.Entity entityA = entity("11111111-1111-1111-1111-111111111111", "tickets", Map.of( // GH-90000
             "title", "login failure investigation",
@@ -91,12 +91,12 @@ class DataCloudHttpServerSemanticSearchTest extends DataCloudHttpServerTestBase 
             "summary", "reset token expired and user needs a new sign in link"
         ));
 
-        when(mockClient.save(anyString(), eq("tickets [GH-90000]"), any()))
+        when(mockClient.save(anyString(), eq("tickets"), any()))
             .thenAnswer(invocation -> { // GH-90000
-                @SuppressWarnings("unchecked [GH-90000]")
+                @SuppressWarnings("unchecked")
                 Map<String, Object> payload = invocation.getArgument(2, Map.class); // GH-90000
-                String title = String.valueOf(payload.get("title [GH-90000]"));
-                return Promise.of(title.contains("login failure [GH-90000]") ? entityA : entityB);
+                String title = String.valueOf(payload.get("title"));
+                return Promise.of(title.contains("login failure") ? entityA : entityB);
             });
         when(mockClient.appendEvent(anyString(), any())).thenReturn(Promise.of(DataCloudClient.Offset.of(1L))); // GH-90000
 
@@ -113,9 +113,9 @@ class DataCloudHttpServerSemanticSearchTest extends DataCloudHttpServerTestBase 
         assertStatusCode(response, 200); // GH-90000
         Map<String, Object> body = parseJsonResponse(response); // GH-90000
         assertThat(body).containsEntry("collection", "tickets"); // GH-90000
-        assertThat(String.valueOf(body.get("answer [GH-90000]"))).contains("Grounded answer [GH-90000]");
-        @SuppressWarnings("unchecked [GH-90000]")
-        List<Map<String, Object>> context = (List<Map<String, Object>>) body.get("context [GH-90000]");
+        assertThat(String.valueOf(body.get("answer"))).contains("Grounded answer");
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> context = (List<Map<String, Object>>) body.get("context");
         assertThat(context).isNotEmpty(); // GH-90000
     }
 

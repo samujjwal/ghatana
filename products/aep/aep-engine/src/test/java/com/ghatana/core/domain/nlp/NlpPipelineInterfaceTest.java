@@ -22,11 +22,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.purpose Unit tests for NLP pipeline interface
  * @doc.layer test
  */
-@DisplayName("NLP Pipeline Interface Tests [GH-90000]")
+@DisplayName("NLP Pipeline Interface Tests")
 class NlpPipelineInterfaceTest {
 
     @Test
-    @DisplayName("generates pipeline from natural language description [GH-90000]")
+    @DisplayName("generates pipeline from natural language description")
     void generatesPipelineFromDescription() { // GH-90000
         NlpPipelineInterface nlpInterface = new NlpPipelineInterface(); // GH-90000
 
@@ -42,27 +42,27 @@ class NlpPipelineInterfaceTest {
     }
 
     @Test
-    @DisplayName("extracts domain from description [GH-90000]")
+    @DisplayName("extracts domain from description")
     void extractsDomainFromDescription() { // GH-90000
         NlpPipelineInterface nlpInterface = new NlpPipelineInterface(); // GH-90000
 
         NlpPipelineInterface.PipelineIntent intent = parseDescription(nlpInterface, "Process orders with fraud check"); // GH-90000
 
-        assertThat(intent.domain()).isEqualTo("ecommerce [GH-90000]");
+        assertThat(intent.domain()).isEqualTo("ecommerce");
     }
 
     @Test
-    @DisplayName("extracts operation from description [GH-90000]")
+    @DisplayName("extracts operation from description")
     void extractsOperationFromDescription() { // GH-90000
         NlpPipelineInterface nlpInterface = new NlpPipelineInterface(); // GH-90000
 
         NlpPipelineInterface.PipelineIntent intent = parseDescription(nlpInterface, "Process orders with fraud check"); // GH-90000
 
-        assertThat(intent.operation()).isEqualTo("detection [GH-90000]");
+        assertThat(intent.operation()).isEqualTo("detection");
     }
 
     @Test
-    @DisplayName("extracts features from description [GH-90000]")
+    @DisplayName("extracts features from description")
     void extractsFeaturesFromDescription() { // GH-90000
         NlpPipelineInterface nlpInterface = new NlpPipelineInterface(); // GH-90000
 
@@ -75,7 +75,7 @@ class NlpPipelineInterfaceTest {
     }
 
     @Test
-    @DisplayName("extracts parameters from description [GH-90000]")
+    @DisplayName("extracts parameters from description")
     void extractsParametersFromDescription() { // GH-90000
         NlpPipelineInterface nlpInterface = new NlpPipelineInterface(); // GH-90000
 
@@ -84,11 +84,11 @@ class NlpPipelineInterfaceTest {
             "Process orders with fraud check for last 5 minutes"
         );
 
-        assertThat(intent.parameters()).containsKey("timeWindow [GH-90000]");
+        assertThat(intent.parameters()).containsKey("timeWindow");
     }
 
     @Test
-    @DisplayName("generates analytics pipeline [GH-90000]")
+    @DisplayName("generates analytics pipeline")
     void generatesAnalyticsPipeline() { // GH-90000
         NlpPipelineInterface nlpInterface = new NlpPipelineInterface(); // GH-90000
 
@@ -103,7 +103,7 @@ class NlpPipelineInterfaceTest {
     }
 
     @Test
-    @DisplayName("generates IoT pipeline [GH-90000]")
+    @DisplayName("generates IoT pipeline")
     void generatesIotPipeline() { // GH-90000
         NlpPipelineInterface nlpInterface = new NlpPipelineInterface(); // GH-90000
 
@@ -118,7 +118,7 @@ class NlpPipelineInterfaceTest {
     }
 
     @Test
-    @DisplayName("generates compliance pipeline [GH-90000]")
+    @DisplayName("generates compliance pipeline")
     void generatesCompliancePipeline() { // GH-90000
         NlpPipelineInterface nlpInterface = new NlpPipelineInterface(); // GH-90000
 
@@ -133,7 +133,7 @@ class NlpPipelineInterfaceTest {
     }
 
     @Test
-    @DisplayName("handles unknown descriptions gracefully [GH-90000]")
+    @DisplayName("handles unknown descriptions gracefully")
     void handlesUnknownDescriptions() { // GH-90000
         NlpPipelineInterface nlpInterface = new NlpPipelineInterface(); // GH-90000
 
@@ -148,7 +148,7 @@ class NlpPipelineInterfaceTest {
     }
 
     @Test
-    @DisplayName("customizes builder with parameters [GH-90000]")
+    @DisplayName("customizes builder with parameters")
     void customizesBuilderWithParameters() { // GH-90000
         NlpPipelineInterface nlpInterface = new NlpPipelineInterface(); // GH-90000
 
@@ -164,7 +164,7 @@ class NlpPipelineInterfaceTest {
     }
 
     @Test
-    @DisplayName("uses custom marketplace [GH-90000]")
+    @DisplayName("uses custom marketplace")
     void usesCustomMarketplace() { // GH-90000
         TemplateMarketplace customMarketplace = new TemplateMarketplace(); // GH-90000
         NlpPipelineInterface nlpInterface = new NlpPipelineInterface(customMarketplace); // GH-90000

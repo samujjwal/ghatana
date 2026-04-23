@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AEP Registry Load Tier [GH-90000]")
+@DisplayName("AEP Registry Load Tier")
 class AepRegistryLoadTierTest extends EventloopTestBase {
 
     private static final TenantId TENANT_A = TenantId.of("tenant-a");

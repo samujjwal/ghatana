@@ -32,23 +32,23 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("FeatureFlagService – Toggle Logic (F001) [GH-90000]")
+@DisplayName("FeatureFlagService – Toggle Logic (F001)")
 class FeatureFlagServiceTest extends EventloopTestBase {
 
     @Mock
     private FeatureFlagService featureFlagService;
 
     @Nested
-    @DisplayName("Toggle Operations [GH-90000]")
+    @DisplayName("Toggle Operations")
     class ToggleOperationsTests {
 
         @Test
-        @DisplayName("[F001]: is_enabled_returns_true_for_enabled_flag [GH-90000]")
+        @DisplayName("[F001]: is_enabled_returns_true_for_enabled_flag")
         void isEnabledReturnsTrueForEnabledFlag() { // GH-90000
             String featureKey = "new-dashboard";
             FeatureFlagService.FeatureContext context = FeatureFlagService.FeatureContext.builder() // GH-90000
-                .userId("user-001 [GH-90000]")
-                .tenantId("tenant-alpha [GH-90000]")
+                .userId("user-001")
+                .tenantId("tenant-alpha")
                 .build(); // GH-90000
 
             when(featureFlagService.isEnabled(featureKey, context)) // GH-90000
@@ -60,11 +60,11 @@ class FeatureFlagServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[F001]: is_enabled_returns_false_for_disabled_flag [GH-90000]")
+        @DisplayName("[F001]: is_enabled_returns_false_for_disabled_flag")
         void isEnabledReturnsFalseForDisabledFlag() { // GH-90000
             String featureKey = "beta-feature";
             FeatureFlagService.FeatureContext context = FeatureFlagService.FeatureContext.builder() // GH-90000
-                .tenantId("tenant-alpha [GH-90000]")
+                .tenantId("tenant-alpha")
                 .build(); // GH-90000
 
             when(featureFlagService.isEnabled(featureKey, context)) // GH-90000
@@ -76,7 +76,7 @@ class FeatureFlagServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[F001]: toggle_changes_flag_state [GH-90000]")
+        @DisplayName("[F001]: toggle_changes_flag_state")
         void toggleChangesFlagState() { // GH-90000
             String featureKey = "feature-001";
 
@@ -97,16 +97,16 @@ class FeatureFlagServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Targeting Rules [GH-90000]")
+    @DisplayName("Targeting Rules")
     class TargetingRulesTests {
 
         @Test
-        @DisplayName("[F001]: user_targeting_matches_specific_user [GH-90000]")
+        @DisplayName("[F001]: user_targeting_matches_specific_user")
         void userTargetingMatchesSpecificUser() { // GH-90000
             String featureKey = "vip-feature";
             FeatureFlagService.FeatureContext vipUser = FeatureFlagService.FeatureContext.builder() // GH-90000
-                .userId("vip-user-001 [GH-90000]")
-                .tenantId("tenant-alpha [GH-90000]")
+                .userId("vip-user-001")
+                .tenantId("tenant-alpha")
                 .attributes(Map.of("tier", "vip")) // GH-90000
                 .build(); // GH-90000
 
@@ -119,14 +119,14 @@ class FeatureFlagServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[F001]: percentage_rollout_enabled_for_matching_users [GH-90000]")
+        @DisplayName("[F001]: percentage_rollout_enabled_for_matching_users")
         void percentageRolloutEnabledForMatchingUsers() { // GH-90000
             String featureKey = "gradual-rollout";
 
             // User ID hash determines if they're in the rollout percentage
             FeatureFlagService.FeatureContext userInRollout = FeatureFlagService.FeatureContext.builder() // GH-90000
-                .userId("user-in-rollout [GH-90000]")
-                .tenantId("tenant-alpha [GH-90000]")
+                .userId("user-in-rollout")
+                .tenantId("tenant-alpha")
                 .build(); // GH-90000
 
             when(featureFlagService.isEnabled(featureKey, userInRollout)) // GH-90000
@@ -138,13 +138,13 @@ class FeatureFlagServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[F001]: percentage_rollout_disabled_for_non_matching_users [GH-90000]")
+        @DisplayName("[F001]: percentage_rollout_disabled_for_non_matching_users")
         void percentageRolloutDisabledForNonMatchingUsers() { // GH-90000
             String featureKey = "limited-rollout";
 
             FeatureFlagService.FeatureContext userOutOfRollout = FeatureFlagService.FeatureContext.builder() // GH-90000
-                .userId("user-out-of-rollout [GH-90000]")
-                .tenantId("tenant-alpha [GH-90000]")
+                .userId("user-out-of-rollout")
+                .tenantId("tenant-alpha")
                 .build(); // GH-90000
 
             when(featureFlagService.isEnabled(featureKey, userOutOfRollout)) // GH-90000
@@ -157,20 +157,20 @@ class FeatureFlagServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Variant Features [GH-90000]")
+    @DisplayName("Variant Features")
     class VariantFeaturesTests {
 
         @Test
-        @DisplayName("[F001]: get_variant_returns_assigned_variant [GH-90000]")
+        @DisplayName("[F001]: get_variant_returns_assigned_variant")
         void getVariantReturnsAssignedVariant() { // GH-90000
             String featureKey = "ab-test-color";
             FeatureFlagService.FeatureContext context = FeatureFlagService.FeatureContext.builder() // GH-90000
-                .userId("user-001 [GH-90000]")
-                .tenantId("tenant-alpha [GH-90000]")
+                .userId("user-001")
+                .tenantId("tenant-alpha")
                 .build(); // GH-90000
 
             when(featureFlagService.getVariant(featureKey, context)) // GH-90000
-                .thenReturn(Promise.of("blue [GH-90000]"));
+                .thenReturn(Promise.of("blue"));
 
             String variant = runPromise(() -> featureFlagService.getVariant(featureKey, context)); // GH-90000
 
@@ -178,16 +178,16 @@ class FeatureFlagServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[F001]: same_user_gets_same_variant [GH-90000]")
+        @DisplayName("[F001]: same_user_gets_same_variant")
         void sameUserGetsSameVariant() { // GH-90000
             String featureKey = "consistent-variant";
             FeatureFlagService.FeatureContext context = FeatureFlagService.FeatureContext.builder() // GH-90000
-                .userId("user-001 [GH-90000]")
-                .tenantId("tenant-alpha [GH-90000]")
+                .userId("user-001")
+                .tenantId("tenant-alpha")
                 .build(); // GH-90000
 
             when(featureFlagService.getVariant(featureKey, context)) // GH-90000
-                .thenReturn(Promise.of("variant-a [GH-90000]"));
+                .thenReturn(Promise.of("variant-a"));
 
             String variant1 = runPromise(() -> featureFlagService.getVariant(featureKey, context)); // GH-90000
             String variant2 = runPromise(() -> featureFlagService.getVariant(featureKey, context)); // GH-90000
@@ -197,11 +197,11 @@ class FeatureFlagServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Flag Management [GH-90000]")
+    @DisplayName("Flag Management")
     class FlagManagementTests {
 
         @Test
-        @DisplayName("[F001]: create_flag_creates_new_flag [GH-90000]")
+        @DisplayName("[F001]: create_flag_creates_new_flag")
         void createFlagCreatesNewFlag() { // GH-90000
             FeatureFlagService.FeatureFlag newFlag = new FeatureFlagService.FeatureFlag( // GH-90000
                 "new-feature", "New Feature", "Description", "tenant-alpha",
@@ -216,12 +216,12 @@ class FeatureFlagServiceTest extends EventloopTestBase {
                 featureFlagService.createFlag(newFlag) // GH-90000
             );
 
-            assertThat(result.key()).isEqualTo("new-feature [GH-90000]");
+            assertThat(result.key()).isEqualTo("new-feature");
             assertThat(result.enabled()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("[F001]: get_flag_returns_existing_flag [GH-90000]")
+        @DisplayName("[F001]: get_flag_returns_existing_flag")
         void getFlagReturnsExistingFlag() { // GH-90000
             String key = "existing-feature";
             FeatureFlagService.FeatureFlag flag = createFlag(key, true); // GH-90000
@@ -238,7 +238,7 @@ class FeatureFlagServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[F001]: delete_flag_removes_flag [GH-90000]")
+        @DisplayName("[F001]: delete_flag_removes_flag")
         void deleteFlagRemovesFlag() { // GH-90000
             String key = "obsolete-feature";
 
@@ -251,7 +251,7 @@ class FeatureFlagServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[F001]: list_flags_returns_all_flags_for_tenant [GH-90000]")
+        @DisplayName("[F001]: list_flags_returns_all_flags_for_tenant")
         void listFlagsReturnsAllFlagsForTenant() { // GH-90000
             String tenantId = "tenant-alpha";
             List<FeatureFlagService.FeatureFlag> flags = List.of( // GH-90000
@@ -272,11 +272,11 @@ class FeatureFlagServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Metrics [GH-90000]")
+    @DisplayName("Metrics")
     class MetricsTests {
 
         @Test
-        @DisplayName("[F001]: get_metrics_returns_evaluation_stats [GH-90000]")
+        @DisplayName("[F001]: get_metrics_returns_evaluation_stats")
         void getMetricsReturnsEvaluationStats() { // GH-90000
             String key = "measured-feature";
 

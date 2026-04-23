@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("DefaultTokenProvider [GH-90000]")
+@DisplayName("DefaultTokenProvider")
 class TokenProviderTest extends EventloopTestBase {
 
     private DefaultTokenProvider provider;
@@ -34,33 +34,33 @@ class TokenProviderTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("createToken() [GH-90000]")
+    @DisplayName("createToken()")
     class CreateTokenTests {
 
         @Test
-        @DisplayName("Creates valid token with correct tenant and agent [GH-90000]")
+        @DisplayName("Creates valid token with correct tenant and agent")
         void createsValidToken() { // GH-90000
             String token = runPromise(() -> provider.createToken("t1", "agent-1", Duration.ofMinutes(10))); // GH-90000
 
             assertThat(token).isNotBlank(); // GH-90000
-            assertThat(token).contains(". [GH-90000]");
-            String[] parts = token.split("\\. [GH-90000]");
+            assertThat(token).contains(".");
+            String[] parts = token.split("\\.");
             assertThat(parts).hasSize(3); // header.payload.signature // GH-90000
         }
 
         @Test
-        @DisplayName("Token can be verified immediately after creation [GH-90000]")
+        @DisplayName("Token can be verified immediately after creation")
         void tokenVerificableImmediately() { // GH-90000
             String token = runPromise(() -> provider.createToken("t1", "agent-1", Duration.ofMinutes(10))); // GH-90000
             Optional<TokenClaims> claims = runPromise(() -> provider.verifyToken(token)); // GH-90000
 
             assertThat(claims).isPresent(); // GH-90000
-            assertThat(claims.get().tenantId()).isEqualTo("t1 [GH-90000]");
-            assertThat(claims.get().agentId()).isEqualTo("agent-1 [GH-90000]");
+            assertThat(claims.get().tenantId()).isEqualTo("t1");
+            assertThat(claims.get().agentId()).isEqualTo("agent-1");
         }
 
         @Test
-        @DisplayName("Caps TTL at 24 hours [GH-90000]")
+        @DisplayName("Caps TTL at 24 hours")
         void capsTtlAt24Hours() { // GH-90000
             String token = runPromise(() -> provider.createToken("t1", "agent-1", Duration.ofDays(30))); // GH-90000
             Optional<TokenClaims> claims = runPromise(() -> provider.verifyToken(token)); // GH-90000
@@ -71,7 +71,7 @@ class TokenProviderTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Different agents get different token IDs [GH-90000]")
+        @DisplayName("Different agents get different token IDs")
         void differentAgentsDifferentTokens() { // GH-90000
             String token1 = runPromise(() -> provider.createToken("t1", "agent-1", Duration.ofMinutes(10))); // GH-90000
             String token2 = runPromise(() -> provider.createToken("t1", "agent-2", Duration.ofMinutes(10))); // GH-90000
@@ -80,7 +80,7 @@ class TokenProviderTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Same agent at different times gets different tokens [GH-90000]")
+        @DisplayName("Same agent at different times gets different tokens")
         void sameAgentDifferentTokens() { // GH-90000
             String token1 = runPromise(() -> provider.createToken("t1", "agent-1", Duration.ofMinutes(10))); // GH-90000
             // Small delay to ensure different timestamp
@@ -92,21 +92,21 @@ class TokenProviderTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("verifyToken() [GH-90000]")
+    @DisplayName("verifyToken()")
     class VerifyTokenTests {
 
         @Test
-        @DisplayName("Rejects malformed JWT (wrong part count) [GH-90000]")
+        @DisplayName("Rejects malformed JWT (wrong part count)")
         void rejectsMalformedToken() { // GH-90000
-            Optional<TokenClaims> claims = runPromise(() -> provider.verifyToken("invalid [GH-90000]"));
+            Optional<TokenClaims> claims = runPromise(() -> provider.verifyToken("invalid"));
             assertThat(claims).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("Rejects token with invalid signature [GH-90000]")
+        @DisplayName("Rejects token with invalid signature")
         void rejectsInvalidSignature() { // GH-90000
             String token = runPromise(() -> provider.createToken("t1", "agent-1", Duration.ofMinutes(10))); // GH-90000
-            String[] parts = token.split("\\. [GH-90000]");
+            String[] parts = token.split("\\.");
             String tamperedToken = parts[0] + "." + parts[1] + ".invalidsignature";
 
             Optional<TokenClaims> claims = runPromise(() -> provider.verifyToken(tamperedToken)); // GH-90000
@@ -114,7 +114,7 @@ class TokenProviderTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Rejects expired token [GH-90000]")
+        @DisplayName("Rejects expired token")
         void rejectsExpiredToken() { // GH-90000
             String token = runPromise(() -> provider.createToken("t1", "agent-1", Duration.ofMillis(1))); // GH-90000
             // Wait for token to expire
@@ -125,7 +125,7 @@ class TokenProviderTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Rejects token not yet valid (before nbf) [GH-90000]")
+        @DisplayName("Rejects token not yet valid (before nbf)")
         void rejectsNotYetValid() { // GH-90000
             // Create token with custom timestamp (requires internal logic) // GH-90000
             String token = runPromise(() -> provider.createToken("t1", "agent-1", Duration.ofHours(1))); // GH-90000
@@ -136,61 +136,61 @@ class TokenProviderTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Extracts correct claims from valid token [GH-90000]")
+        @DisplayName("Extracts correct claims from valid token")
         void extractsCorrectClaims() { // GH-90000
             String token = runPromise(() -> provider.createToken("tenant-abc", "agent-xyz", Duration.ofMinutes(20))); // GH-90000
             Optional<TokenClaims> claims = runPromise(() -> provider.verifyToken(token)); // GH-90000
 
             assertThat(claims).isPresent(); // GH-90000
-            assertThat(claims.get().tenantId()).isEqualTo("tenant-abc [GH-90000]");
-            assertThat(claims.get().agentId()).isEqualTo("agent-xyz [GH-90000]");
+            assertThat(claims.get().tenantId()).isEqualTo("tenant-abc");
+            assertThat(claims.get().agentId()).isEqualTo("agent-xyz");
             assertThat(claims.get().isValid()).isTrue(); // GH-90000
             assertThat(claims.get().isExpired()).isFalse(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("decodeTokenWithoutVerification() [GH-90000]")
+    @DisplayName("decodeTokenWithoutVerification()")
     class DecodeWithoutVerificationTests {
 
         @Test
-        @DisplayName("Decodes valid token without checking signature [GH-90000]")
+        @DisplayName("Decodes valid token without checking signature")
         void decodesValidToken() { // GH-90000
             String token = runPromise(() -> provider.createToken("t1", "agent-1", Duration.ofMinutes(10))); // GH-90000
             Optional<TokenClaims> claims = runPromise(() -> provider.decodeTokenWithoutVerification(token)); // GH-90000
 
             assertThat(claims).isPresent(); // GH-90000
-            assertThat(claims.get().tenantId()).isEqualTo("t1 [GH-90000]");
-            assertThat(claims.get().agentId()).isEqualTo("agent-1 [GH-90000]");
+            assertThat(claims.get().tenantId()).isEqualTo("t1");
+            assertThat(claims.get().agentId()).isEqualTo("agent-1");
         }
 
         @Test
-        @DisplayName("Decodes tampered token (signature not checked) [GH-90000]")
+        @DisplayName("Decodes tampered token (signature not checked)")
         void decodesTamperedToken() { // GH-90000
             String token = runPromise(() -> provider.createToken("t1", "agent-1", Duration.ofMinutes(10))); // GH-90000
-            String[] parts = token.split("\\. [GH-90000]");
+            String[] parts = token.split("\\.");
             String tamperedToken = parts[0] + "." + parts[1] + ".invalidsignature";
 
             Optional<TokenClaims> claims = runPromise(() -> provider.decodeTokenWithoutVerification(tamperedToken)); // GH-90000
             assertThat(claims).isPresent(); // GH-90000
-            assertThat(claims.get().agentId()).isEqualTo("agent-1 [GH-90000]");
+            assertThat(claims.get().agentId()).isEqualTo("agent-1");
         }
 
         @Test
-        @DisplayName("Rejects malformed token during decode [GH-90000]")
+        @DisplayName("Rejects malformed token during decode")
         void rejectsMalformedDuringDecode() { // GH-90000
-            Optional<TokenClaims> claims = runPromise(() -> provider.decodeTokenWithoutVerification("not.a.jwt [GH-90000]"));
+            Optional<TokenClaims> claims = runPromise(() -> provider.decodeTokenWithoutVerification("not.a.jwt"));
             // Decode may fail on invalid JSON
             assertThat(claims).isNotNull(); // May be empty or throw // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("rotateSigningKey() [GH-90000]")
+    @DisplayName("rotateSigningKey()")
     class RotateSigningKeyTests {
 
         @Test
-        @DisplayName("Old tokens remain valid during grace period [GH-90000]")
+        @DisplayName("Old tokens remain valid during grace period")
         void oldTokenValidDuringGracePeriod() { // GH-90000
             String oldToken = runPromise(() -> provider.createToken("t1", "agent-1", Duration.ofMinutes(10))); // GH-90000
 
@@ -200,11 +200,11 @@ class TokenProviderTest extends EventloopTestBase {
             // Old token should still verify
             Optional<TokenClaims> claims = runPromise(() -> provider.verifyToken(oldToken)); // GH-90000
             assertThat(claims).isPresent(); // GH-90000
-            assertThat(claims.get().agentId()).isEqualTo("agent-1 [GH-90000]");
+            assertThat(claims.get().agentId()).isEqualTo("agent-1");
         }
 
         @Test
-        @DisplayName("New tokens after rotation use new key [GH-90000]")
+        @DisplayName("New tokens after rotation use new key")
         void newTokenUsesNewKey() { // GH-90000
             String token1 = runPromise(() -> provider.createToken("t1", "agent-1", Duration.ofMinutes(10))); // GH-90000
 
@@ -222,7 +222,7 @@ class TokenProviderTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Old tokens rejected after grace period expires [GH-90000]")
+        @DisplayName("Old tokens rejected after grace period expires")
         void oldTokenRejectedAfterGrace() { // GH-90000
             String oldToken = runPromise(() -> provider.createToken("t1", "agent-1", Duration.ofMinutes(10))); // GH-90000
 
@@ -239,11 +239,11 @@ class TokenProviderTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Edge Cases [GH-90000]")
+    @DisplayName("Edge Cases")
     class EdgeCaseTests {
 
         @Test
-        @DisplayName("Handles empty tenant ID [GH-90000]")
+        @DisplayName("Handles empty tenant ID")
         void handlesEmptyTenantId() { // GH-90000
             String token = runPromise(() -> provider.createToken("", "agent-1", Duration.ofMinutes(10))); // GH-90000
             Optional<TokenClaims> claims = runPromise(() -> provider.verifyToken(token)); // GH-90000
@@ -253,7 +253,7 @@ class TokenProviderTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Handles very long agent ID [GH-90000]")
+        @DisplayName("Handles very long agent ID")
         void handlesLongAgentId() { // GH-90000
             String longId = "a".repeat(256); // GH-90000
             String token = runPromise(() -> provider.createToken("t1", longId, Duration.ofMinutes(10))); // GH-90000
@@ -264,7 +264,7 @@ class TokenProviderTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Handles minimum TTL [GH-90000]")
+        @DisplayName("Handles minimum TTL")
         void handlesMinimumTtl() { // GH-90000
             String token = runPromise(() -> provider.createToken("t1", "agent-1", Duration.ofSeconds(5))); // GH-90000
             Optional<TokenClaims> claims = runPromise(() -> provider.verifyToken(token)); // GH-90000
@@ -274,7 +274,7 @@ class TokenProviderTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("TokenClaims validation methods work correctly [GH-90000]")
+        @DisplayName("TokenClaims validation methods work correctly")
         void tokenClaimsValidationMethods() { // GH-90000
             String token = runPromise(() -> provider.createToken("t1", "agent-1", Duration.ofMinutes(10))); // GH-90000
             Optional<TokenClaims> claims = runPromise(() -> provider.verifyToken(token)); // GH-90000

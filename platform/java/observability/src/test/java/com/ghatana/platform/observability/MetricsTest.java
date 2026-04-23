@@ -23,7 +23,7 @@ class MetricsTest {
 
     @Test
     void testTimer() { // GH-90000
-        var timer = metrics.timer("test.timer [GH-90000]");
+        var timer = metrics.timer("test.timer");
 
         assertNotNull(timer); // GH-90000
         assertEquals("test.timer", timer.getId().getName()); // GH-90000
@@ -42,7 +42,7 @@ class MetricsTest {
 
     @Test
     void testCounter() { // GH-90000
-        var counter = metrics.counter("test.counter [GH-90000]");
+        var counter = metrics.counter("test.counter");
 
         assertNotNull(counter); // GH-90000
         assertEquals("test.counter", counter.getId().getName()); // GH-90000

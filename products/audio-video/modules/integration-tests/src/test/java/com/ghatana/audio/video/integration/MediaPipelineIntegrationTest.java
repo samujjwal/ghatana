@@ -16,31 +16,31 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer test
  * @doc.pattern IntegrationTest
  */
-@DisplayName("Media Pipeline Integration Tests [GH-90000]")
+@DisplayName("Media Pipeline Integration Tests")
 class MediaPipelineIntegrationTest {
 
     @Test
-    @DisplayName("detectAudioFormat identifies WAV by header [GH-90000]")
+    @DisplayName("detectAudioFormat identifies WAV by header")
     void shouldDetectWavHeader() { // GH-90000
         byte[] wavHeader = new byte[] {
             'R', 'I', 'F', 'F', 0, 0, 0, 0,
             'W', 'A', 'V', 'E', 'f', 'm', 't', ' '
         };
 
-        assertThat(MediaFormatValidator.detectAudioFormat(wavHeader)).isEqualTo("WAV [GH-90000]");
+        assertThat(MediaFormatValidator.detectAudioFormat(wavHeader)).isEqualTo("WAV");
     }
 
     @Test
-    @DisplayName("STT engine factory returns an engine instance [GH-90000]")
+    @DisplayName("STT engine factory returns an engine instance")
     void shouldCreateSttEngine() { // GH-90000
-        SttConfig config = SttConfig.builder().modelId("whisper-tiny [GH-90000]").build();
+        SttConfig config = SttConfig.builder().modelId("whisper-tiny").build();
         assertThat(SttEngineFactory.create(config, null)).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("TTS engine factory returns an engine instance [GH-90000]")
+    @DisplayName("TTS engine factory returns an engine instance")
     void shouldCreateTtsEngine() { // GH-90000
-        TtsConfig config = TtsConfig.builder().defaultVoiceId("en-us [GH-90000]").build();
+        TtsConfig config = TtsConfig.builder().defaultVoiceId("en-us").build();
         assertThat(TtsEngineFactory.create(config, null)).isNotNull(); // GH-90000
     }
 }

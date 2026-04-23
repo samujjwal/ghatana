@@ -22,7 +22,8 @@ import java.util.List;
  * @doc.type interface
  * @doc.purpose Learning plane SPI for agent self-improvement
  * @doc.layer agent-learning
- */
+  * @doc.pattern Component
+*/
 public interface LearningPlane {
 
     /**

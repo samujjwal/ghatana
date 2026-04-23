@@ -56,9 +56,9 @@ class PythonIntegrationTest extends EventloopTestBase {
     @BeforeEach
     void setUp() throws Exception { // GH-90000
         // Copy the test fixture to the temp directory
-        fixtureDir = tempDir.resolve("python-missing-import [GH-90000]");
+        fixtureDir = tempDir.resolve("python-missing-import");
         ConfigTestUtils.copyDirectory( // GH-90000
-                Path.of("src/test/resources/test-fixtures/python-missing-import [GH-90000]"), fixtureDir);
+                Path.of("src/test/resources/test-fixtures/python-missing-import"), fixtureDir);
 
         context = ConfigTestUtils.createTestContext(fixtureDir); // GH-90000
         processRunner = new FakeProcessRunner(context); // GH-90000
@@ -102,14 +102,14 @@ class PythonIntegrationTest extends EventloopTestBase {
 
     private static List<String> ruffArgs(boolean fix, String pattern) { // GH-90000
         List<String> args = new ArrayList<>(); // GH-90000
-        args.add("check [GH-90000]");
-        args.add("--format=json [GH-90000]");
+        args.add("check");
+        args.add("--format=json");
         if (fix) { // GH-90000
-            args.add("--fix [GH-90000]");
+            args.add("--fix");
         }
         args.add(pattern); // GH-90000
         if (!DEFAULT_IGNORE_PATTERNS.isEmpty()) { // GH-90000
-            args.add("--exclude [GH-90000]");
+            args.add("--exclude");
             args.add(String.join(",", DEFAULT_IGNORE_PATTERNS)); // GH-90000
         }
         return args;
@@ -118,14 +118,14 @@ class PythonIntegrationTest extends EventloopTestBase {
     private static List<String> blackArgs(boolean checkOnly, int lineLength, String pattern) { // GH-90000
         List<String> args = new ArrayList<>(); // GH-90000
         if (checkOnly) { // GH-90000
-            args.add("--check [GH-90000]");
+            args.add("--check");
         }
-        args.add("--quiet [GH-90000]");
-        args.add("--line-length [GH-90000]");
+        args.add("--quiet");
+        args.add("--line-length");
         args.add(String.valueOf(lineLength)); // GH-90000
         args.add(pattern); // GH-90000
         if (!DEFAULT_IGNORE_PATTERNS.isEmpty()) { // GH-90000
-            args.add("--exclude [GH-90000]");
+            args.add("--exclude");
             args.add(String.join("|", DEFAULT_IGNORE_PATTERNS)); // GH-90000
         }
         return args;
@@ -138,7 +138,7 @@ class PythonIntegrationTest extends EventloopTestBase {
     }
 
     private static String diagnosticsJson(RuffFinding... findings) { // GH-90000
-        StringBuilder sb = new StringBuilder("[ [GH-90000]");
+        StringBuilder sb = new StringBuilder("[");
         for (int i = 0; i < findings.length; i++) { // GH-90000
             RuffFinding f = findings[i];
             sb.append( // GH-90000
@@ -178,10 +178,10 @@ class PythonIntegrationTest extends EventloopTestBase {
         public boolean applyCodemods(Path file, List<UnifiedDiagnostic> diagnostics) { // GH-90000
             try {
                 String content = Files.readString(file, StandardCharsets.UTF_8); // GH-90000
-                if (content.contains("requests.get [GH-90000]") && !content.contains(IMPORT_REQUESTS)) {
+                if (content.contains("requests.get") && !content.contains(IMPORT_REQUESTS)) {
                     content = IMPORT_REQUESTS + "\n" + content;
                 }
-                if (content.contains("pd.DataFrame [GH-90000]") && !content.contains(IMPORT_PANDAS_AS_PD)) {
+                if (content.contains("pd.DataFrame") && !content.contains(IMPORT_PANDAS_AS_PD)) {
                     content = IMPORT_PANDAS_AS_PD + "\n" + content;
                 }
                 Files.writeString(file, content, StandardCharsets.UTF_8); // GH-90000
@@ -198,8 +198,8 @@ class PythonIntegrationTest extends EventloopTestBase {
         String originalContent = Files.readString(mainPy); // GH-90000
 
         // Should contain missing import errors
-        assertTrue(originalContent.contains("requests.get [GH-90000]"), "Test file should use requests");
-        assertTrue(originalContent.contains("pd.DataFrame [GH-90000]"), "Test file should use pandas");
+        assertTrue(originalContent.contains("requests.get"), "Test file should use requests");
+        assertTrue(originalContent.contains("pd.DataFrame"), "Test file should use pandas");
         assertFalse( // GH-90000
                 originalContent.contains(IMPORT_REQUESTS), // GH-90000
                 "Test file should not import requests yet");
@@ -220,7 +220,7 @@ class PythonIntegrationTest extends EventloopTestBase {
         List<UnifiedDiagnostic> missingImportErrors = diagnostics.stream() // GH-90000
                 .filter( // GH-90000
                         d -> d.getCode().equals(F821_CODE) // GH-90000
-                                && d.getMessage().contains("undefined name [GH-90000]"))
+                                && d.getMessage().contains("undefined name"))
                 .collect(Collectors.toList()); // GH-90000
 
         assertFalse(missingImportErrors.isEmpty(), "Should find missing import errors"); // GH-90000
@@ -246,7 +246,7 @@ class PythonIntegrationTest extends EventloopTestBase {
         long remainingMissingImports = remainingDiagnostics.stream() // GH-90000
                 .filter( // GH-90000
                         d -> d.getCode().equals(F821_CODE) // GH-90000
-                                && d.getMessage().contains("undefined name [GH-90000]"))
+                                && d.getMessage().contains("undefined name"))
                 .count(); // GH-90000
 
         assertEquals(0, remainingMissingImports, "All missing imports should be fixed"); // GH-90000

@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern ContractTest
  */
-@DisplayName("AgentReleaseRepository contract [GH-90000]")
+@DisplayName("AgentReleaseRepository contract")
 class AgentReleaseRepositoryContractTest extends EventloopTestBase {
 
     private AgentReleaseRepository repo;
@@ -48,10 +48,10 @@ class AgentReleaseRepositoryContractTest extends EventloopTestBase {
         return new AgentReleaseBuilder() // GH-90000
                 .agentId(agentId) // GH-90000
                 .releaseVersion(version) // GH-90000
-                .redactionProfileId("rp-test [GH-90000]")
-                .threatModelId("tm-test [GH-90000]")
-                .addPermittedPurpose("agent.inference [GH-90000]")
-                .capabilityMaturityProfile("L1 [GH-90000]")
+                .redactionProfileId("rp-test")
+                .threatModelId("tm-test")
+                .addPermittedPurpose("agent.inference")
+                .capabilityMaturityProfile("L1")
                 .build(); // GH-90000
     }
 
@@ -60,11 +60,11 @@ class AgentReleaseRepositoryContractTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("save and findById [GH-90000]")
+    @DisplayName("save and findById")
     class SaveAndFind {
 
         @Test
-        @DisplayName("saved release is found by its ID [GH-90000]")
+        @DisplayName("saved release is found by its ID")
         void savedReleaseFoundById() { // GH-90000
             AgentRelease release = minimalRelease("agent-001", "1.0.0"); // GH-90000
             runPromise(() -> repo.save(release)); // GH-90000
@@ -76,20 +76,20 @@ class AgentReleaseRepositoryContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("findById returns empty for unknown ID [GH-90000]")
+        @DisplayName("findById returns empty for unknown ID")
         void findByIdUnknown() { // GH-90000
-            Optional<AgentRelease> found = runPromise(() -> repo.findById("unknown-id [GH-90000]"));
+            Optional<AgentRelease> found = runPromise(() -> repo.findById("unknown-id"));
             assertThat(found).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("save is idempotent — re-saving same release does not duplicate [GH-90000]")
+        @DisplayName("save is idempotent — re-saving same release does not duplicate")
         void saveIdempotent() { // GH-90000
             AgentRelease release = minimalRelease("agent-001", "1.0.0"); // GH-90000
             runPromise(() -> repo.save(release)); // GH-90000
             runPromise(() -> repo.save(release)); // GH-90000
 
-            List<AgentRelease> byAgent = runPromise(() -> repo.findByAgentId("agent-001 [GH-90000]"));
+            List<AgentRelease> byAgent = runPromise(() -> repo.findByAgentId("agent-001"));
             assertThat(byAgent).hasSize(1); // GH-90000
         }
     }
@@ -99,11 +99,11 @@ class AgentReleaseRepositoryContractTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("findByAgentId [GH-90000]")
+    @DisplayName("findByAgentId")
     class FindByAgentId {
 
         @Test
-        @DisplayName("returns all releases for a given agent ID [GH-90000]")
+        @DisplayName("returns all releases for a given agent ID")
         void returnsAllReleases() { // GH-90000
             AgentRelease r1 = minimalRelease("agent-A", "1.0.0"); // GH-90000
             AgentRelease r2 = minimalRelease("agent-A", "2.0.0"); // GH-90000
@@ -112,16 +112,16 @@ class AgentReleaseRepositoryContractTest extends EventloopTestBase {
             runPromise(() -> repo.save(r2)); // GH-90000
             runPromise(() -> repo.save(r3)); // GH-90000
 
-            List<AgentRelease> found = runPromise(() -> repo.findByAgentId("agent-A [GH-90000]"));
+            List<AgentRelease> found = runPromise(() -> repo.findByAgentId("agent-A"));
 
             assertThat(found).hasSize(2) // GH-90000
                     .allMatch(r -> "agent-A".equals(r.agentId())); // GH-90000
         }
 
         @Test
-        @DisplayName("returns empty list for unknown agent ID [GH-90000]")
+        @DisplayName("returns empty list for unknown agent ID")
         void unknownAgentEmpty() { // GH-90000
-            List<AgentRelease> found = runPromise(() -> repo.findByAgentId("no-such-agent [GH-90000]"));
+            List<AgentRelease> found = runPromise(() -> repo.findByAgentId("no-such-agent"));
             assertThat(found).isEmpty(); // GH-90000
         }
     }
@@ -131,20 +131,20 @@ class AgentReleaseRepositoryContractTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("findActiveRelease [GH-90000]")
+    @DisplayName("findActiveRelease")
     class FindActiveRelease {
 
         @Test
-        @DisplayName("returns ACTIVE release when one exists [GH-90000]")
+        @DisplayName("returns ACTIVE release when one exists")
         void returnsActiveRelease() { // GH-90000
             AgentRelease release = new AgentReleaseBuilder() // GH-90000
-                    .agentId("agent-001 [GH-90000]")
-                    .releaseVersion("1.0.0 [GH-90000]")
+                    .agentId("agent-001")
+                    .releaseVersion("1.0.0")
                     .state(AgentReleaseState.ACTIVE) // GH-90000
-                    .redactionProfileId("rp-test [GH-90000]")
-                    .threatModelId("tm-test [GH-90000]")
-                    .addPermittedPurpose("agent.inference [GH-90000]")
-                    .capabilityMaturityProfile("L1 [GH-90000]")
+                    .redactionProfileId("rp-test")
+                    .threatModelId("tm-test")
+                    .addPermittedPurpose("agent.inference")
+                    .capabilityMaturityProfile("L1")
                     .build(); // GH-90000
             runPromise(() -> repo.save(release)); // GH-90000
 
@@ -156,7 +156,7 @@ class AgentReleaseRepositoryContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("returns empty when no ACTIVE release exists [GH-90000]")
+        @DisplayName("returns empty when no ACTIVE release exists")
         void emptyWhenNoneActive() { // GH-90000
             AgentRelease draft = minimalRelease("agent-001", "1.0.0"); // GH-90000
             runPromise(() -> repo.save(draft)); // GH-90000
@@ -173,11 +173,11 @@ class AgentReleaseRepositoryContractTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("transition [GH-90000]")
+    @DisplayName("transition")
     class Transition {
 
         @Test
-        @DisplayName("valid transition updates state [GH-90000]")
+        @DisplayName("valid transition updates state")
         void validTransitionUpdatesState() { // GH-90000
             AgentRelease release = minimalRelease("agent-001", "1.0.0"); // GH-90000
             runPromise(() -> repo.save(release)); // GH-90000
@@ -189,23 +189,23 @@ class AgentReleaseRepositoryContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("invalid transition propagates as exception [GH-90000]")
+        @DisplayName("invalid transition propagates as exception")
         void invalidTransitionFails() { // GH-90000
             AgentRelease release = minimalRelease("agent-001", "1.0.0"); // GH-90000
             runPromise(() -> repo.save(release)); // GH-90000
 
             assertThatThrownBy(() -> runPromise(() -> // GH-90000
                     repo.transition(release.agentReleaseId(), AgentReleaseState.ACTIVE, "admin@ghatana.ai"))) // GH-90000
-                    .hasMessageContaining("DRAFT [GH-90000]")
-                    .hasMessageContaining("ACTIVE [GH-90000]");
+                    .hasMessageContaining("DRAFT")
+                    .hasMessageContaining("ACTIVE");
         }
 
         @Test
-        @DisplayName("transition for unknown release ID fails [GH-90000]")
+        @DisplayName("transition for unknown release ID fails")
         void unknownReleaseFails() { // GH-90000
             assertThatThrownBy(() -> runPromise(() -> // GH-90000
                     repo.transition("no-such-id", AgentReleaseState.VALIDATED, "admin@ghatana.ai"))) // GH-90000
-                    .hasMessageContaining("no-such-id [GH-90000]");
+                    .hasMessageContaining("no-such-id");
         }
     }
 
@@ -214,17 +214,17 @@ class AgentReleaseRepositoryContractTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("findByState returns only releases in the given state [GH-90000]")
+    @DisplayName("findByState returns only releases in the given state")
     void findByState() { // GH-90000
         AgentRelease draft1 = minimalRelease("agent-001", "1.0.0"); // GH-90000
         AgentRelease draft2 = minimalRelease("agent-002", "1.0.0"); // GH-90000
         AgentRelease active = new AgentReleaseBuilder() // GH-90000
-                .agentId("agent-003 [GH-90000]")
-                .releaseVersion("1.0.0 [GH-90000]")
-                .state(AgentReleaseState.ACTIVE)                .redactionProfileId("rp-test [GH-90000]")
-                .threatModelId("tm-test [GH-90000]")
-                .addPermittedPurpose("agent.inference [GH-90000]")
-                .capabilityMaturityProfile("L1 [GH-90000]")                .build();
+                .agentId("agent-003")
+                .releaseVersion("1.0.0")
+                .state(AgentReleaseState.ACTIVE)                .redactionProfileId("rp-test")
+                .threatModelId("tm-test")
+                .addPermittedPurpose("agent.inference")
+                .capabilityMaturityProfile("L1")                .build();
         runPromise(() -> repo.save(draft1)); // GH-90000
         runPromise(() -> repo.save(draft2)); // GH-90000
         runPromise(() -> repo.save(active)); // GH-90000
@@ -239,20 +239,20 @@ class AgentReleaseRepositoryContractTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("findGoverningRelease [GH-90000]")
+    @DisplayName("findGoverningRelease")
     class FindGoverningRelease {
 
         @Test
-        @DisplayName("returns ACTIVE release as governing release [GH-90000]")
+        @DisplayName("returns ACTIVE release as governing release")
         void returnsActiveRelease() { // GH-90000
             AgentRelease release = new AgentReleaseBuilder() // GH-90000
-                    .agentId("agent-gov [GH-90000]")
-                    .releaseVersion("1.0.0 [GH-90000]")
+                    .agentId("agent-gov")
+                    .releaseVersion("1.0.0")
                     .state(AgentReleaseState.ACTIVE) // GH-90000
-                    .redactionProfileId("rp-test [GH-90000]")
-                    .threatModelId("tm-test [GH-90000]")
-                    .addPermittedPurpose("agent.inference [GH-90000]")
-                    .capabilityMaturityProfile("L1 [GH-90000]")
+                    .redactionProfileId("rp-test")
+                    .threatModelId("tm-test")
+                    .addPermittedPurpose("agent.inference")
+                    .capabilityMaturityProfile("L1")
                     .build(); // GH-90000
             runPromise(() -> repo.save(release)); // GH-90000
 
@@ -264,16 +264,16 @@ class AgentReleaseRepositoryContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("returns BLOCKED release as governing release [GH-90000]")
+        @DisplayName("returns BLOCKED release as governing release")
         void returnsBlockedRelease() { // GH-90000
             AgentRelease release = new AgentReleaseBuilder() // GH-90000
-                    .agentId("agent-gov [GH-90000]")
-                    .releaseVersion("1.0.0 [GH-90000]")
+                    .agentId("agent-gov")
+                    .releaseVersion("1.0.0")
                     .state(AgentReleaseState.BLOCKED) // GH-90000
-                    .redactionProfileId("rp-test [GH-90000]")
-                    .threatModelId("tm-test [GH-90000]")
-                    .addPermittedPurpose("agent.inference [GH-90000]")
-                    .capabilityMaturityProfile("L1 [GH-90000]")
+                    .redactionProfileId("rp-test")
+                    .threatModelId("tm-test")
+                    .addPermittedPurpose("agent.inference")
+                    .capabilityMaturityProfile("L1")
                     .build(); // GH-90000
             runPromise(() -> repo.save(release)); // GH-90000
 
@@ -285,7 +285,7 @@ class AgentReleaseRepositoryContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("returns empty for DRAFT release (not a governing state) [GH-90000]")
+        @DisplayName("returns empty for DRAFT release (not a governing state)")
         void emptyForDraftRelease() { // GH-90000
             AgentRelease draft = minimalRelease("agent-gov-draft", "1.0.0"); // GH-90000
             runPromise(() -> repo.save(draft)); // GH-90000
@@ -297,7 +297,7 @@ class AgentReleaseRepositoryContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("returns empty when no release exists for agent [GH-90000]")
+        @DisplayName("returns empty when no release exists for agent")
         void emptyWhenNoRelease() { // GH-90000
             Optional<AgentRelease> governing = runPromise(() -> // GH-90000
                     repo.findGoverningRelease("no-such-agent", "tenant-1")); // GH-90000

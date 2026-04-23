@@ -14,7 +14,8 @@ import java.time.Instant;
  * @doc.type value-object
  * @doc.purpose Fact version tracking
  * @doc.layer agent-memory
- */
+  * @doc.pattern Component
+*/
 @Value
 @Builder
 public class FactVersion {

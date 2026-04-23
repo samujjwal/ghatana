@@ -69,7 +69,10 @@ import java.util.Map;
  *   .lateResults(true)
  *   .build()
  * </pre>
- */
+  * @doc.type class
+ * @doc.purpose Provides pattern window spec functionality.
+ * @doc.layer product
+*/
 public class PatternWindowSpec {
 
     @JsonProperty("type")

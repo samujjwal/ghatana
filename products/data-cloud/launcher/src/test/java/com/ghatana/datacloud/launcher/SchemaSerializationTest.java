@@ -19,15 +19,15 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern UnitTest
  */
-@DisplayName("Schema and Serialization Tests [GH-90000]")
+@DisplayName("Schema and Serialization Tests")
 public class SchemaSerializationTest {
 
     @Nested
-    @DisplayName("SchemaValidationTests [GH-90000]")
+    @DisplayName("SchemaValidationTests")
     class SchemaValidationTests {
 
         @Test
-        @DisplayName("valid schema: passes validation [GH-90000]")
+        @DisplayName("valid schema: passes validation")
         void shouldValidateCorrectSchema() { // GH-90000
             Map<String, Object> entity = createValidEntity(); // GH-90000
 
@@ -35,25 +35,25 @@ public class SchemaSerializationTest {
         }
 
         @Test
-        @DisplayName("missing required field: fails [GH-90000]")
+        @DisplayName("missing required field: fails")
         void shouldRejectMissingField() { // GH-90000
             Map<String, Object> entity = createValidEntity(); // GH-90000
-            entity.remove("type [GH-90000]");
+            entity.remove("type");
 
             assertThat(validateSchema(entity)).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("wrong field type: detected [GH-90000]")
+        @DisplayName("wrong field type: detected")
         void shouldDetectWrongType() { // GH-90000
             Map<String, Object> entity = createValidEntity(); // GH-90000
             entity.put("version", "not-a-number"); // Should be int // GH-90000
 
-            assertThat(validateFieldType(entity.get("version [GH-90000]"), Integer.class)).isFalse();
+            assertThat(validateFieldType(entity.get("version"), Integer.class)).isFalse();
         }
 
         @Test
-        @DisplayName("extra fields: allowed [GH-90000]")
+        @DisplayName("extra fields: allowed")
         void shouldAllowExtraFields() { // GH-90000
             Map<String, Object> entity = createValidEntity(); // GH-90000
             entity.put("customField", "custom value"); // GH-90000
@@ -62,7 +62,7 @@ public class SchemaSerializationTest {
         }
 
         @Test
-        @DisplayName("nullable field: null accepted [GH-90000]")
+        @DisplayName("nullable field: null accepted")
         void shouldAllowNullInNullableField() { // GH-90000
             Map<String, Object> entity = createValidEntity(); // GH-90000
             entity.put("description", null); // description is nullable // GH-90000
@@ -72,11 +72,11 @@ public class SchemaSerializationTest {
     }
 
     @Nested
-    @DisplayName("SchemaVersionTests [GH-90000]")
+    @DisplayName("SchemaVersionTests")
     class SchemaVersionTests {
 
         @Test
-        @DisplayName("v1 schema: recognized [GH-90000]")
+        @DisplayName("v1 schema: recognized")
         void shouldRecognizeV1Schema() { // GH-90000
             Map<String, Object> entity = createValidEntity(); // GH-90000
             entity.put("schemaVersion", 1); // GH-90000
@@ -85,7 +85,7 @@ public class SchemaSerializationTest {
         }
 
         @Test
-        @DisplayName("v2 schema: recognized and compatible [GH-90000]")
+        @DisplayName("v2 schema: recognized and compatible")
         void shouldHandleV2Schema() { // GH-90000
             Map<String, Object> entity = createValidEntity(); // GH-90000
             entity.put("schemaVersion", 2); // GH-90000
@@ -96,7 +96,7 @@ public class SchemaSerializationTest {
         }
 
         @Test
-        @DisplayName("forward compatible: old reader new data [GH-90000]")
+        @DisplayName("forward compatible: old reader new data")
         void shouldBeForwardCompatible() { // GH-90000
             Map<String, Object> v2Data = createValidEntity(); // GH-90000
             v2Data.put("schemaVersion", 2); // GH-90000
@@ -108,7 +108,7 @@ public class SchemaSerializationTest {
         }
 
         @Test
-        @DisplayName("backward compatible: new reader old data [GH-90000]")
+        @DisplayName("backward compatible: new reader old data")
         void shouldBeBackwardCompatible() { // GH-90000
             Map<String, Object> v1Data = createValidEntity(); // GH-90000
             v1Data.put("schemaVersion", 1); // GH-90000
@@ -119,7 +119,7 @@ public class SchemaSerializationTest {
         }
 
         @Test
-        @DisplayName("schema migration: v1 to v2 path defined [GH-90000]")
+        @DisplayName("schema migration: v1 to v2 path defined")
         void shouldMigrateSchema() { // GH-90000
             Map<String, Object> v1Data = createValidEntity(); // GH-90000
             v1Data.put("schemaVersion", 1); // GH-90000
@@ -127,40 +127,40 @@ public class SchemaSerializationTest {
             // Migrate to v2
             Map<String, Object> v2Data = migrateToV2(v1Data); // GH-90000
 
-            assertThat(v2Data.get("schemaVersion [GH-90000]")).isEqualTo(2);
+            assertThat(v2Data.get("schemaVersion")).isEqualTo(2);
         }
     }
 
     @Nested
-    @DisplayName("SerializationTests [GH-90000]")
+    @DisplayName("SerializationTests")
     class SerializationTests {
 
         @Test
-        @DisplayName("serialize to map: succeeds [GH-90000]")
+        @DisplayName("serialize to map: succeeds")
         void shouldSerializeToMap() { // GH-90000
             Map<String, Object> entity = createValidEntity(); // GH-90000
 
             Map<String, Object> serialized = serialize(entity); // GH-90000
 
             assertThat(serialized) // GH-90000
-                    .containsEntry("id", entity.get("id [GH-90000]"))
-                    .containsEntry("type", entity.get("type [GH-90000]"));
+                    .containsEntry("id", entity.get("id"))
+                    .containsEntry("type", entity.get("type"));
         }
 
         @Test
-        @DisplayName("deserialize from map: succeeds [GH-90000]")
+        @DisplayName("deserialize from map: succeeds")
         void shouldDeserializeFromMap() { // GH-90000
             Map<String, Object> data = createValidEntity(); // GH-90000
 
             Map<String, Object> deserialized = deserialize(data); // GH-90000
 
             assertThat(deserialized) // GH-90000
-                    .containsEntry("id", data.get("id [GH-90000]"))
-                    .containsEntry("type", data.get("type [GH-90000]"));
+                    .containsEntry("id", data.get("id"))
+                    .containsEntry("type", data.get("type"));
         }
 
         @Test
-        @DisplayName("round-trip serialize/deserialize: maintains data [GH-90000]")
+        @DisplayName("round-trip serialize/deserialize: maintains data")
         void shouldMaintainDataRoundTrip() { // GH-90000
             Map<String, Object> original = createValidEntity(); // GH-90000
 
@@ -171,34 +171,34 @@ public class SchemaSerializationTest {
         }
 
         @Test
-        @DisplayName("null value serialization: handled [GH-90000]")
+        @DisplayName("null value serialization: handled")
         void shouldHandleNullSerialization() { // GH-90000
             Map<String, Object> entity = createValidEntity(); // GH-90000
             entity.put("description", null); // GH-90000
 
             Map<String, Object> serialized = serialize(entity); // GH-90000
 
-            assertThat(serialized.get("description [GH-90000]")).isNull();
+            assertThat(serialized.get("description")).isNull();
         }
 
         @Test
-        @DisplayName("large payload serialization: handled [GH-90000]")
+        @DisplayName("large payload serialization: handled")
         void shouldSerializeLargePayload() { // GH-90000
             Map<String, Object> entity = createValidEntity(); // GH-90000
             entity.put("data", "x".repeat(100_000)); // GH-90000
 
             Map<String, Object> serialized = serialize(entity); // GH-90000
 
-            assertThat(serialized.get("data [GH-90000]").toString()).hasSizeGreaterThan(99_999);
+            assertThat(serialized.get("data").toString()).hasSizeGreaterThan(99_999);
         }
     }
 
     @Nested
-    @DisplayName("BoundaryTests [GH-90000]")
+    @DisplayName("BoundaryTests")
     class BoundaryTests {
 
         @Test
-        @DisplayName("empty string value: allowed [GH-90000]")
+        @DisplayName("empty string value: allowed")
         void shouldAllowEmptyString() { // GH-90000
             Map<String, Object> entity = createValidEntity(); // GH-90000
             entity.put("name", ""); // GH-90000
@@ -207,42 +207,42 @@ public class SchemaSerializationTest {
         }
 
         @Test
-        @DisplayName("string with newlines: preserved [GH-90000]")
+        @DisplayName("string with newlines: preserved")
         void shouldPreserveNewlines() { // GH-90000
             Map<String, Object> entity = createValidEntity(); // GH-90000
             String multiline = "line1\nline2\nline3";
             entity.put("description", multiline); // GH-90000
 
-            assertThat(entity.get("description [GH-90000]")).isEqualTo(multiline);
+            assertThat(entity.get("description")).isEqualTo(multiline);
         }
 
         @Test
-        @DisplayName("numeric boundaries: enforced [GH-90000]")
+        @DisplayName("numeric boundaries: enforced")
         void shouldEnforceNumericBounds() { // GH-90000
             Map<String, Object> entity = createValidEntity(); // GH-90000
 
             // Valid value
             entity.put("version", 1); // GH-90000
-            assertThat(validateFieldValue(entity.get("version [GH-90000]"), 1, Integer.MAX_VALUE)).isTrue();
+            assertThat(validateFieldValue(entity.get("version"), 1, Integer.MAX_VALUE)).isTrue();
 
             // Out of bounds
             entity.put("version", Integer.MAX_VALUE + 1L); // GH-90000
-            assertThat(validateFieldValue(entity.get("version [GH-90000]"), 1, Integer.MAX_VALUE)).isFalse();
+            assertThat(validateFieldValue(entity.get("version"), 1, Integer.MAX_VALUE)).isFalse();
         }
 
         @Test
-        @DisplayName("unicode characters: handled [GH-90000]")
+        @DisplayName("unicode characters: handled")
         void shouldHandleUnicode() { // GH-90000
             Map<String, Object> entity = createValidEntity(); // GH-90000
             entity.put("name", "Test 🚀 データ"); // GH-90000
 
             Map<String, Object> serialized = serialize(entity); // GH-90000
 
-            assertThat(serialized.get("name [GH-90000]")).isEqualTo("Test 🚀 データ [GH-90000]");
+            assertThat(serialized.get("name")).isEqualTo("Test 🚀 データ");
         }
 
         @Test
-        @DisplayName("escaped characters: round-trip preserved [GH-90000]")
+        @DisplayName("escaped characters: round-trip preserved")
         void shouldPreserveEscapes() { // GH-90000
             Map<String, Object> entity = createValidEntity(); // GH-90000
             entity.put("name", "Test\\\"with\\escapes"); // GH-90000
@@ -250,7 +250,7 @@ public class SchemaSerializationTest {
             Map<String, Object> serialized = serialize(entity); // GH-90000
             Map<String, Object> deserialized = deserialize(serialized); // GH-90000
 
-            assertThat(deserialized.get("name [GH-90000]")).isEqualTo("Test\\\"with\\escapes");
+            assertThat(deserialized.get("name")).isEqualTo("Test\\\"with\\escapes");
         }
     }
 
@@ -270,10 +270,10 @@ public class SchemaSerializationTest {
     }
 
     private boolean validateSchema(Map<String, Object> entity) { // GH-90000
-        return entity.containsKey("id [GH-90000]")
-                && entity.containsKey("tenantId [GH-90000]")
-                && entity.containsKey("type [GH-90000]")
-                && entity.containsKey("name [GH-90000]");
+        return entity.containsKey("id")
+                && entity.containsKey("tenantId")
+                && entity.containsKey("type")
+                && entity.containsKey("name");
     }
 
     private boolean validateFieldType(Object value, Class<?> expectedType) { // GH-90000

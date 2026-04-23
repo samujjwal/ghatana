@@ -38,7 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@DisplayName("End-to-End Event Processing Test [GH-90000]")
+@DisplayName("End-to-End Event Processing Test")
 class EndToEndEventProcessingTest extends EventloopTestBase {
 
     private AepEngine engine;
@@ -55,7 +55,7 @@ class EndToEndEventProcessingTest extends EventloopTestBase {
         // Create PatternDetectionAgent
         patternAgent = PatternDetectionAgent.builder() // GH-90000
             .operatorId(com.ghatana.core.operator.OperatorId.of("test", "pattern", "detector", "1.0")) // GH-90000
-            .name("Test Pattern Detector [GH-90000]")
+            .name("Test Pattern Detector")
             .nfa(nfa) // GH-90000
             .confidenceThreshold(0.5) // GH-90000
             .windowDuration(Duration.ofMinutes(5)) // GH-90000
@@ -84,7 +84,7 @@ class EndToEndEventProcessingTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Event is processed end-to-end with pattern detection [GH-90000]")
+    @DisplayName("Event is processed end-to-end with pattern detection")
     void eventIsProcessedWithPatternDetection() { // GH-90000
         // GIVEN
         String tenantId = "tenant-test";
@@ -99,12 +99,12 @@ class EndToEndEventProcessingTest extends EventloopTestBase {
         // THEN
         assertThat(result.success()).isTrue(); // GH-90000
         assertThat(result.eventId()).isNotNull(); // GH-90000
-        assertThat(result.metadata()).containsKey("processed [GH-90000]");
-        assertThat(result.metadata()).containsKey("correlationId [GH-90000]");
+        assertThat(result.metadata()).containsKey("processed");
+        assertThat(result.metadata()).containsKey("correlationId");
     }
 
     @Test
-    @DisplayName("Pattern detection is invoked during event processing [GH-90000]")
+    @DisplayName("Pattern detection is invoked during event processing")
     void patternDetectionIsInvoked() { // GH-90000
         // GIVEN
         String tenantId = "tenant-test";
@@ -122,7 +122,7 @@ class EndToEndEventProcessingTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Multiple events are processed sequentially [GH-90000]")
+    @DisplayName("Multiple events are processed sequentially")
     void multipleEventsProcessedSequentially() { // GH-90000
         // GIVEN
         String tenantId = "tenant-test";
@@ -146,7 +146,7 @@ class EndToEndEventProcessingTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Pattern detections are included in processing result [GH-90000]")
+    @DisplayName("Pattern detections are included in processing result")
     void patternDetectionsIncludedInResult() { // GH-90000
         // GIVEN
         String tenantId = "tenant-test";
@@ -163,7 +163,7 @@ class EndToEndEventProcessingTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Event metadata is populated correctly [GH-90000]")
+    @DisplayName("Event metadata is populated correctly")
     void eventMetadataPopulatedCorrectly() { // GH-90000
         // GIVEN
         String tenantId = "tenant-test";
@@ -175,10 +175,10 @@ class EndToEndEventProcessingTest extends EventloopTestBase {
 
         // THEN
         assertThat(result.success()).isTrue(); // GH-90000
-        assertThat(result.metadata()).containsKey("processed [GH-90000]");
-        assertThat(result.metadata()).containsKey("correlationId [GH-90000]");
-        assertThat(result.metadata()).containsKey("consentStatus [GH-90000]");
-        assertThat(result.metadata()).containsKey("eventVersion [GH-90000]");
+        assertThat(result.metadata()).containsKey("processed");
+        assertThat(result.metadata()).containsKey("correlationId");
+        assertThat(result.metadata()).containsKey("consentStatus");
+        assertThat(result.metadata()).containsKey("eventVersion");
     }
 
     // Helper method to create a simple NFA

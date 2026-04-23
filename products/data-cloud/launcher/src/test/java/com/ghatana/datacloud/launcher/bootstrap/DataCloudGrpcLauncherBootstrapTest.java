@@ -19,11 +19,11 @@ import org.slf4j.Logger;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataCloudGrpcLauncherBootstrap [GH-90000]")
+@DisplayName("DataCloudGrpcLauncherBootstrap")
 class DataCloudGrpcLauncherBootstrapTest {
 
     @Test
-    @DisplayName("registers shutdown hook after successful startup [GH-90000]")
+    @DisplayName("registers shutdown hook after successful startup")
     void registersShutdownHookAfterSuccessfulStartup() { // GH-90000
         Logger log = mock(Logger.class); // GH-90000
         AtomicReference<Thread> registeredHook = new AtomicReference<>(); // GH-90000
@@ -44,11 +44,11 @@ class DataCloudGrpcLauncherBootstrapTest {
             throw new AssertionError("Interrupted while waiting for shutdown hook", exception); // GH-90000
         }
         assertThat(stopCalls.get()).isEqualTo(1); // GH-90000
-        verify(log).info("Stopping gRPC server... [GH-90000]");
+        verify(log).info("Stopping gRPC server...");
     }
 
     @Test
-    @DisplayName("wraps startup failures in typed transport exception [GH-90000]")
+    @DisplayName("wraps startup failures in typed transport exception")
     void wrapsStartupFailuresInTypedTransportException() { // GH-90000
         Logger log = mock(Logger.class); // GH-90000
 
@@ -56,14 +56,14 @@ class DataCloudGrpcLauncherBootstrapTest {
                 DataCloudGrpcLauncherBootstrap.startTransport( // GH-90000
                         log,
                         () -> { // GH-90000
-                            throw new IllegalStateException("boom [GH-90000]");
+                            throw new IllegalStateException("boom");
                         },
                         () -> {}, // GH-90000
                         hook -> {}))
                 .isInstanceOf(com.ghatana.datacloud.launcher.DataCloudTransportStartupException.class) // GH-90000
-                .hasMessage("Failed to start gRPC server [GH-90000]")
+                .hasMessage("Failed to start gRPC server")
                 .hasCauseInstanceOf(IllegalStateException.class); // GH-90000
 
-        verify(log).error(eq("Failed to start gRPC server [GH-90000]"), any(IllegalStateException.class));
+        verify(log).error(eq("Failed to start gRPC server"), any(IllegalStateException.class));
     }
 }

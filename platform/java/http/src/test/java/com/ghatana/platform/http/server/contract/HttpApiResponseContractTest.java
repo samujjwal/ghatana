@@ -41,7 +41,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test, Contract
  */
-@DisplayName("HTTP API Response Contract Tests [GH-90000]")
+@DisplayName("HTTP API Response Contract Tests")
 class HttpApiResponseContractTest extends EventloopTestBase {
 
     private ObjectMapper objectMapper;
@@ -57,24 +57,24 @@ class HttpApiResponseContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Success Response Contracts [GH-90000]")
+    @DisplayName("Success Response Contracts")
     class SuccessResponseContract {
 
         @Test
-        @DisplayName("200 OK response must have application/json content type [GH-90000]")
+        @DisplayName("200 OK response must have application/json content type")
         void okResponseMustHaveJsonContentType() { // GH-90000
             // Use ResponseBuilder to create a response
             HttpResponse response = ResponseBuilder.ok() // GH-90000
-                    .json(new TestData("success [GH-90000]"))
+                    .json(new TestData("success"))
                     .build(); // GH-90000
 
-            assertThat(response.getHeader(HttpHeaders.of("Content-Type [GH-90000]"))).contains("application/json [GH-90000]");
+            assertThat(response.getHeader(HttpHeaders.of("Content-Type"))).contains("application/json");
         }
 
         @Test
-        @DisplayName("200 OK response must have valid JSON body [GH-90000]")
+        @DisplayName("200 OK response must have valid JSON body")
         void okResponseMustHaveValidJson() throws IOException { // GH-90000
-            TestData data = new TestData("test-message [GH-90000]");
+            TestData data = new TestData("test-message");
             HttpResponse response = ResponseBuilder.ok() // GH-90000
                     .json(data) // GH-90000
                     .build(); // GH-90000
@@ -83,25 +83,25 @@ class HttpApiResponseContractTest extends EventloopTestBase {
             JsonNode json = objectMapper.readTree(body); // GH-90000
 
             assertThat(json).isNotNull(); // GH-90000
-            assertThat(json.has("message [GH-90000]")).isTrue();
+            assertThat(json.has("message")).isTrue();
         }
 
         @Test
-        @DisplayName("201 Created response must include Location header [GH-90000]")
+        @DisplayName("201 Created response must include Location header")
         void createdResponseMustIncludeLocation() { // GH-90000
             String resourceId = "resource-123";
             HttpResponse response = ResponseBuilder.created() // GH-90000
                     .header("Location", "/api/v1/resources/" + resourceId) // GH-90000
-                    .json(new TestData("created [GH-90000]"))
+                    .json(new TestData("created"))
                     .build(); // GH-90000
 
-            assertThat(response.getHeader(HttpHeaders.of("Location [GH-90000]")))
+            assertThat(response.getHeader(HttpHeaders.of("Location")))
                     .contains(resourceId); // GH-90000
             assertThat(response.getCode()).isEqualTo(201); // GH-90000
         }
 
         @Test
-        @DisplayName("204 No Content response must be empty [GH-90000]")
+        @DisplayName("204 No Content response must be empty")
         void noContentResponseMustBeEmpty() { // GH-90000
             HttpResponse response = ResponseBuilder.noContent() // GH-90000
                     .build(); // GH-90000
@@ -113,20 +113,20 @@ class HttpApiResponseContractTest extends EventloopTestBase {
                 assertThat(body).isEmpty(); // GH-90000
             } catch (IllegalStateException e) { // GH-90000
                 // Expected for 204 responses - body should be missing
-                assertThat(e.getMessage()).contains("Body is missing [GH-90000]");
+                assertThat(e.getMessage()).contains("Body is missing");
             }
         }
 
         @Test
-        @DisplayName("200 response must include correlation ID if provided [GH-90000]")
+        @DisplayName("200 response must include correlation ID if provided")
         void responseShouldIncludeCorrelationId() { // GH-90000
             String correlationId = "trace-abc-123";
             HttpResponse response = ResponseBuilder.ok() // GH-90000
                     .header("X-Correlation-ID", correlationId) // GH-90000
-                    .json(new TestData("with-trace [GH-90000]"))
+                    .json(new TestData("with-trace"))
                     .build(); // GH-90000
 
-            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID [GH-90000]")))
+            assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID")))
                     .isEqualTo(correlationId); // GH-90000
         }
     }
@@ -136,29 +136,29 @@ class HttpApiResponseContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Error Response Contracts [GH-90000]")
+    @DisplayName("Error Response Contracts")
     class ErrorResponseContract {
 
         @Test
-        @DisplayName("400 Bad Request must include error code and message [GH-90000]")
+        @DisplayName("400 Bad Request must include error code and message")
         void badRequestMustHaveErrorDetails() throws IOException { // GH-90000
             ErrorResponse error = ErrorResponse.builder() // GH-90000
                     .status(400) // GH-90000
-                    .code("VALIDATION_ERROR [GH-90000]")
-                    .message("Invalid request data [GH-90000]")
-                    .path("/api/v1/users [GH-90000]")
+                    .code("VALIDATION_ERROR")
+                    .message("Invalid request data")
+                    .path("/api/v1/users")
                     .build(); // GH-90000
 
             String errorJson = objectMapper.writeValueAsString(error); // GH-90000
             JsonNode json = objectMapper.readTree(errorJson); // GH-90000
 
-            assertThat(json.path("status [GH-90000]").asInt()).isEqualTo(400);
-            assertThat(json.path("code [GH-90000]").asText()).isEqualTo("VALIDATION_ERROR [GH-90000]");
-            assertThat(json.path("message [GH-90000]").asText()).isNotBlank();
+            assertThat(json.path("status").asInt()).isEqualTo(400);
+            assertThat(json.path("code").asText()).isEqualTo("VALIDATION_ERROR");
+            assertThat(json.path("message").asText()).isNotBlank();
         }
 
         @Test
-        @DisplayName("401 Unauthorized must challenge with WWW-Authenticate header [GH-90000]")
+        @DisplayName("401 Unauthorized must challenge with WWW-Authenticate header")
         void unauthorizedMustIncludeWwwAuthenticate() { // GH-90000
             HttpResponse response = ResponseBuilder.unauthorized() // GH-90000
                     .header("WWW-Authenticate", "Bearer realm=\"API\"") // GH-90000
@@ -166,98 +166,98 @@ class HttpApiResponseContractTest extends EventloopTestBase {
                     .build(); // GH-90000
 
             assertThat(response.getCode()).isEqualTo(401); // GH-90000
-            assertThat(response.getHeader(HttpHeaders.of("WWW-Authenticate [GH-90000]")))
-                    .contains("Bearer [GH-90000]");
+            assertThat(response.getHeader(HttpHeaders.of("WWW-Authenticate")))
+                    .contains("Bearer");
         }
 
         @Test
-        @DisplayName("403 Forbidden must document required permissions [GH-90000]")
+        @DisplayName("403 Forbidden must document required permissions")
         void forbiddenMustDocumentPermission() throws IOException { // GH-90000
             ErrorResponse error = ErrorResponse.builder() // GH-90000
                     .status(403) // GH-90000
-                    .code("INSUFFICIENT_PERMISSIONS [GH-90000]")
-                    .message("User lacks required permissions [GH-90000]")
-                    .path("/api/v1/admin/users [GH-90000]")
+                    .code("INSUFFICIENT_PERMISSIONS")
+                    .message("User lacks required permissions")
+                    .path("/api/v1/admin/users")
                     .build(); // GH-90000
 
             String errorJson = objectMapper.writeValueAsString(error); // GH-90000
             JsonNode json = objectMapper.readTree(errorJson); // GH-90000
 
-            assertThat(json.path("status [GH-90000]").asInt()).isEqualTo(403);
-            assertThat(json.path("code [GH-90000]").asText()).contains("PERMISSION [GH-90000]");
+            assertThat(json.path("status").asInt()).isEqualTo(403);
+            assertThat(json.path("code").asText()).contains("PERMISSION");
         }
 
         @Test
-        @DisplayName("404 Not Found must identify missing resource [GH-90000]")
+        @DisplayName("404 Not Found must identify missing resource")
         void notFoundMustIdentifyResource() throws IOException { // GH-90000
             ErrorResponse error = ErrorResponse.builder() // GH-90000
                     .status(404) // GH-90000
-                    .code("USER_NOT_FOUND [GH-90000]")
-                    .message("User with ID 'user-999' not found [GH-90000]")
-                    .path("/api/v1/users/user-999 [GH-90000]")
+                    .code("USER_NOT_FOUND")
+                    .message("User with ID 'user-999' not found")
+                    .path("/api/v1/users/user-999")
                     .build(); // GH-90000
 
             String errorJson = objectMapper.writeValueAsString(error); // GH-90000
             JsonNode json = objectMapper.readTree(errorJson); // GH-90000
 
-            assertThat(json.path("status [GH-90000]").asInt()).isEqualTo(404);
-            assertThat(json.path("message [GH-90000]").asText()).contains("user-999 [GH-90000]");
+            assertThat(json.path("status").asInt()).isEqualTo(404);
+            assertThat(json.path("message").asText()).contains("user-999");
         }
 
         @Test
-        @DisplayName("409 Conflict must explain the conflict state [GH-90000]")
+        @DisplayName("409 Conflict must explain the conflict state")
         void conflictMustExplainState() throws IOException { // GH-90000
             ErrorResponse error = ErrorResponse.builder() // GH-90000
                     .status(409) // GH-90000
-                    .code("RESOURCE_CONFLICT [GH-90000]")
-                    .message("Resource was modified concurrently [GH-90000]")
-                    .path("/api/v1/entities/entity-1 [GH-90000]")
-                    .details("Version mismatch: expected 5, got 6 [GH-90000]")
+                    .code("RESOURCE_CONFLICT")
+                    .message("Resource was modified concurrently")
+                    .path("/api/v1/entities/entity-1")
+                    .details("Version mismatch: expected 5, got 6")
                     .build(); // GH-90000
 
             String errorJson = objectMapper.writeValueAsString(error); // GH-90000
             JsonNode json = objectMapper.readTree(errorJson); // GH-90000
 
-            assertThat(json.path("status [GH-90000]").asInt()).isEqualTo(409);
-            assertThat(json.path("code [GH-90000]").asText()).contains("CONFLICT [GH-90000]");
+            assertThat(json.path("status").asInt()).isEqualTo(409);
+            assertThat(json.path("code").asText()).contains("CONFLICT");
         }
 
         @Test
-        @DisplayName("500 Internal Server Error must not leak internal details [GH-90000]")
+        @DisplayName("500 Internal Server Error must not leak internal details")
         void internalErrorMustNotLeakDetails() throws IOException { // GH-90000
             ErrorResponse error = ErrorResponse.builder() // GH-90000
                     .status(500) // GH-90000
-                    .code("INTERNAL_ERROR [GH-90000]")
-                    .message("An unexpected error occurred [GH-90000]")
-                    .path("/api/v1/process [GH-90000]")
-                    .traceId("trace-500-error-xyz [GH-90000]")
+                    .code("INTERNAL_ERROR")
+                    .message("An unexpected error occurred")
+                    .path("/api/v1/process")
+                    .traceId("trace-500-error-xyz")
                     .build(); // GH-90000
 
             String errorJson = objectMapper.writeValueAsString(error); // GH-90000
             JsonNode json = objectMapper.readTree(errorJson); // GH-90000
 
-            assertThat(json.path("message [GH-90000]").asText())
-                    .doesNotContain("NullPointerException [GH-90000]")
-                    .doesNotContain("at com.ghatana [GH-90000]");
-            assertThat(json.path("traceId [GH-90000]").asText())
+            assertThat(json.path("message").asText())
+                    .doesNotContain("NullPointerException")
+                    .doesNotContain("at com.ghatana");
+            assertThat(json.path("traceId").asText())
                     .isNotBlank() // GH-90000
-                    .contains("trace [GH-90000]");
+                    .contains("trace");
         }
 
         @Test
-        @DisplayName("503 Service Unavailable must suggest retry [GH-90000]")
+        @DisplayName("503 Service Unavailable must suggest retry")
         void serviceUnavailableMustSuggestRetry() throws IOException { // GH-90000
             ErrorResponse error = ErrorResponse.builder() // GH-90000
                     .status(503) // GH-90000
-                    .code("SERVICE_UNAVAILABLE [GH-90000]")
-                    .message("Service temporarily unavailable, please retry [GH-90000]")
+                    .code("SERVICE_UNAVAILABLE")
+                    .message("Service temporarily unavailable, please retry")
                     .build(); // GH-90000
 
             String errorJson = objectMapper.writeValueAsString(error); // GH-90000
             JsonNode json = objectMapper.readTree(errorJson); // GH-90000
 
-            assertThat(json.path("status [GH-90000]").asInt()).isEqualTo(503);
-            assertThat(json.path("message [GH-90000]").asText()).contains("retry [GH-90000]");
+            assertThat(json.path("status").asInt()).isEqualTo(503);
+            assertThat(json.path("message").asText()).contains("retry");
         }
     }
 
@@ -266,28 +266,28 @@ class HttpApiResponseContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Validation Error Contracts [GH-90000]")
+    @DisplayName("Validation Error Contracts")
     class ValidationErrorContract {
 
         @Test
-        @DisplayName("validation errors must include field path and rejection reason [GH-90000]")
+        @DisplayName("validation errors must include field path and rejection reason")
         void validationErrorsMustBeDetailed() throws IOException { // GH-90000
             ErrorResponse error = ErrorResponse.builder() // GH-90000
                     .status(400) // GH-90000
-                    .code("VALIDATION_ERROR [GH-90000]")
-                    .message("Validation failed for request [GH-90000]")
-                    .path("/api/v1/users [GH-90000]")
+                    .code("VALIDATION_ERROR")
+                    .message("Validation failed for request")
+                    .path("/api/v1/users")
                     .build(); // GH-90000
 
             String errorJson = objectMapper.writeValueAsString(error); // GH-90000
             JsonNode json = objectMapper.readTree(errorJson); // GH-90000
 
-            assertThat(json.path("status [GH-90000]").asInt()).isEqualTo(400);
-            assertThat(json.path("code [GH-90000]").asText()).isEqualTo("VALIDATION_ERROR [GH-90000]");
+            assertThat(json.path("status").asInt()).isEqualTo(400);
+            assertThat(json.path("code").asText()).isEqualTo("VALIDATION_ERROR");
         }
 
         @Test
-        @DisplayName("400 error must clearly distinguish from 500 errors [GH-90000]")
+        @DisplayName("400 error must clearly distinguish from 500 errors")
         void clientErrorsMustBeClearlyDistinct() { // GH-90000
             HttpResponse clientError = ResponseBuilder.badRequest() // GH-90000
                     .json(ErrorResponse.of(400, "INVALID_INPUT", "Invalid field value")) // GH-90000
@@ -308,36 +308,36 @@ class HttpApiResponseContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Request Boundary Contracts [GH-90000]")
+    @DisplayName("Request Boundary Contracts")
     class RequestBoundaryContract {
 
         @Test
-        @DisplayName("request with max header size must be accepted [GH-90000]")
+        @DisplayName("request with max header size must be accepted")
         void maxHeaderSizeMustBeAccepted() { // GH-90000
             // Headers up to platform limit (typically 8MB total) // GH-90000
             String largeHeader = "x".repeat(1000); // GH-90000
             HttpResponse response = ResponseBuilder.ok() // GH-90000
                     .header("X-Custom-Data", largeHeader) // GH-90000
-                    .json(new TestData("with-large-header [GH-90000]"))
+                    .json(new TestData("with-large-header"))
                     .build(); // GH-90000
 
             assertThat(response.getCode()).isEqualTo(200); // GH-90000
         }
 
         @Test
-        @DisplayName("request exceeding max body size must be rejected with 413 [GH-90000]")
+        @DisplayName("request exceeding max body size must be rejected with 413")
         void oversizeBodyMustReturn413() { // GH-90000
             // Contract: max payload typically 10MB
             // This is validated at servlet level, not in response builder
             // but the contract is that 413 must be returned for oversized payloads
 
-            assertThat(413).as("Payload Too Large status code [GH-90000]").isGreaterThan(400);
+            assertThat(413).as("Payload Too Large status code").isGreaterThan(400);
         }
 
         @Test
-        @DisplayName("request with timeout must return 408 Request Timeout [GH-90000]")
+        @DisplayName("request with timeout must return 408 Request Timeout")
         void timeoutMustReturn408() { // GH-90000
-            assertThat(408).as("Request Timeout status code [GH-90000]").isGreaterThan(400).isLessThan(500);
+            assertThat(408).as("Request Timeout status code").isGreaterThan(400).isLessThan(500);
         }
     }
 
@@ -346,28 +346,28 @@ class HttpApiResponseContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Content-Type Negotiation [GH-90000]")
+    @DisplayName("Content-Type Negotiation")
     class ContentTypeNegotiationContract {
 
         @Test
-        @DisplayName("request with unsupported Content-Type must return 415 [GH-90000]")
+        @DisplayName("request with unsupported Content-Type must return 415")
         void unsupportedContentTypeMustReturn415() { // GH-90000
-            assertThat(415).as("Unsupported Media Type status code [GH-90000]")
+            assertThat(415).as("Unsupported Media Type status code")
                     .isGreaterThan(400).isLessThan(500); // GH-90000
         }
 
         @Test
-        @DisplayName("response Content-Type must match Accept header when possible [GH-90000]")
+        @DisplayName("response Content-Type must match Accept header when possible")
         void responseContentTypeShouldMatchAccept() { // GH-90000
             // Client: Accept: application/json
             // Server: Content-Type: application/json (match) // GH-90000
 
             HttpResponse response = ResponseBuilder.ok() // GH-90000
-                    .json(new TestData("test [GH-90000]"))
+                    .json(new TestData("test"))
                     .build(); // GH-90000
 
-            assertThat(response.getHeader(HttpHeaders.of("Content-Type [GH-90000]")))
-                    .contains("application/json [GH-90000]");
+            assertThat(response.getHeader(HttpHeaders.of("Content-Type")))
+                    .contains("application/json");
         }
     }
 
@@ -376,39 +376,39 @@ class HttpApiResponseContractTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Response Header Contracts [GH-90000]")
+    @DisplayName("Response Header Contracts")
     class ResponseHeaderContract {
 
         @Test
-        @DisplayName("responses must include Content-Length header [GH-90000]")
+        @DisplayName("responses must include Content-Length header")
         void responseMustIncludeContentLength() { // GH-90000
             HttpResponse response = ResponseBuilder.ok() // GH-90000
-                    .json(new TestData("test [GH-90000]"))
+                    .json(new TestData("test"))
                     .build(); // GH-90000
 
-            String contentLength = response.getHeader(HttpHeaders.of("Content-Length [GH-90000]"));
-            String transferEncoding = response.getHeader(HttpHeaders.of("Transfer-Encoding [GH-90000]"));
+            String contentLength = response.getHeader(HttpHeaders.of("Content-Length"));
+            String transferEncoding = response.getHeader(HttpHeaders.of("Transfer-Encoding"));
 
             // Either explicit Content-Length or chunked encoding or other length indication
             boolean hasLengthInfo = contentLength != null
                     || "chunked".equals(transferEncoding) // GH-90000
-                    || response.getHeader(HttpHeaders.of("Content-Type [GH-90000]")) != null; // At least has content type
+                    || response.getHeader(HttpHeaders.of("Content-Type")) != null; // At least has content type
 
             // For now, make this informational until ResponseBuilder is updated to auto-set Content-Length
             assertThat(hasLengthInfo) // GH-90000
-                    .as("Response should include length information or content type [GH-90000]")
+                    .as("Response should include length information or content type")
                     .isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("responses must not expose sensitive headers [GH-90000]")
+        @DisplayName("responses must not expose sensitive headers")
         void responseShouldNotExposeSensitiveHeaders() { // GH-90000
             HttpResponse response = ResponseBuilder.ok() // GH-90000
-                    .json(new TestData("test [GH-90000]"))
+                    .json(new TestData("test"))
                     .build(); // GH-90000
 
-            assertThat(response.getHeader(HttpHeaders.of("X-Internal-User-ID [GH-90000]"))).isNull();
-            assertThat(response.getHeader(HttpHeaders.of("X-Database-Connection [GH-90000]"))).isNull();
+            assertThat(response.getHeader(HttpHeaders.of("X-Internal-User-ID"))).isNull();
+            assertThat(response.getHeader(HttpHeaders.of("X-Database-Connection"))).isNull();
         }
     }
 

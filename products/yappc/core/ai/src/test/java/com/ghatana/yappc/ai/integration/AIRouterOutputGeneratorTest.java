@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AIRouterOutputGenerator Tests [GH-90000]")
+@DisplayName("AIRouterOutputGenerator Tests")
 class AIRouterOutputGeneratorTest extends EventloopTestBase {
 
   private AIModelRouter router;
@@ -37,11 +37,11 @@ class AIRouterOutputGeneratorTest extends EventloopTestBase {
     router = mock(AIModelRouter.class); // GH-90000
     templateEngine = mock(PromptTemplateEngine.class); // GH-90000
 
-    @SuppressWarnings("unchecked [GH-90000]")
+    @SuppressWarnings("unchecked")
     ResultMapper<String> mapper = mock(ResultMapper.class); // GH-90000
-    when(mapper.mapResponse(any(), any())).thenReturn("mapped-result [GH-90000]");
+    when(mapper.mapResponse(any(), any())).thenReturn("mapped-result");
 
-    when(templateEngine.buildPrompt(any(), any())).thenReturn("generated prompt [GH-90000]");
+    when(templateEngine.buildPrompt(any(), any())).thenReturn("generated prompt");
 
     generator = new AIRouterOutputGenerator<>(router, templateEngine, mapper); // GH-90000
   }
@@ -49,11 +49,11 @@ class AIRouterOutputGeneratorTest extends EventloopTestBase {
   // ===== Basic Generation Tests =====
 
   @Nested
-  @DisplayName("Generate Output [GH-90000]")
+  @DisplayName("Generate Output")
   class GenerateOutput {
 
     @Test
-    @DisplayName("Should generate output by routing through AI model router [GH-90000]")
+    @DisplayName("Should generate output by routing through AI model router")
     void shouldGenerateOutput() { // GH-90000
       AIResponse mockResponse = createMockResponse("gpt-4", 200); // GH-90000
       when(router.route(any())).thenReturn(Promise.of(mockResponse)); // GH-90000
@@ -63,22 +63,22 @@ class AIRouterOutputGeneratorTest extends EventloopTestBase {
 
       String result = runPromise(() -> generator.generate("build REST API", context)); // GH-90000
 
-      assertThat(result).isEqualTo("mapped-result [GH-90000]");
+      assertThat(result).isEqualTo("mapped-result");
     }
 
     @Test
-    @DisplayName("Should propagate error when router fails [GH-90000]")
+    @DisplayName("Should propagate error when router fails")
     void shouldPropagateRouterError() { // GH-90000
       when(router.route(any())).thenReturn( // GH-90000
-          Promise.ofException(new RuntimeException("Router failure [GH-90000]")));
+          Promise.ofException(new RuntimeException("Router failure")));
 
       Map<String, Object> context = Map.of("stepName", "test"); // GH-90000
 
       try {
         runPromise(() -> generator.generate("input", context)); // GH-90000
-        assertThat(false).as("Should have thrown [GH-90000]").isTrue();
+        assertThat(false).as("Should have thrown").isTrue();
       } catch (Exception e) { // GH-90000
-        assertThat(e.getMessage()).contains("Router failure [GH-90000]");
+        assertThat(e.getMessage()).contains("Router failure");
       }
     }
   }
@@ -86,11 +86,11 @@ class AIRouterOutputGeneratorTest extends EventloopTestBase {
   // ===== Task Type Routing Tests =====
 
   @Nested
-  @DisplayName("Task Type Determination [GH-90000]")
+  @DisplayName("Task Type Determination")
   class TaskTypeDetermination {
 
     @Test
-    @DisplayName("Should route implementation steps to CODE_GENERATION [GH-90000]")
+    @DisplayName("Should route implementation steps to CODE_GENERATION")
     void shouldRouteImplementToCodeGen() { // GH-90000
       AIResponse mockResponse = createMockResponse("gpt-4", 200); // GH-90000
       when(router.route(any())).thenAnswer(invocation -> { // GH-90000
@@ -106,7 +106,7 @@ class AIRouterOutputGeneratorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should route analysis steps to CODE_ANALYSIS [GH-90000]")
+    @DisplayName("Should route analysis steps to CODE_ANALYSIS")
     void shouldRouteAnalyzeToCodeAnalysis() { // GH-90000
       AIResponse mockResponse = createMockResponse("claude-3", 150); // GH-90000
       when(router.route(any())).thenAnswer(invocation -> { // GH-90000
@@ -122,7 +122,7 @@ class AIRouterOutputGeneratorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should route test steps to TEST_GENERATION [GH-90000]")
+    @DisplayName("Should route test steps to TEST_GENERATION")
     void shouldRouteTestToTestGen() { // GH-90000
       AIResponse mockResponse = createMockResponse("gpt-4", 200); // GH-90000
       when(router.route(any())).thenAnswer(invocation -> { // GH-90000
@@ -138,7 +138,7 @@ class AIRouterOutputGeneratorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should default to GENERAL for unknown step names [GH-90000]")
+    @DisplayName("Should default to GENERAL for unknown step names")
     void shouldDefaultToGeneral() { // GH-90000
       AIResponse mockResponse = createMockResponse("gpt-4", 200); // GH-90000
       when(router.route(any())).thenAnswer(invocation -> { // GH-90000
@@ -157,17 +157,17 @@ class AIRouterOutputGeneratorTest extends EventloopTestBase {
   // ===== Accessor Tests =====
 
   @Nested
-  @DisplayName("Accessors [GH-90000]")
+  @DisplayName("Accessors")
   class Accessors {
 
     @Test
-    @DisplayName("Should expose underlying router [GH-90000]")
+    @DisplayName("Should expose underlying router")
     void shouldExposeRouter() { // GH-90000
       assertThat(generator.getRouter()).isSameAs(router); // GH-90000
     }
 
     @Test
-    @DisplayName("Should expose cache statistics [GH-90000]")
+    @DisplayName("Should expose cache statistics")
     void shouldExposeCacheStats() { // GH-90000
       CacheStatistics mockStats = mock(CacheStatistics.class); // GH-90000
       when(router.getCacheStatistics()).thenReturn(mockStats); // GH-90000

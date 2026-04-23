@@ -27,7 +27,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("EntityCrudHandler tenant enforcement [GH-90000]")
+@DisplayName("EntityCrudHandler tenant enforcement")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class EntityCrudHandlerTenantEnforcementTest extends EventloopTestBase {
 
@@ -60,7 +60,7 @@ class EntityCrudHandlerTenantEnforcementTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("save rejects missing tenant before loading body [GH-90000]")
+    @DisplayName("save rejects missing tenant before loading body")
     void saveRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
@@ -71,7 +71,7 @@ class EntityCrudHandlerTenantEnforcementTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("get rejects missing tenant before store access [GH-90000]")
+    @DisplayName("get rejects missing tenant before store access")
     void getRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
@@ -82,7 +82,7 @@ class EntityCrudHandlerTenantEnforcementTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("query rejects missing tenant before store access [GH-90000]")
+    @DisplayName("query rejects missing tenant before store access")
     void queryRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
@@ -93,7 +93,7 @@ class EntityCrudHandlerTenantEnforcementTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("delete rejects missing tenant before store access [GH-90000]")
+    @DisplayName("delete rejects missing tenant before store access")
     void deleteRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
@@ -104,7 +104,7 @@ class EntityCrudHandlerTenantEnforcementTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("batch save rejects missing tenant before loading body [GH-90000]")
+    @DisplayName("batch save rejects missing tenant before loading body")
     void batchSaveRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
@@ -115,7 +115,7 @@ class EntityCrudHandlerTenantEnforcementTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("batch delete rejects missing tenant before loading body [GH-90000]")
+    @DisplayName("batch delete rejects missing tenant before loading body")
     void batchDeleteRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
@@ -126,10 +126,10 @@ class EntityCrudHandlerTenantEnforcementTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("full text search rejects missing tenant before search execution [GH-90000]")
+    @DisplayName("full text search rejects missing tenant before search execution")
     void fullTextSearchRejectsMissingTenant() { // GH-90000
-        when(request.getPathParameter("collection [GH-90000]")).thenReturn("orders [GH-90000]");
-        when(request.getQueryParameter("q [GH-90000]")).thenReturn("status:open [GH-90000]");
+        when(request.getPathParameter("collection")).thenReturn("orders");
+        when(request.getQueryParameter("q")).thenReturn("status:open");
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
         HttpResponse response = runPromise(() -> handler.handleFullTextSearch(request)); // GH-90000
@@ -139,7 +139,7 @@ class EntityCrudHandlerTenantEnforcementTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("as-of query rejects missing tenant before store access [GH-90000]")
+    @DisplayName("as-of query rejects missing tenant before store access")
     void asOfRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 

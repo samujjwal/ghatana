@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @doc.layer test
  * @author Ghatana Kernel Team
  */
-@DisplayName("Kernel Lifecycle Integration Tests [GH-90000]")
+@DisplayName("Kernel Lifecycle Integration Tests")
 class KernelLifecycleIntegrationTest {
 
     private KernelRegistryImpl registry;
@@ -54,7 +54,7 @@ class KernelLifecycleIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should start modules in dependency order [GH-90000]")
+    @DisplayName("Should start modules in dependency order")
     void shouldStartModulesInDependencyOrder() { // GH-90000
         List<String> startOrder = new ArrayList<>(); // GH-90000
 
@@ -84,7 +84,7 @@ class KernelLifecycleIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should stop modules in reverse dependency order [GH-90000]")
+    @DisplayName("Should stop modules in reverse dependency order")
     void shouldStopModulesInReverseDependencyOrder() { // GH-90000
         List<String> stopOrder = new ArrayList<>(); // GH-90000
 
@@ -115,7 +115,7 @@ class KernelLifecycleIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should handle diamond dependency pattern [GH-90000]")
+    @DisplayName("Should handle diamond dependency pattern")
     void shouldHandleDiamondDependencyPattern() { // GH-90000
         List<String> startOrder = new ArrayList<>(); // GH-90000
 
@@ -149,12 +149,12 @@ class KernelLifecycleIntegrationTest {
         assertEquals("diamond-d", startOrder.get(3)); // GH-90000
 
         // B and C should be between A and D
-        assertTrue(startOrder.indexOf("diamond-b [GH-90000]") < startOrder.indexOf("diamond-d [GH-90000]"));
-        assertTrue(startOrder.indexOf("diamond-c [GH-90000]") < startOrder.indexOf("diamond-d [GH-90000]"));
+        assertTrue(startOrder.indexOf("diamond-b") < startOrder.indexOf("diamond-d"));
+        assertTrue(startOrder.indexOf("diamond-c") < startOrder.indexOf("diamond-d"));
     }
 
     @Test
-    @DisplayName("Should validate dependencies before allowing registration [GH-90000]")
+    @DisplayName("Should validate dependencies before allowing registration")
     void shouldValidateDependenciesBeforeAllowingRegistration() { // GH-90000
         KernelModule moduleWithMissingDep = createBasicModule("orphan", // GH-90000
             Set.of(new KernelDependency("non-existent", "1.0.0", KernelDependency.DependencyType.MODULE, false))); // GH-90000
@@ -162,11 +162,11 @@ class KernelLifecycleIntegrationTest {
         // Should throw when trying to register with missing dependency
         IllegalStateException exception = assertThrows(IllegalStateException.class, // GH-90000
             () -> registry.registerModule(moduleWithMissingDep)); // GH-90000
-        assertTrue(exception.getMessage().contains("Dependency validation failed [GH-90000]"));
+        assertTrue(exception.getMessage().contains("Dependency validation failed"));
     }
 
     @Test
-    @DisplayName("Should allow optional dependencies to be missing [GH-90000]")
+    @DisplayName("Should allow optional dependencies to be missing")
     void shouldAllowOptionalDependenciesToBeMissing() { // GH-90000
         KernelModule moduleWithOptionalDep = createBasicModule("with-optional", // GH-90000
             Set.of(new KernelDependency("optional-dep", "1.0.0", KernelDependency.DependencyType.EXTERNAL_SERVICE, true))); // GH-90000
@@ -176,13 +176,13 @@ class KernelLifecycleIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should propagate health status across module chain [GH-90000]")
+    @DisplayName("Should propagate health status across module chain")
     void shouldPropagateHealthStatusAcrossModuleChain() { // GH-90000
         AtomicBoolean makeUnhealthy = new AtomicBoolean(false); // GH-90000
 
         KernelModule healthyModule = createHealthTrackingModule("healthy", HealthStatus.healthy(), makeUnhealthy); // GH-90000
         KernelModule unhealthyModule = createHealthTrackingModule("unhealthy", // GH-90000
-            HealthStatus.unhealthy("test failure [GH-90000]"), makeUnhealthy);
+            HealthStatus.unhealthy("test failure"), makeUnhealthy);
 
         registry.registerModule(healthyModule); // GH-90000
         registry.registerModule(unhealthyModule); // GH-90000
@@ -193,12 +193,12 @@ class KernelLifecycleIntegrationTest {
         HealthStatus aggregate = registry.getAggregateHealthStatus(); // GH-90000
 
         assertEquals(HealthStatus.Status.DEGRADED, aggregate.getStatus()); // GH-90000
-        assertTrue(aggregate.getChecks().containsKey("healthy [GH-90000]"));
-        assertTrue(aggregate.getChecks().containsKey("unhealthy [GH-90000]"));
+        assertTrue(aggregate.getChecks().containsKey("healthy"));
+        assertTrue(aggregate.getChecks().containsKey("unhealthy"));
     }
 
     @Test
-    @DisplayName("Should detect circular dependencies [GH-90000]")
+    @DisplayName("Should detect circular dependencies")
     void shouldDetectCircularDependencies() { // GH-90000
         // This test would require cycle detection in the topological sort
         // For now, we test that the system handles the case gracefully
@@ -211,7 +211,7 @@ class KernelLifecycleIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should handle module initialization failure gracefully [GH-90000]")
+    @DisplayName("Should handle module initialization failure gracefully")
     void shouldHandleModuleInitializationFailureGracefully() { // GH-90000
         KernelModule failingModule = new KernelModule() { // GH-90000
             @Override public String getModuleId() { return "failing"; } // GH-90000
@@ -219,18 +219,18 @@ class KernelLifecycleIntegrationTest {
             @Override public Set<KernelCapability> getCapabilities() { return Set.of(); } // GH-90000
             @Override public Set<KernelDependency> getDependencies() { return Set.of(); } // GH-90000
             @Override public void initialize(KernelContext ctx) { // GH-90000
-                throw new RuntimeException("Init failed [GH-90000]");
+                throw new RuntimeException("Init failed");
             }
             @Override public Promise<Void> start() { return Promise.complete(); } // GH-90000
             @Override public Promise<Void> stop() { return Promise.complete(); } // GH-90000
-            @Override public HealthStatus getHealthStatus() { return HealthStatus.unhealthy("init failed [GH-90000]"); }
+            @Override public HealthStatus getHealthStatus() { return HealthStatus.unhealthy("init failed"); }
         };
 
         assertThrows(RuntimeException.class, () -> failingModule.initialize(context)); // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle module start failure with rollback [GH-90000]")
+    @DisplayName("Should handle module start failure with rollback")
     void shouldHandleModuleStartFailureWithRollback() { // GH-90000
         AtomicInteger stopCount = new AtomicInteger(0); // GH-90000
 
@@ -256,10 +256,10 @@ class KernelLifecycleIntegrationTest {
             }
             @Override public void initialize(KernelContext ctx) {} // GH-90000
             @Override public Promise<Void> start() { // GH-90000
-                return Promise.ofException(new RuntimeException("Start failed [GH-90000]"));
+                return Promise.ofException(new RuntimeException("Start failed"));
             }
             @Override public Promise<Void> stop() { return Promise.complete(); } // GH-90000
-            @Override public HealthStatus getHealthStatus() { return HealthStatus.unhealthy("start failed [GH-90000]"); }
+            @Override public HealthStatus getHealthStatus() { return HealthStatus.unhealthy("start failed"); }
         };
 
         registry.registerModule(moduleA); // GH-90000
@@ -275,7 +275,7 @@ class KernelLifecycleIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should resolve all dependent modules correctly [GH-90000]")
+    @DisplayName("Should resolve all dependent modules correctly")
     void shouldResolveAllDependentModulesCorrectly() { // GH-90000
         KernelModule base = createBasicModule("base", Set.of()); // GH-90000
         KernelModule dependent1 = createBasicModule("dep-1", // GH-90000
@@ -287,15 +287,15 @@ class KernelLifecycleIntegrationTest {
         registry.registerModule(dependent1); // GH-90000
         registry.registerModule(dependent2); // GH-90000
 
-        var dependents = registry.getDependentModules("base [GH-90000]");
+        var dependents = registry.getDependentModules("base");
 
         assertEquals(2, dependents.size()); // GH-90000
-        assertTrue(dependents.stream().anyMatch(m -> m.getModuleId().equals("dep-1 [GH-90000]")));
-        assertTrue(dependents.stream().anyMatch(m -> m.getModuleId().equals("dep-2 [GH-90000]")));
+        assertTrue(dependents.stream().anyMatch(m -> m.getModuleId().equals("dep-1")));
+        assertTrue(dependents.stream().anyMatch(m -> m.getModuleId().equals("dep-2")));
     }
 
     @Test
-    @DisplayName("Should maintain capability registry consistency [GH-90000]")
+    @DisplayName("Should maintain capability registry consistency")
     void shouldMaintainCapabilityRegistryConsistency() { // GH-90000
         KernelCapability cap1 = new KernelCapability("test.cap.1", "Test 1", "", KernelCapability.CapabilityType.DATA_MANAGEMENT, java.util.Map.of()); // GH-90000
         KernelCapability cap2 = new KernelCapability("test.cap.2", "Test 2", "", KernelCapability.CapabilityType.DATA_MANAGEMENT, java.util.Map.of()); // GH-90000
@@ -306,14 +306,14 @@ class KernelLifecycleIntegrationTest {
         registry.registerModule(module1); // GH-90000
         registry.registerModule(module2); // GH-90000
 
-        assertTrue(registry.isCapabilityAvailable("test.cap.1 [GH-90000]"));
-        assertTrue(registry.isCapabilityAvailable("test.cap.2 [GH-90000]"));
+        assertTrue(registry.isCapabilityAvailable("test.cap.1"));
+        assertTrue(registry.isCapabilityAvailable("test.cap.2"));
 
         // Unregister module and verify capability removed
-        registry.unregisterModule("mod-1 [GH-90000]");
+        registry.unregisterModule("mod-1");
 
-        assertFalse(registry.isCapabilityAvailable("test.cap.1 [GH-90000]"));
-        assertTrue(registry.isCapabilityAvailable("test.cap.2 [GH-90000]"));
+        assertFalse(registry.isCapabilityAvailable("test.cap.1"));
+        assertTrue(registry.isCapabilityAvailable("test.cap.2"));
     }
 
     // ==================== Test Helpers ====================
@@ -377,7 +377,7 @@ class KernelLifecycleIntegrationTest {
             @Override public Promise<Void> start() { return Promise.complete(); } // GH-90000
             @Override public Promise<Void> stop() { return Promise.complete(); } // GH-90000
             @Override public HealthStatus getHealthStatus() { // GH-90000
-                return toggle.get() ? HealthStatus.unhealthy("toggled [GH-90000]") : status;
+                return toggle.get() ? HealthStatus.unhealthy("toggled") : status;
             }
         };
     }

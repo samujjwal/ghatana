@@ -11,7 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Ops ValidateReleaseStep Tests [GH-90000]")
+@DisplayName("Ops ValidateReleaseStep Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles validate release step test operations
@@ -32,8 +32,8 @@ class ValidateReleaseStepTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should return correct step ID [GH-90000]")
+  @DisplayName("Should return correct step ID")
   void shouldReturnCorrectStepId() { // GH-90000
-    assertThat(step.getStepId()).isEqualTo("ops.validaterelease [GH-90000]");
+    assertThat(step.getStepId()).isEqualTo("ops.validaterelease");
   }
 }

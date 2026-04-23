@@ -18,7 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Requirements NormalizeStep Tests [GH-90000]")
+@DisplayName("Requirements NormalizeStep Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles normalize step test operations
@@ -39,13 +39,13 @@ class NormalizeStepTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should return correct step ID [GH-90000]")
+  @DisplayName("Should return correct step ID")
   void shouldReturnCorrectStepId() { // GH-90000
-    assertThat(step.getStepId()).isEqualTo("requirements.normalize [GH-90000]");
+    assertThat(step.getStepId()).isEqualTo("requirements.normalize");
   }
 
   @Test
-  @DisplayName("Should normalize requirements from intake [GH-90000]")
+  @DisplayName("Should normalize requirements from intake")
   void shouldNormalizeRequirements() { // GH-90000
     // GIVEN
     WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
@@ -65,11 +65,11 @@ class NormalizeStepTest extends EventloopTestBase {
 
     // THEN
     assertThat(result).isNotNull(); // GH-90000
-    assertThat(result.get("requirementId [GH-90000]")).isEqualTo("req-001 [GH-90000]");
+    assertThat(result.get("requirementId")).isEqualTo("req-001");
   }
 
   @Test
-  @DisplayName("Should fail when requirements are missing [GH-90000]")
+  @DisplayName("Should fail when requirements are missing")
   void shouldFailWhenRequirementsMissing() { // GH-90000
     // GIVEN
     WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
@@ -78,6 +78,6 @@ class NormalizeStepTest extends EventloopTestBase {
     // WHEN/THEN
     assertThatThrownBy(() -> runPromise(() -> step.execute(context))) // GH-90000
         .isInstanceOf(IllegalArgumentException.class) // GH-90000
-        .hasMessageContaining("Input data is required [GH-90000]");
+        .hasMessageContaining("Input data is required");
   }
 }

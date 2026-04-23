@@ -58,7 +58,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @EnabledIfEnvironmentVariable(named = "DATACLOUD_DURABLE_LOAD_ENABLED", matches = "true") // GH-90000
 @Testcontainers
-@DisplayName("Durable Multi-Tenant Load Integration Test [GH-90000]")
+@DisplayName("Durable Multi-Tenant Load Integration Test")
 @SuppressWarnings({"resource", "deprecation"}) // GH-90000
 class DurableMultiTenantLoadIntegrationTest {
 
@@ -87,13 +87,13 @@ class DurableMultiTenantLoadIntegrationTest {
     private static final String METRICS_OUTPUT = System.getProperty("datacloud.load.metricsOutput", ""); // GH-90000
 
     @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine [GH-90000]")
-        .withDatabaseName("datacloud_load_it [GH-90000]")
-        .withUsername("dc_load [GH-90000]")
-        .withPassword("dc_load_secret [GH-90000]");
+    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine")
+        .withDatabaseName("datacloud_load_it")
+        .withUsername("dc_load")
+        .withPassword("dc_load_secret");
 
     @Container
-    static final KafkaContainer KAFKA = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.5.0 [GH-90000]"))
+    static final KafkaContainer KAFKA = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.5.0"))
         .withEmbeddedZookeeper(); // GH-90000
 
     private PostgresEntityStore entityStore;
@@ -105,7 +105,7 @@ class DurableMultiTenantLoadIntegrationTest {
         Flyway.configure() // GH-90000
             .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword()) // GH-90000
             .locations("filesystem:" + resolveMigrationDirectory()) // GH-90000
-            .target("10 [GH-90000]")
+            .target("10")
             .load() // GH-90000
             .migrate(); // GH-90000
     }
@@ -121,7 +121,7 @@ class DurableMultiTenantLoadIntegrationTest {
     }
 
     @Test
-    @DisplayName("mixed CRUD, query, and event append traffic stays tenant-isolated under durable load [GH-90000]")
+    @DisplayName("mixed CRUD, query, and event append traffic stays tenant-isolated under durable load")
     void mixedCrudQueryAndEventAppendTrafficStaysTenantIsolatedUnderDurableLoad() throws InterruptedException { // GH-90000
         entityStore = new PostgresEntityStore(new PostgresEntityStoreConfig( // GH-90000
             POSTGRES.getJdbcUrl(), // GH-90000
@@ -153,20 +153,20 @@ class DurableMultiTenantLoadIntegrationTest {
         long minQueries = (long) TENANT_COUNT * 2L * ITERATIONS; // GH-90000
 
         long aggregateEntityWrites = iterationSummaries.stream() // GH-90000
-            .mapToLong(summary -> ((Number) summary.get("entityWrites [GH-90000]")).longValue())
+            .mapToLong(summary -> ((Number) summary.get("entityWrites")).longValue())
             .sum(); // GH-90000
         long aggregateEventAppends = iterationSummaries.stream() // GH-90000
-            .mapToLong(summary -> ((Number) summary.get("eventAppends [GH-90000]")).longValue())
+            .mapToLong(summary -> ((Number) summary.get("eventAppends")).longValue())
             .sum(); // GH-90000
         long aggregateQueries = iterationSummaries.stream() // GH-90000
-            .mapToLong(summary -> ((Number) summary.get("queries [GH-90000]")).longValue())
+            .mapToLong(summary -> ((Number) summary.get("queries")).longValue())
             .sum(); // GH-90000
         double bestThroughput = iterationSummaries.stream() // GH-90000
-            .mapToDouble(summary -> ((Number) summary.get("throughputOpsPerSecond [GH-90000]")).doubleValue())
+            .mapToDouble(summary -> ((Number) summary.get("throughputOpsPerSecond")).doubleValue())
             .max() // GH-90000
             .orElse(0.0d); // GH-90000
         double bestEventBurstThroughput = iterationSummaries.stream() // GH-90000
-            .mapToDouble(summary -> ((Number) summary.get("eventBurstThroughputOpsPerSecond [GH-90000]")).doubleValue())
+            .mapToDouble(summary -> ((Number) summary.get("eventBurstThroughputOpsPerSecond")).doubleValue())
             .max() // GH-90000
             .orElse(0.0d); // GH-90000
 
@@ -250,7 +250,7 @@ class DurableMultiTenantLoadIntegrationTest {
         assertThat(heapDeltaMb).isLessThanOrEqualTo(MAX_HEAP_DELTA_MB); // GH-90000
         assertThat(throughputPerSecond).isPositive(); // GH-90000
 
-        try (var connection = POSTGRES.createConnection(" [GH-90000]");
+        try (var connection = POSTGRES.createConnection("");
              var statement = connection.prepareStatement( // GH-90000
                  "SELECT tenant_id, COUNT(*) AS entity_count FROM entities WHERE collection_name LIKE 'load-orders-%' GROUP BY tenant_id ORDER BY tenant_id" // GH-90000
              );
@@ -258,7 +258,7 @@ class DurableMultiTenantLoadIntegrationTest {
             int tenantRows = 0;
             while (resultSet.next()) { // GH-90000
                 tenantRows++;
-                assertThat(resultSet.getLong("entity_count [GH-90000]")).isEqualTo(ENTITY_OPS_PER_TENANT);
+                assertThat(resultSet.getLong("entity_count")).isEqualTo(ENTITY_OPS_PER_TENANT);
             }
             assertThat(tenantRows).isEqualTo(TENANT_COUNT); // GH-90000
         } catch (Exception exception) { // GH-90000
@@ -341,7 +341,7 @@ class DurableMultiTenantLoadIntegrationTest {
                 .data(Map.of("tenantTag", tenantId, "warmup", true)) // GH-90000
                 .build())); // GH-90000
             runBlocking(() -> eventStore.append(tenant, EventLogStore.EventEntry.builder() // GH-90000
-                .eventType("warmup.event [GH-90000]")
+                .eventType("warmup.event")
                 .timestamp(Instant.now()) // GH-90000
                 .payload(writePayloadBytes(tenantId, -1)) // GH-90000
                 .headers(Map.of("tenant", tenantId, "warmup", "true")) // GH-90000
@@ -361,7 +361,7 @@ class DurableMultiTenantLoadIntegrationTest {
             result.all().get(30, TimeUnit.SECONDS); // GH-90000
         } catch (Exception exception) { // GH-90000
             String message = exception.getMessage(); // GH-90000
-            if (message == null || !message.contains("already exists [GH-90000]")) {
+            if (message == null || !message.contains("already exists")) {
                 throw new IllegalStateException("failed to pre-create durable-load Kafka topics", exception); // GH-90000
             }
         }
@@ -372,7 +372,7 @@ class DurableMultiTenantLoadIntegrationTest {
         List<EventLogStore.EventEntry> entries = new ArrayList<>(eventCount); // GH-90000
         for (int index = 0; index < eventCount; index++) { // GH-90000
             entries.add(EventLogStore.EventEntry.builder() // GH-90000
-                .eventType("entity.load-burst [GH-90000]")
+                .eventType("entity.load-burst")
                 .timestamp(Instant.now()) // GH-90000
                 .payload(writePayloadBytes(tenantId, index)) // GH-90000
                 .headers(Map.of("tenant", tenantId, "phase", "burst")) // GH-90000
@@ -400,7 +400,7 @@ class DurableMultiTenantLoadIntegrationTest {
         if (failure[0] != null) { // GH-90000
             throw new IllegalStateException("blocking performance helper failed", failure[0]); // GH-90000
         }
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         T castResult = (T) result[0]; // GH-90000
         return castResult;
     }
@@ -471,7 +471,7 @@ class DurableMultiTenantLoadIntegrationTest {
             List<EventLogStore.EventEntry> entries = new ArrayList<>(EVENT_OPS_PER_TENANT); // GH-90000
             for (int index = 0; index < EVENT_OPS_PER_TENANT; index++) { // GH-90000
                 entries.add(EventLogStore.EventEntry.builder() // GH-90000
-                    .eventType("entity.load-tested [GH-90000]")
+                    .eventType("entity.load-tested")
                     .timestamp(Instant.now()) // GH-90000
                     .payload(writePayloadBytes(tenantId, index)) // GH-90000
                     .headers(Map.of("tenant", tenantId)) // GH-90000
@@ -558,7 +558,7 @@ class DurableMultiTenantLoadIntegrationTest {
             $$;
             """;
 
-        try (var connection = POSTGRES.createConnection(" [GH-90000]");
+        try (var connection = POSTGRES.createConnection("");
              var statement = connection.createStatement()) { // GH-90000
             statement.execute(createRolesSql); // GH-90000
         } catch (Exception exception) { // GH-90000
@@ -567,17 +567,17 @@ class DurableMultiTenantLoadIntegrationTest {
     }
 
     private static Path resolveMigrationDirectory() { // GH-90000
-        Path workingDirectory = Path.of(System.getProperty("user.dir [GH-90000]")).toAbsolutePath().normalize();
+        Path workingDirectory = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize();
         Path current = workingDirectory;
         while (current != null) { // GH-90000
-            Path siblingModulePath = current.resolve("platform-launcher [GH-90000]")
-                .resolve("src [GH-90000]").resolve("main [GH-90000]").resolve("resources [GH-90000]").resolve("db [GH-90000]").resolve("migration [GH-90000]");
+            Path siblingModulePath = current.resolve("platform-launcher")
+                .resolve("src").resolve("main").resolve("resources").resolve("db").resolve("migration");
             if (Files.isDirectory(siblingModulePath)) { // GH-90000
                 return siblingModulePath;
             }
 
-            Path monorepoPath = current.resolve("products [GH-90000]").resolve("data-cloud [GH-90000]")
-                .resolve("platform-launcher [GH-90000]").resolve("src [GH-90000]").resolve("main [GH-90000]").resolve("resources [GH-90000]").resolve("db [GH-90000]").resolve("migration [GH-90000]");
+            Path monorepoPath = current.resolve("products").resolve("data-cloud")
+                .resolve("platform-launcher").resolve("src").resolve("main").resolve("resources").resolve("db").resolve("migration");
             if (Files.isDirectory(monorepoPath)) { // GH-90000
                 return monorepoPath;
             }

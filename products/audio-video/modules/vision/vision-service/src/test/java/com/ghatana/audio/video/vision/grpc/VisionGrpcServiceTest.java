@@ -32,7 +32,7 @@ import static org.mockito.Mockito.mock;
  * @doc.layer product
  * @doc.pattern TestCase
  */
-@DisplayName("VisionGrpcService [GH-90000]")
+@DisplayName("VisionGrpcService")
 class VisionGrpcServiceTest {
 
     private FakeVisionDetector fakeDetector;
@@ -51,7 +51,7 @@ class VisionGrpcServiceTest {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("detectObjects: empty image bytes → INVALID_ARGUMENT gRPC error [GH-90000]")
+    @DisplayName("detectObjects: empty image bytes → INVALID_ARGUMENT gRPC error")
     void detectObjects_emptyImage_returnsError() { // GH-90000
         // GIVEN
         DetectRequest request = DetectRequest.newBuilder() // GH-90000
@@ -70,11 +70,11 @@ class VisionGrpcServiceTest {
     }
 
     @Test
-    @DisplayName("detectObjects: detector returns detections → proto response mapped correctly [GH-90000]")
+    @DisplayName("detectObjects: detector returns detections → proto response mapped correctly")
     void detectObjects_normal_mapsDetectionsToProto() { // GH-90000
         // GIVEN
         DetectedObject cat = DetectedObject.builder() // GH-90000
-            .className("cat [GH-90000]")
+            .className("cat")
             .confidence(0.92) // GH-90000
             .boundingBox(BoundingBox.builder().x(10).y(20).width(100).height(80).build()) // GH-90000
             .timestamp(Instant.now()) // GH-90000
@@ -94,14 +94,14 @@ class VisionGrpcServiceTest {
         DetectResponse response = observer.getValue(); // GH-90000
         assertThat(response.getDetectionsList()).hasSize(1); // GH-90000
         Detection detection = response.getDetections(0); // GH-90000
-        assertThat(detection.getClassName()).isEqualTo("cat [GH-90000]");
+        assertThat(detection.getClassName()).isEqualTo("cat");
         assertThat(detection.getConfidence()).isEqualTo(0.92); // GH-90000
         assertThat(detection.getBoundingBox().getX()).isEqualTo(10.0); // GH-90000
         assertThat(detection.getBoundingBox().getWidth()).isEqualTo(100.0); // GH-90000
     }
 
     @Test
-    @DisplayName("detectObjects: multiple results → processing time included in response [GH-90000]")
+    @DisplayName("detectObjects: multiple results → processing time included in response")
     void detectObjects_multipleResults_includesProcessingTime() { // GH-90000
         // GIVEN
         fakeDetector.setResults(buildDetections("dog", "car", "person")); // GH-90000
@@ -122,7 +122,7 @@ class VisionGrpcServiceTest {
     }
 
     @Test
-    @DisplayName("detectObjects: DetectionException from detector → INTERNAL gRPC error [GH-90000]")
+    @DisplayName("detectObjects: DetectionException from detector → INTERNAL gRPC error")
     void detectObjects_detectorThrows_propagatesError() { // GH-90000
         // GIVEN
         fakeDetector.setThrowOnDetect(new VisionDetector.DetectionException("simulated failure", null)); // GH-90000
@@ -139,7 +139,7 @@ class VisionGrpcServiceTest {
         assertThat(observer.getError()).isInstanceOf(StatusRuntimeException.class); // GH-90000
         StatusRuntimeException ex = (StatusRuntimeException) observer.getError(); // GH-90000
         assertThat(ex.getStatus().getCode()).isEqualTo(Status.INTERNAL.getCode()); // GH-90000
-        assertThat(ex.getStatus().getDescription()).contains("Detection engine error [GH-90000]");
+        assertThat(ex.getStatus().getDescription()).contains("Detection engine error");
     }
 
     // -------------------------------------------------------------------------
@@ -147,13 +147,13 @@ class VisionGrpcServiceTest {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("analyzeImage: objects detected → scene description generated [GH-90000]")
+    @DisplayName("analyzeImage: objects detected → scene description generated")
     void analyzeImage_withObjects_generatesSceneDescription() { // GH-90000
         // GIVEN
         fakeDetector.setResults(buildDetections("person", "dog")); // GH-90000
         AnalyzeRequest request = AnalyzeRequest.newBuilder() // GH-90000
             .setImageData(ByteString.copyFrom(new byte[]{0x01})) // GH-90000
-            .addAnalysisTypes("scene [GH-90000]")
+            .addAnalysisTypes("scene")
             .build(); // GH-90000
         CapturingObserver<AnalyzeResponse> observer = new CapturingObserver<>(); // GH-90000
 
@@ -167,7 +167,7 @@ class VisionGrpcServiceTest {
     }
 
     @Test
-    @DisplayName("analyzeImage: no detections → scene description indicates empty scene [GH-90000]")
+    @DisplayName("analyzeImage: no detections → scene description indicates empty scene")
     void analyzeImage_noDetections_returnsEmptySceneHint() { // GH-90000
         // GIVEN
         fakeDetector.setResults(Collections.emptyList()); // GH-90000
@@ -184,7 +184,7 @@ class VisionGrpcServiceTest {
     }
 
     @Test
-    @DisplayName("analyzeImage: empty image bytes → INVALID_ARGUMENT gRPC error [GH-90000]")
+    @DisplayName("analyzeImage: empty image bytes → INVALID_ARGUMENT gRPC error")
     void analyzeImage_emptyImage_returnsInvalidArgument() { // GH-90000
         // GIVEN
         AnalyzeRequest request = AnalyzeRequest.newBuilder() // GH-90000
@@ -203,13 +203,13 @@ class VisionGrpcServiceTest {
     }
 
     @Test
-    @DisplayName("analyzeImage: DetectionException from detector → INTERNAL gRPC error [GH-90000]")
+    @DisplayName("analyzeImage: DetectionException from detector → INTERNAL gRPC error")
     void analyzeImage_detectorThrows_mapsToInternal() { // GH-90000
         // GIVEN
         fakeDetector.setThrowOnDetect(new VisionDetector.DetectionException("model error", null)); // GH-90000
         AnalyzeRequest request = AnalyzeRequest.newBuilder() // GH-90000
             .setImageData(ByteString.copyFrom(new byte[]{0x01})) // GH-90000
-            .addAnalysisTypes("scene [GH-90000]")
+            .addAnalysisTypes("scene")
             .build(); // GH-90000
         CapturingObserver<AnalyzeResponse> observer = new CapturingObserver<>(); // GH-90000
 
@@ -221,7 +221,7 @@ class VisionGrpcServiceTest {
         assertThat(observer.getError()).isInstanceOf(StatusRuntimeException.class); // GH-90000
         StatusRuntimeException ex = (StatusRuntimeException) observer.getError(); // GH-90000
         assertThat(ex.getStatus().getCode()).isEqualTo(Status.INTERNAL.getCode()); // GH-90000
-        assertThat(ex.getStatus().getDescription()).contains("Analysis engine error [GH-90000]");
+        assertThat(ex.getStatus().getDescription()).contains("Analysis engine error");
     }
 
     // -------------------------------------------------------------------------
@@ -229,7 +229,7 @@ class VisionGrpcServiceTest {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("classifyImage: empty image bytes → INVALID_ARGUMENT [GH-90000]")
+    @DisplayName("classifyImage: empty image bytes → INVALID_ARGUMENT")
     void classifyImage_emptyImage_returnsInvalidArgument() { // GH-90000
         ClassifyRequest request = ClassifyRequest.newBuilder().build(); // GH-90000
         CapturingObserver<ClassifyResponse> observer = new CapturingObserver<>(); // GH-90000
@@ -243,7 +243,7 @@ class VisionGrpcServiceTest {
     }
 
     @Test
-    @DisplayName("classifyImage: detections returned → labels ranked by confidence [GH-90000]")
+    @DisplayName("classifyImage: detections returned → labels ranked by confidence")
     void classifyImage_withDetections_returnsRankedLabels() { // GH-90000
         fakeDetector.setResults(buildDetections("cat", "cat", "dog")); // GH-90000
         ClassifyRequest request = ClassifyRequest.newBuilder() // GH-90000
@@ -258,13 +258,13 @@ class VisionGrpcServiceTest {
         ClassifyResponse response = observer.getValue(); // GH-90000
         assertThat(response.getLabelsList()).isNotEmpty(); // GH-90000
         // cat appeared twice so its aggregated score should rank first
-        assertThat(response.getLabels(0).getLabel()).isEqualTo("cat [GH-90000]");
+        assertThat(response.getLabels(0).getLabel()).isEqualTo("cat");
         assertThat(response.getLabels(0).getRank()).isEqualTo(1); // GH-90000
         assertThat(response.getProcessingTimeMs()).isGreaterThanOrEqualTo(0); // GH-90000
     }
 
     @Test
-    @DisplayName("classifyImage: DetectionException → INTERNAL [GH-90000]")
+    @DisplayName("classifyImage: DetectionException → INTERNAL")
     void classifyImage_detectorThrows_returnsInternal() { // GH-90000
         fakeDetector.setThrowOnDetect(new VisionDetector.DetectionException("model error", null)); // GH-90000
         ClassifyRequest request = ClassifyRequest.newBuilder() // GH-90000
@@ -284,7 +284,7 @@ class VisionGrpcServiceTest {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("loadModel: blank modelId → INVALID_ARGUMENT [GH-90000]")
+    @DisplayName("loadModel: blank modelId → INVALID_ARGUMENT")
     void loadModel_blankModelId_returnsInvalidArgument() { // GH-90000
         CapturingObserver<LoadModelResponse> observer = new CapturingObserver<>(); // GH-90000
 
@@ -296,16 +296,16 @@ class VisionGrpcServiceTest {
     }
 
     @Test
-    @DisplayName("loadModel: valid modelId → registers and loads successfully [GH-90000]")
+    @DisplayName("loadModel: valid modelId → registers and loads successfully")
     void loadModel_validModelId_loadsSuccessfully() { // GH-90000
         CapturingObserver<LoadModelResponse> observer = new CapturingObserver<>(); // GH-90000
 
-        service.loadModel(LoadModelRequest.newBuilder().setModelId("yolov8n [GH-90000]").build(), observer);
+        service.loadModel(LoadModelRequest.newBuilder().setModelId("yolov8n").build(), observer);
 
         assertThat(observer.hasError()).isFalse(); // GH-90000
         LoadModelResponse response = observer.getValue(); // GH-90000
         assertThat(response.getSuccess()).isTrue(); // GH-90000
-        assertThat(response.getModelId()).isEqualTo("yolov8n [GH-90000]");
+        assertThat(response.getModelId()).isEqualTo("yolov8n");
         assertThat(response.getLoadTimeMs()).isGreaterThanOrEqualTo(0); // GH-90000
     }
 
@@ -314,7 +314,7 @@ class VisionGrpcServiceTest {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("unloadModel: blank modelId → INVALID_ARGUMENT [GH-90000]")
+    @DisplayName("unloadModel: blank modelId → INVALID_ARGUMENT")
     void unloadModel_blankModelId_returnsInvalidArgument() { // GH-90000
         CapturingObserver<UnloadModelResponse> observer = new CapturingObserver<>(); // GH-90000
 
@@ -326,11 +326,11 @@ class VisionGrpcServiceTest {
     }
 
     @Test
-    @DisplayName("unloadModel: unregistered modelId → NOT_FOUND [GH-90000]")
+    @DisplayName("unloadModel: unregistered modelId → NOT_FOUND")
     void unloadModel_unregisteredModelId_returnsNotFound() { // GH-90000
         CapturingObserver<UnloadModelResponse> observer = new CapturingObserver<>(); // GH-90000
 
-        service.unloadModel(UnloadModelRequest.newBuilder().setModelId("unknown-model [GH-90000]").build(), observer);
+        service.unloadModel(UnloadModelRequest.newBuilder().setModelId("unknown-model").build(), observer);
 
         assertThat(observer.hasError()).isTrue(); // GH-90000
         assertThat(((StatusRuntimeException) observer.getError()).getStatus().getCode()) // GH-90000
@@ -338,15 +338,15 @@ class VisionGrpcServiceTest {
     }
 
     @Test
-    @DisplayName("unloadModel: loaded model → unloads successfully [GH-90000]")
+    @DisplayName("unloadModel: loaded model → unloads successfully")
     void unloadModel_loadedModel_returnsSuccess() { // GH-90000
         // Load first, then unload
         CapturingObserver<LoadModelResponse> loadObserver = new CapturingObserver<>(); // GH-90000
-        service.loadModel(LoadModelRequest.newBuilder().setModelId("yolov8-small [GH-90000]").build(), loadObserver);
+        service.loadModel(LoadModelRequest.newBuilder().setModelId("yolov8-small").build(), loadObserver);
         assertThat(loadObserver.hasError()).isFalse(); // GH-90000
 
         CapturingObserver<UnloadModelResponse> unloadObserver = new CapturingObserver<>(); // GH-90000
-        service.unloadModel(UnloadModelRequest.newBuilder().setModelId("yolov8-small [GH-90000]").build(), unloadObserver);
+        service.unloadModel(UnloadModelRequest.newBuilder().setModelId("yolov8-small").build(), unloadObserver);
 
         assertThat(unloadObserver.hasError()).isFalse(); // GH-90000
         assertThat(unloadObserver.getValue().getSuccess()).isTrue(); // GH-90000
@@ -357,7 +357,7 @@ class VisionGrpcServiceTest {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("listModels: empty registry → zero count [GH-90000]")
+    @DisplayName("listModels: empty registry → zero count")
     void listModels_emptyRegistry_returnsZeroModels() { // GH-90000
         CapturingObserver<ListModelsResponse> observer = new CapturingObserver<>(); // GH-90000
 
@@ -368,9 +368,9 @@ class VisionGrpcServiceTest {
     }
 
     @Test
-    @DisplayName("listModels: after loadModel → includes loaded model [GH-90000]")
+    @DisplayName("listModels: after loadModel → includes loaded model")
     void listModels_afterLoad_includesModel() { // GH-90000
-        service.loadModel(LoadModelRequest.newBuilder().setModelId("test-model [GH-90000]").build(),
+        service.loadModel(LoadModelRequest.newBuilder().setModelId("test-model").build(),
             new CapturingObserver<>()); // GH-90000
 
         CapturingObserver<ListModelsResponse> observer = new CapturingObserver<>(); // GH-90000
@@ -386,7 +386,7 @@ class VisionGrpcServiceTest {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("getStatus: initialized detector → status healthy [GH-90000]")
+    @DisplayName("getStatus: initialized detector → status healthy")
     void getStatus_initialized_healthy() { // GH-90000
         // GIVEN
         fakeDetector.setInitialized(true); // GH-90000
@@ -397,11 +397,11 @@ class VisionGrpcServiceTest {
 
         // THEN
         assertThat(observer.hasError()).isFalse(); // GH-90000
-        assertThat(observer.getValue().getStatus()).isEqualTo("healthy [GH-90000]");
+        assertThat(observer.getValue().getStatus()).isEqualTo("healthy");
     }
 
     @Test
-    @DisplayName("getStatus: uninitialized detector → status not_initialized [GH-90000]")
+    @DisplayName("getStatus: uninitialized detector → status not_initialized")
     void getStatus_notInitialized_notInitialized() { // GH-90000
         // GIVEN
         fakeDetector.setInitialized(false); // GH-90000
@@ -412,7 +412,7 @@ class VisionGrpcServiceTest {
 
         // THEN
         assertThat(observer.hasError()).isFalse(); // GH-90000
-        assertThat(observer.getValue().getStatus()).isEqualTo("not_initialized [GH-90000]");
+        assertThat(observer.getValue().getStatus()).isEqualTo("not_initialized");
     }
 
     // -------------------------------------------------------------------------
@@ -420,7 +420,7 @@ class VisionGrpcServiceTest {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("healthCheck: initialized → healthy = true [GH-90000]")
+    @DisplayName("healthCheck: initialized → healthy = true")
     void healthCheck_initialized_returnsHealthy() { // GH-90000
         // GIVEN
         fakeDetector.setInitialized(true); // GH-90000

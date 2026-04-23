@@ -61,7 +61,7 @@ public class MockPythonRenameRefactoring implements RenameRefactoring {
     public boolean canApply(Context context) { // GH-90000
         try {
             Path sourceFile = Path.of(context.getSourceFile()); // GH-90000
-            if (!Files.exists(sourceFile) || !sourceFile.toString().endsWith(".py [GH-90000]")) {
+            if (!Files.exists(sourceFile) || !sourceFile.toString().endsWith(".py")) {
                 return false;
             }
             return true;
@@ -76,7 +76,7 @@ public class MockPythonRenameRefactoring implements RenameRefactoring {
         try {
             // Check for null new name first
             if (context.getNewName() == null) { // GH-90000
-                return RefactoringResult.failure("New name cannot be null [GH-90000]");
+                return RefactoringResult.failure("New name cannot be null");
             }
 
             Path sourceFile = Path.of(context.getSourceFile()); // GH-90000

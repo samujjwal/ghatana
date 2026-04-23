@@ -14,11 +14,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer core
  * @doc.pattern Test
  */
-@DisplayName("ErrorCode — enum invariants [GH-90000]")
+@DisplayName("ErrorCode — enum invariants")
 class ErrorCodeTest {
 
     @Test
-    @DisplayName("all enum values have non-null, non-blank code [GH-90000]")
+    @DisplayName("all enum values have non-null, non-blank code")
     void allValues_nonNullCode() { // GH-90000
         for (ErrorCode code : ErrorCode.values()) { // GH-90000
             assertThat(code.getCode()) // GH-90000
@@ -29,7 +29,7 @@ class ErrorCodeTest {
     }
 
     @Test
-    @DisplayName("all enum values have non-null, non-blank default message [GH-90000]")
+    @DisplayName("all enum values have non-null, non-blank default message")
     void allValues_nonNullDefaultMessage() { // GH-90000
         for (ErrorCode code : ErrorCode.values()) { // GH-90000
             assertThat(code.getDefaultMessage()) // GH-90000
@@ -40,7 +40,7 @@ class ErrorCodeTest {
     }
 
     @Test
-    @DisplayName("all enum values have a non-null HTTP status code [GH-90000]")
+    @DisplayName("all enum values have a non-null HTTP status code")
     void allValues_nonNullHttpStatus() { // GH-90000
         for (ErrorCode code : ErrorCode.values()) { // GH-90000
             assertThat(code.getHttpStatus()) // GH-90000
@@ -50,7 +50,7 @@ class ErrorCodeTest {
     }
 
     @Test
-    @DisplayName("codes are unique across all enum values [GH-90000]")
+    @DisplayName("codes are unique across all enum values")
     void allValues_uniqueCodes() { // GH-90000
         long distinctCount = java.util.Arrays.stream(ErrorCode.values()) // GH-90000
                 .map(ErrorCode::getCode) // GH-90000
@@ -60,54 +60,54 @@ class ErrorCodeTest {
     }
 
     @Test
-    @DisplayName("AUTHENTICATION_ERROR has HTTP 401 [GH-90000]")
+    @DisplayName("AUTHENTICATION_ERROR has HTTP 401")
     void authenticationError_is401() { // GH-90000
         assertThat(ErrorCode.AUTHENTICATION_ERROR.getHttpStatus()).isEqualTo(401); // GH-90000
     }
 
     @Test
-    @DisplayName("AUTHORIZATION_ERROR has HTTP 403 [GH-90000]")
+    @DisplayName("AUTHORIZATION_ERROR has HTTP 403")
     void authorizationError_is403() { // GH-90000
         assertThat(ErrorCode.AUTHORIZATION_ERROR.getHttpStatus()).isEqualTo(403); // GH-90000
     }
 
     @Test
-    @DisplayName("RESOURCE_NOT_FOUND has HTTP 404 [GH-90000]")
+    @DisplayName("RESOURCE_NOT_FOUND has HTTP 404")
     void resourceNotFound_is404() { // GH-90000
         assertThat(ErrorCode.RESOURCE_NOT_FOUND.getHttpStatus()).isEqualTo(404); // GH-90000
     }
 
     @Test
-    @DisplayName("RATE_LIMITED has HTTP 429 [GH-90000]")
+    @DisplayName("RATE_LIMITED has HTTP 429")
     void rateLimited_is429() { // GH-90000
         assertThat(ErrorCode.RATE_LIMITED.getHttpStatus()).isEqualTo(429); // GH-90000
     }
 
     @Test
-    @DisplayName("TIMEOUT has HTTP 504 [GH-90000]")
+    @DisplayName("TIMEOUT has HTTP 504")
     void timeout_is504() { // GH-90000
         assertThat(ErrorCode.TIMEOUT.getHttpStatus()).isEqualTo(504); // GH-90000
     }
 
     @Test
-    @DisplayName("VALIDATION_ERROR has HTTP 422 [GH-90000]")
+    @DisplayName("VALIDATION_ERROR has HTTP 422")
     void validationError_is422() { // GH-90000
         assertThat(ErrorCode.VALIDATION_ERROR.getHttpStatus()).isEqualTo(422); // GH-90000
     }
 
     @Test
-    @DisplayName("UNKNOWN_ERROR has HTTP 500 [GH-90000]")
+    @DisplayName("UNKNOWN_ERROR has HTTP 500")
     void unknownError_is500() { // GH-90000
         assertThat(ErrorCode.UNKNOWN_ERROR.getHttpStatus()).isEqualTo(500); // GH-90000
     }
 
     @Test
-    @DisplayName("error code strings match prefix format [GH-90000]")
+    @DisplayName("error code strings match prefix format")
     void codes_followPrefixFormat() { // GH-90000
         for (ErrorCode code : ErrorCode.values()) { // GH-90000
             assertThat(code.getCode()) // GH-90000
                     .as("ErrorCode.%s code must match PREFIX-NNN format", code.name()) // GH-90000
-                    .matches("[A-Z]+-[A-Z0-9]+ [GH-90000]");
+                    .matches("[A-Z]+-[A-Z0-9]+");
         }
     }
 }

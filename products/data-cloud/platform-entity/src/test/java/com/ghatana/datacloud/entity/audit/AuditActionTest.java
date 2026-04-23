@@ -36,63 +36,63 @@ class AuditActionTest {
 
     @Test
     void collectionOperationsShouldExist() { // GH-90000
-        assertThat(AuditAction.CREATE_COLLECTION.getActionId()).isEqualTo("create_collection [GH-90000]");
-        assertThat(AuditAction.UPDATE_COLLECTION.getActionId()).isEqualTo("update_collection [GH-90000]");
-        assertThat(AuditAction.DELETE_COLLECTION.getActionId()).isEqualTo("delete_collection [GH-90000]");
+        assertThat(AuditAction.CREATE_COLLECTION.getActionId()).isEqualTo("create_collection");
+        assertThat(AuditAction.UPDATE_COLLECTION.getActionId()).isEqualTo("update_collection");
+        assertThat(AuditAction.DELETE_COLLECTION.getActionId()).isEqualTo("delete_collection");
     }
 
     @Test
     void entityOperationsShouldExist() { // GH-90000
-        assertThat(AuditAction.CREATE_ENTITY.getActionId()).isEqualTo("create_entity [GH-90000]");
-        assertThat(AuditAction.UPDATE_ENTITY.getActionId()).isEqualTo("update_entity [GH-90000]");
-        assertThat(AuditAction.DELETE_ENTITY.getActionId()).isEqualTo("delete_entity [GH-90000]");
+        assertThat(AuditAction.CREATE_ENTITY.getActionId()).isEqualTo("create_entity");
+        assertThat(AuditAction.UPDATE_ENTITY.getActionId()).isEqualTo("update_entity");
+        assertThat(AuditAction.DELETE_ENTITY.getActionId()).isEqualTo("delete_entity");
     }
 
     @Test
     void userOperationsShouldExist() { // GH-90000
-        assertThat(AuditAction.CREATE_USER.getActionId()).isEqualTo("create_user [GH-90000]");
-        assertThat(AuditAction.ROLE_ASSIGNED.getActionId()).isEqualTo("role_assigned [GH-90000]");
-        assertThat(AuditAction.ROLE_REVOKED.getActionId()).isEqualTo("role_revoked [GH-90000]");
+        assertThat(AuditAction.CREATE_USER.getActionId()).isEqualTo("create_user");
+        assertThat(AuditAction.ROLE_ASSIGNED.getActionId()).isEqualTo("role_assigned");
+        assertThat(AuditAction.ROLE_REVOKED.getActionId()).isEqualTo("role_revoked");
     }
 
     @Test
     void fromActionIdShouldReturnCorrectEnum() { // GH-90000
-        assertThat(AuditAction.fromActionId("create_entity [GH-90000]")).isEqualTo(AuditAction.CREATE_ENTITY);
-        assertThat(AuditAction.fromActionId("update_entity [GH-90000]")).isEqualTo(AuditAction.UPDATE_ENTITY);
-        assertThat(AuditAction.fromActionId("delete_entity [GH-90000]")).isEqualTo(AuditAction.DELETE_ENTITY);
+        assertThat(AuditAction.fromActionId("create_entity")).isEqualTo(AuditAction.CREATE_ENTITY);
+        assertThat(AuditAction.fromActionId("update_entity")).isEqualTo(AuditAction.UPDATE_ENTITY);
+        assertThat(AuditAction.fromActionId("delete_entity")).isEqualTo(AuditAction.DELETE_ENTITY);
     }
 
     @Test
     void fromActionIdShouldBeCaseInsensitive() { // GH-90000
-        assertThat(AuditAction.fromActionId("CREATE_ENTITY [GH-90000]")).isEqualTo(AuditAction.CREATE_ENTITY);
-        assertThat(AuditAction.fromActionId("Create_Entity [GH-90000]")).isEqualTo(AuditAction.CREATE_ENTITY);
-        assertThat(AuditAction.fromActionId("create_ENTITY [GH-90000]")).isEqualTo(AuditAction.CREATE_ENTITY);
+        assertThat(AuditAction.fromActionId("CREATE_ENTITY")).isEqualTo(AuditAction.CREATE_ENTITY);
+        assertThat(AuditAction.fromActionId("Create_Entity")).isEqualTo(AuditAction.CREATE_ENTITY);
+        assertThat(AuditAction.fromActionId("create_ENTITY")).isEqualTo(AuditAction.CREATE_ENTITY);
     }
 
     @Test
     void fromActionIdShouldThrowForNull() { // GH-90000
         assertThatThrownBy(() -> AuditAction.fromActionId(null)) // GH-90000
             .isInstanceOf(NullPointerException.class) // GH-90000
-            .hasMessageContaining("actionId cannot be null [GH-90000]");
+            .hasMessageContaining("actionId cannot be null");
     }
 
     @Test
     void fromActionIdShouldThrowForUnknownAction() { // GH-90000
-        assertThatThrownBy(() -> AuditAction.fromActionId("unknown_action [GH-90000]"))
+        assertThatThrownBy(() -> AuditAction.fromActionId("unknown_action"))
             .isInstanceOf(IllegalArgumentException.class) // GH-90000
-            .hasMessageContaining("Unknown action ID [GH-90000]");
+            .hasMessageContaining("Unknown action ID");
     }
 
     @Test
     void descriptionsShouldBeMeaningful() { // GH-90000
-        assertThat(AuditAction.CREATE_ENTITY.getDescription()).contains("created [GH-90000]");
-        assertThat(AuditAction.UPDATE_ENTITY.getDescription()).contains("updated [GH-90000]");
-        assertThat(AuditAction.DELETE_ENTITY.getDescription()).contains("deleted [GH-90000]");
+        assertThat(AuditAction.CREATE_ENTITY.getDescription()).contains("created");
+        assertThat(AuditAction.UPDATE_ENTITY.getDescription()).contains("updated");
+        assertThat(AuditAction.DELETE_ENTITY.getDescription()).contains("deleted");
     }
 
     @Test
     void valueOfShouldReturnCorrectEnum() { // GH-90000
-        assertThat(AuditAction.valueOf("CREATE_ENTITY [GH-90000]")).isEqualTo(AuditAction.CREATE_ENTITY);
-        assertThat(AuditAction.valueOf("ACCESS_DENIED [GH-90000]")).isEqualTo(AuditAction.ACCESS_DENIED);
+        assertThat(AuditAction.valueOf("CREATE_ENTITY")).isEqualTo(AuditAction.CREATE_ENTITY);
+        assertThat(AuditAction.valueOf("ACCESS_DENIED")).isEqualTo(AuditAction.ACCESS_DENIED);
     }
 }

@@ -39,8 +39,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@Tag("load [GH-90000]")
-@DisplayName("AEP load simulation [GH-90000]")
+@Tag("load")
+@DisplayName("AEP load simulation")
 class AepLoadSimulationTest extends EventloopTestBase {
 
     /** Number of events processed per tenant in a single load run. */
@@ -64,7 +64,7 @@ class AepLoadSimulationTest extends EventloopTestBase {
     // ─── AEP-003.1: high-volume single tenant ─────────────────────────────────
 
     @Test
-    @DisplayName("processes 1 000 events for a single tenant without errors [GH-90000]")
+    @DisplayName("processes 1 000 events for a single tenant without errors")
     void singleTenantHighVolume_allEventsProcessed() { // GH-90000
         AtomicInteger errorCount = new AtomicInteger(); // GH-90000
         engine = Aep.forTesting(); // GH-90000
@@ -95,14 +95,14 @@ class AepLoadSimulationTest extends EventloopTestBase {
 
         assertThat(results).hasSize(EVENTS_PER_TENANT); // GH-90000
         assertThat(errorCount.get()) // GH-90000
-                .as("no processing errors expected [GH-90000]")
+                .as("no processing errors expected")
                 .isZero(); // GH-90000
     }
 
     // ─── AEP-003.1: multi-tenant isolation ────────────────────────────────────
 
     @Test
-    @DisplayName("maintains isolation under 10 concurrent tenants × 100 events each [GH-90000]")
+    @DisplayName("maintains isolation under 10 concurrent tenants × 100 events each")
     void multiTenantIsolation_noDataLeakage() { // GH-90000
         engine = Aep.forTesting(); // GH-90000
 
@@ -155,7 +155,7 @@ class AepLoadSimulationTest extends EventloopTestBase {
     // ─── AEP-003.4: performance regression baseline ───────────────────────────
 
     @Test
-    @DisplayName("processes 500 events in under 5 seconds (baseline regression guard) [GH-90000]")
+    @DisplayName("processes 500 events in under 5 seconds (baseline regression guard)")
     void throughputBaseline_500EventsUnder5Seconds() { // GH-90000
         int eventCount = 500;
         engine = Aep.forTesting(); // GH-90000
@@ -177,14 +177,14 @@ class AepLoadSimulationTest extends EventloopTestBase {
         long elapsedMs = System.currentTimeMillis() - start; // GH-90000
 
         assertThat(elapsedMs) // GH-90000
-                .as("500 events should complete within 5 seconds in the event loop [GH-90000]")
+                .as("500 events should complete within 5 seconds in the event loop")
                 .isLessThan(5_000L); // GH-90000
     }
 
     // ─── AEP-003.1: idempotency under load ────────────────────────────────────
 
     @Test
-    @DisplayName("idempotency holds under repeated events with same idempotency key [GH-90000]")
+    @DisplayName("idempotency holds under repeated events with same idempotency key")
     void idempotencyUnderLoad_noDuplicateErrors() { // GH-90000
         engine = Aep.forTesting(); // GH-90000
 

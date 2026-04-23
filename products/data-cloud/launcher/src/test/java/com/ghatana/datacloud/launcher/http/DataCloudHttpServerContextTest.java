@@ -27,7 +27,7 @@ import static org.mockito.Mockito.mock;
  * <p>Covers GET /api/v1/context, PUT /api/v1/context,
  * DELETE /api/v1/context/keys/:key, and GET /api/v1/context/snapshot.
  */
-@DisplayName("DataCloudHttpServer – context layer API (P3.1) [GH-90000]")
+@DisplayName("DataCloudHttpServer – context layer API (P3.1)")
 class DataCloudHttpServerContextTest {
 
     private static final String TEST_JWT_SECRET = "0123456789abcdef0123456789abcdef";
@@ -44,7 +44,7 @@ class DataCloudHttpServerContextTest {
         httpClient = HttpClient.newHttpClient(); // GH-90000
         port = findFreePort(); // GH-90000
         provider = JwtTokenProviders.fromSharedSecret(TEST_JWT_SECRET, 60_000L); // GH-90000
-        token = provider.createToken("test-user", List.of("viewer [GH-90000]"), Map.of("tenant_id", "tenant-ctx"));
+        token = provider.createToken("test-user", List.of("viewer"), Map.of("tenant_id", "tenant-ctx"));
 
         server = new DataCloudHttpServer(mock(DataCloudClient.class), port) // GH-90000
             .withJwtProvider(provider); // GH-90000
@@ -61,26 +61,26 @@ class DataCloudHttpServerContextTest {
     // ─── GET /api/v1/context ─────────────────────────────────────────────────
 
     @Test
-    @DisplayName("GET /api/v1/context returns empty entries for new tenant [GH-90000]")
-    @SuppressWarnings("unchecked [GH-90000]")
+    @DisplayName("GET /api/v1/context returns empty entries for new tenant")
+    @SuppressWarnings("unchecked")
     void getContextReturnsEmptyEntriesForNewTenant() throws Exception { // GH-90000
-        HttpResponse<String> response = get("/api/v1/context [GH-90000]");
+        HttpResponse<String> response = get("/api/v1/context");
 
         assertThat(response.statusCode()).isEqualTo(200); // GH-90000
         Map<String, Object> body = mapper.readValue(response.body(), Map.class); // GH-90000
-        Map<String, Object> entries = (Map<String, Object>) body.get("entries [GH-90000]");
+        Map<String, Object> entries = (Map<String, Object>) body.get("entries");
 
         assertThat(entries).isEmpty(); // GH-90000
         assertThat(body).containsEntry("count", 0); // GH-90000
-        assertThat(body).containsKey("version [GH-90000]");
-        assertThat(body).containsKey("tenantId [GH-90000]");
+        assertThat(body).containsKey("version");
+        assertThat(body).containsKey("tenantId");
     }
 
     // ─── PUT /api/v1/context ─────────────────────────────────────────────────
 
     @Test
-    @DisplayName("PUT /api/v1/context upserts entries and returns version 1 [GH-90000]")
-    @SuppressWarnings("unchecked [GH-90000]")
+    @DisplayName("PUT /api/v1/context upserts entries and returns version 1")
+    @SuppressWarnings("unchecked")
     void putContextUpsertsEntriesReturnsVersion() throws Exception { // GH-90000
         String body = mapper.writeValueAsString(Map.of("entries", Map.of("feature.dark-mode", true, "locale", "en-US"))); // GH-90000
 
@@ -89,12 +89,12 @@ class DataCloudHttpServerContextTest {
         assertThat(response.statusCode()).isEqualTo(200); // GH-90000
         Map<String, Object> resp = mapper.readValue(response.body(), Map.class); // GH-90000
         assertThat(resp).containsEntry("upserted", 2); // GH-90000
-        assertThat(((Number) resp.get("version [GH-90000]")).longValue()).isEqualTo(1L);
+        assertThat(((Number) resp.get("version")).longValue()).isEqualTo(1L);
     }
 
     @Test
-    @DisplayName("PUT /api/v1/context with flat body treats all keys as entries [GH-90000]")
-    @SuppressWarnings("unchecked [GH-90000]")
+    @DisplayName("PUT /api/v1/context with flat body treats all keys as entries")
+    @SuppressWarnings("unchecked")
     void putContextFlatBodyTreatsAllKeysAsEntries() throws Exception { // GH-90000
         String body = mapper.writeValueAsString(Map.of("key1", "value1", "key2", 42)); // GH-90000
 
@@ -106,7 +106,7 @@ class DataCloudHttpServerContextTest {
     }
 
     @Test
-    @DisplayName("PUT /api/v1/context with empty body returns 400 [GH-90000]")
+    @DisplayName("PUT /api/v1/context with empty body returns 400")
     void putContextWithEmptyBodyReturns400() throws Exception { // GH-90000
         HttpResponse<String> response = put("/api/v1/context", "{}"); // GH-90000
 
@@ -114,16 +114,16 @@ class DataCloudHttpServerContextTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/context reflects previously PUT entries [GH-90000]")
-    @SuppressWarnings("unchecked [GH-90000]")
+    @DisplayName("GET /api/v1/context reflects previously PUT entries")
+    @SuppressWarnings("unchecked")
     void getContextReflectsPreviouslyPutEntries() throws Exception { // GH-90000
         put("/api/v1/context", mapper.writeValueAsString(Map.of("entries", Map.of("theme", "dark")))); // GH-90000
 
-        HttpResponse<String> response = get("/api/v1/context [GH-90000]");
+        HttpResponse<String> response = get("/api/v1/context");
 
         assertThat(response.statusCode()).isEqualTo(200); // GH-90000
         Map<String, Object> body = mapper.readValue(response.body(), Map.class); // GH-90000
-        Map<String, Object> entries = (Map<String, Object>) body.get("entries [GH-90000]");
+        Map<String, Object> entries = (Map<String, Object>) body.get("entries");
 
         assertThat(entries).containsEntry("theme", "dark"); // GH-90000
         assertThat(body).containsEntry("count", 1); // GH-90000
@@ -132,62 +132,62 @@ class DataCloudHttpServerContextTest {
     // ─── DELETE /api/v1/context/keys/:key ────────────────────────────────────
 
     @Test
-    @DisplayName("DELETE /api/v1/context/keys/:key removes the key and returns 204 [GH-90000]")
+    @DisplayName("DELETE /api/v1/context/keys/:key removes the key and returns 204")
     void deleteContextKeyRemovesKeyReturns204() throws Exception { // GH-90000
         put("/api/v1/context", mapper.writeValueAsString(Map.of("entries", Map.of("toDelete", "yes")))); // GH-90000
 
-        HttpResponse<String> deleteResponse = delete("/api/v1/context/keys/toDelete [GH-90000]");
+        HttpResponse<String> deleteResponse = delete("/api/v1/context/keys/toDelete");
         assertThat(deleteResponse.statusCode()).isEqualTo(204); // GH-90000
 
-        HttpResponse<String> getResponse = get("/api/v1/context [GH-90000]");
-        @SuppressWarnings("unchecked [GH-90000]")
+        HttpResponse<String> getResponse = get("/api/v1/context");
+        @SuppressWarnings("unchecked")
         Map<String, Object> body = mapper.readValue(getResponse.body(), Map.class); // GH-90000
-        @SuppressWarnings("unchecked [GH-90000]")
-        Map<String, Object> entries = (Map<String, Object>) body.get("entries [GH-90000]");
-        assertThat(entries).doesNotContainKey("toDelete [GH-90000]");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> entries = (Map<String, Object>) body.get("entries");
+        assertThat(entries).doesNotContainKey("toDelete");
     }
 
     @Test
-    @DisplayName("DELETE /api/v1/context/keys/:key returns 404 for unknown key [GH-90000]")
+    @DisplayName("DELETE /api/v1/context/keys/:key returns 404 for unknown key")
     void deleteContextKeyReturns404ForUnknownKey() throws Exception { // GH-90000
-        HttpResponse<String> response = delete("/api/v1/context/keys/nonexistent [GH-90000]");
+        HttpResponse<String> response = delete("/api/v1/context/keys/nonexistent");
         assertThat(response.statusCode()).isEqualTo(404); // GH-90000
     }
 
     // ─── GET /api/v1/context/snapshot ────────────────────────────────────────
 
     @Test
-    @DisplayName("GET /api/v1/context/snapshot returns versioned snapshot with createdAt [GH-90000]")
-    @SuppressWarnings("unchecked [GH-90000]")
+    @DisplayName("GET /api/v1/context/snapshot returns versioned snapshot with createdAt")
+    @SuppressWarnings("unchecked")
     void getSnapshotReturnsVersionedSnapshot() throws Exception { // GH-90000
         put("/api/v1/context", mapper.writeValueAsString(Map.of("entries", Map.of("snapKey", "snapValue")))); // GH-90000
 
-        HttpResponse<String> response = get("/api/v1/context/snapshot [GH-90000]");
+        HttpResponse<String> response = get("/api/v1/context/snapshot");
 
         assertThat(response.statusCode()).isEqualTo(200); // GH-90000
         Map<String, Object> snapshot = mapper.readValue(response.body(), Map.class); // GH-90000
 
-        assertThat(snapshot).containsKey("tenantId [GH-90000]");
-        assertThat(snapshot).containsKey("version [GH-90000]");
-        assertThat(snapshot).containsKey("count [GH-90000]");
-        assertThat(snapshot).containsKey("createdAt [GH-90000]");
-        assertThat(snapshot).containsKey("snapshotAt [GH-90000]");
-        Map<String, Object> entries = (Map<String, Object>) snapshot.get("entries [GH-90000]");
+        assertThat(snapshot).containsKey("tenantId");
+        assertThat(snapshot).containsKey("version");
+        assertThat(snapshot).containsKey("count");
+        assertThat(snapshot).containsKey("createdAt");
+        assertThat(snapshot).containsKey("snapshotAt");
+        Map<String, Object> entries = (Map<String, Object>) snapshot.get("entries");
         assertThat(entries).containsEntry("snapKey", "snapValue"); // GH-90000
-        assertThat(((Number) snapshot.get("count [GH-90000]")).intValue()).isEqualTo(1);
+        assertThat(((Number) snapshot.get("count")).intValue()).isEqualTo(1);
     }
 
     @Test
-    @DisplayName("GET /api/v1/context/snapshot version increments with each PUT [GH-90000]")
+    @DisplayName("GET /api/v1/context/snapshot version increments with each PUT")
     void snapshotVersionIncrementsWithEachPut() throws Exception { // GH-90000
         put("/api/v1/context", mapper.writeValueAsString(Map.of("entries", Map.of("k1", "v1")))); // GH-90000
         put("/api/v1/context", mapper.writeValueAsString(Map.of("entries", Map.of("k2", "v2")))); // GH-90000
 
-        HttpResponse<String> response = get("/api/v1/context/snapshot [GH-90000]");
+        HttpResponse<String> response = get("/api/v1/context/snapshot");
         Map<?, ?> snapshot = mapper.readValue(response.body(), Map.class); // GH-90000
 
-        assertThat(((Number) snapshot.get("version [GH-90000]")).longValue()).isEqualTo(2L);
-        assertThat(((Number) snapshot.get("count [GH-90000]")).intValue()).isEqualTo(2);
+        assertThat(((Number) snapshot.get("version")).longValue()).isEqualTo(2L);
+        assertThat(((Number) snapshot.get("count")).intValue()).isEqualTo(2);
     }
 
     // ─── HTTP helpers ─────────────────────────────────────────────────────────

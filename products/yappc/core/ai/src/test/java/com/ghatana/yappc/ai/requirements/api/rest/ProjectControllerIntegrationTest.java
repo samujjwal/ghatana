@@ -28,8 +28,8 @@ import java.util.Set;
  * - Status transitions
  * - Authorization checks
  */
-@DisplayName("ProjectController Integration Tests [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("ProjectController Integration Tests")
+@Tag("integration")
 /**
  * @doc.type class
  * @doc.purpose Handles project controller integration test operations
@@ -56,20 +56,20 @@ class ProjectControllerIntegrationTest extends EventloopTestBase {
         objectMapper = new ObjectMapper(); // GH-90000
 
         testUser = User.builder() // GH-90000
-            .userId("user-123 [GH-90000]")
-            .email("test@example.com [GH-90000]")
-            .username("Test User [GH-90000]")
-            .roles(Set.of("USER [GH-90000]"))
+            .userId("user-123")
+            .email("test@example.com")
+            .username("Test User")
+            .roles(Set.of("USER"))
             .permissions(Set.of("PROJECT_CREATE", "PROJECT_READ")) // GH-90000
             .build(); // GH-90000
     }
 
     @Nested
-    @DisplayName("Project Creation [GH-90000]")
+    @DisplayName("Project Creation")
     class ProjectCreation {
 
         @Test
-        @DisplayName("Should create project in workspace [GH-90000]")
+        @DisplayName("Should create project in workspace")
         void shouldCreateProject() throws Exception { // GH-90000
             // Given
             CreateProjectRequest request = new CreateProjectRequest( // GH-90000
@@ -79,7 +79,7 @@ class ProjectControllerIntegrationTest extends EventloopTestBase {
                 "mobile-app"
             );
 
-            HttpRequest httpRequest = HttpRequest.post(url("/api/v1/projects [GH-90000]"))
+            HttpRequest httpRequest = HttpRequest.post(url("/api/v1/projects"))
                 .withBody(objectMapper.writeValueAsBytes(request)) // GH-90000
                 .build(); // GH-90000
             httpRequest.attach("userPrincipal", testUser); // GH-90000
@@ -96,7 +96,7 @@ class ProjectControllerIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should reject project creation with invalid workspace [GH-90000]")
+        @DisplayName("Should reject project creation with invalid workspace")
         void shouldRejectInvalidWorkspace() throws Exception { // GH-90000
             // Given
             CreateProjectRequest request = new CreateProjectRequest( // GH-90000
@@ -106,7 +106,7 @@ class ProjectControllerIntegrationTest extends EventloopTestBase {
                 "template"
             );
 
-            HttpRequest httpRequest = HttpRequest.post(url("/api/v1/projects [GH-90000]"))
+            HttpRequest httpRequest = HttpRequest.post(url("/api/v1/projects"))
                 .withBody(objectMapper.writeValueAsBytes(request)) // GH-90000
                 .build(); // GH-90000
             httpRequest.attach("userPrincipal", testUser); // GH-90000
@@ -117,11 +117,11 @@ class ProjectControllerIntegrationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Project Retrieval [GH-90000]")
+    @DisplayName("Project Retrieval")
     class ProjectRetrieval {
 
         @Test
-        @DisplayName("Should get project by ID [GH-90000]")
+        @DisplayName("Should get project by ID")
         void shouldGetProject() { // GH-90000
             // Given
             String projectId = "proj-123";
@@ -133,7 +133,7 @@ class ProjectControllerIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should list projects in workspace [GH-90000]")
+        @DisplayName("Should list projects in workspace")
         void shouldListProjects() { // GH-90000
             // Given
             String workspaceId = "ws-123";
@@ -146,11 +146,11 @@ class ProjectControllerIntegrationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Project Updates [GH-90000]")
+    @DisplayName("Project Updates")
     class ProjectUpdates {
 
         @Test
-        @DisplayName("Should update project details [GH-90000]")
+        @DisplayName("Should update project details")
         void shouldUpdateProject() throws Exception { // GH-90000
             // Given
             String projectId = "proj-123";
@@ -170,7 +170,7 @@ class ProjectControllerIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should transition project status [GH-90000]")
+        @DisplayName("Should transition project status")
         void shouldTransitionStatus() throws Exception { // GH-90000
             // Given
             String projectId = "proj-123";
@@ -191,11 +191,11 @@ class ProjectControllerIntegrationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Project Archival [GH-90000]")
+    @DisplayName("Project Archival")
     class ProjectArchival {
 
         @Test
-        @DisplayName("Should archive project [GH-90000]")
+        @DisplayName("Should archive project")
         void shouldArchiveProject() { // GH-90000
             // Given
             String projectId = "proj-123";
@@ -207,7 +207,7 @@ class ProjectControllerIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should prevent operations on archived project [GH-90000]")
+        @DisplayName("Should prevent operations on archived project")
         void shouldPreventOperationsOnArchived() { // GH-90000
             // Given - archived project
             String projectId = "archived-proj";

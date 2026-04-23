@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("KernelPersistence - Phase 3 Expansion [GH-90000]")
+@DisplayName("KernelPersistence - Phase 3 Expansion")
 class KernelPersistenceExpansionTest {
 
     private JdbcModuleRegistry registry;
@@ -39,8 +39,8 @@ class KernelPersistenceExpansionTest {
     void setUp() { // GH-90000
         JdbcDataSource dataSource = new JdbcDataSource(); // GH-90000
         dataSource.setURL("jdbc:h2:mem:registry_" + System.nanoTime() + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1"); // GH-90000
-        dataSource.setUser("sa [GH-90000]");
-        dataSource.setPassword("sa [GH-90000]");
+        dataSource.setUser("sa");
+        dataSource.setPassword("sa");
 
         registry = new JdbcModuleRegistry(dataSource); // GH-90000
         registry.ensureSchema(); // GH-90000
@@ -51,11 +51,11 @@ class KernelPersistenceExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Module Registration [GH-90000]")
+    @DisplayName("Module Registration")
     class RegistrationTests {
 
         @Test
-        @DisplayName("Register many modules [GH-90000]")
+        @DisplayName("Register many modules")
         void registerManyModules() { // GH-90000
             for (int i = 0; i < 100; i++) { // GH-90000
                 String moduleId = "platform:java:module-" + i;
@@ -67,7 +67,7 @@ class KernelPersistenceExpansionTest {
         }
 
         @Test
-        @DisplayName("Register and update modules [GH-90000]")
+        @DisplayName("Register and update modules")
         void registerAndUpdate() { // GH-90000
             String moduleId = "platform:java:kernel";
 
@@ -76,12 +76,12 @@ class KernelPersistenceExpansionTest {
             registry.registerModule(moduleId, "1.0.2", "HEALTHY"); // GH-90000
 
             JdbcModuleRegistry.ModuleRegistration reg = registry.getModule(moduleId).orElseThrow(); // GH-90000
-            assertThat(reg.moduleVersion()).isEqualTo("1.0.2 [GH-90000]");
-            assertThat(reg.moduleStatus()).isEqualTo("HEALTHY [GH-90000]");
+            assertThat(reg.moduleVersion()).isEqualTo("1.0.2");
+            assertThat(reg.moduleStatus()).isEqualTo("HEALTHY");
         }
 
         @Test
-        @DisplayName("Register with various statuses [GH-90000]")
+        @DisplayName("Register with various statuses")
         void variousStatuses() { // GH-90000
             String[] statuses = {"REGISTERED", "STARTED", "HEALTHY", "DEGRADED", "FAILED", "STOPPED"};
 
@@ -96,7 +96,7 @@ class KernelPersistenceExpansionTest {
         }
 
         @Test
-        @DisplayName("Register modules with semantic versioning [GH-90000]")
+        @DisplayName("Register modules with semantic versioning")
         void semanticVersioning() { // GH-90000
             String moduleId = "platform:java:core";
             String[] versions = {"0.1.0", "0.2.0", "1.0.0", "1.1.0", "2.0.0"};
@@ -106,7 +106,7 @@ class KernelPersistenceExpansionTest {
             }
 
             JdbcModuleRegistry.ModuleRegistration reg = registry.getModule(moduleId).orElseThrow(); // GH-90000
-            assertThat(reg.moduleVersion()).isEqualTo("2.0.0 [GH-90000]");
+            assertThat(reg.moduleVersion()).isEqualTo("2.0.0");
         }
     }
 
@@ -115,31 +115,31 @@ class KernelPersistenceExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Module Retrieval [GH-90000]")
+    @DisplayName("Module Retrieval")
     class RetrievalTests {
 
         @Test
-        @DisplayName("Fetch modules by ID [GH-90000]")
+        @DisplayName("Fetch modules by ID")
         void fetchById() { // GH-90000
             registry.registerModule("m1", "1.0", "REGISTERED"); // GH-90000
             registry.registerModule("m2", "1.1", "STARTED"); // GH-90000
             registry.registerModule("m3", "1.2", "HEALTHY"); // GH-90000
 
-            Optional<JdbcModuleRegistry.ModuleRegistration> m1 = registry.getModule("m1 [GH-90000]");
-            Optional<JdbcModuleRegistry.ModuleRegistration> m2 = registry.getModule("m2 [GH-90000]");
-            Optional<JdbcModuleRegistry.ModuleRegistration> m3 = registry.getModule("m3 [GH-90000]");
+            Optional<JdbcModuleRegistry.ModuleRegistration> m1 = registry.getModule("m1");
+            Optional<JdbcModuleRegistry.ModuleRegistration> m2 = registry.getModule("m2");
+            Optional<JdbcModuleRegistry.ModuleRegistration> m3 = registry.getModule("m3");
 
             assertThat(m1).isPresent(); // GH-90000
             assertThat(m2).isPresent(); // GH-90000
             assertThat(m3).isPresent(); // GH-90000
 
-            assertThat(m1.get().moduleStatus()).isEqualTo("REGISTERED [GH-90000]");
-            assertThat(m2.get().moduleStatus()).isEqualTo("STARTED [GH-90000]");
-            assertThat(m3.get().moduleStatus()).isEqualTo("HEALTHY [GH-90000]");
+            assertThat(m1.get().moduleStatus()).isEqualTo("REGISTERED");
+            assertThat(m2.get().moduleStatus()).isEqualTo("STARTED");
+            assertThat(m3.get().moduleStatus()).isEqualTo("HEALTHY");
         }
 
         @Test
-        @DisplayName("List all modules efficiently [GH-90000]")
+        @DisplayName("List all modules efficiently")
         void listAll() { // GH-90000
             for (int i = 0; i < 500; i++) { // GH-90000
                 final int idx = i;
@@ -151,11 +151,11 @@ class KernelPersistenceExpansionTest {
         }
 
         @Test
-        @DisplayName("Non-existent module returns empty [GH-90000]")
+        @DisplayName("Non-existent module returns empty")
         void nonExistentModule() { // GH-90000
             registry.registerModule("m1", "1.0", "REGISTERED"); // GH-90000
 
-            Optional<JdbcModuleRegistry.ModuleRegistration> nonExistent = registry.getModule("does-not-exist [GH-90000]");
+            Optional<JdbcModuleRegistry.ModuleRegistration> nonExistent = registry.getModule("does-not-exist");
             assertThat(nonExistent).isEmpty(); // GH-90000
         }
     }
@@ -165,27 +165,27 @@ class KernelPersistenceExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Module Removal [GH-90000]")
+    @DisplayName("Module Removal")
     class RemovalTests {
 
         @Test
-        @DisplayName("Remove registered modules [GH-90000]")
+        @DisplayName("Remove registered modules")
         void removeModules() { // GH-90000
             registry.registerModule("m1", "1.0", "REGISTERED"); // GH-90000
             registry.registerModule("m2", "1.1", "STARTED"); // GH-90000
             registry.registerModule("m3", "1.2", "HEALTHY"); // GH-90000
 
-            registry.removeModule("m2 [GH-90000]");
+            registry.removeModule("m2");
 
-            Optional<JdbcModuleRegistry.ModuleRegistration> m2 = registry.getModule("m2 [GH-90000]");
+            Optional<JdbcModuleRegistry.ModuleRegistration> m2 = registry.getModule("m2");
             assertThat(m2).isEmpty(); // GH-90000
 
-            Optional<JdbcModuleRegistry.ModuleRegistration> m1 = registry.getModule("m1 [GH-90000]");
+            Optional<JdbcModuleRegistry.ModuleRegistration> m1 = registry.getModule("m1");
             assertThat(m1).isPresent(); // GH-90000
         }
 
         @Test
-        @DisplayName("Remove many modules [GH-90000]")
+        @DisplayName("Remove many modules")
         void removeManyModules() { // GH-90000
             List<String> moduleIds = new ArrayList<>(); // GH-90000
             for (int i = 0; i < 100; i++) { // GH-90000
@@ -209,11 +209,11 @@ class KernelPersistenceExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Concurrent Operations [GH-90000]")
+    @DisplayName("Concurrent Operations")
     class ConcurrencyTests {
 
         @Test
-        @DisplayName("Concurrent module registration [GH-90000]")
+        @DisplayName("Concurrent module registration")
         void concurrentRegistration() throws Exception { // GH-90000
             int threadCount = 20;
             int modulesPerThread = 50;
@@ -245,7 +245,7 @@ class KernelPersistenceExpansionTest {
         }
 
         @Test
-        @DisplayName("Concurrent reads and writes [GH-90000]")
+        @DisplayName("Concurrent reads and writes")
         void concurrentReadsAndWrites() throws Exception { // GH-90000
             // Pre-populate
             for (int i = 0; i < 200; i++) { // GH-90000
@@ -297,7 +297,7 @@ class KernelPersistenceExpansionTest {
         }
 
         @Test
-        @DisplayName("Concurrent mixed operations (register, update, remove, list) [GH-90000]")
+        @DisplayName("Concurrent mixed operations (register, update, remove, list)")
         void concurrentMixedOperations() throws Exception { // GH-90000
             // Pre-populate
             for (int i = 0; i < 300; i++) { // GH-90000
@@ -355,11 +355,11 @@ class KernelPersistenceExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Edge Cases [GH-90000]")
+    @DisplayName("Edge Cases")
     class EdgeCaseTests {
 
         @Test
-        @DisplayName("Very long module IDs and versions [GH-90000]")
+        @DisplayName("Very long module IDs and versions")
         void veryLongNames() { // GH-90000
             String longModuleId = "platform:java:" + "a".repeat(200); // GH-90000
             String longVersion = "1." + "0".repeat(200); // GH-90000
@@ -370,7 +370,7 @@ class KernelPersistenceExpansionTest {
         }
 
         @Test
-        @DisplayName("High volume module registry with many versions [GH-90000]")
+        @DisplayName("High volume module registry with many versions")
         void highVolumeVersionTracking() { // GH-90000
             String baseModuleId = "platform:java:kernel";
 
@@ -380,7 +380,7 @@ class KernelPersistenceExpansionTest {
             }
 
             JdbcModuleRegistry.ModuleRegistration latest = registry.getModule(baseModuleId).orElseThrow(); // GH-90000
-            assertThat(latest.moduleVersion()).isEqualTo("1.99.0 [GH-90000]");
+            assertThat(latest.moduleVersion()).isEqualTo("1.99.0");
 
             List<JdbcModuleRegistry.ModuleRegistration> all = registry.listModules(); // GH-90000
             assertThat(all).hasSize(1);  // Only latest version stored per module // GH-90000

@@ -11,7 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Enhancement ProposeEnhancementsStep Tests [GH-90000]")
+@DisplayName("Enhancement ProposeEnhancementsStep Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles propose enhancements step test operations
@@ -32,13 +32,13 @@ class ProposeEnhancementsStepTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should return correct step ID [GH-90000]")
+  @DisplayName("Should return correct step ID")
   void shouldReturnCorrectStepId() { // GH-90000
-    assertThat(step.getStepId()).isEqualTo("enhancement.proposeenhancements [GH-90000]");
+    assertThat(step.getStepId()).isEqualTo("enhancement.proposeenhancements");
   }
 
   // @Test
-  // @DisplayName("Should propose enhancements from analyzed feedback [GH-90000]")
+  // @DisplayName("Should propose enhancements from analyzed feedback")
   // void shouldProposeEnhancements() { // GH-90000
   //   // GIVEN
   //   WorkflowContext context = WorkflowContext.forWorkflow("wf-123", "tenant-abc"); // GH-90000
@@ -54,7 +54,7 @@ class ProposeEnhancementsStepTest extends EventloopTestBase {
   //           "patterns",
   //           List.of("pattern1", "pattern2"), // GH-90000
   //           "insights",
-  //           List.of("insight1 [GH-90000]"));
+  //           List.of("insight1"));
   //
   //   when(dbClient.query(anyString(), any(), anyInt())) // GH-90000
   //       .thenReturn(Promise.of(List.of(mockAnalysis))); // GH-90000

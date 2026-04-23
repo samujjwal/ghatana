@@ -7,7 +7,11 @@ import java.util.List;
  * Represents a state in the NFA (Non-deterministic Finite Automaton).
  *
  * Day 26 Implementation: NFA state with pattern matching capabilities
- */
+  * @doc.type class
+ * @doc.purpose Provides nfastate functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 public class NFAState {
     private final String id;
     private final NFAStateType type;

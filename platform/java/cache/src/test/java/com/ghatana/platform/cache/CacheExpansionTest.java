@@ -37,7 +37,7 @@ import static org.mockito.Mockito.when;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("Cache - Phase 3 Expansion [GH-90000]")
+@DisplayName("Cache - Phase 3 Expansion")
 class CacheExpansionTest {
 
     @Mock
@@ -60,11 +60,11 @@ class CacheExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Cache Operations [GH-90000]")
+    @DisplayName("Cache Operations")
     class CacheOperationsTests {
 
         @Test
-        @DisplayName("Get many cache entries [GH-90000]")
+        @DisplayName("Get many cache entries")
         void getManyEntries() { // GH-90000
             for (int i = 0; i < 100; i++) { // GH-90000
                 final int idx = i;
@@ -80,7 +80,7 @@ class CacheExpansionTest {
         }
 
         @Test
-        @DisplayName("Put many cache entries [GH-90000]")
+        @DisplayName("Put many cache entries")
         void putManyEntries() { // GH-90000
             for (int i = 0; i < 100; i++) { // GH-90000
                 String key = "key-" + i;
@@ -95,13 +95,13 @@ class CacheExpansionTest {
         }
 
         @Test
-        @DisplayName("Cache hits and misses tracking [GH-90000]")
+        @DisplayName("Cache hits and misses tracking")
         void hitsAndMissesTracking() { // GH-90000
             String hitKey = "exists";
             String missKey = "missing";
 
-            when(backend.getValue("tenant:tenant-1:" + hitKey)).thenReturn("value [GH-90000]");
-            when(backend.deserialize("value", String.class)).thenReturn("value [GH-90000]");
+            when(backend.getValue("tenant:tenant-1:" + hitKey)).thenReturn("value");
+            when(backend.deserialize("value", String.class)).thenReturn("value");
             when(backend.getValue("tenant:tenant-1:" + missKey)).thenReturn(null); // GH-90000
 
             for (int i = 0; i < 50; i++) { // GH-90000
@@ -115,24 +115,24 @@ class CacheExpansionTest {
         }
 
         @Test
-        @DisplayName("Multi-tenant cache isolation [GH-90000]")
+        @DisplayName("Multi-tenant cache isolation")
         void multiTenantIsolation() { // GH-90000
             DistributedCacheService tenant1Cache = new DistributedCacheService(backend, "t1"); // GH-90000
             DistributedCacheService tenant2Cache = new DistributedCacheService(backend, "t2"); // GH-90000
 
             String sharedKey = "shared-key";
-            when(backend.getValue("tenant:t1:" + sharedKey)).thenReturn("t1-value [GH-90000]");
-            when(backend.getValue("tenant:t2:" + sharedKey)).thenReturn("t2-value [GH-90000]");
-            when(backend.deserialize("t1-value", String.class)).thenReturn("t1-value [GH-90000]");
-            when(backend.deserialize("t2-value", String.class)).thenReturn("t2-value [GH-90000]");
+            when(backend.getValue("tenant:t1:" + sharedKey)).thenReturn("t1-value");
+            when(backend.getValue("tenant:t2:" + sharedKey)).thenReturn("t2-value");
+            when(backend.deserialize("t1-value", String.class)).thenReturn("t1-value");
+            when(backend.deserialize("t2-value", String.class)).thenReturn("t2-value");
 
             Optional<String> t1Result = tenant1Cache.get(sharedKey, String.class); // GH-90000
             Optional<String> t2Result = tenant2Cache.get(sharedKey, String.class); // GH-90000
 
             assertThat(t1Result).isPresent(); // GH-90000
             assertThat(t2Result).isPresent(); // GH-90000
-            assertThat(t1Result.get()).isEqualTo("t1-value [GH-90000]");
-            assertThat(t2Result.get()).isEqualTo("t2-value [GH-90000]");
+            assertThat(t1Result.get()).isEqualTo("t1-value");
+            assertThat(t2Result.get()).isEqualTo("t2-value");
         }
     }
 
@@ -141,16 +141,16 @@ class CacheExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Cache Invalidation [GH-90000]")
+    @DisplayName("Cache Invalidation")
     class InvalidationTests {
 
         @Test
-        @DisplayName("Invalidate single cache entry [GH-90000]")
+        @DisplayName("Invalidate single cache entry")
         void invalidateSingle() { // GH-90000
             String key = "key-to-invalidate";
 
-            when(backend.getValue("tenant:tenant-1:" + key)).thenReturn("value [GH-90000]");
-            when(backend.deserialize("value", String.class)).thenReturn("value [GH-90000]");
+            when(backend.getValue("tenant:tenant-1:" + key)).thenReturn("value");
+            when(backend.deserialize("value", String.class)).thenReturn("value");
 
             Optional<String> before = cacheService.get(key, String.class); // GH-90000
             assertThat(before).isPresent(); // GH-90000
@@ -163,7 +163,7 @@ class CacheExpansionTest {
         }
 
         @Test
-        @DisplayName("Invalidate many cache entries [GH-90000]")
+        @DisplayName("Invalidate many cache entries")
         void invalidateMany() { // GH-90000
             List<String> keys = new ArrayList<>(); // GH-90000
             for (int i = 0; i < 100; i++) { // GH-90000
@@ -180,13 +180,13 @@ class CacheExpansionTest {
         }
 
         @Test
-        @DisplayName("Invalidate all cache entries [GH-90000]")
+        @DisplayName("Invalidate all cache entries")
         void invalidateAll() { // GH-90000
             for (int i = 0; i < 50; i++) { // GH-90000
                 cacheService.put("key-" + i, "value-" + i, 300); // GH-90000
             }
 
-            cacheService.invalidatePattern("* [GH-90000]");
+            cacheService.invalidatePattern("*");
 
             // Verify pattern invalidation was called
             org.mockito.Mockito.verify(backend, org.mockito.Mockito.atLeastOnce()) // GH-90000
@@ -199,11 +199,11 @@ class CacheExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Cache Performance [GH-90000]")
+    @DisplayName("Cache Performance")
     class PerformanceTests {
 
         @Test
-        @DisplayName("High-volume cache operations [GH-90000]")
+        @DisplayName("High-volume cache operations")
         void highVolume() { // GH-90000
             for (int i = 0; i < 1000; i++) { // GH-90000
                 final int idx = i;
@@ -212,7 +212,7 @@ class CacheExpansionTest {
                 when(backend.getValue("tenant:tenant-1:" + key)) // GH-90000
                         .thenReturn((idx % 2 == 0) ? "value" : null); // GH-90000
                 if (idx % 2 == 0) { // GH-90000
-                    when(backend.deserialize("value", String.class)).thenReturn("value [GH-90000]");
+                    when(backend.deserialize("value", String.class)).thenReturn("value");
                 }
 
                 Optional<String> result = cacheService.get(key, String.class); // GH-90000
@@ -221,7 +221,7 @@ class CacheExpansionTest {
         }
 
         @Test
-        @DisplayName("Cache with large values [GH-90000]")
+        @DisplayName("Cache with large values")
         void largeValues() { // GH-90000
             String largeValue = "x".repeat(100000); // GH-90000
 
@@ -239,7 +239,7 @@ class CacheExpansionTest {
         }
 
         @Test
-        @DisplayName("Many distinct cache keys [GH-90000]")
+        @DisplayName("Many distinct cache keys")
         void manyDistinctKeys() { // GH-90000
             for (int i = 0; i < 5000; i++) { // GH-90000
                 final int idx = i;
@@ -265,11 +265,11 @@ class CacheExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Concurrent Operations [GH-90000]")
+    @DisplayName("Concurrent Operations")
     class ConcurrencyTests {
 
         @Test
-        @DisplayName("Concurrent cache reads and writes [GH-90000]")
+        @DisplayName("Concurrent cache reads and writes")
         void concurrentReadsAndWrites() throws Exception { // GH-90000
             int threadCount = 25;
             int operationsPerThread = 100;
@@ -278,9 +278,9 @@ class CacheExpansionTest {
 
             ExecutorService exec = Executors.newFixedThreadPool(threadCount); // GH-90000
             try {
-                lenient().when(backend.getValue(anyString())).thenReturn("some-value [GH-90000]");
+                lenient().when(backend.getValue(anyString())).thenReturn("some-value");
                 lenient().when(backend.deserialize("some-value", String.class)) // GH-90000
-                        .thenReturn("some-value [GH-90000]");
+                        .thenReturn("some-value");
                 for (int t = 0; t < threadCount; t++) { // GH-90000
                     final int threadIdx = t;
                     exec.submit(() -> { // GH-90000
@@ -313,7 +313,7 @@ class CacheExpansionTest {
         }
 
         @Test
-        @DisplayName("Concurrent invalidation operations [GH-90000]")
+        @DisplayName("Concurrent invalidation operations")
         void concurrentInvalidation() throws Exception { // GH-90000
             // Pre-populate
             for (int i = 0; i < 300; i++) { // GH-90000
@@ -349,11 +349,11 @@ class CacheExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Edge Cases [GH-90000]")
+    @DisplayName("Edge Cases")
     class EdgeCaseTests {
 
         @Test
-        @DisplayName("Very long cache keys and values [GH-90000]")
+        @DisplayName("Very long cache keys and values")
         void veryLongKeysAndValues() { // GH-90000
             String longKey = "k".repeat(1000); // GH-90000
             String longValue = "v".repeat(100000); // GH-90000

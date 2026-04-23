@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer test
  * @doc.pattern Test
  */
-@DisplayName("MonitoredAspect Tests [GH-90000]")
+@DisplayName("MonitoredAspect Tests")
 class MonitoredAspectTest {
 
     private MeterRegistry meterRegistry;
@@ -34,20 +34,20 @@ class MonitoredAspectTest {
     }
 
     @Test
-    @DisplayName("Should create MonitoredAspect with meter registry [GH-90000]")
+    @DisplayName("Should create MonitoredAspect with meter registry")
     void shouldCreateMonitoredAspectWithMeterRegistry() { // GH-90000
         assertThat(monitoredAspect).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should initialize metric caches [GH-90000]")
+    @DisplayName("Should initialize metric caches")
     void shouldInitializeMetricCaches() { // GH-90000
         assertThat(monitoredAspect).isNotNull(); // GH-90000
         // Caches are private but aspect should be initialized without errors
     }
 
     @Test
-    @DisplayName("Should handle null meter registry gracefully [GH-90000]")
+    @DisplayName("Should handle null meter registry gracefully")
     void shouldHandleNullMeterRegistryGracefully() { // GH-90000
         // This test documents that meter registry is required
         // In production, this should be validated at construction
@@ -55,7 +55,7 @@ class MonitoredAspectTest {
     }
 
     @Test
-    @DisplayName("Monitored annotation should have default values [GH-90000]")
+    @DisplayName("Monitored annotation should have default values")
     void monitoredAnnotationShouldHaveDefaultValues() { // GH-90000
         Monitored monitored = TestClass.class.getAnnotation(Monitored.class); // GH-90000
         
@@ -69,20 +69,20 @@ class MonitoredAspectTest {
     }
 
     @Test
-    @DisplayName("Monitored annotation should accept custom values [GH-90000]")
+    @DisplayName("Monitored annotation should accept custom values")
     void monitoredAnnotationShouldAcceptCustomValues() { // GH-90000
         Monitored monitored = TestClassWithCustom.class.getAnnotation(Monitored.class); // GH-90000
         
         assertThat(monitored).isNotNull(); // GH-90000
-        assertThat(monitored.value()).isEqualTo("custom-metric [GH-90000]");
-        assertThat(monitored.description()).isEqualTo("Custom description [GH-90000]");
+        assertThat(monitored.value()).isEqualTo("custom-metric");
+        assertThat(monitored.description()).isEqualTo("Custom description");
         assertThat(monitored.recordTiming()).isFalse(); // GH-90000
         assertThat(monitored.recordCounters()).isFalse(); // GH-90000
         assertThat(monitored.tags()).isEqualTo(new String[]{"tenant:123", "region:us-west"}); // GH-90000
     }
 
     @Test
-    @DisplayName("Monitored annotation should support class-level annotation [GH-90000]")
+    @DisplayName("Monitored annotation should support class-level annotation")
     void monitoredAnnotationShouldSupportClassLevelAnnotation() { // GH-90000
         Monitored monitored = TestClassLevel.class.getAnnotation(Monitored.class); // GH-90000
         

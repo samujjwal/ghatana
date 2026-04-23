@@ -14,7 +14,8 @@ import java.util.Map;
  * @doc.type value-object
  * @doc.purpose Task checkpoint for resume capability
  * @doc.layer agent-memory
- */
+  * @doc.pattern Component
+*/
 @Value
 @Builder
 public class TaskCheckpoint {

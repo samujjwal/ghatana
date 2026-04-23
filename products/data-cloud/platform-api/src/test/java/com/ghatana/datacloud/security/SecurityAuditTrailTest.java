@@ -30,29 +30,29 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("SecurityAuditTrail – Audit Completeness (S008) [GH-90000]")
+@DisplayName("SecurityAuditTrail – Audit Completeness (S008)")
 class SecurityAuditTrailTest extends EventloopTestBase {
 
     @Mock
     private AuditLogService auditLogService;
 
     @Nested
-    @DisplayName("Event Coverage [GH-90000]")
+    @DisplayName("Event Coverage")
     class EventCoverageTests {
 
         @Test
-        @DisplayName("[S008]: access_events_logged [GH-90000]")
+        @DisplayName("[S008]: access_events_logged")
         void accessEventsLogged() { // GH-90000
             AuditLogService.AuditEvent event = AuditLogService.AuditEvent.builder() // GH-90000
-                .id("evt-001 [GH-90000]")
-                .tenantId("tenant-alpha [GH-90000]")
-                .userId("user-001 [GH-90000]")
+                .id("evt-001")
+                .tenantId("tenant-alpha")
+                .userId("user-001")
                 .type(AuditLogService.EventType.ACCESS) // GH-90000
-                .action("read-entity [GH-90000]")
-                .resource("Entity [GH-90000]")
-                .resourceId("entity-123 [GH-90000]")
+                .action("read-entity")
+                .resource("Entity")
+                .resourceId("entity-123")
                 .success(true) // GH-90000
-                .ipAddress("192.168.1.1 [GH-90000]")
+                .ipAddress("192.168.1.1")
                 .build(); // GH-90000
 
             when(auditLogService.log(any())) // GH-90000
@@ -66,7 +66,7 @@ class SecurityAuditTrailTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[S008]: modification_events_logged [GH-90000]")
+        @DisplayName("[S008]: modification_events_logged")
         void modificationEventsLogged() { // GH-90000
             List<AuditLogService.EventType> modificationTypes = List.of( // GH-90000
                 AuditLogService.EventType.CREATE,
@@ -78,7 +78,7 @@ class SecurityAuditTrailTest extends EventloopTestBase {
                 AuditLogService.AuditEvent event = AuditLogService.AuditEvent.builder() // GH-90000
                     .id("evt-" + type.name()) // GH-90000
                     .type(type) // GH-90000
-                    .tenantId("tenant-alpha [GH-90000]")
+                    .tenantId("tenant-alpha")
                     .build(); // GH-90000
 
                 when(auditLogService.log(event)) // GH-90000
@@ -91,17 +91,17 @@ class SecurityAuditTrailTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[S008]: login_logout_events_logged [GH-90000]")
+        @DisplayName("[S008]: login_logout_events_logged")
         void loginLogoutEventsLogged() { // GH-90000
             AuditLogService.AuditEvent login = AuditLogService.AuditEvent.builder() // GH-90000
                 .type(AuditLogService.EventType.LOGIN) // GH-90000
-                .userId("user-001 [GH-90000]")
+                .userId("user-001")
                 .success(true) // GH-90000
                 .build(); // GH-90000
 
             AuditLogService.AuditEvent logout = AuditLogService.AuditEvent.builder() // GH-90000
                 .type(AuditLogService.EventType.LOGOUT) // GH-90000
-                .userId("user-001 [GH-90000]")
+                .userId("user-001")
                 .success(true) // GH-90000
                 .build(); // GH-90000
 
@@ -115,12 +115,12 @@ class SecurityAuditTrailTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[S008]: policy_violations_logged [GH-90000]")
+        @DisplayName("[S008]: policy_violations_logged")
         void policyViolationsLogged() { // GH-90000
             AuditLogService.AuditEvent violation = AuditLogService.AuditEvent.builder() // GH-90000
                 .type(AuditLogService.EventType.POLICY_VIOLATION) // GH-90000
-                .userId("user-001 [GH-90000]")
-                .action("unauthorized-export [GH-90000]")
+                .userId("user-001")
+                .action("unauthorized-export")
                 .details(Map.of("policyId", "export-policy", "violation", "quota exceeded")) // GH-90000
                 .success(false) // GH-90000
                 .build(); // GH-90000
@@ -137,22 +137,22 @@ class SecurityAuditTrailTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Audit Completeness [GH-90000]")
+    @DisplayName("Audit Completeness")
     class AuditCompletenessTests {
 
         @Test
-        @DisplayName("[S008]: all_security_events_have_required_fields [GH-90000]")
+        @DisplayName("[S008]: all_security_events_have_required_fields")
         void allSecurityEventsHaveRequiredFields() { // GH-90000
             AuditLogService.AuditEvent event = AuditLogService.AuditEvent.builder() // GH-90000
-                .id("evt-001 [GH-90000]")
-                .tenantId("tenant-alpha [GH-90000]")
-                .userId("user-001 [GH-90000]")
+                .id("evt-001")
+                .tenantId("tenant-alpha")
+                .userId("user-001")
                 .type(AuditLogService.EventType.ACCESS) // GH-90000
-                .action("read [GH-90000]")
-                .resource("Entity [GH-90000]")
+                .action("read")
+                .resource("Entity")
                 .success(true) // GH-90000
-                .ipAddress("10.0.0.1 [GH-90000]")
-                .userAgent("Test/1.0 [GH-90000]")
+                .ipAddress("10.0.0.1")
+                .userAgent("Test/1.0")
                 .build(); // GH-90000
 
             // Verify all required fields present
@@ -165,13 +165,13 @@ class SecurityAuditTrailTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[S008]: failed_access_attempts_logged [GH-90000]")
+        @DisplayName("[S008]: failed_access_attempts_logged")
         void failedAccessAttemptsLogged() { // GH-90000
             AuditLogService.AuditEvent failed = AuditLogService.AuditEvent.builder() // GH-90000
                 .type(AuditLogService.EventType.ACCESS) // GH-90000
-                .userId("user-001 [GH-90000]")
-                .action("read [GH-90000]")
-                .resource("SecretData [GH-90000]")
+                .userId("user-001")
+                .action("read")
+                .resource("SecretData")
                 .success(false) // GH-90000
                 .details(Map.of("reason", "Insufficient permissions")) // GH-90000
                 .build(); // GH-90000
@@ -185,14 +185,14 @@ class SecurityAuditTrailTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[S008]: permission_changes_logged [GH-90000]")
+        @DisplayName("[S008]: permission_changes_logged")
         void permissionChangesLogged() { // GH-90000
             AuditLogService.AuditEvent permissionChange = AuditLogService.AuditEvent.builder() // GH-90000
                 .type(AuditLogService.EventType.CONFIG_CHANGE) // GH-90000
-                .userId("admin-001 [GH-90000]")
-                .action("grant-permission [GH-90000]")
-                .resource("Role [GH-90000]")
-                .resourceId("role-123 [GH-90000]")
+                .userId("admin-001")
+                .action("grant-permission")
+                .resource("Role")
+                .resourceId("role-123")
                 .details(Map.of( // GH-90000
                     "targetUser", "user-002",
                     "permission", "ENTITY_DELETE",
@@ -207,17 +207,17 @@ class SecurityAuditTrailTest extends EventloopTestBase {
             runPromise(() -> auditLogService.log(permissionChange)); // GH-90000
 
             verify(auditLogService).log(argThat(e -> // GH-90000
-                e.action().equals("grant-permission [GH-90000]")
+                e.action().equals("grant-permission")
             ));
         }
     }
 
     @Nested
-    @DisplayName("Audit Retention [GH-90000]")
+    @DisplayName("Audit Retention")
     class AuditRetentionTests {
 
         @Test
-        @DisplayName("[S008]: audit_logs_retained_per_policy [GH-90000]")
+        @DisplayName("[S008]: audit_logs_retained_per_policy")
         void auditLogsRetainedPerPolicy() { // GH-90000
             // Security audit logs typically have longer retention
             int securityAuditRetentionDays = 365;
@@ -227,7 +227,7 @@ class SecurityAuditTrailTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[S008]: audit_trail_complete_for_investigation [GH-90000]")
+        @DisplayName("[S008]: audit_trail_complete_for_investigation")
         void auditTrailCompleteForInvestigation() { // GH-90000
             // Simulate investigation query
             String userId = "user-001";
@@ -269,11 +269,11 @@ class SecurityAuditTrailTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Tamper Evidence [GH-90000]")
+    @DisplayName("Tamper Evidence")
     class TamperEvidenceTests {
 
         @Test
-        @DisplayName("[S008]: audit_log_integrity_verified [GH-90000]")
+        @DisplayName("[S008]: audit_log_integrity_verified")
         void auditLogIntegrityVerified() { // GH-90000
             // Simulate integrity check
             boolean integrityValid = verifyLogIntegrity(); // GH-90000
@@ -282,7 +282,7 @@ class SecurityAuditTrailTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[S008]: audit_logs_immutable [GH-90000]")
+        @DisplayName("[S008]: audit_logs_immutable")
         void auditLogsImmutable() { // GH-90000
             // Audit logs should not be modifiable after creation
             boolean canModify = false;

@@ -17,7 +17,8 @@ import java.util.stream.Collectors;
  *
  * Day 24 Implementation: Simple pipeline caching with ActiveJ Promise
  * integration
- */
+  * @doc.pattern Component
+*/
 public class PipelineCache {
 
     private final Duration ttl;

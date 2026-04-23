@@ -32,18 +32,18 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("PolicyEnforcement – Policy Validation (S001) [GH-90000]")
+@DisplayName("PolicyEnforcement – Policy Validation (S001)")
 class PolicyEnforcementTest extends EventloopTestBase {
 
     @Mock
     private PolicyService policyService;
 
     @Nested
-    @DisplayName("Policy Evaluation [GH-90000]")
+    @DisplayName("Policy Evaluation")
     class PolicyEvaluationTests {
 
         @Test
-        @DisplayName("[S001]: evaluate_returns_allowed_for_compliant_action [GH-90000]")
+        @DisplayName("[S001]: evaluate_returns_allowed_for_compliant_action")
         void evaluateReturnsAllowedForCompliantAction() { // GH-90000
             String policyId = "policy-001";
             PolicyService.PolicyContext context = new PolicyService.PolicyContext( // GH-90000
@@ -52,7 +52,7 @@ class PolicyEnforcementTest extends EventloopTestBase {
             );
 
             PolicyService.PolicyResult result = new PolicyService.PolicyResult( // GH-90000
-                policyId, true, List.of("rule-1 [GH-90000]"), List.of(), Map.of()
+                policyId, true, List.of("rule-1"), List.of(), Map.of()
             );
 
             when(policyService.evaluate(policyId, context)) // GH-90000
@@ -65,7 +65,7 @@ class PolicyEnforcementTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[S001]: evaluate_returns_denied_for_violation [GH-90000]")
+        @DisplayName("[S001]: evaluate_returns_denied_for_violation")
         void evaluateReturnsDeniedForViolation() { // GH-90000
             String policyId = "data-retention-policy";
             PolicyService.PolicyContext context = new PolicyService.PolicyContext( // GH-90000
@@ -74,7 +74,7 @@ class PolicyEnforcementTest extends EventloopTestBase {
             );
 
             PolicyService.PolicyResult result = new PolicyService.PolicyResult( // GH-90000
-                policyId, false, List.of(), List.of("retention-rule [GH-90000]"),
+                policyId, false, List.of(), List.of("retention-rule"),
                 Map.of("reason", "Cannot delete within retention period") // GH-90000
             );
 
@@ -84,16 +84,16 @@ class PolicyEnforcementTest extends EventloopTestBase {
             PolicyService.PolicyResult eval = runPromise(() -> policyService.evaluate(policyId, context)); // GH-90000
 
             assertThat(eval.isAllowed()).isFalse(); // GH-90000
-            assertThat(eval.violatedRules()).contains("retention-rule [GH-90000]");
+            assertThat(eval.violatedRules()).contains("retention-rule");
         }
     }
 
     @Nested
-    @DisplayName("Action Validation [GH-90000]")
+    @DisplayName("Action Validation")
     class ActionValidationTests {
 
         @Test
-        @DisplayName("[S001]: validate_action_checks_all_policies [GH-90000]")
+        @DisplayName("[S001]: validate_action_checks_all_policies")
         void validateActionChecksAllPolicies() { // GH-90000
             String action = "export-data";
             PolicyService.PolicyContext context = new PolicyService.PolicyContext( // GH-90000
@@ -104,9 +104,9 @@ class PolicyEnforcementTest extends EventloopTestBase {
             PolicyService.ValidationResult result = new PolicyService.ValidationResult( // GH-90000
                 false,
                 List.of( // GH-90000
-                    new PolicyService.PolicyResult("p1", false, List.of(), List.of("export-limit [GH-90000]"), Map.of())
+                    new PolicyService.PolicyResult("p1", false, List.of(), List.of("export-limit"), Map.of())
                 ),
-                List.of("Export quota exceeded [GH-90000]"),
+                List.of("Export quota exceeded"),
                 List.of() // GH-90000
             );
 
@@ -118,11 +118,11 @@ class PolicyEnforcementTest extends EventloopTestBase {
             );
 
             assertThat(validation.valid()).isFalse(); // GH-90000
-            assertThat(validation.errors()).contains("Export quota exceeded [GH-90000]");
+            assertThat(validation.errors()).contains("Export quota exceeded");
         }
 
         @Test
-        @DisplayName("[S001]: validate_action_returns_valid_when_all_policies_pass [GH-90000]")
+        @DisplayName("[S001]: validate_action_returns_valid_when_all_policies_pass")
         void validateActionReturnsValidWhenAllPoliciesPass() { // GH-90000
             String action = "read-entity";
             PolicyService.PolicyContext context = new PolicyService.PolicyContext( // GH-90000
@@ -133,8 +133,8 @@ class PolicyEnforcementTest extends EventloopTestBase {
             PolicyService.ValidationResult result = new PolicyService.ValidationResult( // GH-90000
                 true,
                 List.of( // GH-90000
-                    new PolicyService.PolicyResult("p1", true, List.of("rule-1 [GH-90000]"), List.of(), Map.of()),
-                    new PolicyService.PolicyResult("p2", true, List.of("rule-2 [GH-90000]"), List.of(), Map.of())
+                    new PolicyService.PolicyResult("p1", true, List.of("rule-1"), List.of(), Map.of()),
+                    new PolicyService.PolicyResult("p2", true, List.of("rule-2"), List.of(), Map.of())
                 ),
                 List.of(), // GH-90000
                 List.of() // GH-90000
@@ -153,11 +153,11 @@ class PolicyEnforcementTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Policy Management [GH-90000]")
+    @DisplayName("Policy Management")
     class PolicyManagementTests {
 
         @Test
-        @DisplayName("[S001]: save_policy_creates_policy [GH-90000]")
+        @DisplayName("[S001]: save_policy_creates_policy")
         void savePolicyCreatesPolicy() { // GH-90000
             PolicyService.Policy policy = new PolicyService.Policy( // GH-90000
                 "new-policy", "Data Retention", "Retain data for 90 days",
@@ -170,12 +170,12 @@ class PolicyEnforcementTest extends EventloopTestBase {
 
             PolicyService.Policy result = runPromise(() -> policyService.savePolicy(policy)); // GH-90000
 
-            assertThat(result.id()).isEqualTo("new-policy [GH-90000]");
+            assertThat(result.id()).isEqualTo("new-policy");
             assertThat(result.enabled()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("[S001]: get_policy_returns_existing [GH-90000]")
+        @DisplayName("[S001]: get_policy_returns_existing")
         void getPolicyReturnsExisting() { // GH-90000
             String policyId = "existing-policy";
             PolicyService.Policy policy = new PolicyService.Policy( // GH-90000
@@ -194,7 +194,7 @@ class PolicyEnforcementTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[S001]: list_policies_filters_by_type [GH-90000]")
+        @DisplayName("[S001]: list_policies_filters_by_type")
         void listPoliciesFiltersByType() { // GH-90000
             String tenantId = "tenant-alpha";
             PolicyService.PolicyType type = PolicyService.PolicyType.DATA_RETENTION;
@@ -215,11 +215,11 @@ class PolicyEnforcementTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Policy Rules [GH-90000]")
+    @DisplayName("Policy Rules")
     class PolicyRulesTests {
 
         @Test
-        @DisplayName("[S001]: rule_with_allow_effect_permits_action [GH-90000]")
+        @DisplayName("[S001]: rule_with_allow_effect_permits_action")
         void ruleWithAllowEffectPermitsAction() { // GH-90000
             PolicyService.Rule rule = new PolicyService.Rule( // GH-90000
                 "allow-read",
@@ -233,7 +233,7 @@ class PolicyEnforcementTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[S001]: rule_with_deny_effect_blocks_action [GH-90000]")
+        @DisplayName("[S001]: rule_with_deny_effect_blocks_action")
         void ruleWithDenyEffectBlocksAction() { // GH-90000
             PolicyService.Rule rule = new PolicyService.Rule( // GH-90000
                 "deny-delete",
@@ -247,11 +247,11 @@ class PolicyEnforcementTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Violations [GH-90000]")
+    @DisplayName("Violations")
     class ViolationsTests {
 
         @Test
-        @DisplayName("[S001]: get_violations_returns_policy_breaches [GH-90000]")
+        @DisplayName("[S001]: get_violations_returns_policy_breaches")
         void getViolationsReturnsPolicyBreaches() { // GH-90000
             String tenantId = "tenant-alpha";
             Instant since = Instant.now().minus(Duration.ofDays(7)); // GH-90000

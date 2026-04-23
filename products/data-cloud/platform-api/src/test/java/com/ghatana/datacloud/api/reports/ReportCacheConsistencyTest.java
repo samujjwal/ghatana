@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("Report Cache Consistency Tests [GH-90000]")
+@DisplayName("Report Cache Consistency Tests")
 class ReportCacheConsistencyTest extends EventloopTestBase {
 
     // ── Cache model ───────────────────────────────────────────────────────────
@@ -48,19 +48,19 @@ class ReportCacheConsistencyTest extends EventloopTestBase {
     // ── Cache hit ─────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("cache returns stored entry on second request without calling backend [GH-90000]")
+    @DisplayName("cache returns stored entry on second request without calling backend")
     void cacheReturnsCachedEntryOnHit() { // GH-90000
         CacheKey key = new CacheKey("EVENT_TREND", "tenant-cache", "window-2026-03"); // GH-90000
         String firstResult = fetchWithCache(key, "report-data-v1"); // GH-90000
         String secondResult = fetchWithCache(key, "report-data-v2"); // different "backend" data // GH-90000
 
         // Second call must hit the cache and return the first result
-        assertThat(secondResult).isEqualTo("report-data-v1 [GH-90000]");
+        assertThat(secondResult).isEqualTo("report-data-v1");
         assertThat(backendCallCount.get()).isEqualTo(1); // GH-90000
     }
 
     @Test
-    @DisplayName("cache tracks hit count correctly [GH-90000]")
+    @DisplayName("cache tracks hit count correctly")
     void cacheTracksHitCount() { // GH-90000
         CacheKey key = new CacheKey("MODEL_PERF", "tenant-x", "w1"); // GH-90000
         fetchWithCache(key, "data-a"); // GH-90000
@@ -74,7 +74,7 @@ class ReportCacheConsistencyTest extends EventloopTestBase {
     // ── Cache miss ────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("cache miss occurs for a key not yet stored [GH-90000]")
+    @DisplayName("cache miss occurs for a key not yet stored")
     void cacheMissOnFirstRequest() { // GH-90000
         CacheKey key = new CacheKey("COLLECTION_SUMMARY", "tenant-miss", "w-new"); // GH-90000
         fetchWithCache(key, "miss-data"); // GH-90000
@@ -84,7 +84,7 @@ class ReportCacheConsistencyTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("different cache keys produce independent entries [GH-90000]")
+    @DisplayName("different cache keys produce independent entries")
     void differentKeysProduceIndependentEntries() { // GH-90000
         CacheKey key1 = new CacheKey("PIPELINE_HEALTH", "tenant-A", "w1"); // GH-90000
         CacheKey key2 = new CacheKey("PIPELINE_HEALTH", "tenant-B", "w1"); // GH-90000
@@ -99,7 +99,7 @@ class ReportCacheConsistencyTest extends EventloopTestBase {
     // ── Cache invalidation ────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("invalidate removes the entry and forces a backend call on next request [GH-90000]")
+    @DisplayName("invalidate removes the entry and forces a backend call on next request")
     void invalidateRemovesEntryAndForcesNextBackendCall() { // GH-90000
         CacheKey key = new CacheKey("ANALYTICS", "tenant-inv", "w-inv"); // GH-90000
         fetchWithCache(key, "v1"); // GH-90000
@@ -112,7 +112,7 @@ class ReportCacheConsistencyTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("invalidating a non-existent key is a no-op [GH-90000]")
+    @DisplayName("invalidating a non-existent key is a no-op")
     void invalidatingNonExistentKeyIsNoOp() { // GH-90000
         CacheKey nonExistent = new CacheKey("MISSING", "tenant-ghost", "w-ghost"); // GH-90000
         cache.invalidate(nonExistent); // must not throw // GH-90000
@@ -120,7 +120,7 @@ class ReportCacheConsistencyTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("invalidateByTenant removes all cache entries for that tenant [GH-90000]")
+    @DisplayName("invalidateByTenant removes all cache entries for that tenant")
     void invalidateByTenantRemovesAllEntriesForTenant() { // GH-90000
         CacheKey k1 = new CacheKey("T1", "tenant-evict", "w1"); // GH-90000
         CacheKey k2 = new CacheKey("T2", "tenant-evict", "w2"); // GH-90000
@@ -130,7 +130,7 @@ class ReportCacheConsistencyTest extends EventloopTestBase {
         fetchWithCache(k2, "d2"); // GH-90000
         fetchWithCache(k3, "d3"); // GH-90000
 
-        cache.invalidateByTenant("tenant-evict [GH-90000]");
+        cache.invalidateByTenant("tenant-evict");
 
         assertThat(cache.contains(k1)).isFalse(); // GH-90000
         assertThat(cache.contains(k2)).isFalse(); // GH-90000
@@ -140,7 +140,7 @@ class ReportCacheConsistencyTest extends EventloopTestBase {
     // ── Cache refresh ─────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("stale entry is refreshed on next access [GH-90000]")
+    @DisplayName("stale entry is refreshed on next access")
     void staleEntriesAreRefreshedOnAccess() { // GH-90000
         // Expire TTL of 0 means everything is immediately stale
         ReportCache shortTtlCache = new ReportCache(Duration.ZERO); // GH-90000
@@ -161,7 +161,7 @@ class ReportCacheConsistencyTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("fresh entry within TTL is not refreshed [GH-90000]")
+    @DisplayName("fresh entry within TTL is not refreshed")
     void freshEntryWithinTtlIsNotRefreshed() { // GH-90000
         AtomicInteger callCount = new AtomicInteger(0); // GH-90000
         CacheKey key = new CacheKey("FRESH_TEST", "tenant-f", "w-f"); // GH-90000

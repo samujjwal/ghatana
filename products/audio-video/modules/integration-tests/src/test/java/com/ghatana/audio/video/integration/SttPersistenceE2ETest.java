@@ -27,7 +27,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer test
  * @doc.pattern E2E Test
  */
-@DisplayName("STT Persistence E2E Tests [GH-90000]")
+@DisplayName("STT Persistence E2E Tests")
 class SttPersistenceE2ETest extends EventloopTestBase {
 
     private static final String TENANT_ID = "test-tenant";
@@ -85,7 +85,7 @@ class SttPersistenceE2ETest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("GIVEN persistence-backed STT service WHEN initialized THEN gRPC client stub is available [GH-90000]")
+    @DisplayName("GIVEN persistence-backed STT service WHEN initialized THEN gRPC client stub is available")
     void testServiceInitializationWithPersistenceWiring() { // GH-90000
         // The test verifies integration wiring and server bootstrap in-process.
         assertThat(blockingStub).isNotNull(); // GH-90000
@@ -100,7 +100,7 @@ class SttPersistenceE2ETest extends EventloopTestBase {
         entity.setUserId(USER_ID); // GH-90000
         entity.setFileName(fileName); // GH-90000
         entity.setStoragePath("/storage/" + fileName); // GH-90000
-        entity.setFormat("wav [GH-90000]");
+        entity.setFormat("wav");
         entity.setStatus(AudioFileEntity.ProcessingStatus.COMPLETED); // GH-90000
         return entity;
     }
@@ -111,7 +111,7 @@ class SttPersistenceE2ETest extends EventloopTestBase {
         entity.setTenantId(TENANT_ID); // GH-90000
         entity.setAudioFileId(audioFileId); // GH-90000
         entity.setText(text); // GH-90000
-        entity.setLanguage("en [GH-90000]");
+        entity.setLanguage("en");
         entity.setConfidence(0.95f); // GH-90000
         entity.setStatus(TranscriptionEntity.TranscriptionStatus.COMPLETED); // GH-90000
         return entity;

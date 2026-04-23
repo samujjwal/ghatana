@@ -1,7 +1,7 @@
 /**
  * Co-Pilot Bubble Component
  *
- * AI-powered suggestions bubble that appears in the workflow builder.
+ * Assisted suggestions bubble that appears in the workflow builder.
  * Part of Journey 4: Co-Pilot Building and Journey 8: Workflow Builder
  *
  * @doc.type component
@@ -267,9 +267,8 @@ export function CoPilotBubble({
             {suggestions.map((_, index) => (
               <div
                 key={index}
-                className={`w-2 h-2 rounded-full transition-colors ${
-                  index === activeIndex ? 'bg-primary-500' : 'bg-gray-300'
-                }`}
+                className={`w-2 h-2 rounded-full transition-colors ${index === activeIndex ? 'bg-primary-500' : 'bg-gray-300'
+                  }`}
               />
             ))}
           </div>

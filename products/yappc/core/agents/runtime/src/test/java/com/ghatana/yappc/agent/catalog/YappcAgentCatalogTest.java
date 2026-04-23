@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("YappcAgentCatalog Tests [GH-90000]")
+@DisplayName("YappcAgentCatalog Tests")
 class YappcAgentCatalogTest {
 
   private YappcAgentCatalog catalog;
@@ -29,23 +29,23 @@ class YappcAgentCatalogTest {
   // ===== Identity Tests =====
 
   @Nested
-  @DisplayName("Catalog Identity [GH-90000]")
+  @DisplayName("Catalog Identity")
   class CatalogIdentity {
 
     @Test
-    @DisplayName("Should return correct catalog ID [GH-90000]")
+    @DisplayName("Should return correct catalog ID")
     void shouldReturnCatalogId() { // GH-90000
-      assertThat(catalog.getCatalogId()).isEqualTo("yappc [GH-90000]");
+      assertThat(catalog.getCatalogId()).isEqualTo("yappc");
     }
 
     @Test
-    @DisplayName("Should return correct display name [GH-90000]")
+    @DisplayName("Should return correct display name")
     void shouldReturnDisplayName() { // GH-90000
-      assertThat(catalog.getDisplayName()).isEqualTo("YAPPC Agent Catalog [GH-90000]");
+      assertThat(catalog.getDisplayName()).isEqualTo("YAPPC Agent Catalog");
     }
 
     @Test
-    @DisplayName("Should return priority 100 [GH-90000]")
+    @DisplayName("Should return priority 100")
     void shouldReturnPriority() { // GH-90000
       assertThat(catalog.priority()).isEqualTo(100); // GH-90000
     }
@@ -54,11 +54,11 @@ class YappcAgentCatalogTest {
   // ===== Graceful Fallback Tests =====
 
   @Nested
-  @DisplayName("Graceful Fallback [GH-90000]")
+  @DisplayName("Graceful Fallback")
   class GracefulFallback {
 
     @Test
-    @DisplayName("Should return empty definitions when catalog resource is missing [GH-90000]")
+    @DisplayName("Should return empty definitions when catalog resource is missing")
     void shouldReturnEmptyDefinitionsWhenMissing() { // GH-90000
       // In test classpath, the yappc-agent-catalog.yaml is likely not present
       // The catalog should gracefully return empty list
@@ -66,31 +66,31 @@ class YappcAgentCatalogTest {
     }
 
     @Test
-    @DisplayName("Should return empty for findById when catalog is unavailable [GH-90000]")
+    @DisplayName("Should return empty for findById when catalog is unavailable")
     void shouldReturnEmptyForFindById() { // GH-90000
-      assertThat(catalog.findById("nonexistent-agent [GH-90000]")).isEmpty();
+      assertThat(catalog.findById("nonexistent-agent")).isEmpty();
     }
 
     @Test
-    @DisplayName("Should return empty for findByCapability when catalog is unavailable [GH-90000]")
+    @DisplayName("Should return empty for findByCapability when catalog is unavailable")
     void shouldReturnEmptyForFindByCapability() { // GH-90000
-      assertThat(catalog.findByCapability("nonexistent-capability [GH-90000]")).isNotNull();
+      assertThat(catalog.findByCapability("nonexistent-capability")).isNotNull();
     }
 
     @Test
-    @DisplayName("Should return empty for findByLevel when catalog is unavailable [GH-90000]")
+    @DisplayName("Should return empty for findByLevel when catalog is unavailable")
     void shouldReturnEmptyForFindByLevel() { // GH-90000
-      assertThat(catalog.findByLevel("L1 [GH-90000]")).isNotNull();
+      assertThat(catalog.findByLevel("L1")).isNotNull();
     }
 
     @Test
-    @DisplayName("Should return empty for findByDomain when catalog is unavailable [GH-90000]")
+    @DisplayName("Should return empty for findByDomain when catalog is unavailable")
     void shouldReturnEmptyForFindByDomain() { // GH-90000
-      assertThat(catalog.findByDomain("sdlc [GH-90000]")).isNotNull();
+      assertThat(catalog.findByDomain("sdlc")).isNotNull();
     }
 
     @Test
-    @DisplayName("Should return empty capabilities set when catalog is unavailable [GH-90000]")
+    @DisplayName("Should return empty capabilities set when catalog is unavailable")
     void shouldReturnEmptyCapabilities() { // GH-90000
       assertThat(catalog.getAllCapabilities()).isNotNull(); // GH-90000
     }
@@ -99,11 +99,11 @@ class YappcAgentCatalogTest {
   // ===== Lazy Loading Tests =====
 
   @Nested
-  @DisplayName("Lazy Loading [GH-90000]")
+  @DisplayName("Lazy Loading")
   class LazyLoading {
 
     @Test
-    @DisplayName("Should load catalog lazily on first access [GH-90000]")
+    @DisplayName("Should load catalog lazily on first access")
     void shouldLoadLazily() { // GH-90000
       // First call triggers loading
       var defs1 = catalog.getDefinitions(); // GH-90000
@@ -114,11 +114,11 @@ class YappcAgentCatalogTest {
     }
 
     @Test
-    @DisplayName("Should be thread-safe for concurrent access [GH-90000]")
+    @DisplayName("Should be thread-safe for concurrent access")
     void shouldBeThreadSafe() throws InterruptedException { // GH-90000
       // Multiple threads accessing simultaneously should not throw
       Thread t1 = new Thread(() -> catalog.getDefinitions()); // GH-90000
-      Thread t2 = new Thread(() -> catalog.findById("test [GH-90000]"));
+      Thread t2 = new Thread(() -> catalog.findById("test"));
       Thread t3 = new Thread(() -> catalog.getAllCapabilities()); // GH-90000
 
       t1.start(); // GH-90000
@@ -137,19 +137,19 @@ class YappcAgentCatalogTest {
   // ===== Constant Tests =====
 
   @Nested
-  @DisplayName("Constants [GH-90000]")
+  @DisplayName("Constants")
   class Constants {
 
     @Test
-    @DisplayName("Should use expected catalog ID constant [GH-90000]")
+    @DisplayName("Should use expected catalog ID constant")
     void shouldUseExpectedCatalogId() { // GH-90000
-      assertThat(YappcAgentCatalog.CATALOG_ID).isEqualTo("yappc [GH-90000]");
+      assertThat(YappcAgentCatalog.CATALOG_ID).isEqualTo("yappc");
     }
 
     @Test
-    @DisplayName("Should use expected display name constant [GH-90000]")
+    @DisplayName("Should use expected display name constant")
     void shouldUseExpectedDisplayName() { // GH-90000
-      assertThat(YappcAgentCatalog.DISPLAY_NAME).isEqualTo("YAPPC Agent Catalog [GH-90000]");
+      assertThat(YappcAgentCatalog.DISPLAY_NAME).isEqualTo("YAPPC Agent Catalog");
     }
   }
 }

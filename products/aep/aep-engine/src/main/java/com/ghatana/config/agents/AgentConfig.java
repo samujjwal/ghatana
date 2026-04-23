@@ -4,6 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * @doc.type interface
+ * @doc.purpose Provides agent config functionality.
+ * @doc.layer product
+ * @doc.pattern Configuration
+ */
 public abstract class AgentConfig {
 
     private String name;

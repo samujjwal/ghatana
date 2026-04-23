@@ -27,7 +27,7 @@ import java.util.Objects;
  * MockQualityScorer scorer = new MockQualityScorer() // GH-90000
  *     .respondWith(QualityMetrics.uniform(85)) // GH-90000
  *     .forTenant("tenant-123", QualityMetrics.uniform(92)) // GH-90000
- *     .throwError(new RuntimeException("Scoring failed [GH-90000]"), "tenant-fail")
+ *     .throwError(new RuntimeException("Scoring failed"), "tenant-fail")
  *     .supportedDimensions("completeness", "consistency", "accuracy", "relevance"); // GH-90000
  *
  * // Use as QualityScorer in tests
@@ -153,8 +153,8 @@ public final class MockQualityScorer implements QualityScorer {
         if (tenantErrors.containsKey(tenantId)) { // GH-90000
             return Promise.ofException(tenantErrors.get(tenantId)); // GH-90000
         }
-        if (tenantErrors.containsKey("__ALL__ [GH-90000]")) {
-            return Promise.ofException(tenantErrors.get("__ALL__ [GH-90000]"));
+        if (tenantErrors.containsKey("__ALL__")) {
+            return Promise.ofException(tenantErrors.get("__ALL__"));
         }
 
         return Promise.of(getTenantMetrics(tenantId)); // GH-90000
@@ -166,15 +166,15 @@ public final class MockQualityScorer implements QualityScorer {
         Objects.requireNonNull(tenantId, "Tenant ID must not be null"); // GH-90000
         Objects.requireNonNull(entities, "Entities list must not be null"); // GH-90000
         if (entities.isEmpty()) { // GH-90000
-            throw new IllegalArgumentException("Entities list must not be empty [GH-90000]");
+            throw new IllegalArgumentException("Entities list must not be empty");
         }
 
         // Check for configured error
         if (tenantErrors.containsKey(tenantId)) { // GH-90000
             return Promise.ofException(tenantErrors.get(tenantId)); // GH-90000
         }
-        if (tenantErrors.containsKey("__ALL__ [GH-90000]")) {
-            return Promise.ofException(tenantErrors.get("__ALL__ [GH-90000]"));
+        if (tenantErrors.containsKey("__ALL__")) {
+            return Promise.ofException(tenantErrors.get("__ALL__"));
         }
 
         QualityMetrics metrics = getTenantMetrics(tenantId); // GH-90000
@@ -207,13 +207,13 @@ public final class MockQualityScorer implements QualityScorer {
                     + "% of fields");
         }
         if (metrics.getConsistency() < 80) { // GH-90000
-            builder.finding("Consistency issues detected in field formats [GH-90000]");
+            builder.finding("Consistency issues detected in field formats");
         }
         if (metrics.getAccuracy() < 80) { // GH-90000
-            builder.finding("Accuracy concerns: validation rules not fully met [GH-90000]");
+            builder.finding("Accuracy concerns: validation rules not fully met");
         }
         if (metrics.getRelevance() < 80) { // GH-90000
-            builder.finding("Relevance: content may not align with entity type [GH-90000]");
+            builder.finding("Relevance: content may not align with entity type");
         }
 
         // Add recommendations based on lowest dimension

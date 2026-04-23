@@ -18,11 +18,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test format validation, schema checking, and compatibility verification.
  */
-@DisplayName("Format Validation Tests [GH-90000]")
+@DisplayName("Format Validation Tests")
 class FormatValidationTest {
 
     @Test
-    @DisplayName("Should validate audio formats [GH-90000]")
+    @DisplayName("Should validate audio formats")
     void shouldValidateAudioFormats() { // GH-90000
         Set<String> audioFormats = Set.of("MP3", "AAC", "FLAC", "WAV", "OPUS"); // GH-90000
         String format = "MP3";
@@ -32,7 +32,7 @@ class FormatValidationTest {
     }
 
     @Test
-    @DisplayName("Should validate video formats [GH-90000]")
+    @DisplayName("Should validate video formats")
     void shouldValidateVideoFormats() { // GH-90000
         Set<String> videoFormats = Set.of("MP4", "MKV", "WEBM", "AVI"); // GH-90000
         String format = "MP4";
@@ -42,7 +42,7 @@ class FormatValidationTest {
     }
 
     @Test
-    @DisplayName("Should check format compatibility [GH-90000]")
+    @DisplayName("Should check format compatibility")
     void shouldCheckFormatCompatibility() { // GH-90000
         String sourceFormat = "WAV";
         String targetFormat = "MP3";
@@ -54,7 +54,7 @@ class FormatValidationTest {
     }
 
     @Test
-    @DisplayName("Should validate media containers [GH-90000]")
+    @DisplayName("Should validate media containers")
     void shouldValidateMediaContainers() { // GH-90000
         Set<String> containers = Set.of("MP4", "MKV", "WEBM"); // GH-90000
         String container = "MP4";
@@ -64,7 +64,7 @@ class FormatValidationTest {
     }
 
     @Test
-    @DisplayName("Should handle format conversion validation [GH-90000]")
+    @DisplayName("Should handle format conversion validation")
     void shouldHandleFormatConversionValidation() { // GH-90000
         String fromFormat = "WAV";
         String toFormat = "MP3";
@@ -76,7 +76,7 @@ class FormatValidationTest {
     }
 
     @Test
-    @DisplayName("Should handle invalid formats [GH-90000]")
+    @DisplayName("Should handle invalid formats")
     void shouldHandleInvalidFormats() { // GH-90000
         String invalidFormat = "INVALID_FORMAT";
         boolean valid = false;

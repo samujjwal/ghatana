@@ -42,7 +42,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataCloudAgentRolloutRepository [GH-90000]")
+@DisplayName("DataCloudAgentRolloutRepository")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class DataCloudAgentRolloutRepositoryTest extends EventloopTestBase {
 
@@ -70,8 +70,8 @@ class DataCloudAgentRolloutRepositoryTest extends EventloopTestBase {
                 AgentRolloutApprovalState.PENDING,
                 "dev@ghatana.ai", null, null, null,
                 false,
-                Instant.parse("2026-04-10T09:00:00Z [GH-90000]"), null,
-                Instant.parse("2026-04-11T09:00:00Z [GH-90000]"));
+                Instant.parse("2026-04-10T09:00:00Z"), null,
+                Instant.parse("2026-04-11T09:00:00Z"));
     }
 
     private Map<String, Object> toRolloutMap(AgentRolloutRecord r) { // GH-90000
@@ -96,11 +96,11 @@ class DataCloudAgentRolloutRepositoryTest extends EventloopTestBase {
     // ─────────────────── tests ───────────────────────────────────────────────
 
     @Nested
-    @DisplayName("save [GH-90000]")
+    @DisplayName("save")
     class Save {
 
         @Test
-        @DisplayName("delegates to DataCloudClient.createEntity [GH-90000]")
+        @DisplayName("delegates to DataCloudClient.createEntity")
         void delegatesToDataCloud() { // GH-90000
             AgentRolloutRecord r = pending("rollout-dc-1", "rel-100"); // GH-90000
             when(dataCloud.createEntity(eq(TENANT_ID), eq(DataCloudAgentRolloutRepository.COLLECTION), any())) // GH-90000
@@ -108,17 +108,17 @@ class DataCloudAgentRolloutRepositoryTest extends EventloopTestBase {
 
             AgentRolloutRecord saved = runPromise(() -> repo.save(r)); // GH-90000
 
-            assertThat(saved.rolloutId()).isEqualTo("rollout-dc-1 [GH-90000]");
+            assertThat(saved.rolloutId()).isEqualTo("rollout-dc-1");
             verify(dataCloud).createEntity(eq(TENANT_ID), eq(DataCloudAgentRolloutRepository.COLLECTION), any()); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("findById [GH-90000]")
+    @DisplayName("findById")
     class FindById {
 
         @Test
-        @DisplayName("returns present when DataCloud returns matching entity [GH-90000]")
+        @DisplayName("returns present when DataCloud returns matching entity")
         void returnsPresentWhenFound() { // GH-90000
             AgentRolloutRecord r = pending("rollout-dc-2", "rel-200"); // GH-90000
             Map<String, Object> dataMap = toRolloutMap(r); // GH-90000
@@ -127,30 +127,30 @@ class DataCloudAgentRolloutRepositoryTest extends EventloopTestBase {
             when(dataCloud.queryEntities(eq(TENANT_ID), eq(DataCloudAgentRolloutRepository.COLLECTION), any())) // GH-90000
                     .thenReturn(Promise.of(List.of(mockEntity))); // GH-90000
 
-            Optional<AgentRolloutRecord> found = runPromise(() -> repo.findById("rollout-dc-2 [GH-90000]"));
+            Optional<AgentRolloutRecord> found = runPromise(() -> repo.findById("rollout-dc-2"));
 
             assertThat(found).isPresent(); // GH-90000
-            assertThat(found.get().rolloutId()).isEqualTo("rollout-dc-2 [GH-90000]");
+            assertThat(found.get().rolloutId()).isEqualTo("rollout-dc-2");
             assertThat(found.get().approvalState()).isEqualTo(AgentRolloutApprovalState.PENDING); // GH-90000
         }
 
         @Test
-        @DisplayName("returns empty when DataCloud returns no entities [GH-90000]")
+        @DisplayName("returns empty when DataCloud returns no entities")
         void returnsEmptyWhenNotFound() { // GH-90000
             when(dataCloud.queryEntities(eq(TENANT_ID), eq(DataCloudAgentRolloutRepository.COLLECTION), any())) // GH-90000
                     .thenReturn(Promise.of(List.of())); // GH-90000
 
-            Optional<AgentRolloutRecord> found = runPromise(() -> repo.findById("no-such-rollout [GH-90000]"));
+            Optional<AgentRolloutRecord> found = runPromise(() -> repo.findById("no-such-rollout"));
             assertThat(found).isEmpty(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("findByReleaseId [GH-90000]")
+    @DisplayName("findByReleaseId")
     class FindByReleaseId {
 
         @Test
-        @DisplayName("returns list from DataCloud query [GH-90000]")
+        @DisplayName("returns list from DataCloud query")
         void returnsListFromDataCloud() { // GH-90000
             AgentRolloutRecord r = pending("rollout-dc-3", "rel-300"); // GH-90000
             EntityInterface e1 = mock(EntityInterface.class); // GH-90000
@@ -161,17 +161,17 @@ class DataCloudAgentRolloutRepositoryTest extends EventloopTestBase {
             when(dataCloud.queryEntities(eq(TENANT_ID), eq(DataCloudAgentRolloutRepository.COLLECTION), any())) // GH-90000
                     .thenReturn(Promise.of(List.of(e1, e2))); // GH-90000
 
-            List<AgentRolloutRecord> result = runPromise(() -> repo.findByReleaseId("rel-300 [GH-90000]"));
+            List<AgentRolloutRecord> result = runPromise(() -> repo.findByReleaseId("rel-300"));
             assertThat(result).hasSize(2); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("approve [GH-90000]")
+    @DisplayName("approve")
     class Approve {
 
         @Test
-        @DisplayName("saves APPROVED record after finding PENDING one [GH-90000]")
+        @DisplayName("saves APPROVED record after finding PENDING one")
         void approvesRollout() { // GH-90000
             AgentRolloutRecord r = pending("rollout-approve", "rel-400"); // GH-90000
             when(mockEntity.getData()).thenReturn(toRolloutMap(r)); // GH-90000
@@ -186,16 +186,16 @@ class DataCloudAgentRolloutRepositoryTest extends EventloopTestBase {
                     repo.approve("rollout-approve", "manager@ghatana.ai")); // GH-90000
 
             assertThat(approved.approvalState()).isEqualTo(AgentRolloutApprovalState.APPROVED); // GH-90000
-            assertThat(approved.approvedBy()).isEqualTo("manager@ghatana.ai [GH-90000]");
+            assertThat(approved.approvedBy()).isEqualTo("manager@ghatana.ai");
         }
     }
 
     @Nested
-    @DisplayName("reject [GH-90000]")
+    @DisplayName("reject")
     class Reject {
 
         @Test
-        @DisplayName("saves REJECTED record with reason [GH-90000]")
+        @DisplayName("saves REJECTED record with reason")
         void rejectsRollout() { // GH-90000
             AgentRolloutRecord r = pending("rollout-reject", "rel-500"); // GH-90000
             when(mockEntity.getData()).thenReturn(toRolloutMap(r)); // GH-90000
@@ -209,17 +209,17 @@ class DataCloudAgentRolloutRepositoryTest extends EventloopTestBase {
                     repo.reject("rollout-reject", "security@ghatana.ai", "Policy violation")); // GH-90000
 
             assertThat(rejected.approvalState()).isEqualTo(AgentRolloutApprovalState.REJECTED); // GH-90000
-            assertThat(rejected.rejectedBy()).isEqualTo("security@ghatana.ai [GH-90000]");
-            assertThat(rejected.rejectedReason()).isEqualTo("Policy violation [GH-90000]");
+            assertThat(rejected.rejectedBy()).isEqualTo("security@ghatana.ai");
+            assertThat(rejected.rejectedReason()).isEqualTo("Policy violation");
         }
     }
 
     @Nested
-    @DisplayName("rollback [GH-90000]")
+    @DisplayName("rollback")
     class Rollback {
 
         @Test
-        @DisplayName("saves ROLLED_BACK record from APPROVED state [GH-90000]")
+        @DisplayName("saves ROLLED_BACK record from APPROVED state")
         void rollsBackRollout() { // GH-90000
             AgentRolloutRecord approved = pending("rollout-rollback", "rel-600") // GH-90000
                     .withApproved("manager@ghatana.ai", Instant.now()); // GH-90000

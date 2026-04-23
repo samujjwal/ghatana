@@ -30,23 +30,23 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("Profile Switching Tests [GH-90000]")
+@DisplayName("Profile Switching Tests")
 class ProfileSwitchingTest extends EventloopTestBase {
 
     @Nested
-    @DisplayName("Profile Activation/Deactivation [GH-90000]")
+    @DisplayName("Profile Activation/Deactivation")
     class ActivationTests {
 
         @Test
-        @DisplayName("switch profile from active to inactive [GH-90000]")
+        @DisplayName("switch profile from active to inactive")
         void switchProfileToInactive() { // GH-90000
             InMemoryCollectionStorageProfileRepository repository = new InMemoryCollectionStorageProfileRepository(); // GH-90000
 
             CollectionStorageProfile activeProfile = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("products [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("products")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
                 .isActive(true) // GH-90000
                 .priorityOrder(1) // GH-90000
                 .build(); // GH-90000
@@ -75,15 +75,15 @@ class ProfileSwitchingTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("switch profile from inactive to active [GH-90000]")
+        @DisplayName("switch profile from inactive to active")
         void switchProfileToActive() { // GH-90000
             InMemoryCollectionStorageProfileRepository repository = new InMemoryCollectionStorageProfileRepository(); // GH-90000
 
             CollectionStorageProfile inactiveProfile = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("products [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("products")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
                 .isActive(false) // GH-90000
                 .priorityOrder(1) // GH-90000
                 .build(); // GH-90000
@@ -111,37 +111,37 @@ class ProfileSwitchingTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("inactive profile returns no available backends [GH-90000]")
+        @DisplayName("inactive profile returns no available backends")
         void inactiveProfileReturnsNoBackends() { // GH-90000
             CollectionStorageProfile profile = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("products [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
-                .fallbackBackendIds(List.of("postgres-secondary [GH-90000]"))
+                .tenantId("tenant-1")
+                .collectionName("products")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
+                .fallbackBackendIds(List.of("postgres-secondary"))
                 .isActive(false) // GH-90000
                 .build(); // GH-90000
 
             assertThat(profile.getAllAvailableBackends()).isEmpty(); // GH-90000
-            assertThat(profile.supportsBackend("postgres-primary [GH-90000]")).isFalse();
+            assertThat(profile.supportsBackend("postgres-primary")).isFalse();
         }
     }
 
     @Nested
-    @DisplayName("Primary Backend Switching [GH-90000]")
+    @DisplayName("Primary Backend Switching")
     class PrimaryBackendTests {
 
         @Test
-        @DisplayName("switch primary backend within profile [GH-90000]")
+        @DisplayName("switch primary backend within profile")
         void switchPrimaryBackend() { // GH-90000
             InMemoryCollectionStorageProfileRepository repository = new InMemoryCollectionStorageProfileRepository(); // GH-90000
 
             CollectionStorageProfile originalProfile = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("products [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
-                .fallbackBackendIds(List.of("postgres-secondary [GH-90000]"))
+                .tenantId("tenant-1")
+                .collectionName("products")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
+                .fallbackBackendIds(List.of("postgres-secondary"))
                 .isActive(true) // GH-90000
                 .build(); // GH-90000
 
@@ -153,8 +153,8 @@ class ProfileSwitchingTest extends EventloopTestBase {
                 .tenantId(originalProfile.getTenantId()) // GH-90000
                 .collectionName(originalProfile.getCollectionName()) // GH-90000
                 .storageProfileId(originalProfile.getStorageProfileId()) // GH-90000
-                .primaryBackendId("postgres-secondary [GH-90000]")
-                .fallbackBackendIds(List.of("postgres-primary [GH-90000]"))
+                .primaryBackendId("postgres-secondary")
+                .fallbackBackendIds(List.of("postgres-primary"))
                 .backendConfig(originalProfile.getBackendConfig()) // GH-90000
                 .isActive(originalProfile.getIsActive()) // GH-90000
                 .priorityOrder(originalProfile.getPriorityOrder()) // GH-90000
@@ -164,20 +164,20 @@ class ProfileSwitchingTest extends EventloopTestBase {
 
             CollectionStorageProfile saved = runPromise(() -> repository.save(switchedProfile)); // GH-90000
 
-            assertThat(saved.getPrimaryBackendId()).isEqualTo("postgres-secondary [GH-90000]");
-            assertThat(saved.getFallbackBackendIds()).containsExactly("postgres-primary [GH-90000]");
+            assertThat(saved.getPrimaryBackendId()).isEqualTo("postgres-secondary");
+            assertThat(saved.getFallbackBackendIds()).containsExactly("postgres-primary");
         }
 
         @Test
-        @DisplayName("switch to new primary backend without fallbacks [GH-90000]")
+        @DisplayName("switch to new primary backend without fallbacks")
         void switchToNewPrimaryWithoutFallbacks() { // GH-90000
             InMemoryCollectionStorageProfileRepository repository = new InMemoryCollectionStorageProfileRepository(); // GH-90000
 
             CollectionStorageProfile originalProfile = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("products [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("products")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
                 .isActive(true) // GH-90000
                 .build(); // GH-90000
 
@@ -188,7 +188,7 @@ class ProfileSwitchingTest extends EventloopTestBase {
                 .tenantId(originalProfile.getTenantId()) // GH-90000
                 .collectionName(originalProfile.getCollectionName()) // GH-90000
                 .storageProfileId(originalProfile.getStorageProfileId()) // GH-90000
-                .primaryBackendId("clickhouse-primary [GH-90000]")
+                .primaryBackendId("clickhouse-primary")
                 .fallbackBackendIds(List.of()) // GH-90000
                 .backendConfig(originalProfile.getBackendConfig()) // GH-90000
                 .isActive(originalProfile.getIsActive()) // GH-90000
@@ -199,25 +199,25 @@ class ProfileSwitchingTest extends EventloopTestBase {
 
             CollectionStorageProfile saved = runPromise(() -> repository.save(switchedProfile)); // GH-90000
 
-            assertThat(saved.getPrimaryBackendId()).isEqualTo("clickhouse-primary [GH-90000]");
+            assertThat(saved.getPrimaryBackendId()).isEqualTo("clickhouse-primary");
             assertThat(saved.getFallbackBackendIds()).isEmpty(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Fallback Backend Switching [GH-90000]")
+    @DisplayName("Fallback Backend Switching")
     class FallbackBackendTests {
 
         @Test
-        @DisplayName("add fallback backend to profile [GH-90000]")
+        @DisplayName("add fallback backend to profile")
         void addFallbackBackend() { // GH-90000
             InMemoryCollectionStorageProfileRepository repository = new InMemoryCollectionStorageProfileRepository(); // GH-90000
 
             CollectionStorageProfile originalProfile = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("products [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("products")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
                 .fallbackBackendIds(List.of()) // GH-90000
                 .isActive(true) // GH-90000
                 .build(); // GH-90000
@@ -245,15 +245,15 @@ class ProfileSwitchingTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("remove fallback backend from profile [GH-90000]")
+        @DisplayName("remove fallback backend from profile")
         void removeFallbackBackend() { // GH-90000
             InMemoryCollectionStorageProfileRepository repository = new InMemoryCollectionStorageProfileRepository(); // GH-90000
 
             CollectionStorageProfile originalProfile = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("products [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("products")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
                 .fallbackBackendIds(List.of("postgres-secondary", "opensearch-secondary")) // GH-90000
                 .isActive(true) // GH-90000
                 .build(); // GH-90000
@@ -266,7 +266,7 @@ class ProfileSwitchingTest extends EventloopTestBase {
                 .collectionName(originalProfile.getCollectionName()) // GH-90000
                 .storageProfileId(originalProfile.getStorageProfileId()) // GH-90000
                 .primaryBackendId(originalProfile.getPrimaryBackendId()) // GH-90000
-                .fallbackBackendIds(List.of("postgres-secondary [GH-90000]"))
+                .fallbackBackendIds(List.of("postgres-secondary"))
                 .backendConfig(originalProfile.getBackendConfig()) // GH-90000
                 .isActive(originalProfile.getIsActive()) // GH-90000
                 .priorityOrder(originalProfile.getPriorityOrder()) // GH-90000
@@ -277,19 +277,19 @@ class ProfileSwitchingTest extends EventloopTestBase {
             CollectionStorageProfile saved = runPromise(() -> repository.save(withoutFallback)); // GH-90000
 
             assertThat(saved.getFallbackBackendIds()).hasSize(1); // GH-90000
-            assertThat(saved.getFallbackBackendIds()).containsExactly("postgres-secondary [GH-90000]");
+            assertThat(saved.getFallbackBackendIds()).containsExactly("postgres-secondary");
         }
 
         @Test
-        @DisplayName("clear all fallback backends [GH-90000]")
+        @DisplayName("clear all fallback backends")
         void clearAllFallbackBackends() { // GH-90000
             InMemoryCollectionStorageProfileRepository repository = new InMemoryCollectionStorageProfileRepository(); // GH-90000
 
             CollectionStorageProfile originalProfile = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("products [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("products")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
                 .fallbackBackendIds(List.of("postgres-secondary", "opensearch-secondary")) // GH-90000
                 .isActive(true) // GH-90000
                 .build(); // GH-90000
@@ -318,19 +318,19 @@ class ProfileSwitchingTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Priority Order Switching [GH-90000]")
+    @DisplayName("Priority Order Switching")
     class PriorityOrderTests {
 
         @Test
-        @DisplayName("increase profile priority [GH-90000]")
+        @DisplayName("increase profile priority")
         void increaseProfilePriority() { // GH-90000
             InMemoryCollectionStorageProfileRepository repository = new InMemoryCollectionStorageProfileRepository(); // GH-90000
 
             CollectionStorageProfile lowPriorityProfile = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("products [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("products")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
                 .priorityOrder(10) // GH-90000
                 .isActive(true) // GH-90000
                 .build(); // GH-90000
@@ -357,15 +357,15 @@ class ProfileSwitchingTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("decrease profile priority [GH-90000]")
+        @DisplayName("decrease profile priority")
         void decreaseProfilePriority() { // GH-90000
             InMemoryCollectionStorageProfileRepository repository = new InMemoryCollectionStorageProfileRepository(); // GH-90000
 
             CollectionStorageProfile highPriorityProfile = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("products [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("products")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
                 .priorityOrder(1) // GH-90000
                 .isActive(true) // GH-90000
                 .build(); // GH-90000
@@ -393,11 +393,11 @@ class ProfileSwitchingTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Configuration Switching [GH-90000]")
+    @DisplayName("Configuration Switching")
     class ConfigurationTests {
 
         @Test
-        @DisplayName("switch backend configuration [GH-90000]")
+        @DisplayName("switch backend configuration")
         void switchBackendConfiguration() { // GH-90000
             InMemoryCollectionStorageProfileRepository repository = new InMemoryCollectionStorageProfileRepository(); // GH-90000
 
@@ -407,10 +407,10 @@ class ProfileSwitchingTest extends EventloopTestBase {
             );
 
             CollectionStorageProfile originalProfile = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("products [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("products")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
                 .backendConfig(originalConfig) // GH-90000
                 .isActive(true) // GH-90000
                 .build(); // GH-90000
@@ -445,7 +445,7 @@ class ProfileSwitchingTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("clear backend configuration [GH-90000]")
+        @DisplayName("clear backend configuration")
         void clearBackendConfiguration() { // GH-90000
             InMemoryCollectionStorageProfileRepository repository = new InMemoryCollectionStorageProfileRepository(); // GH-90000
 
@@ -455,10 +455,10 @@ class ProfileSwitchingTest extends EventloopTestBase {
             );
 
             CollectionStorageProfile originalProfile = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("products [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("products")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
                 .backendConfig(originalConfig) // GH-90000
                 .isActive(true) // GH-90000
                 .build(); // GH-90000
@@ -486,19 +486,19 @@ class ProfileSwitchingTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Switching Scenarios [GH-90000]")
+    @DisplayName("Switching Scenarios")
     class SwitchingScenarios {
 
         @Test
-        @DisplayName("switch from hot to cold profile [GH-90000]")
+        @DisplayName("switch from hot to cold profile")
         void switchFromHotToColdProfile() { // GH-90000
             InMemoryCollectionStorageProfileRepository repository = new InMemoryCollectionStorageProfileRepository(); // GH-90000
 
             CollectionStorageProfile hotProfile = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("products [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("redis-hot [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("products")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("redis-hot")
                 .fallbackBackendIds(List.of()) // GH-90000
                 .backendConfig(Map.of("latency_target_ms", 10)) // GH-90000
                 .isActive(true) // GH-90000
@@ -511,9 +511,9 @@ class ProfileSwitchingTest extends EventloopTestBase {
                 .id(hotProfile.getId()) // GH-90000
                 .tenantId(hotProfile.getTenantId()) // GH-90000
                 .collectionName(hotProfile.getCollectionName()) // GH-90000
-                .storageProfileId("cold-profile [GH-90000]")
-                .primaryBackendId("s3-cold [GH-90000]")
-                .fallbackBackendIds(List.of("s3-backup [GH-90000]"))
+                .storageProfileId("cold-profile")
+                .primaryBackendId("s3-cold")
+                .fallbackBackendIds(List.of("s3-backup"))
                 .backendConfig(Map.of("latency_target_ms", 1000, "compression", true)) // GH-90000
                 .isActive(true) // GH-90000
                 .priorityOrder(2) // GH-90000
@@ -523,21 +523,21 @@ class ProfileSwitchingTest extends EventloopTestBase {
 
             CollectionStorageProfile saved = runPromise(() -> repository.save(coldProfile)); // GH-90000
 
-            assertThat(saved.getStorageProfileId()).isEqualTo("cold-profile [GH-90000]");
-            assertThat(saved.getPrimaryBackendId()).isEqualTo("s3-cold [GH-90000]");
+            assertThat(saved.getStorageProfileId()).isEqualTo("cold-profile");
+            assertThat(saved.getPrimaryBackendId()).isEqualTo("s3-cold");
             assertThat(saved.getBackendConfig()).containsEntry("compression", true); // GH-90000
         }
 
         @Test
-        @DisplayName("switch with failover support enabled [GH-90000]")
+        @DisplayName("switch with failover support enabled")
         void switchWithFailoverEnabled() { // GH-90000
             InMemoryCollectionStorageProfileRepository repository = new InMemoryCollectionStorageProfileRepository(); // GH-90000
 
             CollectionStorageProfile noFailover = CollectionStorageProfile.builder() // GH-90000
-                .tenantId("tenant-1 [GH-90000]")
-                .collectionName("products [GH-90000]")
-                .storageProfileId("hot-profile [GH-90000]")
-                .primaryBackendId("postgres-primary [GH-90000]")
+                .tenantId("tenant-1")
+                .collectionName("products")
+                .storageProfileId("hot-profile")
+                .primaryBackendId("postgres-primary")
                 .fallbackBackendIds(List.of()) // GH-90000
                 .isActive(true) // GH-90000
                 .build(); // GH-90000

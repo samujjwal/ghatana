@@ -32,17 +32,17 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@Tag("integration [GH-90000]")
+@Tag("integration")
 @Testcontainers
-@DisplayName("PostgresConsentManager — integration tests [GH-90000]")
+@DisplayName("PostgresConsentManager — integration tests")
 class PostgresConsentManagerTest extends EventloopTestBase {
 
     @Container
     private static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>("postgres:15-alpine [GH-90000]")
-                    .withDatabaseName("aep_consent_test [GH-90000]")
-                    .withUsername("aep_test [GH-90000]")
-                    .withPassword("aep_test [GH-90000]");
+            new PostgreSQLContainer<>("postgres:15-alpine")
+                    .withDatabaseName("aep_consent_test")
+                    .withUsername("aep_test")
+                    .withPassword("aep_test");
 
     private HikariDataSource dataSource;
     private PostgresConsentManager manager;
@@ -64,13 +64,13 @@ class PostgresConsentManagerTest extends EventloopTestBase {
     void tearDown() throws Exception { // GH-90000
         try (Connection conn = dataSource.getConnection(); // GH-90000
              Statement stmt = conn.createStatement()) { // GH-90000
-            stmt.execute("DROP TABLE IF EXISTS consent_records [GH-90000]");
+            stmt.execute("DROP TABLE IF EXISTS consent_records");
         }
         dataSource.close(); // GH-90000
     }
 
     @Test
-    @DisplayName("recordConsent then hasConsent returns true [GH-90000]")
+    @DisplayName("recordConsent then hasConsent returns true")
     void recordConsent_thenHasConsent_returnsTrue() { // GH-90000
         runPromise(() -> manager.recordConsent("tenant-1", "subject-1", "analytics")); // GH-90000
 
@@ -80,7 +80,7 @@ class PostgresConsentManagerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("hasConsent for absent record returns false [GH-90000]")
+    @DisplayName("hasConsent for absent record returns false")
     void hasConsent_notRecorded_returnsFalse() { // GH-90000
         boolean result = runPromise(() -> manager.hasConsent("tenant-x", "subject-x", "marketing")); // GH-90000
 
@@ -88,7 +88,7 @@ class PostgresConsentManagerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("withdrawConsent after record makes hasConsent return false [GH-90000]")
+    @DisplayName("withdrawConsent after record makes hasConsent return false")
     void withdrawConsent_afterRecord_returnsFalse() { // GH-90000
         runPromise(() -> manager.recordConsent("tenant-2", "subject-2", "gdpr_data_processing")); // GH-90000
         runPromise(() -> manager.withdrawConsent("tenant-2", "subject-2", "gdpr_data_processing")); // GH-90000
@@ -99,7 +99,7 @@ class PostgresConsentManagerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("enforceConsent passes when consent is present [GH-90000]")
+    @DisplayName("enforceConsent passes when consent is present")
     void enforceConsent_withConsent_passes() { // GH-90000
         runPromise(() -> manager.recordConsent("tenant-3", "subject-3", "profiling")); // GH-90000
 
@@ -108,14 +108,14 @@ class PostgresConsentManagerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("enforceConsent throws ConsentRequiredException when consent is absent [GH-90000]")
+    @DisplayName("enforceConsent throws ConsentRequiredException when consent is absent")
     void enforceConsent_withoutConsent_throws() { // GH-90000
         assertThatThrownBy(() -> runPromise(() -> manager.enforceConsent("tenant-4", "subject-4", "email_marketing"))) // GH-90000
                 .isInstanceOf(ConsentRequiredException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("re-recording consent after withdrawal restores consent [GH-90000]")
+    @DisplayName("re-recording consent after withdrawal restores consent")
     void reRecord_afterWithdrawal_restoresConsent() { // GH-90000
         runPromise(() -> manager.recordConsent("tenant-5", "subject-5", "personalization")); // GH-90000
         runPromise(() -> manager.withdrawConsent("tenant-5", "subject-5", "personalization")); // GH-90000
@@ -132,15 +132,15 @@ class PostgresConsentManagerTest extends EventloopTestBase {
         try (Connection conn = dataSource.getConnection(); // GH-90000
              Statement stmt = conn.createStatement()) { // GH-90000
             stmt.execute("""
-                CREATE TABLE IF NOT EXISTS consent_records ( // GH-90000
+                CREATE TABLE IF NOT EXISTS consent_records (
                     id          BIGSERIAL   PRIMARY KEY,
                     tenant_id   TEXT        NOT NULL,
                     subject_id  TEXT        NOT NULL,
                     purpose     TEXT        NOT NULL,
                     granted     BOOLEAN     NOT NULL DEFAULT TRUE,
-                    granted_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(), // GH-90000
+                    granted_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                     revoked_at  TIMESTAMPTZ,
-                    UNIQUE (tenant_id, subject_id, purpose) // GH-90000
+                    UNIQUE (tenant_id, subject_id, purpose)
                 )
                 """);
         }

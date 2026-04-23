@@ -41,7 +41,7 @@ public abstract class AbstractLanguageTest extends EventloopTestBase {
         PolyfixConfig config =
                 new PolyfixConfig( // GH-90000
                         List.of("java", "python"), // GH-90000
-                        List.of("schemas [GH-90000]"),
+                        List.of("schemas"),
                         new PolyfixConfig.Budgets(3, 20), // GH-90000
                         new PolyfixConfig.Policies(true, true, true, false), // GH-90000
                         new PolyfixConfig.Tools( // GH-90000
@@ -91,7 +91,7 @@ public abstract class AbstractLanguageTest extends EventloopTestBase {
      */
     protected Path copyTestResource(String resourcePath) throws IOException { // GH-90000
         // Split the resource path and create the source path
-        String[] pathParts = resourcePath.split("/ [GH-90000]");
+        String[] pathParts = resourcePath.split("/");
         Path source = Path.of("src", "test", "resources"); // GH-90000
         for (String part : pathParts) { // GH-90000
             source = source.resolve(part); // GH-90000

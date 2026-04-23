@@ -13,11 +13,11 @@ import org.junit.jupiter.api.Test;
  * @doc.layer test
  * @doc.pattern Unit Test
  */
-@DisplayName("TraceContext Tests [GH-90000]")
+@DisplayName("TraceContext Tests")
 class TraceContextTest {
 
   @Test
-  @DisplayName("should create TraceContext with all fields [GH-90000]")
+  @DisplayName("should create TraceContext with all fields")
   void shouldCreateTraceContext() { // GH-90000
     String traceId = "trace-123";
     String spanId = "span-456";
@@ -29,7 +29,7 @@ class TraceContextTest {
   }
 
   @Test
-  @DisplayName("should create TraceContext with single traceId [GH-90000]")
+  @DisplayName("should create TraceContext with single traceId")
   void shouldCreateWithSingleTraceId() { // GH-90000
     String traceId = "trace-123";
 
@@ -40,7 +40,7 @@ class TraceContextTest {
   }
 
   @Test
-  @DisplayName("should implement equals correctly [GH-90000]")
+  @DisplayName("should implement equals correctly")
   void shouldImplementEquals() { // GH-90000
     TraceContext ctx1 = new TraceContext("trace-1", "span-1"); // GH-90000
     TraceContext ctx2 = new TraceContext("trace-1", "span-1"); // GH-90000
@@ -51,7 +51,7 @@ class TraceContextTest {
   }
 
   @Test
-  @DisplayName("should handle null values [GH-90000]")
+  @DisplayName("should handle null values")
   void shouldHandleNullValues() { // GH-90000
     TraceContext context = new TraceContext(null, null); // GH-90000
 

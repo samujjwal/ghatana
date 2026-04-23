@@ -26,7 +26,7 @@ import static org.mockito.Mockito.when;
  * @doc.pattern IntegrationTest
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("Distributed Cache Service Integration Tests [GH-90000]")
+@DisplayName("Distributed Cache Service Integration Tests")
 class DistributedCacheServiceIntegrationTest {
 
     @Mock
@@ -43,7 +43,7 @@ class DistributedCacheServiceIntegrationTest {
     }
 
     @Nested
-    @DisplayName("Basic Cache Operations [GH-90000]")
+    @DisplayName("Basic Cache Operations")
     class BasicCacheOperationsTests {
 
         @Test
@@ -51,30 +51,30 @@ class DistributedCacheServiceIntegrationTest {
             // Given
             String key = "test-key";
             String cachedValue = "cached-value";
-            when(backend.getValue("tenant:tenant-cache-test:test-key [GH-90000]")).thenReturn(cachedValue);
-            when(backend.deserialize(cachedValue, String.class)).thenReturn("cached-value [GH-90000]");
+            when(backend.getValue("tenant:tenant-cache-test:test-key")).thenReturn(cachedValue);
+            when(backend.deserialize(cachedValue, String.class)).thenReturn("cached-value");
 
             // When
             Optional<String> result = cacheService.get(key, String.class); // GH-90000
 
             // Then
             assertThat(result).isPresent(); // GH-90000
-            assertThat(result.get()).isEqualTo("cached-value [GH-90000]");
-            assertThat(MDC.get("cacheHit [GH-90000]")).isEqualTo("true [GH-90000]");
+            assertThat(result.get()).isEqualTo("cached-value");
+            assertThat(MDC.get("cacheHit")).isEqualTo("true");
         }
 
         @Test
         void shouldReturnEmptyWhenKeyNotFound() { // GH-90000
             // Given
             String key = "missing-key";
-            when(backend.getValue("tenant:tenant-cache-test:missing-key [GH-90000]")).thenReturn(null);
+            when(backend.getValue("tenant:tenant-cache-test:missing-key")).thenReturn(null);
 
             // When
             Optional<String> result = cacheService.get(key, String.class); // GH-90000
 
             // Then
             assertThat(result).isEmpty(); // GH-90000
-            assertThat(MDC.get("cacheMiss [GH-90000]")).isEqualTo("true [GH-90000]");
+            assertThat(MDC.get("cacheMiss")).isEqualTo("true");
         }
 
         @Test
@@ -84,13 +84,13 @@ class DistributedCacheServiceIntegrationTest {
             String value = "put-test-value";
             long ttl = 3600;
 
-            when(backend.serialize(value)).thenReturn("serialized-value [GH-90000]");
+            when(backend.serialize(value)).thenReturn("serialized-value");
 
             // When
             cacheService.put(key, value, ttl); // GH-90000
 
             // Then
-            assertThat(MDC.get("cachePut [GH-90000]")).isEqualTo("true [GH-90000]");
+            assertThat(MDC.get("cachePut")).isEqualTo("true");
         }
 
         @Test
@@ -102,12 +102,12 @@ class DistributedCacheServiceIntegrationTest {
             cacheService.invalidate(key); // GH-90000
 
             // Then
-            assertThat(MDC.get("cacheInvalidate [GH-90000]")).isEqualTo("true [GH-90000]");
+            assertThat(MDC.get("cacheInvalidate")).isEqualTo("true");
         }
     }
 
     @Nested
-    @DisplayName("Tenant Isolation [GH-90000]")
+    @DisplayName("Tenant Isolation")
     class TenantIsolationTests {
 
         @Test
@@ -121,10 +121,10 @@ class DistributedCacheServiceIntegrationTest {
             DistributedCacheService cache2 = new DistributedCacheService(backend, tenant2); // GH-90000
 
             // When - set expectations for different tenant keys
-            when(backend.getValue("tenant:tenant-1:shared-key [GH-90000]")).thenReturn("value-from-tenant-1 [GH-90000]");
-            when(backend.getValue("tenant:tenant-2:shared-key [GH-90000]")).thenReturn("value-from-tenant-2 [GH-90000]");
-            when(backend.deserialize("value-from-tenant-1", String.class)).thenReturn("value-from-tenant-1 [GH-90000]");
-            when(backend.deserialize("value-from-tenant-2", String.class)).thenReturn("value-from-tenant-2 [GH-90000]");
+            when(backend.getValue("tenant:tenant-1:shared-key")).thenReturn("value-from-tenant-1");
+            when(backend.getValue("tenant:tenant-2:shared-key")).thenReturn("value-from-tenant-2");
+            when(backend.deserialize("value-from-tenant-1", String.class)).thenReturn("value-from-tenant-1");
+            when(backend.deserialize("value-from-tenant-2", String.class)).thenReturn("value-from-tenant-2");
 
             // Then - each tenant sees its own data
             Optional<String> result1 = cache1.get(sharedKey, String.class); // GH-90000
@@ -138,7 +138,7 @@ class DistributedCacheServiceIntegrationTest {
         void shouldNotLeakDataAcrossTenants() { // GH-90000
             // Given
             String key = "sensitive-key";
-            when(backend.getValue("tenant:other-tenant:sensitive-key [GH-90000]")).thenReturn(null);
+            when(backend.getValue("tenant:other-tenant:sensitive-key")).thenReturn(null);
 
             DistributedCacheService otherTenantCache = 
                 new DistributedCacheService(backend, "other-tenant"); // GH-90000
@@ -152,7 +152,7 @@ class DistributedCacheServiceIntegrationTest {
     }
 
     @Nested
-    @DisplayName("Cache Invalidation [GH-90000]")
+    @DisplayName("Cache Invalidation")
     class CacheInvalidationTests {
 
         @Test
@@ -164,38 +164,38 @@ class DistributedCacheServiceIntegrationTest {
             cacheService.invalidate(key); // GH-90000
 
             // Then - no exception thrown
-            assertThat(MDC.get("cacheInvalidate [GH-90000]")).isEqualTo("true [GH-90000]");
+            assertThat(MDC.get("cacheInvalidate")).isEqualTo("true");
         }
 
         @Test
         void shouldInvalidatePattern() { // GH-90000
             // Given
             String pattern = "content:*";
-            when(backend.deletePattern("tenant:tenant-cache-test:content:* [GH-90000]")).thenReturn(5);
+            when(backend.deletePattern("tenant:tenant-cache-test:content:*")).thenReturn(5);
 
             // When
             cacheService.invalidatePattern(pattern); // GH-90000
 
             // Then
-            assertThat(MDC.get("invalidatedCount [GH-90000]")).isEqualTo("5 [GH-90000]");
+            assertThat(MDC.get("invalidatedCount")).isEqualTo("5");
         }
 
         @Test
         void shouldHandleEmptyPatternInvalidation() { // GH-90000
             // Given
             String pattern = "non-existent:*";
-            when(backend.deletePattern("tenant:tenant-cache-test:non-existent:* [GH-90000]")).thenReturn(0);
+            when(backend.deletePattern("tenant:tenant-cache-test:non-existent:*")).thenReturn(0);
 
             // When
             cacheService.invalidatePattern(pattern); // GH-90000
 
             // Then
-            assertThat(MDC.get("invalidatedCount [GH-90000]")).isEqualTo("0 [GH-90000]");
+            assertThat(MDC.get("invalidatedCount")).isEqualTo("0");
         }
     }
 
     @Nested
-    @DisplayName("Cache Compute Pattern [GH-90000]")
+    @DisplayName("Cache Compute Pattern")
     class CacheComputePatternTests {
 
         @Test
@@ -203,18 +203,18 @@ class DistributedCacheServiceIntegrationTest {
             // Given
             String key = "compute-key";
             String cachedValue = "already-cached";
-            when(backend.getValue("tenant:tenant-cache-test:compute-key [GH-90000]")).thenReturn(cachedValue);
-            when(backend.deserialize(cachedValue, String.class)).thenReturn("already-cached [GH-90000]");
+            when(backend.getValue("tenant:tenant-cache-test:compute-key")).thenReturn(cachedValue);
+            when(backend.deserialize(cachedValue, String.class)).thenReturn("already-cached");
 
             DistributedCacheService.CacheLoader<String> loader = () -> { // GH-90000
-                throw new RuntimeException("Should not be called [GH-90000]");
+                throw new RuntimeException("Should not be called");
             };
 
             // When
             String result = cacheService.getOrCompute(key, 3600, loader, String.class); // GH-90000
 
             // Then
-            assertThat(result).isEqualTo("already-cached [GH-90000]");
+            assertThat(result).isEqualTo("already-cached");
         }
 
         @Test
@@ -222,8 +222,8 @@ class DistributedCacheServiceIntegrationTest {
             // Given
             String key = "compute-missing";
             String computedValue = "newly-computed";
-            when(backend.getValue("tenant:tenant-cache-test:compute-missing [GH-90000]")).thenReturn(null);
-            when(backend.serialize(computedValue)).thenReturn("serialized-computed [GH-90000]");
+            when(backend.getValue("tenant:tenant-cache-test:compute-missing")).thenReturn(null);
+            when(backend.serialize(computedValue)).thenReturn("serialized-computed");
 
             DistributedCacheService.CacheLoader<String> loader = () -> computedValue; // GH-90000
 
@@ -231,30 +231,30 @@ class DistributedCacheServiceIntegrationTest {
             String result = cacheService.getOrCompute(key, 3600, loader, String.class); // GH-90000
 
             // Then
-            assertThat(result).isEqualTo("newly-computed [GH-90000]");
+            assertThat(result).isEqualTo("newly-computed");
         }
 
         @Test
         void shouldPropagateLoaderException() { // GH-90000
             // Given
             String key = "compute-error";
-            when(backend.getValue("tenant:tenant-cache-test:compute-error [GH-90000]")).thenReturn(null);
+            when(backend.getValue("tenant:tenant-cache-test:compute-error")).thenReturn(null);
 
             DistributedCacheService.CacheLoader<String> loader = () -> { // GH-90000
-                throw new IOException("Loader failed [GH-90000]");
+                throw new IOException("Loader failed");
             };
 
             // When + Then
             assertThatThrownBy(() -> cacheService.getOrCompute(key, 3600, loader, String.class)) // GH-90000
                     .isInstanceOf(DistributedCacheService.CacheException.class) // GH-90000
-                    .hasMessageContaining("Failed to load value [GH-90000]");
+                    .hasMessageContaining("Failed to load value");
         }
 
         @Test
         void shouldNotCacheNullValues() { // GH-90000
             // Given
             String key = "compute-null";
-            when(backend.getValue("tenant:tenant-cache-test:compute-null [GH-90000]")).thenReturn(null);
+            when(backend.getValue("tenant:tenant-cache-test:compute-null")).thenReturn(null);
 
             DistributedCacheService.CacheLoader<String> loader = () -> null; // GH-90000
 
@@ -267,15 +267,15 @@ class DistributedCacheServiceIntegrationTest {
     }
 
     @Nested
-    @DisplayName("Cache Statistics [GH-90000]")
+    @DisplayName("Cache Statistics")
     class CacheStatisticsTests {
 
         @Test
         void shouldRetrieveCacheStatistics() { // GH-90000
             // Given
             String pattern = "content:*";
-            when(backend.getKeyCount("tenant:tenant-cache-test:content:* [GH-90000]")).thenReturn(10L);
-            when(backend.getCacheSize("tenant:tenant-cache-test:content:* [GH-90000]")).thenReturn(5120L);
+            when(backend.getKeyCount("tenant:tenant-cache-test:content:*")).thenReturn(10L);
+            when(backend.getCacheSize("tenant:tenant-cache-test:content:*")).thenReturn(5120L);
 
             // When
             DistributedCacheService.CacheStatistics stats = cacheService.getStatistics(pattern); // GH-90000
@@ -289,8 +289,8 @@ class DistributedCacheServiceIntegrationTest {
         void shouldReturnZeroStatsOnError() { // GH-90000
             // Given
             String pattern = "error:*";
-            when(backend.getKeyCount("tenant:tenant-cache-test:error:* [GH-90000]"))
-                    .thenThrow(new RuntimeException("Backend error [GH-90000]"));
+            when(backend.getKeyCount("tenant:tenant-cache-test:error:*"))
+                    .thenThrow(new RuntimeException("Backend error"));
 
             // When
             DistributedCacheService.CacheStatistics stats = cacheService.getStatistics(pattern); // GH-90000
@@ -302,15 +302,15 @@ class DistributedCacheServiceIntegrationTest {
     }
 
     @Nested
-    @DisplayName("Error Handling [GH-90000]")
+    @DisplayName("Error Handling")
     class ErrorHandlingTests {
 
         @Test
         void shouldHandleGetError() { // GH-90000
             // Given
             String key = "error-key";
-            when(backend.getValue("tenant:tenant-cache-test:error-key [GH-90000]"))
-                    .thenThrow(new RuntimeException("Backend unavailable [GH-90000]"));
+            when(backend.getValue("tenant:tenant-cache-test:error-key"))
+                    .thenThrow(new RuntimeException("Backend unavailable"));
 
             // When
             Optional<String> result = cacheService.get(key, String.class); // GH-90000
@@ -324,7 +324,7 @@ class DistributedCacheServiceIntegrationTest {
             // Given
             String key = "put-error";
             String value = "value";
-            when(backend.serialize(value)).thenThrow(new RuntimeException("Serialization failed [GH-90000]"));
+            when(backend.serialize(value)).thenThrow(new RuntimeException("Serialization failed"));
 
             // When + Then - should not throw, just log
             cacheService.put(key, value, 3600); // GH-90000
@@ -335,8 +335,8 @@ class DistributedCacheServiceIntegrationTest {
         void shouldHandleInvalidateError() { // GH-90000
             // Given
             String key = "invalidate-error";
-            doThrow(new RuntimeException("Delete failed [GH-90000]"))
-                .when(backend).deleteKey("tenant:tenant-cache-test:invalidate-error [GH-90000]");
+            doThrow(new RuntimeException("Delete failed"))
+                .when(backend).deleteKey("tenant:tenant-cache-test:invalidate-error");
 
             // When + Then - should not throw
             cacheService.invalidate(key); // GH-90000
@@ -345,14 +345,14 @@ class DistributedCacheServiceIntegrationTest {
     }
 
     @Nested
-    @DisplayName("MDC Context Management [GH-90000]")
+    @DisplayName("MDC Context Management")
     class MDCContextManagementTests {
 
         @Test
         void shouldClearMDCAfterTest() { // GH-90000
             // Given
             String key = "mdc-test";
-            when(backend.getValue("tenant:tenant-cache-test:mdc-test [GH-90000]")).thenReturn(null);
+            when(backend.getValue("tenant:tenant-cache-test:mdc-test")).thenReturn(null);
 
             // When
             cacheService.get(key, String.class); // GH-90000
@@ -366,14 +366,14 @@ class DistributedCacheServiceIntegrationTest {
         void shouldSetCacheHitInMDC() { // GH-90000
             // Given
             String key = "hit-test";
-            when(backend.getValue("tenant:tenant-cache-test:hit-test [GH-90000]")).thenReturn("value [GH-90000]");
-            when(backend.deserialize("value", String.class)).thenReturn("value [GH-90000]");
+            when(backend.getValue("tenant:tenant-cache-test:hit-test")).thenReturn("value");
+            when(backend.deserialize("value", String.class)).thenReturn("value");
 
             // When
             cacheService.get(key, String.class); // GH-90000
 
             // Then
-            assertThat(MDC.get("cacheHit [GH-90000]")).isEqualTo("true [GH-90000]");
+            assertThat(MDC.get("cacheHit")).isEqualTo("true");
             MDC.clear(); // GH-90000
         }
 
@@ -381,27 +381,27 @@ class DistributedCacheServiceIntegrationTest {
         void shouldSetCacheMissInMDC() { // GH-90000
             // Given
             String key = "miss-test";
-            when(backend.getValue("tenant:tenant-cache-test:miss-test [GH-90000]")).thenReturn(null);
+            when(backend.getValue("tenant:tenant-cache-test:miss-test")).thenReturn(null);
 
             // When
             cacheService.get(key, String.class); // GH-90000
 
             // Then
-            assertThat(MDC.get("cacheMiss [GH-90000]")).isEqualTo("true [GH-90000]");
+            assertThat(MDC.get("cacheMiss")).isEqualTo("true");
             MDC.clear(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Concurrent Cache Operations [GH-90000]")
+    @DisplayName("Concurrent Cache Operations")
     class ConcurrentOperationsTests {
 
         @Test
         void shouldHandleConcurrentGets() throws InterruptedException { // GH-90000
             // Given
             String key = "concurrent-key";
-            when(backend.getValue("tenant:tenant-cache-test:concurrent-key [GH-90000]")).thenReturn("value [GH-90000]");
-            when(backend.deserialize("value", String.class)).thenReturn("value [GH-90000]");
+            when(backend.getValue("tenant:tenant-cache-test:concurrent-key")).thenReturn("value");
+            when(backend.deserialize("value", String.class)).thenReturn("value");
 
             // When
             Thread t1 = new Thread(() -> cacheService.get(key, String.class)); // GH-90000

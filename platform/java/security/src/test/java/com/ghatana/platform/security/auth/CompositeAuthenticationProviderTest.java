@@ -19,11 +19,12 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("CompositeAuthenticationProvider — delegate chain and priority ordering [GH-90000]")
+@DisplayName("CompositeAuthenticationProvider — delegate chain and priority ordering")
+@SuppressWarnings("deprecation")
 class CompositeAuthenticationProviderTest extends EventloopTestBase {
 
-    private static final User TEST_USER = new User("user-1", "alice", Set.of("USER [GH-90000]"));
-    private static final Credentials TOKEN_CRED = new TokenCredentials("test-token [GH-90000]");
+    private static final User TEST_USER = new User("user-1", "alice", Set.of("USER"));
+    private static final Credentials TOKEN_CRED = new TokenCredentials("test-token");
 
     // ── Factory helpers ──────────────────────────────────────────────────────
 
@@ -87,14 +88,14 @@ class CompositeAuthenticationProviderTest extends EventloopTestBase {
     // ── Constructor ───────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("constructor with no providers throws IllegalArgumentException [GH-90000]")
+    @DisplayName("constructor with no providers throws IllegalArgumentException")
     void constructorThrowsForEmptyProviders() { // GH-90000
         assertThatThrownBy(() -> new CompositeAuthenticationProvider(List.of())) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("constructor with null array throws NullPointerException [GH-90000]")
+    @DisplayName("constructor with null array throws NullPointerException")
     void constructorThrowsForNullArray() { // GH-90000
         assertThatThrownBy(() -> new CompositeAuthenticationProvider((AuthenticationProvider[]) null)) // GH-90000
                 .isInstanceOf(NullPointerException.class); // GH-90000
@@ -103,7 +104,7 @@ class CompositeAuthenticationProviderTest extends EventloopTestBase {
     // ── authenticate ─────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("authenticate returns user when delegate provider succeeds [GH-90000]")
+    @DisplayName("authenticate returns user when delegate provider succeeds")
     void authenticateReturnsUserFromSuccessfulDelegate() { // GH-90000
         CompositeAuthenticationProvider composite = new CompositeAuthenticationProvider( // GH-90000
                 successProvider("token", 1)); // GH-90000
@@ -114,7 +115,7 @@ class CompositeAuthenticationProviderTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("authenticate returns empty when no provider supports the credentials type [GH-90000]")
+    @DisplayName("authenticate returns empty when no provider supports the credentials type")
     void authenticateReturnsEmptyWhenNoProviderSupports() { // GH-90000
         CompositeAuthenticationProvider composite = new CompositeAuthenticationProvider( // GH-90000
                 unsupportedProvider(1)); // GH-90000
@@ -125,7 +126,7 @@ class CompositeAuthenticationProviderTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("authenticate returns empty when supporting provider returns empty [GH-90000]")
+    @DisplayName("authenticate returns empty when supporting provider returns empty")
     void authenticateReturnsEmptyWhenProviderFails() { // GH-90000
         CompositeAuthenticationProvider composite = new CompositeAuthenticationProvider( // GH-90000
                 failProvider("token", 1)); // GH-90000
@@ -136,7 +137,7 @@ class CompositeAuthenticationProviderTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("authenticate throws NullPointerException for null credentials [GH-90000]")
+    @DisplayName("authenticate throws NullPointerException for null credentials")
     void authenticateThrowsForNullCredentials() { // GH-90000
         CompositeAuthenticationProvider composite = new CompositeAuthenticationProvider( // GH-90000
                 successProvider("token", 1)); // GH-90000
@@ -148,7 +149,7 @@ class CompositeAuthenticationProviderTest extends EventloopTestBase {
     // ── Priority ordering ─────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("providers are ordered by priority (highest first) [GH-90000]")
+    @DisplayName("providers are ordered by priority (highest first)")
     void providersOrderedByPriorityDescending() { // GH-90000
         // Low-priority unsupported first; high-priority supportive second
         CompositeAuthenticationProvider composite = new CompositeAuthenticationProvider( // GH-90000
@@ -161,7 +162,7 @@ class CompositeAuthenticationProviderTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("getPriority returns the highest priority among all delegates [GH-90000]")
+    @DisplayName("getPriority returns the highest priority among all delegates")
     void getPriorityReturnsHighest() { // GH-90000
         CompositeAuthenticationProvider composite = new CompositeAuthenticationProvider( // GH-90000
                 successProvider("token", 3), // GH-90000
@@ -173,28 +174,28 @@ class CompositeAuthenticationProviderTest extends EventloopTestBase {
     // ── supports ─────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("supports returns true when any delegate supports the type [GH-90000]")
+    @DisplayName("supports returns true when any delegate supports the type")
     void supportsTrueWhenAnyDelegateSupports() { // GH-90000
         CompositeAuthenticationProvider composite = new CompositeAuthenticationProvider( // GH-90000
                 successProvider("token", 1), // GH-90000
                 successProvider("basic", 2)); // GH-90000
 
-        assertThat(composite.supports("basic [GH-90000]")).isTrue();
+        assertThat(composite.supports("basic")).isTrue();
     }
 
     @Test
-    @DisplayName("supports returns false when no delegate supports the type [GH-90000]")
+    @DisplayName("supports returns false when no delegate supports the type")
     void supportsFalseWhenNoDelegateSupports() { // GH-90000
         CompositeAuthenticationProvider composite = new CompositeAuthenticationProvider( // GH-90000
                 successProvider("token", 1)); // GH-90000
 
-        assertThat(composite.supports("oauth2 [GH-90000]")).isFalse();
+        assertThat(composite.supports("oauth2")).isFalse();
     }
 
     // ── getProviders ──────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("getProviders returns unmodifiable list of all delegates [GH-90000]")
+    @DisplayName("getProviders returns unmodifiable list of all delegates")
     void getProvidersReturnsUnmodifiableList() { // GH-90000
         AuthenticationProvider p1 = successProvider("token", 1); // GH-90000
         AuthenticationProvider p2 = successProvider("basic", 2); // GH-90000
@@ -210,13 +211,13 @@ class CompositeAuthenticationProviderTest extends EventloopTestBase {
     // ── Builder ───────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("builder creates a valid composite with added providers [GH-90000]")
+    @DisplayName("builder creates a valid composite with added providers")
     void builderCreatesValidComposite() { // GH-90000
         CompositeAuthenticationProvider composite = CompositeAuthenticationProvider.builder() // GH-90000
                 .withProvider(successProvider("token", 5)) // GH-90000
                 .build(); // GH-90000
 
-        assertThat(composite.supports("token [GH-90000]")).isTrue();
+        assertThat(composite.supports("token")).isTrue();
         assertThat(composite.getProviders()).hasSize(1); // GH-90000
     }
 }

@@ -37,8 +37,8 @@ public final class SecurityTestFixture {
     public static class SecurityContextBuilder {
         private String userId = "user-123";
         private String tenantId = "tenant-456";
-        private Set<String> roles = new HashSet<>(Set.of("USER [GH-90000]"));
-        private Set<String> permissions = new HashSet<>(Set.of("read [GH-90000]"));
+        private Set<String> roles = new HashSet<>(Set.of("USER"));
+        private Set<String> permissions = new HashSet<>(Set.of("read"));
 
         public SecurityContextBuilder userId(String userId) { // GH-90000
             this.userId = userId;
@@ -61,14 +61,14 @@ public final class SecurityTestFixture {
         }
 
         public SecurityContextBuilder admin() { // GH-90000
-            this.roles = new HashSet<>(Set.of("ADMIN [GH-90000]"));
+            this.roles = new HashSet<>(Set.of("ADMIN"));
             this.permissions = new HashSet<>(Set.of("read", "write", "delete", "admin")); // GH-90000
             return this;
         }
 
         public SecurityContextBuilder viewer() { // GH-90000
-            this.roles = new HashSet<>(Set.of("VIEWER [GH-90000]"));
-            this.permissions = new HashSet<>(Set.of("read [GH-90000]"));
+            this.roles = new HashSet<>(Set.of("VIEWER"));
+            this.permissions = new HashSet<>(Set.of("read"));
             return this;
         }
 

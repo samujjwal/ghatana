@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatNullPointerException;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("SceneUnderstandingService [GH-90000]")
+@DisplayName("SceneUnderstandingService")
 class SceneUnderstandingServiceTest {
 
     /** Stub model: returns outdoor/park at 0.92 and indoor/office at 0.45. */
@@ -31,14 +31,14 @@ class SceneUnderstandingServiceTest {
     // ─── of() ───────────────────────────────────────────────────────────────── // GH-90000
 
     @Test
-    @DisplayName("of(null) throws NullPointerException [GH-90000]")
+    @DisplayName("of(null) throws NullPointerException")
     void of_null_throwsNPE() { // GH-90000
         assertThatNullPointerException() // GH-90000
                 .isThrownBy(() -> SceneUnderstandingService.of(null)); // GH-90000
     }
 
     @Test
-    @DisplayName("of(model, threshold > 1) throws IllegalArgumentException [GH-90000]")
+    @DisplayName("of(model, threshold > 1) throws IllegalArgumentException")
     void of_invalidThreshold_throwsIAE() { // GH-90000
         assertThatIllegalArgumentException() // GH-90000
                 .isThrownBy(() -> SceneUnderstandingService.of(STUB_MODEL, 1.5)); // GH-90000
@@ -47,31 +47,31 @@ class SceneUnderstandingServiceTest {
     // ─── classify() ─────────────────────────────────────────────────────────── // GH-90000
 
     @Nested
-    @DisplayName("classify() [GH-90000]")
+    @DisplayName("classify()")
     class Classify {
 
         @Test
-        @DisplayName("returns outdoor/park as top scene (0.92 > 0.60 default threshold) [GH-90000]")
+        @DisplayName("returns outdoor/park as top scene (0.92 > 0.60 default threshold)")
         void classify_topScene_outdoorPark() { // GH-90000
             SceneUnderstandingService service = SceneUnderstandingService.of(STUB_MODEL); // GH-90000
             SceneUnderstandingService.SceneDescription desc = service.classify(new byte[]{1, 2, 3}); // GH-90000
 
             assertThat(desc.hasTopScene()).isTrue(); // GH-90000
-            assertThat(desc.topSceneLabel()).isEqualTo("outdoor/park [GH-90000]");
+            assertThat(desc.topSceneLabel()).isEqualTo("outdoor/park");
         }
 
         @Test
-        @DisplayName("low-confidence indoor/office is filtered by default threshold [GH-90000]")
+        @DisplayName("low-confidence indoor/office is filtered by default threshold")
         void classify_indoorOffice_filtered() { // GH-90000
             SceneUnderstandingService service = SceneUnderstandingService.of(STUB_MODEL); // GH-90000
             SceneUnderstandingService.SceneDescription desc = service.classify(new byte[]{1}); // GH-90000
 
             assertThat(desc.qualifyingScenes()).hasSize(1); // GH-90000
-            assertThat(desc.qualifyingScenes().get(0).label()).isEqualTo("outdoor/park [GH-90000]");
+            assertThat(desc.qualifyingScenes().get(0).label()).isEqualTo("outdoor/park");
         }
 
         @Test
-        @DisplayName("threshold 0.0 includes all scene candidates [GH-90000]")
+        @DisplayName("threshold 0.0 includes all scene candidates")
         void classify_zeroThreshold_includesAll() { // GH-90000
             SceneUnderstandingService service = SceneUnderstandingService.of(STUB_MODEL, 0.0); // GH-90000
             SceneUnderstandingService.SceneDescription desc = service.classify(new byte[]{1}); // GH-90000
@@ -80,7 +80,7 @@ class SceneUnderstandingServiceTest {
         }
 
         @Test
-        @DisplayName("imageSizeBytes matches the input array length [GH-90000]")
+        @DisplayName("imageSizeBytes matches the input array length")
         void classify_imageSizeBytes_correct() { // GH-90000
             SceneUnderstandingService service = SceneUnderstandingService.of(STUB_MODEL); // GH-90000
             SceneUnderstandingService.SceneDescription desc = service.classify(new byte[42]); // GH-90000
@@ -88,14 +88,14 @@ class SceneUnderstandingServiceTest {
         }
 
         @Test
-        @DisplayName("null imageBytes throws NullPointerException [GH-90000]")
+        @DisplayName("null imageBytes throws NullPointerException")
         void classify_null_throwsNPE() { // GH-90000
             SceneUnderstandingService service = SceneUnderstandingService.of(STUB_MODEL); // GH-90000
             assertThatNullPointerException().isThrownBy(() -> service.classify(null)); // GH-90000
         }
 
         @Test
-        @DisplayName("empty imageBytes throws IllegalArgumentException [GH-90000]")
+        @DisplayName("empty imageBytes throws IllegalArgumentException")
         void classify_empty_throwsIAE() { // GH-90000
             SceneUnderstandingService service = SceneUnderstandingService.of(STUB_MODEL); // GH-90000
             assertThatIllegalArgumentException() // GH-90000
@@ -103,7 +103,7 @@ class SceneUnderstandingServiceTest {
         }
 
         @Test
-        @DisplayName("model returning no labels above threshold still returns a description [GH-90000]")
+        @DisplayName("model returning no labels above threshold still returns a description")
         void classify_noLabelsAboveThreshold_hasNoTopScene() { // GH-90000
             SceneUnderstandingService.SceneClassificationModel noneModel =
                     bytes -> List.of(new SceneUnderstandingService.SceneLabel("x", 0.10)); // GH-90000
@@ -120,14 +120,14 @@ class SceneUnderstandingServiceTest {
     // ─── SceneLabel validation ────────────────────────────────────────────────
 
     @Test
-    @DisplayName("SceneLabel: null label throws NullPointerException [GH-90000]")
+    @DisplayName("SceneLabel: null label throws NullPointerException")
     void sceneLabel_nullLabel_throwsNPE() { // GH-90000
         assertThatNullPointerException() // GH-90000
                 .isThrownBy(() -> new SceneUnderstandingService.SceneLabel(null, 0.8)); // GH-90000
     }
 
     @Test
-    @DisplayName("SceneLabel: confidence > 1 throws IllegalArgumentException [GH-90000]")
+    @DisplayName("SceneLabel: confidence > 1 throws IllegalArgumentException")
     void sceneLabel_invalidConfidence_throwsIAE() { // GH-90000
         assertThatIllegalArgumentException() // GH-90000
                 .isThrownBy(() -> new SceneUnderstandingService.SceneLabel("outdoor", 1.1)); // GH-90000

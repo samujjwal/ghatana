@@ -36,13 +36,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("PolicyConfigLoader [GH-90000]")
+@DisplayName("PolicyConfigLoader")
 class PolicyConfigLoaderTest {
 
     // ─── Classpath-based loading ───────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Classpath loading (production YAML) [GH-90000]")
+    @DisplayName("Classpath loading (production YAML)")
     class ClasspathLoading {
 
         /**
@@ -50,7 +50,7 @@ class PolicyConfigLoaderTest {
          * parsed correctly and returns the expected number of policy definitions.
          */
         @Test
-        @DisplayName("loads at least 3 policy definitions from classpath lifecycle-policies.yaml [GH-90000]")
+        @DisplayName("loads at least 3 policy definitions from classpath lifecycle-policies.yaml")
         void loadsExpectedPolicyCount() { // GH-90000
             PolicyConfigLoader loader = new PolicyConfigLoader(); // GH-90000
 
@@ -58,36 +58,36 @@ class PolicyConfigLoaderTest {
         }
 
         @Test
-        @DisplayName("indexes known policy id 'phase_advance_policy' [GH-90000]")
+        @DisplayName("indexes known policy id 'phase_advance_policy'")
         void findsPhaseAdvancePolicy() { // GH-90000
             PolicyConfigLoader loader = new PolicyConfigLoader(); // GH-90000
 
-            Optional<PolicyDefinition> found = loader.findById("phase_advance_policy [GH-90000]");
+            Optional<PolicyDefinition> found = loader.findById("phase_advance_policy");
 
             assertThat(found).isPresent(); // GH-90000
-            assertThat(found.get().getId()).isEqualTo("phase_advance_policy [GH-90000]");
-            assertThat(found.get().getVersion()).isEqualTo("1.0 [GH-90000]");
+            assertThat(found.get().getId()).isEqualTo("phase_advance_policy");
+            assertThat(found.get().getVersion()).isEqualTo("1.0");
             assertThat(found.get().getRules()).isNotEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("indexes known policy id 'agent_autonomy_policy' [GH-90000]")
+        @DisplayName("indexes known policy id 'agent_autonomy_policy'")
         void findsAgentAutonomyPolicy() { // GH-90000
             PolicyConfigLoader loader = new PolicyConfigLoader(); // GH-90000
 
-            assertThat(loader.findById("agent_autonomy_policy [GH-90000]")).isPresent();
+            assertThat(loader.findById("agent_autonomy_policy")).isPresent();
         }
 
         @Test
-        @DisplayName("returns empty Optional for unknown policy id [GH-90000]")
+        @DisplayName("returns empty Optional for unknown policy id")
         void returnsEmptyForUnknownId() { // GH-90000
             PolicyConfigLoader loader = new PolicyConfigLoader(); // GH-90000
 
-            assertThat(loader.findById("no_such_policy [GH-90000]")).isEmpty();
+            assertThat(loader.findById("no_such_policy")).isEmpty();
         }
 
         @Test
-        @DisplayName("getAll() returns only enabled policies [GH-90000]")
+        @DisplayName("getAll() returns only enabled policies")
         void getAllReturnsEnabledOnly() { // GH-90000
             PolicyConfigLoader loader = new PolicyConfigLoader(); // GH-90000
 
@@ -98,7 +98,7 @@ class PolicyConfigLoaderTest {
         }
 
         @Test
-        @DisplayName("total rule count is positive [GH-90000]")
+        @DisplayName("total rule count is positive")
         void totalRuleCountIsPositive() { // GH-90000
             PolicyConfigLoader loader = new PolicyConfigLoader(); // GH-90000
 
@@ -113,45 +113,45 @@ class PolicyConfigLoaderTest {
     // ─── Phase-transition query API ───────────────────────────────────────────
 
     @Nested
-    @DisplayName("Phase transition query [GH-90000]")
+    @DisplayName("Phase transition query")
     class PhaseTransitionQuery {
 
         @Test
-        @DisplayName("getRulesForPhase('PLANNING') returns the test-coverage gate [GH-90000]")
+        @DisplayName("getRulesForPhase('PLANNING') returns the test-coverage gate")
         void rulesForPlanningPhase() { // GH-90000
             PolicyConfigLoader loader = new PolicyConfigLoader(); // GH-90000
 
-            List<PolicyDefinition.Rule> rules = loader.getRulesForPhase("PLANNING [GH-90000]");
+            List<PolicyDefinition.Rule> rules = loader.getRulesForPhase("PLANNING");
 
             assertThat(rules).isNotEmpty(); // GH-90000
             assertThat(rules).anyMatch(r -> "require_test_coverage_design_to_planning".equals(r.getId())); // GH-90000
         }
 
         @Test
-        @DisplayName("getRulesForPhase('DEPLOY') returns the security-scan gate [GH-90000]")
+        @DisplayName("getRulesForPhase('DEPLOY') returns the security-scan gate")
         void rulesForDeployPhase() { // GH-90000
             PolicyConfigLoader loader = new PolicyConfigLoader(); // GH-90000
 
-            List<PolicyDefinition.Rule> rules = loader.getRulesForPhase("DEPLOY [GH-90000]");
+            List<PolicyDefinition.Rule> rules = loader.getRulesForPhase("DEPLOY");
 
             assertThat(rules).isNotEmpty(); // GH-90000
             assertThat(rules).anyMatch(r -> "require_security_scan_before_deploy".equals(r.getId())); // GH-90000
         }
 
         @Test
-        @DisplayName("getRulesForTransition('DESIGN', 'PLANNING') returns exactly the coverage rule [GH-90000]")
+        @DisplayName("getRulesForTransition('DESIGN', 'PLANNING') returns exactly the coverage rule")
         void rulesForDesignToPlanningTransition() { // GH-90000
             PolicyConfigLoader loader = new PolicyConfigLoader(); // GH-90000
 
             List<PolicyDefinition.Rule> rules = loader.getRulesForTransition("DESIGN", "PLANNING"); // GH-90000
 
             assertThat(rules).hasSize(1); // GH-90000
-            assertThat(rules.get(0).getId()).isEqualTo("require_test_coverage_design_to_planning [GH-90000]");
-            assertThat(rules.get(0).getAction()).isEqualTo("BLOCK [GH-90000]");
+            assertThat(rules.get(0).getId()).isEqualTo("require_test_coverage_design_to_planning");
+            assertThat(rules.get(0).getAction()).isEqualTo("BLOCK");
         }
 
         @Test
-        @DisplayName("getRulesForTransition with no matching transition returns empty list [GH-90000]")
+        @DisplayName("getRulesForTransition with no matching transition returns empty list")
         void noRulesForUnknownTransition() { // GH-90000
             PolicyConfigLoader loader = new PolicyConfigLoader(); // GH-90000
 
@@ -161,13 +161,13 @@ class PolicyConfigLoaderTest {
         }
 
         @Test
-        @DisplayName("getRulesForPhase is case-insensitive [GH-90000]")
+        @DisplayName("getRulesForPhase is case-insensitive")
         void caseInsensitivePhaseQuery() { // GH-90000
             PolicyConfigLoader loader = new PolicyConfigLoader(); // GH-90000
 
             // Both lower-case and upper-case should yield the same results
-            List<PolicyDefinition.Rule> upper = loader.getRulesForPhase("DEPLOY [GH-90000]");
-            List<PolicyDefinition.Rule> lower = loader.getRulesForPhase("deploy [GH-90000]");
+            List<PolicyDefinition.Rule> upper = loader.getRulesForPhase("DEPLOY");
+            List<PolicyDefinition.Rule> lower = loader.getRulesForPhase("deploy");
 
             assertThat(lower.stream().map(PolicyDefinition.Rule::getId)) // GH-90000
                     .containsExactlyInAnyOrderElementsOf( // GH-90000
@@ -178,46 +178,46 @@ class PolicyConfigLoaderTest {
     // ─── Static loadAll(Path) ───────────────────────────────────────────────── // GH-90000
 
     @Nested
-    @DisplayName("loadAll(Path) directory scanning [GH-90000]")
+    @DisplayName("loadAll(Path) directory scanning")
     class LoadAll {
 
         @Test
-        @DisplayName("loads policies from all *.yaml files in a directory [GH-90000]")
+        @DisplayName("loads policies from all *.yaml files in a directory")
         void loadsFromDirectory(@TempDir Path tmpDir) throws IOException { // GH-90000
             String yaml = "policies:\n"
                     + "  - id: dynamic_policy\n"
                     + "    version: \"1.0\"\n"
                     + "    description: Dynamic\n"
                     + "    rules: []\n";
-            Files.writeString(tmpDir.resolve("dynamic.yaml [GH-90000]"), yaml);
+            Files.writeString(tmpDir.resolve("dynamic.yaml"), yaml);
 
             List<PolicyDefinition> loaded = PolicyConfigLoader.loadAll(tmpDir); // GH-90000
 
             assertThat(loaded).hasSize(1); // GH-90000
-            assertThat(loaded.get(0).getId()).isEqualTo("dynamic_policy [GH-90000]");
+            assertThat(loaded.get(0).getId()).isEqualTo("dynamic_policy");
         }
 
         @Test
-        @DisplayName("skips non-yaml files in directory [GH-90000]")
+        @DisplayName("skips non-yaml files in directory")
         void skipsNonYamlFiles(@TempDir Path tmpDir) throws IOException { // GH-90000
             String yaml = "policies:\n  - id: real_policy\n    rules: []\n";
-            Files.writeString(tmpDir.resolve("real.yaml [GH-90000]"), yaml);
-            Files.writeString(tmpDir.resolve("README.md [GH-90000]"), "# docs");
-            Files.writeString(tmpDir.resolve("config.json [GH-90000]"), "{}");
+            Files.writeString(tmpDir.resolve("real.yaml"), yaml);
+            Files.writeString(tmpDir.resolve("README.md"), "# docs");
+            Files.writeString(tmpDir.resolve("config.json"), "{}");
 
             List<PolicyDefinition> loaded = PolicyConfigLoader.loadAll(tmpDir); // GH-90000
 
             assertThat(loaded).hasSize(1); // GH-90000
-            assertThat(loaded.get(0).getId()).isEqualTo("real_policy [GH-90000]");
+            assertThat(loaded.get(0).getId()).isEqualTo("real_policy");
         }
 
         @Test
-        @DisplayName("merges policies from multiple YAML files [GH-90000]")
+        @DisplayName("merges policies from multiple YAML files")
         void mergesPoliciesFromMultipleFiles(@TempDir Path tmpDir) throws IOException { // GH-90000
             String yaml1 = "policies:\n  - id: policy_a\n    rules: []\n";
             String yaml2 = "policies:\n  - id: policy_b\n    rules: []\n";
-            Files.writeString(tmpDir.resolve("a.yaml [GH-90000]"), yaml1);
-            Files.writeString(tmpDir.resolve("b.yaml [GH-90000]"), yaml2);
+            Files.writeString(tmpDir.resolve("a.yaml"), yaml1);
+            Files.writeString(tmpDir.resolve("b.yaml"), yaml2);
 
             List<PolicyDefinition> loaded = PolicyConfigLoader.loadAll(tmpDir); // GH-90000
 
@@ -227,7 +227,7 @@ class PolicyConfigLoaderTest {
         }
 
         @Test
-        @DisplayName("returns empty list for empty directory [GH-90000]")
+        @DisplayName("returns empty list for empty directory")
         void emptyDirectoryReturnsEmptyList(@TempDir Path tmpDir) { // GH-90000
             List<PolicyDefinition> loaded = PolicyConfigLoader.loadAll(tmpDir); // GH-90000
 
@@ -235,19 +235,19 @@ class PolicyConfigLoaderTest {
         }
 
         @Test
-        @DisplayName("throws IllegalStateException on unparseable YAML (8.2.7 fail-fast) [GH-90000]")
+        @DisplayName("throws IllegalStateException on unparseable YAML (8.2.7 fail-fast)")
         void throwsOnMalformedYaml(@TempDir Path tmpDir) throws IOException { // GH-90000
-            Files.writeString(tmpDir.resolve("bad.yaml [GH-90000]"), "policies: [\n  broken: {{\n");
+            Files.writeString(tmpDir.resolve("bad.yaml"), "policies: [\n  broken: {{\n");
 
             assertThatThrownBy(() -> PolicyConfigLoader.loadAll(tmpDir)) // GH-90000
                     .isInstanceOf(IllegalStateException.class) // GH-90000
-                    .hasMessageContaining("failed to parse policy file [GH-90000]");
+                    .hasMessageContaining("failed to parse policy file");
         }
 
         @Test
-        @DisplayName("returns empty list for a non-existent (non-directory) path [GH-90000]")
+        @DisplayName("returns empty list for a non-existent (non-directory) path")
         void nonExistentPathReturnsEmpty(@TempDir Path tmpDir) { // GH-90000
-            Path nonexistent = tmpDir.resolve("does-not-exist [GH-90000]");
+            Path nonexistent = tmpDir.resolve("does-not-exist");
 
             List<PolicyDefinition> loaded = PolicyConfigLoader.loadAll(nonexistent); // GH-90000
 
@@ -258,18 +258,18 @@ class PolicyConfigLoaderTest {
     // ─── Duplicate ID detection ───────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Duplicate policy ID detection [GH-90000]")
+    @DisplayName("Duplicate policy ID detection")
     class DuplicateId {
 
         @Test
-        @DisplayName("throws IllegalStateException on duplicate policy IDs across files (8.2.7) [GH-90000]")
+        @DisplayName("throws IllegalStateException on duplicate policy IDs across files (8.2.7)")
         void throwsOnDuplicateIdAcrossFiles(@TempDir Path tmpDir) throws IOException { // GH-90000
             String yaml = "policies:\n  - id: dup_policy\n    rules: []\n";
             // The loader resolves {yappc.config.dir}/policies/*.yaml, so create a policies/ subdir
-            Path policiesDir = tmpDir.resolve("policies [GH-90000]");
+            Path policiesDir = tmpDir.resolve("policies");
             Files.createDirectories(policiesDir); // GH-90000
-            Files.writeString(policiesDir.resolve("file1.yaml [GH-90000]"), yaml);
-            Files.writeString(policiesDir.resolve("file2.yaml [GH-90000]"), yaml);
+            Files.writeString(policiesDir.resolve("file1.yaml"), yaml);
+            Files.writeString(policiesDir.resolve("file2.yaml"), yaml);
 
             // loadAll returns both; the constructor's buildIndex() will throw on duplicate // GH-90000
             // Use the constructor path via system property
@@ -278,9 +278,9 @@ class PolicyConfigLoaderTest {
             try {
                 assertThatThrownBy(PolicyConfigLoader::new) // GH-90000
                         .isInstanceOf(IllegalStateException.class) // GH-90000
-                        .hasMessageContaining("duplicate policy id [GH-90000]");
+                        .hasMessageContaining("duplicate policy id");
             } finally {
-                System.clearProperty("yappc.config.dir [GH-90000]");
+                System.clearProperty("yappc.config.dir");
             }
         }
     }
@@ -300,7 +300,7 @@ class PolicyConfigLoaderTest {
      * </ol>
      */
     @Nested
-    @DisplayName("8.3.3 Hot-reload integration (policy active within 10 s) [GH-90000]")
+    @DisplayName("8.3.3 Hot-reload integration (policy active within 10 s)")
     class HotReloadIntegration {
 
         private ConfigWatchService watcher;
@@ -313,10 +313,10 @@ class PolicyConfigLoaderTest {
         }
 
         @Test
-        @DisplayName("new policy YAML written to watched dir → findById returns it within 10 s (8.3.3) [GH-90000]")
+        @DisplayName("new policy YAML written to watched dir → findById returns it within 10 s (8.3.3)")
         void newPolicyBecomesActiveWithin10Seconds(@TempDir Path configRoot) throws IOException, InterruptedException { // GH-90000
             // ── SETUP ──────────────────────────────────────────────────────
-            Path policiesDir = configRoot.resolve("policies [GH-90000]");
+            Path policiesDir = configRoot.resolve("policies");
             Files.createDirectories(policiesDir); // GH-90000
 
             // Construct loader against the empty external dir (0 policies initially) // GH-90000
@@ -325,7 +325,7 @@ class PolicyConfigLoaderTest {
             try {
                 policyLoader = new PolicyConfigLoader(); // GH-90000
             } finally {
-                System.clearProperty("yappc.config.dir [GH-90000]");
+                System.clearProperty("yappc.config.dir");
             }
 
             // Verify initial state: empty
@@ -356,28 +356,28 @@ class PolicyConfigLoaderTest {
                     + "          to_phase: RELOAD\n"
                     + "        action: ALLOW\n";
 
-            Files.writeString(policiesDir.resolve("hot-policy.yaml [GH-90000]"), newPolicyYaml);
+            Files.writeString(policiesDir.resolve("hot-policy.yaml"), newPolicyYaml);
 
             // ── ASSERT: new policy active within 10 seconds ────────────────
             long deadline = System.currentTimeMillis() + 10_000; // GH-90000
-            while (policyLoader.findById("hot_loaded_policy [GH-90000]").isEmpty()
+            while (policyLoader.findById("hot_loaded_policy").isEmpty()
                     && System.currentTimeMillis() < deadline) { // GH-90000
                 TimeUnit.MILLISECONDS.sleep(100); // GH-90000
             }
 
-            Optional<PolicyDefinition> found = policyLoader.findById("hot_loaded_policy [GH-90000]");
+            Optional<PolicyDefinition> found = policyLoader.findById("hot_loaded_policy");
             assertThat(found) // GH-90000
-                    .as("Policy 'hot_loaded_policy' must be active within 10 s of file write [GH-90000]")
+                    .as("Policy 'hot_loaded_policy' must be active within 10 s of file write")
                     .isPresent(); // GH-90000
             assertThat(found.get().getRules()).hasSize(1); // GH-90000
-            assertThat(found.get().getRules().get(0).getId()).isEqualTo("hot_rule_1 [GH-90000]");
+            assertThat(found.get().getRules().get(0).getId()).isEqualTo("hot_rule_1");
         }
 
         @Test
-        @DisplayName("atomicReload() replaces snapshot atomically — concurrent reads stay consistent [GH-90000]")
+        @DisplayName("atomicReload() replaces snapshot atomically — concurrent reads stay consistent")
         void atomicReloadPreservesConsistency(@TempDir Path policiesDir) throws IOException { // GH-90000
             // Write initial single policy
-            Files.writeString(policiesDir.resolve("initial.yaml [GH-90000]"),
+            Files.writeString(policiesDir.resolve("initial.yaml"),
                     "policies:\n  - id: initial_policy\n    rules: []\n");
             List<PolicyDefinition> loaded = PolicyConfigLoader.loadAll(policiesDir); // GH-90000
 
@@ -388,13 +388,13 @@ class PolicyConfigLoaderTest {
             // so we need to simulate this differently: set property so external dir = policiesDir.parent
             // and rename policiesDir to match RELATIVE_DIR constant "policies"
             // Simpler: just test atomicReload directly without the full constructor
-            System.clearProperty("yappc.config.dir [GH-90000]");
+            System.clearProperty("yappc.config.dir");
 
             // Verify loadAll works
-            assertThat(loaded).hasSize(1).extracting(PolicyDefinition::getId).containsExactly("initial_policy [GH-90000]");
+            assertThat(loaded).hasSize(1).extracting(PolicyDefinition::getId).containsExactly("initial_policy");
 
             // Write a second policy file
-            Files.writeString(policiesDir.resolve("second.yaml [GH-90000]"),
+            Files.writeString(policiesDir.resolve("second.yaml"),
                     "policies:\n  - id: second_policy\n    rules: []\n");
 
             // Reload

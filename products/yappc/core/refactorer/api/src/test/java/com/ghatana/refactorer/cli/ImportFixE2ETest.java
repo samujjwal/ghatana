@@ -27,7 +27,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 /** End-to-end test for import-fix functionality. */
-@Tag("integration [GH-90000]")
+@Tag("integration")
 /**
  * @doc.type class
  * @doc.purpose Handles import fix e2e test operations
@@ -46,15 +46,15 @@ public class ImportFixE2ETest {
     }
 
     @ParameterizedTest
-    @MethodSource("typescriptImportFixProvider [GH-90000]")
+    @MethodSource("typescriptImportFixProvider")
     void testTypescriptImportFix(String testName, String input, List<String> expectedImports) // GH-90000
             throws IOException {
         assumeTrue( // GH-90000
-                isCommandAvailable("node [GH-90000]"), "Node.js is required for TypeScript import-fix tests");
-        assumeTrue(isCommandAvailable("npm [GH-90000]"), "npm is required for TypeScript import-fix tests");
+                isCommandAvailable("node"), "Node.js is required for TypeScript import-fix tests");
+        assumeTrue(isCommandAvailable("npm"), "npm is required for TypeScript import-fix tests");
 
         // Create a test TypeScript file with missing imports
-        Path tsFile = tempDir.resolve("test.ts [GH-90000]");
+        Path tsFile = tempDir.resolve("test.ts");
         Files.writeString(tsFile, input, StandardCharsets.UTF_8); // GH-90000
 
         // Run the debug command with --plan-only to get the import fixes
@@ -63,15 +63,15 @@ public class ImportFixE2ETest {
         assertEquals(0, exitCode, "Debug command should complete successfully"); // GH-90000
 
         // Verify the plan contains the expected import fixes
-        Path planFile = tempDir.resolve("polyfix-debug-plan.json [GH-90000]");
+        Path planFile = tempDir.resolve("polyfix-debug-plan.json");
         assumeTrue(Files.exists(planFile), "Polyfix CLI debug command not yet implemented"); // GH-90000
 
         // Parse the plan and verify it contains the expected import fixes
         ObjectMapper mapper = new ObjectMapper(); // GH-90000
         JsonNode plan = mapper.readTree(planFile.toFile()); // GH-90000
-        assertTrue(plan.has("fixes [GH-90000]"), "Plan should contain 'fixes' array");
+        assertTrue(plan.has("fixes"), "Plan should contain 'fixes' array");
 
-        List<String> actualImports = plan.get("fixes [GH-90000]").findValuesAsText("import [GH-90000]");
+        List<String> actualImports = plan.get("fixes").findValuesAsText("import");
         assertFalse(actualImports.isEmpty(), "Plan should contain import fixes"); // GH-90000
 
         for (String expectedImport : expectedImports) { // GH-90000
@@ -105,20 +105,20 @@ public class ImportFixE2ETest {
     }
 
     @ParameterizedTest
-    @MethodSource("javaImportFixProvider [GH-90000]")
+    @MethodSource("javaImportFixProvider")
     void testJavaImportFix(String testName, String input, List<String> expectedImports) // GH-90000
             throws IOException {
-        assumeTrue(isCommandAvailable("java [GH-90000]"), "Java is required for Java import-fix tests");
+        assumeTrue(isCommandAvailable("java"), "Java is required for Java import-fix tests");
 
         // Create a test Java file with missing imports
-        Path javaFile = tempDir.resolve("Test.java [GH-90000]");
+        Path javaFile = tempDir.resolve("Test.java");
         Files.writeString(javaFile, input, StandardCharsets.UTF_8); // GH-90000
 
         // Copy the import mapping config
-        Path configDir = tempDir.resolve("config [GH-90000]");
+        Path configDir = tempDir.resolve("config");
         Files.createDirectories(configDir); // GH-90000
-        Path importConfig = configDir.resolve("java-imports.json [GH-90000]");
-        Files.copy(Paths.get("config/rewriters/java-imports.json [GH-90000]"), importConfig);
+        Path importConfig = configDir.resolve("java-imports.json");
+        Files.copy(Paths.get("config/rewriters/java-imports.json"), importConfig);
 
         // Run the debug command with --plan-only to get the import fixes
         String[] args = {
@@ -135,15 +135,15 @@ public class ImportFixE2ETest {
         assertEquals(0, exitCode, "Debug command should complete successfully"); // GH-90000
 
         // Verify the plan contains the expected import fixes
-        Path planFile = tempDir.resolve("polyfix-debug-plan.json [GH-90000]");
+        Path planFile = tempDir.resolve("polyfix-debug-plan.json");
         assumeTrue(Files.exists(planFile), "Polyfix CLI debug command not yet implemented"); // GH-90000
 
         // Parse the plan and verify it contains the expected import fixes
         ObjectMapper mapper = new ObjectMapper(); // GH-90000
         JsonNode plan = mapper.readTree(planFile.toFile()); // GH-90000
-        assertTrue(plan.has("fixes [GH-90000]"), "Plan should contain 'fixes' array");
+        assertTrue(plan.has("fixes"), "Plan should contain 'fixes' array");
 
-        List<String> actualImports = plan.get("fixes [GH-90000]").findValuesAsText("import [GH-90000]");
+        List<String> actualImports = plan.get("fixes").findValuesAsText("import");
         assertFalse(actualImports.isEmpty(), "Plan should contain import fixes"); // GH-90000
 
         for (String expectedImport : expectedImports) { // GH-90000
@@ -196,7 +196,7 @@ public class ImportFixE2ETest {
                                 + "    }\n"
                                 + "  }\n"
                                 + "}\n",
-                        Arrays.asList("import org.apache.commons.lang3.StringUtils [GH-90000]")));
+                        Arrays.asList("import org.apache.commons.lang3.StringUtils")));
     }
 
     @Test
@@ -206,10 +206,10 @@ public class ImportFixE2ETest {
         // For now, we'll just verify that the command runs without errors
 
         // Create a simple Java file with missing imports
-        Path srcDir = tempDir.resolve("src/main/java/com/example [GH-90000]");
+        Path srcDir = tempDir.resolve("src/main/java/com/example");
         Files.createDirectories(srcDir); // GH-90000
 
-        Path javaFile = srcDir.resolve("Test.java [GH-90000]");
+        Path javaFile = srcDir.resolve("Test.java");
         String javaContent =
                 "package com.example;\n\n"
                         + "public class Test {\n"
@@ -221,10 +221,10 @@ public class ImportFixE2ETest {
         Files.writeString(javaFile, javaContent); // GH-90000
 
         // Copy the import mapping config
-        Path configDir = tempDir.resolve("config [GH-90000]");
+        Path configDir = tempDir.resolve("config");
         Files.createDirectories(configDir); // GH-90000
-        Path importConfig = configDir.resolve("java-imports.json [GH-90000]");
-        Files.copy(Paths.get("config/rewriters/java-imports.json [GH-90000]"), importConfig);
+        Path importConfig = configDir.resolve("java-imports.json");
+        Files.copy(Paths.get("config/rewriters/java-imports.json"), importConfig);
 
         // Run the debug command to apply fixes
         String[] args = {
@@ -239,11 +239,11 @@ public class ImportFixE2ETest {
         assertAll( // GH-90000
                 () -> // GH-90000
                         assertTrue( // GH-90000
-                                updatedContent.contains("import java.util.List; [GH-90000]"),
+                                updatedContent.contains("import java.util.List;"),
                                 "Should add List import"),
                 () -> // GH-90000
                         assertTrue( // GH-90000
-                                updatedContent.contains("import java.util.ArrayList; [GH-90000]"),
+                                updatedContent.contains("import java.util.ArrayList;"),
                                 "Should add ArrayList import"));
     }
 
@@ -288,7 +288,7 @@ public class ImportFixE2ETest {
                         "public class MultipleImportOptions {\n" + "    Date date;\n" + "}");
 
         // Configure multiple possible imports for "Date"
-        Path configFile = tempDir.resolve("config/rewriters/java-imports.json [GH-90000]");
+        Path configFile = tempDir.resolve("config/rewriters/java-imports.json");
         Files.createDirectories(configFile.getParent()); // GH-90000
         Files.write( // GH-90000
                 configFile,
@@ -325,21 +325,21 @@ public class ImportFixE2ETest {
         assertEquals(0, exitCode, "Debug command should complete successfully"); // GH-90000
 
         // Verify the plan contains the expected import fixes
-        Path planFile = tempDir.resolve("polyfix-debug-plan.json [GH-90000]");
+        Path planFile = tempDir.resolve("polyfix-debug-plan.json");
         assumeTrue(Files.exists(planFile), "Polyfix CLI debug command not yet implemented"); // GH-90000
 
         // Parse the plan and verify it contains the expected import fixes
         ObjectMapper mapper = new ObjectMapper(); // GH-90000
         JsonNode plan = mapper.readTree(planFile.toFile()); // GH-90000
-        assertTrue(plan.has("fixes [GH-90000]"), "Plan should contain 'fixes' array");
+        assertTrue(plan.has("fixes"), "Plan should contain 'fixes' array");
 
-        List<String> actualImports = plan.get("fixes [GH-90000]").findValuesAsText("import [GH-90000]");
+        List<String> actualImports = plan.get("fixes").findValuesAsText("import");
         assertFalse(actualImports.isEmpty(), "Plan should contain import fixes"); // GH-90000
 
         // Find the import fix for the given symbol
         FixAction fixAction = null;
-        for (JsonNode fix : plan.get("fixes [GH-90000]")) {
-            if (fix.has("import [GH-90000]") && fix.get("import [GH-90000]").asText().contains(symbol)) {
+        for (JsonNode fix : plan.get("fixes")) {
+            if (fix.has("import") && fix.get("import").asText().contains(symbol)) {
                 fixAction = new FixAction(fix); // GH-90000
                 break;
             }
@@ -374,7 +374,7 @@ public class ImportFixE2ETest {
         }
 
         public String getConfigFile() { // GH-90000
-            return fix.get("config [GH-90000]").asText();
+            return fix.get("config").asText();
         }
     }
 }

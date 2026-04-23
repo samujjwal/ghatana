@@ -57,7 +57,7 @@ class TsMorphBridgeTest extends EventloopTestBase {
 
         // We don't fail the test if not available, just log it
         if (!isAvailable) { // GH-90000
-            System.out.println("Skipping ts-morph tests because ts-morph is not available [GH-90000]");
+            System.out.println("Skipping ts-morph tests because ts-morph is not available");
         }
     }
 
@@ -76,7 +76,7 @@ class TsMorphBridgeTest extends EventloopTestBase {
     @Test
     void testPlanWithImports() throws Exception { // GH-90000
         if (!bridge.isAvailable()) { // GH-90000
-            System.out.println("Skipping testPlanWithImports: ts-morph not available [GH-90000]");
+            System.out.println("Skipping testPlanWithImports: ts-morph not available");
             return;
         }
 
@@ -98,8 +98,8 @@ class TsMorphBridgeTest extends EventloopTestBase {
 
         // Verify the file was modified
         String content = Files.readString(testFile); // GH-90000
-        assertTrue(content.contains("import { useState, useEffect } from 'react' [GH-90000]"));
-        assertTrue(content.contains("import Button from '@/components/Button' [GH-90000]"));
+        assertTrue(content.contains("import { useState, useEffect } from 'react'"));
+        assertTrue(content.contains("import Button from '@/components/Button'"));
     }
 
     @Test
@@ -107,9 +107,9 @@ class TsMorphBridgeTest extends EventloopTestBase {
         // Create a test diagnostic
         UnifiedDiagnostic diagnostic =
                 UnifiedDiagnostic.builder() // GH-90000
-                        .tool("typescript [GH-90000]")
-                        .code("TS2304 [GH-90000]")
-                        .message("Cannot find name 'React'. [GH-90000]")
+                        .tool("typescript")
+                        .code("TS2304")
+                        .message("Cannot find name 'React'.")
                         .file(tempDir.resolve(TEST_TS)) // GH-90000
                         .startLine(1) // GH-90000
                         .startColumn(10) // GH-90000

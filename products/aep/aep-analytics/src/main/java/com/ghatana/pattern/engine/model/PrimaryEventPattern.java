@@ -6,7 +6,11 @@ import java.util.Objects;
 
 /**
  * Represents a primary event pattern that matches a single event type.
- */
+  * @doc.type class
+ * @doc.purpose Provides primary event pattern functionality.
+ * @doc.layer product
+ * @doc.pattern Event
+*/
 public class PrimaryEventPattern extends AbstractPatternSpec {
     private final String eventType;
     private final String alias;

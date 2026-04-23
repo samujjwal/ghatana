@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * Tests for {@link InMemoryEventLogStoreProvider}.
  */
-@DisplayName("InMemoryEventLogStoreProvider [GH-90000]")
+@DisplayName("InMemoryEventLogStoreProvider")
 class InMemoryEventLogStoreProviderTest extends EventloopTestBase {
 
     private InMemoryEventLogStoreProvider store;
@@ -33,7 +33,7 @@ class InMemoryEventLogStoreProviderTest extends EventloopTestBase {
     @BeforeEach
     void setUp() { // GH-90000
         store = new InMemoryEventLogStoreProvider(); // GH-90000
-        tenant = TenantContext.of("tenant-1 [GH-90000]");
+        tenant = TenantContext.of("tenant-1");
     }
 
     private EventEntry entry(String type) { // GH-90000
@@ -47,59 +47,59 @@ class InMemoryEventLogStoreProviderTest extends EventloopTestBase {
     // ─── Append ──────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("append [GH-90000]")
+    @DisplayName("append")
     class Append {
 
         @Test
         void firstAppendReturnsOffset1() { // GH-90000
-            Offset offset = runPromise(() -> store.append(tenant, entry("OrderCreated [GH-90000]")));
-            assertThat(offset.value()).isEqualTo("1 [GH-90000]");
+            Offset offset = runPromise(() -> store.append(tenant, entry("OrderCreated")));
+            assertThat(offset.value()).isEqualTo("1");
         }
 
         @Test
         void subsequentAppendsIncrementOffset() { // GH-90000
-            runPromise(() -> store.append(tenant, entry("A [GH-90000]")));
-            Offset second = runPromise(() -> store.append(tenant, entry("B [GH-90000]")));
-            assertThat(second.value()).isEqualTo("2 [GH-90000]");
+            runPromise(() -> store.append(tenant, entry("A")));
+            Offset second = runPromise(() -> store.append(tenant, entry("B")));
+            assertThat(second.value()).isEqualTo("2");
         }
 
         @Test
         void differentTenantsHaveIndependentOffsets() { // GH-90000
-            TenantContext other = TenantContext.of("tenant-2 [GH-90000]");
-            Offset t1 = runPromise(() -> store.append(tenant, entry("X [GH-90000]")));
-            Offset t2 = runPromise(() -> store.append(other, entry("Y [GH-90000]")));
-            assertThat(t1.value()).isEqualTo("1 [GH-90000]");
-            assertThat(t2.value()).isEqualTo("1 [GH-90000]");
+            TenantContext other = TenantContext.of("tenant-2");
+            Offset t1 = runPromise(() -> store.append(tenant, entry("X")));
+            Offset t2 = runPromise(() -> store.append(other, entry("Y")));
+            assertThat(t1.value()).isEqualTo("1");
+            assertThat(t2.value()).isEqualTo("1");
         }
     }
 
     // ─── appendBatch ─────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("appendBatch [GH-90000]")
+    @DisplayName("appendBatch")
     class AppendBatch {
 
         @Test
         void returnsOneOffsetPerEntry() { // GH-90000
-            List<EventEntry> entries = List.of(entry("A [GH-90000]"), entry("B [GH-90000]"), entry("C [GH-90000]"));
+            List<EventEntry> entries = List.of(entry("A"), entry("B"), entry("C"));
             List<Offset> offsets = runPromise(() -> store.appendBatch(tenant, entries)); // GH-90000
             assertThat(offsets).hasSize(3); // GH-90000
-            assertThat(offsets.get(0).value()).isEqualTo("1 [GH-90000]");
-            assertThat(offsets.get(1).value()).isEqualTo("2 [GH-90000]");
-            assertThat(offsets.get(2).value()).isEqualTo("3 [GH-90000]");
+            assertThat(offsets.get(0).value()).isEqualTo("1");
+            assertThat(offsets.get(1).value()).isEqualTo("2");
+            assertThat(offsets.get(2).value()).isEqualTo("3");
         }
     }
 
     // ─── read ─────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("read [GH-90000]")
+    @DisplayName("read")
     class Read {
 
         @Test
         void readFromBeginning() { // GH-90000
-            runPromise(() -> store.append(tenant, entry("A [GH-90000]")));
-            runPromise(() -> store.append(tenant, entry("B [GH-90000]")));
+            runPromise(() -> store.append(tenant, entry("A")));
+            runPromise(() -> store.append(tenant, entry("B")));
 
             List<EventEntry> result = runPromise(() -> store.read(tenant, Offset.of(0L), 10)); // GH-90000
             assertThat(result).hasSize(2); // GH-90000
@@ -108,7 +108,7 @@ class InMemoryEventLogStoreProviderTest extends EventloopTestBase {
         @Test
         void limitHonoured() { // GH-90000
             for (int i = 0; i < 5; i++) { // GH-90000
-                runPromise(() -> store.append(tenant, entry("E [GH-90000]")));
+                runPromise(() -> store.append(tenant, entry("E")));
             }
             List<EventEntry> result = runPromise(() -> store.read(tenant, Offset.of(0L), 2)); // GH-90000
             assertThat(result).hasSize(2); // GH-90000
@@ -117,15 +117,15 @@ class InMemoryEventLogStoreProviderTest extends EventloopTestBase {
         @Test
         void emptyForUnknownTenant() { // GH-90000
             List<EventEntry> result = runPromise(() -> // GH-90000
-                    store.read(TenantContext.of("unknown [GH-90000]"), Offset.of(0L), 10));
+                    store.read(TenantContext.of("unknown"), Offset.of(0L), 10));
             assertThat(result).isEmpty(); // GH-90000
         }
 
         @Test
         void readFromMidway() { // GH-90000
-            runPromise(() -> store.append(tenant, entry("A [GH-90000]")));
-            runPromise(() -> store.append(tenant, entry("B [GH-90000]")));
-            runPromise(() -> store.append(tenant, entry("C [GH-90000]")));
+            runPromise(() -> store.append(tenant, entry("A")));
+            runPromise(() -> store.append(tenant, entry("B")));
+            runPromise(() -> store.append(tenant, entry("C")));
 
             // Read starting from offset 2 — should return entries with offset >= 2
             List<EventEntry> result = runPromise(() -> store.read(tenant, Offset.of(2L), 10)); // GH-90000
@@ -134,28 +134,28 @@ class InMemoryEventLogStoreProviderTest extends EventloopTestBase {
 
         @Test
         void nonNumericOffsetThrows() { // GH-90000
-            runPromise(() -> store.append(tenant, entry("A [GH-90000]")));
+            runPromise(() -> store.append(tenant, entry("A")));
             assertThatThrownBy(() -> // GH-90000
-                    runPromise(() -> store.read(tenant, Offset.of("bad [GH-90000]"), 10)))
+                    runPromise(() -> store.read(tenant, Offset.of("bad"), 10)))
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("Offset must be numeric [GH-90000]");
+                    .hasMessageContaining("Offset must be numeric");
         }
     }
 
     // ─── readByTimeRange ─────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("readByTimeRange [GH-90000]")
+    @DisplayName("readByTimeRange")
     class ReadByTimeRange {
 
         @Test
         void filtersToRange() { // GH-90000
-            Instant base = Instant.parse("2026-01-01T00:00:00Z [GH-90000]");
-            EventEntry before = EventEntry.builder().eventType("Before [GH-90000]")
+            Instant base = Instant.parse("2026-01-01T00:00:00Z");
+            EventEntry before = EventEntry.builder().eventType("Before")
                     .timestamp(base.minusSeconds(10)).payload("{}".getBytes()).build(); // GH-90000
-            EventEntry inside = EventEntry.builder().eventType("Inside [GH-90000]")
+            EventEntry inside = EventEntry.builder().eventType("Inside")
                     .timestamp(base).payload("{}".getBytes()).build(); // GH-90000
-            EventEntry after = EventEntry.builder().eventType("After [GH-90000]")
+            EventEntry after = EventEntry.builder().eventType("After")
                     .timestamp(base.plusSeconds(100)).payload("{}".getBytes()).build(); // GH-90000
 
             runPromise(() -> store.append(tenant, before)); // GH-90000
@@ -165,21 +165,21 @@ class InMemoryEventLogStoreProviderTest extends EventloopTestBase {
             List<EventEntry> result = runPromise(() -> // GH-90000
                     store.readByTimeRange(tenant, base, base.plusSeconds(50), 10)); // GH-90000
             assertThat(result).hasSize(1); // GH-90000
-            assertThat(result.get(0).eventType()).isEqualTo("Inside [GH-90000]");
+            assertThat(result.get(0).eventType()).isEqualTo("Inside");
         }
     }
 
     // ─── readByType ───────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("readByType [GH-90000]")
+    @DisplayName("readByType")
     class ReadByType {
 
         @Test
         void returnsOnlyMatchingType() { // GH-90000
-            runPromise(() -> store.append(tenant, entry("TypeA [GH-90000]")));
-            runPromise(() -> store.append(tenant, entry("TypeB [GH-90000]")));
-            runPromise(() -> store.append(tenant, entry("TypeA [GH-90000]")));
+            runPromise(() -> store.append(tenant, entry("TypeA")));
+            runPromise(() -> store.append(tenant, entry("TypeB")));
+            runPromise(() -> store.append(tenant, entry("TypeA")));
 
             List<EventEntry> result = runPromise(() -> // GH-90000
                     store.readByType(tenant, "TypeA", Offset.of(0L), 10)); // GH-90000
@@ -191,42 +191,42 @@ class InMemoryEventLogStoreProviderTest extends EventloopTestBase {
     // ─── getLatestOffset / getEarliestOffset ─────────────────────────────────
 
     @Nested
-    @DisplayName("offset queries [GH-90000]")
+    @DisplayName("offset queries")
     class OffsetQueries {
 
         @Test
         void latestOffsetForEmptyTenantIsZero() { // GH-90000
             Offset latest = runPromise(() -> // GH-90000
-                    store.getLatestOffset(TenantContext.of("new-tenant [GH-90000]")));
-            assertThat(latest.value()).isEqualTo("0 [GH-90000]");
+                    store.getLatestOffset(TenantContext.of("new-tenant")));
+            assertThat(latest.value()).isEqualTo("0");
         }
 
         @Test
         void latestOffsetReflectsAppendsCount() { // GH-90000
-            runPromise(() -> store.append(tenant, entry("A [GH-90000]")));
-            runPromise(() -> store.append(tenant, entry("B [GH-90000]")));
+            runPromise(() -> store.append(tenant, entry("A")));
+            runPromise(() -> store.append(tenant, entry("B")));
             Offset latest = runPromise(() -> store.getLatestOffset(tenant)); // GH-90000
-            assertThat(latest.value()).isEqualTo("2 [GH-90000]");
+            assertThat(latest.value()).isEqualTo("2");
         }
 
         @Test
         void earliestOffsetIsAlwaysZero() { // GH-90000
-            runPromise(() -> store.append(tenant, entry("A [GH-90000]")));
+            runPromise(() -> store.append(tenant, entry("A")));
             Offset earliest = runPromise(() -> store.getEarliestOffset(tenant)); // GH-90000
-            assertThat(earliest.value()).isEqualTo("0 [GH-90000]");
+            assertThat(earliest.value()).isEqualTo("0");
         }
     }
 
     // ─── tail ────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("tail [GH-90000]")
+    @DisplayName("tail")
     class Tail {
 
         @Test
         void deliversExistingEntries() { // GH-90000
-            runPromise(() -> store.append(tenant, entry("E1 [GH-90000]")));
-            runPromise(() -> store.append(tenant, entry("E2 [GH-90000]")));
+            runPromise(() -> store.append(tenant, entry("E1")));
+            runPromise(() -> store.append(tenant, entry("E2")));
 
             List<EventEntry> received = new ArrayList<>(); // GH-90000
             EventLogStore.Subscription sub = runPromise(() -> // GH-90000
@@ -250,8 +250,8 @@ class InMemoryEventLogStoreProviderTest extends EventloopTestBase {
 
         @Test
         void tailFromEndDeliversNothing() { // GH-90000
-            runPromise(() -> store.append(tenant, entry("X [GH-90000]")));
-            runPromise(() -> store.append(tenant, entry("Y [GH-90000]")));
+            runPromise(() -> store.append(tenant, entry("X")));
+            runPromise(() -> store.append(tenant, entry("Y")));
 
             List<EventEntry> received = new ArrayList<>(); // GH-90000
             // offset == size of list => no entries returned

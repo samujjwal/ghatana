@@ -86,7 +86,7 @@ class PostgresqlCheckpointStoreTest {
         assertThatThrownBy(() -> // GH-90000
                         checkpointStore.createExecution(tenantId, "pipeline", "instance", idempotencyKey, Map.of())) // GH-90000
                 .isInstanceOf(RuntimeException.class) // GH-90000
-                .hasMessageContaining("already exists [GH-90000]");
+                .hasMessageContaining("already exists");
 
         verify(pipelineRepository).existsByIdempotencyKey(tenantId, idempotencyKey); // GH-90000
         verify(pipelineRepository, never()).save(any()); // GH-90000
@@ -135,7 +135,7 @@ class PostgresqlCheckpointStoreTest {
         assertThatThrownBy(() -> checkpointStore.updateCheckpoint( // GH-90000
                         instanceId, "step", "name", PipelineCheckpointStatus.STEP_SUCCESS, null, null))
                 .isInstanceOf(RuntimeException.class) // GH-90000
-                .hasMessageContaining("not found [GH-90000]");
+                .hasMessageContaining("not found");
 
         verify(pipelineRepository).findById(instanceId); // GH-90000
         verify(pipelineRepository, never()).save(any()); // GH-90000
@@ -299,7 +299,7 @@ class PostgresqlCheckpointStoreTest {
 
         // Then
         assertThat(result).isPresent(); // GH-90000
-        assertThat(result.get().getStepId()).isEqualTo("step-1 [GH-90000]");
+        assertThat(result.get().getStepId()).isEqualTo("step-1");
 
         verify(stepRepository).findLastSuccessfulStep(instanceId); // GH-90000
     }

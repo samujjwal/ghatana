@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("Lifecycle outer endpoint security [GH-90000]")
+@DisplayName("Lifecycle outer endpoint security")
 class LifecycleEndpointSecurityRoutingTest extends EventloopTestBase {
 
     private static final String DEV_KEY = "dev-key";
@@ -36,7 +36,7 @@ class LifecycleEndpointSecurityRoutingTest extends EventloopTestBase {
 
     private static AsyncServlet outerRouterLikeServlet() { // GH-90000
         AsyncServlet securedMetrics = YappcApiSecurity.secureReadEndpoint( // GH-90000
-                request -> HttpResponse.ok200().withPlainText("metrics [GH-90000]").toPromise(),
+                request -> HttpResponse.ok200().withPlainText("metrics").toPromise(),
                 "yappc:lifecycle-metrics",
                 "dev-key,test-key",
                 "dev-key=tenant-1;test-key=tenant-2",
@@ -47,20 +47,20 @@ class LifecycleEndpointSecurityRoutingTest extends EventloopTestBase {
         return request -> {
             String path = request.getPath(); // GH-90000
             if ("/health".equals(path)) { // GH-90000
-                return HttpResponse.ok200().withPlainText("OK [GH-90000]").toPromise();
+                return HttpResponse.ok200().withPlainText("OK").toPromise();
             }
             if ("/ready".equals(path)) { // GH-90000
-                return HttpResponse.ok200().withPlainText("READY [GH-90000]").toPromise();
+                return HttpResponse.ok200().withPlainText("READY").toPromise();
             }
             if ("/metrics".equals(path)) { // GH-90000
                 return securedMetrics.serve(request); // GH-90000
             }
-            return HttpResponse.ofCode(404).withPlainText("Not Found [GH-90000]").toPromise();
+            return HttpResponse.ofCode(404).withPlainText("Not Found").toPromise();
         };
     }
 
     @Test
-    @DisplayName("health and ready endpoints are public [GH-90000]")
+    @DisplayName("health and ready endpoints are public")
     void healthAndReadyArePublic() { // GH-90000
         AsyncServlet router = outerRouterLikeServlet(); // GH-90000
 
@@ -74,7 +74,7 @@ class LifecycleEndpointSecurityRoutingTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("metrics endpoint remains API-key protected [GH-90000]")
+    @DisplayName("metrics endpoint remains API-key protected")
     void metricsRemainsProtected() { // GH-90000
         AsyncServlet router = outerRouterLikeServlet(); // GH-90000
 
@@ -83,8 +83,8 @@ class LifecycleEndpointSecurityRoutingTest extends EventloopTestBase {
 
         HttpResponse authorized = runPromise(() -> router.serve( // GH-90000
                 HttpRequest.builder(HttpMethod.GET, "http://localhost/metrics") // GH-90000
-                        .withHeader(HttpHeaders.of("X-API-Key [GH-90000]"), DEV_KEY)
-                        .withHeader(HttpHeaders.of("X-Forwarded-For [GH-90000]"), "127.0.0.1")
+                        .withHeader(HttpHeaders.of("X-API-Key"), DEV_KEY)
+                        .withHeader(HttpHeaders.of("X-Forwarded-For"), "127.0.0.1")
                         .build())); // GH-90000
 
         assertThat(unauthorized.getCode()).isEqualTo(401); // GH-90000

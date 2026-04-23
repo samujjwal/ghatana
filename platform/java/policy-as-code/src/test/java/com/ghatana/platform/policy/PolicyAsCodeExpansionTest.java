@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Policy-as-Code - Phase 4 Boundary [GH-90000]")
+@DisplayName("Policy-as-Code - Phase 4 Boundary")
 class PolicyAsCodeExpansionTest extends EventloopTestBase {
 
     // ============================================
@@ -33,11 +33,11 @@ class PolicyAsCodeExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Policy Evaluation [GH-90000]")
+    @DisplayName("Policy Evaluation")
     class PolicyEvaluationTests {
 
         @Test
-        @DisplayName("Single policy condition evaluation [GH-90000]")
+        @DisplayName("Single policy condition evaluation")
         void singleConditionEvaluation() { // GH-90000
             // Policy: IF principal=='user-1' THEN action=='read' IS ALLOWED
             Map<String, Object> context = new HashMap<>(); // GH-90000
@@ -46,14 +46,14 @@ class PolicyAsCodeExpansionTest extends EventloopTestBase {
             context.put("resource", "doc-1"); // GH-90000
 
             // Simulate condition matching
-            boolean principalMatches = "user-1".equals(context.get("principal [GH-90000]"));
-            boolean actionMatches = "read".equals(context.get("action [GH-90000]"));
+            boolean principalMatches = "user-1".equals(context.get("principal"));
+            boolean actionMatches = "read".equals(context.get("action"));
 
             assertThat(principalMatches && actionMatches).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("Complex policy conditions at scale [GH-90000]")
+        @DisplayName("Complex policy conditions at scale")
         void complexConditionsAtScale() { // GH-90000
             runPromise(() -> { // GH-90000
                 io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete(); // GH-90000
@@ -73,7 +73,7 @@ class PolicyAsCodeExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Policy evaluation with nested conditions [GH-90000]")
+        @DisplayName("Policy evaluation with nested conditions")
         void nestedConditions() { // GH-90000
             Map<String, Object> outerPolicy = new HashMap<>(); // GH-90000
             outerPolicy.put("condition", "principal == 'admin'"); // GH-90000
@@ -83,12 +83,12 @@ class PolicyAsCodeExpansionTest extends EventloopTestBase {
             innerPolicy.put("resourceType", "collection"); // GH-90000
 
             // Both conditions must be satisfied
-            assertThat(outerPolicy.get("condition [GH-90000]")).isNotNull();
-            assertThat(innerPolicy.get("condition [GH-90000]")).isNotNull();
+            assertThat(outerPolicy.get("condition")).isNotNull();
+            assertThat(innerPolicy.get("condition")).isNotNull();
         }
 
         @Test
-        @DisplayName("Policy evaluation with caching [GH-90000]")
+        @DisplayName("Policy evaluation with caching")
         void evaluationCaching() { // GH-90000
             Map<String, Map<String, Object>> evaluationCache = new HashMap<>(); // GH-90000
 
@@ -111,11 +111,11 @@ class PolicyAsCodeExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Policy Application Boundaries [GH-90000]")
+    @DisplayName("Policy Application Boundaries")
     class PolicyApplicationTests {
 
         @Test
-        @DisplayName("Policy application to multiple resources [GH-90000]")
+        @DisplayName("Policy application to multiple resources")
         void multiResourceApplication() { // GH-90000
             runPromise(() -> { // GH-90000
                 io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete(); // GH-90000
@@ -131,7 +131,7 @@ class PolicyAsCodeExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Policy boundaries between tenants [GH-90000]")
+        @DisplayName("Policy boundaries between tenants")
         void tenantBoundaries() { // GH-90000
             Map<String, List<String>> tenantPolicies = new HashMap<>(); // GH-90000
 
@@ -146,12 +146,12 @@ class PolicyAsCodeExpansionTest extends EventloopTestBase {
 
             // Each tenant has isolated policies
             assertThat(tenantPolicies).hasSize(5); // GH-90000
-            assertThat(tenantPolicies.get("t0 [GH-90000]")).hasSize(20);
-            assertThat(tenantPolicies.get("t1 [GH-90000]")).hasSize(20);
+            assertThat(tenantPolicies.get("t0")).hasSize(20);
+            assertThat(tenantPolicies.get("t1")).hasSize(20);
         }
 
         @Test
-        @DisplayName("Policy effect precedence (allow/deny) [GH-90000]")
+        @DisplayName("Policy effect precedence (allow/deny)")
         void effectPrecedence() { // GH-90000
             Map<String, String> policyEffects = new HashMap<>(); // GH-90000
             policyEffects.put("allow-read", "ALLOW"); // GH-90000
@@ -159,8 +159,8 @@ class PolicyAsCodeExpansionTest extends EventloopTestBase {
             policyEffects.put("conditional-write", "CONDITIONAL"); // GH-90000
 
             // Deny takes precedence over Allow
-            assertThat(policyEffects.get("deny-delete [GH-90000]")).isEqualTo("DENY [GH-90000]");
-            assertThat(policyEffects.get("allow-read [GH-90000]")).isEqualTo("ALLOW [GH-90000]");
+            assertThat(policyEffects.get("deny-delete")).isEqualTo("DENY");
+            assertThat(policyEffects.get("allow-read")).isEqualTo("ALLOW");
         }
     }
 
@@ -169,11 +169,11 @@ class PolicyAsCodeExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Policy Versioning [GH-90000]")
+    @DisplayName("Policy Versioning")
     class PolicyVersioningTests {
 
         @Test
-        @DisplayName("Policy version management [GH-90000]")
+        @DisplayName("Policy version management")
         void versionManagement() { // GH-90000
             Map<Integer, Map<String, Object>> versions = new HashMap<>(); // GH-90000
 
@@ -186,11 +186,11 @@ class PolicyAsCodeExpansionTest extends EventloopTestBase {
             }
 
             assertThat(versions).hasSize(10); // GH-90000
-            assertThat(versions.get(10).get("version [GH-90000]")).isEqualTo(10);
+            assertThat(versions.get(10).get("version")).isEqualTo(10);
         }
 
         @Test
-        @DisplayName("Policy rollback and superseding [GH-90000]")
+        @DisplayName("Policy rollback and superseding")
         void policyRollback() { // GH-90000
             Map<String, Object> activePolicy = new HashMap<>(); // GH-90000
             activePolicy.put("id", "policy-1"); // GH-90000
@@ -202,8 +202,8 @@ class PolicyAsCodeExpansionTest extends EventloopTestBase {
             previousPolicy.put("version", 4); // GH-90000
             previousPolicy.put("status", "SUPERSEDED"); // GH-90000
 
-            int activeVersion = (Integer) activePolicy.get("version [GH-90000]");
-            int previousVersion = (Integer) previousPolicy.get("version [GH-90000]");
+            int activeVersion = (Integer) activePolicy.get("version");
+            int previousVersion = (Integer) previousPolicy.get("version");
             assertThat(activeVersion).isGreaterThan(previousVersion); // GH-90000
         }
     }

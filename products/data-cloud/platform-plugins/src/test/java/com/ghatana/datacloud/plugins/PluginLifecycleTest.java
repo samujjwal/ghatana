@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.*;
  * Test plugin lifecycle, initialization, health checks, configuration,
  * dependencies, and failure recovery.
  */
-@DisplayName("Plugin Lifecycle Tests [GH-90000]")
+@DisplayName("Plugin Lifecycle Tests")
 class PluginLifecycleTest {
 
     // =========================================================================
@@ -33,11 +33,11 @@ class PluginLifecycleTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Plugin state transitions [GH-90000]")
+    @DisplayName("Plugin state transitions")
     class PluginStateTransitions {
 
         @Test
-        @DisplayName("should transition from UNLOADED to LOADED on initialization [GH-90000]")
+        @DisplayName("should transition from UNLOADED to LOADED on initialization")
         void shouldTransitionFromUnloadedToLoaded() { // GH-90000
             PluginState initialState = PluginState.UNLOADED;
             PluginState loadedState = PluginState.LOADED;
@@ -47,7 +47,7 @@ class PluginLifecycleTest {
         }
 
         @Test
-        @DisplayName("should transition from LOADED to STARTED on start [GH-90000]")
+        @DisplayName("should transition from LOADED to STARTED on start")
         void shouldTransitionFromLoadedToStarted() { // GH-90000
             PluginState loadedState = PluginState.LOADED;
             PluginState startedState = PluginState.STARTED;
@@ -56,7 +56,7 @@ class PluginLifecycleTest {
         }
 
         @Test
-        @DisplayName("should transition from STARTED to STOPPED on stop [GH-90000]")
+        @DisplayName("should transition from STARTED to STOPPED on stop")
         void shouldTransitionFromStartedToStopped() { // GH-90000
             PluginState startedState = PluginState.STARTED;
             PluginState stoppedState = PluginState.STOPPED;
@@ -65,7 +65,7 @@ class PluginLifecycleTest {
         }
 
         @Test
-        @DisplayName("should transition to FAILED on error [GH-90000]")
+        @DisplayName("should transition to FAILED on error")
         void shouldTransitionToFailedOnError() { // GH-90000
             PluginState failedState = PluginState.FAILED;
 
@@ -73,7 +73,7 @@ class PluginLifecycleTest {
         }
 
         @Test
-        @DisplayName("should support all state values [GH-90000]")
+        @DisplayName("should support all state values")
         void shouldSupportAllStateValues() { // GH-90000
             PluginState[] states = PluginState.values(); // GH-90000
 
@@ -92,32 +92,32 @@ class PluginLifecycleTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Plugin metadata [GH-90000]")
+    @DisplayName("Plugin metadata")
     class PluginMetadataTests {
 
         @Test
-        @DisplayName("should create valid plugin metadata [GH-90000]")
+        @DisplayName("should create valid plugin metadata")
         void shouldCreateValidPluginMetadata() { // GH-90000
             PluginMetadata metadata = PluginMetadata.builder() // GH-90000
-                .id("redis-m0-hot [GH-90000]")
-                .name("Redis M0 HOT Tier Storage Plugin [GH-90000]")
-                .version("1.0.0 [GH-90000]")
-                .description("Redis M0 HOT Tier Storage Plugin [GH-90000]")
+                .id("redis-m0-hot")
+                .name("Redis M0 HOT Tier Storage Plugin")
+                .version("1.0.0")
+                .description("Redis M0 HOT Tier Storage Plugin")
                 .type(PluginType.STORAGE) // GH-90000
                 .capabilities(Set.of("streaming", "time-range-query", "idempotency")) // GH-90000
-                .vendor("Ghatana [GH-90000]")
-                .license("Apache-2.0 [GH-90000]")
+                .vendor("Ghatana")
+                .license("Apache-2.0")
                 .build(); // GH-90000
 
-            assertThat(metadata.id()).isEqualTo("redis-m0-hot [GH-90000]");
-            assertThat(metadata.name()).isEqualTo("Redis M0 HOT Tier Storage Plugin [GH-90000]");
-            assertThat(metadata.version()).isEqualTo("1.0.0 [GH-90000]");
+            assertThat(metadata.id()).isEqualTo("redis-m0-hot");
+            assertThat(metadata.name()).isEqualTo("Redis M0 HOT Tier Storage Plugin");
+            assertThat(metadata.version()).isEqualTo("1.0.0");
             assertThat(metadata.type()).isEqualTo(PluginType.STORAGE); // GH-90000
             assertThat(metadata.capabilities()).contains("streaming", "time-range-query"); // GH-90000
         }
 
         @Test
-        @DisplayName("should support plugin type enumeration [GH-90000]")
+        @DisplayName("should support plugin type enumeration")
         void shouldSupportPluginTypeEnumeration() { // GH-90000
             PluginType[] types = PluginType.values(); // GH-90000
 
@@ -126,14 +126,14 @@ class PluginLifecycleTest {
         }
 
         @Test
-        @DisplayName("should handle metadata with minimal fields [GH-90000]")
+        @DisplayName("should handle metadata with minimal fields")
         void shouldHandleMetadataWithMinimalFields() { // GH-90000
             PluginMetadata metadata = PluginMetadata.builder() // GH-90000
-                .id("test-plugin [GH-90000]")
+                .id("test-plugin")
                 .type(PluginType.STORAGE) // GH-90000
                 .build(); // GH-90000
 
-            assertThat(metadata.id()).isEqualTo("test-plugin [GH-90000]");
+            assertThat(metadata.id()).isEqualTo("test-plugin");
             assertThat(metadata.type()).isEqualTo(PluginType.STORAGE); // GH-90000
         }
     }
@@ -143,11 +143,11 @@ class PluginLifecycleTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Plugin configuration [GH-90000]")
+    @DisplayName("Plugin configuration")
     class PluginConfiguration {
 
         @Test
-        @DisplayName("should validate configuration parameters [GH-90000]")
+        @DisplayName("should validate configuration parameters")
         void shouldValidateConfigurationParameters() { // GH-90000
             Map<String, Object> config = Map.of( // GH-90000
                 "host", "localhost",
@@ -156,24 +156,24 @@ class PluginLifecycleTest {
                 "maxConnections", 10
             );
 
-            assertThat(config).containsKey("host [GH-90000]");
-            assertThat(config).containsKey("port [GH-90000]");
-            assertThat(config.get("timeout [GH-90000]")).isEqualTo(5000);
-            assertThat(config.get("maxConnections [GH-90000]")).isEqualTo(10);
+            assertThat(config).containsKey("host");
+            assertThat(config).containsKey("port");
+            assertThat(config.get("timeout")).isEqualTo(5000);
+            assertThat(config.get("maxConnections")).isEqualTo(10);
         }
 
         @Test
-        @DisplayName("should handle missing configuration with defaults [GH-90000]")
+        @DisplayName("should handle missing configuration with defaults")
         void shouldHandleMissingConfigurationWithDefaults() { // GH-90000
             Map<String, Object> config = Map.of("host", "localhost"); // GH-90000
 
             // Missing port should use default
-            int defaultPort = config.containsKey("port [GH-90000]") ? (int) config.get("port [GH-90000]") : 6379;
+            int defaultPort = config.containsKey("port") ? (int) config.get("port") : 6379;
             assertThat(defaultPort).isEqualTo(6379); // GH-90000
         }
 
         @Test
-        @DisplayName("should validate configuration types [GH-90000]")
+        @DisplayName("should validate configuration types")
         void shouldValidateConfigurationTypes() { // GH-90000
             Map<String, Object> config = Map.of( // GH-90000
                 "stringParam", "value",
@@ -182,10 +182,10 @@ class PluginLifecycleTest {
                 "listParam", List.of("a", "b") // GH-90000
             );
 
-            assertThat(config.get("stringParam [GH-90000]")).isInstanceOf(String.class);
-            assertThat(config.get("intParam [GH-90000]")).isInstanceOf(Integer.class);
-            assertThat(config.get("boolParam [GH-90000]")).isInstanceOf(Boolean.class);
-            assertThat(config.get("listParam [GH-90000]")).isInstanceOf(List.class);
+            assertThat(config.get("stringParam")).isInstanceOf(String.class);
+            assertThat(config.get("intParam")).isInstanceOf(Integer.class);
+            assertThat(config.get("boolParam")).isInstanceOf(Boolean.class);
+            assertThat(config.get("listParam")).isInstanceOf(List.class);
         }
     }
 
@@ -194,11 +194,11 @@ class PluginLifecycleTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Plugin dependencies [GH-90000]")
+    @DisplayName("Plugin dependencies")
     class PluginDependencies {
 
         @Test
-        @DisplayName("should handle plugin with no dependencies [GH-90000]")
+        @DisplayName("should handle plugin with no dependencies")
         void shouldHandlePluginWithNoDependencies() { // GH-90000
             Set<String> dependencies = Set.of(); // GH-90000
 
@@ -206,16 +206,16 @@ class PluginLifecycleTest {
         }
 
         @Test
-        @DisplayName("should handle plugin with single dependency [GH-90000]")
+        @DisplayName("should handle plugin with single dependency")
         void shouldHandlePluginWithSingleDependency() { // GH-90000
-            Set<String> dependencies = Set.of("postgresql-l1-warm [GH-90000]");
+            Set<String> dependencies = Set.of("postgresql-l1-warm");
 
             assertThat(dependencies).hasSize(1); // GH-90000
-            assertThat(dependencies).contains("postgresql-l1-warm [GH-90000]");
+            assertThat(dependencies).contains("postgresql-l1-warm");
         }
 
         @Test
-        @DisplayName("should handle plugin with multiple dependencies [GH-90000]")
+        @DisplayName("should handle plugin with multiple dependencies")
         void shouldHandlePluginWithMultipleDependencies() { // GH-90000
             Set<String> dependencies = Set.of( // GH-90000
                 "postgresql-l1-warm",
@@ -228,13 +228,13 @@ class PluginLifecycleTest {
         }
 
         @Test
-        @DisplayName("should detect circular dependencies [GH-90000]")
+        @DisplayName("should detect circular dependencies")
         void shouldDetectCircularDependencies() { // GH-90000
-            Set<String> pluginADeps = Set.of("plugin-b [GH-90000]");
-            Set<String> pluginBDeps = Set.of("plugin-c [GH-90000]");
-            Set<String> pluginCDeps = Set.of("plugin-a [GH-90000]"); // circular
+            Set<String> pluginADeps = Set.of("plugin-b");
+            Set<String> pluginBDeps = Set.of("plugin-c");
+            Set<String> pluginCDeps = Set.of("plugin-a"); // circular
 
-            boolean hasCircular = pluginCDeps.contains("plugin-a [GH-90000]") && pluginADeps.contains("plugin-b [GH-90000]");
+            boolean hasCircular = pluginCDeps.contains("plugin-a") && pluginADeps.contains("plugin-b");
             assertThat(hasCircular).isTrue(); // GH-90000
         }
     }
@@ -244,20 +244,20 @@ class PluginLifecycleTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Health checks [GH-90000]")
+    @DisplayName("Health checks")
     class HealthChecks {
 
         @Test
-        @DisplayName("should report healthy when plugin is running [GH-90000]")
+        @DisplayName("should report healthy when plugin is running")
         void shouldReportHealthyWhenRunning() { // GH-90000
-            PluginState state = PluginState.valueOf("STARTED [GH-90000]");
+            PluginState state = PluginState.valueOf("STARTED");
             boolean isHealthy = state == PluginState.STARTED;
 
             assertThat(isHealthy).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("should report unhealthy when plugin is failed [GH-90000]")
+        @DisplayName("should report unhealthy when plugin is failed")
         void shouldReportUnhealthyWhenFailed() { // GH-90000
             PluginState state = PluginState.FAILED;
             boolean isHealthy = state == PluginState.STARTED;
@@ -266,7 +266,7 @@ class PluginLifecycleTest {
         }
 
         @Test
-        @DisplayName("should report unhealthy when plugin is stopped [GH-90000]")
+        @DisplayName("should report unhealthy when plugin is stopped")
         void shouldReportUnhealthyWhenStopped() { // GH-90000
             PluginState state = PluginState.STOPPED;
             boolean isHealthy = state == PluginState.STARTED;
@@ -275,7 +275,7 @@ class PluginLifecycleTest {
         }
 
         @Test
-        @DisplayName("should include health check details [GH-90000]")
+        @DisplayName("should include health check details")
         void shouldIncludeHealthCheckDetails() { // GH-90000
             Map<String, Object> healthDetails = Map.of( // GH-90000
                 "status", "UP",
@@ -284,9 +284,9 @@ class PluginLifecycleTest {
                 "lastCheck", "2026-04-20T10:00:00Z"
             );
 
-            assertThat(healthDetails.get("status [GH-90000]")).isEqualTo("UP [GH-90000]");
-            assertThat(healthDetails.get("connections [GH-90000]")).isEqualTo(5);
-            assertThat(healthDetails.get("latencyMs [GH-90000]")).isEqualTo(12);
+            assertThat(healthDetails.get("status")).isEqualTo("UP");
+            assertThat(healthDetails.get("connections")).isEqualTo(5);
+            assertThat(healthDetails.get("latencyMs")).isEqualTo(12);
         }
     }
 
@@ -295,11 +295,11 @@ class PluginLifecycleTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Failure recovery [GH-90000]")
+    @DisplayName("Failure recovery")
     class FailureRecovery {
 
         @Test
-        @DisplayName("should handle initialization failure gracefully [GH-90000]")
+        @DisplayName("should handle initialization failure gracefully")
         void shouldHandleInitializationFailureGracefully() { // GH-90000
             boolean initSuccess = false;
             String errorMessage = "Connection refused";
@@ -312,7 +312,7 @@ class PluginLifecycleTest {
         }
 
         @Test
-        @DisplayName("should support retry on transient failures [GH-90000]")
+        @DisplayName("should support retry on transient failures")
         void shouldSupportRetryOnTransientFailures() { // GH-90000
             int maxRetries = 3;
             int attempt = 0;
@@ -331,7 +331,7 @@ class PluginLifecycleTest {
         }
 
         @Test
-        @DisplayName("should give up after max retries [GH-90000]")
+        @DisplayName("should give up after max retries")
         void shouldGiveUpAfterMaxRetries() { // GH-90000
             int maxRetries = 3;
             int attempt = 0;
@@ -347,7 +347,7 @@ class PluginLifecycleTest {
         }
 
         @Test
-        @DisplayName("should track failure count [GH-90000]")
+        @DisplayName("should track failure count")
         void shouldTrackFailureCount() { // GH-90000
             int failureCount = 0;
 
@@ -365,11 +365,11 @@ class PluginLifecycleTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Lifecycle ordering [GH-90000]")
+    @DisplayName("Lifecycle ordering")
     class LifecycleOrdering {
 
         @Test
-        @DisplayName("should initialize before start [GH-90000]")
+        @DisplayName("should initialize before start")
         void shouldInitializeBeforeStart() { // GH-90000
             PluginState state = PluginState.UNLOADED;
 
@@ -383,7 +383,7 @@ class PluginLifecycleTest {
         }
 
         @Test
-        @DisplayName("should stop before shutdown [GH-90000]")
+        @DisplayName("should stop before shutdown")
         void shouldStopBeforeShutdown() { // GH-90000
             PluginState state = PluginState.STARTED;
 
@@ -397,7 +397,7 @@ class PluginLifecycleTest {
         }
 
         @Test
-        @DisplayName("should not start without initialization [GH-90000]")
+        @DisplayName("should not start without initialization")
         void shouldNotStartWithoutInitialization() { // GH-90000
             PluginState state = PluginState.UNLOADED;
 
@@ -412,11 +412,11 @@ class PluginLifecycleTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Capability checks [GH-90000]")
+    @DisplayName("Capability checks")
     class CapabilityChecks {
 
         @Test
-        @DisplayName("should check plugin capabilities [GH-90000]")
+        @DisplayName("should check plugin capabilities")
         void shouldCheckPluginCapabilities() { // GH-90000
             Set<String> capabilities = Set.of( // GH-90000
                 "streaming",
@@ -424,13 +424,13 @@ class PluginLifecycleTest {
                 "idempotency"
             );
 
-            assertThat(capabilities).contains("streaming [GH-90000]");
-            assertThat(capabilities).contains("time-range-query [GH-90000]");
-            assertThat(capabilities).doesNotContain("batch-processing [GH-90000]");
+            assertThat(capabilities).contains("streaming");
+            assertThat(capabilities).contains("time-range-query");
+            assertThat(capabilities).doesNotContain("batch-processing");
         }
 
         @Test
-        @DisplayName("should validate required capabilities [GH-90000]")
+        @DisplayName("should validate required capabilities")
         void shouldValidateRequiredCapabilities() { // GH-90000
             Set<String> pluginCapabilities = Set.of("streaming", "idempotency"); // GH-90000
             Set<String> requiredCapabilities = Set.of("streaming", "time-range-query"); // GH-90000
@@ -442,7 +442,7 @@ class PluginLifecycleTest {
         }
 
         @Test
-        @DisplayName("should handle plugin with no capabilities [GH-90000]")
+        @DisplayName("should handle plugin with no capabilities")
         void shouldHandlePluginWithNoCapabilities() { // GH-90000
             Set<String> capabilities = Set.of(); // GH-90000
 

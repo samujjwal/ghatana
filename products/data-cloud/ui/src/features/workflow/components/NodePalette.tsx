@@ -169,6 +169,7 @@ export const NodePalette: React.FC<NodePaletteProps> = ({ onDragStart }) => {
         <input
           type="text"
           placeholder="Search nodes..."
+          aria-label="Search nodes"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -179,11 +180,10 @@ export const NodePalette: React.FC<NodePaletteProps> = ({ onDragStart }) => {
       <div className="px-4 py-2 border-b border-gray-200 flex flex-wrap gap-2">
         <button
           onClick={() => setSelectedCategory(null)}
-          className={`px-3 py-1 text-xs rounded-full transition-colors ${
-            selectedCategory === null
+          className={`px-3 py-1 text-xs rounded-full transition-colors ${selectedCategory === null
               ? 'bg-blue-500 text-white'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
+            }`}
         >
           All
         </button>
@@ -191,11 +191,10 @@ export const NodePalette: React.FC<NodePaletteProps> = ({ onDragStart }) => {
           <button
             key={cat}
             onClick={() => setSelectedCategory(cat)}
-            className={`px-3 py-1 text-xs rounded-full transition-colors ${
-              selectedCategory === cat
+            className={`px-3 py-1 text-xs rounded-full transition-colors ${selectedCategory === cat
                 ? 'bg-blue-500 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+              }`}
           >
             {cat}
           </button>

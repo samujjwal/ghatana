@@ -18,11 +18,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test plugin security, permissions, and access control.
  */
-@DisplayName("Plugin Security Tests [GH-90000]")
+@DisplayName("Plugin Security Tests")
 class PluginSecurityTest {
 
     @Test
-    @DisplayName("Should validate plugin permissions [GH-90000]")
+    @DisplayName("Should validate plugin permissions")
     void shouldValidatePluginPermissions() { // GH-90000
         Set<String> permissions = Set.of("read", "write", "execute"); // GH-90000
         String requiredPermission = "read";
@@ -31,7 +31,7 @@ class PluginSecurityTest {
     }
 
     @Test
-    @DisplayName("Should handle plugin authentication [GH-90000]")
+    @DisplayName("Should handle plugin authentication")
     void shouldHandlePluginAuthentication() { // GH-90000
         String token = "plugin-token-123";
         boolean authenticated = true;
@@ -41,7 +41,7 @@ class PluginSecurityTest {
     }
 
     @Test
-    @DisplayName("Should handle plugin authorization [GH-90000]")
+    @DisplayName("Should handle plugin authorization")
     void shouldHandlePluginAuthorization() { // GH-90000
         String role = "ADMIN";
         Set<String> allowedRoles = Set.of("ADMIN", "USER"); // GH-90000
@@ -50,7 +50,7 @@ class PluginSecurityTest {
     }
 
     @Test
-    @DisplayName("Should handle plugin sandboxing [GH-90000]")
+    @DisplayName("Should handle plugin sandboxing")
     void shouldHandlePluginSandboxing() { // GH-90000
         boolean sandboxed = true;
         String isolationLevel = "PROCESS";
@@ -60,7 +60,7 @@ class PluginSecurityTest {
     }
 
     @Test
-    @DisplayName("Should handle security violations [GH-90000]")
+    @DisplayName("Should handle security violations")
     void shouldHandleSecurityViolations() { // GH-90000
         boolean violation = false;
         String violationType = null;
@@ -70,7 +70,7 @@ class PluginSecurityTest {
     }
 
     @Test
-    @DisplayName("Should handle plugin certificates [GH-90000]")
+    @DisplayName("Should handle plugin certificates")
     void shouldHandlePluginCertificates() { // GH-90000
         String certificate = "cert-123";
         boolean valid = true;

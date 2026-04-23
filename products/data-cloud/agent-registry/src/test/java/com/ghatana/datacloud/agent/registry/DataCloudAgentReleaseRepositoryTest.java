@@ -40,7 +40,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataCloudAgentReleaseRepository [GH-90000]")
+@DisplayName("DataCloudAgentReleaseRepository")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class DataCloudAgentReleaseRepositoryTest extends EventloopTestBase {
 
@@ -63,12 +63,12 @@ class DataCloudAgentReleaseRepositoryTest extends EventloopTestBase {
 
     private AgentRelease minimalRelease() { // GH-90000
         return new AgentReleaseBuilder() // GH-90000
-                .agentId("agent-001 [GH-90000]")
-                .releaseVersion("1.0.0 [GH-90000]")
-                .redactionProfileId("rp-test [GH-90000]")
-                .threatModelId("tm-test [GH-90000]")
-                .addPermittedPurpose("agent.inference [GH-90000]")
-                .capabilityMaturityProfile("L1 [GH-90000]")
+                .agentId("agent-001")
+                .releaseVersion("1.0.0")
+                .redactionProfileId("rp-test")
+                .threatModelId("tm-test")
+                .addPermittedPurpose("agent.inference")
+                .capabilityMaturityProfile("L1")
                 .build(); // GH-90000
     }
 
@@ -101,11 +101,11 @@ class DataCloudAgentReleaseRepositoryTest extends EventloopTestBase {
     // ─────────────────── save ───────────────────────────────────────────────
 
     @Nested
-    @DisplayName("save [GH-90000]")
+    @DisplayName("save")
     class Save {
 
         @Test
-        @DisplayName("delegates to dataCloud.createEntity with correct collection [GH-90000]")
+        @DisplayName("delegates to dataCloud.createEntity with correct collection")
         void delegatesToDataCloud() { // GH-90000
             stubCreateEntity(); // GH-90000
             AgentRelease release = minimalRelease(); // GH-90000
@@ -117,24 +117,24 @@ class DataCloudAgentReleaseRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("propagates DataCloud failure [GH-90000]")
+        @DisplayName("propagates DataCloud failure")
         void propagatesFailure() { // GH-90000
             when(dataCloud.createEntity(any(), any(), any())) // GH-90000
-                    .thenReturn(Promise.ofException(new RuntimeException("DC unavailable [GH-90000]")));
+                    .thenReturn(Promise.ofException(new RuntimeException("DC unavailable")));
 
             assertThatThrownBy(() -> runPromise(() -> repo.save(minimalRelease()))) // GH-90000
-                    .hasMessageContaining("DC unavailable [GH-90000]");
+                    .hasMessageContaining("DC unavailable");
         }
     }
 
     // ─────────────────── findById ────────────────────────────────────────────
 
     @Nested
-    @DisplayName("findById [GH-90000]")
+    @DisplayName("findById")
     class FindById {
 
         @Test
-        @DisplayName("returns release when entity found [GH-90000]")
+        @DisplayName("returns release when entity found")
         void returnsReleaseWhenFound() { // GH-90000
             AgentRelease release = minimalRelease(); // GH-90000
             Map<String, Object> data = minimalDataMap(release); // GH-90000
@@ -150,12 +150,12 @@ class DataCloudAgentReleaseRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("returns empty when entity not found [GH-90000]")
+        @DisplayName("returns empty when entity not found")
         void returnsEmptyWhenNotFound() { // GH-90000
             when(dataCloud.queryEntities(any(), any(), any())) // GH-90000
                     .thenReturn(Promise.of(List.of())); // GH-90000
 
-            Optional<AgentRelease> found = runPromise(() -> repo.findById("no-such-id [GH-90000]"));
+            Optional<AgentRelease> found = runPromise(() -> repo.findById("no-such-id"));
 
             assertThat(found).isEmpty(); // GH-90000
         }
@@ -164,16 +164,16 @@ class DataCloudAgentReleaseRepositoryTest extends EventloopTestBase {
     // ─────────────────── findByState ────────────────────────────────────────
 
     @Test
-    @DisplayName("findByState queries collection with state filter [GH-90000]")
+    @DisplayName("findByState queries collection with state filter")
     void findByStateQueriesCollection() { // GH-90000
         AgentRelease active = new AgentReleaseBuilder() // GH-90000
-                .agentId("agent-001 [GH-90000]")
-                .releaseVersion("1.0.0 [GH-90000]")
+                .agentId("agent-001")
+                .releaseVersion("1.0.0")
                 .state(AgentReleaseState.ACTIVE) // GH-90000
-                .redactionProfileId("rp-test [GH-90000]")
-                .threatModelId("tm-test [GH-90000]")
-                .addPermittedPurpose("agent.inference [GH-90000]")
-                .capabilityMaturityProfile("L1 [GH-90000]")
+                .redactionProfileId("rp-test")
+                .threatModelId("tm-test")
+                .addPermittedPurpose("agent.inference")
+                .capabilityMaturityProfile("L1")
                 .build(); // GH-90000
         Map<String, Object> data = minimalDataMap(active); // GH-90000
         EntityInterface entity = mock(EntityInterface.class); // GH-90000
@@ -190,7 +190,7 @@ class DataCloudAgentReleaseRepositoryTest extends EventloopTestBase {
     // ─────────────────── transition ─────────────────────────────────────────
 
     @Test
-    @DisplayName("transition saves updated state [GH-90000]")
+    @DisplayName("transition saves updated state")
     void transitionSavesUpdatedState() { // GH-90000
         AgentRelease draft = minimalRelease(); // GH-90000
         Map<String, Object> draftData = minimalDataMap(draft); // GH-90000
@@ -210,13 +210,13 @@ class DataCloudAgentReleaseRepositoryTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("transition fails when release not found [GH-90000]")
+    @DisplayName("transition fails when release not found")
     void transitionFailsWhenNotFound() { // GH-90000
         when(dataCloud.queryEntities(any(), any(), any())) // GH-90000
                 .thenReturn(Promise.of(List.of())); // GH-90000
 
         assertThatThrownBy(() -> runPromise(() -> // GH-90000
                 repo.transition("no-such-id", AgentReleaseState.VALIDATED, "admin@test.com"))) // GH-90000
-                .hasMessageContaining("no-such-id [GH-90000]");
+                .hasMessageContaining("no-such-id");
     }
 }

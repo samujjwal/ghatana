@@ -43,27 +43,27 @@ class ActiveJVendoringPolicyTest {
             String content = Files.readString(repoRoot.resolve(relativePath)); // GH-90000
             assertThat(content) // GH-90000
                 .as("Expected vendored ActiveJ file %s to carry GHATANA-PATCH ownership marker", relativePath) // GH-90000
-                .contains("GHATANA-PATCH: [GH-90000]")
-                .contains("6.0-rc2 [GH-90000]");
+                .contains("GHATANA-PATCH:")
+                .contains("6.0-rc2");
         }
     }
 
     @Test
     void patchManifestMustTrackCurrentActivejBaseline() throws IOException { // GH-90000
         Path repoRoot = findRepoRoot(); // GH-90000
-        String manifest = Files.readString(repoRoot.resolve("io/activej/PATCHES.md [GH-90000]"));
+        String manifest = Files.readString(repoRoot.resolve("io/activej/PATCHES.md"));
 
         assertThat(manifest).contains("Baseline upstream version:", "activej-6.0-rc2"); // GH-90000
         assertThat(manifest).contains("AbstractPromise.java", "SettablePromise.java", "Stopwatch.java", "EventloopInspector.java"); // GH-90000
     }
 
     private static Path findRepoRoot() { // GH-90000
-        Path current = Path.of(" [GH-90000]").toAbsolutePath();
-        while (current != null && !Files.exists(current.resolve("settings.gradle.kts [GH-90000]"))) {
+        Path current = Path.of("").toAbsolutePath();
+        while (current != null && !Files.exists(current.resolve("settings.gradle.kts"))) {
             current = current.getParent(); // GH-90000
         }
         if (current == null) { // GH-90000
-            throw new IllegalStateException("Could not locate repository root from test working directory [GH-90000]");
+            throw new IllegalStateException("Could not locate repository root from test working directory");
         }
         return current;
     }

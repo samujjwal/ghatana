@@ -26,17 +26,17 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@Tag("integration [GH-90000]")
+@Tag("integration")
 @Testcontainers(disabledWithoutDocker = true) // GH-90000
-@DisplayName("KafkaIntegrationTest [GH-90000]")
+@DisplayName("KafkaIntegrationTest")
 class KafkaIntegrationTest {
 
     @Container
     private static final KafkaContainer KAFKA =
-        new KafkaContainer(DockerImageName.parse("apache/kafka-native:3.8.0 [GH-90000]"));
+        new KafkaContainer(DockerImageName.parse("apache/kafka-native:3.8.0"));
 
     @Test
-    @DisplayName("can create and list a topic [GH-90000]")
+    @DisplayName("can create and list a topic")
     void canCreateAndListTopic() throws Exception { // GH-90000
         try (AdminClient adminClient = AdminClient.create(Map.of( // GH-90000
             "bootstrap.servers", KAFKA.getBootstrapServers() // GH-90000
@@ -45,7 +45,7 @@ class KafkaIntegrationTest {
                 .all() // GH-90000
                 .get(); // GH-90000
 
-            assertThat(adminClient.listTopics().names().get()).contains("aep.integration.probe [GH-90000]");
+            assertThat(adminClient.listTopics().names().get()).contains("aep.integration.probe");
         }
     }
 }

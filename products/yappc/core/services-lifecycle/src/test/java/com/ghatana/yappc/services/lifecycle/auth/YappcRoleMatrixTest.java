@@ -43,16 +43,16 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("YAPPC Role Matrix Tests [GH-90000]")
+@DisplayName("YAPPC Role Matrix Tests")
 class YappcRoleMatrixTest extends EventloopTestBase {
 
     private static final String TENANT = "tenant-alpha";
 
     /** Canonical YAPPC resources that correspond to each service's API. */
     enum YappcResource {
-        LIFECYCLE("yappc:lifecycle-api [GH-90000]"),
-        AI("yappc:ai-api [GH-90000]"),
-        SCAFFOLD("yappc:scaffold-api [GH-90000]");
+        LIFECYCLE("yappc:lifecycle-api"),
+        AI("yappc:ai-api"),
+        SCAFFOLD("yappc:scaffold-api");
 
         final String resourceName;
 
@@ -63,10 +63,10 @@ class YappcRoleMatrixTest extends EventloopTestBase {
 
     /** YAPPC role names used in policy and API key mappings. */
     enum YappcRole {
-        ADMIN("admin [GH-90000]"),
-        EDITOR("editor [GH-90000]"),
-        AGENT("agent [GH-90000]"),
-        VIEWER("viewer [GH-90000]");
+        ADMIN("admin"),
+        EDITOR("editor"),
+        AGENT("agent"),
+        VIEWER("viewer");
 
         final String roleName;
 
@@ -80,12 +80,12 @@ class YappcRoleMatrixTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("admin role — read and write on all resources [GH-90000]")
+    @DisplayName("admin role — read and write on all resources")
     class AdminRoleMatrix {
 
         @ParameterizedTest
         @EnumSource(YappcResource.class) // GH-90000
-        @DisplayName("admin can READ on {} [GH-90000]")
+        @DisplayName("admin can READ on {}")
         void adminCanRead(YappcResource resource) { // GH-90000
             PolicyService policyService = buildPolicyService(resource.resourceName); // GH-90000
             AsyncServlet secured = buildSecuredChain("admin-key", YappcRole.ADMIN, policyService, "read", resource.resourceName); // GH-90000
@@ -100,7 +100,7 @@ class YappcRoleMatrixTest extends EventloopTestBase {
 
         @ParameterizedTest
         @EnumSource(YappcResource.class) // GH-90000
-        @DisplayName("admin can WRITE on {} [GH-90000]")
+        @DisplayName("admin can WRITE on {}")
         void adminCanWrite(YappcResource resource) { // GH-90000
             PolicyService policyService = buildPolicyService(resource.resourceName); // GH-90000
             AsyncServlet secured = buildSecuredChain("admin-key", YappcRole.ADMIN, policyService, "write", resource.resourceName); // GH-90000
@@ -119,12 +119,12 @@ class YappcRoleMatrixTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("editor role — read and write on all resources [GH-90000]")
+    @DisplayName("editor role — read and write on all resources")
     class EditorRoleMatrix {
 
         @ParameterizedTest
         @EnumSource(YappcResource.class) // GH-90000
-        @DisplayName("editor can READ on {} [GH-90000]")
+        @DisplayName("editor can READ on {}")
         void editorCanRead(YappcResource resource) { // GH-90000
             PolicyService policyService = buildPolicyService(resource.resourceName); // GH-90000
             AsyncServlet secured = buildSecuredChain("editor-key", YappcRole.EDITOR, policyService, "read", resource.resourceName); // GH-90000
@@ -139,7 +139,7 @@ class YappcRoleMatrixTest extends EventloopTestBase {
 
         @ParameterizedTest
         @EnumSource(YappcResource.class) // GH-90000
-        @DisplayName("editor can WRITE on {} [GH-90000]")
+        @DisplayName("editor can WRITE on {}")
         void editorCanWrite(YappcResource resource) { // GH-90000
             PolicyService policyService = buildPolicyService(resource.resourceName); // GH-90000
             AsyncServlet secured = buildSecuredChain("editor-key", YappcRole.EDITOR, policyService, "write", resource.resourceName); // GH-90000
@@ -158,12 +158,12 @@ class YappcRoleMatrixTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("agent role — read and write on all resources [GH-90000]")
+    @DisplayName("agent role — read and write on all resources")
     class AgentRoleMatrix {
 
         @ParameterizedTest
         @EnumSource(YappcResource.class) // GH-90000
-        @DisplayName("agent can READ on {} [GH-90000]")
+        @DisplayName("agent can READ on {}")
         void agentCanRead(YappcResource resource) { // GH-90000
             PolicyService policyService = buildPolicyService(resource.resourceName); // GH-90000
             AsyncServlet secured = buildSecuredChain("agent-key", YappcRole.AGENT, policyService, "read", resource.resourceName); // GH-90000
@@ -178,7 +178,7 @@ class YappcRoleMatrixTest extends EventloopTestBase {
 
         @ParameterizedTest
         @EnumSource(YappcResource.class) // GH-90000
-        @DisplayName("agent can WRITE on {} [GH-90000]")
+        @DisplayName("agent can WRITE on {}")
         void agentCanWrite(YappcResource resource) { // GH-90000
             PolicyService policyService = buildPolicyService(resource.resourceName); // GH-90000
             AsyncServlet secured = buildSecuredChain("agent-key", YappcRole.AGENT, policyService, "write", resource.resourceName); // GH-90000
@@ -197,12 +197,12 @@ class YappcRoleMatrixTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("viewer role — read only, writes denied [GH-90000]")
+    @DisplayName("viewer role — read only, writes denied")
     class ViewerRoleMatrix {
 
         @ParameterizedTest
         @EnumSource(YappcResource.class) // GH-90000
-        @DisplayName("viewer can READ on {} [GH-90000]")
+        @DisplayName("viewer can READ on {}")
         void viewerCanRead(YappcResource resource) { // GH-90000
             PolicyService policyService = buildPolicyService(resource.resourceName); // GH-90000
             AsyncServlet secured = buildSecuredChain("viewer-key", YappcRole.VIEWER, policyService, "read", resource.resourceName); // GH-90000
@@ -217,7 +217,7 @@ class YappcRoleMatrixTest extends EventloopTestBase {
 
         @ParameterizedTest
         @EnumSource(YappcResource.class) // GH-90000
-        @DisplayName("viewer CANNOT WRITE on {} [GH-90000]")
+        @DisplayName("viewer CANNOT WRITE on {}")
         void viewerCannotWrite(YappcResource resource) { // GH-90000
             PolicyService policyService = buildPolicyService(resource.resourceName); // GH-90000
             AsyncServlet secured = buildSecuredChain("viewer-key", YappcRole.VIEWER, policyService, "write", resource.resourceName); // GH-90000
@@ -236,18 +236,18 @@ class YappcRoleMatrixTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("unknown role — all access denied [GH-90000]")
+    @DisplayName("unknown role — all access denied")
     class UnknownRoleDenied {
 
         @ParameterizedTest
         @EnumSource(YappcResource.class) // GH-90000
-        @DisplayName("key with unknown role gets 403 on READ for {} [GH-90000]")
+        @DisplayName("key with unknown role gets 403 on READ for {}")
         void unknownRoleDeniedRead(YappcResource resource) { // GH-90000
             PolicyService policyService = buildPolicyService(resource.resourceName); // GH-90000
             // Resolver maps "unknown-key" to a Principal with role "unknown" — no policies match
             ApiKeyResolver resolver = key ->
                     "unknown-key".equals(key) // GH-90000
-                            ? Optional.of(new Principal("unknown-user", List.of("unknown [GH-90000]"), TENANT))
+                            ? Optional.of(new Principal("unknown-user", List.of("unknown"), TENANT))
                             : Optional.empty(); // GH-90000
             ApiKeyAuthFilter authFilter = new ApiKeyAuthFilter(resolver); // GH-90000
             RBACFilter readFilter = new RBACFilter(policyService, "read", resource.resourceName); // GH-90000
@@ -264,12 +264,12 @@ class YappcRoleMatrixTest extends EventloopTestBase {
 
         @ParameterizedTest
         @EnumSource(YappcResource.class) // GH-90000
-        @DisplayName("key with unknown role gets 403 on WRITE for {} [GH-90000]")
+        @DisplayName("key with unknown role gets 403 on WRITE for {}")
         void unknownRoleDeniedWrite(YappcResource resource) { // GH-90000
             PolicyService policyService = buildPolicyService(resource.resourceName); // GH-90000
             ApiKeyResolver resolver = key ->
                     "unknown-key".equals(key) // GH-90000
-                            ? Optional.of(new Principal("unknown-user", List.of("unknown [GH-90000]"), TENANT))
+                            ? Optional.of(new Principal("unknown-user", List.of("unknown"), TENANT))
                             : Optional.empty(); // GH-90000
             ApiKeyAuthFilter authFilter = new ApiKeyAuthFilter(resolver); // GH-90000
             RBACFilter writeFilter = new RBACFilter(policyService, "write", resource.resourceName); // GH-90000
@@ -290,15 +290,15 @@ class YappcRoleMatrixTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("missing or invalid API key — always 401 [GH-90000]")
+    @DisplayName("missing or invalid API key — always 401")
     class MissingKeyDenied {
 
         @ParameterizedTest
         @EnumSource(YappcResource.class) // GH-90000
-        @DisplayName("no API key header → 401 on {} read [GH-90000]")
+        @DisplayName("no API key header → 401 on {} read")
         void noKeyReturns401OnRead(YappcResource resource) { // GH-90000
             PolicyService policyService = buildPolicyService(resource.resourceName); // GH-90000
-            ApiKeyAuthFilter authFilter = new ApiKeyAuthFilter(Set.of("valid-key [GH-90000]"));
+            ApiKeyAuthFilter authFilter = new ApiKeyAuthFilter(Set.of("valid-key"));
             RBACFilter readFilter = new RBACFilter(policyService, "read", resource.resourceName); // GH-90000
             AsyncServlet delegate = req -> HttpResponse.ok200().toPromise(); // GH-90000
             AsyncServlet secured = authFilter.secure(readFilter.secure(delegate)); // GH-90000
@@ -313,10 +313,10 @@ class YappcRoleMatrixTest extends EventloopTestBase {
 
         @ParameterizedTest
         @EnumSource(YappcResource.class) // GH-90000
-        @DisplayName("invalid API key → 401 on {} write [GH-90000]")
+        @DisplayName("invalid API key → 401 on {} write")
         void invalidKeyReturns401OnWrite(YappcResource resource) { // GH-90000
             PolicyService policyService = buildPolicyService(resource.resourceName); // GH-90000
-            ApiKeyAuthFilter authFilter = new ApiKeyAuthFilter(Set.of("valid-key [GH-90000]"));
+            ApiKeyAuthFilter authFilter = new ApiKeyAuthFilter(Set.of("valid-key"));
             RBACFilter writeFilter = new RBACFilter(policyService, "write", resource.resourceName); // GH-90000
             AsyncServlet delegate = req -> HttpResponse.ok200().toPromise(); // GH-90000
             AsyncServlet secured = authFilter.secure(writeFilter.secure(delegate)); // GH-90000
@@ -340,10 +340,10 @@ class YappcRoleMatrixTest extends EventloopTestBase {
      */
     private static PolicyService buildPolicyService(String resource) { // GH-90000
         PolicyService service = new PolicyService(new InMemoryPolicyRepository()); // GH-90000
-        service.createPolicy("admin-" + resource, "admin all", "admin", resource, Set.of("* [GH-90000]"));
+        service.createPolicy("admin-" + resource, "admin all", "admin", resource, Set.of("*"));
         service.createPolicy("editor-" + resource, "editor rw", "editor", resource, Set.of("read", "write")); // GH-90000
         service.createPolicy("agent-" + resource, "agent rw", "agent", resource, Set.of("read", "write")); // GH-90000
-        service.createPolicy("viewer-" + resource, "viewer r", "viewer", resource, Set.of("read [GH-90000]"));
+        service.createPolicy("viewer-" + resource, "viewer r", "viewer", resource, Set.of("read"));
         return service;
     }
 
@@ -364,7 +364,7 @@ class YappcRoleMatrixTest extends EventloopTestBase {
 
     private static HttpRequest requestWithKey(HttpMethod method, String path, String apiKey) { // GH-90000
         return HttpRequest.builder(method, "http://localhost" + path) // GH-90000
-                .withHeader(HttpHeaders.of("X-API-Key [GH-90000]"), apiKey)
+                .withHeader(HttpHeaders.of("X-API-Key"), apiKey)
                 .build(); // GH-90000
     }
 }

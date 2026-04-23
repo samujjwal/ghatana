@@ -13,7 +13,8 @@ import java.util.Map;
  * @doc.type value-object
  * @doc.purpose Memory plane statistics
  * @doc.layer agent-memory
- */
+  * @doc.pattern Component
+*/
 @Value
 @Builder
 public class MemoryPlaneStats {

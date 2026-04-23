@@ -51,7 +51,7 @@ import org.mockito.MockitoAnnotations;
  * @doc.layer test
  * @doc.pattern Unit Test
  */
-@DisplayName("RequirementController Tests [GH-90000]")
+@DisplayName("RequirementController Tests")
 class RequirementControllerTest extends EventloopTestBase {
 
   @Mock private RequirementEmbeddingService embeddingService;
@@ -83,20 +83,20 @@ class RequirementControllerTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should create requirement controller with valid service [GH-90000]")
+  @DisplayName("Should create requirement controller with valid service")
   void shouldCreateController() { // GH-90000
     assertThat(controller).isNotNull(); // GH-90000
   }
 
   @Test
-  @DisplayName("Should throw NullPointerException when service is null [GH-90000]")
+  @DisplayName("Should throw NullPointerException when service is null")
   void shouldThrowWhenServiceNull() { // GH-90000
     assertThatThrownBy(() -> new RequirementController(null)) // GH-90000
         .isInstanceOf(NullPointerException.class); // GH-90000
   }
 
   @Test
-  @DisplayName("Should create requirement when valid request [GH-90000]")
+  @DisplayName("Should create requirement when valid request")
   void shouldCreateRequirementWhenValidRequest() throws Exception { // GH-90000
     CreateRequirementRequest request = new CreateRequirementRequest("Test requirement", "HIGH"); // GH-90000
     UUID projectId = UUID.randomUUID(); // GH-90000
@@ -109,30 +109,30 @@ class RequirementControllerTest extends EventloopTestBase {
     HttpResponse response = runPromise(() -> controller.createRequirement(httpRequest)); // GH-90000
 
     assertThat(response.getCode()).isEqualTo(201); // GH-90000
-    assertThat(response.getHeader(HttpHeaders.CONTENT_TYPE)).contains("application/json [GH-90000]");
+    assertThat(response.getHeader(HttpHeaders.CONTENT_TYPE)).contains("application/json");
 
     ByteBuf bodyBuf = runPromise(() -> response.loadBody()); // GH-90000
     String responseBody = bodyBuf.asString(StandardCharsets.UTF_8); // GH-90000
     JsonNode jsonResponse = objectMapper.readTree(responseBody); // GH-90000
 
-    assertThat(jsonResponse.has("id [GH-90000]")).isTrue();
-    assertThat(jsonResponse.has("text [GH-90000]")).isTrue();
-    assertThat(jsonResponse.get("text [GH-90000]").asText()).isEqualTo("Test requirement [GH-90000]");
-    assertThat(jsonResponse.has("status [GH-90000]")).isTrue();
-    assertThat(jsonResponse.get("status [GH-90000]").asText()).isEqualTo("DRAFT [GH-90000]");
-    assertThat(jsonResponse.has("qualityScore [GH-90000]")).isTrue();
-    assertThat(jsonResponse.get("qualityScore [GH-90000]").asDouble()).isGreaterThan(0.0);
-    assertThat(jsonResponse.has("duplicateWarnings [GH-90000]")).isTrue();
-    assertThat(jsonResponse.get("duplicateWarnings [GH-90000]").isArray()).isTrue();
-    assertThat(jsonResponse.has("suggestions [GH-90000]")).isTrue();
-    assertThat(jsonResponse.get("suggestions [GH-90000]").isArray()).isTrue();
+    assertThat(jsonResponse.has("id")).isTrue();
+    assertThat(jsonResponse.has("text")).isTrue();
+    assertThat(jsonResponse.get("text").asText()).isEqualTo("Test requirement");
+    assertThat(jsonResponse.has("status")).isTrue();
+    assertThat(jsonResponse.get("status").asText()).isEqualTo("DRAFT");
+    assertThat(jsonResponse.has("qualityScore")).isTrue();
+    assertThat(jsonResponse.get("qualityScore").asDouble()).isGreaterThan(0.0);
+    assertThat(jsonResponse.has("duplicateWarnings")).isTrue();
+    assertThat(jsonResponse.get("duplicateWarnings").isArray()).isTrue();
+    assertThat(jsonResponse.has("suggestions")).isTrue();
+    assertThat(jsonResponse.get("suggestions").isArray()).isTrue();
 
     verify(embeddingService) // GH-90000
-        .embedAndStore(anyString(), eq("Test requirement [GH-90000]"), eq(projectId.toString()));
+        .embedAndStore(anyString(), eq("Test requirement"), eq(projectId.toString()));
   }
 
   @Test
-  @DisplayName("Should return detailed requirement with suggestions and similar items [GH-90000]")
+  @DisplayName("Should return detailed requirement with suggestions and similar items")
   void shouldGetRequirementWithSuggestionsAndSimilar() throws Exception { // GH-90000
     UUID projectId = UUID.randomUUID(); // GH-90000
 
@@ -145,7 +145,7 @@ class RequirementControllerTest extends EventloopTestBase {
                         .withBody(objectMapper.writeValueAsBytes(create)) // GH-90000
                         .build())); // GH-90000
     JsonNode created = objectMapper.readTree(runPromise(() -> createResponse.loadBody()).asString(StandardCharsets.UTF_8)); // GH-90000
-    String requirementId = created.get("id [GH-90000]").asText();
+    String requirementId = created.get("id").asText();
 
     when(embeddingService.generateSuggestions(anyString(), anyString(), any())) // GH-90000
         .thenReturn( // GH-90000
@@ -172,13 +172,13 @@ class RequirementControllerTest extends EventloopTestBase {
 
     assertThat(getResponse.getCode()).isEqualTo(200); // GH-90000
     JsonNode body = objectMapper.readTree(runPromise(() -> getResponse.loadBody()).asString(StandardCharsets.UTF_8)); // GH-90000
-    assertThat(body.get("suggestions [GH-90000]")).hasSize(1);
-    assertThat(body.get("similarRequirements [GH-90000]")).hasSize(1);
-    assertThat(body.get("qualityScore [GH-90000]").asDouble()).isGreaterThan(0.0);
+    assertThat(body.get("suggestions")).hasSize(1);
+    assertThat(body.get("similarRequirements")).hasSize(1);
+    assertThat(body.get("qualityScore").asDouble()).isGreaterThan(0.0);
   }
 
   @Test
-  @DisplayName("Should return 400 when creating requirement with invalid data [GH-90000]")
+  @DisplayName("Should return 400 when creating requirement with invalid data")
   void shouldReturn400WhenCreatingRequirementWithInvalidData() throws Exception { // GH-90000
     UUID projectId = UUID.randomUUID(); // GH-90000
     HttpRequest httpRequest =
@@ -193,7 +193,7 @@ class RequirementControllerTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should find similar requirements when valid request [GH-90000]")
+  @DisplayName("Should find similar requirements when valid request")
   void shouldFindSimilarRequirementsWhenValidRequest() throws Exception { // GH-90000
     UUID projectId = UUID.randomUUID(); // GH-90000
     HttpResponse createResponse =
@@ -207,7 +207,7 @@ class RequirementControllerTest extends EventloopTestBase {
                         .build())); // GH-90000
     String requirementId =
         objectMapper.readTree(runPromise(() -> createResponse.loadBody()).asString(StandardCharsets.UTF_8)) // GH-90000
-            .get("id [GH-90000]")
+            .get("id")
             .asText(); // GH-90000
 
     doReturn(Promise.of( // GH-90000
@@ -229,7 +229,7 @@ class RequirementControllerTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should generate suggestions and allow recording feedback [GH-90000]")
+  @DisplayName("Should generate suggestions and allow recording feedback")
   void shouldGenerateSuggestionsAndRecordFeedback() throws Exception { // GH-90000
     UUID projectId = UUID.randomUUID(); // GH-90000
     HttpResponse createResponse =
@@ -243,7 +243,7 @@ class RequirementControllerTest extends EventloopTestBase {
                         .build())); // GH-90000
     String requirementId =
         objectMapper.readTree(runPromise(() -> createResponse.loadBody()).asString(StandardCharsets.UTF_8)) // GH-90000
-            .get("id [GH-90000]")
+            .get("id")
             .asText(); // GH-90000
 
     AISuggestion suggestion =
@@ -270,7 +270,7 @@ class RequirementControllerTest extends EventloopTestBase {
     assertThat(suggestionsResponse.getCode()).isEqualTo(200); // GH-90000
     JsonNode suggestions =
         objectMapper.readTree(runPromise(() -> suggestionsResponse.loadBody()).asString(StandardCharsets.UTF_8)); // GH-90000
-    String suggestionId = suggestions.get(0).get("id [GH-90000]").asText();
+    String suggestionId = suggestions.get(0).get("id").asText();
 
     RecordFeedbackRequest feedback = new RecordFeedbackRequest("HELPFUL", 5, "Great insight"); // GH-90000
     HttpResponse feedbackResponse =
@@ -286,15 +286,15 @@ class RequirementControllerTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should reject feedback with invalid rating [GH-90000]")
+  @DisplayName("Should reject feedback with invalid rating")
   void shouldRejectInvalidRating() { // GH-90000
     assertThatThrownBy(() -> new RecordFeedbackRequest("HELPFUL", 6, "Text")) // GH-90000
         .isInstanceOf(IllegalArgumentException.class) // GH-90000
-        .hasMessageContaining("rating [GH-90000]");
+        .hasMessageContaining("rating");
   }
 
   @Test
-  @DisplayName("Should accept feedback with valid rating 1-5 [GH-90000]")
+  @DisplayName("Should accept feedback with valid rating 1-5")
   void shouldAcceptValidRatings() { // GH-90000
     for (int rating = 1; rating <= 5; rating++) { // GH-90000
       RecordFeedbackRequest feedback = new RecordFeedbackRequest("HELPFUL", rating, "Text"); // GH-90000
@@ -303,35 +303,35 @@ class RequirementControllerTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should handle feedback with null rating [GH-90000]")
+  @DisplayName("Should handle feedback with null rating")
   void shouldHandleNullRating() { // GH-90000
     RecordFeedbackRequest feedback = new RecordFeedbackRequest("HELPFUL", null, "Text"); // GH-90000
     assertThat(feedback.hasRating()).isFalse(); // GH-90000
   }
 
   @Test
-  @DisplayName("Should create valid CreateRequirementRequest [GH-90000]")
+  @DisplayName("Should create valid CreateRequirementRequest")
   void shouldCreateValidRequest() { // GH-90000
     CreateRequirementRequest req = new CreateRequirementRequest("Add OAuth2", "HIGH"); // GH-90000
 
-    assertThat(req.text()).isEqualTo("Add OAuth2 [GH-90000]");
-    assertThat(req.priority()).isEqualTo("HIGH [GH-90000]");
+    assertThat(req.text()).isEqualTo("Add OAuth2");
+    assertThat(req.priority()).isEqualTo("HIGH");
   }
 
   @Test
-  @DisplayName("Should set default priority in CreateRequirementRequest [GH-90000]")
+  @DisplayName("Should set default priority in CreateRequirementRequest")
   void shouldSetDefaultPriority() { // GH-90000
     CreateRequirementRequest req = new CreateRequirementRequest("Add OAuth2", null); // GH-90000
 
-    assertThat(req.priority()).isEqualTo("MEDIUM [GH-90000]");
+    assertThat(req.priority()).isEqualTo("MEDIUM");
   }
 
   @Test
-  @DisplayName("Should reject empty requirement text [GH-90000]")
+  @DisplayName("Should reject empty requirement text")
   void shouldRejectEmptyText() { // GH-90000
     assertThatThrownBy(() -> new CreateRequirementRequest("   ", "HIGH")) // GH-90000
         .isInstanceOf(IllegalArgumentException.class) // GH-90000
-        .hasMessageContaining("cannot be empty [GH-90000]");
+        .hasMessageContaining("cannot be empty");
   }
 
   private AISuggestion sampleSuggestion( // GH-90000

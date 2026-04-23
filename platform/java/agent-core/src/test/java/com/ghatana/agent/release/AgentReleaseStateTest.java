@@ -21,11 +21,11 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("AgentReleaseState [GH-90000]")
+@DisplayName("AgentReleaseState")
 class AgentReleaseStateTest {
 
     @Nested
-    @DisplayName("Valid transitions [GH-90000]")
+    @DisplayName("Valid transitions")
     class ValidTransitions {
 
         @Test
@@ -82,7 +82,7 @@ class AgentReleaseStateTest {
     }
 
     @Nested
-    @DisplayName("Invalid transitions [GH-90000]")
+    @DisplayName("Invalid transitions")
     class InvalidTransitions {
 
         @Test
@@ -117,7 +117,7 @@ class AgentReleaseStateTest {
     }
 
     @Nested
-    @DisplayName("Dispatchability [GH-90000]")
+    @DisplayName("Dispatchability")
     class Dispatchability {
 
         @Test
@@ -162,7 +162,7 @@ class AgentReleaseStateTest {
     }
 
     @Test
-    @DisplayName("allowedTransitions returns non-null for all states [GH-90000]")
+    @DisplayName("allowedTransitions returns non-null for all states")
     void allowedTransitionsNonNull() { // GH-90000
         for (AgentReleaseState state : AgentReleaseState.values()) { // GH-90000
             assertThat(state.allowedTransitions()).isNotNull(); // GH-90000
@@ -170,7 +170,7 @@ class AgentReleaseStateTest {
     }
 
     @Test
-    @DisplayName("RETIRED has no allowed transitions [GH-90000]")
+    @DisplayName("RETIRED has no allowed transitions")
     void retiredHasNoTransitions() { // GH-90000
         assertThat(AgentReleaseState.RETIRED.allowedTransitions()).isEmpty(); // GH-90000
     }

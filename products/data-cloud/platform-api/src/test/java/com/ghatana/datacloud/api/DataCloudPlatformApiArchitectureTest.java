@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
-@DisplayName("Data Cloud Platform API Architecture [GH-90000]")
+@DisplayName("Data Cloud Platform API Architecture")
 class DataCloudPlatformApiArchitectureTest {
 
     private static JavaClasses PLATFORM_API_CLASSES;
@@ -29,7 +29,7 @@ class DataCloudPlatformApiArchitectureTest {
     }
 
     @Test
-    @DisplayName("platform-api must not depend on platform-launcher packages [GH-90000]")
+    @DisplayName("platform-api must not depend on platform-launcher packages")
     void platformApiMustNotDependOnPlatformLauncher() { // GH-90000
         ArchRule rule = noClasses() // GH-90000
                 .that().resideInAnyPackage( // GH-90000
@@ -41,12 +41,12 @@ class DataCloudPlatformApiArchitectureTest {
                         "com.ghatana.datacloud.workspace..")
                 .should().dependOnClassesThat() // GH-90000
                 .resideInAnyPackage("com.ghatana.datacloud.launcher..", "com.ghatana.datacloud.infrastructure..") // GH-90000
-                .because("The extracted API module must stay reusable and independent of runtime bootstrap code. [GH-90000]");
+                .because("The extracted API module must stay reusable and independent of runtime bootstrap code.");
         rule.check(PLATFORM_API_CLASSES); // GH-90000
     }
 
     @Test
-    @DisplayName("platform-api must not depend on AEP or orchestrator packages [GH-90000]")
+    @DisplayName("platform-api must not depend on AEP or orchestrator packages")
     void platformApiMustNotDependOnAepPackages() { // GH-90000
         ArchRule rule = noClasses() // GH-90000
                 .that().resideInAnyPackage( // GH-90000
@@ -58,7 +58,7 @@ class DataCloudPlatformApiArchitectureTest {
                         "com.ghatana.datacloud.workspace..")
                 .should().dependOnClassesThat() // GH-90000
                 .resideInAnyPackage("com.ghatana.aep..", "com.ghatana.orchestrator..") // GH-90000
-                .because("Data Cloud API contracts are foundational and must remain product-independent. [GH-90000]");
+                .because("Data Cloud API contracts are foundational and must remain product-independent.");
         rule.check(PLATFORM_API_CLASSES); // GH-90000
     }
 }

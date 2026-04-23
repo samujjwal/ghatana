@@ -42,7 +42,7 @@ import static org.mockito.Mockito.when;
 /**
  * Unit tests for {@link DefaultToolExecutor}.
  */
-@DisplayName("DefaultToolExecutor [GH-90000]")
+@DisplayName("DefaultToolExecutor")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class DefaultToolExecutorTest extends EventloopTestBase {
 
@@ -65,7 +65,7 @@ class DefaultToolExecutorTest extends EventloopTestBase {
                  .thenReturn(Promise.of(null)); // GH-90000
         // default policy: ALLOW (most tests operate on the post-policy path) // GH-90000
         lenient().when(policyEngine.evaluate(any(), any(), any())) // GH-90000
-                 .thenReturn(Promise.of(PolicyEvalResult.allow("tool.execution [GH-90000]")));
+                 .thenReturn(Promise.of(PolicyEvalResult.allow("tool.execution")));
     }
 
     private static ToolExecutionEnvelope envelope(String toolId, String agentId, ActionClass ac) { // GH-90000
@@ -85,11 +85,11 @@ class DefaultToolExecutorTest extends EventloopTestBase {
     // ─── No handler registered ──────────────────────────────────────────────
 
     @Nested
-    @DisplayName("no handler registered [GH-90000]")
+    @DisplayName("no handler registered")
     class NoHandler {
 
         @Test
-        @DisplayName("returns DENIED result when no handler is registered [GH-90000]")
+        @DisplayName("returns DENIED result when no handler is registered")
         void deniedWhenNoHandler() { // GH-90000
             ToolContract c = contract("missing-tool", ActionClass.READ, false); // GH-90000
             ToolExecutionEnvelope e = envelope("missing-tool", "agent-1", ActionClass.READ); // GH-90000
@@ -97,18 +97,18 @@ class DefaultToolExecutorTest extends EventloopTestBase {
             ToolExecutionResult result = runPromise(() -> executor.execute(e, c)); // GH-90000
 
             assertThat(result.status()).isEqualTo(ToolExecutionStatus.DENIED); // GH-90000
-            assertThat(result.errorMessage()).contains("missing-tool [GH-90000]");
+            assertThat(result.errorMessage()).contains("missing-tool");
         }
     }
 
     // ─── Low-risk actions (no approval check) ─────────────────────────────── // GH-90000
 
     @Nested
-    @DisplayName("low-risk READ action [GH-90000]")
+    @DisplayName("low-risk READ action")
     class LowRiskAction {
 
         @Test
-        @DisplayName("READ action executes directly without approval gate [GH-90000]")
+        @DisplayName("READ action executes directly without approval gate")
         void readActionDirectExecution() { // GH-90000
             ToolContract c = contract("search", ActionClass.READ, false); // GH-90000
             ToolExecutionEnvelope e = envelope("search", "agent-1", ActionClass.READ); // GH-90000
@@ -118,12 +118,12 @@ class DefaultToolExecutorTest extends EventloopTestBase {
             ToolExecutionResult result = runPromise(() -> executor.execute(e, c)); // GH-90000
 
             assertThat(result.status()).isEqualTo(ToolExecutionStatus.SUCCESS); // GH-90000
-            assertThat(result.output()).isEqualTo("result [GH-90000]");
+            assertThat(result.output()).isEqualTo("result");
             verifyNoInteractions(approvalGateway); // GH-90000
         }
 
         @Test
-        @DisplayName("DRAFT action executes directly without approval gate [GH-90000]")
+        @DisplayName("DRAFT action executes directly without approval gate")
         void draftActionDirectExecution() { // GH-90000
             ToolContract c = contract("draft-tool", ActionClass.DRAFT, false); // GH-90000
             ToolExecutionEnvelope e = envelope("draft-tool", "agent-1", ActionClass.DRAFT); // GH-90000
@@ -140,11 +140,11 @@ class DefaultToolExecutorTest extends EventloopTestBase {
     // ─── Approval gate ──────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("approval gate [GH-90000]")
+    @DisplayName("approval gate")
     class ApprovalGateTests {
 
         @Test
-        @DisplayName("WRITE_IRREVERSIBLE with requiresApproval=true returns APPROVAL_PENDING when gateway says yes [GH-90000]")
+        @DisplayName("WRITE_IRREVERSIBLE with requiresApproval=true returns APPROVAL_PENDING when gateway says yes")
         void writeSideEffectPendingApproval() { // GH-90000
             when(approvalGateway.requiresApproval(any(), any(), any())).thenReturn(Promise.of(true)); // GH-90000
             ToolContract c = contract("send-email", ActionClass.WRITE_IRREVERSIBLE, true); // GH-90000
@@ -158,7 +158,7 @@ class DefaultToolExecutorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("WRITE_IRREVERSIBLE with requiresApproval=true executes when gateway says no-approval-needed [GH-90000]")
+        @DisplayName("WRITE_IRREVERSIBLE with requiresApproval=true executes when gateway says no-approval-needed")
         void writeSideEffectExecutesWhenAlreadyApproved() { // GH-90000
             when(approvalGateway.requiresApproval(any(), any(), any())).thenReturn(Promise.of(false)); // GH-90000
             ToolContract c = contract("send-email", ActionClass.WRITE_IRREVERSIBLE, true); // GH-90000
@@ -173,7 +173,7 @@ class DefaultToolExecutorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("requiresApproval=false skips the approval gateway even for privileged actions [GH-90000]")
+        @DisplayName("requiresApproval=false skips the approval gateway even for privileged actions")
         void noApprovalFlagSkipsGateway() { // GH-90000
             ToolContract c = contract("db-write", ActionClass.WRITE_REVERSIBLE, false); // GH-90000
             ToolExecutionEnvelope e = envelope("db-write", "agent-1", ActionClass.WRITE_REVERSIBLE); // GH-90000
@@ -190,31 +190,31 @@ class DefaultToolExecutorTest extends EventloopTestBase {
     // ─── Handler exception ──────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("handler exception handling [GH-90000]")
+    @DisplayName("handler exception handling")
     class HandlerException {
 
         @Test
-        @DisplayName("unhandled exception from handler produces FAILED result [GH-90000]")
+        @DisplayName("unhandled exception from handler produces FAILED result")
         void handlerExceptionProducesFailed() { // GH-90000
             ToolContract c = contract("bad-tool", ActionClass.READ, false); // GH-90000
             ToolExecutionEnvelope e = envelope("bad-tool", "agent-1", ActionClass.READ); // GH-90000
-            executor.register("bad-tool", (env, con) -> Promise.ofException(new RuntimeException("boom [GH-90000]")));
+            executor.register("bad-tool", (env, con) -> Promise.ofException(new RuntimeException("boom")));
 
             ToolExecutionResult result = runPromise(() -> executor.execute(e, c)); // GH-90000
 
             assertThat(result.status()).isEqualTo(ToolExecutionStatus.FAILED); // GH-90000
-            assertThat(result.errorMessage()).contains("boom [GH-90000]");
+            assertThat(result.errorMessage()).contains("boom");
         }
     }
 
     // ─── Monitor recording ──────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("monitor integration [GH-90000]")
+    @DisplayName("monitor integration")
     class MonitorIntegration {
 
         @Test
-        @DisplayName("monitor.record is called after every successful execution [GH-90000]")
+        @DisplayName("monitor.record is called after every successful execution")
         void monitorCalledOnSuccess() { // GH-90000
             ToolContract c = contract("search", ActionClass.READ, false); // GH-90000
             ToolExecutionEnvelope e = envelope("search", "agent-1", ActionClass.READ); // GH-90000
@@ -228,7 +228,7 @@ class DefaultToolExecutorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("monitor.record is called after a DENIED result [GH-90000]")
+        @DisplayName("monitor.record is called after a DENIED result")
         void monitorCalledOnDenied() { // GH-90000
             // No handler registered → denied
             ToolContract c = contract("no-tool", ActionClass.READ, false); // GH-90000
@@ -245,11 +245,11 @@ class DefaultToolExecutorTest extends EventloopTestBase {
     // ─── TX-6: mandatory policy gate ────────────────────────────────────────
 
     @Nested
-    @DisplayName("TX-6 mandatory policy gate [GH-90000]")
+    @DisplayName("TX-6 mandatory policy gate")
     class MandatoryPolicyGate {
 
         @Test
-        @DisplayName("policyEngine is evaluated before every tool execution [GH-90000]")
+        @DisplayName("policyEngine is evaluated before every tool execution")
         void policyEngineEvaluatedBeforeExecution() { // GH-90000
             ToolContract c = contract("search", ActionClass.READ, false); // GH-90000
             ToolExecutionEnvelope e = envelope("search", "agent-1", ActionClass.READ); // GH-90000
@@ -264,11 +264,11 @@ class DefaultToolExecutorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("tool execution is denied when policy engine returns DENY [GH-90000]")
+        @DisplayName("tool execution is denied when policy engine returns DENY")
         void deniedWhenPolicyDenies() { // GH-90000
             when(policyEngine.evaluate(any(), any(), any())) // GH-90000
                     .thenReturn(Promise.of(PolicyEvalResult.deny( // GH-90000
-                            "tool.execution", java.util.List.of("high-risk tool blocked [GH-90000]"), 90)));
+                            "tool.execution", java.util.List.of("high-risk tool blocked"), 90)));
 
             ToolContract c = contract("dangerous-tool", ActionClass.WRITE_IRREVERSIBLE, false); // GH-90000
             ToolExecutionEnvelope e = envelope("dangerous-tool", "agent-1", ActionClass.WRITE_IRREVERSIBLE); // GH-90000
@@ -278,11 +278,11 @@ class DefaultToolExecutorTest extends EventloopTestBase {
             ToolExecutionResult result = runPromise(() -> executor.execute(e, c)); // GH-90000
 
             assertThat(result.status()).isEqualTo(ToolExecutionStatus.DENIED); // GH-90000
-            assertThat(result.errorMessage()).contains("high-risk tool blocked [GH-90000]");
+            assertThat(result.errorMessage()).contains("high-risk tool blocked");
         }
 
         @Test
-        @DisplayName("policy DENY reason is included in denied result when no reasons given [GH-90000]")
+        @DisplayName("policy DENY reason is included in denied result when no reasons given")
         void defaultDenyReasonWhenPolicyHasNoReasons() { // GH-90000
             when(policyEngine.evaluate(any(), any(), any())) // GH-90000
                     .thenReturn(Promise.of(PolicyEvalResult.deny("tool.execution", java.util.List.of(), 50))); // GH-90000
@@ -299,11 +299,11 @@ class DefaultToolExecutorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("handler is NOT called when policy denies [GH-90000]")
+        @DisplayName("handler is NOT called when policy denies")
         void handlerNotCalledWhenPolicyDenies() { // GH-90000
             when(policyEngine.evaluate(any(), any(), any())) // GH-90000
                     .thenReturn(Promise.of(PolicyEvalResult.deny( // GH-90000
-                            "tool.execution", java.util.List.of("denied [GH-90000]"), 80)));
+                            "tool.execution", java.util.List.of("denied"), 80)));
 
             ToolContract c = contract("safe-read", ActionClass.READ, false); // GH-90000
             ToolExecutionEnvelope e = envelope("safe-read", "agent-1", ActionClass.READ); // GH-90000
@@ -320,11 +320,11 @@ class DefaultToolExecutorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("policy DENY still calls monitor.record [GH-90000]")
+        @DisplayName("policy DENY still calls monitor.record")
         void monitorCalledOnPolicyDeny() { // GH-90000
             when(policyEngine.evaluate(any(), any(), any())) // GH-90000
                     .thenReturn(Promise.of(PolicyEvalResult.deny( // GH-90000
-                            "tool.execution", java.util.List.of("denied [GH-90000]"), 70)));
+                            "tool.execution", java.util.List.of("denied"), 70)));
 
             ToolContract c = contract("guarded-tool", ActionClass.READ, false); // GH-90000
             ToolExecutionEnvelope e = envelope("guarded-tool", "agent-1", ActionClass.READ); // GH-90000
@@ -337,7 +337,7 @@ class DefaultToolExecutorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("tool execution succeeds end-to-end when policy allows [GH-90000]")
+        @DisplayName("tool execution succeeds end-to-end when policy allows")
         void successEndToEndWhenPolicyAllows() { // GH-90000
             // policyEngine is pre-stubbed to ALLOW in @BeforeEach
             ToolContract c = contract("allowed-tool", ActionClass.READ, false); // GH-90000
@@ -354,7 +354,7 @@ class DefaultToolExecutorTest extends EventloopTestBase {
     // ─── Metrics and tracing ─────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("metrics and tracing (P6-T5) [GH-90000]")
+    @DisplayName("metrics and tracing (P6-T5)")
     class MetricsAndTracing {
 
         private MeterRegistry meterRegistry;
@@ -365,14 +365,14 @@ class DefaultToolExecutorTest extends EventloopTestBase {
             meterRegistry = new SimpleMeterRegistry(); // GH-90000
             // Use a real no-op OTel tracer — avoids sealed-interface mock issues
             io.opentelemetry.api.trace.Tracer noop =
-                    io.opentelemetry.api.OpenTelemetry.noop().getTracer("test [GH-90000]");
+                    io.opentelemetry.api.OpenTelemetry.noop().getTracer("test");
             AgentRunTracer tracer = new AgentRunTracer(noop); // GH-90000
             instrumentedExecutor = new DefaultToolExecutor( // GH-90000
                     approvalGateway, monitor, policyEngine, tracer, meterRegistry);
         }
 
         @Test
-        @DisplayName("successful tool call increments agent.tool.calls counter [GH-90000]")
+        @DisplayName("successful tool call increments agent.tool.calls counter")
         void successfulCallIncrementsToolCallsCounter() { // GH-90000
             ToolContract c = contract("read-tool", ActionClass.READ, false); // GH-90000
             ToolExecutionEnvelope e = envelope("read-tool", "agent-1", ActionClass.READ); // GH-90000
@@ -388,11 +388,11 @@ class DefaultToolExecutorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("policy denial increments agent.policy.denials counter [GH-90000]")
+        @DisplayName("policy denial increments agent.policy.denials counter")
         void policyDenialIncrementsDenialsCounter() { // GH-90000
             when(policyEngine.evaluate(any(), any(), any())) // GH-90000
                     .thenReturn(Promise.of(PolicyEvalResult.deny( // GH-90000
-                            "tool.execution", java.util.List.of("blocked [GH-90000]"), 90)));
+                            "tool.execution", java.util.List.of("blocked"), 90)));
 
             ToolContract c = contract("blocked-tool", ActionClass.WRITE_IRREVERSIBLE, false); // GH-90000
             ToolExecutionEnvelope e = envelope("blocked-tool", "agent-1", ActionClass.WRITE_IRREVERSIBLE); // GH-90000
@@ -408,11 +408,11 @@ class DefaultToolExecutorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("policy denial does NOT increment tool.calls counter [GH-90000]")
+        @DisplayName("policy denial does NOT increment tool.calls counter")
         void policyDenialDoesNotIncrementCallsCounter() { // GH-90000
             when(policyEngine.evaluate(any(), any(), any())) // GH-90000
                     .thenReturn(Promise.of(PolicyEvalResult.deny( // GH-90000
-                            "tool.execution", java.util.List.of("blocked [GH-90000]"), 90)));
+                            "tool.execution", java.util.List.of("blocked"), 90)));
 
             ToolContract c = contract("blocked-tool2", ActionClass.WRITE_IRREVERSIBLE, false); // GH-90000
             ToolExecutionEnvelope e = envelope("blocked-tool2", "agent-1", ActionClass.WRITE_IRREVERSIBLE); // GH-90000
@@ -429,7 +429,7 @@ class DefaultToolExecutorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("multiple calls accumulate counter correctly [GH-90000]")
+        @DisplayName("multiple calls accumulate counter correctly")
         void multipleCallsAccumulateCounter() { // GH-90000
             ToolContract c = contract("counter-tool", ActionClass.READ, false); // GH-90000
             instrumentedExecutor.register("counter-tool", (env, con) -> Promise.of( // GH-90000

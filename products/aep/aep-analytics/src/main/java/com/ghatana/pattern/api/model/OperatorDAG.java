@@ -42,7 +42,10 @@ import java.util.Map;
  * <p><b>Design Reference:</b>
  * This DAG format implements the operator graph from WORLD_CLASS_DESIGN_MASTER.md.
  * See .github/copilot-instructions.md "Unified Operator Model" for operator types.
- */
+  * @doc.type enum
+ * @doc.purpose Provides operator dag functionality.
+ * @doc.layer product
+*/
 public class OperatorDAG {
 
     @JsonProperty("nodes")

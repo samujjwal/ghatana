@@ -19,11 +19,11 @@ import java.util.Map;
  * @doc.layer test
  * @doc.pattern Test
  */
-@DisplayName("LifecycleServiceModule AI Runtime Tests [GH-90000]")
+@DisplayName("LifecycleServiceModule AI Runtime Tests")
 class LifecycleServiceModuleAiRuntimeTest {
 
     @Test
-    @DisplayName("resolveAiRuntimeMode defaults to required mode [GH-90000]")
+    @DisplayName("resolveAiRuntimeMode defaults to required mode")
     void resolveAiRuntimeModeDefaultsToRequiredMode() { // GH-90000
         Map<String, String> env = new HashMap<>(); // GH-90000
 
@@ -32,7 +32,7 @@ class LifecycleServiceModuleAiRuntimeTest {
     }
 
     @Test
-    @DisplayName("resolveAiRuntimeMode allows explicit stub mode outside production [GH-90000]")
+    @DisplayName("resolveAiRuntimeMode allows explicit stub mode outside production")
     void resolveAiRuntimeModeAllowsExplicitStubModeOutsideProduction() { // GH-90000
         Map<String, String> env = new HashMap<>(); // GH-90000
         env.put(YappcEnvironmentConfig.AGENT_LLM_MODE_ENV, "stub"); // GH-90000
@@ -43,7 +43,7 @@ class LifecycleServiceModuleAiRuntimeTest {
     }
 
     @Test
-    @DisplayName("resolveAiRuntimeMode rejects explicit stub mode in production [GH-90000]")
+    @DisplayName("resolveAiRuntimeMode rejects explicit stub mode in production")
     void resolveAiRuntimeModeRejectsExplicitStubModeInProduction() { // GH-90000
         Map<String, String> env = new HashMap<>(); // GH-90000
         env.put(YappcEnvironmentConfig.AGENT_LLM_MODE_ENV, "stub"); // GH-90000
@@ -52,6 +52,6 @@ class LifecycleServiceModuleAiRuntimeTest {
         assertThatThrownBy(() -> LifecycleServiceModule.resolveAiRuntimeMode(env)) // GH-90000
                 .isInstanceOf(IllegalStateException.class) // GH-90000
                 .hasMessageContaining(YappcEnvironmentConfig.AGENT_LLM_MODE_ENV) // GH-90000
-                .hasMessageContaining("production [GH-90000]");
+                .hasMessageContaining("production");
     }
 }

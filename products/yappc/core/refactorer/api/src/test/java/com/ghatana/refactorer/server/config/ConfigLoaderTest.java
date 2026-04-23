@@ -24,14 +24,14 @@ class ConfigLoaderTest {
 
     @AfterEach
     void clearConfigFileOverride() { // GH-90000
-        System.clearProperty("config.file [GH-90000]");
+        System.clearProperty("config.file");
         ConfigFactory.invalidateCaches(); // GH-90000
     }
 
     @Test
     void load_wrapsInvalidConfigurationInTypedException(@TempDir Path tempDir) // GH-90000
             throws IOException {
-        Path configFile = tempDir.resolve("invalid.conf [GH-90000]");
+        Path configFile = tempDir.resolve("invalid.conf");
         Files.writeString( // GH-90000
                 configFile,
                 """
@@ -52,6 +52,6 @@ class ConfigLoaderTest {
 
         assertEquals("Configuration loading failed", exception.getMessage()); // GH-90000
         assertInstanceOf(IllegalArgumentException.class, exception.getCause()); // GH-90000
-        assertTrue(exception.getCause().getMessage().contains("Invalid HTTP port [GH-90000]"));
+        assertTrue(exception.getCause().getMessage().contains("Invalid HTTP port"));
     }
 }

@@ -30,18 +30,18 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("AIAssistService – Query Processing (AI001) [GH-90000]")
+@DisplayName("AIAssistService – Query Processing (AI001)")
 class AIAssistServiceTest extends EventloopTestBase {
 
     @Mock
     private AIAssistService aiAssistService;
 
     @Nested
-    @DisplayName("Query Processing [GH-90000]")
+    @DisplayName("Query Processing")
     class QueryProcessingTests {
 
         @Test
-        @DisplayName("[AI001]: process_query_returns_results [GH-90000]")
+        @DisplayName("[AI001]: process_query_returns_results")
         void processQueryReturnsResults() { // GH-90000
             String query = "Show me sales data from last month";
             AIAssistService.QueryContext context = createQueryContext(); // GH-90000
@@ -49,7 +49,7 @@ class AIAssistServiceTest extends EventloopTestBase {
             AIAssistService.GeneratedSQL generatedSQL = new AIAssistService.GeneratedSQL( // GH-90000
                 "SELECT * FROM sales WHERE date >= '2024-01-01'",
                 "Query to get sales data from January 2024",
-                List.of("sales [GH-90000]"), List.of(), true
+                List.of("sales"), List.of(), true
             );
 
             AIAssistService.QueryResult result = new AIAssistService.QueryResult( // GH-90000
@@ -65,13 +65,13 @@ class AIAssistServiceTest extends EventloopTestBase {
                 aiAssistService.processQuery(query, context) // GH-90000
             );
 
-            assertThat(processed.queryId()).isEqualTo("query-001 [GH-90000]");
+            assertThat(processed.queryId()).isEqualTo("query-001");
             assertThat(processed.confidenceScore()).isEqualTo(0.95); // GH-90000
             assertThat(processed.generatedSQL().isSafe()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("[AI001]: process_query_with_low_confidence_flagged [GH-90000]")
+        @DisplayName("[AI001]: process_query_with_low_confidence_flagged")
         void processQueryWithLowConfidenceFlagged() { // GH-90000
             String query = "ambiguous query";
             AIAssistService.QueryContext context = createQueryContext(); // GH-90000
@@ -93,11 +93,11 @@ class AIAssistServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("SQL Generation [GH-90000]")
+    @DisplayName("SQL Generation")
     class SQLGenerationTests {
 
         @Test
-        @DisplayName("[AI001]: generate_sql_creates_valid_query [GH-90000]")
+        @DisplayName("[AI001]: generate_sql_creates_valid_query")
         void generateSQLCreatesValidQuery() { // GH-90000
             String description = "Find all active users";
             AIAssistService.DatabaseSchema schema = createDatabaseSchema(); // GH-90000
@@ -105,7 +105,7 @@ class AIAssistServiceTest extends EventloopTestBase {
             AIAssistService.GeneratedSQL result = new AIAssistService.GeneratedSQL( // GH-90000
                 "SELECT * FROM users WHERE status = 'active'",
                 "Query to find users with active status",
-                List.of("users [GH-90000]"), List.of(), true
+                List.of("users"), List.of(), true
             );
 
             when(aiAssistService.generateSQL(description, schema)) // GH-90000
@@ -115,14 +115,14 @@ class AIAssistServiceTest extends EventloopTestBase {
                 aiAssistService.generateSQL(description, schema) // GH-90000
             );
 
-            assertThat(generated.sql()).containsIgnoringCase("SELECT [GH-90000]");
-            assertThat(generated.tablesUsed()).contains("users [GH-90000]");
+            assertThat(generated.sql()).containsIgnoringCase("SELECT");
+            assertThat(generated.tablesUsed()).contains("users");
             assertThat(generated.isReadOnly()).isTrue(); // GH-90000
             assertThat(generated.isSafe()).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("[AI001]: generate_sql_detects_unsafe_operations [GH-90000]")
+        @DisplayName("[AI001]: generate_sql_detects_unsafe_operations")
         void generateSQLDetectsUnsafeOperations() { // GH-90000
             String description = "Delete all users";
             AIAssistService.DatabaseSchema schema = createDatabaseSchema(); // GH-90000
@@ -130,8 +130,8 @@ class AIAssistServiceTest extends EventloopTestBase {
             AIAssistService.GeneratedSQL result = new AIAssistService.GeneratedSQL( // GH-90000
                 "DELETE FROM users",
                 "WARNING: This will delete all users",
-                List.of("users [GH-90000]"),
-                List.of("DESTRUCTIVE_OPERATION [GH-90000]"),
+                List.of("users"),
+                List.of("DESTRUCTIVE_OPERATION"),
                 false
             );
 
@@ -144,16 +144,16 @@ class AIAssistServiceTest extends EventloopTestBase {
 
             assertThat(generated.isReadOnly()).isFalse(); // GH-90000
             assertThat(generated.isSafe()).isFalse(); // GH-90000
-            assertThat(generated.warnings()).contains("DESTRUCTIVE_OPERATION [GH-90000]");
+            assertThat(generated.warnings()).contains("DESTRUCTIVE_OPERATION");
         }
     }
 
     @Nested
-    @DisplayName("Query Explanation [GH-90000]")
+    @DisplayName("Query Explanation")
     class QueryExplanationTests {
 
         @Test
-        @DisplayName("[AI001]: explain_results_provides_summary [GH-90000]")
+        @DisplayName("[AI001]: explain_results_provides_summary")
         void explainResultsProvidesSummary() { // GH-90000
             String query = "SELECT * FROM sales";
             List<Map<String, Object>> results = List.of( // GH-90000
@@ -165,7 +165,7 @@ class AIAssistServiceTest extends EventloopTestBase {
             AIAssistService.Explanation explanation = new AIAssistService.Explanation( // GH-90000
                 "Sales data shows North region at $50K and South at $75K",
                 List.of("South region outperforms North by 50%", "Total sales: $125K"), // GH-90000
-                List.of("Focus marketing on South region [GH-90000]"),
+                List.of("Focus marketing on South region"),
                 "bar_chart"
             );
 
@@ -176,18 +176,18 @@ class AIAssistServiceTest extends EventloopTestBase {
                 aiAssistService.explainResults(query, results, context) // GH-90000
             );
 
-            assertThat(result.summary()).contains("North [GH-90000]");
+            assertThat(result.summary()).contains("North");
             assertThat(result.keyPoints()).hasSize(2); // GH-90000
-            assertThat(result.visualizationSuggestion()).isEqualTo("bar_chart [GH-90000]");
+            assertThat(result.visualizationSuggestion()).isEqualTo("bar_chart");
         }
     }
 
     @Nested
-    @DisplayName("Query Suggestions [GH-90000]")
+    @DisplayName("Query Suggestions")
     class QuerySuggestionsTests {
 
         @Test
-        @DisplayName("[AI001]: suggest_queries_returns_relevant_suggestions [GH-90000]")
+        @DisplayName("[AI001]: suggest_queries_returns_relevant_suggestions")
         void suggestQueriesReturnsRelevantSuggestions() { // GH-90000
             AIAssistService.QueryContext context = createQueryContext(); // GH-90000
 
@@ -216,11 +216,11 @@ class AIAssistServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Conversation Management [GH-90000]")
+    @DisplayName("Conversation Management")
     class ConversationManagementTests {
 
         @Test
-        @DisplayName("[AI001]: create_conversation_creates_new [GH-90000]")
+        @DisplayName("[AI001]: create_conversation_creates_new")
         void createConversationCreatesNew() { // GH-90000
             String tenantId = "tenant-alpha";
             String userId = "user-001";
@@ -237,13 +237,13 @@ class AIAssistServiceTest extends EventloopTestBase {
                 aiAssistService.createConversation(tenantId, userId) // GH-90000
             );
 
-            assertThat(result.id()).isEqualTo("conv-001 [GH-90000]");
+            assertThat(result.id()).isEqualTo("conv-001");
             assertThat(result.tenantId()).isEqualTo(tenantId); // GH-90000
             assertThat(result.messageCount()).isZero(); // GH-90000
         }
 
         @Test
-        @DisplayName("[AI001]: add_message_updates_conversation [GH-90000]")
+        @DisplayName("[AI001]: add_message_updates_conversation")
         void addMessageUpdatesConversation() { // GH-90000
             String conversationId = "conv-001";
             AIAssistService.Message message = new AIAssistService.Message( // GH-90000
@@ -268,7 +268,7 @@ class AIAssistServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[AI001]: get_conversation_returns_history [GH-90000]")
+        @DisplayName("[AI001]: get_conversation_returns_history")
         void getConversationReturnsHistory() { // GH-90000
             String conversationId = "conv-001";
 
@@ -293,7 +293,7 @@ class AIAssistServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[AI001]: clear_conversation_removes_messages [GH-90000]")
+        @DisplayName("[AI001]: clear_conversation_removes_messages")
         void clearConversationRemovesMessages() { // GH-90000
             String conversationId = "conv-001";
 
@@ -307,11 +307,11 @@ class AIAssistServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Service Status [GH-90000]")
+    @DisplayName("Service Status")
     class ServiceStatusTests {
 
         @Test
-        @DisplayName("[AI001]: get_status_returns_service_info [GH-90000]")
+        @DisplayName("[AI001]: get_status_returns_service_info")
         void getStatusReturnsServiceInfo() { // GH-90000
             AIAssistService.ServiceStatus status = new AIAssistService.ServiceStatus( // GH-90000
                 true, "openai", "gpt-4", 1000, 500.0, Instant.now() // GH-90000
@@ -323,8 +323,8 @@ class AIAssistServiceTest extends EventloopTestBase {
             AIAssistService.ServiceStatus result = runPromise(() -> aiAssistService.getStatus()); // GH-90000
 
             assertThat(result.available()).isTrue(); // GH-90000
-            assertThat(result.provider()).isEqualTo("openai [GH-90000]");
-            assertThat(result.model()).isEqualTo("gpt-4 [GH-90000]");
+            assertThat(result.provider()).isEqualTo("openai");
+            assertThat(result.model()).isEqualTo("gpt-4");
             assertThat(result.averageLatencyMs()).isEqualTo(500.0); // GH-90000
         }
     }

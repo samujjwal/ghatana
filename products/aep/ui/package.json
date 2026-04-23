@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "lint": "eslint src --max-warnings=0",
     "type-check": "tsc --noEmit",
+    "verify:truth": "npx tsx scripts/verify-product-truth.ts",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:e2e": "playwright test",

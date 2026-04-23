@@ -16,13 +16,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("DeploymentRiskAssessor Tests [GH-90000]")
+@DisplayName("DeploymentRiskAssessor Tests")
 class DeploymentRiskAssessorTest extends EventloopTestBase {
 
   @Mock private YAPPCAIService aiService;
 
   @Test
-  @DisplayName("assess parses AI deployment recommendation [GH-90000]")
+  @DisplayName("assess parses AI deployment recommendation")
   void assessParsesAiDeploymentRecommendation() { // GH-90000
     when(aiService.reason(anyString(), anyMap())) // GH-90000
         .thenReturn( // GH-90000
@@ -50,9 +50,9 @@ class DeploymentRiskAssessorTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("assess falls back to blue green for breaking API changes [GH-90000]")
+  @DisplayName("assess falls back to blue green for breaking API changes")
   void assessFallsBackToBlueGreenForBreakingApiChanges() { // GH-90000
-    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("  [GH-90000]"));
+    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of(" "));
 
     DeploymentRiskAssessor assessor =
         new DeploymentRiskAssessor( // GH-90000
@@ -65,7 +65,7 @@ class DeploymentRiskAssessorTest extends EventloopTestBase {
             () -> // GH-90000
                 assessor.assess( // GH-90000
                     new DeploymentRiskAssessor.DeploymentRequest( // GH-90000
-                        "project-a", "tenant-a", 50, 10, List.of("api [GH-90000]"), true)));
+                        "project-a", "tenant-a", 50, 10, List.of("api"), true)));
 
     assertThat(risk.strategy()).isEqualTo(DeploymentRiskAssessor.DeploymentStrategy.BLUE_GREEN); // GH-90000
     assertThat(risk.requiresApproval()).isTrue(); // GH-90000
@@ -73,9 +73,9 @@ class DeploymentRiskAssessorTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("assess falls back to canary when AI response is malformed and coverage is low [GH-90000]")
+  @DisplayName("assess falls back to canary when AI response is malformed and coverage is low")
   void assessFallsBackToCanaryWhenAiResponseIsMalformedAndCoverageIsLow() { // GH-90000
-    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("not-json [GH-90000]"));
+    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("not-json"));
 
     DeploymentRiskAssessor assessor =
         new DeploymentRiskAssessor( // GH-90000
@@ -97,7 +97,7 @@ class DeploymentRiskAssessorTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("assess falls back to immediate for low risk changes [GH-90000]")
+  @DisplayName("assess falls back to immediate for low risk changes")
   void assessFallsBackToImmediateForLowRiskChanges() { // GH-90000
     when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("{\"strategy\":\"INVALID\"}")); // GH-90000
 
@@ -120,7 +120,7 @@ class DeploymentRiskAssessorTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("assess defaults missing AI fields and non array factors [GH-90000]")
+  @DisplayName("assess defaults missing AI fields and non array factors")
   void assessDefaultsMissingAiFieldsAndNonArrayFactors() { // GH-90000
     when(aiService.reason(anyString(), anyMap())) // GH-90000
         .thenReturn( // GH-90000
@@ -138,17 +138,17 @@ class DeploymentRiskAssessorTest extends EventloopTestBase {
             () -> // GH-90000
                 assessor.assess( // GH-90000
                     new DeploymentRiskAssessor.DeploymentRequest( // GH-90000
-                        "project-a", "tenant-a", 60, 20, List.of("svc [GH-90000]"), false)));
+                        "project-a", "tenant-a", 60, 20, List.of("svc"), false)));
 
     assertThat(risk.strategy()).isEqualTo(DeploymentRiskAssessor.DeploymentStrategy.ROLLING); // GH-90000
-    assertThat(risk.rationale()).isEqualTo("AI generated recommendation [GH-90000]");
+    assertThat(risk.rationale()).isEqualTo("AI generated recommendation");
     assertThat(risk.riskFactors()).isEmpty(); // GH-90000
     assertThat(risk.canaryPercent()).isZero(); // GH-90000
     assertThat(risk.aiGenerated()).isTrue(); // GH-90000
   }
 
     @Test
-    @DisplayName("assess falls back when AI response is null [GH-90000]")
+    @DisplayName("assess falls back when AI response is null")
     void assessFallsBackWhenAiResponseIsNull() { // GH-90000
         when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of(null)); // GH-90000
 
@@ -163,14 +163,14 @@ class DeploymentRiskAssessorTest extends EventloopTestBase {
                         () -> // GH-90000
                                 assessor.assess( // GH-90000
                                         new DeploymentRiskAssessor.DeploymentRequest( // GH-90000
-                                                "project-a", "tenant-a", 30, 10, List.of("svc [GH-90000]"), false)));
+                                                "project-a", "tenant-a", 30, 10, List.of("svc"), false)));
 
         assertThat(risk.aiGenerated()).isFalse(); // GH-90000
         assertThat(risk.strategy()).isEqualTo(DeploymentRiskAssessor.DeploymentStrategy.IMMEDIATE); // GH-90000
     }
 
   @Test
-  @DisplayName("assess falls back when AI score is invalid and supports rolling strategy [GH-90000]")
+  @DisplayName("assess falls back when AI score is invalid and supports rolling strategy")
   void assessFallsBackWhenAiScoreIsInvalidAndSupportsRollingStrategy() { // GH-90000
     when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("{\"riskScore\":-1}")); // GH-90000
 
@@ -193,7 +193,7 @@ class DeploymentRiskAssessorTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("assess falls back when AI strategy is invalid despite valid risk score [GH-90000]")
+  @DisplayName("assess falls back when AI strategy is invalid despite valid risk score")
   void assessFallsBackWhenAiStrategyIsInvalidDespiteValidRiskScore() { // GH-90000
     when(aiService.reason(anyString(), anyMap())) // GH-90000
         .thenReturn(Promise.of("{\"riskScore\":6.4,\"strategy\":\"SIDEWAYS\"}")); // GH-90000
@@ -216,7 +216,7 @@ class DeploymentRiskAssessorTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("assess requires approval for very high non breaking fallback risk [GH-90000]")
+  @DisplayName("assess requires approval for very high non breaking fallback risk")
   void assessRequiresApprovalForVeryHighNonBreakingFallbackRisk() { // GH-90000
     when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("{\"riskScore\":-1}")); // GH-90000
 
@@ -239,7 +239,7 @@ class DeploymentRiskAssessorTest extends EventloopTestBase {
   }
 
     @Test
-    @DisplayName("assess falls back to canary when score alone is high [GH-90000]")
+    @DisplayName("assess falls back to canary when score alone is high")
     void assessFallsBackToCanaryWhenScoreAloneIsHigh() { // GH-90000
         when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("{\"riskScore\":-1}")); // GH-90000
 
@@ -268,7 +268,7 @@ class DeploymentRiskAssessorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("assess falls back to canary when low coverage alone crosses the threshold [GH-90000]")
+    @DisplayName("assess falls back to canary when low coverage alone crosses the threshold")
     void assessFallsBackToCanaryWhenLowCoverageAloneCrossesTheThreshold() { // GH-90000
         when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("{\"riskScore\":-1}")); // GH-90000
 
@@ -283,16 +283,16 @@ class DeploymentRiskAssessorTest extends EventloopTestBase {
                         () -> // GH-90000
                                 assessor.assess( // GH-90000
                                         new DeploymentRiskAssessor.DeploymentRequest( // GH-90000
-                                                "project-a", "tenant-a", 80, 20, List.of("api [GH-90000]"), false)));
+                                                "project-a", "tenant-a", 80, 20, List.of("api"), false)));
 
         assertThat(risk.strategy()).isEqualTo(DeploymentRiskAssessor.DeploymentStrategy.CANARY); // GH-90000
         assertThat(risk.aiGenerated()).isFalse(); // GH-90000
-        assertThat(risk.riskFactors()).contains("low-test-coverage [GH-90000]");
+        assertThat(risk.riskFactors()).contains("low-test-coverage");
         assertThat(risk.riskScore()).isLessThan(7.0); // GH-90000
     }
 
   @Test
-  @DisplayName("deployment records normalize invalid values [GH-90000]")
+  @DisplayName("deployment records normalize invalid values")
   void deploymentRecordsNormalizeInvalidValues() { // GH-90000
     DeploymentRiskAssessor.DeploymentRisk risk =
         new DeploymentRiskAssessor.DeploymentRisk(12.0, null, null, null, false, -3, false); // GH-90000
@@ -315,7 +315,7 @@ class DeploymentRiskAssessorTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("deployment signals omit factors when thresholds are not met [GH-90000]")
+  @DisplayName("deployment signals omit factors when thresholds are not met")
   void deploymentSignalsOmitFactorsWhenThresholdsAreNotMet() { // GH-90000
     DeploymentRiskAssessor.DeploymentSignals signals =
         new DeploymentRiskAssessor.DeploymentSignals(50, 10, 1, 1, 0.01, 0.95, false); // GH-90000

@@ -98,7 +98,7 @@ class LakehouseConnectorTest extends EventloopTestBase {
                 .data(Map.of("key", "updated-value")) // GH-90000
                 .build(); // GH-90000
         Entity result = resolve(connector.update(updated)); // GH-90000
-        assertThat(result.getData().get("key [GH-90000]")).isEqualTo("updated-value [GH-90000]");
+        assertThat(result.getData().get("key")).isEqualTo("updated-value");
     }
 
     @Test
@@ -151,7 +151,7 @@ class LakehouseConnectorTest extends EventloopTestBase {
         resolve(connector.create(entity(Map.of("status", "active", "amount", 80)))); // GH-90000
 
         QuerySpec spec = QuerySpec.builder() // GH-90000
-            .filter("status = 'active' AND amount >= 100 [GH-90000]")
+            .filter("status = 'active' AND amount >= 100")
             .build(); // GH-90000
 
         StorageConnector.QueryResult result = resolve(connector.query(COLLECTION_ID, TENANT, spec)); // GH-90000
@@ -174,7 +174,7 @@ class LakehouseConnectorTest extends EventloopTestBase {
         StorageConnector.QueryResult result = resolve(connector.query(COLLECTION_ID, TENANT, spec)); // GH-90000
 
         assertThat(result.entities()) // GH-90000
-            .extracting(entity -> entity.getData().get("score [GH-90000]"))
+            .extracting(entity -> entity.getData().get("score"))
             .containsExactly(20, 10); // GH-90000
     }
 
@@ -268,7 +268,7 @@ class LakehouseConnectorTest extends EventloopTestBase {
 
     @Test
     void getMetadata_returnsLakehouseType() { // GH-90000
-        assertThat(connector.getMetadata().backendType().name()).isEqualTo("LAKEHOUSE [GH-90000]");
+        assertThat(connector.getMetadata().backendType().name()).isEqualTo("LAKEHOUSE");
     }
 
     @Test

@@ -17,7 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Architecture DeriveContractsStep Tests [GH-90000]")
+@DisplayName("Architecture DeriveContractsStep Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles derive contracts step test operations
@@ -38,13 +38,13 @@ class DeriveContractsStepTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should return correct step ID [GH-90000]")
+  @DisplayName("Should return correct step ID")
   void shouldReturnCorrectStepId() { // GH-90000
-    assertThat(step.getStepId()).isEqualTo("architecture.derivecontracts [GH-90000]");
+    assertThat(step.getStepId()).isEqualTo("architecture.derivecontracts");
   }
 
   @Test
-  @DisplayName("Should derive API contracts from architecture [GH-90000]")
+  @DisplayName("Should derive API contracts from architecture")
   void shouldDeriveAPIContracts() { // GH-90000
     // GIVEN
     WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
@@ -62,11 +62,11 @@ class DeriveContractsStepTest extends EventloopTestBase {
 
     // THEN
     assertThat(result).isNotNull(); // GH-90000
-    assertThat(result.get("architectureId [GH-90000]")).isEqualTo("arch-001 [GH-90000]");
+    assertThat(result.get("architectureId")).isEqualTo("arch-001");
   }
 
   @Test
-  @DisplayName("Should fail when architectureId is missing [GH-90000]")
+  @DisplayName("Should fail when architectureId is missing")
   void shouldFailWhenArchitectureIdMissing() { // GH-90000
     // GIVEN
     WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
@@ -75,6 +75,6 @@ class DeriveContractsStepTest extends EventloopTestBase {
     // WHEN/THEN
     assertThatThrownBy(() -> runPromise(() -> step.execute(context))) // GH-90000
         .isInstanceOf(IllegalArgumentException.class) // GH-90000
-        .hasMessageContaining("architectureId [GH-90000]");
+        .hasMessageContaining("architectureId");
   }
 }

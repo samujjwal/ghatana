@@ -36,7 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AEP HTTP Security [GH-90000]")
+@DisplayName("AEP HTTP Security")
 class AepSecurityTest {
 
     private AepEngine engine;
@@ -67,56 +67,56 @@ class AepSecurityTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Security Headers [GH-90000]")
+    @DisplayName("Security Headers")
     class SecurityHeaderTests {
 
         @Test
-        @DisplayName("GET /health includes X-Content-Type-Options: nosniff [GH-90000]")
+        @DisplayName("GET /health includes X-Content-Type-Options: nosniff")
         void get_health_hasNoSniff() throws Exception { // GH-90000
-            HttpResponse<String> resp = get("/health [GH-90000]");
-            assertThat(resp.headers().firstValue("X-Content-Type-Options [GH-90000]"))
-                    .hasValue("nosniff [GH-90000]");
+            HttpResponse<String> resp = get("/health");
+            assertThat(resp.headers().firstValue("X-Content-Type-Options"))
+                    .hasValue("nosniff");
         }
 
         @Test
-        @DisplayName("GET /health includes X-Frame-Options: DENY [GH-90000]")
+        @DisplayName("GET /health includes X-Frame-Options: DENY")
         void get_health_hasXFrameOptionsDeny() throws Exception { // GH-90000
-            HttpResponse<String> resp = get("/health [GH-90000]");
-            assertThat(resp.headers().firstValue("X-Frame-Options [GH-90000]"))
-                    .hasValue("DENY [GH-90000]");
+            HttpResponse<String> resp = get("/health");
+            assertThat(resp.headers().firstValue("X-Frame-Options"))
+                    .hasValue("DENY");
         }
 
         @Test
-        @DisplayName("GET /health includes Strict-Transport-Security header [GH-90000]")
+        @DisplayName("GET /health includes Strict-Transport-Security header")
         void get_health_hasHsts() throws Exception { // GH-90000
-            HttpResponse<String> resp = get("/health [GH-90000]");
-            assertThat(resp.headers().firstValue("Strict-Transport-Security [GH-90000]"))
+            HttpResponse<String> resp = get("/health");
+            assertThat(resp.headers().firstValue("Strict-Transport-Security"))
                     .isPresent() // GH-90000
-                    .hasValueSatisfying(v -> assertThat(v).contains("max-age=31536000 [GH-90000]"));
+                    .hasValueSatisfying(v -> assertThat(v).contains("max-age=31536000"));
         }
 
         @Test
-        @DisplayName("GET /health includes Content-Security-Policy with frame-ancestors none [GH-90000]")
+        @DisplayName("GET /health includes Content-Security-Policy with frame-ancestors none")
         void get_health_hasCsp() throws Exception { // GH-90000
-            HttpResponse<String> resp = get("/health [GH-90000]");
-            assertThat(resp.headers().firstValue("Content-Security-Policy [GH-90000]"))
+            HttpResponse<String> resp = get("/health");
+            assertThat(resp.headers().firstValue("Content-Security-Policy"))
                     .isPresent() // GH-90000
-                    .hasValueSatisfying(v -> assertThat(v).contains("frame-ancestors 'none' [GH-90000]"));
+                    .hasValueSatisfying(v -> assertThat(v).contains("frame-ancestors 'none'"));
         }
 
         @Test
-        @DisplayName("GET /health includes Referrer-Policy header [GH-90000]")
+        @DisplayName("GET /health includes Referrer-Policy header")
         void get_health_hasReferrerPolicy() throws Exception { // GH-90000
-            HttpResponse<String> resp = get("/health [GH-90000]");
-            assertThat(resp.headers().firstValue("Referrer-Policy [GH-90000]"))
+            HttpResponse<String> resp = get("/health");
+            assertThat(resp.headers().firstValue("Referrer-Policy"))
                     .isPresent(); // GH-90000
         }
 
         @Test
-        @DisplayName("GET /health includes X-Request-Id header [GH-90000]")
+        @DisplayName("GET /health includes X-Request-Id header")
         void get_health_hasXRequestId() throws Exception { // GH-90000
-            HttpResponse<String> resp = get("/health [GH-90000]");
-            assertThat(resp.headers().firstValue("X-Request-Id [GH-90000]"))
+            HttpResponse<String> resp = get("/health");
+            assertThat(resp.headers().firstValue("X-Request-Id"))
                     .isPresent(); // GH-90000
         }
     }
@@ -126,11 +126,11 @@ class AepSecurityTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Payload Size Limit [GH-90000]")
+    @DisplayName("Payload Size Limit")
     class PayloadSizeTests {
 
         @Test
-        @DisplayName("POST with oversized payload → 413 Payload Too Large [GH-90000]")
+        @DisplayName("POST with oversized payload → 413 Payload Too Large")
         void post_oversizedPayload_returns413() throws Exception { // GH-90000
             // Send a body that is 1 byte over the enforced 16 MiB limit
             // (AepInputValidator.MAX_REQUEST_BODY_BYTES = 16 * 1024 * 1024). // GH-90000
@@ -149,7 +149,7 @@ class AepSecurityTest {
         }
 
         @Test
-        @DisplayName("POST with valid-size payload is forwarded to router [GH-90000]")
+        @DisplayName("POST with valid-size payload is forwarded to router")
         void post_validPayload_isForwarded() throws Exception { // GH-90000
             String body = "{\"tenantId\":\"t1\",\"type\":\"click\",\"payload\":{\"k\":\"v\"}}";
             HttpResponse<String> resp = post("/api/v1/events", body); // GH-90000
@@ -163,11 +163,11 @@ class AepSecurityTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("CORS Preflight [GH-90000]")
+    @DisplayName("CORS Preflight")
     class CorsTests {
 
         @Test
-        @DisplayName("OPTIONS preflight returns 204 with CORS headers [GH-90000]")
+        @DisplayName("OPTIONS preflight returns 204 with CORS headers")
         void options_preflight_returns204WithCorsHeaders() throws Exception { // GH-90000
             HttpRequest req = HttpRequest.newBuilder() // GH-90000
                     .uri(URI.create("http://localhost:" + port + "/api/v1/events")) // GH-90000
@@ -179,7 +179,7 @@ class AepSecurityTest {
             HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString()); // GH-90000
 
             assertThat(resp.statusCode()).isEqualTo(204); // GH-90000
-            assertThat(resp.headers().firstValue("Access-Control-Allow-Methods [GH-90000]"))
+            assertThat(resp.headers().firstValue("Access-Control-Allow-Methods"))
                     .isPresent(); // GH-90000
         }
     }
@@ -189,11 +189,11 @@ class AepSecurityTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Input Validation [GH-90000]")
+    @DisplayName("Input Validation")
     class InputValidationTests {
 
         @Test
-        @DisplayName("POST /api/v1/events with injection payload → 400 [GH-90000]")
+        @DisplayName("POST /api/v1/events with injection payload → 400")
         void post_withInjectionPayload_returns400() throws Exception { // GH-90000
             // payload with script-injection pattern — validator should reject
             String malicious = "{\"tenantId\":\"t1\",\"type\":\"click\",\"payload\":"
@@ -206,7 +206,7 @@ class AepSecurityTest {
         }
 
         @Test
-        @DisplayName("POST /api/v1/events with valid payload → 200 [GH-90000]")
+        @DisplayName("POST /api/v1/events with valid payload → 200")
         void post_withValidPayload_returns200() throws Exception { // GH-90000
             String valid = "{\"tenantId\":\"tenant-123\",\"type\":\"user-click\","
                     + "\"payload\":{\"itemId\":\"abc123\",\"screen\":\"home\"}}";

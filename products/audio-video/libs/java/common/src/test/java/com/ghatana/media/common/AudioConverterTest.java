@@ -14,11 +14,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern TestCase
  */
-@DisplayName("AudioConverter [GH-90000]")
+@DisplayName("AudioConverter")
 class AudioConverterTest {
 
     @Test
-    @DisplayName("PCM16 round-trip keeps sample shape [GH-90000]")
+    @DisplayName("PCM16 round-trip keeps sample shape")
     void pcm16RoundTrip() { // GH-90000
         float[] samples = new float[]{-1.0f, -0.5f, 0.0f, 0.5f, 1.0f};
 
@@ -33,7 +33,7 @@ class AudioConverterTest {
     }
 
     @Test
-    @DisplayName("Signed 24-bit PCM values are sign-extended correctly [GH-90000]")
+    @DisplayName("Signed 24-bit PCM values are sign-extended correctly")
     void pcm24SignExtension() { // GH-90000
         byte[] data = new byte[]{0x00, 0x00, (byte) 0x80, (byte) 0xFF, (byte) 0xFF, 0x7F}; // GH-90000
 
@@ -44,7 +44,7 @@ class AudioConverterTest {
     }
 
     @Test
-    @DisplayName("Audio metadata is extracted from AudioData and WAV bytes [GH-90000]")
+    @DisplayName("Audio metadata is extracted from AudioData and WAV bytes")
     void extractsAudioMetadata() { // GH-90000
         AudioData audioData = AudioConverter.fromFloatSamples(new float[]{0.0f, 0.5f, -0.5f, 0.25f}, 16000, 1); // GH-90000
 
@@ -60,7 +60,7 @@ class AudioConverterTest {
         assertThat(wavMetadata.channels()).isEqualTo(1); // GH-90000
         assertThat(wavMetadata.bitsPerSample()).isEqualTo(16); // GH-90000
         assertThat(wavMetadata.sampleCount()).isEqualTo(4); // GH-90000
-        assertThat(wavMetadata.containerFormat()).isEqualTo("WAV [GH-90000]");
+        assertThat(wavMetadata.containerFormat()).isEqualTo("WAV");
     }
 
     private static org.assertj.core.data.Offset<Float> within(float value) { // GH-90000

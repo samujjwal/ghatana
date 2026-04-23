@@ -31,7 +31,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("AepCentralRegistryService [GH-90000]")
+@DisplayName("AepCentralRegistryService")
 class AepCentralRegistryServiceTest extends EventloopTestBase {
 
     @Mock
@@ -51,15 +51,15 @@ class AepCentralRegistryServiceTest extends EventloopTestBase {
         registry = CatalogRegistry.empty(); // GH-90000
         registry.register(new TestCatalog("catalog-a", List.of( // GH-90000
                 CatalogAgentEntry.builder() // GH-90000
-                        .id("agent-1 [GH-90000]")
-                        .name("Agent One [GH-90000]")
-                        .catalogId("catalog-a [GH-90000]")
-                        .capabilities(java.util.Set.of("search [GH-90000]"))
+                        .id("agent-1")
+                        .name("Agent One")
+                        .catalogId("catalog-a")
+                        .capabilities(java.util.Set.of("search"))
                         .build(), // GH-90000
                 CatalogAgentEntry.builder() // GH-90000
-                        .id("agent-2 [GH-90000]")
-                        .name("Agent Two [GH-90000]")
-                        .catalogId("catalog-a [GH-90000]")
+                        .id("agent-2")
+                        .name("Agent Two")
+                        .catalogId("catalog-a")
                         .capabilities(java.util.Set.of("plan", "search")) // GH-90000
                         .build() // GH-90000
         )));
@@ -68,7 +68,7 @@ class AepCentralRegistryServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("listAgents exposes merged catalog definitions [GH-90000]")
+    @DisplayName("listAgents exposes merged catalog definitions")
     void listAgentsExposesMergedDefinitions() { // GH-90000
         List<CatalogAgentEntry> entries = runPromise(service::listAgents); // GH-90000
 
@@ -78,106 +78,106 @@ class AepCentralRegistryServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("getAgent returns matching catalog definition [GH-90000]")
+    @DisplayName("getAgent returns matching catalog definition")
     void getAgentReturnsMatchingDefinition() { // GH-90000
-        Optional<CatalogAgentEntry> found = runPromise(() -> service.getAgent("agent-1 [GH-90000]"));
-        Optional<CatalogAgentEntry> missing = runPromise(() -> service.getAgent("missing [GH-90000]"));
+        Optional<CatalogAgentEntry> found = runPromise(() -> service.getAgent("agent-1"));
+        Optional<CatalogAgentEntry> missing = runPromise(() -> service.getAgent("missing"));
 
         assertThat(found).isPresent(); // GH-90000
-        assertThat(found.get().getName()).isEqualTo("Agent One [GH-90000]");
+        assertThat(found.get().getName()).isEqualTo("Agent One");
         assertThat(missing).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("findByCapability filters catalog definitions [GH-90000]")
+    @DisplayName("findByCapability filters catalog definitions")
     void findByCapabilityFiltersDefinitions() { // GH-90000
-        List<CatalogAgentEntry> searchAgents = runPromise(() -> service.findByCapability("search [GH-90000]"));
-        List<CatalogAgentEntry> planAgents = runPromise(() -> service.findByCapability("plan [GH-90000]"));
+        List<CatalogAgentEntry> searchAgents = runPromise(() -> service.findByCapability("search"));
+        List<CatalogAgentEntry> planAgents = runPromise(() -> service.findByCapability("plan"));
 
         assertThat(searchAgents).hasSize(2); // GH-90000
-        assertThat(planAgents).singleElement().extracting(CatalogAgentEntry::getId).isEqualTo("agent-2 [GH-90000]");
+        assertThat(planAgents).singleElement().extracting(CatalogAgentEntry::getId).isEqualTo("agent-2");
     }
 
     @Test
-    @DisplayName("materializeAgent registers live agent in memory [GH-90000]")
+    @DisplayName("materializeAgent registers live agent in memory")
     void materializeAgentRegistersLiveAgent() { // GH-90000
         AgentConfig config = AgentConfig.builder() // GH-90000
-                .agentId("agent-1 [GH-90000]")
+                .agentId("agent-1")
                 .type(AgentType.DETERMINISTIC) // GH-90000
-                .implementationRef("provider:test [GH-90000]")
+                .implementationRef("provider:test")
                 .build(); // GH-90000
         doReturn(typedAgent).when(materializer).materialize("provider:test", config); // GH-90000
 
         TypedAgent<?, ?> result = runPromise(() -> service.materializeAgent("agent-1", "provider:test", config)); // GH-90000
-        Optional<TypedAgent<?, ?>> liveAgent = runPromise(() -> service.getLiveAgent("agent-1 [GH-90000]"));
+        Optional<TypedAgent<?, ?>> liveAgent = runPromise(() -> service.getLiveAgent("agent-1"));
 
         assertThat(result).isSameAs(typedAgent); // GH-90000
         assertThat(liveAgent).containsSame(typedAgent); // GH-90000
         assertThat(service.liveAgentCount()).isEqualTo(1); // GH-90000
-        assertThat(service.liveAgentIds()).containsExactly("agent-1 [GH-90000]");
+        assertThat(service.liveAgentIds()).containsExactly("agent-1");
     }
 
     @Test
-    @DisplayName("shutdownAgent returns false when agent was never materialized [GH-90000]")
+    @DisplayName("shutdownAgent returns false when agent was never materialized")
     void shutdownAgentReturnsFalseWhenMissing() { // GH-90000
-        Boolean result = runPromise(() -> service.shutdownAgent("missing [GH-90000]"));
+        Boolean result = runPromise(() -> service.shutdownAgent("missing"));
 
         assertThat(result).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("shutdownAgent shuts down and removes live agent [GH-90000]")
+    @DisplayName("shutdownAgent shuts down and removes live agent")
     void shutdownAgentRemovesLiveAgent() { // GH-90000
         AgentConfig config = AgentConfig.builder() // GH-90000
-                .agentId("agent-1 [GH-90000]")
+                .agentId("agent-1")
                 .type(AgentType.DETERMINISTIC) // GH-90000
-                .implementationRef("provider:test [GH-90000]")
+                .implementationRef("provider:test")
                 .build(); // GH-90000
         doReturn(typedAgent).when(materializer).materialize("provider:test", config); // GH-90000
         when(typedAgent.shutdown()).thenReturn(Promise.complete()); // GH-90000
 
         runPromise(() -> service.materializeAgent("agent-1", "provider:test", config)); // GH-90000
-        Boolean result = runPromise(() -> service.shutdownAgent("agent-1 [GH-90000]"));
+        Boolean result = runPromise(() -> service.shutdownAgent("agent-1"));
 
         assertThat(result).isTrue(); // GH-90000
         assertThat(service.liveAgentCount()).isZero(); // GH-90000
-        assertThat(runPromise(() -> service.getLiveAgent("agent-1 [GH-90000]"))).isEmpty();
+        assertThat(runPromise(() -> service.getLiveAgent("agent-1"))).isEmpty();
         verify(typedAgent).shutdown(); // GH-90000
     }
 
     @Test
-    @DisplayName("isAgentHealthy returns false for missing live agent [GH-90000]")
+    @DisplayName("isAgentHealthy returns false for missing live agent")
     void isAgentHealthyReturnsFalseForMissingAgent() { // GH-90000
-        Boolean healthy = runPromise(() -> service.isAgentHealthy("missing [GH-90000]"));
+        Boolean healthy = runPromise(() -> service.isAgentHealthy("missing"));
 
         assertThat(healthy).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("isAgentHealthy treats healthy and degraded as healthy [GH-90000]")
+    @DisplayName("isAgentHealthy treats healthy and degraded as healthy")
     void isAgentHealthyTreatsHealthyAndDegradedAsHealthy() { // GH-90000
         AgentConfig config = AgentConfig.builder() // GH-90000
-                .agentId("agent-1 [GH-90000]")
+                .agentId("agent-1")
                 .type(AgentType.DETERMINISTIC) // GH-90000
-                .implementationRef("provider:test [GH-90000]")
+                .implementationRef("provider:test")
                 .build(); // GH-90000
         doReturn(typedAgent).when(materializer).materialize("provider:test", config); // GH-90000
-        when(typedAgent.healthCheck()).thenReturn(Promise.of(HealthStatus.degraded("Agent is degraded [GH-90000]")));
+        when(typedAgent.healthCheck()).thenReturn(Promise.of(HealthStatus.degraded("Agent is degraded")));
 
         runPromise(() -> service.materializeAgent("agent-1", "provider:test", config)); // GH-90000
-        Boolean healthy = runPromise(() -> service.isAgentHealthy("agent-1 [GH-90000]"));
+        Boolean healthy = runPromise(() -> service.isAgentHealthy("agent-1"));
 
         assertThat(healthy).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("canMaterialize delegates to materializer [GH-90000]")
+    @DisplayName("canMaterialize delegates to materializer")
     void canMaterializeDelegates() { // GH-90000
-        when(materializer.canMaterialize("provider:test [GH-90000]")).thenReturn(true);
-        when(materializer.canMaterialize("missing:test [GH-90000]")).thenReturn(false);
+        when(materializer.canMaterialize("provider:test")).thenReturn(true);
+        when(materializer.canMaterialize("missing:test")).thenReturn(false);
 
-        assertThat(service.canMaterialize("provider:test [GH-90000]")).isTrue();
-        assertThat(service.canMaterialize("missing:test [GH-90000]")).isFalse();
+        assertThat(service.canMaterialize("provider:test")).isTrue();
+        assertThat(service.canMaterialize("missing:test")).isFalse();
     }
 
     private static final class TestCatalog implements AgentCatalog {

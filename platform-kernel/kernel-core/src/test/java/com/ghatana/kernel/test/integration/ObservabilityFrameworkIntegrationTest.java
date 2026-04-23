@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Ghatana Kernel Team
  * @since 1.0.0
  */
-@DisplayName("Observability Framework Integration Tests [GH-90000]")
+@DisplayName("Observability Framework Integration Tests")
 class ObservabilityFrameworkIntegrationTest {
 
     private MockKernelTelemetryManager telemetryManager;
@@ -34,7 +34,7 @@ class ObservabilityFrameworkIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should record metric with tags [GH-90000]")
+    @DisplayName("Should record metric with tags")
     void testRecordMetric() { // GH-90000
         assertDoesNotThrow(() -> // GH-90000
             telemetryManager.recordMetric("test.metric", 42.0, "tag1", "value1") // GH-90000
@@ -42,7 +42,7 @@ class ObservabilityFrameworkIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should record event [GH-90000]")
+    @DisplayName("Should record event")
     void testRecordEvent() { // GH-90000
         KernelTelemetryManager.Event event = new KernelTelemetryManager.Event( // GH-90000
             "test.event", "test-source", Map.of("key", "value") // GH-90000
@@ -52,7 +52,7 @@ class ObservabilityFrameworkIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should create explainability context [GH-90000]")
+    @DisplayName("Should create explainability context")
     void testCreateExplainabilityContext() { // GH-90000
         KernelTelemetryManager.AgentAction action = new KernelTelemetryManager.AgentAction( // GH-90000
             "test-agent", "classify", Map.of("input", "test") // GH-90000
@@ -65,9 +65,9 @@ class ObservabilityFrameworkIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should start and stop timer [GH-90000]")
+    @DisplayName("Should start and stop timer")
     void testTimer() { // GH-90000
-        KernelTelemetryManager.Timer timer = telemetryManager.startTimer("test.timer [GH-90000]");
+        KernelTelemetryManager.Timer timer = telemetryManager.startTimer("test.timer");
 
         assertNotNull(timer); // GH-90000
 
@@ -82,15 +82,15 @@ class ObservabilityFrameworkIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should record audit event [GH-90000]")
+    @DisplayName("Should record audit event")
     void testRecordAuditEvent() { // GH-90000
         AuditTrailService.AuditEvent event = AuditTrailService.AuditEvent.builder() // GH-90000
-            .eventId("event-1 [GH-90000]")
-            .eventType("user.login [GH-90000]")
-            .entityId("user-1 [GH-90000]")
-            .userId("user-1 [GH-90000]")
-            .tenantId("tenant-1 [GH-90000]")
-            .action("login [GH-90000]")
+            .eventId("event-1")
+            .eventType("user.login")
+            .entityId("user-1")
+            .userId("user-1")
+            .tenantId("tenant-1")
+            .action("login")
             .data(Map.of("ip", "192.168.1.1")) // GH-90000
             .build(); // GH-90000
 
@@ -98,11 +98,11 @@ class ObservabilityFrameworkIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should query audit events [GH-90000]")
+    @DisplayName("Should query audit events")
     void testQueryAuditEvents() { // GH-90000
         AuditTrailService.AuditQuery query = AuditTrailService.AuditQuery.builder() // GH-90000
-            .entityId("user-1 [GH-90000]")
-            .tenantId("tenant-1 [GH-90000]")
+            .entityId("user-1")
+            .tenantId("tenant-1")
             .limit(10) // GH-90000
             .build(); // GH-90000
 
@@ -112,17 +112,17 @@ class ObservabilityFrameworkIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should verify audit trail integrity [GH-90000]")
+    @DisplayName("Should verify audit trail integrity")
     void testVerifyTrailIntegrity() { // GH-90000
         AuditTrailService.VerificationResult result =
-            auditTrailService.verifyTrailIntegrity("entity-1 [GH-90000]");
+            auditTrailService.verifyTrailIntegrity("entity-1");
 
         assertNotNull(result); // GH-90000
         assertTrue(result.isValid()); // GH-90000
     }
 
     @Test
-    @DisplayName("Should generate explanation for agent action [GH-90000]")
+    @DisplayName("Should generate explanation for agent action")
     void testGenerateExplanation() { // GH-90000
         KernelTelemetryManager.AgentAction action = new KernelTelemetryManager.AgentAction( // GH-90000
             "test-agent", "classify", Map.of("input", "test") // GH-90000
@@ -137,21 +137,21 @@ class ObservabilityFrameworkIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should record and retrieve decision explanation [GH-90000]")
+    @DisplayName("Should record and retrieve decision explanation")
     void testRecordDecisionExplanation() { // GH-90000
         ExplainabilityFramework.Explanation explanation =
             ExplainabilityFramework.Explanation.builder() // GH-90000
-                .decisionId("decision-1 [GH-90000]")
-                .summary("Test decision [GH-90000]")
-                .detailedReasoning("Detailed reasoning [GH-90000]")
+                .decisionId("decision-1")
+                .summary("Test decision")
+                .detailedReasoning("Detailed reasoning")
                 .confidence(0.95) // GH-90000
-                .modelId("model-1 [GH-90000]")
+                .modelId("model-1")
                 .build(); // GH-90000
 
         explainabilityFramework.recordDecisionExplanation("decision-1", explanation); // GH-90000
 
         ExplainabilityFramework.Explanation retrieved =
-            explainabilityFramework.getExplanation("decision-1 [GH-90000]");
+            explainabilityFramework.getExplanation("decision-1");
 
         assertNotNull(retrieved); // GH-90000
         assertEquals("decision-1", retrieved.getDecisionId()); // GH-90000
@@ -325,11 +325,11 @@ class ObservabilityFrameworkIntegrationTest {
         public Explanation generateExplanation(KernelTelemetryManager.AgentAction action, // GH-90000
                                                ExecutionContext context) {
             return Explanation.builder() // GH-90000
-                .decisionId("decision-1 [GH-90000]")
+                .decisionId("decision-1")
                 .summary("Mock explanation for " + action.getActionType()) // GH-90000
-                .detailedReasoning("Detailed reasoning [GH-90000]")
+                .detailedReasoning("Detailed reasoning")
                 .confidence(0.95) // GH-90000
-                .modelId("model-1 [GH-90000]")
+                .modelId("model-1")
                 .build(); // GH-90000
         }
 

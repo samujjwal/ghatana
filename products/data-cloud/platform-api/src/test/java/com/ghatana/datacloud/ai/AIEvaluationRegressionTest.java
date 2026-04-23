@@ -27,15 +27,15 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Regression Test
  */
-@DisplayName("AI Evaluation Pipeline – Regression Tests [GH-90000]")
+@DisplayName("AI Evaluation Pipeline – Regression Tests")
 class AIEvaluationRegressionTest extends EventloopTestBase {
 
     @Nested
-    @DisplayName("SQL Generation Regression [GH-90000]")
+    @DisplayName("SQL Generation Regression")
     class SQLGenerationRegressionTests {
 
         @Test
-        @DisplayName("[REG-001]: sql_generation_accuracy_maintained [GH-90000]")
+        @DisplayName("[REG-001]: sql_generation_accuracy_maintained")
         void sqlGenerationAccuracyMaintained() { // GH-90000
             // Regression test: SQL generation accuracy should not drop below 0.85
             // This tracks the model's ability to correctly translate natural language to SQL
@@ -78,7 +78,7 @@ class AIEvaluationRegressionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[REG-002]: sql_generation_latency_within_threshold [GH-90000]")
+        @DisplayName("[REG-002]: sql_generation_latency_within_threshold")
         void sqlGenerationLatencyWithinThreshold() { // GH-90000
             // Regression test: SQL generation latency should remain under 2000ms
             // This tracks infrastructure performance and model inference speed
@@ -98,11 +98,11 @@ class AIEvaluationRegressionTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Query Explanation Regression [GH-90000]")
+    @DisplayName("Query Explanation Regression")
     class QueryExplanationRegressionTests {
 
         @Test
-        @DisplayName("[REG-003]: explanation_quality_maintained [GH-90000]")
+        @DisplayName("[REG-003]: explanation_quality_maintained")
         void explanationQualityMaintained() { // GH-90000
             // Regression test: Explanation quality score should not drop below 0.80
             // This tracks the model's ability to provide useful query explanations
@@ -118,7 +118,7 @@ class AIEvaluationRegressionTest extends EventloopTestBase {
                 "user-1",
                 "conv-1",
                 "public",
-                List.of("sales [GH-90000]"),
+                List.of("sales"),
                 Map.of(), // GH-90000
                 null
             );
@@ -126,16 +126,16 @@ class AIEvaluationRegressionTest extends EventloopTestBase {
             // In production, this would call explainResults
             // For regression testing, we verify explanation structure
             assertThat(results).hasSizeGreaterThan(0); // GH-90000
-            assertThat(query).contains("SELECT [GH-90000]");
+            assertThat(query).contains("SELECT");
         }
     }
 
     @Nested
-    @DisplayName("Metrics Collection Regression [GH-90000]")
+    @DisplayName("Metrics Collection Regression")
     class MetricsCollectionRegressionTests {
 
         @Test
-        @DisplayName("[REG-004]: metrics_aggregation_accurate [GH-90000]")
+        @DisplayName("[REG-004]: metrics_aggregation_accurate")
         void metricsAggregationAccurate() { // GH-90000
             // Regression test: Metrics aggregation should accurately reflect evaluation results
             // This verifies the metrics pipeline is correctly calculating accuracy, precision, recall, F1
@@ -187,7 +187,7 @@ class AIEvaluationRegressionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[REG-005]: time_range_filtering_correct [GH-90000]")
+        @DisplayName("[REG-005]: time_range_filtering_correct")
         void timeRangeFilteringCorrect() { // GH-90000
             // Regression test: Time range filtering should correctly scope metrics queries
             // This verifies metrics are being aggregated over the correct time windows
@@ -205,11 +205,11 @@ class AIEvaluationRegressionTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Model Drift Detection [GH-90000]")
+    @DisplayName("Model Drift Detection")
     class ModelDriftDetectionTests {
 
         @Test
-        @DisplayName("[REG-006]: confidence_scores_stable [GH-90000]")
+        @DisplayName("[REG-006]: confidence_scores_stable")
         void confidenceScoresStable() { // GH-90000
             // Regression test: Model confidence scores should remain stable over time
             // Significant drops may indicate model drift or data quality issues
@@ -224,7 +224,7 @@ class AIEvaluationRegressionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[REG-007]: error_rates_within_threshold [GH-90000]")
+        @DisplayName("[REG-007]: error_rates_within_threshold")
         void errorRatesWithinThreshold() { // GH-90000
             // Regression test: Error rates should remain below 5%
             // This tracks model reliability and infrastructure stability

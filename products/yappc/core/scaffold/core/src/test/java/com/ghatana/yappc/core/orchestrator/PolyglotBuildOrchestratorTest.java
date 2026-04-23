@@ -40,13 +40,13 @@ class PolyglotBuildOrchestratorTest extends EventloopTestBase {
                 new PolyglotBuildOrchestrator.BuildTarget( // GH-90000
                         "service-a",
                         "python",
-                        Paths.get("/project/service-a [GH-90000]"),
+                        Paths.get("/project/service-a"),
                         List.of(), // GH-90000
                         Map.of()), // GH-90000
                 new PolyglotBuildOrchestrator.BuildTarget( // GH-90000
                         "service-b",
                         "go",
-                        Paths.get("/project/service-b [GH-90000]"),
+                        Paths.get("/project/service-b"),
                         List.of(), // GH-90000
                         Map.of())); // GH-90000
 
@@ -63,14 +63,14 @@ class PolyglotBuildOrchestratorTest extends EventloopTestBase {
                 new PolyglotBuildOrchestrator.BuildTarget( // GH-90000
                         "library",
                         "rust",
-                        Paths.get("/project/library [GH-90000]"),
+                        Paths.get("/project/library"),
                         List.of(), // GH-90000
                         Map.of()), // GH-90000
                 new PolyglotBuildOrchestrator.BuildTarget( // GH-90000
                         "service",
                         "dotnet",
-                        Paths.get("/project/service [GH-90000]"),
-                        List.of("library [GH-90000]"),
+                        Paths.get("/project/service"),
+                        List.of("library"),
                         Map.of())); // GH-90000
 
         PolyglotBuildOrchestrator.BuildOrchestrationResult result = runPromise(() -> orchestrator.orchestrateBuilds(targets)); // GH-90000
@@ -87,11 +87,11 @@ class PolyglotBuildOrchestratorTest extends EventloopTestBase {
 
         List<PolyglotBuildOrchestrator.BuildTarget> targets = List.of( // GH-90000
                 new PolyglotBuildOrchestrator.BuildTarget( // GH-90000
-                        "c", "go", Paths.get("/c [GH-90000]"), List.of("b [GH-90000]"), Map.of()),
+                        "c", "go", Paths.get("/c"), List.of("b"), Map.of()),
                 new PolyglotBuildOrchestrator.BuildTarget( // GH-90000
-                        "b", "python", Paths.get("/b [GH-90000]"), List.of("a [GH-90000]"), Map.of()),
+                        "b", "python", Paths.get("/b"), List.of("a"), Map.of()),
                 new PolyglotBuildOrchestrator.BuildTarget( // GH-90000
-                        "a", "rust", Paths.get("/a [GH-90000]"), List.of(), Map.of()));
+                        "a", "rust", Paths.get("/a"), List.of(), Map.of()));
 
         List<PolyglotBuildOrchestrator.BuildTarget> ordered = resolver.resolveBuildOrder(targets); // GH-90000
 
@@ -107,9 +107,9 @@ class PolyglotBuildOrchestratorTest extends EventloopTestBase {
 
         List<PolyglotBuildOrchestrator.BuildTarget> targets = List.of( // GH-90000
                 new PolyglotBuildOrchestrator.BuildTarget( // GH-90000
-                        "a", "go", Paths.get("/a [GH-90000]"), List.of("b [GH-90000]"), Map.of()),
+                        "a", "go", Paths.get("/a"), List.of("b"), Map.of()),
                 new PolyglotBuildOrchestrator.BuildTarget( // GH-90000
-                        "b", "python", Paths.get("/b [GH-90000]"), List.of("a [GH-90000]"), Map.of()));
+                        "b", "python", Paths.get("/b"), List.of("a"), Map.of()));
 
         assertThrows(IllegalStateException.class, () -> { // GH-90000
             resolver.resolveBuildOrder(targets); // GH-90000

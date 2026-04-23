@@ -26,15 +26,15 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Governance - Phase 5 Performance & Stress [GH-90000]")
+@DisplayName("Governance - Phase 5 Performance & Stress")
 class GovernancePerformanceExpansionTest extends EventloopTestBase {
 
     @Nested
-    @DisplayName("Policy Evaluation Performance [GH-90000]")
+    @DisplayName("Policy Evaluation Performance")
     class PolicyEvaluationPerformanceTests {
 
         @Test
-        @DisplayName("Evaluate 1000+ policies rapidly [GH-90000]")
+        @DisplayName("Evaluate 1000+ policies rapidly")
         void massivePolicyEvaluation() { // GH-90000
             runPromise(() -> { // GH-90000
                 io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete(); // GH-90000
@@ -55,7 +55,7 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Policy evaluation with large condition sets [GH-90000]")
+        @DisplayName("Policy evaluation with large condition sets")
         void largeConditionSets() { // GH-90000
             // Single policy with 500 conditions
             Map<String, Object> complexPolicy = new HashMap<>(); // GH-90000
@@ -74,7 +74,7 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("High-cardinality policy refinement [GH-90000]")
+        @DisplayName("High-cardinality policy refinement")
         void highCardinalityRefinement() { // GH-90000
             // 10000 distinct values being evaluated against policies
             Map<String, String> values = new HashMap<>(); // GH-90000
@@ -88,7 +88,7 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Concurrent policy evaluation (100+ parallel) [GH-90000]")
+        @DisplayName("Concurrent policy evaluation (100+ parallel)")
         void concurrentPolicyEvaluation() { // GH-90000
             runPromise(() -> { // GH-90000
                 io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete(); // GH-90000
@@ -107,11 +107,11 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("RBAC & Access Control Stress [GH-90000]")
+    @DisplayName("RBAC & Access Control Stress")
     class RBACStressTests {
 
         @Test
-        @DisplayName("Role inheritance chain evaluation (50 levels) [GH-90000]")
+        @DisplayName("Role inheritance chain evaluation (50 levels)")
         void deepRoleInheritance() { // GH-90000
             Map<String, String> roleHierarchy = new HashMap<>(); // GH-90000
 
@@ -124,7 +124,7 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("User with 1000+ role assignments [GH-90000]")
+        @DisplayName("User with 1000+ role assignments")
         void massiveRoleAssignment() { // GH-90000
             Map<String, Integer> userRoles = new HashMap<>(); // GH-90000
 
@@ -136,7 +136,7 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Permission resolution under extreme scale [GH-90000]")
+        @DisplayName("Permission resolution under extreme scale")
         void permissionResolutionScale() { // GH-90000
             runPromise(() -> { // GH-90000
                 io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete(); // GH-90000
@@ -155,7 +155,7 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Concurrent role assignment and revocation [GH-90000]")
+        @DisplayName("Concurrent role assignment and revocation")
         void concurrentRoleOperations() { // GH-90000
             AtomicInteger assignments = new AtomicInteger(0); // GH-90000
             AtomicInteger revocations = new AtomicInteger(0); // GH-90000
@@ -175,11 +175,11 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Data Governance Stress [GH-90000]")
+    @DisplayName("Data Governance Stress")
     class DataGovernanceStressTests {
 
         @Test
-        @DisplayName("Consent tracking for 50000+ data subjects [GH-90000]")
+        @DisplayName("Consent tracking for 50000+ data subjects")
         void massiveConsentTracking() { // GH-90000
             Map<String, Boolean> consents = new HashMap<>(); // GH-90000
 
@@ -194,7 +194,7 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Retention policy enforcement batch processing [GH-90000]")
+        @DisplayName("Retention policy enforcement batch processing")
         void batchRetentionProcessing() { // GH-90000
             runPromise(() -> { // GH-90000
                 io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete(); // GH-90000
@@ -213,7 +213,7 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Data classification across 1000+ datasets [GH-90000]")
+        @DisplayName("Data classification across 1000+ datasets")
         void massiveClassification() { // GH-90000
             Map<String, String> classifications = new HashMap<>(); // GH-90000
 
@@ -228,7 +228,7 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Multi-tenant data isolation verification [GH-90000]")
+        @DisplayName("Multi-tenant data isolation verification")
         void multiTenantDataStress() { // GH-90000
             Map<String, Map<String, Integer>> tenantData = new HashMap<>(); // GH-90000
 
@@ -242,16 +242,16 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
             }
 
             assertThat(tenantData).hasSize(100); // GH-90000
-            assertThat(tenantData.get("tenant-0 [GH-90000]")).hasSize(100);
+            assertThat(tenantData.get("tenant-0")).hasSize(100);
         }
     }
 
     @Nested
-    @DisplayName("Concurrent Governance Operations [GH-90000]")
+    @DisplayName("Concurrent Governance Operations")
     class ConcurrencyStressTests {
 
         @Test
-        @DisplayName("1000 concurrent policy updates [GH-90000]")
+        @DisplayName("1000 concurrent policy updates")
         void massiveConcurrentUpdates() { // GH-90000
             runPromise(() -> { // GH-90000
                 io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete(); // GH-90000
@@ -269,7 +269,7 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Lock-free governance state transitions [GH-90000]")
+        @DisplayName("Lock-free governance state transitions")
         void lockFreeTransitions() { // GH-90000
             AtomicInteger transitionCount = new AtomicInteger(0); // GH-90000
 
@@ -284,7 +284,7 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("High-contention governance metadata updates [GH-90000]")
+        @DisplayName("High-contention governance metadata updates")
         void highContentionUpdates() { // GH-90000
             Map<String, AtomicInteger> contentionMetrics = new HashMap<>(); // GH-90000
             contentionMetrics.put("policyVersion", new AtomicInteger(0)); // GH-90000
@@ -293,37 +293,37 @@ class GovernancePerformanceExpansionTest extends EventloopTestBase {
 
             // Simulate high-contention updates
             for (int i = 0; i < 100; i++) { // GH-90000
-                contentionMetrics.get("policyVersion [GH-90000]").incrementAndGet();
-                contentionMetrics.get("roleUpdates [GH-90000]").incrementAndGet();
-                contentionMetrics.get("consentUpdates [GH-90000]").incrementAndGet();
+                contentionMetrics.get("policyVersion").incrementAndGet();
+                contentionMetrics.get("roleUpdates").incrementAndGet();
+                contentionMetrics.get("consentUpdates").incrementAndGet();
             }
 
-            assertThat(contentionMetrics.get("policyVersion [GH-90000]").get()).isEqualTo(100);
+            assertThat(contentionMetrics.get("policyVersion").get()).isEqualTo(100);
         }
     }
 
     @Nested
-    @DisplayName("Memory & Resource Efficiency [GH-90000]")
+    @DisplayName("Memory & Resource Efficiency")
     class ResourceEfficiencyTests {
 
         @Test
-        @DisplayName("Large policy document handling [GH-90000]")
+        @DisplayName("Large policy document handling")
         void largePolicyDocuments() { // GH-90000
             // Single policy with 10MB content
             StringBuilder largePolicy = new StringBuilder(); // GH-90000
             for (int i = 0; i < 100000; i++) { // GH-90000
-                largePolicy.append("condition- [GH-90000]").append(i).append(": [GH-90000]").append(i % 100).append("; [GH-90000]");
+                largePolicy.append("condition-").append(i).append(":").append(i % 100).append(";");
             }
 
             Map<String, Object> policy = new HashMap<>(); // GH-90000
             policy.put("content", largePolicy.toString()); // GH-90000
             policy.put("sizeBytes", largePolicy.length()); // GH-90000
 
-            assertThat(policy.get("sizeBytes [GH-90000]")).isInstanceOf(Integer.class);
+            assertThat(policy.get("sizeBytes")).isInstanceOf(Integer.class);
         }
 
         @Test
-        @DisplayName("Memory-efficient policy caching [GH-90000]")
+        @DisplayName("Memory-efficient policy caching")
         void efficientCaching() { // GH-90000
             Map<String, Integer> cacheHits = new HashMap<>(); // GH-90000
 

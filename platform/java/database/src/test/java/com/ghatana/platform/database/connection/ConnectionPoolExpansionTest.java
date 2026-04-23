@@ -26,8 +26,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("ConnectionPool - Phase 3 Expansion [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("ConnectionPool - Phase 3 Expansion")
+@Tag("integration")
 class ConnectionPoolExpansionTest extends EventloopTestBase {
 
     // ============================================
@@ -35,11 +35,11 @@ class ConnectionPoolExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("High Concurrency Scenarios [GH-90000]")
+    @DisplayName("High Concurrency Scenarios")
     class ConcurrencyTests {
 
         @Test
-        @DisplayName("Handles 100 concurrent connection requests [GH-90000]")
+        @DisplayName("Handles 100 concurrent connection requests")
         void handleHighConcurrencyLoad() { // GH-90000
             int poolSize = 20;
             int concurrentRequests = 100;
@@ -59,7 +59,7 @@ class ConnectionPoolExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Maintains correct count under rapid acquire/release cycles [GH-90000]")
+        @DisplayName("Maintains correct count under rapid acquire/release cycles")
         void rapidAcquireReleaseCycles() { // GH-90000
             int poolSize = 5;
             AtomicInteger available = new AtomicInteger(poolSize); // GH-90000
@@ -85,7 +85,7 @@ class ConnectionPoolExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Prevents over-release of connections [GH-90000]")
+        @DisplayName("Prevents over-release of connections")
         void preventOverRelease() { // GH-90000
             int poolSize = 5;
             AtomicInteger available = new AtomicInteger(poolSize); // GH-90000
@@ -106,11 +106,11 @@ class ConnectionPoolExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Pool Size Constraints [GH-90000]")
+    @DisplayName("Pool Size Constraints")
     class PoolSizeTests {
 
         @Test
-        @DisplayName("Enforces maximum pool size limit [GH-90000]")
+        @DisplayName("Enforces maximum pool size limit")
         void enforceMaxPoolSize() { // GH-90000
             int maxPoolSize = 10;
             AtomicInteger activeConnections = new AtomicInteger(0); // GH-90000
@@ -126,7 +126,7 @@ class ConnectionPoolExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Grows pool dynamically up to max size [GH-90000]")
+        @DisplayName("Grows pool dynamically up to max size")
         void dynamicPoolGrowth() { // GH-90000
             int maxPoolSize = 15;
             AtomicInteger activeConnections = new AtomicInteger(0); // GH-90000
@@ -151,11 +151,11 @@ class ConnectionPoolExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Recovery and Resilience [GH-90000]")
+    @DisplayName("Recovery and Resilience")
     class RecoveryTests {
 
         @Test
-        @DisplayName("Recovers from temporary exhaustion [GH-90000]")
+        @DisplayName("Recovers from temporary exhaustion")
         void recoveryFromExhaustion() { // GH-90000
             int poolSize = 5;
             AtomicInteger available = new AtomicInteger(poolSize); // GH-90000
@@ -181,7 +181,7 @@ class ConnectionPoolExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Tracks connection state transitions accurately [GH-90000]")
+        @DisplayName("Tracks connection state transitions accurately")
         void connectionStateTransitions() { // GH-90000
             int poolSize = 3;
             AtomicInteger available = new AtomicInteger(poolSize); // GH-90000

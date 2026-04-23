@@ -34,7 +34,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer test
  * @doc.pattern Unit Test
  */
-@DisplayName("EntityServiceImpl Tests [GH-90000]")
+@DisplayName("EntityServiceImpl Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class EntityServiceImplTest extends EventloopTestBase {
 
@@ -52,11 +52,11 @@ class EntityServiceImplTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Create Entity [GH-90000]")
+    @DisplayName("Create Entity")
     class CreateEntityTests {
 
         @Test
-        @DisplayName("[TEST-001]: createEntity_successfully_creates_entity [GH-90000]")
+        @DisplayName("[TEST-001]: createEntity_successfully_creates_entity")
         void createEntitySuccessfully() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
@@ -93,7 +93,7 @@ class EntityServiceImplTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[TEST-001]: createEntity_with_null_tenantId_throws_exception [GH-90000]")
+        @DisplayName("[TEST-001]: createEntity_with_null_tenantId_throws_exception")
         void createEntityNullTenantId() { // GH-90000
             // Given
             String tenantId = null;
@@ -108,7 +108,7 @@ class EntityServiceImplTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[TEST-001]: createEntity_with_empty_tenantId_throws_exception [GH-90000]")
+        @DisplayName("[TEST-001]: createEntity_with_empty_tenantId_throws_exception")
         void createEntityEmptyTenantId() { // GH-90000
             // Given
             String tenantId = "";
@@ -123,7 +123,7 @@ class EntityServiceImplTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[TEST-001]: createEntity_repository_error_increments_error_metric [GH-90000]")
+        @DisplayName("[TEST-001]: createEntity_repository_error_increments_error_metric")
         void createEntityRepositoryError() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
@@ -131,7 +131,7 @@ class EntityServiceImplTest extends EventloopTestBase {
             String userId = "user-123";
             Map<String, Object> data = Map.of("name", "John"); // GH-90000
 
-            when(repository.save(eq(tenantId), any(Entity.class))).thenReturn(Promise.ofException(new RuntimeException("DB error [GH-90000]")));
+            when(repository.save(eq(tenantId), any(Entity.class))).thenReturn(Promise.ofException(new RuntimeException("DB error")));
 
             // When
             clearFatalError(); // GH-90000
@@ -147,11 +147,11 @@ class EntityServiceImplTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Get Entity [GH-90000]")
+    @DisplayName("Get Entity")
     class GetEntityTests {
 
         @Test
-        @DisplayName("[TEST-002]: getEntity_returns_entity_when_found [GH-90000]")
+        @DisplayName("[TEST-002]: getEntity_returns_entity_when_found")
         void getEntityReturnsEntity() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
@@ -177,7 +177,7 @@ class EntityServiceImplTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[TEST-002]: getEntity_returns_null_when_not_found [GH-90000]")
+        @DisplayName("[TEST-002]: getEntity_returns_null_when_not_found")
         void getEntityNotFound() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
@@ -196,11 +196,11 @@ class EntityServiceImplTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Update Entity [GH-90000]")
+    @DisplayName("Update Entity")
     class UpdateEntityTests {
 
         @Test
-        @DisplayName("[TEST-003]: updateEntity_successfully_updates_entity [GH-90000]")
+        @DisplayName("[TEST-003]: updateEntity_successfully_updates_entity")
         void updateEntitySuccessfully() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
@@ -213,9 +213,9 @@ class EntityServiceImplTest extends EventloopTestBase {
                 .tenantId(tenantId) // GH-90000
                 .collectionName(collectionName) // GH-90000
                 .data(Map.of("name", "John")) // GH-90000
-                .createdBy("user-1 [GH-90000]")
+                .createdBy("user-1")
                 .createdAt(Instant.now()) // GH-90000
-                .updatedBy("user-1 [GH-90000]")
+                .updatedBy("user-1")
                 .updatedAt(Instant.now()) // GH-90000
                 .version(1) // GH-90000
                 .build(); // GH-90000
@@ -240,7 +240,7 @@ class EntityServiceImplTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[TEST-003]: updateEntity_throws_when_entity_not_found [GH-90000]")
+        @DisplayName("[TEST-003]: updateEntity_throws_when_entity_not_found")
         void updateEntityNotFound() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
@@ -265,11 +265,11 @@ class EntityServiceImplTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Delete Entity [GH-90000]")
+    @DisplayName("Delete Entity")
     class DeleteEntityTests {
 
         @Test
-        @DisplayName("[TEST-004]: deleteEntity_successfully_deletes_entity [GH-90000]")
+        @DisplayName("[TEST-004]: deleteEntity_successfully_deletes_entity")
         void deleteEntitySuccessfully() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
@@ -288,7 +288,7 @@ class EntityServiceImplTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[TEST-004]: deleteEntity_increments_error_metric_on_failure [GH-90000]")
+        @DisplayName("[TEST-004]: deleteEntity_increments_error_metric_on_failure")
         void deleteEntityError() { // GH-90000
             // Given
             String tenantId = "tenant-alpha";
@@ -297,7 +297,7 @@ class EntityServiceImplTest extends EventloopTestBase {
             String userId = "user-123";
 
             when(repository.delete(tenantId, collectionName, entityId)) // GH-90000
-                .thenReturn(Promise.ofException(new RuntimeException("Delete failed [GH-90000]")));
+                .thenReturn(Promise.ofException(new RuntimeException("Delete failed")));
 
             // When
             clearFatalError(); // GH-90000

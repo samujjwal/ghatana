@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
  * <p>Extends {@link EventloopTestBase} because the underlying publisher returns
  * ActiveJ {@link Promise} objects that must be resolved in an event-loop context.
  */
-@DisplayName("DeploymentHttpAdapter [GH-90000]")
+@DisplayName("DeploymentHttpAdapter")
 class DeploymentHttpAdapterTest extends EventloopTestBase {
 
     @Test
@@ -30,19 +30,19 @@ class DeploymentHttpAdapterTest extends EventloopTestBase {
         DeploymentHttpAdapter adapter = new DeploymentHttpAdapter(orchestrator); // GH-90000
 
         DeploymentRequest request = DeploymentRequest.builder() // GH-90000
-                .pipelineId("pipeline-a [GH-90000]")
-                .tenantId("tenant-a [GH-90000]")
-                .environment("prod [GH-90000]")
+                .pipelineId("pipeline-a")
+                .tenantId("tenant-a")
+                .environment("prod")
                 .build(); // GH-90000
 
         DeploymentResponse response = runPromise(() -> adapter.handleDeploymentRequest(request)); // GH-90000
 
-        assertThat(response.getStatus()).isEqualTo("DEPLOYED [GH-90000]");
-        assertThat(response.getPipelineId()).isEqualTo("pipeline-a [GH-90000]");
-        assertThat(response.getTenantId()).isEqualTo("tenant-a [GH-90000]");
+        assertThat(response.getStatus()).isEqualTo("DEPLOYED");
+        assertThat(response.getPipelineId()).isEqualTo("pipeline-a");
+        assertThat(response.getTenantId()).isEqualTo("tenant-a");
         assertThat(response.getDeploymentId()).isNotBlank(); // GH-90000
         assertThat(publisher.events).hasSize(1); // GH-90000
-        assertThat(publisher.events.getFirst().eventType).isEqualTo("pipeline.deploy.requested [GH-90000]");
+        assertThat(publisher.events.getFirst().eventType).isEqualTo("pipeline.deploy.requested");
     }
 
     @Test
@@ -52,17 +52,17 @@ class DeploymentHttpAdapterTest extends EventloopTestBase {
         DeploymentHttpAdapter adapter = new DeploymentHttpAdapter(orchestrator); // GH-90000
 
         DeploymentRequest request = DeploymentRequest.builder() // GH-90000
-                .pipelineId("pipeline-b [GH-90000]")
-                .tenantId("tenant-b [GH-90000]")
-                .environment("prod [GH-90000]")
+                .pipelineId("pipeline-b")
+                .tenantId("tenant-b")
+                .environment("prod")
                 .build(); // GH-90000
 
         DeploymentResponse response = runPromise(() -> adapter.handleUpdateRequest("deploy-123", request)); // GH-90000
 
-        assertThat(response.getStatus()).isEqualTo("UPDATED [GH-90000]");
-        assertThat(response.getDeploymentId()).isEqualTo("deploy-123 [GH-90000]");
+        assertThat(response.getStatus()).isEqualTo("UPDATED");
+        assertThat(response.getDeploymentId()).isEqualTo("deploy-123");
         assertThat(publisher.events).hasSize(1); // GH-90000
-        assertThat(publisher.events.getFirst().eventType).isEqualTo("pipeline.update.requested [GH-90000]");
+        assertThat(publisher.events.getFirst().eventType).isEqualTo("pipeline.update.requested");
     }
 
     @Test
@@ -73,11 +73,11 @@ class DeploymentHttpAdapterTest extends EventloopTestBase {
 
         DeploymentResponse response = runPromise(() -> adapter.handleUndeployRequest("deploy-456", "tenant-c")); // GH-90000
 
-        assertThat(response.getStatus()).isEqualTo("UNDEPLOYED [GH-90000]");
-        assertThat(response.getDeploymentId()).isEqualTo("deploy-456 [GH-90000]");
-        assertThat(response.getTenantId()).isEqualTo("tenant-c [GH-90000]");
+        assertThat(response.getStatus()).isEqualTo("UNDEPLOYED");
+        assertThat(response.getDeploymentId()).isEqualTo("deploy-456");
+        assertThat(response.getTenantId()).isEqualTo("tenant-c");
         assertThat(publisher.events).hasSize(1); // GH-90000
-        assertThat(publisher.events.getFirst().eventType).isEqualTo("pipeline.undeploy.requested [GH-90000]");
+        assertThat(publisher.events.getFirst().eventType).isEqualTo("pipeline.undeploy.requested");
     }
 
     private static final class RecordingDeploymentEventPublisher implements DeploymentEventPublisher {

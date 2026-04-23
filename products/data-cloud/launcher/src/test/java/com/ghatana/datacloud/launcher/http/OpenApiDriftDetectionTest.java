@@ -62,7 +62,7 @@ import static org.mockito.Mockito.mock;
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
 @Timeout(value = 15, unit = TimeUnit.SECONDS) // GH-90000
-@DisplayName("OpenAPI Contract Drift Detection [GH-90000]")
+@DisplayName("OpenAPI Contract Drift Detection")
 class OpenApiDriftDetectionTest {
 
     private DataCloudClient mockClient;
@@ -104,11 +104,11 @@ class OpenApiDriftDetectionTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("ApiResponse envelope contract [GH-90000]")
+    @DisplayName("ApiResponse envelope contract")
     class ApiResponseEnvelopeTests {
 
         @Test
-        @DisplayName("entity save response has status + data or error keys [GH-90000]")
+        @DisplayName("entity save response has status + data or error keys")
         void entitySave_hasApiResponseEnvelope() throws Exception { // GH-90000
             HttpResponse<String> resp = postJson("/api/v1/entities/products", // GH-90000
                 "{\"name\":\"Widget\",\"price\":9.99}");
@@ -116,28 +116,28 @@ class OpenApiDriftDetectionTest {
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             JsonNode body = mapper.readTree(resp.body()); // GH-90000
             // Entity endpoints return flat JSON; check for entity-specific or error fields
-            assertThat(body.has("id [GH-90000]") || body.has("data [GH-90000]") || body.has("error [GH-90000]"))
+            assertThat(body.has("id") || body.has("data") || body.has("error"))
                 .as("Entity save response must have 'id', 'data', or 'error' key; got: " + body) // GH-90000
                 .isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("entity GET response has status + data or error keys [GH-90000]")
+        @DisplayName("entity GET response has status + data or error keys")
         void entityGet_hasApiResponseEnvelope() throws Exception { // GH-90000
-            HttpResponse<String> resp = get("/api/v1/entities/products/drift-ent-1 [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/entities/products/drift-ent-1");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             JsonNode body = mapper.readTree(resp.body()); // GH-90000
             // Entity GET returns flat JSON with "id" at top level (plus nested "data" for attributes) // GH-90000
-            assertThat(body.has("id [GH-90000]") || body.has("data [GH-90000]") || body.has("error [GH-90000]"))
+            assertThat(body.has("id") || body.has("data") || body.has("error"))
                 .as("Entity GET response must have 'id', 'data', or 'error' key; got: " + body) // GH-90000
                 .isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("voice intents catalog response has status + data keys [GH-90000]")
+        @DisplayName("voice intents catalog response has status + data keys")
         void voiceIntents_hasApiResponseEnvelope() throws Exception { // GH-90000
-            HttpResponse<String> resp = get("/api/v1/voice/intents [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/voice/intents");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             JsonNode body = mapper.readTree(resp.body()); // GH-90000
@@ -145,7 +145,7 @@ class OpenApiDriftDetectionTest {
         }
 
         @Test
-        @DisplayName("AI assist entity suggest response has status + data + ai keys [GH-90000]")
+        @DisplayName("AI assist entity suggest response has status + data + ai keys")
         void aiEntitySuggest_hasAiBlock() throws Exception { // GH-90000
             HttpResponse<String> resp = postJson( // GH-90000
                 "/api/v1/entities/orders/suggest",
@@ -154,11 +154,11 @@ class OpenApiDriftDetectionTest {
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             JsonNode body = mapper.readTree(resp.body()); // GH-90000
             assertResponseEnvelope(body); // GH-90000
-            assertThat(body.has("ai [GH-90000]")).as("ai block must be present on AI assist endpoints [GH-90000]").isTrue();
-            JsonNode ai = body.get("ai [GH-90000]");
-            assertThat(ai.has("fallback [GH-90000]")).isTrue();
-            assertThat(ai.has("confidence [GH-90000]")).isTrue();
-            assertThat(ai.has("model [GH-90000]")).isTrue();
+            assertThat(body.has("ai")).as("ai block must be present on AI assist endpoints").isTrue();
+            JsonNode ai = body.get("ai");
+            assertThat(ai.has("fallback")).isTrue();
+            assertThat(ai.has("confidence")).isTrue();
+            assertThat(ai.has("model")).isTrue();
         }
     }
 
@@ -167,11 +167,11 @@ class OpenApiDriftDetectionTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Entity endpoint response schema [GH-90000]")
+    @DisplayName("Entity endpoint response schema")
     class EntitySchemaTests {
 
         @Test
-        @DisplayName("POST /api/v1/entities/:collection response data has id, collection, attributes [GH-90000]")
+        @DisplayName("POST /api/v1/entities/:collection response data has id, collection, attributes")
         void entitySave_dataHasRequiredFields() throws Exception { // GH-90000
             HttpResponse<String> resp = postJson("/api/v1/entities/products", // GH-90000
                 "{\"name\":\"Widget\",\"price\":9.99}");
@@ -179,43 +179,43 @@ class OpenApiDriftDetectionTest {
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             JsonNode body = mapper.readTree(resp.body()); // GH-90000
             // Entity SAVE returns flat JSON: {id, collection, version, createdAt, timestamp}
-            assertThat(body.has("id [GH-90000]")).as("id must be present in save response [GH-90000]").isTrue();
-            assertThat(body.has("collection [GH-90000]")).as("collection must be present in save response [GH-90000]").isTrue();
+            assertThat(body.has("id")).as("id must be present in save response").isTrue();
+            assertThat(body.has("collection")).as("collection must be present in save response").isTrue();
         }
 
         @Test
-        @DisplayName("GET /api/v1/entities/:collection/:id response data has id, collection, attributes [GH-90000]")
+        @DisplayName("GET /api/v1/entities/:collection/:id response data has id, collection, attributes")
         void entityGet_dataHasRequiredFields() throws Exception { // GH-90000
-            HttpResponse<String> resp = get("/api/v1/entities/products/drift-ent-1 [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/entities/products/drift-ent-1");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             JsonNode body = mapper.readTree(resp.body()); // GH-90000
             // Entity GET returns flat JSON: {id, collection, data:{...}, timestamp}
-            assertThat(body.has("id [GH-90000]")).as("id must be present in entity GET response [GH-90000]").isTrue();
+            assertThat(body.has("id")).as("id must be present in entity GET response").isTrue();
         }
 
         @Test
-        @DisplayName("DELETE /api/v1/entities/:collection/:id returns 200 with success indicator [GH-90000]")
+        @DisplayName("DELETE /api/v1/entities/:collection/:id returns 200 with success indicator")
         void entityDelete_returns200WithSuccess() throws Exception { // GH-90000
-            HttpResponse<String> resp = delete("/api/v1/entities/products/drift-ent-1 [GH-90000]");
+            HttpResponse<String> resp = delete("/api/v1/entities/products/drift-ent-1");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             JsonNode body = mapper.readTree(resp.body()); // GH-90000
             // Entity DELETE returns flat JSON: {collection, id, deleted, timestamp}
-            assertThat(body.has("deleted [GH-90000]") || body.has("data [GH-90000]") || body.has("error [GH-90000]"))
+            assertThat(body.has("deleted") || body.has("data") || body.has("error"))
                 .as("Entity DELETE response must have 'deleted', 'data', or 'error' key; got: " + body) // GH-90000
                 .isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("entity query GET /api/v1/entities/:collection returns array in data [GH-90000]")
+        @DisplayName("entity query GET /api/v1/entities/:collection returns array in data")
         void entityQuery_dataIsArray() throws Exception { // GH-90000
-            HttpResponse<String> resp = get("/api/v1/entities/products [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/entities/products");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             JsonNode body = mapper.readTree(resp.body()); // GH-90000
             // Entity query returns flat JSON: {entities:[], count:N, timestamp}
-            assertThat(body.has("entities [GH-90000]") || body.has("data [GH-90000]") || body.has("error [GH-90000]"))
+            assertThat(body.has("entities") || body.has("data") || body.has("error"))
                 .as("Entity query response must have 'entities', 'data', or 'error' key; got: " + body) // GH-90000
                 .isTrue(); // GH-90000
         }
@@ -226,22 +226,22 @@ class OpenApiDriftDetectionTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Voice endpoint response schema [GH-90000]")
+    @DisplayName("Voice endpoint response schema")
     class VoiceSchemaTests {
 
         @Test
-        @DisplayName("GET /api/v1/voice/intents data has intents array and count [GH-90000]")
+        @DisplayName("GET /api/v1/voice/intents data has intents array and count")
         void intents_dataHasIntentsArrayAndCount() throws Exception { // GH-90000
-            HttpResponse<String> resp = get("/api/v1/voice/intents [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/voice/intents");
 
             JsonNode data = assertAndGetData(resp); // GH-90000
-            assertThat(data.has("intents [GH-90000]")).as("data.intents must be present [GH-90000]").isTrue();
-            assertThat(data.get("intents [GH-90000]").isArray()).isTrue();
-            assertThat(data.has("count [GH-90000]")).as("data.count must be present [GH-90000]").isTrue();
+            assertThat(data.has("intents")).as("data.intents must be present").isTrue();
+            assertThat(data.get("intents").isArray()).isTrue();
+            assertThat(data.has("count")).as("data.count must be present").isTrue();
         }
 
         @Test
-        @DisplayName("POST /api/v1/voice/intent with valid utterance returns 200 [GH-90000]")
+        @DisplayName("POST /api/v1/voice/intent with valid utterance returns 200")
         void voiceIntent_validUtterance_returns200() throws Exception { // GH-90000
             HttpResponse<String> resp = postJson("/api/v1/voice/intent", // GH-90000
                 "{\"utterance\":\"list_pipelines\",\"confirm\":true}");
@@ -252,7 +252,7 @@ class OpenApiDriftDetectionTest {
         }
 
         @Test
-        @DisplayName("POST /api/v1/voice/intent with empty body returns structured error, not 500 [GH-90000]")
+        @DisplayName("POST /api/v1/voice/intent with empty body returns structured error, not 500")
         void voiceIntent_emptyBody_not500() throws Exception { // GH-90000
             HttpResponse<String> resp = postJson("/api/v1/voice/intent", "{}"); // GH-90000
 
@@ -265,30 +265,30 @@ class OpenApiDriftDetectionTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Utility endpoint response schema [GH-90000]")
+    @DisplayName("Utility endpoint response schema")
     class UtilityEndpointSchemaTests {
 
         @Test
-        @DisplayName("GET /health returns 200 with status field [GH-90000]")
+        @DisplayName("GET /health returns 200 with status field")
         void health_returns200WithStatus() throws Exception { // GH-90000
-            HttpResponse<String> resp = get("/health [GH-90000]");
+            HttpResponse<String> resp = get("/health");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             JsonNode body = mapper.readTree(resp.body()); // GH-90000
-            assertThat(body.has("status [GH-90000]")).as("/health must have status field [GH-90000]").isTrue();
+            assertThat(body.has("status")).as("/health must have status field").isTrue();
         }
 
         @Test
-        @DisplayName("GET /ready returns 200 [GH-90000]")
+        @DisplayName("GET /ready returns 200")
         void ready_returns200() throws Exception { // GH-90000
-            HttpResponse<String> resp = get("/ready [GH-90000]");
+            HttpResponse<String> resp = get("/ready");
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
         }
 
         @Test
-        @DisplayName("GET /metrics returns prometheus-format text [GH-90000]")
+        @DisplayName("GET /metrics returns prometheus-format text")
         void metrics_returnsPrometheusText() throws Exception { // GH-90000
-            HttpResponse<String> resp = get("/metrics [GH-90000]");
+            HttpResponse<String> resp = get("/metrics");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             // Prometheus format starts with HELP or TYPE comments, or is empty
@@ -301,17 +301,17 @@ class OpenApiDriftDetectionTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Content-Type response headers [GH-90000]")
+    @DisplayName("Content-Type response headers")
     class ContentTypeTests {
 
         @Test
-        @DisplayName("JSON endpoints return application/json Content-Type [GH-90000]")
+        @DisplayName("JSON endpoints return application/json Content-Type")
         void jsonEndpoints_returnApplicationJsonContentType() throws Exception { // GH-90000
-            HttpResponse<String> resp = get("/api/v1/voice/intents [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/voice/intents");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            String contentType = resp.headers().firstValue("content-type [GH-90000]").orElse(" [GH-90000]");
-            assertThat(contentType).containsIgnoringCase("application/json [GH-90000]");
+            String contentType = resp.headers().firstValue("content-type").orElse("");
+            assertThat(contentType).containsIgnoringCase("application/json");
         }
     }
 
@@ -321,8 +321,8 @@ class OpenApiDriftDetectionTest {
 
     private void assertResponseEnvelope(JsonNode body) { // GH-90000
         // Every ApiResponse must have either a "data" key or an "error" key
-        boolean hasData  = body.has("data [GH-90000]");
-        boolean hasError = body.has("error [GH-90000]");
+        boolean hasData  = body.has("data");
+        boolean hasError = body.has("error");
         assertThat(hasData || hasError) // GH-90000
             .as("ApiResponse envelope must have 'data' or 'error' key; got: " + body) // GH-90000
             .isTrue(); // GH-90000
@@ -332,8 +332,8 @@ class OpenApiDriftDetectionTest {
         assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
         JsonNode body = mapper.readTree(resp.body()); // GH-90000
         assertResponseEnvelope(body); // GH-90000
-        assertThat(body.has("data [GH-90000]")).as("data key must be present for success responses [GH-90000]").isTrue();
-        return body.get("data [GH-90000]");
+        assertThat(body.has("data")).as("data key must be present for success responses").isTrue();
+        return body.get("data");
     }
 
     private HttpResponse<String> get(String path) throws Exception { // GH-90000

@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("StandardHumanApprovalPlugin Tests [GH-90000]")
+@DisplayName("StandardHumanApprovalPlugin Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class StandardHumanApprovalPluginTest extends EventloopTestBase {
 
@@ -49,27 +49,27 @@ class StandardHumanApprovalPluginTest extends EventloopTestBase {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("Should reflect RUNNING state after start [GH-90000]")
+    @DisplayName("Should reflect RUNNING state after start")
     void testLifecycle_running() { // GH-90000
         assertThat(plugin.getState()).isEqualTo(PluginState.RUNNING); // GH-90000
     }
 
     @Test
-    @DisplayName("Should transition to STOPPED after stop() [GH-90000]")
+    @DisplayName("Should transition to STOPPED after stop()")
     void testLifecycle_stop() { // GH-90000
         runPromise(() -> plugin.stop()); // GH-90000
         assertThat(plugin.getState()).isEqualTo(PluginState.STOPPED); // GH-90000
     }
 
     @Test
-    @DisplayName("Should transition to UNLOADED after shutdown() [GH-90000]")
+    @DisplayName("Should transition to UNLOADED after shutdown()")
     void testLifecycle_shutdown() { // GH-90000
         runPromise(() -> plugin.shutdown()); // GH-90000
         assertThat(plugin.getState()).isEqualTo(PluginState.UNLOADED); // GH-90000
     }
 
     @Test
-    @DisplayName("Should return correct metadata id [GH-90000]")
+    @DisplayName("Should return correct metadata id")
     void testMetadata() { // GH-90000
         assertThat(plugin.metadata().id()).isEqualTo("com.ghatana.plugin.human-approval");
         assertThat(plugin.metadata().version()).isEqualTo("1.0.0");
@@ -80,7 +80,7 @@ class StandardHumanApprovalPluginTest extends EventloopTestBase {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("Should create a PENDING approval record [GH-90000]")
+    @DisplayName("Should create a PENDING approval record")
     void testRequestApproval_createsPending() { // GH-90000
         ApprovalRequest req = buildRequest("patient-42", "nurse-7", "patient-data-export"); // GH-90000
 
@@ -95,7 +95,7 @@ class StandardHumanApprovalPluginTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should be idempotent on duplicate requestId [GH-90000]")
+    @DisplayName("Should be idempotent on duplicate requestId")
     void testRequestApproval_idempotent() { // GH-90000
         ApprovalRequest req = buildRequest("patient-42", "nurse-7", "patient-data-export"); // GH-90000
 
@@ -107,7 +107,7 @@ class StandardHumanApprovalPluginTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should reject null request [GH-90000]")
+    @DisplayName("Should reject null request")
     void testRequestApproval_nullRequest() { // GH-90000
         assertThatThrownBy(() -> runPromise(() -> plugin.requestApproval(null))) // GH-90000
                 .isInstanceOf(NullPointerException.class); // GH-90000
@@ -118,7 +118,7 @@ class StandardHumanApprovalPluginTest extends EventloopTestBase {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("Should return empty for unknown requestId [GH-90000]")
+    @DisplayName("Should return empty for unknown requestId")
     void testGetApprovalStatus_unknown() { // GH-90000
         Optional<ApprovalRecord> result = runPromise( // GH-90000
                 () -> plugin.getApprovalStatus("does-not-exist"));
@@ -126,7 +126,7 @@ class StandardHumanApprovalPluginTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should return the record for a known requestId [GH-90000]")
+    @DisplayName("Should return the record for a known requestId")
     void testGetApprovalStatus_known() { // GH-90000
         ApprovalRequest req = buildRequest("trade-99", "system", "large-trade-approval"); // GH-90000
         runPromise(() -> plugin.requestApproval(req)); // GH-90000
@@ -138,7 +138,7 @@ class StandardHumanApprovalPluginTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should reject blank requestId in getApprovalStatus [GH-90000]")
+    @DisplayName("Should reject blank requestId in getApprovalStatus")
     void testGetApprovalStatus_blankId() { // GH-90000
         Promise<Optional<ApprovalRecord>> p = plugin.getApprovalStatus("   ");
         assertThatThrownBy(() -> runPromise(() -> p)) // GH-90000
@@ -150,7 +150,7 @@ class StandardHumanApprovalPluginTest extends EventloopTestBase {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("Should transition to APPROVED [GH-90000]")
+    @DisplayName("Should transition to APPROVED")
     void testCompleteApproval_approved() { // GH-90000
         ApprovalRequest req = buildRequest("patient-1", "dr-jones", "medication-override"); // GH-90000
         runPromise(() -> plugin.requestApproval(req)); // GH-90000
@@ -166,7 +166,7 @@ class StandardHumanApprovalPluginTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should transition to REJECTED [GH-90000]")
+    @DisplayName("Should transition to REJECTED")
     void testCompleteApproval_rejected() { // GH-90000
         ApprovalRequest req = buildRequest("patient-2", "system", "high-risk-procedure"); // GH-90000
         runPromise(() -> plugin.requestApproval(req)); // GH-90000
@@ -179,7 +179,7 @@ class StandardHumanApprovalPluginTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("completeApproval on already-decided record is no-op [GH-90000]")
+    @DisplayName("completeApproval on already-decided record is no-op")
     void testCompleteApproval_idempotent() { // GH-90000
         ApprovalRequest req = buildRequest("patient-3", "nurse-1", "export"); // GH-90000
         runPromise(() -> plugin.requestApproval(req)); // GH-90000
@@ -196,7 +196,7 @@ class StandardHumanApprovalPluginTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("completeApproval on unknown requestId returns exception [GH-90000]")
+    @DisplayName("completeApproval on unknown requestId returns exception")
     void testCompleteApproval_unknown() { // GH-90000
         Promise<ApprovalRecord> p = plugin.completeApproval("bad-id", // GH-90000
                 ApprovalDecision.APPROVED, "reviewer", null);
@@ -209,7 +209,7 @@ class StandardHumanApprovalPluginTest extends EventloopTestBase {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("Should return only pending records for a subject [GH-90000]")
+    @DisplayName("Should return only pending records for a subject")
     void testListPendingForSubject() { // GH-90000
         String subjectId = "patient-99";
         ApprovalRequest req1 = buildRequest(subjectId, "nurse-1", "export"); // GH-90000
@@ -232,7 +232,7 @@ class StandardHumanApprovalPluginTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should return empty list when subject has no pending approvals [GH-90000]")
+    @DisplayName("Should return empty list when subject has no pending approvals")
     void testListPendingForSubject_empty() { // GH-90000
         List<ApprovalRecord> pending = runPromise( // GH-90000
                 () -> plugin.listPendingForSubject("unknown-subject"));
@@ -244,7 +244,7 @@ class StandardHumanApprovalPluginTest extends EventloopTestBase {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("Should cancel a pending approval [GH-90000]")
+    @DisplayName("Should cancel a pending approval")
     void testCancelApproval() { // GH-90000
         ApprovalRequest req = buildRequest("patient-5", "system", "routine-export"); // GH-90000
         runPromise(() -> plugin.requestApproval(req)); // GH-90000
@@ -326,7 +326,7 @@ class StandardHumanApprovalPluginTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("cancelApproval on already-decided record is no-op [GH-90000]")
+    @DisplayName("cancelApproval on already-decided record is no-op")
     void testCancelApproval_alreadyDecidedIsNoOp() { // GH-90000
         ApprovalRequest req = buildRequest("patient-6", "dr-x", "sample"); // GH-90000
         runPromise(() -> plugin.requestApproval(req)); // GH-90000
@@ -343,7 +343,7 @@ class StandardHumanApprovalPluginTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("cancelApproval on unknown requestId returns exception [GH-90000]")
+    @DisplayName("cancelApproval on unknown requestId returns exception")
     void testCancelApproval_unknown() { // GH-90000
         Promise<Void> p = plugin.cancelApproval("ghost-id", "reason"); // GH-90000
         assertThatThrownBy(() -> runPromise(() -> p)) // GH-90000

@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Boundary Policy Resolution Tests [GH-90000]")
+@DisplayName("Boundary Policy Resolution Tests")
 class BoundaryPolicyResolutionTest extends EventloopTestBase {
 
     private KernelRegistryImpl registry;
@@ -37,7 +37,7 @@ class BoundaryPolicyResolutionTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should resolve single policy without conflicts [GH-90000]")
+    @DisplayName("Should resolve single policy without conflicts")
     void testSinglePolicyResolution() { // GH-90000
         // GIVEN: Single policy
         BoundaryPolicy policy = new BoundaryPolicy("policy-1", PolicyType.ALLOW); // GH-90000
@@ -52,11 +52,11 @@ class BoundaryPolicyResolutionTest extends EventloopTestBase {
 
         // THEN: Policy allows action
         assertThat(decision.isAllowed()).isTrue(); // GH-90000
-        assertThat(decision.getAppliedPolicies()).containsExactly("policy-1 [GH-90000]");
+        assertThat(decision.getAppliedPolicies()).containsExactly("policy-1");
     }
 
     @Test
-    @DisplayName("Should resolve conflicting policies with priority [GH-90000]")
+    @DisplayName("Should resolve conflicting policies with priority")
     void testConflictingPolicyResolution() { // GH-90000
         // GIVEN: Conflicting policies with different priorities
         BoundaryPolicy allowPolicy = new BoundaryPolicy("allow-policy", PolicyType.ALLOW); // GH-90000
@@ -77,11 +77,11 @@ class BoundaryPolicyResolutionTest extends EventloopTestBase {
 
         // THEN: Higher priority policy wins (deny) // GH-90000
         assertThat(decision.isAllowed()).isFalse(); // GH-90000
-        assertThat(decision.getAppliedPolicies()).contains("deny-policy [GH-90000]");
+        assertThat(decision.getAppliedPolicies()).contains("deny-policy");
     }
 
     @Test
-    @DisplayName("Should handle policy inheritance across module boundaries [GH-90000]")
+    @DisplayName("Should handle policy inheritance across module boundaries")
     void testPolicyInheritance() { // GH-90000
         // GIVEN: Parent and child module policies
         BoundaryPolicy parentPolicy = new BoundaryPolicy("parent-policy", PolicyType.ALLOW); // GH-90000
@@ -108,7 +108,7 @@ class BoundaryPolicyResolutionTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should enforce default deny policy [GH-90000]")
+    @DisplayName("Should enforce default deny policy")
     void testDefaultDenyPolicy() { // GH-90000
         // GIVEN: No explicit policies
 
@@ -119,11 +119,11 @@ class BoundaryPolicyResolutionTest extends EventloopTestBase {
 
         // THEN: Default deny applies
         assertThat(decision.isAllowed()).isFalse(); // GH-90000
-        assertThat(decision.getReason()).contains("No matching policy [GH-90000]");
+        assertThat(decision.getReason()).contains("No matching policy");
     }
 
     @Test
-    @DisplayName("Should handle wildcard policy patterns [GH-90000]")
+    @DisplayName("Should handle wildcard policy patterns")
     void testWildcardPolicyPatterns() { // GH-90000
         // GIVEN: Wildcard policy
         BoundaryPolicy wildcardPolicy = new BoundaryPolicy("wildcard-policy", PolicyType.ALLOW); // GH-90000
@@ -146,7 +146,7 @@ class BoundaryPolicyResolutionTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should resolve time-based policies [GH-90000]")
+    @DisplayName("Should resolve time-based policies")
     void testTimeBasedPolicies() { // GH-90000
         // GIVEN: Time-based policy
         BoundaryPolicy timePolicy = new BoundaryPolicy("time-policy", PolicyType.ALLOW); // GH-90000
@@ -169,10 +169,10 @@ class BoundaryPolicyResolutionTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle conditional policies [GH-90000]")
+    @DisplayName("Should handle conditional policies")
     void testConditionalPolicies() { // GH-90000
         // GIVEN: Conditional policy
-        ConditionalPolicy conditionalPolicy = new ConditionalPolicy("conditional-policy [GH-90000]");
+        ConditionalPolicy conditionalPolicy = new ConditionalPolicy("conditional-policy");
         conditionalPolicy.addCondition("user.role", "admin"); // GH-90000
         conditionalPolicy.addRule("module:system", "action:configure"); // GH-90000
 
@@ -195,7 +195,7 @@ class BoundaryPolicyResolutionTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should audit policy decisions [GH-90000]")
+    @DisplayName("Should audit policy decisions")
     void testPolicyDecisionAuditing() { // GH-90000
         // GIVEN: Policy with auditing enabled
         BoundaryPolicy policy = new BoundaryPolicy("audit-policy", PolicyType.ALLOW); // GH-90000
@@ -210,9 +210,9 @@ class BoundaryPolicyResolutionTest extends EventloopTestBase {
         // THEN: Decision is audited
         assertThat(policyResolver.getAuditLog()).isNotEmpty(); // GH-90000
         assertThat(policyResolver.getAuditLog().get(0)) // GH-90000
-            .contains("module:finance [GH-90000]")
-            .contains("action:transfer [GH-90000]")
-            .contains("ALLOW [GH-90000]");
+            .contains("module:finance")
+            .contains("action:transfer")
+            .contains("ALLOW");
     }
 
     // Test policy implementations
@@ -290,9 +290,9 @@ class BoundaryPolicyResolutionTest extends EventloopTestBase {
         }
 
         private boolean matchesPattern(String pattern, String value) { // GH-90000
-            if (pattern.equals("* [GH-90000]") || pattern.endsWith(":* [GH-90000]")) {
+            if (pattern.equals("*") || pattern.endsWith(":*")) {
                 String prefix = pattern.replace(":*", ""); // GH-90000
-                return value.startsWith(prefix) || pattern.equals("* [GH-90000]");
+                return value.startsWith(prefix) || pattern.equals("*");
             }
             return pattern.equals(value); // GH-90000
         }

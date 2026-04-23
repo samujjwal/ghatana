@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Unit tests for YappcApi.
  */
-@DisplayName("YappcApi Tests [GH-90000]")
+@DisplayName("YappcApi Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles yappc api test operations
@@ -50,7 +50,7 @@ class YappcApiTest {
     @BeforeEach
     void setUp() { // GH-90000
         YappcConfig config = YappcConfig.builder() // GH-90000
-                .packsPath(tempDir.resolve("packs [GH-90000]"))
+                .packsPath(tempDir.resolve("packs"))
                 .workspacePath(tempDir) // GH-90000
                 .enableCache(false) // GH-90000
                 .build(); // GH-90000
@@ -65,22 +65,22 @@ class YappcApiTest {
     }
 
     @Test
-    @DisplayName("Should create API with default configuration [GH-90000]")
+    @DisplayName("Should create API with default configuration")
     void shouldCreateApiWithDefaults() { // GH-90000
         YappcApi defaultApi = YappcApi.create(); // GH-90000
 
         assertThat(defaultApi).isNotNull(); // GH-90000
         assertThat(defaultApi.isReady()).isTrue(); // GH-90000
-        assertThat(defaultApi.getVersion()).isEqualTo("1.0.0 [GH-90000]");
+        assertThat(defaultApi.getVersion()).isEqualTo("1.0.0");
 
         defaultApi.shutdown(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should create API with builder [GH-90000]")
+    @DisplayName("Should create API with builder")
     void shouldCreateApiWithBuilder() { // GH-90000
         YappcApi builtApi = YappcApi.builder() // GH-90000
-                .packsPath(tempDir.resolve("custom-packs [GH-90000]"))
+                .packsPath(tempDir.resolve("custom-packs"))
                 .workspacePath(tempDir) // GH-90000
                 .enableCache(true) // GH-90000
                 .build(); // GH-90000
@@ -92,7 +92,7 @@ class YappcApiTest {
     }
 
     @Test
-    @DisplayName("Should provide pack service [GH-90000]")
+    @DisplayName("Should provide pack service")
     void shouldProvidePackService() { // GH-90000
         PackService packService = api.packs(); // GH-90000
 
@@ -101,7 +101,7 @@ class YappcApiTest {
     }
 
     @Test
-    @DisplayName("Should provide project service [GH-90000]")
+    @DisplayName("Should provide project service")
     void shouldProvideProjectService() { // GH-90000
         ProjectService projectService = api.projects(); // GH-90000
 
@@ -109,7 +109,7 @@ class YappcApiTest {
     }
 
     @Test
-    @DisplayName("Should provide template service [GH-90000]")
+    @DisplayName("Should provide template service")
     void shouldProvideTemplateService() { // GH-90000
         TemplateService templateService = api.templates(); // GH-90000
 
@@ -121,7 +121,7 @@ class YappcApiTest {
     }
 
     @Test
-    @DisplayName("Should provide dependency service [GH-90000]")
+    @DisplayName("Should provide dependency service")
     void shouldProvideDependencyService() { // GH-90000
         DependencyService dependencyService = api.dependencies(); // GH-90000
 
@@ -129,7 +129,7 @@ class YappcApiTest {
     }
 
     @Test
-    @DisplayName("Should report not ready after shutdown [GH-90000]")
+    @DisplayName("Should report not ready after shutdown")
     void shouldReportNotReadyAfterShutdown() { // GH-90000
         api.shutdown(); // GH-90000
 
@@ -137,8 +137,8 @@ class YappcApiTest {
     }
 
     @Test
-    @DisplayName("Should return version [GH-90000]")
+    @DisplayName("Should return version")
     void shouldReturnVersion() { // GH-90000
-        assertThat(api.getVersion()).isEqualTo("1.0.0 [GH-90000]");
+        assertThat(api.getVersion()).isEqualTo("1.0.0");
     }
 }

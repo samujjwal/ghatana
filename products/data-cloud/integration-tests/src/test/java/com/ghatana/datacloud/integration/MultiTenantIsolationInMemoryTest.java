@@ -39,7 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p><b>DC-P0-4 Note:</b> Renamed from MultiTenantIsolationTest to clarify this is a synthetic test
  * using in-memory storage, not a true integration test against real durable providers.</p>
  */
-@DisplayName("Multi-Tenant Isolation In-Memory Tests (Synthetic) [GH-90000]")
+@DisplayName("Multi-Tenant Isolation In-Memory Tests (Synthetic)")
 class MultiTenantIsolationInMemoryTest {
 
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {}; // GH-90000
@@ -59,7 +59,7 @@ class MultiTenantIsolationInMemoryTest {
     void setUp() throws Exception { // GH-90000
         DataCloudConfig config = DataCloudConfig.builder() // GH-90000
             .profile(DataCloudProfile.SOVEREIGN) // GH-90000
-            .customConfig(Map.of("sovereign.dataDir", tempDir.resolve("sovereign-store [GH-90000]").toString()))
+            .customConfig(Map.of("sovereign.dataDir", tempDir.resolve("sovereign-store").toString()))
             .build(); // GH-90000
         client = DataCloud.create(config); // GH-90000
         port = findFreePort(); // GH-90000
@@ -78,12 +78,12 @@ class MultiTenantIsolationInMemoryTest {
     }
 
     @Test
-    @DisplayName("query endpoint returns only the requesting tenant's entities [GH-90000]")
+    @DisplayName("query endpoint returns only the requesting tenant's entities")
     void queryEndpointReturnsOnlyTheRequestingTenantsEntities() throws Exception { // GH-90000
         String tenantAId = String.valueOf(sendJson("POST", "/api/v1/entities/" + COLLECTION, // GH-90000
-            Map.of("name", "tenant-a-doc", "owner", "tenant-a"), "tenant-a").body().get("id [GH-90000]"));
+            Map.of("name", "tenant-a-doc", "owner", "tenant-a"), "tenant-a").body().get("id"));
         String tenantBId = String.valueOf(sendJson("POST", "/api/v1/entities/" + COLLECTION, // GH-90000
-            Map.of("name", "tenant-b-doc", "owner", "tenant-b"), "tenant-b").body().get("id [GH-90000]"));
+            Map.of("name", "tenant-b-doc", "owner", "tenant-b"), "tenant-b").body().get("id"));
 
         ParsedHttpResponse tenantAQuery = sendJson("GET", "/api/v1/entities/" + COLLECTION + "?limit=10", // GH-90000
             null, "tenant-a");
@@ -97,10 +97,10 @@ class MultiTenantIsolationInMemoryTest {
     }
 
     @Test
-    @DisplayName("cross-tenant reads and deletes do not expose another tenant's entity [GH-90000]")
+    @DisplayName("cross-tenant reads and deletes do not expose another tenant's entity")
     void crossTenantReadsAndDeletesDoNotExposeAnotherTenantsEntity() throws Exception { // GH-90000
         String tenantAId = String.valueOf(sendJson("POST", "/api/v1/entities/" + COLLECTION, // GH-90000
-            Map.of("name", "secret-doc", "classification", "private"), "tenant-a").body().get("id [GH-90000]"));
+            Map.of("name", "secret-doc", "classification", "private"), "tenant-a").body().get("id"));
 
         ParsedHttpResponse crossTenantRead = sendJson("GET", "/api/v1/entities/" + COLLECTION + "/" + tenantAId, // GH-90000
             null, "tenant-b");
@@ -113,7 +113,7 @@ class MultiTenantIsolationInMemoryTest {
         assertThat(crossTenantDelete.statusCode()).isEqualTo(404); // GH-90000
         assertThat(ownerRead.statusCode()).isEqualTo(200); // GH-90000
         assertThat(ownerRead.body()).containsEntry("id", tenantAId); // GH-90000
-        assertThat(asMap(ownerRead.body().get("data [GH-90000]"))).containsEntry("classification", "private");
+        assertThat(asMap(ownerRead.body().get("data"))).containsEntry("classification", "private");
     }
 
     private ParsedHttpResponse sendJson( // GH-90000
@@ -142,14 +142,14 @@ class MultiTenantIsolationInMemoryTest {
         return new ParsedHttpResponse(response.statusCode(), parsedBody); // GH-90000
     }
 
-    @SuppressWarnings("unchecked [GH-90000]")
+    @SuppressWarnings("unchecked")
     private List<String> entityIds(Map<String, Object> responseBody) { // GH-90000
-        return ((List<Map<String, Object>>) responseBody.get("entities [GH-90000]")).stream()
-            .map(entity -> String.valueOf(entity.get("id [GH-90000]")))
+        return ((List<Map<String, Object>>) responseBody.get("entities")).stream()
+            .map(entity -> String.valueOf(entity.get("id")))
             .toList(); // GH-90000
     }
 
-    @SuppressWarnings("unchecked [GH-90000]")
+    @SuppressWarnings("unchecked")
     private Map<String, Object> asMap(Object value) { // GH-90000
         return (Map<String, Object>) value; // GH-90000
     }

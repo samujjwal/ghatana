@@ -16,43 +16,43 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("Delivery Specialists Boundary Tests [GH-90000]")
+@DisplayName("Delivery Specialists Boundary Tests")
 class DeliverySpecialistsBoundaryTest {
 
     private static final JavaClasses CLASSES = new ClassFileImporter() // GH-90000
-            .importPackages("com.ghatana.yappc.agents.code [GH-90000]");
+            .importPackages("com.ghatana.yappc.agents.code");
 
     @Test
-    @DisplayName("delivery specialists should not depend on code specialists directly [GH-90000]")
+    @DisplayName("delivery specialists should not depend on code specialists directly")
     void deliverySpecialistsShouldNotDependOnCodeSpecialistInternals() { // GH-90000
         // The module is allowed to share the same package for build reasons,
         // but should not introduce circular cross-specialist dependencies.
         ArchRule rule = noClasses() // GH-90000
-                .that().haveNameMatching(".*ReleaseOrchestrator.*|.*BudgetGate.*|.*SbomGenerator.* [GH-90000]")
-                .should().dependOnClassesThat().haveNameMatching(".*UxDirector.*|.*ApiHandlerGenerator.*|.*ReplayDebugger.* [GH-90000]")
-                .because("Delivery specialists must not depend on code-generation specialists [GH-90000]")
+                .that().haveNameMatching(".*ReleaseOrchestrator.*|.*BudgetGate.*|.*SbomGenerator.*")
+                .should().dependOnClassesThat().haveNameMatching(".*UxDirector.*|.*ApiHandlerGenerator.*|.*ReplayDebugger.*")
+                .because("Delivery specialists must not depend on code-generation specialists")
                 .allowEmptyShould(true); // GH-90000
         rule.check(CLASSES); // GH-90000
     }
 
     @Test
-    @DisplayName("delivery specialists should not depend on scaffold [GH-90000]")
+    @DisplayName("delivery specialists should not depend on scaffold")
     void shouldNotDependOnScaffold() { // GH-90000
         ArchRule rule = noClasses() // GH-90000
-                .that().resideInAPackage("..agents.. [GH-90000]")
-                .should().dependOnClassesThat().resideInAPackage("..scaffold.. [GH-90000]")
-                .because("Delivery specialists must not depend on scaffold modules [GH-90000]")
+                .that().resideInAPackage("..agents..")
+                .should().dependOnClassesThat().resideInAPackage("..scaffold..")
+                .because("Delivery specialists must not depend on scaffold modules")
                 .allowEmptyShould(true); // GH-90000
         rule.check(CLASSES); // GH-90000
     }
 
     @Test
-    @DisplayName("delivery specialists should not depend on refactorer [GH-90000]")
+    @DisplayName("delivery specialists should not depend on refactorer")
     void shouldNotDependOnRefactorer() { // GH-90000
         ArchRule rule = noClasses() // GH-90000
-                .that().resideInAPackage("..agents.. [GH-90000]")
-                .should().dependOnClassesThat().resideInAPackage("..refactorer.. [GH-90000]")
-                .because("Delivery specialists must not depend on refactorer modules [GH-90000]")
+                .that().resideInAPackage("..agents..")
+                .should().dependOnClassesThat().resideInAPackage("..refactorer..")
+                .because("Delivery specialists must not depend on refactorer modules")
                 .allowEmptyShould(true); // GH-90000
         rule.check(CLASSES); // GH-90000
     }

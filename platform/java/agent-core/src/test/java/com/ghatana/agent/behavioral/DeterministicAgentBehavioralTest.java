@@ -29,7 +29,7 @@ import static org.mockito.Mockito.*;
  * Tests deterministic behavior, confidence scoring, explanation generation,
  * and state management.
  */
-@DisplayName("DeterministicAgent Behavioral Tests [GH-90000]")
+@DisplayName("DeterministicAgent Behavioral Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class DeterministicAgentBehavioralTest {
 
@@ -42,13 +42,13 @@ class DeterministicAgentBehavioralTest {
     @BeforeEach
     void setUp() { // GH-90000
         agentContext = AgentContext.builder() // GH-90000
-                .turnId("turn-1 [GH-90000]")
-                .agentId("det-agent [GH-90000]")
-                .tenantId("tenant-1 [GH-90000]")
+                .turnId("turn-1")
+                .agentId("det-agent")
+                .tenantId("tenant-1")
                 .memoryStore(memoryStore) // GH-90000
                 .build(); // GH-90000
 
-        agent = new DeterministicAgent("det-agent [GH-90000]");
+        agent = new DeterministicAgent("det-agent");
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -56,15 +56,15 @@ class DeterministicAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Processing Logic [GH-90000]")
+    @DisplayName("Processing Logic")
     class ProcessingTests {
 
         @Test
-        @DisplayName("Rule-based agent processes input and produces output [GH-90000]")
+        @DisplayName("Rule-based agent processes input and produces output")
         void ruleBasedProcessing() { // GH-90000
             Rule rule = Rule.builder() // GH-90000
-                    .id("r1 [GH-90000]")
-                    .name("Check Score [GH-90000]")
+                    .id("r1")
+                    .name("Check Score")
                     .priority(1) // GH-90000
                     .condition(RuleCondition.gt("score", 80)) // GH-90000
                     .action("result", "PASS") // GH-90000
@@ -87,11 +87,11 @@ class DeterministicAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Same input always produces same output (determinism) [GH-90000]")
+        @DisplayName("Same input always produces same output (determinism)")
         void deterministicOutputConsistency() { // GH-90000
             Rule rule = Rule.builder() // GH-90000
-                    .id("r1 [GH-90000]")
-                    .name("Status Check [GH-90000]")
+                    .id("r1")
+                    .name("Status Check")
                     .priority(1) // GH-90000
                     .condition(RuleCondition.eq("status", "active")) // GH-90000
                     .action("action", "process") // GH-90000
@@ -116,11 +116,11 @@ class DeterministicAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Threshold evaluation produces correct activation state [GH-90000]")
+        @DisplayName("Threshold evaluation produces correct activation state")
         void thresholdProcessing() { // GH-90000
             ThresholdEvaluator threshold = ThresholdEvaluator.builder() // GH-90000
-                    .id("temp [GH-90000]")
-                    .field("temperature [GH-90000]")
+                    .id("temp")
+                    .field("temperature")
                     .activationThreshold(100.0) // GH-90000
                     .upperBound(true) // GH-90000
                     .build(); // GH-90000
@@ -141,19 +141,19 @@ class DeterministicAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("FSM transitions follow state machine rules [GH-90000]")
+        @DisplayName("FSM transitions follow state machine rules")
         void finiteStateMachineProcessing() { // GH-90000
             FiniteStateMachine.FSMDefinition fsmDefinition = FiniteStateMachine.FSMDefinition.builder() // GH-90000
-                    .id("workflow [GH-90000]")
-                    .name("Workflow FSM [GH-90000]")
-                    .initialState("IDLE [GH-90000]")
-                    .state("IDLE [GH-90000]").state("PROCESSING [GH-90000]").state("DONE [GH-90000]").state("FAILED [GH-90000]")
+                    .id("workflow")
+                    .name("Workflow FSM")
+                    .initialState("IDLE")
+                    .state("IDLE").state("PROCESSING").state("DONE").state("FAILED")
                     .transition(FiniteStateMachine.FSMDefinition.Transition.builder() // GH-90000
-                            .name("START [GH-90000]").fromState("IDLE [GH-90000]").toState("PROCESSING [GH-90000]").build())
+                            .name("START").fromState("IDLE").toState("PROCESSING").build())
                     .transition(FiniteStateMachine.FSMDefinition.Transition.builder() // GH-90000
-                            .name("COMPLETE [GH-90000]").fromState("PROCESSING [GH-90000]").toState("DONE [GH-90000]").build())
+                            .name("COMPLETE").fromState("PROCESSING").toState("DONE").build())
                     .transition(FiniteStateMachine.FSMDefinition.Transition.builder() // GH-90000
-                            .name("ERROR [GH-90000]").fromState("PROCESSING [GH-90000]").toState("FAILED [GH-90000]").build())
+                            .name("ERROR").fromState("PROCESSING").toState("FAILED").build())
                     .build(); // GH-90000
 
             DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
@@ -170,7 +170,7 @@ class DeterministicAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Pattern matching correctly identifies patterns [GH-90000]")
+        @DisplayName("Pattern matching correctly identifies patterns")
         void patternMatchingProcessing() { // GH-90000
             DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
                     .subtype(DeterministicSubtype.PATTERN) // GH-90000
@@ -186,11 +186,11 @@ class DeterministicAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Multiple rules evaluate all matching rules in priority order [GH-90000]")
+        @DisplayName("Multiple rules evaluate all matching rules in priority order")
         void multipleRulesInPriorityOrder() { // GH-90000
             Rule high = Rule.builder() // GH-90000
-                    .id("r-high [GH-90000]")
-                    .name("High Priority [GH-90000]")
+                    .id("r-high")
+                    .name("High Priority")
                     .priority(1) // GH-90000
                     .condition(RuleCondition.gt("severity", 7)) // GH-90000
                     .action("action", "escalate") // GH-90000
@@ -198,8 +198,8 @@ class DeterministicAgentBehavioralTest {
                     .build(); // GH-90000
 
             Rule medium = Rule.builder() // GH-90000
-                    .id("r-medium [GH-90000]")
-                    .name("Medium Priority [GH-90000]")
+                    .id("r-medium")
+                    .name("Medium Priority")
                     .priority(2) // GH-90000
                     .condition(RuleCondition.gt("severity", 5)) // GH-90000
                     .action("action", "notify") // GH-90000
@@ -221,11 +221,11 @@ class DeterministicAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("No matching rules produces empty output [GH-90000]")
+        @DisplayName("No matching rules produces empty output")
         void noMatchingRulesOutput() { // GH-90000
             Rule rule = Rule.builder() // GH-90000
-                    .id("r1 [GH-90000]")
-                    .name("Impossible [GH-90000]")
+                    .id("r1")
+                    .name("Impossible")
                     .priority(1) // GH-90000
                     .condition(RuleCondition.eq("x", "impossible")) // GH-90000
                     .action("result", "never") // GH-90000
@@ -252,15 +252,15 @@ class DeterministicAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Confidence Scoring [GH-90000]")
+    @DisplayName("Confidence Scoring")
     class ConfidenceScoringTests {
 
         @Test
-        @DisplayName("Deterministic agents always have confidence = 1.0 [GH-90000]")
+        @DisplayName("Deterministic agents always have confidence = 1.0")
         void deterministicConfidence() { // GH-90000
             Rule rule = Rule.builder() // GH-90000
-                    .id("r1 [GH-90000]")
-                    .name("Test [GH-90000]")
+                    .id("r1")
+                    .name("Test")
                     .priority(1) // GH-90000
                     .condition(RuleCondition.eq("type", "test")) // GH-90000
                     .action("result", "ok") // GH-90000
@@ -282,11 +282,11 @@ class DeterministicAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Confidence score is always in valid range [0.0, 1.0] [GH-90000]")
+        @DisplayName("Confidence score is always in valid range [0.0, 1.0]")
         void confidenceInValidRange() { // GH-90000
             Rule rule = Rule.builder() // GH-90000
-                    .id("r1 [GH-90000]")
-                    .name("Test [GH-90000]")
+                    .id("r1")
+                    .name("Test")
                     .priority(1) // GH-90000
                     .condition(RuleCondition.gt("value", 0)) // GH-90000
                     .action("result", "ok") // GH-90000
@@ -316,15 +316,15 @@ class DeterministicAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Explanation Generation [GH-90000]")
+    @DisplayName("Explanation Generation")
     class ExplanationTests {
 
         @Test
-        @DisplayName("Explanation is non-empty for successful results [GH-90000]")
+        @DisplayName("Explanation is non-empty for successful results")
         void explanationNonEmpty() { // GH-90000
             Rule rule = Rule.builder() // GH-90000
-                    .id("r1 [GH-90000]")
-                    .name("Check Score [GH-90000]")
+                    .id("r1")
+                    .name("Check Score")
                     .priority(1) // GH-90000
                     .condition(RuleCondition.gt("score", 75)) // GH-90000
                     .action("result", "PASS") // GH-90000
@@ -347,11 +347,11 @@ class DeterministicAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Explanation references the matching rule [GH-90000]")
+        @DisplayName("Explanation references the matching rule")
         void explanationReferencesRule() { // GH-90000
             Rule rule = Rule.builder() // GH-90000
-                    .id("rule-audit [GH-90000]")
-                    .name("Audit Rule [GH-90000]")
+                    .id("rule-audit")
+                    .name("Audit Rule")
                     .priority(1) // GH-90000
                     .condition(RuleCondition.gt("amount", 1000)) // GH-90000
                     .action("review", "mandatory") // GH-90000
@@ -376,11 +376,11 @@ class DeterministicAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Explanation contains decision reasoning [GH-90000]")
+        @DisplayName("Explanation contains decision reasoning")
         void explanationContainsReasoning() { // GH-90000
             Rule rule = Rule.builder() // GH-90000
-                    .id("r1 [GH-90000]")
-                    .name("CPU Alert [GH-90000]")
+                    .id("r1")
+                    .name("CPU Alert")
                     .priority(1) // GH-90000
                     .condition(RuleCondition.gt("cpu_usage", 90)) // GH-90000
                     .action("alert", "critical") // GH-90000
@@ -399,8 +399,8 @@ class DeterministicAgentBehavioralTest {
 
             assertThat(result.getExplanation()) // GH-90000
                     .contains("95.5", "90", "cpu") // GH-90000
-                    .doesNotContainIgnoringCase("high confidence [GH-90000]")
-                    .doesNotContainIgnoringCase("model [GH-90000]");
+                    .doesNotContainIgnoringCase("high confidence")
+                    .doesNotContainIgnoringCase("model");
         }
     }
 
@@ -409,15 +409,15 @@ class DeterministicAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("State Management [GH-90000]")
+    @DisplayName("State Management")
     class StateManagementTests {
 
         @Test
-        @DisplayName("Agent initializes successfully with valid config [GH-90000]")
+        @DisplayName("Agent initializes successfully with valid config")
         void agentInitialization() { // GH-90000
             Rule rule = Rule.builder() // GH-90000
-                    .id("r1 [GH-90000]")
-                    .name("Test [GH-90000]")
+                    .id("r1")
+                    .name("Test")
                     .priority(1) // GH-90000
                     .condition(RuleCondition.eq("x", "y")) // GH-90000
                     .action("a", "b") // GH-90000
@@ -436,11 +436,11 @@ class DeterministicAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Agent metadata reflects configuration [GH-90000]")
+        @DisplayName("Agent metadata reflects configuration")
         void agentMetadata() { // GH-90000
             Rule rule = Rule.builder() // GH-90000
-                    .id("r1 [GH-90000]")
-                    .name("Test [GH-90000]")
+                    .id("r1")
+                    .name("Test")
                     .priority(1) // GH-90000
                     .condition(RuleCondition.eq("x", "y")) // GH-90000
                     .action("a", "b") // GH-90000
@@ -461,11 +461,11 @@ class DeterministicAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Processing produces metrics [GH-90000]")
+        @DisplayName("Processing produces metrics")
         void processingMetrics() { // GH-90000
             Rule rule = Rule.builder() // GH-90000
-                    .id("r1 [GH-90000]")
-                    .name("Test [GH-90000]")
+                    .id("r1")
+                    .name("Test")
                     .priority(1) // GH-90000
                     .condition(RuleCondition.eq("x", "y")) // GH-90000
                     .action("a", "b") // GH-90000
@@ -492,15 +492,15 @@ class DeterministicAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Edge Cases [GH-90000]")
+    @DisplayName("Edge Cases")
     class EdgeCaseTests {
 
         @Test
-        @DisplayName("Null input field is handled gracefully [GH-90000]")
+        @DisplayName("Null input field is handled gracefully")
         void nullFieldHandling() { // GH-90000
             Rule rule = Rule.builder() // GH-90000
-                    .id("r1 [GH-90000]")
-                    .name("Test [GH-90000]")
+                    .id("r1")
+                    .name("Test")
                     .priority(1) // GH-90000
                     .condition(RuleCondition.eq("field", "value")) // GH-90000
                     .action("result", "match") // GH-90000
@@ -522,7 +522,7 @@ class DeterministicAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Empty rule set produces valid result [GH-90000]")
+        @DisplayName("Empty rule set produces valid result")
         void emptyRuleSet() { // GH-90000
             DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
                     .subtype(DeterministicSubtype.RULE_BASED) // GH-90000
@@ -537,11 +537,11 @@ class DeterministicAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Large input maps are processed correctly [GH-90000]")
+        @DisplayName("Large input maps are processed correctly")
         void largeInputHandling() { // GH-90000
             Rule rule = Rule.builder() // GH-90000
-                    .id("r1 [GH-90000]")
-                    .name("Test [GH-90000]")
+                    .id("r1")
+                    .name("Test")
                     .priority(1) // GH-90000
                     .condition(RuleCondition.gt("count", 5)) // GH-90000
                     .action("result", "proceed") // GH-90000
@@ -566,11 +566,11 @@ class DeterministicAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Numeric comparisons handle different numeric types [GH-90000]")
+        @DisplayName("Numeric comparisons handle different numeric types")
         void numericTypeHandling() { // GH-90000
             Rule rule = Rule.builder() // GH-90000
-                    .id("r1 [GH-90000]")
-                    .name("Numeric [GH-90000]")
+                    .id("r1")
+                    .name("Numeric")
                     .priority(1) // GH-90000
                     .condition(RuleCondition.gt("value", 50)) // GH-90000
                     .action("result", "pass") // GH-90000
@@ -601,15 +601,15 @@ class DeterministicAgentBehavioralTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Async Processing [GH-90000]")
+    @DisplayName("Async Processing")
     class AsyncTests {
 
         @Test
-        @DisplayName("Process returns Promise that resolves successfully [GH-90000]")
+        @DisplayName("Process returns Promise that resolves successfully")
         void asyncProcessing() { // GH-90000
             Rule rule = Rule.builder() // GH-90000
-                    .id("r1 [GH-90000]")
-                    .name("Test [GH-90000]")
+                    .id("r1")
+                    .name("Test")
                     .priority(1) // GH-90000
                     .condition(RuleCondition.eq("x", "y")) // GH-90000
                     .action("a", "b") // GH-90000
@@ -630,11 +630,11 @@ class DeterministicAgentBehavioralTest {
         }
 
         @Test
-        @DisplayName("Processing completes within expected latency [GH-90000]")
+        @DisplayName("Processing completes within expected latency")
         void processingLatency() { // GH-90000
             Rule rule = Rule.builder() // GH-90000
-                    .id("r1 [GH-90000]")
-                    .name("Test [GH-90000]")
+                    .id("r1")
+                    .name("Test")
                     .priority(1) // GH-90000
                     .condition(RuleCondition.eq("x", "y")) // GH-90000
                     .action("a", "b") // GH-90000

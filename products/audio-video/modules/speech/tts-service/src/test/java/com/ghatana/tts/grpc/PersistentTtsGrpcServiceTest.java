@@ -25,7 +25,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.MDC;
 
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("PersistentTtsGrpcService [GH-90000]")
+@DisplayName("PersistentTtsGrpcService")
 class PersistentTtsGrpcServiceTest {
 
     @Mock
@@ -48,11 +48,11 @@ class PersistentTtsGrpcServiceTest {
     }
 
     @Test
-    @DisplayName("streamSynthesize rejects requests without tenant context [GH-90000]")
+    @DisplayName("streamSynthesize rejects requests without tenant context")
     void streamSynthesizeRejectsRequestsWithoutTenantContext() { // GH-90000
         CapturingObserver<AudioChunk> observer = new CapturingObserver<>(); // GH-90000
 
-        service.streamSynthesize(SynthesizeRequest.newBuilder().setText("hello [GH-90000]").build(), observer);
+        service.streamSynthesize(SynthesizeRequest.newBuilder().setText("hello").build(), observer);
 
         assertThat(observer.error).isInstanceOf(StatusRuntimeException.class); // GH-90000
         assertThat(((StatusRuntimeException) observer.error).getStatus().getCode()) // GH-90000
@@ -60,11 +60,11 @@ class PersistentTtsGrpcServiceTest {
     }
 
     @Test
-    @DisplayName("streamSynthesize delegates to base TTS streaming implementation [GH-90000]")
+    @DisplayName("streamSynthesize delegates to base TTS streaming implementation")
     void streamSynthesizeDelegatesToBaseImplementation() { // GH-90000
         MDC.put("tenantId", "tenant-a"); // GH-90000
         doAnswer(invocation -> { // GH-90000
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             java.util.function.Consumer<com.ghatana.media.common.AudioChunk> consumer = invocation.getArgument(2); // GH-90000
             consumer.accept(new com.ghatana.media.common.AudioChunk(new byte[] {1, 2, 3}, 1, false, 0)); // GH-90000
             consumer.accept(new com.ghatana.media.common.AudioChunk(new byte[] {4, 5}, 2, true, 1)); // GH-90000
@@ -72,7 +72,7 @@ class PersistentTtsGrpcServiceTest {
         }).when(engine).synthesizeStreaming(anyString(), any(), any()); // GH-90000
 
         CapturingObserver<AudioChunk> observer = new CapturingObserver<>(); // GH-90000
-        service.streamSynthesize(SynthesizeRequest.newBuilder().setText("hello [GH-90000]").build(), observer);
+        service.streamSynthesize(SynthesizeRequest.newBuilder().setText("hello").build(), observer);
 
         assertThat(observer.error).isNull(); // GH-90000
         assertThat(observer.completed).isTrue(); // GH-90000

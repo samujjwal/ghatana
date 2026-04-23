@@ -24,7 +24,7 @@ import static org.mockito.Mockito.*;
  * Unit tests for {@link AepConnectionPoolOptimizer} (AEP-004.4). // GH-90000
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("AepConnectionPoolOptimizer — AEP-004.4 [GH-90000]")
+@DisplayName("AepConnectionPoolOptimizer — AEP-004.4")
 class AepConnectionPoolOptimizerTest {
 
     @Mock
@@ -45,7 +45,7 @@ class AepConnectionPoolOptimizerTest {
     }
 
     @Test
-    @DisplayName("Successful borrows increment success counter [GH-90000]")
+    @DisplayName("Successful borrows increment success counter")
     void successfulBorrowsAreTracked() throws SQLException { // GH-90000
         optimizer.getConnection(); // GH-90000
         optimizer.getConnection(); // GH-90000
@@ -57,9 +57,9 @@ class AepConnectionPoolOptimizerTest {
     }
 
     @Test
-    @DisplayName("Failed borrow increments failure counter [GH-90000]")
+    @DisplayName("Failed borrow increments failure counter")
     void failedBorrowIsTracked() throws SQLException { // GH-90000
-        when(mockDataSource.getConnection()).thenThrow(new SQLException("pool exhausted [GH-90000]"));
+        when(mockDataSource.getConnection()).thenThrow(new SQLException("pool exhausted"));
 
         assertThatThrownBy(() -> optimizer.getConnection()) // GH-90000
                 .isInstanceOf(SQLException.class); // GH-90000
@@ -70,7 +70,7 @@ class AepConnectionPoolOptimizerTest {
     }
 
     @Test
-    @DisplayName("Efficiency = 1.0 when all borrows succeed [GH-90000]")
+    @DisplayName("Efficiency = 1.0 when all borrows succeed")
     void efficiencyIsOneWhenAllSucceed() throws SQLException { // GH-90000
         optimizer.getConnection(); // GH-90000
         optimizer.getConnection(); // GH-90000
@@ -82,13 +82,13 @@ class AepConnectionPoolOptimizerTest {
     }
 
     @Test
-    @DisplayName("Efficiency < 1.0 when some borrows fail [GH-90000]")
+    @DisplayName("Efficiency < 1.0 when some borrows fail")
     void efficiencyDropsWithFailures() throws SQLException { // GH-90000
         // 9 successes, 1 failure → efficiency = 0.90
         for (int i = 0; i < 9; i++) { // GH-90000
             optimizer.getConnection(); // GH-90000
         }
-        when(mockDataSource.getConnection()).thenThrow(new SQLException("timeout [GH-90000]"));
+        when(mockDataSource.getConnection()).thenThrow(new SQLException("timeout"));
         try { optimizer.getConnection(); } catch (SQLException ignored) {} // GH-90000
 
         AepConnectionPoolOptimizer.PoolStats stats = optimizer.stats(); // GH-90000
@@ -97,7 +97,7 @@ class AepConnectionPoolOptimizerTest {
     }
 
     @Test
-    @DisplayName("Empty stats return efficiency 1.0 and meet target [GH-90000]")
+    @DisplayName("Empty stats return efficiency 1.0 and meet target")
     void emptyStatsReturnDefault() { // GH-90000
         AepConnectionPoolOptimizer.PoolStats stats = optimizer.stats(); // GH-90000
         assertThat(stats.totalBorrows()).isEqualTo(0); // GH-90000
@@ -106,7 +106,7 @@ class AepConnectionPoolOptimizerTest {
     }
 
     @Test
-    @DisplayName("asDataSource returns an instrumented DataSource [GH-90000]")
+    @DisplayName("asDataSource returns an instrumented DataSource")
     void asDataSourceDelegates() throws SQLException { // GH-90000
         DataSource ds = optimizer.asDataSource(); // GH-90000
         ds.getConnection(); // GH-90000
@@ -116,14 +116,14 @@ class AepConnectionPoolOptimizerTest {
     }
 
     @Test
-    @DisplayName("Builder rejects null delegate [GH-90000]")
+    @DisplayName("Builder rejects null delegate")
     void builderRejectsNullDelegate() { // GH-90000
         assertThatThrownBy(() -> AepConnectionPoolOptimizer.builder(null)) // GH-90000
                 .isInstanceOf(NullPointerException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("Builder rejects zero slow threshold [GH-90000]")
+    @DisplayName("Builder rejects zero slow threshold")
     void builderRejectsZeroThreshold() { // GH-90000
         assertThatThrownBy(() -> AepConnectionPoolOptimizer.builder(mockDataSource) // GH-90000
                 .slowConnectionThreshold(Duration.ZERO)) // GH-90000

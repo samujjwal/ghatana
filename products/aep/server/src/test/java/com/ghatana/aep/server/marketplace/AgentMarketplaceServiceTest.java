@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.purpose Regression coverage for marketplace listing, publishing, and reviews
  * @doc.layer product
  */
-@DisplayName("AgentMarketplaceService [GH-90000]")
+@DisplayName("AgentMarketplaceService")
 class AgentMarketplaceServiceTest {
 
     private static final String TENANT_ID = "tenant-a";
@@ -26,11 +26,11 @@ class AgentMarketplaceServiceTest {
         AgentMarketplaceService service = new AgentMarketplaceService( // GH-90000
                 null,
                 List.of(CatalogAgentEntry.builder() // GH-90000
-                        .id("catalog-agent [GH-90000]")
-                        .name("Catalog Agent [GH-90000]")
-                        .description("Built into the central catalog [GH-90000]")
-                        .catalogId("platform [GH-90000]")
-                        .metadata(Map.of("level", "expert", "domain", "governance", "tags", List.of("trusted [GH-90000]")))
+                        .id("catalog-agent")
+                        .name("Catalog Agent")
+                        .description("Built into the central catalog")
+                        .catalogId("platform")
+                        .metadata(Map.of("level", "expert", "domain", "governance", "tags", List.of("trusted")))
                         .capabilities(Set.of("triage", "explain")) // GH-90000
                         .build())); // GH-90000
 
@@ -41,8 +41,8 @@ class AgentMarketplaceServiceTest {
                 "1.1.0",
                 "operations",
                 "worker",
-                List.of("deploy [GH-90000]"),
-                List.of("beta [GH-90000]"),
+                List.of("deploy"),
+                List.of("beta"),
                 "tenant-a");
 
         service.publishAgent(TENANT_ID, publishRequest); // GH-90000
@@ -52,11 +52,11 @@ class AgentMarketplaceServiceTest {
 
         assertThat(listings).extracting(AgentMarketplaceService.MarketplaceAgentListing::id) // GH-90000
                 .contains("catalog-agent", "tenant-agent"); // GH-90000
-        assertThat(listings).filteredOn(listing -> listing.id().equals("tenant-agent [GH-90000]"))
+        assertThat(listings).filteredOn(listing -> listing.id().equals("tenant-agent"))
                 .singleElement() // GH-90000
                 .satisfies(listing -> { // GH-90000
-                    assertThat(listing.source()).isEqualTo("tenant [GH-90000]");
-                    assertThat(listing.owner()).isEqualTo("tenant-a [GH-90000]");
+                    assertThat(listing.source()).isEqualTo("tenant");
+                    assertThat(listing.owner()).isEqualTo("tenant-a");
                 });
     }
 
@@ -65,10 +65,10 @@ class AgentMarketplaceServiceTest {
         AgentMarketplaceService service = new AgentMarketplaceService( // GH-90000
                 null,
                 List.of(CatalogAgentEntry.builder() // GH-90000
-                        .id("reviewed-agent [GH-90000]")
-                        .name("Reviewed Agent [GH-90000]")
-                        .catalogId("platform [GH-90000]")
-                        .capabilities(Set.of("triage [GH-90000]"))
+                        .id("reviewed-agent")
+                        .name("Reviewed Agent")
+                        .catalogId("platform")
+                        .capabilities(Set.of("triage"))
                         .build())); // GH-90000
 
         Promise<AgentMarketplaceService.MarketplaceReview> first = service.addReview( // GH-90000

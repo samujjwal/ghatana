@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * Tests for {@link InMemoryConsentManager}.
  */
-@DisplayName("InMemoryConsentManager [GH-90000]")
+@DisplayName("InMemoryConsentManager")
 class ConsentManagerTest extends EventloopTestBase {
 
     private InMemoryConsentManager consentManager;
@@ -27,11 +27,11 @@ class ConsentManagerTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("recordConsent [GH-90000]")
+    @DisplayName("recordConsent")
     class RecordConsentTests {
 
         @Test
-        @DisplayName("records consent for a new subject+purpose pair [GH-90000]")
+        @DisplayName("records consent for a new subject+purpose pair")
         void recordsNewConsent() { // GH-90000
             runPromise(() -> consentManager.recordConsent("t1", "user1", "analytics")); // GH-90000
             boolean result = runPromise(() -> consentManager.hasConsent("t1", "user1", "analytics")); // GH-90000
@@ -39,7 +39,7 @@ class ConsentManagerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("recording consent is idempotent [GH-90000]")
+        @DisplayName("recording consent is idempotent")
         void recordConsentIdempotent() { // GH-90000
             runPromise(() -> consentManager.recordConsent("t1", "user1", "analytics")); // GH-90000
             runPromise(() -> consentManager.recordConsent("t1", "user1", "analytics")); // GH-90000
@@ -47,7 +47,7 @@ class ConsentManagerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("multiple purposes per subject are tracked independently [GH-90000]")
+        @DisplayName("multiple purposes per subject are tracked independently")
         void multiplePurposesPerSubject() { // GH-90000
             runPromise(() -> consentManager.recordConsent("t1", "user1", "analytics")); // GH-90000
             runPromise(() -> consentManager.recordConsent("t1", "user1", "marketing")); // GH-90000
@@ -60,7 +60,7 @@ class ConsentManagerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("different tenants are isolated [GH-90000]")
+        @DisplayName("different tenants are isolated")
         void tenantsAreIsolated() { // GH-90000
             runPromise(() -> consentManager.recordConsent("tenantA", "user1", "analytics")); // GH-90000
             boolean inA = runPromise(() -> consentManager.hasConsent("tenantA", "user1", "analytics")); // GH-90000
@@ -72,11 +72,11 @@ class ConsentManagerTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("withdrawConsent [GH-90000]")
+    @DisplayName("withdrawConsent")
     class WithdrawConsentTests {
 
         @Test
-        @DisplayName("withdrawing an existing consent removes it [GH-90000]")
+        @DisplayName("withdrawing an existing consent removes it")
         void withdrawRemovesConsent() { // GH-90000
             runPromise(() -> consentManager.recordConsent("t1", "user1", "analytics")); // GH-90000
             runPromise(() -> consentManager.withdrawConsent("t1", "user1", "analytics")); // GH-90000
@@ -86,14 +86,14 @@ class ConsentManagerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("withdrawing a non-existing consent is a no-op [GH-90000]")
+        @DisplayName("withdrawing a non-existing consent is a no-op")
         void withdrawNonExistingIsNoop() { // GH-90000
             runPromise(() -> consentManager.withdrawConsent("t1", "user1", "analytics")); // GH-90000
             assertThat(consentManager.totalConsentedPairs()).isEqualTo(0); // GH-90000
         }
 
         @Test
-        @DisplayName("withdrawing one purpose leaves other purposes intact [GH-90000]")
+        @DisplayName("withdrawing one purpose leaves other purposes intact")
         void withdrawOneDoesNotAffectOthers() { // GH-90000
             runPromise(() -> consentManager.recordConsent("t1", "user1", "analytics")); // GH-90000
             runPromise(() -> consentManager.recordConsent("t1", "user1", "marketing")); // GH-90000
@@ -108,27 +108,27 @@ class ConsentManagerTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("enforceConsent [GH-90000]")
+    @DisplayName("enforceConsent")
     class EnforceConsentTests {
 
         @Test
-        @DisplayName("passes when consent exists [GH-90000]")
+        @DisplayName("passes when consent exists")
         void passesWithConsent() { // GH-90000
             runPromise(() -> consentManager.recordConsent("t1", "user1", "analytics")); // GH-90000
             runPromise(() -> consentManager.enforceConsent("t1", "user1", "analytics")); // GH-90000
         }
 
         @Test
-        @DisplayName("throws ConsentRequiredException when consent is absent [GH-90000]")
+        @DisplayName("throws ConsentRequiredException when consent is absent")
         void throwsWhenNoConsent() { // GH-90000
             assertThatThrownBy(() -> // GH-90000
                 runPromise(() -> consentManager.enforceConsent("t1", "user1", "analytics")) // GH-90000
             ).isInstanceOf(ConsentRequiredException.class) // GH-90000
              .satisfies(ex -> { // GH-90000
                  ConsentRequiredException e = (ConsentRequiredException) ex; // GH-90000
-                 assertThat(e.tenantId()).isEqualTo("t1 [GH-90000]");
-                 assertThat(e.subjectId()).isEqualTo("user1 [GH-90000]");
-                 assertThat(e.purpose()).isEqualTo("analytics [GH-90000]");
+                 assertThat(e.tenantId()).isEqualTo("t1");
+                 assertThat(e.subjectId()).isEqualTo("user1");
+                 assertThat(e.purpose()).isEqualTo("analytics");
              });
         }
     }

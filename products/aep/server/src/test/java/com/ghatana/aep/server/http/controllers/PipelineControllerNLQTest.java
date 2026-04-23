@@ -62,7 +62,7 @@ class PipelineControllerNLQTest {
 
         PipelineRegistration savedPipeline = PipelineRegistration.builder() // GH-90000
             .id(UUID.randomUUID().toString()) // GH-90000
-            .name("Fraud Detection Pipeline [GH-90000]")
+            .name("Fraud Detection Pipeline")
             .description("Auto-generated pipeline from: " + description) // GH-90000
             .active(true) // GH-90000
             .version(1) // GH-90000
@@ -191,7 +191,7 @@ class PipelineControllerNLQTest {
 
         PipelineRegistration savedPipeline = PipelineRegistration.builder() // GH-90000
             .id(UUID.randomUUID().toString()) // GH-90000
-            .name("Process Events Pipeline [GH-90000]")
+            .name("Process Events Pipeline")
             .description("Auto-generated pipeline from: " + description) // GH-90000
             .active(true) // GH-90000
             .version(1) // GH-90000
@@ -209,7 +209,7 @@ class PipelineControllerNLQTest {
         assertNotNull(response); // GH-90000
         assertEquals(201, response.getCode()); // GH-90000
         verify(mockRepository).save(argThat((PipelineRegistration pipeline) -> // GH-90000
-            pipeline.getConfig() != null && pipeline.getConfig().contains("transaction.created [GH-90000]")
+            pipeline.getConfig() != null && pipeline.getConfig().contains("transaction.created")
         ));
     }
 }

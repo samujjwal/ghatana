@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("MultimodalEngineServiceTest [GH-90000]")
+@DisplayName("MultimodalEngineServiceTest")
 class MultimodalEngineServiceTest extends EventloopTestBase {
 
     private static final byte[] SAMPLE_AUDIO = new byte[] {1, 2, 3, 4, 5};
@@ -38,25 +38,25 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("input validation for audio analysis [GH-90000]")
+    @DisplayName("input validation for audio analysis")
     class InputValidationAudio {
 
         @Test
-        @DisplayName("null audio data throws exception for audio analysis [GH-90000]")
+        @DisplayName("null audio data throws exception for audio analysis")
         void nullAudioForAudioAnalysis_throwsException() { // GH-90000
             assertThatThrownBy(() -> engine.analyseAudio(null)) // GH-90000
                     .isInstanceOf(Exception.class); // GH-90000
         }
 
         @Test
-        @DisplayName("empty audio data throws exception for audio analysis [GH-90000]")
+        @DisplayName("empty audio data throws exception for audio analysis")
         void emptyAudioForAudioAnalysis_throwsException() { // GH-90000
             assertThatThrownBy(() -> engine.analyseAudio(new byte[0])) // GH-90000
                     .isInstanceOf(Exception.class); // GH-90000
         }
 
         @Test
-        @DisplayName("single byte audio is accepted for audio analysis [GH-90000]")
+        @DisplayName("single byte audio is accepted for audio analysis")
         void singleByteAudioForAudioAnalysis_isAccepted() { // GH-90000
             assertThatCode(() -> engine.analyseAudio(new byte[] {1})) // GH-90000
                     .doesNotThrowAnyException(); // GH-90000
@@ -68,11 +68,11 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("audio-only analysis [GH-90000]")
+    @DisplayName("audio-only analysis")
     class AudioOnlyAnalysis {
 
         @Test
-        @DisplayName("audio analysis produces valid transcription [GH-90000]")
+        @DisplayName("audio analysis produces valid transcription")
         void audioAnalysisProducesValidTranscription() { // GH-90000
             TestAudioResult result = engine.analyseAudio(SAMPLE_AUDIO); // GH-90000
 
@@ -81,7 +81,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("audio analysis includes confidence score [GH-90000]")
+        @DisplayName("audio analysis includes confidence score")
         void audioAnalysisIncludesConfidence() { // GH-90000
             TestAudioResult result = engine.analyseAudio(SAMPLE_AUDIO); // GH-90000
 
@@ -89,7 +89,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("audio analysis detects language [GH-90000]")
+        @DisplayName("audio analysis detects language")
         void audioAnalysisDetectsLanguage() { // GH-90000
             TestAudioResult result = engine.analyseAudio(SAMPLE_AUDIO); // GH-90000
 
@@ -97,7 +97,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("audio analysis is deterministic for same input [GH-90000]")
+        @DisplayName("audio analysis is deterministic for same input")
         void audioAnalysisIsDeterministic() { // GH-90000
             TestAudioResult r1 = engine.analyseAudio(SAMPLE_AUDIO); // GH-90000
             TestAudioResult r2 = engine.analyseAudio(SAMPLE_AUDIO); // GH-90000
@@ -112,18 +112,18 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("image analysis [GH-90000]")
+    @DisplayName("image analysis")
     class ImageAnalysis {
 
         @Test
-        @DisplayName("null image data throws exception [GH-90000]")
+        @DisplayName("null image data throws exception")
         void nullImageData_throwsException() { // GH-90000
             assertThatThrownBy(() -> engine.analyseImage(null)) // GH-90000
                     .isInstanceOf(Exception.class); // GH-90000
         }
 
         @Test
-        @DisplayName("image analysis produces scene description [GH-90000]")
+        @DisplayName("image analysis produces scene description")
         void imageAnalysisProducesSceneDescription() { // GH-90000
             TestVisualResult result = engine.analyseImage(SAMPLE_IMAGE); // GH-90000
 
@@ -132,7 +132,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("image analysis includes detections [GH-90000]")
+        @DisplayName("image analysis includes detections")
         void imageAnalysisIncludesDetections() { // GH-90000
             TestVisualResult result = engine.analyseImage(SAMPLE_IMAGE); // GH-90000
 
@@ -140,7 +140,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("image analysis confidence is in valid range [GH-90000]")
+        @DisplayName("image analysis confidence is in valid range")
         void imageAnalysisConfidenceIsValid() { // GH-90000
             TestVisualResult result = engine.analyseImage(SAMPLE_IMAGE); // GH-90000
 
@@ -148,7 +148,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("image analysis is deterministic for same input [GH-90000]")
+        @DisplayName("image analysis is deterministic for same input")
         void imageAnalysisIsDeterministic() { // GH-90000
             TestVisualResult r1 = engine.analyseImage(SAMPLE_IMAGE); // GH-90000
             TestVisualResult r2 = engine.analyseImage(SAMPLE_IMAGE); // GH-90000
@@ -162,18 +162,18 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("video analysis [GH-90000]")
+    @DisplayName("video analysis")
     class VideoAnalysis {
 
         @Test
-        @DisplayName("null video data throws exception [GH-90000]")
+        @DisplayName("null video data throws exception")
         void nullVideoData_throwsException() { // GH-90000
             assertThatThrownBy(() -> engine.analyseVideo(null, 24, 100)) // GH-90000
                     .isInstanceOf(Exception.class); // GH-90000
         }
 
         @Test
-        @DisplayName("video analysis with custom frame rate succeeds [GH-90000]")
+        @DisplayName("video analysis with custom frame rate succeeds")
         void videoAnalysisWithCustomFrameRateSucceeds() { // GH-90000
             TestVisualResult result = engine.analyseVideo(SAMPLE_VIDEO, 30, 100); // GH-90000
 
@@ -182,7 +182,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("video analysis with frame limit succeeds [GH-90000]")
+        @DisplayName("video analysis with frame limit succeeds")
         void videoAnalysisWithFrameLimitSucceeds() { // GH-90000
             TestVisualResult result = engine.analyseVideo(SAMPLE_VIDEO, 24, 50); // GH-90000
 
@@ -195,11 +195,11 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("cross-modal fusion [GH-90000]")
+    @DisplayName("cross-modal fusion")
     class CrossModalFusion {
 
         @Test
-        @DisplayName("audio + image fusion produces combined analysis [GH-90000]")
+        @DisplayName("audio + image fusion produces combined analysis")
         void audioImageFusionProducesCombinedAnalysis() { // GH-90000
             TestMultimodalResult result = engine.fuseAudioAndImage(SAMPLE_AUDIO, SAMPLE_IMAGE); // GH-90000
 
@@ -208,16 +208,16 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("fused audio-image includes both audio and visual content [GH-90000]")
+        @DisplayName("fused audio-image includes both audio and visual content")
         void fusedAudioImageIncludesBothModalities() { // GH-90000
             TestMultimodalResult result = engine.fuseAudioAndImage(SAMPLE_AUDIO, SAMPLE_IMAGE); // GH-90000
 
-            assertThat(result.combinedAnalysis()).containsIgnoringCase("audio [GH-90000]");
-            assertThat(result.combinedAnalysis()).containsIgnoringCase("image [GH-90000]");
+            assertThat(result.combinedAnalysis()).containsIgnoringCase("audio");
+            assertThat(result.combinedAnalysis()).containsIgnoringCase("image");
         }
 
         @Test
-        @DisplayName("audio + image + text fusion includes all three modalities [GH-90000]")
+        @DisplayName("audio + image + text fusion includes all three modalities")
         void audioImageTextFusionIncludesAllModalities() { // GH-90000
             TestMultimodalResult result = engine.fuseAudioImageAndText( // GH-90000
                     SAMPLE_AUDIO, SAMPLE_IMAGE, SAMPLE_TEXT_HINT
@@ -227,7 +227,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("fusion with null text hint still succeeds [GH-90000]")
+        @DisplayName("fusion with null text hint still succeeds")
         void fusionWithNullTextHintSucceeds() { // GH-90000
             TestMultimodalResult result = engine.fuseAudioImageAndText( // GH-90000
                     SAMPLE_AUDIO, SAMPLE_IMAGE, null
@@ -237,7 +237,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("fusion with empty text hint still succeeds [GH-90000]")
+        @DisplayName("fusion with empty text hint still succeeds")
         void fusionWithEmptyTextHintSucceeds() { // GH-90000
             TestMultimodalResult result = engine.fuseAudioImageAndText( // GH-90000
                     SAMPLE_AUDIO, SAMPLE_IMAGE, ""
@@ -247,7 +247,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("fusion is deterministic for identical inputs [GH-90000]")
+        @DisplayName("fusion is deterministic for identical inputs")
         void fusionIsDeterministic() { // GH-90000
             TestMultimodalResult r1 = engine.fuseAudioAndImage(SAMPLE_AUDIO, SAMPLE_IMAGE); // GH-90000
             TestMultimodalResult r2 = engine.fuseAudioAndImage(SAMPLE_AUDIO, SAMPLE_IMAGE); // GH-90000
@@ -261,11 +261,11 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("temporal alignment [GH-90000]")
+    @DisplayName("temporal alignment")
     class TemporalAlignment {
 
         @Test
-        @DisplayName("video + audio alignment produces temporal segments [GH-90000]")
+        @DisplayName("video + audio alignment produces temporal segments")
         void videoAudioAlignmentProducesSegments() { // GH-90000
             TestVideoAudioAlignment alignment = engine.alignVideoAndAudio( // GH-90000
                     SAMPLE_VIDEO, SAMPLE_AUDIO, 24
@@ -276,7 +276,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("temporal alignment includes speech text [GH-90000]")
+        @DisplayName("temporal alignment includes speech text")
         void temporalAlignmentIncludesSpeechText() { // GH-90000
             TestVideoAudioAlignment alignment = engine.alignVideoAndAudio( // GH-90000
                     SAMPLE_VIDEO, SAMPLE_AUDIO, 24
@@ -290,7 +290,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("temporal alignment includes sync confidence [GH-90000]")
+        @DisplayName("temporal alignment includes sync confidence")
         void temporalAlignmentIncludesSyncConfidence() { // GH-90000
             TestVideoAudioAlignment alignment = engine.alignVideoAndAudio( // GH-90000
                     SAMPLE_VIDEO, SAMPLE_AUDIO, 24
@@ -304,7 +304,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("different frame rates produce different alignments [GH-90000]")
+        @DisplayName("different frame rates produce different alignments")
         void differentFrameRatesProduceDifferentAlignments() { // GH-90000
             TestVideoAudioAlignment a24 = engine.alignVideoAndAudio(SAMPLE_VIDEO, SAMPLE_AUDIO, 24); // GH-90000
             TestVideoAudioAlignment a30 = engine.alignVideoAndAudio(SAMPLE_VIDEO, SAMPLE_AUDIO, 30); // GH-90000
@@ -320,11 +320,11 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("context preservation [GH-90000]")
+    @DisplayName("context preservation")
     class ContextPreservation {
 
         @Test
-        @DisplayName("sequential multimodal analyses maintain context [GH-90000]")
+        @DisplayName("sequential multimodal analyses maintain context")
         void sequentialAnalysesMaintainContext() { // GH-90000
             TestAudioResult audio = engine.analyseAudio(SAMPLE_AUDIO); // GH-90000
             TestVisualResult visual = engine.analyseImage(SAMPLE_IMAGE); // GH-90000
@@ -337,7 +337,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("context from multiple images is preserved [GH-90000]")
+        @DisplayName("context from multiple images is preserved")
         void contextFromMultipleImagesIsPreserved() { // GH-90000
             TestVisualResult img1 = engine.analyseImage(SAMPLE_IMAGE); // GH-90000
             TestVisualResult img2 = engine.analyseImage(new byte[] {30, 40, 50}); // GH-90000
@@ -352,11 +352,11 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("integration correctness [GH-90000]")
+    @DisplayName("integration correctness")
     class IntegrationCorrectness {
 
         @Test
-        @DisplayName("audio component integration is correct [GH-90000]")
+        @DisplayName("audio component integration is correct")
         void audioComponentIntegrationIsCorrect() { // GH-90000
             byte[] testAudio = {1, 2, 3};
             TestAudioResult result = engine.analyseAudio(testAudio); // GH-90000
@@ -368,7 +368,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("vision component integration is correct [GH-90000]")
+        @DisplayName("vision component integration is correct")
         void visionComponentIntegrationIsCorrect() { // GH-90000
             byte[] testImage = {10, 20};
             TestVisualResult result = engine.analyseImage(testImage); // GH-90000
@@ -380,7 +380,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("fused results combine both components correctly [GH-90000]")
+        @DisplayName("fused results combine both components correctly")
         void fusedResultsCombineComponentsCorrectly() { // GH-90000
             TestMultimodalResult result = engine.fuseAudioAndImage(SAMPLE_AUDIO, SAMPLE_IMAGE); // GH-90000
 
@@ -390,7 +390,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("temporal alignment correctly synchronizes modalities [GH-90000]")
+        @DisplayName("temporal alignment correctly synchronizes modalities")
         void temporalAlignmentSynchronizesModalities() { // GH-90000
             TestVideoAudioAlignment alignment = engine.alignVideoAndAudio( // GH-90000
                     SAMPLE_VIDEO, SAMPLE_AUDIO, 24
@@ -406,11 +406,11 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("error handling and robustness [GH-90000]")
+    @DisplayName("error handling and robustness")
     class ErrorHandlingAndRobustness {
 
         @Test
-        @DisplayName("multiple consecutive errors don't affect next success [GH-90000]")
+        @DisplayName("multiple consecutive errors don't affect next success")
         void multipleErrorsDontAffectNextSuccess() { // GH-90000
             // Trigger some errors
             assertThatThrownBy(() -> engine.analyseAudio(null)) // GH-90000
@@ -424,7 +424,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("large audio data is handled without failure [GH-90000]")
+        @DisplayName("large audio data is handled without failure")
         void largeAudioDataIsHandled() { // GH-90000
             byte[] largeAudio = new byte[1_000_000];
             for (int i = 0; i < largeAudio.length; i++) { // GH-90000
@@ -436,7 +436,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("rapid consecutive operations don't interfere [GH-90000]")
+        @DisplayName("rapid consecutive operations don't interfere")
         void rapidConsecutiveOperationsDontInterfere() { // GH-90000
             for (int i = 0; i < 10; i++) { // GH-90000
                 TestAudioResult audio = engine.analyseAudio(SAMPLE_AUDIO); // GH-90000
@@ -455,11 +455,11 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
     // ═══════════════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("performance [GH-90000]")
+    @DisplayName("performance")
     class Performance {
 
         @Test
-        @DisplayName("audio analysis completes in reasonable time [GH-90000]")
+        @DisplayName("audio analysis completes in reasonable time")
         void audioAnalysisCompletesInReasonableTime() { // GH-90000
             long start = System.currentTimeMillis(); // GH-90000
             engine.analyseAudio(SAMPLE_AUDIO); // GH-90000
@@ -469,7 +469,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("fusion analysis completes in reasonable time [GH-90000]")
+        @DisplayName("fusion analysis completes in reasonable time")
         void fusionAnalysisCompletesInReasonableTime() { // GH-90000
             long start = System.currentTimeMillis(); // GH-90000
             engine.fuseAudioAndImage(SAMPLE_AUDIO, SAMPLE_IMAGE); // GH-90000
@@ -479,7 +479,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("processing time is recorded in results [GH-90000]")
+        @DisplayName("processing time is recorded in results")
         void processingTimeIsRecorded() { // GH-90000
             TestMultimodalResult result = engine.fuseAudioAndImage(SAMPLE_AUDIO, SAMPLE_IMAGE); // GH-90000
 
@@ -498,7 +498,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
 
         public TestAudioResult analyseAudio(byte[] audioData) { // GH-90000
             if (audioData == null || audioData.length == 0) { // GH-90000
-                throw new IllegalArgumentException("Audio data must not be null or empty [GH-90000]");
+                throw new IllegalArgumentException("Audio data must not be null or empty");
             }
             return new TestAudioResult( // GH-90000
                     "Transcribed audio: " + audioData.length + " bytes",
@@ -509,7 +509,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
 
         public TestVisualResult analyseImage(byte[] imageData) { // GH-90000
             if (imageData == null || imageData.length == 0) { // GH-90000
-                throw new IllegalArgumentException("Image data must not be null or empty [GH-90000]");
+                throw new IllegalArgumentException("Image data must not be null or empty");
             }
             return new TestVisualResult( // GH-90000
                     "Scene with " + imageData.length + " byte images",
@@ -520,7 +520,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
 
         public TestVisualResult analyseVideo(byte[] videoData, int fps, int maxFrames) { // GH-90000
             if (videoData == null || videoData.length == 0) { // GH-90000
-                throw new IllegalArgumentException("Video data must not be null or empty [GH-90000]");
+                throw new IllegalArgumentException("Video data must not be null or empty");
             }
             return new TestVisualResult( // GH-90000
                     "Video scene at " + fps + "fps, max " + maxFrames + " frames",
@@ -531,7 +531,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
 
         public TestMultimodalResult fuseAudioAndImage(byte[] audio, byte[] image) { // GH-90000
             return new TestMultimodalResult( // GH-90000
-                    "Fused: audio(" + audio.length +  [GH-90000]") + image(" + image.length +  [GH-90000]")",
+                    "Fused: audio(" + audio.length + ") + image(" + image.length + ")",
                     System.currentTimeMillis() // GH-90000
             );
         }
@@ -548,7 +548,7 @@ class MultimodalEngineServiceTest extends EventloopTestBase {
 
         public TestVideoAudioAlignment alignVideoAndAudio(byte[] video, byte[] audio, int fps) { // GH-90000
             if (video == null || video.length == 0) { // GH-90000
-                throw new IllegalArgumentException("Video data must not be null or empty [GH-90000]");
+                throw new IllegalArgumentException("Video data must not be null or empty");
             }
             List<TestAlignment> alignments = List.of( // GH-90000
                     new TestAlignment("Hello", 0.92), // GH-90000

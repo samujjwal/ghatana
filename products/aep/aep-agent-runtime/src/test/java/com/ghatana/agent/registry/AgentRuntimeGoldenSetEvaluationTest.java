@@ -29,7 +29,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-@DisplayName("AEP Runtime Golden Set Evaluation [GH-90000]")
+@DisplayName("AEP Runtime Golden Set Evaluation")
 class AgentRuntimeGoldenSetEvaluationTest extends EventloopTestBase {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();

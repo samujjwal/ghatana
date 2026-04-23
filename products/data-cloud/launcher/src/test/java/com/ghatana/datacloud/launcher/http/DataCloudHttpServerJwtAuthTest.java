@@ -21,7 +21,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-@DisplayName("DataCloudHttpServer JWT authentication [GH-90000]")
+@DisplayName("DataCloudHttpServer JWT authentication")
 class DataCloudHttpServerJwtAuthTest {
 
     private static final String TEST_JWT_SECRET = "0123456789abcdef0123456789abcdef";
@@ -44,10 +44,10 @@ class DataCloudHttpServerJwtAuthTest {
     }
 
     @Test
-    @DisplayName("protected routes accept valid JWT bearer tokens [GH-90000]")
+    @DisplayName("protected routes accept valid JWT bearer tokens")
     void protectedRoutesAcceptValidJwtBearerTokens() throws Exception { // GH-90000
         JwtTokenProvider provider = JwtTokenProviders.fromSharedSecret(TEST_JWT_SECRET, 60000L); // GH-90000
-        String token = provider.createToken("ui-user", List.of("viewer [GH-90000]"), Map.of("tenant_id", "tenant-a"));
+        String token = provider.createToken("ui-user", List.of("viewer"), Map.of("tenant_id", "tenant-a"));
 
         server = new DataCloudHttpServer(mock(DataCloudClient.class), port) // GH-90000
                 .withJwtProvider(provider); // GH-90000
@@ -59,7 +59,7 @@ class DataCloudHttpServerJwtAuthTest {
     }
 
     @Test
-    @DisplayName("health endpoints stay public when JWT auth is enabled [GH-90000]")
+    @DisplayName("health endpoints stay public when JWT auth is enabled")
     void healthEndpointsStayPublicWhenJwtAuthEnabled() throws Exception { // GH-90000
         JwtTokenProvider provider = JwtTokenProviders.fromSharedSecret(TEST_JWT_SECRET, 60000L); // GH-90000
 
@@ -73,7 +73,7 @@ class DataCloudHttpServerJwtAuthTest {
     }
 
     @Test
-    @DisplayName("invalid JWT bearer tokens return 401 on protected routes [GH-90000]")
+    @DisplayName("invalid JWT bearer tokens return 401 on protected routes")
     void invalidJwtBearerTokensReturn401() throws Exception { // GH-90000
         JwtTokenProvider provider = JwtTokenProviders.fromSharedSecret(TEST_JWT_SECRET, 60000L); // GH-90000
 

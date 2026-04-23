@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
-@DisplayName("ResilientTypedAgent Resilience Coverage [GH-90000]")
+@DisplayName("ResilientTypedAgent Resilience Coverage")
 class ResilientTypedAgentResilienceTest extends EventloopTestBase {
 
     @Override

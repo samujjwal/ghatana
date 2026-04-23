@@ -30,7 +30,7 @@ import static org.mockito.Mockito.when;
 /**
  * Tests for {@link DataCloudEventCloudConnector}.
  */
-@DisplayName("DataCloudEventCloudConnector [GH-90000]")
+@DisplayName("DataCloudEventCloudConnector")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class DataCloudEventCloudConnectorTest extends EventloopTestBase {
 
@@ -54,7 +54,7 @@ class DataCloudEventCloudConnectorTest extends EventloopTestBase {
     void shouldPublishEventToEventLogStore() { // GH-90000
         // GIVEN
         when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) // GH-90000
-            .thenReturn(Promise.of(Offset.of("1 [GH-90000]")));
+            .thenReturn(Promise.of(Offset.of("1")));
 
         byte[] payload = "{\"order\":123}".getBytes(StandardCharsets.UTF_8); // GH-90000
 
@@ -66,11 +66,11 @@ class DataCloudEventCloudConnectorTest extends EventloopTestBase {
         verify(eventLogStore).append(tenantCaptor.capture(), entryCaptor.capture()); // GH-90000
 
         // Verify tenant
-        assertThat(tenantCaptor.getValue().tenantId()).isEqualTo("test-tenant [GH-90000]");
+        assertThat(tenantCaptor.getValue().tenantId()).isEqualTo("test-tenant");
 
         // Verify event entry
         EventEntry entry = entryCaptor.getValue(); // GH-90000
-        assertThat(entry.eventType()).isEqualTo("order.created [GH-90000]");
+        assertThat(entry.eventType()).isEqualTo("order.created");
         assertThat(entry.eventId()).isNotNull(); // GH-90000
     }
 
@@ -78,7 +78,7 @@ class DataCloudEventCloudConnectorTest extends EventloopTestBase {
     void shouldReturnEventIdOnPublish() { // GH-90000
         // GIVEN
         when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) // GH-90000
-            .thenReturn(Promise.of(Offset.of("42 [GH-90000]")));
+            .thenReturn(Promise.of(Offset.of("42")));
 
         // WHEN
         String eventId = runPromise(() -> // GH-90000
@@ -95,21 +95,21 @@ class DataCloudEventCloudConnectorTest extends EventloopTestBase {
         DataCloudEventCloudConnector customConnector =
             new DataCloudEventCloudConnector(eventLogStore, "custom-tenant"); // GH-90000
         when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) // GH-90000
-            .thenReturn(Promise.of(Offset.of("1 [GH-90000]")));
+            .thenReturn(Promise.of(Offset.of("1")));
 
         // WHEN
         runPromise(() -> customConnector.publish("topic", new byte[]{1})); // GH-90000
 
         // THEN
         verify(eventLogStore).append(tenantCaptor.capture(), any()); // GH-90000
-        assertThat(tenantCaptor.getValue().tenantId()).isEqualTo("custom-tenant [GH-90000]");
+        assertThat(tenantCaptor.getValue().tenantId()).isEqualTo("custom-tenant");
     }
 
     @Test
     void shouldPublishWithExplicitTenantId() { // GH-90000
         // GIVEN
         when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) // GH-90000
-            .thenReturn(Promise.of(Offset.of("1 [GH-90000]")));
+            .thenReturn(Promise.of(Offset.of("1")));
 
         // WHEN
         String eventId = runPromise(() -> // GH-90000
@@ -118,7 +118,7 @@ class DataCloudEventCloudConnectorTest extends EventloopTestBase {
         // THEN
         assertThat(eventId).isNotBlank(); // GH-90000
         verify(eventLogStore).append(tenantCaptor.capture(), any()); // GH-90000
-        assertThat(tenantCaptor.getValue().tenantId()).isEqualTo("explicit-tenant [GH-90000]");
+        assertThat(tenantCaptor.getValue().tenantId()).isEqualTo("explicit-tenant");
     }
 
     @Test
@@ -169,13 +169,13 @@ class DataCloudEventCloudConnectorTest extends EventloopTestBase {
     void shouldPropagatePublishFailure() { // GH-90000
         // GIVEN
         when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) // GH-90000
-            .thenReturn(Promise.ofException(new RuntimeException("Store unavailable [GH-90000]")));
+            .thenReturn(Promise.ofException(new RuntimeException("Store unavailable")));
 
         // WHEN/THEN
         try {
             runPromise(() -> connector.publish("topic", new byte[]{1})); // GH-90000
         } catch (Exception e) { // GH-90000
-            assertThat(e).hasMessageContaining("Store unavailable [GH-90000]");
+            assertThat(e).hasMessageContaining("Store unavailable");
         }
         clearFatalError(); // GH-90000
     }

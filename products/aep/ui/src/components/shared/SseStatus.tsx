@@ -14,14 +14,24 @@
  */
 import React, { useEffect, useState } from 'react';
 import { useAtomValue } from 'jotai';
+import { useLocation } from 'react-router';
 import { tenantIdAtom } from '@/stores/tenant.store';
 import { subscribeToAepStream } from '@/api/sse';
+import { isSseRelevantPath } from '@/lib/routes';
 
 type SseState = 'connecting' | 'connected' | 'disconnected';
 
 export function SseStatus() {
   const tenantId = useAtomValue(tenantIdAtom);
+  const { pathname } = useLocation();
   const [state, setState] = useState<SseState>('connecting');
+
+  // Only subscribe to SSE on pages that actually need real-time data
+  const isRelevant = isSseRelevantPath(pathname);
+
+  if (!isRelevant) {
+    return null;
+  }
 
   useEffect(() => {
     setState('connecting');
@@ -48,9 +58,9 @@ export function SseStatus() {
     state === 'connected' ? 'Live' : state === 'disconnected' ? 'Offline' : 'Connecting';
 
   return (
-    <div className="mx-3 mt-1 flex items-center gap-2 px-2 py-1 text-xs text-gray-400">
+    <div className="mx-3 mt-1 flex items-center gap-2 px-2 py-1 text-xs text-gray-500 dark:text-gray-300">
       <span className={['h-2 w-2 rounded-full flex-shrink-0', dot].join(' ')} />
-      <span>{label}</span>
+      <span className="font-medium">{label}</span>
     </div>
   );
 }

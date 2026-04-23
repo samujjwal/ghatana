@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.*;
 
-@DisplayName("FeatureService [GH-90000]")
+@DisplayName("FeatureService")
 class FeatureServiceTest {
 
     private FeatureService featureService;
@@ -24,27 +24,27 @@ class FeatureServiceTest {
     }
 
     @Test
-    @DisplayName("should return true for enabled features [GH-90000]")
+    @DisplayName("should return true for enabled features")
     void shouldReturnTrueForEnabledFeatures() { // GH-90000
         assertThat(featureService.isEnabled(Feature.AEP_ADVANCED_PATTERNS)).isTrue(); // GH-90000
         assertThat(featureService.isEnabled(Feature.YAPPC_SCAFFOLDING)).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("should return false for disabled features [GH-90000]")
+    @DisplayName("should return false for disabled features")
     void shouldReturnFalseForDisabledFeatures() { // GH-90000
         assertThat(featureService.isEnabled(Feature.AEP_MACHINE_LEARNING)).isFalse(); // GH-90000
         assertThat(featureService.isDisabled(Feature.AEP_MACHINE_LEARNING)).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("should return false for features not configured [GH-90000]")
+    @DisplayName("should return false for features not configured")
     void shouldReturnFalseForUnconfiguredFeatures() { // GH-90000
         assertThat(featureService.isEnabled(Feature.DATA_CLOUD_KNOWLEDGE_GRAPH)).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("should execute action when feature is enabled [GH-90000]")
+    @DisplayName("should execute action when feature is enabled")
     void shouldExecuteActionWhenFeatureEnabled() { // GH-90000
         AtomicBoolean executed = new AtomicBoolean(false); // GH-90000
 
@@ -54,7 +54,7 @@ class FeatureServiceTest {
     }
 
     @Test
-    @DisplayName("should not execute action when feature is disabled [GH-90000]")
+    @DisplayName("should not execute action when feature is disabled")
     void shouldNotExecuteActionWhenFeatureDisabled() { // GH-90000
         AtomicBoolean executed = new AtomicBoolean(false); // GH-90000
 
@@ -64,7 +64,7 @@ class FeatureServiceTest {
     }
 
     @Test
-    @DisplayName("should get value when feature is enabled [GH-90000]")
+    @DisplayName("should get value when feature is enabled")
     void shouldGetValueWhenFeatureEnabled() { // GH-90000
         String result = featureService.getIfEnabled( // GH-90000
                 Feature.AEP_ADVANCED_PATTERNS,
@@ -72,11 +72,11 @@ class FeatureServiceTest {
                 "disabled"
         );
 
-        assertThat(result).isEqualTo("enabled [GH-90000]");
+        assertThat(result).isEqualTo("enabled");
     }
 
     @Test
-    @DisplayName("should get default value when feature is disabled [GH-90000]")
+    @DisplayName("should get default value when feature is disabled")
     void shouldGetDefaultValueWhenFeatureDisabled() { // GH-90000
         String result = featureService.getIfEnabled( // GH-90000
                 Feature.AEP_MACHINE_LEARNING,
@@ -84,11 +84,11 @@ class FeatureServiceTest {
                 "disabled"
         );
 
-        assertThat(result).isEqualTo("disabled [GH-90000]");
+        assertThat(result).isEqualTo("disabled");
     }
 
     @Test
-    @DisplayName("should return all enabled features [GH-90000]")
+    @DisplayName("should return all enabled features")
     void shouldReturnAllEnabledFeatures() { // GH-90000
         Set<Feature> enabled = featureService.getEnabledFeatures(); // GH-90000
 
@@ -97,7 +97,7 @@ class FeatureServiceTest {
     }
 
     @Test
-    @DisplayName("should allow programmatic enable/disable [GH-90000]")
+    @DisplayName("should allow programmatic enable/disable")
     void shouldAllowProgrammaticEnableDisable() { // GH-90000
         assertThat(featureService.isEnabled(Feature.AEP_MACHINE_LEARNING)).isFalse(); // GH-90000
 
@@ -109,7 +109,7 @@ class FeatureServiceTest {
     }
 
     @Test
-    @DisplayName("should reset feature to default state [GH-90000]")
+    @DisplayName("should reset feature to default state")
     void shouldResetFeatureToDefaultState() { // GH-90000
         featureService.enable(Feature.AEP_MACHINE_LEARNING); // GH-90000
         assertThat(featureService.isEnabled(Feature.AEP_MACHINE_LEARNING)).isTrue(); // GH-90000
@@ -119,7 +119,7 @@ class FeatureServiceTest {
     }
 
     @Test
-    @DisplayName("withDefaults should create service with sensible defaults [GH-90000]")
+    @DisplayName("withDefaults should create service with sensible defaults")
     void withDefaultsShouldCreateServiceWithSensibleDefaults() { // GH-90000
         FeatureService defaultService = FeatureService.withDefaults(); // GH-90000
 

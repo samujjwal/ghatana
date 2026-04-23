@@ -66,17 +66,17 @@ class TscRunnerTest extends EventloopTestBase {
     @Test
     void testRunWithValidCode() throws IOException { // GH-90000
         if (!tscRunner.isAvailable()) { // GH-90000
-            logger.warn("Skipping testRunWithValidCode: TypeScript is not available [GH-90000]");
+            logger.warn("Skipping testRunWithValidCode: TypeScript is not available");
             return;
         }
 
         try {
             // Copy test project to temp directory
-            Path testProjectDir = tempDir.resolve("test-project [GH-90000]");
+            Path testProjectDir = tempDir.resolve("test-project");
             copyTestProject(testProjectDir); // GH-90000
 
             // Run the linter on the valid file
-            Path validFile = testProjectDir.resolve("src/valid.ts [GH-90000]");
+            Path validFile = testProjectDir.resolve("src/valid.ts");
             assertTrue(Files.exists(validFile), "Test file should exist: " + validFile); // GH-90000
 
             List<UnifiedDiagnostic> diagnostics = runPromise(() -> tscRunner.run(testProjectDir)); // GH-90000
@@ -98,17 +98,17 @@ class TscRunnerTest extends EventloopTestBase {
     @Test
     void testRunWithInvalidCode() throws IOException { // GH-90000
         if (!tscRunner.isAvailable()) { // GH-90000
-            logger.warn("Skipping testRunWithInvalidCode: TypeScript is not available [GH-90000]");
+            logger.warn("Skipping testRunWithInvalidCode: TypeScript is not available");
             return;
         }
 
         try {
             // Copy test project to temp directory
-            Path testProjectDir = tempDir.resolve("test-project [GH-90000]");
+            Path testProjectDir = tempDir.resolve("test-project");
             copyTestProject(testProjectDir); // GH-90000
 
             // Run the linter on the invalid file
-            Path invalidFile = testProjectDir.resolve("src/invalid.ts [GH-90000]");
+            Path invalidFile = testProjectDir.resolve("src/invalid.ts");
             assertTrue(Files.exists(invalidFile), "Test file should exist: " + invalidFile); // GH-90000
 
             List<UnifiedDiagnostic> diagnostics = runPromise(() -> tscRunner.run(testProjectDir)); // GH-90000
@@ -129,16 +129,16 @@ class TscRunnerTest extends EventloopTestBase {
                     errorMessages.stream() // GH-90000
                             .anyMatch( // GH-90000
                                     msg ->
-                                            msg.contains("is not assignable [GH-90000]")
-                                                    || msg.contains("Type ' [GH-90000]")
-                                                    || msg.contains("not assignable [GH-90000]"));
+                                            msg.contains("is not assignable")
+                                                    || msg.contains("Type '")
+                                                    || msg.contains("not assignable"));
 
             boolean hasUndefinedError =
                     errorMessages.stream() // GH-90000
                             .anyMatch( // GH-90000
                                     msg ->
-                                            msg.contains("Cannot find name [GH-90000]")
-                                                    || msg.contains("is not defined [GH-90000]"));
+                                            msg.contains("Cannot find name")
+                                                    || msg.contains("is not defined"));
 
             assertTrue(hasTypeError, "Expected type error not found in: " + errorMessages); // GH-90000
 
@@ -153,7 +153,7 @@ class TscRunnerTest extends EventloopTestBase {
 
     private void copyTestProject(Path targetDir) throws IOException { // GH-90000
         // Copy the test project from resources to the temp directory
-        Path sourceDir = Path.of("src/test/resources/ts-test-project [GH-90000]");
+        Path sourceDir = Path.of("src/test/resources/ts-test-project");
 
         // Verify source directory exists
         if (!Files.exists(sourceDir)) { // GH-90000

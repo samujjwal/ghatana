@@ -14,7 +14,8 @@ import java.util.Map;
  * @doc.type class
  * @doc.purpose Candidate for skill evaluation
  * @doc.layer agent-learning
- */
+  * @doc.pattern Component
+*/
 @Value
 @Builder
 public class UpdateCandidate {

@@ -26,7 +26,7 @@ import com.ghatana.yappc.agents.architecture.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("MultiCloudOrchestratorAgent [GH-90000]")
+@DisplayName("MultiCloudOrchestratorAgent")
 class MultiCloudOrchestratorAgentTest extends EventloopTestBase {
 
   private MemoryStore memoryStore;
@@ -41,11 +41,11 @@ class MultiCloudOrchestratorAgentTest extends EventloopTestBase {
   }
 
   @Nested
-  @DisplayName("Validation [GH-90000]")
+  @DisplayName("Validation")
   class Validation {
 
     @Test
-    @DisplayName("should accept valid multi-cloud request [GH-90000]")
+    @DisplayName("should accept valid multi-cloud request")
     void validRequest() { // GH-90000
       MultiCloudOrchestratorInput input = new MultiCloudOrchestratorInput( // GH-90000
           "cloud-1", "deployment", List.of("aws", "gcp"), // GH-90000
@@ -54,16 +54,16 @@ class MultiCloudOrchestratorAgentTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should reject unknown cloud provider [GH-90000]")
+    @DisplayName("should reject unknown cloud provider")
     void unknownProvider() { // GH-90000
       MultiCloudOrchestratorInput input = new MultiCloudOrchestratorInput( // GH-90000
-          "cloud-2", "deployment", List.of("ibm-cloud [GH-90000]"),
+          "cloud-2", "deployment", List.of("ibm-cloud"),
           Map.of(), Map.of()); // GH-90000
       assertThat(agent.validateInput(input).isValid()).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("should accept all known providers [GH-90000]")
+    @DisplayName("should accept all known providers")
     void allKnownProviders() { // GH-90000
       MultiCloudOrchestratorInput input = new MultiCloudOrchestratorInput( // GH-90000
           "cloud-3", "audit", List.of("aws", "azure", "gcp", "kubernetes"), // GH-90000
@@ -73,11 +73,11 @@ class MultiCloudOrchestratorAgentTest extends EventloopTestBase {
   }
 
   @Nested
-  @DisplayName("Multi-Cloud Planning [GH-90000]")
+  @DisplayName("Multi-Cloud Planning")
   class CloudPlanning {
 
     @Test
-    @DisplayName("should create provider-specific actions [GH-90000]")
+    @DisplayName("should create provider-specific actions")
     void providerSpecificActions() { // GH-90000
       OutputGenerator<StepRequest<MultiCloudOrchestratorInput>,
           StepResult<MultiCloudOrchestratorOutput>> generator =
@@ -97,12 +97,12 @@ class MultiCloudOrchestratorAgentTest extends EventloopTestBase {
           .isEqualTo(MultiCloudOrchestratorOutput.STATUS_PLANNED); // GH-90000
       assertThat(result.output().providerActions()) // GH-90000
           .hasSize(2) // GH-90000
-          .anyMatch(a -> a.contains("aws [GH-90000]"))
-          .anyMatch(a -> a.contains("gcp [GH-90000]"));
+          .anyMatch(a -> a.contains("aws"))
+          .anyMatch(a -> a.contains("gcp"));
     }
 
     @Test
-    @DisplayName("should track per-provider status [GH-90000]")
+    @DisplayName("should track per-provider status")
     void perProviderStatus() { // GH-90000
       OutputGenerator<StepRequest<MultiCloudOrchestratorInput>,
           StepResult<MultiCloudOrchestratorOutput>> generator =
@@ -119,18 +119,18 @@ class MultiCloudOrchestratorAgentTest extends EventloopTestBase {
 
       assertThat(result.output().providerStatus()) // GH-90000
           .containsKeys("aws", "azure", "gcp") // GH-90000
-          .allSatisfy((k, v) -> assertThat(v).isEqualTo("PLANNED [GH-90000]"));
+          .allSatisfy((k, v) -> assertThat(v).isEqualTo("PLANNED"));
     }
 
     @Test
-    @DisplayName("should estimate cost based on providers [GH-90000]")
+    @DisplayName("should estimate cost based on providers")
     void costEstimation() { // GH-90000
       OutputGenerator<StepRequest<MultiCloudOrchestratorInput>,
           StepResult<MultiCloudOrchestratorOutput>> generator =
           new MultiCloudOrchestratorAgent.MultiCloudOrchestratorGenerator(); // GH-90000
 
       MultiCloudOrchestratorInput input = new MultiCloudOrchestratorInput( // GH-90000
-          "cloud-3", "deployment", List.of("aws [GH-90000]"),
+          "cloud-3", "deployment", List.of("aws"),
           Map.of(), Map.of()); // GH-90000
 
       StepResult<MultiCloudOrchestratorOutput> result = runPromise(() -> // GH-90000
@@ -142,14 +142,14 @@ class MultiCloudOrchestratorAgentTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should cost more with multiple providers [GH-90000]")
+    @DisplayName("should cost more with multiple providers")
     void moreCostWithMoreProviders() { // GH-90000
       OutputGenerator<StepRequest<MultiCloudOrchestratorInput>,
           StepResult<MultiCloudOrchestratorOutput>> generator =
           new MultiCloudOrchestratorAgent.MultiCloudOrchestratorGenerator(); // GH-90000
 
       MultiCloudOrchestratorInput singleInput = new MultiCloudOrchestratorInput( // GH-90000
-          "cost-1", "deployment", List.of("aws [GH-90000]"), Map.of(), Map.of());
+          "cost-1", "deployment", List.of("aws"), Map.of(), Map.of());
 
       MultiCloudOrchestratorInput multiInput = new MultiCloudOrchestratorInput( // GH-90000
           "cost-2", "deployment", List.of("aws", "azure", "gcp"), Map.of(), Map.of()); // GH-90000
@@ -170,17 +170,17 @@ class MultiCloudOrchestratorAgentTest extends EventloopTestBase {
   }
 
   @Nested
-  @DisplayName("StepContract [GH-90000]")
+  @DisplayName("StepContract")
   class StepContractTests {
 
     @Test
-    @DisplayName("should have correct step name [GH-90000]")
+    @DisplayName("should have correct step name")
     void stepName() { // GH-90000
-      assertThat(agent.getStepName()).isEqualTo("orchestrator.multi-cloud [GH-90000]");
+      assertThat(agent.getStepName()).isEqualTo("orchestrator.multi-cloud");
     }
 
     @Test
-    @DisplayName("should advertise multi-cloud capabilities [GH-90000]")
+    @DisplayName("should advertise multi-cloud capabilities")
     void capabilities() { // GH-90000
       assertThat(agent.getStepContract().capabilities()) // GH-90000
           .contains("multi-cloud-orchestration", "cross-cloud-coordination"); // GH-90000

@@ -81,7 +81,10 @@ import java.util.stream.Collectors;
  * <p><b>Design Reference:</b>
  * Protobuf contracts defined in contracts/proto/pattern/v1/pattern.proto.
  * See .github/copilot-instructions.md "Contracts-first" for schema evolution patterns.
- */
+  * @doc.type enum
+ * @doc.purpose Provides pattern proto mapper functionality.
+ * @doc.layer product
+*/
 public class PatternProtoMapper {
 
     /**

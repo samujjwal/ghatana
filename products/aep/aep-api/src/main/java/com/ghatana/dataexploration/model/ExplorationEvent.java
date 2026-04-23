@@ -8,7 +8,11 @@ import java.util.Map;
  * This will be replaced with proper protobuf Event in production.
  *
  * Day 28 Implementation: Temporary event model for preprocessing demo.
- */
+  * @doc.type class
+ * @doc.purpose Provides exploration event functionality.
+ * @doc.layer product
+ * @doc.pattern Event
+*/
 public class ExplorationEvent {
     private final String id;
     private final String type;

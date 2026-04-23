@@ -21,7 +21,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-@DisplayName("DataCloudHttpServer capability registry [GH-90000]")
+@DisplayName("DataCloudHttpServer capability registry")
 class DataCloudHttpServerCapabilityTest {
 
     private static final String TEST_JWT_SECRET = "0123456789abcdef0123456789abcdef";
@@ -45,11 +45,11 @@ class DataCloudHttpServerCapabilityTest {
     }
 
     @Test
-    @DisplayName("capabilities endpoint reports configured and degraded features [GH-90000]")
-    @SuppressWarnings("unchecked [GH-90000]")
+    @DisplayName("capabilities endpoint reports configured and degraded features")
+    @SuppressWarnings("unchecked")
     void capabilitiesEndpointReportsConfiguredAndDegradedFeatures() throws Exception { // GH-90000
         JwtTokenProvider provider = JwtTokenProviders.fromSharedSecret(TEST_JWT_SECRET, 60000L); // GH-90000
-        String token = provider.createToken("ui-user", List.of("viewer [GH-90000]"), Map.of("tenant_id", "tenant-a"));
+        String token = provider.createToken("ui-user", List.of("viewer"), Map.of("tenant_id", "tenant-a"));
 
         server = new DataCloudHttpServer(mock(DataCloudClient.class), port) // GH-90000
             .withJwtProvider(provider) // GH-90000
@@ -60,11 +60,11 @@ class DataCloudHttpServerCapabilityTest {
 
         assertThat(response.statusCode()).isEqualTo(200); // GH-90000
         Map<String, Object> body = mapper.readValue(response.body(), Map.class); // GH-90000
-        Map<String, Object> data = (Map<String, Object>) body.get("data [GH-90000]");
-        Map<String, Object> capabilities = (Map<String, Object>) data.get("capabilities [GH-90000]");
-        Map<String, Object> jwtCapability = (Map<String, Object>) capabilities.get("authentication.jwt [GH-90000]");
-        Map<String, Object> databaseCapability = (Map<String, Object>) capabilities.get("health.database [GH-90000]");
-        Map<String, Object> searchCapability = (Map<String, Object>) capabilities.get("search.openSearch [GH-90000]");
+        Map<String, Object> data = (Map<String, Object>) body.get("data");
+        Map<String, Object> capabilities = (Map<String, Object>) data.get("capabilities");
+        Map<String, Object> jwtCapability = (Map<String, Object>) capabilities.get("authentication.jwt");
+        Map<String, Object> databaseCapability = (Map<String, Object>) capabilities.get("health.database");
+        Map<String, Object> searchCapability = (Map<String, Object>) capabilities.get("search.openSearch");
 
         assertThat(jwtCapability).containsEntry("status", "ACTIVE"); // GH-90000
         assertThat(databaseCapability).containsEntry("status", "DEGRADED"); // GH-90000

@@ -36,10 +36,10 @@ class DebugControllerWithFixSuggesterTest {
         fixSuggester.registerSuggestion( // GH-90000
                 "TestError: (.+?)", // GH-90000
                 FixSuggestion.builder() // GH-90000
-                        .id("test.fix [GH-90000]")
-                        .description("Test fix for demonstration [GH-90000]")
-                        .fixPattern("// Fix for ${1} [GH-90000]")
-                        .language("test [GH-90000]")
+                        .id("test.fix")
+                        .description("Test fix for demonstration")
+                        .fixPattern("// Fix for ${1}")
+                        .language("test")
                         .confidence(0.9) // GH-90000
                         .build()); // GH-90000
         this.debugController =
@@ -52,7 +52,7 @@ class DebugControllerWithFixSuggesterTest {
         String errorMessage = "TestError: Something went wrong";
         ErrorPatternManager.MatchedPattern testMatch =
                 matchedPattern("test_error", errorMessage, "Test fix"); // GH-90000
-        when(errorPatternManager.findMatches(anyString(), eq("node [GH-90000]")))
+        when(errorPatternManager.findMatches(anyString(), eq("node")))
                 .thenReturn(List.of(testMatch)); // GH-90000
 
         DebugController.ParseResult result = debugController.parse(errorMessage); // GH-90000
@@ -69,10 +69,10 @@ class DebugControllerWithFixSuggesterTest {
         fixSuggester.registerSuggestion( // GH-90000
                 "java\\.lang\\.NullPointerException.*",
                 FixSuggestion.builder() // GH-90000
-                        .id("java.specific.fix [GH-90000]")
-                        .description("Java-specific fix [GH-90000]")
-                        .fixPattern("// Java null-safety fix [GH-90000]")
-                        .language("java [GH-90000]")
+                        .id("java.specific.fix")
+                        .description("Java-specific fix")
+                        .fixPattern("// Java null-safety fix")
+                        .language("java")
                         .confidence(0.9) // GH-90000
                         .build()); // GH-90000
 
@@ -82,7 +82,7 @@ class DebugControllerWithFixSuggesterTest {
                         + "    at com.example.Test.main(Test.java:10)"; // GH-90000
         ErrorPatternManager.MatchedPattern javaMatch =
                 matchedPattern("java_npe", javaError, "Add null checks"); // GH-90000
-        when(errorPatternManager.findMatches(anyString(), eq("java [GH-90000]")))
+        when(errorPatternManager.findMatches(anyString(), eq("java")))
                 .thenReturn(List.of(javaMatch)); // GH-90000
 
         DebugController.ParseResult result = debugController.parse(javaError); // GH-90000
@@ -109,10 +109,10 @@ class DebugControllerWithFixSuggesterTest {
         fixSuggester.registerSuggestion( // GH-90000
                 "SecondaryError: (.+?)", // GH-90000
                 FixSuggestion.builder() // GH-90000
-                        .id("secondary.fix [GH-90000]")
-                        .description("Secondary fix [GH-90000]")
-                        .fixPattern("// Secondary fix for ${1} [GH-90000]")
-                        .language("test [GH-90000]")
+                        .id("secondary.fix")
+                        .description("Secondary fix")
+                        .fixPattern("// Secondary fix for ${1}")
+                        .language("test")
                         .confidence(0.8) // GH-90000
                         .build()); // GH-90000
 
@@ -121,7 +121,7 @@ class DebugControllerWithFixSuggesterTest {
                 matchedPattern("primary_error", "PrimaryError: first", "Primary"); // GH-90000
         ErrorPatternManager.MatchedPattern secondaryMatch =
                 matchedPattern("secondary_error", "SecondaryError: second", "Secondary"); // GH-90000
-        when(errorPatternManager.findMatches(anyString(), eq("node [GH-90000]")))
+        when(errorPatternManager.findMatches(anyString(), eq("node")))
                 .thenReturn(List.of(primaryMatch, secondaryMatch)); // GH-90000
 
         DebugController.ParseResult result = debugController.parse(combinedError); // GH-90000
@@ -138,19 +138,19 @@ class DebugControllerWithFixSuggesterTest {
         fixSuggester.registerSuggestion( // GH-90000
                 "DuplicateError: (.+?)", // GH-90000
                 FixSuggestion.builder() // GH-90000
-                        .id("duplicate.fix [GH-90000]")
-                        .description("Lower-confidence duplicate fix [GH-90000]")
-                        .fixPattern("// duplicate fix [GH-90000]")
-                        .language("test [GH-90000]")
+                        .id("duplicate.fix")
+                        .description("Lower-confidence duplicate fix")
+                        .fixPattern("// duplicate fix")
+                        .language("test")
                         .confidence(0.4) // GH-90000
                         .build()); // GH-90000
         fixSuggester.registerSuggestion( // GH-90000
                 "DuplicateSecondaryError: (.+?)", // GH-90000
                 FixSuggestion.builder() // GH-90000
-                        .id("duplicate.fix [GH-90000]")
-                        .description("Higher-confidence duplicate fix [GH-90000]")
-                        .fixPattern("// duplicate fix improved [GH-90000]")
-                        .language("test [GH-90000]")
+                        .id("duplicate.fix")
+                        .description("Higher-confidence duplicate fix")
+                        .fixPattern("// duplicate fix improved")
+                        .language("test")
                         .confidence(0.95) // GH-90000
                         .build()); // GH-90000
 
@@ -162,7 +162,7 @@ class DebugControllerWithFixSuggesterTest {
                         "duplicate_secondary_error",
                         "DuplicateSecondaryError: second",
                         "Duplicate secondary");
-        when(errorPatternManager.findMatches(anyString(), eq("node [GH-90000]")))
+        when(errorPatternManager.findMatches(anyString(), eq("node")))
                 .thenReturn(List.of(duplicateMatch, duplicateSecondaryMatch)); // GH-90000
 
         DebugController.ParseResult result = debugController.parse(combinedError); // GH-90000
@@ -191,11 +191,11 @@ class DebugControllerWithFixSuggesterTest {
     private static class TestStackTraceParser implements StackTraceParser {
         @Override
         public List<TraceFrame> parse(String content) { // GH-90000
-            if (content.contains("NullPointerException [GH-90000]")) {
+            if (content.contains("NullPointerException")) {
                 return List.of( // GH-90000
                         new TraceFrame("Test.java", 10, "main", "NullPointerException in main")); // GH-90000
             }
-            if (content.contains("Error: [GH-90000]")) {
+            if (content.contains("Error:")) {
                 return List.of( // GH-90000
                         new TraceFrame("test.js", 10, "testMethod", "Test error in test.js")); // GH-90000
             }

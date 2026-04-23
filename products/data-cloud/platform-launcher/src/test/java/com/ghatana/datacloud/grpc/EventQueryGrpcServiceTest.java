@@ -29,7 +29,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer test
  * @doc.pattern Test
  */
-@DisplayName("EventQueryGrpcService Tests [GH-90000]")
+@DisplayName("EventQueryGrpcService Tests")
 class EventQueryGrpcServiceTest {
 
     private EventLogStore eventLogStore;
@@ -42,14 +42,14 @@ class EventQueryGrpcServiceTest {
     }
 
     @Nested
-    @DisplayName("ExecuteQuery - Type Filter [GH-90000]")
+    @DisplayName("ExecuteQuery - Type Filter")
     class ExecuteQueryTypeFilter {
 
         @Test
-        @DisplayName("should execute query with type filter [GH-90000]")
+        @DisplayName("should execute query with type filter")
         void shouldExecuteTypeFilterQuery() { // GH-90000
             ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() // GH-90000
-                    .setQuery("type:user.created [GH-90000]")
+                    .setQuery("type:user.created")
                     .setLimit(100) // GH-90000
                     .build(); // GH-90000
 
@@ -59,8 +59,8 @@ class EventQueryGrpcServiceTest {
             );
 
             when(eventLogStore.readByType( // GH-90000
-                    argThat(ctx -> ctx.tenantId().equals("default-tenant [GH-90000]")),
-                    eq("user.created [GH-90000]"),
+                    argThat(ctx -> ctx.tenantId().equals("default-tenant")),
+                    eq("user.created"),
                     any(), // GH-90000
                     eq(100))) // GH-90000
                     .thenReturn(io.activej.promise.Promise.of(entries)); // GH-90000
@@ -76,16 +76,16 @@ class EventQueryGrpcServiceTest {
         }
 
         @Test
-        @DisplayName("should handle empty type filter results [GH-90000]")
+        @DisplayName("should handle empty type filter results")
         void shouldHandleEmptyTypeFilterResults() { // GH-90000
             ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() // GH-90000
-                    .setQuery("type:nonexistent.event [GH-90000]")
+                    .setQuery("type:nonexistent.event")
                     .setLimit(100) // GH-90000
                     .build(); // GH-90000
 
             when(eventLogStore.readByType( // GH-90000
                     any(TenantContext.class), // GH-90000
-                    eq("nonexistent.event [GH-90000]"),
+                    eq("nonexistent.event"),
                     any(), // GH-90000
                     anyInt())) // GH-90000
                     .thenReturn(io.activej.promise.Promise.of(List.of())); // GH-90000
@@ -99,10 +99,10 @@ class EventQueryGrpcServiceTest {
         }
 
         @Test
-        @DisplayName("should trim whitespace from type filter [GH-90000]")
+        @DisplayName("should trim whitespace from type filter")
         void shouldTrimWhitespaceFromType() { // GH-90000
             ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() // GH-90000
-                    .setQuery("type:  user.created   [GH-90000]")
+                    .setQuery("type:  user.created  ")
                     .setLimit(100) // GH-90000
                     .build(); // GH-90000
 
@@ -112,7 +112,7 @@ class EventQueryGrpcServiceTest {
 
             when(eventLogStore.readByType( // GH-90000
                     any(TenantContext.class), // GH-90000
-                    eq("user.created [GH-90000]"),
+                    eq("user.created"),
                     any(), // GH-90000
                     anyInt())) // GH-90000
                     .thenReturn(io.activej.promise.Promise.of(entries)); // GH-90000
@@ -127,14 +127,14 @@ class EventQueryGrpcServiceTest {
     }
 
     @Nested
-    @DisplayName("ExecuteQuery - Scan Query [GH-90000]")
+    @DisplayName("ExecuteQuery - Scan Query")
     class ExecuteQueryScan {
 
         @Test
-        @DisplayName("should execute scan query without type filter [GH-90000]")
+        @DisplayName("should execute scan query without type filter")
         void shouldExecuteScanQuery() { // GH-90000
             ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() // GH-90000
-                    .setQuery("SELECT * FROM events LIMIT 50 [GH-90000]")
+                    .setQuery("SELECT * FROM events LIMIT 50")
                     .setLimit(50) // GH-90000
                     .build(); // GH-90000
 
@@ -158,10 +158,10 @@ class EventQueryGrpcServiceTest {
         }
 
         @Test
-        @DisplayName("should respect default limit [GH-90000]")
+        @DisplayName("should respect default limit")
         void shouldRespectDefaultLimit() { // GH-90000
             ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() // GH-90000
-                    .setQuery("SELECT * FROM events [GH-90000]")
+                    .setQuery("SELECT * FROM events")
                     // No limit specified = should use default 100
                     .build(); // GH-90000
 
@@ -186,14 +186,14 @@ class EventQueryGrpcServiceTest {
     }
 
     @Nested
-    @DisplayName("ExecuteQuery - Limit Handling [GH-90000]")
+    @DisplayName("ExecuteQuery - Limit Handling")
     class ExecuteQueryLimits {
 
         @Test
-        @DisplayName("should enforce maximum query limit [GH-90000]")
+        @DisplayName("should enforce maximum query limit")
         void shouldEnforceMaxLimit() { // GH-90000
             ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() // GH-90000
-                    .setQuery("SELECT * FROM events [GH-90000]")
+                    .setQuery("SELECT * FROM events")
                     .setLimit(20000) // Exceeds max of 10,000 // GH-90000
                     .build(); // GH-90000
 
@@ -217,10 +217,10 @@ class EventQueryGrpcServiceTest {
         }
 
         @Test
-        @DisplayName("should handle zero limit [GH-90000]")
+        @DisplayName("should handle zero limit")
         void shouldHandleZeroLimit() { // GH-90000
             ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() // GH-90000
-                    .setQuery("SELECT * FROM events [GH-90000]")
+                    .setQuery("SELECT * FROM events")
                     .setLimit(0) // GH-90000
                     .build(); // GH-90000
 
@@ -240,20 +240,20 @@ class EventQueryGrpcServiceTest {
     }
 
     @Nested
-    @DisplayName("ExecuteQuery - Tenant Resolution [GH-90000]")
+    @DisplayName("ExecuteQuery - Tenant Resolution")
     class ExecuteQueryTenantResolution {
 
         @Test
-        @DisplayName("should use tenant from envelope [GH-90000]")
+        @DisplayName("should use tenant from envelope")
         void shouldUseTenantFromEnvelope() { // GH-90000
             // Create envelope with tenant ID
             Envelope envelope = Envelope.newBuilder() // GH-90000
-                    .setTenantId("tenant-specific-123 [GH-90000]")
+                    .setTenantId("tenant-specific-123")
                     .build(); // GH-90000
 
             ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() // GH-90000
                     .setEnvelope(envelope) // GH-90000
-                    .setQuery("type:user.created [GH-90000]")
+                    .setQuery("type:user.created")
                     .setLimit(100) // GH-90000
                     .build(); // GH-90000
 
@@ -262,8 +262,8 @@ class EventQueryGrpcServiceTest {
             );
 
             when(eventLogStore.readByType( // GH-90000
-                    argThat(ctx -> ctx.tenantId().equals("tenant-specific-123 [GH-90000]")),
-                    eq("user.created [GH-90000]"),
+                    argThat(ctx -> ctx.tenantId().equals("tenant-specific-123")),
+                    eq("user.created"),
                     any(), // GH-90000
                     anyInt())) // GH-90000
                     .thenReturn(io.activej.promise.Promise.of(entries)); // GH-90000
@@ -277,10 +277,10 @@ class EventQueryGrpcServiceTest {
         }
 
         @Test
-        @DisplayName("should use default tenant when envelope missing [GH-90000]")
+        @DisplayName("should use default tenant when envelope missing")
         void shouldUseDefaultTenant() { // GH-90000
             ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() // GH-90000
-                    .setQuery("type:user.created [GH-90000]")
+                    .setQuery("type:user.created")
                     .setLimit(100) // GH-90000
                     .build(); // GH-90000
 
@@ -289,8 +289,8 @@ class EventQueryGrpcServiceTest {
             );
 
             when(eventLogStore.readByType( // GH-90000
-                    argThat(ctx -> ctx.tenantId().equals("default-tenant [GH-90000]")),
-                    eq("user.created [GH-90000]"),
+                    argThat(ctx -> ctx.tenantId().equals("default-tenant")),
+                    eq("user.created"),
                     any(), // GH-90000
                     anyInt())) // GH-90000
                     .thenReturn(io.activej.promise.Promise.of(entries)); // GH-90000
@@ -305,14 +305,14 @@ class EventQueryGrpcServiceTest {
     }
 
     @Nested
-    @DisplayName("ExecuteQuery - Error Handling [GH-90000]")
+    @DisplayName("ExecuteQuery - Error Handling")
     class ExecuteQueryErrors {
 
         @Test
-        @DisplayName("should handle event log store errors [GH-90000]")
+        @DisplayName("should handle event log store errors")
         void shouldHandleEventStoreError() { // GH-90000
             ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() // GH-90000
-                    .setQuery("type:user.created [GH-90000]")
+                    .setQuery("type:user.created")
                     .setLimit(100) // GH-90000
                     .build(); // GH-90000
 
@@ -322,7 +322,7 @@ class EventQueryGrpcServiceTest {
                     any(), // GH-90000
                     anyInt())) // GH-90000
                     .thenReturn(io.activej.promise.Promise.ofException( // GH-90000
-                            new RuntimeException("Event store failed [GH-90000]")));
+                            new RuntimeException("Event store failed")));
 
             CapturingObserver<ExecuteQueryResponseProto> observer = new CapturingObserver<>(); // GH-90000
             service.executeQuery(request, observer); // GH-90000
@@ -334,7 +334,7 @@ class EventQueryGrpcServiceTest {
         }
 
         @Test
-        @DisplayName("should handle null request gracefully [GH-90000]")
+        @DisplayName("should handle null request gracefully")
         void shouldHandleNullRequest() { // GH-90000
             CapturingObserver<ExecuteQueryResponseProto> observer = new CapturingObserver<>(); // GH-90000
 
@@ -344,14 +344,14 @@ class EventQueryGrpcServiceTest {
     }
 
     @Nested
-    @DisplayName("ExplainQuery [GH-90000]")
+    @DisplayName("ExplainQuery")
     class ExplainQueryBehavior {
 
         @Test
-        @DisplayName("should return query explanation [GH-90000]")
+        @DisplayName("should return query explanation")
         void shouldExplainQuery() { // GH-90000
             ExplainQueryRequestProto request = ExplainQueryRequestProto.newBuilder() // GH-90000
-                    .setQuery("type:user.created [GH-90000]")
+                    .setQuery("type:user.created")
                     .build(); // GH-90000
 
             CapturingObserver<ExplainQueryResponseProto> observer = new CapturingObserver<>(); // GH-90000
@@ -363,10 +363,10 @@ class EventQueryGrpcServiceTest {
         }
 
         @Test
-        @DisplayName("should include query plan in explanation [GH-90000]")
+        @DisplayName("should include query plan in explanation")
         void shouldIncludeQueryPlan() { // GH-90000
             ExplainQueryRequestProto request = ExplainQueryRequestProto.newBuilder() // GH-90000
-                    .setQuery("SELECT * FROM events WHERE type='user.created' [GH-90000]")
+                    .setQuery("SELECT * FROM events WHERE type='user.created'")
                     .build(); // GH-90000
 
             CapturingObserver<ExplainQueryResponseProto> observer = new CapturingObserver<>(); // GH-90000
@@ -379,10 +379,10 @@ class EventQueryGrpcServiceTest {
         }
 
         @Test
-        @DisplayName("should honor tenant context in explain [GH-90000]")
+        @DisplayName("should honor tenant context in explain")
         void shouldHonorTenantInExplain() { // GH-90000
             ExplainQueryRequestProto request = ExplainQueryRequestProto.newBuilder() // GH-90000
-                    .setQuery("type:user.created [GH-90000]")
+                    .setQuery("type:user.created")
                     .build(); // GH-90000
 
             CapturingObserver<ExplainQueryResponseProto> observer = new CapturingObserver<>(); // GH-90000
@@ -395,14 +395,14 @@ class EventQueryGrpcServiceTest {
     }
 
     @Nested
-    @DisplayName("Performance and Edge Cases [GH-90000]")
+    @DisplayName("Performance and Edge Cases")
     class PerformanceEdgeCases {
 
         @Test
-        @DisplayName("should handle large result streams [GH-90000]")
+        @DisplayName("should handle large result streams")
         void shouldHandleLargeResultStreams() { // GH-90000
             ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() // GH-90000
-                    .setQuery("type:event.stream [GH-90000]")
+                    .setQuery("type:event.stream")
                     .setLimit(1000) // GH-90000
                     .build(); // GH-90000
 
@@ -413,7 +413,7 @@ class EventQueryGrpcServiceTest {
 
             when(eventLogStore.readByType( // GH-90000
                     any(TenantContext.class), // GH-90000
-                    eq("event.stream [GH-90000]"),
+                    eq("event.stream"),
                     any(), // GH-90000
                     eq(1000))) // GH-90000
                     .thenReturn(io.activej.promise.Promise.of(entries)); // GH-90000
@@ -428,10 +428,10 @@ class EventQueryGrpcServiceTest {
         }
 
         @Test
-        @DisplayName("should handle special characters in query [GH-90000]")
+        @DisplayName("should handle special characters in query")
         void shouldHandleSpecialCharsInQuery() { // GH-90000
             ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() // GH-90000
-                    .setQuery("type:event.with_special-chars.v2 [GH-90000]")
+                    .setQuery("type:event.with_special-chars.v2")
                     .setLimit(100) // GH-90000
                     .build(); // GH-90000
 
@@ -441,7 +441,7 @@ class EventQueryGrpcServiceTest {
 
             when(eventLogStore.readByType( // GH-90000
                     any(TenantContext.class), // GH-90000
-                    eq("event.with_special-chars.v2 [GH-90000]"),
+                    eq("event.with_special-chars.v2"),
                     any(), // GH-90000
                     anyInt())) // GH-90000
                     .thenReturn(io.activej.promise.Promise.of(entries)); // GH-90000
@@ -463,7 +463,7 @@ class EventQueryGrpcServiceTest {
                 .eventType(eventType) // GH-90000
                 .eventVersion(version) // GH-90000
                 .timestamp(Instant.now()) // GH-90000
-                .contentType("application/json [GH-90000]")
+                .contentType("application/json")
                 .payload("{\"test\": \"data\"}".getBytes(StandardCharsets.UTF_8)) // GH-90000
                 .build(); // GH-90000
     }

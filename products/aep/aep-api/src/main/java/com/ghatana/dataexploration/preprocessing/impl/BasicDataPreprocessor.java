@@ -26,7 +26,11 @@ import java.util.stream.Collectors;
  * Basic implementation of DataPreprocessor for pattern exploration.
  *
  * Day 28 Implementation: In-memory preprocessing with temporal feature extraction and correlation analysis.
- */
+  * @doc.type class
+ * @doc.purpose Provides basic data preprocessor functionality.
+ * @doc.layer product
+ * @doc.pattern Processor
+*/
 public class BasicDataPreprocessor implements DataPreprocessor {
 
     @Override

@@ -8,7 +8,11 @@ import java.util.List;
  * Interface for loading pipeline specifications from various formats.
  *
  * Day 24 Implementation: Specification format loading support
- */
+  * @doc.type interface
+ * @doc.purpose Provides spec format loader functionality.
+ * @doc.layer product
+ * @doc.pattern Interface
+*/
 public interface SpecFormatLoader {
 
     /**

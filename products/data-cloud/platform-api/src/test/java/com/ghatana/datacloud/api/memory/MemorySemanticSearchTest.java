@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("Memory Semantic Search Tests [GH-90000]")
+@DisplayName("Memory Semantic Search Tests")
 class MemorySemanticSearchTest extends EventloopTestBase {
 
     // ── Embedding model (test stub) ─────────────────────────────────────────── // GH-90000
@@ -55,7 +55,7 @@ class MemorySemanticSearchTest extends EventloopTestBase {
     // ── Semantic search ranking ───────────────────────────────────────────────
 
     @Test
-    @DisplayName("search returns results ordered by decreasing similarity [GH-90000]")
+    @DisplayName("search returns results ordered by decreasing similarity")
     void searchReturnsResultsOrderedBySimilarity() { // GH-90000
         double[] query = {1.0, 0.0, 0.0}; // matches m1, m2 closely
         List<SearchResult> results = search.query("tenant-A", query, 10); // GH-90000
@@ -67,18 +67,18 @@ class MemorySemanticSearchTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("top match is the item with highest cosine similarity to the query [GH-90000]")
+    @DisplayName("top match is the item with highest cosine similarity to the query")
     void topMatchHasHighestCosineSimilarity() { // GH-90000
         double[] query = {1.0, 0.0, 0.0}; // unit vector along first dimension
         List<SearchResult> results = search.query("tenant-A", query, 5); // GH-90000
 
         assertThat(results).isNotEmpty(); // GH-90000
-        assertThat(results.get(0).item().id()).isEqualTo("m1 [GH-90000]"); // exact match
+        assertThat(results.get(0).item().id()).isEqualTo("m1"); // exact match
         assertThat(results.get(0).similarity()).isCloseTo(1.0, org.assertj.core.data.Offset.offset(0.001)); // GH-90000
     }
 
     @Test
-    @DisplayName("item with zero cosine similarity is ranked last [GH-90000]")
+    @DisplayName("item with zero cosine similarity is ranked last")
     void zeroSimilarityItemRankedLast() { // GH-90000
         double[] query = {0.0, 0.0, 1.0}; // perpendicular to m1 (java) and m3 (db) // GH-90000
         List<SearchResult> results = search.query("tenant-A", query, 5); // GH-90000
@@ -90,7 +90,7 @@ class MemorySemanticSearchTest extends EventloopTestBase {
     // ── Tenant isolation ──────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("search is scoped to the requesting tenant [GH-90000]")
+    @DisplayName("search is scoped to the requesting tenant")
     void searchIsScopedToTenant() { // GH-90000
         double[] query = {1.0, 0.0, 0.0};
         List<SearchResult> tenantAResults = search.query("tenant-A", query, 10); // GH-90000
@@ -102,14 +102,14 @@ class MemorySemanticSearchTest extends EventloopTestBase {
                 .map(r -> r.item().id()).collect(Collectors.toSet()); // GH-90000
 
         // m5 belongs to tenant-B only
-        assertThat(tenantBIds).contains("m5 [GH-90000]");
-        assertThat(tenantAIds).doesNotContain("m5 [GH-90000]");
+        assertThat(tenantBIds).contains("m5");
+        assertThat(tenantAIds).doesNotContain("m5");
     }
 
     // ── Pagination ────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("top-k limits the result set to k items [GH-90000]")
+    @DisplayName("top-k limits the result set to k items")
     void topKLimitsResultSet() { // GH-90000
         double[] query = {1.0, 0.0, 0.0};
         List<SearchResult> results = search.query("tenant-A", query, 2); // GH-90000
@@ -118,7 +118,7 @@ class MemorySemanticSearchTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("top-k larger than index size returns all available items [GH-90000]")
+    @DisplayName("top-k larger than index size returns all available items")
     void topKLargerThanIndexReturnsAllItems() { // GH-90000
         double[] query = {1.0, 0.0, 0.0};
         List<SearchResult> results = search.query("tenant-A", query, 100); // GH-90000
@@ -129,16 +129,16 @@ class MemorySemanticSearchTest extends EventloopTestBase {
     // ── Filters ───────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("content filter excludes items not matching the keyword [GH-90000]")
+    @DisplayName("content filter excludes items not matching the keyword")
     void contentFilterExcludesNonMatchingItems() { // GH-90000
         double[] query = {1.0, 0.0, 0.0};
         List<SearchResult> results = search.queryWithContentFilter("tenant-A", query, 10, "java"); // GH-90000
 
-        assertThat(results).allMatch(r -> r.item().content().contains("java [GH-90000]"));
+        assertThat(results).allMatch(r -> r.item().content().contains("java"));
     }
 
     @Test
-    @DisplayName("content filter returning no matches produces an empty result list [GH-90000]")
+    @DisplayName("content filter returning no matches produces an empty result list")
     void contentFilterWithNoMatchesProducesEmptyList() { // GH-90000
         double[] query = {1.0, 0.0, 0.0};
         List<SearchResult> results = search.queryWithContentFilter("tenant-A", query, 10, "kubernetes"); // GH-90000

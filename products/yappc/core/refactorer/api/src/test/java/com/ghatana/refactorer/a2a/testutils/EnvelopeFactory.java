@@ -96,7 +96,7 @@ public final class EnvelopeFactory {
         private String correlationId = "corr-123";
         private String operation = "run";
         private String repoRoot = "/tmp/test-repo";
-        private List<String> languages = List.of("java [GH-90000]");
+        private List<String> languages = List.of("java");
         private boolean formatters = true;
 
         public TaskRequestBuilder id(String id) { // GH-90000

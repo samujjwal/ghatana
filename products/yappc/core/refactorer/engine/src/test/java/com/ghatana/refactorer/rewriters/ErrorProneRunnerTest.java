@@ -38,21 +38,21 @@ class ErrorProneRunnerTest {
     @BeforeEach
     void setUp() { // GH-90000
         runner = new ErrorProneRunner(); // GH-90000
-        javacPath = System.getProperty("java.home [GH-90000]") + "/bin/javac";
+        javacPath = System.getProperty("java.home") + "/bin/javac";
     }
 
     @Test
     void testRunWithNoSources() { // GH-90000
         ErrorProneRunner.Options opts =
                 ErrorProneRunner.Options.builder().javacCmd(javacPath).build(); // GH-90000
-        List<UnifiedDiagnostic> diagnostics = runner.run(Path.of(". [GH-90000]"), opts, List.of(), 5000);
+        List<UnifiedDiagnostic> diagnostics = runner.run(Path.of("."), opts, List.of(), 5000);
         assertTrue(diagnostics.isEmpty(), "Expected no diagnostics for empty sources"); // GH-90000
     }
 
     @Test
     void testRunWithDefaultOptions() throws IOException { // GH-90000
         // Create a simple Java file
-        Path tempDir = Files.createTempDirectory("errorprone-test [GH-90000]");
+        Path tempDir = Files.createTempDirectory("errorprone-test");
         Path srcFile = tempDir.resolve(TEST_JAVA); // GH-90000
         Files.writeString( // GH-90000
                 srcFile,
@@ -71,7 +71,7 @@ class ErrorProneRunnerTest {
     @Test
     void testRunWithValidJavaFile(@TempDir Path tempDir) throws Exception { // GH-90000
         // Create a simple Java file
-        Path srcDir = tempDir.resolve("src/main/java [GH-90000]");
+        Path srcDir = tempDir.resolve("src/main/java");
         Files.createDirectories(srcDir); // GH-90000
         Path javaFile = srcDir.resolve(TEST_JAVA); // GH-90000
 
@@ -90,7 +90,7 @@ class ErrorProneRunnerTest {
         ErrorProneRunner.Options opts =
                 ErrorProneRunner.Options.builder() // GH-90000
                         .javacCmd(javacPath) // GH-90000
-                        .extraArgs(List.of("-Xlint:none [GH-90000]")) // Disable all warnings
+                        .extraArgs(List.of("-Xlint:none")) // Disable all warnings
                         .build(); // GH-90000
 
         List<UnifiedDiagnostic> diagnostics = runner.run(tempDir, opts, List.of(javaFile), 10000); // GH-90000
@@ -104,7 +104,7 @@ class ErrorProneRunnerTest {
     @Test
     void testRunWithInvalidJavaFile(@TempDir Path tempDir) throws Exception { // GH-90000
         // Create a Java file with an error
-        Path srcDir = tempDir.resolve("src/main/java [GH-90000]");
+        Path srcDir = tempDir.resolve("src/main/java");
         Files.createDirectories(srcDir); // GH-90000
         Path javaFile = srcDir.resolve(TEST_JAVA); // GH-90000
         Files.writeString( // GH-90000
@@ -118,7 +118,7 @@ class ErrorProneRunnerTest {
         ErrorProneRunner.Options opts =
                 ErrorProneRunner.Options.builder() // GH-90000
                         .javacCmd(javacPath) // GH-90000
-                        .extraArgs(List.of("-Xlint:all [GH-90000]"))
+                        .extraArgs(List.of("-Xlint:all"))
                         .build(); // GH-90000
 
         List<UnifiedDiagnostic> diagnostics = runner.run(tempDir, opts, List.of(javaFile), 10000); // GH-90000
@@ -129,15 +129,15 @@ class ErrorProneRunnerTest {
         // Check that the error message contains relevant information
         String errorMessage = diagnostics.get(0).message(); // GH-90000
         assertTrue( // GH-90000
-                errorMessage.contains("cannot find symbol [GH-90000]")
-                        || errorMessage.contains("UndefinedType [GH-90000]"),
+                errorMessage.contains("cannot find symbol")
+                        || errorMessage.contains("UndefinedType"),
                 "Unexpected error message: " + errorMessage);
     }
 
     @Test
     void testRunWithWarning(@TempDir Path tempDir) throws Exception { // GH-90000
         // Create a Java file with a warning
-        Path srcDir = tempDir.resolve("src/main/java [GH-90000]");
+        Path srcDir = tempDir.resolve("src/main/java");
         Files.createDirectories(srcDir); // GH-90000
         Path javaFile = srcDir.resolve(TEST_JAVA); // GH-90000
         Files.writeString( // GH-90000
@@ -153,7 +153,7 @@ class ErrorProneRunnerTest {
         ErrorProneRunner.Options opts =
                 ErrorProneRunner.Options.builder() // GH-90000
                         .javacCmd(javacPath) // GH-90000
-                        .extraArgs(List.of("-Xlint:all [GH-90000]"))
+                        .extraArgs(List.of("-Xlint:all"))
                         .build(); // GH-90000
 
         List<UnifiedDiagnostic> diagnostics = runner.run(tempDir, opts, List.of(javaFile), 10000); // GH-90000
@@ -164,21 +164,21 @@ class ErrorProneRunnerTest {
         // Check that the warning message contains relevant information
         String warningMessage = diagnostics.get(0).message(); // GH-90000
         assertTrue( // GH-90000
-                warningMessage.toLowerCase(Locale.ROOT).contains("raw type [GH-90000]")
-                        || warningMessage.toLowerCase(Locale.ROOT).contains("arraylist [GH-90000]"),
+                warningMessage.toLowerCase(Locale.ROOT).contains("raw type")
+                        || warningMessage.toLowerCase(Locale.ROOT).contains("arraylist"),
                 "Unexpected warning message: " + warningMessage);
     }
 
     @Test
     void testRunWithInvalidJavacCommand() { // GH-90000
         ErrorProneRunner.Options opts =
-                ErrorProneRunner.Options.builder().javacCmd("nonexistent-javac [GH-90000]").build();
+                ErrorProneRunner.Options.builder().javacCmd("nonexistent-javac").build();
 
         List<UnifiedDiagnostic> diagnostics =
                 runner.run( // GH-90000
-                        Path.of(". [GH-90000]"),
+                        Path.of("."),
                         opts,
-                        List.of(Path.of("Test.java [GH-90000]").toAbsolutePath()), // Use absolute path
+                        List.of(Path.of("Test.java").toAbsolutePath()), // Use absolute path
                         5000);
 
         // Should have at least one error
@@ -187,10 +187,10 @@ class ErrorProneRunnerTest {
         // Check that the error message indicates the command wasn't found
         String errorMessage = diagnostics.get(0).message().toLowerCase(Locale.ROOT); // GH-90000
         assertTrue( // GH-90000
-                errorMessage.contains("cannot run program [GH-90000]")
-                        || errorMessage.contains("not found [GH-90000]")
-                        || errorMessage.contains("no such file [GH-90000]")
-                        || errorMessage.contains("source file not readable [GH-90000]"),
+                errorMessage.contains("cannot run program")
+                        || errorMessage.contains("not found")
+                        || errorMessage.contains("no such file")
+                        || errorMessage.contains("source file not readable"),
                 "Unexpected error message: " + errorMessage);
     }
 
@@ -203,7 +203,7 @@ class ErrorProneRunnerTest {
 
         // Now we expect a diagnostic instead of an exception
         List<UnifiedDiagnostic> diagnostics =
-                runner.run(Path.of(". [GH-90000]"), opts, List.of(nonExistentFile), 5000);
+                runner.run(Path.of("."), opts, List.of(nonExistentFile), 5000);
 
         // Should have at least one error
         assertFalse(diagnostics.isEmpty(), "Expected error for non-existent source file"); // GH-90000
@@ -211,8 +211,8 @@ class ErrorProneRunnerTest {
         // Check that the error message indicates the file wasn't found
         String errorMessage = diagnostics.get(0).message().toLowerCase(Locale.ROOT); // GH-90000
         assertTrue( // GH-90000
-                errorMessage.contains("source file not readable [GH-90000]")
-                        || errorMessage.contains("file not found [GH-90000]"),
+                errorMessage.contains("source file not readable")
+                        || errorMessage.contains("file not found"),
                 "Unexpected error message: " + errorMessage);
     }
 }

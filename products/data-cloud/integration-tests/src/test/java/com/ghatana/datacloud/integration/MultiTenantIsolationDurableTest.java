@@ -44,21 +44,21 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@DisplayName("Multi-Tenant Isolation Durable Tests (Real Persistence) [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("Multi-Tenant Isolation Durable Tests (Real Persistence)")
+@Tag("integration")
 class MultiTenantIsolationDurableTest {
 
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {}; // GH-90000
     private static final String COLLECTION = "tenant_isolation_entities_durable";
 
     private static final PostgreSQLContainer<?> POSTGRESQL = new PostgreSQLContainer<>( // GH-90000
-        DockerImageName.parse("postgres:16-alpine [GH-90000]"))
-        .withDatabaseName("datacloud_test [GH-90000]")
-        .withUsername("test_user [GH-90000]")
-        .withPassword("test_pass [GH-90000]");
+        DockerImageName.parse("postgres:16-alpine"))
+        .withDatabaseName("datacloud_test")
+        .withUsername("test_user")
+        .withPassword("test_pass");
 
     private static final KafkaContainer KAFKA = new KafkaContainer( // GH-90000
-        DockerImageName.parse("confluentinc/cp-kafka:7.5.0 [GH-90000]"));
+        DockerImageName.parse("confluentinc/cp-kafka:7.5.0"));
 
     private final ObjectMapper objectMapper = new ObjectMapper(); // GH-90000
     private final HttpClient httpClient = HttpClient.newHttpClient(); // GH-90000
@@ -100,12 +100,12 @@ class MultiTenantIsolationDurableTest {
     }
 
     @Test
-    @DisplayName("query endpoint returns only the requesting tenant's entities from PostgreSQL [GH-90000]")
+    @DisplayName("query endpoint returns only the requesting tenant's entities from PostgreSQL")
     void queryEndpointReturnsOnlyTheRequestingTenantsEntitiesFromPostgreSQL() throws Exception { // GH-90000
         String tenantAId = String.valueOf(sendJson("POST", "/api/v1/entities/" + COLLECTION, // GH-90000
-            Map.of("name", "tenant-a-doc", "owner", "tenant-a"), "tenant-a").body().get("id [GH-90000]"));
+            Map.of("name", "tenant-a-doc", "owner", "tenant-a"), "tenant-a").body().get("id"));
         String tenantBId = String.valueOf(sendJson("POST", "/api/v1/entities/" + COLLECTION, // GH-90000
-            Map.of("name", "tenant-b-doc", "owner", "tenant-b"), "tenant-b").body().get("id [GH-90000]"));
+            Map.of("name", "tenant-b-doc", "owner", "tenant-b"), "tenant-b").body().get("id"));
 
         ParsedHttpResponse tenantAQuery = sendJson("GET", "/api/v1/entities/" + COLLECTION + "?limit=10", // GH-90000
             null, "tenant-a");
@@ -119,10 +119,10 @@ class MultiTenantIsolationDurableTest {
     }
 
     @Test
-    @DisplayName("cross-tenant reads and deletes do not expose another tenant's entity in PostgreSQL [GH-90000]")
+    @DisplayName("cross-tenant reads and deletes do not expose another tenant's entity in PostgreSQL")
     void crossTenantReadsAndDeletesDoNotExposeAnotherTenantsEntityInPostgreSQL() throws Exception { // GH-90000
         String tenantAId = String.valueOf(sendJson("POST", "/api/v1/entities/" + COLLECTION, // GH-90000
-            Map.of("name", "secret-doc", "classification", "private"), "tenant-a").body().get("id [GH-90000]"));
+            Map.of("name", "secret-doc", "classification", "private"), "tenant-a").body().get("id"));
 
         ParsedHttpResponse crossTenantRead = sendJson("GET", "/api/v1/entities/" + COLLECTION + "/" + tenantAId, // GH-90000
             null, "tenant-b");
@@ -135,14 +135,14 @@ class MultiTenantIsolationDurableTest {
         assertThat(crossTenantDelete.statusCode()).isEqualTo(404); // GH-90000
         assertThat(ownerRead.statusCode()).isEqualTo(200); // GH-90000
         assertThat(ownerRead.body()).containsEntry("id", tenantAId); // GH-90000
-        assertThat(asMap(ownerRead.body().get("data [GH-90000]"))).containsEntry("classification", "private");
+        assertThat(asMap(ownerRead.body().get("data"))).containsEntry("classification", "private");
     }
 
     @Test
-    @DisplayName("tenant isolation persists across server restarts with PostgreSQL [GH-90000]")
+    @DisplayName("tenant isolation persists across server restarts with PostgreSQL")
     void tenantIsolationPersistsAcrossServerRestartsWithPostgreSQL() throws Exception { // GH-90000
         String tenantAId = String.valueOf(sendJson("POST", "/api/v1/entities/" + COLLECTION, // GH-90000
-            Map.of("name", "persistent-doc", "owner", "tenant-a"), "tenant-a").body().get("id [GH-90000]"));
+            Map.of("name", "persistent-doc", "owner", "tenant-a"), "tenant-a").body().get("id"));
 
         // Stop and restart server
         server.stop(); // GH-90000
@@ -164,7 +164,7 @@ class MultiTenantIsolationDurableTest {
     }
 
     @Test
-    @DisplayName("concurrent tenant operations maintain isolation in PostgreSQL [GH-90000]")
+    @DisplayName("concurrent tenant operations maintain isolation in PostgreSQL")
     void concurrentTenantOperationsMaintainIsolationInPostgreSQL() throws Exception { // GH-90000
         List<Thread> threads = new ArrayList<>(); // GH-90000
         List<String> tenantAIds = new ArrayList<>(); // GH-90000
@@ -177,7 +177,7 @@ class MultiTenantIsolationDurableTest {
                 try {
                     String id = String.valueOf(sendJson("POST", "/api/v1/entities/" + COLLECTION, // GH-90000
                         Map.of("name", "tenant-a-doc-" + index, "owner", "tenant-a"), "tenant-a") // GH-90000
-                        .body().get("id [GH-90000]"));
+                        .body().get("id"));
                     synchronized (tenantAIds) { // GH-90000
                         tenantAIds.add(id); // GH-90000
                     }
@@ -196,7 +196,7 @@ class MultiTenantIsolationDurableTest {
                 try {
                     String id = String.valueOf(sendJson("POST", "/api/v1/entities/" + COLLECTION, // GH-90000
                         Map.of("name", "tenant-b-doc-" + index, "owner", "tenant-b"), "tenant-b") // GH-90000
-                        .body().get("id [GH-90000]"));
+                        .body().get("id"));
                     synchronized (tenantBIds) { // GH-90000
                         tenantBIds.add(id); // GH-90000
                     }
@@ -227,7 +227,7 @@ class MultiTenantIsolationDurableTest {
     }
 
     @Test
-    @DisplayName("tenant-specific indexes work correctly in PostgreSQL [GH-90000]")
+    @DisplayName("tenant-specific indexes work correctly in PostgreSQL")
     void tenantSpecificIndexesWorkCorrectlyInPostgreSQL() throws Exception { // GH-90000
         // Create multiple entities for tenant A
         for (int i = 0; i < 5; i++) { // GH-90000
@@ -281,14 +281,14 @@ class MultiTenantIsolationDurableTest {
         return new ParsedHttpResponse(response.statusCode(), parsedBody); // GH-90000
     }
 
-    @SuppressWarnings("unchecked [GH-90000]")
+    @SuppressWarnings("unchecked")
     private List<String> entityIds(Map<String, Object> responseBody) { // GH-90000
-        return ((List<Map<String, Object>>) responseBody.get("entities [GH-90000]")).stream()
-            .map(entity -> String.valueOf(entity.get("id [GH-90000]")))
+        return ((List<Map<String, Object>>) responseBody.get("entities")).stream()
+            .map(entity -> String.valueOf(entity.get("id")))
             .toList(); // GH-90000
     }
 
-    @SuppressWarnings("unchecked [GH-90000]")
+    @SuppressWarnings("unchecked")
     private Map<String, Object> asMap(Object value) { // GH-90000
         return (Map<String, Object>) value; // GH-90000
     }

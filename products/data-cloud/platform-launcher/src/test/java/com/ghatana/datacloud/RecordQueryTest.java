@@ -12,13 +12,13 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Tests for {@link RecordQuery} fluent builder and validation.
  */
-@DisplayName("RecordQuery [GH-90000]")
+@DisplayName("RecordQuery")
 class RecordQueryTest {
 
     // ── where / filter ────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("where() [GH-90000]")
+    @DisplayName("where()")
     class Where {
 
         @Test
@@ -28,9 +28,9 @@ class RecordQueryTest {
 
             assertThat(q.getFilters()).hasSize(1); // GH-90000
             RecordQuery.FilterCondition f = q.getFilters().get(0); // GH-90000
-            assertThat(f.getField()).isEqualTo("status [GH-90000]");
+            assertThat(f.getField()).isEqualTo("status");
             assertThat(f.getOperator()).isEqualTo(RecordQuery.Operator.EQUALS); // GH-90000
-            assertThat(f.getValue()).isEqualTo("active [GH-90000]");
+            assertThat(f.getValue()).isEqualTo("active");
         }
 
         @Test
@@ -44,7 +44,7 @@ class RecordQueryTest {
     }
 
     @Nested
-    @DisplayName("whereIn() / whereNotIn() [GH-90000]")
+    @DisplayName("whereIn() / whereNotIn()")
     class WhereInOut {
 
         @Test
@@ -73,7 +73,7 @@ class RecordQueryTest {
     // ── ordering ──────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("orderBy() / orderByAsc() / orderByDesc() [GH-90000]")
+    @DisplayName("orderBy() / orderByAsc() / orderByDesc()")
     class Ordering {
 
         @Test
@@ -83,13 +83,13 @@ class RecordQueryTest {
 
             assertThat(q.getSorts()).hasSize(1); // GH-90000
             RecordQuery.SortSpec sort = q.getSorts().get(0); // GH-90000
-            assertThat(sort.getField()).isEqualTo("createdAt [GH-90000]");
+            assertThat(sort.getField()).isEqualTo("createdAt");
             assertThat(sort.getDirection()).isEqualTo(RecordQuery.SortDirection.DESC); // GH-90000
         }
 
         @Test
         void orderByAscUsesAscDirection() { // GH-90000
-            RecordQuery q = new RecordQuery().orderByAsc("name [GH-90000]");
+            RecordQuery q = new RecordQuery().orderByAsc("name");
 
             assertThat(q.getSorts()).hasSize(1); // GH-90000
             assertThat(q.getSorts().get(0).getDirection()).isEqualTo(RecordQuery.SortDirection.ASC); // GH-90000
@@ -97,7 +97,7 @@ class RecordQueryTest {
 
         @Test
         void orderByDescUsesDescDirection() { // GH-90000
-            RecordQuery q = new RecordQuery().orderByDesc("name [GH-90000]");
+            RecordQuery q = new RecordQuery().orderByDesc("name");
 
             assertThat(q.getSorts()).hasSize(1); // GH-90000
             assertThat(q.getSorts().get(0).getDirection()).isEqualTo(RecordQuery.SortDirection.DESC); // GH-90000
@@ -106,8 +106,8 @@ class RecordQueryTest {
         @Test
         void multipleSortSpecsAllowed() { // GH-90000
             RecordQuery q = new RecordQuery() // GH-90000
-                    .orderByDesc("score [GH-90000]")
-                    .orderByAsc("name [GH-90000]");
+                    .orderByDesc("score")
+                    .orderByAsc("name");
 
             assertThat(q.getSorts()).hasSize(2); // GH-90000
         }
@@ -116,7 +116,7 @@ class RecordQueryTest {
     // ── projection / pagination ───────────────────────────────────────────────
 
     @Nested
-    @DisplayName("select() / limit() / offset() / page() [GH-90000]")
+    @DisplayName("select() / limit() / offset() / page()")
     class ProjectionPagination {
 
         @Test
@@ -160,13 +160,13 @@ class RecordQueryTest {
     // ── time range ────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("inTimeRange() / after() / before() / onTimeField() [GH-90000]")
+    @DisplayName("inTimeRange() / after() / before() / onTimeField()")
     class TimeRange {
 
         @Test
         void inTimeRangeSetsStartAndEnd() { // GH-90000
-            Instant start = Instant.parse("2025-01-01T00:00:00Z [GH-90000]");
-            Instant end   = Instant.parse("2025-12-31T23:59:59Z [GH-90000]");
+            Instant start = Instant.parse("2025-01-01T00:00:00Z");
+            Instant end   = Instant.parse("2025-12-31T23:59:59Z");
             RecordQuery q = new RecordQuery().inTimeRange(start, end); // GH-90000
 
             assertThat(q.getStartTime()).isEqualTo(start); // GH-90000
@@ -175,7 +175,7 @@ class RecordQueryTest {
 
         @Test
         void afterSetsStartTime() { // GH-90000
-            Instant t = Instant.parse("2025-06-01T00:00:00Z [GH-90000]");
+            Instant t = Instant.parse("2025-06-01T00:00:00Z");
             RecordQuery q = new RecordQuery().after(t); // GH-90000
 
             assertThat(q.getStartTime()).isEqualTo(t); // GH-90000
@@ -184,7 +184,7 @@ class RecordQueryTest {
 
         @Test
         void beforeSetsEndTime() { // GH-90000
-            Instant t = Instant.parse("2025-06-01T00:00:00Z [GH-90000]");
+            Instant t = Instant.parse("2025-06-01T00:00:00Z");
             RecordQuery q = new RecordQuery().before(t); // GH-90000
 
             assertThat(q.getEndTime()).isEqualTo(t); // GH-90000
@@ -193,23 +193,23 @@ class RecordQueryTest {
 
         @Test
         void onTimeFieldSetsTimeField() { // GH-90000
-            RecordQuery q = new RecordQuery().onTimeField("eventTimestamp [GH-90000]");
+            RecordQuery q = new RecordQuery().onTimeField("eventTimestamp");
 
-            assertThat(q.getTimeField()).isEqualTo("eventTimestamp [GH-90000]");
+            assertThat(q.getTimeField()).isEqualTo("eventTimestamp");
         }
     }
 
     // ── stream / offset ───────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("inStream() / inPartitions() / fromOffset() / toOffset() [GH-90000]")
+    @DisplayName("inStream() / inPartitions() / fromOffset() / toOffset()")
     class StreamOffset {
 
         @Test
         void inStreamSetsStreamName() { // GH-90000
-            RecordQuery q = new RecordQuery().inStream("orders [GH-90000]");
+            RecordQuery q = new RecordQuery().inStream("orders");
 
-            assertThat(q.getStreamName()).isEqualTo("orders [GH-90000]");
+            assertThat(q.getStreamName()).isEqualTo("orders");
         }
 
         @Test
@@ -237,7 +237,7 @@ class RecordQueryTest {
     // ── aggregation ───────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("groupBy() / aggregate() / bucket() [GH-90000]")
+    @DisplayName("groupBy() / aggregate() / bucket()")
     class Aggregation {
 
         @Test
@@ -255,8 +255,8 @@ class RecordQueryTest {
             assertThat(q.getAggregations()).hasSize(1); // GH-90000
             RecordQuery.AggregationSpec agg = q.getAggregations().get(0); // GH-90000
             assertThat(agg.getType()).isEqualTo(RecordQuery.AggregationType.COUNT); // GH-90000
-            assertThat(agg.getField()).isEqualTo("id [GH-90000]");
-            assertThat(agg.getAlias()).isEqualTo("count_id [GH-90000]");
+            assertThat(agg.getField()).isEqualTo("id");
+            assertThat(agg.getAlias()).isEqualTo("count_id");
         }
 
         @Test
@@ -265,7 +265,7 @@ class RecordQueryTest {
                     .aggregate(RecordQuery.AggregationType.SUM, "amount", "total"); // GH-90000
 
             assertThat(q.getAggregations()).hasSize(1); // GH-90000
-            assertThat(q.getAggregations().get(0).getAlias()).isEqualTo("total [GH-90000]");
+            assertThat(q.getAggregations().get(0).getAlias()).isEqualTo("total");
         }
 
         @Test
@@ -279,14 +279,14 @@ class RecordQueryTest {
     // ── full-text search ──────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("search() / searchIn() [GH-90000]")
+    @DisplayName("search() / searchIn()")
     class FullTextSearch {
 
         @Test
         void searchSetsSearchText() { // GH-90000
-            RecordQuery q = new RecordQuery().search("java async [GH-90000]");
+            RecordQuery q = new RecordQuery().search("java async");
 
-            assertThat(q.getSearchText()).isEqualTo("java async [GH-90000]");
+            assertThat(q.getSearchText()).isEqualTo("java async");
         }
 
         @Test
@@ -300,36 +300,36 @@ class RecordQueryTest {
     // ── validate() ──────────────────────────────────────────────────────────── // GH-90000
 
     @Nested
-    @DisplayName("validate() [GH-90000]")
+    @DisplayName("validate()")
     class Validate {
 
         @Test
         void throwsWhenCollectionNameIsNull() { // GH-90000
             RecordQuery q = new RecordQuery(); // GH-90000
             assertThatIllegalArgumentException().isThrownBy(q::validate) // GH-90000
-                    .withMessageContaining("Collection name is required [GH-90000]");
+                    .withMessageContaining("Collection name is required");
         }
 
         @Test
         void throwsWhenCollectionNameIsBlank() { // GH-90000
             RecordQuery q = new RecordQuery(); // GH-90000
-            q.setCollectionName("    [GH-90000]");
+            q.setCollectionName("   ");
             assertThatIllegalArgumentException().isThrownBy(q::validate); // GH-90000
         }
 
         @Test
         void throwsWhenLimitIsNegative() { // GH-90000
             RecordQuery q = new RecordQuery(); // GH-90000
-            q.setCollectionName("events [GH-90000]");
+            q.setCollectionName("events");
             q.setLimit(-1); // GH-90000
             assertThatIllegalArgumentException().isThrownBy(q::validate) // GH-90000
-                    .withMessageContaining("Limit cannot be negative [GH-90000]");
+                    .withMessageContaining("Limit cannot be negative");
         }
 
         @Test
         void throwsWhenOffsetIsNegative() { // GH-90000
             RecordQuery q = new RecordQuery(); // GH-90000
-            q.setCollectionName("events [GH-90000]");
+            q.setCollectionName("events");
             q.setOffset(-1); // GH-90000
             assertThatIllegalArgumentException().isThrownBy(q::validate); // GH-90000
         }
@@ -337,27 +337,27 @@ class RecordQueryTest {
         @Test
         void throwsWhenStartTimeIsAfterEndTime() { // GH-90000
             RecordQuery q = new RecordQuery(); // GH-90000
-            q.setCollectionName("events [GH-90000]");
-            q.setStartTime(Instant.parse("2025-12-01T00:00:00Z [GH-90000]"));
-            q.setEndTime(Instant.parse("2025-01-01T00:00:00Z [GH-90000]"));
+            q.setCollectionName("events");
+            q.setStartTime(Instant.parse("2025-12-01T00:00:00Z"));
+            q.setEndTime(Instant.parse("2025-01-01T00:00:00Z"));
             assertThatIllegalArgumentException().isThrownBy(q::validate) // GH-90000
-                    .withMessageContaining("Start time must be before end time [GH-90000]");
+                    .withMessageContaining("Start time must be before end time");
         }
 
         @Test
         void throwsWhenStartOffsetIsGreaterThanEndOffset() { // GH-90000
             RecordQuery q = new RecordQuery(); // GH-90000
-            q.setCollectionName("events [GH-90000]");
+            q.setCollectionName("events");
             q.setStartOffset(500L); // GH-90000
             q.setEndOffset(100L); // GH-90000
             assertThatIllegalArgumentException().isThrownBy(q::validate) // GH-90000
-                    .withMessageContaining("Start offset must be less than end offset [GH-90000]");
+                    .withMessageContaining("Start offset must be less than end offset");
         }
 
         @Test
         void passesWithValidQuery() { // GH-90000
             RecordQuery q = new RecordQuery(); // GH-90000
-            q.setCollectionName("orders [GH-90000]");
+            q.setCollectionName("orders");
             assertThatNoException().isThrownBy(q::validate); // GH-90000
         }
     }
@@ -365,7 +365,7 @@ class RecordQueryTest {
     // ── enum completeness ─────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("Operator enum has all expected values [GH-90000]")
+    @DisplayName("Operator enum has all expected values")
     void operatorEnumValues() { // GH-90000
         assertThat(RecordQuery.Operator.values()).hasSize(17); // GH-90000
         assertThat(RecordQuery.Operator.EQUALS).isNotNull(); // GH-90000
@@ -373,7 +373,7 @@ class RecordQueryTest {
     }
 
     @Test
-    @DisplayName("AggregationType enum has all expected values [GH-90000]")
+    @DisplayName("AggregationType enum has all expected values")
     void aggregationTypeValues() { // GH-90000
         assertThat(RecordQuery.AggregationType.values()) // GH-90000
                 .contains( // GH-90000
@@ -386,7 +386,7 @@ class RecordQueryTest {
     }
 
     @Test
-    @DisplayName("TimeBucket enum has all expected values [GH-90000]")
+    @DisplayName("TimeBucket enum has all expected values")
     void timeBucketValues() { // GH-90000
         assertThat(RecordQuery.TimeBucket.values()) // GH-90000
                 .contains( // GH-90000

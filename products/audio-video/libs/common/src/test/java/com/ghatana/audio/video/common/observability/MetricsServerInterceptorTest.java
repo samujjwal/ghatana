@@ -20,22 +20,22 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@DisplayName("Metrics Server Interceptor Tests [GH-90000]")
+@DisplayName("Metrics Server Interceptor Tests")
 class MetricsServerInterceptorTest {
 
     @Test
-    @DisplayName("Should record started handled and duration metrics in Prometheus format [GH-90000]")
+    @DisplayName("Should record started handled and duration metrics in Prometheus format")
     void shouldRecordMetricsInPrometheusFormat() { // GH-90000
         MetricsServerInterceptor interceptor = new MetricsServerInterceptor(); // GH-90000
         Metadata headers = new Metadata(); // GH-90000
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         ServerCallHandler<String, String> next = mock(ServerCallHandler.class); // GH-90000
         when(next.startCall(any(), eq(headers))).thenReturn(new ServerCall.Listener<>() {}); // GH-90000
 
-        interceptor.interceptCall(createServerCall("audio.Video/Transcribe [GH-90000]"), headers, next);
-        interceptor.interceptCall(createServerCall("audio.Video/Transcribe [GH-90000]"), headers, next);
+        interceptor.interceptCall(createServerCall("audio.Video/Transcribe"), headers, next);
+        interceptor.interceptCall(createServerCall("audio.Video/Transcribe"), headers, next);
 
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         ArgumentCaptor<ServerCall<String, String>> wrappedCallCaptor = ArgumentCaptor.forClass(ServerCall.class); // GH-90000
         verify(next, org.mockito.Mockito.times(2)).startCall(wrappedCallCaptor.capture(), eq(headers)); // GH-90000
 
@@ -52,17 +52,17 @@ class MetricsServerInterceptorTest {
     }
 
     @Test
-    @DisplayName("Should clear collected metrics on reset [GH-90000]")
+    @DisplayName("Should clear collected metrics on reset")
     void shouldClearMetricsOnReset() { // GH-90000
         MetricsServerInterceptor interceptor = new MetricsServerInterceptor(); // GH-90000
         Metadata headers = new Metadata(); // GH-90000
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         ServerCallHandler<String, String> next = mock(ServerCallHandler.class); // GH-90000
         when(next.startCall(any(), eq(headers))).thenReturn(new ServerCall.Listener<>() {}); // GH-90000
 
-        interceptor.interceptCall(createServerCall("audio.Video/Health [GH-90000]"), headers, next);
+        interceptor.interceptCall(createServerCall("audio.Video/Health"), headers, next);
 
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         ArgumentCaptor<ServerCall<String, String>> wrappedCallCaptor = ArgumentCaptor.forClass(ServerCall.class); // GH-90000
         verify(next).startCall(wrappedCallCaptor.capture(), eq(headers)); // GH-90000
         wrappedCallCaptor.getValue().close(Status.OK, new Metadata()); // GH-90000
@@ -70,11 +70,11 @@ class MetricsServerInterceptorTest {
         interceptor.reset(); // GH-90000
 
         String scrape = interceptor.scrape(); // GH-90000
-        assertThat(scrape).doesNotContain("audio.Video/Health [GH-90000]");
-        assertThat(scrape).contains("# HELP grpc_server_started_total [GH-90000]");
+        assertThat(scrape).doesNotContain("audio.Video/Health");
+        assertThat(scrape).contains("# HELP grpc_server_started_total");
     }
 
-    @SuppressWarnings("unchecked [GH-90000]")
+    @SuppressWarnings("unchecked")
     private static ServerCall<String, String> createServerCall(String fullMethodName) { // GH-90000
         ServerCall<String, String> call = mock(ServerCall.class); // GH-90000
         when(call.getMethodDescriptor()).thenReturn(MethodDescriptor.<String, String>newBuilder() // GH-90000

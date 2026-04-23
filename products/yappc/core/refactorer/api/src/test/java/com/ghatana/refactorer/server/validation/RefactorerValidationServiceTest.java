@@ -17,16 +17,16 @@ import org.junit.jupiter.api.Test;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("RefactorerValidationService [GH-90000]")
+@DisplayName("RefactorerValidationService")
 class RefactorerValidationServiceTest extends EventloopTestBase {
 
     private final RefactorerValidationService service = new RefactorerValidationService(); // GH-90000
 
     @Test
-    @DisplayName("rejects gRPC diagnose requests without languages or a valid budget [GH-90000]")
+    @DisplayName("rejects gRPC diagnose requests without languages or a valid budget")
     void rejectsInvalidGrpcDiagnoseRequests() { // GH-90000
         DiagnoseRequest request = DiagnoseRequest.newBuilder() // GH-90000
-                .setRepoRoot("/tmp/repo [GH-90000]")
+                .setRepoRoot("/tmp/repo")
                 .setBudget(Budget.newBuilder().setMaxPasses(0).setMaxEditsPerFile(-1).setTimeoutSeconds(0).build()) // GH-90000
                 .build(); // GH-90000
 
@@ -39,7 +39,7 @@ class RefactorerValidationServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("rejects gRPC run requests without config and idempotency key [GH-90000]")
+    @DisplayName("rejects gRPC run requests without config and idempotency key")
     void rejectsInvalidGrpcRunRequests() { // GH-90000
         RunRequest request = RunRequest.newBuilder().build(); // GH-90000
 
@@ -52,7 +52,7 @@ class RefactorerValidationServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("accepts valid gRPC requests using the same rules as REST [GH-90000]")
+    @DisplayName("accepts valid gRPC requests using the same rules as REST")
     void acceptsValidGrpcRequests() { // GH-90000
         ValidationResult result = runPromise(() -> service.validateEvent(GrpcProtoFactory.sampleRunRequest())); // GH-90000
 

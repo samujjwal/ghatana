@@ -18,34 +18,34 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Tests for tool-runtime: {@link NoopToolSandbox}, {@link InMemoryToolExecutionMonitor},
  * and {@link ToolExecutionStats}.
  */
-@DisplayName("Tool Runtime [GH-90000]")
+@DisplayName("Tool Runtime")
 class ToolRuntimeTest extends EventloopTestBase {
 
     @Nested
-    @DisplayName("NoopToolSandbox [GH-90000]")
+    @DisplayName("NoopToolSandbox")
     class NoopSandboxTests {
 
         @Test
-        @DisplayName("returns 'noop:<toolName>' for any invocation [GH-90000]")
+        @DisplayName("returns 'noop:<toolName>' for any invocation")
         void returnsNoopResponse() { // GH-90000
             String result = runPromise(() -> // GH-90000
                 NoopToolSandbox.INSTANCE.execute("t1", "agent1", "search", Map.of("q", "hello"))); // GH-90000
-            assertThat(result).isEqualTo("noop:search [GH-90000]");
+            assertThat(result).isEqualTo("noop:search");
         }
 
         @Test
-        @DisplayName("INSTANCE singleton is not null [GH-90000]")
+        @DisplayName("INSTANCE singleton is not null")
         void instanceNotNull() { // GH-90000
             assertThat(NoopToolSandbox.INSTANCE).isNotNull(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("InMemoryToolExecutionMonitor [GH-90000]")
+    @DisplayName("InMemoryToolExecutionMonitor")
     class MonitorTests {
 
         @Test
-        @DisplayName("getStats returns zeroed stats for unknown tool [GH-90000]")
+        @DisplayName("getStats returns zeroed stats for unknown tool")
         void zeroStatsForUnknownTool() { // GH-90000
             InMemoryToolExecutionMonitor monitor = new InMemoryToolExecutionMonitor(); // GH-90000
             ToolExecutionStats stats = runPromise(() -> monitor.getStats("t1", "search")); // GH-90000
@@ -54,7 +54,7 @@ class ToolRuntimeTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("records one successful execution [GH-90000]")
+        @DisplayName("records one successful execution")
         void recordSuccess() { // GH-90000
             InMemoryToolExecutionMonitor monitor = new InMemoryToolExecutionMonitor(); // GH-90000
             runBlocking(() -> monitor.record("t1", "agent1", "search", Duration.ofMillis(50), 128, true)); // GH-90000
@@ -67,7 +67,7 @@ class ToolRuntimeTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("records a failure execution [GH-90000]")
+        @DisplayName("records a failure execution")
         void recordFailure() { // GH-90000
             InMemoryToolExecutionMonitor monitor = new InMemoryToolExecutionMonitor(); // GH-90000
             runBlocking(() -> monitor.record("t1", "agent1", "search", Duration.ofMillis(10), 0, false)); // GH-90000
@@ -78,7 +78,7 @@ class ToolRuntimeTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("aggregates multiple executions and computes average [GH-90000]")
+        @DisplayName("aggregates multiple executions and computes average")
         void aggregatesMultipleExecutions() { // GH-90000
             InMemoryToolExecutionMonitor monitor = new InMemoryToolExecutionMonitor(); // GH-90000
             runBlocking(() -> monitor.record("t1", "agent1", "search", Duration.ofMillis(100), 50, true)); // GH-90000
@@ -91,7 +91,7 @@ class ToolRuntimeTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("tenants are isolated in stats [GH-90000]")
+        @DisplayName("tenants are isolated in stats")
         void tenantsAreIsolated() { // GH-90000
             InMemoryToolExecutionMonitor monitor = new InMemoryToolExecutionMonitor(); // GH-90000
             runBlocking(() -> monitor.record("tenantA", "agent1", "search", Duration.ofMillis(10), 0, true)); // GH-90000
@@ -102,18 +102,18 @@ class ToolRuntimeTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("ToolExecutionStats [GH-90000]")
+    @DisplayName("ToolExecutionStats")
     class StatsTests {
 
         @Test
-        @DisplayName("successRate returns 0.0 when totalInvocations is zero [GH-90000]")
+        @DisplayName("successRate returns 0.0 when totalInvocations is zero")
         void successRateZeroWhenNoInvocations() { // GH-90000
             ToolExecutionStats stats = new ToolExecutionStats("t1", "s", 0, 0, 0, 0.0); // GH-90000
             assertThat(stats.successRate()).isZero(); // GH-90000
         }
 
         @Test
-        @DisplayName("successRate computes correctly [GH-90000]")
+        @DisplayName("successRate computes correctly")
         void successRateComputed() { // GH-90000
             ToolExecutionStats stats = new ToolExecutionStats("t1", "s", 4, 3, 1, 100.0); // GH-90000
             assertThat(stats.successRate()).isEqualTo(0.75); // GH-90000

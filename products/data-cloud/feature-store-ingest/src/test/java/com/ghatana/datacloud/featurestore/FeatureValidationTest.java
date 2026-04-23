@@ -27,57 +27,57 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * Test feature validation, quality checks, and data integrity.
  */
-@DisplayName("Feature Validation Tests [GH-90000]")
-@Tag("quality [GH-90000]")
+@DisplayName("Feature Validation Tests")
+@Tag("quality")
 class FeatureValidationTest {
 
     @Test
-    @DisplayName("Should validate feature schemas [GH-90000]")
+    @DisplayName("Should validate feature schemas")
     void shouldValidateFeatureSchemas() { // GH-90000
         Map<String, Object> payload = Map.of("user_age", 25, "user_income", 50000.0); // GH-90000
 
         assertThat(payload).isNotEmpty(); // GH-90000
-        assertThat(payload.keySet()).allMatch(key -> key.matches("[a-z0-9_]+ [GH-90000]"));
+        assertThat(payload.keySet()).allMatch(key -> key.matches("[a-z0-9_]+"));
     }
 
     @Test
-    @DisplayName("Should check feature quality [GH-90000]")
+    @DisplayName("Should check feature quality")
     void shouldCheckFeatureQuality() { // GH-90000
         Map<String, Object> payload = Map.of("age", 25); // GH-90000
 
         assertThat(payload).isNotEmpty(); // GH-90000
-        assertThat(payload.get("age [GH-90000]")).isInstanceOf(Integer.class);
+        assertThat(payload.get("age")).isInstanceOf(Integer.class);
     }
 
     @Test
-    @DisplayName("Should handle feature constraints [GH-90000]")
+    @DisplayName("Should handle feature constraints")
     void shouldHandleFeatureConstraints() { // GH-90000
         Map<String, Object> payload = Map.of("age", 25, "name", "John Doe"); // GH-90000
 
         assertThat(payload).isNotEmpty(); // GH-90000
-        assertThat(payload.keySet()).allMatch(key -> key.matches("[a-z0-9_]+ [GH-90000]"));
+        assertThat(payload.keySet()).allMatch(key -> key.matches("[a-z0-9_]+"));
     }
 
     @Test
-    @DisplayName("Should detect feature anomalies [GH-90000]")
+    @DisplayName("Should detect feature anomalies")
     void shouldDetectFeatureAnomalies() { // GH-90000
         Map<String, Object> payload = Map.of("age", -1000); // Negative age is anomalous // GH-90000
 
         assertThat(payload).isNotEmpty(); // GH-90000
-        assertThat((Integer) payload.get("age [GH-90000]")).isNegative();
+        assertThat((Integer) payload.get("age")).isNegative();
     }
 
     @Test
-    @DisplayName("Should handle validation failures [GH-90000]")
+    @DisplayName("Should handle validation failures")
     void shouldHandleValidationFailures() { // GH-90000
         Map<String, Object> payload = Map.of("special@chars", "test"); // GH-90000
 
         assertThat(payload).isNotEmpty(); // GH-90000
-        assertThat(payload).containsKey("special@chars [GH-90000]");
+        assertThat(payload).containsKey("special@chars");
     }
 
     @Test
-    @DisplayName("Should handle data integrity [GH-90000]")
+    @DisplayName("Should handle data integrity")
     void shouldHandleDataIntegrity() { // GH-90000
         Map<String, Object> payload = Map.of("age", 25, "name", "John Doe"); // GH-90000
         Instant timestamp = Instant.now(); // GH-90000
@@ -89,7 +89,7 @@ class FeatureValidationTest {
     // Additional comprehensive quality validation tests
 
     @Test
-    @DisplayName("Should detect null values in features [GH-90000]")
+    @DisplayName("Should detect null values in features")
     void shouldDetectNullValuesInFeatures() { // GH-90000
         Map<String, Object> payload = new HashMap<>(); // GH-90000
         payload.put("age", 25); // GH-90000
@@ -103,11 +103,11 @@ class FeatureValidationTest {
             }
         }
 
-        assertThat(nullFields).containsExactly("name [GH-90000]");
+        assertThat(nullFields).containsExactly("name");
     }
 
     @Test
-    @DisplayName("Should validate feature data types [GH-90000]")
+    @DisplayName("Should validate feature data types")
     void shouldValidateFeatureDataTypes() { // GH-90000
         Map<String, Object> payload = Map.of( // GH-90000
             "age", 25,
@@ -117,15 +117,15 @@ class FeatureValidationTest {
             "tags", List.of("tag1", "tag2") // GH-90000
         );
 
-        assertThat(payload.get("age [GH-90000]")).isInstanceOf(Integer.class);
-        assertThat(payload.get("name [GH-90000]")).isInstanceOf(String.class);
-        assertThat(payload.get("income [GH-90000]")).isInstanceOf(Double.class);
-        assertThat(payload.get("active [GH-90000]")).isInstanceOf(Boolean.class);
-        assertThat(payload.get("tags [GH-90000]")).isInstanceOf(List.class);
+        assertThat(payload.get("age")).isInstanceOf(Integer.class);
+        assertThat(payload.get("name")).isInstanceOf(String.class);
+        assertThat(payload.get("income")).isInstanceOf(Double.class);
+        assertThat(payload.get("active")).isInstanceOf(Boolean.class);
+        assertThat(payload.get("tags")).isInstanceOf(List.class);
     }
 
     @Test
-    @DisplayName("Should validate feature value ranges [GH-90000]")
+    @DisplayName("Should validate feature value ranges")
     void shouldValidateFeatureValueRanges() { // GH-90000
         Map<String, Object> payload = Map.of( // GH-90000
             "age", 25,
@@ -134,35 +134,35 @@ class FeatureValidationTest {
         );
 
         // Age should be between 0 and 150
-        int age = (Integer) payload.get("age [GH-90000]");
+        int age = (Integer) payload.get("age");
         assertThat(age).isBetween(0, 150); // GH-90000
 
         // Score should be between 0 and 1
-        double score = (Double) payload.get("score [GH-90000]");
+        double score = (Double) payload.get("score");
         assertThat(score).isBetween(0.0, 1.0); // GH-90000
 
         // Count should be non-negative
-        int count = (Integer) payload.get("count [GH-90000]");
+        int count = (Integer) payload.get("count");
         assertThat(count).isGreaterThanOrEqualTo(0); // GH-90000
     }
 
     @Test
-    @DisplayName("Should detect out-of-range values [GH-90000]")
+    @DisplayName("Should detect out-of-range values")
     void shouldDetectOutOfRangeValues() { // GH-90000
         Map<String, Object> payload = Map.of( // GH-90000
             "age", 200,  // Invalid age
             "score", 1.5   // Invalid score (> 1.0) // GH-90000
         );
 
-        int age = (Integer) payload.get("age [GH-90000]");
+        int age = (Integer) payload.get("age");
         assertThat(age).isGreaterThan(150);  // Out of valid range // GH-90000
 
-        double score = (Double) payload.get("score [GH-90000]");
+        double score = (Double) payload.get("score");
         assertThat(score).isGreaterThan(1.0);  // Out of valid range // GH-90000
     }
 
     @Test
-    @DisplayName("Should check feature completeness [GH-90000]")
+    @DisplayName("Should check feature completeness")
     void shouldCheckFeatureCompleteness() { // GH-90000
         Map<String, Object> payload = new HashMap<>(); // GH-90000
         payload.put("age", 25); // GH-90000
@@ -182,7 +182,7 @@ class FeatureValidationTest {
     }
 
     @Test
-    @DisplayName("Should detect duplicate feature values [GH-90000]")
+    @DisplayName("Should detect duplicate feature values")
     void shouldDetectDuplicateFeatureValues() { // GH-90000
         List<Map<String, Object>> records = List.of( // GH-90000
             Map.of("id", 1, "name", "John"), // GH-90000
@@ -194,17 +194,17 @@ class FeatureValidationTest {
         Set<String> duplicates = new HashSet<>(); // GH-90000
 
         for (Map<String, Object> record : records) { // GH-90000
-            String name = (String) record.get("name [GH-90000]");
+            String name = (String) record.get("name");
             if (!names.add(name)) { // GH-90000
                 duplicates.add(name); // GH-90000
             }
         }
 
-        assertThat(duplicates).contains("John [GH-90000]");
+        assertThat(duplicates).contains("John");
     }
 
     @Test
-    @DisplayName("Should validate feature consistency [GH-90000]")
+    @DisplayName("Should validate feature consistency")
     void shouldValidateFeatureConsistency() { // GH-90000
         Map<String, Object> payload = Map.of( // GH-90000
             "start_date", "2024-01-01",
@@ -212,43 +212,43 @@ class FeatureValidationTest {
             "status", "active"
         );
 
-        String startDate = (String) payload.get("start_date [GH-90000]");
-        String endDate = (String) payload.get("end_date [GH-90000]");
+        String startDate = (String) payload.get("start_date");
+        String endDate = (String) payload.get("end_date");
 
         assertThat(endDate).isLessThan(startDate);  // Consistency check fails // GH-90000
     }
 
     @Test
-    @DisplayName("Should handle empty strings vs null [GH-90000]")
+    @DisplayName("Should handle empty strings vs null")
     void shouldHandleEmptyStringsVsNull() { // GH-90000
         Map<String, Object> payload = new HashMap<>(); // GH-90000
         payload.put("name", "");      // Empty string // GH-90000
         payload.put("email", null);   // Null value // GH-90000
 
-        String name = (String) payload.get("name [GH-90000]");
-        String email = (String) payload.get("email [GH-90000]");
+        String name = (String) payload.get("name");
+        String email = (String) payload.get("email");
 
         assertThat(name).isEmpty(); // GH-90000
         assertThat(email).isNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should validate timestamp formats [GH-90000]")
+    @DisplayName("Should validate timestamp formats")
     void shouldValidateTimestampFormats() { // GH-90000
         Map<String, Object> payload = Map.of( // GH-90000
             "created_at", "2024-01-01T00:00:00Z",
             "updated_at", Instant.now().toString() // GH-90000
         );
 
-        String createdAt = (String) payload.get("created_at [GH-90000]");
-        String updatedAt = (String) payload.get("updated_at [GH-90000]");
+        String createdAt = (String) payload.get("created_at");
+        String updatedAt = (String) payload.get("updated_at");
 
-        assertThat(createdAt).matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$ [GH-90000]");
+        assertThat(createdAt).matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$");
         assertThat(updatedAt).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should detect invalid email formats [GH-90000]")
+    @DisplayName("Should detect invalid email formats")
     void shouldDetectInvalidEmailFormats() { // GH-90000
         List<String> emails = List.of( // GH-90000
             "valid@example.com",
@@ -259,7 +259,7 @@ class FeatureValidationTest {
 
         List<String> invalidEmails = new ArrayList<>(); // GH-90000
         for (String email : emails) { // GH-90000
-            if (!email.matches("^[A-Za-z0-9+_.-]+@.+\\..+$ [GH-90000]")) {
+            if (!email.matches("^[A-Za-z0-9+_.-]+@.+\\..+$")) {
                 invalidEmails.add(email); // GH-90000
             }
         }
@@ -268,15 +268,15 @@ class FeatureValidationTest {
     }
 
     @Test
-    @DisplayName("Should validate numeric precision [GH-90000]")
+    @DisplayName("Should validate numeric precision")
     void shouldValidateNumericPrecision() { // GH-90000
         Map<String, Object> payload = Map.of( // GH-90000
             "price", 19.99,
             "tax_rate", 0.0875
         );
 
-        double price = (Double) payload.get("price [GH-90000]");
-        double taxRate = (Double) payload.get("tax_rate [GH-90000]");
+        double price = (Double) payload.get("price");
+        double taxRate = (Double) payload.get("tax_rate");
 
         // Price should have at most 2 decimal places
         assertThat(Math.abs(price * 100 - Math.round(price * 100))).isLessThan(1e-6); // GH-90000
@@ -286,39 +286,39 @@ class FeatureValidationTest {
     }
 
     @Test
-    @DisplayName("Should handle special characters in strings [GH-90000]")
+    @DisplayName("Should handle special characters in strings")
     void shouldHandleSpecialCharactersInStrings() { // GH-90000
         Map<String, Object> payload = Map.of( // GH-90000
             "description", "Product with special chars: @#$%^&*()", // GH-90000
             "name", "Simple_Name-123"
         );
 
-        String description = (String) payload.get("description [GH-90000]");
-        String name = (String) payload.get("name [GH-90000]");
+        String description = (String) payload.get("description");
+        String name = (String) payload.get("name");
 
-        assertThat(description).contains("@#$%^&*() [GH-90000]");
-        assertThat(name).matches("[a-zA-Z0-9_-]+ [GH-90000]");
+        assertThat(description).contains("@#$%^&*()");
+        assertThat(name).matches("[a-zA-Z0-9_-]+");
     }
 
     @Test
-    @DisplayName("Should validate array/list lengths [GH-90000]")
+    @DisplayName("Should validate array/list lengths")
     void shouldValidateArrayLengths() { // GH-90000
         Map<String, Object> payload = Map.of( // GH-90000
             "tags", List.of("tag1", "tag2", "tag3"), // GH-90000
             "items", List.of()  // Empty list // GH-90000
         );
 
-        @SuppressWarnings("unchecked [GH-90000]")
-        List<String> tags = (List<String>) payload.get("tags [GH-90000]");
-        @SuppressWarnings("unchecked [GH-90000]")
-        List<String> items = (List<String>) payload.get("items [GH-90000]");
+        @SuppressWarnings("unchecked")
+        List<String> tags = (List<String>) payload.get("tags");
+        @SuppressWarnings("unchecked")
+        List<String> items = (List<String>) payload.get("items");
 
         assertThat(tags).hasSize(3); // GH-90000
         assertThat(items).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should detect circular references in nested structures [GH-90000]")
+    @DisplayName("Should detect circular references in nested structures")
     void shouldDetectCircularReferences() { // GH-90000
         Map<String, Object> map1 = new HashMap<>(); // GH-90000
         Map<String, Object> map2 = new HashMap<>(); // GH-90000
@@ -353,7 +353,7 @@ class FeatureValidationTest {
     }
 
     @Test
-    @DisplayName("Should validate feature name patterns [GH-90000]")
+    @DisplayName("Should validate feature name patterns")
     void shouldValidateFeatureNamePatterns() { // GH-90000
         List<String> featureNames = List.of( // GH-90000
             "user_age",
@@ -365,7 +365,7 @@ class FeatureValidationTest {
 
         List<String> invalidNames = new ArrayList<>(); // GH-90000
         for (String name : featureNames) { // GH-90000
-            if (!name.matches("^[a-z][a-z0-9_]*$ [GH-90000]")) {
+            if (!name.matches("^[a-z][a-z0-9_]*$")) {
                 invalidNames.add(name); // GH-90000
             }
         }
@@ -374,7 +374,7 @@ class FeatureValidationTest {
     }
 
     @Test
-    @DisplayName("Should check feature cardinality [GH-90000]")
+    @DisplayName("Should check feature cardinality")
     void shouldCheckFeatureCardinality() { // GH-90000
         Map<String, Object> payload = Map.of( // GH-90000
             "category", "electronics",
@@ -383,13 +383,13 @@ class FeatureValidationTest {
 
         // Category should have limited cardinality (e.g., from a predefined set) // GH-90000
         Set<String> validCategories = Set.of("electronics", "clothing", "books", "food"); // GH-90000
-        String category = (String) payload.get("category [GH-90000]");
+        String category = (String) payload.get("category");
 
         assertThat(validCategories).contains(category); // GH-90000
     }
 
     @Test
-    @DisplayName("Should validate enum-like fields [GH-90000]")
+    @DisplayName("Should validate enum-like fields")
     void shouldValidateEnumLikeFields() { // GH-90000
         Map<String, Object> payload = Map.of( // GH-90000
             "status", "active",
@@ -399,8 +399,8 @@ class FeatureValidationTest {
         Set<String> validStatuses = Set.of("active", "inactive", "pending"); // GH-90000
         Set<String> validPriorities = Set.of("low", "medium", "high", "urgent"); // GH-90000
 
-        String status = (String) payload.get("status [GH-90000]");
-        String priority = (String) payload.get("priority [GH-90000]");
+        String status = (String) payload.get("status");
+        String priority = (String) payload.get("priority");
 
         assertThat(validStatuses).contains(status); // GH-90000
         assertThat(validPriorities).contains(priority); // GH-90000

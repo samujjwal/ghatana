@@ -47,7 +47,7 @@ class OpenRewriteRunnerTest {
 
     @BeforeEach
     void setUp() { // GH-90000
-        srcDir = tempDir.resolve("src/main/java [GH-90000]");
+        srcDir = tempDir.resolve("src/main/java");
 
         mockContext = mock(PolyfixProjectContext.class); // GH-90000
         when(mockContext.log()).thenReturn(mock(Logger.class)); // GH-90000
@@ -72,7 +72,7 @@ class OpenRewriteRunnerTest {
     @Test
     void testRecipeExecution() throws Exception { // GH-90000
         // Setup test file
-        Path testFile = srcDir.resolve("Test.java [GH-90000]");
+        Path testFile = srcDir.resolve("Test.java");
         Files.createDirectories(testFile.getParent()); // GH-90000
         Files.writeString(testFile, CLASS_TEST); // GH-90000
 
@@ -84,7 +84,7 @@ class OpenRewriteRunnerTest {
                 .thenReturn(java.util.stream.Stream.of(sourceFile)); // GH-90000
 
         Recipe recipe = mock(Recipe.class); // GH-90000
-        when(recipe.getName()).thenReturn("test-recipe [GH-90000]");
+        when(recipe.getName()).thenReturn("test-recipe");
 
         RecipeRun recipeRun = mock(RecipeRun.class, RETURNS_DEEP_STUBS); // GH-90000
         Result result = mock(Result.class); // GH-90000
@@ -95,7 +95,7 @@ class OpenRewriteRunnerTest {
 
         when(result.getBefore()).thenReturn(before); // GH-90000
         when(result.getAfter()).thenReturn(after); // GH-90000
-        when(result.diff()).thenReturn("diff [GH-90000]");
+        when(result.diff()).thenReturn("diff");
 
         when(recipeRun.getChangeset().getAllResults()).thenReturn(List.of(result)); // GH-90000
         when(recipe.run(any(InMemoryLargeSourceSet.class), any(ExecutionContext.class))) // GH-90000
@@ -106,7 +106,7 @@ class OpenRewriteRunnerTest {
 
         // Verify
         assertThat(diagnostics).hasSize(1); // GH-90000
-        assertThat(diagnostics.get(0).getMessage()).contains("Applied test-recipe [GH-90000]");
+        assertThat(diagnostics.get(0).getMessage()).contains("Applied test-recipe");
 
         // Verify file was written
         assertThat(testFile).exists(); // GH-90000
@@ -116,22 +116,22 @@ class OpenRewriteRunnerTest {
     @Test
     void testErrorHandling() { // GH-90000
         Recipe recipe = mock(Recipe.class); // GH-90000
-        when(recipe.getName()).thenReturn("failing-recipe [GH-90000]");
+        when(recipe.getName()).thenReturn("failing-recipe");
         when(recipe.run(any(InMemoryLargeSourceSet.class), any(ExecutionContext.class))) // GH-90000
-                .thenThrow(new RuntimeException("Test error [GH-90000]"));
+                .thenThrow(new RuntimeException("Test error"));
 
-        Path testFile = tempDir.resolve("Test.java [GH-90000]");
+        Path testFile = tempDir.resolve("Test.java");
         List<UnifiedDiagnostic> results = runner.run(recipe, List.of(testFile)); // GH-90000
 
         assertThat(results).hasSize(1); // GH-90000
         assertThat(results.get(0).getMessage()) // GH-90000
-                .contains("Failed to apply OpenRewrite recipe: Test error [GH-90000]");
+                .contains("Failed to apply OpenRewrite recipe: Test error");
     }
 
     @Test
     void testFileWriting() throws IOException { // GH-90000
         // Setup test file with content that will be modified
-        Path testFile = srcDir.resolve("Test.java [GH-90000]");
+        Path testFile = srcDir.resolve("Test.java");
         Files.createDirectories(testFile.getParent()); // GH-90000
         Files.writeString(testFile, CLASS_TEST); // GH-90000
 
@@ -143,18 +143,18 @@ class OpenRewriteRunnerTest {
                 .thenReturn(java.util.stream.Stream.of(sourceFile)); // GH-90000
 
         Recipe recipe = mock(Recipe.class); // GH-90000
-        when(recipe.getName()).thenReturn("modify-recipe [GH-90000]");
+        when(recipe.getName()).thenReturn("modify-recipe");
 
         RecipeRun recipeRun = mock(RecipeRun.class, RETURNS_DEEP_STUBS); // GH-90000
         Result result = mock(Result.class); // GH-90000
         SourceFile before = mock(SourceFile.class); // GH-90000
         SourceFile after = mock(SourceFile.class); // GH-90000
         when(before.getSourcePath()).thenReturn(Path.of(SRC_MAIN_JAVA_TEST_JAVA)); // GH-90000
-        when(after.printAll()).thenReturn("class Test { /* modified */ } [GH-90000]");
+        when(after.printAll()).thenReturn("class Test { /* modified */ }");
 
         when(result.getBefore()).thenReturn(before); // GH-90000
         when(result.getAfter()).thenReturn(after); // GH-90000
-        when(result.diff()).thenReturn("diff [GH-90000]");
+        when(result.diff()).thenReturn("diff");
 
         when(recipeRun.getChangeset().getAllResults()).thenReturn(List.of(result)); // GH-90000
         when(recipe.run(any(InMemoryLargeSourceSet.class), any(ExecutionContext.class))) // GH-90000
@@ -164,6 +164,6 @@ class OpenRewriteRunnerTest {
         runner.run(recipe, List.of(testFile)); // GH-90000
 
         // Verify file was modified
-        assertThat(testFile).content().isEqualTo("class Test { /* modified */ } [GH-90000]");
+        assertThat(testFile).content().isEqualTo("class Test { /* modified */ }");
     }
 }

@@ -18,18 +18,18 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern UnitTest
  */
-@DisplayName("ComplianceAssessment Domain Model Tests [GH-90000]")
+@DisplayName("ComplianceAssessment Domain Model Tests")
 class ComplianceAssessmentTest {
 
     private static final String STATUS_IN_PROGRESS = "IN_PROGRESS";
     private static final String STATUS_COMPLETED = "COMPLETED";
 
     @Nested
-    @DisplayName("Factory Method Tests [GH-90000]")
+    @DisplayName("Factory Method Tests")
     class FactoryMethodTests {
 
         @Test
-        @DisplayName("of() creates assessment with required fields and defaults [GH-90000]")
+        @DisplayName("of() creates assessment with required fields and defaults")
         void ofCreatesWithRequiredFieldsAndDefaults() { // GH-90000
             // GIVEN
             UUID workspaceId = UUID.randomUUID(); // GH-90000
@@ -53,32 +53,32 @@ class ComplianceAssessmentTest {
         }
 
         @Test
-        @DisplayName("of() throws NullPointerException when workspaceId is null [GH-90000]")
+        @DisplayName("of() throws NullPointerException when workspaceId is null")
         void ofThrowsWhenWorkspaceIdNull() { // GH-90000
             UUID frameworkId = UUID.randomUUID(); // GH-90000
 
             assertThatThrownBy(() -> ComplianceAssessment.of(null, frameworkId)) // GH-90000
                     .isInstanceOf(NullPointerException.class) // GH-90000
-                    .hasMessageContaining("workspaceId must not be null [GH-90000]");
+                    .hasMessageContaining("workspaceId must not be null");
         }
 
         @Test
-        @DisplayName("of() throws NullPointerException when frameworkId is null [GH-90000]")
+        @DisplayName("of() throws NullPointerException when frameworkId is null")
         void ofThrowsWhenFrameworkIdNull() { // GH-90000
             UUID workspaceId = UUID.randomUUID(); // GH-90000
 
             assertThatThrownBy(() -> ComplianceAssessment.of(workspaceId, null)) // GH-90000
                     .isInstanceOf(NullPointerException.class) // GH-90000
-                    .hasMessageContaining("frameworkId must not be null [GH-90000]");
+                    .hasMessageContaining("frameworkId must not be null");
         }
     }
 
     @Nested
-    @DisplayName("Builder Tests [GH-90000]")
+    @DisplayName("Builder Tests")
     class BuilderTests {
 
         @Test
-        @DisplayName("builder creates assessment with all fields [GH-90000]")
+        @DisplayName("builder creates assessment with all fields")
         void builderCreatesWithAllFields() { // GH-90000
             // GIVEN
             UUID id = UUID.randomUUID(); // GH-90000
@@ -118,7 +118,7 @@ class ComplianceAssessmentTest {
         }
 
         @Test
-        @DisplayName("builder defaults status to IN_PROGRESS [GH-90000]")
+        @DisplayName("builder defaults status to IN_PROGRESS")
         void builderDefaultsStatusToInProgress() { // GH-90000
             ComplianceAssessment assessment = ComplianceAssessment.builder() // GH-90000
                     .workspaceId(UUID.randomUUID()) // GH-90000
@@ -130,11 +130,11 @@ class ComplianceAssessmentTest {
     }
 
     @Nested
-    @DisplayName("Score Calculation Tests [GH-90000]")
+    @DisplayName("Score Calculation Tests")
     class ScoreCalculationTests {
 
         @Test
-        @DisplayName("calculateScore() computes correct percentage [GH-90000]")
+        @DisplayName("calculateScore() computes correct percentage")
         void calculateScoreComputesCorrectPercentage() { // GH-90000
             // GIVEN: 80 passed out of 100 total (0 N/A) = 80% // GH-90000
             ComplianceAssessment assessment = ComplianceAssessment.builder() // GH-90000
@@ -154,7 +154,7 @@ class ComplianceAssessmentTest {
         }
 
         @Test
-        @DisplayName("calculateScore() excludes N/A controls from denominator [GH-90000]")
+        @DisplayName("calculateScore() excludes N/A controls from denominator")
         void calculateScoreExcludesNotApplicable() { // GH-90000
             // GIVEN: 80 passed, 10 failed, 10 N/A = 80/(100-10)*100 = 88.89 -> 89 // GH-90000
             ComplianceAssessment assessment = ComplianceAssessment.builder() // GH-90000
@@ -176,7 +176,7 @@ class ComplianceAssessmentTest {
         }
 
         @Test
-        @DisplayName("calculateScore() returns 0 when all controls are N/A [GH-90000]")
+        @DisplayName("calculateScore() returns 0 when all controls are N/A")
         void calculateScoreReturnsZeroWhenAllNotApplicable() { // GH-90000
             // GIVEN: All controls are N/A, avoid division by zero
             ComplianceAssessment assessment = ComplianceAssessment.builder() // GH-90000
@@ -196,7 +196,7 @@ class ComplianceAssessmentTest {
         }
 
         @Test
-        @DisplayName("calculateScore() returns 100 for perfect score [GH-90000]")
+        @DisplayName("calculateScore() returns 100 for perfect score")
         void calculateScoreReturns100ForPerfectScore() { // GH-90000
             // GIVEN: All applicable controls passed
             ComplianceAssessment assessment = ComplianceAssessment.builder() // GH-90000
@@ -216,7 +216,7 @@ class ComplianceAssessmentTest {
         }
 
         @Test
-        @DisplayName("calculateScore() returns 0 when no controls passed [GH-90000]")
+        @DisplayName("calculateScore() returns 0 when no controls passed")
         void calculateScoreReturns0WhenNoPassed() { // GH-90000
             ComplianceAssessment assessment = ComplianceAssessment.builder() // GH-90000
                     .workspaceId(UUID.randomUUID()) // GH-90000
@@ -235,7 +235,7 @@ class ComplianceAssessmentTest {
         }
 
         @Test
-        @DisplayName("calculateScore() returns this for fluent chaining [GH-90000]")
+        @DisplayName("calculateScore() returns this for fluent chaining")
         void calculateScoreReturnsSelfForChaining() { // GH-90000
             ComplianceAssessment assessment = ComplianceAssessment.builder() // GH-90000
                     .workspaceId(UUID.randomUUID()) // GH-90000
@@ -252,11 +252,11 @@ class ComplianceAssessmentTest {
     }
 
     @Nested
-    @DisplayName("Complete Method Tests [GH-90000]")
+    @DisplayName("Complete Method Tests")
     class CompleteMethodTests {
 
         @Test
-        @DisplayName("complete() sets status to COMPLETED and assessedAt [GH-90000]")
+        @DisplayName("complete() sets status to COMPLETED and assessedAt")
         void completeSetsStatusAndTimestamp() { // GH-90000
             // GIVEN
             ComplianceAssessment assessment = ComplianceAssessment.of( // GH-90000
@@ -275,7 +275,7 @@ class ComplianceAssessmentTest {
         }
 
         @Test
-        @DisplayName("complete() also calculates the score [GH-90000]")
+        @DisplayName("complete() also calculates the score")
         void completeAlsoCalculatesScore() { // GH-90000
             // GIVEN
             ComplianceAssessment assessment = ComplianceAssessment.builder() // GH-90000
@@ -296,7 +296,7 @@ class ComplianceAssessmentTest {
         }
 
         @Test
-        @DisplayName("complete() returns this for fluent chaining [GH-90000]")
+        @DisplayName("complete() returns this for fluent chaining")
         void completeReturnsSelfForChaining() { // GH-90000
             ComplianceAssessment assessment = ComplianceAssessment.of( // GH-90000
                     UUID.randomUUID(), // GH-90000
@@ -310,11 +310,11 @@ class ComplianceAssessmentTest {
     }
 
     @Nested
-    @DisplayName("IsPassing Method Tests [GH-90000]")
+    @DisplayName("IsPassing Method Tests")
     class IsPassingMethodTests {
 
         @Test
-        @DisplayName("isPassing() returns true when score >= 80 [GH-90000]")
+        @DisplayName("isPassing() returns true when score >= 80")
         void isPassingReturnsTrueWhenScoreAbove80() { // GH-90000
             ComplianceAssessment assessment = ComplianceAssessment.builder() // GH-90000
                     .workspaceId(UUID.randomUUID()) // GH-90000
@@ -326,7 +326,7 @@ class ComplianceAssessmentTest {
         }
 
         @Test
-        @DisplayName("isPassing() returns true when score == 80 [GH-90000]")
+        @DisplayName("isPassing() returns true when score == 80")
         void isPassingReturnsTrueWhenScoreEquals80() { // GH-90000
             ComplianceAssessment assessment = ComplianceAssessment.builder() // GH-90000
                     .workspaceId(UUID.randomUUID()) // GH-90000
@@ -338,7 +338,7 @@ class ComplianceAssessmentTest {
         }
 
         @Test
-        @DisplayName("isPassing() returns false when score < 80 [GH-90000]")
+        @DisplayName("isPassing() returns false when score < 80")
         void isPassingReturnsFalseWhenScoreBelow80() { // GH-90000
             ComplianceAssessment assessment = ComplianceAssessment.builder() // GH-90000
                     .workspaceId(UUID.randomUUID()) // GH-90000
@@ -350,7 +350,7 @@ class ComplianceAssessmentTest {
         }
 
         @Test
-        @DisplayName("isPassing() returns false for score of 0 [GH-90000]")
+        @DisplayName("isPassing() returns false for score of 0")
         void isPassingReturnsFalseForZeroScore() { // GH-90000
             ComplianceAssessment assessment = ComplianceAssessment.of( // GH-90000
                     UUID.randomUUID(), // GH-90000
@@ -361,7 +361,7 @@ class ComplianceAssessmentTest {
         }
 
         @Test
-        @DisplayName("isPassing() returns true for perfect score [GH-90000]")
+        @DisplayName("isPassing() returns true for perfect score")
         void isPassingReturnsTrueForPerfectScore() { // GH-90000
             ComplianceAssessment assessment = ComplianceAssessment.builder() // GH-90000
                     .workspaceId(UUID.randomUUID()) // GH-90000
@@ -374,11 +374,11 @@ class ComplianceAssessmentTest {
     }
 
     @Nested
-    @DisplayName("Equality Tests [GH-90000]")
+    @DisplayName("Equality Tests")
     class EqualityTests {
 
         @Test
-        @DisplayName("equals returns true for same id [GH-90000]")
+        @DisplayName("equals returns true for same id")
         void equalsReturnsTrueForSameId() { // GH-90000
             UUID id = UUID.randomUUID(); // GH-90000
             ComplianceAssessment assessment1 = ComplianceAssessment.builder().id(id).workspaceId(UUID.randomUUID()).build(); // GH-90000
@@ -389,7 +389,7 @@ class ComplianceAssessmentTest {
         }
 
         @Test
-        @DisplayName("equals returns false for different ids [GH-90000]")
+        @DisplayName("equals returns false for different ids")
         void equalsReturnsFalseForDifferentIds() { // GH-90000
             ComplianceAssessment assessment1 = ComplianceAssessment.builder().id(UUID.randomUUID()).build(); // GH-90000
             ComplianceAssessment assessment2 = ComplianceAssessment.builder().id(UUID.randomUUID()).build(); // GH-90000
@@ -399,11 +399,11 @@ class ComplianceAssessmentTest {
     }
 
     @Nested
-    @DisplayName("Full Lifecycle Tests [GH-90000]")
+    @DisplayName("Full Lifecycle Tests")
     class LifecycleTests {
 
         @Test
-        @DisplayName("full lifecycle: create -> set results -> complete [GH-90000]")
+        @DisplayName("full lifecycle: create -> set results -> complete")
         void fullLifecycle() { // GH-90000
             // GIVEN: Create assessment
             ComplianceAssessment assessment = ComplianceAssessment.of( // GH-90000
@@ -429,7 +429,7 @@ class ComplianceAssessmentTest {
         }
 
         @Test
-        @DisplayName("can store JSON details [GH-90000]")
+        @DisplayName("can store JSON details")
         void canStoreJsonDetails() { // GH-90000
             ComplianceAssessment assessment = ComplianceAssessment.builder() // GH-90000
                     .workspaceId(UUID.randomUUID()) // GH-90000
@@ -437,17 +437,17 @@ class ComplianceAssessmentTest {
                     .details("{\"controls\": [{\"id\": \"1\", \"status\": \"PASSED\"}]}") // GH-90000
                     .build(); // GH-90000
 
-            assertThat(assessment.getDetails()).contains("controls [GH-90000]");
-            assertThat(assessment.getDetails()).contains("PASSED [GH-90000]");
+            assertThat(assessment.getDetails()).contains("controls");
+            assertThat(assessment.getDetails()).contains("PASSED");
         }
     }
 
     @Nested
-    @DisplayName("Control Count Tests [GH-90000]")
+    @DisplayName("Control Count Tests")
     class ControlCountTests {
 
         @Test
-        @DisplayName("control counts sum correctly [GH-90000]")
+        @DisplayName("control counts sum correctly")
         void controlCountsSumCorrectly() { // GH-90000
             ComplianceAssessment assessment = ComplianceAssessment.builder() // GH-90000
                     .workspaceId(UUID.randomUUID()) // GH-90000

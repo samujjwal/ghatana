@@ -8,11 +8,11 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("Voice Intent Accuracy [GH-90000]")
+@DisplayName("Voice Intent Accuracy")
 class VoiceIntentAccuracyTest {
 
     @Test
-    @DisplayName("common voice queries resolve with at least 90 percent heuristic accuracy [GH-90000]")
+    @DisplayName("common voice queries resolve with at least 90 percent heuristic accuracy")
     void commonVoiceQueriesResolveWithAtLeastNinetyPercentAccuracy() { // GH-90000
         List<Map.Entry<String, String>> corpus = List.of( // GH-90000
             Map.entry("query entities in orders", "query_entities"), // GH-90000

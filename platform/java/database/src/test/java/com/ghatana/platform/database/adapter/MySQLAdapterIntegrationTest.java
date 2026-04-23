@@ -23,18 +23,18 @@ import static org.assertj.core.api.Assertions.assertThatCode;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("MySQL Adapter Integration Tests [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("MySQL Adapter Integration Tests")
+@Tag("integration")
 class MySQLAdapterIntegrationTest extends EventloopTestBase {
 
     // ── Connection pool ───────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("connection pool behavior [GH-90000]")
+    @DisplayName("connection pool behavior")
     class ConnectionPoolBehavior {
 
         @Test
-        @DisplayName("pool initializes with configured minimum connections [GH-90000]")
+        @DisplayName("pool initializes with configured minimum connections")
         void pool_initializesWithConfiguredMinimumConnections() { // GH-90000
             int minConnections = 3;
             AtomicInteger activeConnections = new AtomicInteger(0); // GH-90000
@@ -47,7 +47,7 @@ class MySQLAdapterIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("idle connection dropped after timeout [GH-90000]")
+        @DisplayName("idle connection dropped after timeout")
         void idleConnection_droppedAfterTimeout() { // GH-90000
             AtomicBoolean connectionDropped = new AtomicBoolean(false); // GH-90000
 
@@ -64,11 +64,11 @@ class MySQLAdapterIntegrationTest extends EventloopTestBase {
     // ── Query execution ───────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("query execution [GH-90000]")
+    @DisplayName("query execution")
     class QueryExecution {
 
         @Test
-        @DisplayName("INSERT followed by SELECT returns the inserted row [GH-90000]")
+        @DisplayName("INSERT followed by SELECT returns the inserted row")
         void insert_thenSelect_returnsInsertedRow() { // GH-90000
             List<String> table = new ArrayList<>(); // GH-90000
             String row = "test-value-123";
@@ -79,28 +79,28 @@ class MySQLAdapterIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("UPDATE modifies only matching rows [GH-90000]")
+        @DisplayName("UPDATE modifies only matching rows")
         void update_modifiesOnlyMatchingRows() { // GH-90000
             List<String> table = new ArrayList<>(List.of("alice", "bob", "alice-old")); // GH-90000
 
-            table.replaceAll(s -> s.equals("alice-old [GH-90000]") ? "alice-updated" : s);
+            table.replaceAll(s -> s.equals("alice-old") ? "alice-updated" : s);
 
             assertThat(table).containsExactlyInAnyOrder("alice", "bob", "alice-updated"); // GH-90000
-            assertThat(table).doesNotContain("alice-old [GH-90000]");
+            assertThat(table).doesNotContain("alice-old");
         }
 
         @Test
-        @DisplayName("DELETE removes only matching rows [GH-90000]")
+        @DisplayName("DELETE removes only matching rows")
         void delete_removesOnlyMatchingRows() { // GH-90000
             List<String> table = new ArrayList<>(List.of("active", "inactive", "active")); // GH-90000
 
-            table.removeIf(s -> s.equals("inactive [GH-90000]"));
+            table.removeIf(s -> s.equals("inactive"));
 
-            assertThat(table).containsOnly("active [GH-90000]").hasSize(2);
+            assertThat(table).containsOnly("active").hasSize(2);
         }
 
         @Test
-        @DisplayName("ORDER BY sorts results deterministically [GH-90000]")
+        @DisplayName("ORDER BY sorts results deterministically")
         void orderBy_sortsResultsDeterministically() { // GH-90000
             List<Integer> unordered = List.of(5, 3, 1, 4, 2); // GH-90000
 
@@ -110,12 +110,12 @@ class MySQLAdapterIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("GROUP BY aggregates correctly [GH-90000]")
+        @DisplayName("GROUP BY aggregates correctly")
         void groupBy_aggregatesCorrectly() { // GH-90000
             List<String> rows = List.of("a", "b", "a", "c", "b", "a"); // GH-90000
 
-            long countA = rows.stream().filter(s -> s.equals("a [GH-90000]")).count();
-            long countB = rows.stream().filter(s -> s.equals("b [GH-90000]")).count();
+            long countA = rows.stream().filter(s -> s.equals("a")).count();
+            long countB = rows.stream().filter(s -> s.equals("b")).count();
 
             assertThat(countA).isEqualTo(3); // GH-90000
             assertThat(countB).isEqualTo(2); // GH-90000
@@ -125,11 +125,11 @@ class MySQLAdapterIntegrationTest extends EventloopTestBase {
     // ── Transaction management ────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("transaction management [GH-90000]")
+    @DisplayName("transaction management")
     class TransactionManagement {
 
         @Test
-        @DisplayName("transaction commits on success [GH-90000]")
+        @DisplayName("transaction commits on success")
         void transaction_commitsOnSuccess() { // GH-90000
             AtomicBoolean committed = new AtomicBoolean(false); // GH-90000
 
@@ -142,12 +142,12 @@ class MySQLAdapterIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("transaction rolls back on exception [GH-90000]")
+        @DisplayName("transaction rolls back on exception")
         void transaction_rollsBackOnException() { // GH-90000
             AtomicBoolean rolledBack = new AtomicBoolean(false); // GH-90000
 
             try {
-                throw new RuntimeException("Simulated failure [GH-90000]");
+                throw new RuntimeException("Simulated failure");
             } catch (RuntimeException e) { // GH-90000
                 rolledBack.set(true); // GH-90000
             }
@@ -156,7 +156,7 @@ class MySQLAdapterIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("isolation level READ_COMMITTED prevents dirty reads [GH-90000]")
+        @DisplayName("isolation level READ_COMMITTED prevents dirty reads")
         void isolation_readCommitted_preventsDirtyReads() { // GH-90000
             // Simulate: transaction A writes uncommitted data
             // Transaction B should not see it under READ_COMMITTED
@@ -176,11 +176,11 @@ class MySQLAdapterIntegrationTest extends EventloopTestBase {
     // ── MySQL-specific features ───────────────────────────────────────────────
 
     @Nested
-    @DisplayName("MySQL-specific features [GH-90000]")
+    @DisplayName("MySQL-specific features")
     class MySQLSpecificFeatures {
 
         @Test
-        @DisplayName("AUTO_INCREMENT generates unique sequential identifiers [GH-90000]")
+        @DisplayName("AUTO_INCREMENT generates unique sequential identifiers")
         void autoIncrement_generatesUniqueSequentialIdentifiers() { // GH-90000
             AtomicInteger autoIncrementId = new AtomicInteger(0); // GH-90000
 
@@ -194,7 +194,7 @@ class MySQLAdapterIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("UPSERT (INSERT ON DUPLICATE KEY UPDATE) replaces on conflict [GH-90000]")
+        @DisplayName("UPSERT (INSERT ON DUPLICATE KEY UPDATE) replaces on conflict")
         void upsert_replacesOnConflict() { // GH-90000
             // Simulate upsert behavior
             java.util.Map<String, String> table = new java.util.HashMap<>(); // GH-90000

@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Kernel Event Bus Integration Tests [GH-90000]")
+@DisplayName("Kernel Event Bus Integration Tests")
 class KernelEventBusIntegrationTest extends EventloopTestBase {
 
     private KernelRegistryImpl registry;
@@ -40,7 +40,7 @@ class KernelEventBusIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should publish and subscribe to events across modules [GH-90000]")
+    @DisplayName("Should publish and subscribe to events across modules")
     void testCrossModuleEventPublishing() { // GH-90000
         // GIVEN: Two modules with event subscription
         List<TestEvent> module1Events = new CopyOnWriteArrayList<>(); // GH-90000
@@ -57,18 +57,18 @@ class KernelEventBusIntegrationTest extends EventloopTestBase {
         });
 
         // WHEN: Publish event
-        TestEvent event = new TestEvent("test-data [GH-90000]");
+        TestEvent event = new TestEvent("test-data");
         runPromise(() -> eventBus.publish("test.event", event)); // GH-90000
 
         // THEN: Both modules receive the event
         assertThat(module1Events).hasSize(1); // GH-90000
         assertThat(module2Events).hasSize(1); // GH-90000
-        assertThat(module1Events.get(0).getData()).isEqualTo("test-data [GH-90000]");
-        assertThat(module2Events.get(0).getData()).isEqualTo("test-data [GH-90000]");
+        assertThat(module1Events.get(0).getData()).isEqualTo("test-data");
+        assertThat(module2Events.get(0).getData()).isEqualTo("test-data");
     }
 
     @Test
-    @DisplayName("Should handle event ordering guarantees [GH-90000]")
+    @DisplayName("Should handle event ordering guarantees")
     void testEventOrdering() { // GH-90000
         // GIVEN: Subscriber tracking event order
         List<Integer> receivedOrder = new CopyOnWriteArrayList<>(); // GH-90000
@@ -89,7 +89,7 @@ class KernelEventBusIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should propagate correlation ID across events [GH-90000]")
+    @DisplayName("Should propagate correlation ID across events")
     void testCorrelationIdPropagation() { // GH-90000
         // GIVEN: Subscriber that checks correlation ID
         List<String> correlationIds = new CopyOnWriteArrayList<>(); // GH-90000
@@ -109,7 +109,7 @@ class KernelEventBusIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should handle subscriber errors without affecting other subscribers [GH-90000]")
+    @DisplayName("Should handle subscriber errors without affecting other subscribers")
     void testSubscriberErrorIsolation() { // GH-90000
         // GIVEN: Multiple subscribers, one fails
         List<TestEvent> successfulSubscriber = new CopyOnWriteArrayList<>(); // GH-90000
@@ -122,11 +122,11 @@ class KernelEventBusIntegrationTest extends EventloopTestBase {
 
         eventBus.subscribe("test.event", event -> { // GH-90000
             failingSubscriberCalls.incrementAndGet(); // GH-90000
-            return Promise.ofException(new RuntimeException("Subscriber failed [GH-90000]"));
+            return Promise.ofException(new RuntimeException("Subscriber failed"));
         });
 
         // WHEN: Publish event
-        TestEvent event = new TestEvent("test-data [GH-90000]");
+        TestEvent event = new TestEvent("test-data");
         runPromise(() -> eventBus.publish("test.event", event)); // GH-90000
 
         // THEN: Successful subscriber still receives event
@@ -135,7 +135,7 @@ class KernelEventBusIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should support event filtering by type [GH-90000]")
+    @DisplayName("Should support event filtering by type")
     void testEventFiltering() { // GH-90000
         // GIVEN: Subscribers for different event types
         List<TestEvent> typeAEvents = new CopyOnWriteArrayList<>(); // GH-90000
@@ -152,18 +152,18 @@ class KernelEventBusIntegrationTest extends EventloopTestBase {
         });
 
         // WHEN: Publish different event types
-        runPromise(() -> eventBus.publish("event.typeA", new TestEvent("dataA [GH-90000]")));
-        runPromise(() -> eventBus.publish("event.typeB", new TestEvent("dataB [GH-90000]")));
+        runPromise(() -> eventBus.publish("event.typeA", new TestEvent("dataA")));
+        runPromise(() -> eventBus.publish("event.typeB", new TestEvent("dataB")));
 
         // THEN: Each subscriber receives only its event type
         assertThat(typeAEvents).hasSize(1); // GH-90000
         assertThat(typeBEvents).hasSize(1); // GH-90000
-        assertThat(typeAEvents.get(0).getData()).isEqualTo("dataA [GH-90000]");
-        assertThat(typeBEvents.get(0).getData()).isEqualTo("dataB [GH-90000]");
+        assertThat(typeAEvents.get(0).getData()).isEqualTo("dataA");
+        assertThat(typeBEvents.get(0).getData()).isEqualTo("dataB");
     }
 
     @Test
-    @DisplayName("Should handle high-volume event publishing [GH-90000]")
+    @DisplayName("Should handle high-volume event publishing")
     void testHighVolumeEventPublishing() { // GH-90000
         // GIVEN: Subscriber counting events
         AtomicInteger eventCount = new AtomicInteger(0); // GH-90000
@@ -185,7 +185,7 @@ class KernelEventBusIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should support unsubscribe functionality [GH-90000]")
+    @DisplayName("Should support unsubscribe functionality")
     void testUnsubscribe() { // GH-90000
         // GIVEN: Subscriber that can be unsubscribed
         List<TestEvent> events = new CopyOnWriteArrayList<>(); // GH-90000
@@ -196,19 +196,19 @@ class KernelEventBusIntegrationTest extends EventloopTestBase {
         });
 
         // WHEN: Publish event, unsubscribe, publish again
-        runPromise(() -> eventBus.publish("test.event", new TestEvent("data1 [GH-90000]")));
+        runPromise(() -> eventBus.publish("test.event", new TestEvent("data1")));
 
         eventBus.unsubscribe(subscriptionId); // GH-90000
 
-        runPromise(() -> eventBus.publish("test.event", new TestEvent("data2 [GH-90000]")));
+        runPromise(() -> eventBus.publish("test.event", new TestEvent("data2")));
 
         // THEN: Only first event received
         assertThat(events).hasSize(1); // GH-90000
-        assertThat(events.get(0).getData()).isEqualTo("data1 [GH-90000]");
+        assertThat(events.get(0).getData()).isEqualTo("data1");
     }
 
     @Test
-    @DisplayName("Should handle async event processing [GH-90000]")
+    @DisplayName("Should handle async event processing")
     void testAsyncEventProcessing() { // GH-90000
         // GIVEN: Subscriber with async processing
         List<TestEvent> processedEvents = new CopyOnWriteArrayList<>(); // GH-90000
@@ -222,12 +222,12 @@ class KernelEventBusIntegrationTest extends EventloopTestBase {
         });
 
         // WHEN: Publish event
-        TestEvent event = new TestEvent("async-data [GH-90000]");
+        TestEvent event = new TestEvent("async-data");
         runPromise(() -> eventBus.publish("async.event", event)); // GH-90000
 
         // THEN: Event processed asynchronously
         assertThat(processedEvents).hasSize(1); // GH-90000
-        assertThat(processedEvents.get(0).getData()).isEqualTo("async-data [GH-90000]");
+        assertThat(processedEvents.get(0).getData()).isEqualTo("async-data");
     }
 
     // Test event implementations

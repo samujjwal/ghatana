@@ -21,9 +21,9 @@ public class PlatformBoundaryRules {
     @ArchTest
     static final ArchRule PLATFORM_SHOULD_NOT_DEPEND_ON_PRODUCTS =
         noClasses() // GH-90000
-            .that().resideInAPackage("com.ghatana.platform.. [GH-90000]")
-            .should().dependOnClassesThat().resideInAPackage("com.ghatana.products.. [GH-90000]")
-            .because("Platform modules must not depend on product modules to maintain clean architecture [GH-90000]");
+            .that().resideInAPackage("com.ghatana.platform..")
+            .should().dependOnClassesThat().resideInAPackage("com.ghatana.products..")
+            .because("Platform modules must not depend on product modules to maintain clean architecture");
 
     /**
      * Platform packages should only depend on allowed external packages.
@@ -32,7 +32,7 @@ public class PlatformBoundaryRules {
     @ArchTest
     static final ArchRule PLATFORM_SHOULD_ONLY_DEPEND_ON_ALLOWED_PACKAGES =
         classes() // GH-90000
-            .that().resideInAPackage("com.ghatana.platform.. [GH-90000]")
+            .that().resideInAPackage("com.ghatana.platform..")
             .should().onlyAccessClassesThat() // GH-90000
             .resideInAnyPackage( // GH-90000
                 "com.ghatana.platform..",
@@ -53,7 +53,7 @@ public class PlatformBoundaryRules {
                 "org.lombok..",
                 "org.jetbrains.annotations.."
             )
-            .because("Platform modules should only depend on approved external packages [GH-90000]");
+            .because("Platform modules should only depend on approved external packages");
 
     /**
      * Platform API interfaces should not depend on implementation details.
@@ -62,11 +62,11 @@ public class PlatformBoundaryRules {
     @ArchTest
     static final ArchRule PLATFORM_API_SHOULD_NOT_DEPEND_ON_IMPLEMENTATION =
         noClasses() // GH-90000
-            .that().resideInAPackage("com.ghatana.platform..api [GH-90000]")
-            .and().haveSimpleNameEndingWith("Api [GH-90000]")
+            .that().resideInAPackage("com.ghatana.platform..api")
+            .and().haveSimpleNameEndingWith("Api")
             .should().dependOnClassesThat() // GH-90000
             .resideInAnyPackage("..impl..", "..internal..", "..impl..") // GH-90000
-            .because("API interfaces should not depend on implementation details [GH-90000]");
+            .because("API interfaces should not depend on implementation details");
 
     /**
      * Platform test classes should not access production internals.
@@ -75,9 +75,9 @@ public class PlatformBoundaryRules {
     @ArchTest
     static final ArchRule PLATFORM_TESTS_SHOULD_NOT_ACCESS_INTERNALS =
         noClasses() // GH-90000
-            .that().resideInAPackage("..test.. [GH-90000]")
-            .and().resideInAPackage("com.ghatana.platform.. [GH-90000]")
+            .that().resideInAPackage("..test..")
+            .and().resideInAPackage("com.ghatana.platform..")
             .should().dependOnClassesThat() // GH-90000
             .resideInAnyPackage("..internal..", "..impl..") // GH-90000
-            .because("Tests should validate public contracts, not implementation details [GH-90000]");
+            .because("Tests should validate public contracts, not implementation details");
 }

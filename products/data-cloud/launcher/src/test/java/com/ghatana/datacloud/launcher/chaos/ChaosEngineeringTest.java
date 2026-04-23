@@ -45,7 +45,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Unit Test, Chaos Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("Chaos Engineering Tests [GH-90000]")
+@DisplayName("Chaos Engineering Tests")
 class ChaosEngineeringTest extends EventloopTestBase {
 
     private static final String TENANT_ID = "chaos-tenant";
@@ -65,26 +65,26 @@ class ChaosEngineeringTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Database Failure Scenarios [GH-90000]")
+    @DisplayName("Database Failure Scenarios")
     class DatabaseFailureTests {
 
         @Test
-        @DisplayName("Should retry on transient database connection failure [GH-90000]")
+        @DisplayName("Should retry on transient database connection failure")
         void shouldRetryOnTransientFailure() throws Exception { // GH-90000
             String recordId = runPromise(() -> harness.createRecordWithRetry("test-id", 3)); // GH-90000
 
-            assertThat(recordId).isEqualTo("record-id [GH-90000]");
+            assertThat(recordId).isEqualTo("record-id");
         }
 
         @Test
-        @DisplayName("Should fail after exhausting retries [GH-90000]")
+        @DisplayName("Should fail after exhausting retries")
         void shouldFailAfterMaxRetries() { // GH-90000
             assertThatThrownBy(() -> runPromise(() -> harness.createRecordWithRetry("test-id", 0))) // GH-90000
                     .isInstanceOf(Exception.class); // GH-90000
         }
 
         @Test
-        @DisplayName("Should activate circuit breaker after multiple failures [GH-90000]")
+        @DisplayName("Should activate circuit breaker after multiple failures")
         void shouldActivateCircuitBreaker() throws Exception { // GH-90000
             // Inject failures
             chaos.injectFailurePattern(FailurePattern.INTERMITTENT_DATABASE); // GH-90000
@@ -99,11 +99,11 @@ class ChaosEngineeringTest extends EventloopTestBase {
             // Circuit breaker should open after threshold
             assertThatThrownBy(() -> runPromise(() -> harness.createRecordWithRetry("id-final", 1))) // GH-90000
                     .isInstanceOf(CircuitBreakerOpenException.class) // GH-90000
-                    .hasMessage("Circuit breaker open [GH-90000]");
+                    .hasMessage("Circuit breaker open");
         }
 
         @Test
-        @DisplayName("Should recover after circuit breaker reset [GH-90000]")
+        @DisplayName("Should recover after circuit breaker reset")
         void shouldRecoverAfterCircuitBreakerReset() throws Exception { // GH-90000
             // Open circuit breaker
             chaos.injectFailurePattern(FailurePattern.INTERMITTENT_DATABASE); // GH-90000
@@ -128,7 +128,7 @@ class ChaosEngineeringTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should handle long database query timeout [GH-90000]")
+        @DisplayName("Should handle long database query timeout")
         void shouldHandleQueryTimeout() { // GH-90000
             assertThatThrownBy(() -> runPromise(() -> harness.executeQueryWithTimeout("SELECT *", 30))) // GH-90000
                     .isInstanceOf(Exception.class); // GH-90000
@@ -136,11 +136,11 @@ class ChaosEngineeringTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Message Broker Failure Scenarios [GH-90000]")
+    @DisplayName("Message Broker Failure Scenarios")
     class MessageBrokerFailureTests {
 
         @Test
-        @DisplayName("Should buffer events when Kafka is unavailable [GH-90000]")
+        @DisplayName("Should buffer events when Kafka is unavailable")
         void shouldBufferEventsWhenBrokerDown() throws Exception { // GH-90000
             chaos.injectFailurePattern(FailurePattern.KAFKA_UNAVAILABLE); // GH-90000
 
@@ -162,7 +162,7 @@ class ChaosEngineeringTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should detect message loss and emit alerts [GH-90000]")
+        @DisplayName("Should detect message loss and emit alerts")
         void shouldDetectMessageLoss() throws Exception { // GH-90000
             chaos.injectFailurePattern(FailurePattern.KAFKA_PARTIAL_WRITE); // GH-90000
 
@@ -173,12 +173,12 @@ class ChaosEngineeringTest extends EventloopTestBase {
 
             long persistedCount = harness.getEventCount(TENANT_ID); // GH-90000
             if (persistedCount < 50) { // GH-90000
-                assertThat(harness.getAlertCount("MESSAGE_LOSS [GH-90000]")).isGreaterThan(0);
+                assertThat(harness.getAlertCount("MESSAGE_LOSS")).isGreaterThan(0);
             }
         }
 
         @Test
-        @DisplayName("Should handle high message latency gracefully [GH-90000]")
+        @DisplayName("Should handle high message latency gracefully")
         void shouldHandleHighLatency() throws Exception { // GH-90000
             chaos.injectFailurePattern(FailurePattern.HIGH_LATENCY_KAFKA); // GH-90000
 
@@ -196,11 +196,11 @@ class ChaosEngineeringTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Cache Layer Failure Scenarios [GH-90000]")
+    @DisplayName("Cache Layer Failure Scenarios")
     class CacheFailureTests {
 
         @Test
-        @DisplayName("Should fallback to database when cache is unavailable [GH-90000]")
+        @DisplayName("Should fallback to database when cache is unavailable")
         void shouldFallbackToDatabaseWhenCacheDown() throws Exception { // GH-90000
             chaos.injectFailurePattern(FailurePattern.REDIS_UNAVAILABLE); // GH-90000
 
@@ -213,7 +213,7 @@ class ChaosEngineeringTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should detect stale cache entries and invalidate [GH-90000]")
+        @DisplayName("Should detect stale cache entries and invalidate")
         void shouldInvalidateStaleCacheEntries() throws Exception { // GH-90000
             // Load data into cache
             harness.getRecord(TENANT_ID, "record-id"); // GH-90000
@@ -227,17 +227,17 @@ class ChaosEngineeringTest extends EventloopTestBase {
             chaos.injectFailurePattern(FailurePattern.STALE_CACHE_ENTRIES); // GH-90000
 
             // Should detect staleness and invalidate
-            long staleCacheHits = harness.getMetric("stale_cache_detections [GH-90000]");
+            long staleCacheHits = harness.getMetric("stale_cache_detections");
             assertThat(staleCacheHits).isGreaterThan(0); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Network Partition Scenarios [GH-90000]")
+    @DisplayName("Network Partition Scenarios")
     class NetworkPartitionTests {
 
         @Test
-        @DisplayName("Should detect network partition and activate split-brain prevention [GH-90000]")
+        @DisplayName("Should detect network partition and activate split-brain prevention")
         void shouldDetectNetworkPartition() throws Exception { // GH-90000
             chaos.injectNetworkPartition("region-a", "region-b"); // GH-90000
 
@@ -253,7 +253,7 @@ class ChaosEngineeringTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should heal partition and resync data [GH-90000]")
+        @DisplayName("Should heal partition and resync data")
         void shouldHealPartitionAndResync() throws Exception { // GH-90000
             chaos.injectNetworkPartition("region-a", "region-b"); // GH-90000
 
@@ -267,8 +267,8 @@ class ChaosEngineeringTest extends EventloopTestBase {
             Thread.sleep(100); // GH-90000
 
             // Both regions should be synced
-            long a_writes = harness.getRecordCount("region-a [GH-90000]");
-            long b_writes = harness.getRecordCount("region-b [GH-90000]");
+            long a_writes = harness.getRecordCount("region-a");
+            long b_writes = harness.getRecordCount("region-b");
 
             // Region B should catch up
             assertThat(Math.abs(a_writes - b_writes)).isLessThan(2); // GH-90000
@@ -276,11 +276,11 @@ class ChaosEngineeringTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Cascading Failure Scenarios [GH-90000]")
+    @DisplayName("Cascading Failure Scenarios")
     class CascadingFailureTests {
 
         @Test
-        @DisplayName("Should handle cascading failures without complete system outage [GH-90000]")
+        @DisplayName("Should handle cascading failures without complete system outage")
         void shouldHandleCascadingFailures() throws Exception { // GH-90000
             // Fail database
             chaos.injectFailurePattern(FailurePattern.INTERMITTENT_DATABASE); // GH-90000
@@ -301,11 +301,11 @@ class ChaosEngineeringTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Degraded Mode Operation [GH-90000]")
+    @DisplayName("Degraded Mode Operation")
     class DegradedModeTests {
 
         @Test
-        @DisplayName("Should operate in degraded mode with reduced features [GH-90000]")
+        @DisplayName("Should operate in degraded mode with reduced features")
         void shouldOperateInDegradedMode() throws Exception { // GH-90000
             chaos.setSystemHealth(SystemHealth.DEGRADED); // GH-90000
 
@@ -315,7 +315,7 @@ class ChaosEngineeringTest extends EventloopTestBase {
 
             // Heavy analytics should not work
             assertThatThrownBy(() -> runPromise(() -> // GH-90000
-                    harness.runAnalyticsQuery("SELECT * FROM large_dataset [GH-90000]")))
+                    harness.runAnalyticsQuery("SELECT * FROM large_dataset")))
                     .isInstanceOf(ServiceUnavailableException.class); // GH-90000
 
             // Real-time should be limited
@@ -350,24 +350,24 @@ class ChaosEngineeringTest extends EventloopTestBase {
 
         Promise<String> createRecordWithRetry(String id, int maxRetries) { // GH-90000
             if (maxRetries <= 0) { // GH-90000
-                return Promise.ofException(new RuntimeException("No retries allowed [GH-90000]"));
+                return Promise.ofException(new RuntimeException("No retries allowed"));
             }
             if (cbFailureCount >= CB_THRESHOLD) { // GH-90000
                 long elapsed = System.currentTimeMillis() - cbOpenedAtMs; // GH-90000
                 if (elapsed < CB_HALF_OPEN_DELAY_MS) { // GH-90000
-                    return Promise.ofException(new CircuitBreakerOpenException("Circuit breaker open [GH-90000]"));
+                    return Promise.ofException(new CircuitBreakerOpenException("Circuit breaker open"));
                 }
                 cbFailureCount = 0;
-                return Promise.of("record-id [GH-90000]");
+                return Promise.of("record-id");
             }
             if (chaos.shouldFail() || maxRetries == 1) { // GH-90000
                 cbFailureCount++;
                 if (cbFailureCount == CB_THRESHOLD) { // GH-90000
                     cbOpenedAtMs = System.currentTimeMillis(); // GH-90000
                 }
-                return Promise.ofException(new RuntimeException("Retry limit exceeded [GH-90000]"));
+                return Promise.ofException(new RuntimeException("Retry limit exceeded"));
             }
-            return Promise.of("record-id [GH-90000]");
+            return Promise.of("record-id");
         }
 
         Promise<Object> executeQueryWithTimeout(String query, int timeoutSeconds) { // GH-90000
@@ -405,7 +405,7 @@ class ChaosEngineeringTest extends EventloopTestBase {
         }
 
         Promise<String> publishEventWithTimeout(String tenantId, Event event, int timeoutMs) { // GH-90000
-            return Promise.of("event-id [GH-90000]");
+            return Promise.of("event-id");
         }
 
         Record getRecord(String tenantId, String recordId) { // GH-90000
@@ -441,7 +441,7 @@ class ChaosEngineeringTest extends EventloopTestBase {
             if (chaos.isRegionPartitioned(region)) { // GH-90000
                 return Promise.ofException(new NetworkPartitionException()); // GH-90000
             }
-            return Promise.of("record-id [GH-90000]");
+            return Promise.of("record-id");
         }
 
         long getRecordCount(String region) { // GH-90000

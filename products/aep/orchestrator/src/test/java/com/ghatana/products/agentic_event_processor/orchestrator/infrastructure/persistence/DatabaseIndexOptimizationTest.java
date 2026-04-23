@@ -34,14 +34,14 @@ import org.junit.jupiter.api.Test;
  * @doc.layer infrastructure
  * @doc.pattern Unit Test
  */
-@DisplayName("Database Index Optimization Tests [GH-90000]")
+@DisplayName("Database Index Optimization Tests")
 class DatabaseIndexOptimizationTest {
 
     /**
      * Verifies that PipelineCheckpointEntity declares all 7 strategic indexes.
      */
     @Test
-    @DisplayName("PipelineCheckpointEntity declares all strategic indexes [GH-90000]")
+    @DisplayName("PipelineCheckpointEntity declares all strategic indexes")
     void shouldDeclareAllPipelineCheckpointIndexes() { // GH-90000
         Index[] indexes = getIndexes(PipelineCheckpointEntity.class); // GH-90000
 
@@ -50,13 +50,13 @@ class DatabaseIndexOptimizationTest {
 
         Map<String, Index> byName = Arrays.stream(indexes).collect(Collectors.toMap(Index::name, idx -> idx)); // GH-90000
 
-        assertThat(byName).containsKey("idx_pipeline_checkpoints_tenant_idempotency [GH-90000]");
-        assertThat(byName).containsKey("idx_pipeline_checkpoints_idempotency [GH-90000]");
-        assertThat(byName).containsKey("idx_pipeline_checkpoints_tenant_pipeline [GH-90000]");
-        assertThat(byName).containsKey("idx_pipeline_checkpoints_pipeline_id [GH-90000]");
-        assertThat(byName).containsKey("idx_pipeline_checkpoints_status [GH-90000]");
-        assertThat(byName).containsKey("idx_pipeline_checkpoints_created_at [GH-90000]");
-        assertThat(byName).containsKey("idx_pipeline_checkpoints_updated_at [GH-90000]");
+        assertThat(byName).containsKey("idx_pipeline_checkpoints_tenant_idempotency");
+        assertThat(byName).containsKey("idx_pipeline_checkpoints_idempotency");
+        assertThat(byName).containsKey("idx_pipeline_checkpoints_tenant_pipeline");
+        assertThat(byName).containsKey("idx_pipeline_checkpoints_pipeline_id");
+        assertThat(byName).containsKey("idx_pipeline_checkpoints_status");
+        assertThat(byName).containsKey("idx_pipeline_checkpoints_created_at");
+        assertThat(byName).containsKey("idx_pipeline_checkpoints_updated_at");
     }
 
     /**
@@ -65,19 +65,19 @@ class DatabaseIndexOptimizationTest {
      * ensure multi-tenant isolation without table scans.
      */
     @Test
-    @DisplayName("Tenant-scoped composite indexes are declared correctly [GH-90000]")
+    @DisplayName("Tenant-scoped composite indexes are declared correctly")
     void shouldDeclareTenantScopedCompositeIndexes() { // GH-90000
         Index[] indexes = getIndexes(PipelineCheckpointEntity.class); // GH-90000
         Map<String, String> columnsByName =
                 Arrays.stream(indexes).collect(Collectors.toMap(Index::name, Index::columnList)); // GH-90000
 
         // tenant + idempotency key — used for duplicate detection
-        assertThat(columnsByName.get("idx_pipeline_checkpoints_tenant_idempotency [GH-90000]"))
-                .isEqualTo("tenant_id, idempotency_key [GH-90000]");
+        assertThat(columnsByName.get("idx_pipeline_checkpoints_tenant_idempotency"))
+                .isEqualTo("tenant_id, idempotency_key");
 
         // tenant + pipeline — used for listing executions per pipeline
-        assertThat(columnsByName.get("idx_pipeline_checkpoints_tenant_pipeline [GH-90000]"))
-                .isEqualTo("tenant_id, pipeline_id [GH-90000]");
+        assertThat(columnsByName.get("idx_pipeline_checkpoints_tenant_pipeline"))
+                .isEqualTo("tenant_id, pipeline_id");
     }
 
     /**
@@ -85,13 +85,13 @@ class DatabaseIndexOptimizationTest {
      * exactly-once semantics.
      */
     @Test
-    @DisplayName("Idempotency index has unique constraint for exactly-once semantics [GH-90000]")
+    @DisplayName("Idempotency index has unique constraint for exactly-once semantics")
     void shouldHaveUniqueIdempotencyConstraint() { // GH-90000
         Index[] indexes = getIndexes(PipelineCheckpointEntity.class); // GH-90000
         Index idempotencyIdx = Arrays.stream(indexes) // GH-90000
-                .filter(idx -> idx.name().equals("idx_pipeline_checkpoints_tenant_idempotency [GH-90000]"))
+                .filter(idx -> idx.name().equals("idx_pipeline_checkpoints_tenant_idempotency"))
                 .findFirst() // GH-90000
-                .orElseThrow(() -> new AssertionError("Idempotency index not found [GH-90000]"));
+                .orElseThrow(() -> new AssertionError("Idempotency index not found"));
 
         assertThat(idempotencyIdx.unique()).isTrue(); // GH-90000
     }
@@ -100,7 +100,7 @@ class DatabaseIndexOptimizationTest {
      * Verifies that StepCheckpointEntity declares all 4 required indexes.
      */
     @Test
-    @DisplayName("StepCheckpointEntity declares all required indexes [GH-90000]")
+    @DisplayName("StepCheckpointEntity declares all required indexes")
     void shouldDeclareAllStepCheckpointIndexes() { // GH-90000
         Index[] indexes = getIndexes(StepCheckpointEntity.class); // GH-90000
 
@@ -122,7 +122,7 @@ class DatabaseIndexOptimizationTest {
      * {@code idx_{table_name}_{column_hint}}.
      */
     @Test
-    @DisplayName("All indexes follow naming convention idx_{table}_{column} [GH-90000]")
+    @DisplayName("All indexes follow naming convention idx_{table}_{column}")
     void indexNamingConventionIsConsistent() { // GH-90000
         for (Class<?> entity : List.of(PipelineCheckpointEntity.class, StepCheckpointEntity.class)) { // GH-90000
             Table table = entity.getAnnotation(Table.class); // GH-90000

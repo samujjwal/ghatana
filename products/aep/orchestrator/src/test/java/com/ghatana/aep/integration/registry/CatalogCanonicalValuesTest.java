@@ -40,7 +40,7 @@ import org.junit.jupiter.api.TestFactory;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@DisplayName("CatalogCanonicalValues — all AEP operator YAMLs have canonical enum values [GH-90000]")
+@DisplayName("CatalogCanonicalValues — all AEP operator YAMLs have canonical enum values")
 class CatalogCanonicalValuesTest {
 
     private static final String CATALOG_OPERATORS_DIR = "products/aep/agent-catalog/operators";
@@ -56,7 +56,7 @@ class CatalogCanonicalValuesTest {
         assertThat(catalogDir).isDirectory().as("AEP catalog operators directory must exist at %s", catalogDir); // GH-90000
 
         return Files.walk(catalogDir) // GH-90000
-                .filter(p -> p.toString().endsWith(".yaml [GH-90000]") || p.toString().endsWith(".yml [GH-90000]"))
+                .filter(p -> p.toString().endsWith(".yaml") || p.toString().endsWith(".yml"))
                 .sorted() // GH-90000
                 .map(yamlFile -> DynamicTest.dynamicTest( // GH-90000
                         "catalog: " + catalogDir.relativize(yamlFile), () -> validateIdentityBlock(yamlFile))); // GH-90000
@@ -64,14 +64,14 @@ class CatalogCanonicalValuesTest {
 
     private void validateIdentityBlock(Path yamlFile) throws IOException { // GH-90000
         JsonNode root = YAML.readTree(yamlFile.toFile()); // GH-90000
-        JsonNode identity = root.path("identity [GH-90000]");
+        JsonNode identity = root.path("identity");
 
         assertThat(identity.isMissingNode()) // GH-90000
                 .as("'identity' block is missing in %s", yamlFile.getFileName()) // GH-90000
                 .isFalse(); // GH-90000
 
         // agentType — must resolve to a non-deprecated canonical AgentType
-        String rawAgentType = identity.path("agentType [GH-90000]").asText(null);
+        String rawAgentType = identity.path("agentType").asText(null);
         assertThat(rawAgentType) // GH-90000
                 .as("identity.agentType must be present in %s", yamlFile.getFileName()) // GH-90000
                 .isNotBlank(); // GH-90000
@@ -90,7 +90,7 @@ class CatalogCanonicalValuesTest {
                 .isNotNull(); // GH-90000
 
         // autonomyLevel — must resolve to a canonical AutonomyLevel (or legacy alias) // GH-90000
-        String rawAnalomy = identity.path("autonomyLevel [GH-90000]").asText(null);
+        String rawAnalomy = identity.path("autonomyLevel").asText(null);
         if (rawAnalomy != null && !rawAnalomy.isBlank()) { // GH-90000
             AutonomyLevel resolved = AutonomyLevel.fromString(rawAnalomy); // GH-90000
             assertThat(resolved) // GH-90000
@@ -103,7 +103,7 @@ class CatalogCanonicalValuesTest {
         }
 
         // determinismGuarantee — must be a canonical DeterminismGuarantee
-        String rawDeterminism = identity.path("determinismGuarantee [GH-90000]").asText(null);
+        String rawDeterminism = identity.path("determinismGuarantee").asText(null);
         if (rawDeterminism != null && !rawDeterminism.isBlank()) { // GH-90000
             try {
                 DeterminismGuarantee.valueOf(rawDeterminism.toUpperCase().replace('-', '_')); // GH-90000
@@ -117,7 +117,7 @@ class CatalogCanonicalValuesTest {
         }
 
         // stateMutability — must be a canonical StateMutability
-        String rawStateMutability = identity.path("stateMutability [GH-90000]").asText(null);
+        String rawStateMutability = identity.path("stateMutability").asText(null);
         if (rawStateMutability != null && !rawStateMutability.isBlank()) { // GH-90000
             try {
                 StateMutability.valueOf(rawStateMutability.toUpperCase().replace('-', '_')); // GH-90000
@@ -148,7 +148,7 @@ class CatalogCanonicalValuesTest {
         }
         Path candidate = current;
         for (int i = 0; i < 12; i++) { // GH-90000
-            if (candidate != null && Files.exists(candidate.resolve("gradlew [GH-90000]"))) {
+            if (candidate != null && Files.exists(candidate.resolve("gradlew"))) {
                 return candidate;
             }
             candidate = candidate != null ? candidate.getParent() : null; // GH-90000

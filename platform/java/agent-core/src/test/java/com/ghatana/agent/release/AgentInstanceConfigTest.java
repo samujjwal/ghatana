@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("AgentInstanceConfig [GH-90000]")
+@DisplayName("AgentInstanceConfig")
 class AgentInstanceConfigTest {
 
     private static AgentInstanceConfig minimal() { // GH-90000
@@ -41,58 +41,58 @@ class AgentInstanceConfigTest {
     }
 
     @Test
-    @DisplayName("construction with valid fields succeeds [GH-90000]")
+    @DisplayName("construction with valid fields succeeds")
     void validConstruction() { // GH-90000
         AgentInstanceConfig config = minimal(); // GH-90000
-        assertThat(config.instanceConfigId()).isEqualTo("cfg-001 [GH-90000]");
-        assertThat(config.tenantId()).isEqualTo("tenant-001 [GH-90000]");
+        assertThat(config.instanceConfigId()).isEqualTo("cfg-001");
+        assertThat(config.tenantId()).isEqualTo("tenant-001");
         assertThat(config.killSwitch()).isFalse(); // GH-90000
     }
 
     @Nested
-    @DisplayName("Blank ID validation [GH-90000]")
+    @DisplayName("Blank ID validation")
     class BlankIdValidation {
 
         @Test
-        @DisplayName("blank instanceConfigId throws [GH-90000]")
+        @DisplayName("blank instanceConfigId throws")
         void blankInstanceConfigId() { // GH-90000
             assertThatThrownBy(() -> new AgentInstanceConfig( // GH-90000
                     " ", "release-001", "tenant-001", "production",
                     Map.of(), Map.of(), Map.of(), Map.of(), false, // GH-90000
                     Instant.now(), Instant.now())) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("instanceConfigId [GH-90000]");
+                    .hasMessageContaining("instanceConfigId");
         }
 
         @Test
-        @DisplayName("blank agentReleaseId throws [GH-90000]")
+        @DisplayName("blank agentReleaseId throws")
         void blankAgentReleaseId() { // GH-90000
             assertThatThrownBy(() -> new AgentInstanceConfig( // GH-90000
                     "cfg-001", "", "tenant-001", "production",
                     Map.of(), Map.of(), Map.of(), Map.of(), false, // GH-90000
                     Instant.now(), Instant.now())) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("agentReleaseId [GH-90000]");
+                    .hasMessageContaining("agentReleaseId");
         }
 
         @Test
-        @DisplayName("blank tenantId throws [GH-90000]")
+        @DisplayName("blank tenantId throws")
         void blankTenantId() { // GH-90000
             assertThatThrownBy(() -> new AgentInstanceConfig( // GH-90000
                     "cfg-001", "release-001", "", "production",
                     Map.of(), Map.of(), Map.of(), Map.of(), false, // GH-90000
                     Instant.now(), Instant.now())) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("tenantId [GH-90000]");
+                    .hasMessageContaining("tenantId");
         }
     }
 
     @Nested
-    @DisplayName("Immutability [GH-90000]")
+    @DisplayName("Immutability")
     class Immutability {
 
         @Test
-        @DisplayName("modelOverrides map is unmodifiable [GH-90000]")
+        @DisplayName("modelOverrides map is unmodifiable")
         void modelOverridesUnmodifiable() { // GH-90000
             AgentInstanceConfig config = new AgentInstanceConfig( // GH-90000
                     "cfg-001", "release-001", "tenant-001", "production",
@@ -105,7 +105,7 @@ class AgentInstanceConfigTest {
         }
 
         @Test
-        @DisplayName("featureFlags map is unmodifiable [GH-90000]")
+        @DisplayName("featureFlags map is unmodifiable")
         void featureFlagsUnmodifiable() { // GH-90000
             AgentInstanceConfig config = new AgentInstanceConfig( // GH-90000
                     "cfg-001", "release-001", "tenant-001", "production",
@@ -118,7 +118,7 @@ class AgentInstanceConfigTest {
     }
 
     @Test
-    @DisplayName("killSwitch can be set to true [GH-90000]")
+    @DisplayName("killSwitch can be set to true")
     void killSwitchTrue() { // GH-90000
         AgentInstanceConfig config = new AgentInstanceConfig( // GH-90000
                 "cfg-001", "release-001", "tenant-001", "staging",

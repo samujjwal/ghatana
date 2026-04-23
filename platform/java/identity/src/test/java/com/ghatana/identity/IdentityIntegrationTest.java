@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Identity Integration Tests [GH-90000]")
+@DisplayName("Identity Integration Tests")
 class IdentityIntegrationTest extends EventloopTestBase {
 
     private DefaultTokenProvider tokenProvider;
@@ -54,17 +54,17 @@ class IdentityIntegrationTest extends EventloopTestBase {
         AgentIdentity agent1t1 = new AgentIdentity("t1", "agent-1", // GH-90000
             "spiffe://ghatana.io/t1/agent-1", Set.of("collection:read", "job:execute"), Instant.now()); // GH-90000
         AgentIdentity agent1t2 = new AgentIdentity("t2", "agent-1", // GH-90000
-            "spiffe://ghatana.io/t2/agent-1", Set.of("collection:read [GH-90000]"), Instant.now());
+            "spiffe://ghatana.io/t2/agent-1", Set.of("collection:read"), Instant.now());
         resolver.register(agent1t1); // GH-90000
         resolver.register(agent1t2); // GH-90000
     }
 
     @Nested
-    @DisplayName("Tenant Isolation [GH-90000]")
+    @DisplayName("Tenant Isolation")
     class TenantIsolationTests {
 
         @Test
-        @DisplayName("Agent in t1 cannot access resources in t2 [GH-90000]")
+        @DisplayName("Agent in t1 cannot access resources in t2")
         void agentT1CannotAccessT2() { // GH-90000
             Boolean authorized = runPromise(() -> // GH-90000
                 authzService.isAuthorized("t2", "agent-1", "collection:read")); // GH-90000
@@ -82,7 +82,7 @@ class IdentityIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Authentication is tenant-scoped [GH-90000]")
+        @DisplayName("Authentication is tenant-scoped")
         void authenticationTenantScoped() { // GH-90000
             Optional<String> t1Session = runPromise(() -> // GH-90000
                 authService.authenticate("t1", "agent-1", "valid-hash")); // GH-90000
@@ -95,7 +95,7 @@ class IdentityIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Failed attempts are tenant-scoped [GH-90000]")
+        @DisplayName("Failed attempts are tenant-scoped")
         void failedAttemptsTenantScoped() { // GH-90000
             for (int i = 0; i < 3; i++) { // GH-90000
                 runPromise(() -> authService.recordFailedAttempt("t1", "agent-1")); // GH-90000
@@ -110,11 +110,11 @@ class IdentityIntegrationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Authentication + Authorization Flow [GH-90000]")
+    @DisplayName("Authentication + Authorization Flow")
     class AuthFlowTests {
 
         @Test
-        @DisplayName("Complete login and authorization check [GH-90000]")
+        @DisplayName("Complete login and authorization check")
         void completeAuthFlow() { // GH-90000
             // 1. Authenticate
             Optional<String> sessionToken = runPromise(() -> // GH-90000
@@ -125,8 +125,8 @@ class IdentityIntegrationTest extends EventloopTestBase {
             Optional<TokenClaims> claims = runPromise(() -> // GH-90000
                 tokenProvider.verifyToken(sessionToken.get())); // GH-90000
             assertThat(claims).isPresent(); // GH-90000
-            assertThat(claims.get().tenantId()).isEqualTo("t1 [GH-90000]");
-            assertThat(claims.get().agentId()).isEqualTo("agent-1 [GH-90000]");
+            assertThat(claims.get().tenantId()).isEqualTo("t1");
+            assertThat(claims.get().agentId()).isEqualTo("agent-1");
 
             // 3. Check authorization
             Boolean authorized = runPromise(() -> // GH-90000
@@ -138,7 +138,7 @@ class IdentityIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Lockout prevents further authentication [GH-90000]")
+        @DisplayName("Lockout prevents further authentication")
         void lockoutPreventsAuth() { // GH-90000
             // Force lockout
             for (int i = 0; i < 5; i++) { // GH-90000
@@ -154,11 +154,11 @@ class IdentityIntegrationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Token Lifecycle [GH-90000]")
+    @DisplayName("Token Lifecycle")
     class TokenLifecycleTests {
 
         @Test
-        @DisplayName("Token remains valid throughout session [GH-90000]")
+        @DisplayName("Token remains valid throughout session")
         void tokenValidThroughputSession() { // GH-90000
             String token = runPromise(() -> tokenProvider.createToken("t1", "agent-1", Duration.ofMinutes(10))); // GH-90000
 
@@ -178,7 +178,7 @@ class IdentityIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Key rotation with grace period backward compatible [GH-90000]")
+        @DisplayName("Key rotation with grace period backward compatible")
         void keyRotationBackwardCompatible() { // GH-90000
             // Issue token with old key
             String oldToken = runPromise(() -> tokenProvider.createToken("t1", "agent-1", Duration.ofMinutes(10))); // GH-90000
@@ -202,28 +202,28 @@ class IdentityIntegrationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Delegation Token Integration [GH-90000]")
+    @DisplayName("Delegation Token Integration")
     class DelegationIntegrationTests {
 
         @Test
-        @DisplayName("Delegation preserves tenant boundaries [GH-90000]")
+        @DisplayName("Delegation preserves tenant boundaries")
         void delegationTenantBoundaries() { // GH-90000
             DelegationTokenService delegService = new DefaultDelegationTokenService(); // GH-90000
 
             DelegationToken delegation = runPromise(() -> // GH-90000
-                delegService.delegate("t1", "agent-a", "agent-b", Set.of("read [GH-90000]"), Duration.ofHours(1)));
+                delegService.delegate("t1", "agent-a", "agent-b", Set.of("read"), Duration.ofHours(1)));
 
-            assertThat(delegation.tenantId()).isEqualTo("t1 [GH-90000]");
+            assertThat(delegation.tenantId()).isEqualTo("t1");
             assertThat(delegation.chain()).containsExactly("agent-a", "agent-b"); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("Concurrency & Race Conditions [GH-90000]")
+    @DisplayName("Concurrency & Race Conditions")
     class ConcurrencyTests {
 
         @Test
-        @DisplayName("Concurrent token creation is safe [GH-90000]")
+        @DisplayName("Concurrent token creation is safe")
         void concurrentTokenCreationSafe() { // GH-90000
             for (int i = 0; i < 10; i++) { // GH-90000
                 final int idx = i;
@@ -241,7 +241,7 @@ class IdentityIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Concurrent authentication and authorization [GH-90000]")
+        @DisplayName("Concurrent authentication and authorization")
         void concurrentAuthzChecks() { // GH-90000
             Optional<String> session = runPromise(() -> // GH-90000
                 authService.authenticate("t1", "agent-1", "valid-hash")); // GH-90000
@@ -257,11 +257,11 @@ class IdentityIntegrationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Error Handling & Recovery [GH-90000]")
+    @DisplayName("Error Handling & Recovery")
     class ErrorHandlingTests {
 
         @Test
-        @DisplayName("Handles unknown principal gracefully [GH-90000]")
+        @DisplayName("Handles unknown principal gracefully")
         void unknownPrincipalHandling() { // GH-90000
             Boolean authorized = runPromise(() -> // GH-90000
                 authzService.isAuthorized("t1", "nonexistent-agent", "collection:read")); // GH-90000
@@ -270,16 +270,16 @@ class IdentityIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Handles malformed token gracefully [GH-90000]")
+        @DisplayName("Handles malformed token gracefully")
         void malformedTokenHandling() { // GH-90000
             Optional<TokenClaims> claims = runPromise(() -> // GH-90000
-                tokenProvider.verifyToken("not-a-valid-jwt [GH-90000]"));
+                tokenProvider.verifyToken("not-a-valid-jwt"));
 
             assertThat(claims).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("Handles invalid credentials in authentication [GH-90000]")
+        @DisplayName("Handles invalid credentials in authentication")
         void invalidCredentialsHandling() { // GH-90000
             Optional<String> session = runPromise(() -> // GH-90000
                 authService.authenticate("t1", "agent-1", "")); // GH-90000
@@ -288,7 +288,7 @@ class IdentityIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Recovery after lockout expiration [GH-90000]")
+        @DisplayName("Recovery after lockout expiration")
         void recoveryAfterLockout() { // GH-90000
             // Lock account
             for (int i = 0; i < 5; i++) { // GH-90000
@@ -309,23 +309,23 @@ class IdentityIntegrationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Identity Verification Flow [GH-90000]")
+    @DisplayName("Identity Verification Flow")
     class IdentityVerificationTests {
 
         @Test
-        @DisplayName("Full identity resolution chain [GH-90000]")
+        @DisplayName("Full identity resolution chain")
         void fullIdentityResolution() { // GH-90000
             Optional<AgentIdentity> identity = runPromise(() -> // GH-90000
                 identityService.resolve("t1", "agent-1")); // GH-90000
 
             assertThat(identity).isPresent(); // GH-90000
-            assertThat(identity.get().agentId()).isEqualTo("agent-1 [GH-90000]");
-            assertThat(identity.get().scopes()).contains("collection:read [GH-90000]");
-            assertThat(identity.get().spiffeId()).contains("spiffe:// [GH-90000]");
+            assertThat(identity.get().agentId()).isEqualTo("agent-1");
+            assertThat(identity.get().scopes()).contains("collection:read");
+            assertThat(identity.get().spiffeId()).contains("spiffe://");
         }
 
         @Test
-        @DisplayName("Credential issuance and revocation [GH-90000]")
+        @DisplayName("Credential issuance and revocation")
         void credentialLifecycle() { // GH-90000
             CredentialToken issued = runPromise(() -> // GH-90000
                 identityService.issueCredential("t1", "agent-1", Duration.ofMinutes(10))); // GH-90000

@@ -49,25 +49,36 @@ export const API_BASE_URL: string = import.meta.env.VITE_AEP_API_URL ?? "";
 /**
  * Returns the current auth token from local storage, if present.
  */
+/**
+ * Reads the current auth token from session storage.
+ *
+ * NOTE (TASK-I5): We use `sessionStorage` instead of `localStorage` so tokens
+ * are cleared when the tab closes and are not persisted across browser sessions.
+ * This reduces the attack surface for XSS that exfiltrates tokens and avoids
+ * leaking credentials across shared devices.
+ *
+ * Long-term the platform should move to httpOnly + Secure + SameSite cookies
+ * set by the backend, which would make these helpers obsolete.
+ */
 export function getAuthToken(): string | null {
-  return localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
+  return sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
 }
 
 export function setAuthToken(token: string): void {
-  localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
+  sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
 }
 
 export function getSessionToken(): string | null {
-  return localStorage.getItem(SESSION_TOKEN_STORAGE_KEY);
+  return sessionStorage.getItem(SESSION_TOKEN_STORAGE_KEY);
 }
 
 export function setSessionToken(token: string): void {
-  localStorage.setItem(SESSION_TOKEN_STORAGE_KEY, token);
+  sessionStorage.setItem(SESSION_TOKEN_STORAGE_KEY, token);
 }
 
 export function clearAuthState(): void {
-  localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
-  localStorage.removeItem(SESSION_TOKEN_STORAGE_KEY);
+  sessionStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+  sessionStorage.removeItem(SESSION_TOKEN_STORAGE_KEY);
 }
 
 /**

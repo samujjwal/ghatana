@@ -31,7 +31,7 @@ import static org.mockito.Mockito.*;
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
 @TestInstance(TestInstance.Lifecycle.PER_CLASS) // GH-90000
-@DisplayName("EventDurability – CDC Capture End-to-End (D006) [GH-90000]")
+@DisplayName("EventDurability – CDC Capture End-to-End (D006)")
 class EventDurabilityIntegrationTest extends EventloopTestBase {
 
     @Mock
@@ -45,7 +45,7 @@ class EventDurabilityIntegrationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("[D006]: write_with_leader_ack_achieves_durability [GH-90000]")
+    @DisplayName("[D006]: write_with_leader_ack_achieves_durability")
     void writeWithLeaderAckAchievesDurability() { // GH-90000
         EventDurabilityService.Event event = new EventDurabilityService.Event( // GH-90000
             "evt-001", "test.event", "tenant-alpha",
@@ -71,7 +71,7 @@ class EventDurabilityIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[D006]: write_with_majority_ack_replicates_to_quorum [GH-90000]")
+    @DisplayName("[D006]: write_with_majority_ack_replicates_to_quorum")
     void writeWithMajorityAckReplicatesToQuorum() { // GH-90000
         EventDurabilityService.Event event = new EventDurabilityService.Event( // GH-90000
             "evt-002", "test.event", "tenant-alpha",
@@ -98,7 +98,7 @@ class EventDurabilityIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[D006]: write_with_fsync_ack_persists_to_disk [GH-90000]")
+    @DisplayName("[D006]: write_with_fsync_ack_persists_to_disk")
     void writeWithFsyncAckPersistsToDisk() { // GH-90000
         EventDurabilityService.Event event = new EventDurabilityService.Event( // GH-90000
             "evt-003", "test.event", "tenant-alpha",
@@ -129,7 +129,7 @@ class EventDurabilityIntegrationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("[D006]: save_checkpoint_persists_offset [GH-90000]")
+    @DisplayName("[D006]: save_checkpoint_persists_offset")
     void saveCheckpointPersistsOffset() { // GH-90000
         String consumerId = "consumer-001";
         int partition = 0;
@@ -144,7 +144,7 @@ class EventDurabilityIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[D006]: get_checkpoint_returns_saved_offset [GH-90000]")
+    @DisplayName("[D006]: get_checkpoint_returns_saved_offset")
     void getCheckpointReturnsSavedOffset() { // GH-90000
         String consumerId = "consumer-001";
         int partition = 0;
@@ -162,7 +162,7 @@ class EventDurabilityIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[D006]: get_all_checkpoints_returns_all_partitions [GH-90000]")
+    @DisplayName("[D006]: get_all_checkpoints_returns_all_partitions")
     void getAllCheckpointsReturnsAllPartitions() { // GH-90000
         String consumerId = "consumer-001";
         List<EventCheckpointRepository.Checkpoint> checkpoints = List.of( // GH-90000
@@ -187,7 +187,7 @@ class EventDurabilityIntegrationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("[D006]: consumer_lag_calculated_correctly [GH-90000]")
+    @DisplayName("[D006]: consumer_lag_calculated_correctly")
     void consumerLagCalculatedCorrectly() { // GH-90000
         String consumerId = "consumer-001";
         List<EventCheckpointRepository.PartitionLag> lags = List.of( // GH-90000
@@ -209,7 +209,7 @@ class EventDurabilityIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[D006]: caught_up_partition_has_zero_lag [GH-90000]")
+    @DisplayName("[D006]: caught_up_partition_has_zero_lag")
     void caughtUpPartitionHasZeroLag() { // GH-90000
         EventCheckpointRepository.PartitionLag lag =
             EventCheckpointRepository.PartitionLag.of(0, 1000, 1000); // GH-90000
@@ -219,7 +219,7 @@ class EventDurabilityIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[D006]: behind_partition_has_positive_lag [GH-90000]")
+    @DisplayName("[D006]: behind_partition_has_positive_lag")
     void behindPartitionHasPositiveLag() { // GH-90000
         EventCheckpointRepository.PartitionLag lag =
             EventCheckpointRepository.PartitionLag.of(0, 1000, 800); // GH-90000
@@ -233,7 +233,7 @@ class EventDurabilityIntegrationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("[D006]: durability_status_shows_replica_count [GH-90000]")
+    @DisplayName("[D006]: durability_status_shows_replica_count")
     void durabilityStatusShowsReplicaCount() { // GH-90000
         String eventId = "evt-001";
 
@@ -260,7 +260,7 @@ class EventDurabilityIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[D006]: fully_durable_when_fsynced_and_replicated [GH-90000]")
+    @DisplayName("[D006]: fully_durable_when_fsynced_and_replicated")
     void fullyDurableWhenFsyncedAndReplicated() { // GH-90000
         EventDurabilityService.DurabilityStatus status =
             new EventDurabilityService.DurabilityStatus( // GH-90000
@@ -276,7 +276,7 @@ class EventDurabilityIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[D006]: not_fully_durable_when_not_fsynced [GH-90000]")
+    @DisplayName("[D006]: not_fully_durable_when_not_fsynced")
     void notFullyDurableWhenNotFsynced() { // GH-90000
         EventDurabilityService.DurabilityStatus status =
             new EventDurabilityService.DurabilityStatus( // GH-90000
@@ -296,7 +296,7 @@ class EventDurabilityIntegrationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("[D006]: wait_for_durability_returns_true_when_achieved [GH-90000]")
+    @DisplayName("[D006]: wait_for_durability_returns_true_when_achieved")
     void waitForDurabilityReturnsTrueWhenAchieved() { // GH-90000
         String eventId = "evt-001";
 
@@ -318,7 +318,7 @@ class EventDurabilityIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("[D006]: wait_for_durability_returns_false_on_timeout [GH-90000]")
+    @DisplayName("[D006]: wait_for_durability_returns_false_on_timeout")
     void waitForDurabilityReturnsFalseOnTimeout() { // GH-90000
         String eventId = "evt-slow";
 
@@ -344,7 +344,7 @@ class EventDurabilityIntegrationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("[D006]: cdc_event_captured_with_offset [GH-90000]")
+    @DisplayName("[D006]: cdc_event_captured_with_offset")
     void cdcEventCapturedWithOffset() { // GH-90000
         Map<String, Object> cdcEvent = buildEvent( // GH-90000
             "cdc.entity.created",
@@ -352,15 +352,15 @@ class EventDurabilityIntegrationTest extends EventloopTestBase {
             Map.of("source", "database", "operation", "INSERT") // GH-90000
         );
 
-        assertThat(cdcEvent.get("offset [GH-90000]")).isEqualTo(42L);
-        @SuppressWarnings("unchecked [GH-90000]")
-        Map<String, Object> payload = (Map<String, Object>) cdcEvent.get("payload [GH-90000]");
-        assertThat(payload.get("source [GH-90000]")).isEqualTo("database [GH-90000]");
-        assertThat(payload.get("operation [GH-90000]")).isEqualTo("INSERT [GH-90000]");
+        assertThat(cdcEvent.get("offset")).isEqualTo(42L);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> payload = (Map<String, Object>) cdcEvent.get("payload");
+        assertThat(payload.get("source")).isEqualTo("database");
+        assertThat(payload.get("operation")).isEqualTo("INSERT");
     }
 
     @Test
-    @DisplayName("[D006]: cdc_events_ordered_by_offset [GH-90000]")
+    @DisplayName("[D006]: cdc_events_ordered_by_offset")
     void cdcEventsOrderedByOffset() { // GH-90000
         List<Map<String, Object>> events = List.of( // GH-90000
             buildEvent("cdc.event", 3, Map.of()), // GH-90000
@@ -369,12 +369,12 @@ class EventDurabilityIntegrationTest extends EventloopTestBase {
         );
 
         List<Map<String, Object>> sorted = events.stream() // GH-90000
-            .sorted(java.util.Comparator.comparingLong(e -> (Long) e.get("offset [GH-90000]")))
+            .sorted(java.util.Comparator.comparingLong(e -> (Long) e.get("offset")))
             .toList(); // GH-90000
 
-        assertThat(sorted.get(0).get("offset [GH-90000]")).isEqualTo(1L);
-        assertThat(sorted.get(1).get("offset [GH-90000]")).isEqualTo(2L);
-        assertThat(sorted.get(2).get("offset [GH-90000]")).isEqualTo(3L);
+        assertThat(sorted.get(0).get("offset")).isEqualTo(1L);
+        assertThat(sorted.get(1).get("offset")).isEqualTo(2L);
+        assertThat(sorted.get(2).get("offset")).isEqualTo(3L);
     }
 
     private static Map<String, Object> buildEvent(String type, long offset, Map<String, Object> payload) { // GH-90000

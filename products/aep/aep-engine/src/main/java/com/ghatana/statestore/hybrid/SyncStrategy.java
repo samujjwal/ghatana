@@ -10,7 +10,11 @@ package com.ghatana.statestore.hybrid;
  * - BATCHED: Batch syncs every N operations (balanced, recommended)
  * - PERIODIC: Sync every T milliseconds (fastest, eventual)
  * - ON_CHECKPOINT: Only during checkpoint (maximum performance)
- */
+  * @doc.type enum
+ * @doc.purpose Provides sync strategy functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 public enum SyncStrategy {
 
     /**

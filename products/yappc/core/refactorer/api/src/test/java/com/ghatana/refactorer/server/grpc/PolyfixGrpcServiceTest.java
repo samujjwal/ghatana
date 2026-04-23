@@ -23,11 +23,11 @@ import org.junit.jupiter.api.Test;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("PolyfixGrpcService [GH-90000]")
+@DisplayName("PolyfixGrpcService")
 class PolyfixGrpcServiceTest {
 
     @Test
-    @DisplayName("maps invalid run requests to INVALID_ARGUMENT [GH-90000]")
+    @DisplayName("maps invalid run requests to INVALID_ARGUMENT")
     void mapsInvalidRunRequestsToInvalidArgument() { // GH-90000
         PolyfixGrpcService service = new PolyfixGrpcService(mock(JobService.class)); // GH-90000
         CapturingObserver<com.ghatana.refactorer.api.v1.JobId> observer = new CapturingObserver<>(); // GH-90000
@@ -40,44 +40,44 @@ class PolyfixGrpcServiceTest {
     }
 
     @Test
-    @DisplayName("maps service exceptions to matching gRPC status codes [GH-90000]")
+    @DisplayName("maps service exceptions to matching gRPC status codes")
     void mapsServiceExceptionsToGrpcStatuses() { // GH-90000
         StatusRuntimeException error = PolyfixGrpcService.toGrpcException( // GH-90000
                 new ExceptionHandler.ServiceException(ErrorCode.STORAGE_UNAVAILABLE, "downstream unavailable")); // GH-90000
 
         assertThat(error.getStatus().getCode()).isEqualTo(Status.Code.UNAVAILABLE); // GH-90000
-        assertThat(error.getStatus().getDescription()).isEqualTo("downstream unavailable [GH-90000]");
+        assertThat(error.getStatus().getDescription()).isEqualTo("downstream unavailable");
     }
 
     @Test
-    @DisplayName("returns NOT_FOUND when requested job status is missing [GH-90000]")
+    @DisplayName("returns NOT_FOUND when requested job status is missing")
     void returnsNotFoundWhenJobStatusMissing() { // GH-90000
         JobService jobService = mock(JobService.class); // GH-90000
-        when(jobService.get("missing-job [GH-90000]")).thenReturn(Optional.empty());
+        when(jobService.get("missing-job")).thenReturn(Optional.empty());
         PolyfixGrpcService service = new PolyfixGrpcService(jobService); // GH-90000
         CapturingObserver<com.ghatana.refactorer.api.v1.RunStatus> observer = new CapturingObserver<>(); // GH-90000
 
-        service.getStatus(JobId.newBuilder().setId("missing-job [GH-90000]").build(), observer);
+        service.getStatus(JobId.newBuilder().setId("missing-job").build(), observer);
 
         assertThat(observer.error).isInstanceOf(StatusRuntimeException.class); // GH-90000
         StatusRuntimeException error = (StatusRuntimeException) observer.error; // GH-90000
         assertThat(error.getStatus().getCode()).isEqualTo(Status.Code.NOT_FOUND); // GH-90000
-        assertThat(error.getStatus().getDescription()).contains("missing-job [GH-90000]");
+        assertThat(error.getStatus().getDescription()).contains("missing-job");
     }
 
     @Test
-    @DisplayName("returns a status payload when the job exists [GH-90000]")
+    @DisplayName("returns a status payload when the job exists")
     void returnsStatusPayloadWhenJobExists() { // GH-90000
         JobService jobService = mock(JobService.class); // GH-90000
         JobRecord record = JobRecord.newQueued("job-1", "tenant-1", java.util.Map.of("idempotencyKey", "idem-1")); // GH-90000
-        when(jobService.get("job-1 [GH-90000]")).thenReturn(Optional.of(record));
+        when(jobService.get("job-1")).thenReturn(Optional.of(record));
         PolyfixGrpcService service = new PolyfixGrpcService(jobService); // GH-90000
         CapturingObserver<com.ghatana.refactorer.api.v1.RunStatus> observer = new CapturingObserver<>(); // GH-90000
 
-        service.getStatus(JobId.newBuilder().setId("job-1 [GH-90000]").build(), observer);
+        service.getStatus(JobId.newBuilder().setId("job-1").build(), observer);
 
         assertThat(observer.value).isNotNull(); // GH-90000
-        assertThat(observer.value.getJobId()).isEqualTo("job-1 [GH-90000]");
+        assertThat(observer.value.getJobId()).isEqualTo("job-1");
         assertThat(observer.completed).isTrue(); // GH-90000
     }
 

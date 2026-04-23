@@ -26,7 +26,7 @@ import static org.mockito.Mockito.*;
  * - Cluster membership consensus
  * - RTO and RPO target achievement
  */
-@DisplayName("Failover and Recovery Integration Tests [GH-90000]")
+@DisplayName("Failover and Recovery Integration Tests")
 class FailoverRecoveryIntegrationTest extends EventloopTestBase {
 
     @Mock private FailoverManager failoverManager;
@@ -53,11 +53,11 @@ class FailoverRecoveryIntegrationTest extends EventloopTestBase {
 
     // ===== Service Failover Tests =====
     @Nested
-    @DisplayName("Service Failover Scenarios [GH-90000]")
+    @DisplayName("Service Failover Scenarios")
     class FailoverTests {
 
         @Test
-        @DisplayName("should elect leader in healthy cluster [GH-90000]")
+        @DisplayName("should elect leader in healthy cluster")
         void shouldElectLeader() { // GH-90000
             List<String> candidates = List.of("node-1", "node-2", "node-3"); // GH-90000
 
@@ -67,7 +67,7 @@ class FailoverRecoveryIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should promote replica on primary failure [GH-90000]")
+        @DisplayName("should promote replica on primary failure")
         void shouldPromoteReplica() { // GH-90000
             String failedPrimary = "primary-node";
             List<String> replicas = List.of("replica-1", "replica-2", "replica-3"); // GH-90000
@@ -79,7 +79,7 @@ class FailoverRecoveryIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should trigger failover on health check timeout [GH-90000]")
+        @DisplayName("should trigger failover on health check timeout")
         void shouldTriggerOnTimeout() { // GH-90000
             HealthCheckResult healthCheck = new HealthCheckResult(); // GH-90000
             healthCheck.setStatus(HealthStatus.TIMEOUT); // GH-90000
@@ -91,7 +91,7 @@ class FailoverRecoveryIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should validate failover prerequisites [GH-90000]")
+        @DisplayName("should validate failover prerequisites")
         void shouldValidatePrerequisites() { // GH-90000
             FailoverConditions conditions = new FailoverConditions(); // GH-90000
             conditions.setReplicasHealthy(3); // GH-90000
@@ -103,7 +103,7 @@ class FailoverRecoveryIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should reject failover without quorum [GH-90000]")
+        @DisplayName("should reject failover without quorum")
         void shouldRejectNoQuorum() { // GH-90000
             FailoverConditions conditions = new FailoverConditions(); // GH-90000
             conditions.setReplicasHealthy(2); // GH-90000
@@ -114,17 +114,17 @@ class FailoverRecoveryIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should prevent cascading failovers [GH-90000]")
+        @DisplayName("should prevent cascading failovers")
         void shouldPreventCascading() { // GH-90000
-            failoverService.recordFailoverAttempt("primary-1 [GH-90000]");
+            failoverService.recordFailoverAttempt("primary-1");
 
-            boolean allowed = failoverService.allowFailover("primary-1 [GH-90000]");
+            boolean allowed = failoverService.allowFailover("primary-1");
 
             assertThat(allowed).isFalse(); // Prevent immediate re-failover // GH-90000
         }
 
         @Test
-        @DisplayName("should update route after failover [GH-90000]")
+        @DisplayName("should update route after failover")
         void shouldUpdateRoute() { // GH-90000
             String newLeader = "replica-2-promoted";
 
@@ -137,11 +137,11 @@ class FailoverRecoveryIntegrationTest extends EventloopTestBase {
 
     // ===== Data Recovery Tests =====
     @Nested
-    @DisplayName("Data Recovery After Failures [GH-90000]")
+    @DisplayName("Data Recovery After Failures")
     class DataRecoveryTests {
 
         @Test
-        @DisplayName("should recover from write-ahead log [GH-90000]")
+        @DisplayName("should recover from write-ahead log")
         void shouldRecoverFromWAL() { // GH-90000
             WriteAheadLog wal = new WriteAheadLog(); // GH-90000
             wal.addEntry(new LogEntry("operation-1", 1)); // GH-90000
@@ -154,7 +154,7 @@ class FailoverRecoveryIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should support point-in-time recovery [GH-90000]")
+        @DisplayName("should support point-in-time recovery")
         void shouldSupportPointInTimeRecovery() { // GH-90000
             long recoveryTime = System.currentTimeMillis() - 3600000; // 1 hour ago // GH-90000
 
@@ -164,7 +164,7 @@ class FailoverRecoveryIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should restore from backup [GH-90000]")
+        @DisplayName("should restore from backup")
         void shouldRestoreFromBackup() { // GH-90000
             BackupMetadata backup = new BackupMetadata(); // GH-90000
             backup.setTimestamp(System.currentTimeMillis() - 300000); // GH-90000
@@ -176,7 +176,7 @@ class FailoverRecoveryIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should perform incremental recovery [GH-90000]")
+        @DisplayName("should perform incremental recovery")
         void shouldPerformIncremental() { // GH-90000
             BackupMetadata baseBackup = new BackupMetadata(); // GH-90000
             List<IncrementalBackup> increments = List.of( // GH-90000
@@ -191,7 +191,7 @@ class FailoverRecoveryIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should validate data consistency after recovery [GH-90000]")
+        @DisplayName("should validate data consistency after recovery")
         void shouldValidateConsistency() { // GH-90000
             failoverService.restoreFromBackup(new BackupMetadata()); // GH-90000
 
@@ -201,7 +201,7 @@ class FailoverRecoveryIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should measure recovery time objective [GH-90000]")
+        @DisplayName("should measure recovery time objective")
         void shouldMeasureRTO() { // GH-90000
             long recoveryStart = System.currentTimeMillis(); // GH-90000
 
@@ -214,7 +214,7 @@ class FailoverRecoveryIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should achieve recovery point objective [GH-90000]")
+        @DisplayName("should achieve recovery point objective")
         void shouldAchieveRPO() { // GH-90000
             RecoveryMetrics metrics = failoverService.getRecoveryMetrics(); // GH-90000
 
@@ -227,11 +227,11 @@ class FailoverRecoveryIntegrationTest extends EventloopTestBase {
 
     // ===== Cluster Membership Tests =====
     @Nested
-    @DisplayName("Cluster Membership Changes [GH-90000]")
+    @DisplayName("Cluster Membership Changes")
     class ClusterMembershipTests {
 
         @Test
-        @DisplayName("should add new replica node to cluster [GH-90000]")
+        @DisplayName("should add new replica node to cluster")
         void shouldAddNode() { // GH-90000
             String newNode = "replica-4";
             List<String> currentCluster = List.of("primary", "replica-1", "replica-2", "replica-3"); // GH-90000
@@ -242,7 +242,7 @@ class FailoverRecoveryIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should remove failed node from cluster [GH-90000]")
+        @DisplayName("should remove failed node from cluster")
         void shouldRemoveNode() { // GH-90000
             String failedNode = "replica-2";
             List<String> currentCluster = List.of("primary", "replica-1", "replica-2", "replica-3"); // GH-90000
@@ -254,7 +254,7 @@ class FailoverRecoveryIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should rebalance after membership change [GH-90000]")
+        @DisplayName("should rebalance after membership change")
         void shouldRebalanceMembers() { // GH-90000
             failoverService.addNodeToCluster( // GH-90000
                     List.of("primary", "replica-1"), // GH-90000
@@ -267,7 +267,7 @@ class FailoverRecoveryIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should verify quorum after membership change [GH-90000]")
+        @DisplayName("should verify quorum after membership change")
         void shouldVerifyQuorum() { // GH-90000
             List<String> cluster = List.of("node-1", "node-2", "node-3", "node-4", "node-5"); // GH-90000
 
@@ -277,7 +277,7 @@ class FailoverRecoveryIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should prevent removing too many nodes simultaneously [GH-90000]")
+        @DisplayName("should prevent removing too many nodes simultaneously")
         void shouldPreventMassRemoval() { // GH-90000
             List<String> cluster = List.of("node-1", "node-2", "node-3"); // GH-90000
 
@@ -287,7 +287,7 @@ class FailoverRecoveryIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should coordinate membership consensus [GH-90000]")
+        @DisplayName("should coordinate membership consensus")
         void shouldCoordinateConsensus() { // GH-90000
             MembershipChange change = new MembershipChange("add", "new-node"); // GH-90000
 
@@ -297,9 +297,9 @@ class FailoverRecoveryIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should handle partial network partitions during rebalance [GH-90000]")
+        @DisplayName("should handle partial network partitions during rebalance")
         void shouldHandlePartitionDuringRebalance() { // GH-90000
-            failoverService.simulateNetworkPartition("node-4 [GH-90000]");
+            failoverService.simulateNetworkPartition("node-4");
 
             RebalanceProgress progress = failoverService.rebalanceCluster(); // GH-90000
 
@@ -310,11 +310,11 @@ class FailoverRecoveryIntegrationTest extends EventloopTestBase {
 
     // ===== Recovery Metrics & Objectives Tests =====
     @Nested
-    @DisplayName("Recovery Objectives and Metrics [GH-90000]")
+    @DisplayName("Recovery Objectives and Metrics")
     class RecoveryObjectivesTests {
 
         @Test
-        @DisplayName("should measure actual RTO against target [GH-90000]")
+        @DisplayName("should measure actual RTO against target")
         void shouldMeasureRTO() { // GH-90000
             long rtoTarget = 300000; // 5 minutes
 
@@ -324,7 +324,7 @@ class FailoverRecoveryIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should measure actual RPO against target [GH-90000]")
+        @DisplayName("should measure actual RPO against target")
         void shouldMeasureRPO() { // GH-90000
             long rpoTarget = 60000; // 1 minute
 
@@ -334,7 +334,7 @@ class FailoverRecoveryIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should track recovery performance over time [GH-90000]")
+        @DisplayName("should track recovery performance over time")
         void shouldTrackPerformance() { // GH-90000
             for (int i = 0; i < 10; i++) { // GH-90000
                 failoverService.executeFailover(); // GH-90000
@@ -346,7 +346,7 @@ class FailoverRecoveryIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should alert on RTO/RPO breach [GH-90000]")
+        @DisplayName("should alert on RTO/RPO breach")
         void shouldAlertOnBreach() { // GH-90000
             failoverService.simulateSlowRecovery(500000); // Exceeds 5 min SLA // GH-90000
 
@@ -357,7 +357,7 @@ class FailoverRecoveryIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should verify graceful degradation during recovery [GH-90000]")
+        @DisplayName("should verify graceful degradation during recovery")
         void shouldVerifyDegradation() { // GH-90000
             failoverService.startRecovery(); // GH-90000
 
@@ -368,7 +368,7 @@ class FailoverRecoveryIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should measure recovery resource consumption [GH-90000]")
+        @DisplayName("should measure recovery resource consumption")
         void shouldMeasureResources() { // GH-90000
             failoverService.executeFullRecovery(); // GH-90000
 
@@ -420,7 +420,7 @@ class FailoverRecoveryIntegrationTest extends EventloopTestBase {
 
         void initiateFailoverWithValidation(FailoverConditions conditions) { // GH-90000
             if (!conditions.quorumReached) { // GH-90000
-                throw new NoAvailableReplicaException("Cannot initiate failover without quorum [GH-90000]");
+                throw new NoAvailableReplicaException("Cannot initiate failover without quorum");
             }
         }
 

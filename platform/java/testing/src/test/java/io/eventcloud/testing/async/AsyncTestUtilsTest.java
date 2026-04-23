@@ -14,13 +14,13 @@ class AsyncTestUtilsTest {
     @Test
     void await_shouldReturnFutureResult() { // GH-90000
         // Given
-        CompletableFuture<String> future = CompletableFuture.completedFuture("test [GH-90000]");
+        CompletableFuture<String> future = CompletableFuture.completedFuture("test");
 
         // When
         String result = AsyncTestUtils.await(future, Duration.ofSeconds(1)); // GH-90000
 
         // Then
-        assertThat(result).isEqualTo("test [GH-90000]");
+        assertThat(result).isEqualTo("test");
     }
 
     @Test
@@ -31,18 +31,18 @@ class AsyncTestUtilsTest {
         // When/Then
         assertThatThrownBy(() -> AsyncTestUtils.await(future, Duration.ofMillis(100))) // GH-90000
             .isInstanceOf(RuntimeException.class) // GH-90000
-            .hasMessageContaining("Timed out [GH-90000]");
+            .hasMessageContaining("Timed out");
     }
 
     @Test
     void await_shouldThrowOnException() { // GH-90000
         // Given
-        CompletableFuture<String> future = CompletableFuture.failedFuture(new RuntimeException("test error [GH-90000]"));
+        CompletableFuture<String> future = CompletableFuture.failedFuture(new RuntimeException("test error"));
 
         // When/Then
         assertThatThrownBy(() -> AsyncTestUtils.await(future, Duration.ofSeconds(1))) // GH-90000
             .isInstanceOf(RuntimeException.class) // GH-90000
-            .hasMessageContaining("test error [GH-90000]");
+            .hasMessageContaining("test error");
     }
 
     @Test
@@ -75,7 +75,7 @@ class AsyncTestUtilsTest {
         assertThatThrownBy(() -> // GH-90000
             AsyncTestUtils.await(condition::get, Duration.ofMillis(100), Duration.ofMillis(10)) // GH-90000
         ).isInstanceOf(RuntimeException.class) // GH-90000
-         .hasMessageContaining("Condition not met [GH-90000]");
+         .hasMessageContaining("Condition not met");
     }
 
     @Test
@@ -89,7 +89,7 @@ class AsyncTestUtilsTest {
         long duration = System.currentTimeMillis() - startTime; // GH-90000
 
         // Then
-        assertThat(result).isEqualTo("test [GH-90000]");
+        assertThat(result).isEqualTo("test");
         assertThat(duration).isGreaterThanOrEqualTo(100); // GH-90000
     }
 
@@ -97,7 +97,7 @@ class AsyncTestUtilsTest {
     void delayedFailure_shouldFailAfterDelay() { // GH-90000
         // Given
         CompletableFuture<String> future = AsyncTestUtils.delayedFailure( // GH-90000
-            new RuntimeException("test error [GH-90000]"),
+            new RuntimeException("test error"),
             Duration.ofMillis(100) // GH-90000
         );
 
@@ -105,6 +105,6 @@ class AsyncTestUtilsTest {
         assertThatThrownBy(future::join) // GH-90000
             .isInstanceOf(CompletionException.class) // GH-90000
             .hasCauseInstanceOf(RuntimeException.class) // GH-90000
-            .hasMessageContaining("test error [GH-90000]");
+            .hasMessageContaining("test error");
     }
 }

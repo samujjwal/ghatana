@@ -34,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("PhaseGateValidator [GH-90000]")
+@DisplayName("PhaseGateValidator")
 class PhaseGateValidatorTest extends EventloopTestBase {
 
     private PhaseGateValidator      validator;
@@ -55,7 +55,7 @@ class PhaseGateValidatorTest extends EventloopTestBase {
     // ── Stage config loaded ───────────────────────────────────────────────────
 
     @Test
-    @DisplayName("stageConfig loads at least the 8 canonical YAPPC phases [GH-90000]")
+    @DisplayName("stageConfig loads at least the 8 canonical YAPPC phases")
     void stageConfigLoadsCorePhases() { // GH-90000
         assertThat(stageConfig.size()).isGreaterThanOrEqualTo(1); // GH-90000
     }
@@ -63,11 +63,11 @@ class PhaseGateValidatorTest extends EventloopTestBase {
     // ── Validation result ─────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("validate() [GH-90000]")
+    @DisplayName("validate()")
     class ValidateMethod {
 
         @Test
-        @DisplayName("returns allClear for unknown phase id (fail-open for unknown stages) [GH-90000]")
+        @DisplayName("returns allClear for unknown phase id (fail-open for unknown stages)")
         void unknownPhaseReturnsAllClear() { // GH-90000
             // INTENT maps to "intent" stage; if no stage matches we expect allClear
             PhaseGateValidator.ValidationResult result = runPromise(() -> // GH-90000
@@ -79,7 +79,7 @@ class PhaseGateValidatorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("returns ValidationResult with target phase preserved [GH-90000]")
+        @DisplayName("returns ValidationResult with target phase preserved")
         void resultPreservesTargetPhase() { // GH-90000
             PhaseGateValidator.ValidationResult result = runPromise(() -> // GH-90000
                     validator.validate("proj-1", PhaseType.SHAPE, Map.of())); // GH-90000
@@ -88,7 +88,7 @@ class PhaseGateValidatorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("empty conditions produce no criteria blockers for trivially-satisfied stage [GH-90000]")
+        @DisplayName("empty conditions produce no criteria blockers for trivially-satisfied stage")
         void emptyConditionsOnTrivialStageProduceNoBlockers() { // GH-90000
             // With empty conditions, unmatched criteria all fail-closed.
             // For phases where ALL entry criteria can be satisfied by keyword presence,
@@ -102,7 +102,7 @@ class PhaseGateValidatorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("blockers list is immutable [GH-90000]")
+        @DisplayName("blockers list is immutable")
         void blockersListIsImmutable() { // GH-90000
             PhaseGateValidator.ValidationResult result = runPromise(() -> // GH-90000
                     validator.validate("proj-1", PhaseType.RUN, Map.of())); // GH-90000
@@ -114,11 +114,11 @@ class PhaseGateValidatorTest extends EventloopTestBase {
     // ── Artifact gate ─────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("artifact gate [GH-90000]")
+    @DisplayName("artifact gate")
     class ArtifactGate {
 
         @Test
-        @DisplayName("missing artifact appears in artifactBlockers() [GH-90000]")
+        @DisplayName("missing artifact appears in artifactBlockers()")
         void missingArtifactAppearsInBlockers() { // GH-90000
             // Use GENERATE phase which has artifact requirements in stages.yaml
             // With an empty artifact store, all required artifacts are missing.
@@ -128,11 +128,11 @@ class PhaseGateValidatorTest extends EventloopTestBase {
             // We can't assert exact blocker count without knowing stages.yaml content,
             // but we CAN assert that if there ARE artifact blockers, they have the right prefix.
             result.artifactBlockers().forEach(b -> // GH-90000
-                    assertThat(b).startsWith("missing-artifact: [GH-90000]"));
+                    assertThat(b).startsWith("missing-artifact:"));
         }
 
         @Test
-        @DisplayName("isArtifactGateOpen returns false for project with no artifacts [GH-90000]")
+        @DisplayName("isArtifactGateOpen returns false for project with no artifacts")
         void isArtifactGateOpenReturnsFalseWhenNoArtifacts() { // GH-90000
             // Store has no artifacts → gate should be reporting blocked or open
             boolean open = runPromise(() -> // GH-90000
@@ -143,7 +143,7 @@ class PhaseGateValidatorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("blockers split correctly into artifact vs criteria categories [GH-90000]")
+        @DisplayName("blockers split correctly into artifact vs criteria categories")
         void blockersCategorizationIsCorrect() { // GH-90000
             PhaseGateValidator.ValidationResult result = runPromise(() -> // GH-90000
                     validator.validate("proj-split", PhaseType.VALIDATE, Map.of())); // GH-90000
@@ -165,7 +165,7 @@ class PhaseGateValidatorTest extends EventloopTestBase {
     // ── allClear factory ──────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("ValidationResult.allClear has no blockers and allClear=true [GH-90000]")
+    @DisplayName("ValidationResult.allClear has no blockers and allClear=true")
     void allClearFactoryIsConsistent() { // GH-90000
         PhaseGateValidator.ValidationResult result =
                 PhaseGateValidator.ValidationResult.allClear(PhaseType.OBSERVE); // GH-90000
@@ -179,21 +179,21 @@ class PhaseGateValidatorTest extends EventloopTestBase {
     // ── Null safety ───────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("constructor rejects null stageConfig [GH-90000]")
+    @DisplayName("constructor rejects null stageConfig")
     void constructorRejectsNullStageConfig() { // GH-90000
         org.junit.jupiter.api.Assertions.assertThrows(NullPointerException.class, () -> // GH-90000
                 new PhaseGateValidator(null, gateEvaluator, artifactRepo)); // GH-90000
     }
 
     @Test
-    @DisplayName("constructor rejects null gateEvaluator [GH-90000]")
+    @DisplayName("constructor rejects null gateEvaluator")
     void constructorRejectsNullGateEvaluator() { // GH-90000
         org.junit.jupiter.api.Assertions.assertThrows(NullPointerException.class, () -> // GH-90000
                 new PhaseGateValidator(stageConfig, null, artifactRepo)); // GH-90000
     }
 
     @Test
-    @DisplayName("constructor rejects null artifactRepository [GH-90000]")
+    @DisplayName("constructor rejects null artifactRepository")
     void constructorRejectsNullArtifactRepository() { // GH-90000
         org.junit.jupiter.api.Assertions.assertThrows(NullPointerException.class, () -> // GH-90000
                 new PhaseGateValidator(stageConfig, gateEvaluator, null)); // GH-90000
@@ -202,7 +202,7 @@ class PhaseGateValidatorTest extends EventloopTestBase {
     // ── Metrics emission ──────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Phase gate metrics emission [GH-90000]")
+    @DisplayName("Phase gate metrics emission")
     class MetricsEmissionTest {
 
         private SimpleMeterRegistry metricsRegistry;
@@ -218,14 +218,14 @@ class PhaseGateValidatorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("emits PASS metric when all gates clear [GH-90000]")
+        @DisplayName("emits PASS metric when all gates clear")
         void emitsPassMetricOnClearGate() { // GH-90000
             runPromise(() -> instrumentedValidator.validate( // GH-90000
                     "project-metrics-pass", PhaseType.INTENT, Map.of())); // GH-90000
 
             // At least one gate-validation counter should have been registered (PASS or BLOCK) // GH-90000
             long totalEmitted = metricsRegistry
-                    .find("yappc.lifecycle.phase.gate.validations.total [GH-90000]")
+                    .find("yappc.lifecycle.phase.gate.validations.total")
                     .counters() // GH-90000
                     .stream() // GH-90000
                     .mapToLong(c -> (long) c.count()) // GH-90000
@@ -234,16 +234,16 @@ class PhaseGateValidatorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("emits BLOCK metric when entry criterion is unmet [GH-90000]")
+        @DisplayName("emits BLOCK metric when entry criterion is unmet")
         void emitsBlockMetricOnUnmetCriterion() { // GH-90000
-            // Use a phase known to have entry criteria ("requirements_reviewed [GH-90000]") to force BLOCK
+            // Use a phase known to have entry criteria ("requirements_reviewed") to force BLOCK
             runPromise(() -> instrumentedValidator.validate( // GH-90000
                     "project-metrics-block", PhaseType.SHAPE,
                     Map.of("requirements_reviewed", false))); // GH-90000
 
             // Either PASS or BLOCK — the gate metric must be emitted regardless
             double total = metricsRegistry
-                    .find("yappc.lifecycle.phase.gate.validations.total [GH-90000]")
+                    .find("yappc.lifecycle.phase.gate.validations.total")
                     .tag("phase", "SHAPE") // GH-90000
                     .counters() // GH-90000
                     .stream() // GH-90000
@@ -253,20 +253,20 @@ class PhaseGateValidatorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("records duration in distribution summary [GH-90000]")
+        @DisplayName("records duration in distribution summary")
         void recordsDurationSummary() { // GH-90000
             runPromise(() -> instrumentedValidator.validate( // GH-90000
                     "project-duration", PhaseType.INTENT, Map.of())); // GH-90000
 
             var summary = metricsRegistry
-                    .find("yappc.lifecycle.phase.gate.duration.ms [GH-90000]")
+                    .find("yappc.lifecycle.phase.gate.duration.ms")
                     .summary(); // GH-90000
             assertThat(summary).isNotNull(); // GH-90000
             assertThat(summary.count()).isGreaterThanOrEqualTo(1); // GH-90000
         }
 
         @Test
-        @DisplayName("does not emit metrics when BusinessMetrics is null (3-arg constructor) [GH-90000]")
+        @DisplayName("does not emit metrics when BusinessMetrics is null (3-arg constructor)")
         void doesNotEmitWhenMetricsNull() { // GH-90000
             PhaseGateValidator noMetricsValidator = new PhaseGateValidator( // GH-90000
                     stageConfig, gateEvaluator, artifactRepo);
@@ -275,7 +275,7 @@ class PhaseGateValidatorTest extends EventloopTestBase {
 
             // The per-test registry should still be empty (no metrics emitted via default constructor) // GH-90000
             var counter = metricsRegistry
-                    .find("yappc.lifecycle.phase.gate.validations.total [GH-90000]")
+                    .find("yappc.lifecycle.phase.gate.validations.total")
                     .counter(); // GH-90000
             assertThat(counter).isNull(); // GH-90000
         }

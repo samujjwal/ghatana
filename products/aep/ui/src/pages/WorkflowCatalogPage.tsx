@@ -23,6 +23,12 @@ import {
 } from '@/api/aep.api';
 import { Button } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
+import {
+  getEditPipelineUrl,
+  getPipelineListUrl,
+} from '@/lib/routes';
+import { EmptyState } from '@/components/core/EmptyState';
+import { ErrorState } from '@/components/core/ErrorState';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -132,8 +138,15 @@ export function WorkflowCatalogPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [instantiatingIds, setInstantiatingIds] = useState<Set<string>>(new Set());
+  const [instantiatedPipeline, setInstantiatedPipeline] = useState<{ name: string; id: string } | null>(null);
 
-  const { data: templates, isLoading, isError, error } = useQuery({
+  const {
+    data: templates = [],
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['workflow-templates', tenantId],
     queryFn: () => listWorkflowTemplates(tenantId),
     staleTime: 60_000,
@@ -146,7 +159,11 @@ export function WorkflowCatalogPage() {
     },
     onSuccess: (result, templateId) => {
       queryClient.invalidateQueries({ queryKey: ['pipelines', tenantId] });
-      navigate(`/pipelines/${result.pipelineId}`);
+      const template = templates?.find((t) => t.id === templateId);
+      setInstantiatedPipeline({
+        name: template?.name ?? 'Untitled',
+        id: result.pipelineId,
+      });
     },
     onError: (_err, templateId) => {
       setInstantiatingIds((prev) => {
@@ -217,32 +234,19 @@ export function WorkflowCatalogPage() {
         )}
 
         {isError && (
-          <div className="flex items-center justify-center h-40">
-            <p className="text-sm text-red-600 dark:text-red-400">
-              Failed to load templates:{' '}
-              {error instanceof Error ? error.message : 'Unknown error'}
-            </p>
-          </div>
+          <ErrorState
+            title="Failed to load templates"
+            message={error instanceof Error ? error.message : 'Unknown error'}
+            onRetry={() => void refetch()}
+          />
         )}
 
         {!isLoading && !isError && filtered.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-40 gap-2">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {templates?.length === 0
-                ? 'No workflow templates registered for this tenant.'
-                : 'No templates match your search.'}
-            </p>
-            {search && (
-              <Button
-                type="button"
-                onClick={() => setSearch('')}
-                variant="text"
-                className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
-              >
-                Clear search
-              </Button>
-            )}
-          </div>
+          <EmptyState
+            title={templates?.length === 0 ? 'No workflow templates registered' : 'No templates match your search'}
+            description={templates?.length === 0 ? 'Register templates for this tenant to get started.' : 'Try adjusting your search terms.'}
+            action={search ? { label: 'Clear search', onClick: () => setSearch('') } : undefined}
+          />
         )}
 
         {!isLoading && !isError && filtered.length > 0 && (
@@ -258,6 +262,41 @@ export function WorkflowCatalogPage() {
           </div>
         )}
       </div>
+
+      {/* Success confirmation modal */}
+      {instantiatedPipeline && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-900 rounded-xl p-6 max-w-sm w-full mx-4 shadow-xl">
+            <h2 className="font-semibold text-gray-900 dark:text-white mb-2">
+              Pipeline created
+            </h2>
+            <p className="text-sm text-gray-500 mb-4">
+              “{instantiatedPipeline.name}” was instantiated successfully.
+            </p>
+            <div className="flex gap-2 justify-end">
+              <Button
+                onClick={() => {
+                  setInstantiatedPipeline(null);
+                  navigate(getPipelineListUrl());
+                }}
+                variant="secondary"
+              >
+                Go to list
+              </Button>
+              <Button
+                onClick={() => {
+                  const id = instantiatedPipeline.id;
+                  setInstantiatedPipeline(null);
+                  navigate(getEditPipelineUrl(id));
+                }}
+                variant="primary"
+              >
+                Open in builder
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

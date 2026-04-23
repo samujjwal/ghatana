@@ -3,6 +3,12 @@ package com.ghatana.orchestrator.models;
 import java.time.Instant;
 import java.util.Set;
 
+/**
+ * @doc.type class
+ * @doc.purpose Provides agent metadata entity functionality.
+ * @doc.layer product
+ * @doc.pattern Entity
+ */
 public class AgentMetadataEntity {
     public String id;
     public String className;

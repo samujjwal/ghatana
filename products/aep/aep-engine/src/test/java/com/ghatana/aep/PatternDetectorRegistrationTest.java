@@ -28,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern UnitTest
  */
-@DisplayName("PatternDetector Registration [GH-90000]")
+@DisplayName("PatternDetector Registration")
 class PatternDetectorRegistrationTest extends EventloopTestBase {
 
     private AepEngine engine;
@@ -61,11 +61,11 @@ class PatternDetectorRegistrationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("registerPatternDetector() [GH-90000]")
+    @DisplayName("registerPatternDetector()")
     class RegisterTests {
 
         @Test
-        @DisplayName("registers detector successfully [GH-90000]")
+        @DisplayName("registers detector successfully")
         void registersDetectorSuccessfully() { // GH-90000
             engine.registerPatternDetector("tenant-1", testDetector); // GH-90000
             
@@ -74,23 +74,23 @@ class PatternDetectorRegistrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("throws on null detector [GH-90000]")
+        @DisplayName("throws on null detector")
         void throwsOnNullDetector() { // GH-90000
             assertThatThrownBy(() -> engine.registerPatternDetector("tenant-1", null)) // GH-90000
                 .isInstanceOf(NullPointerException.class) // GH-90000
-                .hasMessageContaining("detector [GH-90000]");
+                .hasMessageContaining("detector");
         }
 
         @Test
-        @DisplayName("throws on null tenantId [GH-90000]")
+        @DisplayName("throws on null tenantId")
         void throwsOnNullTenantId() { // GH-90000
             assertThatThrownBy(() -> engine.registerPatternDetector(null, testDetector)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("tenantId [GH-90000]");
+                .hasMessageContaining("tenantId");
         }
 
         @Test
-        @DisplayName("allows multiple detectors for same tenant [GH-90000]")
+        @DisplayName("allows multiple detectors for same tenant")
         void allowsMultipleDetectorsForSameTenant() { // GH-90000
             AepEngine.PatternDetector detector2 = (tenantId, event, patterns) -> Promise.of(List.of()); // GH-90000
             
@@ -101,7 +101,7 @@ class PatternDetectorRegistrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("allows detectors for different tenants [GH-90000]")
+        @DisplayName("allows detectors for different tenants")
         void allowsDetectorsForDifferentTenants() { // GH-90000
             engine.registerPatternDetector("tenant-1", testDetector); // GH-90000
             engine.registerPatternDetector("tenant-2", testDetector); // GH-90000
@@ -111,11 +111,11 @@ class PatternDetectorRegistrationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("unregisterPatternDetector() [GH-90000]")
+    @DisplayName("unregisterPatternDetector()")
     class UnregisterTests {
 
         @Test
-        @DisplayName("removes registered detector [GH-90000]")
+        @DisplayName("removes registered detector")
         void removesRegisteredDetector() { // GH-90000
             engine.registerPatternDetector("tenant-1", testDetector); // GH-90000
             engine.unregisterPatternDetector("tenant-1", testDetector); // GH-90000
@@ -124,23 +124,23 @@ class PatternDetectorRegistrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("throws on null detector [GH-90000]")
+        @DisplayName("throws on null detector")
         void throwsOnNullDetector() { // GH-90000
             assertThatThrownBy(() -> engine.unregisterPatternDetector("tenant-1", null)) // GH-90000
                 .isInstanceOf(NullPointerException.class) // GH-90000
-                .hasMessageContaining("detector [GH-90000]");
+                .hasMessageContaining("detector");
         }
 
         @Test
-        @DisplayName("throws on null tenantId [GH-90000]")
+        @DisplayName("throws on null tenantId")
         void throwsOnNullTenantId() { // GH-90000
             assertThatThrownBy(() -> engine.unregisterPatternDetector(null, testDetector)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("tenantId [GH-90000]");
+                .hasMessageContaining("tenantId");
         }
 
         @Test
-        @DisplayName("handles unregister of non-existent detector gracefully [GH-90000]")
+        @DisplayName("handles unregister of non-existent detector gracefully")
         void handlesUnregisterOfNonExistentDetector() { // GH-90000
             // Should not throw even if detector was never registered
             engine.unregisterPatternDetector("tenant-1", testDetector); // GH-90000
@@ -148,11 +148,11 @@ class PatternDetectorRegistrationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Detector Invocation [GH-90000]")
+    @DisplayName("Detector Invocation")
     class InvocationTests {
 
         @Test
-        @DisplayName("registered detector is invoked during event processing [GH-90000]")
+        @DisplayName("registered detector is invoked during event processing")
         void registeredDetectorIsInvokedDuringProcessing() { // GH-90000
             engine.registerPatternDetector("tenant-1", testDetector); // GH-90000
             
@@ -166,7 +166,7 @@ class PatternDetectorRegistrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("detector is not invoked for different tenant [GH-90000]")
+        @DisplayName("detector is not invoked for different tenant")
         void detectorNotInvokedForDifferentTenant() { // GH-90000
             engine.registerPatternDetector("tenant-1", testDetector); // GH-90000
             
@@ -179,10 +179,10 @@ class PatternDetectorRegistrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("detector errors do not fail event processing [GH-90000]")
+        @DisplayName("detector errors do not fail event processing")
         void detectorErrorsDoNotFailEventProcessing() { // GH-90000
             AepEngine.PatternDetector failingDetector = (tenantId, event, patterns) -> { // GH-90000
-                throw new RuntimeException("Detector failed [GH-90000]");
+                throw new RuntimeException("Detector failed");
             };
             
             engine.registerPatternDetector("tenant-1", failingDetector); // GH-90000
@@ -197,7 +197,7 @@ class PatternDetectorRegistrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("unregistered detector is not invoked [GH-90000]")
+        @DisplayName("unregistered detector is not invoked")
         void unregisteredDetectorIsNotInvoked() { // GH-90000
             engine.registerPatternDetector("tenant-1", testDetector); // GH-90000
             engine.unregisterPatternDetector("tenant-1", testDetector); // GH-90000
@@ -211,7 +211,7 @@ class PatternDetectorRegistrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("multiple detectors are all invoked [GH-90000]")
+        @DisplayName("multiple detectors are all invoked")
         void multipleDetectorsAreAllInvoked() { // GH-90000
             AtomicInteger count2 = new AtomicInteger(0); // GH-90000
             AepEngine.PatternDetector detector2 = (tenantId, event, patterns) -> { // GH-90000
@@ -233,11 +233,11 @@ class PatternDetectorRegistrationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Closed Engine Behavior [GH-90000]")
+    @DisplayName("Closed Engine Behavior")
     class ClosedEngineTests {
 
         @Test
-        @DisplayName("cannot register detector after engine closed [GH-90000]")
+        @DisplayName("cannot register detector after engine closed")
         void cannotRegisterAfterClosed() { // GH-90000
             engine.close(); // GH-90000
             
@@ -246,7 +246,7 @@ class PatternDetectorRegistrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("cannot unregister detector after engine closed [GH-90000]")
+        @DisplayName("cannot unregister detector after engine closed")
         void cannotUnregisterAfterClosed() { // GH-90000
             engine.registerPatternDetector("tenant-1", testDetector); // GH-90000
             engine.close(); // GH-90000

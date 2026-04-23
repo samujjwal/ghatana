@@ -37,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("EndpointSensitivity – route classification matrix [GH-90000]")
+@DisplayName("EndpointSensitivity – route classification matrix")
 class EndpointSensitivityTest {
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -45,7 +45,7 @@ class EndpointSensitivityTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("PUBLIC paths — health / metrics probes [GH-90000]")
+    @DisplayName("PUBLIC paths — health / metrics probes")
     class PublicPaths {
 
         @ParameterizedTest(name = "{0} {1} → PUBLIC") // GH-90000
@@ -67,7 +67,7 @@ class EndpointSensitivityTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("INTERNAL — authenticated read-only GETs [GH-90000]")
+    @DisplayName("INTERNAL — authenticated read-only GETs")
     class InternalPaths {
 
         @ParameterizedTest(name = "GET {0} → INTERNAL") // GH-90000
@@ -119,7 +119,7 @@ class EndpointSensitivityTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("SENSITIVE — authenticated writes, AI, voice [GH-90000]")
+    @DisplayName("SENSITIVE — authenticated writes, AI, voice")
     class SensitivePaths {
 
         @ParameterizedTest(name = "{0} {1} → SENSITIVE") // GH-90000
@@ -178,7 +178,7 @@ class EndpointSensitivityTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("CRITICAL — deletions, governance, model promote, approve/reject [GH-90000]")
+    @DisplayName("CRITICAL — deletions, governance, model promote, approve/reject")
     class CriticalPaths {
 
         @ParameterizedTest(name = "{0} {1} → CRITICAL") // GH-90000
@@ -216,28 +216,28 @@ class EndpointSensitivityTest {
         // ── Explicit named tests for high-value invariants ───────────────────
 
         @Test
-        @DisplayName("GET /api/v1/governance/compliance/summary is CRITICAL (governance prefix) [GH-90000]")
+        @DisplayName("GET /api/v1/governance/compliance/summary is CRITICAL (governance prefix)")
         void governanceGet_isCritical() { // GH-90000
             assertThat(classify("GET", "/api/v1/governance/compliance/summary")) // GH-90000
                 .isEqualTo(CRITICAL); // GH-90000
         }
 
         @Test
-        @DisplayName("DELETE /api/v1/entities/:collection/:id is CRITICAL [GH-90000]")
+        @DisplayName("DELETE /api/v1/entities/:collection/:id is CRITICAL")
         void entityDelete_isCritical() { // GH-90000
             assertThat(classify("DELETE", "/api/v1/entities/user_profiles/u-123")) // GH-90000
                 .isEqualTo(CRITICAL); // GH-90000
         }
 
         @Test
-        @DisplayName("DELETE /api/v1/pipelines/:id is CRITICAL (pipeline teardown requires audit) [GH-90000]")
+        @DisplayName("DELETE /api/v1/pipelines/:id is CRITICAL (pipeline teardown requires audit)")
         void pipelineDelete_isCritical() { // GH-90000
             assertThat(classify("DELETE", "/api/v1/pipelines/etl-001")) // GH-90000
                 .isEqualTo(CRITICAL); // GH-90000
         }
 
         @Test
-        @DisplayName("DELETE /api/v1/checkpoints/:id is CRITICAL (checkpoint deletion requires audit) [GH-90000]")
+        @DisplayName("DELETE /api/v1/checkpoints/:id is CRITICAL (checkpoint deletion requires audit)")
         void checkpointDelete_isCritical() { // GH-90000
             assertThat(classify("DELETE", "/api/v1/checkpoints/cp-001")) // GH-90000
                 .isEqualTo(CRITICAL); // GH-90000
@@ -249,39 +249,39 @@ class EndpointSensitivityTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Edge cases and boundary conditions [GH-90000]")
+    @DisplayName("Edge cases and boundary conditions")
     class EdgeCases {
 
         @Test
-        @DisplayName("Unknown /api/v1/ path with GET → INTERNAL (authenticated default) [GH-90000]")
+        @DisplayName("Unknown /api/v1/ path with GET → INTERNAL (authenticated default)")
         void unknownApiV1Get_returnsInternal() { // GH-90000
             assertThat(classify("GET", "/api/v1/unknown-resource")) // GH-90000
                 .isEqualTo(INTERNAL); // GH-90000
         }
 
         @Test
-        @DisplayName("Unknown /api/v1/ path with POST → INTERNAL (not matching any prefix) [GH-90000]")
+        @DisplayName("Unknown /api/v1/ path with POST → INTERNAL (not matching any prefix)")
         void unknownApiV1Post_returnsInternal() { // GH-90000
             assertThat(classify("POST", "/api/v1/unknown-resource")) // GH-90000
                 .isEqualTo(INTERNAL); // GH-90000
         }
 
         @Test
-        @DisplayName("Non-api path → INTERNAL (fallback) [GH-90000]")
+        @DisplayName("Non-api path → INTERNAL (fallback)")
         void nonApiPath_returnsInternal() { // GH-90000
             assertThat(classify("GET", "/static/index.html")) // GH-90000
                 .isEqualTo(INTERNAL); // GH-90000
         }
 
         @Test
-        @DisplayName("POST /api/v1/learning/trigger is SENSITIVE — mutation of learning pipeline [GH-90000]")
+        @DisplayName("POST /api/v1/learning/trigger is SENSITIVE — mutation of learning pipeline")
         void learningTrigger_isSensitive() { // GH-90000
             assertThat(classify("POST", "/api/v1/learning/trigger")) // GH-90000
                 .isEqualTo(SENSITIVE); // GH-90000
         }
 
         @Test
-        @DisplayName("classify is case-insensitive for HTTP method [GH-90000]")
+        @DisplayName("classify is case-insensitive for HTTP method")
         void caseInsensitiveMethod() { // GH-90000
             assertThat(classify("delete", "/api/v1/pipelines/my-pipeline")).isEqualTo(CRITICAL); // GH-90000
             assertThat(classify("DELETE", "/api/v1/pipelines/my-pipeline")).isEqualTo(CRITICAL); // GH-90000
@@ -289,7 +289,7 @@ class EndpointSensitivityTest {
         }
 
         @Test
-        @DisplayName("PUBLIC_PATHS set contains the expected probe paths [GH-90000]")
+        @DisplayName("PUBLIC_PATHS set contains the expected probe paths")
         void publicPathsSet_containsProbes() { // GH-90000
             assertThat(PUBLIC_PATHS).containsExactlyInAnyOrder( // GH-90000
                 "/health", "/health/detail", "/ready", "/live", "/metrics", "/info"
@@ -297,7 +297,7 @@ class EndpointSensitivityTest {
         }
 
         @Test
-        @DisplayName("CRITICAL_PATH_PREFIXES covers governance, learning review, and voice transcripts (always-critical) [GH-90000]")
+        @DisplayName("CRITICAL_PATH_PREFIXES covers governance, learning review, and voice transcripts (always-critical)")
         void criticalPrefixes_coversExpectedResources() { // GH-90000
             Set<String> expected = Set.of( // GH-90000
                 "/api/v1/governance/",
@@ -308,7 +308,7 @@ class EndpointSensitivityTest {
         }
 
         @Test
-        @DisplayName("DELETE_CRITICAL_PREFIXES covers all resources where deletion requires policy engine [GH-90000]")
+        @DisplayName("DELETE_CRITICAL_PREFIXES covers all resources where deletion requires policy engine")
         void deleteCriticalPrefixes_coversExpectedResources() { // GH-90000
             Set<String> expected = Set.of( // GH-90000
                 "/api/v1/entities/",

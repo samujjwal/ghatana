@@ -22,7 +22,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("EntityValidationHandler [GH-90000]")
+@DisplayName("EntityValidationHandler")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class EntityValidationHandlerTest extends EventloopTestBase {
 
@@ -47,7 +47,7 @@ class EntityValidationHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("single validation rejects missing tenant before reading body [GH-90000]")
+    @DisplayName("single validation rejects missing tenant before reading body")
     void singleValidationRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 
@@ -59,7 +59,7 @@ class EntityValidationHandlerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("batch validation rejects missing tenant before reading body [GH-90000]")
+    @DisplayName("batch validation rejects missing tenant before reading body")
     void batchValidationRejectsMissingTenant() { // GH-90000
         when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
 

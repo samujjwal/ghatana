@@ -53,14 +53,14 @@ class EntityMappingTest {
     mapper = new YappcEntityMapper(objectMapper, new EncryptionService( // GH-90000
       Base64.getDecoder().decode(EncryptionService.generateKey()))); // GH-90000
     ProjectEntity original = new ProjectEntity("Test Project", "Description", "user-123"); // GH-90000
-    original.setTenantId("tenant-1 [GH-90000]");
-    original.setCurrentStage("plan [GH-90000]");
-    original.setStatus("ACTIVE [GH-90000]");
+    original.setTenantId("tenant-1");
+    original.setCurrentStage("plan");
+    original.setStatus("ACTIVE");
     original.setEnvironmentVariables(Map.of( // GH-90000
       "OPENAI_API_KEY", "sk-roundtrip-secret",
       "DATABASE_URL", "jdbc:postgresql://localhost/yappc"
     ));
-    original.advanceStage("execute [GH-90000]");
+    original.advanceStage("execute");
 
     // When
     Map<String, Object> data = mapper.toEntityData(original); // GH-90000
@@ -83,13 +83,13 @@ class EntityMappingTest {
     // Given
     UUID projectId = UUID.randomUUID(); // GH-90000
     TaskEntity original = new TaskEntity(projectId, "Implement feature", "Task description", "execute"); // GH-90000
-    original.setAssignedAgentId("agent.yappc.java-expert [GH-90000]");
-    original.setStatus("IN_PROGRESS [GH-90000]");
-    original.setPriority("HIGH [GH-90000]");
-    original.requiresCapability("code-generation [GH-90000]");
-    original.requiresCapability("test-generation [GH-90000]");
+    original.setAssignedAgentId("agent.yappc.java-expert");
+    original.setStatus("IN_PROGRESS");
+    original.setPriority("HIGH");
+    original.requiresCapability("code-generation");
+    original.requiresCapability("test-generation");
     original.withLabel("type", "feature"); // GH-90000
-    original.setEventCorrelationId("evt-123 [GH-90000]");
+    original.setEventCorrelationId("evt-123");
 
     // When
     Map<String, Object> data = mapper.toEntityData(original); // GH-90000
@@ -106,7 +106,7 @@ class EntityMappingTest {
     assertEquals(original.getStage(), restored.getStage()); // GH-90000
     assertEquals(original.getEventCorrelationId(), restored.getEventCorrelationId()); // GH-90000
     assertEquals(2, restored.getRequiredCapabilities().size()); // GH-90000
-    assertTrue(restored.getLabels().containsKey("type [GH-90000]"));
+    assertTrue(restored.getLabels().containsKey("type"));
   }
 
   @Test
@@ -115,7 +115,7 @@ class EntityMappingTest {
     UUID projectId = UUID.randomUUID(); // GH-90000
     PhaseStateEntity original = new PhaseStateEntity( // GH-90000
         projectId, "execute", "plan", "sprint.plan.approved");
-    original.setStatus("ACTIVE [GH-90000]");
+    original.setStatus("ACTIVE");
     original.markEntryCriterion("sprint_approved", true); // GH-90000
     original.markEntryCriterion("capacity_available", true); // GH-90000
     original.addProducedArtifact("sprint-plan", "docs/plans/sprint-1.md"); // GH-90000
@@ -124,7 +124,7 @@ class EntityMappingTest {
         "human approval received",
         true,
         "Approved by product owner");
-    original.setEventCorrelationId("evt-phase-123 [GH-90000]");
+    original.setEventCorrelationId("evt-phase-123");
 
     // When
     Map<String, Object> data = mapper.toEntityData(original); // GH-90000
@@ -152,15 +152,15 @@ class EntityMappingTest {
 
     // When/Then - Test valid transitions
     assertEquals("intent", project.getCurrentStage()); // GH-90000
-    assertTrue(project.advanceStage("context [GH-90000]"));
+    assertTrue(project.advanceStage("context"));
     assertEquals("context", project.getCurrentStage()); // GH-90000
-    assertTrue(project.advanceStage("plan [GH-90000]"));
+    assertTrue(project.advanceStage("plan"));
     assertEquals("plan", project.getCurrentStage()); // GH-90000
-    assertTrue(project.advanceStage("execute [GH-90000]"));
+    assertTrue(project.advanceStage("execute"));
     assertEquals("execute", project.getCurrentStage()); // GH-90000
 
     // Invalid transition should fail
-    assertFalse(project.advanceStage("intent [GH-90000]")); // Can't go backwards
+    assertFalse(project.advanceStage("intent")); // Can't go backwards
     assertEquals("execute", project.getCurrentStage()); // GH-90000
   }
 
@@ -168,7 +168,7 @@ class EntityMappingTest {
   void testTaskStateMachine() { // GH-90000
     // Given
     TaskEntity task = new TaskEntity(UUID.randomUUID(), "Test Task", "Desc", "execute"); // GH-90000
-    task.setAssignedAgentId("agent.yappc.java-expert [GH-90000]");
+    task.setAssignedAgentId("agent.yappc.java-expert");
 
     // When/Then - Test task lifecycle
     assertEquals("PENDING", task.getStatus()); // GH-90000
@@ -190,15 +190,15 @@ class EntityMappingTest {
     task.setMaxRetries(3); // GH-90000
 
     // When - Fail twice, succeed on third
-    assertTrue(task.fail("Network error [GH-90000]")); // Retry 1
+    assertTrue(task.fail("Network error")); // Retry 1
     assertEquals("PENDING", task.getStatus()); // GH-90000
     assertEquals(1, task.getRetryCount()); // GH-90000
 
-    assertTrue(task.fail("Timeout [GH-90000]")); // Retry 2
+    assertTrue(task.fail("Timeout")); // Retry 2
     assertEquals("PENDING", task.getStatus()); // GH-90000
     assertEquals(2, task.getRetryCount()); // GH-90000
 
-    assertFalse(task.fail("Final failure [GH-90000]")); // No more retries
+    assertFalse(task.fail("Final failure")); // No more retries
     assertEquals("FAILED", task.getStatus()); // GH-90000
     assertEquals(3, task.getRetryCount()); // GH-90000
     assertFalse(task.canRetry()); // GH-90000

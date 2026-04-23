@@ -16,7 +16,7 @@ class StorageTierTest {
     // ═══ Ordering ═══
 
     @Test
-    @DisplayName("HOT is higher than WARM, COOL, COLD [GH-90000]")
+    @DisplayName("HOT is higher than WARM, COOL, COLD")
     void hotIsHigherThanAll() { // GH-90000
         assertThat(StorageTier.HOT.isHigherThan(StorageTier.WARM)).isTrue(); // GH-90000
         assertThat(StorageTier.HOT.isHigherThan(StorageTier.COOL)).isTrue(); // GH-90000
@@ -24,7 +24,7 @@ class StorageTierTest {
     }
 
     @Test
-    @DisplayName("COLD is lower than HOT, WARM, COOL [GH-90000]")
+    @DisplayName("COLD is lower than HOT, WARM, COOL")
     void coldIsLowerThanAll() { // GH-90000
         assertThat(StorageTier.COLD.isLowerThan(StorageTier.HOT)).isTrue(); // GH-90000
         assertThat(StorageTier.COLD.isLowerThan(StorageTier.WARM)).isTrue(); // GH-90000
@@ -32,7 +32,7 @@ class StorageTierTest {
     }
 
     @Test
-    @DisplayName("Same tier is neither higher nor lower [GH-90000]")
+    @DisplayName("Same tier is neither higher nor lower")
     void sameTierNotHigherOrLower() { // GH-90000
         for (StorageTier tier : StorageTier.values()) { // GH-90000
             assertThat(tier.isHigherThan(tier)).isFalse(); // GH-90000
@@ -41,7 +41,7 @@ class StorageTierTest {
     }
 
     @Test
-    @DisplayName("Ordering is transitive: HOT > WARM > COOL > COLD [GH-90000]")
+    @DisplayName("Ordering is transitive: HOT > WARM > COOL > COLD")
     void orderingIsTransitive() { // GH-90000
         assertThat(StorageTier.HOT.isHigherThan(StorageTier.WARM)).isTrue(); // GH-90000
         assertThat(StorageTier.WARM.isHigherThan(StorageTier.COOL)).isTrue(); // GH-90000
@@ -51,7 +51,7 @@ class StorageTierTest {
     // ═══ Navigation ═══
 
     @Test
-    @DisplayName("nextLowerTier traverses HOT→WARM→COOL→COLD→COLD [GH-90000]")
+    @DisplayName("nextLowerTier traverses HOT→WARM→COOL→COLD→COLD")
     void nextLowerTier_fullTraversal() { // GH-90000
         assertThat(StorageTier.HOT.nextLowerTier()).isEqualTo(StorageTier.WARM); // GH-90000
         assertThat(StorageTier.WARM.nextLowerTier()).isEqualTo(StorageTier.COOL); // GH-90000
@@ -60,7 +60,7 @@ class StorageTierTest {
     }
 
     @Test
-    @DisplayName("nextHigherTier traverses COLD→COOL→WARM→HOT→HOT [GH-90000]")
+    @DisplayName("nextHigherTier traverses COLD→COOL→WARM→HOT→HOT")
     void nextHigherTier_fullTraversal() { // GH-90000
         assertThat(StorageTier.COLD.nextHigherTier()).isEqualTo(StorageTier.COOL); // GH-90000
         assertThat(StorageTier.COOL.nextHigherTier()).isEqualTo(StorageTier.WARM); // GH-90000
@@ -71,7 +71,7 @@ class StorageTierTest {
     // ═══ Boundary methods ═══
 
     @Test
-    @DisplayName("Only HOT is hottest [GH-90000]")
+    @DisplayName("Only HOT is hottest")
     void onlyHotIsHottest() { // GH-90000
         assertThat(StorageTier.HOT.isHottest()).isTrue(); // GH-90000
         assertThat(StorageTier.WARM.isHottest()).isFalse(); // GH-90000
@@ -80,7 +80,7 @@ class StorageTierTest {
     }
 
     @Test
-    @DisplayName("Only COLD is coldest [GH-90000]")
+    @DisplayName("Only COLD is coldest")
     void onlyColdIsColdest() { // GH-90000
         assertThat(StorageTier.COLD.isColdest()).isTrue(); // GH-90000
         assertThat(StorageTier.HOT.isColdest()).isFalse(); // GH-90000
@@ -91,7 +91,7 @@ class StorageTierTest {
     // ═══ Default tier ═══
 
     @Test
-    @DisplayName("Default tier is WARM [GH-90000]")
+    @DisplayName("Default tier is WARM")
     void defaultTierIsWarm() { // GH-90000
         assertThat(StorageTier.defaultTier()).isEqualTo(StorageTier.WARM); // GH-90000
     }
@@ -99,21 +99,21 @@ class StorageTierTest {
     // ═══ Values completeness ═══
 
     @Test
-    @DisplayName("Enum has exactly 4 tiers [GH-90000]")
+    @DisplayName("Enum has exactly 4 tiers")
     void exactlyFourTiers() { // GH-90000
         assertThat(StorageTier.values()).hasSize(4); // GH-90000
     }
 
     @ParameterizedTest
     @EnumSource(StorageTier.class) // GH-90000
-    @DisplayName("nextLowerTier never returns null [GH-90000]")
+    @DisplayName("nextLowerTier never returns null")
     void nextLowerTier_neverNull(StorageTier tier) { // GH-90000
         assertThat(tier.nextLowerTier()).isNotNull(); // GH-90000
     }
 
     @ParameterizedTest
     @EnumSource(StorageTier.class) // GH-90000
-    @DisplayName("nextHigherTier never returns null [GH-90000]")
+    @DisplayName("nextHigherTier never returns null")
     void nextHigherTier_neverNull(StorageTier tier) { // GH-90000
         assertThat(tier.nextHigherTier()).isNotNull(); // GH-90000
     }
@@ -121,7 +121,7 @@ class StorageTierTest {
     // ═══ Asymmetry ═══
 
     @Test
-    @DisplayName("isHigherThan and isLowerThan are asymmetric [GH-90000]")
+    @DisplayName("isHigherThan and isLowerThan are asymmetric")
     void higherAndLowerAreAsymmetric() { // GH-90000
         assertThat(StorageTier.HOT.isHigherThan(StorageTier.COLD)).isTrue(); // GH-90000
         assertThat(StorageTier.COLD.isHigherThan(StorageTier.HOT)).isFalse(); // GH-90000

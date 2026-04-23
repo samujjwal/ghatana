@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("Video Streaming Performance Tier [GH-90000]")
+@DisplayName("Video Streaming Performance Tier")
 class VideoStreamingPerformanceTierTest {
 
     private final VideoStreamSession session = new VideoStreamSession();

@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * module. They intentionally avoid a Spring Boot harness because the shared-service module does
  * not provide one in its current build graph.</p>
  */
-@DisplayName("Auth Gateway E2E Tests [GH-90000]")
+@DisplayName("Auth Gateway E2E Tests")
 public class AuthGatewayE2ETest {
 
     private static final Path SPEC_PATH = Path.of( // GH-90000
@@ -46,45 +46,45 @@ public class AuthGatewayE2ETest {
     private final ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory()); // GH-90000
 
     @Test
-    @DisplayName("Auth flow endpoints exist in documented login-validate-refresh-exchange sequence [GH-90000]")
+    @DisplayName("Auth flow endpoints exist in documented login-validate-refresh-exchange sequence")
     void authFlowEndpointsExistInSequence() throws Exception { // GH-90000
-        JsonNode paths = readSpec().path("paths [GH-90000]");
+        JsonNode paths = readSpec().path("paths");
 
-        assertThat(paths.has("/auth/login [GH-90000]")).isTrue();
-        assertThat(paths.has("/auth/validate [GH-90000]")).isTrue();
-        assertThat(paths.has("/auth/refresh [GH-90000]")).isTrue();
-        assertThat(paths.has("/auth/exchange [GH-90000]")).isTrue();
-        assertThat(paths.has("/auth/logout [GH-90000]")).isTrue();
+        assertThat(paths.has("/auth/login")).isTrue();
+        assertThat(paths.has("/auth/validate")).isTrue();
+        assertThat(paths.has("/auth/refresh")).isTrue();
+        assertThat(paths.has("/auth/exchange")).isTrue();
+        assertThat(paths.has("/auth/logout")).isTrue();
     }
 
     @Test
-    @DisplayName("Login and refresh responses declare token-bearing response schemas [GH-90000]")
+    @DisplayName("Login and refresh responses declare token-bearing response schemas")
     void tokenBearingSchemasExist() throws Exception { // GH-90000
-        JsonNode schemas = readSpec().path("components [GH-90000]").path("schemas [GH-90000]");
+        JsonNode schemas = readSpec().path("components").path("schemas");
 
-        assertThat(schemas.path("LoginResponse [GH-90000]").path("properties [GH-90000]").has("accessToken [GH-90000]")).isTrue();
-        assertThat(schemas.path("LoginResponse [GH-90000]").path("properties [GH-90000]").has("refreshToken [GH-90000]")).isTrue();
-        assertThat(schemas.path("RefreshResponse [GH-90000]").path("properties [GH-90000]").has("accessToken [GH-90000]")).isTrue();
-        assertThat(schemas.path("ExchangeResponse [GH-90000]").path("properties [GH-90000]").has("platformToken [GH-90000]")).isTrue();
+        assertThat(schemas.path("LoginResponse").path("properties").has("accessToken")).isTrue();
+        assertThat(schemas.path("LoginResponse").path("properties").has("refreshToken")).isTrue();
+        assertThat(schemas.path("RefreshResponse").path("properties").has("accessToken")).isTrue();
+        assertThat(schemas.path("ExchangeResponse").path("properties").has("platformToken")).isTrue();
     }
 
     @Test
-    @DisplayName("Protected tenant and validation endpoints require documented bearer auth [GH-90000]")
+    @DisplayName("Protected tenant and validation endpoints require documented bearer auth")
     void protectedEndpointsDeclareBearerSecurity() throws Exception { // GH-90000
-        JsonNode paths = readSpec().path("paths [GH-90000]");
+        JsonNode paths = readSpec().path("paths");
 
-        assertThat(paths.path("/auth/validate [GH-90000]").path("get [GH-90000]").path("security [GH-90000]")).isNotEmpty();
-        assertThat(paths.path("/auth/refresh [GH-90000]").path("post [GH-90000]").path("security [GH-90000]")).isNotEmpty();
-        assertThat(paths.path("/auth/tenant [GH-90000]").path("get [GH-90000]").path("security [GH-90000]")).isNotEmpty();
+        assertThat(paths.path("/auth/validate").path("get").path("security")).isNotEmpty();
+        assertThat(paths.path("/auth/refresh").path("post").path("security")).isNotEmpty();
+        assertThat(paths.path("/auth/tenant").path("get").path("security")).isNotEmpty();
     }
 
     @Test
-    @DisplayName("Health endpoint documents auth-gateway service identity [GH-90000]")
+    @DisplayName("Health endpoint documents auth-gateway service identity")
     void healthEndpointDocumentsServiceIdentity() throws Exception { // GH-90000
-        JsonNode healthSchema = readSpec().path("components [GH-90000]").path("schemas [GH-90000]").path("HealthResponse [GH-90000]");
+        JsonNode healthSchema = readSpec().path("components").path("schemas").path("HealthResponse");
 
-        assertThat(healthSchema.path("properties [GH-90000]").path("service [GH-90000]").path("example [GH-90000]").asText())
-                .isEqualTo("auth-gateway [GH-90000]");
+        assertThat(healthSchema.path("properties").path("service").path("example").asText())
+                .isEqualTo("auth-gateway");
     }
 
     private JsonNode readSpec() throws IOException { // GH-90000

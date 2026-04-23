@@ -26,9 +26,9 @@ class DotnetBuildSpecTest {
     @Test
     void testBuilderCreatesValidSpec() { // GH-90000
         DotnetBuildSpec spec = DotnetBuildSpec.builder() // GH-90000
-                .projectName("TestProject [GH-90000]")
-                .version("1.0.0 [GH-90000]")
-                .targetFramework("net8.0 [GH-90000]")
+                .projectName("TestProject")
+                .version("1.0.0")
+                .targetFramework("net8.0")
                 .projectType(DotnetBuildSpec.DotnetProjectType.API) // GH-90000
                 .outputType(DotnetBuildSpec.DotnetOutputType.EXE) // GH-90000
                 .build(); // GH-90000
@@ -43,7 +43,7 @@ class DotnetBuildSpecTest {
     void testBuilderRequiresProjectName() { // GH-90000
         assertThrows(IllegalStateException.class, () -> { // GH-90000
             DotnetBuildSpec.builder() // GH-90000
-                    .version("1.0.0 [GH-90000]")
+                    .version("1.0.0")
                     .build(); // GH-90000
         });
     }
@@ -54,7 +54,7 @@ class DotnetBuildSpecTest {
                 new DotnetBuildSpec.DotnetDependency("Swashbuckle.AspNetCore", "6.5.0")); // GH-90000
 
         DotnetBuildSpec spec = DotnetBuildSpec.builder() // GH-90000
-                .projectName("TestProject [GH-90000]")
+                .projectName("TestProject")
                 .dependencies(deps) // GH-90000
                 .build(); // GH-90000
 

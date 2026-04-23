@@ -25,14 +25,14 @@ class GradleDependencyGuardTest {
 
     @Test
     void libsShouldNotDependOnProductModulesInGradleBuildFiles() throws IOException { // GH-90000
-        Path libsJavaRoot = Paths.get(" [GH-90000]").toAbsolutePath().getParent();
+        Path libsJavaRoot = Paths.get("").toAbsolutePath().getParent();
 
         List<String> violations = new ArrayList<>(); // GH-90000
 
         Files.walk(libsJavaRoot) // GH-90000
                 .filter(path -> { // GH-90000
                     String name = path.getFileName().toString(); // GH-90000
-                    return name.equals("build.gradle [GH-90000]") || name.equals("build.gradle.kts [GH-90000]");
+                    return name.equals("build.gradle") || name.equals("build.gradle.kts");
                 })
                 .forEach(path -> scanGradleFile(path, libsJavaRoot, violations)); // GH-90000
 
@@ -50,7 +50,7 @@ class GradleDependencyGuardTest {
 
             for (int i = 0; i < lines.size(); i++) { // GH-90000
                 String line = lines.get(i).trim(); // GH-90000
-                if ((line.contains("project(':products: [GH-90000]") || line.contains("project(\":products:"))
+                if ((line.contains("project(':products:") || line.contains("project(\":products:"))
                         && !line.contains(ALLOWED_PRODUCT_PREFIX) // GH-90000
                         && !line.contains(ALLOWED_DATACLOUD_SPI)) { // GH-90000
                     violations.add(rel + ":" + (i + 1) + " -> " + line); // GH-90000

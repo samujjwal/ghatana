@@ -59,7 +59,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.catchThrowableOfType;
  * @doc.pattern IntegrationTest
  * @since 2.0.0
  */
-@DisplayName("EventService gRPC — in-process integration tests [GH-90000]")
+@DisplayName("EventService gRPC — in-process integration tests")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class) // GH-90000
 class EventServiceGrpcIntegrationTest {
 
@@ -116,7 +116,7 @@ class EventServiceGrpcIntegrationTest {
         return EventProto.newBuilder() // GH-90000
                 .setType(type) // GH-90000
                 .setTenantId(tenantId) // GH-90000
-                .setTypeVersion("1.0.0 [GH-90000]")
+                .setTypeVersion("1.0.0")
                 .setPayloadJson(payloadJson) // GH-90000
                 .build(); // GH-90000
     }
@@ -125,7 +125,7 @@ class EventServiceGrpcIntegrationTest {
 
     @Test
     @Order(1) // GH-90000
-    @DisplayName("Ingest — single event is stored and echoed back [GH-90000]")
+    @DisplayName("Ingest — single event is stored and echoed back")
     void ingest_singleEvent_returnsStoredEvent() { // GH-90000
         EventProto event = buildEvent("user.signed_up", TENANT, "{\"userId\":\"abc123\"}"); // GH-90000
         IngestRequestProto request = IngestRequestProto.newBuilder() // GH-90000
@@ -135,7 +135,7 @@ class EventServiceGrpcIntegrationTest {
         IngestResponseProto response = blockingStub.ingest(request); // GH-90000
 
         assertThat(response.hasEvent()).isTrue(); // GH-90000
-        assertThat(response.getEvent().getType()).isEqualTo("user.signed_up [GH-90000]");
+        assertThat(response.getEvent().getType()).isEqualTo("user.signed_up");
 
         // Capture the ID assigned by the mapper so test #4 can retrieve it
         ingestedEventId = response.getEvent().hasId() // GH-90000
@@ -145,7 +145,7 @@ class EventServiceGrpcIntegrationTest {
 
     @Test
     @Order(2) // GH-90000
-    @DisplayName("Ingest — missing event field returns INVALID_ARGUMENT [GH-90000]")
+    @DisplayName("Ingest — missing event field returns INVALID_ARGUMENT")
     void ingest_missingEventField_returnsInvalidArgument() { // GH-90000
         IngestRequestProto empty = IngestRequestProto.newBuilder().build(); // GH-90000
 
@@ -158,7 +158,7 @@ class EventServiceGrpcIntegrationTest {
 
     @Test
     @Order(3) // GH-90000
-    @DisplayName("IngestBatch — batch of 3 events is stored, counts returned correctly [GH-90000]")
+    @DisplayName("IngestBatch — batch of 3 events is stored, counts returned correctly")
     void ingestBatch_threeEvents_successCountThree() { // GH-90000
         IngestBatchRequestProto request = IngestBatchRequestProto.newBuilder() // GH-90000
                 .addEvents(buildEvent("order.placed",    TENANT, "{\"orderId\":\"1\"}")) // GH-90000
@@ -175,7 +175,7 @@ class EventServiceGrpcIntegrationTest {
 
     @Test
     @Order(4) // GH-90000
-    @DisplayName("IngestBatch — empty batch returns zero counts without error [GH-90000]")
+    @DisplayName("IngestBatch — empty batch returns zero counts without error")
     void ingestBatch_emptyBatch_returnsZeroCounts() { // GH-90000
         IngestBatchRequestProto empty = IngestBatchRequestProto.newBuilder().build(); // GH-90000
 
@@ -187,12 +187,12 @@ class EventServiceGrpcIntegrationTest {
 
     @Test
     @Order(5) // GH-90000
-    @DisplayName("Query — scan by type returns matching events [GH-90000]")
+    @DisplayName("Query — scan by type returns matching events")
     void query_byEventType_returnsMatchingEvents() { // GH-90000
         // "order.placed" events were ingested in test #3 (2 events) // GH-90000
         QueryEventsRequestProto request = QueryEventsRequestProto.newBuilder() // GH-90000
                 .setTenantId(TENANT) // GH-90000
-                .setTypePrefix("order.placed [GH-90000]")
+                .setTypePrefix("order.placed")
                 .setLimit(10) // GH-90000
                 .build(); // GH-90000
 
@@ -203,12 +203,12 @@ class EventServiceGrpcIntegrationTest {
         assertThat(responses).isNotEmpty(); // GH-90000
         responses.forEach(resp -> // GH-90000
                 assertThat(resp.getEventsList()) // GH-90000
-                        .allSatisfy(e -> assertThat(e.getType()).isEqualTo("order.placed [GH-90000]")));
+                        .allSatisfy(e -> assertThat(e.getType()).isEqualTo("order.placed")));
     }
 
     @Test
     @Order(6) // GH-90000
-    @DisplayName("Query — full scan without type filter returns all ingested events [GH-90000]")
+    @DisplayName("Query — full scan without type filter returns all ingested events")
     void query_fullScan_returnsAllEvents() { // GH-90000
         QueryEventsRequestProto request = QueryEventsRequestProto.newBuilder() // GH-90000
                 .setTenantId(TENANT) // GH-90000
@@ -225,7 +225,7 @@ class EventServiceGrpcIntegrationTest {
 
     @Test
     @Order(7) // GH-90000
-    @DisplayName("GetEvent — retrieves the event ingested in test #1 by UUID [GH-90000]")
+    @DisplayName("GetEvent — retrieves the event ingested in test #1 by UUID")
     void getEvent_existingId_returnsEvent() { // GH-90000
         if (ingestedEventId == null) { // GH-90000
             // Event proto had no id field set — skip lookup assertion
@@ -239,12 +239,12 @@ class EventServiceGrpcIntegrationTest {
         GetEventResponseProto response = blockingStub.getEvent(request); // GH-90000
 
         assertThat(response.hasEvent()).isTrue(); // GH-90000
-        assertThat(response.getEvent().getType()).isEqualTo("user.signed_up [GH-90000]");
+        assertThat(response.getEvent().getType()).isEqualTo("user.signed_up");
     }
 
     @Test
     @Order(8) // GH-90000
-    @DisplayName("GetEvent — unrecognised UUID returns NOT_FOUND [GH-90000]")
+    @DisplayName("GetEvent — unrecognised UUID returns NOT_FOUND")
     void getEvent_unknownId_returnsNotFound() { // GH-90000
         GetEventRequestProto request = GetEventRequestProto.newBuilder() // GH-90000
                 .setEventId(UUID.randomUUID().toString()) // GH-90000
@@ -260,10 +260,10 @@ class EventServiceGrpcIntegrationTest {
 
     @Test
     @Order(9) // GH-90000
-    @DisplayName("GetEvent \u2014 malformed UUID returns INVALID_ARGUMENT [GH-90000]")
+    @DisplayName("GetEvent \u2014 malformed UUID returns INVALID_ARGUMENT")
     void getEvent_malformedUuid_returnsInvalidArgument() { // GH-90000
         GetEventRequestProto request = GetEventRequestProto.newBuilder() // GH-90000
-                .setEventId("not-a-uuid [GH-90000]")
+                .setEventId("not-a-uuid")
                 .setTenantId(TENANT) // GH-90000
                 .build(); // GH-90000
 
@@ -276,7 +276,7 @@ class EventServiceGrpcIntegrationTest {
 
     @Test
     @Order(10) // GH-90000
-    @DisplayName("IngestStream — bidirectional stream ingests events and receives echo responses [GH-90000]")
+    @DisplayName("IngestStream — bidirectional stream ingests events and receives echo responses")
     void ingestStream_bidirectional_responsesReceivedForEachEvent() throws InterruptedException { // GH-90000
         int eventCount = 3;
         CountDownLatch completedLatch = new CountDownLatch(1); // GH-90000
@@ -311,9 +311,9 @@ class EventServiceGrpcIntegrationTest {
 
         boolean completed = completedLatch.await(10, TimeUnit.SECONDS); // GH-90000
 
-        assertThat(completed).as("Stream should complete within timeout [GH-90000]").isTrue();
-        assertThat(streamError.get()).as("No stream errors [GH-90000]").isNull();
+        assertThat(completed).as("Stream should complete within timeout").isTrue();
+        assertThat(streamError.get()).as("No stream errors").isNull();
         assertThat(received).hasSize(eventCount); // GH-90000
-        received.forEach(r -> assertThat(r.getEvent().getType()).isEqualTo("stream.event [GH-90000]"));
+        received.forEach(r -> assertThat(r.getEvent().getType()).isEqualTo("stream.event"));
     }
 }

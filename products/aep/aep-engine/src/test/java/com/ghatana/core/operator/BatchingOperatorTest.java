@@ -23,11 +23,11 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("BatchingOperator [GH-90000]")
+@DisplayName("BatchingOperator")
 class BatchingOperatorTest extends EventloopTestBase {
 
     @Test
-    @DisplayName("process() keeps promise pending until scheduled flush executes [GH-90000]")
+    @DisplayName("process() keeps promise pending until scheduled flush executes")
     void shouldResolvePromiseOnTimedFlush() { // GH-90000
         UnifiedOperator delegate = mock(UnifiedOperator.class); // GH-90000
         Event event = mock(Event.class); // GH-90000
@@ -50,7 +50,7 @@ class BatchingOperatorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("process() resolves all queued promises when batch size threshold is reached [GH-90000]")
+    @DisplayName("process() resolves all queued promises when batch size threshold is reached")
     void shouldResolveQueuedPromisesOnSizeFlush() { // GH-90000
         UnifiedOperator delegate = mock(UnifiedOperator.class); // GH-90000
         Event first = mock(Event.class); // GH-90000

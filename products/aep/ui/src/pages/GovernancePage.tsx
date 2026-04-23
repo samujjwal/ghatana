@@ -19,6 +19,8 @@ import {
 } from '@/api/aep.api';
 import { isFeatureEnabled } from '@/lib/feature-flags';
 import { Button } from '@ghatana/design-system';
+import { EmptyState } from '@/components/core/EmptyState';
+import { ErrorState } from '@/components/core/ErrorState';
 
 type GovSection = 'policies' | 'compliance' | 'tenancy' | 'audit';
 
@@ -96,14 +98,24 @@ function GovernanceBoundaryPanel({
 }
 
 function PoliciesPanel({ tenantId }: { tenantId: string }) {
-  const { data: policies = [], isLoading } = useQuery({
+  const { data: policies, isLoading, isError, refetch } = useQuery({
     queryKey: ['aep', 'policies', tenantId],
     queryFn: () => listPolicies(tenantId),
-    staleTime: 30_000,
+    staleTime: 60_000,
   });
 
-  const activeCount = policies.filter((policy) => policy.status === 'ACTIVE').length;
-  const pendingCount = policies.filter((policy) => policy.status === 'PENDING_REVIEW').length;
+  const activeCount = policies?.filter((policy) => policy.status === 'ACTIVE').length;
+  const pendingCount = policies?.filter((policy) => policy.status === 'PENDING_REVIEW').length;
+
+  if (isLoading) {
+    return <EmptyState title="Loading policies…" description="Fetching governance policies for this tenant." />;
+  }
+  if (isError) {
+    return <ErrorState title="Failed to load policies" onRetry={() => void refetch()} />;
+  }
+  if (!policies || policies.length === 0) {
+    return <EmptyState title="No policies registered" description="Policies will appear once they are configured for this tenant." />;
+  }
 
   return (
     <div className="p-6">
@@ -114,77 +126,73 @@ function PoliciesPanel({ tenantId }: { tenantId: string }) {
           { label: 'Pending review', value: pendingCount },
           { label: 'Deprecated', value: policies.filter((policy) => policy.status === 'DEPRECATED').length },
         ].map((item) => (
-          <div key={item.label} className="rounded-lg border border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-900">
+          <div key={item.label} className="rounded-lg border border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-950">
             <p className="text-xs text-gray-500 dark:text-gray-400">{item.label}</p>
             <p className="mt-0.5 text-2xl font-semibold text-gray-900 dark:text-white">{item.value}</p>
           </div>
         ))}
       </div>
 
-      {isLoading ? (
-        <p className="py-10 text-center text-sm text-gray-400">Loading policies…</p>
-      ) : policies.length === 0 ? (
-        <p className="py-10 text-center text-sm text-gray-400">No policies yet. They appear here once learning episodes are reviewed and promoted.</p>
-      ) : (
-        <div className="overflow-auto rounded-lg border border-gray-200 dark:border-gray-800">
-          <table className="min-w-full divide-y divide-gray-200 text-sm dark:divide-gray-800">
-            <thead className="bg-gray-50 dark:bg-gray-900">
-              <tr>
-                {['Policy ID', 'Skill', 'Version', 'Confidence', 'Status'].map((header) => (
-                  <th key={header} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    {header}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 bg-white dark:divide-gray-900 dark:bg-gray-950">
-              {policies.map((policy) => (
-                <tr key={policy.id} className="transition-colors hover:bg-gray-50 dark:hover:bg-gray-900">
-                  <td className="px-4 py-3 font-mono text-xs text-gray-600 dark:text-gray-300">{policy.id}</td>
-                  <td className="px-4 py-3 text-gray-900 dark:text-white">{policy.skillId}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-gray-500">v{policy.version}</td>
-                  <td className="px-4 py-3 text-gray-900 dark:text-white">
-                    <span className={`font-semibold ${policy.confidenceScore >= 0.8 ? 'text-green-600 dark:text-green-400' : policy.confidenceScore >= 0.6 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}`}>
-                      {(policy.confidenceScore * 100).toFixed(0)}%
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <PolicyStatusBadge status={policy.status} />
-                  </td>
-                </tr>
+      <div className="overflow-auto rounded-lg border border-gray-200 dark:border-gray-800">
+        <table className="min-w-full divide-y divide-gray-200 text-sm dark:divide-gray-800">
+          <thead className="bg-gray-50 dark:bg-gray-900">
+            <tr>
+              {['Policy ID', 'Skill', 'Version', 'Confidence', 'Status'].map((header) => (
+                <th key={header} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  {header}
+                </th>
               ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100 bg-white dark:divide-gray-900 dark:bg-gray-950">
+            {policies.map((policy) => (
+              <tr key={policy.id} className="transition-colors hover:bg-gray-50 dark:hover:bg-gray-900">
+                <td className="px-4 py-3 font-mono text-xs text-gray-600 dark:text-gray-300">{policy.id}</td>
+                <td className="px-4 py-3 text-gray-900 dark:text-white">{policy.skillId}</td>
+                <td className="px-4 py-3 font-mono text-xs text-gray-500">v{policy.version}</td>
+                <td className="px-4 py-3 text-gray-900 dark:text-white">
+                  <span className={`font-semibold ${policy.confidenceScore >= 0.8 ? 'text-green-600 dark:text-green-400' : policy.confidenceScore >= 0.6 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}`}>
+                    {(policy.confidenceScore * 100).toFixed(0)}%
+                  </span>
+                </td>
+                <td className="px-4 py-3">
+                  <PolicyStatusBadge status={policy.status} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
 
 function CompliancePanel({ tenantId }: { tenantId: string }) {
-  const { data, isLoading } = useQuery({
-    queryKey: ['aep', 'governance', 'compliance', tenantId],
+  const { data: summary, isLoading, isError, refetch } = useQuery({
+    queryKey: ['aep', 'compliance', tenantId],
     queryFn: () => getGovernanceComplianceSummary(tenantId),
-    staleTime: 30_000,
   });
+
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   if (isLoading) {
-    return <p className="py-10 text-center text-sm text-gray-400">Loading compliance summary…</p>;
+    return <EmptyState title="Loading compliance…" description="Fetching compliance summary." />;
   }
-
-  if (!data) {
-    return null;
+  if (isError) {
+    return <ErrorState title="Failed to load compliance data" onRetry={() => void refetch()} />;
+  }
+  if (!summary) {
+    return <EmptyState title="No compliance data" description="Compliance metrics will populate once scans are run." />;
   }
 
   return (
     <div className="space-y-6 p-6">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {[
-          { label: 'Configured', value: data.configured ? 'Yes' : 'No' },
-          { label: 'Operations', value: data.supportedOperations.length },
-          { label: 'Collections', value: data.registeredCollections.length },
-          { label: 'SOC2 controls', value: data.soc2.controlCount },
+          { label: 'Configured', value: summary.configured ? 'Yes' : 'No' },
+          { label: 'Operations', value: summary.supportedOperations.length },
+          { label: 'Collections', value: summary.registeredCollections.length },
+          { label: 'SOC2 controls', value: summary.soc2.controlCount },
         ].map((item) => (
           <div key={item.label} className="rounded-lg border border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-900">
             <p className="text-xs text-gray-500 dark:text-gray-400">{item.label}</p>
@@ -197,7 +205,7 @@ function CompliancePanel({ tenantId }: { tenantId: string }) {
         <div className="rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-950">
           <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Supported operations</h3>
           <div className="flex flex-wrap gap-2">
-            {data.supportedOperations.map((operation) => (
+            {summary.supportedOperations.map((operation) => (
               <span key={operation} className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 dark:bg-blue-950 dark:text-blue-300">
                 {operation.replace('_', ' ')}
               </span>
@@ -206,7 +214,7 @@ function CompliancePanel({ tenantId }: { tenantId: string }) {
 
           <h4 className="mb-2 mt-5 text-sm font-semibold text-gray-900 dark:text-white">Registered collections</h4>
           <ul className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
-            {data.registeredCollections.map((collection) => (
+            {summary.registeredCollections.map((collection) => (
               <li key={collection} className="font-mono text-xs">{collection}</li>
             ))}
           </ul>
@@ -214,10 +222,10 @@ function CompliancePanel({ tenantId }: { tenantId: string }) {
 
         <div className="rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-950">
           <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">SOC 2 posture</h3>
-          <p className="text-sm text-gray-700 dark:text-gray-300">{data.soc2.title}</p>
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Generated {new Date(data.soc2.generatedAt).toLocaleString()}</p>
+          <p className="text-sm text-gray-700 dark:text-gray-300">{summary.soc2.title}</p>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Generated {new Date(summary.soc2.generatedAt).toLocaleString()}</p>
           <p className="mt-3 inline-flex rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700 dark:bg-green-950 dark:text-green-300">
-            {data.soc2.overallStatus}
+            {summary.soc2.overallStatus}
           </p>
 
           <div className="mt-4">
@@ -230,7 +238,7 @@ function CompliancePanel({ tenantId }: { tenantId: string }) {
             </Button>
             {showAdvanced && (
               <div className="mt-3 space-y-2">
-                {data.soc2.controls.map((control) => (
+                {summary.soc2.controls.map((control) => (
                   <div key={control.controlId} className="flex items-start justify-between gap-3 rounded border border-gray-100 px-3 py-2 text-sm dark:border-gray-800">
                     <div>
                       <p className="font-medium text-gray-900 dark:text-white">{control.controlId}</p>

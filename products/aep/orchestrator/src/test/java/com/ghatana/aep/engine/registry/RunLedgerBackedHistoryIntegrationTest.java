@@ -27,20 +27,20 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@Tag("integration [GH-90000]")
+@Tag("integration")
 @Testcontainers(disabledWithoutDocker = true) // GH-90000
-@DisplayName("RunLedgerBackedHistoryIntegrationTest [GH-90000]")
+@DisplayName("RunLedgerBackedHistoryIntegrationTest")
 class RunLedgerBackedHistoryIntegrationTest extends EventloopTestBase {
 
     @Container
     private static final PostgreSQLContainer<?> POSTGRES =
-        new PostgreSQLContainer<>("postgres:15-alpine [GH-90000]")
-            .withDatabaseName("aep_orchestrator [GH-90000]")
-            .withUsername("aep [GH-90000]")
-            .withPassword("aep [GH-90000]");
+        new PostgreSQLContainer<>("postgres:15-alpine")
+            .withDatabaseName("aep_orchestrator")
+            .withUsername("aep")
+            .withPassword("aep");
 
     @Test
-    @DisplayName("append persists an execution record that getHistory can read back [GH-90000]")
+    @DisplayName("append persists an execution record that getHistory can read back")
     void appendPersistsExecutionHistory() throws Exception { // GH-90000
         HikariConfig config = new HikariConfig(); // GH-90000
         config.setJdbcUrl(POSTGRES.getJdbcUrl()); // GH-90000
@@ -70,13 +70,13 @@ class RunLedgerBackedHistoryIntegrationTest extends EventloopTestBase {
                 Map.of("message", "hello"), // GH-90000
                 Map.of("result", "ok"), // GH-90000
                 15L,
-                Instant.parse("2026-04-15T12:00:00Z [GH-90000]").toString());
+                Instant.parse("2026-04-15T12:00:00Z").toString());
 
             runPromise(() -> history.append("agent-1", record)); // GH-90000
             List<AgentExecutionService.ExecutionRecord> stored = runPromise(() -> history.getHistory("agent-1", 10)); // GH-90000
 
             assertThat(stored).hasSize(1); // GH-90000
-            assertThat(stored.get(0).executionId()).isEqualTo("exec-1 [GH-90000]");
+            assertThat(stored.get(0).executionId()).isEqualTo("exec-1");
             assertThat(stored.get(0).input()).isEqualTo(Map.of("message", "hello")); // GH-90000
             assertThat(stored.get(0).output()).isEqualTo(Map.of("result", "ok")); // GH-90000
         }

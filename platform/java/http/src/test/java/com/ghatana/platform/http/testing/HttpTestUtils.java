@@ -49,14 +49,14 @@ import java.util.Map;
  * assertEquals(201, response.getCode()); // GH-90000
  *
  * // 2. Parse JSON response
- * HttpResponse response = runner.get("/api/users/123 [GH-90000]");
+ * HttpResponse response = runner.get("/api/users/123");
  * User user = HttpTestUtils.parseJsonResponse(response, User.class); // GH-90000
  *
  * assertEquals("123", user.getId()); // GH-90000
  * assertEquals("John Doe", user.getName()); // GH-90000
  *
  * // 3. Assert response status
- * HttpResponse response = runner.get("/api/users [GH-90000]");
+ * HttpResponse response = runner.get("/api/users");
  * HttpTestUtils.assertStatus(response, 200); // GH-90000
  * HttpTestUtils.assertContentType(response, "application/json"); // GH-90000
  *
@@ -82,7 +82,7 @@ import java.util.Map;
  * HttpResponse response = runner.execute(request); // GH-90000
  *
  * // 6. Parse response array
- * HttpResponse response = runner.get("/api/users [GH-90000]");
+ * HttpResponse response = runner.get("/api/users");
  * User[] users = HttpTestUtils.parseJsonResponse(response, User[].class); // GH-90000
  *
  * assertTrue(users.length > 0); // GH-90000
@@ -111,7 +111,7 @@ import java.util.Map;
  * assertEquals(201, response.getCode()); // GH-90000
  *
  * // 9. Parse error response
- * HttpResponse response = runner.get("/api/users/999 [GH-90000]");
+ * HttpResponse response = runner.get("/api/users/999");
  *
  * HttpTestUtils.assertStatus(response, 404); // GH-90000
  *
@@ -189,7 +189,7 @@ import java.util.Map;
  * HttpTestUtils.assertStatus(response, 201); // GH-90000
  *
  * // Pattern 2: GET, parse response
- * HttpResponse response = runner.get("/api/users/123 [GH-90000]");
+ * HttpResponse response = runner.get("/api/users/123");
  * HttpTestUtils.assertStatus(response, 200); // GH-90000
  * User user = HttpTestUtils.parseJsonResponse(response, User.class); // GH-90000
  *
@@ -201,7 +201,7 @@ import java.util.Map;
  * HttpTestUtils.assertHeader(response, "Set-Cookie", "session=..."); // GH-90000
  *
  * // Pattern 4: Error handling
- * HttpResponse response = runner.get("/api/invalid [GH-90000]");
+ * HttpResponse response = runner.get("/api/invalid");
  * HttpTestUtils.assertStatus(response, 400); // GH-90000
  * ErrorResponse error = HttpTestUtils.parseJsonResponse( // GH-90000
  *     response, ErrorResponse.class);
@@ -246,7 +246,7 @@ public final class HttpTestUtils {
     private static final ObjectMapper OBJECT_MAPPER = createObjectMapper(); // GH-90000
 
     private HttpTestUtils() { // GH-90000
-        throw new UnsupportedOperationException("Utility class [GH-90000]");
+        throw new UnsupportedOperationException("Utility class");
     }
 
     /**
@@ -293,13 +293,13 @@ public final class HttpTestUtils {
         StringBuilder body = new StringBuilder(); // GH-90000
         fields.forEach((key, value) -> { // GH-90000
             if (body.length() > 0) { // GH-90000
-                body.append("& [GH-90000]");
+                body.append("&");
             }
-            body.append(key).append("= [GH-90000]").append(URLEncoder.encode(value, StandardCharsets.UTF_8));
+            body.append(key).append("=").append(URLEncoder.encode(value, StandardCharsets.UTF_8));
         });
 
         HttpRequest.Builder builder = HttpRequest.post(path) // GH-90000
-            .withHeader(io.activej.http.HttpHeaders.of("Content-Type [GH-90000]"), "application/x-www-form-urlencoded")
+            .withHeader(io.activej.http.HttpHeaders.of("Content-Type"), "application/x-www-form-urlencoded")
             .withBody(body.toString().getBytes(StandardCharsets.UTF_8)); // GH-90000
 
         return builder.build(); // GH-90000

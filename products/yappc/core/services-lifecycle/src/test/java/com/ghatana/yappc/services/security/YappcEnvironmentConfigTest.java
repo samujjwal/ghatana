@@ -9,13 +9,13 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@DisplayName("YappcEnvironmentConfig Tests [GH-90000]")
+@DisplayName("YappcEnvironmentConfig Tests")
 class YappcEnvironmentConfigTest {
 
     // ─── validate() throw-on-error ───────────────────────────────────────── // GH-90000
 
     @Test
-    @DisplayName("validate passes with all required variables set [GH-90000]")
+    @DisplayName("validate passes with all required variables set")
     void validatePassesWithAllRequiredVars() { // GH-90000
         Map<String, String> env = minimalValidEnv(); // GH-90000
         // Should not throw
@@ -23,7 +23,7 @@ class YappcEnvironmentConfigTest {
     }
 
     @Test
-    @DisplayName("validate throws when YAPPC_API_KEYS is absent [GH-90000]")
+    @DisplayName("validate throws when YAPPC_API_KEYS is absent")
     void validateThrowsWhenApiKeysMissing() { // GH-90000
         Map<String, String> env = minimalValidEnv(); // GH-90000
         env.remove(YappcEnvironmentConfig.API_KEYS_ENV); // GH-90000
@@ -34,7 +34,7 @@ class YappcEnvironmentConfigTest {
     }
 
     @Test
-    @DisplayName("validate throws when YAPPC_API_KEYS is blank [GH-90000]")
+    @DisplayName("validate throws when YAPPC_API_KEYS is blank")
     void validateThrowsWhenApiKeysBlank() { // GH-90000
         Map<String, String> env = minimalValidEnv(); // GH-90000
         env.put(YappcEnvironmentConfig.API_KEYS_ENV, "   "); // GH-90000
@@ -45,7 +45,7 @@ class YappcEnvironmentConfigTest {
     }
 
     @Test
-    @DisplayName("validate throws when dev-key is used in production mode [GH-90000]")
+    @DisplayName("validate throws when dev-key is used in production mode")
     void validateThrowsForInsecureDefaultKeyInProduction() { // GH-90000
         Map<String, String> env = minimalValidEnv(); // GH-90000
         env.put(YappcEnvironmentConfig.API_KEYS_ENV, YappcEnvironmentConfig.INSECURE_DEFAULT_KEY); // GH-90000
@@ -54,11 +54,11 @@ class YappcEnvironmentConfigTest {
         assertThatThrownBy(() -> YappcEnvironmentConfig.validate(env)) // GH-90000
                 .isInstanceOf(YappcEnvironmentConfig.YappcEnvironmentConfigException.class) // GH-90000
                 .hasMessageContaining(YappcEnvironmentConfig.INSECURE_DEFAULT_KEY) // GH-90000
-                .hasMessageContaining("production [GH-90000]");
+                .hasMessageContaining("production");
     }
 
     @Test
-    @DisplayName("validate allows dev-key in non-production mode [GH-90000]")
+    @DisplayName("validate allows dev-key in non-production mode")
     void validateAllowsDevKeyInDevMode() { // GH-90000
         Map<String, String> env = minimalValidEnv(); // GH-90000
         env.put(YappcEnvironmentConfig.API_KEYS_ENV, "dev-key"); // GH-90000
@@ -69,7 +69,7 @@ class YappcEnvironmentConfigTest {
     }
 
     @Test
-    @DisplayName("validate throws when agent LLM mode is invalid [GH-90000]")
+    @DisplayName("validate throws when agent LLM mode is invalid")
     void validateThrowsWhenAgentLlmModeIsInvalid() { // GH-90000
         Map<String, String> env = minimalValidEnv(); // GH-90000
         env.put(YappcEnvironmentConfig.AGENT_LLM_MODE_ENV, "auto"); // GH-90000
@@ -77,11 +77,11 @@ class YappcEnvironmentConfigTest {
         assertThatThrownBy(() -> YappcEnvironmentConfig.validate(env)) // GH-90000
                 .isInstanceOf(YappcEnvironmentConfig.YappcEnvironmentConfigException.class) // GH-90000
                 .hasMessageContaining(YappcEnvironmentConfig.AGENT_LLM_MODE_ENV) // GH-90000
-                .hasMessageContaining("required, stub [GH-90000]");
+                .hasMessageContaining("required, stub");
     }
 
     @Test
-    @DisplayName("validate throws when stub AI mode is requested in production [GH-90000]")
+    @DisplayName("validate throws when stub AI mode is requested in production")
     void validateThrowsWhenStubAiModeIsRequestedInProduction() { // GH-90000
         Map<String, String> env = minimalValidEnv(); // GH-90000
         env.put(YappcEnvironmentConfig.AGENT_LLM_MODE_ENV, "stub"); // GH-90000
@@ -90,11 +90,11 @@ class YappcEnvironmentConfigTest {
         assertThatThrownBy(() -> YappcEnvironmentConfig.validate(env)) // GH-90000
                 .isInstanceOf(YappcEnvironmentConfig.YappcEnvironmentConfigException.class) // GH-90000
                 .hasMessageContaining(YappcEnvironmentConfig.AGENT_LLM_MODE_ENV) // GH-90000
-                .hasMessageContaining("production [GH-90000]");
+                .hasMessageContaining("production");
     }
 
     @Test
-    @DisplayName("validate allows explicit stub AI mode in development [GH-90000]")
+    @DisplayName("validate allows explicit stub AI mode in development")
     void validateAllowsExplicitStubAiModeInDevelopment() { // GH-90000
         Map<String, String> env = minimalValidEnv(); // GH-90000
         env.put(YappcEnvironmentConfig.AGENT_LLM_MODE_ENV, "stub"); // GH-90000
@@ -104,7 +104,7 @@ class YappcEnvironmentConfigTest {
     }
 
     @Test
-    @DisplayName("validate throws when DB_URL is set but credentials are missing [GH-90000]")
+    @DisplayName("validate throws when DB_URL is set but credentials are missing")
     void validateThrowsWhenDbUrlSetWithoutCredentials() { // GH-90000
         Map<String, String> env = minimalValidEnv(); // GH-90000
         env.put(YappcEnvironmentConfig.DB_URL_ENV, "jdbc:postgresql://localhost:5432/yappc"); // GH-90000
@@ -117,18 +117,18 @@ class YappcEnvironmentConfigTest {
     }
 
     @Test
-    @DisplayName("validate throws in production when required AI mode has no provider configured [GH-90000]")
+    @DisplayName("validate throws in production when required AI mode has no provider configured")
     void validateThrowsInProductionWhenRequiredAiModeHasNoProviderConfigured() { // GH-90000
         Map<String, String> env = minimalValidEnv(); // GH-90000
         env.put(YappcEnvironmentConfig.PROFILE_ENV, "production"); // GH-90000
 
         assertThatThrownBy(() -> YappcEnvironmentConfig.validate(env)) // GH-90000
                 .isInstanceOf(YappcEnvironmentConfig.YappcEnvironmentConfigException.class) // GH-90000
-                .hasMessageContaining("Production AI runtime requires at least one configured provider [GH-90000]");
+                .hasMessageContaining("Production AI runtime requires at least one configured provider");
     }
 
     @Test
-    @DisplayName("validate throws in production when provider is configured without model [GH-90000]")
+    @DisplayName("validate throws in production when provider is configured without model")
     void validateThrowsInProductionWhenProviderModelIsMissing() { // GH-90000
         Map<String, String> env = minimalValidEnv(); // GH-90000
         env.put(YappcEnvironmentConfig.PROFILE_ENV, "production"); // GH-90000
@@ -140,7 +140,7 @@ class YappcEnvironmentConfigTest {
     }
 
     @Test
-    @DisplayName("validate throws in production when tracing export endpoint is missing [GH-90000]")
+    @DisplayName("validate throws in production when tracing export endpoint is missing")
     void validateThrowsInProductionWhenTracingEndpointIsMissing() { // GH-90000
         Map<String, String> env = productionAiEnv(); // GH-90000
         env.remove(YappcEnvironmentConfig.OTEL_EXPORTER_OTLP_ENDPOINT_ENV); // GH-90000
@@ -151,13 +151,13 @@ class YappcEnvironmentConfigTest {
     }
 
     @Test
-    @DisplayName("validate passes in production when AI provider and tracing are configured [GH-90000]")
+    @DisplayName("validate passes in production when AI provider and tracing are configured")
     void validatePassesInProductionWhenAiProviderAndTracingAreConfigured() { // GH-90000
         YappcEnvironmentConfig.validate(productionAiEnv()); // GH-90000
     }
 
     @Test
-    @DisplayName("validate passes when DB_URL is set with both credentials [GH-90000]")
+    @DisplayName("validate passes when DB_URL is set with both credentials")
     void validatePassesWhenDbUrlAndCredentialsSet() { // GH-90000
         Map<String, String> env = minimalValidEnv(); // GH-90000
         env.put(YappcEnvironmentConfig.DB_URL_ENV, "jdbc:postgresql://localhost:5432/yappc"); // GH-90000
@@ -169,7 +169,7 @@ class YappcEnvironmentConfigTest {
     }
 
     @Test
-    @DisplayName("validate collects multiple errors in a single throw [GH-90000]")
+    @DisplayName("validate collects multiple errors in a single throw")
     void validateCollectsAllErrors() { // GH-90000
         Map<String, String> env = new HashMap<>(); // GH-90000
         // Omit API keys AND provide DB_URL without credentials
@@ -185,7 +185,7 @@ class YappcEnvironmentConfigTest {
     // ─── check() non-throwing variant ───────────────────────────────────── // GH-90000
 
     @Test
-    @DisplayName("check returns isValid=true for valid env [GH-90000]")
+    @DisplayName("check returns isValid=true for valid env")
     void checkReturnsValidForCorrectEnv() { // GH-90000
         YappcEnvironmentConfig.ValidationResult result =
                 YappcEnvironmentConfig.check(minimalValidEnv()); // GH-90000
@@ -195,7 +195,7 @@ class YappcEnvironmentConfigTest {
     }
 
     @Test
-    @DisplayName("check returns isValid=false and exposes all error messages [GH-90000]")
+    @DisplayName("check returns isValid=false and exposes all error messages")
     void checkReturnsInvalidAndAllErrors() { // GH-90000
         Map<String, String> env = new HashMap<>(); // GH-90000
         env.put(YappcEnvironmentConfig.DB_URL_ENV, "jdbc:postgresql://localhost:5432/yappc"); // GH-90000
@@ -209,7 +209,7 @@ class YappcEnvironmentConfigTest {
     }
 
     @Test
-    @DisplayName("prod profile alias 'prod' is also rejected for dev-key [GH-90000]")
+    @DisplayName("prod profile alias 'prod' is also rejected for dev-key")
     void prodAliasAlsoRejectedForDevKey() { // GH-90000
         Map<String, String> env = minimalValidEnv(); // GH-90000
         env.put(YappcEnvironmentConfig.API_KEYS_ENV, "dev-key"); // GH-90000
@@ -218,7 +218,7 @@ class YappcEnvironmentConfigTest {
         YappcEnvironmentConfig.ValidationResult result = YappcEnvironmentConfig.check(env); // GH-90000
 
         assertThat(result.isValid()).isFalse(); // GH-90000
-        assertThat(result.errors().get(0)).contains("dev-key [GH-90000]");
+        assertThat(result.errors().get(0)).contains("dev-key");
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────

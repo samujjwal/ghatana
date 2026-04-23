@@ -36,7 +36,7 @@ import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.sli
  * @doc.layer platform
  * @doc.pattern ArchitectureFitnessFunctions
  */
-@DisplayName("Monorepo Architecture Governance Rules [GH-90000]")
+@DisplayName("Monorepo Architecture Governance Rules")
 class ArchitectureRulesTest {
 
     // ── Class import scopes ───────────────────────────────────────────────────
@@ -49,7 +49,7 @@ class ArchitectureRulesTest {
     static void importClasses() { // GH-90000
         PLATFORM_CLASSES = new ClassFileImporter() // GH-90000
                 .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS) // GH-90000
-                .importPackages("com.ghatana.platform [GH-90000]");
+                .importPackages("com.ghatana.platform");
 
         PRODUCT_CLASSES = new ClassFileImporter() // GH-90000
                 .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS) // GH-90000
@@ -61,38 +61,38 @@ class ArchitectureRulesTest {
 
         ALL_CLASSES = new ClassFileImporter() // GH-90000
                 .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS) // GH-90000
-                .importPackages("com.ghatana [GH-90000]");
+                .importPackages("com.ghatana");
     }
 
     // ── Dependency direction ──────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Dependency Direction [GH-90000]")
+    @DisplayName("Dependency Direction")
     class DependencyDirection {
 
         @Test
-        @DisplayName("Platform libs must not depend on product code [GH-90000]")
+        @DisplayName("Platform libs must not depend on product code")
         void platformMustNotDependOnProducts() { // GH-90000
             ArchRule rule = noClasses() // GH-90000
-                    .that().resideInAPackage("com.ghatana.platform.. [GH-90000]")
+                    .that().resideInAPackage("com.ghatana.platform..")
                     .should().dependOnClassesThat() // GH-90000
                     .resideInAnyPackage( // GH-90000
                             "com.ghatana.appplatform..",
                             "com.ghatana.yappc..",
                             "com.ghatana.datacloud..",
                             "com.ghatana.refactorer..")
-                    .because("Platform libs must be product-independent [GH-90000]");
+                    .because("Platform libs must be product-independent");
             rule.check(PLATFORM_CLASSES); // GH-90000
         }
 
         @Test
-        @DisplayName("Core platform must not depend on agent or product packages [GH-90000]")
+        @DisplayName("Core platform must not depend on agent or product packages")
         void coreMustNotDependOnAgents() { // GH-90000
             ArchRule rule = noClasses() // GH-90000
-                    .that().resideInAPackage("com.ghatana.platform.core.. [GH-90000]")
+                    .that().resideInAPackage("com.ghatana.platform.core..")
                     .should().dependOnClassesThat() // GH-90000
-                    .resideInAPackage("com.ghatana.agent.. [GH-90000]")
-                    .because("Core platform must not have upward dependencies on agent framework [GH-90000]");
+                    .resideInAPackage("com.ghatana.agent..")
+                    .because("Core platform must not have upward dependencies on agent framework");
             rule.check(PLATFORM_CLASSES); // GH-90000
         }
     }
@@ -100,44 +100,44 @@ class ArchitectureRulesTest {
     // ── ActiveJ concurrency ───────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("ActiveJ Concurrency Rules [GH-90000]")
+    @DisplayName("ActiveJ Concurrency Rules")
     class ActiveJConcurrency {
 
         @Test
-        @DisplayName("Platform code must not use Spring Reactor / WebFlux [GH-90000]")
+        @DisplayName("Platform code must not use Spring Reactor / WebFlux")
         void noSpringReactorInPlatform() { // GH-90000
             ArchRule rule = noClasses() // GH-90000
-                    .that().resideInAPackage("com.ghatana.platform.. [GH-90000]")
+                    .that().resideInAPackage("com.ghatana.platform..")
                     .should().dependOnClassesThat() // GH-90000
                     .resideInAnyPackage( // GH-90000
                             "reactor.core..",
                             "org.springframework.web.reactive..",
                             "reactor.netty..")
-                    .because("ActiveJ is the canonical async framework; Spring Reactor is forbidden [GH-90000]");
+                    .because("ActiveJ is the canonical async framework; Spring Reactor is forbidden");
             rule.check(PLATFORM_CLASSES); // GH-90000
         }
 
         @Test
-        @DisplayName("Product code must not use Spring Reactor / WebFlux [GH-90000]")
+        @DisplayName("Product code must not use Spring Reactor / WebFlux")
         void noSpringReactorInProducts() { // GH-90000
             ArchRule rule = noClasses() // GH-90000
-                    .that().resideInAPackage("com.ghatana.. [GH-90000]")
+                    .that().resideInAPackage("com.ghatana..")
                     .should().dependOnClassesThat() // GH-90000
                     .resideInAnyPackage( // GH-90000
                             "reactor.core..",
                             "org.springframework.web.reactive..")
-                    .because("ActiveJ is the canonical async framework; Spring Reactor is forbidden [GH-90000]");
+                    .because("ActiveJ is the canonical async framework; Spring Reactor is forbidden");
             rule.check(ALL_CLASSES); // GH-90000
         }
 
         @Test
-        @DisplayName("Production code must not use System.out / System.err for logging [GH-90000]")
+        @DisplayName("Production code must not use System.out / System.err for logging")
         void noSystemOutInProductionCode() { // GH-90000
             ArchRule rule = noClasses() // GH-90000
-                    .that().resideInAPackage("com.ghatana.. [GH-90000]")
+                    .that().resideInAPackage("com.ghatana..")
                     .should().callMethod(System.class, "out") // GH-90000
                     .orShould().callMethod(System.class, "err") // GH-90000
-                    .because("Use SLF4J loggers instead of System.out/err [GH-90000]");
+                    .because("Use SLF4J loggers instead of System.out/err");
             rule.check(ALL_CLASSES); // GH-90000
         }
     }
@@ -145,31 +145,31 @@ class ArchitectureRulesTest {
     // ── Security ──────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Security Rules [GH-90000]")
+    @DisplayName("Security Rules")
     class SecurityRules {
 
         @Test
-        @DisplayName("JWT validation must reside in security packages [GH-90000]")
+        @DisplayName("JWT validation must reside in security packages")
         void jwtValidationInSecurityPackages() { // GH-90000
             ArchRule rule = classes() // GH-90000
-                    .that().haveSimpleNameEndingWith("JwtValidationFilter [GH-90000]")
-                    .or().haveSimpleNameEndingWith("JwtTokenProvider [GH-90000]")
+                    .that().haveSimpleNameEndingWith("JwtValidationFilter")
+                    .or().haveSimpleNameEndingWith("JwtTokenProvider")
                     .should().resideInAnyPackage( // GH-90000
                             "com.ghatana.platform.security..",
                             "com.ghatana.appplatform.gateway..",
                             "com.ghatana.services.auth..")
-                    .because("JWT handling must live in dedicated security packages [GH-90000]");
+                    .because("JWT handling must live in dedicated security packages");
             rule.check(ALL_CLASSES); // GH-90000
         }
 
         @Test
-        @DisplayName("Credential stores must implement CredentialStore interface [GH-90000]")
+        @DisplayName("Credential stores must implement CredentialStore interface")
         void credentialStoresMustImplementInterface() { // GH-90000
             ArchRule rule = classes() // GH-90000
-                    .that().haveSimpleNameEndingWith("CredentialStore [GH-90000]")
-                    .and().doNotHaveSimpleName("CredentialStore [GH-90000]") // exclude the interface itself
+                    .that().haveSimpleNameEndingWith("CredentialStore")
+                    .and().doNotHaveSimpleName("CredentialStore") // exclude the interface itself
                     .should().implement(com.ghatana.services.auth.CredentialStore.class) // GH-90000
-                    .because("All credential store implementations must fulfil the CredentialStore contract [GH-90000]");
+                    .because("All credential store implementations must fulfil the CredentialStore contract");
             rule.check(ALL_CLASSES); // GH-90000
         }
     }
@@ -177,29 +177,29 @@ class ArchitectureRulesTest {
     // ── Naming conventions ────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Naming Conventions [GH-90000]")
+    @DisplayName("Naming Conventions")
     class NamingConventions {
 
         @Test
-        @DisplayName("Filter classes must end in 'Filter' [GH-90000]")
+        @DisplayName("Filter classes must end in 'Filter'")
         void filterClassesMustEndWithFilter() { // GH-90000
             ArchRule rule = classes() // GH-90000
                     .that().implement( // GH-90000
                             com.ghatana.platform.http.server.filter.FilterChain.Filter.class)
-                    .should().haveSimpleNameEndingWith("Filter [GH-90000]")
-                    .because("FilterChain.Filter implementations must be named *Filter for discoverability [GH-90000]");
+                    .should().haveSimpleNameEndingWith("Filter")
+                    .because("FilterChain.Filter implementations must be named *Filter for discoverability");
             rule.check(ALL_CLASSES); // GH-90000
         }
 
         @Test
-        @DisplayName("Repository implementations must end in 'Store' or 'Repository' [GH-90000]")
+        @DisplayName("Repository implementations must end in 'Store' or 'Repository'")
         void repositoriesNamingConvention() { // GH-90000
             ArchRule rule = classes() // GH-90000
                     .that().implement( // GH-90000
                             com.ghatana.agent.framework.memory.MemoryStore.class)
-                    .and().doNotHaveSimpleName("MemoryStore [GH-90000]")
-                    .should().haveSimpleNameEndingWith("MemoryStore [GH-90000]")
-                    .because("MemoryStore implementations must follow the *MemoryStore naming pattern [GH-90000]");
+                    .and().doNotHaveSimpleName("MemoryStore")
+                    .should().haveSimpleNameEndingWith("MemoryStore")
+                    .because("MemoryStore implementations must follow the *MemoryStore naming pattern");
             rule.check(ALL_CLASSES); // GH-90000
         }
     }
@@ -207,16 +207,16 @@ class ArchitectureRulesTest {
     // ── Package coupling ──────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Package Coupling [GH-90000]")
+    @DisplayName("Package Coupling")
     class PackageCoupling {
 
         @Test
-        @DisplayName("Platform sub-packages must not have circular dependencies [GH-90000]")
+        @DisplayName("Platform sub-packages must not have circular dependencies")
         void noPlatformCircularDependencies() { // GH-90000
             ArchRule rule = slices() // GH-90000
-                    .matching("com.ghatana.platform.(*).. [GH-90000]")
+                    .matching("com.ghatana.platform.(*)..")
                     .should().beFreeOfCycles() // GH-90000
-                    .because("Platform packages must not have circular dependencies [GH-90000]");
+                    .because("Platform packages must not have circular dependencies");
             rule.check(PLATFORM_CLASSES); // GH-90000
         }
     }

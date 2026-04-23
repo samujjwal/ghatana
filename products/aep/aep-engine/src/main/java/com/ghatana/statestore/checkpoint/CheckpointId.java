@@ -7,7 +7,11 @@ import java.util.UUID;
 /**
  * Unique identifier for a checkpoint or savepoint.
  * Immutable value object containing checkpoint ID, type, and creation timestamp.
- */
+  * @doc.type class
+ * @doc.purpose Provides checkpoint id functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 public final class CheckpointId {
 
     private final String id;

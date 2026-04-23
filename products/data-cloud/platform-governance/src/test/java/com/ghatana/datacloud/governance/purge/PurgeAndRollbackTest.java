@@ -23,8 +23,8 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("PurgeAndRollbackTest [GH-90000]")
-@Tag("governance [GH-90000]")
+@DisplayName("PurgeAndRollbackTest")
+@Tag("governance")
 class PurgeAndRollbackTest {
 
     private PurgeService purgeService;
@@ -41,35 +41,35 @@ class PurgeAndRollbackTest {
     // ── Purge ─────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("purge removes the record from the tenant store [GH-90000]")
+    @DisplayName("purge removes the record from the tenant store")
     void purgeRemovesRecord() { // GH-90000
         purgeService.purge("tenant-a", "r1"); // GH-90000
         assertThat(purgeService.exists("tenant-a", "r1")).isFalse(); // GH-90000
     }
 
     @Test
-    @DisplayName("purge does not affect other records in the same tenant [GH-90000]")
+    @DisplayName("purge does not affect other records in the same tenant")
     void purgeDoesNotAffectOtherRecords() { // GH-90000
         purgeService.purge("tenant-a", "r1"); // GH-90000
         assertThat(purgeService.exists("tenant-a", "r2")).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("purge is tenant-isolated — cross-tenant record survives [GH-90000]")
+    @DisplayName("purge is tenant-isolated — cross-tenant record survives")
     void purgeIsTenantIsolated() { // GH-90000
         purgeService.purge("tenant-a", "r1"); // GH-90000
         assertThat(purgeService.exists("tenant-b", "r3")).isTrue(); // GH-90000
     }
 
     @Test
-    @DisplayName("purging a non-existent record is idempotent and does not throw [GH-90000]")
+    @DisplayName("purging a non-existent record is idempotent and does not throw")
     void purgeNonExistentRecordIsIdempotent() { // GH-90000
         assertThatCode(() -> purgeService.purge("tenant-a", "nonexistent-id")) // GH-90000
                 .doesNotThrowAnyException(); // GH-90000
     }
 
     @Test
-    @DisplayName("second purge of same record is idempotent [GH-90000]")
+    @DisplayName("second purge of same record is idempotent")
     void doublePurgeIsIdempotent() { // GH-90000
         purgeService.purge("tenant-a", "r1"); // GH-90000
         assertThatCode(() -> purgeService.purge("tenant-a", "r1")) // GH-90000
@@ -80,7 +80,7 @@ class PurgeAndRollbackTest {
     // ── Rollback ──────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("rollback within grace period restores the record [GH-90000]")
+    @DisplayName("rollback within grace period restores the record")
     void rollbackWithinGracePeriodRestoresRecord() { // GH-90000
         String token = purgeService.purgeWithRollback("tenant-a", "r1"); // GH-90000
         purgeService.rollback(token); // GH-90000
@@ -88,14 +88,14 @@ class PurgeAndRollbackTest {
     }
 
     @Test
-    @DisplayName("rollback with unknown token throws PurgeRollbackException [GH-90000]")
+    @DisplayName("rollback with unknown token throws PurgeRollbackException")
     void rollbackWithUnknownTokenThrows() { // GH-90000
-        assertThatThrownBy(() -> purgeService.rollback("unknown-token [GH-90000]"))
+        assertThatThrownBy(() -> purgeService.rollback("unknown-token"))
                 .isInstanceOf(PurgeRollbackException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("rollback token is single-use — second rollback throws [GH-90000]")
+    @DisplayName("rollback token is single-use — second rollback throws")
     void rollbackTokenIsSingleUse() { // GH-90000
         String token = purgeService.purgeWithRollback("tenant-a", "r1"); // GH-90000
         purgeService.rollback(token); // GH-90000
@@ -106,7 +106,7 @@ class PurgeAndRollbackTest {
     // ── Partial purge (batch) ───────────────────────────────────────────────── // GH-90000
 
     @Test
-    @DisplayName("batch purge removes all specified records [GH-90000]")
+    @DisplayName("batch purge removes all specified records")
     void batchPurgeRemovesAllSpecified() { // GH-90000
         purgeService.batchPurge("tenant-a", List.of("r1", "r2")); // GH-90000
         assertThat(purgeService.exists("tenant-a", "r1")).isFalse(); // GH-90000
@@ -114,7 +114,7 @@ class PurgeAndRollbackTest {
     }
 
     @Test
-    @DisplayName("batch purge on empty list does nothing [GH-90000]")
+    @DisplayName("batch purge on empty list does nothing")
     void batchPurgeOnEmptyListDoesNothing() { // GH-90000
         assertThatCode(() -> purgeService.batchPurge("tenant-a", List.of())) // GH-90000
                 .doesNotThrowAnyException(); // GH-90000
@@ -122,19 +122,19 @@ class PurgeAndRollbackTest {
     }
 
     @Test
-    @DisplayName("batch purge emits purge audit event per record [GH-90000]")
+    @DisplayName("batch purge emits purge audit event per record")
     void batchPurgeEmitsAuditEvents() { // GH-90000
         List<String> events = new ArrayList<>(); // GH-90000
         purgeService.onAuditEvent(events::add); // GH-90000
         purgeService.batchPurge("tenant-a", List.of("r1", "r2")); // GH-90000
         assertThat(events).hasSize(2); // GH-90000
-        assertThat(events).allSatisfy(e -> assertThat(e).contains("PURGE [GH-90000]"));
+        assertThat(events).allSatisfy(e -> assertThat(e).contains("PURGE"));
     }
 
     // ── Confirmation flow ─────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("purge requires explicit confirmation flag [GH-90000]")
+    @DisplayName("purge requires explicit confirmation flag")
     void purgeRequiresConfirmation() { // GH-90000
         AtomicBoolean confirmed = new AtomicBoolean(false); // GH-90000
         purgeService.purgeWithConfirmation("tenant-a", "r1", confirmed); // GH-90000

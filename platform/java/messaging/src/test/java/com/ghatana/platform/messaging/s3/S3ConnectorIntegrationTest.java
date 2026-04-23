@@ -24,8 +24,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("S3 Connector Integration Tests [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("S3 Connector Integration Tests")
+@Tag("integration")
 class S3ConnectorIntegrationTest extends EventloopTestBase {
 
     // ── In-memory S3 bucket simulation ────────────────────────────────────────
@@ -39,7 +39,7 @@ class S3ConnectorIntegrationTest extends EventloopTestBase {
         }
 
         void putObject(String key, byte[] data) { // GH-90000
-            if (key == null || key.isBlank()) throw new IllegalArgumentException("Key must not be blank [GH-90000]");
+            if (key == null || key.isBlank()) throw new IllegalArgumentException("Key must not be blank");
             objects.put(key, data); // GH-90000
         }
 
@@ -70,71 +70,71 @@ class S3ConnectorIntegrationTest extends EventloopTestBase {
     // ── Object upload ─────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("object upload [GH-90000]")
+    @DisplayName("object upload")
     class ObjectUpload {
 
         @Test
-        @DisplayName("put object stores data retrievable by key [GH-90000]")
+        @DisplayName("put object stores data retrievable by key")
         void putObject_storesDataRetrievableByKey() { // GH-90000
-            InMemoryS3Bucket bucket = new InMemoryS3Bucket("my-bucket [GH-90000]");
+            InMemoryS3Bucket bucket = new InMemoryS3Bucket("my-bucket");
             byte[] data = "Hello, S3!".getBytes(); // GH-90000
 
             bucket.putObject("folder/hello.txt", data); // GH-90000
-            Optional<byte[]> retrieved = bucket.getObject("folder/hello.txt [GH-90000]");
+            Optional<byte[]> retrieved = bucket.getObject("folder/hello.txt");
 
             assertThat(retrieved).isPresent(); // GH-90000
             assertThat(retrieved.get()).isEqualTo(data); // GH-90000
         }
 
         @Test
-        @DisplayName("put object with blank key throws exception [GH-90000]")
+        @DisplayName("put object with blank key throws exception")
         void putObject_withBlankKey_throwsException() { // GH-90000
-            InMemoryS3Bucket bucket = new InMemoryS3Bucket("my-bucket [GH-90000]");
+            InMemoryS3Bucket bucket = new InMemoryS3Bucket("my-bucket");
 
             assertThatThrownBy(() -> bucket.putObject("", new byte[]{1})) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("Key must not be blank [GH-90000]");
+                    .hasMessageContaining("Key must not be blank");
         }
 
         @Test
-        @DisplayName("overwriting existing key replaces old data [GH-90000]")
+        @DisplayName("overwriting existing key replaces old data")
         void overwritingExistingKey_replacesOldData() { // GH-90000
-            InMemoryS3Bucket bucket = new InMemoryS3Bucket("my-bucket [GH-90000]");
+            InMemoryS3Bucket bucket = new InMemoryS3Bucket("my-bucket");
             bucket.putObject("file.txt", "version1".getBytes()); // GH-90000
             bucket.putObject("file.txt", "version2".getBytes()); // GH-90000
 
-            Optional<byte[]> retrieved = bucket.getObject("file.txt [GH-90000]");
+            Optional<byte[]> retrieved = bucket.getObject("file.txt");
 
             assertThat(retrieved).isPresent(); // GH-90000
-            assertThat(new String(retrieved.get())).isEqualTo("version2 [GH-90000]");
+            assertThat(new String(retrieved.get())).isEqualTo("version2");
         }
     }
 
     // ── Object download ───────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("object download [GH-90000]")
+    @DisplayName("object download")
     class ObjectDownload {
 
         @Test
-        @DisplayName("get existing object returns data [GH-90000]")
+        @DisplayName("get existing object returns data")
         void getExistingObject_returnsData() { // GH-90000
-            InMemoryS3Bucket bucket = new InMemoryS3Bucket("my-bucket [GH-90000]");
+            InMemoryS3Bucket bucket = new InMemoryS3Bucket("my-bucket");
             byte[] expected = "data bytes".getBytes(); // GH-90000
             bucket.putObject("docs/readme.md", expected); // GH-90000
 
-            Optional<byte[]> result = bucket.getObject("docs/readme.md [GH-90000]");
+            Optional<byte[]> result = bucket.getObject("docs/readme.md");
 
             assertThat(result).isPresent(); // GH-90000
             assertThat(result.get()).isEqualTo(expected); // GH-90000
         }
 
         @Test
-        @DisplayName("get non-existent object returns empty optional [GH-90000]")
+        @DisplayName("get non-existent object returns empty optional")
         void getNonExistentObject_returnsEmptyOptional() { // GH-90000
-            InMemoryS3Bucket bucket = new InMemoryS3Bucket("my-bucket [GH-90000]");
+            InMemoryS3Bucket bucket = new InMemoryS3Bucket("my-bucket");
 
-            Optional<byte[]> result = bucket.getObject("does-not-exist.txt [GH-90000]");
+            Optional<byte[]> result = bucket.getObject("does-not-exist.txt");
 
             assertThat(result).isEmpty(); // GH-90000
         }
@@ -143,13 +143,13 @@ class S3ConnectorIntegrationTest extends EventloopTestBase {
     // ── Object listing ────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("object listing [GH-90000]")
+    @DisplayName("object listing")
     class ObjectListing {
 
         @Test
-        @DisplayName("list all objects (null prefix) returns all keys sorted [GH-90000]")
+        @DisplayName("list all objects (null prefix) returns all keys sorted")
         void listAllObjects_returnsAllKeysSorted() { // GH-90000
-            InMemoryS3Bucket bucket = new InMemoryS3Bucket("my-bucket [GH-90000]");
+            InMemoryS3Bucket bucket = new InMemoryS3Bucket("my-bucket");
             bucket.putObject("b/file.txt", new byte[]{}); // GH-90000
             bucket.putObject("a/file.txt", new byte[]{}); // GH-90000
             bucket.putObject("c/file.txt", new byte[]{}); // GH-90000
@@ -160,22 +160,22 @@ class S3ConnectorIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("list with prefix filters to matching keys only [GH-90000]")
+        @DisplayName("list with prefix filters to matching keys only")
         void listWithPrefix_filtersToMatchingKeysOnly() { // GH-90000
-            InMemoryS3Bucket bucket = new InMemoryS3Bucket("my-bucket [GH-90000]");
+            InMemoryS3Bucket bucket = new InMemoryS3Bucket("my-bucket");
             bucket.putObject("images/cat.jpg",  new byte[]{}); // GH-90000
             bucket.putObject("images/dog.jpg",  new byte[]{}); // GH-90000
             bucket.putObject("docs/readme.md",  new byte[]{}); // GH-90000
 
-            List<String> imageKeys = bucket.listObjects("images/ [GH-90000]");
+            List<String> imageKeys = bucket.listObjects("images/");
 
             assertThat(imageKeys).containsExactlyInAnyOrder("images/cat.jpg", "images/dog.jpg"); // GH-90000
         }
 
         @Test
-        @DisplayName("list on empty bucket returns empty list [GH-90000]")
+        @DisplayName("list on empty bucket returns empty list")
         void listOnEmptyBucket_returnsEmptyList() { // GH-90000
-            InMemoryS3Bucket bucket = new InMemoryS3Bucket("my-bucket [GH-90000]");
+            InMemoryS3Bucket bucket = new InMemoryS3Bucket("my-bucket");
 
             List<String> keys = bucket.listObjects(null); // GH-90000
 
@@ -186,28 +186,28 @@ class S3ConnectorIntegrationTest extends EventloopTestBase {
     // ── Object deletion ───────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("object deletion [GH-90000]")
+    @DisplayName("object deletion")
     class ObjectDeletion {
 
         @Test
-        @DisplayName("delete existing object removes it from bucket [GH-90000]")
+        @DisplayName("delete existing object removes it from bucket")
         void deleteExistingObject_removesFromBucket() { // GH-90000
-            InMemoryS3Bucket bucket = new InMemoryS3Bucket("my-bucket [GH-90000]");
+            InMemoryS3Bucket bucket = new InMemoryS3Bucket("my-bucket");
             bucket.putObject("temp.txt", new byte[]{1, 2, 3}); // GH-90000
 
-            bucket.deleteObject("temp.txt [GH-90000]");
+            bucket.deleteObject("temp.txt");
 
-            assertThat(bucket.exists("temp.txt [GH-90000]")).isFalse();
+            assertThat(bucket.exists("temp.txt")).isFalse();
             assertThat(bucket.objectCount()).isEqualTo(0); // GH-90000
         }
 
         @Test
-        @DisplayName("delete non-existent object is a no-op [GH-90000]")
+        @DisplayName("delete non-existent object is a no-op")
         void deleteNonExistentObject_isNoOp() { // GH-90000
-            InMemoryS3Bucket bucket = new InMemoryS3Bucket("my-bucket [GH-90000]");
+            InMemoryS3Bucket bucket = new InMemoryS3Bucket("my-bucket");
             bucket.putObject("existing.txt", new byte[]{}); // GH-90000
 
-            bucket.deleteObject("non-existent.txt [GH-90000]");
+            bucket.deleteObject("non-existent.txt");
 
             assertThat(bucket.objectCount()).isEqualTo(1); // GH-90000
         }
@@ -216,11 +216,11 @@ class S3ConnectorIntegrationTest extends EventloopTestBase {
     // ── Large object / multi-part simulation ─────────────────────────────────
 
     @Nested
-    @DisplayName("large object upload (multi-part simulation) [GH-90000]")
+    @DisplayName("large object upload (multi-part simulation)")
     class LargeObjectUpload {
 
         @Test
-        @DisplayName("multi-part upload reassembles parts in correct order [GH-90000]")
+        @DisplayName("multi-part upload reassembles parts in correct order")
         void multiPartUpload_reassemblesPartsInOrder() { // GH-90000
             List<byte[]> parts = new ArrayList<>(); // GH-90000
             parts.add("Part1".getBytes()); // GH-90000
@@ -236,7 +236,7 @@ class S3ConnectorIntegrationTest extends EventloopTestBase {
                 offset += part.length;
             }
 
-            assertThat(new String(assembled)).isEqualTo("Part1Part2Part3 [GH-90000]");
+            assertThat(new String(assembled)).isEqualTo("Part1Part2Part3");
         }
     }
 }

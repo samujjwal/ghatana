@@ -53,14 +53,14 @@ import static org.mockito.Mockito.lenient;
  */
 @Testcontainers
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("Transcription Messaging Integration Tests (AV-P0-04) [GH-90000]")
+@DisplayName("Transcription Messaging Integration Tests (AV-P0-04)")
 class TranscriptionMessagingIT extends EventloopTestBase {
 
     private static final int MAX_DELIVERY_ATTEMPTS = 2;
 
     @Container
     static final RabbitMQContainer RABBIT = new RabbitMQContainer( // GH-90000
-            DockerImageName.parse("rabbitmq:3.13-management-alpine [GH-90000]"));
+            DockerImageName.parse("rabbitmq:3.13-management-alpine"));
 
     @Mock
     private MetricsCollector metricsCollector;
@@ -84,9 +84,9 @@ class TranscriptionMessagingIT extends EventloopTestBase {
         ConnectionFactory factory = new ConnectionFactory(); // GH-90000
         factory.setHost(RABBIT.getHost()); // GH-90000
         factory.setPort(RABBIT.getAmqpPort()); // GH-90000
-        factory.setUsername("guest [GH-90000]");
-        factory.setPassword("guest [GH-90000]");
-        factory.setVirtualHost("/ [GH-90000]");
+        factory.setUsername("guest");
+        factory.setPassword("guest");
+        factory.setVirtualHost("/");
         try (Connection conn = factory.newConnection(); // GH-90000
              com.rabbitmq.client.Channel ch = conn.createChannel()) { // GH-90000
             ch.exchangeDeclare(deadLetterExchange, "direct", true); // GH-90000
@@ -101,9 +101,9 @@ class TranscriptionMessagingIT extends EventloopTestBase {
         RabbitMQConfig config = RabbitMQConfig.builder() // GH-90000
                 .host(RABBIT.getHost()) // GH-90000
                 .port(RABBIT.getAmqpPort()) // GH-90000
-                .username("guest [GH-90000]")
-                .password("guest [GH-90000]")
-                .virtualHost("/ [GH-90000]")
+                .username("guest")
+                .password("guest")
+                .virtualHost("/")
                 .queueName(queueName) // GH-90000
                 .maxDeliveryAttempts(MAX_DELIVERY_ATTEMPTS) // GH-90000
                 .build(); // GH-90000
@@ -130,7 +130,7 @@ class TranscriptionMessagingIT extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should deliver message from producer to consumer (happy path) [GH-90000]")
+    @DisplayName("Should deliver message from producer to consumer (happy path)")
     void shouldDeliverMessageRoundTrip() throws InterruptedException { // GH-90000
         List<TranscriptionJobProducer.TranscriptionJobMessage> received =
                 Collections.synchronizedList(new ArrayList<>()); // GH-90000
@@ -156,11 +156,11 @@ class TranscriptionMessagingIT extends EventloopTestBase {
         assertThat(delivered).isTrue(); // GH-90000
         assertThat(received).hasSize(1); // GH-90000
         assertThat(received.get(0).jobId()).isEqualTo(job.jobId()); // GH-90000
-        assertThat(received.get(0).tenantId()).isEqualTo("tenant-1 [GH-90000]");
+        assertThat(received.get(0).tenantId()).isEqualTo("tenant-1");
     }
 
     @Test
-    @DisplayName("Should re-deliver on consumer nack (retry path) [GH-90000]")
+    @DisplayName("Should re-deliver on consumer nack (retry path)")
     void shouldRetryOnConsumerFailure() throws InterruptedException { // GH-90000
         AtomicInteger deliveryCount = new AtomicInteger(0); // GH-90000
         CountDownLatch latch = new CountDownLatch(2); // expect 2 deliveries // GH-90000
@@ -170,7 +170,7 @@ class TranscriptionMessagingIT extends EventloopTestBase {
             latch.countDown(); // GH-90000
             if (count == 1) { // GH-90000
                 // Simulate failure on first delivery — triggers nack+requeue
-                return Promise.ofException(new RuntimeException("simulated processing failure [GH-90000]"));
+                return Promise.ofException(new RuntimeException("simulated processing failure"));
             }
             return Promise.complete(); // GH-90000
         });
@@ -190,23 +190,23 @@ class TranscriptionMessagingIT extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should route poison messages to DLQ after max delivery count [GH-90000]")
+    @DisplayName("Should route poison messages to DLQ after max delivery count")
     void shouldDeadLetterPoisonMessage() throws Exception { // GH-90000
         AtomicInteger deliveryCount = new AtomicInteger(0); // GH-90000
 
         // Consumer always fails → strategy retries up to MAX_DELIVERY_ATTEMPTS, then dead-letters
         consumer.setJobProcessor(job -> { // GH-90000
             deliveryCount.incrementAndGet(); // GH-90000
-            return Promise.ofException(new RuntimeException("always fails — DLQ test [GH-90000]"));
+            return Promise.ofException(new RuntimeException("always fails — DLQ test"));
         });
 
         // Subscribe to DLQ via direct AMQP channel
         ConnectionFactory factory = new ConnectionFactory(); // GH-90000
         factory.setHost(RABBIT.getHost()); // GH-90000
         factory.setPort(RABBIT.getAmqpPort()); // GH-90000
-        factory.setUsername("guest [GH-90000]");
-        factory.setPassword("guest [GH-90000]");
-        factory.setVirtualHost("/ [GH-90000]");
+        factory.setUsername("guest");
+        factory.setPassword("guest");
+        factory.setVirtualHost("/");
 
         List<String> dlqMessages = Collections.synchronizedList(new ArrayList<>()); // GH-90000
         CountDownLatch dlqLatch = new CountDownLatch(1); // GH-90000
@@ -239,7 +239,7 @@ class TranscriptionMessagingIT extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Duplicate jobId should be processed idempotently via seen-set guard [GH-90000]")
+    @DisplayName("Duplicate jobId should be processed idempotently via seen-set guard")
     void shouldProcessDuplicateJobIdOnlyOnce() throws InterruptedException { // GH-90000
         // Idempotency guard: consumer tracks seen job IDs in a concurrent set
         java.util.Set<UUID> seen = Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<>()); // GH-90000

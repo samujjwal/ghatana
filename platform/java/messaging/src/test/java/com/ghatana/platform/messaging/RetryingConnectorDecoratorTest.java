@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("RetryingConnectorDecorator [GH-90000]")
+@DisplayName("RetryingConnectorDecorator")
 class RetryingConnectorDecoratorTest {
 
     private static final QueueMessage MSG = new QueueMessage("key", "body", Map.of()); // GH-90000
@@ -46,11 +46,11 @@ class RetryingConnectorDecoratorTest {
     // ──────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Successful send [GH-90000]")
+    @DisplayName("Successful send")
     class SuccessTests {
 
         @Test
-        @DisplayName("delegates to underlying strategy when first attempt succeeds [GH-90000]")
+        @DisplayName("delegates to underlying strategy when first attempt succeeds")
         void shouldDelegateAndSucceedOnFirstAttempt() { // GH-90000
             AtomicInteger callCount = new AtomicInteger(); // GH-90000
             QueueProducerStrategy delegate = alwaysSucceed(callCount); // GH-90000
@@ -65,7 +65,7 @@ class RetryingConnectorDecoratorTest {
         }
 
         @Test
-        @DisplayName("succeeds on second attempt after first returns false [GH-90000]")
+        @DisplayName("succeeds on second attempt after first returns false")
         void shouldRetryOnFalseReturn() { // GH-90000
             AtomicInteger callCount = new AtomicInteger(); // GH-90000
             // Returns false on first call, true on second
@@ -85,14 +85,14 @@ class RetryingConnectorDecoratorTest {
         }
 
         @Test
-        @DisplayName("succeeds after exception on first attempt, success on second [GH-90000]")
+        @DisplayName("succeeds after exception on first attempt, success on second")
         void shouldRetryAfterException() { // GH-90000
             AtomicInteger callCount = new AtomicInteger(); // GH-90000
             QueueProducerStrategy delegate = new StubProducer() { // GH-90000
                 @Override public boolean send(QueueMessage msg) { // GH-90000
                     int attempt = callCount.incrementAndGet(); // GH-90000
                     if (attempt == 1) { // GH-90000
-                        throw new RuntimeException("transient error [GH-90000]");
+                        throw new RuntimeException("transient error");
                     }
                     return true;
                 }
@@ -108,7 +108,7 @@ class RetryingConnectorDecoratorTest {
         }
 
         @Test
-        @DisplayName("default sendBatch() uses retrying send() for each message [GH-90000]")
+        @DisplayName("default sendBatch() uses retrying send() for each message")
         void shouldApplyRetryingSendToBatchMessages() { // GH-90000
             AtomicInteger callCount = new AtomicInteger(); // GH-90000
             QueueProducerStrategy delegate = new StubProducer() { // GH-90000
@@ -132,11 +132,11 @@ class RetryingConnectorDecoratorTest {
     // ──────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Exhausted retries [GH-90000]")
+    @DisplayName("Exhausted retries")
     class ExhaustedRetryTests {
 
         @Test
-        @DisplayName("returns false after all attempts return false [GH-90000]")
+        @DisplayName("returns false after all attempts return false")
         void shouldReturnFalseAfterAllAttemptsReturnFalse() { // GH-90000
             AtomicInteger callCount = new AtomicInteger(); // GH-90000
             QueueProducerStrategy delegate = new StubProducer() { // GH-90000
@@ -155,13 +155,13 @@ class RetryingConnectorDecoratorTest {
         }
 
         @Test
-        @DisplayName("throws RuntimeException after all attempts throw [GH-90000]")
+        @DisplayName("throws RuntimeException after all attempts throw")
         void shouldThrowAfterAllAttemptsThrow() { // GH-90000
             AtomicInteger callCount = new AtomicInteger(); // GH-90000
             QueueProducerStrategy delegate = new StubProducer() { // GH-90000
                 @Override public boolean send(QueueMessage msg) { // GH-90000
                     callCount.incrementAndGet(); // GH-90000
-                    throw new RuntimeException("persistent failure [GH-90000]");
+                    throw new RuntimeException("persistent failure");
                 }
             };
 
@@ -170,7 +170,7 @@ class RetryingConnectorDecoratorTest {
 
             assertThatThrownBy(() -> decorator.send(MSG)) // GH-90000
                 .isInstanceOf(RuntimeException.class) // GH-90000
-                .hasMessageContaining("persistent failure [GH-90000]");
+                .hasMessageContaining("persistent failure");
 
             assertThat(callCount.get()).isEqualTo(2); // exactly maxAttempts // GH-90000
         }
@@ -181,11 +181,11 @@ class RetryingConnectorDecoratorTest {
     // ──────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Lifecycle delegation [GH-90000]")
+    @DisplayName("Lifecycle delegation")
     class LifecycleDelegationTests {
 
         @Test
-        @DisplayName("start() delegates to underlying strategy [GH-90000]")
+        @DisplayName("start() delegates to underlying strategy")
         void startDelegates() { // GH-90000
             AtomicInteger startCount = new AtomicInteger(); // GH-90000
             QueueProducerStrategy delegate = new StubProducer() { // GH-90000
@@ -201,7 +201,7 @@ class RetryingConnectorDecoratorTest {
         }
 
         @Test
-        @DisplayName("stop() delegates to underlying strategy [GH-90000]")
+        @DisplayName("stop() delegates to underlying strategy")
         void stopDelegates() { // GH-90000
             AtomicInteger stopCount = new AtomicInteger(); // GH-90000
             QueueProducerStrategy delegate = new StubProducer() { // GH-90000
@@ -222,14 +222,14 @@ class RetryingConnectorDecoratorTest {
     // ──────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("constructor rejects null delegate [GH-90000]")
+    @DisplayName("constructor rejects null delegate")
     void shouldRejectNullDelegate() { // GH-90000
         assertThatThrownBy(() -> new RetryingConnectorDecorator(null, RetryConfig.DEFAULT)) // GH-90000
             .isInstanceOf(NullPointerException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("constructor rejects null retryConfig [GH-90000]")
+    @DisplayName("constructor rejects null retryConfig")
     void shouldRejectNullRetryConfig() { // GH-90000
         assertThatThrownBy(() -> new RetryingConnectorDecorator(new StubProducer(), null)) // GH-90000
             .isInstanceOf(NullPointerException.class); // GH-90000

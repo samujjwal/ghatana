@@ -20,7 +20,11 @@ import java.util.UUID;
 /**
  * JPA entity representing an agent specification in the database.
  * Includes versioning and soft delete support.
- */
+  * @doc.type class
+ * @doc.purpose Provides jpa agent entity functionality.
+ * @doc.layer product
+ * @doc.pattern Entity
+*/
 @Entity
 @Table(name = "agent_specs")
 public class JpaAgentEntity {

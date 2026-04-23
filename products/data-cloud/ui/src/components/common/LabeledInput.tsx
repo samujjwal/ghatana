@@ -1,11 +1,13 @@
 /**
  * LabeledInput Component
  *
- * Accessible, reusable form input with explicit visible or screen-reader label.
- * Enforces label presence — never relies on placeholder-only text.
+ * Thin wrapper around @ghatana/design-system TextField.
+ * Preserves local prop names (wrapperClassName, labelSrOnly) for backward
+ * compatibility while delegating rendering to the canonical design-system
+ * component.
  *
  * @doc.type component
- * @doc.purpose Accessible form input with mandatory label
+ * @doc.purpose Accessible form input with mandatory label (DS-006 migration)
  * @doc.layer shared
  * @doc.pattern Form Component
  * @example
@@ -21,7 +23,7 @@
  */
 
 import React from 'react';
-import { cn } from '../../lib/theme';
+import { TextField } from '@ghatana/design-system';
 
 interface LabeledInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'className'> {
   /** Visible label text — required for accessibility */
@@ -41,49 +43,16 @@ interface LabeledInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElem
 export const LabeledInput = React.forwardRef<HTMLInputElement, LabeledInputProps>(
   ({ label, id, helperText, error, labelSrOnly = false, wrapperClassName, ...inputProps }, ref) => {
     return (
-      <div className={cn('space-y-1.5', wrapperClassName)}>
-        <label
-          htmlFor={id}
-          className={cn(
-            'block text-sm font-medium text-gray-700 dark:text-gray-300',
-            labelSrOnly && 'sr-only'
-          )}
-        >
-          {label}
-        </label>
-        <input
-          ref={ref}
-          id={id}
-          aria-invalid={error ? true : undefined}
-          aria-describedby={
-            cn(
-              helperText && `${id}-helper`,
-              error && `${id}-error`
-            ) || undefined
-          }
-          className={cn(
-            'w-full rounded-md border px-3 py-2 text-sm',
-            'bg-white dark:bg-gray-800',
-            'text-gray-900 dark:text-white',
-            'placeholder-gray-400 dark:placeholder-gray-500',
-            'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500',
-            error
-              ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-              : 'border-gray-300 dark:border-gray-600'
-          )}
-          {...inputProps}
-        />
-        {helperText && !error && (
-          <p id={`${id}-helper`} className="text-xs text-gray-500 dark:text-gray-400">
-            {helperText}
-          </p>
-        )}
-        {error && (
-          <p id={`${id}-error`} className="text-xs text-red-600 dark:text-red-400" role="alert">
-            {error}
-          </p>
-        )}
-      </div>
+      <TextField
+        label={label}
+        id={id}
+        helperText={helperText}
+        error={error}
+        className={wrapperClassName}
+        inputRef={ref as React.Ref<HTMLInputElement>}
+        inputProps={{ id, ...inputProps }}
+        InputLabelProps={labelSrOnly ? { className: 'sr-only' } : undefined}
+      />
     );
   }
 );
@@ -93,10 +62,10 @@ LabeledInput.displayName = 'LabeledInput';
 /**
  * LabeledSelect Component
  *
- * Accessible select dropdown with mandatory label.
+ * Thin wrapper around @ghatana/design-system TextField in select mode.
  *
  * @doc.type component
- * @doc.purpose Accessible select dropdown with mandatory label
+ * @doc.purpose Accessible select dropdown with mandatory label (DS-006 migration)
  * @doc.layer shared
  * @doc.pattern Form Component
  */
@@ -113,50 +82,19 @@ interface LabeledSelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectE
 export const LabeledSelect = React.forwardRef<HTMLSelectElement, LabeledSelectProps>(
   ({ label, id, helperText, error, labelSrOnly = false, wrapperClassName, children, ...selectProps }, ref) => {
     return (
-      <div className={cn('space-y-1.5', wrapperClassName)}>
-        <label
-          htmlFor={id}
-          className={cn(
-            'block text-sm font-medium text-gray-700 dark:text-gray-300',
-            labelSrOnly && 'sr-only'
-          )}
-        >
-          {label}
-        </label>
-        <select
-          ref={ref}
-          id={id}
-          aria-invalid={error ? true : undefined}
-          aria-describedby={
-            cn(
-              helperText && `${id}-helper`,
-              error && `${id}-error`
-            ) || undefined
-          }
-          className={cn(
-            'w-full rounded-md border px-3 py-2 text-sm',
-            'bg-white dark:bg-gray-800',
-            'text-gray-900 dark:text-white',
-            'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500',
-            error
-              ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-              : 'border-gray-300 dark:border-gray-600'
-          )}
-          {...selectProps}
-        >
-          {children}
-        </select>
-        {helperText && !error && (
-          <p id={`${id}-helper`} className="text-xs text-gray-500 dark:text-gray-400">
-            {helperText}
-          </p>
-        )}
-        {error && (
-          <p id={`${id}-error`} className="text-xs text-red-600 dark:text-red-400" role="alert">
-            {error}
-          </p>
-        )}
-      </div>
+      <TextField
+        select
+        label={label}
+        id={id}
+        helperText={helperText}
+        error={error}
+        className={wrapperClassName}
+        inputRef={ref as React.Ref<HTMLSelectElement>}
+        SelectProps={{ native: true, id, ...selectProps }}
+        InputLabelProps={labelSrOnly ? { className: 'sr-only' } : undefined}
+      >
+        {children}
+      </TextField>
     );
   }
 );

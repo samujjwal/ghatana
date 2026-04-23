@@ -14,7 +14,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@DisplayName("PluginRegistry Hardening [GH-90000]")
+@DisplayName("PluginRegistry Hardening")
 class PluginRegistryHardeningTest extends EventloopTestBase {
 
     @AfterEach

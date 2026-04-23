@@ -9,7 +9,11 @@ import java.util.stream.Collectors;
 
 /**
  * Represents an aggregation operation that can be applied to a collection of events.
- */
+  * @doc.type interface
+ * @doc.purpose Provides aggregation functionality.
+ * @doc.layer product
+ * @doc.pattern Interface
+*/
 @FunctionalInterface
 public interface Aggregation {
 

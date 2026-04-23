@@ -27,8 +27,8 @@ class EmbeddedYAPPCClientTest extends EventloopTestBase {
     @BeforeEach
     void setUp() { // GH-90000
         config = YAPPCConfig.builder() // GH-90000
-            .aiProvider("ollama [GH-90000]")
-            .storagePlugin("memory [GH-90000]")
+            .aiProvider("ollama")
+            .storagePlugin("memory")
             .build(); // GH-90000
 
         client = new EmbeddedYAPPCClient(config); // GH-90000
@@ -63,10 +63,10 @@ class EmbeddedYAPPCClientTest extends EventloopTestBase {
         runPromise(() -> client.start()); // GH-90000
 
         TaskDefinition task = TaskDefinition.builder() // GH-90000
-            .id("test-task [GH-90000]")
-            .name("Test Task [GH-90000]")
-            .description("A test task [GH-90000]")
-            .category("testing [GH-90000]")
+            .id("test-task")
+            .name("Test Task")
+            .description("A test task")
+            .category("testing")
             .build(); // GH-90000
 
         TaskRegistrationResult result = runPromise(() -> client.registerTask(task)); // GH-90000
@@ -80,8 +80,8 @@ class EmbeddedYAPPCClientTest extends EventloopTestBase {
         runPromise(() -> client.start()); // GH-90000
 
         TaskDefinition task = TaskDefinition.builder() // GH-90000
-            .id("test-task [GH-90000]")
-            .name("Test Task [GH-90000]")
+            .id("test-task")
+            .name("Test Task")
             .build(); // GH-90000
 
         runPromise(() -> client.registerTask(task)); // GH-90000
@@ -102,13 +102,13 @@ class EmbeddedYAPPCClientTest extends EventloopTestBase {
         runPromise(() -> client.start()); // GH-90000
 
         TaskDefinition task1 = TaskDefinition.builder() // GH-90000
-            .id("task-1 [GH-90000]")
-            .name("Task 1 [GH-90000]")
+            .id("task-1")
+            .name("Task 1")
             .build(); // GH-90000
 
         TaskDefinition task2 = TaskDefinition.builder() // GH-90000
-            .id("task-2 [GH-90000]")
-            .name("Task 2 [GH-90000]")
+            .id("task-2")
+            .name("Task 2")
             .build(); // GH-90000
 
         runPromise(() -> client.registerTask(task1)); // GH-90000
@@ -124,11 +124,11 @@ class EmbeddedYAPPCClientTest extends EventloopTestBase {
         runPromise(() -> client.start()); // GH-90000
 
         StepContext context = StepContext.builder() // GH-90000
-            .projectId("test-project [GH-90000]")
-            .phase("planning [GH-90000]")
+            .projectId("test-project")
+            .phase("planning")
             .build(); // GH-90000
 
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
         StepResult<Map<String, Object>> result = (StepResult<Map<String, Object>>) (StepResult<?>) runPromise(() -> client.invokeAgent( // GH-90000
             "planning",
             "create-architecture",
@@ -171,7 +171,7 @@ class EmbeddedYAPPCClientTest extends EventloopTestBase {
 
         CanvasResult canvasResult = runPromise(() -> client.createCanvas(createRequest)); // GH-90000
 
-        ValidationContext context = ValidationContext.forPhase("planning [GH-90000]");
+        ValidationContext context = ValidationContext.forPhase("planning");
         ValidationReport report = runPromise(() -> client.validateCanvas( // GH-90000
             canvasResult.getCanvasId(), // GH-90000
             context
@@ -210,7 +210,7 @@ class EmbeddedYAPPCClientTest extends EventloopTestBase {
     void testGetLifecycleState() { // GH-90000
         runPromise(() -> client.start()); // GH-90000
 
-        LifecycleState state = runPromise(() -> client.getLifecycleState("test-project [GH-90000]"));
+        LifecycleState state = runPromise(() -> client.getLifecycleState("test-project"));
 
         assertNotNull(state); // GH-90000
         assertEquals("test-project", state.getProjectId()); // GH-90000
@@ -244,7 +244,7 @@ class EmbeddedYAPPCClientTest extends EventloopTestBase {
         Map<String, Object> metrics = runPromise(() -> client.getMetrics()); // GH-90000
 
         assertNotNull(metrics); // GH-90000
-        assertTrue(metrics.containsKey("started [GH-90000]"));
-        assertTrue((Boolean) metrics.get("started [GH-90000]"));
+        assertTrue(metrics.containsKey("started"));
+        assertTrue((Boolean) metrics.get("started"));
     }
 }

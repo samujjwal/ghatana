@@ -44,7 +44,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AgentController [GH-90000]")
+@DisplayName("AgentController")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class AgentControllerTest extends EventloopTestBase {
 
@@ -70,13 +70,13 @@ class AgentControllerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("listAgents returns complete registration metadata including discovery-only semantics [GH-90000]")
+    @DisplayName("listAgents returns complete registration metadata including discovery-only semantics")
     void listAgentsReturnsCompleteRegistrationMetadata() throws Exception { // GH-90000
         when(dataCloudClient.entityStore()).thenReturn(entityStore); // GH-90000
         AgentController dataCloudBackedController = new AgentController(engine, dataCloudClient, sloMetrics); // GH-90000
         when(entityStore.query(any(), any())).thenReturn(Promise.of(EntityStore.QueryResult.of( // GH-90000
             List.of(new EntityStore.Entity( // GH-90000
-                EntityStore.EntityId.of("agent-manifest [GH-90000]"),
+                EntityStore.EntityId.of("agent-manifest"),
                 "aep_agents",
                 Map.ofEntries( // GH-90000
                     Map.entry("id", "agent-manifest"), // GH-90000
@@ -97,10 +97,10 @@ class AgentControllerTest extends EventloopTestBase {
             1L
         )));
 
-        HttpResponse response = runPromise(() -> dataCloudBackedController.handleListAgents(mockTenantRequest("tenant-a [GH-90000]")));
+        HttpResponse response = runPromise(() -> dataCloudBackedController.handleListAgents(mockTenantRequest("tenant-a")));
         Map<String, Object> body = parseBody(response); // GH-90000
-        @SuppressWarnings("unchecked [GH-90000]")
-        List<Map<String, Object>> agents = (List<Map<String, Object>>) body.get("agents [GH-90000]");
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> agents = (List<Map<String, Object>>) body.get("agents");
 
         assertThat(response.getCode()).isEqualTo(200); // GH-90000
         assertThat(agents).singleElement().satisfies(agent -> { // GH-90000
@@ -117,12 +117,12 @@ class AgentControllerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("getAgent flattens stored agent data into the public contract [GH-90000]")
+    @DisplayName("getAgent flattens stored agent data into the public contract")
     void getAgentFlattensStoredAgentData() throws Exception { // GH-90000
         when(dataCloudClient.entityStore()).thenReturn(entityStore); // GH-90000
         AgentController dataCloudBackedController = new AgentController(engine, dataCloudClient, sloMetrics); // GH-90000
         when(entityStore.findById(any(), any())).thenReturn(Promise.of(Optional.of(new EntityStore.Entity( // GH-90000
-            EntityStore.EntityId.of("agent-direct [GH-90000]"),
+            EntityStore.EntityId.of("agent-direct"),
             "aep_agents",
             Map.of( // GH-90000
                 "id", "agent-direct",
@@ -131,7 +131,7 @@ class AgentControllerTest extends EventloopTestBase {
                 "type", "DETERMINISTIC",
                 "version", "1.4.2",
                 "status", "ACTIVE",
-                "capabilities", List.of("score [GH-90000]"),
+                "capabilities", List.of("score"),
                 "config", Map.of("mode", "strict"), // GH-90000
                 "createdAt", "2026-04-20T08:00:00Z"
             ),
@@ -150,13 +150,13 @@ class AgentControllerTest extends EventloopTestBase {
         assertThat(body).containsEntry("registeredAt", "2026-04-20T08:00:00Z"); // GH-90000
         assertThat(body).containsEntry("registryStorage", "datacloud"); // GH-90000
         assertThat(body).containsEntry("memoryPersistence", "datacloud"); // GH-90000
-        @SuppressWarnings("unchecked [GH-90000]")
-        Map<String, Object> config = (Map<String, Object>) body.get("config [GH-90000]");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> config = (Map<String, Object>) body.get("config");
         assertThat(config).containsEntry("mode", "strict"); // GH-90000
     }
 
     @Test
-    @DisplayName("returns 400 when input is not a JSON object [GH-90000]")
+    @DisplayName("returns 400 when input is not a JSON object")
     void executeRejectsNonObjectInput() throws Exception { // GH-90000
         HttpRequest request = mockExecuteRequest( // GH-90000
             "agent-1",
@@ -165,8 +165,8 @@ class AgentControllerTest extends EventloopTestBase {
 
         HttpResponse response = runPromise(() -> controller.handleExecuteAgent(request)); // GH-90000
         Map<String, Object> body = parseBody(response); // GH-90000
-        @SuppressWarnings("unchecked [GH-90000]")
-        Map<String, Object> details = (Map<String, Object>) body.get("detailsMap [GH-90000]");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> details = (Map<String, Object>) body.get("detailsMap");
 
         assertThat(response.getCode()).isEqualTo(400); // GH-90000
         assertThat(details).containsEntry("errorCode", "INVALID_INPUT"); // GH-90000
@@ -175,10 +175,10 @@ class AgentControllerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("returns 503 with retry guidance when dependency is unavailable [GH-90000]")
+    @DisplayName("returns 503 with retry guidance when dependency is unavailable")
     void executeMapsUnavailableTo503() throws Exception { // GH-90000
         when(engine.process(anyString(), any())) // GH-90000
-            .thenReturn(Promise.ofException(new IllegalStateException("DataCloud unavailable [GH-90000]")));
+            .thenReturn(Promise.ofException(new IllegalStateException("DataCloud unavailable")));
 
         HttpRequest request = mockExecuteRequest( // GH-90000
             "agent-1",
@@ -187,8 +187,8 @@ class AgentControllerTest extends EventloopTestBase {
 
         HttpResponse response = runPromise(() -> controller.handleExecuteAgent(request)); // GH-90000
         Map<String, Object> body = parseBody(response); // GH-90000
-        @SuppressWarnings("unchecked [GH-90000]")
-        Map<String, Object> details = (Map<String, Object>) body.get("detailsMap [GH-90000]");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> details = (Map<String, Object>) body.get("detailsMap");
 
         assertThat(response.getCode()).isEqualTo(503); // GH-90000
         assertThat(details).containsEntry("errorCode", "AGENT_EXECUTION_DEPENDENCY_UNAVAILABLE"); // GH-90000
@@ -198,10 +198,10 @@ class AgentControllerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("returns 504 for timeout failures [GH-90000]")
+    @DisplayName("returns 504 for timeout failures")
     void executeMapsTimeoutTo504() throws Exception { // GH-90000
         when(engine.process(anyString(), any())) // GH-90000
-            .thenReturn(Promise.ofException(new TimeoutException("execution timeout [GH-90000]")));
+            .thenReturn(Promise.ofException(new TimeoutException("execution timeout")));
 
         HttpRequest request = mockExecuteRequest( // GH-90000
             "agent-1",
@@ -210,8 +210,8 @@ class AgentControllerTest extends EventloopTestBase {
 
         HttpResponse response = runPromise(() -> controller.handleExecuteAgent(request)); // GH-90000
         Map<String, Object> body = parseBody(response); // GH-90000
-        @SuppressWarnings("unchecked [GH-90000]")
-        Map<String, Object> details = (Map<String, Object>) body.get("detailsMap [GH-90000]");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> details = (Map<String, Object>) body.get("detailsMap");
 
         assertThat(response.getCode()).isEqualTo(504); // GH-90000
         assertThat(details).containsEntry("errorCode", "AGENT_EXECUTION_TIMEOUT"); // GH-90000
@@ -219,10 +219,10 @@ class AgentControllerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("returns 403 for forbidden execution [GH-90000]")
+    @DisplayName("returns 403 for forbidden execution")
     void executeMapsForbiddenTo403() throws Exception { // GH-90000
         when(engine.process(anyString(), any())) // GH-90000
-            .thenReturn(Promise.ofException(new SecurityException("forbidden by policy [GH-90000]")));
+            .thenReturn(Promise.ofException(new SecurityException("forbidden by policy")));
 
         HttpRequest request = mockExecuteRequest( // GH-90000
             "agent-1",
@@ -231,8 +231,8 @@ class AgentControllerTest extends EventloopTestBase {
 
         HttpResponse response = runPromise(() -> controller.handleExecuteAgent(request)); // GH-90000
         Map<String, Object> body = parseBody(response); // GH-90000
-        @SuppressWarnings("unchecked [GH-90000]")
-        Map<String, Object> details = (Map<String, Object>) body.get("detailsMap [GH-90000]");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> details = (Map<String, Object>) body.get("detailsMap");
 
         assertThat(response.getCode()).isEqualTo(403); // GH-90000
         assertThat(details).containsEntry("errorCode", "AGENT_EXECUTION_FORBIDDEN"); // GH-90000
@@ -240,7 +240,7 @@ class AgentControllerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("returns 200 with execution summary on success [GH-90000]")
+    @DisplayName("returns 200 with execution summary on success")
     void executeReturnsSuccessPayload() throws Exception { // GH-90000
         when(engine.process(anyString(), any())) // GH-90000
             .thenReturn(Promise.of(new AepEngine.ProcessingResult( // GH-90000
@@ -363,14 +363,14 @@ class AgentControllerTest extends EventloopTestBase {
 
     private HttpRequest mockTenantRequest(String tenantId) { // GH-90000
         HttpRequest request = mock(HttpRequest.class); // GH-90000
-        when(request.getQueryParameter("tenantId [GH-90000]")).thenReturn(tenantId);
+        when(request.getQueryParameter("tenantId")).thenReturn(tenantId);
         return request;
     }
 
     private HttpRequest mockAgentRequest(String agentId, String tenantId) { // GH-90000
         HttpRequest request = mock(HttpRequest.class); // GH-90000
-        when(request.getPathParameter("agentId [GH-90000]")).thenReturn(agentId);
-        when(request.getQueryParameter("tenantId [GH-90000]")).thenReturn(tenantId);
+        when(request.getPathParameter("agentId")).thenReturn(agentId);
+        when(request.getQueryParameter("tenantId")).thenReturn(tenantId);
         return request;
     }
 
@@ -389,8 +389,8 @@ class AgentControllerTest extends EventloopTestBase {
 
     private HttpRequest mockExecuteRequest(String agentId, String bodyJson) { // GH-90000
         HttpRequest request = mock(HttpRequest.class); // GH-90000
-        when(request.getPathParameter("agentId [GH-90000]")).thenReturn(agentId);
-        when(request.getQueryParameter("tenantId [GH-90000]")).thenReturn(null);
+        when(request.getPathParameter("agentId")).thenReturn(agentId);
+        when(request.getQueryParameter("tenantId")).thenReturn(null);
         when(request.getHeader(any())).thenReturn(null); // GH-90000
         when(request.loadBody()).thenReturn(Promise.of(ByteBuf.wrapForReading(bodyJson.getBytes(StandardCharsets.UTF_8)))); // GH-90000
         return request;

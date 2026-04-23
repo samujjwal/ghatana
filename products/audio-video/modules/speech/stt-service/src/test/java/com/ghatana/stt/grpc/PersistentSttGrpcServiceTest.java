@@ -17,7 +17,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
 
-@DisplayName("PersistentSttGrpcService [GH-90000]")
+@DisplayName("PersistentSttGrpcService")
 class PersistentSttGrpcServiceTest {
 
     private PersistentSttGrpcService service;
@@ -34,7 +34,7 @@ class PersistentSttGrpcServiceTest {
     }
 
     @Test
-    @DisplayName("transcribe rejects requests without tenant context [GH-90000]")
+    @DisplayName("transcribe rejects requests without tenant context")
     void transcribeRejectsRequestsWithoutTenantContext() { // GH-90000
         CapturingObserver<TranscribeResponse> observer = new CapturingObserver<>(); // GH-90000
 

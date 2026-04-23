@@ -15,11 +15,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Tests for {@link EventDurabilityConfig} and related enums.
  */
-@DisplayName("EventDurabilityConfig [GH-90000]")
+@DisplayName("EventDurabilityConfig")
 class EventDurabilityConfigTest {
 
     @Nested
-    @DisplayName("defaults [GH-90000]")
+    @DisplayName("defaults")
     class Defaults {
 
         @Test
@@ -77,7 +77,7 @@ class EventDurabilityConfigTest {
     }
 
     @Nested
-    @DisplayName("setters [GH-90000]")
+    @DisplayName("setters")
     class Setters {
 
         @Test
@@ -153,7 +153,7 @@ class EventDurabilityConfigTest {
     }
 
     @Nested
-    @DisplayName("DurabilityLevel enum [GH-90000]")
+    @DisplayName("DurabilityLevel enum")
     class DurabilityLevelEnum {
 
         @Test
@@ -169,7 +169,7 @@ class EventDurabilityConfigTest {
 
         @Test
         void valueOfByName() { // GH-90000
-            assertThat(EventDurabilityService.DurabilityLevel.valueOf("NONE [GH-90000]"))
+            assertThat(EventDurabilityService.DurabilityLevel.valueOf("NONE"))
                     .isSameAs(EventDurabilityService.DurabilityLevel.NONE); // GH-90000
         }
     }

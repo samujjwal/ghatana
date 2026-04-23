@@ -4,7 +4,11 @@ import java.util.Objects;
 
 /**
  * Compiler feature flags supplied by callers.
- */
+  * @doc.type record
+ * @doc.purpose Provides compile options functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 public record CompileOptions(
         GeneratedTypeMode mode,
         boolean generateProtoGlue,

@@ -28,7 +28,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer test
  * @doc.pattern Test
  */
-@DisplayName("IntentService [GH-90000]")
+@DisplayName("IntentService")
 class IntentServiceTest extends EventloopTestBase {
 
     private CompletionService aiService;
@@ -49,7 +49,7 @@ class IntentServiceTest extends EventloopTestBase {
         when(aiService.complete(any(CompletionRequest.class))) // GH-90000
                 .thenReturn(Promise.of(CompletionResult.builder() // GH-90000
                         .text(text) // GH-90000
-                        .modelUsed("gpt-4 [GH-90000]")
+                        .modelUsed("gpt-4")
                         .build())); // GH-90000
     }
 
@@ -60,17 +60,17 @@ class IntentServiceTest extends EventloopTestBase {
 
     private IntentInput captureInput(String tenantId) { // GH-90000
         return IntentInput.builder() // GH-90000
-                .rawText("Build a task management app for teams [GH-90000]")
-                .format("text [GH-90000]")
+                .rawText("Build a task management app for teams")
+                .format("text")
                 .tenantId(tenantId) // GH-90000
                 .build(); // GH-90000
     }
 
     private IntentSpec spec(String tenantId) { // GH-90000
         return IntentSpec.builder() // GH-90000
-                .id("intent-123 [GH-90000]")
-                .productName("Task Manager [GH-90000]")
-                .description("Team collaboration tool [GH-90000]")
+                .id("intent-123")
+                .productName("Task Manager")
+                .description("Team collaboration tool")
                 .goals(List.of()) // GH-90000
                 .personas(List.of()) // GH-90000
                 .constraints(List.of()) // GH-90000
@@ -79,15 +79,15 @@ class IntentServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("capture() [GH-90000]")
+    @DisplayName("capture()")
     class CaptureTests {
 
         @Test
-        @DisplayName("returns well-formed IntentSpec with tenant preserved [GH-90000]")
+        @DisplayName("returns well-formed IntentSpec with tenant preserved")
         void shouldCaptureIntentWithAI() { // GH-90000
-            stubAiSuccess("Product: Task Manager\nDescription: Team collaboration tool [GH-90000]");
+            stubAiSuccess("Product: Task Manager\nDescription: Team collaboration tool");
 
-            IntentSpec result = runPromise(() -> service.capture(captureInput("tenant-123 [GH-90000]")));
+            IntentSpec result = runPromise(() -> service.capture(captureInput("tenant-123")));
 
             assertNotNull(result); // GH-90000
             assertNotNull(result.id()); // GH-90000
@@ -98,45 +98,45 @@ class IntentServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("records timer with tenant tag on success [GH-90000]")
+        @DisplayName("records timer with tenant tag on success")
         void shouldRecordTimerOnSuccess() { // GH-90000
-            stubAiSuccess("Product: X\nDescription: desc [GH-90000]");
+            stubAiSuccess("Product: X\nDescription: desc");
 
-            runPromise(() -> service.capture(captureInput("tenant-abc [GH-90000]")));
+            runPromise(() -> service.capture(captureInput("tenant-abc")));
 
-            verify(metrics).recordTimer(eq("yappc.intent.capture [GH-90000]"), anyLong(),
+            verify(metrics).recordTimer(eq("yappc.intent.capture"), anyLong(),
                     any(Map.class)); // GH-90000
         }
 
         @Test
-        @DisplayName("increments success counter on success [GH-90000]")
+        @DisplayName("increments success counter on success")
         void shouldIncrementSuccessCounterOnSuccess() { // GH-90000
-            stubAiSuccess("Product: X\nDescription: desc [GH-90000]");
+            stubAiSuccess("Product: X\nDescription: desc");
 
-            runPromise(() -> service.capture(captureInput("tenant-abc [GH-90000]")));
+            runPromise(() -> service.capture(captureInput("tenant-abc")));
 
-            verify(metrics).incrementCounter(contains("success [GH-90000]"), anyMap());
+            verify(metrics).incrementCounter(contains("success"), anyMap());
         }
 
         @Test
-        @DisplayName("AI failure uses fallback parser and records fallback metric [GH-90000]")
+        @DisplayName("AI failure uses fallback parser and records fallback metric")
         void shouldHandleAIServiceFailureOnCapture() { // GH-90000
-            stubAiFailure("AI service unavailable [GH-90000]");
+            stubAiFailure("AI service unavailable");
 
             IntentSpec result = runPromise(() -> service.capture(captureInput(null))); // GH-90000
 
             assertNotNull(result); // GH-90000
             assertNotNull(result.productName()); // GH-90000
-            verify(metrics).incrementCounter(eq("yappc.ai.intent.capture.fallback [GH-90000]"), anyMap());
+            verify(metrics).incrementCounter(eq("yappc.ai.intent.capture.fallback"), anyMap());
         }
 
         @Test
-        @DisplayName("different tenants get distinct intent IDs [GH-90000]")
+        @DisplayName("different tenants get distinct intent IDs")
         void shouldIsolateTenants() { // GH-90000
-            stubAiSuccess("Product: App\nDescription: desc [GH-90000]");
+            stubAiSuccess("Product: App\nDescription: desc");
 
-            IntentSpec spec1 = runPromise(() -> service.capture(captureInput("tenant-A [GH-90000]")));
-            IntentSpec spec2 = runPromise(() -> service.capture(captureInput("tenant-B [GH-90000]")));
+            IntentSpec spec1 = runPromise(() -> service.capture(captureInput("tenant-A")));
+            IntentSpec spec2 = runPromise(() -> service.capture(captureInput("tenant-B")));
 
             assertNotEquals(spec1.id(), spec2.id()); // GH-90000
             assertEquals("tenant-A", spec1.tenantId()); // GH-90000
@@ -145,15 +145,15 @@ class IntentServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("analyze() [GH-90000]")
+    @DisplayName("analyze()")
     class AnalyzeTests {
 
         @Test
-        @DisplayName("returns IntentAnalysis with risks and gaps for given spec [GH-90000]")
+        @DisplayName("returns IntentAnalysis with risks and gaps for given spec")
         void shouldAnalyzeIntentForFeasibility() { // GH-90000
-            stubAiSuccess("Feasibility: High\nRisks: Technical complexity [GH-90000]");
+            stubAiSuccess("Feasibility: High\nRisks: Technical complexity");
 
-            IntentAnalysis result = runPromise(() -> service.analyze(spec("tenant-123 [GH-90000]")));
+            IntentAnalysis result = runPromise(() -> service.analyze(spec("tenant-123")));
 
             assertNotNull(result); // GH-90000
             assertEquals("intent-123", result.intentId()); // GH-90000
@@ -164,36 +164,36 @@ class IntentServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("records timer with tenant tag on successful analysis [GH-90000]")
+        @DisplayName("records timer with tenant tag on successful analysis")
         void shouldRecordTimerOnAnalyze() { // GH-90000
-            stubAiSuccess("Feasibility: High [GH-90000]");
+            stubAiSuccess("Feasibility: High");
 
-            runPromise(() -> service.analyze(spec("tenant-xyz [GH-90000]")));
+            runPromise(() -> service.analyze(spec("tenant-xyz")));
 
-            verify(metrics).recordTimer(eq("yappc.intent.analyze [GH-90000]"), anyLong(),
+            verify(metrics).recordTimer(eq("yappc.intent.analyze"), anyLong(),
                     any(Map.class)); // GH-90000
         }
 
         @Test
-        @DisplayName("increments success counter on successful analysis [GH-90000]")
+        @DisplayName("increments success counter on successful analysis")
         void shouldIncrementSuccessCounterOnAnalyze() { // GH-90000
-            stubAiSuccess("Feasibility: High [GH-90000]");
+            stubAiSuccess("Feasibility: High");
 
-            runPromise(() -> service.analyze(spec("tenant-xyz [GH-90000]")));
+            runPromise(() -> service.analyze(spec("tenant-xyz")));
 
-            verify(metrics).incrementCounter(contains("success [GH-90000]"), anyMap());
+            verify(metrics).incrementCounter(contains("success"), anyMap());
         }
 
         @Test
-        @DisplayName("AI failure during analyze uses fallback output and records fallback metric [GH-90000]")
+        @DisplayName("AI failure during analyze uses fallback output and records fallback metric")
         void shouldHandleAIServiceFailureOnAnalyze() { // GH-90000
-            stubAiFailure("Model timeout [GH-90000]");
+            stubAiFailure("Model timeout");
 
-            IntentAnalysis result = runPromise(() -> service.analyze(spec("tenant-99 [GH-90000]")));
+            IntentAnalysis result = runPromise(() -> service.analyze(spec("tenant-99")));
 
             assertNotNull(result); // GH-90000
             assertEquals("intent-123", result.intentId()); // GH-90000
-            verify(metrics).incrementCounter(eq("yappc.ai.intent.analyze.fallback [GH-90000]"), anyMap());
+            verify(metrics).incrementCounter(eq("yappc.ai.intent.analyze.fallback"), anyMap());
         }
     }
 }

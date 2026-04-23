@@ -13,7 +13,7 @@
  */
 
 import React, { useMemo, useCallback, useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import {
   FlowCanvas,
   FlowControls,
@@ -25,6 +25,7 @@ import {
   type FlowEdge,
   type OnConnect,
 } from '@ghatana/canvas/flow';
+import { apiClient } from '../lib/api/client';
 import { migrateCollection as migrateCollectionApi, type MigrationTargetTier } from '../api/cost.service';
 import { UnsupportedSurfaceBoundary } from '../components/common/UnsupportedSurfaceBoundary';
 import { dataFabricMetricsBoundary } from '../components/common/unsupportedSurfaceRegistry';
@@ -52,56 +53,9 @@ interface FabricMetricsResponse {
   lastUpdated: string;
 }
 
-const PREVIEW_FABRIC_METRICS: FabricMetricsResponse = {
-  tiers: [
-    {
-      tier: 'HOT',
-      label: 'HOT Tier (Redis)',
-      throughputEps: 18250,
-      latencyP99Ms: 18,
-      errorRate: 0.001,
-      queueDepth: 42,
-      status: 'healthy',
-      instanceCount: 3,
-    },
-    {
-      tier: 'WARM',
-      label: 'WARM Tier (PostgreSQL)',
-      throughputEps: 9300,
-      latencyP99Ms: 64,
-      errorRate: 0.003,
-      queueDepth: 17,
-      status: 'healthy',
-      instanceCount: 2,
-      storageGb: 460.2,
-    },
-    {
-      tier: 'COOL',
-      label: 'COOL Tier (Iceberg)',
-      throughputEps: 1200,
-      latencyP99Ms: 140,
-      errorRate: 0,
-      queueDepth: 3,
-      status: 'healthy',
-      instanceCount: 1,
-      storageGb: 1820.7,
-    },
-    {
-      tier: 'COLD',
-      label: 'COLD Tier (S3/Archive)',
-      throughputEps: 85,
-      latencyP99Ms: 1900,
-      errorRate: 0,
-      queueDepth: 0,
-      status: 'healthy',
-      instanceCount: 1,
-      storageGb: 12240.4,
-    },
-  ],
-  totalEventsPerSec: 28835,
-  totalStorageGb: 14521.3,
-  lastUpdated: 'preview',
-};
+async function fetchFabricMetrics(): Promise<FabricMetricsResponse> {
+  return apiClient.get<FabricMetricsResponse>('/data-fabric/metrics');
+}
 
 // =============================================================================
 // Node layout
@@ -288,7 +242,14 @@ function TierLegend(): React.ReactElement {
  * @doc.pattern Page
  */
 export function DataFabricPage(): React.ReactElement {
-  const fabricMetrics = PREVIEW_FABRIC_METRICS;
+  // Real-time fabric metrics from DC API
+  const { data: fabricMetrics } = useQuery<FabricMetricsResponse>({
+    queryKey: ['data-fabric', 'metrics'],
+    queryFn: fetchFabricMetrics,
+    staleTime: 60_000,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: false,
+  });
 
   // B10: Manual tier migration state
   const [migrateCollection, setMigrateCollection] = useState('');

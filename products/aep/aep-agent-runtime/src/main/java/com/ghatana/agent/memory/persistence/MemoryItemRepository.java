@@ -14,7 +14,8 @@ import java.util.List;
  * @doc.type interface
  * @doc.purpose Memory item persistence SPI
  * @doc.layer agent-memory
- */
+  * @doc.pattern Repository
+*/
 public interface MemoryItemRepository {
 
     @NotNull Promise<MemoryItem> save(@NotNull MemoryItem item);

@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThatNullPointerException;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("AepBusinessKpiTracker [GH-90000]")
+@DisplayName("AepBusinessKpiTracker")
 class AepBusinessKpiTrackerTest {
 
     private static final String TENANT = "tenant-alpha";
@@ -27,7 +27,7 @@ class AepBusinessKpiTrackerTest {
     // ─── create ───────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("create: starts with no tracked tenants [GH-90000]")
+    @DisplayName("create: starts with no tracked tenants")
     void create_empty() { // GH-90000
         AepBusinessKpiTracker tracker = AepBusinessKpiTracker.create(); // GH-90000
         assertThat(tracker.trackedTenants()).isEmpty(); // GH-90000
@@ -36,11 +36,11 @@ class AepBusinessKpiTrackerTest {
     // ─── increment (single) ─────────────────────────────────────────────────── // GH-90000
 
     @Nested
-    @DisplayName("increment() - single step [GH-90000]")
+    @DisplayName("increment() - single step")
     class IncrementSingle {
 
         @Test
-        @DisplayName("increments counter by 1 [GH-90000]")
+        @DisplayName("increments counter by 1")
         void increment_byOne() { // GH-90000
             AepBusinessKpiTracker tracker = AepBusinessKpiTracker.create(); // GH-90000
             tracker.increment(TENANT, KPI_PROCESSED); // GH-90000
@@ -48,7 +48,7 @@ class AepBusinessKpiTrackerTest {
         }
 
         @Test
-        @DisplayName("multiple increments accumulate [GH-90000]")
+        @DisplayName("multiple increments accumulate")
         void increment_multiple_accumulates() { // GH-90000
             AepBusinessKpiTracker tracker = AepBusinessKpiTracker.create(); // GH-90000
             tracker.increment(TENANT, KPI_PROCESSED); // GH-90000
@@ -58,7 +58,7 @@ class AepBusinessKpiTrackerTest {
         }
 
         @Test
-        @DisplayName("null tenantId throws NullPointerException [GH-90000]")
+        @DisplayName("null tenantId throws NullPointerException")
         void increment_nullTenant_throwsNPE() { // GH-90000
             AepBusinessKpiTracker tracker = AepBusinessKpiTracker.create(); // GH-90000
             assertThatNullPointerException() // GH-90000
@@ -66,7 +66,7 @@ class AepBusinessKpiTrackerTest {
         }
 
         @Test
-        @DisplayName("null kpiName throws NullPointerException [GH-90000]")
+        @DisplayName("null kpiName throws NullPointerException")
         void increment_nullKpi_throwsNPE() { // GH-90000
             AepBusinessKpiTracker tracker = AepBusinessKpiTracker.create(); // GH-90000
             assertThatNullPointerException() // GH-90000
@@ -77,11 +77,11 @@ class AepBusinessKpiTrackerTest {
     // ─── increment (delta) ──────────────────────────────────────────────────── // GH-90000
 
     @Nested
-    @DisplayName("increment(delta) [GH-90000]")
+    @DisplayName("increment(delta)")
     class IncrementDelta {
 
         @Test
-        @DisplayName("increments counter by delta [GH-90000]")
+        @DisplayName("increments counter by delta")
         void incrementDelta_correctValue() { // GH-90000
             AepBusinessKpiTracker tracker = AepBusinessKpiTracker.create(); // GH-90000
             tracker.increment(TENANT, KPI_PROCESSED, 10L); // GH-90000
@@ -89,7 +89,7 @@ class AepBusinessKpiTrackerTest {
         }
 
         @Test
-        @DisplayName("negative delta throws IllegalArgumentException [GH-90000]")
+        @DisplayName("negative delta throws IllegalArgumentException")
         void incrementDelta_negative_throwsIAE() { // GH-90000
             AepBusinessKpiTracker tracker = AepBusinessKpiTracker.create(); // GH-90000
             assertThatIllegalArgumentException() // GH-90000
@@ -97,7 +97,7 @@ class AepBusinessKpiTrackerTest {
         }
 
         @Test
-        @DisplayName("zero delta is accepted and does not change value [GH-90000]")
+        @DisplayName("zero delta is accepted and does not change value")
         void incrementDelta_zero_accepted() { // GH-90000
             AepBusinessKpiTracker tracker = AepBusinessKpiTracker.create(); // GH-90000
             tracker.increment(TENANT, KPI_PROCESSED, 5L); // GH-90000
@@ -109,18 +109,18 @@ class AepBusinessKpiTrackerTest {
     // ─── counter ──────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("counter() [GH-90000]")
+    @DisplayName("counter()")
     class Counter {
 
         @Test
-        @DisplayName("returns 0 for unknown tenant/kpi pair [GH-90000]")
+        @DisplayName("returns 0 for unknown tenant/kpi pair")
         void counter_unknown_returnsZero() { // GH-90000
             AepBusinessKpiTracker tracker = AepBusinessKpiTracker.create(); // GH-90000
             assertThat(tracker.counter("unknown-tenant", "nonexistent.kpi")).isZero(); // GH-90000
         }
 
         @Test
-        @DisplayName("different KPIs for same tenant are independent [GH-90000]")
+        @DisplayName("different KPIs for same tenant are independent")
         void counter_differentKpis_independent() { // GH-90000
             AepBusinessKpiTracker tracker = AepBusinessKpiTracker.create(); // GH-90000
             tracker.increment(TENANT, KPI_PROCESSED, 5L); // GH-90000
@@ -130,7 +130,7 @@ class AepBusinessKpiTrackerTest {
         }
 
         @Test
-        @DisplayName("different tenants share the same KPI name independently [GH-90000]")
+        @DisplayName("different tenants share the same KPI name independently")
         void counter_tenantIsolation() { // GH-90000
             AepBusinessKpiTracker tracker = AepBusinessKpiTracker.create(); // GH-90000
             tracker.increment("tenant-a", KPI_PROCESSED, 10L); // GH-90000
@@ -140,7 +140,7 @@ class AepBusinessKpiTrackerTest {
         }
 
         @Test
-        @DisplayName("null tenantId throws NullPointerException [GH-90000]")
+        @DisplayName("null tenantId throws NullPointerException")
         void counter_nullTenant_throwsNPE() { // GH-90000
             AepBusinessKpiTracker tracker = AepBusinessKpiTracker.create(); // GH-90000
             assertThatNullPointerException() // GH-90000
@@ -151,11 +151,11 @@ class AepBusinessKpiTrackerTest {
     // ─── gauge ────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("gauge() [GH-90000]")
+    @DisplayName("gauge()")
     class Gauge {
 
         @Test
-        @DisplayName("records and retrieves a gauge value [GH-90000]")
+        @DisplayName("records and retrieves a gauge value")
         void gauge_recordAndRetrieve() { // GH-90000
             AepBusinessKpiTracker tracker = AepBusinessKpiTracker.create(); // GH-90000
             tracker.gauge(TENANT, KPI_LAG, 123.45); // GH-90000
@@ -165,7 +165,7 @@ class AepBusinessKpiTrackerTest {
         }
 
         @Test
-        @DisplayName("latest gauge value overwrites earlier one [GH-90000]")
+        @DisplayName("latest gauge value overwrites earlier one")
         void gauge_latestOverwrites() { // GH-90000
             AepBusinessKpiTracker tracker = AepBusinessKpiTracker.create(); // GH-90000
             tracker.gauge(TENANT, KPI_LAG, 100.0); // GH-90000
@@ -176,14 +176,14 @@ class AepBusinessKpiTrackerTest {
         }
 
         @Test
-        @DisplayName("gaugeValue returns empty for unknown tenant/kpi [GH-90000]")
+        @DisplayName("gaugeValue returns empty for unknown tenant/kpi")
         void gaugeValue_unknown_returnsEmpty() { // GH-90000
             AepBusinessKpiTracker tracker = AepBusinessKpiTracker.create(); // GH-90000
             assertThat(tracker.gaugeValue("unknown", KPI_LAG)).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("gauge timestamp is set to approximately now [GH-90000]")
+        @DisplayName("gauge timestamp is set to approximately now")
         void gauge_timestampIsNow() { // GH-90000
             AepBusinessKpiTracker tracker = AepBusinessKpiTracker.create(); // GH-90000
             long before = System.currentTimeMillis(); // GH-90000
@@ -197,7 +197,7 @@ class AepBusinessKpiTrackerTest {
         }
 
         @Test
-        @DisplayName("null tenantId throws NullPointerException [GH-90000]")
+        @DisplayName("null tenantId throws NullPointerException")
         void gauge_nullTenant_throwsNPE() { // GH-90000
             AepBusinessKpiTracker tracker = AepBusinessKpiTracker.create(); // GH-90000
             assertThatNullPointerException() // GH-90000
@@ -208,7 +208,7 @@ class AepBusinessKpiTrackerTest {
     // ─── trackedTenants ───────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("trackedTenants: includes tenants with only counters and only gauges [GH-90000]")
+    @DisplayName("trackedTenants: includes tenants with only counters and only gauges")
     void trackedTenants_includesAllTenants() { // GH-90000
         AepBusinessKpiTracker tracker = AepBusinessKpiTracker.create(); // GH-90000
         tracker.increment("counter-only", KPI_PROCESSED); // GH-90000
@@ -219,7 +219,7 @@ class AepBusinessKpiTrackerTest {
     // ─── resetTenant ──────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("resetTenant: removes all data for that tenant [GH-90000]")
+    @DisplayName("resetTenant: removes all data for that tenant")
     void resetTenant_removesAll() { // GH-90000
         AepBusinessKpiTracker tracker = AepBusinessKpiTracker.create(); // GH-90000
         tracker.increment(TENANT, KPI_PROCESSED, 5L); // GH-90000
@@ -232,7 +232,7 @@ class AepBusinessKpiTrackerTest {
     }
 
     @Test
-    @DisplayName("resetTenant: null tenantId throws NullPointerException [GH-90000]")
+    @DisplayName("resetTenant: null tenantId throws NullPointerException")
     void resetTenant_nullTenant_throwsNPE() { // GH-90000
         AepBusinessKpiTracker tracker = AepBusinessKpiTracker.create(); // GH-90000
         assertThatNullPointerException() // GH-90000
@@ -242,7 +242,7 @@ class AepBusinessKpiTrackerTest {
     // ─── printReport ─────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("printReport: completes without exception [GH-90000]")
+    @DisplayName("printReport: completes without exception")
     void printReport_noException() { // GH-90000
         AepBusinessKpiTracker tracker = AepBusinessKpiTracker.create(); // GH-90000
         tracker.increment(TENANT, KPI_PROCESSED, 1_000L); // GH-90000

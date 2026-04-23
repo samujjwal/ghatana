@@ -31,7 +31,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("MemoryTier – Episodic, Semantic, Procedural (D008) [GH-90000]")
+@DisplayName("MemoryTier – Episodic, Semantic, Procedural (D008)")
 class MemoryTierTest extends EventloopTestBase {
 
     @Mock
@@ -48,11 +48,11 @@ class MemoryTierTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Episodic Memory [GH-90000]")
+    @DisplayName("Episodic Memory")
     class EpisodicMemoryTests {
 
         @Test
-        @DisplayName("[D008]: store_episodic_creates_short_term_memory [GH-90000]")
+        @DisplayName("[D008]: store_episodic_creates_short_term_memory")
         void storeEpisodicCreatesShortTermMemory() { // GH-90000
             String agentId = "agent-001";
             MemoryService.MemoryEntry entry = MemoryService.MemoryEntry.create( // GH-90000
@@ -81,7 +81,7 @@ class MemoryTierTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D008]: recall_episodic_by_pattern [GH-90000]")
+        @DisplayName("[D008]: recall_episodic_by_pattern")
         void recallEpisodicByPattern() { // GH-90000
             String agentId = "agent-001";
             List<MemoryService.MemoryEntry> memories = List.of( // GH-90000
@@ -94,7 +94,7 @@ class MemoryTierTest extends EventloopTestBase {
                 .thenReturn(Promise.of(memories)); // GH-90000
 
             MemoryService.RecallQuery query = MemoryService.RecallQuery.builder() // GH-90000
-                .pattern("weather [GH-90000]")
+                .pattern("weather")
                 .tier(MemoryService.MemoryTier.EPISODIC) // GH-90000
                 .build(); // GH-90000
 
@@ -106,7 +106,7 @@ class MemoryTierTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D008]: episodic_has_recent_timestamp [GH-90000]")
+        @DisplayName("[D008]: episodic_has_recent_timestamp")
         void episodicHasRecentTimestamp() { // GH-90000
             long now = System.currentTimeMillis(); // GH-90000
 
@@ -127,11 +127,11 @@ class MemoryTierTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Semantic Memory [GH-90000]")
+    @DisplayName("Semantic Memory")
     class SemanticMemoryTests {
 
         @Test
-        @DisplayName("[D008]: store_semantic_creates_long_term_knowledge [GH-90000]")
+        @DisplayName("[D008]: store_semantic_creates_long_term_knowledge")
         void storeSemanticCreatesLongTermKnowledge() { // GH-90000
             String agentId = "agent-001";
             MemoryService.MemoryEntry entry = MemoryService.MemoryEntry.create( // GH-90000
@@ -160,7 +160,7 @@ class MemoryTierTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D008]: recall_semantic_by_keyword [GH-90000]")
+        @DisplayName("[D008]: recall_semantic_by_keyword")
         void recallSemanticByKeyword() { // GH-90000
             String agentId = "agent-001";
             List<MemoryService.MemoryEntry> memories = List.of( // GH-90000
@@ -171,7 +171,7 @@ class MemoryTierTest extends EventloopTestBase {
                 .thenReturn(Promise.of(memories)); // GH-90000
 
             MemoryService.RecallQuery query = MemoryService.RecallQuery.builder() // GH-90000
-                .pattern("Celsius [GH-90000]")
+                .pattern("Celsius")
                 .tier(MemoryService.MemoryTier.SEMANTIC) // GH-90000
                 .build(); // GH-90000
 
@@ -180,11 +180,11 @@ class MemoryTierTest extends EventloopTestBase {
             );
 
             assertThat(results).hasSize(1); // GH-90000
-            assertThat(results.get(0).content()).contains("Celsius [GH-90000]");
+            assertThat(results.get(0).content()).contains("Celsius");
         }
 
         @Test
-        @DisplayName("[D008]: semantic_memory_persists_longer [GH-90000]")
+        @DisplayName("[D008]: semantic_memory_persists_longer")
         void semanticMemoryPersistsLonger() { // GH-90000
             // Semantic memories should have higher importance and access counts
             MemoryService.MemoryEntry semantic = createSemanticMemory("agent-001", "important fact", 0.95); // GH-90000
@@ -204,11 +204,11 @@ class MemoryTierTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Procedural Memory [GH-90000]")
+    @DisplayName("Procedural Memory")
     class ProceduralMemoryTests {
 
         @Test
-        @DisplayName("[D008]: store_procedural_creates_skill_memory [GH-90000]")
+        @DisplayName("[D008]: store_procedural_creates_skill_memory")
         void storeProceduralCreatesSkillMemory() { // GH-90000
             String agentId = "agent-001";
             MemoryService.MemoryEntry entry = MemoryService.MemoryEntry.create( // GH-90000
@@ -233,11 +233,13 @@ class MemoryTierTest extends EventloopTestBase {
             );
 
             assertThat(result.tier()).isEqualTo(MemoryService.MemoryTier.PROCEDURAL); // GH-90000
-            assertThat(((Map<String, Object>) result.metadata()).get("type [GH-90000]")).isEqualTo("formula [GH-90000]");
+            assertThat(result.metadata()).isInstanceOf(Map.class);
+            Map<?, ?> metadata = (Map<?, ?>) result.metadata();
+            assertThat(metadata.get("type")).isEqualTo("formula");
         }
 
         @Test
-        @DisplayName("[D008]: procedural_skills_have_high_access_count [GH-90000]")
+        @DisplayName("[D008]: procedural_skills_have_high_access_count")
         void proceduralSkillsHaveHighAccessCount() { // GH-90000
             MemoryService.MemoryEntry procedural = new MemoryService.MemoryEntry( // GH-90000
                 "mem-004", "agent-001", MemoryService.MemoryTier.PROCEDURAL,
@@ -254,11 +256,11 @@ class MemoryTierTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Memory Consolidation [GH-90000]")
+    @DisplayName("Memory Consolidation")
     class MemoryConsolidationTests {
 
         @Test
-        @DisplayName("[D008]: consolidate_episodic_to_semantic [GH-90000]")
+        @DisplayName("[D008]: consolidate_episodic_to_semantic")
         void consolidateEpisodicToSemantic() { // GH-90000
             String agentId = "agent-001";
 
@@ -268,7 +270,7 @@ class MemoryTierTest extends EventloopTestBase {
             );
 
             MemoryService.ConsolidationResult result = new MemoryService.ConsolidationResult( // GH-90000
-                2, 1, 0, List.of("mem-consolidated [GH-90000]")
+                2, 1, 0, List.of("mem-consolidated")
             );
 
             when(memoryService.consolidate(eq(agentId), any())) // GH-90000
@@ -284,7 +286,7 @@ class MemoryTierTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D008]: consolidation_important_memories_only [GH-90000]")
+        @DisplayName("[D008]: consolidation_important_memories_only")
         void consolidationImportantMemoriesOnly() { // GH-90000
             MemoryService.ConsolidationCriteria criteria = new MemoryService.ConsolidationCriteria( // GH-90000
                 0.8, 86400000, 3, 100
@@ -305,11 +307,11 @@ class MemoryTierTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Memory Statistics [GH-90000]")
+    @DisplayName("Memory Statistics")
     class MemoryStatsTests {
 
         @Test
-        @DisplayName("[D008]: get_stats_returns_tier_breakdown [GH-90000]")
+        @DisplayName("[D008]: get_stats_returns_tier_breakdown")
         void getStatsReturnsTierBreakdown() { // GH-90000
             String agentId = "agent-001";
 
@@ -336,7 +338,7 @@ class MemoryTierTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D008]: tier_counts_sum_to_total [GH-90000]")
+        @DisplayName("[D008]: tier_counts_sum_to_total")
         void tierCountsSumToTotal() { // GH-90000
             long episodic = 500;
             long semantic = 400;
@@ -351,11 +353,11 @@ class MemoryTierTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Recall Query [GH-90000]")
+    @DisplayName("Recall Query")
     class RecallQueryTests {
 
         @Test
-        @DisplayName("[D008]: recall_with_min_importance_filters [GH-90000]")
+        @DisplayName("[D008]: recall_with_min_importance_filters")
         void recallWithMinImportanceFilters() { // GH-90000
             MemoryService.RecallQuery query = MemoryService.RecallQuery.builder() // GH-90000
                 .minImportance(0.8) // GH-90000
@@ -365,7 +367,7 @@ class MemoryTierTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D008]: recall_with_time_range_filters_by_date [GH-90000]")
+        @DisplayName("[D008]: recall_with_time_range_filters_by_date")
         void recallWithTimeRangeFiltersByDate() { // GH-90000
             long startTime = 1704067200000L; // 2024-01-01
             long endTime = 1706745600000L;   // 2024-02-01
@@ -380,7 +382,7 @@ class MemoryTierTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D008]: recall_with_limit_restricts_results [GH-90000]")
+        @DisplayName("[D008]: recall_with_limit_restricts_results")
         void recallWithLimitRestrictsResults() { // GH-90000
             MemoryService.RecallQuery query = MemoryService.RecallQuery.builder() // GH-90000
                 .limit(10) // GH-90000
@@ -395,11 +397,11 @@ class MemoryTierTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Importance [GH-90000]")
+    @DisplayName("Importance")
     class ImportanceTests {
 
         @Test
-        @DisplayName("[D008]: importance_range_0_to_1 [GH-90000]")
+        @DisplayName("[D008]: importance_range_0_to_1")
         void importanceRange0To1() { // GH-90000
             double low = 0.1;
             double medium = 0.5;
@@ -411,7 +413,7 @@ class MemoryTierTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D008]: high_importance_memories_preserved [GH-90000]")
+        @DisplayName("[D008]: high_importance_memories_preserved")
         void highImportanceMemoriesPreserved() { // GH-90000
             MemoryService.MemoryEntry important = MemoryService.MemoryEntry.create( // GH-90000
                 "agent-001", MemoryService.MemoryTier.SEMANTIC,

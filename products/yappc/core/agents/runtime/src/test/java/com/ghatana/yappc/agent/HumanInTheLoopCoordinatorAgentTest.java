@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("HumanInTheLoopCoordinatorAgent Tests [GH-90000]")
+@DisplayName("HumanInTheLoopCoordinatorAgent Tests")
 class HumanInTheLoopCoordinatorAgentTest extends EventloopTestBase {
 
     private HumanInTheLoopCoordinatorAgent agent;
@@ -42,10 +42,10 @@ class HumanInTheLoopCoordinatorAgentTest extends EventloopTestBase {
     @BeforeEach
     void setUp() { // GH-90000
         context = AgentContext.builder() // GH-90000
-                .agentId("HumanInTheLoopCoordinatorAgentTest [GH-90000]")
-                .turnId("turn-001 [GH-90000]")
-                .tenantId("tenant-test [GH-90000]")
-                .sessionId("session-test [GH-90000]")
+                .agentId("HumanInTheLoopCoordinatorAgentTest")
+                .turnId("turn-001")
+                .tenantId("tenant-test")
+                .sessionId("session-test")
                 .memoryStore(new EventLogMemoryStore()) // GH-90000
                 .build(); // GH-90000
 
@@ -58,70 +58,70 @@ class HumanInTheLoopCoordinatorAgentTest extends EventloopTestBase {
                 "phase-1",
                 "phase-2",
                 "Gate requires manual approval",
-                List.of("criterion-1 [GH-90000]"),
-                List.of("artifact-1 [GH-90000]"),
+                List.of("criterion-1"),
+                List.of("artifact-1"),
                 null
         );
     }
 
     @Nested
-    @DisplayName("Constructor & Guards [GH-90000]")
+    @DisplayName("Constructor & Guards")
     class ConstructorAndGuards {
 
         @Test
-        @DisplayName("null gateway → NullPointerException [GH-90000]")
+        @DisplayName("null gateway → NullPointerException")
         void nullGatewayThrowsNPE() { // GH-90000
             assertThatThrownBy(() -> new HumanInTheLoopCoordinatorAgent( // GH-90000
                     (HumanInTheLoopCoordinatorAgent.ApprovalGateway) null)) // GH-90000
                     .isInstanceOf(NullPointerException.class) // GH-90000
-                    .hasMessageContaining("gateway [GH-90000]");
+                    .hasMessageContaining("gateway");
         }
 
         @Test
-        @DisplayName("null pollingConfig → NullPointerException [GH-90000]")
+        @DisplayName("null pollingConfig → NullPointerException")
         void nullPollingConfigThrowsNPE() { // GH-90000
             HumanInTheLoopCoordinatorAgent.ApprovalGateway gateway = createStubGateway( // GH-90000
-                    req -> Promise.of("id [GH-90000]"), (tid, rid) -> Promise.of(null));
+                    req -> Promise.of("id"), (tid, rid) -> Promise.of(null));
             assertThatThrownBy(() -> new HumanInTheLoopCoordinatorAgent(gateway, null)) // GH-90000
                     .isInstanceOf(NullPointerException.class) // GH-90000
-                    .hasMessageContaining("pollingConfig [GH-90000]");
+                    .hasMessageContaining("pollingConfig");
         }
 
         @Test
-        @DisplayName("valid constructor with custom pollingConfig [GH-90000]")
+        @DisplayName("valid constructor with custom pollingConfig")
         void constructorWithCustomPollingConfig() { // GH-90000
             HumanInTheLoopCoordinatorAgent.PollingConfig config =
                     new HumanInTheLoopCoordinatorAgent.PollingConfig(1000L, 10); // GH-90000
             HumanInTheLoopCoordinatorAgent.ApprovalGateway gateway = createStubGateway( // GH-90000
-                    req -> Promise.of("id [GH-90000]"), (tid, rid) -> Promise.of(null));
+                    req -> Promise.of("id"), (tid, rid) -> Promise.of(null));
             agent = new HumanInTheLoopCoordinatorAgent(gateway, config); // GH-90000
             assertThat(agent).isNotNull(); // GH-90000
         }
     }
 
     @Nested
-    @DisplayName("TypedAgent Contract [GH-90000]")
+    @DisplayName("TypedAgent Contract")
     class TypedAgentContract {
 
         @BeforeEach
         void createAgent() { // GH-90000
             agent = HumanInTheLoopCoordinatorAgent.of( // GH-90000
-                    req -> Promise.of("test-id [GH-90000]"),
+                    req -> Promise.of("test-id"),
                     (tid, rid) -> Promise.of(null)); // GH-90000
         }
 
         @Test
-        @DisplayName("descriptor returns valid AgentDescriptor [GH-90000]")
+        @DisplayName("descriptor returns valid AgentDescriptor")
         void descriptorReturnsValidDescriptor() { // GH-90000
             AgentDescriptor desc = agent.descriptor(); // GH-90000
             assertThat(desc).isNotNull(); // GH-90000
         }
 
         @Test
-        @DisplayName("initialize completes successfully [GH-90000]")
+        @DisplayName("initialize completes successfully")
         void initializeCompletes() { // GH-90000
             Promise<Void> result = agent.initialize(AgentConfig.builder() // GH-90000
-                    .agentId("test [GH-90000]")
+                    .agentId("test")
                     .type(AgentType.DETERMINISTIC) // GH-90000
                     .build()); // GH-90000
             Void unused = runPromise(() -> result); // GH-90000
@@ -129,7 +129,7 @@ class HumanInTheLoopCoordinatorAgentTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("shutdown completes successfully [GH-90000]")
+        @DisplayName("shutdown completes successfully")
         void shutdownCompletes() { // GH-90000
             Promise<Void> result = agent.shutdown(); // GH-90000
             Void unused = runPromise(() -> result); // GH-90000
@@ -137,7 +137,7 @@ class HumanInTheLoopCoordinatorAgentTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("healthCheck returns HEALTHY [GH-90000]")
+        @DisplayName("healthCheck returns HEALTHY")
         void healthCheckReturnsHealthy() { // GH-90000
             HealthStatus status = runPromise(() -> agent.healthCheck()); // GH-90000
             assertThat(status.getStatus()).isEqualTo(Status.HEALTHY); // GH-90000
@@ -145,17 +145,17 @@ class HumanInTheLoopCoordinatorAgentTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("process — happy path [GH-90000]")
+    @DisplayName("process — happy path")
     class ProcessHappyPath {
 
         @Test
-        @DisplayName("approval from first poll returns success with decision [GH-90000]")
+        @DisplayName("approval from first poll returns success with decision")
         void approvalFromFirstPoll() { // GH-90000
             ApprovalDecision approvedDecision = ApprovalDecision.approved( // GH-90000
                     "req-001", "reviewer-1", "Looks good");
 
             agent = HumanInTheLoopCoordinatorAgent.of( // GH-90000
-                    req -> Promise.of("req-001 [GH-90000]"),
+                    req -> Promise.of("req-001"),
                     (tid, rid) -> Promise.of(approvedDecision)); // GH-90000
 
             AgentResult<ApprovalDecision> result = runPromise(() -> // GH-90000
@@ -167,13 +167,13 @@ class HumanInTheLoopCoordinatorAgentTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("rejection from first poll returns success [GH-90000]")
+        @DisplayName("rejection from first poll returns success")
         void rejectionFromFirstPoll() { // GH-90000
             ApprovalDecision rejectedDecision = ApprovalDecision.rejected( // GH-90000
                     "req-002", "reviewer-2", "Needs more work");
 
             agent = HumanInTheLoopCoordinatorAgent.of( // GH-90000
-                    req -> Promise.of("req-002 [GH-90000]"),
+                    req -> Promise.of("req-002"),
                     (tid, rid) -> Promise.of(rejectedDecision)); // GH-90000
 
             AgentResult<ApprovalDecision> result = runPromise(() -> // GH-90000
@@ -184,7 +184,7 @@ class HumanInTheLoopCoordinatorAgentTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("approval after multiple polls returns success [GH-90000]")
+        @DisplayName("approval after multiple polls returns success")
         void approvalAfterMultiplePolls() { // GH-90000
             AtomicInteger pollCount = new AtomicInteger(0); // GH-90000
             ApprovalDecision approvedDecision = ApprovalDecision.approved( // GH-90000
@@ -192,7 +192,7 @@ class HumanInTheLoopCoordinatorAgentTest extends EventloopTestBase {
 
             agent = new HumanInTheLoopCoordinatorAgent( // GH-90000
                     createStubGateway( // GH-90000
-                            req -> Promise.of("req-003 [GH-90000]"),
+                            req -> Promise.of("req-003"),
                             (tid, rid) -> { // GH-90000
                                 int count = pollCount.getAndIncrement(); // GH-90000
                                 // Return null for first 2 polls, then decision
@@ -210,13 +210,13 @@ class HumanInTheLoopCoordinatorAgentTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("tenant context flows through to gateway [GH-90000]")
+        @DisplayName("tenant context flows through to gateway")
         void tenantContextPropagatesToGateway() { // GH-90000
             String[] capturedTenantId = {null};
             ApprovalDecision decision = ApprovalDecision.approved("req-004", "reviewer", "ok"); // GH-90000
 
             agent = HumanInTheLoopCoordinatorAgent.of( // GH-90000
-                    req -> Promise.of("req-004 [GH-90000]"),
+                    req -> Promise.of("req-004"),
                     (tid, rid) -> { // GH-90000
                         capturedTenantId[0] = tid;
                         return Promise.of(decision); // GH-90000
@@ -226,20 +226,20 @@ class HumanInTheLoopCoordinatorAgentTest extends EventloopTestBase {
                     agent.process(context, testRequest)); // GH-90000
 
             assertThat(result.isFailed()).isFalse(); // GH-90000
-            assertThat(capturedTenantId[0]).isEqualTo("tenant-test [GH-90000]");
+            assertThat(capturedTenantId[0]).isEqualTo("tenant-test");
         }
     }
 
     @Nested
-    @DisplayName("process — timeout & errors [GH-90000]")
+    @DisplayName("process — timeout & errors")
     class ProcessTimeoutAndErrors {
 
         @Test
-        @DisplayName("polling timeout → failed AgentResult [GH-90000]")
+        @DisplayName("polling timeout → failed AgentResult")
         void pollingTimeoutReturnsFailed() { // GH-90000
             agent = new HumanInTheLoopCoordinatorAgent( // GH-90000
                     createStubGateway( // GH-90000
-                            req -> Promise.of("req-timeout [GH-90000]"),
+                            req -> Promise.of("req-timeout"),
                             (tid, rid) -> Promise.of(null)), // GH-90000
                     new HumanInTheLoopCoordinatorAgent.PollingConfig(0L, 3)); // GH-90000
 
@@ -250,38 +250,38 @@ class HumanInTheLoopCoordinatorAgentTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("null context → NullPointerException [GH-90000]")
+        @DisplayName("null context → NullPointerException")
         void nullContextThrowsNPE() { // GH-90000
             agent = HumanInTheLoopCoordinatorAgent.of( // GH-90000
-                    req -> Promise.of("id [GH-90000]"),
+                    req -> Promise.of("id"),
                     (tid, rid) -> Promise.of(null)); // GH-90000
 
             assertThatThrownBy(() -> // GH-90000
                     runPromise(() -> agent.process(null, testRequest))) // GH-90000
                     .isInstanceOf(NullPointerException.class) // GH-90000
-                    .hasMessageContaining("context [GH-90000]");
+                    .hasMessageContaining("context");
         }
 
         @Test
-        @DisplayName("null input → NullPointerException [GH-90000]")
+        @DisplayName("null input → NullPointerException")
         void nullInputThrowsNPE() { // GH-90000
             agent = HumanInTheLoopCoordinatorAgent.of( // GH-90000
-                    req -> Promise.of("id [GH-90000]"),
+                    req -> Promise.of("id"),
                     (tid, rid) -> Promise.of(null)); // GH-90000
 
             assertThatThrownBy(() -> // GH-90000
                     runPromise(() -> agent.process(context, null))) // GH-90000
                     .isInstanceOf(NullPointerException.class) // GH-90000
-                    .hasMessageContaining("input [GH-90000]");
+                    .hasMessageContaining("input");
         }
     }
 
     @Nested
-    @DisplayName("approval type handling [GH-90000]")
+    @DisplayName("approval type handling")
     class ApprovalTypeHandling {
 
         @Test
-        @DisplayName("PHASE_ADVANCE approval type [GH-90000]")
+        @DisplayName("PHASE_ADVANCE approval type")
         void phaseAdvanceTypeAllowed() { // GH-90000
             ApprovalRequest phaseAdvanceReq = new ApprovalRequest( // GH-90000
                     "", "tenant-test", "project-x", "agent-1",
@@ -291,7 +291,7 @@ class HumanInTheLoopCoordinatorAgentTest extends EventloopTestBase {
             ApprovalDecision decision = ApprovalDecision.approved("req", "reviewer", "ok"); // GH-90000
 
             agent = HumanInTheLoopCoordinatorAgent.of( // GH-90000
-                    req -> Promise.of("req [GH-90000]"),
+                    req -> Promise.of("req"),
                     (tid, rid) -> Promise.of(decision)); // GH-90000
 
             AgentResult<ApprovalDecision> result = runPromise(() -> // GH-90000
@@ -301,7 +301,7 @@ class HumanInTheLoopCoordinatorAgentTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("DEPLOYMENT approval type [GH-90000]")
+        @DisplayName("DEPLOYMENT approval type")
         void deploymentTypeAllowed() { // GH-90000
             ApprovalRequest deployReq = new ApprovalRequest( // GH-90000
                     "", "tenant-test", "project-y", "agent-2",
@@ -311,7 +311,7 @@ class HumanInTheLoopCoordinatorAgentTest extends EventloopTestBase {
             ApprovalDecision decision = ApprovalDecision.approved("req2", "reviewer", "deploy!"); // GH-90000
 
             agent = HumanInTheLoopCoordinatorAgent.of( // GH-90000
-                    req -> Promise.of("req2 [GH-90000]"),
+                    req -> Promise.of("req2"),
                     (tid, rid) -> Promise.of(decision)); // GH-90000
 
             AgentResult<ApprovalDecision> result = runPromise(() -> // GH-90000
@@ -321,17 +321,17 @@ class HumanInTheLoopCoordinatorAgentTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("RISK_ACCEPTANCE approval type [GH-90000]")
+        @DisplayName("RISK_ACCEPTANCE approval type")
         void riskAcceptanceTypeAllowed() { // GH-90000
             ApprovalRequest riskReq = new ApprovalRequest( // GH-90000
                     "", "tenant-test", "project-z", "agent-3",
                     ApprovalRequest.TYPE_RISK_ACCEPTANCE,
-                    null, null, "Accept risk?", List.of("high-risk [GH-90000]"), List.of(), null);
+                    null, null, "Accept risk?", List.of("high-risk"), List.of(), null);
 
             ApprovalDecision decision = ApprovalDecision.approved("req3", "reviewer", "risk accepted"); // GH-90000
 
             agent = HumanInTheLoopCoordinatorAgent.of( // GH-90000
-                    req -> Promise.of("req3 [GH-90000]"),
+                    req -> Promise.of("req3"),
                     (tid, rid) -> Promise.of(decision)); // GH-90000
 
             AgentResult<ApprovalDecision> result = runPromise(() -> // GH-90000

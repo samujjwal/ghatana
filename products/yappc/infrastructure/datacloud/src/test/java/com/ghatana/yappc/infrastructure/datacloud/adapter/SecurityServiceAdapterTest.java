@@ -20,7 +20,7 @@ import static org.mockito.Mockito.*;
 /**
  * Tests for SecurityServiceAdapter.
  */
-@DisplayName("SecurityServiceAdapter Tests [GH-90000]")
+@DisplayName("SecurityServiceAdapter Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 /**
  * @doc.type class
@@ -37,31 +37,31 @@ class SecurityServiceAdapterTest extends EventloopTestBase {
 
     @BeforeEach
     void setUp() { // GH-90000
-        lenient().when(mockScanner.scan(any())).thenReturn(Promise.of(SecurityReport.clean("test-scanner [GH-90000]")));
+        lenient().when(mockScanner.scan(any())).thenReturn(Promise.of(SecurityReport.clean("test-scanner")));
         securityServiceAdapter = new SecurityServiceAdapter(mockScanner); // GH-90000
     }
 
     @Test
-    @DisplayName("Should scan project for vulnerabilities [GH-90000]")
+    @DisplayName("Should scan project for vulnerabilities")
     void shouldScanProject() { // GH-90000
-        Path projectPath = Paths.get("/project [GH-90000]");
+        Path projectPath = Paths.get("/project");
         Map<String, Object> result = runPromise(() -> securityServiceAdapter.scanProject(projectPath)); // GH-90000
-        assertThat(result).containsKey("status [GH-90000]");
+        assertThat(result).containsKey("status");
     }
 
     @Test
-    @DisplayName("Should generate SBOM [GH-90000]")
+    @DisplayName("Should generate SBOM")
     void shouldGenerateSbom() { // GH-90000
-        Path projectPath = Paths.get("/project [GH-90000]");
+        Path projectPath = Paths.get("/project");
         String result = runPromise(() -> securityServiceAdapter.generateSbom(projectPath)); // GH-90000
         assertThat(result).isNotNull(); // GH-90000
     }
 
     @Test
-    @DisplayName("Should check dependencies [GH-90000]")
+    @DisplayName("Should check dependencies")
     void shouldCheckDependencies() { // GH-90000
-        Path projectPath = Paths.get("/project [GH-90000]");
+        Path projectPath = Paths.get("/project");
         Map<String, Object> result = runPromise(() -> securityServiceAdapter.checkDependencies(projectPath)); // GH-90000
-        assertThat(result).containsKey("status [GH-90000]");
+        assertThat(result).containsKey("status");
     }
 }

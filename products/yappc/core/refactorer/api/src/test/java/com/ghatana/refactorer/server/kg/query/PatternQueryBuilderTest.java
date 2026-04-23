@@ -20,10 +20,10 @@ class PatternQueryBuilderTest extends EventloopTestBase {
     String spec =
         PatternQueryBuilder.create() // GH-90000
             .operator(PatternQueryBuilder.LogicalOperator.AND) // GH-90000
-            .pattern("SEQ(a, b) [GH-90000]")
-            .pattern("SEQ(c, d) [GH-90000]")
+            .pattern("SEQ(a, b)")
+            .pattern("SEQ(c, d)")
             .build(); // GH-90000
-    assertThat(spec).contains("AND(SEQ(a, b), SEQ(c, d)) [GH-90000]").contains("@50 [GH-90000]");
+    assertThat(spec).contains("AND(SEQ(a, b), SEQ(c, d))").contains("@50");
   }
 
   @Test
@@ -31,11 +31,11 @@ class PatternQueryBuilderTest extends EventloopTestBase {
     String spec =
         PatternQueryBuilder.create() // GH-90000
             .operator(PatternQueryBuilder.LogicalOperator.OR) // GH-90000
-            .pattern("pattern1 [GH-90000]")
-            .pattern("pattern2 [GH-90000]")
-            .pattern("pattern3 [GH-90000]")
+            .pattern("pattern1")
+            .pattern("pattern2")
+            .pattern("pattern3")
             .build(); // GH-90000
-    assertThat(spec).contains("OR(pattern1, pattern2, pattern3) [GH-90000]");
+    assertThat(spec).contains("OR(pattern1, pattern2, pattern3)");
   }
 
   @Test
@@ -43,11 +43,11 @@ class PatternQueryBuilderTest extends EventloopTestBase {
     String spec =
         PatternQueryBuilder.create() // GH-90000
             .operator(PatternQueryBuilder.LogicalOperator.AND) // GH-90000
-            .pattern("p1 [GH-90000]")
-            .pattern("p2 [GH-90000]")
+            .pattern("p1")
+            .pattern("p2")
             .confidence(0.88) // GH-90000
             .build(); // GH-90000
-    assertThat(spec).contains("@88 [GH-90000]");
+    assertThat(spec).contains("@88");
   }
 
   @Test
@@ -62,11 +62,11 @@ class PatternQueryBuilderTest extends EventloopTestBase {
         PatternQueryBuilder.create() // GH-90000
             .operator(PatternQueryBuilder.LogicalOperator.AND) // GH-90000
             .pattern(seqPattern) // GH-90000
-            .pattern("other-pattern [GH-90000]")
+            .pattern("other-pattern")
             .confidence(0.75) // GH-90000
             .build(); // GH-90000
 
-    assertThat(compositeSpec).contains("AND( [GH-90000]").contains("SEQ(login, access) [GH-90000]");
+    assertThat(compositeSpec).contains("AND(").contains("SEQ(login, access)");
   }
 
   @Test
@@ -78,10 +78,10 @@ class PatternQueryBuilderTest extends EventloopTestBase {
         PatternQueryBuilder.create() // GH-90000
             .operator(PatternQueryBuilder.LogicalOperator.OR) // GH-90000
             .patternFromBuilder(seqBuilder) // GH-90000
-            .patternFromBuilder(PatternQueryBuilder.create().pattern("p1 [GH-90000]"))
+            .patternFromBuilder(PatternQueryBuilder.create().pattern("p1"))
             .build(); // GH-90000
 
-    assertThat(spec).contains("OR( [GH-90000]");
+    assertThat(spec).contains("OR(");
   }
 
   @Test
@@ -89,7 +89,7 @@ class PatternQueryBuilderTest extends EventloopTestBase {
     PatternQueryBuilder builder = PatternQueryBuilder.create(); // GH-90000
     assertThatThrownBy(builder::build) // GH-90000
         .isInstanceOf(IllegalStateException.class) // GH-90000
-        .hasMessage("At least one pattern must be added before building [GH-90000]");
+        .hasMessage("At least one pattern must be added before building");
   }
 
   @Test
@@ -102,9 +102,9 @@ class PatternQueryBuilderTest extends EventloopTestBase {
   @Test
   void testCompositePatternRejectsBlankPattern() { // GH-90000
     assertThatThrownBy( // GH-90000
-            () -> PatternQueryBuilder.create().pattern("    [GH-90000]"))
+            () -> PatternQueryBuilder.create().pattern("   "))
         .isInstanceOf(IllegalArgumentException.class) // GH-90000
-        .hasMessage("Pattern specification cannot be null or empty [GH-90000]");
+        .hasMessage("Pattern specification cannot be null or empty");
   }
 
   @Test
@@ -112,7 +112,7 @@ class PatternQueryBuilderTest extends EventloopTestBase {
     PatternQueryBuilder builder =
         PatternQueryBuilder.create() // GH-90000
             .operator(PatternQueryBuilder.LogicalOperator.AND) // GH-90000
-            .pattern("p1 [GH-90000]");
+            .pattern("p1");
     assertThatThrownBy(() -> builder.confidence(-0.1)) // GH-90000
         .isInstanceOf(IllegalArgumentException.class); // GH-90000
   }
@@ -122,10 +122,10 @@ class PatternQueryBuilderTest extends EventloopTestBase {
     PatternQueryBuilder builder =
         PatternQueryBuilder.create() // GH-90000
             .operator(PatternQueryBuilder.LogicalOperator.OR) // GH-90000
-            .pattern("pattern1 [GH-90000]")
-            .pattern("pattern2 [GH-90000]")
+            .pattern("pattern1")
+            .pattern("pattern2")
             .confidence(0.65) // GH-90000
-            .description("Test composite [GH-90000]");
+            .description("Test composite");
 
     assertThat(builder.getOperator()) // GH-90000
         .isEqualTo(PatternQueryBuilder.LogicalOperator.OR); // GH-90000
@@ -138,18 +138,18 @@ class PatternQueryBuilderTest extends EventloopTestBase {
     String spec =
         PatternQueryBuilder.create() // GH-90000
             .operator(PatternQueryBuilder.LogicalOperator.AND) // GH-90000
-            .pattern("p1 [GH-90000]")
-            .pattern("p2 [GH-90000]")
-            .pattern("p3 [GH-90000]")
+            .pattern("p1")
+            .pattern("p2")
+            .pattern("p3")
             .confidence(0.9) // GH-90000
-            .description("Complex pattern [GH-90000]")
+            .description("Complex pattern")
             .build(); // GH-90000
-    assertThat(spec).contains("AND(p1, p2, p3) [GH-90000]").contains("@90 [GH-90000]");
+    assertThat(spec).contains("AND(p1, p2, p3)").contains("@90");
   }
 
   @Test
   void testLogicalOperatorSymbols() { // GH-90000
-    assertThat(PatternQueryBuilder.LogicalOperator.AND.getSymbol()).isEqualTo("AND [GH-90000]");
-    assertThat(PatternQueryBuilder.LogicalOperator.OR.getSymbol()).isEqualTo("OR [GH-90000]");
+    assertThat(PatternQueryBuilder.LogicalOperator.AND.getSymbol()).isEqualTo("AND");
+    assertThat(PatternQueryBuilder.LogicalOperator.OR.getSymbol()).isEqualTo("OR");
   }
 }

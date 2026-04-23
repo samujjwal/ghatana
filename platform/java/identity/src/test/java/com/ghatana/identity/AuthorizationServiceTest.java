@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("DefaultAuthorizationService [GH-90000]")
+@DisplayName("DefaultAuthorizationService")
 class AuthorizationServiceTest extends EventloopTestBase {
 
     private DefaultAuthorizationService authzService;
@@ -48,16 +48,16 @@ class AuthorizationServiceTest extends EventloopTestBase {
         resolver.register(writer); // GH-90000
 
         AgentIdentity admin = new AgentIdentity("t1", "admin-agent", // GH-90000
-            "spiffe://ghatana.io/t1/admin", Set.of("* [GH-90000]"), Instant.now());
+            "spiffe://ghatana.io/t1/admin", Set.of("*"), Instant.now());
         resolver.register(admin); // GH-90000
     }
 
     @Nested
-    @DisplayName("isAuthorized() [GH-90000]")
+    @DisplayName("isAuthorized()")
     class IsAuthorizedTests {
 
         @Test
-        @DisplayName("Grants access when principal has required scope [GH-90000]")
+        @DisplayName("Grants access when principal has required scope")
         void grantsAccessWithScope() { // GH-90000
             Boolean authorized = runPromise(() -> // GH-90000
                 authzService.isAuthorized("t1", "reader-agent", "collection:read")); // GH-90000
@@ -66,7 +66,7 @@ class AuthorizationServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Denies access when principal lacks required scope [GH-90000]")
+        @DisplayName("Denies access when principal lacks required scope")
         void deniesAccessWithoutScope() { // GH-90000
             Boolean authorized = runPromise(() -> // GH-90000
                 authzService.isAuthorized("t1", "reader-agent", "collection:write")); // GH-90000
@@ -75,7 +75,7 @@ class AuthorizationServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Grants all access to agent with wildcard scope [GH-90000]")
+        @DisplayName("Grants all access to agent with wildcard scope")
         void grantsWildcardAccess() { // GH-90000
             Boolean authorized = runPromise(() -> // GH-90000
                 authzService.isAuthorized("t1", "admin-agent", "anything:resource")); // GH-90000
@@ -84,7 +84,7 @@ class AuthorizationServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Denies access for unknown principal [GH-90000]")
+        @DisplayName("Denies access for unknown principal")
         void deniesUnknownPrincipal() { // GH-90000
             Boolean authorized = runPromise(() -> // GH-90000
                 authzService.isAuthorized("t1", "unknown-agent", "collection:read")); // GH-90000
@@ -93,7 +93,7 @@ class AuthorizationServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Enforces tenant isolation [GH-90000]")
+        @DisplayName("Enforces tenant isolation")
         void enforcesTenantIsolation() { // GH-90000
             Boolean authorized = runPromise(() -> // GH-90000
                 authzService.isAuthorized("t2", "reader-agent", "collection:read")); // GH-90000
@@ -102,7 +102,7 @@ class AuthorizationServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Handles multiple scopes correctly [GH-90000]")
+        @DisplayName("Handles multiple scopes correctly")
         void handlesMultipleScopes() { // GH-90000
             Boolean canRead = runPromise(() -> // GH-90000
                 authzService.isAuthorized("t1", "writer-agent", "collection:read")); // GH-90000
@@ -121,11 +121,11 @@ class AuthorizationServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("hasScope() [GH-90000]")
+    @DisplayName("hasScope()")
     class HasScopeTests {
 
         @Test
-        @DisplayName("Returns true when principal has scope [GH-90000]")
+        @DisplayName("Returns true when principal has scope")
         void returnsTrueForScope() { // GH-90000
             Boolean has = runPromise(() -> // GH-90000
                 authzService.hasScope("t1", "reader-agent", "collection:read")); // GH-90000
@@ -134,7 +134,7 @@ class AuthorizationServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Returns false when principal lacks scope [GH-90000]")
+        @DisplayName("Returns false when principal lacks scope")
         void returnsFalseForMissingScope() { // GH-90000
             Boolean has = runPromise(() -> // GH-90000
                 authzService.hasScope("t1", "reader-agent", "collection:write")); // GH-90000
@@ -143,7 +143,7 @@ class AuthorizationServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Returns true for wildcard scope holder [GH-90000]")
+        @DisplayName("Returns true for wildcard scope holder")
         void returnsTrueForWildcard() { // GH-90000
             Boolean has = runPromise(() -> // GH-90000
                 authzService.hasScope("t1", "admin-agent", "any:scope:here")); // GH-90000
@@ -152,7 +152,7 @@ class AuthorizationServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Returns false for unknown principal [GH-90000]")
+        @DisplayName("Returns false for unknown principal")
         void returnsFalseForUnknownPrincipal() { // GH-90000
             Boolean has = runPromise(() -> // GH-90000
                 authzService.hasScope("t1", "unknown-agent", "collection:read")); // GH-90000
@@ -161,7 +161,7 @@ class AuthorizationServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Returns false for wrong tenant [GH-90000]")
+        @DisplayName("Returns false for wrong tenant")
         void returnsFalseForWrongTenant() { // GH-90000
             Boolean has = runPromise(() -> // GH-90000
                 authzService.hasScope("t2", "reader-agent", "collection:read")); // GH-90000
@@ -171,11 +171,11 @@ class AuthorizationServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("enforce() [GH-90000]")
+    @DisplayName("enforce()")
     class EnforceTests {
 
         @Test
-        @DisplayName("Completes successfully when authorized [GH-90000]")
+        @DisplayName("Completes successfully when authorized")
         void completesWhenAuthorized() { // GH-90000
             Void result = runPromise(() -> // GH-90000
                 authzService.enforce("t1", "reader-agent", "collection:read")); // GH-90000
@@ -184,7 +184,7 @@ class AuthorizationServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Throws AuthorizationDeniedException when denied [GH-90000]")
+        @DisplayName("Throws AuthorizationDeniedException when denied")
         void throwsWhenDenied() { // GH-90000
             assertThatThrownBy(() -> runPromise(() -> // GH-90000
                 authzService.enforce("t1", "reader-agent", "collection:delete") // GH-90000
@@ -192,21 +192,21 @@ class AuthorizationServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Exception contains correct details [GH-90000]")
+        @DisplayName("Exception contains correct details")
         void exceptionHasDetails() { // GH-90000
             assertThatThrownBy(() -> runPromise(() -> // GH-90000
                 authzService.enforce("t1", "reader-agent", "sensitive:operation") // GH-90000
             )).isInstanceOf(AuthorizationDeniedException.class) // GH-90000
                 .satisfies(ex -> { // GH-90000
                     AuthorizationDeniedException authEx = (AuthorizationDeniedException) ex; // GH-90000
-                    assertThat(authEx.principal()).isEqualTo("reader-agent [GH-90000]");
-                    assertThat(authEx.resource()).isEqualTo("sensitive:operation [GH-90000]");
-                    assertThat(authEx.tenantId()).isEqualTo("t1 [GH-90000]");
+                    assertThat(authEx.principal()).isEqualTo("reader-agent");
+                    assertThat(authEx.resource()).isEqualTo("sensitive:operation");
+                    assertThat(authEx.tenantId()).isEqualTo("t1");
                 });
         }
 
         @Test
-        @DisplayName("Throws for unknown principal [GH-90000]")
+        @DisplayName("Throws for unknown principal")
         void throwsForUnknownPrincipal() { // GH-90000
             assertThatThrownBy(() -> runPromise(() -> // GH-90000
                 authzService.enforce("t1", "unknown-agent", "collection:read") // GH-90000
@@ -215,11 +215,11 @@ class AuthorizationServiceTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Edge Cases [GH-90000]")
+    @DisplayName("Edge Cases")
     class EdgeCaseTests {
 
         @Test
-        @DisplayName("Handles empty resource string [GH-90000]")
+        @DisplayName("Handles empty resource string")
         void handlesEmptyResource() { // GH-90000
             Boolean authorized = runPromise(() -> // GH-90000
                 authzService.isAuthorized("t1", "admin-agent", "")); // GH-90000
@@ -229,7 +229,7 @@ class AuthorizationServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Handles malformed resource (no colon) [GH-90000]")
+        @DisplayName("Handles malformed resource (no colon)")
         void handlesMalformedResource() { // GH-90000
             Boolean authorized = runPromise(() -> // GH-90000
                 authzService.isAuthorized("t1", "reader-agent", "malformed-resource")); // GH-90000
@@ -239,7 +239,7 @@ class AuthorizationServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Case-sensitive scope matching [GH-90000]")
+        @DisplayName("Case-sensitive scope matching")
         void caseSensitiveScopes() { // GH-90000
             Boolean authorized = runPromise(() -> // GH-90000
                 authzService.isAuthorized("t1", "reader-agent", "Collection:Read")); // GH-90000
@@ -248,7 +248,7 @@ class AuthorizationServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Handles principal with no scopes [GH-90000]")
+        @DisplayName("Handles principal with no scopes")
         void handlesNoScopes() { // GH-90000
             // Create agent with empty scopes
             AgentIdentity noscope = new AgentIdentity("t1", "noscope-agent", // GH-90000

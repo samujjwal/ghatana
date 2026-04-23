@@ -18,14 +18,14 @@ class SeqQueryBuilderTest extends EventloopTestBase {
   @Test
   void testCreateSeqWithTwoEvents() { // GH-90000
     String spec = SeqQueryBuilder.create("login", "access").build(); // GH-90000
-    assertThat(spec).contains("SEQ(login, access) [GH-90000]").contains("[5m] [GH-90000]").contains("@50 [GH-90000]");
+    assertThat(spec).contains("SEQ(login, access)").contains("[5m]").contains("@50");
   }
 
   @Test
   void testSeqWithMultipleEvents() { // GH-90000
     String spec =
         SeqQueryBuilder.create("login", "data-access", "file-read", "logout").build(); // GH-90000
-    assertThat(spec).contains("SEQ(login, data-access, file-read, logout) [GH-90000]");
+    assertThat(spec).contains("SEQ(login, data-access, file-read, logout)");
   }
 
   @Test
@@ -34,7 +34,7 @@ class SeqQueryBuilderTest extends EventloopTestBase {
         SeqQueryBuilder.create("login", "access") // GH-90000
             .within(Duration.ofMinutes(30)) // GH-90000
             .build(); // GH-90000
-    assertThat(spec).contains("[30m] [GH-90000]");
+    assertThat(spec).contains("[30m]");
   }
 
   @Test
@@ -43,7 +43,7 @@ class SeqQueryBuilderTest extends EventloopTestBase {
         SeqQueryBuilder.create("login", "access") // GH-90000
             .confidence(0.85) // GH-90000
             .build(); // GH-90000
-    assertThat(spec).contains("@85 [GH-90000]");
+    assertThat(spec).contains("@85");
   }
 
   @Test
@@ -52,19 +52,19 @@ class SeqQueryBuilderTest extends EventloopTestBase {
         SeqQueryBuilder.create("event1", "event2", "event3") // GH-90000
             .within(Duration.ofMinutes(10)) // GH-90000
             .confidence(0.92) // GH-90000
-            .description("Test sequence pattern [GH-90000]")
+            .description("Test sequence pattern")
             .build(); // GH-90000
     assertThat(spec) // GH-90000
-        .contains("SEQ(event1, event2, event3) [GH-90000]")
-        .contains("[10m] [GH-90000]")
-        .contains("@92 [GH-90000]");
+        .contains("SEQ(event1, event2, event3)")
+        .contains("[10m]")
+        .contains("@92");
   }
 
   @Test
   void testSeqRequiresAtLeastTwoEvents() { // GH-90000
-    assertThatThrownBy(() -> SeqQueryBuilder.create("single [GH-90000]"))
+    assertThatThrownBy(() -> SeqQueryBuilder.create("single"))
         .isInstanceOf(IllegalArgumentException.class) // GH-90000
-        .hasMessage("SEQ pattern requires at least 2 event types [GH-90000]");
+        .hasMessage("SEQ pattern requires at least 2 event types");
   }
 
   @Test
@@ -72,7 +72,7 @@ class SeqQueryBuilderTest extends EventloopTestBase {
     SeqQueryBuilder builder = SeqQueryBuilder.create("a", "b"); // GH-90000
     assertThatThrownBy(() -> builder.confidence(1.5)) // GH-90000
         .isInstanceOf(IllegalArgumentException.class) // GH-90000
-        .hasMessage("Confidence must be between 0 and 1 [GH-90000]");
+        .hasMessage("Confidence must be between 0 and 1");
   }
 
   @Test
@@ -93,7 +93,7 @@ class SeqQueryBuilderTest extends EventloopTestBase {
         SeqQueryBuilder.create("a", "b") // GH-90000
             .within(Duration.ofSeconds(30)) // GH-90000
             .confidence(0.5) // GH-90000
-            .description("desc [GH-90000]")
+            .description("desc")
             .build(); // GH-90000
     assertThat(spec).isNotBlank(); // GH-90000
   }

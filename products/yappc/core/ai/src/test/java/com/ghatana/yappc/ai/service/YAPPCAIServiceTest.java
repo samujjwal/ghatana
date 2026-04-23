@@ -42,9 +42,9 @@ public class YAPPCAIServiceTest extends EventloopTestBase {
         when(router.shutdown()).thenReturn(Promise.complete()); // GH-90000
         when(router.getAvailableModels()).thenReturn(Map.of( // GH-90000
             "llama3.2", ModelConfig.builder() // GH-90000
-                .modelId("llama3.2 [GH-90000]")
-                .displayName("Llama 3.2 [GH-90000]")
-                .provider("ollama [GH-90000]")
+                .modelId("llama3.2")
+                .displayName("Llama 3.2")
+                .provider("ollama")
                 .build())); // GH-90000
 
         aiService = YAPPCAIService.builder() // GH-90000
@@ -55,14 +55,14 @@ public class YAPPCAIServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should initialize through injected router [GH-90000]")
+    @DisplayName("Should initialize through injected router")
     void shouldInitializeThroughInjectedRouter() { // GH-90000
         verify(router).initialize(); // GH-90000
-        assertThat(aiService.getAvailableModels()).containsKey("llama3.2 [GH-90000]");
+        assertThat(aiService.getAvailableModels()).containsKey("llama3.2");
     }
 
     @Test
-    @DisplayName("Should generate code through router and strip markdown fences [GH-90000]")
+    @DisplayName("Should generate code through router and strip markdown fences")
     void shouldGenerateCodeThroughRouterAndStripMarkdownFences() { // GH-90000
         when(router.route(any())).thenAnswer(invocation -> { // GH-90000
             AIRequest request = invocation.getArgument(0); // GH-90000
@@ -75,12 +75,12 @@ public class YAPPCAIServiceTest extends EventloopTestBase {
             "Build a Java demo class",
             Map.of("language", "Java"))); // GH-90000
 
-        assertThat(result).isEqualTo("public class Demo {} [GH-90000]");
+        assertThat(result).isEqualTo("public class Demo {}");
         assertThat(aiService.getTotalRequests()).isEqualTo(1); // GH-90000
     }
 
     @Test
-    @DisplayName("Should parse code analysis content [GH-90000]")
+    @DisplayName("Should parse code analysis content")
     void shouldParseCodeAnalysisContent() { // GH-90000
         when(router.route(any())).thenAnswer(invocation -> { // GH-90000
             AIRequest request = invocation.getArgument(0); // GH-90000
@@ -88,14 +88,14 @@ public class YAPPCAIServiceTest extends EventloopTestBase {
             return Promise.of(responseFor(request, "Null pointer risk in processData()")); // GH-90000
         });
 
-        YAPPCAIService.CodeAnalysis analysis = runPromise(() -> aiService.analyzeCode("class Demo {} [GH-90000]"));
+        YAPPCAIService.CodeAnalysis analysis = runPromise(() -> aiService.analyzeCode("class Demo {}"));
 
-        assertThat(analysis.getSummary()).contains("Null pointer risk [GH-90000]");
+        assertThat(analysis.getSummary()).contains("Null pointer risk");
         assertThat(analysis.getFindings()).containsEntry("raw", "Null pointer risk in processData()"); // GH-90000
     }
 
     @Test
-    @DisplayName("Should route reasoning requests and return raw content [GH-90000]")
+    @DisplayName("Should route reasoning requests and return raw content")
     void shouldRouteReasoningRequestsAndReturnRawContent() { // GH-90000
         when(router.route(any())).thenAnswer(invocation -> { // GH-90000
             AIRequest request = invocation.getArgument(0); // GH-90000
@@ -103,13 +103,13 @@ public class YAPPCAIServiceTest extends EventloopTestBase {
             return Promise.of(responseFor(request, "Use a modular monolith first.")); // GH-90000
         });
 
-        String answer = runPromise(() -> aiService.reason("How should YAPPC structure a new feature? [GH-90000]"));
+        String answer = runPromise(() -> aiService.reason("How should YAPPC structure a new feature?"));
 
-        assertThat(answer).isEqualTo("Use a modular monolith first. [GH-90000]");
+        assertThat(answer).isEqualTo("Use a modular monolith first.");
     }
 
     @Test
-    @DisplayName("Should expose cache statistics and output generator [GH-90000]")
+    @DisplayName("Should expose cache statistics and output generator")
     void shouldExposeCacheStatisticsAndOutputGenerator() { // GH-90000
         CacheStatistics stats = mock(CacheStatistics.class); // GH-90000
         when(router.getCacheStatistics()).thenReturn(stats); // GH-90000
@@ -122,7 +122,7 @@ public class YAPPCAIServiceTest extends EventloopTestBase {
     private AIResponse responseFor(AIRequest request, String content) { // GH-90000
         return AIResponse.builder() // GH-90000
             .requestId(request.getRequestId()) // GH-90000
-            .modelId("codellama [GH-90000]")
+            .modelId("codellama")
             .content(content) // GH-90000
             .metrics(AIResponse.ResponseMetrics.builder() // GH-90000
                 .latencyMs(10) // GH-90000

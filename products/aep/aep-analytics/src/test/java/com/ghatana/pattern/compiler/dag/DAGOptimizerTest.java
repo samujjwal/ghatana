@@ -14,11 +14,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("DAGOptimizer Tests [GH-90000]")
+@DisplayName("DAGOptimizer Tests")
 class DAGOptimizerTest {
 
     @Test
-    @DisplayName("optimize prunes nodes unreachable from root [GH-90000]")
+    @DisplayName("optimize prunes nodes unreachable from root")
     void optimizePrunesNodesUnreachableFromRoot() throws PatternValidationException { // GH-90000
         DAGOptimizer optimizer = new DAGOptimizer(null, new SimpleMeterRegistry()); // GH-90000
         OperatorDAG dag = OperatorDAG.builder() // GH-90000
@@ -28,7 +28,7 @@ class DAGOptimizerTest {
                         node("orphan", "SELECT")))) // GH-90000
                 .edges(new ArrayList<>(List.of( // GH-90000
                         edge("root", "child")))) // GH-90000
-                .rootNodeId("root [GH-90000]")
+                .rootNodeId("root")
                 .metadata(Map.of()) // GH-90000
                 .build(); // GH-90000
 
@@ -40,7 +40,7 @@ class DAGOptimizerTest {
     }
 
     @Test
-    @DisplayName("optimize tolerates empty graph structures [GH-90000]")
+    @DisplayName("optimize tolerates empty graph structures")
     void optimizeToleratesEmptyGraphStructures() throws PatternValidationException { // GH-90000
         DAGOptimizer optimizer = new DAGOptimizer(null, new SimpleMeterRegistry()); // GH-90000
         OperatorDAG dag = OperatorDAG.builder() // GH-90000
@@ -57,14 +57,14 @@ class DAGOptimizerTest {
     }
 
     @Test
-    @DisplayName("optimize rejects null DAG [GH-90000]")
+    @DisplayName("optimize rejects null DAG")
     void optimizeRejectsNullDag() { // GH-90000
         DAGOptimizer optimizer = new DAGOptimizer(null, new SimpleMeterRegistry()); // GH-90000
 
         PatternValidationException exception = assertThrows(PatternValidationException.class, // GH-90000
                 () -> optimizer.optimize(null)); // GH-90000
 
-        assertTrue(exception.getMessage().contains("DAG cannot be null [GH-90000]"));
+        assertTrue(exception.getMessage().contains("DAG cannot be null"));
     }
 
     private static OperatorDAG.OperatorNode node(String id, String type) { // GH-90000

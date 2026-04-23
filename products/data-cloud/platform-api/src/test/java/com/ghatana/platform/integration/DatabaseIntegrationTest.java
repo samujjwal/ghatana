@@ -26,8 +26,8 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer   platform
  * @doc.pattern IntegrationTest
  */
-@DisplayName("Platform Database Integration Tests [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("Platform Database Integration Tests")
+@Tag("integration")
 @Timeout(value = 30, unit = TimeUnit.SECONDS) // GH-90000
 class DatabaseIntegrationTest extends EventloopTestBase {
 
@@ -41,7 +41,7 @@ class DatabaseIntegrationTest extends EventloopTestBase {
     // ── Connection management ─────────────────────────────────────────────────
 
     @Test
-    @DisplayName("acquire returns a valid connection when pool has idle connections [GH-90000]")
+    @DisplayName("acquire returns a valid connection when pool has idle connections")
     void acquireReturnsValidConnectionWhenPoolHasIdleConnections() { // GH-90000
         InMemoryDatabase.Connection conn = db.acquire(); // GH-90000
         assertThat(conn).isNotNull(); // GH-90000
@@ -50,7 +50,7 @@ class DatabaseIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("acquiring all pool connections then one more blocks until one is released [GH-90000]")
+    @DisplayName("acquiring all pool connections then one more blocks until one is released")
     void acquiringBeyondPoolLimitBlocksUntilRelease() throws Exception { // GH-90000
         List<InMemoryDatabase.Connection> conns = new ArrayList<>(); // GH-90000
         for (int i = 0; i < 5; i++) conns.add(db.acquire()); // GH-90000
@@ -75,7 +75,7 @@ class DatabaseIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("released connections free capacity for another acquire [GH-90000]")
+    @DisplayName("released connections free capacity for another acquire")
     void releasedConnectionsFreeCapacityForAnotherAcquire() { // GH-90000
         InMemoryDatabase.Connection c1 = db.acquire(); // GH-90000
         c1.release(); // GH-90000
@@ -88,19 +88,19 @@ class DatabaseIntegrationTest extends EventloopTestBase {
     // ── CRUD correctness ──────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("insert and select-all round-trip returns the stored row [GH-90000]")
+    @DisplayName("insert and select-all round-trip returns the stored row")
     void insertAndSelectAllRoundTrip() { // GH-90000
         InMemoryDatabase.Connection conn = db.acquire(); // GH-90000
         conn.execute("INSERT", "users", Map.of("id", "u1", "name", "Alice")); // GH-90000
 
         List<Map<String, Object>> rows = conn.query("SELECT", "users"); // GH-90000
         assertThat(rows).hasSize(1); // GH-90000
-        assertThat(rows.get(0).get("name [GH-90000]")).isEqualTo("Alice [GH-90000]");
+        assertThat(rows.get(0).get("name")).isEqualTo("Alice");
         conn.release(); // GH-90000
     }
 
     @Test
-    @DisplayName("update modifies only the targeted row [GH-90000]")
+    @DisplayName("update modifies only the targeted row")
     void updateModifiesOnlyTargetedRow() { // GH-90000
         InMemoryDatabase.Connection conn = db.acquire(); // GH-90000
         conn.execute("INSERT", "users", Map.of("id", "u-upd", "name", "Bob")); // GH-90000
@@ -108,12 +108,12 @@ class DatabaseIntegrationTest extends EventloopTestBase {
 
         List<Map<String, Object>> rows = conn.query("SELECT", "users"); // GH-90000
         assertThat(rows).hasSize(1); // GH-90000
-        assertThat(rows.get(0).get("name [GH-90000]")).isEqualTo("Robert [GH-90000]");
+        assertThat(rows.get(0).get("name")).isEqualTo("Robert");
         conn.release(); // GH-90000
     }
 
     @Test
-    @DisplayName("delete removes the targeted row and count becomes zero [GH-90000]")
+    @DisplayName("delete removes the targeted row and count becomes zero")
     void deleteRemovesTargetedRowAndCountBecomesZero() { // GH-90000
         InMemoryDatabase.Connection conn = db.acquire(); // GH-90000
         conn.execute("INSERT", "items", Map.of("id", "item-1", "value", "x")); // GH-90000
@@ -127,7 +127,7 @@ class DatabaseIntegrationTest extends EventloopTestBase {
     // ── Transaction isolation ─────────────────────────────────────────────────
 
     @Test
-    @DisplayName("uncommitted transaction changes are not visible outside the transaction [GH-90000]")
+    @DisplayName("uncommitted transaction changes are not visible outside the transaction")
     void uncommittedChangesAreNotVisibleOutsideTransaction() { // GH-90000
         InMemoryDatabase.Connection conn = db.acquire(); // GH-90000
         InMemoryDatabase.Transaction tx = conn.beginTransaction(); // GH-90000
@@ -144,7 +144,7 @@ class DatabaseIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("committed transaction changes are visible from other connections [GH-90000]")
+    @DisplayName("committed transaction changes are visible from other connections")
     void committedChangesAreVisibleFromOtherConnections() { // GH-90000
         InMemoryDatabase.Connection conn = db.acquire(); // GH-90000
         InMemoryDatabase.Transaction tx = conn.beginTransaction(); // GH-90000
@@ -154,12 +154,12 @@ class DatabaseIntegrationTest extends EventloopTestBase {
 
         InMemoryDatabase.Connection conn2 = db.acquire(); // GH-90000
         List<Map<String, Object>> rows = conn2.query("SELECT", "accounts"); // GH-90000
-        assertThat(rows).anyMatch(r -> "acc-2".equals(r.get("id [GH-90000]")));
+        assertThat(rows).anyMatch(r -> "acc-2".equals(r.get("id")));
         conn2.release(); // GH-90000
     }
 
     @Test
-    @DisplayName("rolled-back transaction leaves the table unchanged [GH-90000]")
+    @DisplayName("rolled-back transaction leaves the table unchanged")
     void rolledBackTransactionLeavesTableUnchanged() { // GH-90000
         InMemoryDatabase.Connection conn = db.acquire(); // GH-90000
         InMemoryDatabase.Transaction tx = conn.beginTransaction(); // GH-90000
@@ -174,7 +174,7 @@ class DatabaseIntegrationTest extends EventloopTestBase {
     // ── Concurrent writes ─────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("concurrent inserts from multiple connections are all persisted [GH-90000]")
+    @DisplayName("concurrent inserts from multiple connections are all persisted")
     void concurrentInsertsAreAllPersisted() throws Exception { // GH-90000
         int writers = 20;
         CyclicBarrier barrier = new CyclicBarrier(writers); // GH-90000
@@ -253,12 +253,12 @@ class DatabaseIntegrationTest extends EventloopTestBase {
                 switch (op) { // GH-90000
                     case "INSERT" -> db.table(table).add(new HashMap<>(row)); // GH-90000
                     case "UPDATE" -> {
-                        Object id = row.get("id [GH-90000]");
-                        db.table(table).replaceAll(r -> id.equals(r.get("id [GH-90000]")) ? new HashMap<>(row) : r);
+                        Object id = row.get("id");
+                        db.table(table).replaceAll(r -> id.equals(r.get("id")) ? new HashMap<>(row) : r);
                     }
                     case "DELETE" -> {
-                        Object id = row.get("id [GH-90000]");
-                        db.table(table).removeIf(r -> id.equals(r.get("id [GH-90000]")));
+                        Object id = row.get("id");
+                        db.table(table).removeIf(r -> id.equals(r.get("id")));
                     }
                     default -> throw new IllegalArgumentException("Unsupported operation: " + op); // GH-90000
                 }

@@ -16,11 +16,11 @@ import org.junit.jupiter.api.Test;
  * @doc.layer test
  * @doc.pattern Unit Test
  */
-@DisplayName("AgentHeartbeatService Tests [GH-90000]")
+@DisplayName("AgentHeartbeatService Tests")
 class AgentHeartbeatServiceTest {
 
   @Test
-  @DisplayName("should create service with default interval [GH-90000]")
+  @DisplayName("should create service with default interval")
   void shouldCreateWithDefaultInterval() { // GH-90000
     AgentHealthProvider mockProvider = mock(AgentHealthProvider.class); // GH-90000
     io.activej.eventloop.Eventloop mockEventloop = mock(io.activej.eventloop.Eventloop.class); // GH-90000
@@ -33,7 +33,7 @@ class AgentHeartbeatServiceTest {
   }
 
   @Test
-  @DisplayName("should create service with custom interval [GH-90000]")
+  @DisplayName("should create service with custom interval")
   void shouldCreateWithCustomInterval() { // GH-90000
     AgentHealthProvider mockProvider = mock(AgentHealthProvider.class); // GH-90000
     io.activej.eventloop.Eventloop mockEventloop = mock(io.activej.eventloop.Eventloop.class); // GH-90000
@@ -45,28 +45,28 @@ class AgentHeartbeatServiceTest {
   }
 
   @Test
-  @DisplayName("should reject non-positive interval [GH-90000]")
+  @DisplayName("should reject non-positive interval")
   void shouldRejectNonPositiveInterval() { // GH-90000
     AgentHealthProvider mockProvider = mock(AgentHealthProvider.class); // GH-90000
     io.activej.eventloop.Eventloop mockEventloop = mock(io.activej.eventloop.Eventloop.class); // GH-90000
 
     assertThatThrownBy(() -> new AgentHeartbeatService(mockProvider, mockEventloop, 0L)) // GH-90000
         .isInstanceOf(IllegalArgumentException.class) // GH-90000
-        .hasMessageContaining("heartbeatIntervalMs must be positive [GH-90000]");
+        .hasMessageContaining("heartbeatIntervalMs must be positive");
 
     assertThatThrownBy(() -> new AgentHeartbeatService(mockProvider, mockEventloop, -100L)) // GH-90000
         .isInstanceOf(IllegalArgumentException.class) // GH-90000
-        .hasMessageContaining("heartbeatIntervalMs must be positive [GH-90000]");
+        .hasMessageContaining("heartbeatIntervalMs must be positive");
   }
 
   @Test
-  @DisplayName("should have correct default interval constant [GH-90000]")
+  @DisplayName("should have correct default interval constant")
   void shouldHaveCorrectDefaultInterval() { // GH-90000
     assertThat(AgentHeartbeatService.DEFAULT_INTERVAL_MS).isEqualTo(30_000L); // GH-90000
   }
 
   @Test
-  @DisplayName("should return running state [GH-90000]")
+  @DisplayName("should return running state")
   void shouldReturnRunningState() { // GH-90000
     AgentHealthProvider mockProvider = mock(AgentHealthProvider.class); // GH-90000
     io.activej.eventloop.Eventloop mockEventloop = mock(io.activej.eventloop.Eventloop.class); // GH-90000
@@ -77,7 +77,7 @@ class AgentHeartbeatServiceTest {
   }
 
   @Test
-  @DisplayName("should return null lastHeartbeat before start [GH-90000]")
+  @DisplayName("should return null lastHeartbeat before start")
   void shouldReturnNullLastHeartbeatBeforeStart() { // GH-90000
     AgentHealthProvider mockProvider = mock(AgentHealthProvider.class); // GH-90000
     io.activej.eventloop.Eventloop mockEventloop = mock(io.activej.eventloop.Eventloop.class); // GH-90000

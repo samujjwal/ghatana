@@ -1,7 +1,7 @@
 /**
  * Data Quality Dashboard Component
  * 
- * AI-powered data quality monitoring and assessment.
+ * Automated data quality monitoring and assessment.
  * Displays quality scores, anomalies, and recommendations.
  * 
  * @doc.type component

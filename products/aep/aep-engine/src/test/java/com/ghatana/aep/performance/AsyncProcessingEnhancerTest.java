@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * Unit tests for {@link AsyncProcessingEnhancer} (AEP-006.3). // GH-90000
  */
-@DisplayName("AsyncProcessingEnhancer — AEP-006.3 [GH-90000]")
+@DisplayName("AsyncProcessingEnhancer — AEP-006.3")
 class AsyncProcessingEnhancerTest extends EventloopTestBase {
 
     private AsyncProcessingEnhancer enhancer;
@@ -33,7 +33,7 @@ class AsyncProcessingEnhancerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("fanOut processes all inputs and returns results in order [GH-90000]")
+    @DisplayName("fanOut processes all inputs and returns results in order")
     void fanOutProcessesAllInputs() { // GH-90000
         List<Integer> inputs = List.of(1, 2, 3, 4, 5); // GH-90000
 
@@ -46,7 +46,7 @@ class AsyncProcessingEnhancerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("fanOut with maxConcurrency=1 is effectively sequential [GH-90000]")
+    @DisplayName("fanOut with maxConcurrency=1 is effectively sequential")
     void fanOutSequential() { // GH-90000
         AtomicInteger maxConcurrent = new AtomicInteger(0); // GH-90000
         AtomicInteger current = new AtomicInteger(0); // GH-90000
@@ -68,7 +68,7 @@ class AsyncProcessingEnhancerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("offload executes blocking task off the event loop and returns result [GH-90000]")
+    @DisplayName("offload executes blocking task off the event loop and returns result")
     void offloadExecutesCpuBoundTask() { // GH-90000
         Long result = runPromise(() -> // GH-90000
             enhancer.offload(() -> { // GH-90000
@@ -82,7 +82,7 @@ class AsyncProcessingEnhancerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("processBatched groups inputs into batches and concatenates results [GH-90000]")
+    @DisplayName("processBatched groups inputs into batches and concatenates results")
     void processBatchedGroupsInputs() { // GH-90000
         List<Integer> inputs = List.of(1, 2, 3, 4, 5, 6, 7); // GH-90000
 
@@ -94,12 +94,12 @@ class AsyncProcessingEnhancerTest extends EventloopTestBase {
         );
 
         assertThat(results).hasSize(7); // GH-90000
-        assertThat(results.get(0)).isEqualTo("item-1 [GH-90000]");
-        assertThat(results.get(6)).isEqualTo("item-7 [GH-90000]");
+        assertThat(results.get(0)).isEqualTo("item-1");
+        assertThat(results.get(6)).isEqualTo("item-7");
     }
 
     @Test
-    @DisplayName("throughputStats returns meaningful stats after some ops [GH-90000]")
+    @DisplayName("throughputStats returns meaningful stats after some ops")
     void throughputStatsAfterOps() { // GH-90000
         runPromise(() -> // GH-90000
             AsyncProcessingEnhancer.fanOut(List.of(1, 2, 3), i -> Promise.of(i * 10), 3) // GH-90000
@@ -110,7 +110,7 @@ class AsyncProcessingEnhancerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("fanOut rejects non-positive maxConcurrency [GH-90000]")
+    @DisplayName("fanOut rejects non-positive maxConcurrency")
     void fanOutRejectsZeroMaxConcurrency() { // GH-90000
         assertThatThrownBy(() -> // GH-90000
             runPromise(() -> AsyncProcessingEnhancer.fanOut(List.of(1), i -> Promise.of(i), 0)) // GH-90000
@@ -118,10 +118,10 @@ class AsyncProcessingEnhancerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("fanOut returns empty list for empty inputs [GH-90000]")
+    @DisplayName("fanOut returns empty list for empty inputs")
     void fanOutEmptyInput() { // GH-90000
         List<String> results = runPromise(() -> // GH-90000
-            AsyncProcessingEnhancer.fanOut(List.of(), i -> Promise.of("x [GH-90000]"), 5)
+            AsyncProcessingEnhancer.fanOut(List.of(), i -> Promise.of("x"), 5)
         );
         assertThat(results).isEmpty(); // GH-90000
     }

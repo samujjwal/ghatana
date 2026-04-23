@@ -74,7 +74,10 @@ import java.util.Map;
  *   .parameter("within", "PT5M")
  *   .build()
  * </pre>
- */
+  * @doc.type class
+ * @doc.purpose Provides operator spec functionality.
+ * @doc.layer product
+*/
 public class OperatorSpec {
 
     @JsonProperty("type")

@@ -8,36 +8,41 @@
 
 /**
  * Feature flag configuration
- * 
+ *
  * All flags default to false for safety. Features must be explicitly
  * enabled via environment variables or configuration.
  */
 export const featureFlags = {
   // Run detail tabs
-  EVENT_LINEAGE: import.meta.env.VITE_FEATURE_EVENT_LINEAGE === 'true',
-  AGENT_DECISIONS: import.meta.env.VITE_FEATURE_AGENT_DECISIONS === 'true',
-  POLICY_REFERENCES: import.meta.env.VITE_FEATURE_POLICY_REFERENCES === 'true',
-  
+  EVENT_LINEAGE: import.meta.env.VITE_FEATURE_EVENT_LINEAGE === "true",
+  AGENT_DECISIONS: import.meta.env.VITE_FEATURE_AGENT_DECISIONS === "true",
+  POLICY_REFERENCES: import.meta.env.VITE_FEATURE_POLICY_REFERENCES === "true",
+
   // Governance sections — enabled by default so operators can access safety controls
-  COMPLIANCE_REPORTS: import.meta.env.VITE_FEATURE_COMPLIANCE_REPORTS !== 'false',
-  TENANT_MANAGEMENT: import.meta.env.VITE_FEATURE_TENANT_MANAGEMENT !== 'false',
-  AUDIT_LOG: import.meta.env.VITE_FEATURE_AUDIT_LOG !== 'false',
+  COMPLIANCE_REPORTS:
+    import.meta.env.VITE_FEATURE_COMPLIANCE_REPORTS !== "false",
+  TENANT_MANAGEMENT: import.meta.env.VITE_FEATURE_TENANT_MANAGEMENT !== "false",
+  AUDIT_LOG: import.meta.env.VITE_FEATURE_AUDIT_LOG !== "false",
 
   // Voice/NLP features — NLQ enabled by default (backend route now wired)
-  VOICE_COMMANDS: import.meta.env.VITE_FEATURE_VOICE_COMMANDS === 'true',
-  NLQ: import.meta.env.VITE_FEATURE_NLQ !== 'false',
+  VOICE_COMMANDS: import.meta.env.VITE_FEATURE_VOICE_COMMANDS === "true",
+  NLQ: import.meta.env.VITE_FEATURE_NLQ !== "false",
 
   // AI features — AI_SUGGESTIONS and ANOMALY_DETECTION enabled by default (routes now wired)
-  AI_SUGGESTIONS: import.meta.env.VITE_FEATURE_AI_SUGGESTIONS !== 'false',
-  SMART_PRIORITIZATION: import.meta.env.VITE_FEATURE_SMART_PRIORITIZATION === 'true',
-  ANOMALY_DETECTION: import.meta.env.VITE_FEATURE_ANOMALY_DETECTION !== 'false',
-  
+  AI_SUGGESTIONS: import.meta.env.VITE_FEATURE_AI_SUGGESTIONS !== "false",
+  SMART_PRIORITIZATION:
+    import.meta.env.VITE_FEATURE_SMART_PRIORITIZATION === "true",
+  ANOMALY_DETECTION: import.meta.env.VITE_FEATURE_ANOMALY_DETECTION !== "false",
+
   // Bulk operations
-  BULK_OPERATIONS: import.meta.env.VITE_FEATURE_BULK_OPERATIONS === 'true',
-  
+  BULK_OPERATIONS: import.meta.env.VITE_FEATURE_BULK_OPERATIONS === "true",
+
   // Advanced features
-  COMMAND_PALETTE: import.meta.env.VITE_FEATURE_COMMAND_PALETTE === 'true',
-  BREADCRUMBS: import.meta.env.VITE_FEATURE_BREADCRUMBS === 'true',
+  COMMAND_PALETTE: import.meta.env.VITE_FEATURE_COMMAND_PALETTE === "true",
+  BREADCRUMBS: import.meta.env.VITE_FEATURE_BREADCRUMBS === "true",
+
+  // Auth migration (TASK-I4): legacy JWT paste fallback — disabled by default
+  LEGACY_JWT_PASTE: import.meta.env.VITE_ENABLE_LEGACY_JWT_PASTE === "true",
 } as const;
 
 /**
@@ -47,7 +52,7 @@ export type FeatureFlag = keyof typeof featureFlags;
 
 /**
  * Check if a feature flag is enabled
- * 
+ *
  * @param flag - The feature flag to check
  * @returns true if the feature is enabled, false otherwise
  */
@@ -57,7 +62,7 @@ export function isFeatureEnabled(flag: FeatureFlag): boolean {
 
 /**
  * Get all enabled feature flags
- * 
+ *
  * @returns Array of enabled feature flag names
  */
 export function getEnabledFeatures(): FeatureFlag[] {
@@ -68,7 +73,7 @@ export function getEnabledFeatures(): FeatureFlag[] {
 
 /**
  * Get all disabled feature flags
- * 
+ *
  * @returns Array of disabled feature flag names
  */
 export function getDisabledFeatures(): FeatureFlag[] {
@@ -87,9 +92,14 @@ export function useFeatureFlag(flag: FeatureFlag): boolean {
 /**
  * Hook for multiple feature flags
  */
-export function useFeatureFlags(flags: FeatureFlag[]): Record<FeatureFlag, boolean> {
-  return flags.reduce((acc, flag) => {
-    acc[flag] = featureFlags[flag];
-    return acc;
-  }, {} as Record<FeatureFlag, boolean>);
+export function useFeatureFlags(
+  flags: FeatureFlag[],
+): Record<FeatureFlag, boolean> {
+  return flags.reduce(
+    (acc, flag) => {
+      acc[flag] = featureFlags[flag];
+      return acc;
+    },
+    {} as Record<FeatureFlag, boolean>,
+  );
 }

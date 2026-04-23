@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("YappcRetentionService Tests [GH-90000]")
+@DisplayName("YappcRetentionService Tests")
 class YappcRetentionServiceTest extends EventloopTestBase {
 
     private InMemoryArtifactStore store;
@@ -48,11 +48,11 @@ class YappcRetentionServiceTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("tagCreatedAt — metadata stamping [GH-90000]")
+    @DisplayName("tagCreatedAt — metadata stamping")
     class TagCreatedAt {
 
         @Test
-        @DisplayName("stores ISO-8601 created_at stamp in artifact metadata [GH-90000]")
+        @DisplayName("stores ISO-8601 created_at stamp in artifact metadata")
         void storesCreatedAtStamp() { // GH-90000
             // GIVEN
             String version = runPromise(() -> repository.storeArtifact("proj-1", PhaseType.INTENT, "data".getBytes())); // GH-90000
@@ -73,11 +73,11 @@ class YappcRetentionServiceTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("purgeExpiredArtifacts — TTL enforcement [GH-90000]")
+    @DisplayName("purgeExpiredArtifacts — TTL enforcement")
     class PurgeExpiredArtifacts {
 
         @Test
-        @DisplayName("returns 0 when no versions exist for the given project/phase [GH-90000]")
+        @DisplayName("returns 0 when no versions exist for the given project/phase")
         void returnsZeroForEmptyRepo() { // GH-90000
             int purged = runPromise(() -> retentionService.purgeExpiredArtifacts( // GH-90000
                     "no-such-project", PhaseType.INTENT, Duration.ofDays(30))); // GH-90000
@@ -86,7 +86,7 @@ class YappcRetentionServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("does not purge versions that have no created_at stamp [GH-90000]")
+        @DisplayName("does not purge versions that have no created_at stamp")
         void skipsVersionsWithoutStamp() { // GH-90000
             // GIVEN — artifact stored without a created_at tag
             runPromise(() -> repository.storeArtifact("proj-1", PhaseType.INTENT, "data".getBytes())); // GH-90000
@@ -100,7 +100,7 @@ class YappcRetentionServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("does not purge versions younger than maxAge [GH-90000]")
+        @DisplayName("does not purge versions younger than maxAge")
         void sparesFreshVersions() { // GH-90000
             // GIVEN — fresh artifact tagged just now
             String version = runPromise(() -> repository.storeArtifact("proj-2", PhaseType.SHAPE, "payload".getBytes())); // GH-90000
@@ -115,7 +115,7 @@ class YappcRetentionServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("purges versions older than maxAge and returns count [GH-90000]")
+        @DisplayName("purges versions older than maxAge and returns count")
         void purgesStaleVersions() { // GH-90000
             // GIVEN — two artifacts with an artificially old created_at timestamp
             String v1 = runPromise(() -> repository.storeArtifact("proj-3", PhaseType.VALIDATE, "old1".getBytes())); // GH-90000
@@ -137,7 +137,7 @@ class YappcRetentionServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("purges only stale versions, spares fresh ones in the same project/phase [GH-90000]")
+        @DisplayName("purges only stale versions, spares fresh ones in the same project/phase")
         void purgesOnlyStaleMixed() { // GH-90000
             // GIVEN — one fresh and one stale version
             String fresh = runPromise(() -> repository.storeArtifact("proj-4", PhaseType.GENERATE, "new".getBytes())); // GH-90000
@@ -158,7 +158,7 @@ class YappcRetentionServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("skips versions with a malformed created_at value [GH-90000]")
+        @DisplayName("skips versions with a malformed created_at value")
         void skipsMalformedTimestamp() { // GH-90000
             // GIVEN — artifact with a broken timestamp
             String version = runPromise(() -> repository.storeArtifact("proj-5", PhaseType.RUN, "data".getBytes())); // GH-90000

@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Ghatana Kernel Team
  * @since 1.0.0
  */
-@DisplayName("Kernel Purity Validation Tests [GH-90000]")
+@DisplayName("Kernel Purity Validation Tests")
 public class KernelPurityValidationTest {
 
     private static final List<String> FORBIDDEN_PRODUCT_TERMS = List.of( // GH-90000
@@ -45,7 +45,7 @@ public class KernelPurityValidationTest {
     );
 
     @Test
-    @DisplayName("All kernel capabilities must be generic [GH-90000]")
+    @DisplayName("All kernel capabilities must be generic")
     void allKernelCapabilitiesMustBeGeneric() { // GH-90000
         // Get all capabilities from KernelCapability.Core
         try {
@@ -72,7 +72,7 @@ public class KernelPurityValidationTest {
     }
 
     @Test
-    @DisplayName("Kernel modules must not have product-specific method names [GH-90000]")
+    @DisplayName("Kernel modules must not have product-specific method names")
     void kernelModulesMustNotHaveProductSpecificMethodNames() { // GH-90000
         // This test validates that kernel modules don't have product-specific methods
         // by checking for forbidden terms in method names
@@ -91,7 +91,7 @@ public class KernelPurityValidationTest {
     }
 
     @Test
-    @DisplayName("Capability IDs follow naming convention [GH-90000]")
+    @DisplayName("Capability IDs follow naming convention")
     void capabilityIdsFollowNamingConvention() { // GH-90000
         // Validate capability IDs follow the convention: category.action
         Set<String> validPrefixes = Set.of( // GH-90000
@@ -119,7 +119,7 @@ public class KernelPurityValidationTest {
                             "Valid prefixes: " + validPrefixes);
 
                         // Validate format: lowercase letters, numbers, hyphens, dots
-                        assertTrue(capabilityId.matches("^[a-z0-9-.]+$ [GH-90000]"),
+                        assertTrue(capabilityId.matches("^[a-z0-9-.]+$"),
                             "Capability ID '" + capabilityId + "' contains invalid characters. " +
                             "Only lowercase letters, numbers, hyphens, and dots are allowed.");
                     }
@@ -131,7 +131,7 @@ public class KernelPurityValidationTest {
     }
 
     @Test
-    @DisplayName("No CompletableFuture in kernel module signatures [GH-90000]")
+    @DisplayName("No CompletableFuture in kernel module signatures")
     void noCompletableFutureInKernelModuleSignatures() { // GH-90000
         // Verify kernel module interfaces don't use CompletableFuture
         Class<KernelModule> moduleInterface = KernelModule.class;
@@ -140,13 +140,13 @@ public class KernelPurityValidationTest {
         for (Method method : methods) { // GH-90000
             Class<?> returnType = method.getReturnType(); // GH-90000
 
-            assertFalse(returnType.getName().contains("CompletableFuture [GH-90000]"),
+            assertFalse(returnType.getName().contains("CompletableFuture"),
                 "Method '" + method.getName() + "' returns CompletableFuture. " + // GH-90000
                 "Kernel modules must use ActiveJ Promise instead.");
 
             // Check parameter types
             for (Class<?> paramType : method.getParameterTypes()) { // GH-90000
-                assertFalse(paramType.getName().contains("CompletableFuture [GH-90000]"),
+                assertFalse(paramType.getName().contains("CompletableFuture"),
                     "Method '" + method.getName() + "' has parameter type CompletableFuture. " + // GH-90000
                     "Kernel modules must use ActiveJ Promise instead.");
             }
@@ -154,7 +154,7 @@ public class KernelPurityValidationTest {
     }
 
     @Test
-    @DisplayName("All kernel modules have proper JSDoc tags [GH-90000]")
+    @DisplayName("All kernel modules have proper JSDoc tags")
     void allKernelModulesHaveProperJSDocTags() { // GH-90000
         // This test validates that all kernel module implementations
         // have the required @doc.* tags
@@ -176,87 +176,87 @@ public class KernelPurityValidationTest {
     // ==================== Convergence-era purity checks (Day 2) ==================== // GH-90000
 
     @Test
-    @DisplayName("Transitional capability class has been removed (package capability.* no longer exists) [GH-90000]")
+    @DisplayName("Transitional capability class has been removed (package capability.* no longer exists)")
     void transitionalCapabilityClassHasBeenRemoved() { // GH-90000
         // D1: capability.KernelCapability was transitional and has been completely removed.
         // Verify the package no longer exists by checking ClassNotFoundException
         assertThrows(ClassNotFoundException.class, () -> { // GH-90000
-            Class.forName("com.ghatana.kernel.capability.KernelCapability [GH-90000]");
+            Class.forName("com.ghatana.kernel.capability.KernelCapability");
         }, "capability.KernelCapability should have been completely removed. " +
             "Canonical type is descriptor.KernelCapability.");
     }
 
     @Test
-    @DisplayName("Transitional plugin.KernelExtension has been removed [GH-90000]")
+    @DisplayName("Transitional plugin.KernelExtension has been removed")
     void transitionalPluginExtensionHasBeenRemoved() { // GH-90000
         assertThrows(ClassNotFoundException.class, () -> // GH-90000
-                Class.forName("com.ghatana.kernel.plugin.KernelExtension [GH-90000]"),
+                Class.forName("com.ghatana.kernel.plugin.KernelExtension"),
             "plugin.KernelExtension should have been removed. " +
             "Canonical type is extension.KernelExtension.");
     }
 
     @Test
-    @DisplayName("ProductPlugin has been removed [GH-90000]")
+    @DisplayName("ProductPlugin has been removed")
     void productPluginHasBeenRemoved() { // GH-90000
         assertThrows(ClassNotFoundException.class, () -> // GH-90000
-                Class.forName("com.ghatana.kernel.plugin.ProductPlugin [GH-90000]"),
+                Class.forName("com.ghatana.kernel.plugin.ProductPlugin"),
             "ProductPlugin should have been removed. Canonical runtime model is KernelPlugin.");
     }
 
     @Test
-    @DisplayName("CrossProductAuditService has been removed in favor of CrossScopeAuditService [GH-90000]")
+    @DisplayName("CrossProductAuditService has been removed in favor of CrossScopeAuditService")
     void crossProductAuditServiceHasBeenRemoved() { // GH-90000
         // CrossProductAuditService was deprecated and has been completely removed.
         // Verify the class no longer exists by checking ClassNotFoundException
         assertThrows(ClassNotFoundException.class, () -> { // GH-90000
-            Class.forName("com.ghatana.kernel.audit.CrossProductAuditService [GH-90000]");
+            Class.forName("com.ghatana.kernel.audit.CrossProductAuditService");
         }, "CrossProductAuditService should have been completely removed. " +
             "Use CrossScopeAuditService with policy-driven retention.");
     }
 
     @Test
-    @DisplayName("descriptor.KernelCapability.Products has been removed [GH-90000]")
+    @DisplayName("descriptor.KernelCapability.Products has been removed")
     void descriptorProductsInnerClassHasBeenRemoved() { // GH-90000
         assertThrows(ClassNotFoundException.class, () -> // GH-90000
-                Class.forName("com.ghatana.kernel.descriptor.KernelCapability$Products [GH-90000]"),
+                Class.forName("com.ghatana.kernel.descriptor.KernelCapability$Products"),
             "KernelCapability.Products should have been removed. Product-specific capabilities " +
             "must be declared by product/domain modules.");
     }
 
     @Test
-    @DisplayName("descriptor.KernelCapability must not expose product capability inner class [GH-90000]")
+    @DisplayName("descriptor.KernelCapability must not expose product capability inner class")
     void descriptorMustNotExposeProductCapabilityInnerClass() { // GH-90000
         boolean hasProductsInnerClass = Arrays.stream(KernelCapability.class.getDeclaredClasses()) // GH-90000
-            .anyMatch(c -> c.getSimpleName().equals("Products [GH-90000]"));
+            .anyMatch(c -> c.getSimpleName().equals("Products"));
         assertFalse(hasProductsInnerClass, // GH-90000
             "KernelCapability must not expose a Products inner class. Product capabilities " +
             "must be declared in product-owned modules.");
     }
 
     @Test
-    @DisplayName("CrossScopeAuditService must exist as canonical replacement [GH-90000]")
+    @DisplayName("CrossScopeAuditService must exist as canonical replacement")
     void crossScopeAuditServiceMustExist() { // GH-90000
         // Verify the canonical replacement exists alongside the deprecated service
         try {
-            Class<?> canonical = Class.forName("com.ghatana.kernel.audit.CrossScopeAuditService [GH-90000]");
+            Class<?> canonical = Class.forName("com.ghatana.kernel.audit.CrossScopeAuditService");
             assertNotNull(canonical); // GH-90000
             assertFalse(canonical.isAnnotationPresent(Deprecated.class), // GH-90000
                 "CrossScopeAuditService is the canonical service and must NOT be deprecated.");
         } catch (ClassNotFoundException e) { // GH-90000
-            fail("CrossScopeAuditService must exist as the canonical audit service. [GH-90000]");
+            fail("CrossScopeAuditService must exist as the canonical audit service.");
         }
     }
 
     @Test
-    @DisplayName("Scope abstractions must exist for scope-first kernel framing [GH-90000]")
+    @DisplayName("Scope abstractions must exist for scope-first kernel framing")
     void scopeAbstractionsMustExist() { // GH-90000
         // These are foundational abstractions for the scope-first model
         try {
-            Class.forName("com.ghatana.kernel.scope.ScopeType [GH-90000]");
-            Class.forName("com.ghatana.kernel.scope.ScopeDescriptor [GH-90000]");
-            Class.forName("com.ghatana.kernel.policy.ClassificationDescriptor [GH-90000]");
-            Class.forName("com.ghatana.kernel.policy.RetentionPolicyResolver [GH-90000]");
-            Class.forName("com.ghatana.kernel.policy.AuditPolicyResolver [GH-90000]");
+            Class.forName("com.ghatana.kernel.scope.ScopeType");
+            Class.forName("com.ghatana.kernel.scope.ScopeDescriptor");
+            Class.forName("com.ghatana.kernel.policy.ClassificationDescriptor");
+            Class.forName("com.ghatana.kernel.policy.RetentionPolicyResolver");
+            Class.forName("com.ghatana.kernel.policy.AuditPolicyResolver");
         } catch (ClassNotFoundException e) { // GH-90000
             fail("Missing scope/policy abstraction: " + e.getMessage() + // GH-90000
                 ". Per KERNEL_CANONICALIZATION_DECISIONS §4, scope-first framing is required.");
@@ -266,75 +266,75 @@ public class KernelPurityValidationTest {
     // ==================== Day 7-9: Boundary/Bus/Workflow Convergence Checks ====================
 
     @Test
-    @DisplayName("ProductBoundaryEnforcer has been removed (use ScopeBoundaryEnforcer) [GH-90000]")
+    @DisplayName("ProductBoundaryEnforcer has been removed (use ScopeBoundaryEnforcer)")
     void productBoundaryEnforcerHasBeenRemoved() { // GH-90000
         // ProductBoundaryEnforcer was deprecated and has been completely removed.
         assertThrows(ClassNotFoundException.class, () -> { // GH-90000
-            Class.forName("com.ghatana.kernel.boundary.ProductBoundaryEnforcer [GH-90000]");
+            Class.forName("com.ghatana.kernel.boundary.ProductBoundaryEnforcer");
         }, "ProductBoundaryEnforcer should have been completely removed. Use ScopeBoundaryEnforcer.");
     }
 
     @Test
-    @DisplayName("ScopeBoundaryEnforcer must exist as canonical replacement [GH-90000]")
+    @DisplayName("ScopeBoundaryEnforcer must exist as canonical replacement")
     void scopeBoundaryEnforcerMustExist() { // GH-90000
         try {
-            Class<?> canonical = Class.forName("com.ghatana.kernel.boundary.ScopeBoundaryEnforcer [GH-90000]");
+            Class<?> canonical = Class.forName("com.ghatana.kernel.boundary.ScopeBoundaryEnforcer");
             assertNotNull(canonical); // GH-90000
             assertFalse(canonical.isAnnotationPresent(Deprecated.class), // GH-90000
                 "ScopeBoundaryEnforcer is canonical and must NOT be deprecated.");
         } catch (ClassNotFoundException e) { // GH-90000
-            fail("ScopeBoundaryEnforcer must exist as the canonical boundary enforcer. [GH-90000]");
+            fail("ScopeBoundaryEnforcer must exist as the canonical boundary enforcer.");
         }
     }
 
     @Test
-    @DisplayName("KernelInterProductBus has been removed [GH-90000]")
+    @DisplayName("KernelInterProductBus has been removed")
     void kernelInterProductBusHasBeenRemoved() { // GH-90000
         assertThrows(ClassNotFoundException.class, () -> // GH-90000
-                Class.forName("com.ghatana.kernel.communication.KernelInterProductBus [GH-90000]"),
+                Class.forName("com.ghatana.kernel.communication.KernelInterProductBus"),
             "KernelInterProductBus should have been removed — use KernelInterScopeBus.");
     }
 
     @Test
-    @DisplayName("KernelInterScopeBus must exist as canonical replacement [GH-90000]")
+    @DisplayName("KernelInterScopeBus must exist as canonical replacement")
     void kernelInterScopeBusMustExist() { // GH-90000
         try {
-            Class<?> canonical = Class.forName("com.ghatana.kernel.communication.KernelInterScopeBus [GH-90000]");
+            Class<?> canonical = Class.forName("com.ghatana.kernel.communication.KernelInterScopeBus");
             assertNotNull(canonical); // GH-90000
             assertFalse(canonical.isAnnotationPresent(Deprecated.class), // GH-90000
                 "KernelInterScopeBus is canonical and must NOT be deprecated.");
         } catch (ClassNotFoundException e) { // GH-90000
-            fail("KernelInterScopeBus must exist as the canonical inter-scope bus. [GH-90000]");
+            fail("KernelInterScopeBus must exist as the canonical inter-scope bus.");
         }
     }
 
     @Test
-    @DisplayName("CrossProductWorkflowEngine has been removed [GH-90000]")
+    @DisplayName("CrossProductWorkflowEngine has been removed")
     void crossProductWorkflowEngineHasBeenRemoved() { // GH-90000
         assertThrows(ClassNotFoundException.class, () -> // GH-90000
-                Class.forName("com.ghatana.kernel.workflow.CrossProductWorkflowEngine [GH-90000]"),
+                Class.forName("com.ghatana.kernel.workflow.CrossProductWorkflowEngine"),
             "CrossProductWorkflowEngine should have been removed — use CrossScopeWorkflowEngine.");
     }
 
     @Test
-    @DisplayName("CrossScopeWorkflowEngine must exist as canonical replacement [GH-90000]")
+    @DisplayName("CrossScopeWorkflowEngine must exist as canonical replacement")
     void crossScopeWorkflowEngineMustExist() { // GH-90000
         try {
-            Class<?> canonical = Class.forName("com.ghatana.kernel.workflow.CrossScopeWorkflowEngine [GH-90000]");
+            Class<?> canonical = Class.forName("com.ghatana.kernel.workflow.CrossScopeWorkflowEngine");
             assertNotNull(canonical); // GH-90000
             assertFalse(canonical.isAnnotationPresent(Deprecated.class), // GH-90000
                 "CrossScopeWorkflowEngine is canonical and must NOT be deprecated.");
         } catch (ClassNotFoundException e) { // GH-90000
-            fail("CrossScopeWorkflowEngine must exist as the canonical workflow engine. [GH-90000]");
+            fail("CrossScopeWorkflowEngine must exist as the canonical workflow engine.");
         }
     }
 
     @Test
-    @DisplayName("BoundaryPolicyResolver must exist for scope-driven boundary checks [GH-90000]")
+    @DisplayName("BoundaryPolicyResolver must exist for scope-driven boundary checks")
     void boundaryPolicyResolverMustExist() { // GH-90000
         try {
-            Class.forName("com.ghatana.kernel.boundary.BoundaryPolicyResolver [GH-90000]");
-            Class.forName("com.ghatana.kernel.boundary.DefaultBoundaryPolicyResolver [GH-90000]");
+            Class.forName("com.ghatana.kernel.boundary.BoundaryPolicyResolver");
+            Class.forName("com.ghatana.kernel.boundary.DefaultBoundaryPolicyResolver");
         } catch (ClassNotFoundException e) { // GH-90000
             fail("Missing boundary policy abstraction: " + e.getMessage()); // GH-90000
         }
@@ -343,7 +343,7 @@ public class KernelPurityValidationTest {
     // ==================== Day 5: Registry Canonicalization (Decision D4) ==================== // GH-90000
 
     @Test
-    @DisplayName("KernelRegistry must NOT be @KernelInternal — it is the public contract [GH-90000]")
+    @DisplayName("KernelRegistry must NOT be @KernelInternal — it is the public contract")
     void kernelRegistryMustNotBeInternal() { // GH-90000
         Class<?> registry = com.ghatana.kernel.registry.KernelRegistry.class;
         assertFalse(registry.isAnnotationPresent(KernelInternal.class), // GH-90000
@@ -352,7 +352,7 @@ public class KernelPurityValidationTest {
     }
 
     @Test
-    @DisplayName("KernelRegistryImpl must NOT be @KernelInternal — it is the public implementation [GH-90000]")
+    @DisplayName("KernelRegistryImpl must NOT be @KernelInternal — it is the public implementation")
     void kernelRegistryImplMustNotBeInternal() { // GH-90000
         Class<?> registryImpl = com.ghatana.kernel.registry.KernelRegistryImpl.class;
         assertFalse(registryImpl.isAnnotationPresent(KernelInternal.class), // GH-90000
@@ -361,7 +361,7 @@ public class KernelPurityValidationTest {
     }
 
     @Test
-    @DisplayName("CapabilityRegistry must be @KernelInternal [GH-90000]")
+    @DisplayName("CapabilityRegistry must be @KernelInternal")
     void capabilityRegistryMustBeInternal() { // GH-90000
         Class<?> capReg = com.ghatana.kernel.registry.CapabilityRegistry.class;
         assertTrue(capReg.isAnnotationPresent(KernelInternal.class), // GH-90000
@@ -370,7 +370,7 @@ public class KernelPurityValidationTest {
     }
 
     @Test
-    @DisplayName("ServiceRegistry must be @KernelInternal [GH-90000]")
+    @DisplayName("ServiceRegistry must be @KernelInternal")
     void serviceRegistryMustBeInternal() { // GH-90000
         Class<?> svcReg = com.ghatana.kernel.registry.ServiceRegistry.class;
         assertTrue(svcReg.isAnnotationPresent(KernelInternal.class), // GH-90000
@@ -379,7 +379,7 @@ public class KernelPurityValidationTest {
     }
 
     @Test
-    @DisplayName("PluginRegistry must be @KernelInternal [GH-90000]")
+    @DisplayName("PluginRegistry must be @KernelInternal")
     void pluginRegistryMustBeInternal() { // GH-90000
         Class<?> plugReg = com.ghatana.kernel.registry.PluginRegistry.class;
         assertTrue(plugReg.isAnnotationPresent(KernelInternal.class), // GH-90000
@@ -388,11 +388,11 @@ public class KernelPurityValidationTest {
     }
 
     @Test
-    @DisplayName("PluginContext.getCapabilityRegistry must be @Deprecated(forRemoval=true) [GH-90000]")
+    @DisplayName("PluginContext.getCapabilityRegistry must be @Deprecated(forRemoval=true)")
     void pluginContextCapabilityRegistryAccessorMustBeDeprecated() { // GH-90000
         try {
             java.lang.reflect.Method method =
-                com.ghatana.kernel.plugin.PluginContext.class.getMethod("getCapabilityRegistry [GH-90000]");
+                com.ghatana.kernel.plugin.PluginContext.class.getMethod("getCapabilityRegistry");
             assertTrue(method.isAnnotationPresent(Deprecated.class), // GH-90000
                 "PluginContext.getCapabilityRegistry() must be @Deprecated — " + // GH-90000
                 "it exposes an internal sub-registry. Use getCapability() instead."); // GH-90000
@@ -405,11 +405,11 @@ public class KernelPurityValidationTest {
     }
 
     @Test
-    @DisplayName("PluginContext.getServiceRegistry must be @Deprecated(forRemoval=true) [GH-90000]")
+    @DisplayName("PluginContext.getServiceRegistry must be @Deprecated(forRemoval=true)")
     void pluginContextServiceRegistryAccessorMustBeDeprecated() { // GH-90000
         try {
             java.lang.reflect.Method method =
-                com.ghatana.kernel.plugin.PluginContext.class.getMethod("getServiceRegistry [GH-90000]");
+                com.ghatana.kernel.plugin.PluginContext.class.getMethod("getServiceRegistry");
             assertTrue(method.isAnnotationPresent(Deprecated.class), // GH-90000
                 "PluginContext.getServiceRegistry() must be @Deprecated — " + // GH-90000
                 "it exposes an internal sub-registry. Use registerService() instead."); // GH-90000
@@ -424,41 +424,41 @@ public class KernelPurityValidationTest {
     // ==================== Day 10: Legacy Duplicate Deprecation ====================
 
     @Test
-    @DisplayName("CrossProductConfigResolver has been removed [GH-90000]")
+    @DisplayName("CrossProductConfigResolver has been removed")
     void crossProductConfigResolverHasBeenRemoved() { // GH-90000
         assertThrows(ClassNotFoundException.class, () -> // GH-90000
-                Class.forName("com.ghatana.kernel.config.CrossProductConfigResolver [GH-90000]"),
+                Class.forName("com.ghatana.kernel.config.CrossProductConfigResolver"),
             "CrossProductConfigResolver should have been removed — " +
             "use HierarchicalKernelConfigResolver instead.");
     }
 
     @Test
-    @DisplayName("HierarchicalKernelConfigResolver must exist as canonical replacement [GH-90000]")
+    @DisplayName("HierarchicalKernelConfigResolver must exist as canonical replacement")
     void hierarchicalConfigResolverMustExist() { // GH-90000
         try {
-            Class<?> canonical = Class.forName("com.ghatana.kernel.config.HierarchicalKernelConfigResolver [GH-90000]");
+            Class<?> canonical = Class.forName("com.ghatana.kernel.config.HierarchicalKernelConfigResolver");
             assertNotNull(canonical); // GH-90000
             assertFalse(canonical.isAnnotationPresent(Deprecated.class), // GH-90000
                 "HierarchicalKernelConfigResolver is canonical and must NOT be deprecated.");
         } catch (ClassNotFoundException e) { // GH-90000
-            fail("HierarchicalKernelConfigResolver must exist as the canonical config resolver. [GH-90000]");
+            fail("HierarchicalKernelConfigResolver must exist as the canonical config resolver.");
         }
     }
 
     @Test
-    @DisplayName("CrossProductModelRegistry has been removed [GH-90000]")
+    @DisplayName("CrossProductModelRegistry has been removed")
     void crossProductModelRegistryHasBeenRemoved() { // GH-90000
         assertThrows(ClassNotFoundException.class, () -> // GH-90000
-                Class.forName("com.ghatana.kernel.ai.CrossProductModelRegistry [GH-90000]"),
+                Class.forName("com.ghatana.kernel.ai.CrossProductModelRegistry"),
             "CrossProductModelRegistry should have been removed because it violates kernel purity.");
     }
 
     @Test
-    @DisplayName("DataCloudKernelAdapterImpl legacy audit methods must be @Deprecated(forRemoval=true) [GH-90000]")
+    @DisplayName("DataCloudKernelAdapterImpl legacy audit methods must be @Deprecated(forRemoval=true)")
     void adapterLegacyAuditMethodsMustBeDeprecated() { // GH-90000
         Class<?> adapter = com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapterImpl.class;
         Arrays.stream(adapter.getDeclaredMethods()) // GH-90000
-            .filter(m -> m.getName().equals("storeAuditEvent [GH-90000]") || m.getName().equals("queryAuditEvents [GH-90000]"))
+            .filter(m -> m.getName().equals("storeAuditEvent") || m.getName().equals("queryAuditEvents"))
             .forEach(m -> { // GH-90000
                 assertTrue(m.isAnnotationPresent(Deprecated.class), // GH-90000
                     "DataCloudKernelAdapterImpl." + m.getName() + "() must be @Deprecated — " + // GH-90000
@@ -470,11 +470,11 @@ public class KernelPurityValidationTest {
     }
 
     @Test
-    @DisplayName("DataCloudKernelAdapterImpl must have canonical scope-aware audit method [GH-90000]")
+    @DisplayName("DataCloudKernelAdapterImpl must have canonical scope-aware audit method")
     void adapterMustHaveScopeAwareAuditMethod() { // GH-90000
         Class<?> adapter = com.ghatana.kernel.adapter.datacloud.DataCloudKernelAdapterImpl.class;
         boolean hasCanonical = Arrays.stream(adapter.getDeclaredMethods()) // GH-90000
-            .anyMatch(m -> m.getName().equals("storeScopeAuditRecord [GH-90000]"));
+            .anyMatch(m -> m.getName().equals("storeScopeAuditRecord"));
         assertTrue(hasCanonical, // GH-90000
             "DataCloudKernelAdapterImpl must have storeScopeAuditRecord() as canonical replacement."); // GH-90000
     }
@@ -484,7 +484,7 @@ public class KernelPurityValidationTest {
     // ========================================================================
 
     @Test
-    @DisplayName("ContractFamily enum must have exactly 6 families [GH-90000]")
+    @DisplayName("ContractFamily enum must have exactly 6 families")
     void contractFamilyEnumMustHaveSixFamilies() { // GH-90000
         com.ghatana.kernel.contracts.KernelContract.ContractFamily[] families =
             com.ghatana.kernel.contracts.KernelContract.ContractFamily.values(); // GH-90000
@@ -498,7 +498,7 @@ public class KernelPurityValidationTest {
     }
 
     @Test
-    @DisplayName("All 6 contract family classes must exist and extend KernelContract [GH-90000]")
+    @DisplayName("All 6 contract family classes must exist and extend KernelContract")
     void allContractFamilyClassesMustExist() { // GH-90000
         List<String> familyClassNames = List.of( // GH-90000
             "com.ghatana.kernel.contracts.ExperienceContract",
@@ -520,7 +520,7 @@ public class KernelPurityValidationTest {
     }
 
     @Test
-    @DisplayName("KernelContract must enforce contractId regex validation [GH-90000]")
+    @DisplayName("KernelContract must enforce contractId regex validation")
     void kernelContractMustEnforceContractIdRegex() { // GH-90000
         // Valid contract should succeed
         com.ghatana.kernel.contracts.ApiContract valid =
@@ -536,7 +536,7 @@ public class KernelPurityValidationTest {
     }
 
     @Test
-    @DisplayName("KernelContract must enforce semver version validation [GH-90000]")
+    @DisplayName("KernelContract must enforce semver version validation")
     void kernelContractMustEnforceSemverVersion() { // GH-90000
         assertThrows(IllegalArgumentException.class, () -> // GH-90000
             com.ghatana.kernel.contracts.ApiContract.builder("test.api", "Test", "not-semver").build(), // GH-90000
@@ -544,31 +544,31 @@ public class KernelPurityValidationTest {
     }
 
     @Test
-    @DisplayName("ContractRegistry must exist and support register/lookup [GH-90000]")
+    @DisplayName("ContractRegistry must exist and support register/lookup")
     void contractRegistryMustSupportRegisterAndLookup() { // GH-90000
         com.ghatana.kernel.contracts.ContractRegistry registry =
             new com.ghatana.kernel.contracts.ContractRegistry(); // GH-90000
 
         com.ghatana.kernel.contracts.ApiContract api =
             com.ghatana.kernel.contracts.ApiContract.builder("test.api.v1", "Test API", "1.0.0") // GH-90000
-                .basePath("/api/v1 [GH-90000]")
+                .basePath("/api/v1")
                 .build(); // GH-90000
 
         registry.register(api); // GH-90000
         assertEquals(1, registry.size()); // GH-90000
-        assertTrue(registry.getById("test.api.v1 [GH-90000]").isPresent());
+        assertTrue(registry.getById("test.api.v1").isPresent());
         assertEquals(1, registry.getByFamily(com.ghatana.kernel.contracts.KernelContract.ContractFamily.API).size()); // GH-90000
         assertEquals(0, registry.getByFamily(com.ghatana.kernel.contracts.KernelContract.ContractFamily.SCHEMA).size()); // GH-90000
     }
 
     @Test
-    @DisplayName("ContractValidator interface must exist with ValidationResult record [GH-90000]")
+    @DisplayName("ContractValidator interface must exist with ValidationResult record")
     void contractValidatorInterfaceMustExist() { // GH-90000
         try {
-            Class<?> validatorClass = Class.forName("com.ghatana.kernel.contracts.ContractValidator [GH-90000]");
+            Class<?> validatorClass = Class.forName("com.ghatana.kernel.contracts.ContractValidator");
             assertTrue(validatorClass.isInterface(), "ContractValidator must be an interface"); // GH-90000
 
-            Class<?> resultClass = Class.forName("com.ghatana.kernel.contracts.ContractValidator$ValidationResult [GH-90000]");
+            Class<?> resultClass = Class.forName("com.ghatana.kernel.contracts.ContractValidator$ValidationResult");
             assertTrue(resultClass.isRecord(), "ValidationResult must be a record"); // GH-90000
         } catch (ClassNotFoundException e) { // GH-90000
             fail("ContractValidator or ValidationResult missing: " + e.getMessage()); // GH-90000
@@ -576,7 +576,7 @@ public class KernelPurityValidationTest {
     }
 
     @Test
-    @DisplayName("AutonomyContract must reject AUTONOMOUS tier without human review [GH-90000]")
+    @DisplayName("AutonomyContract must reject AUTONOMOUS tier without human review")
     void autonomyContractMustRequireHumanReviewForAutonomous() { // GH-90000
         assertThrows(IllegalArgumentException.class, () -> // GH-90000
             com.ghatana.kernel.contracts.AutonomyContract.builder("agent.test", "Test Agent", "1.0.0") // GH-90000
@@ -590,7 +590,7 @@ public class KernelPurityValidationTest {
     }
 
     @Test
-    @DisplayName("Contract system must be product-agnostic (no product-specific references) [GH-90000]")
+    @DisplayName("Contract system must be product-agnostic (no product-specific references)")
     void contractSystemMustBeProductAgnostic() { // GH-90000
         List<Class<?>> contractClasses = List.of( // GH-90000
             com.ghatana.kernel.contracts.KernelContract.class,
@@ -619,10 +619,10 @@ public class KernelPurityValidationTest {
     // ========================================================================
 
     @Test
-    @DisplayName("SchemaContractBridge interface must exist in contracts.schema package [GH-90000]")
+    @DisplayName("SchemaContractBridge interface must exist in contracts.schema package")
     void schemaContractBridgeMustExist() { // GH-90000
         try {
-            Class<?> bridgeClass = Class.forName("com.ghatana.kernel.contracts.schema.SchemaContractBridge [GH-90000]");
+            Class<?> bridgeClass = Class.forName("com.ghatana.kernel.contracts.schema.SchemaContractBridge");
             assertTrue(bridgeClass.isInterface(), "SchemaContractBridge must be an interface"); // GH-90000
 
             // Must have the 4 canonical bridge methods
@@ -641,10 +641,10 @@ public class KernelPurityValidationTest {
     }
 
     @Test
-    @DisplayName("SchemaGovernanceValidator must exist and implement ContractValidator [GH-90000]")
+    @DisplayName("SchemaGovernanceValidator must exist and implement ContractValidator")
     void schemaGovernanceValidatorMustExist() { // GH-90000
         try {
-            Class<?> validatorClass = Class.forName("com.ghatana.kernel.contracts.schema.SchemaGovernanceValidator [GH-90000]");
+            Class<?> validatorClass = Class.forName("com.ghatana.kernel.contracts.schema.SchemaGovernanceValidator");
             assertTrue(com.ghatana.kernel.contracts.ContractValidator.class.isAssignableFrom(validatorClass), // GH-90000
                 "SchemaGovernanceValidator must implement ContractValidator");
         } catch (ClassNotFoundException e) { // GH-90000
@@ -653,7 +653,7 @@ public class KernelPurityValidationTest {
     }
 
     @Test
-    @DisplayName("SchemaGovernanceValidator must reject empty schema contracts [GH-90000]")
+    @DisplayName("SchemaGovernanceValidator must reject empty schema contracts")
     void schemaGovernanceValidatorRejectsEmptyContracts() { // GH-90000
         com.ghatana.kernel.contracts.schema.SchemaGovernanceValidator validator =
             new com.ghatana.kernel.contracts.schema.SchemaGovernanceValidator(); // GH-90000
@@ -669,7 +669,7 @@ public class KernelPurityValidationTest {
     }
 
     @Test
-    @DisplayName("SchemaGovernanceValidator must pass valid schema contracts [GH-90000]")
+    @DisplayName("SchemaGovernanceValidator must pass valid schema contracts")
     void schemaGovernanceValidatorPassesValidContracts() { // GH-90000
         com.ghatana.kernel.contracts.schema.SchemaGovernanceValidator validator =
             new com.ghatana.kernel.contracts.schema.SchemaGovernanceValidator(); // GH-90000
@@ -694,10 +694,10 @@ public class KernelPurityValidationTest {
     // ========================================================================
 
     @Test
-    @DisplayName("AiAutonomyContractBridge interface must exist in contracts.autonomy package [GH-90000]")
+    @DisplayName("AiAutonomyContractBridge interface must exist in contracts.autonomy package")
     void aiAutonomyContractBridgeMustExist() { // GH-90000
         try {
-            Class<?> bridgeClass = Class.forName("com.ghatana.kernel.contracts.autonomy.AiAutonomyContractBridge [GH-90000]");
+            Class<?> bridgeClass = Class.forName("com.ghatana.kernel.contracts.autonomy.AiAutonomyContractBridge");
             assertTrue(bridgeClass.isInterface(), "AiAutonomyContractBridge must be an interface"); // GH-90000
             Set<String> expectedMethods = Set.of( // GH-90000
                 "exportCurrentState", "validatePromotion", "getRulesForTier");
@@ -714,10 +714,10 @@ public class KernelPurityValidationTest {
     }
 
     @Test
-    @DisplayName("AnalyticsContractBridge interface must exist in contracts.analytics package [GH-90000]")
+    @DisplayName("AnalyticsContractBridge interface must exist in contracts.analytics package")
     void analyticsContractBridgeMustExist() { // GH-90000
         try {
-            Class<?> bridgeClass = Class.forName("com.ghatana.kernel.contracts.analytics.AnalyticsContractBridge [GH-90000]");
+            Class<?> bridgeClass = Class.forName("com.ghatana.kernel.contracts.analytics.AnalyticsContractBridge");
             assertTrue(bridgeClass.isInterface(), "AnalyticsContractBridge must be an interface"); // GH-90000
             Set<String> expectedMethods = Set.of( // GH-90000
                 "exportMetrics", "exportDashboards", "getSubsystemId");
@@ -734,7 +734,7 @@ public class KernelPurityValidationTest {
     }
 
     @Test
-    @DisplayName("AutonomyGovernanceValidator must implement ContractValidator [GH-90000]")
+    @DisplayName("AutonomyGovernanceValidator must implement ContractValidator")
     void autonomyGovernanceValidatorMustExist() { // GH-90000
         try {
             Class<?> validatorClass = Class.forName( // GH-90000
@@ -747,7 +747,7 @@ public class KernelPurityValidationTest {
     }
 
     @Test
-    @DisplayName("AutonomyGovernanceValidator must reject zero-confidence agents [GH-90000]")
+    @DisplayName("AutonomyGovernanceValidator must reject zero-confidence agents")
     void autonomyGovernanceValidatorRejectsZeroConfidence() { // GH-90000
         var validator = new com.ghatana.kernel.contracts.autonomy.AutonomyGovernanceValidator(); // GH-90000
         com.ghatana.kernel.contracts.AutonomyContract contract =

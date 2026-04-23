@@ -41,7 +41,11 @@ import java.util.Set;
  *   String user = JwtServerInterceptor.CTX_SUBJECT.get();
  *   String tenant = JwtServerInterceptor.CTX_TENANT.get();
  * }</pre>
- */
+  * @doc.type interface
+ * @doc.purpose Provides jwt server interceptor functionality.
+ * @doc.layer product
+ * @doc.pattern Filter
+*/
 public class JwtServerInterceptor implements ServerInterceptor {
 
     private static final Logger LOG = LoggerFactory.getLogger(JwtServerInterceptor.class);

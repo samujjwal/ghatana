@@ -6,7 +6,11 @@ import java.time.Instant;
  * Information about a checkpoint.
  *
  * Day 27 Implementation: Metadata for checkpoint tracking and management.
- */
+  * @doc.type class
+ * @doc.purpose Provides checkpoint info functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 public class CheckpointInfo {
 
     private final String checkpointId;

@@ -9,7 +9,11 @@ import io.activej.promise.Promise;
 /**
  * Expert interface for pipeline design assistance.
  * Provides AI-powered recommendations for pipeline construction.
- */
+  * @doc.type interface
+ * @doc.purpose Provides pipeline design assistant functionality.
+ * @doc.layer product
+ * @doc.pattern Interface
+*/
 public interface PipelineDesignAssistant {
 
     /**

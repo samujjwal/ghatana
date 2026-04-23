@@ -65,7 +65,10 @@ import java.util.UUID;
  *     <td>State storage implementation (redis, rocksdb, etc.)</td>
  *   </tr>
  * </table>
- */
+  * @doc.type class
+ * @doc.purpose Provides detection plan functionality.
+ * @doc.layer product
+*/
 public class DetectionPlan {
 
     @JsonProperty("patternId")

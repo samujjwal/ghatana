@@ -27,7 +27,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("AgentMaterializer [GH-90000]")
+@DisplayName("AgentMaterializer")
 class AgentMaterializerTest {
 
     @Mock
@@ -43,7 +43,7 @@ class AgentMaterializerTest {
     private AgentLogicProvider provider;
 
     @Test
-    @DisplayName("constructor rejects null dependencies [GH-90000]")
+    @DisplayName("constructor rejects null dependencies")
     void constructorRejectsNullDependencies() { // GH-90000
         assertThatNullPointerException() // GH-90000
                 .isThrownBy(() -> new AgentMaterializer(null, providerRegistry)); // GH-90000
@@ -52,12 +52,12 @@ class AgentMaterializerTest {
     }
 
     @Test
-    @DisplayName("materialize config uses implementationRef from config [GH-90000]")
+    @DisplayName("materialize config uses implementationRef from config")
     void materializeConfigUsesImplementationRef() { // GH-90000
         AgentConfig config = AgentConfig.builder() // GH-90000
-                .agentId("agent-1 [GH-90000]")
+                .agentId("agent-1")
                 .type(AgentType.DETERMINISTIC) // GH-90000
-                .implementationRef("provider-x:demo [GH-90000]")
+                .implementationRef("provider-x:demo")
                 .build(); // GH-90000
         doReturn(typedAgent).when(providerRegistry).createAgent("provider-x:demo", config); // GH-90000
 
@@ -69,10 +69,10 @@ class AgentMaterializerTest {
     }
 
     @Test
-    @DisplayName("materialize config falls back to properties implementationRef [GH-90000]")
+    @DisplayName("materialize config falls back to properties implementationRef")
     void materializeConfigFallsBackToProperties() { // GH-90000
         AgentConfig config = AgentConfig.builder() // GH-90000
-                .agentId("agent-2 [GH-90000]")
+                .agentId("agent-2")
                 .type(AgentType.DETERMINISTIC) // GH-90000
                 .properties(Map.of("implementationRef", "provider-y:fallback")) // GH-90000
                 .build(); // GH-90000
@@ -86,10 +86,10 @@ class AgentMaterializerTest {
     }
 
     @Test
-    @DisplayName("materialize config fails when implementationRef is missing everywhere [GH-90000]")
+    @DisplayName("materialize config fails when implementationRef is missing everywhere")
     void materializeConfigFailsWhenRefMissing() { // GH-90000
         AgentConfig config = AgentConfig.builder() // GH-90000
-                .agentId("agent-3 [GH-90000]")
+                .agentId("agent-3")
                 .type(AgentType.DETERMINISTIC) // GH-90000
                 .build(); // GH-90000
 
@@ -97,16 +97,16 @@ class AgentMaterializerTest {
 
         assertThatIllegalStateException() // GH-90000
                 .isThrownBy(() -> materializer.materialize(config)) // GH-90000
-                .withMessageContaining("has no implementationRef [GH-90000]");
+                .withMessageContaining("has no implementationRef");
     }
 
     @Test
-    @DisplayName("explicit ref materialization bypasses config implementationRef [GH-90000]")
+    @DisplayName("explicit ref materialization bypasses config implementationRef")
     void explicitRefBypassesConfigRef() { // GH-90000
         AgentConfig config = AgentConfig.builder() // GH-90000
-                .agentId("agent-4 [GH-90000]")
+                .agentId("agent-4")
                 .type(AgentType.DETERMINISTIC) // GH-90000
-                .implementationRef("ignored:old [GH-90000]")
+                .implementationRef("ignored:old")
                 .build(); // GH-90000
         doReturn(typedAgent).when(providerRegistry).createAgent("provider-z:explicit", config); // GH-90000
 
@@ -119,10 +119,10 @@ class AgentMaterializerTest {
     }
 
     @Test
-    @DisplayName("explicit ref materialization rejects null ref [GH-90000]")
+    @DisplayName("explicit ref materialization rejects null ref")
     void explicitRefRejectsNull() { // GH-90000
         AgentConfig config = AgentConfig.builder() // GH-90000
-                .agentId("agent-5 [GH-90000]")
+                .agentId("agent-5")
                 .type(AgentType.DETERMINISTIC) // GH-90000
                 .build(); // GH-90000
 
@@ -133,15 +133,15 @@ class AgentMaterializerTest {
     }
 
     @Test
-    @DisplayName("canMaterialize delegates to provider registry [GH-90000]")
+    @DisplayName("canMaterialize delegates to provider registry")
     void canMaterializeDelegatesToRegistry() { // GH-90000
-        when(providerRegistry.resolve("provider-a:agent [GH-90000]")).thenReturn(Optional.of(provider));
-        when(providerRegistry.resolve("missing:agent [GH-90000]")).thenReturn(Optional.empty());
+        when(providerRegistry.resolve("provider-a:agent")).thenReturn(Optional.of(provider));
+        when(providerRegistry.resolve("missing:agent")).thenReturn(Optional.empty());
 
         AgentMaterializer materializer = new AgentMaterializer(configMaterializer, providerRegistry); // GH-90000
 
-        assertThat(materializer.canMaterialize("provider-a:agent [GH-90000]")).isTrue();
-        assertThat(materializer.canMaterialize("missing:agent [GH-90000]")).isFalse();
+        assertThat(materializer.canMaterialize("provider-a:agent")).isTrue();
+        assertThat(materializer.canMaterialize("missing:agent")).isFalse();
         assertThat(materializer.getProviderRegistry()).isSameAs(providerRegistry); // GH-90000
     }
 }

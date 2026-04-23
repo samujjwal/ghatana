@@ -18,8 +18,8 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("OptimizedFieldMaskerTest [GH-90000]")
-@Tag("governance [GH-90000]")
+@DisplayName("OptimizedFieldMaskerTest")
+@Tag("governance")
 class OptimizedFieldMaskerTest {
 
     private OptimizedFieldMasker masker;
@@ -43,41 +43,41 @@ class OptimizedFieldMaskerTest {
     // ── Basic masking functionality ─────────────────────────────────────────────
 
     @Test
-    @DisplayName("SSN is fully masked using optimized pattern [GH-90000]")
+    @DisplayName("SSN is fully masked using optimized pattern")
     void ssnIsFullyMasked() { // GH-90000
         String masked = masker.mask("ssn", "123-45-6789"); // GH-90000
-        assertThat(masked).doesNotContain("123 [GH-90000]");
+        assertThat(masked).doesNotContain("123");
         assertThat(masked).isNotBlank(); // GH-90000
     }
 
     @Test
-    @DisplayName("password is redacted with placeholder [GH-90000]")
+    @DisplayName("password is redacted with placeholder")
     void passwordIsRedacted() { // GH-90000
         String masked = masker.mask("password", "SuperSecret1!"); // GH-90000
-        assertThat(masked).isEqualTo("[REDACTED] [GH-90000]");
-        assertThat(masked).doesNotContain("Secret [GH-90000]");
+        assertThat(masked).isEqualTo("[REDACTED]");
+        assertThat(masked).doesNotContain("Secret");
     }
 
     @Test
-    @DisplayName("email is partially masked but domain is preserved [GH-90000]")
+    @DisplayName("email is partially masked but domain is preserved")
     void emailIsPartiallyMasked() { // GH-90000
         String masked = masker.mask("email", "user@example.com"); // GH-90000
-        assertThat(masked).contains("@example.com [GH-90000]");
-        assertThat(masked).doesNotStartWith("user [GH-90000]");
+        assertThat(masked).contains("@example.com");
+        assertThat(masked).doesNotStartWith("user");
     }
 
     @Test
-    @DisplayName("credit card shows only last 4 digits [GH-90000]")
+    @DisplayName("credit card shows only last 4 digits")
     void creditCardShowsLastFourDigits() { // GH-90000
         String masked = masker.mask("creditCard", "1234 5678 9012 3456"); // GH-90000
-        assertThat(masked).endsWith("3456 [GH-90000]");
-        assertThat(masked).doesNotContain("1234 [GH-90000]");
+        assertThat(masked).endsWith("3456");
+        assertThat(masked).doesNotContain("1234");
     }
 
     // ── Caching functionality ───────────────────────────────────────────────────
 
     @Test
-    @DisplayName("caching returns same result for repeated masking [GH-90000]")
+    @DisplayName("caching returns same result for repeated masking")
     void cachingReturnsSameResult() { // GH-90000
         String first = masker.mask("email", "test@example.com"); // GH-90000
         String second = masker.mask("email", "test@example.com"); // GH-90000
@@ -86,7 +86,7 @@ class OptimizedFieldMaskerTest {
     }
 
     @Test
-    @DisplayName("cache statistics report correct values [GH-90000]")
+    @DisplayName("cache statistics report correct values")
     void cacheStatsAreCorrect() { // GH-90000
         masker.mask("email", "user1@example.com"); // GH-90000
         masker.mask("email", "user2@example.com"); // GH-90000
@@ -99,7 +99,7 @@ class OptimizedFieldMaskerTest {
     }
 
     @Test
-    @DisplayName("clearCache removes all cached entries [GH-90000]")
+    @DisplayName("clearCache removes all cached entries")
     void clearCacheRemovesEntries() { // GH-90000
         masker.mask("email", "test@example.com"); // GH-90000
         assertThat(masker.getCacheSize()).isGreaterThan(0); // GH-90000
@@ -109,7 +109,7 @@ class OptimizedFieldMaskerTest {
     }
 
     @Test
-    @DisplayName("cache respects max size limit [GH-90000]")
+    @DisplayName("cache respects max size limit")
     void cacheRespectsMaxSize() { // GH-90000
         OptimizedFieldMasker smallCacheMasker = new OptimizedFieldMasker(policy, 5, false); // GH-90000
         for (int i = 0; i < 10; i++) { // GH-90000
@@ -121,7 +121,7 @@ class OptimizedFieldMaskerTest {
     // ── Parallel batch processing ───────────────────────────────────────────────
 
     @Test
-    @DisplayName("batch masking processes all fields [GH-90000]")
+    @DisplayName("batch masking processes all fields")
     void batchMaskingProcessesAllFields() { // GH-90000
         Map<String, String> record = new LinkedHashMap<>(); // GH-90000
         record.put("email", "person@example.com"); // GH-90000
@@ -130,13 +130,13 @@ class OptimizedFieldMaskerTest {
 
         Map<String, String> masked = masker.maskRecord(record); // GH-90000
 
-        assertThat(masked.get("email [GH-90000]")).doesNotStartWith("person [GH-90000]");
-        assertThat(masked.get("password [GH-90000]")).isEqualTo("[REDACTED] [GH-90000]");
-        assertThat(masked.get("username [GH-90000]")).isEqualTo("jdoe [GH-90000]");
+        assertThat(masked.get("email")).doesNotStartWith("person");
+        assertThat(masked.get("password")).isEqualTo("[REDACTED]");
+        assertThat(masked.get("username")).isEqualTo("jdoe");
     }
 
     @Test
-    @DisplayName("large batch uses parallel processing [GH-90000]")
+    @DisplayName("large batch uses parallel processing")
     void largeBatchUsesParallel() { // GH-90000
         Map<String, String> largeRecord = new LinkedHashMap<>(); // GH-90000
         for (int i = 0; i < 20; i++) { // GH-90000
@@ -145,11 +145,11 @@ class OptimizedFieldMaskerTest {
 
         Map<String, String> masked = masker.maskRecord(largeRecord); // GH-90000
         assertThat(masked).hasSize(20); // GH-90000
-        assertThat(masked.get("email0 [GH-90000]")).doesNotStartWith("user0 [GH-90000]");
+        assertThat(masked.get("email0")).doesNotStartWith("user0");
     }
 
     @Test
-    @DisplayName("small batch uses sequential processing [GH-90000]")
+    @DisplayName("small batch uses sequential processing")
     void smallBatchUsesSequential() { // GH-90000
         Map<String, String> smallRecord = new LinkedHashMap<>(); // GH-90000
         smallRecord.put("email", "test@example.com"); // GH-90000
@@ -160,7 +160,7 @@ class OptimizedFieldMaskerTest {
     }
 
     @Test
-    @DisplayName("batch masking with parallel disabled uses sequential [GH-90000]")
+    @DisplayName("batch masking with parallel disabled uses sequential")
     void batchWithParallelDisabled() { // GH-90000
         OptimizedFieldMasker sequentialMasker = new OptimizedFieldMasker(policy, 100, false); // GH-90000
         Map<String, String> record = new LinkedHashMap<>(); // GH-90000
@@ -174,28 +174,28 @@ class OptimizedFieldMaskerTest {
     // ── Edge cases ─────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("null value returns safe placeholder [GH-90000]")
+    @DisplayName("null value returns safe placeholder")
     void nullValueReturnsPlaceholder() { // GH-90000
         String masked = masker.mask("email", null); // GH-90000
-        assertThat(masked).isEqualTo("[NULL] [GH-90000]");
+        assertThat(masked).isEqualTo("[NULL]");
     }
 
     @Test
-    @DisplayName("empty string returns empty placeholder [GH-90000]")
+    @DisplayName("empty string returns empty placeholder")
     void emptyStringReturnsPlaceholder() { // GH-90000
         String masked = masker.mask("email", ""); // GH-90000
-        assertThat(masked).isEqualTo("[EMPTY] [GH-90000]");
+        assertThat(masked).isEqualTo("[EMPTY]");
     }
 
     @Test
-    @DisplayName("unregistered field is returned as-is [GH-90000]")
+    @DisplayName("unregistered field is returned as-is")
     void unregisteredFieldReturnedAsIs() { // GH-90000
         String masked = masker.mask("username", "john_doe"); // GH-90000
-        assertThat(masked).isEqualTo("john_doe [GH-90000]");
+        assertThat(masked).isEqualTo("john_doe");
     }
 
     @Test
-    @DisplayName("empty record returns empty map [GH-90000]")
+    @DisplayName("empty record returns empty map")
     void emptyRecordReturnsEmpty() { // GH-90000
         assertThat(masker.maskRecord(Map.of())).isEmpty(); // GH-90000
     }
@@ -203,7 +203,7 @@ class OptimizedFieldMaskerTest {
     // ── Performance characteristics ─────────────────────────────────────────────
 
     @Test
-    @DisplayName("cached operations are faster than uncached [GH-90000]")
+    @DisplayName("cached operations are faster than uncached")
     void cachedOperationsAreFaster() { // GH-90000
         // Warm up cache
         masker.mask("email", "test@example.com"); // GH-90000

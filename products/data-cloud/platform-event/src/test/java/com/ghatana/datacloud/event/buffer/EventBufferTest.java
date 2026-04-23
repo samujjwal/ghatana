@@ -30,7 +30,7 @@ import static org.mockito.Mockito.when;
 /**
  * Tests for {@link EventBuffer}.
  */
-@DisplayName("EventBuffer [GH-90000]")
+@DisplayName("EventBuffer")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class EventBufferTest extends EventloopTestBase {
 
@@ -66,27 +66,27 @@ class EventBufferTest extends EventloopTestBase {
         for (int i = 0; i < 10; i++) { // GH-90000
             buffer.offer(testEntry("evt." + i)); // GH-90000
         }
-        assertThat(buffer.offer(testEntry("evt.overflow [GH-90000]"))).isFalse();
+        assertThat(buffer.offer(testEntry("evt.overflow"))).isFalse();
         assertThat(buffer.size()).isEqualTo(10); // GH-90000
     }
 
     @Test
     void shouldDrainInOrder() { // GH-90000
-        buffer.offer(testEntry("first [GH-90000]"));
-        buffer.offer(testEntry("second [GH-90000]"));
-        buffer.offer(testEntry("third [GH-90000]"));
+        buffer.offer(testEntry("first"));
+        buffer.offer(testEntry("second"));
+        buffer.offer(testEntry("third"));
 
         List<EventEntry> drained = buffer.drain(2); // GH-90000
 
         assertThat(drained).hasSize(2); // GH-90000
-        assertThat(drained.get(0).eventType()).isEqualTo("first [GH-90000]");
-        assertThat(drained.get(1).eventType()).isEqualTo("second [GH-90000]");
+        assertThat(drained.get(0).eventType()).isEqualTo("first");
+        assertThat(drained.get(1).eventType()).isEqualTo("second");
         assertThat(buffer.size()).isEqualTo(1); // GH-90000
     }
 
     @Test
     void shouldDrainLessThanRequested() { // GH-90000
-        buffer.offer(testEntry("only-one [GH-90000]"));
+        buffer.offer(testEntry("only-one"));
 
         List<EventEntry> drained = buffer.drain(5); // GH-90000
 
@@ -113,9 +113,9 @@ class EventBufferTest extends EventloopTestBase {
     @Test
     void shouldReportLowWaterMark() { // GH-90000
         assertThat(buffer.isBelowLowWaterMark()).isTrue(); // GH-90000
-        buffer.offer(testEntry("one [GH-90000]"));
+        buffer.offer(testEntry("one"));
         assertThat(buffer.isBelowLowWaterMark()).isTrue(); // GH-90000
-        buffer.offer(testEntry("two [GH-90000]"));
+        buffer.offer(testEntry("two"));
         assertThat(buffer.isBelowLowWaterMark()).isFalse(); // GH-90000
     }
 
@@ -128,7 +128,7 @@ class EventBufferTest extends EventloopTestBase {
         when(spillStore.appendBatch(any(TenantContext.class), any())) // GH-90000
             .thenReturn(Promise.of(List.of(Offset.of(1L), Offset.of(2L)))); // GH-90000
 
-        Integer spilled = runPromise(() -> buffer.spillExcess("tenant-1 [GH-90000]"));
+        Integer spilled = runPromise(() -> buffer.spillExcess("tenant-1"));
 
         assertThat(spilled).isEqualTo(2); // GH-90000
         assertThat(buffer.size()).isEqualTo(8); // GH-90000
@@ -136,26 +136,26 @@ class EventBufferTest extends EventloopTestBase {
 
     @Test
     void shouldNotSpillWhenBelowHighWaterMark() { // GH-90000
-        buffer.offer(testEntry("evt.1 [GH-90000]"));
+        buffer.offer(testEntry("evt.1"));
 
-        Integer spilled = runPromise(() -> buffer.spillExcess("tenant-1 [GH-90000]"));
+        Integer spilled = runPromise(() -> buffer.spillExcess("tenant-1"));
 
         assertThat(spilled).isZero(); // GH-90000
     }
 
     @Test
     void shouldTrackStats() { // GH-90000
-        buffer.offer(testEntry("evt.1 [GH-90000]"));
-        buffer.offer(testEntry("evt.2 [GH-90000]"));
+        buffer.offer(testEntry("evt.1"));
+        buffer.offer(testEntry("evt.2"));
         buffer.drain(1); // GH-90000
 
         Map<String, Object> stats = buffer.stats(); // GH-90000
 
-        assertThat(stats.get("bufferName [GH-90000]")).isEqualTo("test-buffer [GH-90000]");
-        assertThat(stats.get("size [GH-90000]")).isEqualTo(1);
-        assertThat(stats.get("capacity [GH-90000]")).isEqualTo(10);
-        assertThat(stats.get("totalEnqueued [GH-90000]")).isEqualTo(2L);
-        assertThat(stats.get("totalDrained [GH-90000]")).isEqualTo(1L);
+        assertThat(stats.get("bufferName")).isEqualTo("test-buffer");
+        assertThat(stats.get("size")).isEqualTo(1);
+        assertThat(stats.get("capacity")).isEqualTo(10);
+        assertThat(stats.get("totalEnqueued")).isEqualTo(2L);
+        assertThat(stats.get("totalDrained")).isEqualTo(1L);
     }
 
     @Test
@@ -168,14 +168,14 @@ class EventBufferTest extends EventloopTestBase {
     void shouldRejectInvalidConstructorParams() { // GH-90000
         assertThatThrownBy(() -> new EventBuffer(spillStore, "bad", 0, 0, 0)) // GH-90000
             .isInstanceOf(IllegalArgumentException.class) // GH-90000
-            .hasMessageContaining("capacity [GH-90000]");
+            .hasMessageContaining("capacity");
 
         assertThatThrownBy(() -> new EventBuffer(spillStore, "bad", 10, 15, 2)) // GH-90000
             .isInstanceOf(IllegalArgumentException.class) // GH-90000
-            .hasMessageContaining("highWaterMark [GH-90000]");
+            .hasMessageContaining("highWaterMark");
 
         assertThatThrownBy(() -> new EventBuffer(spillStore, "bad", 10, 8, 9)) // GH-90000
             .isInstanceOf(IllegalArgumentException.class) // GH-90000
-            .hasMessageContaining("lowWaterMark [GH-90000]");
+            .hasMessageContaining("lowWaterMark");
     }
 }

@@ -26,11 +26,11 @@ class ShapeServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should create shape from specification [GH-90000]")
+    @DisplayName("Should create shape from specification")
     void testCreateShape() throws Exception { // GH-90000
         ShapeSpec spec = ShapeSpec.builder() // GH-90000
-                .name("UserDTO [GH-90000]")
-                .type("DTO [GH-90000]")
+                .name("UserDTO")
+                .type("DTO")
                 .properties(Map.of("id", "Long", "email", "String", "active", "Boolean")) // GH-90000
                 .build(); // GH-90000
 
@@ -38,17 +38,17 @@ class ShapeServiceTest extends EventloopTestBase {
         Shape shape = runPromise(() -> promise); // GH-90000
 
         assertThat(shape).isNotNull(); // GH-90000
-        assertThat(shape.name()).isEqualTo("UserDTO [GH-90000]");
-        assertThat(shape.type()).isEqualTo("DTO [GH-90000]");
+        assertThat(shape.name()).isEqualTo("UserDTO");
+        assertThat(shape.type()).isEqualTo("DTO");
         assertThat(shape.properties()).hasSize(3); // GH-90000
     }
 
     @Test
-    @DisplayName("Should validate shape properties [GH-90000]")
+    @DisplayName("Should validate shape properties")
     void testValidateShape() throws Exception { // GH-90000
         Shape shape = Shape.builder() // GH-90000
-                .name("OrderDTO [GH-90000]")
-                .type("DTO [GH-90000]")
+                .name("OrderDTO")
+                .type("DTO")
                 .properties(Map.of("id", "Long", "total", "BigDecimal")) // GH-90000
                 .build(); // GH-90000
 
@@ -60,11 +60,11 @@ class ShapeServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should reject shape with reserved keywords [GH-90000]")
+    @DisplayName("Should reject shape with reserved keywords")
     void testRejectReservedKeywords() throws Exception { // GH-90000
         Shape shape = Shape.builder() // GH-90000
-                .name("Class [GH-90000]") // Reserved keyword
-                .type("DTO [GH-90000]")
+                .name("Class") // Reserved keyword
+                .type("DTO")
                 .properties(Map.of("id", "Long")) // GH-90000
                 .build(); // GH-90000
 
@@ -72,15 +72,15 @@ class ShapeServiceTest extends EventloopTestBase {
         ValidationResult result = runPromise(() -> promise); // GH-90000
 
         assertThat(result.valid()).isFalse(); // GH-90000
-        assertThat(result.errors()).contains("Shape name 'Class' is a reserved keyword [GH-90000]");
+        assertThat(result.errors()).contains("Shape name 'Class' is a reserved keyword");
     }
 
     @Test
-    @DisplayName("Should generate TypeScript interface from shape [GH-90000]")
+    @DisplayName("Should generate TypeScript interface from shape")
     void testGenerateTypescript() throws Exception { // GH-90000
         Shape shape = Shape.builder() // GH-90000
-                .name("ProductDTO [GH-90000]")
-                .type("DTO [GH-90000]")
+                .name("ProductDTO")
+                .type("DTO")
                 .properties(Map.of( // GH-90000
                     "sku", "String",
                     "price", "BigDecimal",
@@ -91,18 +91,18 @@ class ShapeServiceTest extends EventloopTestBase {
         Promise<String> promise = shapeService.generateTypescript(shape); // GH-90000
         String typescript = runPromise(() -> promise); // GH-90000
 
-        assertThat(typescript).contains("interface ProductDTO [GH-90000]");
-        assertThat(typescript).contains("sku: string [GH-90000]");
-        assertThat(typescript).contains("price: number [GH-90000]");
-        assertThat(typescript).contains("inStock: boolean [GH-90000]");
+        assertThat(typescript).contains("interface ProductDTO");
+        assertThat(typescript).contains("sku: string");
+        assertThat(typescript).contains("price: number");
+        assertThat(typescript).contains("inStock: boolean");
     }
 
     @Test
-    @DisplayName("Should generate Java class from shape [GH-90000]")
+    @DisplayName("Should generate Java class from shape")
     void testGenerateJava() throws Exception { // GH-90000
         Shape shape = Shape.builder() // GH-90000
-                .name("CustomerDTO [GH-90000]")
-                .type("DTO [GH-90000]")
+                .name("CustomerDTO")
+                .type("DTO")
                 .properties(Map.of( // GH-90000
                     "id", "Long",
                     "email", "String",
@@ -113,18 +113,18 @@ class ShapeServiceTest extends EventloopTestBase {
         Promise<String> promise = shapeService.generateJava(shape); // GH-90000
         String java = runPromise(() -> promise); // GH-90000
 
-        assertThat(java).contains("public class CustomerDTO [GH-90000]");
-        assertThat(java).contains("private Long id [GH-90000]");
-        assertThat(java).contains("private String email [GH-90000]");
-        assertThat(java).contains("private Integer loyaltyPoints [GH-90000]");
+        assertThat(java).contains("public class CustomerDTO");
+        assertThat(java).contains("private Long id");
+        assertThat(java).contains("private String email");
+        assertThat(java).contains("private Integer loyaltyPoints");
     }
 
     @Test
-    @DisplayName("Should convert shape to JSON Schema [GH-90000]")
+    @DisplayName("Should convert shape to JSON Schema")
     void testGenerateJsonSchema() throws Exception { // GH-90000
         Shape shape = Shape.builder() // GH-90000
-                .name("AddressDTO [GH-90000]")
-                .type("DTO [GH-90000]")
+                .name("AddressDTO")
+                .type("DTO")
                 .properties(Map.of( // GH-90000
                     "street", "String",
                     "city", "String",
@@ -140,34 +140,34 @@ class ShapeServiceTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should transform shape to different type [GH-90000]")
+    @DisplayName("Should transform shape to different type")
     void testTransformShape() throws Exception { // GH-90000
         Shape source = Shape.builder() // GH-90000
-                .name("UserInput [GH-90000]")
-                .type("Input [GH-90000]")
+                .name("UserInput")
+                .type("Input")
                 .properties(Map.of("name", "String", "email", "String")) // GH-90000
                 .build(); // GH-90000
 
         Promise<Shape> promise = shapeService.transformTo(source, "Entity"); // GH-90000
         Shape transformed = runPromise(() -> promise); // GH-90000
 
-        assertThat(transformed.name()).isEqualTo("UserInput [GH-90000]");
-        assertThat(transformed.type()).isEqualTo("Entity [GH-90000]");
+        assertThat(transformed.name()).isEqualTo("UserInput");
+        assertThat(transformed.type()).isEqualTo("Entity");
         assertThat(transformed.properties()).hasSize(2); // GH-90000
     }
 
     @Test
-    @DisplayName("Should detect shape conflicts [GH-90000]")
+    @DisplayName("Should detect shape conflicts")
     void testDetectConflicts() throws Exception { // GH-90000
         Shape shape1 = Shape.builder() // GH-90000
-                .name("OrderSummary [GH-90000]")
-                .type("DTO [GH-90000]")
+                .name("OrderSummary")
+                .type("DTO")
                 .properties(Map.of("orderId", "Long")) // GH-90000
                 .build(); // GH-90000
 
         Shape shape2 = Shape.builder() // GH-90000
-                .name("OrderSummary [GH-90000]")
-                .type("DTO [GH-90000]")
+                .name("OrderSummary")
+                .type("DTO")
                 .properties(Map.of("orderId", "String")) // Different type // GH-90000
                 .build(); // GH-90000
 
@@ -175,38 +175,38 @@ class ShapeServiceTest extends EventloopTestBase {
         ConflictResult conflicts = runPromise(() -> promise); // GH-90000
 
         assertThat(conflicts.hasConflicts()).isTrue(); // GH-90000
-        assertThat(conflicts.conflicts()).contains("Property 'orderId' type mismatch: Long vs String [GH-90000]");
+        assertThat(conflicts.conflicts()).contains("Property 'orderId' type mismatch: Long vs String");
     }
 
     @Test
-    @DisplayName("Should merge compatible shapes [GH-90000]")
+    @DisplayName("Should merge compatible shapes")
     void testMergeShapes() throws Exception { // GH-90000
         Shape base = Shape.builder() // GH-90000
-                .name("UserBase [GH-90000]")
-                .type("DTO [GH-90000]")
+                .name("UserBase")
+                .type("DTO")
                 .properties(Map.of("id", "Long", "name", "String")) // GH-90000
                 .build(); // GH-90000
 
         Shape extension = Shape.builder() // GH-90000
-                .name("UserExtended [GH-90000]")
-                .type("DTO [GH-90000]")
+                .name("UserExtended")
+                .type("DTO")
                 .properties(Map.of("email", "String", "phone", "String")) // GH-90000
                 .build(); // GH-90000
 
         Promise<Shape> promise = shapeService.mergeShapes(base, extension, "UserComplete"); // GH-90000
         Shape merged = runPromise(() -> promise); // GH-90000
 
-        assertThat(merged.name()).isEqualTo("UserComplete [GH-90000]");
+        assertThat(merged.name()).isEqualTo("UserComplete");
         assertThat(merged.properties()).hasSize(4); // GH-90000
         assertThat(merged.properties()).containsKeys("id", "name", "email", "phone"); // GH-90000
     }
 
     @Test
-    @DisplayName("Should validate property names [GH-90000]")
+    @DisplayName("Should validate property names")
     void testValidatePropertyNames() throws Exception { // GH-90000
         Shape shape = Shape.builder() // GH-90000
-                .name("TestDTO [GH-90000]")
-                .type("DTO [GH-90000]")
+                .name("TestDTO")
+                .type("DTO")
                 .properties(Map.of( // GH-90000
                     "validName", "String",
                     "123invalid", "String", // Invalid: starts with number
@@ -218,7 +218,7 @@ class ShapeServiceTest extends EventloopTestBase {
         ValidationResult result = runPromise(() -> promise); // GH-90000
 
         assertThat(result.valid()).isFalse(); // GH-90000
-        assertThat(result.errors()).anyMatch(e -> e.contains("123invalid [GH-90000]"));
+        assertThat(result.errors()).anyMatch(e -> e.contains("123invalid"));
     }
 
     // Mock implementations
@@ -291,7 +291,7 @@ class ShapeServiceTest extends EventloopTestBase {
 
                 for (String propName : shape.properties().keySet()) { // GH-90000
                     if (propName.isEmpty()) { // GH-90000
-                        errors.add("Property name cannot be empty [GH-90000]");
+                        errors.add("Property name cannot be empty");
                     } else if (Character.isDigit(propName.charAt(0))) { // GH-90000
                         errors.add("Property name '" + propName + "' cannot start with a digit"); // GH-90000
                     }
@@ -305,13 +305,13 @@ class ShapeServiceTest extends EventloopTestBase {
         public Promise<String> generateTypescript(Shape shape) { // GH-90000
             return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
                 StringBuilder ts = new StringBuilder(); // GH-90000
-                ts.append("interface  [GH-90000]").append(shape.name()).append(" {\n [GH-90000]");
+                ts.append("interface ").append(shape.name()).append(" {\n");
 
                 shape.properties().forEach((name, type) -> { // GH-90000
-                    ts.append("   [GH-90000]").append(name).append(":  [GH-90000]").append(mapToTypescript(type)).append(";\n [GH-90000]");
+                    ts.append("  ").append(name).append(": ").append(mapToTypescript(type)).append(";\n");
                 });
 
-                ts.append("} [GH-90000]");
+                ts.append("}");
                 return ts.toString(); // GH-90000
             });
         }
@@ -320,13 +320,13 @@ class ShapeServiceTest extends EventloopTestBase {
         public Promise<String> generateJava(Shape shape) { // GH-90000
             return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
                 StringBuilder java = new StringBuilder(); // GH-90000
-                java.append("public class  [GH-90000]").append(shape.name()).append(" {\n [GH-90000]");
+                java.append("public class ").append(shape.name()).append(" {\n");
 
                 shape.properties().forEach((name, type) -> { // GH-90000
-                    java.append("  private  [GH-90000]").append(type).append("  [GH-90000]").append(name).append(";\n [GH-90000]");
+                    java.append("  private ").append(type).append(" ").append(name).append(";\n");
                 });
 
-                java.append("} [GH-90000]");
+                java.append("}");
                 return java.toString(); // GH-90000
             });
         }
@@ -335,7 +335,7 @@ class ShapeServiceTest extends EventloopTestBase {
         public Promise<String> generateJsonSchema(Shape shape) { // GH-90000
             return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
                 StringBuilder schema = new StringBuilder(); // GH-90000
-                schema.append("{\n [GH-90000]");
+                schema.append("{\n");
                 schema.append("  \"type\": \"object\",\n"); // GH-90000
                 schema.append("  \"properties\": {\n"); // GH-90000
 
@@ -343,8 +343,8 @@ class ShapeServiceTest extends EventloopTestBase {
                     schema.append("    \"").append(name).append("\": {\"type\": \"").append(mapToJsonType(type)).append("\"},\n"); // GH-90000
                 });
 
-                schema.append("  }\n [GH-90000]");
-                schema.append("} [GH-90000]");
+                schema.append("  }\n");
+                schema.append("}");
                 return schema.toString(); // GH-90000
             });
         }

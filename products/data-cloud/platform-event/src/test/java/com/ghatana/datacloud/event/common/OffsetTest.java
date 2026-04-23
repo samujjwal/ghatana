@@ -14,11 +14,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * Tests for {@link Offset}.
  */
-@DisplayName("Offset [GH-90000]")
+@DisplayName("Offset")
 class OffsetTest {
 
     @Nested
-    @DisplayName("factory method of() [GH-90000]")
+    @DisplayName("factory method of()")
     class FactoryOf {
 
         @Test
@@ -46,12 +46,12 @@ class OffsetTest {
         void rejectsValueBelowMinusTwoViaConstructor() { // GH-90000
             assertThatThrownBy(() -> new Offset(-3)) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("-3 [GH-90000]");
+                    .hasMessageContaining("-3");
         }
     }
 
     @Nested
-    @DisplayName("constants [GH-90000]")
+    @DisplayName("constants")
     class Constants {
 
         @Test
@@ -71,7 +71,7 @@ class OffsetTest {
     }
 
     @Nested
-    @DisplayName("next() [GH-90000]")
+    @DisplayName("next()")
     class Next {
 
         @Test
@@ -89,19 +89,19 @@ class OffsetTest {
         void throwsOnLatest() { // GH-90000
             assertThatThrownBy(Offset.LATEST::next) // GH-90000
                     .isInstanceOf(IllegalStateException.class) // GH-90000
-                    .hasMessageContaining("special [GH-90000]");
+                    .hasMessageContaining("special");
         }
 
         @Test
         void throwsOnEarliest() { // GH-90000
             assertThatThrownBy(Offset.EARLIEST::next) // GH-90000
                     .isInstanceOf(IllegalStateException.class) // GH-90000
-                    .hasMessageContaining("special [GH-90000]");
+                    .hasMessageContaining("special");
         }
     }
 
     @Nested
-    @DisplayName("isFirst() [GH-90000]")
+    @DisplayName("isFirst()")
     class IsFirst {
 
         @Test
@@ -116,7 +116,7 @@ class OffsetTest {
     }
 
     @Nested
-    @DisplayName("isSpecial() [GH-90000]")
+    @DisplayName("isSpecial()")
     class IsSpecial {
 
         @Test
@@ -141,7 +141,7 @@ class OffsetTest {
     }
 
     @Nested
-    @DisplayName("isBefore() / isAfter() [GH-90000]")
+    @DisplayName("isBefore() / isAfter()")
     class Comparison {
 
         @Test
@@ -197,32 +197,32 @@ class OffsetTest {
     }
 
     @Nested
-    @DisplayName("toString() [GH-90000]")
+    @DisplayName("toString()")
     class ToStringTest {
 
         @Test
         void latestRepresentation() { // GH-90000
-            assertThat(Offset.LATEST.toString()).isEqualTo("Offset[LATEST] [GH-90000]");
+            assertThat(Offset.LATEST.toString()).isEqualTo("Offset[LATEST]");
         }
 
         @Test
         void earliestRepresentation() { // GH-90000
-            assertThat(Offset.EARLIEST.toString()).isEqualTo("Offset[EARLIEST] [GH-90000]");
+            assertThat(Offset.EARLIEST.toString()).isEqualTo("Offset[EARLIEST]");
         }
 
         @Test
         void normalOffsetRepresentation() { // GH-90000
-            assertThat(Offset.of(99).toString()).isEqualTo("Offset[99] [GH-90000]");
+            assertThat(Offset.of(99).toString()).isEqualTo("Offset[99]");
         }
 
         @Test
         void firstRepresentation() { // GH-90000
-            assertThat(Offset.FIRST.toString()).isEqualTo("Offset[0] [GH-90000]");
+            assertThat(Offset.FIRST.toString()).isEqualTo("Offset[0]");
         }
     }
 
     @Test
-    @DisplayName("record equality [GH-90000]")
+    @DisplayName("record equality")
     void recordEquality() { // GH-90000
         assertThat(Offset.of(5)).isEqualTo(new Offset(5)); // GH-90000
         assertThat(Offset.of(5)).isNotEqualTo(Offset.of(6)); // GH-90000

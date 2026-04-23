@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Kernel Security Integration Tests [GH-90000]")
+@DisplayName("Kernel Security Integration Tests")
 class KernelSecurityIntegrationTest extends EventloopTestBase {
 
     private KernelRegistryImpl registry;
@@ -38,7 +38,7 @@ class KernelSecurityIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should authenticate user with valid credentials [GH-90000]")
+    @DisplayName("Should authenticate user with valid credentials")
     void testUserAuthentication() { // GH-90000
         // GIVEN: Valid user credentials
         String username = "test-user";
@@ -55,7 +55,7 @@ class KernelSecurityIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should reject invalid credentials [GH-90000]")
+    @DisplayName("Should reject invalid credentials")
     void testInvalidCredentials() { // GH-90000
         // GIVEN: Invalid credentials
         String username = "test-user";
@@ -71,7 +71,7 @@ class KernelSecurityIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should authorize user with required permissions [GH-90000]")
+    @DisplayName("Should authorize user with required permissions")
     void testUserAuthorization() { // GH-90000
         // GIVEN: Authenticated user with permissions
         String userId = "test-user";
@@ -96,7 +96,7 @@ class KernelSecurityIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should enforce role-based access control [GH-90000]")
+    @DisplayName("Should enforce role-based access control")
     void testRoleBasedAccessControl() { // GH-90000
         // GIVEN: User with admin role
         String userId = "admin-user";
@@ -113,7 +113,7 @@ class KernelSecurityIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should validate security tokens [GH-90000]")
+    @DisplayName("Should validate security tokens")
     void testSecurityTokenValidation() { // GH-90000
         // GIVEN: Generated security token
         String userId = "test-user";
@@ -132,10 +132,10 @@ class KernelSecurityIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should reject expired tokens [GH-90000]")
+    @DisplayName("Should reject expired tokens")
     void testExpiredTokenRejection() { // GH-90000
         // GIVEN: Expired token
-        String expiredToken = securityManager.generateExpiredToken("test-user [GH-90000]");
+        String expiredToken = securityManager.generateExpiredToken("test-user");
 
         // WHEN: Validate expired token
         TokenValidationResult validation = runPromise(() -> // GH-90000
@@ -144,14 +144,14 @@ class KernelSecurityIntegrationTest extends EventloopTestBase {
 
         // THEN: Token is invalid
         assertThat(validation.isValid()).isFalse(); // GH-90000
-        assertThat(validation.getReason()).contains("expired [GH-90000]");
+        assertThat(validation.getReason()).contains("expired");
     }
 
     @Test
-    @DisplayName("Should enforce security policies across modules [GH-90000]")
+    @DisplayName("Should enforce security policies across modules")
     void testCrossModuleSecurityPolicies() { // GH-90000
         // GIVEN: Security policy for module access
-        SecurityPolicy policy = new SecurityPolicy("module-access-policy [GH-90000]");
+        SecurityPolicy policy = new SecurityPolicy("module-access-policy");
         policy.addRule("module:finance", "role:finance-user"); // GH-90000
         policy.addRule("module:phr", "role:healthcare-user"); // GH-90000
 
@@ -181,7 +181,7 @@ class KernelSecurityIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should audit security events [GH-90000]")
+    @DisplayName("Should audit security events")
     void testSecurityAuditLogging() { // GH-90000
         // GIVEN: Security manager with audit logging
         String userId = "test-user";
@@ -193,12 +193,12 @@ class KernelSecurityIntegrationTest extends EventloopTestBase {
         // THEN: Security events are audited
         assertThat(securityManager.getAuditLog()).isNotEmpty(); // GH-90000
         assertThat(securityManager.getAuditLog()) // GH-90000
-            .anyMatch(event -> event.contains("authentication [GH-90000]"))
-            .anyMatch(event -> event.contains("authorization [GH-90000]"));
+            .anyMatch(event -> event.contains("authentication"))
+            .anyMatch(event -> event.contains("authorization"));
     }
 
     @Test
-    @DisplayName("Should handle concurrent authentication requests [GH-90000]")
+    @DisplayName("Should handle concurrent authentication requests")
     void testConcurrentAuthentication() throws Exception { // GH-90000
         // GIVEN: Multiple concurrent authentication requests
         int requestCount = 50;
@@ -241,16 +241,16 @@ class KernelSecurityIntegrationTest extends EventloopTestBase {
         private final java.util.Map<String, String> tokenUsers = new java.util.HashMap<>(); // GH-90000
 
         TestSecurityManager() { // GH-90000
-            validUsers.add("test-user [GH-90000]");
-            validUsers.add("admin-user [GH-90000]");
-            validUsers.add("finance-user [GH-90000]");
-            validUsers.add("phr-user [GH-90000]");
+            validUsers.add("test-user");
+            validUsers.add("admin-user");
+            validUsers.add("finance-user");
+            validUsers.add("phr-user");
         }
 
         Promise<AuthenticationResult> authenticate(String username, String password) { // GH-90000
             auditLog.add("authentication:" + username); // GH-90000
 
-            if ((validUsers.contains(username) || username.startsWith("user- [GH-90000]"))
+            if ((validUsers.contains(username) || username.startsWith("user-"))
                 && ("password".equals(password) || "secure-password".equals(password))) { // GH-90000
                 return Promise.of(new AuthenticationResult(true, username)); // GH-90000
             }
@@ -325,7 +325,7 @@ class KernelSecurityIntegrationTest extends EventloopTestBase {
                 String requiredRole = policy.getRequiredRole(resource); // GH-90000
                 if (requiredRole != null) { // GH-90000
                     Set<String> roles = userRoles.getOrDefault(userId, Set.of()); // GH-90000
-                    String normalizedRole = requiredRole.startsWith("role: [GH-90000]")
+                    String normalizedRole = requiredRole.startsWith("role:")
                         ? requiredRole.substring("role:".length()) // GH-90000
                         : requiredRole;
                     return Promise.of(roles.contains(normalizedRole)); // GH-90000

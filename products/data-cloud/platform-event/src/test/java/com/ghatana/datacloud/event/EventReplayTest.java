@@ -33,7 +33,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("EventReplay – From Offset (D007) [GH-90000]")
+@DisplayName("EventReplay – From Offset (D007)")
 class EventReplayTest extends EventloopTestBase {
 
     @Mock
@@ -59,11 +59,11 @@ class EventReplayTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Replay from Offset [GH-90000]")
+    @DisplayName("Replay from Offset")
     class ReplayFromOffsetTests {
 
         @Test
-        @DisplayName("[D007]: replay_from_offset_replays_subsequent_events [GH-90000]")
+        @DisplayName("[D007]: replay_from_offset_replays_subsequent_events")
         void replayFromOffsetReplaysSubsequentEvents() { // GH-90000
             String consumerId = "consumer-001";
             long fromOffset = 100;
@@ -87,7 +87,7 @@ class EventReplayTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D007]: replay_from_zero_replays_all_events [GH-90000]")
+        @DisplayName("[D007]: replay_from_zero_replays_all_events")
         void replayFromZeroReplaysAllEvents() { // GH-90000
             String consumerId = "consumer-001";
 
@@ -108,7 +108,7 @@ class EventReplayTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D007]: replay_from_latest_offset_returns_empty [GH-90000]")
+        @DisplayName("[D007]: replay_from_latest_offset_returns_empty")
         void replayFromLatestOffsetReturnsEmpty() { // GH-90000
             String consumerId = "consumer-001";
             long latestOffset = 1000;
@@ -129,7 +129,7 @@ class EventReplayTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D007]: replay_respects_max_events_limit [GH-90000]")
+        @DisplayName("[D007]: replay_respects_max_events_limit")
         void replayRespectsMaxEventsLimit() { // GH-90000
             String consumerId = "consumer-001";
             long maxEvents = 100;
@@ -155,11 +155,11 @@ class EventReplayTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Replay from Checkpoint [GH-90000]")
+    @DisplayName("Replay from Checkpoint")
     class ReplayFromCheckpointTests {
 
         @Test
-        @DisplayName("[D007]: replay_from_checkpoint_reads_stored_offset [GH-90000]")
+        @DisplayName("[D007]: replay_from_checkpoint_reads_stored_offset")
         void replayFromCheckpointReadsStoredOffset() { // GH-90000
             String consumerId = "consumer-001";
             long checkpointOffset = 500;
@@ -183,7 +183,7 @@ class EventReplayTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D007]: replay_from_checkpoint_starts_from_zero_if_no_checkpoint [GH-90000]")
+        @DisplayName("[D007]: replay_from_checkpoint_starts_from_zero_if_no_checkpoint")
         void replayFromCheckpointStartsFromZeroIfNoCheckpoint() { // GH-90000
             String consumerId = "consumer-001";
 
@@ -211,11 +211,11 @@ class EventReplayTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Time Range Replay [GH-90000]")
+    @DisplayName("Time Range Replay")
     class TimeRangeReplayTests {
 
         @Test
-        @DisplayName("[D007]: replay_for_time_range_filters_by_timestamp [GH-90000]")
+        @DisplayName("[D007]: replay_for_time_range_filters_by_timestamp")
         void replayForTimeRangeFiltersByTimestamp() { // GH-90000
             long startTime = 1704067200000L; // 2024-01-01
             long endTime = 1706745600000L;   // 2024-02-01
@@ -241,11 +241,11 @@ class EventReplayTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Tenant-specific Replay [GH-90000]")
+    @DisplayName("Tenant-specific Replay")
     class TenantSpecificReplayTests {
 
         @Test
-        @DisplayName("[D007]: replay_for_tenant_filters_events [GH-90000]")
+        @DisplayName("[D007]: replay_for_tenant_filters_events")
         void replayForTenantFiltersEvents() { // GH-90000
             String tenantId = "tenant-alpha";
             long fromOffset = 0;
@@ -271,11 +271,11 @@ class EventReplayTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Replay Control [GH-90000]")
+    @DisplayName("Replay Control")
     class ReplayControlTests {
 
         @Test
-        @DisplayName("[D007]: pause_replay_stops_processing [GH-90000]")
+        @DisplayName("[D007]: pause_replay_stops_processing")
         void pauseReplayStopsProcessing() { // GH-90000
             String consumerId = "consumer-001";
 
@@ -297,7 +297,7 @@ class EventReplayTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D007]: resume_replay_continues_processing [GH-90000]")
+        @DisplayName("[D007]: resume_replay_continues_processing")
         void resumeReplayContinuesProcessing() { // GH-90000
             String consumerId = "consumer-001";
 
@@ -319,7 +319,7 @@ class EventReplayTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D007]: cancel_replay_stops_and_clears [GH-90000]")
+        @DisplayName("[D007]: cancel_replay_stops_and_clears")
         void cancelReplayStopsAndClears() { // GH-90000
             String consumerId = "consumer-001";
 
@@ -346,11 +346,11 @@ class EventReplayTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Replay Progress [GH-90000]")
+    @DisplayName("Replay Progress")
     class ReplayProgressTests {
 
         @Test
-        @DisplayName("[D007]: replay_status_shows_progress_percentage [GH-90000]")
+        @DisplayName("[D007]: replay_status_shows_progress_percentage")
         void replayStatusShowsProgressPercentage() { // GH-90000
             String consumerId = "consumer-001";
 
@@ -371,7 +371,7 @@ class EventReplayTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D007]: progress_calculated_correctly [GH-90000]")
+        @DisplayName("[D007]: progress_calculated_correctly")
         void progressCalculatedCorrectly() { // GH-90000
             EventReplayService.ReplayStatus status = new EventReplayService.ReplayStatus( // GH-90000
                 "test", EventReplayService.ReplayState.RUNNING,
@@ -385,7 +385,7 @@ class EventReplayTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D007]: elapsed_time_tracked [GH-90000]")
+        @DisplayName("[D007]: elapsed_time_tracked")
         void elapsedTimeTracked() { // GH-90000
             Duration elapsed = Duration.ofSeconds(15); // GH-90000
 
@@ -399,7 +399,7 @@ class EventReplayTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D007]: estimated_remaining_time_calculated [GH-90000]")
+        @DisplayName("[D007]: estimated_remaining_time_calculated")
         void estimatedRemainingTimeCalculated() { // GH-90000
             Duration remaining = Duration.ofSeconds(10); // GH-90000
 
@@ -418,11 +418,11 @@ class EventReplayTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Replay Success Rate [GH-90000]")
+    @DisplayName("Replay Success Rate")
     class ReplaySuccessRateTests {
 
         @Test
-        @DisplayName("[D007]: perfect_replay_has_100_percent_success [GH-90000]")
+        @DisplayName("[D007]: perfect_replay_has_100_percent_success")
         void perfectReplayHas100PercentSuccess() { // GH-90000
             EventReplayService.ReplayResult result = new EventReplayService.ReplayResult( // GH-90000
                 "test", 0, 100, 100, 100, 0,
@@ -434,7 +434,7 @@ class EventReplayTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D007]: partial_failure_reduces_success_rate [GH-90000]")
+        @DisplayName("[D007]: partial_failure_reduces_success_rate")
         void partialFailureReducesSuccessRate() { // GH-90000
             EventReplayService.ReplayResult result = new EventReplayService.ReplayResult( // GH-90000
                 "test", 0, 100, 100, 90, 10,
@@ -446,7 +446,7 @@ class EventReplayTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("[D007]: all_failed_has_zero_success_rate [GH-90000]")
+        @DisplayName("[D007]: all_failed_has_zero_success_rate")
         void allFailedHasZeroSuccessRate() { // GH-90000
             EventReplayService.ReplayResult result = new EventReplayService.ReplayResult( // GH-90000
                 "test", 0, 100, 100, 0, 100,
@@ -463,11 +463,11 @@ class EventReplayTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Replayed Event [GH-90000]")
+    @DisplayName("Replayed Event")
     class ReplayedEventTests {
 
         @Test
-        @DisplayName("[D007]: replayed_event_contains_original_data [GH-90000]")
+        @DisplayName("[D007]: replayed_event_contains_original_data")
         void replayedEventContainsOriginalData() { // GH-90000
             EventReplayService.ReplayedEvent event = new EventReplayService.ReplayedEvent( // GH-90000
                 "evt-001", "test.event", "tenant-alpha",
@@ -476,14 +476,14 @@ class EventReplayTest extends EventloopTestBase {
                 1
             );
 
-            assertThat(event.id()).isEqualTo("evt-001 [GH-90000]");
-            assertThat(event.type()).isEqualTo("test.event [GH-90000]");
-            assertThat(event.tenantId()).isEqualTo("tenant-alpha [GH-90000]");
+            assertThat(event.id()).isEqualTo("evt-001");
+            assertThat(event.type()).isEqualTo("test.event");
+            assertThat(event.tenantId()).isEqualTo("tenant-alpha");
             assertThat(event.offset()).isEqualTo(42); // GH-90000
         }
 
         @Test
-        @DisplayName("[D007]: first_replay_identified_by_count [GH-90000]")
+        @DisplayName("[D007]: first_replay_identified_by_count")
         void firstReplayIdentifiedByCount() { // GH-90000
             EventReplayService.ReplayedEvent first = new EventReplayService.ReplayedEvent( // GH-90000
                 "evt-001", "test.event", "tenant-alpha",

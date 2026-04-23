@@ -40,7 +40,11 @@ import io.micrometer.core.instrument.MeterRegistry;
  * @see AgentStreamOperatorAdapter
  * @see VirtualOrgAgent
  * @see OperatorId
- */
+  * @doc.type class
+ * @doc.purpose Provides agent stream operator adapter factory functionality.
+ * @doc.layer product
+ * @doc.pattern Factory
+*/
 public class AgentStreamOperatorAdapterFactory {
 
     private static final String NAMESPACE = "virtualorg";

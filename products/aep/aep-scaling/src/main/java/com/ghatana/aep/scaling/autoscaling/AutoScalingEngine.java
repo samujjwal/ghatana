@@ -17,7 +17,11 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Auto-scaling engine that evaluates cluster metrics and makes scaling decisions.
- */
+  * @doc.type class
+ * @doc.purpose Provides auto scaling engine functionality.
+ * @doc.layer product
+ * @doc.pattern Component
+*/
 @Slf4j
 public class AutoScalingEngine {
 

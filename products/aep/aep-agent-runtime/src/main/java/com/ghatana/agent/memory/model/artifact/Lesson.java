@@ -16,7 +16,8 @@ import java.util.Map;
  * @doc.type value-object
  * @doc.purpose Lesson artifact for memory
  * @doc.layer agent-memory
- */
+  * @doc.pattern Component
+*/
 @Value
 @Builder
 public class Lesson implements TypedArtifact {

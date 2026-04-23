@@ -26,13 +26,13 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("InMemoryPatternRepository [GH-90000]")
+@DisplayName("InMemoryPatternRepository")
 class InMemoryPatternRepositoryTest extends EventloopTestBase {
 
     private InMemoryPatternRepository repository;
 
-    private static final TenantId TENANT_A = TenantId.of("tenant-alpha [GH-90000]");
-    private static final TenantId TENANT_B = TenantId.of("tenant-beta [GH-90000]");
+    private static final TenantId TENANT_A = TenantId.of("tenant-alpha");
+    private static final TenantId TENANT_B = TenantId.of("tenant-beta");
 
     @BeforeEach
     void setUp() { // GH-90000
@@ -44,11 +44,11 @@ class InMemoryPatternRepositoryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("save and find by id [GH-90000]")
+    @DisplayName("save and find by id")
     class SaveAndFind {
 
         @Test
-        @DisplayName("saved pattern can be found by id and tenant [GH-90000]")
+        @DisplayName("saved pattern can be found by id and tenant")
         void savedPatternIsFound() { // GH-90000
             Pattern pattern = buildPattern(TENANT_A, "fraud_pattern", "SEQ(A,B)", "DRAFT"); // GH-90000
 
@@ -58,11 +58,11 @@ class InMemoryPatternRepositoryTest extends EventloopTestBase {
                     repository.findByIdAndTenant(pattern.getId(), TENANT_A)); // GH-90000
 
             assertThat(result).isPresent(); // GH-90000
-            assertThat(result.get().getName()).isEqualTo("fraud_pattern [GH-90000]");
+            assertThat(result.get().getName()).isEqualTo("fraud_pattern");
         }
 
         @Test
-        @DisplayName("findByIdAndTenant returns empty for wrong tenant [GH-90000]")
+        @DisplayName("findByIdAndTenant returns empty for wrong tenant")
         void wrongTenantReturnsEmpty() { // GH-90000
             Pattern pattern = buildPattern(TENANT_A, "tenant_a_pattern", "SEQ(A)", "DRAFT"); // GH-90000
             runPromise(() -> repository.save(pattern)); // GH-90000
@@ -74,7 +74,7 @@ class InMemoryPatternRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("findByIdAndTenant returns empty for unknown id [GH-90000]")
+        @DisplayName("findByIdAndTenant returns empty for unknown id")
         void unknownIdReturnsEmpty() { // GH-90000
             Optional<Pattern> result = runPromise(() -> // GH-90000
                     repository.findByIdAndTenant("no-such-id", TENANT_A)); // GH-90000
@@ -83,14 +83,14 @@ class InMemoryPatternRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("save returns the saved pattern [GH-90000]")
+        @DisplayName("save returns the saved pattern")
         void saveReturnsSavedPattern() { // GH-90000
             Pattern pattern = buildPattern(TENANT_A, "my_pattern", "SEQ(X)", "DRAFT"); // GH-90000
 
             Pattern returned = runPromise(() -> repository.save(pattern)); // GH-90000
 
             assertThat(returned.getId()).isEqualTo(pattern.getId()); // GH-90000
-            assertThat(returned.getName()).isEqualTo("my_pattern [GH-90000]");
+            assertThat(returned.getName()).isEqualTo("my_pattern");
         }
     }
 
@@ -99,11 +99,11 @@ class InMemoryPatternRepositoryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("update [GH-90000]")
+    @DisplayName("update")
     class Update {
 
         @Test
-        @DisplayName("update replaces existing entry [GH-90000]")
+        @DisplayName("update replaces existing entry")
         void updateReplacesEntry() { // GH-90000
             Pattern original = buildPattern(TENANT_A, "original_name", "SEQ(A)", "DRAFT"); // GH-90000
             runPromise(() -> repository.save(original)); // GH-90000
@@ -111,9 +111,9 @@ class InMemoryPatternRepositoryTest extends EventloopTestBase {
             Pattern updated = Pattern.builder() // GH-90000
                     .id(original.getId()) // GH-90000
                     .tenantId(TENANT_A) // GH-90000
-                    .name("updated_name [GH-90000]")
-                    .specification("SEQ(A,B) [GH-90000]")
-                    .status("COMPILED [GH-90000]")
+                    .name("updated_name")
+                    .specification("SEQ(A,B)")
+                    .status("COMPILED")
                     .build(); // GH-90000
 
             runPromise(() -> repository.update(updated)); // GH-90000
@@ -122,12 +122,12 @@ class InMemoryPatternRepositoryTest extends EventloopTestBase {
                     repository.findByIdAndTenant(original.getId(), TENANT_A)); // GH-90000
 
             assertThat(found).isPresent(); // GH-90000
-            assertThat(found.get().getName()).isEqualTo("updated_name [GH-90000]");
-            assertThat(found.get().getStatus()).isEqualTo("COMPILED [GH-90000]");
+            assertThat(found.get().getName()).isEqualTo("updated_name");
+            assertThat(found.get().getStatus()).isEqualTo("COMPILED");
         }
 
         @Test
-        @DisplayName("update changes the status index [GH-90000]")
+        @DisplayName("update changes the status index")
         void updateChangesStatusIndex() { // GH-90000
             Pattern pattern = buildPattern(TENANT_A, "p", "SEQ(A)", "DRAFT"); // GH-90000
             runPromise(() -> repository.save(pattern)); // GH-90000
@@ -142,7 +142,7 @@ class InMemoryPatternRepositoryTest extends EventloopTestBase {
                     .tenantId(TENANT_A) // GH-90000
                     .name(pattern.getName()) // GH-90000
                     .specification(pattern.getSpecification()) // GH-90000
-                    .status("COMPILED [GH-90000]")
+                    .status("COMPILED")
                     .build(); // GH-90000
             runPromise(() -> repository.update(compiled)); // GH-90000
 
@@ -155,7 +155,7 @@ class InMemoryPatternRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("update returns the updated pattern [GH-90000]")
+        @DisplayName("update returns the updated pattern")
         void updateReturnUpdatedPattern() { // GH-90000
             Pattern pattern = buildPattern(TENANT_A, "p", "SEQ(A)", "DRAFT"); // GH-90000
             runPromise(() -> repository.save(pattern)); // GH-90000
@@ -163,14 +163,14 @@ class InMemoryPatternRepositoryTest extends EventloopTestBase {
             Pattern changed = Pattern.builder() // GH-90000
                     .id(pattern.getId()) // GH-90000
                     .tenantId(TENANT_A) // GH-90000
-                    .name("changed [GH-90000]")
-                    .specification("SEQ(A,B,C) [GH-90000]")
-                    .status("DRAFT [GH-90000]")
+                    .name("changed")
+                    .specification("SEQ(A,B,C)")
+                    .status("DRAFT")
                     .build(); // GH-90000
 
             Pattern returned = runPromise(() -> repository.update(changed)); // GH-90000
 
-            assertThat(returned.getName()).isEqualTo("changed [GH-90000]");
+            assertThat(returned.getName()).isEqualTo("changed");
         }
     }
 
@@ -179,11 +179,11 @@ class InMemoryPatternRepositoryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("findByTenant [GH-90000]")
+    @DisplayName("findByTenant")
     class FindByTenant {
 
         @Test
-        @DisplayName("null status returns all patterns for tenant [GH-90000]")
+        @DisplayName("null status returns all patterns for tenant")
         void nullStatusReturnsAll() { // GH-90000
             runPromise(() -> repository.save(buildPattern(TENANT_A, "d1", "SEQ(A)", "DRAFT"))); // GH-90000
             runPromise(() -> repository.save(buildPattern(TENANT_A, "c1", "SEQ(B)", "COMPILED"))); // GH-90000
@@ -195,7 +195,7 @@ class InMemoryPatternRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("status filter narrows results [GH-90000]")
+        @DisplayName("status filter narrows results")
         void statusFilterNarrows() { // GH-90000
             runPromise(() -> repository.save(buildPattern(TENANT_A, "d1", "SEQ(A)", "DRAFT"))); // GH-90000
             runPromise(() -> repository.save(buildPattern(TENANT_A, "d2", "SEQ(B)", "DRAFT"))); // GH-90000
@@ -208,7 +208,7 @@ class InMemoryPatternRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("returns empty for unknown status [GH-90000]")
+        @DisplayName("returns empty for unknown status")
         void emptyForUnknownStatus() { // GH-90000
             runPromise(() -> repository.save(buildPattern(TENANT_A, "p", "SEQ(A)", "DRAFT"))); // GH-90000
 
@@ -218,7 +218,7 @@ class InMemoryPatternRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("tenant isolation: does not return other tenants patterns [GH-90000]")
+        @DisplayName("tenant isolation: does not return other tenants patterns")
         void tenantIsolation() { // GH-90000
             runPromise(() -> repository.save(buildPattern(TENANT_B, "b_pattern", "SEQ(B)", "ACTIVE"))); // GH-90000
 
@@ -233,11 +233,11 @@ class InMemoryPatternRepositoryTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("delete [GH-90000]")
+    @DisplayName("delete")
     class Delete {
 
         @Test
-        @DisplayName("deleted pattern is no longer findable [GH-90000]")
+        @DisplayName("deleted pattern is no longer findable")
         void deletedPatternIsGone() { // GH-90000
             Pattern pattern = buildPattern(TENANT_A, "to_delete", "SEQ(X)", "DRAFT"); // GH-90000
             runPromise(() -> repository.save(pattern)); // GH-90000
@@ -251,7 +251,7 @@ class InMemoryPatternRepositoryTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("delete removes pattern from find results [GH-90000]")
+        @DisplayName("delete removes pattern from find results")
         void deletedPatternNotInList() { // GH-90000
             Pattern p1 = buildPattern(TENANT_A, "keep", "SEQ(A)", "DRAFT"); // GH-90000
             Pattern p2 = buildPattern(TENANT_A, "remove", "SEQ(B)", "DRAFT"); // GH-90000
@@ -263,14 +263,14 @@ class InMemoryPatternRepositoryTest extends EventloopTestBase {
             List<Pattern> remaining = runPromise(() -> repository.findByTenant(TENANT_A, null)); // GH-90000
 
             assertThat(remaining).hasSize(1); // GH-90000
-            assertThat(remaining.get(0).getName()).isEqualTo("keep [GH-90000]");
+            assertThat(remaining.get(0).getName()).isEqualTo("keep");
         }
 
         @Test
-        @DisplayName("delete unknown id is no-op [GH-90000]")
+        @DisplayName("delete unknown id is no-op")
         void deleteUnknownIdIsNoOp() { // GH-90000
             // Must not throw
-            runPromise(() -> repository.delete("ghost-id [GH-90000]"));
+            runPromise(() -> repository.delete("ghost-id"));
         }
     }
 

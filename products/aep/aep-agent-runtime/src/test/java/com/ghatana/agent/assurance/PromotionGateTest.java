@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.*;
  * Tests for WP7: Assurance and release governance — PromotionGate,
  * EvaluationResult, EvaluationPackRef.
  */
-@DisplayName("Assurance & Promotion (WP7) [GH-90000]")
+@DisplayName("Assurance & Promotion (WP7)")
 class PromotionGateTest {
 
     // =========================================================================
@@ -27,18 +27,18 @@ class PromotionGateTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("EvaluationResult [GH-90000]")
+    @DisplayName("EvaluationResult")
     class EvaluationResultTests {
 
         @Test
-        @DisplayName("should construct with all fields [GH-90000]")
+        @DisplayName("should construct with all fields")
         void shouldConstructWithAllFields() { // GH-90000
             EvaluationResult result = new EvaluationResult( // GH-90000
                     "run-1", "eval.safety.v1", "2.1.0",
                     0.95, 100, 95, 5,
                     true,
                     Map.of("accuracy", 0.96, "latency", 0.90), // GH-90000
-                    List.of("scenario-42: timeout [GH-90000]"),
+                    List.of("scenario-42: timeout"),
                     Instant.now(), 12345L); // GH-90000
 
             assertThat(result.passRate()).isEqualTo(0.95); // GH-90000
@@ -48,7 +48,7 @@ class PromotionGateTest {
         }
 
         @Test
-        @DisplayName("collections should default to empty when null [GH-90000]")
+        @DisplayName("collections should default to empty when null")
         void collectionsShouldDefaultToEmpty() { // GH-90000
             EvaluationResult result = new EvaluationResult( // GH-90000
                     "run-1", "eval.v1", "1.0",
@@ -66,11 +66,11 @@ class PromotionGateTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("EvaluationPackRef [GH-90000]")
+    @DisplayName("EvaluationPackRef")
     class EvaluationPackRefTests {
 
         @Test
-        @DisplayName("should construct with required fields [GH-90000]")
+        @DisplayName("should construct with required fields")
         void shouldConstructWithRequiredFields() { // GH-90000
             EvaluationPackRef ref = new EvaluationPackRef( // GH-90000
                     "eval.procurement.regression.v1",
@@ -82,14 +82,14 @@ class PromotionGateTest {
                     0.90,
                     Instant.now()); // GH-90000
 
-            assertThat(ref.packId()).isEqualTo("eval.procurement.regression.v1 [GH-90000]");
+            assertThat(ref.packId()).isEqualTo("eval.procurement.regression.v1");
             assertThat(ref.requiredPassRate()).isEqualTo(0.90); // GH-90000
             assertThat(ref.categories()).hasSize(2); // GH-90000
             assertThat(ref.scenarioCount()).isEqualTo(50); // GH-90000
         }
 
         @Test
-        @DisplayName("should reject invalid pass rate [GH-90000]")
+        @DisplayName("should reject invalid pass rate")
         void shouldRejectInvalidPassRate() { // GH-90000
             assertThatThrownBy(() -> new EvaluationPackRef( // GH-90000
                     "eval.v1", "1.0", "agent-1", "1.0",
@@ -103,11 +103,11 @@ class PromotionGateTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("PromotionGate evaluation [GH-90000]")
+    @DisplayName("PromotionGate evaluation")
     class PromotionGateEvaluationTests {
 
         @Test
-        @DisplayName("should approve when all required packs pass above threshold [GH-90000]")
+        @DisplayName("should approve when all required packs pass above threshold")
         void shouldApproveWhenAllPacksPass() { // GH-90000
             PromotionGate gate = new PromotionGate( // GH-90000
                     "gate-prod", "production",
@@ -125,11 +125,11 @@ class PromotionGateTest {
             PromotionGate.PromotionDecision decision = gate.evaluate(results); // GH-90000
 
             assertThat(decision.approved()).isTrue(); // GH-90000
-            assertThat(decision.reason()).contains("All checks passed [GH-90000]");
+            assertThat(decision.reason()).contains("All checks passed");
         }
 
         @Test
-        @DisplayName("should reject when required pack is missing [GH-90000]")
+        @DisplayName("should reject when required pack is missing")
         void shouldRejectWhenPackMissing() { // GH-90000
             PromotionGate gate = new PromotionGate( // GH-90000
                     "gate-prod", "production",
@@ -145,15 +145,15 @@ class PromotionGateTest {
             PromotionGate.PromotionDecision decision = gate.evaluate(results); // GH-90000
 
             assertThat(decision.approved()).isFalse(); // GH-90000
-            assertThat(decision.reason()).contains("Missing required evaluation pack [GH-90000]");
+            assertThat(decision.reason()).contains("Missing required evaluation pack");
         }
 
         @Test
-        @DisplayName("should reject when pass rate is below threshold [GH-90000]")
+        @DisplayName("should reject when pass rate is below threshold")
         void shouldRejectWhenPassRateBelowThreshold() { // GH-90000
             PromotionGate gate = new PromotionGate( // GH-90000
                     "gate-prod", "production",
-                    List.of("eval.safety.v1 [GH-90000]"),
+                    List.of("eval.safety.v1"),
                     0.90, false, Duration.ofHours(24), 5.0); // GH-90000
 
             List<EvaluationResult> results = List.of( // GH-90000
@@ -164,15 +164,15 @@ class PromotionGateTest {
             PromotionGate.PromotionDecision decision = gate.evaluate(results); // GH-90000
 
             assertThat(decision.approved()).isFalse(); // GH-90000
-            assertThat(decision.reason()).contains("pass rate [GH-90000]");
+            assertThat(decision.reason()).contains("pass rate");
         }
 
         @Test
-        @DisplayName("should block when human signoff is required [GH-90000]")
+        @DisplayName("should block when human signoff is required")
         void shouldBlockWhenHumanSignoffRequired() { // GH-90000
             PromotionGate gate = new PromotionGate( // GH-90000
                     "gate-prod", "production",
-                    List.of("eval.safety.v1 [GH-90000]"),
+                    List.of("eval.safety.v1"),
                     0.90, true, // requiresHumanSignoff
                     Duration.ofHours(24), 5.0); // GH-90000
 
@@ -184,21 +184,21 @@ class PromotionGateTest {
             PromotionGate.PromotionDecision decision = gate.evaluate(results); // GH-90000
 
             assertThat(decision.approved()).isFalse(); // GH-90000
-            assertThat(decision.reason()).contains("human sign-off [GH-90000]");
+            assertThat(decision.reason()).contains("human sign-off");
         }
 
         @Test
-        @DisplayName("should reject invalid minimumPassRate out of range [GH-90000]")
+        @DisplayName("should reject invalid minimumPassRate out of range")
         void shouldRejectInvalidPassRate() { // GH-90000
             assertThatThrownBy(() -> new PromotionGate( // GH-90000
                     "gate-1", "staging", List.of(), 1.5, false, // GH-90000
                     Duration.ofHours(1), 5.0)) // GH-90000
                     .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                    .hasMessageContaining("minimumPassRate [GH-90000]");
+                    .hasMessageContaining("minimumPassRate");
         }
 
         @Test
-        @DisplayName("should approve with empty required pack list [GH-90000]")
+        @DisplayName("should approve with empty required pack list")
         void shouldApproveWithEmptyRequiredPacks() { // GH-90000
             PromotionGate gate = new PromotionGate( // GH-90000
                     "gate-dev", "development",

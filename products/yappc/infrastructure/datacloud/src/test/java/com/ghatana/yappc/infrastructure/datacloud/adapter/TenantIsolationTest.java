@@ -52,7 +52,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer infrastructure
  * @doc.pattern Test
  */
-@DisplayName("TenantIsolationTest — YappcDataCloudRepository (4.4.3) [GH-90000]")
+@DisplayName("TenantIsolationTest — YappcDataCloudRepository (4.4.3)")
 class TenantIsolationTest extends EventloopTestBase {
 
     private static final String TENANT_ALPHA = "tenant-alpha";
@@ -84,11 +84,11 @@ class TenantIsolationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Cross-Tenant Isolation [GH-90000]")
+    @DisplayName("Cross-Tenant Isolation")
     class CrossTenantIsolation {
 
         @Test
-        @DisplayName("findAll under tenant-B returns empty when tenant-A owns the data [GH-90000]")
+        @DisplayName("findAll under tenant-B returns empty when tenant-A owns the data")
         void shouldReturnEmptyForDifferentTenant() { // GH-90000
             // GIVEN — tenant-A saves an entity
             UUID entityId = UUID.randomUUID(); // GH-90000
@@ -115,12 +115,12 @@ class TenantIsolationTest extends EventloopTestBase {
             verify(client).query( // GH-90000
                     tenantCaptor.capture(), anyString(), any(DataCloudClient.Query.class)); // GH-90000
             assertThat(tenantCaptor.getValue()) // GH-90000
-                    .as("findAll must scope to the active tenant, not the writer's tenant [GH-90000]")
+                    .as("findAll must scope to the active tenant, not the writer's tenant")
                     .isEqualTo(TENANT_BETA); // GH-90000
         }
 
         @Test
-        @DisplayName("findAll under same tenant returns the saved entity [GH-90000]")
+        @DisplayName("findAll under same tenant returns the saved entity")
         void shouldReturnEntityForSameTenant() { // GH-90000
             // GIVEN — tenant-A saves and then queries under the same context
             UUID entityId = UUID.randomUUID(); // GH-90000
@@ -145,11 +145,11 @@ class TenantIsolationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("explicit blank tenant triggers SecurityException from resolveTenantId [GH-90000]")
+        @DisplayName("explicit blank tenant triggers SecurityException from resolveTenantId")
         void shouldThrowSecurityExceptionForBlankTenant() { // GH-90000
             // GIVEN — a blank tenant ID is explicitly set (simulates misconfigured filter) // GH-90000
-            TenantContext.setCurrentTenantId("    [GH-90000]");
-            runBlocking(() -> TenantContext.setCurrentTenantId("    [GH-90000]"));
+            TenantContext.setCurrentTenantId("   ");
+            runBlocking(() -> TenantContext.setCurrentTenantId("   "));
 
             // WHEN / THEN — any repository operation throws SecurityException before hitting the DB
             assertThat(runPromiseThrowing(() -> repository.findAll())) // GH-90000
@@ -165,11 +165,11 @@ class TenantIsolationTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Tenant ID Propagation [GH-90000]")
+    @DisplayName("Tenant ID Propagation")
     class TenantIdPropagation {
 
         @Test
-        @DisplayName("save propagates TenantContext tenant ID to EntityRepository [GH-90000]")
+        @DisplayName("save propagates TenantContext tenant ID to EntityRepository")
         void savePropagatesTenantId() { // GH-90000
             // GIVEN
             UUID entityId = UUID.randomUUID(); // GH-90000
@@ -188,7 +188,7 @@ class TenantIsolationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("findById propagates TenantContext tenant ID to EntityRepository [GH-90000]")
+        @DisplayName("findById propagates TenantContext tenant ID to EntityRepository")
         void findByIdPropagatesTenantId() { // GH-90000
             // GIVEN
             TenantContext.setCurrentTenantId(TENANT_ALPHA); // GH-90000
@@ -206,7 +206,7 @@ class TenantIsolationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("deleteById propagates TenantContext tenant ID to EntityRepository [GH-90000]")
+        @DisplayName("deleteById propagates TenantContext tenant ID to EntityRepository")
         void deleteByIdPropagatesTenantId() { // GH-90000
             // GIVEN
             UUID entityId = UUID.randomUUID(); // GH-90000
@@ -225,7 +225,7 @@ class TenantIsolationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("when no tenant is explicitly set, 'default-tenant' fallback is used [GH-90000]")
+        @DisplayName("when no tenant is explicitly set, 'default-tenant' fallback is used")
         void noExplicitTenantUsesDefaultFallback() { // GH-90000
             // GIVEN — TenantContext cleared; getCurrentTenantId() returns "default-tenant" // GH-90000
             TenantContext.clear(); // GH-90000
@@ -240,8 +240,8 @@ class TenantIsolationTest extends EventloopTestBase {
             verify(client).query( // GH-90000
                     tenantCaptor.capture(), anyString(), any(DataCloudClient.Query.class)); // GH-90000
             assertThat(tenantCaptor.getValue()) // GH-90000
-                    .as("TenantContext.getCurrentTenantId() defaults to 'default-tenant' when not set [GH-90000]")
-                    .isEqualTo("default-tenant [GH-90000]");
+                    .as("TenantContext.getCurrentTenantId() defaults to 'default-tenant' when not set")
+                    .isEqualTo("default-tenant");
         }
     }
 
@@ -255,7 +255,7 @@ class TenantIsolationTest extends EventloopTestBase {
      */
     private Throwable runPromiseThrowing(java.util.concurrent.Callable<io.activej.promise.Promise<?>> callable) { // GH-90000
         try {
-            @SuppressWarnings("unchecked [GH-90000]")
+            @SuppressWarnings("unchecked")
             java.util.concurrent.Callable<io.activej.promise.Promise<Object>> typed =
                 (java.util.concurrent.Callable<io.activej.promise.Promise<Object>>) (Object) callable; // GH-90000
             runPromise(typed); // GH-90000

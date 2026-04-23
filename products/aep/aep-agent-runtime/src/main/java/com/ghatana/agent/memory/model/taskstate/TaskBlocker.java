@@ -13,7 +13,8 @@ import java.time.Instant;
  * @doc.type value-object
  * @doc.purpose Task blocker tracking
  * @doc.layer agent-memory
- */
+  * @doc.pattern Component
+*/
 @Value
 @Builder
 public class TaskBlocker {

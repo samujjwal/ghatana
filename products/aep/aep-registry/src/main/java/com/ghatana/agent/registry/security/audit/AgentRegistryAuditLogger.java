@@ -10,7 +10,11 @@ import org.slf4j.LoggerFactory;
  * {@code com.ghatana.security.audit.AuditLogger} implementation.
  * This class intentionally delegates to SLF4J and is provided for backward compatibility
  * within the agent-registry module.
- */
+  * @doc.type class
+ * @doc.purpose Provides agent registry audit logger functionality.
+ * @doc.layer product
+ * @doc.pattern Registry
+*/
 public class AgentRegistryAuditLogger {
     private static final Logger logger = LoggerFactory.getLogger(AgentRegistryAuditLogger.class);
 

@@ -36,7 +36,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("GenerationApiController [GH-90000]")
+@DisplayName("GenerationApiController")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class GenerationApiControllerTest extends EventloopTestBase {
 
@@ -54,14 +54,14 @@ class GenerationApiControllerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("generate rejects specs that have not passed validation [GH-90000]")
+    @DisplayName("generate rejects specs that have not passed validation")
     void generateRejectsUnvalidatedSpec() throws Exception { // GH-90000
         ValidatedSpec invalidSpec = ValidatedSpec.of( // GH-90000
-            ShapeSpec.builder().id("shape-1 [GH-90000]").build(),
+            ShapeSpec.builder().id("shape-1").build(),
             LifecycleValidationResult.builder().passed(false).build() // GH-90000
         );
 
-        HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/generate [GH-90000]")
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/generate")
             .withBody(ByteBuf.wrapForReading(JsonMapper.toJson(invalidSpec).getBytes(StandardCharsets.UTF_8))) // GH-90000
             .build(); // GH-90000
 
@@ -72,16 +72,16 @@ class GenerationApiControllerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("regenerate with diff requires validatedSpec and existingArtifacts envelope [GH-90000]")
+    @DisplayName("regenerate with diff requires validatedSpec and existingArtifacts envelope")
     void regenerateWithDiffUsesExplicitEnvelope() throws Exception { // GH-90000
         ValidatedSpec validSpec = ValidatedSpec.of( // GH-90000
-            ShapeSpec.builder().id("shape-1 [GH-90000]").build(),
+            ShapeSpec.builder().id("shape-1").build(),
             LifecycleValidationResult.builder().passed(true).build() // GH-90000
         );
         GeneratedArtifacts existingArtifacts = GeneratedArtifacts.builder() // GH-90000
-            .id("artifacts-1 [GH-90000]")
-            .specRef("shape-1 [GH-90000]")
-            .artifacts(List.of(Artifact.builder().id("artifact-1 [GH-90000]").name("README [GH-90000]").type("doc [GH-90000]").build()))
+            .id("artifacts-1")
+            .specRef("shape-1")
+            .artifacts(List.of(Artifact.builder().id("artifact-1").name("README").type("doc").build()))
             .build(); // GH-90000
         DiffResult diffResult = DiffResult.builder() // GH-90000
             .newArtifacts(existingArtifacts) // GH-90000
@@ -91,7 +91,7 @@ class GenerationApiControllerTest extends EventloopTestBase {
         when(generationService.regenerateWithDiff(any(), any())).thenReturn(Promise.of(diffResult)); // GH-90000
 
         String requestJson = JsonMapper.toJson(new DiffEnvelope(validSpec, existingArtifacts)); // GH-90000
-        HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/generate/diff [GH-90000]")
+        HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/generate/diff")
             .withBody(ByteBuf.wrapForReading(requestJson.getBytes(StandardCharsets.UTF_8))) // GH-90000
             .build(); // GH-90000
 

@@ -35,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern IntegrationTest
  */
 @IntegrationTest
-@DisplayName("YAPPC Domain Repository Integration Tests [GH-90000]")
+@DisplayName("YAPPC Domain Repository Integration Tests")
 class RepositoryIntegrationTest {
 
     /**
@@ -73,11 +73,11 @@ class RepositoryIntegrationTest {
     }
 
     @Nested
-    @DisplayName("Dashboard Repository Tests [GH-90000]")
+    @DisplayName("Dashboard Repository Tests")
     class DashboardRepositoryTests {
 
         @Test
-        @DisplayName("should save and retrieve dashboard [GH-90000]")
+        @DisplayName("should save and retrieve dashboard")
         void shouldSaveAndRetrieveDashboard() { // GH-90000
             // Given
             UUID workspaceId = UUID.randomUUID(); // GH-90000
@@ -89,12 +89,12 @@ class RepositoryIntegrationTest {
 
             // Then
             assertThat(retrieved).isPresent(); // GH-90000
-            assertThat(retrieved.get().getName()).isEqualTo("My Dashboard [GH-90000]");
+            assertThat(retrieved.get().getName()).isEqualTo("My Dashboard");
             assertThat(retrieved.get().getWorkspaceId()).isEqualTo(workspaceId); // GH-90000
         }
 
         @Test
-        @DisplayName("should find dashboards by workspace id [GH-90000]")
+        @DisplayName("should find dashboards by workspace id")
         void shouldFindDashboardsByWorkspaceId() { // GH-90000
             // Given
             UUID workspaceId1 = UUID.randomUUID(); // GH-90000
@@ -114,7 +114,7 @@ class RepositoryIntegrationTest {
         }
 
         @Test
-        @DisplayName("should find dashboard by workspace and name [GH-90000]")
+        @DisplayName("should find dashboard by workspace and name")
         void shouldFindDashboardByWorkspaceAndName() { // GH-90000
             // Given
             UUID workspaceId = UUID.randomUUID(); // GH-90000
@@ -127,12 +127,12 @@ class RepositoryIntegrationTest {
 
             // Then
             assertThat(found).isPresent(); // GH-90000
-            assertThat(found.get().getName()).isEqualTo("Unique Dashboard [GH-90000]");
+            assertThat(found.get().getName()).isEqualTo("Unique Dashboard");
             assertThat(notFound).isEmpty(); // GH-90000
         }
 
         @Test
-        @DisplayName("should delete dashboard [GH-90000]")
+        @DisplayName("should delete dashboard")
         void shouldDeleteDashboard() { // GH-90000
             // Given
             UUID workspaceId = UUID.randomUUID(); // GH-90000
@@ -148,11 +148,11 @@ class RepositoryIntegrationTest {
     }
 
     @Nested
-    @DisplayName("ScanJob Repository Tests [GH-90000]")
+    @DisplayName("ScanJob Repository Tests")
     class ScanJobRepositoryTests {
 
         @Test
-        @DisplayName("should save and retrieve scan job [GH-90000]")
+        @DisplayName("should save and retrieve scan job")
         void shouldSaveAndRetrieveScanJob() { // GH-90000
             // Given
             UUID workspaceId = UUID.randomUUID(); // GH-90000
@@ -170,7 +170,7 @@ class RepositoryIntegrationTest {
         }
 
         @Test
-        @DisplayName("should find scan jobs by status [GH-90000]")
+        @DisplayName("should find scan jobs by status")
         void shouldFindScanJobsByStatus() { // GH-90000
             // Given
             UUID workspaceId = UUID.randomUUID(); // GH-90000
@@ -197,7 +197,7 @@ class RepositoryIntegrationTest {
         }
 
         @Test
-        @DisplayName("should find scan jobs by project id [GH-90000]")
+        @DisplayName("should find scan jobs by project id")
         void shouldFindScanJobsByProjectId() { // GH-90000
             // Given
             UUID workspaceId = UUID.randomUUID(); // GH-90000
@@ -216,7 +216,7 @@ class RepositoryIntegrationTest {
         }
 
         @Test
-        @DisplayName("should update scan job status [GH-90000]")
+        @DisplayName("should update scan job status")
         void shouldUpdateScanJobStatus() { // GH-90000
             // Given
             UUID workspaceId = UUID.randomUUID(); // GH-90000
@@ -237,11 +237,11 @@ class RepositoryIntegrationTest {
     }
 
     @Nested
-    @DisplayName("Incident Repository Tests [GH-90000]")
+    @DisplayName("Incident Repository Tests")
     class IncidentRepositoryTests {
 
         @Test
-        @DisplayName("should save and retrieve incident [GH-90000]")
+        @DisplayName("should save and retrieve incident")
         void shouldSaveAndRetrieveIncident() { // GH-90000
             // Given
             UUID workspaceId = UUID.randomUUID(); // GH-90000
@@ -253,12 +253,12 @@ class RepositoryIntegrationTest {
 
             // Then
             assertThat(retrieved).isPresent(); // GH-90000
-            assertThat(retrieved.get().getTitle()).isEqualTo("Security Breach [GH-90000]");
-            assertThat(retrieved.get().getSeverity()).isEqualTo("CRITICAL [GH-90000]");
+            assertThat(retrieved.get().getTitle()).isEqualTo("Security Breach");
+            assertThat(retrieved.get().getSeverity()).isEqualTo("CRITICAL");
         }
 
         @Test
-        @DisplayName("should find open incidents by workspace [GH-90000]")
+        @DisplayName("should find open incidents by workspace")
         void shouldFindOpenIncidentsByWorkspace() { // GH-90000
             // Given
             UUID workspaceId = UUID.randomUUID(); // GH-90000
@@ -266,7 +266,7 @@ class RepositoryIntegrationTest {
             Incident open1 = Incident.of(workspaceId, "Open Incident 1", "HIGH"); // GH-90000
             Incident open2 = Incident.of(workspaceId, "Open Incident 2", "MEDIUM"); // GH-90000
             Incident resolved = Incident.of(workspaceId, "Resolved Incident", "LOW"); // GH-90000
-            resolved.resolve("Fixed [GH-90000]");
+            resolved.resolve("Fixed");
 
             incidentRepository.save(open1); // GH-90000
             incidentRepository.save(open2); // GH-90000
@@ -281,7 +281,7 @@ class RepositoryIntegrationTest {
         }
 
         @Test
-        @DisplayName("should find incidents by severity [GH-90000]")
+        @DisplayName("should find incidents by severity")
         void shouldFindIncidentsBySeverity() { // GH-90000
             // Given
             UUID workspaceId = UUID.randomUUID(); // GH-90000
@@ -292,7 +292,7 @@ class RepositoryIntegrationTest {
             incidentRepository.save(Incident.of(workspaceId, "Medium", "MEDIUM")); // GH-90000
 
             // When
-            List<Incident> criticalIncidents = incidentRepository.findBySeverity("CRITICAL [GH-90000]");
+            List<Incident> criticalIncidents = incidentRepository.findBySeverity("CRITICAL");
 
             // Then
             assertThat(criticalIncidents).hasSize(2); // GH-90000
@@ -300,11 +300,11 @@ class RepositoryIntegrationTest {
     }
 
     @Nested
-    @DisplayName("CloudAccount Repository Tests [GH-90000]")
+    @DisplayName("CloudAccount Repository Tests")
     class CloudAccountRepositoryTests {
 
         @Test
-        @DisplayName("should save and retrieve cloud account [GH-90000]")
+        @DisplayName("should save and retrieve cloud account")
         void shouldSaveAndRetrieveCloudAccount() { // GH-90000
             // Given
             UUID workspaceId = UUID.randomUUID(); // GH-90000
@@ -316,12 +316,12 @@ class RepositoryIntegrationTest {
 
             // Then
             assertThat(retrieved).isPresent(); // GH-90000
-            assertThat(retrieved.get().getName()).isEqualTo("Production AWS [GH-90000]");
+            assertThat(retrieved.get().getName()).isEqualTo("Production AWS");
             assertThat(retrieved.get().getProvider()).isEqualTo(CloudProvider.AWS); // GH-90000
         }
 
         @Test
-        @DisplayName("should find cloud accounts by provider [GH-90000]")
+        @DisplayName("should find cloud accounts by provider")
         void shouldFindCloudAccountsByProvider() { // GH-90000
             // Given
             UUID workspaceId = UUID.randomUUID(); // GH-90000
@@ -340,7 +340,7 @@ class RepositoryIntegrationTest {
         }
 
         @Test
-        @DisplayName("should find enabled cloud accounts [GH-90000]")
+        @DisplayName("should find enabled cloud accounts")
         void shouldFindEnabledCloudAccounts() { // GH-90000
             // Given
             UUID workspaceId = UUID.randomUUID(); // GH-90000
@@ -357,16 +357,16 @@ class RepositoryIntegrationTest {
 
             // Then
             assertThat(enabledAccounts).hasSize(1); // GH-90000
-            assertThat(enabledAccounts.get(0).getName()).isEqualTo("Enabled [GH-90000]");
+            assertThat(enabledAccounts.get(0).getName()).isEqualTo("Enabled");
         }
     }
 
     @Nested
-    @DisplayName("SecurityAlert Repository Tests [GH-90000]")
+    @DisplayName("SecurityAlert Repository Tests")
     class SecurityAlertRepositoryTests {
 
         @Test
-        @DisplayName("should save and retrieve security alert [GH-90000]")
+        @DisplayName("should save and retrieve security alert")
         void shouldSaveAndRetrieveSecurityAlert() { // GH-90000
             // Given
             UUID workspaceId = UUID.randomUUID(); // GH-90000
@@ -379,12 +379,12 @@ class RepositoryIntegrationTest {
 
             // Then
             assertThat(retrieved).isPresent(); // GH-90000
-            assertThat(retrieved.get().getTitle()).isEqualTo("Suspicious Activity [GH-90000]");
-            assertThat(retrieved.get().getSeverity()).isEqualTo("HIGH [GH-90000]");
+            assertThat(retrieved.get().getTitle()).isEqualTo("Suspicious Activity");
+            assertThat(retrieved.get().getSeverity()).isEqualTo("HIGH");
         }
 
         @Test
-        @DisplayName("should find unacknowledged alerts [GH-90000]")
+        @DisplayName("should find unacknowledged alerts")
         void shouldFindUnacknowledgedAlerts() { // GH-90000
             // Given
             UUID workspaceId = UUID.randomUUID(); // GH-90000
@@ -408,7 +408,7 @@ class RepositoryIntegrationTest {
         }
 
         @Test
-        @DisplayName("should count alerts by severity [GH-90000]")
+        @DisplayName("should count alerts by severity")
         void shouldCountAlertsBySeverity() { // GH-90000
             // Given
             UUID workspaceId = UUID.randomUUID(); // GH-90000

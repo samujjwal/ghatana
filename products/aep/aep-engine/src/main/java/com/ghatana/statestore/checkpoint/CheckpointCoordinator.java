@@ -17,7 +17,11 @@ import java.util.Optional;
  *   <li>Coordinator collects all acks and marks checkpoint complete</li>
  *   <li>Checkpoint metadata persisted for recovery</li>
  * </ol>
- */
+  * @doc.type interface
+ * @doc.purpose Provides checkpoint coordinator functionality.
+ * @doc.layer product
+ * @doc.pattern Coordinator
+*/
 public interface CheckpointCoordinator {
 
     /**

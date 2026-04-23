@@ -311,7 +311,7 @@ public abstract class DataCloudHttpServerTestBase {
      * @param response HTTP response
      * @return parsed Map
      */
-    @SuppressWarnings("unchecked [GH-90000]")
+    @SuppressWarnings("unchecked")
     protected Map<String, Object> parseJsonResponse(java.net.http.HttpResponse<String> response) // GH-90000
             throws IOException {
         return mapper.readValue(response.body(), Map.class); // GH-90000
@@ -373,7 +373,7 @@ public abstract class DataCloudHttpServerTestBase {
         headers.forEach(merged::put); // GH-90000
         for (String headerName : headers.keySet()) { // GH-90000
             if ("X-Tenant-ID".equalsIgnoreCase(headerName) || "X-Tenant-Id".equalsIgnoreCase(headerName)) { // GH-90000
-                merged.remove("X-Tenant-ID [GH-90000]");
+                merged.remove("X-Tenant-ID");
                 break;
             }
         }
@@ -404,7 +404,7 @@ public abstract class DataCloudHttpServerTestBase {
         long deadline = System.currentTimeMillis() + maxWaitMs; // GH-90000
         while (System.currentTimeMillis() < deadline) { // GH-90000
             try {
-                java.net.http.HttpResponse<String> resp = get("/health [GH-90000]");
+                java.net.http.HttpResponse<String> resp = get("/health");
                 if (resp.statusCode() == 200) { // GH-90000
                     return;
                 }

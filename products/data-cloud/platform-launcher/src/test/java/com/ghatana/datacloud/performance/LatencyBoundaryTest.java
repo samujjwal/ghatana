@@ -29,7 +29,7 @@ import static org.mockito.Mockito.*;
  * Focus: P50, P95, P99 latency, SLA budgets, percentile monitoring
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("LatencyBoundaryTest - DC-F-024 [GH-90000]")
+@DisplayName("LatencyBoundaryTest - DC-F-024")
 class LatencyBoundaryTest {
 
     @Mock private LatencyHistogramCollector histogramCollector;
@@ -43,11 +43,11 @@ class LatencyBoundaryTest {
     }
 
     @Nested
-    @DisplayName("P50 Latency SLA Validation [GH-90000]")
+    @DisplayName("P50 Latency SLA Validation")
     class P50LatencySLAValidation {
 
         @Test
-        @DisplayName("shouldMaintainP50SLA_whenLoadIncreases_thenMedianStable [GH-90000]")
+        @DisplayName("shouldMaintainP50SLA_whenLoadIncreases_thenMedianStable")
         void shouldMaintainP50SLA_whenLoadIncreases_thenMedianStable() { // GH-90000
             when(histogramCollector.computePercentile(50)).thenReturn(100L); // GH-90000
             when(slaValidator.validateP50SLA(100L)).thenReturn(true); // GH-90000
@@ -60,7 +60,7 @@ class LatencyBoundaryTest {
         }
 
         @Test
-        @DisplayName("shouldMeasureP50WithinTarget_whenOptimalLoad_thenSLAHeld [GH-90000]")
+        @DisplayName("shouldMeasureP50WithinTarget_whenOptimalLoad_thenSLAHeld")
         void shouldMeasureP50WithinTarget_whenOptimalLoad_thenSLAHeld() { // GH-90000
             when(histogramCollector.computePercentile(50)).thenReturn(95L); // GH-90000
 
@@ -70,7 +70,7 @@ class LatencyBoundaryTest {
         }
 
         @Test
-        @DisplayName("shouldDetectP50Degradation_whenLoadBecomesConcerning_thenSLAApproached [GH-90000]")
+        @DisplayName("shouldDetectP50Degradation_whenLoadBecomesConcerning_thenSLAApproached")
         void shouldDetectP50Degradation_whenLoadBecomesConcerning_thenSLAApproached() { // GH-90000
             List<Long> measurements = new ArrayList<>(); // GH-90000
             measurements.add(50L); // GH-90000
@@ -82,7 +82,7 @@ class LatencyBoundaryTest {
         }
 
         @Test
-        @DisplayName("shouldReportP50Exactly_whenHistogramComputed_thenMeasurementAccurate [GH-90000]")
+        @DisplayName("shouldReportP50Exactly_whenHistogramComputed_thenMeasurementAccurate")
         void shouldReportP50Exactly_whenHistogramComputed_thenMeasurementAccurate() { // GH-90000
             when(histogramCollector.computePercentile(50)).thenReturn(100L); // GH-90000
 
@@ -93,7 +93,7 @@ class LatencyBoundaryTest {
         }
 
         @Test
-        @DisplayName("shouldMaintainP50DuringSpike_whenTrafficSpikes_thenMedianWithinBound [GH-90000]")
+        @DisplayName("shouldMaintainP50DuringSpike_whenTrafficSpikes_thenMedianWithinBound")
         void shouldMaintainP50DuringSpike_whenTrafficSpikes_thenMedianWithinBound() { // GH-90000
             when(histogramCollector.computePercentileDuringSpike(50)).thenReturn(150L); // GH-90000
 
@@ -103,7 +103,7 @@ class LatencyBoundaryTest {
         }
 
         @Test
-        @DisplayName("shouldValidateP50CrossAllOperations_whenMixedWorkload_thenAllOperationsSLA [GH-90000]")
+        @DisplayName("shouldValidateP50CrossAllOperations_whenMixedWorkload_thenAllOperationsSLA")
         void shouldValidateP50CrossAllOperations_whenMixedWorkload_thenAllOperationsSLA() { // GH-90000
             when(slaValidator.validateAllOperationsP50()).thenReturn(true); // GH-90000
 
@@ -114,11 +114,11 @@ class LatencyBoundaryTest {
     }
 
     @Nested
-    @DisplayName("P95/P99 Tail Latency SLA Validation [GH-90000]")
+    @DisplayName("P95/P99 Tail Latency SLA Validation")
     class P95P99TailLatencySLAValidation {
 
         @Test
-        @DisplayName("shouldMaintainP95SLA_whenLoadIncreases_thenTailStable [GH-90000]")
+        @DisplayName("shouldMaintainP95SLA_whenLoadIncreases_thenTailStable")
         void shouldMaintainP95SLA_whenLoadIncreases_thenTailStable() { // GH-90000
             when(histogramCollector.computePercentile(95)).thenReturn(500L); // GH-90000
             when(slaValidator.validateP95SLA(500L)).thenReturn(true); // GH-90000
@@ -131,7 +131,7 @@ class LatencyBoundaryTest {
         }
 
         @Test
-        @DisplayName("shouldMaintainP99SLA_whenLoadIncreases_thenTailStable [GH-90000]")
+        @DisplayName("shouldMaintainP99SLA_whenLoadIncreases_thenTailStable")
         void shouldMaintainP99SLA_whenLoadIncreases_thenTailStable() { // GH-90000
             when(histogramCollector.computePercentile(99)).thenReturn(1000L); // GH-90000
             when(slaValidator.validateP99SLA(1000L)).thenReturn(true); // GH-90000
@@ -144,7 +144,7 @@ class LatencyBoundaryTest {
         }
 
         @Test
-        @DisplayName("shouldDetectP95OutlierInfluence_whenSparseSlowRequests_thenP95Affected [GH-90000]")
+        @DisplayName("shouldDetectP95OutlierInfluence_whenSparseSlowRequests_thenP95Affected")
         void shouldDetectP95OutlierInfluence_whenSparseSlowRequests_thenP95Affected() { // GH-90000
             when(histogramCollector.countOutliersAbovePercentile(95)).thenReturn(50L); // GH-90000
 
@@ -154,7 +154,7 @@ class LatencyBoundaryTest {
         }
 
         @Test
-        @DisplayName("shouldDetectP99OutlierInfluence_whenSlowRequests_thenP99Reflects [GH-90000]")
+        @DisplayName("shouldDetectP99OutlierInfluence_whenSlowRequests_thenP99Reflects")
         void shouldDetectP99OutlierInfluence_whenSlowRequests_thenP99Reflects() { // GH-90000
             when(histogramCollector.countOutliersAbovePercentile(99)).thenReturn(10L); // GH-90000
 
@@ -164,7 +164,7 @@ class LatencyBoundaryTest {
         }
 
         @Test
-        @DisplayName("shouldMaintainP95P99DuringSpike_whenLoadSpikes_thenTailsWithinBounds [GH-90000]")
+        @DisplayName("shouldMaintainP95P99DuringSpike_whenLoadSpikes_thenTailsWithinBounds")
         void shouldMaintainP95P99DuringSpike_whenLoadSpikes_thenTailsWithinBounds() { // GH-90000
             when(histogramCollector.computePercentileDuringSpike(95)).thenReturn(750L); // GH-90000
             when(histogramCollector.computePercentileDuringSpike(99)).thenReturn(1500L); // GH-90000
@@ -177,7 +177,7 @@ class LatencyBoundaryTest {
         }
 
         @Test
-        @DisplayName("shouldValidateP95P99AcrossAllOperations_whenMixedWorkload_thenTailsSLAMet [GH-90000]")
+        @DisplayName("shouldValidateP95P99AcrossAllOperations_whenMixedWorkload_thenTailsSLAMet")
         void shouldValidateP95P99AcrossAllOperations_whenMixedWorkload_thenTailsSLAMet() { // GH-90000
             when(slaValidator.validateAllOperationsP95P99()).thenReturn(true); // GH-90000
 
@@ -188,11 +188,11 @@ class LatencyBoundaryTest {
     }
 
     @Nested
-    @DisplayName("Percentile Distribution Comprehensive Analysis [GH-90000]")
+    @DisplayName("Percentile Distribution Comprehensive Analysis")
     class PercentileDistributionComprehensiveAnalysis {
 
         @Test
-        @DisplayName("shouldComputeAllPercentiles_P1ToP99_whenLoadRuns_thenDistributionComplete [GH-90000]")
+        @DisplayName("shouldComputeAllPercentiles_P1ToP99_whenLoadRuns_thenDistributionComplete")
         void shouldComputeAllPercentiles_P1ToP99_whenLoadRuns_thenDistributionComplete() { // GH-90000
             when(histogramCollector.getAllPercentiles()).thenReturn(new long[]{10, 50, 100, 200, 500, 1000}); // GH-90000
 
@@ -203,7 +203,7 @@ class LatencyBoundaryTest {
         }
 
         @Test
-        @DisplayName("shouldShowLatencyImprovement_whenCacheHits_thenP50P95P99Improve [GH-90000]")
+        @DisplayName("shouldShowLatencyImprovement_whenCacheHits_thenP50P95P99Improve")
         void shouldShowLatencyImprovement_whenCacheHits_thenP50P95P99Improve() { // GH-90000
             long p50Before = 100L;
             long p50After = 75L;
@@ -212,7 +212,7 @@ class LatencyBoundaryTest {
         }
 
         @Test
-        @DisplayName("shouldShowLatencyDegradation_whenCacheMisses_thenP50P95P99Degrade [GH-90000]")
+        @DisplayName("shouldShowLatencyDegradation_whenCacheMisses_thenP50P95P99Degrade")
         void shouldShowLatencyDegradation_whenCacheMisses_thenP50P95P99Degrade() { // GH-90000
             long p50Before = 75L;
             long p50After = 150L;
@@ -221,7 +221,7 @@ class LatencyBoundaryTest {
         }
 
         @Test
-        @DisplayName("shouldDetectBimodalDistribution_whenTwoPopulations_thenMultipleModesDetected [GH-90000]")
+        @DisplayName("shouldDetectBimodalDistribution_whenTwoPopulations_thenMultipleModesDetected")
         void shouldDetectBimodalDistribution_whenTwoPopulations_thenMultipleModesDetected() { // GH-90000
             when(histogramCollector.detectModes()).thenReturn(2); // GH-90000
 
@@ -231,7 +231,7 @@ class LatencyBoundaryTest {
         }
 
         @Test
-        @DisplayName("shouldComputePercentileConfidenceIntervals_whenSamplesCollected_thenIntervalReported [GH-90000]")
+        @DisplayName("shouldComputePercentileConfidenceIntervals_whenSamplesCollected_thenIntervalReported")
         void shouldComputePercentileConfidenceIntervals_whenSamplesCollected_thenIntervalReported() { // GH-90000
             when(histogramCollector.getConfidenceInterval95(50)).thenReturn(new ConfidenceInterval(95L, 105L)); // GH-90000
 
@@ -241,7 +241,7 @@ class LatencyBoundaryTest {
         }
 
         @Test
-        @DisplayName("shouldValidatePercentileMonotonicity_thenP1<=P25<=P50<=P75<=P95<=P99 [GH-90000]")
+        @DisplayName("shouldValidatePercentileMonotonicity_thenP1<=P25<=P50<=P75<=P95<=P99")
         void shouldValidatePercentileMonotonicity_thenP1LessP25LessP50LessP75LessP95LessP99() { // GH-90000
             when(histogramCollector.computePercentile(1)).thenReturn(5L); // GH-90000
             when(histogramCollector.computePercentile(25)).thenReturn(50L); // GH-90000
@@ -261,7 +261,7 @@ class LatencyBoundaryTest {
         }
 
         @Test
-        @DisplayName("shouldMeasurePercentileStability_whenLoadConstant_thenVarianceSmall [GH-90000]")
+        @DisplayName("shouldMeasurePercentileStability_whenLoadConstant_thenVarianceSmall")
         void shouldMeasurePercentileStability_whenLoadConstant_thenVarianceSmall() { // GH-90000
             when(histogramCollector.computePercentileVariance(50)).thenReturn(5.0); // GH-90000
 
@@ -271,7 +271,7 @@ class LatencyBoundaryTest {
         }
 
         @Test
-        @DisplayName("shouldDetectLatencyJitter_whenVariabilityHigh_thenJitterQuantified [GH-90000]")
+        @DisplayName("shouldDetectLatencyJitter_whenVariabilityHigh_thenJitterQuantified")
         void shouldDetectLatencyJitter_whenVariabilityHigh_thenJitterQuantified() { // GH-90000
             when(histogramCollector.computeLatencyJitter()).thenReturn(150.0); // GH-90000
 
@@ -289,11 +289,11 @@ class LatencyBoundaryTest {
     }
 
     @Nested
-    @DisplayName("SLA Compliance Over Time [GH-90000]")
+    @DisplayName("SLA Compliance Over Time")
     class SLAComplianceOverTime {
 
         @Test
-        @DisplayName("shouldMaintainSLACompliance_whileLoadRuns_thenBudgetNotExceeded [GH-90000]")
+        @DisplayName("shouldMaintainSLACompliance_whileLoadRuns_thenBudgetNotExceeded")
         void shouldMaintainSLACompliance_whileLoadRuns_thenBudgetNotExceeded() { // GH-90000
             when(slaValidator.getRemainingViolationBudget()).thenReturn(95); // GH-90000
 
@@ -303,7 +303,7 @@ class LatencyBoundaryTest {
         }
 
         @Test
-        @DisplayName("shouldTrackSLABudgetConsumption_whenViolationsOccur_thenBudgetDecremented [GH-90000]")
+        @DisplayName("shouldTrackSLABudgetConsumption_whenViolationsOccur_thenBudgetDecremented")
         void shouldTrackSLABudgetConsumption_whenViolationsOccur_thenBudgetDecremented() { // GH-90000
             int budgetBefore = 100;
             int budgetAfter = 95;
@@ -312,7 +312,7 @@ class LatencyBoundaryTest {
         }
 
         @Test
-        @DisplayName("shouldResetSLABudget_atBoundary_thenNewPeriodStarts [GH-90000]")
+        @DisplayName("shouldResetSLABudget_atBoundary_thenNewPeriodStarts")
         void shouldResetSLABudget_atBoundary_thenNewPeriodStarts() { // GH-90000
             when(slaValidator.getRemainingViolationBudget()).thenReturn(100); // GH-90000
 
@@ -322,7 +322,7 @@ class LatencyBoundaryTest {
         }
 
         @Test
-        @DisplayName("shouldAlertWhenSLABudgetLow_whenViolationsTrendUp_thenAlertTriggered [GH-90000]")
+        @DisplayName("shouldAlertWhenSLABudgetLow_whenViolationsTrendUp_thenAlertTriggered")
         void shouldAlertWhenSLABudgetLow_whenViolationsTrendUp_thenAlertTriggered() { // GH-90000
             when(slaValidator.shouldTriggerAlert()).thenReturn(true); // GH-90000
 
@@ -332,7 +332,7 @@ class LatencyBoundaryTest {
         }
 
         @Test
-        @DisplayName("shouldValidateSLAComplianceAtMultiplePercentiles_thenAllLevelsMeasured [GH-90000]")
+        @DisplayName("shouldValidateSLAComplianceAtMultiplePercentiles_thenAllLevelsMeasured")
         void shouldValidateSLAComplianceAtMultiplePercentiles_thenAllLevelsMeasured() { // GH-90000
             when(slaValidator.validateComplianceAtPercentile(95)).thenReturn(true); // GH-90000
             when(slaValidator.validateComplianceAtPercentile(99)).thenReturn(true); // GH-90000
@@ -344,7 +344,7 @@ class LatencyBoundaryTest {
         }
 
         @Test
-        @DisplayName("shouldComputeEffectiveServiceLevelObjective_whenMeasured_thenESLOReported [GH-90000]")
+        @DisplayName("shouldComputeEffectiveServiceLevelObjective_whenMeasured_thenESLOReported")
         void shouldComputeEffectiveServiceLevelObjective_whenMeasured_thenESLOReported() { // GH-90000
             when(slaValidator.computeEffectiveSLO()).thenReturn(99.95); // GH-90000
 

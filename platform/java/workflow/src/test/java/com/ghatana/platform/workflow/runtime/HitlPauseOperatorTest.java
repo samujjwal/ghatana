@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Tests for {@link HitlPauseOperator} and HITL lifecycle in {@link DurableWorkflowRuntime}.
  */
-@DisplayName("HitlPauseOperator tests [GH-90000]")
+@DisplayName("HitlPauseOperator tests")
 class HitlPauseOperatorTest extends EventloopTestBase {
 
     private InMemoryWorkflowDefinitionRegistry definitionRegistry;
@@ -64,13 +64,13 @@ class HitlPauseOperatorTest extends EventloopTestBase {
     // ── HITL workflow pausing ──────────────────────────────────────────────
 
     @Nested
-    @DisplayName("HITL pause behavior [GH-90000]")
+    @DisplayName("HITL pause behavior")
     class HitlPauseBehavior {
 
         @Test
-        @DisplayName("workflow pauses at HUMAN_IN_THE_LOOP step with WAITING_FOR_HITL status [GH-90000]")
+        @DisplayName("workflow pauses at HUMAN_IN_THE_LOOP step with WAITING_FOR_HITL status")
         void pausesAtHitlStep() { // GH-90000
-            registerHitlWorkflow("hitl-wf [GH-90000]");
+            registerHitlWorkflow("hitl-wf");
 
             WorkflowRun result = runPromise(() -> runtime.start( // GH-90000
                 "hitl-wf", "tenant-1", "corr-1", new HashMap<>())); // GH-90000
@@ -79,23 +79,23 @@ class HitlPauseOperatorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("paused run stores HITL step metadata in variables [GH-90000]")
+        @DisplayName("paused run stores HITL step metadata in variables")
         void storesHitlMetadataInVariables() { // GH-90000
-            registerHitlWorkflow("hitl-wf [GH-90000]");
+            registerHitlWorkflow("hitl-wf");
 
             WorkflowRun result = runPromise(() -> runtime.start( // GH-90000
                 "hitl-wf", "tenant-1", "corr-1", new HashMap<>())); // GH-90000
 
-            assertThat(result.variables()).containsKey("__hitlStepId [GH-90000]");
-            assertThat(result.variables()).containsKey("__hitlNextStepId [GH-90000]");
-            assertThat(result.variables().get("__hitlStepId [GH-90000]")).isEqualTo("hitl-step [GH-90000]");
-            assertThat(result.variables().get("__hitlNextStepId [GH-90000]")).isEqualTo("final-step [GH-90000]");
+            assertThat(result.variables()).containsKey("__hitlStepId");
+            assertThat(result.variables()).containsKey("__hitlNextStepId");
+            assertThat(result.variables().get("__hitlStepId")).isEqualTo("hitl-step");
+            assertThat(result.variables().get("__hitlNextStepId")).isEqualTo("final-step");
         }
 
         @Test
-        @DisplayName("pre-HITL action steps execute before pausing [GH-90000]")
+        @DisplayName("pre-HITL action steps execute before pausing")
         void preHitlStepsExecuteFirst() { // GH-90000
-            registerHitlWorkflow("hitl-wf [GH-90000]");
+            registerHitlWorkflow("hitl-wf");
 
             WorkflowRun result = runPromise(() -> runtime.start( // GH-90000
                 "hitl-wf", "tenant-1", "corr-1", new HashMap<>())); // GH-90000
@@ -107,13 +107,13 @@ class HitlPauseOperatorTest extends EventloopTestBase {
     // ── Resume: approve ────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Approve resumes workflow [GH-90000]")
+    @DisplayName("Approve resumes workflow")
     class ApproveResumesWorkflow {
 
         @Test
-        @DisplayName("approve() resumes execution and completes workflow [GH-90000]")
+        @DisplayName("approve() resumes execution and completes workflow")
         void approveCompletesWorkflow() { // GH-90000
-            registerHitlWorkflow("hitl-wf [GH-90000]");
+            registerHitlWorkflow("hitl-wf");
 
             WorkflowRun paused = runPromise(() -> runtime.start( // GH-90000
                 "hitl-wf", "tenant-1", "corr-1", new HashMap<>())); // GH-90000
@@ -124,9 +124,9 @@ class HitlPauseOperatorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("approve() merges additional context into variables [GH-90000]")
+        @DisplayName("approve() merges additional context into variables")
         void approvesMergesContext() { // GH-90000
-            registerHitlWorkflow("hitl-wf [GH-90000]");
+            registerHitlWorkflow("hitl-wf");
 
             WorkflowRun paused = runPromise(() -> runtime.start( // GH-90000
                 "hitl-wf", "tenant-1", "corr-1", new HashMap<>())); // GH-90000
@@ -138,21 +138,21 @@ class HitlPauseOperatorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("approved run has __hitlDecision=APPROVED in variables [GH-90000]")
+        @DisplayName("approved run has __hitlDecision=APPROVED in variables")
         void approvedRunHasDecisionVariable() { // GH-90000
-            registerHitlWorkflow("hitl-wf [GH-90000]");
+            registerHitlWorkflow("hitl-wf");
 
             WorkflowRun paused = runPromise(() -> runtime.start( // GH-90000
                 "hitl-wf", "tenant-1", "corr-1", new HashMap<>())); // GH-90000
             WorkflowRun completed = runPromise(() -> hitl.approve(paused.runId())); // GH-90000
 
-            assertThat(completed.variables().get("__hitlDecision [GH-90000]")).isEqualTo("APPROVED [GH-90000]");
+            assertThat(completed.variables().get("__hitlDecision")).isEqualTo("APPROVED");
         }
 
         @Test
-        @DisplayName("post-HITL steps execute after approval [GH-90000]")
+        @DisplayName("post-HITL steps execute after approval")
         void postHitlStepsExecute() { // GH-90000
-            registerHitlWorkflow("hitl-wf [GH-90000]");
+            registerHitlWorkflow("hitl-wf");
 
             WorkflowRun paused = runPromise(() -> runtime.start( // GH-90000
                 "hitl-wf", "tenant-1", "corr-1", new HashMap<>())); // GH-90000
@@ -165,13 +165,13 @@ class HitlPauseOperatorTest extends EventloopTestBase {
     // ── Resume: reject ─────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("Reject cancels workflow [GH-90000]")
+    @DisplayName("Reject cancels workflow")
     class RejectCancelsWorkflow {
 
         @Test
-        @DisplayName("reject() cancels the workflow run [GH-90000]")
+        @DisplayName("reject() cancels the workflow run")
         void rejectCancelsRun() { // GH-90000
-            registerHitlWorkflow("hitl-wf [GH-90000]");
+            registerHitlWorkflow("hitl-wf");
 
             WorkflowRun paused = runPromise(() -> runtime.start( // GH-90000
                 "hitl-wf", "tenant-1", "corr-1", new HashMap<>())); // GH-90000
@@ -181,60 +181,60 @@ class HitlPauseOperatorTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("rejected run has __hitlDecision=REJECTED in variables [GH-90000]")
+        @DisplayName("rejected run has __hitlDecision=REJECTED in variables")
         void rejectedRunHasDecisionVariable() { // GH-90000
-            registerHitlWorkflow("hitl-wf [GH-90000]");
+            registerHitlWorkflow("hitl-wf");
 
             WorkflowRun paused = runPromise(() -> runtime.start( // GH-90000
                 "hitl-wf", "tenant-1", "corr-1", new HashMap<>())); // GH-90000
             WorkflowRun cancelled = runPromise(() -> hitl.reject(paused.runId(), "Not allowed")); // GH-90000
 
-            assertThat(cancelled.variables().get("__hitlDecision [GH-90000]")).isEqualTo("REJECTED [GH-90000]");
+            assertThat(cancelled.variables().get("__hitlDecision")).isEqualTo("REJECTED");
         }
     }
 
     // ── Validation ─────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("HitlPauseOperator validation [GH-90000]")
+    @DisplayName("HitlPauseOperator validation")
     class HitlPauseOperatorValidation {
 
         @Test
-        @DisplayName("rejects blank runId in approve() [GH-90000]")
+        @DisplayName("rejects blank runId in approve()")
         void rejectsBlankRunIdOnApprove() { // GH-90000
-            assertThatThrownBy(() -> hitl.approve(" [GH-90000]"))
+            assertThatThrownBy(() -> hitl.approve(""))
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("runId [GH-90000]");
+                .hasMessageContaining("runId");
         }
 
         @Test
-        @DisplayName("rejects blank runId in reject() [GH-90000]")
+        @DisplayName("rejects blank runId in reject()")
         void rejectsBlankRunIdOnReject() { // GH-90000
             assertThatThrownBy(() -> hitl.reject("", "reason")) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("runId [GH-90000]");
+                .hasMessageContaining("runId");
         }
 
         @Test
-        @DisplayName("rejects null runtime in constructor [GH-90000]")
+        @DisplayName("rejects null runtime in constructor")
         void rejectsNullRuntime() { // GH-90000
             assertThatThrownBy(() -> new HitlPauseOperator(null)) // GH-90000
                 .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("resume() on non-WAITING_FOR_HITL run throws error [GH-90000]")
+        @DisplayName("resume() on non-WAITING_FOR_HITL run throws error")
         void resumeOnWrongStatusThrows() { // GH-90000
-            registerHitlWorkflow("hitl-wf [GH-90000]");
+            registerHitlWorkflow("hitl-wf");
             // Start and complete immediately a workflow with no HITL step
-            registerNoHitlWorkflow("no-hitl-wf [GH-90000]");
+            registerNoHitlWorkflow("no-hitl-wf");
             WorkflowRun completedRun = runPromise(() -> runtime.start( // GH-90000
                 "no-hitl-wf", "tenant-1", "corr-2", new HashMap<>())); // GH-90000
 
             assertThatThrownBy(() -> // GH-90000
                     runPromise(() -> hitl.approve(completedRun.runId()))) // GH-90000
                 .isInstanceOf(IllegalStateException.class) // GH-90000
-                .hasMessageContaining("not waiting for HITL [GH-90000]");
+                .hasMessageContaining("not waiting for HITL");
         }
     }
 
@@ -252,7 +252,7 @@ class HitlPauseOperatorTest extends EventloopTestBase {
 
         WorkflowDefinition def = WorkflowDefinition.builder(workflowId, "HITL Workflow") // GH-90000
             .addStep(WorkflowStepDefinition.action("pre-step", "Pre-HITL Action", "pre-action-op") // GH-90000
-                .withNextStep("hitl-step [GH-90000]"))
+                .withNextStep("hitl-step"))
             .addStep(WorkflowStepDefinition.humanInTheLoop("hitl-step", "Human Checkpoint", "final-step")) // GH-90000
             .addStep(WorkflowStepDefinition.action("final-step", "Post-HITL Action", "post-action-op") // GH-90000
                 .withNextStep(null)) // GH-90000

@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("DistributedCache - Phase 3 Expansion [GH-90000]")
+@DisplayName("DistributedCache - Phase 3 Expansion")
 class DistributedCacheExpansionTest extends EventloopTestBase {
 
     private InMemoryCacheAdapter<String, String> l1;
@@ -48,11 +48,11 @@ class DistributedCacheExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("L1/L2 Cache Composition [GH-90000]")
+    @DisplayName("L1/L2 Cache Composition")
     class CacheCompositionTests {
 
         @Test
-        @DisplayName("Write through both layers [GH-90000]")
+        @DisplayName("Write through both layers")
         void writeThroughBothLayers() { // GH-90000
             for (int i = 0; i < 100; i++) { // GH-90000
                 final int idx = i;
@@ -71,50 +71,50 @@ class DistributedCacheExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("L1 hit avoids L2 access [GH-90000]")
+        @DisplayName("L1 hit avoids L2 access")
         void l1HitPath() { // GH-90000
             runPromise(() -> cache.put("cached", "value")); // GH-90000
 
             for (int i = 0; i < 50; i++) { // GH-90000
-                Optional<String> result = runPromise(() -> cache.get("cached [GH-90000]"));
+                Optional<String> result = runPromise(() -> cache.get("cached"));
                 assertThat(result).isPresent(); // GH-90000
             }
 
             // Verify was in L1 all this time
-            assertThat(runPromise(() -> l1.get("cached [GH-90000]"))).isPresent();
+            assertThat(runPromise(() -> l1.get("cached"))).isPresent();
         }
 
         @Test
-        @DisplayName("L1 miss populates from L2 [GH-90000]")
+        @DisplayName("L1 miss populates from L2")
         void l1MisspopulatesFromL2() { // GH-90000
             // Put directly in L2
             runPromise(() -> l2.put("key", "l2-value")); // GH-90000
 
             // First access should miss L1 but hit L2
-            Optional<String> result = runPromise(() -> cache.get("key [GH-90000]"));
-            assertThat(result).contains("l2-value [GH-90000]");
+            Optional<String> result = runPromise(() -> cache.get("key"));
+            assertThat(result).contains("l2-value");
 
             // Second access should be L1 hit
-            result = runPromise(() -> cache.get("key [GH-90000]"));
-            assertThat(result).contains("l2-value [GH-90000]");
+            result = runPromise(() -> cache.get("key"));
+            assertThat(result).contains("l2-value");
         }
 
         @Test
-        @DisplayName("Value updates propagate to both layers [GH-90000]")
+        @DisplayName("Value updates propagate to both layers")
         void updatePropagation() { // GH-90000
             runPromise(() -> cache.put("key", "value-1")); // GH-90000
 
-            Optional<String> v1 = runPromise(() -> cache.get("key [GH-90000]"));
-            assertThat(v1).contains("value-1 [GH-90000]");
+            Optional<String> v1 = runPromise(() -> cache.get("key"));
+            assertThat(v1).contains("value-1");
 
             // Update
             runPromise(() -> cache.put("key", "value-2")); // GH-90000
 
-            Optional<String> v2L1 = runPromise(() -> l1.get("key [GH-90000]"));
-            Optional<String> v2L2 = runPromise(() -> l2.get("key [GH-90000]"));
+            Optional<String> v2L1 = runPromise(() -> l1.get("key"));
+            Optional<String> v2L2 = runPromise(() -> l2.get("key"));
 
-            assertThat(v2L1).contains("value-2 [GH-90000]");
-            assertThat(v2L2).contains("value-2 [GH-90000]");
+            assertThat(v2L1).contains("value-2");
+            assertThat(v2L2).contains("value-2");
         }
     }
 
@@ -123,23 +123,23 @@ class DistributedCacheExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Cache Invalidation [GH-90000]")
+    @DisplayName("Cache Invalidation")
     class InvalidationTests {
 
         @Test
-        @DisplayName("Invalidate single key removes from both layers [GH-90000]")
+        @DisplayName("Invalidate single key removes from both layers")
         void singleKeyInvalidation() { // GH-90000
             runPromise(() -> cache.put("key1", "v1")); // GH-90000
             runPromise(() -> cache.put("key2", "v2")); // GH-90000
 
-            runPromise(() -> cache.invalidate("key1 [GH-90000]"));
+            runPromise(() -> cache.invalidate("key1"));
 
-            assertThat(runPromise(() -> cache.get("key1 [GH-90000]"))).isEmpty();
-            assertThat(runPromise(() -> cache.get("key2 [GH-90000]"))).isPresent();
+            assertThat(runPromise(() -> cache.get("key1"))).isEmpty();
+            assertThat(runPromise(() -> cache.get("key2"))).isPresent();
         }
 
         @Test
-        @DisplayName("Invalidate all keys clears both layers [GH-90000]")
+        @DisplayName("Invalidate all keys clears both layers")
         void invalidateAll() { // GH-90000
             for (int i = 0; i < 100; i++) { // GH-90000
                 final int idx = i;
@@ -156,7 +156,7 @@ class DistributedCacheExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Many concurrent invalidations [GH-90000]")
+        @DisplayName("Many concurrent invalidations")
         void concurrentInvalidations() throws Exception { // GH-90000
             // Put many items
             for (int i = 0; i < 50; i++) { // GH-90000
@@ -189,7 +189,7 @@ class DistributedCacheExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Invalidation under heavy load [GH-90000]")
+        @DisplayName("Invalidation under heavy load")
         void invalidationUnderLoad() { // GH-90000
             // Build up cache
             for (int i = 0; i < 500; i++) { // GH-90000
@@ -204,8 +204,8 @@ class DistributedCacheExpansionTest extends EventloopTestBase {
             }
 
             // Verify correct subset removed
-            assertThat(runPromise(() -> cache.get("key-0 [GH-90000]"))).isEmpty();
-            assertThat(runPromise(() -> cache.get("key-499 [GH-90000]"))).isPresent();
+            assertThat(runPromise(() -> cache.get("key-0"))).isEmpty();
+            assertThat(runPromise(() -> cache.get("key-499"))).isPresent();
         }
     }
 
@@ -214,40 +214,40 @@ class DistributedCacheExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Get-Or-Load Pattern [GH-90000]")
+    @DisplayName("Get-Or-Load Pattern")
     class GetOrLoadTests {
 
         @Test
-        @DisplayName("Loader called on full cache miss [GH-90000]")
+        @DisplayName("Loader called on full cache miss")
         void loaderCalledOnMiss() { // GH-90000
             AtomicInteger loadCount = new AtomicInteger(0); // GH-90000
 
             String value = runPromise(() -> cache.getOrLoad("key", k -> { // GH-90000
                 loadCount.incrementAndGet(); // GH-90000
-                return Promise.of("computed-value [GH-90000]");
+                return Promise.of("computed-value");
             }));
 
-            assertThat(value).isEqualTo("computed-value [GH-90000]");
+            assertThat(value).isEqualTo("computed-value");
             assertThat(loadCount.get()).isEqualTo(1); // GH-90000
         }
 
         @Test
-        @DisplayName("Loader not called on L1 cache hit [GH-90000]")
+        @DisplayName("Loader not called on L1 cache hit")
         void loaderSkipOnL1Hit() { // GH-90000
             runPromise(() -> cache.put("key", "cached-value")); // GH-90000
             AtomicInteger loadCount = new AtomicInteger(0); // GH-90000
 
             String value = runPromise(() -> cache.getOrLoad("key", k -> { // GH-90000
                 loadCount.incrementAndGet(); // GH-90000
-                return Promise.of("computed-value [GH-90000]");
+                return Promise.of("computed-value");
             }));
 
-            assertThat(value).isEqualTo("cached-value [GH-90000]");
+            assertThat(value).isEqualTo("cached-value");
             assertThat(loadCount.get()).isEqualTo(0); // GH-90000
         }
 
         @Test
-        @DisplayName("Many concurrent loads for same key (thundering herd mitigation) [GH-90000]")
+        @DisplayName("Many concurrent loads for same key (thundering herd mitigation)")
         void concurrentLoadsSameKey() throws Exception { // GH-90000
             AtomicInteger loadCount = new AtomicInteger(0); // GH-90000
 
@@ -262,7 +262,7 @@ class DistributedCacheExpansionTest extends EventloopTestBase {
                         try {
                             String value = runPromise(() -> cache.getOrLoad("shared-key", k -> { // GH-90000
                                 loadCount.incrementAndGet(); // GH-90000
-                                return Promise.of("loaded [GH-90000]");
+                                return Promise.of("loaded");
                             }));
                             if ("loaded".equals(value)) { // GH-90000
                                 successCount.incrementAndGet(); // GH-90000
@@ -281,14 +281,14 @@ class DistributedCacheExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Load caches result in both layers [GH-90000]")
+        @DisplayName("Load caches result in both layers")
         void loadCachesInBothLayers() { // GH-90000
             String value = runPromise(() -> cache.getOrLoad("key", k -> // GH-90000
-                Promise.of("loaded-value [GH-90000]")));
+                Promise.of("loaded-value")));
 
-            assertThat(value).isEqualTo("loaded-value [GH-90000]");
-            assertThat(runPromise(() -> l1.get("key [GH-90000]"))).contains("loaded-value [GH-90000]");
-            assertThat(runPromise(() -> l2.get("key [GH-90000]"))).contains("loaded-value [GH-90000]");
+            assertThat(value).isEqualTo("loaded-value");
+            assertThat(runPromise(() -> l1.get("key"))).contains("loaded-value");
+            assertThat(runPromise(() -> l2.get("key"))).contains("loaded-value");
         }
     }
 
@@ -297,11 +297,11 @@ class DistributedCacheExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Concurrent Cache Operations [GH-90000]")
+    @DisplayName("Concurrent Cache Operations")
     class ConcurrencyTests {
 
         @Test
-        @DisplayName("Many concurrent puts [GH-90000]")
+        @DisplayName("Many concurrent puts")
         void concurrentPuts() throws Exception { // GH-90000
             int threadCount = 30;
             int itemsPerThread = 50;
@@ -332,7 +332,7 @@ class DistributedCacheExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Concurrent mixed operations (put, get, invalidate) [GH-90000]")
+        @DisplayName("Concurrent mixed operations (put, get, invalidate)")
         void concurrentMixedOps() throws Exception { // GH-90000
             // Pre-populate
             for (int i = 0; i < 200; i++) { // GH-90000
@@ -376,7 +376,7 @@ class DistributedCacheExpansionTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("High-frequency cache hits under concurrent load [GH-90000]")
+        @DisplayName("High-frequency cache hits under concurrent load")
         void highFrequencyHits() throws Exception { // GH-90000
             // Pre-load hot keys
             for (int i = 0; i < 10; i++) { // GH-90000
@@ -420,11 +420,11 @@ class DistributedCacheExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Eviction and TTL [GH-90000]")
+    @DisplayName("Eviction and TTL")
     class EvictionTests {
 
         @Test
-        @DisplayName("Values respect TTL in both layers [GH-90000]")
+        @DisplayName("Values respect TTL in both layers")
         void ttlRespected() { // GH-90000
             Duration shortTtl = Duration.ofMillis(100); // GH-90000
             InMemoryCacheAdapter<String, String> ttlL1 =
@@ -433,7 +433,7 @@ class DistributedCacheExpansionTest extends EventloopTestBase {
                 new WriteThroughDistributedCache<>(ttlL1, l2); // GH-90000
 
             runPromise(() -> ttlCache.put("expiring", "value")); // GH-90000
-            assertThat(runPromise(() -> ttlCache.get("expiring [GH-90000]"))).isPresent();
+            assertThat(runPromise(() -> ttlCache.get("expiring"))).isPresent();
 
             // Wait for expiration
             try {
@@ -443,11 +443,11 @@ class DistributedCacheExpansionTest extends EventloopTestBase {
             }
 
             // Should be gone from L1
-            assertThat(runPromise(() -> ttlL1.get("expiring [GH-90000]"))).isEmpty();
+            assertThat(runPromise(() -> ttlL1.get("expiring"))).isEmpty();
         }
 
         @Test
-        @DisplayName("Large cache capacity constraints [GH-90000]")
+        @DisplayName("Large cache capacity constraints")
         void largeCapacityHandling() { // GH-90000
             InMemoryCacheAdapter<String, String> smallL1 =
                 new InMemoryCacheAdapter<>(50, Duration.ofMinutes(5)); // GH-90000
@@ -461,7 +461,7 @@ class DistributedCacheExpansionTest extends EventloopTestBase {
             }
 
             // L1 respects capacity, L2 holds all
-            assertThat(runPromise(() -> l2.get("key-0 [GH-90000]"))).isPresent();
+            assertThat(runPromise(() -> l2.get("key-0"))).isPresent();
         }
     }
 
@@ -470,17 +470,17 @@ class DistributedCacheExpansionTest extends EventloopTestBase {
     // ============================================
 
     @Nested
-    @DisplayName("Edge Cases [GH-90000]")
+    @DisplayName("Edge Cases")
     class EdgeCaseTests {
 
         @Test
-        @DisplayName("Very large cache values [GH-90000]")
+        @DisplayName("Very large cache values")
         void veryLargeValues() { // GH-90000
             String largeValue = "x".repeat(10_000); // GH-90000
 
             runPromise(() -> cache.put("large-key", largeValue)); // GH-90000
 
-            Optional<String> retrieved = runPromise(() -> cache.get("large-key [GH-90000]"));
+            Optional<String> retrieved = runPromise(() -> cache.get("large-key"));
             assertThat(retrieved).isPresent(); // GH-90000
             assertThat(retrieved.get()).satisfies(s -> assertThat(s.length()).isEqualTo(10_000)); // GH-90000
         }

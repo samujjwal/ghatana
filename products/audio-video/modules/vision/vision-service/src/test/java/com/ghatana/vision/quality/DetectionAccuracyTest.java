@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer   product
  * @doc.pattern Test
  */
-@DisplayName("DetectionAccuracyTest [GH-90000]")
+@DisplayName("DetectionAccuracyTest")
 class DetectionAccuracyTest {
 
     private VisionModelEngine engine;
@@ -42,7 +42,7 @@ class DetectionAccuracyTest {
         "coco_indoor_chairs,  chair",
         "coco_bottles_table,  bottle",
     })
-    @DisplayName("COCO benchmark fixture produces detections [GH-90000]")
+    @DisplayName("COCO benchmark fixture produces detections")
     void cocoFixtureProducesDetections(String fixtureId, String expectedLabel) { // GH-90000
         byte[] image = makeCocoFixture(fixtureId, expectedLabel); // GH-90000
         List<DetectedObject> detections = engine.detectObjects(image); // GH-90000
@@ -52,7 +52,7 @@ class DetectionAccuracyTest {
     }
 
     @Test
-    @DisplayName("COCO fixture produces at least one detection above threshold [GH-90000]")
+    @DisplayName("COCO fixture produces at least one detection above threshold")
     void cocoFixtureHasAtLeastOneDetection() { // GH-90000
         byte[] image = makeCocoFixture("coco_street_scene_rich", "car"); // GH-90000
         // Deterministic hash should produce some detections for varied input
@@ -62,7 +62,7 @@ class DetectionAccuracyTest {
     }
 
     @Test
-    @DisplayName("all COCO detections have labels from the known category set [GH-90000]")
+    @DisplayName("all COCO detections have labels from the known category set")
     void cocoDetectionsHaveValidLabels() { // GH-90000
         byte[] image = makeCocoFixture("coco_mixed_scene", "person"); // GH-90000
         List<DetectedObject> detections = engine.detectObjects(image); // GH-90000
@@ -72,7 +72,7 @@ class DetectionAccuracyTest {
     // ── Noise robustness ──────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("noisy image is processed without error [GH-90000]")
+    @DisplayName("noisy image is processed without error")
     void noisyImageProcessed() { // GH-90000
         byte[] noisy = buildNoisy(1024); // GH-90000
         assertThatCode(() -> engine.detectObjects(noisy)) // GH-90000
@@ -80,7 +80,7 @@ class DetectionAccuracyTest {
     }
 
     @Test
-    @DisplayName("all detections from noisy image meet confidence threshold [GH-90000]")
+    @DisplayName("all detections from noisy image meet confidence threshold")
     void noisyImageDetectionsMeetThreshold() { // GH-90000
         byte[] noisy = buildNoisy(2048); // GH-90000
         engine.detectObjects(noisy).forEach(d -> // GH-90000
@@ -89,7 +89,7 @@ class DetectionAccuracyTest {
 
     @ParameterizedTest(name = "noiseSize={0}") // GH-90000
     @ValueSource(ints = {128, 512, 2048, 8192}) // GH-90000
-    @DisplayName("varying noise sizes complete without error [GH-90000]")
+    @DisplayName("varying noise sizes complete without error")
     void varyingNoiseSizesComplete(int size) { // GH-90000
         byte[] noisy = buildNoisy(size); // GH-90000
         assertThatCode(() -> engine.detectObjects(noisy)) // GH-90000
@@ -99,21 +99,21 @@ class DetectionAccuracyTest {
     // ── Lighting variations ───────────────────────────────────────────────────
 
     @Test
-    @DisplayName("underexposed image is processed without error [GH-90000]")
+    @DisplayName("underexposed image is processed without error")
     void underexposedImageProcessed() { // GH-90000
         byte[] dark = buildUniform(512, (byte) 10); // GH-90000
         assertThatCode(() -> engine.detectObjects(dark)).doesNotThrowAnyException(); // GH-90000
     }
 
     @Test
-    @DisplayName("overexposed image is processed without error [GH-90000]")
+    @DisplayName("overexposed image is processed without error")
     void overexposedImageProcessed() { // GH-90000
         byte[] bright = buildUniform(512, (byte) 245); // GH-90000
         assertThatCode(() -> engine.detectObjects(bright)).doesNotThrowAnyException(); // GH-90000
     }
 
     @Test
-    @DisplayName("mid-gray image classification does not throw [GH-90000]")
+    @DisplayName("mid-gray image classification does not throw")
     void midGrayImageClassified() { // GH-90000
         byte[] gray = buildUniform(512, (byte) 128); // GH-90000
         assertThatCode(() -> engine.classify(gray)).doesNotThrowAnyException(); // GH-90000
@@ -122,14 +122,14 @@ class DetectionAccuracyTest {
     // ── Occlusion robustness ──────────────────────────────────────────────────
 
     @Test
-    @DisplayName("partially occluded image (blocked patches) is processed without error [GH-90000]")
+    @DisplayName("partially occluded image (blocked patches) is processed without error")
     void occludedImageProcessed() { // GH-90000
         byte[] occluded = buildOccluded(1024); // GH-90000
         assertThatCode(() -> engine.detectObjects(occluded)).doesNotThrowAnyException(); // GH-90000
     }
 
     @Test
-    @DisplayName("heavily occluded image detection count is non-negative [GH-90000]")
+    @DisplayName("heavily occluded image detection count is non-negative")
     void heavilyOccludedDetectionCountIsNonNegative() { // GH-90000
         byte[] occluded = buildOccluded(2048); // GH-90000
         assertThat(engine.detectObjects(occluded).size()).isGreaterThanOrEqualTo(0); // GH-90000
@@ -139,7 +139,7 @@ class DetectionAccuracyTest {
 
     @ParameterizedTest(name = "threshold={0}") // GH-90000
     @ValueSource(doubles = {0.1, 0.3, 0.5, 0.7, 0.9}) // GH-90000
-    @DisplayName("detection count decreases or stays equal as threshold increases [GH-90000]")
+    @DisplayName("detection count decreases or stays equal as threshold increases")
     void thresholdMonotonicity(double threshold) { // GH-90000
         byte[] image = makeCocoFixture("threshold_test_scene", "person"); // GH-90000
         int count = new VisionModelEngine("yolov8-coco", threshold).detectObjects(image).size(); // GH-90000
@@ -151,7 +151,7 @@ class DetectionAccuracyTest {
 
     @ParameterizedTest(name = "size={0} bytes") // GH-90000
     @ValueSource(ints = {1, 64, 256, 1024, 65536}) // GH-90000
-    @DisplayName("images of various sizes are processed without error [GH-90000]")
+    @DisplayName("images of various sizes are processed without error")
     void variousSizesProcessed(int size) { // GH-90000
         byte[] image = new byte[size];
         // Fill with simple gradient to ensure non-zero
@@ -162,14 +162,14 @@ class DetectionAccuracyTest {
     // ── Error handling ────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("null image throws VisionException [GH-90000]")
+    @DisplayName("null image throws VisionException")
     void nullImageThrows() { // GH-90000
         assertThatThrownBy(() -> engine.detectObjects(null)) // GH-90000
                 .isInstanceOf(VisionModelEngine.VisionException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("empty image throws VisionException [GH-90000]")
+    @DisplayName("empty image throws VisionException")
     void emptyImageThrows() { // GH-90000
         assertThatThrownBy(() -> engine.detectObjects(new byte[0])) // GH-90000
                 .isInstanceOf(VisionModelEngine.VisionException.class); // GH-90000

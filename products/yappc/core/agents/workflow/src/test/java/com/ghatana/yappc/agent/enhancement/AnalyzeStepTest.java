@@ -19,7 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Enhancement AnalyzeStep Tests [GH-90000]")
+@DisplayName("Enhancement AnalyzeStep Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles analyze step test operations
@@ -40,7 +40,7 @@ class AnalyzeStepTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should analyze feedback and generate insights [GH-90000]")
+  @DisplayName("Should analyze feedback and generate insights")
   void shouldAnalyzeFeedback() { // GH-90000
     // GIVEN
     WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
@@ -76,12 +76,12 @@ class AnalyzeStepTest extends EventloopTestBase {
 
     // THEN
     assertThat(result).isNotNull(); // GH-90000
-    assertThat(result.get("status [GH-90000]")).isEqualTo("ANALYZED [GH-90000]");
-    assertThat(result.get("insightCount [GH-90000]")).isNotNull();
+    assertThat(result.get("status")).isEqualTo("ANALYZED");
+    assertThat(result.get("insightCount")).isNotNull();
   }
 
   @Test
-  @DisplayName("Should fail when feedbackId is missing [GH-90000]")
+  @DisplayName("Should fail when feedbackId is missing")
   void shouldFailWhenFeedbackIdMissing() { // GH-90000
     // GIVEN
     WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
@@ -92,6 +92,6 @@ class AnalyzeStepTest extends EventloopTestBase {
     // WHEN/THEN
     assertThatThrownBy(() -> runPromise(() -> step.execute(context))) // GH-90000
         .isInstanceOf(IllegalStateException.class) // GH-90000
-        .hasMessageContaining("feedbackId [GH-90000]");
+        .hasMessageContaining("feedbackId");
   }
 }

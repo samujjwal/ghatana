@@ -28,9 +28,9 @@ class PhaseOperatorTest extends EventloopTestBase {
         // GIVEN
         IntentService intentService = mock(IntentService.class); // GH-90000
         IntentSpec expectedSpec = IntentSpec.builder() // GH-90000
-                .id("intent-123 [GH-90000]")
-                .productName("Test Product [GH-90000]")
-                .description("Test product intent [GH-90000]")
+                .id("intent-123")
+                .productName("Test Product")
+                .description("Test product intent")
                 .goals(List.of()) // GH-90000
                 .personas(List.of()) // GH-90000
                 .constraints(List.of()) // GH-90000
@@ -43,8 +43,8 @@ class PhaseOperatorTest extends EventloopTestBase {
                 PhaseType.INTENT, intentService, null, null, null, null, null, null, null);
 
         IntentInput input = IntentInput.builder() // GH-90000
-                .rawText("Build an app [GH-90000]")
-                .format("text [GH-90000]")
+                .rawText("Build an app")
+                .format("text")
                 .build(); // GH-90000
 
         // WHEN
@@ -81,9 +81,9 @@ class PhaseOperatorTest extends EventloopTestBase {
 
         // THEN
         assertNotNull(metadata); // GH-90000
-        assertEquals("VALIDATE", metadata.get("phase [GH-90000]"));
-        assertEquals("yappc.phase.validate", metadata.get("operator_id [GH-90000]"));
-        assertEquals("1.0.0", metadata.get("version [GH-90000]"));
+        assertEquals("VALIDATE", metadata.get("phase"));
+        assertEquals("yappc.phase.validate", metadata.get("operator_id"));
+        assertEquals("1.0.0", metadata.get("version"));
     }
 
     @Test
@@ -94,7 +94,7 @@ class PhaseOperatorTest extends EventloopTestBase {
 
         // WHEN/THEN
         Exception e = assertThrows(Exception.class, () -> // GH-90000
-                runPromise(() -> operator.execute("invalid input [GH-90000]")));
-        assertTrue(e.getMessage().contains("Invalid input type [GH-90000]"));
+                runPromise(() -> operator.execute("invalid input")));
+        assertTrue(e.getMessage().contains("Invalid input type"));
     }
 }

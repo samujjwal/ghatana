@@ -48,7 +48,7 @@ class PolyfixOrchestratorTest {
     @BeforeEach
     void setUp() throws IOException { // GH-90000
         System.setProperty("test.environment", "true"); // GH-90000
-        tempDir = Files.createTempDirectory("polyfix-test- [GH-90000]");
+        tempDir = Files.createTempDirectory("polyfix-test-");
         tempDir.toFile().deleteOnExit(); // GH-90000
 
         // Create a proper logger for testing
@@ -63,7 +63,7 @@ class PolyfixOrchestratorTest {
     @Test
     void run_shouldGenerateReportWhenReportDirIsConfigured() throws IOException { // GH-90000
         // Given
-        Path reportDir = tempDir.resolve("reports [GH-90000]");
+        Path reportDir = tempDir.resolve("reports");
         // Ensure the report directory exists before creating the orchestrator
         Files.createDirectories(reportDir); // GH-90000
 
@@ -131,7 +131,7 @@ class PolyfixOrchestratorTest {
     @Test
     void run_shouldIncludeErrorInReportWhenExceptionOccurs() throws IOException { // GH-90000
         // Given
-        Path reportDir = tempDir.resolve("error-reports [GH-90000]");
+        Path reportDir = tempDir.resolve("error-reports");
         // Ensure the report directory exists before creating the orchestrator
         Files.createDirectories(reportDir); // GH-90000
 
@@ -141,7 +141,7 @@ class PolyfixOrchestratorTest {
             testContext = createTestContext(); // GH-90000
 
             // Now mock the diagnostics to throw an exception
-            RuntimeException testError = new RuntimeException("Test error [GH-90000]");
+            RuntimeException testError = new RuntimeException("Test error");
             mockedRunner.when(() -> DiagnosticsRunner.runAll(testContext)).thenThrow(testError); // GH-90000
 
             // Create the orchestrator with the report directory
@@ -153,10 +153,10 @@ class PolyfixOrchestratorTest {
             // Then
             assertNotNull(summary, "Run should complete with error"); // GH-90000
             assertTrue( // GH-90000
-                    summary.status().contains("ERROR [GH-90000]"),
+                    summary.status().contains("ERROR"),
                     "Status should indicate an error occurred. Actual status: " + summary.status()); // GH-90000
             assertTrue( // GH-90000
-                    summary.status().contains("Test error [GH-90000]"),
+                    summary.status().contains("Test error"),
                     "Status should include the error message. Actual status: " + summary.status()); // GH-90000
 
             // Verify error report was generated
@@ -178,16 +178,16 @@ class PolyfixOrchestratorTest {
             Path reportFile =
                     reportFiles.stream() // GH-90000
                             .filter(Files::isRegularFile) // GH-90000
-                            .filter(p -> p.toString().toLowerCase().endsWith(".json [GH-90000]"))
+                            .filter(p -> p.toString().toLowerCase().endsWith(".json"))
                             .findFirst() // GH-90000
-                            .orElseThrow(() -> new AssertionError("No JSON report generated [GH-90000]"));
+                            .orElseThrow(() -> new AssertionError("No JSON report generated"));
 
             String reportContent = Files.readString(reportFile); // GH-90000
             assertTrue( // GH-90000
-                    reportContent.contains("ERROR [GH-90000]"),
+                    reportContent.contains("ERROR"),
                     "Report content should include error status. Content: " + reportContent);
             assertTrue( // GH-90000
-                    reportContent.contains("Test error [GH-90000]"),
+                    reportContent.contains("Test error"),
                     "Report content should include error message. Content: " + reportContent);
 
             // Verify the static method was called with our test context

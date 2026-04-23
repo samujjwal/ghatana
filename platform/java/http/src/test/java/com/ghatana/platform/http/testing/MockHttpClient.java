@@ -52,7 +52,7 @@ import java.util.function.Function;
  *     )
  *     .build(); // GH-90000
  *
- * HttpResponse response = client.execute(HttpRequest.get("/users/123 [GH-90000]"));
+ * HttpResponse response = client.execute(HttpRequest.get("/users/123"));
  * assertEquals(200, response.getCode()); // GH-90000
  *
  * // 2. Dynamic responses (based on request) // GH-90000
@@ -84,7 +84,7 @@ import java.util.function.Function;
  *     )
  *     .build(); // GH-90000
  *
- * HttpResponse response = client.execute(HttpRequest.get("/unknown [GH-90000]"));
+ * HttpResponse response = client.execute(HttpRequest.get("/unknown"));
  * assertEquals(503, response.getCode()); // GH-90000
  *
  * // 4. Test error handling
@@ -98,7 +98,7 @@ import java.util.function.Function;
  *
  * try {
  *     myService.fetchData(client); // GH-90000
- *     fail("Expected exception [GH-90000]");
+ *     fail("Expected exception");
  * } catch (ServiceException e) { // GH-90000
  *     assertEquals("Internal server error", e.getMessage()); // GH-90000
  * }
@@ -122,7 +122,7 @@ import java.util.function.Function;
  * // 6. Request-based conditional responses
  * MockHttpClient client = MockHttpClient.builder() // GH-90000
  *     .stub(HttpMethod.GET, "/api/search", request -> { // GH-90000
- *         String query = request.getQueryParameter("q [GH-90000]");
+ *         String query = request.getQueryParameter("q");
  *
  *         if (query == null || query.isEmpty()) { // GH-90000
  *             return HttpResponse.ofCode(400) // GH-90000
@@ -145,7 +145,7 @@ import java.util.function.Function;
  * );
  *
  * // Test
- * HttpResponse response = client.execute(HttpRequest.get("/health [GH-90000]"));
+ * HttpResponse response = client.execute(HttpRequest.get("/health"));
  * assertEquals(200, response.getCode()); // GH-90000
  *
  * // Remove stub
@@ -178,7 +178,7 @@ import java.util.function.Function;
  * Body: "Mock: No stub found"
  *
  * Can be overridden with custom response:
- * .defaultResponse(HttpResponse.ofCode(503).withJson("... [GH-90000]"))
+ * .defaultResponse(HttpResponse.ofCode(503).withJson("..."))
  * </pre>
  *
  * <p><b>Response Functions</b><br>
@@ -189,10 +189,10 @@ import java.util.function.Function;
  *     HttpMethod method = request.getMethod(); // GH-90000
  *
  *     // Access headers
- *     String authHeader = request.getHeader("Authorization [GH-90000]");
+ *     String authHeader = request.getHeader("Authorization");
  *
  *     // Access query parameters
- *     String filter = request.getQueryParameter("filter [GH-90000]");
+ *     String filter = request.getQueryParameter("filter");
  *
  *     // Access body
  *     byte[] body = request.getBody().asArray(); // GH-90000
@@ -224,7 +224,7 @@ import java.util.function.Function;
  *
  * // Simulate network errors
  * .stub(HttpMethod.GET, "/error", request -> { // GH-90000
- *     throw new IOException("Connection refused [GH-90000]");
+ *     throw new IOException("Connection refused");
  * })
  * }</pre>
  *

@@ -7,22 +7,22 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("PromptTemplateRegistry [GH-90000]")
+@DisplayName("PromptTemplateRegistry")
 class PromptTemplateRegistryTest {
 
     @Test
-    @DisplayName("returns latest registered version [GH-90000]")
+    @DisplayName("returns latest registered version")
     void returnsLatestVersion() { // GH-90000
         PromptTemplateRegistry registry = new PromptTemplateRegistry(); // GH-90000
         registry.register(PromptTemplateVersion.of("intent.capture", "v1", "baseline", "template-v1", 100)); // GH-90000
         registry.register(PromptTemplateVersion.of("intent.capture", "v2", "baseline", "template-v2", 100)); // GH-90000
 
-        PromptTemplateVersion latest = registry.latest("intent.capture [GH-90000]").orElseThrow();
-        assertThat(latest.version()).isEqualTo("v2 [GH-90000]");
+        PromptTemplateVersion latest = registry.latest("intent.capture").orElseThrow();
+        assertThat(latest.version()).isEqualTo("v2");
     }
 
     @Test
-    @DisplayName("selectForExperiment is deterministic for same subject and experiment [GH-90000]")
+    @DisplayName("selectForExperiment is deterministic for same subject and experiment")
     void selectForExperimentDeterministic() { // GH-90000
         PromptTemplateRegistry registry = new PromptTemplateRegistry(); // GH-90000
         registry.register(PromptTemplateVersion.of("intent.capture", "v1", "baseline", "a", 50)); // GH-90000
@@ -39,7 +39,7 @@ class PromptTemplateRegistryTest {
     }
 
     @Test
-    @DisplayName("renders template variables [GH-90000]")
+    @DisplayName("renders template variables")
     void rendersVariables() { // GH-90000
         PromptTemplateRegistry registry = new PromptTemplateRegistry(); // GH-90000
         PromptTemplateVersion template = PromptTemplateVersion.of( // GH-90000
@@ -50,11 +50,11 @@ class PromptTemplateRegistryTest {
                 100);
 
         String rendered = registry.render(template, Map.of("rawText", "Build a compliance dashboard")); // GH-90000
-        assertThat(rendered).isEqualTo("Idea: Build a compliance dashboard [GH-90000]");
+        assertThat(rendered).isEqualTo("Idea: Build a compliance dashboard");
     }
 
     @Test
-    @DisplayName("selectForActiveExperiment uses active version and supports rollback [GH-90000]")
+    @DisplayName("selectForActiveExperiment uses active version and supports rollback")
     void activeVersionSelectionAndRollback() { // GH-90000
         PromptTemplateRegistry registry = new PromptTemplateRegistry(); // GH-90000
         registry.register(PromptTemplateVersion.of("intent.capture", "v1", "baseline", "v1", 100)); // GH-90000
@@ -65,17 +65,17 @@ class PromptTemplateRegistryTest {
                 .selectForActiveExperiment("intent.capture", "tenant-a", "exp-1") // GH-90000
                 .orElseThrow(); // GH-90000
 
-        assertThat(active.version()).isEqualTo("v2 [GH-90000]");
+        assertThat(active.version()).isEqualTo("v2");
         assertThat(registry.rollbackToVersion("intent.capture", "v1")).isTrue(); // GH-90000
 
         PromptTemplateVersion rolledBack = registry
                 .selectForActiveExperiment("intent.capture", "tenant-a", "exp-1") // GH-90000
                 .orElseThrow(); // GH-90000
-        assertThat(rolledBack.version()).isEqualTo("v1 [GH-90000]");
+        assertThat(rolledBack.version()).isEqualTo("v1");
     }
 
     @Test
-    @DisplayName("rebalanceVariantWeights adjusts experiment weights using recorded scores [GH-90000]")
+    @DisplayName("rebalanceVariantWeights adjusts experiment weights using recorded scores")
     void rebalancesVariantWeights() { // GH-90000
         PromptTemplateRegistry registry = new PromptTemplateRegistry(); // GH-90000
         registry.register(PromptTemplateVersion.of("intent.capture", "v1", "baseline", "a", 50)); // GH-90000

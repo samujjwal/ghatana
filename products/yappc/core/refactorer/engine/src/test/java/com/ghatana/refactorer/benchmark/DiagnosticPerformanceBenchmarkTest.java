@@ -54,7 +54,7 @@ class DiagnosticPerformanceBenchmarkTest {
 
     @Test
     void testSmallProjectPerformance() { // GH-90000
-        System.out.println("\n=== Small Project (10 files) === [GH-90000]");
+        System.out.println("\n=== Small Project (10 files) ===");
 
         // Run sequential benchmark
         DiagnosticPerformanceBenchmark.BenchmarkResult sequential =
@@ -83,7 +83,7 @@ class DiagnosticPerformanceBenchmarkTest {
 
     @Test
     void testMediumProjectPerformance() { // GH-90000
-        System.out.println("\n=== Medium Project (50 files) === [GH-90000]");
+        System.out.println("\n=== Medium Project (50 files) ===");
 
         // Run sequential benchmark
         DiagnosticPerformanceBenchmark.BenchmarkResult sequential =
@@ -111,7 +111,7 @@ class DiagnosticPerformanceBenchmarkTest {
 
     @Test
     void testLargeProjectPerformance() { // GH-90000
-        System.out.println("\n=== Large Project (100 files) === [GH-90000]");
+        System.out.println("\n=== Large Project (100 files) ===");
 
         // Run sequential benchmark
         DiagnosticPerformanceBenchmark.BenchmarkResult sequential =
@@ -139,7 +139,7 @@ class DiagnosticPerformanceBenchmarkTest {
 
     @Test
     void testThroughputComparison() { // GH-90000
-        System.out.println("\n=== Throughput Comparison === [GH-90000]");
+        System.out.println("\n=== Throughput Comparison ===");
 
         // Test all project sizes
         runAndPrintThroughput("Small (10 files)", smallProjectFiles); // GH-90000

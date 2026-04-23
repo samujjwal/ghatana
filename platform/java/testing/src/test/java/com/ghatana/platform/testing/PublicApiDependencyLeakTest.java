@@ -29,10 +29,10 @@ class PublicApiDependencyLeakTest {
     void publicApiShouldNotExposeInternalThirdPartyDependencies() throws IOException, URISyntaxException, ClassNotFoundException { // GH-90000
         List<String> violations = new ArrayList<>(); // GH-90000
         for (Class<?> candidate : loadPlatformTestingClasses()) { // GH-90000
-            if (candidate.getName().contains(".internal. [GH-90000]")) {
+            if (candidate.getName().contains(".internal.")) {
                 continue;
             }
-            if (candidate.getName().startsWith("com.ghatana.platform.testing.fixtures. [GH-90000]")) {
+            if (candidate.getName().startsWith("com.ghatana.platform.testing.fixtures.")) {
                 continue;
             }
             collectViolations(candidate, violations); // GH-90000
@@ -111,13 +111,13 @@ class PublicApiDependencyLeakTest {
     private static List<Class<?>> loadPlatformTestingClasses() throws IOException, URISyntaxException, ClassNotFoundException { // GH-90000
         CodeSource codeSource = BaseTest.class.getProtectionDomain().getCodeSource(); // GH-90000
         Path classesRoot = Path.of(codeSource.getLocation().toURI()); // GH-90000
-        Path packageRoot = classesRoot.resolve("com/ghatana/platform/testing [GH-90000]");
+        Path packageRoot = classesRoot.resolve("com/ghatana/platform/testing");
 
         try (Stream<Path> paths = Files.walk(packageRoot)) { // GH-90000
             List<Class<?>> classes = new ArrayList<>(); // GH-90000
             for (Path path : paths.filter(Files::isRegularFile) // GH-90000
-                    .filter(file -> file.getFileName().toString().endsWith(".class [GH-90000]"))
-                    .filter(file -> !file.getFileName().toString().contains("$ [GH-90000]"))
+                    .filter(file -> file.getFileName().toString().endsWith(".class"))
+                    .filter(file -> !file.getFileName().toString().contains("$"))
                     .sorted(Comparator.naturalOrder()) // GH-90000
                     .toList()) { // GH-90000
                 String className = classesRoot.relativize(path) // GH-90000

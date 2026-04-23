@@ -42,7 +42,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.pattern Unit Test, Security Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("Security Penetration Tests [GH-90000]")
+@DisplayName("Security Penetration Tests")
 class SecurityPenetrationTest extends EventloopTestBase {
 
     @Mock
@@ -56,11 +56,11 @@ class SecurityPenetrationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("SQL Injection Attempts [GH-90000]")
+    @DisplayName("SQL Injection Attempts")
     class SQLInjectionTests {
 
         @Test
-        @DisplayName("Should prevent classic SQL injection via query parameters [GH-90000]")
+        @DisplayName("Should prevent classic SQL injection via query parameters")
         void shouldPreventClassicSQLInjection() { // GH-90000
             String payload = "' OR '1'='1";
             String injectedQuery = "SELECT * FROM records WHERE id = '" + payload + "'";
@@ -70,7 +70,7 @@ class SecurityPenetrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should prevent UNION-based SQL injection [GH-90000]")
+        @DisplayName("Should prevent UNION-based SQL injection")
         void shouldPreventUnionBasedInjection() { // GH-90000
             String payload = "1' UNION SELECT password FROM users--";
 
@@ -80,7 +80,7 @@ class SecurityPenetrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should prevent time-based blind SQL injection [GH-90000]")
+        @DisplayName("Should prevent time-based blind SQL injection")
         void shouldPreventTimeBasedBlindInjection() { // GH-90000
             String payload = "1'; WAITFOR DELAY '00:00:10'--";
 
@@ -96,7 +96,7 @@ class SecurityPenetrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should escape special characters in parameterized queries [GH-90000]")
+        @DisplayName("Should escape special characters in parameterized queries")
         void shouldEscapeSpecialCharacters() { // GH-90000
             String payload = "test'; DROP TABLE records;--";
 
@@ -106,16 +106,16 @@ class SecurityPenetrationTest extends EventloopTestBase {
                     .doesNotThrowAnyException(); // GH-90000
 
             // Table should still exist
-            assertThat(harness.tableExists("records [GH-90000]")).isTrue();
+            assertThat(harness.tableExists("records")).isTrue();
         }
     }
 
     @Nested
-    @DisplayName("NoSQL Injection Attempts [GH-90000]")
+    @DisplayName("NoSQL Injection Attempts")
     class NoSQLInjectionTests {
 
         @Test
-        @DisplayName("Should prevent MongoDB operator injection [GH-90000]")
+        @DisplayName("Should prevent MongoDB operator injection")
         void shouldPreventMongoDBOperatorInjection() { // GH-90000
             Map<String, Object> payload = new HashMap<>(); // GH-90000
             Map<String, Object> emailPayload = new HashMap<>(); // GH-90000
@@ -127,7 +127,7 @@ class SecurityPenetrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should prevent JSON-based query injection [GH-90000]")
+        @DisplayName("Should prevent JSON-based query injection")
         void shouldPreventJSONQueryInjection() { // GH-90000
             String payload = "{\"id\": {\"$gte\": 0}}";
 
@@ -137,56 +137,56 @@ class SecurityPenetrationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Authentication & Authorization Bypasses [GH-90000]")
+    @DisplayName("Authentication & Authorization Bypasses")
     class AuthenticationTests {
 
         @Test
-        @DisplayName("Should require valid authentication token [GH-90000]")
+        @DisplayName("Should require valid authentication token")
         void shouldRequireValidToken() { // GH-90000
             assertThatThrownBy(() -> runPromise(() -> harness.accessResourceWithoutAuth())) // GH-90000
                     .isInstanceOf(AuthenticationException.class) // GH-90000
-                    .hasMessage("Authentication required [GH-90000]");
+                    .hasMessage("Authentication required");
         }
 
         @Test
-        @DisplayName("Should reject expired tokens [GH-90000]")
+        @DisplayName("Should reject expired tokens")
         void shouldRejectExpiredTokens() { // GH-90000
             String expiredToken = harness.generateExpiredToken(); // GH-90000
 
             assertThatThrownBy(() -> runPromise(() -> harness.accessResourceWithToken(expiredToken))) // GH-90000
                     .isInstanceOf(AuthenticationException.class) // GH-90000
-                    .hasMessage("Token expired [GH-90000]");
+                    .hasMessage("Token expired");
         }
 
         @Test
-        @DisplayName("Should prevent privilege escalation [GH-90000]")
+        @DisplayName("Should prevent privilege escalation")
         void shouldRejectPrivilegeEscalation() { // GH-90000
-            String userToken = harness.generateTokenForRole("USER [GH-90000]");
+            String userToken = harness.generateTokenForRole("USER");
 
             assertThatThrownBy(() -> runPromise(() -> // GH-90000
                     harness.deleteUserWithToken("other-user", userToken))) // GH-90000
                     .isInstanceOf(AuthorizationException.class) // GH-90000
-                    .hasMessage("Insufficient permissions [GH-90000]");
+                    .hasMessage("Insufficient permissions");
         }
 
         @Test
-        @DisplayName("Should validate token signature [GH-90000]")
+        @DisplayName("Should validate token signature")
         void shouldValidateTokenSignature() { // GH-90000
             String validToken = harness.generateValidToken(); // GH-90000
             String tamperedToken = harness.tamperWithToken(validToken); // GH-90000
 
             assertThatThrownBy(() -> runPromise(() -> harness.accessResourceWithToken(tamperedToken))) // GH-90000
                     .isInstanceOf(AuthenticationException.class) // GH-90000
-                    .hasMessage("Invalid token signature [GH-90000]");
+                    .hasMessage("Invalid token signature");
         }
     }
 
     @Nested
-    @DisplayName("Tenant Isolation Bypass Attempts [GH-90000]")
+    @DisplayName("Tenant Isolation Bypass Attempts")
     class TenantIsolationTests {
 
         @Test
-        @DisplayName("Should prevent accessing another tenant's data [GH-90000]")
+        @DisplayName("Should prevent accessing another tenant's data")
         void shouldEnforceTenantIsolation() { // GH-90000
             String tenant1Id = "tenant-1";
 
@@ -199,21 +199,21 @@ class SecurityPenetrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should prevent tenant ID manipulation in requests [GH-90000]")
+        @DisplayName("Should prevent tenant ID manipulation in requests")
         void shouldPreventTenantIDManipulation() { // GH-90000
-            String userToken = harness.generateTokenForTenant("tenant-1 [GH-90000]");
+            String userToken = harness.generateTokenForTenant("tenant-1");
 
             // Attempt to specify different tenant in request
             assertThatThrownBy(() -> runPromise(() -> // GH-90000
                     harness.createRecordInTenantWithToken("tenant-2", "data", userToken))) // GH-90000
                     .isInstanceOf(AuthorizationException.class) // GH-90000
-                    .hasMessage("Tenant mismatch [GH-90000]");
+                    .hasMessage("Tenant mismatch");
         }
 
         @Test
-        @DisplayName("Should validate tenant context on every operation [GH-90000]")
+        @DisplayName("Should validate tenant context on every operation")
         void shouldValidateTenantOnEveryOp() { // GH-90000
-            String token = harness.generateTokenForTenant("tenant-1 [GH-90000]");
+            String token = harness.generateTokenForTenant("tenant-1");
 
             // All operations should include tenant validation
             assertThatCode(() -> runPromise(() -> harness.readRecordWithToken("tenant-1:id", token))) // GH-90000
@@ -225,11 +225,11 @@ class SecurityPenetrationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Rate Limiting Bypasses [GH-90000]")
+    @DisplayName("Rate Limiting Bypasses")
     class RateLimitBypassTests {
 
         @Test
-        @DisplayName("Should enforce rate limits per user [GH-90000]")
+        @DisplayName("Should enforce rate limits per user")
         void shouldEnforceRateLimitsPerUser() { // GH-90000
             String token = harness.generateValidToken(); // GH-90000
 
@@ -244,7 +244,7 @@ class SecurityPenetrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should prevent rate limit bypass via IP spoofing [GH-90000]")
+        @DisplayName("Should prevent rate limit bypass via IP spoofing")
         void shouldPreventIPSpoofing() { // GH-90000
             String token = harness.generateValidToken(); // GH-90000
 
@@ -260,7 +260,7 @@ class SecurityPenetrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should honor rate limit headers [GH-90000]")
+        @DisplayName("Should honor rate limit headers")
         void shouldHonorRateLimitHeaders() { // GH-90000
             String token = harness.generateValidToken(); // GH-90000
 
@@ -273,11 +273,11 @@ class SecurityPenetrationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Input Validation Tests [GH-90000]")
+    @DisplayName("Input Validation Tests")
     class InputValidationTests {
 
         @Test
-        @DisplayName("Should sanitize XSS payloads in data [GH-90000]")
+        @DisplayName("Should sanitize XSS payloads in data")
         void shouldSanitizeXSSPayloads() { // GH-90000
             String xssPayload = "<script>alert('XSS')</script>"; // GH-90000
             Record record = new Record(); // GH-90000
@@ -288,12 +288,12 @@ class SecurityPenetrationTest extends EventloopTestBase {
 
             // Retrieved data should be sanitized
             Record retrieved = harness.retrieveRecord(record.getId()); // GH-90000
-            Object name = retrieved.get("name [GH-90000]");
-            assertThat(name).asInstanceOf(STRING).doesNotContain("<script> [GH-90000]");
+            Object name = retrieved.get("name");
+            assertThat(name).asInstanceOf(STRING).doesNotContain("<script>");
         }
 
         @Test
-        @DisplayName("Should reject oversized payloads [GH-90000]")
+        @DisplayName("Should reject oversized payloads")
         void shouldRejectOversizedPayloads() { // GH-90000
             byte[] largePayload = new byte[100 * 1024 * 1024];  // 100MB
 
@@ -302,7 +302,7 @@ class SecurityPenetrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Should validate field types and ranges [GH-90000]")
+        @DisplayName("Should validate field types and ranges")
         void shouldValidateFieldTypes() { // GH-90000
             Record record = new Record(); // GH-90000
             record.put("age", "not-a-number");  // Invalid type // GH-90000
@@ -313,37 +313,37 @@ class SecurityPenetrationTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("Information Disclosure [GH-90000]")
+    @DisplayName("Information Disclosure")
     class InformationDisclosureTests {
 
         @Test
-        @DisplayName("Should not expose internal error details to client [GH-90000]")
+        @DisplayName("Should not expose internal error details to client")
         void shouldNotExposeInternalErrors() { // GH-90000
             assertThatThrownBy(() -> runPromise(() -> harness.triggerInternalError())) // GH-90000
                     .isInstanceOf(DataCloudException.class) // GH-90000
-                    .hasMessageContaining("An error occurred [GH-90000]")
-                    .hasMessageNotContaining("NullPointerException [GH-90000]")
-                    .hasMessageNotContaining("java.lang. [GH-90000]");
+                    .hasMessageContaining("An error occurred")
+                    .hasMessageNotContaining("NullPointerException")
+                    .hasMessageNotContaining("java.lang.");
         }
 
         @Test
-        @DisplayName("Should not expose database structure in error messages [GH-90000]")
+        @DisplayName("Should not expose database structure in error messages")
         void shouldNotExposeDbStructure() { // GH-90000
             assertThatThrownBy(() -> runPromise(() -> // GH-90000
-                    harness.executeQuery("SELECT * FROM nonexistent_table [GH-90000]")))
+                    harness.executeQuery("SELECT * FROM nonexistent_table")))
                     .isInstanceOf(Exception.class) // GH-90000
-                    .hasMessageNotContaining("table 'nonexistent_table' doesn't exist [GH-90000]");
+                    .hasMessageNotContaining("table 'nonexistent_table' doesn't exist");
         }
 
         @Test
-        @DisplayName("Should not expose file paths in responses [GH-90000]")
+        @DisplayName("Should not expose file paths in responses")
         void shouldNotExposeFilePaths() { // GH-90000
             String response = runPromise(() -> harness.getSystemStatus()); // GH-90000
 
             assertThat(response) // GH-90000
-                    .doesNotContain("/home/user [GH-90000]")
-                    .doesNotContain("/opt/data-cloud [GH-90000]")
-                    .doesNotContain(System.getProperty("java.home [GH-90000]"));
+                    .doesNotContain("/home/user")
+                    .doesNotContain("/opt/data-cloud")
+                    .doesNotContain(System.getProperty("java.home"));
         }
     }
 
@@ -358,17 +358,17 @@ class SecurityPenetrationTest extends EventloopTestBase {
 
         private static boolean containsSQLInjection(String query) { // GH-90000
             String upper = query.toUpperCase(); // GH-90000
-            return upper.contains("' OR  [GH-90000]") || upper.contains("OR '1'='1 [GH-90000]") ||
-                    upper.contains("UNION SELECT [GH-90000]") || upper.contains("WAITFOR DELAY [GH-90000]") ||
-                    upper.contains("-- [GH-90000]") || upper.contains("DROP TABLE [GH-90000]");
+            return upper.contains("' OR ") || upper.contains("OR '1'='1") ||
+                    upper.contains("UNION SELECT") || upper.contains("WAITFOR DELAY") ||
+                    upper.contains("--") || upper.contains("DROP TABLE");
         }
 
         Promise<Object> executeQuery(String query) { // GH-90000
             if (containsSQLInjection(query)) { // GH-90000
-                return Promise.ofException(new QueryInjectionException("SQL injection detected [GH-90000]"));
+                return Promise.ofException(new QueryInjectionException("SQL injection detected"));
             }
-            if (query.contains("nonexistent_table [GH-90000]")) {
-                return Promise.ofException(new RuntimeException("Query failed: invalid query [GH-90000]"));
+            if (query.contains("nonexistent_table")) {
+                return Promise.ofException(new RuntimeException("Query failed: invalid query"));
             }
             return Promise.of(new Object()); // GH-90000
         }
@@ -383,9 +383,9 @@ class SecurityPenetrationTest extends EventloopTestBase {
         Promise<Object> quereyWithMap(Map<String, Object> payload) { // GH-90000
             for (Object value : payload.values()) { // GH-90000
                 if (value instanceof Map<?, ?> map) { // GH-90000
-                    boolean hasOperator = map.keySet().stream().anyMatch(k -> k.toString().startsWith("$ [GH-90000]"));
+                    boolean hasOperator = map.keySet().stream().anyMatch(k -> k.toString().startsWith("$"));
                     if (hasOperator) { // GH-90000
-                        return Promise.ofException(new QueryInjectionException("NoSQL operator injection detected [GH-90000]"));
+                        return Promise.ofException(new QueryInjectionException("NoSQL operator injection detected"));
                     }
                 }
             }
@@ -393,23 +393,23 @@ class SecurityPenetrationTest extends EventloopTestBase {
         }
 
         Promise<Object> executeJsonQuery(String query) { // GH-90000
-            if (query.contains("$gte [GH-90000]") || query.contains("$ne [GH-90000]") || query.contains("$lt [GH-90000]") ||
-                    query.contains("$gt [GH-90000]") || query.contains("$in [GH-90000]") || query.contains("$or [GH-90000]")) {
-                return Promise.ofException(new QueryInjectionException("JSON injection detected [GH-90000]"));
+            if (query.contains("$gte") || query.contains("$ne") || query.contains("$lt") ||
+                    query.contains("$gt") || query.contains("$in") || query.contains("$or")) {
+                return Promise.ofException(new QueryInjectionException("JSON injection detected"));
             }
             return Promise.of(new Object()); // GH-90000
         }
 
         Promise<Object> accessResourceWithoutAuth() { // GH-90000
-            return Promise.ofException(new AuthenticationException("Authentication required [GH-90000]"));
+            return Promise.ofException(new AuthenticationException("Authentication required"));
         }
 
         Promise<Object> accessResourceWithToken(String token) { // GH-90000
             if ("expired".equals(token)) { // GH-90000
-                return Promise.ofException(new AuthenticationException("Token expired [GH-90000]"));
+                return Promise.ofException(new AuthenticationException("Token expired"));
             }
-            if (token != null && token.endsWith("_tampered [GH-90000]")) {
-                return Promise.ofException(new AuthenticationException("Invalid token signature [GH-90000]"));
+            if (token != null && token.endsWith("_tampered")) {
+                return Promise.ofException(new AuthenticationException("Invalid token signature"));
             }
             return Promise.of(new Object()); // GH-90000
         }
@@ -423,8 +423,8 @@ class SecurityPenetrationTest extends EventloopTestBase {
         }
 
         Promise<Object> deleteUserWithToken(String userId, String token) { // GH-90000
-            if (token != null && token.startsWith("role_user [GH-90000]")) {
-                return Promise.ofException(new AuthorizationException("Insufficient permissions [GH-90000]"));
+            if (token != null && token.startsWith("role_user")) {
+                return Promise.ofException(new AuthorizationException("Insufficient permissions"));
             }
             return Promise.of(new Object()); // GH-90000
         }
@@ -434,18 +434,18 @@ class SecurityPenetrationTest extends EventloopTestBase {
         }
 
         Promise<Object> readRecordWithToken(String recordId, String token) { // GH-90000
-            String tokenTenant = token.startsWith("tenant: [GH-90000]") ? token.substring(7) : "";
-            String recordTenant = recordId.contains(": [GH-90000]") ? recordId.split(": [GH-90000]")[0] : "";
+            String tokenTenant = token.startsWith("tenant:") ? token.substring(7) : "";
+            String recordTenant = recordId.contains(":") ? recordId.split(":")[0] : "";
             if (!tokenTenant.equals(recordTenant)) { // GH-90000
-                return Promise.ofException(new AuthorizationException("Access denied: tenant mismatch [GH-90000]"));
+                return Promise.ofException(new AuthorizationException("Access denied: tenant mismatch"));
             }
             return Promise.of(new Object()); // GH-90000
         }
 
         Promise<Object> createRecordInTenantWithToken(String tenantId, String data, String token) { // GH-90000
-            String tokenTenant = token.startsWith("tenant: [GH-90000]") ? token.substring(7) : "";
+            String tokenTenant = token.startsWith("tenant:") ? token.substring(7) : "";
             if (!tokenTenant.equals(tenantId)) { // GH-90000
-                return Promise.ofException(new AuthorizationException("Tenant mismatch [GH-90000]"));
+                return Promise.ofException(new AuthorizationException("Tenant mismatch"));
             }
             return Promise.of(new Object()); // GH-90000
         }
@@ -471,7 +471,7 @@ class SecurityPenetrationTest extends EventloopTestBase {
 
         Promise<Object> storeRecord(Record record) { // GH-90000
             // Validate field types
-            Object age = record.get("age [GH-90000]");
+            Object age = record.get("age");
             if (age != null && !(age instanceof Number)) { // GH-90000
                 try {
                     Double.parseDouble(age.toString()); // GH-90000
@@ -506,10 +506,10 @@ class SecurityPenetrationTest extends EventloopTestBase {
         }
 
         Promise<Object> triggerInternalError() { // GH-90000
-            return Promise.ofException(new DataCloudException("An error occurred [GH-90000]"));
+            return Promise.ofException(new DataCloudException("An error occurred"));
         }
 
-        Promise<String> getSystemStatus() { return Promise.of("OK [GH-90000]"); }
+        Promise<String> getSystemStatus() { return Promise.of("OK"); }
     }
 
     private static class Record {

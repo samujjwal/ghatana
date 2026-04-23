@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer test
  * @doc.pattern Test
  */
-@DisplayName("JpaTranscriptionRepository Tests [GH-90000]")
+@DisplayName("JpaTranscriptionRepository Tests")
 class JpaTranscriptionRepositoryTest {
 
     private EntityManagerFactory emf;
@@ -28,7 +28,7 @@ class JpaTranscriptionRepositoryTest {
 
     @BeforeEach
     void setUp() { // GH-90000
-        emf = Persistence.createEntityManagerFactory("audio-video-test [GH-90000]");
+        emf = Persistence.createEntityManagerFactory("audio-video-test");
         entityManager = emf.createEntityManager(); // GH-90000
         repository = new JpaTranscriptionRepository(entityManager); // GH-90000
     }
@@ -44,7 +44,7 @@ class JpaTranscriptionRepositoryTest {
     }
 
     @Test
-    @DisplayName("GIVEN valid entity WHEN save THEN entity is persisted [GH-90000]")
+    @DisplayName("GIVEN valid entity WHEN save THEN entity is persisted")
     void testSaveTranscription() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -70,7 +70,7 @@ class JpaTranscriptionRepositoryTest {
     }
 
     @Test
-    @DisplayName("GIVEN saved entity WHEN findById THEN returns entity [GH-90000]")
+    @DisplayName("GIVEN saved entity WHEN findById THEN returns entity")
     void testFindById() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -86,7 +86,7 @@ class JpaTranscriptionRepositoryTest {
     }
 
     @Test
-    @DisplayName("GIVEN saved transcription WHEN findByAudioFileId THEN returns transcription [GH-90000]")
+    @DisplayName("GIVEN saved transcription WHEN findByAudioFileId THEN returns transcription")
     void testFindByAudioFileId() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -110,7 +110,7 @@ class JpaTranscriptionRepositoryTest {
     }
 
     @Test
-    @DisplayName("GIVEN wrong tenant WHEN findById THEN returns empty [GH-90000]")
+    @DisplayName("GIVEN wrong tenant WHEN findById THEN returns empty")
     void testFindByIdWrongTenant() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -126,7 +126,7 @@ class JpaTranscriptionRepositoryTest {
     }
 
     @Test
-    @DisplayName("GIVEN multiple entities WHEN findByTenantId THEN returns all for tenant [GH-90000]")
+    @DisplayName("GIVEN multiple entities WHEN findByTenantId THEN returns all for tenant")
     void testFindByTenantId() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -145,7 +145,7 @@ class JpaTranscriptionRepositoryTest {
     }
 
     @Test
-    @DisplayName("GIVEN entities with different statuses WHEN findByStatus THEN returns matching [GH-90000]")
+    @DisplayName("GIVEN entities with different statuses WHEN findByStatus THEN returns matching")
     void testFindByStatus() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -173,7 +173,7 @@ class JpaTranscriptionRepositoryTest {
     }
 
     @Test
-    @DisplayName("GIVEN saved entity WHEN softDelete THEN entity is marked deleted [GH-90000]")
+    @DisplayName("GIVEN saved entity WHEN softDelete THEN entity is marked deleted")
     void testSoftDelete() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -192,7 +192,7 @@ class JpaTranscriptionRepositoryTest {
     }
 
     @Test
-    @DisplayName("GIVEN no entity WHEN softDelete THEN returns false [GH-90000]")
+    @DisplayName("GIVEN no entity WHEN softDelete THEN returns false")
     void testSoftDeleteNotFound() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -206,7 +206,7 @@ class JpaTranscriptionRepositoryTest {
     }
 
     @Test
-    @DisplayName("GIVEN soft deleted entity WHEN hardDelete THEN entity is removed [GH-90000]")
+    @DisplayName("GIVEN soft deleted entity WHEN hardDelete THEN entity is removed")
     void testHardDelete() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -224,7 +224,7 @@ class JpaTranscriptionRepositoryTest {
     }
 
     @Test
-    @DisplayName("GIVEN transcription exists WHEN existsByAudioFileId THEN returns true [GH-90000]")
+    @DisplayName("GIVEN transcription exists WHEN existsByAudioFileId THEN returns true")
     void testExistsByAudioFileId() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -247,7 +247,7 @@ class JpaTranscriptionRepositoryTest {
     }
 
     @Test
-    @DisplayName("GIVEN no transcription WHEN existsByAudioFileId THEN returns false [GH-90000]")
+    @DisplayName("GIVEN no transcription WHEN existsByAudioFileId THEN returns false")
     void testExistsByAudioFileIdNotFound() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -261,7 +261,7 @@ class JpaTranscriptionRepositoryTest {
     }
 
     @Test
-    @DisplayName("GIVEN saved entities WHEN countByTenantId THEN returns correct count [GH-90000]")
+    @DisplayName("GIVEN saved entities WHEN countByTenantId THEN returns correct count")
     void testCountByTenantId() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";

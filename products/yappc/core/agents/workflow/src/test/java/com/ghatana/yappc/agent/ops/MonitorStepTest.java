@@ -18,7 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Ops MonitorStep Tests [GH-90000]")
+@DisplayName("Ops MonitorStep Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles monitor step test operations
@@ -39,13 +39,13 @@ class MonitorStepTest extends EventloopTestBase {
   }
 
   @Test
-  @DisplayName("Should return correct step ID [GH-90000]")
+  @DisplayName("Should return correct step ID")
   void shouldReturnCorrectStepId() { // GH-90000
-    assertThat(step.getStepId()).isEqualTo("ops.monitor [GH-90000]");
+    assertThat(step.getStepId()).isEqualTo("ops.monitor");
   }
 
   @Test
-  @DisplayName("Should monitor production deployment [GH-90000]")
+  @DisplayName("Should monitor production deployment")
   void shouldMonitorDeployment() { // GH-90000
     // GIVEN
     WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000

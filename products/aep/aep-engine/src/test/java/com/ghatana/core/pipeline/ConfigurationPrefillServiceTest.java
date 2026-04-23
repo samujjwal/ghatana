@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern UnitTest
  */
-@DisplayName("ConfigurationPrefillService [GH-90000]")
+@DisplayName("ConfigurationPrefillService")
 class ConfigurationPrefillServiceTest {
 
     private ConfigurationPrefillService service;
@@ -33,86 +33,86 @@ class ConfigurationPrefillServiceTest {
     }
 
     @Nested
-    @DisplayName("suggestConfiguration() [GH-90000]")
+    @DisplayName("suggestConfiguration()")
     class SuggestConfigurationTests {
 
         @Test
-        @DisplayName("suggests configuration for filter stage [GH-90000]")
+        @DisplayName("suggests configuration for filter stage")
         void suggestsConfigurationForFilterStage() { // GH-90000
             Map<String, Object> config = service.suggestConfiguration("filter", "transaction.created", Map.of()); // GH-90000
 
             assertThat(config).isNotEmpty(); // GH-90000
-            assertThat(config).containsKey("removeNulls [GH-90000]");
-            assertThat(config).containsKey("validateSchema [GH-90000]");
+            assertThat(config).containsKey("removeNulls");
+            assertThat(config).containsKey("validateSchema");
         }
 
         @Test
-        @DisplayName("suggests configuration for detect stage [GH-90000]")
+        @DisplayName("suggests configuration for detect stage")
         void suggestsConfigurationForDetectStage() { // GH-90000
             Map<String, Object> config = service.suggestConfiguration("detect", "transaction.created", Map.of()); // GH-90000
 
             assertThat(config).isNotEmpty(); // GH-90000
-            assertThat(config).containsKey("model [GH-90000]");
-            assertThat(config).containsKey("threshold [GH-90000]");
+            assertThat(config).containsKey("model");
+            assertThat(config).containsKey("threshold");
         }
 
         @Test
-        @DisplayName("customizes for transaction events [GH-90000]")
+        @DisplayName("customizes for transaction events")
         void customizesForTransactionEvents() { // GH-90000
             Map<String, Object> config = service.suggestConfiguration("filter", "transaction.created", Map.of()); // GH-90000
 
-            assertThat(config).containsKey("minAmount [GH-90000]");
-            assertThat(config).containsKey("maxAmount [GH-90000]");
+            assertThat(config).containsKey("minAmount");
+            assertThat(config).containsKey("maxAmount");
         }
 
         @Test
-        @DisplayName("customizes for login events [GH-90000]")
+        @DisplayName("customizes for login events")
         void customizesForLoginEvents() { // GH-90000
             Map<String, Object> config = service.suggestConfiguration("validate", "user.login", Map.of()); // GH-90000
 
-            assertThat(config).containsKey("tokenType [GH-90000]");
-            assertThat(config).containsKey("validateSignature [GH-90000]");
+            assertThat(config).containsKey("tokenType");
+            assertThat(config).containsKey("validateSignature");
         }
 
         @Test
-        @DisplayName("customizes for sensor events [GH-90000]")
+        @DisplayName("customizes for sensor events")
         void customizesForSensorEvents() { // GH-90000
             Map<String, Object> config = service.suggestConfiguration("filter", "sensor.reading", Map.of()); // GH-90000
 
-            assertThat(config).containsKey("method [GH-90000]");
-            assertThat(config).containsKey("threshold [GH-90000]");
+            assertThat(config).containsKey("method");
+            assertThat(config).containsKey("threshold");
         }
 
         @Test
-        @DisplayName("customizes based on industry context [GH-90000]")
+        @DisplayName("customizes based on industry context")
         void customizesBasedOnIndustryContext() { // GH-90000
             Map<String, Object> context = Map.of("industry", "finance"); // GH-90000
             Map<String, Object> config = service.suggestConfiguration("detect", "transaction.created", context); // GH-90000
 
-            assertThat(config.get("threshold [GH-90000]")).isEqualTo(0.9);
+            assertThat(config.get("threshold")).isEqualTo(0.9);
         }
 
         @Test
-        @DisplayName("customizes for healthcare industry [GH-90000]")
+        @DisplayName("customizes for healthcare industry")
         void customizesForHealthcareIndustry() { // GH-90000
             Map<String, Object> context = Map.of("industry", "healthcare"); // GH-90000
             Map<String, Object> config = service.suggestConfiguration("log", "patient.event", context); // GH-90000
 
-            assertThat(config.get("includePayload [GH-90000]")).isEqualTo(false);
-            assertThat(config.get("level [GH-90000]")).isEqualTo("warn [GH-90000]");
+            assertThat(config.get("includePayload")).isEqualTo(false);
+            assertThat(config.get("level")).isEqualTo("warn");
         }
 
         @Test
-        @DisplayName("customizes for sensitivity context [GH-90000]")
+        @DisplayName("customizes for sensitivity context")
         void customizesForSensitivityContext() { // GH-90000
             Map<String, Object> context = Map.of("sensitivity", "high"); // GH-90000
             Map<String, Object> config = service.suggestConfiguration("detect", "transaction.created", context); // GH-90000
 
-            assertThat(config.get("threshold [GH-90000]")).isEqualTo(0.95);
+            assertThat(config.get("threshold")).isEqualTo(0.95);
         }
 
         @Test
-        @DisplayName("returns empty config for unknown stage type [GH-90000]")
+        @DisplayName("returns empty config for unknown stage type")
         void returnsEmptyConfigForUnknownStageType() { // GH-90000
             Map<String, Object> config = service.suggestConfiguration("unknown", "test.event", Map.of()); // GH-90000
 
@@ -120,7 +120,7 @@ class ConfigurationPrefillServiceTest {
         }
 
         @Test
-        @DisplayName("calculates auto-configuration percentage [GH-90000]")
+        @DisplayName("calculates auto-configuration percentage")
         void calculatesAutoConfigurationPercentage() { // GH-90000
             List<NaturalLanguagePipelineService.StageSpec> stages = List.of( // GH-90000
                 new NaturalLanguagePipelineService.StageSpec( // GH-90000
@@ -135,14 +135,14 @@ class ConfigurationPrefillServiceTest {
         }
 
         @Test
-        @DisplayName("returns 0 for empty stages [GH-90000]")
+        @DisplayName("returns 0 for empty stages")
         void returns0ForEmptyStages() { // GH-90000
             double percentage = service.calculateAutoConfigurationPercentage(List.of()); // GH-90000
             assertThat(percentage).isEqualTo(0.0); // GH-90000
         }
 
         @Test
-        @DisplayName("returns 0 for null stages [GH-90000]")
+        @DisplayName("returns 0 for null stages")
         void returns0ForNullStages() { // GH-90000
             double percentage = service.calculateAutoConfigurationPercentage(null); // GH-90000
             assertThat(percentage).isEqualTo(0.0); // GH-90000
@@ -150,11 +150,11 @@ class ConfigurationPrefillServiceTest {
     }
 
     @Nested
-    @DisplayName("getConfidence() [GH-90000]")
+    @DisplayName("getConfidence()")
     class GetConfidenceTests {
 
         @Test
-        @DisplayName("returns confidence for default configs [GH-90000]")
+        @DisplayName("returns confidence for default configs")
         void returnsConfidenceForDefaultConfigs() { // GH-90000
             double confidence = service.getConfidence("filter", "transaction.created", "removeNulls"); // GH-90000
 
@@ -162,7 +162,7 @@ class ConfigurationPrefillServiceTest {
         }
 
         @Test
-        @DisplayName("returns high confidence for transaction amount configs [GH-90000]")
+        @DisplayName("returns high confidence for transaction amount configs")
         void returnsHighConfidenceForTransactionAmountConfigs() { // GH-90000
             double confidence = service.getConfidence("filter", "transaction.created", "minAmount"); // GH-90000
 
@@ -170,7 +170,7 @@ class ConfigurationPrefillServiceTest {
         }
 
         @Test
-        @DisplayName("returns high confidence for sensor threshold configs [GH-90000]")
+        @DisplayName("returns high confidence for sensor threshold configs")
         void returnsHighConfidenceForSensorThresholdConfigs() { // GH-90000
             double confidence = service.getConfidence("detect", "sensor.reading", "threshold"); // GH-90000
 
@@ -178,7 +178,7 @@ class ConfigurationPrefillServiceTest {
         }
 
         @Test
-        @DisplayName("returns low confidence for unknown configs [GH-90000]")
+        @DisplayName("returns low confidence for unknown configs")
         void returnsLowConfidenceForUnknownConfigs() { // GH-90000
             double confidence = service.getConfidence("filter", "test.event", "unknownKey"); // GH-90000
 
@@ -186,7 +186,7 @@ class ConfigurationPrefillServiceTest {
         }
 
         @Test
-        @DisplayName("confidence is between 0 and 1 [GH-90000]")
+        @DisplayName("confidence is between 0 and 1")
         void confidenceIsBetween0And1() { // GH-90000
             double confidence = service.getConfidence("filter", "test.event", "anyKey"); // GH-90000
 
@@ -195,11 +195,11 @@ class ConfigurationPrefillServiceTest {
     }
 
     @Nested
-    @DisplayName("ConfigSuggestion [GH-90000]")
+    @DisplayName("ConfigSuggestion")
     class ConfigSuggestionTests {
 
         @Test
-        @DisplayName("config suggestion has required fields [GH-90000]")
+        @DisplayName("config suggestion has required fields")
         void configSuggestionHasRequiredFields() { // GH-90000
             ConfigurationPrefillService.ConfigSuggestion suggestion = new ConfigurationPrefillService.ConfigSuggestion( // GH-90000
                 "key", "value", 0.8, "reason"

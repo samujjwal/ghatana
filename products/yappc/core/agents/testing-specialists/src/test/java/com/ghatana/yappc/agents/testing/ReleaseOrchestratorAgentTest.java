@@ -27,7 +27,7 @@ import com.ghatana.yappc.agents.code.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("ReleaseOrchestratorAgent [GH-90000]")
+@DisplayName("ReleaseOrchestratorAgent")
 class ReleaseOrchestratorAgentTest extends EventloopTestBase {
 
   private MemoryStore memoryStore;
@@ -42,11 +42,11 @@ class ReleaseOrchestratorAgentTest extends EventloopTestBase {
   }
 
   @Nested
-  @DisplayName("Validation [GH-90000]")
+  @DisplayName("Validation")
   class Validation {
 
     @Test
-    @DisplayName("should accept valid release request with artifacts [GH-90000]")
+    @DisplayName("should accept valid release request with artifacts")
     void validRequest() { // GH-90000
       ReleaseOrchestratorInput input = new ReleaseOrchestratorInput( // GH-90000
           "rel-1", "2.0.0", "standard", List.of("app.jar", "app.war"), Map.of()); // GH-90000
@@ -54,16 +54,16 @@ class ReleaseOrchestratorAgentTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("should reject empty releaseId [GH-90000]")
+    @DisplayName("should reject empty releaseId")
     void emptyReleaseId() { // GH-90000
       assertThatThrownBy(() -> // GH-90000
           new ReleaseOrchestratorInput("", "2.0.0", "standard", // GH-90000
-              List.of("app.jar [GH-90000]"), Map.of()))
+              List.of("app.jar"), Map.of()))
           .isInstanceOf(IllegalArgumentException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("should reject empty artifacts list [GH-90000]")
+    @DisplayName("should reject empty artifacts list")
     void emptyArtifacts() { // GH-90000
       ReleaseOrchestratorInput input = new ReleaseOrchestratorInput( // GH-90000
           "rel-1", "2.0.0", "standard", List.of(), Map.of()); // GH-90000
@@ -73,18 +73,18 @@ class ReleaseOrchestratorAgentTest extends EventloopTestBase {
   }
 
   @Nested
-  @DisplayName("Release Pipeline Gates [GH-90000]")
+  @DisplayName("Release Pipeline Gates")
   class ReleasePipeline {
 
     @Test
-    @DisplayName("should block standard release without governance approval [GH-90000]")
+    @DisplayName("should block standard release without governance approval")
     void blockedWithoutGovernance() { // GH-90000
       OutputGenerator<StepRequest<ReleaseOrchestratorInput>,
           StepResult<ReleaseOrchestratorOutput>> generator =
           new ReleaseOrchestratorAgent.ReleaseOrchestratorGenerator(); // GH-90000
 
       ReleaseOrchestratorInput input = new ReleaseOrchestratorInput( // GH-90000
-          "rel-1", "2.0.0", "standard", List.of("app.jar [GH-90000]"), Map.of());
+          "rel-1", "2.0.0", "standard", List.of("app.jar"), Map.of());
 
       StepResult<ReleaseOrchestratorOutput> result = runPromise(() -> // GH-90000
           generator.generate( // GH-90000
@@ -95,18 +95,18 @@ class ReleaseOrchestratorAgentTest extends EventloopTestBase {
       assertThat(result.output().status()) // GH-90000
           .isEqualTo(ReleaseOrchestratorOutput.STATUS_BLOCKED); // GH-90000
       assertThat(result.output().pendingGates()) // GH-90000
-          .contains("governance-approval [GH-90000]");
+          .contains("governance-approval");
     }
 
     @Test
-    @DisplayName("should pass patch release without explicit governance/staging [GH-90000]")
+    @DisplayName("should pass patch release without explicit governance/staging")
     void patchReleaseAutoApproved() { // GH-90000
       OutputGenerator<StepRequest<ReleaseOrchestratorInput>,
           StepResult<ReleaseOrchestratorOutput>> generator =
           new ReleaseOrchestratorAgent.ReleaseOrchestratorGenerator(); // GH-90000
 
       ReleaseOrchestratorInput input = new ReleaseOrchestratorInput( // GH-90000
-          "rel-2", "2.0.1", "patch", List.of("app.jar [GH-90000]"),
+          "rel-2", "2.0.1", "patch", List.of("app.jar"),
           Map.of("stagingPassed", true)); // GH-90000
 
       StepResult<ReleaseOrchestratorOutput> result = runPromise(() -> // GH-90000
@@ -117,18 +117,18 @@ class ReleaseOrchestratorAgentTest extends EventloopTestBase {
       assertThat(result.output().status()) // GH-90000
           .isEqualTo(ReleaseOrchestratorOutput.STATUS_READY); // GH-90000
       assertThat(result.output().pendingGates()).isEmpty(); // GH-90000
-      assertThat(result.output().sbomDigest()).startsWith("sha256: [GH-90000]");
+      assertThat(result.output().sbomDigest()).startsWith("sha256:");
     }
 
     @Test
-    @DisplayName("should pass fully approved standard release [GH-90000]")
+    @DisplayName("should pass fully approved standard release")
     void fullyApprovedRelease() { // GH-90000
       OutputGenerator<StepRequest<ReleaseOrchestratorInput>,
           StepResult<ReleaseOrchestratorOutput>> generator =
           new ReleaseOrchestratorAgent.ReleaseOrchestratorGenerator(); // GH-90000
 
       ReleaseOrchestratorInput input = new ReleaseOrchestratorInput( // GH-90000
-          "rel-3", "3.0.0", "standard", List.of("app.jar [GH-90000]"),
+          "rel-3", "3.0.0", "standard", List.of("app.jar"),
           Map.of("governanceApproved", true, "stagingPassed", true)); // GH-90000
 
       StepResult<ReleaseOrchestratorOutput> result = runPromise(() -> // GH-90000
@@ -143,20 +143,20 @@ class ReleaseOrchestratorAgentTest extends EventloopTestBase {
   }
 
   @Nested
-  @DisplayName("StepContract [GH-90000]")
+  @DisplayName("StepContract")
   class StepContractTests {
 
     @Test
-    @DisplayName("should have correct step name [GH-90000]")
+    @DisplayName("should have correct step name")
     void stepName() { // GH-90000
-      assertThat(agent.getStepName()).isEqualTo("orchestrator.release [GH-90000]");
+      assertThat(agent.getStepName()).isEqualTo("orchestrator.release");
     }
 
     @Test
-    @DisplayName("should report to head-of-devops [GH-90000]")
+    @DisplayName("should report to head-of-devops")
     void reportsTo() { // GH-90000
-      assertThat(agent.getStepContract().metadata().get("reports_to [GH-90000]"))
-          .isEqualTo("head-of-devops [GH-90000]");
+      assertThat(agent.getStepContract().metadata().get("reports_to"))
+          .isEqualTo("head-of-devops");
     }
   }
 }

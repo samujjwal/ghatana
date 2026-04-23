@@ -25,19 +25,19 @@ import static org.mockito.Mockito.*;
  * @doc.layer test
  * @doc.pattern Test
  */
-@DisplayName("Tenant-Aware Rate Limiting Interceptor Tests (AV-P2-04) [GH-90000]")
+@DisplayName("Tenant-Aware Rate Limiting Interceptor Tests (AV-P2-04)")
 class TenantAwareRateLimitingInterceptorTest {
 
     @Test
-    @DisplayName("Should allow call within per-tenant limit [GH-90000]")
+    @DisplayName("Should allow call within per-tenant limit")
     void shouldAllowCallWithinTenantLimit() { // GH-90000
         TenantAwareRateLimitingInterceptor interceptor =
                 new TenantAwareRateLimitingInterceptor(50.0, Map.of("premium-tenant", 100.0)); // GH-90000
 
-        Metadata headers = withTenantId("premium-tenant [GH-90000]");
-        @SuppressWarnings("unchecked [GH-90000]")
-        ServerCall<String, String> call = createServerCall("av.STT/Transcribe [GH-90000]");
-        @SuppressWarnings("unchecked [GH-90000]")
+        Metadata headers = withTenantId("premium-tenant");
+        @SuppressWarnings("unchecked")
+        ServerCall<String, String> call = createServerCall("av.STT/Transcribe");
+        @SuppressWarnings("unchecked")
         ServerCallHandler<String, String> next = mock(ServerCallHandler.class); // GH-90000
         when(next.startCall(any(), eq(headers))).thenReturn(new ServerCall.Listener<>() {}); // GH-90000
 
@@ -48,25 +48,25 @@ class TenantAwareRateLimitingInterceptorTest {
     }
 
     @Test
-    @DisplayName("Should reject call when rate exhausted for premium tenant with low override [GH-90000]")
+    @DisplayName("Should reject call when rate exhausted for premium tenant with low override")
     void shouldRejectWhenTenantQuotaExhausted() { // GH-90000
         // Set a very low per-tenant quota (1 TPS, burst 1) to exhaust immediately // GH-90000
         TenantAwareRateLimitingInterceptor interceptor =
                 new TenantAwareRateLimitingInterceptor(50.0, Map.of("low-quota-tenant", 0.001)); // GH-90000
 
-        Metadata headers = withTenantId("low-quota-tenant [GH-90000]");
-        @SuppressWarnings("unchecked [GH-90000]")
+        Metadata headers = withTenantId("low-quota-tenant");
+        @SuppressWarnings("unchecked")
         ServerCallHandler<String, String> next = mock(ServerCallHandler.class); // GH-90000
         when(next.startCall(any(), any())).thenReturn(new ServerCall.Listener<>() {}); // GH-90000
 
         // Exhaust the burst
         for (int i = 0; i < 20; i++) { // GH-90000
-            interceptor.interceptCall(createServerCall("av.STT/Transcribe [GH-90000]"), headers, next);
+            interceptor.interceptCall(createServerCall("av.STT/Transcribe"), headers, next);
         }
 
         // Next call should be rejected
-        @SuppressWarnings("unchecked [GH-90000]")
-        ServerCall<String, String> rejectedCall = createServerCall("av.STT/Transcribe [GH-90000]");
+        @SuppressWarnings("unchecked")
+        ServerCall<String, String> rejectedCall = createServerCall("av.STT/Transcribe");
         interceptor.interceptCall(rejectedCall, headers, next); // GH-90000
 
         ArgumentCaptor<Status> statusCaptor = ArgumentCaptor.forClass(Status.class); // GH-90000
@@ -78,15 +78,15 @@ class TenantAwareRateLimitingInterceptorTest {
     }
 
     @Test
-    @DisplayName("Tenant without explicit quota falls back to global default [GH-90000]")
+    @DisplayName("Tenant without explicit quota falls back to global default")
     void shouldUseDefaultLimitForUnknownTenant() { // GH-90000
         TenantAwareRateLimitingInterceptor interceptor =
                 new TenantAwareRateLimitingInterceptor(50.0, Map.of()); // GH-90000
 
-        Metadata headers = withTenantId("unknown-tenant [GH-90000]");
-        @SuppressWarnings("unchecked [GH-90000]")
-        ServerCall<String, String> call = createServerCall("av.STT/Transcribe [GH-90000]");
-        @SuppressWarnings("unchecked [GH-90000]")
+        Metadata headers = withTenantId("unknown-tenant");
+        @SuppressWarnings("unchecked")
+        ServerCall<String, String> call = createServerCall("av.STT/Transcribe");
+        @SuppressWarnings("unchecked")
         ServerCallHandler<String, String> next = mock(ServerCallHandler.class); // GH-90000
         when(next.startCall(any(), eq(headers))).thenReturn(new ServerCall.Listener<>() {}); // GH-90000
 
@@ -97,15 +97,15 @@ class TenantAwareRateLimitingInterceptorTest {
     }
 
     @Test
-    @DisplayName("Null tenant ID uses global default limiter [GH-90000]")
+    @DisplayName("Null tenant ID uses global default limiter")
     void shouldHandleNullTenantId() { // GH-90000
         TenantAwareRateLimitingInterceptor interceptor =
                 new TenantAwareRateLimitingInterceptor(50.0, Map.of()); // GH-90000
 
         Metadata headers = new Metadata(); // no tenant header // GH-90000
-        @SuppressWarnings("unchecked [GH-90000]")
-        ServerCall<String, String> call = createServerCall("av.Vision/Detect [GH-90000]");
-        @SuppressWarnings("unchecked [GH-90000]")
+        @SuppressWarnings("unchecked")
+        ServerCall<String, String> call = createServerCall("av.Vision/Detect");
+        @SuppressWarnings("unchecked")
         ServerCallHandler<String, String> next = mock(ServerCallHandler.class); // GH-90000
         when(next.startCall(any(), eq(headers))).thenReturn(new ServerCall.Listener<>() {}); // GH-90000
 
@@ -115,7 +115,7 @@ class TenantAwareRateLimitingInterceptorTest {
     }
 
     @Test
-    @DisplayName("updateTenantQuota replaces existing limit at runtime [GH-90000]")
+    @DisplayName("updateTenantQuota replaces existing limit at runtime")
     void shouldUpdateTenantQuotaAtRuntime() { // GH-90000
         TenantAwareRateLimitingInterceptor interceptor =
                 new TenantAwareRateLimitingInterceptor(50.0, Map.of()); // GH-90000
@@ -123,10 +123,10 @@ class TenantAwareRateLimitingInterceptorTest {
         // Apply a very high quota so calls proceed
         interceptor.updateTenantQuota("dynamic-tenant", 100.0); // GH-90000
 
-        Metadata headers = withTenantId("dynamic-tenant [GH-90000]");
-        @SuppressWarnings("unchecked [GH-90000]")
-        ServerCall<String, String> call = createServerCall("av.STT/Transcribe [GH-90000]");
-        @SuppressWarnings("unchecked [GH-90000]")
+        Metadata headers = withTenantId("dynamic-tenant");
+        @SuppressWarnings("unchecked")
+        ServerCall<String, String> call = createServerCall("av.STT/Transcribe");
+        @SuppressWarnings("unchecked")
         ServerCallHandler<String, String> next = mock(ServerCallHandler.class); // GH-90000
         when(next.startCall(any(), eq(headers))).thenReturn(new ServerCall.Listener<>() {}); // GH-90000
 
@@ -143,7 +143,7 @@ class TenantAwareRateLimitingInterceptorTest {
         return headers;
     }
 
-    @SuppressWarnings("unchecked [GH-90000]")
+    @SuppressWarnings("unchecked")
     private static <ReqT, RespT> ServerCall<ReqT, RespT> createServerCall(String fullMethodName) { // GH-90000
         ServerCall<ReqT, RespT> call = mock(ServerCall.class); // GH-90000
         MethodDescriptor<ReqT, RespT> descriptor = MethodDescriptor.<ReqT, RespT>newBuilder() // GH-90000
@@ -156,7 +156,7 @@ class TenantAwareRateLimitingInterceptorTest {
         return call;
     }
 
-    @SuppressWarnings("unchecked [GH-90000]")
+    @SuppressWarnings("unchecked")
     private static <T> MethodDescriptor.Marshaller<T> byteMarshaller() { // GH-90000
         return (MethodDescriptor.Marshaller<T>) new MethodDescriptor.Marshaller<String>() { // GH-90000
             @Override

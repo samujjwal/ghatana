@@ -52,7 +52,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("Concurrent Multi-Tenant Load Test [GH-90000]")
+@DisplayName("Concurrent Multi-Tenant Load Test")
 class ConcurrentTenantLoadTest {
 
     private static final int TENANT_COUNT = 50;
@@ -78,7 +78,7 @@ class ConcurrentTenantLoadTest {
     // =========================================================================
 
     @Test
-    @DisplayName("50 concurrent tenants each complete 100 writes + 100 reads with zero cross-tenant leakage [GH-90000]")
+    @DisplayName("50 concurrent tenants each complete 100 writes + 100 reads with zero cross-tenant leakage")
     void concurrentTenantsCompleteWithZeroLeakage() throws InterruptedException { // GH-90000
         // ── Setup ─────────────────────────────────────────────────────────────
         CountDownLatch startGun = new CountDownLatch(1);          // burst start // GH-90000
@@ -159,7 +159,7 @@ class ConcurrentTenantLoadTest {
                                     count[0] = entities.size(); // GH-90000
                                     // detect any entity belonging to another tenant
                                     for (Entity entity : entities) { // GH-90000
-                                        Object tag = entity.data().get("tenantTag [GH-90000]");
+                                        Object tag = entity.data().get("tenantTag");
                                         if (tag != null && !tenantId.equals(tag.toString())) { // GH-90000
                                             leakageViolations.add( // GH-90000
                                                 "tenant=" + tenantId
@@ -200,11 +200,11 @@ class ConcurrentTenantLoadTest {
             .isTrue(); // GH-90000
 
         assertThat(errors) // GH-90000
-            .as("No errors should occur during concurrent load [GH-90000]")
+            .as("No errors should occur during concurrent load")
             .isEmpty(); // GH-90000
 
         assertThat(leakageViolations) // GH-90000
-            .as("Zero cross-tenant data leakage violations [GH-90000]")
+            .as("Zero cross-tenant data leakage violations")
             .isEmpty(); // GH-90000
 
         assertThat(successfulWrites.get()) // GH-90000
@@ -228,7 +228,7 @@ class ConcurrentTenantLoadTest {
     // =========================================================================
 
     @Test
-    @DisplayName("Concurrent saves across 50 tenants produce no entity id collisions [GH-90000]")
+    @DisplayName("Concurrent saves across 50 tenants produce no entity id collisions")
     void concurrentSavesProduceNoIdCollisions() throws InterruptedException { // GH-90000
         Set<String> allIds = ConcurrentHashMap.newKeySet(); // GH-90000
         CountDownLatch startGun = new CountDownLatch(1); // GH-90000
@@ -283,7 +283,7 @@ class ConcurrentTenantLoadTest {
             .as("All threads must finish within %d seconds", TIMEOUT_SECONDS) // GH-90000
             .isTrue(); // GH-90000
 
-        assertThat(errors).as("No errors during concurrent saves [GH-90000]").isEmpty();
+        assertThat(errors).as("No errors during concurrent saves").isEmpty();
 
         // Every saved entity across all tenants must have a globally unique ID
         // (UUIDs are used, so collisions would be catastrophic) // GH-90000

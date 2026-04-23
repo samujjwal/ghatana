@@ -11,7 +11,11 @@ import java.util.function.Consumer;
 /**
  * Base interface for queue consumer strategies.
  * Simplified for platform-connectors module.
- */
+  * @doc.type interface
+ * @doc.purpose Provides queue consumer strategy functionality.
+ * @doc.layer platform
+ * @doc.pattern Interface
+*/
 public interface QueueConsumerStrategy {
 
     /**

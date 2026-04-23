@@ -30,7 +30,7 @@ import static org.mockito.Mockito.*;
  * @doc.purpose Validate audit log recording, retrieval, export, and cleanup
  * @doc.layer application
  */
-@DisplayName("AuditingService Tests [GH-90000]")
+@DisplayName("AuditingService Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class AuditingServiceTest extends EventloopTestBase {
 
@@ -52,18 +52,18 @@ class AuditingServiceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Construction [GH-90000]")
+    @DisplayName("Construction")
     class Construction {
 
         @Test
-        @DisplayName("should throw NullPointerException when auditStore is null [GH-90000]")
+        @DisplayName("should throw NullPointerException when auditStore is null")
         void shouldThrowForNullStore() { // GH-90000
             assertThatThrownBy(() -> new AuditingService(null, metricsCollector)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
         }
 
         @Test
-        @DisplayName("should throw NullPointerException when metricsCollector is null [GH-90000]")
+        @DisplayName("should throw NullPointerException when metricsCollector is null")
         void shouldThrowForNullMetrics() { // GH-90000
             assertThatThrownBy(() -> new AuditingService(auditStore, null)) // GH-90000
                     .isInstanceOf(NullPointerException.class); // GH-90000
@@ -75,11 +75,11 @@ class AuditingServiceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Log Action [GH-90000]")
+    @DisplayName("Log Action")
     class LogAction {
 
         @Test
-        @DisplayName("should save audit log entry when logAction is called [GH-90000]")
+        @DisplayName("should save audit log entry when logAction is called")
         void shouldSaveAuditLog() { // GH-90000
             when(auditStore.save(any())).thenReturn(Promise.complete()); // GH-90000
 
@@ -89,15 +89,15 @@ class AuditingServiceTest extends EventloopTestBase {
             ArgumentCaptor<AuditLog> captor = ArgumentCaptor.forClass(AuditLog.class); // GH-90000
             verify(auditStore).save(captor.capture()); // GH-90000
             AuditLog saved = captor.getValue(); // GH-90000
-            assertThat(saved.getTenantId()).isEqualTo("tenant-1 [GH-90000]");
-            assertThat(saved.getUserId()).isEqualTo("user-1 [GH-90000]");
+            assertThat(saved.getTenantId()).isEqualTo("tenant-1");
+            assertThat(saved.getUserId()).isEqualTo("user-1");
             assertThat(saved.getAction()).isEqualTo(AuditAction.CREATE_ENTITY); // GH-90000
-            assertThat(saved.getResourceType()).isEqualTo("entity [GH-90000]");
-            assertThat(saved.getResourceId()).isEqualTo("entity-123 [GH-90000]");
+            assertThat(saved.getResourceType()).isEqualTo("entity");
+            assertThat(saved.getResourceId()).isEqualTo("entity-123");
         }
 
         @Test
-        @DisplayName("should record metrics after logging action [GH-90000]")
+        @DisplayName("should record metrics after logging action")
         void shouldRecordMetricsOnSuccess() { // GH-90000
             when(auditStore.save(any())).thenReturn(Promise.complete()); // GH-90000
 
@@ -113,21 +113,21 @@ class AuditingServiceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Query Operations [GH-90000]")
+    @DisplayName("Query Operations")
     class QueryOperations {
 
         private final String tenantId = "tenant-query";
         private final AuditLog sampleLog = AuditLog.builder() // GH-90000
                 .tenantId(tenantId) // GH-90000
-                .userId("user-1 [GH-90000]")
+                .userId("user-1")
                 .action(AuditAction.CREATE_ENTITY) // GH-90000
-                .resourceType("entity [GH-90000]")
+                .resourceType("entity")
                 .resourceId(UUID.randomUUID().toString()) // GH-90000
                 .timestamp(Instant.now()) // GH-90000
                 .build(); // GH-90000
 
         @Test
-        @DisplayName("should return user activity for a tenant and user [GH-90000]")
+        @DisplayName("should return user activity for a tenant and user")
         void shouldReturnUserActivity() { // GH-90000
             when(auditStore.findByTenantAndUser(tenantId, "user-1")) // GH-90000
                     .thenReturn(Promise.of(List.of(sampleLog))); // GH-90000
@@ -137,7 +137,7 @@ class AuditingServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should return resource audit trail [GH-90000]")
+        @DisplayName("should return resource audit trail")
         void shouldReturnResourceAuditTrail() { // GH-90000
             when(auditStore.findByResource(tenantId, "entity", "entity-1")) // GH-90000
                     .thenReturn(Promise.of(List.of(sampleLog))); // GH-90000
@@ -147,7 +147,7 @@ class AuditingServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should return action logs by action type [GH-90000]")
+        @DisplayName("should return action logs by action type")
         void shouldReturnActionLogs() { // GH-90000
             when(auditStore.findByAction(tenantId, AuditAction.CREATE_ENTITY)) // GH-90000
                     .thenReturn(Promise.of(List.of(sampleLog))); // GH-90000
@@ -157,7 +157,7 @@ class AuditingServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should return audit logs by date range [GH-90000]")
+        @DisplayName("should return audit logs by date range")
         void shouldReturnAuditLogsByDateRange() { // GH-90000
             Instant start = Instant.now().minusSeconds(3600); // GH-90000
             Instant end = Instant.now(); // GH-90000
@@ -169,7 +169,7 @@ class AuditingServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should return audit log count by tenant [GH-90000]")
+        @DisplayName("should return audit log count by tenant")
         void shouldReturnCount() { // GH-90000
             when(auditStore.countByTenant(tenantId)).thenReturn(Promise.of(42L)); // GH-90000
 
@@ -183,11 +183,11 @@ class AuditingServiceTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("Export and Cleanup [GH-90000]")
+    @DisplayName("Export and Cleanup")
     class ExportAndCleanup {
 
         @Test
-        @DisplayName("should export audit logs and return non-null result [GH-90000]")
+        @DisplayName("should export audit logs and return non-null result")
         void shouldExportAuditLogs() { // GH-90000
             String tenantId = "tenant-export";
             Instant start = Instant.now().minusSeconds(3600); // GH-90000
@@ -200,7 +200,7 @@ class AuditingServiceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should delete old logs and return count [GH-90000]")
+        @DisplayName("should delete old logs and return count")
         void shouldCleanupOldLogs() { // GH-90000
             when(auditStore.deleteOlderThan("tenant-clean", 30)).thenReturn(Promise.of(5L)); // GH-90000
 

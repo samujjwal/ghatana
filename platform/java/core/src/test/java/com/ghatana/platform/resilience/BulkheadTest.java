@@ -9,23 +9,23 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.*;
 
-@DisplayName("K18-004 Bulkhead — Concurrency Limiter [GH-90000]")
+@DisplayName("K18-004 Bulkhead — Concurrency Limiter")
 class BulkheadTest {
 
     @Test
-    @DisplayName("bulkhead_withinLimit: executes successfully when permits available [GH-90000]")
+    @DisplayName("bulkhead_withinLimit: executes successfully when permits available")
     void bulkhead_withinLimit_executesSuccessfully() throws Exception { // GH-90000
         Bulkhead bulkhead = Bulkhead.of("payment-service", 3); // GH-90000
 
         String result = bulkhead.tryExecuteBlocking(() -> "result"); // GH-90000
 
-        assertThat(result).isEqualTo("result [GH-90000]");
+        assertThat(result).isEqualTo("result");
         assertThat(bulkhead.getTotalAcquired()).isEqualTo(1); // GH-90000
         assertThat(bulkhead.getTotalRejected()).isEqualTo(0); // GH-90000
     }
 
     @Test
-    @DisplayName("bulkhead_exhausted_rejects: throws BulkheadFullException when saturated [GH-90000]")
+    @DisplayName("bulkhead_exhausted_rejects: throws BulkheadFullException when saturated")
     void bulkhead_exhausted_rejects() { // GH-90000
         Bulkhead bulkhead = Bulkhead.of("slow-service", 1); // GH-90000
 
@@ -59,13 +59,13 @@ class BulkheadTest {
             ready.await(2, java.util.concurrent.TimeUnit.SECONDS); // GH-90000
         } catch (InterruptedException e) { // GH-90000
             Thread.currentThread().interrupt(); // GH-90000
-            fail("Interrupted [GH-90000]");
+            fail("Interrupted");
         }
 
         // Now the single permit is held — try to acquire should fail immediately
         assertThatThrownBy(() -> bulkhead.tryExecuteBlocking(() -> "should-not-run")) // GH-90000
                 .isInstanceOf(Bulkhead.BulkheadFullException.class) // GH-90000
-                .hasMessageContaining("slow-service [GH-90000]");
+                .hasMessageContaining("slow-service");
         assertThat(bulkhead.getTotalRejected()).isEqualTo(1); // GH-90000
 
         occupying.countDown(); // GH-90000
@@ -73,7 +73,7 @@ class BulkheadTest {
     }
 
     @Test
-    @DisplayName("bulkhead_isolation: separate bulkheads do not affect each other [GH-90000]")
+    @DisplayName("bulkhead_isolation: separate bulkheads do not affect each other")
     void bulkhead_isolation_separateBulkheads() throws Exception { // GH-90000
         Bulkhead b1 = Bulkhead.of("service-a", 1); // GH-90000
         Bulkhead b2 = Bulkhead.of("service-b", 1); // GH-90000
@@ -88,15 +88,15 @@ class BulkheadTest {
     }
 
     @Test
-    @DisplayName("bulkhead_configurable_poolSize: rejects beyond maxConcurrency [GH-90000]")
+    @DisplayName("bulkhead_configurable_poolSize: rejects beyond maxConcurrency")
     void bulkhead_configurable_poolSize() { // GH-90000
         assertThatThrownBy(() -> Bulkhead.of("test", 0)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class) // GH-90000
-                .hasMessageContaining("maxConcurrency must be > 0 [GH-90000]");
+                .hasMessageContaining("maxConcurrency must be > 0");
     }
 
     @Test
-    @DisplayName("bulkhead_metrics: counts acquired and rejected separately [GH-90000]")
+    @DisplayName("bulkhead_metrics: counts acquired and rejected separately")
     void bulkhead_metrics() throws Exception { // GH-90000
         Bulkhead bulkhead = Bulkhead.of("service", 5); // GH-90000
 
@@ -107,6 +107,6 @@ class BulkheadTest {
         assertThat(bulkhead.getTotalAcquired()).isEqualTo(5); // GH-90000
         assertThat(bulkhead.getTotalRejected()).isEqualTo(0); // GH-90000
         assertThat(bulkhead.getMaxConcurrency()).isEqualTo(5); // GH-90000
-        assertThat(bulkhead.getName()).isEqualTo("service [GH-90000]");
+        assertThat(bulkhead.getName()).isEqualTo("service");
     }
 }

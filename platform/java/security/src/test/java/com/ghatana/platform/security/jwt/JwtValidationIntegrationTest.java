@@ -23,8 +23,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("JWT Validation Integration Tests [GH-90000]")
-@Tag("integration [GH-90000]")
+@DisplayName("JWT Validation Integration Tests")
+@Tag("integration")
 class JwtValidationIntegrationTest extends EventloopTestBase {
 
     private JwtTokenProvider tokenProvider;
@@ -38,23 +38,23 @@ class JwtValidationIntegrationTest extends EventloopTestBase {
     // ── Token creation and validation ─────────────────────────────────────────
 
     @Nested
-    @DisplayName("token creation and validation [GH-90000]")
+    @DisplayName("token creation and validation")
     class TokenCreationAndValidation {
 
         @Test
-        @DisplayName("valid token is accepted by provider [GH-90000]")
+        @DisplayName("valid token is accepted by provider")
         void validToken_isAcceptedByProvider() { // GH-90000
-            String token = tokenProvider.createToken("user-123", List.of("USER [GH-90000]"), Map.of("tenant", "tenant-abc"));
+            String token = tokenProvider.createToken("user-123", List.of("USER"), Map.of("tenant", "tenant-abc"));
 
             assertThat(token).isNotBlank(); // GH-90000
             assertThat(tokenProvider.validateToken(token)).isTrue(); // GH-90000
         }
 
         @Test
-        @DisplayName("token subject can be extracted after validation [GH-90000]")
+        @DisplayName("token subject can be extracted after validation")
         void tokenSubject_canBeExtractedAfterValidation() { // GH-90000
             String subject = "user-456";
-            String token = tokenProvider.createToken(subject, List.of("USER [GH-90000]"), Map.of("tenant", "tenant-abc"));
+            String token = tokenProvider.createToken(subject, List.of("USER"), Map.of("tenant", "tenant-abc"));
 
             String extracted = tokenProvider.getUserIdFromToken(token).orElse(null); // GH-90000
 
@@ -62,9 +62,9 @@ class JwtValidationIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("tampered token signature is rejected [GH-90000]")
+        @DisplayName("tampered token signature is rejected")
         void tamperedTokenSignature_isRejected() { // GH-90000
-            String token = tokenProvider.createToken("user-123", List.of("USER [GH-90000]"), Map.of("tenant", "tenant-abc"));
+            String token = tokenProvider.createToken("user-123", List.of("USER"), Map.of("tenant", "tenant-abc"));
 
             // Tamper with the signature (last portion after final '.') // GH-90000
             int lastDot = token.lastIndexOf('.'); // GH-90000
@@ -74,22 +74,22 @@ class JwtValidationIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("completely invalid token is rejected [GH-90000]")
+        @DisplayName("completely invalid token is rejected")
         void completelyInvalidToken_isRejected() { // GH-90000
-            assertThat(tokenProvider.validateToken("not-a-jwt [GH-90000]")).isFalse();
-            assertThat(tokenProvider.validateToken(" [GH-90000]")).isFalse();
-            assertThat(tokenProvider.validateToken("a.b.c [GH-90000]")).isFalse();
+            assertThat(tokenProvider.validateToken("not-a-jwt")).isFalse();
+            assertThat(tokenProvider.validateToken("")).isFalse();
+            assertThat(tokenProvider.validateToken("a.b.c")).isFalse();
         }
     }
 
     // ── Token expiration ──────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("token expiration [GH-90000]")
+    @DisplayName("token expiration")
     class TokenExpiration {
 
         @Test
-        @DisplayName("expired token is rejected by provider [GH-90000]")
+        @DisplayName("expired token is rejected by provider")
         void expiredToken_isRejectedByProvider() { // GH-90000
             // Use a clearly expired token (issued in 2000 with 1ms TTL) // GH-90000
             // In a real integration test this would use a test provider with custom clock.
@@ -107,9 +107,9 @@ class JwtValidationIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("non-expired token is accepted by provider [GH-90000]")
+        @DisplayName("non-expired token is accepted by provider")
         void nonExpiredToken_isAcceptedByProvider() { // GH-90000
-            String token = tokenProvider.createToken("user-789", List.of("USER [GH-90000]"), Map.of("tenant", "tenant-abc"));
+            String token = tokenProvider.createToken("user-789", List.of("USER"), Map.of("tenant", "tenant-abc"));
 
             // Freshly generated token should be valid
             assertThat(tokenProvider.validateToken(token)).isTrue(); // GH-90000
@@ -119,11 +119,11 @@ class JwtValidationIntegrationTest extends EventloopTestBase {
     // ── Token revocation ──────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("token revocation [GH-90000]")
+    @DisplayName("token revocation")
     class TokenRevocation {
 
         @Test
-        @DisplayName("revoked token is rejected on next validation [GH-90000]")
+        @DisplayName("revoked token is rejected on next validation")
         void revokedToken_isRejectedOnNextValidation() { // GH-90000
             // Simulate revocation via deny-list check
             java.util.Set<String> revokedTokenIds = new java.util.HashSet<>(); // GH-90000
@@ -136,10 +136,10 @@ class JwtValidationIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("non-revoked token is accepted even when deny-list is active [GH-90000]")
+        @DisplayName("non-revoked token is accepted even when deny-list is active")
         void nonRevokedToken_isAccepted_whenDenyListIsActive() { // GH-90000
             java.util.Set<String> revokedTokenIds = new java.util.HashSet<>(); // GH-90000
-            revokedTokenIds.add("jti-other-revoked [GH-90000]");
+            revokedTokenIds.add("jti-other-revoked");
 
             String validTokenId = "jti-valid-999";
             boolean accepted = !revokedTokenIds.contains(validTokenId); // GH-90000
@@ -151,14 +151,14 @@ class JwtValidationIntegrationTest extends EventloopTestBase {
     // ── Token refresh flow ────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("token refresh flow [GH-90000]")
+    @DisplayName("token refresh flow")
     class TokenRefreshFlow {
 
         @Test
-        @DisplayName("refresh produces a new token with extended expiry [GH-90000]")
+        @DisplayName("refresh produces a new token with extended expiry")
         void refresh_producesNewTokenWithExtendedExpiry() { // GH-90000
-            String original = tokenProvider.createToken("user-123", List.of("USER [GH-90000]"), Map.of("tenant", "tenant-abc"));
-            String refreshed = tokenProvider.createToken("user-123", List.of("USER [GH-90000]"), Map.of("tenant", "tenant-abc"));
+            String original = tokenProvider.createToken("user-123", List.of("USER"), Map.of("tenant", "tenant-abc"));
+            String refreshed = tokenProvider.createToken("user-123", List.of("USER"), Map.of("tenant", "tenant-abc"));
 
             // Both tokens should be valid, but they should be distinct
             assertThat(tokenProvider.validateToken(original)).isTrue(); // GH-90000
@@ -166,11 +166,11 @@ class JwtValidationIntegrationTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("refreshed token carries same subject as original [GH-90000]")
+        @DisplayName("refreshed token carries same subject as original")
         void refreshedToken_carriesSameSubjectAsOriginal() { // GH-90000
             String subject = "user-refresh-test";
-            String original  = tokenProvider.createToken(subject, List.of("USER [GH-90000]"), Map.of("tenant", "tenant-abc"));
-            String refreshed = tokenProvider.createToken(subject, List.of("USER [GH-90000]"), Map.of("tenant", "tenant-abc"));
+            String original  = tokenProvider.createToken(subject, List.of("USER"), Map.of("tenant", "tenant-abc"));
+            String refreshed = tokenProvider.createToken(subject, List.of("USER"), Map.of("tenant", "tenant-abc"));
 
             assertThat(tokenProvider.getUserIdFromToken(original)).hasValue(subject); // GH-90000
             assertThat(tokenProvider.getUserIdFromToken(refreshed)).hasValue(subject); // GH-90000
@@ -180,15 +180,15 @@ class JwtValidationIntegrationTest extends EventloopTestBase {
     // ── Signature verification ────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("signature verification [GH-90000]")
+    @DisplayName("signature verification")
     class SignatureVerification {
 
         @Test
-        @DisplayName("token signed with different key is rejected [GH-90000]")
+        @DisplayName("token signed with different key is rejected")
         void tokenSignedWithDifferentKey_isRejected() { // GH-90000
             // Provider 2 uses a different key
             JwtTokenProvider otherProvider = new JwtTokenProvider("different-secret-key-at-least-32-bytes!", 3_600_000); // GH-90000
-            String foreignToken = otherProvider.createToken("user-x", List.of("USER [GH-90000]"), Map.of("tenant", "tenant-abc"));
+            String foreignToken = otherProvider.createToken("user-x", List.of("USER"), Map.of("tenant", "tenant-abc"));
 
             // Our provider should reject a token signed by a different key
             // (In the real implementation this would fail HMAC/RSA verification) // GH-90000

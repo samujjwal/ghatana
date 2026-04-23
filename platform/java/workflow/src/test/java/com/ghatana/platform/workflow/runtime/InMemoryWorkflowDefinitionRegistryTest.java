@@ -14,7 +14,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 
-@DisplayName("InMemoryWorkflowDefinitionRegistry Tests [GH-90000]")
+@DisplayName("InMemoryWorkflowDefinitionRegistry Tests")
 class InMemoryWorkflowDefinitionRegistryTest extends EventloopTestBase {
 
     private InMemoryWorkflowDefinitionRegistry registry;
@@ -34,7 +34,7 @@ class InMemoryWorkflowDefinitionRegistryTest extends EventloopTestBase {
     @Test
     void shouldRegisterAndFindLatest() { // GH-90000
         runPromise(() -> registry.register(defV("wf-1", 1)) // GH-90000
-            .then(v -> registry.findLatest("wf-1 [GH-90000]"))
+            .then(v -> registry.findLatest("wf-1"))
             .whenResult(opt -> { // GH-90000
                 assertThat(opt).isPresent(); // GH-90000
                 assertThat(opt.get().version()).isEqualTo(1); // GH-90000
@@ -46,7 +46,7 @@ class InMemoryWorkflowDefinitionRegistryTest extends EventloopTestBase {
         runPromise(() -> registry.register(defV("wf-1", 1)) // GH-90000
             .then(v -> registry.register(defV("wf-1", 2))) // GH-90000
             .then(v -> registry.register(defV("wf-1", 3))) // GH-90000
-            .then(v -> registry.findLatest("wf-1 [GH-90000]"))
+            .then(v -> registry.findLatest("wf-1"))
             .whenResult(opt -> assertThat(opt.get().version()).isEqualTo(3))); // GH-90000
     }
 
@@ -60,7 +60,7 @@ class InMemoryWorkflowDefinitionRegistryTest extends EventloopTestBase {
 
     @Test
     void shouldReturnEmptyForMissing() { // GH-90000
-        Optional<WorkflowDefinition> result = runPromise(() -> registry.findLatest("nope [GH-90000]"));
+        Optional<WorkflowDefinition> result = runPromise(() -> registry.findLatest("nope"));
         assertThat(result).isEmpty(); // GH-90000
     }
 
@@ -77,9 +77,9 @@ class InMemoryWorkflowDefinitionRegistryTest extends EventloopTestBase {
     @Test
     void shouldRemove() { // GH-90000
         runPromise(() -> registry.register(defV("wf-1", 1)) // GH-90000
-            .then(v -> registry.remove("wf-1 [GH-90000]")));
+            .then(v -> registry.remove("wf-1")));
 
-        Optional<WorkflowDefinition> result = runPromise(() -> registry.findLatest("wf-1 [GH-90000]"));
+        Optional<WorkflowDefinition> result = runPromise(() -> registry.findLatest("wf-1"));
         assertThat(result).isEmpty(); // GH-90000
         assertThat(registry.size()).isZero(); // GH-90000
     }

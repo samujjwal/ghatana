@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.*;
  *   <li>Concurrent multi-tenant access: no cross-contamination under load</li>
  * </ul>
  */
-@DisplayName("Data-Cloud Tenant Isolation [GH-90000]")
+@DisplayName("Data-Cloud Tenant Isolation")
 class DataCloudTenantIsolationTest {
 
     private static final String TENANT_A = "tenant-alpha";
@@ -54,11 +54,11 @@ class DataCloudTenantIsolationTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Entity CRUD Isolation [GH-90000]")
+    @DisplayName("Entity CRUD Isolation")
     class EntityCrudIsolation {
 
         @Test
-        @DisplayName("Entity saved by tenant A is invisible to tenant B [GH-90000]")
+        @DisplayName("Entity saved by tenant A is invisible to tenant B")
         void entityInvisibleAcrossTenants() { // GH-90000
             Eventloop eventloop = Eventloop.builder().build(); // GH-90000
             eventloop.submit(() -> { // GH-90000
@@ -75,7 +75,7 @@ class DataCloudTenantIsolationTest {
         }
 
         @Test
-        @DisplayName("Each tenant sees only its own entities [GH-90000]")
+        @DisplayName("Each tenant sees only its own entities")
         void eachTenantSeesOwnEntities() { // GH-90000
             Eventloop eventloop = Eventloop.builder().build(); // GH-90000
 
@@ -115,7 +115,7 @@ class DataCloudTenantIsolationTest {
         }
 
         @Test
-        @DisplayName("Delete by tenant A does not affect tenant B's entities [GH-90000]")
+        @DisplayName("Delete by tenant A does not affect tenant B's entities")
         void deleteDoesNotAffectOtherTenant() { // GH-90000
             Eventloop eventloop = Eventloop.builder().build(); // GH-90000
             String[] entityIdA = new String[1];
@@ -145,7 +145,7 @@ class DataCloudTenantIsolationTest {
         }
 
         @Test
-        @DisplayName("findById across tenants returns empty, not other tenant's entity [GH-90000]")
+        @DisplayName("findById across tenants returns empty, not other tenant's entity")
         void findByIdCrossTenantReturnsEmpty() { // GH-90000
             Eventloop eventloop = Eventloop.builder().build(); // GH-90000
             String[] entityId = new String[1];
@@ -171,11 +171,11 @@ class DataCloudTenantIsolationTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Event Log Isolation [GH-90000]")
+    @DisplayName("Event Log Isolation")
     class EventLogIsolation {
 
         @Test
-        @DisplayName("Events appended by tenant A are invisible to tenant B [GH-90000]")
+        @DisplayName("Events appended by tenant A are invisible to tenant B")
         void eventsInvisibleAcrossTenants() { // GH-90000
             Eventloop eventloop = Eventloop.builder().build(); // GH-90000
 
@@ -195,7 +195,7 @@ class DataCloudTenantIsolationTest {
         }
 
         @Test
-        @DisplayName("Event queries by type are tenant-scoped [GH-90000]")
+        @DisplayName("Event queries by type are tenant-scoped")
         void eventQueryByTypeTenantScoped() { // GH-90000
             Eventloop eventloop = Eventloop.builder().build(); // GH-90000
 
@@ -208,7 +208,7 @@ class DataCloudTenantIsolationTest {
 
             // Each tenant should see only 1 event
             eventloop.submit(() -> { // GH-90000
-                client.queryEvents(TENANT_A, EventQuery.byType("order.created [GH-90000]"))
+                client.queryEvents(TENANT_A, EventQuery.byType("order.created"))
                         .whenResult(events -> { // GH-90000
                             assertThat(events).hasSize(1); // GH-90000
                             assertThat(events.get(0).payload()).containsEntry("tenant", "A"); // GH-90000
@@ -217,7 +217,7 @@ class DataCloudTenantIsolationTest {
             eventloop.run(); // GH-90000
 
             eventloop.submit(() -> { // GH-90000
-                client.queryEvents(TENANT_B, EventQuery.byType("order.created [GH-90000]"))
+                client.queryEvents(TENANT_B, EventQuery.byType("order.created"))
                         .whenResult(events -> { // GH-90000
                             assertThat(events).hasSize(1); // GH-90000
                             assertThat(events.get(0).payload()).containsEntry("tenant", "B"); // GH-90000
@@ -232,11 +232,11 @@ class DataCloudTenantIsolationTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("TenantContext SPI [GH-90000]")
+    @DisplayName("TenantContext SPI")
     class TenantContextSpi {
 
         @Test
-        @DisplayName("TenantContext.of() creates correct tenant scope [GH-90000]")
+        @DisplayName("TenantContext.of() creates correct tenant scope")
         void tenantContextOf() { // GH-90000
             TenantContext ctx = TenantContext.of(TENANT_A); // GH-90000
             assertThat(ctx.tenantId()).isEqualTo(TENANT_A); // GH-90000
@@ -245,15 +245,15 @@ class DataCloudTenantIsolationTest {
         }
 
         @Test
-        @DisplayName("TenantContext with workspace scopes further [GH-90000]")
+        @DisplayName("TenantContext with workspace scopes further")
         void tenantContextWithWorkspace() { // GH-90000
             TenantContext ctx = TenantContext.of(TENANT_A, "workspace-prod"); // GH-90000
             assertThat(ctx.tenantId()).isEqualTo(TENANT_A); // GH-90000
-            assertThat(ctx.workspaceId()).isPresent().contains("workspace-prod [GH-90000]");
+            assertThat(ctx.workspaceId()).isPresent().contains("workspace-prod");
         }
 
         @Test
-        @DisplayName("TenantContext metadata does not leak across instances [GH-90000]")
+        @DisplayName("TenantContext metadata does not leak across instances")
         void metadataDoesNotLeak() { // GH-90000
             TenantContext ctx1 = TenantContext.of(TENANT_A, Map.of("env", "prod")); // GH-90000
             TenantContext ctx2 = TenantContext.of(TENANT_B, Map.of("env", "staging")); // GH-90000
@@ -266,7 +266,7 @@ class DataCloudTenantIsolationTest {
         }
 
         @Test
-        @DisplayName("TenantContext.withMetadata creates new instance [GH-90000]")
+        @DisplayName("TenantContext.withMetadata creates new instance")
         void withMetadataCreatesNew() { // GH-90000
             TenantContext original = TenantContext.of(TENANT_A); // GH-90000
             TenantContext enriched = original.withMetadata("region", "us-west-2"); // GH-90000
@@ -284,11 +284,11 @@ class DataCloudTenantIsolationTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Cross-Collection Isolation [GH-90000]")
+    @DisplayName("Cross-Collection Isolation")
     class CrossCollectionIsolation {
 
         @Test
-        @DisplayName("Same collection name in different tenants are isolated namespaces [GH-90000]")
+        @DisplayName("Same collection name in different tenants are isolated namespaces")
         void sameCollectionDifferentTenants() { // GH-90000
             Eventloop eventloop = Eventloop.builder().build(); // GH-90000
 
@@ -331,11 +331,11 @@ class DataCloudTenantIsolationTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Concurrent Multi-Tenant Access [GH-90000]")
+    @DisplayName("Concurrent Multi-Tenant Access")
     class ConcurrentAccess {
 
         @Test
-        @DisplayName("Concurrent entity saves maintain tenant isolation [GH-90000]")
+        @DisplayName("Concurrent entity saves maintain tenant isolation")
         void concurrentEntitySaveMaintainsIsolation() throws Exception { // GH-90000
             int opsPerTenant = 20;
             Eventloop eventloop = Eventloop.builder().build(); // GH-90000
@@ -373,11 +373,11 @@ class DataCloudTenantIsolationTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("End-to-End Multi-Tenant Lifecycle [GH-90000]")
+    @DisplayName("End-to-End Multi-Tenant Lifecycle")
     class EndToEndLifecycle {
 
         @Test
-        @DisplayName("Full CRUD lifecycle maintains tenant boundaries [GH-90000]")
+        @DisplayName("Full CRUD lifecycle maintains tenant boundaries")
         void fullCrudLifecycle() { // GH-90000
             Eventloop eventloop = Eventloop.builder().build(); // GH-90000
             String[] entityIdA = new String[1];
@@ -421,7 +421,7 @@ class DataCloudTenantIsolationTest {
         }
 
         @Test
-        @DisplayName("Full event lifecycle maintains tenant boundaries [GH-90000]")
+        @DisplayName("Full event lifecycle maintains tenant boundaries")
         void fullEventLifecycle() { // GH-90000
             Eventloop eventloop = Eventloop.builder().build(); // GH-90000
 

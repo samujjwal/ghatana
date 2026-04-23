@@ -24,7 +24,7 @@ import static org.mockito.Mockito.*;
 /**
  * Tests for WidgetDataCloudAdapter.
  */
-@DisplayName("WidgetDataCloudAdapter Tests [GH-90000]")
+@DisplayName("WidgetDataCloudAdapter Tests")
 /**
  * @doc.type class
  * @doc.purpose Handles widget data cloud adapter test operations
@@ -51,7 +51,7 @@ class WidgetDataCloudAdapterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should find widgets by dashboard ID [GH-90000]")
+    @DisplayName("Should find widgets by dashboard ID")
     void shouldFindByDashboardId() { // GH-90000
         UUID dashboardId = UUID.randomUUID(); // GH-90000
 
@@ -65,7 +65,7 @@ class WidgetDataCloudAdapterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should find widgets by workspace ID [GH-90000]")
+    @DisplayName("Should find widgets by workspace ID")
     void shouldFindByWorkspaceId() { // GH-90000
         UUID workspaceId = UUID.randomUUID(); // GH-90000
 

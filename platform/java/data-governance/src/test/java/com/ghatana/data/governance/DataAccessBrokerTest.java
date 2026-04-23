@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 /**
  * Tests for {@link DefaultDataAccessBroker}.
  */
-@DisplayName("DefaultDataAccessBroker [GH-90000]")
+@DisplayName("DefaultDataAccessBroker")
 class DataAccessBrokerTest extends EventloopTestBase {
 
     private InMemoryConsentManager consent;
@@ -33,14 +33,14 @@ class DataAccessBrokerTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("checkAccess — granted [GH-90000]")
+    @DisplayName("checkAccess — granted")
     class GrantedTests {
 
         @Test
-        @DisplayName("grants access when both consent and purpose binding are satisfied [GH-90000]")
+        @DisplayName("grants access when both consent and purpose binding are satisfied")
         void grantsAccess() { // GH-90000
             runPromise(() -> consent.recordConsent("t1", "user1", "analytics")); // GH-90000
-            runPromise(() -> purposeEnforcer.bindPurpose("t1", "email-data", Set.of("analytics [GH-90000]")));
+            runPromise(() -> purposeEnforcer.bindPurpose("t1", "email-data", Set.of("analytics")));
 
             assertThatCode(() -> // GH-90000
                 runPromise(() -> broker.checkAccess("t1", "user1", "email-data", "analytics")) // GH-90000
@@ -49,13 +49,13 @@ class DataAccessBrokerTest extends EventloopTestBase {
     }
 
     @Nested
-    @DisplayName("checkAccess — denied [GH-90000]")
+    @DisplayName("checkAccess — denied")
     class DeniedTests {
 
         @Test
-        @DisplayName("denies when consent is missing (fails before checking purpose) [GH-90000]")
+        @DisplayName("denies when consent is missing (fails before checking purpose)")
         void deniesWithoutConsent() { // GH-90000
-            runPromise(() -> purposeEnforcer.bindPurpose("t1", "email-data", Set.of("analytics [GH-90000]")));
+            runPromise(() -> purposeEnforcer.bindPurpose("t1", "email-data", Set.of("analytics")));
 
             assertThatThrownBy(() -> // GH-90000
                 runPromise(() -> broker.checkAccess("t1", "user1", "email-data", "analytics")) // GH-90000
@@ -63,7 +63,7 @@ class DataAccessBrokerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("denies when purpose binding is missing even with consent [GH-90000]")
+        @DisplayName("denies when purpose binding is missing even with consent")
         void deniesWithoutPurposeBinding() { // GH-90000
             runPromise(() -> consent.recordConsent("t1", "user1", "analytics")); // GH-90000
 
@@ -73,10 +73,10 @@ class DataAccessBrokerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("denies when purpose is not in binding [GH-90000]")
+        @DisplayName("denies when purpose is not in binding")
         void deniesForDisallowedPurpose() { // GH-90000
             runPromise(() -> consent.recordConsent("t1", "user1", "marketing")); // GH-90000
-            runPromise(() -> purposeEnforcer.bindPurpose("t1", "email-data", Set.of("analytics [GH-90000]")));
+            runPromise(() -> purposeEnforcer.bindPurpose("t1", "email-data", Set.of("analytics")));
 
             assertThatThrownBy(() -> // GH-90000
                 runPromise(() -> broker.checkAccess("t1", "user1", "email-data", "marketing")) // GH-90000
@@ -84,10 +84,10 @@ class DataAccessBrokerTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("tenant isolation: consent from tenantA does not satisfy tenantB check [GH-90000]")
+        @DisplayName("tenant isolation: consent from tenantA does not satisfy tenantB check")
         void tenantIsolation() { // GH-90000
             runPromise(() -> consent.recordConsent("tenantA", "user1", "analytics")); // GH-90000
-            runPromise(() -> purposeEnforcer.bindPurpose("tenantA", "email-data", Set.of("analytics [GH-90000]")));
+            runPromise(() -> purposeEnforcer.bindPurpose("tenantA", "email-data", Set.of("analytics")));
 
             assertThatThrownBy(() -> // GH-90000
                 runPromise(() -> broker.checkAccess("tenantB", "user1", "email-data", "analytics")) // GH-90000

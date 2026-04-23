@@ -51,7 +51,7 @@ import static org.mockito.Mockito.when;
  * @doc.pattern Performance Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("API Performance Tests – DC-NF-001 to DC-NF-005 [GH-90000]")
+@DisplayName("API Performance Tests – DC-NF-001 to DC-NF-005")
 class ApiPerformanceTest extends EventloopTestBase {
 
     private static final String TENANT_ID  = "perf-api-tenant";
@@ -96,12 +96,12 @@ class ApiPerformanceTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("DC-NF-001: Response time SLA validation [GH-90000]")
+    @DisplayName("DC-NF-001: Response time SLA validation")
     class ResponseTimeSlaTests {
 
         @ParameterizedTest
         @ValueSource(ints = {10, 50, 100, 500}) // GH-90000
-        @DisplayName("Entity save P99 must be under 200ms for given request count [GH-90000]")
+        @DisplayName("Entity save P99 must be under 200ms for given request count")
         void entitySaveP99WithinSla(int requestCount) throws Exception { // GH-90000
             List<Long> latencies = measureLatencies(requestCount, () -> // GH-90000
                 runPromise(() -> client.save(TENANT_ID, COLLECTION, Map.of("field", "value"))) // GH-90000
@@ -115,7 +115,7 @@ class ApiPerformanceTest extends EventloopTestBase {
 
         @ParameterizedTest
         @ValueSource(ints = {10, 50, 100, 500}) // GH-90000
-        @DisplayName("Event append P99 must be under 200ms for given request count [GH-90000]")
+        @DisplayName("Event append P99 must be under 200ms for given request count")
         void eventAppendP99WithinSla(int requestCount) throws Exception { // GH-90000
             List<Long> latencies = measureLatencies(requestCount, () -> // GH-90000
                 runPromise(() -> client.appendEvent(TENANT_ID, buildEvent("evt-" + UUID.randomUUID()))) // GH-90000
@@ -128,7 +128,7 @@ class ApiPerformanceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Entity read P99 must be under 200ms [GH-90000]")
+        @DisplayName("Entity read P99 must be under 200ms")
         void entityReadP99WithinSla() throws Exception { // GH-90000
             List<Long> latencies = measureLatencies(200, () -> // GH-90000
                 runPromise(() -> client.findById(TENANT_ID, COLLECTION, "entity-id-1")) // GH-90000
@@ -139,7 +139,7 @@ class ApiPerformanceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Event query P99 must be under 200ms [GH-90000]")
+        @DisplayName("Event query P99 must be under 200ms")
         void eventQueryP99WithinSla() throws Exception { // GH-90000
             List<Long> latencies = measureLatencies(100, () -> // GH-90000
                 runPromise(() -> client.queryEvents(TENANT_ID, buildEventQuery())) // GH-90000
@@ -150,7 +150,7 @@ class ApiPerformanceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Mixed workload P99 must stay within SLA [GH-90000]")
+        @DisplayName("Mixed workload P99 must stay within SLA")
         void mixedWorkloadP99WithinSla() throws Exception { // GH-90000
             List<Long> latencies = new ArrayList<>(); // GH-90000
 
@@ -168,7 +168,7 @@ class ApiPerformanceTest extends EventloopTestBase {
             }
 
             long p99 = percentile(latencies, 99); // GH-90000
-            assertThat(p99).as("Mixed workload P99 [GH-90000]").isLessThan(P99_LIMIT_MS);
+            assertThat(p99).as("Mixed workload P99").isLessThan(P99_LIMIT_MS);
         }
     }
 
@@ -177,11 +177,11 @@ class ApiPerformanceTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("DC-NF-002: Throughput validation [GH-90000]")
+    @DisplayName("DC-NF-002: Throughput validation")
     class ThroughputTests {
 
         @Test
-        @DisplayName("Sequential event append throughput must meet baseline [GH-90000]")
+        @DisplayName("Sequential event append throughput must meet baseline")
         void sequentialEventThroughputBaseline() throws Exception { // GH-90000
             int count = 1000;
             long start = System.nanoTime(); // GH-90000
@@ -194,11 +194,11 @@ class ApiPerformanceTest extends EventloopTestBase {
             double throughputPerSec = count / (elapsedMs / 1000.0); // GH-90000
 
             // Mocked client: expect > 100 ops/sec (real infra targets 10k/sec) // GH-90000
-            assertThat(throughputPerSec).as("Sequential throughput ops/sec [GH-90000]").isGreaterThan(100.0);
+            assertThat(throughputPerSec).as("Sequential throughput ops/sec").isGreaterThan(100.0);
         }
 
         @Test
-        @DisplayName("Concurrent event append must not corrupt offset counter [GH-90000]")
+        @DisplayName("Concurrent event append must not corrupt offset counter")
         void concurrentEventAppendOffsetIntegrity() throws Exception { // GH-90000
             int threads = 20;
             int eventsPerThread = 50;
@@ -223,11 +223,11 @@ class ApiPerformanceTest extends EventloopTestBase {
 
             for (Thread thread : threadList) thread.join(5000); // GH-90000
 
-            assertThat(errors.get()).as("Concurrent append errors [GH-90000]").isZero();
+            assertThat(errors.get()).as("Concurrent append errors").isZero();
         }
 
         @Test
-        @DisplayName("Burst traffic: 10x spike must not exceed 3x SLA latency [GH-90000]")
+        @DisplayName("Burst traffic: 10x spike must not exceed 3x SLA latency")
         void burstTrafficLatencyBound() throws Exception { // GH-90000
             int normalLoad = 10;
             int burstLoad = 100;
@@ -243,7 +243,7 @@ class ApiPerformanceTest extends EventloopTestBase {
             );
 
             long p99Burst = percentile(burstLatencies, 99); // GH-90000
-            assertThat(p99Burst).as("Burst P99 must be < 3x SLA [GH-90000]").isLessThan(P99_LIMIT_MS * 3);
+            assertThat(p99Burst).as("Burst P99 must be < 3x SLA").isLessThan(P99_LIMIT_MS * 3);
         }
     }
 
@@ -252,11 +252,11 @@ class ApiPerformanceTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("DC-NF-003: Concurrent user scaling [GH-90000]")
+    @DisplayName("DC-NF-003: Concurrent user scaling")
     class ConcurrentUserTests {
 
         @Test
-        @DisplayName("100 concurrent users: P99 must stay within SLA [GH-90000]")
+        @DisplayName("100 concurrent users: P99 must stay within SLA")
         void hundredConcurrentUsersP99WithinSla() throws InterruptedException { // GH-90000
             CountDownLatch start = new CountDownLatch(1); // GH-90000
             CountDownLatch done = new CountDownLatch(CONCURRENCY); // GH-90000
@@ -281,15 +281,15 @@ class ApiPerformanceTest extends EventloopTestBase {
 
             start.countDown(); // GH-90000
             assertThat(done.await(30, TimeUnit.SECONDS)).isTrue(); // GH-90000
-            assertThat(errors.get()).as("Concurrent user errors [GH-90000]").isZero();
+            assertThat(errors.get()).as("Concurrent user errors").isZero();
 
             long p99 = percentile(latencies, 99); // GH-90000
-            assertThat(p99).as("100 concurrent users P99 [GH-90000]").isLessThan(CONCURRENT_P99_MS);
+            assertThat(p99).as("100 concurrent users P99").isLessThan(CONCURRENT_P99_MS);
         }
 
         @ParameterizedTest
         @ValueSource(ints = {10, 50, 100}) // GH-90000
-        @DisplayName("Concurrent reads must maintain SLA across varying concurrency levels [GH-90000]")
+        @DisplayName("Concurrent reads must maintain SLA across varying concurrency levels")
         void concurrentReadsSla(int concurrency) throws InterruptedException { // GH-90000
             CountDownLatch start = new CountDownLatch(1); // GH-90000
             CountDownLatch done = new CountDownLatch(concurrency); // GH-90000
@@ -324,22 +324,22 @@ class ApiPerformanceTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("DC-NF-004: Storage operation latency [GH-90000]")
+    @DisplayName("DC-NF-004: Storage operation latency")
     class StorageLatencyTests {
 
         @Test
-        @DisplayName("Entity save (write) P99 must be under 500ms [GH-90000]")
+        @DisplayName("Entity save (write) P99 must be under 500ms")
         void entitySaveStorageP99() throws Exception { // GH-90000
             List<Long> latencies = measureLatencies(200, () -> // GH-90000
                 runPromise(() -> client.save(TENANT_ID, COLLECTION, Map.of("key", "value"))) // GH-90000
             );
 
             long p99 = percentile(latencies, 99); // GH-90000
-            assertThat(p99).as("Storage write P99 [GH-90000]").isLessThan(STORAGE_P99_MS);
+            assertThat(p99).as("Storage write P99").isLessThan(STORAGE_P99_MS);
         }
 
         @Test
-        @DisplayName("Entity delete P99 must be under 500ms [GH-90000]")
+        @DisplayName("Entity delete P99 must be under 500ms")
         void entityDeleteStorageP99() throws Exception { // GH-90000
             when(client.delete(anyString(), anyString(), anyString())) // GH-90000
                 .thenAnswer(inv -> { // GH-90000
@@ -352,11 +352,11 @@ class ApiPerformanceTest extends EventloopTestBase {
             );
 
             long p99 = percentile(latencies, 99); // GH-90000
-            assertThat(p99).as("Storage delete P99 [GH-90000]").isLessThan(STORAGE_P99_MS);
+            assertThat(p99).as("Storage delete P99").isLessThan(STORAGE_P99_MS);
         }
 
         @Test
-        @DisplayName("Read-after-write latency must remain low [GH-90000]")
+        @DisplayName("Read-after-write latency must remain low")
         void readAfterWriteLatency() throws Exception { // GH-90000
             List<Long> readAfterWriteLatencies = new ArrayList<>(); // GH-90000
 
@@ -370,7 +370,7 @@ class ApiPerformanceTest extends EventloopTestBase {
             }
 
             long p99 = percentile(readAfterWriteLatencies, 99); // GH-90000
-            assertThat(p99).as("Read-after-write P99 [GH-90000]").isLessThan(STORAGE_P99_MS);
+            assertThat(p99).as("Read-after-write P99").isLessThan(STORAGE_P99_MS);
         }
     }
 
@@ -379,11 +379,11 @@ class ApiPerformanceTest extends EventloopTestBase {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("DC-NF-005: Sustained load stability [GH-90000]")
+    @DisplayName("DC-NF-005: Sustained load stability")
     class SustainedLoadTests {
 
         @Test
-        @DisplayName("Latency must not degrade across sequential batches (soak simulation) [GH-90000]")
+        @DisplayName("Latency must not degrade across sequential batches (soak simulation)")
         void latencyStabilityAcrossBatches() throws Exception { // GH-90000
             int batches = 5;
             int batchSize = 50;
@@ -406,7 +406,7 @@ class ApiPerformanceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Memory-scoped operation count must stay consistent under load [GH-90000]")
+        @DisplayName("Memory-scoped operation count must stay consistent under load")
         void operationCountConsistencyUnderLoad() throws Exception { // GH-90000
             AtomicLong successCount = new AtomicLong(0); // GH-90000
             AtomicLong failCount = new AtomicLong(0); // GH-90000
@@ -420,12 +420,12 @@ class ApiPerformanceTest extends EventloopTestBase {
                 }
             }
 
-            assertThat(failCount.get()).as("Sustained load failure count [GH-90000]").isZero();
-            assertThat(successCount.get()).as("Sustained load success count [GH-90000]").isEqualTo(200);
+            assertThat(failCount.get()).as("Sustained load failure count").isZero();
+            assertThat(successCount.get()).as("Sustained load success count").isEqualTo(200);
         }
 
         @Test
-        @DisplayName("Throughput must not drop more than 20% from initial rate after sustained load [GH-90000]")
+        @DisplayName("Throughput must not drop more than 20% from initial rate after sustained load")
         void throughputStabilityUnderSustainedLoad() throws Exception { // GH-90000
             int warmupOps = 50;
             int sustainedOps = 200;
@@ -445,7 +445,7 @@ class ApiPerformanceTest extends EventloopTestBase {
             double sustainedRate = sustainedOps / (Duration.ofNanos(System.nanoTime() - sustainedStart).toMillis() / 1000.0); // GH-90000
 
             assertThat(sustainedRate) // GH-90000
-                .as("Sustained throughput must not drop >20% from warmup rate [GH-90000]")
+                .as("Sustained throughput must not drop >20% from warmup rate")
                 .isGreaterThan(warmupRate * 0.80); // GH-90000
         }
     }

@@ -10,7 +10,11 @@ import java.util.stream.Collectors;
 /**
  * Represents an executable plan for a windowed query that groups events into windows
  * based on time or other criteria.
- */
+  * @doc.type interface
+ * @doc.purpose Provides windowed query plan functionality.
+ * @doc.layer product
+ * @doc.pattern Interface
+*/
 public interface WindowedQueryPlan {
 
     /**

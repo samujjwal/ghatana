@@ -52,7 +52,10 @@ import java.util.UUID;
  *   <li><b>Root</b>: Final operator (sink) with no outgoing edges</li>
  *   <li><b>Leaves</b>: Event selectors (sources) with no incoming edges</li>
  * </ul>
- */
+  * @doc.type class
+ * @doc.purpose Provides dagbuilder functionality.
+ * @doc.layer product
+*/
 public class DAGBuilder {
 
     private final OperatorRegistry operatorRegistry;

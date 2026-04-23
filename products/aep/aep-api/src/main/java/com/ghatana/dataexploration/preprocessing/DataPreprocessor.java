@@ -18,7 +18,11 @@ import java.util.Set;
  * Interface for preprocessing event data to extract patterns and prepare for group mining.
  *
  * Day 28 Implementation: Data preprocessing for pattern exploration and correlated group mining.
- */
+  * @doc.type interface
+ * @doc.purpose Provides data preprocessor functionality.
+ * @doc.layer product
+ * @doc.pattern Processor
+*/
 public interface DataPreprocessor {
 
     /**

@@ -30,18 +30,18 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Integration Test
  */
-@Tag("integration [GH-90000]")
+@Tag("integration")
 @Testcontainers
-@DisplayName("ReplicaLagMonitor Integration Tests [GH-90000]")
+@DisplayName("ReplicaLagMonitor Integration Tests")
 class ReplicaLagMonitorIT {
 
     @Container
-    @SuppressWarnings("resource [GH-90000]")
+    @SuppressWarnings("resource")
     static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>("postgres:15-alpine [GH-90000]")
-                    .withDatabaseName("testdb [GH-90000]")
-                    .withUsername("test [GH-90000]")
-                    .withPassword("test [GH-90000]");
+            new PostgreSQLContainer<>("postgres:15-alpine")
+                    .withDatabaseName("testdb")
+                    .withUsername("test")
+                    .withPassword("test");
 
     private HikariDataSource primaryDataSource;
     private HikariDataSource replicaDataSource;   // Same container acts as "replica" in monitor
@@ -80,7 +80,7 @@ class ReplicaLagMonitorIT {
     }
 
     @Test
-    @DisplayName("monitor starts without error when replicas are configured [GH-90000]")
+    @DisplayName("monitor starts without error when replicas are configured")
     void startWithReplicas() throws InterruptedException { // GH-90000
         Map<String, DataSource> replicaMap = Map.of("replica-1", replicaDataSource); // GH-90000
         RoutingDataSource routingDataSource = new RoutingDataSource(primaryDataSource, replicaMap); // GH-90000
@@ -101,7 +101,7 @@ class ReplicaLagMonitorIT {
     }
 
     @Test
-    @DisplayName("getReplicaLag returns 0 when primary and replica are the same node [GH-90000]")
+    @DisplayName("getReplicaLag returns 0 when primary and replica are the same node")
     void lagIsZeroWhenPrimaryEqualsReplica() throws InterruptedException { // GH-90000
         Map<String, DataSource> replicaMap = Map.of("replica-1", replicaDataSource); // GH-90000
         RoutingDataSource routingDataSource = new RoutingDataSource(primaryDataSource, replicaMap); // GH-90000
@@ -117,12 +117,12 @@ class ReplicaLagMonitorIT {
         Thread.sleep(500); // Allow at least one monitoring cycle // GH-90000
 
         // On a single-node setup, lag should be reported as 0 or very small
-        long lag = monitor.getReplicaLag("replica-1 [GH-90000]");
+        long lag = monitor.getReplicaLag("replica-1");
         assertThat(lag).isGreaterThanOrEqualTo(0L); // GH-90000
     }
 
     @Test
-    @DisplayName("stop shuts down the scheduler cleanly [GH-90000]")
+    @DisplayName("stop shuts down the scheduler cleanly")
     void stopShutsDownCleanly() { // GH-90000
         Map<String, DataSource> replicaMap = Map.of("replica-1", replicaDataSource); // GH-90000
         RoutingDataSource routingDataSource = new RoutingDataSource(primaryDataSource, replicaMap); // GH-90000
@@ -142,7 +142,7 @@ class ReplicaLagMonitorIT {
     }
 
     @Test
-    @DisplayName("monitor with no replicas starts and stops without error [GH-90000]")
+    @DisplayName("monitor with no replicas starts and stops without error")
     void noReplicas() { // GH-90000
         RoutingDataSource routingDataSource = new RoutingDataSource(primaryDataSource, Map.of()); // GH-90000
 
@@ -159,7 +159,7 @@ class ReplicaLagMonitorIT {
     }
 
     @Test
-    @DisplayName("multiple replicas are all tracked by the monitor [GH-90000]")
+    @DisplayName("multiple replicas are all tracked by the monitor")
     void multipleReplicas() throws InterruptedException { // GH-90000
         HikariConfig cfg2 = new HikariConfig(); // GH-90000
         cfg2.setJdbcUrl(POSTGRES.getJdbcUrl()); // GH-90000
@@ -185,8 +185,8 @@ class ReplicaLagMonitorIT {
             Thread.sleep(500); // GH-90000
 
             // Both replicas should be tracked
-            assertThat(monitor.getReplicaLag("r1 [GH-90000]")).isGreaterThanOrEqualTo(0L);
-            assertThat(monitor.getReplicaLag("r2 [GH-90000]")).isGreaterThanOrEqualTo(0L);
+            assertThat(monitor.getReplicaLag("r1")).isGreaterThanOrEqualTo(0L);
+            assertThat(monitor.getReplicaLag("r2")).isGreaterThanOrEqualTo(0L);
         } finally {
             replica2.close(); // GH-90000
         }

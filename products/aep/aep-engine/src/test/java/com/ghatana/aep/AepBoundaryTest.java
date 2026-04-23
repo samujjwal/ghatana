@@ -38,7 +38,7 @@ class AepBoundaryTest {
     @ArchTest
     static final ArchRule aep_must_not_depend_on_other_products =
             noClasses() // GH-90000
-                    .that().resideInAPackage("com.ghatana.aep.. [GH-90000]")
+                    .that().resideInAPackage("com.ghatana.aep..")
                     .should().dependOnClassesThat().resideInAnyPackage( // GH-90000
                             "com.ghatana.datacloud..",
                             "com.ghatana.tutorputor..",
@@ -61,8 +61,8 @@ class AepBoundaryTest {
     @ArchTest
     static final ArchRule compliance_must_not_depend_on_engine_internals =
             noClasses() // GH-90000
-                    .that().resideInAPackage("com.ghatana.aep.compliance.. [GH-90000]")
-                    .should().dependOnClassesThat().resideInAPackage("com.ghatana.aep.engine.internal.. [GH-90000]")
+                    .that().resideInAPackage("com.ghatana.aep.compliance..")
+                    .should().dependOnClassesThat().resideInAPackage("com.ghatana.aep.engine.internal..")
                     .allowEmptyShould(true) // GH-90000
                     .because("AEP compliance must use the published engine API/SPI, " // GH-90000
                             + "not internal engine implementation classes.");
@@ -79,7 +79,7 @@ class AepBoundaryTest {
     @ArchTest
     static final ArchRule engine_must_not_depend_on_server_launcher =
             noClasses() // GH-90000
-                    .that().resideInAPackage("com.ghatana.aep.engine.. [GH-90000]")
+                    .that().resideInAPackage("com.ghatana.aep.engine..")
                     .should().dependOnClassesThat().resideInAnyPackage( // GH-90000
                             "com.ghatana.aep.server.."
                     )

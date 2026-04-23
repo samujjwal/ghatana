@@ -33,7 +33,7 @@ import static org.mockito.Mockito.lenient;
  * @doc.pattern Test
  */
 @ExtendWith(MockitoExtension.class) // GH-90000
-@DisplayName("YAPPC Agent Orchestration Operators [GH-90000]")
+@DisplayName("YAPPC Agent Orchestration Operators")
 class YappcAgentOrchestrationOperatorsTest extends EventloopTestBase {
 
     // ─── shared helpers ───────────────────────────────────────────────────────
@@ -80,7 +80,7 @@ class YappcAgentOrchestrationOperatorsTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("AgentDispatchValidatorOperator [GH-90000]")
+    @DisplayName("AgentDispatchValidatorOperator")
     class AgentDispatchValidatorTests {
 
         private AgentDispatchValidatorOperator operator;
@@ -91,7 +91,7 @@ class YappcAgentOrchestrationOperatorsTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should emit agent.dispatch.validated for valid dispatch event [GH-90000]")
+        @DisplayName("should emit agent.dispatch.validated for valid dispatch event")
         void shouldValidateCompleteDispatchEvent() { // GH-90000
             // GIVEN
             Event event = buildDispatchRequestedEvent("agent-1", "planning", "execution", "tenant-1"); // GH-90000
@@ -104,15 +104,15 @@ class YappcAgentOrchestrationOperatorsTest extends EventloopTestBase {
             assertThat(result.getOutputEvents()).hasSize(1); // GH-90000
             Event out = result.getOutputEvents().get(0); // GH-90000
             assertThat(out.getType()).isEqualTo(AgentDispatchValidatorOperator.EVENT_DISPATCH_VALIDATED); // GH-90000
-            assertThat(out.getPayload("agentId [GH-90000]")).isEqualTo("agent-1 [GH-90000]");
-            assertThat(out.getPayload("fromStage [GH-90000]")).isEqualTo("planning [GH-90000]");
-            assertThat(out.getPayload("toStage [GH-90000]")).isEqualTo("execution [GH-90000]");
-            assertThat(out.getPayload("originalEventType [GH-90000]"))
+            assertThat(out.getPayload("agentId")).isEqualTo("agent-1");
+            assertThat(out.getPayload("fromStage")).isEqualTo("planning");
+            assertThat(out.getPayload("toStage")).isEqualTo("execution");
+            assertThat(out.getPayload("originalEventType"))
                     .isEqualTo(AgentDispatchValidatorOperator.EVENT_DISPATCH_REQUESTED); // GH-90000
         }
 
         @Test
-        @DisplayName("should fail when agentId is missing [GH-90000]")
+        @DisplayName("should fail when agentId is missing")
         void shouldFailWhenAgentIdMissing() { // GH-90000
             // GIVEN — build event without agentId
             Event event = GEvent.builder() // GH-90000
@@ -128,12 +128,12 @@ class YappcAgentOrchestrationOperatorsTest extends EventloopTestBase {
 
             // THEN
             assertThat(result.isSuccess()).isFalse(); // GH-90000
-            assertThat(result.getErrorMessage()).contains("VALIDATION_FAILED [GH-90000]");
-            assertThat(result.getErrorMessage()).contains("agentId [GH-90000]");
+            assertThat(result.getErrorMessage()).contains("VALIDATION_FAILED");
+            assertThat(result.getErrorMessage()).contains("agentId");
         }
 
         @Test
-        @DisplayName("should fail when fromStage is blank [GH-90000]")
+        @DisplayName("should fail when fromStage is blank")
         void shouldFailWhenFromStageIsBlank() { // GH-90000
             // GIVEN
             Event event = GEvent.builder() // GH-90000
@@ -150,11 +150,11 @@ class YappcAgentOrchestrationOperatorsTest extends EventloopTestBase {
 
             // THEN
             assertThat(result.isSuccess()).isFalse(); // GH-90000
-            assertThat(result.getErrorMessage()).contains("fromStage [GH-90000]");
+            assertThat(result.getErrorMessage()).contains("fromStage");
         }
 
         @Test
-        @DisplayName("should fail when all required fields are missing [GH-90000]")
+        @DisplayName("should fail when all required fields are missing")
         void shouldReportAllMissingFields() { // GH-90000
             // GIVEN — event with no payload at all
             Event event = GEvent.builder() // GH-90000
@@ -176,7 +176,7 @@ class YappcAgentOrchestrationOperatorsTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("BackpressureOperator [GH-90000]")
+    @DisplayName("BackpressureOperator")
     class BackpressureOperatorTests {
 
         private BackpressureOperator operator;
@@ -187,7 +187,7 @@ class YappcAgentOrchestrationOperatorsTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should pass a single event through the buffer [GH-90000]")
+        @DisplayName("should pass a single event through the buffer")
         void shouldPassEventThrough() { // GH-90000
             // GIVEN
             Event event = buildDispatchRequestedEvent("agent-1", "plan", "exec", "tenant-1"); // GH-90000
@@ -203,7 +203,7 @@ class YappcAgentOrchestrationOperatorsTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should maintain correct buffer size after processing [GH-90000]")
+        @DisplayName("should maintain correct buffer size after processing")
         void shouldMaintainBufferSizeCorrectly() { // GH-90000
             // GIVEN — two events offered
             Event evt1 = buildDispatchRequestedEvent("agent-1", "plan", "exec", "tenant-1"); // GH-90000
@@ -220,7 +220,7 @@ class YappcAgentOrchestrationOperatorsTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should be created with default buffer size constant [GH-90000]")
+        @DisplayName("should be created with default buffer size constant")
         void shouldHaveCorrectDefaultBufferSize() { // GH-90000
             assertThat(BackpressureOperator.DEFAULT_BUFFER_SIZE).isEqualTo(2048); // GH-90000
         }
@@ -231,7 +231,7 @@ class YappcAgentOrchestrationOperatorsTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("AgentExecutorOperator [GH-90000]")
+    @DisplayName("AgentExecutorOperator")
     class AgentExecutorOperatorTests {
 
         @Mock
@@ -248,7 +248,7 @@ class YappcAgentOrchestrationOperatorsTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should emit agent.result.produced with status=error when agent system is not yet initialized [GH-90000]")
+        @DisplayName("should emit agent.result.produced with status=error when agent system is not yet initialized")
         void shouldEmitResultProducedEvent() { // GH-90000
             // GIVEN — operator with an uninitialized YappcAgentSystem
             Event event = buildDispatchValidatedEvent("agent-1", "plan", "exec", "tenant-1", "corr-001"); // GH-90000
@@ -262,13 +262,13 @@ class YappcAgentOrchestrationOperatorsTest extends EventloopTestBase {
             assertThat(result.getOutputEvents()).hasSize(1); // GH-90000
             Event out = result.getOutputEvents().get(0); // GH-90000
             assertThat(out.getType()).isEqualTo(AgentExecutorOperator.EVENT_RESULT_PRODUCED); // GH-90000
-            assertThat(out.getPayload("status [GH-90000]")).isEqualTo("error [GH-90000]");
-            assertThat(out.getPayload("agentId [GH-90000]")).isEqualTo("agent-1 [GH-90000]");
-            assertThat(out.getPayload("correlationId [GH-90000]")).isEqualTo("corr-001 [GH-90000]");
+            assertThat(out.getPayload("status")).isEqualTo("error");
+            assertThat(out.getPayload("agentId")).isEqualTo("agent-1");
+            assertThat(out.getPayload("correlationId")).isEqualTo("corr-001");
         }
 
         @Test
-        @DisplayName("should fail when agentId is missing from dispatch event [GH-90000]")
+        @DisplayName("should fail when agentId is missing from dispatch event")
         void shouldFailWhenAgentIdMissing() { // GH-90000
             // GIVEN — validated event without agentId
             Event event = GEvent.builder() // GH-90000
@@ -282,7 +282,7 @@ class YappcAgentOrchestrationOperatorsTest extends EventloopTestBase {
 
             // THEN
             assertThat(result.isSuccess()).isFalse(); // GH-90000
-            assertThat(result.getErrorMessage()).contains("agentId [GH-90000]");
+            assertThat(result.getErrorMessage()).contains("agentId");
         }
     }
 
@@ -291,7 +291,7 @@ class YappcAgentOrchestrationOperatorsTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("ResultAggregatorOperator [GH-90000]")
+    @DisplayName("ResultAggregatorOperator")
     class ResultAggregatorOperatorTests {
 
         private ResultAggregatorOperator operator;
@@ -303,7 +303,7 @@ class YappcAgentOrchestrationOperatorsTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should emit workflow.step.completed immediately when threshold=1 [GH-90000]")
+        @DisplayName("should emit workflow.step.completed immediately when threshold=1")
         void shouldEmitStepCompletedImmediately() { // GH-90000
             // GIVEN
             Event event = buildResultProducedEvent("agent-1", "tenant-1", "corr-001", "success"); // GH-90000
@@ -316,12 +316,12 @@ class YappcAgentOrchestrationOperatorsTest extends EventloopTestBase {
             assertThat(result.getOutputEvents()).hasSize(1); // GH-90000
             Event out = result.getOutputEvents().get(0); // GH-90000
             assertThat(out.getType()).isEqualTo(ResultAggregatorOperator.EVENT_STEP_COMPLETED); // GH-90000
-            assertThat(out.getPayload("correlationId [GH-90000]")).isEqualTo("corr-001 [GH-90000]");
-            assertThat(out.getPayload("resultCount [GH-90000]")).isEqualTo(1);
+            assertThat(out.getPayload("correlationId")).isEqualTo("corr-001");
+            assertThat(out.getPayload("resultCount")).isEqualTo(1);
         }
 
         @Test
-        @DisplayName("should clear bucket after emitting step.completed [GH-90000]")
+        @DisplayName("should clear bucket after emitting step.completed")
         void shouldClearBucketAfterEmit() { // GH-90000
             // GIVEN
             Event event = buildResultProducedEvent("agent-1", "tenant-1", "corr-002", "success"); // GH-90000
@@ -334,7 +334,7 @@ class YappcAgentOrchestrationOperatorsTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should accumulate results until threshold is met with threshold=2 [GH-90000]")
+        @DisplayName("should accumulate results until threshold is met with threshold=2")
         void shouldAccumulateUntilThreshold() { // GH-90000
             // GIVEN
             operator = new ResultAggregatorOperator(2); // GH-90000
@@ -361,7 +361,7 @@ class YappcAgentOrchestrationOperatorsTest extends EventloopTestBase {
     // =========================================================================
 
     @Nested
-    @DisplayName("MetricsCollectorOperator [GH-90000]")
+    @DisplayName("MetricsCollectorOperator")
     class MetricsCollectorOperatorTests {
 
         private MetricsCollectorOperator operator;
@@ -372,7 +372,7 @@ class YappcAgentOrchestrationOperatorsTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should emit agent.metrics.updated for each result event [GH-90000]")
+        @DisplayName("should emit agent.metrics.updated for each result event")
         void shouldEmitMetricsUpdatedEvent() { // GH-90000
             // GIVEN
             Event event = buildResultProducedEvent("agent-1", "tenant-1", "corr-001", "success"); // GH-90000
@@ -385,13 +385,13 @@ class YappcAgentOrchestrationOperatorsTest extends EventloopTestBase {
             assertThat(result.getOutputEvents()).hasSize(1); // GH-90000
             Event out = result.getOutputEvents().get(0); // GH-90000
             assertThat(out.getType()).isEqualTo(MetricsCollectorOperator.EVENT_METRICS_UPDATED); // GH-90000
-            assertThat(out.getPayload("agentId [GH-90000]")).isEqualTo("agent-1 [GH-90000]");
-            assertThat(out.getPayload("status [GH-90000]")).isEqualTo("success [GH-90000]");
-            assertThat(out.getPayload("agent_executions_total [GH-90000]")).isEqualTo(1L);
+            assertThat(out.getPayload("agentId")).isEqualTo("agent-1");
+            assertThat(out.getPayload("status")).isEqualTo("success");
+            assertThat(out.getPayload("agent_executions_total")).isEqualTo(1L);
         }
 
         @Test
-        @DisplayName("should increment totalExecutions counter on each call [GH-90000]")
+        @DisplayName("should increment totalExecutions counter on each call")
         void shouldIncrementExecutionCounter() { // GH-90000
             // GIVEN
             Event event = buildResultProducedEvent("agent-1", "tenant-1", "corr-001", "success"); // GH-90000
@@ -405,7 +405,7 @@ class YappcAgentOrchestrationOperatorsTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("should start with zero total executions [GH-90000]")
+        @DisplayName("should start with zero total executions")
         void shouldStartAtZero() { // GH-90000
             assertThat(operator.getTotalExecutions()).isEqualTo(0L); // GH-90000
         }

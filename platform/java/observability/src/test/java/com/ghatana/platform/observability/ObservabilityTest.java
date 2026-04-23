@@ -28,7 +28,7 @@ class ObservabilityTest {
     }
 
     @Test
-    @DisplayName("Should track user login metrics [GH-90000]")
+    @DisplayName("Should track user login metrics")
     void testUserLoginMetrics() { // GH-90000
         businessMetrics.recordUserLogin("user-123", "tenant-abc"); // GH-90000
         businessMetrics.recordUserLogin("user-456", "tenant-abc"); // GH-90000
@@ -39,11 +39,11 @@ class ObservabilityTest {
     }
 
     @Test
-    @DisplayName("Should track session metrics [GH-90000]")
+    @DisplayName("Should track session metrics")
     void testSessionMetrics() { // GH-90000
         businessMetrics.recordSessionCreated("tenant-abc", Duration.ofMinutes(30)); // GH-90000
         businessMetrics.recordSessionCreated("tenant-abc", Duration.ofMinutes(45)); // GH-90000
-        businessMetrics.recordSessionEnded("tenant-abc [GH-90000]");
+        businessMetrics.recordSessionEnded("tenant-abc");
 
         double createdCount = registry.counter("business.sessions.created", "tenant", "tenant-abc").count(); // GH-90000
         double endedCount = registry.counter("business.sessions.ended", "tenant", "tenant-abc").count(); // GH-90000
@@ -53,7 +53,7 @@ class ObservabilityTest {
     }
 
     @Test
-    @DisplayName("Should track project lifecycle metrics [GH-90000]")
+    @DisplayName("Should track project lifecycle metrics")
     void testProjectMetrics() { // GH-90000
         businessMetrics.recordProjectCreated("tenant-abc", "microservice"); // GH-90000
         businessMetrics.recordProjectCreated("tenant-abc", "web-app"); // GH-90000
@@ -67,7 +67,7 @@ class ObservabilityTest {
     }
 
     @Test
-    @DisplayName("Should track phase completion metrics [GH-90000]")
+    @DisplayName("Should track phase completion metrics")
     void testPhaseMetrics() { // GH-90000
         businessMetrics.recordPhaseCompleted("PLANNING", "tenant-abc"); // GH-90000
         businessMetrics.recordPhaseCompleted("DESIGN", "tenant-abc"); // GH-90000
@@ -81,7 +81,7 @@ class ObservabilityTest {
     }
 
     @Test
-    @DisplayName("Should track AI/LLM metrics [GH-90000]")
+    @DisplayName("Should track AI/LLM metrics")
     void testAiMetrics() { // GH-90000
         businessMetrics.recordAgentInvocation("code-generator", "tenant-abc", true); // GH-90000
         businessMetrics.recordAgentInvocation("code-generator", "tenant-abc", true); // GH-90000
@@ -95,7 +95,7 @@ class ObservabilityTest {
     }
 
     @Test
-    @DisplayName("Should track LLM token usage [GH-90000]")
+    @DisplayName("Should track LLM token usage")
     void testLlmTokenMetrics() { // GH-90000
         businessMetrics.recordLlmCall("gpt-4", "tenant-abc", 1500, 800); // GH-90000
         businessMetrics.recordLlmCall("gpt-4", "tenant-abc", 2000, 1200); // GH-90000
@@ -108,7 +108,7 @@ class ObservabilityTest {
     }
 
     @Test
-    @DisplayName("Should track code generation metrics [GH-90000]")
+    @DisplayName("Should track code generation metrics")
     void testCodeGenerationMetrics() { // GH-90000
         businessMetrics.recordCodeGenerated("java", "tenant-abc", 150); // GH-90000
         businessMetrics.recordCodeGenerated("typescript", "tenant-abc", 200); // GH-90000
@@ -122,7 +122,7 @@ class ObservabilityTest {
     }
 
     @Test
-    @DisplayName("Should track collaboration metrics [GH-90000]")
+    @DisplayName("Should track collaboration metrics")
     void testCollaborationMetrics() { // GH-90000
         businessMetrics.recordCollaborationSession("tenant-abc", 5); // GH-90000
         businessMetrics.recordCommentCreated("tenant-abc", "architecture"); // GH-90000
@@ -136,7 +136,7 @@ class ObservabilityTest {
     }
 
     @Test
-    @DisplayName("Should track Data Cloud event metrics [GH-90000]")
+    @DisplayName("Should track Data Cloud event metrics")
     void testDataCloudMetrics() { // GH-90000
         businessMetrics.recordEventPublished("ProjectCreated", "tenant-abc"); // GH-90000
         businessMetrics.recordEventPublished("ProjectCreated", "tenant-abc"); // GH-90000
@@ -150,7 +150,7 @@ class ObservabilityTest {
     }
 
     @Test
-    @DisplayName("Should track tenant and API metrics [GH-90000]")
+    @DisplayName("Should track tenant and API metrics")
     void testTenantMetrics() { // GH-90000
         businessMetrics.recordTenantCreated("new-tenant", "pro"); // GH-90000
         businessMetrics.recordTenantCreated("another-tenant", "enterprise"); // GH-90000
@@ -162,7 +162,7 @@ class ObservabilityTest {
     }
 
     @Test
-    @DisplayName("Should track feature usage [GH-90000]")
+    @DisplayName("Should track feature usage")
     void testFeatureUsageMetrics() { // GH-90000
         businessMetrics.recordFeatureUsage("ai-code-generation", "tenant-abc"); // GH-90000
         businessMetrics.recordFeatureUsage("ai-code-generation", "tenant-abc"); // GH-90000
@@ -176,7 +176,7 @@ class ObservabilityTest {
     }
 
     @Test
-    @DisplayName("Should track workflow execution [GH-90000]")
+    @DisplayName("Should track workflow execution")
     void testWorkflowMetrics() { // GH-90000
         businessMetrics.recordWorkflowExecuted("create-microservice", "tenant-abc", true); // GH-90000
         businessMetrics.recordWorkflowExecuted("create-microservice", "tenant-abc", false); // GH-90000
@@ -189,7 +189,7 @@ class ObservabilityTest {
     }
 
     @Test
-    @DisplayName("Should update gauge values [GH-90000]")
+    @DisplayName("Should update gauge values")
     void testGaugeUpdates() { // GH-90000
         businessMetrics.setActiveUsers(1000L, 5000L); // GH-90000
         businessMetrics.setActiveTenants(50L); // GH-90000

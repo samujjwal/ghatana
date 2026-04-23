@@ -14,7 +14,8 @@ import java.util.Map;
  * @doc.type class
  * @doc.purpose Evaluation context for gates
  * @doc.layer agent-learning
- */
+  * @doc.pattern Component
+*/
 @Value
 @Builder
 public class EvaluationContext {

@@ -4,7 +4,11 @@ import java.util.List;
 
 /**
  * Result from combined video + audio analysis with temporal alignment.
- */
+  * @doc.type class
+ * @doc.purpose Provides video audio result functionality.
+ * @doc.layer product
+ * @doc.pattern ValueObject
+*/
 public class VideoAudioResult {
 
     private final AudioResult audioResult;

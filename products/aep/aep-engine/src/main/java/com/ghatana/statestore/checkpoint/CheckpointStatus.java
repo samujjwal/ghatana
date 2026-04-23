@@ -2,7 +2,11 @@ package com.ghatana.statestore.checkpoint;
 
 /**
  * Status of a checkpoint operation.
- */
+  * @doc.type enum
+ * @doc.purpose Provides checkpoint status functionality.
+ * @doc.layer product
+ * @doc.pattern Enum
+*/
 public enum CheckpointStatus {
     /**
      * Checkpoint has been initiated and barriers injected.

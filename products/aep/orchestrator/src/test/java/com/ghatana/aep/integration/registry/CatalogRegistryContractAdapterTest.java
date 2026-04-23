@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
  * Tests CatalogRegistryContractAdapter — verifies that AgentRegistryContracts
  * methods delegate correctly to the underlying CatalogRegistry.
  */
-@DisplayName("CatalogRegistryContractAdapter [GH-90000]")
+@DisplayName("CatalogRegistryContractAdapter")
 class CatalogRegistryContractAdapterTest extends EventloopTestBase {
 
     private CatalogRegistry catalogRegistry;
@@ -34,14 +34,14 @@ class CatalogRegistryContractAdapterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("listAgents returns empty list when catalog is empty [GH-90000]")
+    @DisplayName("listAgents returns empty list when catalog is empty")
     void listAgentsEmptyCatalog() { // GH-90000
         List<CatalogAgentEntry> result = runPromise(adapter::listAgents); // GH-90000
         assertThat(result).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("listAgents returns all definitions from registered catalog [GH-90000]")
+    @DisplayName("listAgents returns all definitions from registered catalog")
     void listAgentsWithCatalog() { // GH-90000
         catalogRegistry.register(buildCatalog("cat1", "agent-alpha", "agent-beta")); // GH-90000
 
@@ -52,52 +52,52 @@ class CatalogRegistryContractAdapterTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("getAgent returns present optional when agent exists [GH-90000]")
+    @DisplayName("getAgent returns present optional when agent exists")
     void getAgentFound() { // GH-90000
         catalogRegistry.register(buildCatalog("cat1", "agent-alpha")); // GH-90000
 
-        Optional<CatalogAgentEntry> result = runPromise(() -> adapter.getAgent("agent-alpha [GH-90000]"));
+        Optional<CatalogAgentEntry> result = runPromise(() -> adapter.getAgent("agent-alpha"));
 
         assertThat(result).isPresent(); // GH-90000
-        assertThat(result.get().getId()).isEqualTo("agent-alpha [GH-90000]");
+        assertThat(result.get().getId()).isEqualTo("agent-alpha");
     }
 
     @Test
-    @DisplayName("getAgent returns empty optional when agent is not found [GH-90000]")
+    @DisplayName("getAgent returns empty optional when agent is not found")
     void getAgentNotFound() { // GH-90000
-        Optional<CatalogAgentEntry> result = runPromise(() -> adapter.getAgent("no-such-agent [GH-90000]"));
+        Optional<CatalogAgentEntry> result = runPromise(() -> adapter.getAgent("no-such-agent"));
 
         assertThat(result).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("findByCapability returns matching agents [GH-90000]")
+    @DisplayName("findByCapability returns matching agents")
     void findByCapabilityMatches() { // GH-90000
         catalogRegistry.register(buildCatalogWithCapability("cat1", "agent-cap", "text-generation")); // GH-90000
         catalogRegistry.register(buildCatalog("cat1b", "agent-other")); // no capability // GH-90000
 
-        List<CatalogAgentEntry> result = runPromise(() -> adapter.findByCapability("text-generation [GH-90000]"));
+        List<CatalogAgentEntry> result = runPromise(() -> adapter.findByCapability("text-generation"));
 
         assertThat(result).hasSize(1); // GH-90000
-        assertThat(result.get(0).getId()).isEqualTo("agent-cap [GH-90000]");
+        assertThat(result.get(0).getId()).isEqualTo("agent-cap");
     }
 
     @Test
-    @DisplayName("findByCapability returns empty list when no agents match [GH-90000]")
+    @DisplayName("findByCapability returns empty list when no agents match")
     void findByCapabilityNoMatch() { // GH-90000
         catalogRegistry.register(buildCatalog("cat1", "agent-alpha")); // GH-90000
 
-        List<CatalogAgentEntry> result = runPromise(() -> adapter.findByCapability("nonexistent-capability [GH-90000]"));
+        List<CatalogAgentEntry> result = runPromise(() -> adapter.findByCapability("nonexistent-capability"));
 
         assertThat(result).isEmpty(); // GH-90000
     }
 
     @Test
-    @DisplayName("rejects null catalogRegistry in constructor [GH-90000]")
+    @DisplayName("rejects null catalogRegistry in constructor")
     void rejectsNullRegistry() { // GH-90000
         assertThatThrownBy(() -> new CatalogRegistryContractAdapter(null)) // GH-90000
                 .isInstanceOf(NullPointerException.class) // GH-90000
-                .hasMessageContaining("catalogRegistry [GH-90000]");
+                .hasMessageContaining("catalogRegistry");
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────

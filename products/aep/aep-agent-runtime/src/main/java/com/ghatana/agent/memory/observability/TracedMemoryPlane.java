@@ -28,7 +28,8 @@ import java.util.Objects;
  * @doc.type class
  * @doc.purpose Observability decorator for MemoryPlane
  * @doc.layer agent-memory
- */
+  * @doc.pattern Component
+*/
 public class TracedMemoryPlane implements MemoryPlane {
 
     private static final Logger log = LoggerFactory.getLogger(TracedMemoryPlane.class);

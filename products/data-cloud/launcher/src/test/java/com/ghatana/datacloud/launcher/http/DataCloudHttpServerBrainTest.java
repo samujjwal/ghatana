@@ -39,7 +39,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataCloudHttpServer – Brain Endpoints (DC-6) [GH-90000]")
+@DisplayName("DataCloudHttpServer – Brain Endpoints (DC-6)")
 class DataCloudHttpServerBrainTest {
 
     private DataCloudClient mockClient;
@@ -65,66 +65,66 @@ class DataCloudHttpServerBrainTest {
     // ==================== Brain unavailable (no-brain constructor) ==================== // GH-90000
 
     @Nested
-    @DisplayName("Brain not wired (null brain) [GH-90000]")
+    @DisplayName("Brain not wired (null brain)")
     class BrainUnavailableTests {
 
         @Test
-        @DisplayName("GET /api/v1/brain/health → 503 when brain is null [GH-90000]")
+        @DisplayName("GET /api/v1/brain/health → 503 when brain is null")
         void health_brainNull_returns503() throws Exception { // GH-90000
             startServerWithoutBrain(); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/brain/health [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/brain/health");
 
             assertThat(resp.statusCode()).isEqualTo(503); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("message [GH-90000]").toString()).containsIgnoringCase("not available [GH-90000]");
+            assertThat(body.get("message").toString()).containsIgnoringCase("not available");
         }
 
         @Test
-        @DisplayName("GET /api/v1/brain/config → 503 when brain is null [GH-90000]")
+        @DisplayName("GET /api/v1/brain/config → 503 when brain is null")
         void config_brainNull_returns503() throws Exception { // GH-90000
             startServerWithoutBrain(); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/brain/config [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/brain/config");
 
             assertThat(resp.statusCode()).isEqualTo(503); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("message [GH-90000]").toString()).containsIgnoringCase("not available [GH-90000]");
+            assertThat(body.get("message").toString()).containsIgnoringCase("not available");
         }
 
         @Test
-        @DisplayName("GET /api/v1/brain/stats → 503 when brain is null [GH-90000]")
+        @DisplayName("GET /api/v1/brain/stats → 503 when brain is null")
         void stats_brainNull_returns503() throws Exception { // GH-90000
             startServerWithoutBrain(); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/brain/stats [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/brain/stats");
 
             assertThat(resp.statusCode()).isEqualTo(503); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("message [GH-90000]").toString()).containsIgnoringCase("not available [GH-90000]");
+            assertThat(body.get("message").toString()).containsIgnoringCase("not available");
         }
 
         @Test
-        @DisplayName("GET /api/v1/brain/workspace → 503 when brain is null [GH-90000]")
+        @DisplayName("GET /api/v1/brain/workspace → 503 when brain is null")
         void workspace_brainNull_returns503() throws Exception { // GH-90000
             startServerWithoutBrain(); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/brain/workspace [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/brain/workspace");
 
             assertThat(resp.statusCode()).isEqualTo(503); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("message [GH-90000]").toString()).containsIgnoringCase("not available [GH-90000]");
+            assertThat(body.get("message").toString()).containsIgnoringCase("not available");
         }
     }
 
     // ==================== GET /api/v1/brain/health ====================
 
     @Nested
-    @DisplayName("GET /api/v1/brain/health [GH-90000]")
+    @DisplayName("GET /api/v1/brain/health")
     class BrainHealthTests {
 
         @Test
-        @DisplayName("healthy brain → 200 with HEALTHY status [GH-90000]")
+        @DisplayName("healthy brain → 200 with HEALTHY status")
         void health_healthyBrain_returns200WithHealthyStatus() throws Exception { // GH-90000
             DataCloudBrain.HealthStatus healthStatus = DataCloudBrain.HealthStatus.builder() // GH-90000
                 .status(DataCloudBrain.HealthStatus.Status.HEALTHY) // GH-90000
@@ -132,24 +132,24 @@ class DataCloudHttpServerBrainTest {
                     "attention", DataCloudBrain.HealthStatus.Status.HEALTHY,
                     "workspace", DataCloudBrain.HealthStatus.Status.HEALTHY
                 ))
-                .messages(List.of("Brain operational: brain-test [GH-90000]"))
+                .messages(List.of("Brain operational: brain-test"))
                 .build(); // GH-90000
             when(mockBrain.health()).thenReturn(Promise.of(healthStatus)); // GH-90000
 
             startServerWithBrain(); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/brain/health [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/brain/health");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("status [GH-90000]")).isEqualTo("HEALTHY [GH-90000]");
-            assertThat(body.get("components [GH-90000]")).isNotNull();
-            assertThat(body.get("messages [GH-90000]")).isNotNull();
-            assertThat(body.get("timestamp [GH-90000]")).isNotNull();
+            assertThat(body.get("status")).isEqualTo("HEALTHY");
+            assertThat(body.get("components")).isNotNull();
+            assertThat(body.get("messages")).isNotNull();
+            assertThat(body.get("timestamp")).isNotNull();
         }
 
         @Test
-        @DisplayName("degraded brain → 200 with DEGRADED status [GH-90000]")
+        @DisplayName("degraded brain → 200 with DEGRADED status")
         void health_degradedBrain_returns200WithDegradedStatus() throws Exception { // GH-90000
             DataCloudBrain.HealthStatus healthStatus = DataCloudBrain.HealthStatus.builder() // GH-90000
                 .status(DataCloudBrain.HealthStatus.Status.DEGRADED) // GH-90000
@@ -157,24 +157,24 @@ class DataCloudHttpServerBrainTest {
                     "attention", DataCloudBrain.HealthStatus.Status.HEALTHY,
                     "reflexes",  DataCloudBrain.HealthStatus.Status.DEGRADED
                 ))
-                .messages(List.of("Reflex engine degraded [GH-90000]"))
+                .messages(List.of("Reflex engine degraded"))
                 .build(); // GH-90000
             when(mockBrain.health()).thenReturn(Promise.of(healthStatus)); // GH-90000
 
             startServerWithBrain(); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/brain/health [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/brain/health");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("status [GH-90000]")).isEqualTo("DEGRADED [GH-90000]");
+            assertThat(body.get("status")).isEqualTo("DEGRADED");
 
-            Map<?, ?> components = (Map<?, ?>) body.get("components [GH-90000]");
-            assertThat(components.get("reflexes [GH-90000]")).isEqualTo("DEGRADED [GH-90000]");
+            Map<?, ?> components = (Map<?, ?>) body.get("components");
+            assertThat(components.get("reflexes")).isEqualTo("DEGRADED");
         }
 
         @Test
-        @DisplayName("brain health check includes component map [GH-90000]")
+        @DisplayName("brain health check includes component map")
         void health_always_includesComponentMap() throws Exception { // GH-90000
             DataCloudBrain.HealthStatus healthStatus = DataCloudBrain.HealthStatus.builder() // GH-90000
                 .status(DataCloudBrain.HealthStatus.Status.HEALTHY) // GH-90000
@@ -190,30 +190,30 @@ class DataCloudHttpServerBrainTest {
 
             startServerWithBrain(); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/brain/health [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/brain/health");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            Map<?, ?> components = (Map<?, ?>) body.get("components [GH-90000]");
-            assertThat(components.containsKey("attention [GH-90000]")).isTrue();
-            assertThat(components.containsKey("workspace [GH-90000]")).isTrue();
-            assertThat(components.containsKey("memory [GH-90000]")).isTrue();
-            assertThat(components.containsKey("patterns [GH-90000]")).isTrue();
+            Map<?, ?> components = (Map<?, ?>) body.get("components");
+            assertThat(components.containsKey("attention")).isTrue();
+            assertThat(components.containsKey("workspace")).isTrue();
+            assertThat(components.containsKey("memory")).isTrue();
+            assertThat(components.containsKey("patterns")).isTrue();
         }
     }
 
     // ==================== GET /api/v1/brain/config ====================
 
     @Nested
-    @DisplayName("GET /api/v1/brain/config [GH-90000]")
+    @DisplayName("GET /api/v1/brain/config")
     class BrainConfigTests {
 
         @Test
-        @DisplayName("returns 200 with brain configuration fields [GH-90000]")
+        @DisplayName("returns 200 with brain configuration fields")
         void config_always_returns200WithConfigFields() throws Exception { // GH-90000
             BrainConfig cfg = BrainConfig.builder() // GH-90000
-                .brainId("brain-test-01 [GH-90000]")
-                .name("Test Brain [GH-90000]")
+                .brainId("brain-test-01")
+                .name("Test Brain")
                 .learningEnabled(true) // GH-90000
                 .reflexesEnabled(false) // GH-90000
                 .salienceThreshold(0.75f) // GH-90000
@@ -222,19 +222,19 @@ class DataCloudHttpServerBrainTest {
 
             startServerWithBrain(); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/brain/config [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/brain/config");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("brainId [GH-90000]")).isEqualTo("brain-test-01 [GH-90000]");
-            assertThat(body.get("name [GH-90000]")).isEqualTo("Test Brain [GH-90000]");
-            assertThat(body.get("learningEnabled [GH-90000]")).isEqualTo(true);
-            assertThat(body.get("reflexesEnabled [GH-90000]")).isEqualTo(false);
-            assertThat(body.get("timestamp [GH-90000]")).isNotNull();
+            assertThat(body.get("brainId")).isEqualTo("brain-test-01");
+            assertThat(body.get("name")).isEqualTo("Test Brain");
+            assertThat(body.get("learningEnabled")).isEqualTo(true);
+            assertThat(body.get("reflexesEnabled")).isEqualTo(false);
+            assertThat(body.get("timestamp")).isNotNull();
         }
 
         @Test
-        @DisplayName("response contains salienceThreshold field [GH-90000]")
+        @DisplayName("response contains salienceThreshold field")
         void config_includesSalienceThreshold() throws Exception { // GH-90000
             BrainConfig cfg = BrainConfig.builder() // GH-90000
                 .salienceThreshold(0.5f) // GH-90000
@@ -243,22 +243,22 @@ class DataCloudHttpServerBrainTest {
 
             startServerWithBrain(); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/brain/config [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/brain/config");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.containsKey("salienceThreshold [GH-90000]")).isTrue();
+            assertThat(body.containsKey("salienceThreshold")).isTrue();
         }
     }
 
     // ==================== GET /api/v1/brain/stats ====================
 
     @Nested
-    @DisplayName("GET /api/v1/brain/stats [GH-90000]")
+    @DisplayName("GET /api/v1/brain/stats")
     class BrainStatsTests {
 
         @Test
-        @DisplayName("returns 200 with all stats fields [GH-90000]")
+        @DisplayName("returns 200 with all stats fields")
         void stats_always_returns200WithStatsFields() throws Exception { // GH-90000
             DataCloudBrain.BrainStats stats = DataCloudBrain.BrainStats.builder() // GH-90000
                 .totalRecordsProcessed(1000L) // GH-90000
@@ -273,37 +273,37 @@ class DataCloudHttpServerBrainTest {
 
             startServerWithBrain(); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/brain/stats [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/brain/stats");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(((Number) body.get("totalRecordsProcessed [GH-90000]")).longValue()).isEqualTo(1000L);
-            assertThat(((Number) body.get("activePatterns [GH-90000]")).intValue()).isEqualTo(42);
-            assertThat(((Number) body.get("activeRules [GH-90000]")).intValue()).isEqualTo(15);
-            assertThat(((Number) body.get("hotTierRecords [GH-90000]")).intValue()).isEqualTo(200);
-            assertThat(((Number) body.get("warmTierRecords [GH-90000]")).intValue()).isEqualTo(800);
-            assertThat(body.get("uptimeSeconds [GH-90000]")).isNotNull();
-            assertThat(body.get("tenantId [GH-90000]")).isNotNull();
-            assertThat(body.get("timestamp [GH-90000]")).isNotNull();
+            assertThat(((Number) body.get("totalRecordsProcessed")).longValue()).isEqualTo(1000L);
+            assertThat(((Number) body.get("activePatterns")).intValue()).isEqualTo(42);
+            assertThat(((Number) body.get("activeRules")).intValue()).isEqualTo(15);
+            assertThat(((Number) body.get("hotTierRecords")).intValue()).isEqualTo(200);
+            assertThat(((Number) body.get("warmTierRecords")).intValue()).isEqualTo(800);
+            assertThat(body.get("uptimeSeconds")).isNotNull();
+            assertThat(body.get("tenantId")).isNotNull();
+            assertThat(body.get("timestamp")).isNotNull();
         }
 
         @Test
-        @DisplayName("tenantId defaults to 'default' when header absent [GH-90000]")
+        @DisplayName("tenantId defaults to 'default' when header absent")
         void stats_noTenantHeader_defaultTenant() throws Exception { // GH-90000
             DataCloudBrain.BrainStats stats = DataCloudBrain.BrainStats.builder().build(); // GH-90000
             when(mockBrain.getStats(any(BrainContext.class))).thenReturn(Promise.of(stats)); // GH-90000
 
             startServerWithBrain(); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/brain/stats [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/brain/stats");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("tenantId [GH-90000]")).isEqualTo("default [GH-90000]");
+            assertThat(body.get("tenantId")).isEqualTo("default");
         }
 
         @Test
-        @DisplayName("tenantId from X-Tenant-Id header is forwarded [GH-90000]")
+        @DisplayName("tenantId from X-Tenant-Id header is forwarded")
         void stats_withTenantHeader_forwardsTenantId() throws Exception { // GH-90000
             DataCloudBrain.BrainStats stats = DataCloudBrain.BrainStats.builder().build(); // GH-90000
             when(mockBrain.getStats(any(BrainContext.class))).thenReturn(Promise.of(stats)); // GH-90000
@@ -319,49 +319,49 @@ class DataCloudHttpServerBrainTest {
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("tenantId [GH-90000]")).isEqualTo("tenant-acme [GH-90000]");
+            assertThat(body.get("tenantId")).isEqualTo("tenant-acme");
         }
     }
 
     // ==================== GET /api/v1/brain/workspace ====================
 
     @Nested
-    @DisplayName("GET /api/v1/brain/workspace [GH-90000]")
+    @DisplayName("GET /api/v1/brain/workspace")
     class BrainWorkspaceTests {
 
         @Test
-        @DisplayName("returns 200 with workspace summary fields [GH-90000]")
+        @DisplayName("returns 200 with workspace summary fields")
         void workspace_always_returns200WithSummaryFields() throws Exception { // GH-90000
             BrainConfig cfg = BrainConfig.builder() // GH-90000
-                .brainId("brain-ws-01 [GH-90000]")
+                .brainId("brain-ws-01")
                 .build(); // GH-90000
             when(mockBrain.getConfig()).thenReturn(cfg); // GH-90000
 
             startServerWithBrain(); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/brain/workspace [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/brain/workspace");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("status [GH-90000]")).isEqualTo("active [GH-90000]");
-            assertThat(body.get("brainId [GH-90000]")).isEqualTo("brain-ws-01 [GH-90000]");
-            assertThat(body.get("note [GH-90000]")).isNotNull();
-            assertThat(body.get("timestamp [GH-90000]")).isNotNull();
+            assertThat(body.get("status")).isEqualTo("active");
+            assertThat(body.get("brainId")).isEqualTo("brain-ws-01");
+            assertThat(body.get("note")).isNotNull();
+            assertThat(body.get("timestamp")).isNotNull();
         }
 
         @Test
-        @DisplayName("note field references /api/v1/brain/stats for details [GH-90000]")
+        @DisplayName("note field references /api/v1/brain/stats for details")
         void workspace_note_referencesStatsEndpoint() throws Exception { // GH-90000
             BrainConfig cfg = BrainConfig.builder().build(); // GH-90000
             when(mockBrain.getConfig()).thenReturn(cfg); // GH-90000
 
             startServerWithBrain(); // GH-90000
 
-            HttpResponse<String> resp = get("/api/v1/brain/workspace [GH-90000]");
+            HttpResponse<String> resp = get("/api/v1/brain/workspace");
 
             assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
             Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
-            assertThat(body.get("note [GH-90000]").toString()).containsIgnoringCase("/api/v1/brain/stats [GH-90000]");
+            assertThat(body.get("note").toString()).containsIgnoringCase("/api/v1/brain/stats");
         }
     }
 

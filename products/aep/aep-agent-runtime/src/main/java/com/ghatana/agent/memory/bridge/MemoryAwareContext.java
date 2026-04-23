@@ -21,7 +21,8 @@ import org.jetbrains.annotations.Nullable;
  * @doc.type interface
  * @doc.purpose Extended context with memory plane access
  * @doc.layer agent-memory
- */
+  * @doc.pattern Interface
+*/
 public interface MemoryAwareContext extends AgentContext {
 
     /**

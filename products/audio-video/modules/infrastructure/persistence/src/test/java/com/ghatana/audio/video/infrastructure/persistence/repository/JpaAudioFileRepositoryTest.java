@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer test
  * @doc.pattern Test
  */
-@DisplayName("JpaAudioFileRepository Tests [GH-90000]")
+@DisplayName("JpaAudioFileRepository Tests")
 class JpaAudioFileRepositoryTest {
 
     private EntityManagerFactory emf;
@@ -29,7 +29,7 @@ class JpaAudioFileRepositoryTest {
     @BeforeEach
     void setUp() { // GH-90000
         // Use in-memory H2 for unit tests
-        emf = Persistence.createEntityManagerFactory("audio-video-test [GH-90000]");
+        emf = Persistence.createEntityManagerFactory("audio-video-test");
         entityManager = emf.createEntityManager(); // GH-90000
         repository = new JpaAudioFileRepository(entityManager); // GH-90000
     }
@@ -45,7 +45,7 @@ class JpaAudioFileRepositoryTest {
     }
 
     @Test
-    @DisplayName("GIVEN valid entity WHEN save THEN entity is persisted [GH-90000]")
+    @DisplayName("GIVEN valid entity WHEN save THEN entity is persisted")
     void testSaveAudioFile() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -72,7 +72,7 @@ class JpaAudioFileRepositoryTest {
     }
 
     @Test
-    @DisplayName("GIVEN saved entity WHEN findById THEN returns entity [GH-90000]")
+    @DisplayName("GIVEN saved entity WHEN findById THEN returns entity")
     void testFindById() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -89,7 +89,7 @@ class JpaAudioFileRepositoryTest {
     }
 
     @Test
-    @DisplayName("GIVEN wrong tenant WHEN findById THEN returns empty [GH-90000]")
+    @DisplayName("GIVEN wrong tenant WHEN findById THEN returns empty")
     void testFindByIdWrongTenant() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -105,7 +105,7 @@ class JpaAudioFileRepositoryTest {
     }
 
     @Test
-    @DisplayName("GIVEN multiple entities WHEN findByTenantId THEN returns all for tenant [GH-90000]")
+    @DisplayName("GIVEN multiple entities WHEN findByTenantId THEN returns all for tenant")
     void testFindByTenantId() { // GH-90000
         // GIVEN
         String tenantId1 = "tenant-123";
@@ -124,11 +124,11 @@ class JpaAudioFileRepositoryTest {
 
         // THEN
         assertThat(found).hasSize(2); // GH-90000
-        assertThat(found).extracting("id [GH-90000]").containsExactlyInAnyOrder(entity1.getId(), entity2.getId());
+        assertThat(found).extracting("id").containsExactlyInAnyOrder(entity1.getId(), entity2.getId());
     }
 
     @Test
-    @DisplayName("GIVEN saved entity WHEN softDelete THEN entity is marked deleted [GH-90000]")
+    @DisplayName("GIVEN saved entity WHEN softDelete THEN entity is marked deleted")
     void testSoftDelete() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -152,7 +152,7 @@ class JpaAudioFileRepositoryTest {
     }
 
     @Test
-    @DisplayName("GIVEN no entity WHEN softDelete THEN returns false [GH-90000]")
+    @DisplayName("GIVEN no entity WHEN softDelete THEN returns false")
     void testSoftDeleteNotFound() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -166,7 +166,7 @@ class JpaAudioFileRepositoryTest {
     }
 
     @Test
-    @DisplayName("GIVEN soft deleted entity WHEN hardDelete THEN entity is removed [GH-90000]")
+    @DisplayName("GIVEN soft deleted entity WHEN hardDelete THEN entity is removed")
     void testHardDelete() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -184,7 +184,7 @@ class JpaAudioFileRepositoryTest {
     }
 
     @Test
-    @DisplayName("GIVEN soft deleted user file WHEN findByUserId THEN excludes deleted records [GH-90000]")
+    @DisplayName("GIVEN soft deleted user file WHEN findByUserId THEN excludes deleted records")
     void testFindByUserIdExcludesSoftDeleted() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -221,7 +221,7 @@ class JpaAudioFileRepositoryTest {
     }
 
     @Test
-    @DisplayName("GIVEN saved entities WHEN countByTenantId THEN returns correct count [GH-90000]")
+    @DisplayName("GIVEN saved entities WHEN countByTenantId THEN returns correct count")
     void testCountByTenantId() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";
@@ -236,7 +236,7 @@ class JpaAudioFileRepositoryTest {
     }
 
     @Test
-    @DisplayName("GIVEN soft deleted entity not counted WHEN countByTenantId [GH-90000]")
+    @DisplayName("GIVEN soft deleted entity not counted WHEN countByTenantId")
     void testCountByTenantIdExcludesDeleted() { // GH-90000
         // GIVEN
         String tenantId = "tenant-123";

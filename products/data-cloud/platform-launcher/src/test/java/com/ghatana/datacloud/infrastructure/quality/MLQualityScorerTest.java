@@ -31,7 +31,7 @@ import static org.mockito.Mockito.*;
  * @doc.purpose Verify ML-based quality scoring functionality
  * @doc.layer infrastructure
  */
-@DisplayName("ML Quality Scorer Tests [GH-90000]")
+@DisplayName("ML Quality Scorer Tests")
 @ExtendWith(MockitoExtension.class) // GH-90000
 class MLQualityScorerTest extends EventloopTestBase {
 
@@ -55,7 +55,7 @@ class MLQualityScorerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should score entity with high-quality data [GH-90000]")
+    @DisplayName("Should score entity with high-quality data")
     void shouldScoreHighQualityEntity() { // GH-90000
         // GIVEN: Entity with complete, consistent data
         Entity entity = createEntity(Map.of( // GH-90000
@@ -80,15 +80,15 @@ class MLQualityScorerTest extends EventloopTestBase {
 
         // AND: Records metrics
         verify(aiMetrics).recordInference( // GH-90000
-            eq("quality-scorer-v1 [GH-90000]"),
-            eq("1.0.0 [GH-90000]"),
+            eq("quality-scorer-v1"),
+            eq("1.0.0"),
             any(Duration.class), // GH-90000
             eq(true) // GH-90000
         );
     }
 
     @Test
-    @DisplayName("Should handle entity with missing fields [GH-90000]")
+    @DisplayName("Should handle entity with missing fields")
     void shouldHandleIncompleteEntity() { // GH-90000
         // GIVEN: Entity with missing fields (using HashMap to allow null values) // GH-90000
         Map<String, Object> data = new HashMap<>(); // GH-90000
@@ -111,7 +111,7 @@ class MLQualityScorerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should score batch of entities [GH-90000]")
+    @DisplayName("Should score batch of entities")
     void shouldScoreBatch() { // GH-90000
         // GIVEN: Multiple entities
         List<Entity> entities = List.of( // GH-90000
@@ -135,7 +135,7 @@ class MLQualityScorerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should explain quality score [GH-90000]")
+    @DisplayName("Should explain quality score")
     void shouldExplainScore() { // GH-90000
         // GIVEN: Entity and metrics
         Entity entity = createEntity(Map.of("name", "Test", "value", 100)); // GH-90000
@@ -159,23 +159,23 @@ class MLQualityScorerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should reject null parameters [GH-90000]")
+    @DisplayName("Should reject null parameters")
     void shouldRejectNullParameters() { // GH-90000
         Entity entity = createEntity(Map.of("test", "value")); // GH-90000
 
         assertThatThrownBy(() -> // GH-90000
             scorer.scoreEntity(null, entity, null) // GH-90000
         ).isInstanceOf(NullPointerException.class) // GH-90000
-         .hasMessageContaining("tenantId [GH-90000]");
+         .hasMessageContaining("tenantId");
 
         assertThatThrownBy(() -> // GH-90000
             scorer.scoreEntity("tenant-1", null, null) // GH-90000
         ).isInstanceOf(NullPointerException.class) // GH-90000
-         .hasMessageContaining("entity [GH-90000]");
+         .hasMessageContaining("entity");
     }
 
     @Test
-    @DisplayName("Should handle model not found error [GH-90000]")
+    @DisplayName("Should handle model not found error")
     void shouldHandleModelNotFound() { // GH-90000
         // GIVEN: No model registered
         when(modelRegistry.findByStatus(anyString(), any())) // GH-90000
@@ -198,7 +198,7 @@ class MLQualityScorerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should validate entity [GH-90000]")
+    @DisplayName("Should validate entity")
     void shouldValidateEntity() { // GH-90000
         // GIVEN: Valid entity
         Entity entity = createEntity(Map.of("name", "Test")); // GH-90000
@@ -213,7 +213,7 @@ class MLQualityScorerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should reject empty entity [GH-90000]")
+    @DisplayName("Should reject empty entity")
     void shouldRejectEmptyEntity() { // GH-90000
         // GIVEN: Empty entity
         Entity entity = createEntity(Map.of()); // GH-90000
@@ -225,11 +225,11 @@ class MLQualityScorerTest extends EventloopTestBase {
 
         // THEN: Validation fails
         assertThat(result.isValid()).isFalse(); // GH-90000
-        assertThat(result.errors()).contains("Entity data is empty [GH-90000]");
+        assertThat(result.errors()).contains("Entity data is empty");
     }
 
     @Test
-    @DisplayName("Should get supported dimensions [GH-90000]")
+    @DisplayName("Should get supported dimensions")
     void shouldGetSupportedDimensions() { // GH-90000
         // WHEN: Getting dimensions
         List<String> dimensions = runPromise(scorer::getSupportedDimensions); // GH-90000
@@ -241,19 +241,19 @@ class MLQualityScorerTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should enforce confidence threshold [GH-90000]")
+    @DisplayName("Should enforce confidence threshold")
     void shouldEnforceConfidenceThreshold() { // GH-90000
         assertThatThrownBy(() -> // GH-90000
             new MLQualityScorer(modelRegistry, aiMetrics, // GH-90000
                 Executors.newCachedThreadPool(), "test", -0.1) // GH-90000
         ).isInstanceOf(IllegalArgumentException.class) // GH-90000
-         .hasMessageContaining("minConfidenceThreshold [GH-90000]");
+         .hasMessageContaining("minConfidenceThreshold");
 
         assertThatThrownBy(() -> // GH-90000
             new MLQualityScorer(modelRegistry, aiMetrics, // GH-90000
                 Executors.newCachedThreadPool(), "test", 1.5) // GH-90000
         ).isInstanceOf(IllegalArgumentException.class) // GH-90000
-         .hasMessageContaining("minConfidenceThreshold [GH-90000]");
+         .hasMessageContaining("minConfidenceThreshold");
     }
 
     // Helper methods
@@ -261,8 +261,8 @@ class MLQualityScorerTest extends EventloopTestBase {
     private Entity createEntity(Map<String, Object> data) { // GH-90000
         return Entity.builder() // GH-90000
             .id(UUID.randomUUID()) // GH-90000
-            .tenantId("tenant-1 [GH-90000]")
-            .collectionName("test_collection [GH-90000]")
+            .tenantId("tenant-1")
+            .collectionName("test_collection")
             .data(new HashMap<>(data)) // GH-90000
             .createdAt(Instant.now()) // GH-90000
             .updatedAt(Instant.now()) // GH-90000
@@ -272,10 +272,10 @@ class MLQualityScorerTest extends EventloopTestBase {
     private ModelMetadata createModel(String name, String version, DeploymentStatus status) { // GH-90000
         return ModelMetadata.builder() // GH-90000
             .id(UUID.randomUUID()) // GH-90000
-            .tenantId("tenant-1 [GH-90000]")
+            .tenantId("tenant-1")
             .name(name) // GH-90000
             .version(version) // GH-90000
-            .framework("tensorflow [GH-90000]")
+            .framework("tensorflow")
             .deploymentStatus(status) // GH-90000
             .metadata(Map.of()) // GH-90000
             .trainingMetrics(Map.of()) // GH-90000

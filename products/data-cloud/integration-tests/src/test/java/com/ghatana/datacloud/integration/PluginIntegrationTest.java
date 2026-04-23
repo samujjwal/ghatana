@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer   product
  * @doc.pattern IntegrationTest
  */
-@DisplayName("Plugin Integration Tests [GH-90000]")
+@DisplayName("Plugin Integration Tests")
 class PluginIntegrationTest extends EventloopTestBase {
 
     private PluginPlatform platform;
@@ -39,16 +39,16 @@ class PluginIntegrationTest extends EventloopTestBase {
     // ── Plugin registration ────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("plugin registered with the platform is discoverable by ID [GH-90000]")
+    @DisplayName("plugin registered with the platform is discoverable by ID")
     void pluginRegisteredIsdiscoverableById() { // GH-90000
         TestPlugin plugin = new TestPlugin("plugin-csv-int", true, List.of("row1", "row2")); // GH-90000
         platform.registerPlugin(plugin); // GH-90000
 
-        assertThat(platform.findPlugin("plugin-csv-int [GH-90000]")).isPresent();
+        assertThat(platform.findPlugin("plugin-csv-int")).isPresent();
     }
 
     @Test
-    @DisplayName("registering duplicate plugin ID is rejected [GH-90000]")
+    @DisplayName("registering duplicate plugin ID is rejected")
     void registeringDuplicatePluginIdIsRejected() { // GH-90000
         TestPlugin plugin = new TestPlugin("plugin-dup-int", true, List.of()); // GH-90000
         platform.registerPlugin(plugin); // GH-90000
@@ -60,34 +60,34 @@ class PluginIntegrationTest extends EventloopTestBase {
     // ── Plugin activation ──────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("healthy plugin activates and transitions to ACTIVE state [GH-90000]")
+    @DisplayName("healthy plugin activates and transitions to ACTIVE state")
     void healthyPluginActivatesSuccessfully() { // GH-90000
-        TestPlugin plugin = new TestPlugin("plugin-act-int", true, List.of("data [GH-90000]"));
+        TestPlugin plugin = new TestPlugin("plugin-act-int", true, List.of("data"));
         platform.registerPlugin(plugin); // GH-90000
-        platform.activate("plugin-act-int [GH-90000]");
+        platform.activate("plugin-act-int");
 
-        assertThat(platform.pluginStatus("plugin-act-int [GH-90000]")).isEqualTo("ACTIVE [GH-90000]");
+        assertThat(platform.pluginStatus("plugin-act-int")).isEqualTo("ACTIVE");
     }
 
     @Test
-    @DisplayName("unhealthy plugin activation sets status to FAILED [GH-90000]")
+    @DisplayName("unhealthy plugin activation sets status to FAILED")
     void unhealthyPluginActivationSetsStatusToFailed() { // GH-90000
         TestPlugin plugin = new TestPlugin("plugin-sick-int", false, List.of()); // GH-90000
         platform.registerPlugin(plugin); // GH-90000
-        platform.activate("plugin-sick-int [GH-90000]");
+        platform.activate("plugin-sick-int");
 
-        assertThat(platform.pluginStatus("plugin-sick-int [GH-90000]")).isEqualTo("FAILED [GH-90000]");
+        assertThat(platform.pluginStatus("plugin-sick-int")).isEqualTo("FAILED");
     }
 
     // ── Data forwarding ────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("active plugin forwards ingested data to the platform entity store [GH-90000]")
+    @DisplayName("active plugin forwards ingested data to the platform entity store")
     void activePluginForwardsDataToPlatform() { // GH-90000
         TestPlugin plugin = new TestPlugin("plugin-fwd-int", true, // GH-90000
                 List.of("record-A", "record-B", "record-C")); // GH-90000
         platform.registerPlugin(plugin); // GH-90000
-        platform.activate("plugin-fwd-int [GH-90000]");
+        platform.activate("plugin-fwd-int");
 
         List<String> ingested = platform.ingestFrom("plugin-fwd-int", 10); // GH-90000
 
@@ -95,64 +95,64 @@ class PluginIntegrationTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("inactive plugin cannot forward data [GH-90000]")
+    @DisplayName("inactive plugin cannot forward data")
     void inactivePluginCannotForwardData() { // GH-90000
-        TestPlugin plugin = new TestPlugin("plugin-nofwd", true, List.of("data [GH-90000]"));
+        TestPlugin plugin = new TestPlugin("plugin-nofwd", true, List.of("data"));
         platform.registerPlugin(plugin); // GH-90000
 
         assertThatThrownBy(() -> platform.ingestFrom("plugin-nofwd", 10)) // GH-90000
                 .isInstanceOf(IllegalStateException.class) // GH-90000
-                .hasMessageContaining("not active [GH-90000]");
+                .hasMessageContaining("not active");
     }
 
     // ── Plugin isolation ───────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("one plugin's failure during ingest does not affect other plugins [GH-90000]")
+    @DisplayName("one plugin's failure during ingest does not affect other plugins")
     void onePluginFailureDoesNotAffectOtherPlugins() { // GH-90000
         TestPlugin faultyPlugin = new TestPlugin("plugin-faulty", true, null) { // GH-90000
             @Override public List<String> readBatch(int n) { // GH-90000
-                throw new RuntimeException("Simulated ingest error [GH-90000]");
+                throw new RuntimeException("Simulated ingest error");
             }
         };
         TestPlugin goodPlugin = new TestPlugin("plugin-good-int", true, // GH-90000
-                List.of("good-record [GH-90000]"));
+                List.of("good-record"));
 
         platform.registerPlugin(faultyPlugin); // GH-90000
         platform.registerPlugin(goodPlugin); // GH-90000
-        platform.activate("plugin-faulty [GH-90000]");
-        platform.activate("plugin-good-int [GH-90000]");
+        platform.activate("plugin-faulty");
+        platform.activate("plugin-good-int");
 
         // Faulty plugin's ingest error is swallowed per isolation contract
         try { platform.ingestFrom("plugin-faulty", 10); } catch (Exception ignored) {} // GH-90000
 
         // Good plugin remains ACTIVE
-        assertThat(platform.pluginStatus("plugin-good-int [GH-90000]")).isEqualTo("ACTIVE [GH-90000]");
+        assertThat(platform.pluginStatus("plugin-good-int")).isEqualTo("ACTIVE");
         List<String> goodData = platform.ingestFrom("plugin-good-int", 10); // GH-90000
-        assertThat(goodData).contains("good-record [GH-90000]");
+        assertThat(goodData).contains("good-record");
     }
 
     // ── Plugin deactivation ────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("deactivated plugin transitions to INACTIVE and its buffered data is flushed [GH-90000]")
+    @DisplayName("deactivated plugin transitions to INACTIVE and its buffered data is flushed")
     void deactivatedPluginTransitionsToInactive() { // GH-90000
         TestPlugin plugin = new TestPlugin("plugin-deact-int", true, // GH-90000
-                List.of("flush-record [GH-90000]"));
+                List.of("flush-record"));
         platform.registerPlugin(plugin); // GH-90000
-        platform.activate("plugin-deact-int [GH-90000]");
-        platform.deactivate("plugin-deact-int [GH-90000]");
+        platform.activate("plugin-deact-int");
+        platform.deactivate("plugin-deact-int");
 
-        assertThat(platform.pluginStatus("plugin-deact-int [GH-90000]")).isEqualTo("INACTIVE [GH-90000]");
+        assertThat(platform.pluginStatus("plugin-deact-int")).isEqualTo("INACTIVE");
     }
 
     @Test
-    @DisplayName("deactivated plugin cannot ingest data [GH-90000]")
+    @DisplayName("deactivated plugin cannot ingest data")
     void deactivatedPluginCannotIngestData() { // GH-90000
-        TestPlugin plugin = new TestPlugin("plugin-deact2-int", true, List.of("x [GH-90000]"));
+        TestPlugin plugin = new TestPlugin("plugin-deact2-int", true, List.of("x"));
         platform.registerPlugin(plugin); // GH-90000
-        platform.activate("plugin-deact2-int [GH-90000]");
-        platform.deactivate("plugin-deact2-int [GH-90000]");
+        platform.activate("plugin-deact2-int");
+        platform.deactivate("plugin-deact2-int");
 
         assertThatThrownBy(() -> platform.ingestFrom("plugin-deact2-int", 10)) // GH-90000
                 .isInstanceOf(IllegalStateException.class); // GH-90000
@@ -161,18 +161,18 @@ class PluginIntegrationTest extends EventloopTestBase {
     // ── Multiple plugins collaboration ─────────────────────────────────────────
 
     @Test
-    @DisplayName("multiple active plugins can independently forward data to the platform [GH-90000]")
+    @DisplayName("multiple active plugins can independently forward data to the platform")
     void multipleActivePluginsForwardDataIndependently() { // GH-90000
-        TestPlugin p1 = new TestPlugin("plugin-m1", true, List.of("m1-record [GH-90000]"));
+        TestPlugin p1 = new TestPlugin("plugin-m1", true, List.of("m1-record"));
         TestPlugin p2 = new TestPlugin("plugin-m2", true, List.of("m2-a", "m2-b")); // GH-90000
         TestPlugin p3 = new TestPlugin("plugin-m3", true, List.of("m3-x", "m3-y", "m3-z")); // GH-90000
 
         platform.registerPlugin(p1); // GH-90000
         platform.registerPlugin(p2); // GH-90000
         platform.registerPlugin(p3); // GH-90000
-        platform.activate("plugin-m1 [GH-90000]");
-        platform.activate("plugin-m2 [GH-90000]");
-        platform.activate("plugin-m3 [GH-90000]");
+        platform.activate("plugin-m1");
+        platform.activate("plugin-m2");
+        platform.activate("plugin-m3");
 
         assertThat(platform.ingestFrom("plugin-m1", 10)).hasSize(1); // GH-90000
         assertThat(platform.ingestFrom("plugin-m2", 10)).hasSize(2); // GH-90000

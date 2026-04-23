@@ -26,7 +26,7 @@ class PIIScannerTest {
         assertTrue(result.hasPII()); // GH-90000
         assertEquals(1, result.items().size()); // GH-90000
         assertEquals("email", result.items().get(0).type()); // GH-90000
-        assertTrue(result.items().get(0).matchedText().contains("user@example.com [GH-90000]"));
+        assertTrue(result.items().get(0).matchedText().contains("user@example.com"));
     }
 
     @Test
@@ -35,7 +35,7 @@ class PIIScannerTest {
         PIIScanner.PIIResult result = scanner.scan(text); // GH-90000
         
         assertTrue(result.hasPII()); // GH-90000
-        assertTrue(result.items().stream().anyMatch(item -> item.type().equals("phone [GH-90000]")));
+        assertTrue(result.items().stream().anyMatch(item -> item.type().equals("phone")));
     }
 
     @Test
@@ -44,7 +44,7 @@ class PIIScannerTest {
         PIIScanner.PIIResult result = scanner.scan(text); // GH-90000
         
         assertTrue(result.hasPII()); // GH-90000
-        assertTrue(result.items().stream().anyMatch(item -> item.type().equals("credit_card [GH-90000]")));
+        assertTrue(result.items().stream().anyMatch(item -> item.type().equals("credit_card")));
     }
 
     @Test
@@ -53,7 +53,7 @@ class PIIScannerTest {
         PIIScanner.PIIResult result = scanner.scan(text); // GH-90000
         
         assertTrue(result.hasPII()); // GH-90000
-        assertTrue(result.items().stream().anyMatch(item -> item.type().equals("ssn [GH-90000]")));
+        assertTrue(result.items().stream().anyMatch(item -> item.type().equals("ssn")));
     }
 
     @Test
@@ -62,7 +62,7 @@ class PIIScannerTest {
         PIIScanner.PIIResult result = scanner.scan(text); // GH-90000
         
         assertTrue(result.hasPII()); // GH-90000
-        assertTrue(result.items().stream().anyMatch(item -> item.type().equals("ip_address [GH-90000]")));
+        assertTrue(result.items().stream().anyMatch(item -> item.type().equals("ip_address")));
     }
 
     @Test
@@ -76,7 +76,7 @@ class PIIScannerTest {
 
     @Test
     void shouldHandleEmptyText() { // GH-90000
-        PIIScanner.PIIResult result = scanner.scan(" [GH-90000]");
+        PIIScanner.PIIResult result = scanner.scan("");
         
         assertFalse(result.hasPII()); // GH-90000
         assertTrue(result.items().isEmpty()); // GH-90000
@@ -101,8 +101,8 @@ class PIIScannerTest {
         PIIScanner.PIIResult result = scanner.scanMap(data); // GH-90000
         
         assertTrue(result.hasPII()); // GH-90000
-        assertTrue(result.items().stream().anyMatch(item -> item.type().equals("email [GH-90000]")));
-        assertTrue(result.items().stream().anyMatch(item -> item.type().equals("phone [GH-90000]")));
+        assertTrue(result.items().stream().anyMatch(item -> item.type().equals("email")));
+        assertTrue(result.items().stream().anyMatch(item -> item.type().equals("phone")));
     }
 
     @Test

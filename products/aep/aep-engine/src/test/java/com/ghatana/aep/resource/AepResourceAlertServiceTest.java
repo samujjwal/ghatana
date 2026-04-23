@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * Unit tests for {@link AepResourceAlertService} (AEP-005.4). // GH-90000
  */
-@DisplayName("AepResourceAlertService — AEP-005.4 [GH-90000]")
+@DisplayName("AepResourceAlertService — AEP-005.4")
 class AepResourceAlertServiceTest {
 
     private AepResourceAlertService service;
@@ -35,7 +35,7 @@ class AepResourceAlertServiceTest {
     }
 
     @Test
-    @DisplayName("No alert fired when resources are below thresholds [GH-90000]")
+    @DisplayName("No alert fired when resources are below thresholds")
     void noAlertBelowThresholds() { // GH-90000
         AepMemoryMonitor.MemorySnapshot memSnap = buildMemSnap(0.70); // GH-90000
         AepCpuOptimizer.CpuSnapshot cpuSnap = buildCpuSnap(0.50); // GH-90000
@@ -48,7 +48,7 @@ class AepResourceAlertServiceTest {
     }
 
     @Test
-    @DisplayName("Heap alert fires when heap exceeds threshold [GH-90000]")
+    @DisplayName("Heap alert fires when heap exceeds threshold")
     void heapAlertFires() { // GH-90000
         service.evaluate(buildMemSnap(0.90), buildCpuSnap(0.30)); // GH-90000
 
@@ -59,7 +59,7 @@ class AepResourceAlertServiceTest {
     }
 
     @Test
-    @DisplayName("CPU alert fires when CPU exceeds threshold [GH-90000]")
+    @DisplayName("CPU alert fires when CPU exceeds threshold")
     void cpuAlertFires() { // GH-90000
         service.evaluate(buildMemSnap(0.50), buildCpuSnap(0.85)); // GH-90000
 
@@ -70,7 +70,7 @@ class AepResourceAlertServiceTest {
     }
 
     @Test
-    @DisplayName("Alert fires only once per breach window (no spam) [GH-90000]")
+    @DisplayName("Alert fires only once per breach window (no spam)")
     void alertFiresOncePerBreachWindow() { // GH-90000
         service.evaluate(buildMemSnap(0.90), buildCpuSnap(0.30)); // GH-90000
         service.evaluate(buildMemSnap(0.92), buildCpuSnap(0.30)); // still high // GH-90000
@@ -84,7 +84,7 @@ class AepResourceAlertServiceTest {
     }
 
     @Test
-    @DisplayName("Alert clears when resource drops below threshold [GH-90000]")
+    @DisplayName("Alert clears when resource drops below threshold")
     void alertClears() { // GH-90000
         service.evaluate(buildMemSnap(0.90), buildCpuSnap(0.30)); // fire alert // GH-90000
         service.evaluate(buildMemSnap(0.70), buildCpuSnap(0.30)); // clear // GH-90000
@@ -93,7 +93,7 @@ class AepResourceAlertServiceTest {
     }
 
     @Test
-    @DisplayName("Alert refires after clearing if threshold is breached again [GH-90000]")
+    @DisplayName("Alert refires after clearing if threshold is breached again")
     void alertRefiresAfterClear() { // GH-90000
         service.evaluate(buildMemSnap(0.90), buildCpuSnap(0.30)); // fire // GH-90000
         service.evaluate(buildMemSnap(0.70), buildCpuSnap(0.30)); // clear // GH-90000
@@ -106,21 +106,21 @@ class AepResourceAlertServiceTest {
     }
 
     @Test
-    @DisplayName("Alert history includes all fired alerts [GH-90000]")
+    @DisplayName("Alert history includes all fired alerts")
     void alertHistoryIsAccumulated() { // GH-90000
         service.evaluate(buildMemSnap(0.90), buildCpuSnap(0.90)); // two alerts // GH-90000
         assertThat(service.alertHistory()).hasSize(2); // GH-90000
     }
 
     @Test
-    @DisplayName("Null memSnap throws NullPointerException [GH-90000]")
+    @DisplayName("Null memSnap throws NullPointerException")
     void nullMemSnapThrows() { // GH-90000
         assertThatThrownBy(() -> service.evaluate(null, buildCpuSnap(0.5))) // GH-90000
                 .isInstanceOf(NullPointerException.class); // GH-90000
     }
 
     @Test
-    @DisplayName("Builder rejects threshold out of range [GH-90000]")
+    @DisplayName("Builder rejects threshold out of range")
     void builderRejectsOutOfRangeThreshold() { // GH-90000
         assertThatThrownBy(() -> AepResourceAlertService.builder().heapAlertThreshold(1.5)) // GH-90000
                 .isInstanceOf(IllegalArgumentException.class); // GH-90000

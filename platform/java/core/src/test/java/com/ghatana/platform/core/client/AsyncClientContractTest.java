@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer core
  * @doc.pattern Test
  */
-@DisplayName("AsyncClient Contract — lifecycle and state management [GH-90000]")
+@DisplayName("AsyncClient Contract — lifecycle and state management")
 class AsyncClientContractTest extends EventloopTestBase {
 
     // ── Concrete test double ──────────────────────────────────────────────────
@@ -65,18 +65,18 @@ class AsyncClientContractTest extends EventloopTestBase {
     // ── Initial state ─────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("initial state [GH-90000]")
+    @DisplayName("initial state")
     class InitialState {
 
         @Test
-        @DisplayName("client starts not running by default [GH-90000]")
+        @DisplayName("client starts not running by default")
         void clientStartsNotRunningByDefault() { // GH-90000
             TestAsyncClient client = new TestAsyncClient(); // GH-90000
             assertThat(client.isRunning()).isFalse(); // GH-90000
         }
 
         @Test
-        @DisplayName("client can be constructed in running state [GH-90000]")
+        @DisplayName("client can be constructed in running state")
         void clientCanBeConstructedInRunningState() { // GH-90000
             TestAsyncClient client = new TestAsyncClient(true); // GH-90000
             assertThat(client.isRunning()).isTrue(); // GH-90000
@@ -86,11 +86,11 @@ class AsyncClientContractTest extends EventloopTestBase {
     // ── Start lifecycle ───────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("start() lifecycle [GH-90000]")
+    @DisplayName("start() lifecycle")
     class StartLifecycle {
 
         @Test
-        @DisplayName("start() transitions running flag to true [GH-90000]")
+        @DisplayName("start() transitions running flag to true")
         void start_transitionsRunningFlagToTrue() { // GH-90000
             TestAsyncClient client = new TestAsyncClient(); // GH-90000
 
@@ -100,7 +100,7 @@ class AsyncClientContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("start() returns completed promise [GH-90000]")
+        @DisplayName("start() returns completed promise")
         void start_returnsCompletedPromise() { // GH-90000
             TestAsyncClient client = new TestAsyncClient(); // GH-90000
 
@@ -111,7 +111,7 @@ class AsyncClientContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("markStarted() returns true on first transition, false if already running [GH-90000]")
+        @DisplayName("markStarted() returns true on first transition, false if already running")
         void markStarted_idempotentStateTransition() { // GH-90000
             TestAsyncClient client = new TestAsyncClient(); // GH-90000
 
@@ -129,11 +129,11 @@ class AsyncClientContractTest extends EventloopTestBase {
     // ── Stop lifecycle ────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("stop() lifecycle [GH-90000]")
+    @DisplayName("stop() lifecycle")
     class StopLifecycle {
 
         @Test
-        @DisplayName("stop() transitions running flag to false [GH-90000]")
+        @DisplayName("stop() transitions running flag to false")
         void stop_transitionsRunningFlagToFalse() { // GH-90000
             TestAsyncClient client = new TestAsyncClient(true); // GH-90000
 
@@ -143,7 +143,7 @@ class AsyncClientContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("markStopped() returns true on first transition, false if already stopped [GH-90000]")
+        @DisplayName("markStopped() returns true on first transition, false if already stopped")
         void markStopped_idempotentStateTransition() { // GH-90000
             TestAsyncClient client = new TestAsyncClient(true); // GH-90000
 
@@ -159,11 +159,11 @@ class AsyncClientContractTest extends EventloopTestBase {
     // ── Health check ──────────────────────────────────────────────────────────
 
     @Nested
-    @DisplayName("healthCheck() [GH-90000]")
+    @DisplayName("healthCheck()")
     class HealthCheck {
 
         @Test
-        @DisplayName("healthCheck() returns false when not running [GH-90000]")
+        @DisplayName("healthCheck() returns false when not running")
         void healthCheck_returnsFalseWhenNotRunning() { // GH-90000
             TestAsyncClient client = new TestAsyncClient(); // GH-90000
 
@@ -173,7 +173,7 @@ class AsyncClientContractTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("healthCheck() returns true when running [GH-90000]")
+        @DisplayName("healthCheck() returns true when running")
         void healthCheck_returnsTrueWhenRunning() { // GH-90000
             TestAsyncClient client = new TestAsyncClient(true); // GH-90000
 
@@ -186,11 +186,11 @@ class AsyncClientContractTest extends EventloopTestBase {
     // ── Start → Stop → Start roundtrip ────────────────────────────────────────
 
     @Nested
-    @DisplayName("start → stop → restart roundtrip [GH-90000]")
+    @DisplayName("start → stop → restart roundtrip")
     class StartStopRestart {
 
         @Test
-        @DisplayName("client can be restarted after stopping [GH-90000]")
+        @DisplayName("client can be restarted after stopping")
         void clientCanBeRestartedAfterStopping() { // GH-90000
             TestAsyncClient client = new TestAsyncClient(); // GH-90000
 
@@ -211,7 +211,7 @@ class AsyncClientContractTest extends EventloopTestBase {
     // ── setRunning() force override ─────────────────────────────────────────── // GH-90000
 
     @Test
-    @DisplayName("setRunning() forces state unconditionally [GH-90000]")
+    @DisplayName("setRunning() forces state unconditionally")
     void setRunning_forcesStateUnconditionally() { // GH-90000
         TestAsyncClient client = new TestAsyncClient(); // GH-90000
 

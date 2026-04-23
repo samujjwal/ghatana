@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("AgentMemory - Phase 3 Expansion [GH-90000]")
+@DisplayName("AgentMemory - Phase 3 Expansion")
 class AgentMemoryExpansionTest {
 
     // ============================================
@@ -38,11 +38,11 @@ class AgentMemoryExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Memory Links - Phase 3 [GH-90000]")
+    @DisplayName("Memory Links - Phase 3")
     class MemoryLinksTests {
 
         @Test
-        @DisplayName("Create many memory links [GH-90000]")
+        @DisplayName("Create many memory links")
         void createManyLinks() { // GH-90000
             List<MemoryLink> links = new ArrayList<>(); // GH-90000
 
@@ -65,7 +65,7 @@ class AgentMemoryExpansionTest {
         }
 
         @Test
-        @DisplayName("Different link types [GH-90000]")
+        @DisplayName("Different link types")
         void differentLinkTypes() { // GH-90000
             LinkType[] types = {
                 LinkType.RELATED, LinkType.SUPPORTS, LinkType.CONTRADICTS,
@@ -87,7 +87,7 @@ class AgentMemoryExpansionTest {
         }
 
         @Test
-        @DisplayName("Link strength variations [GH-90000]")
+        @DisplayName("Link strength variations")
         void linkStrengthVariations() { // GH-90000
             double[] strengths = {0.0, 0.25, 0.5, 0.75, 1.0};
 
@@ -106,7 +106,7 @@ class AgentMemoryExpansionTest {
         }
 
         @Test
-        @DisplayName("Links with very long descriptions [GH-90000]")
+        @DisplayName("Links with very long descriptions")
         void longDescriptions() { // GH-90000
             String longDesc = "This is a detailed description of the relationship. ".repeat(100); // GH-90000
 
@@ -128,11 +128,11 @@ class AgentMemoryExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Memory Item Relationships [GH-90000]")
+    @DisplayName("Memory Item Relationships")
     class RelationshipTests {
 
         @Test
-        @DisplayName("Build complex relationship graphs [GH-90000]")
+        @DisplayName("Build complex relationship graphs")
         void complexGraphs() { // GH-90000
             // Create a graph with multiple item relationships
             List<MemoryLink> itemLinks = new ArrayList<>(); // GH-90000
@@ -156,7 +156,7 @@ class AgentMemoryExpansionTest {
         }
 
         @Test
-        @DisplayName("Relationship strength distribution [GH-90000]")
+        @DisplayName("Relationship strength distribution")
         void strengthDistribution() { // GH-90000
             List<MemoryLink> links = new ArrayList<>(); // GH-90000
             int[] connectionCounts = new int[5];  // Track link counts by strength bucket
@@ -183,7 +183,7 @@ class AgentMemoryExpansionTest {
         }
 
         @Test
-        @DisplayName("Relationship type variety [GH-90000]")
+        @DisplayName("Relationship type variety")
         void typeVariety() { // GH-90000
             List<MemoryLink> links = new ArrayList<>(); // GH-90000
 
@@ -207,11 +207,11 @@ class AgentMemoryExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Memory Item Operations [GH-90000]")
+    @DisplayName("Memory Item Operations")
     class ItemOperationsTests {
 
         @Test
-        @DisplayName("Many memory items with cross-references [GH-90000]")
+        @DisplayName("Many memory items with cross-references")
         void manyItemsCrossReferences() { // GH-90000
             Set<MemoryItem> items = new HashSet<>(); // GH-90000
 
@@ -229,7 +229,7 @@ class AgentMemoryExpansionTest {
         }
 
         @Test
-        @DisplayName("Memory items with link updates [GH-90000]")
+        @DisplayName("Memory items with link updates")
         void itemsWithLinkUpdates() { // GH-90000
             List<MemoryItem> items = new ArrayList<>(); // GH-90000
 
@@ -237,8 +237,8 @@ class AgentMemoryExpansionTest {
                 final int idx = i;
                 MemoryItem item = EnhancedProcedure.builder() // GH-90000
                         .id("item-" + idx) // GH-90000
-                    .situation("Situation [GH-90000]")
-                    .action("Action [GH-90000]")
+                    .situation("Situation")
+                    .action("Action")
                         .build(); // GH-90000
                 items.add(item); // GH-90000
             }
@@ -262,11 +262,11 @@ class AgentMemoryExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Concurrent Operations [GH-90000]")
+    @DisplayName("Concurrent Operations")
     class ConcurrencyTests {
 
         @Test
-        @DisplayName("Concurrent memory link creation [GH-90000]")
+        @DisplayName("Concurrent memory link creation")
         void concurrentLinkCreation() throws Exception { // GH-90000
             int threadCount = 20;
             int linksPerThread = 100;
@@ -304,7 +304,7 @@ class AgentMemoryExpansionTest {
         }
 
         @Test
-        @DisplayName("High-volume relationship network building [GH-90000]")
+        @DisplayName("High-volume relationship network building")
         void highVolumeNetworkBuilding() { // GH-90000
             // Build a large relationship network
             int itemCount = 50;
@@ -335,11 +335,11 @@ class AgentMemoryExpansionTest {
     // ============================================
 
     @Nested
-    @DisplayName("Edge Cases [GH-90000]")
+    @DisplayName("Edge Cases")
     class EdgeCaseTests {
 
         @Test
-        @DisplayName("Extreme memory link scenarios [GH-90000]")
+        @DisplayName("Extreme memory link scenarios")
         void extremeScenarios() { // GH-90000
             // Very long target ID
             String longTargetId = "item-" + "x".repeat(500); // GH-90000
@@ -351,14 +351,14 @@ class AgentMemoryExpansionTest {
 
             // Extreme strength values
             MemoryLink minStrength = MemoryLink.builder() // GH-90000
-                    .targetItemId("item-min [GH-90000]")
+                    .targetItemId("item-min")
                     .linkType(LinkType.RELATED) // GH-90000
                     .strength(0.0) // GH-90000
                     .build(); // GH-90000
             assertThat(minStrength.getStrength()).isEqualTo(0.0); // GH-90000
 
             MemoryLink maxStrength = MemoryLink.builder() // GH-90000
-                    .targetItemId("item-max [GH-90000]")
+                    .targetItemId("item-max")
                     .linkType(LinkType.RELATED) // GH-90000
                     .strength(1.0) // GH-90000
                     .build(); // GH-90000

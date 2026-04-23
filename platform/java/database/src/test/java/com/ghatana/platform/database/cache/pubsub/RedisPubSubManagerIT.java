@@ -31,15 +31,15 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer platform
  * @doc.pattern Integration Test
  */
-@Tag("integration [GH-90000]")
+@Tag("integration")
 @Testcontainers
-@DisplayName("RedisPubSubManager Integration Tests [GH-90000]")
+@DisplayName("RedisPubSubManager Integration Tests")
 class RedisPubSubManagerIT extends EventloopTestBase {
 
     @Container
-    @SuppressWarnings("resource [GH-90000]")
+    @SuppressWarnings("resource")
     static final GenericContainer<?> REDIS =
-            new GenericContainer<>(DockerImageName.parse("redis:7-alpine [GH-90000]"))
+            new GenericContainer<>(DockerImageName.parse("redis:7-alpine"))
                     .withExposedPorts(6379); // GH-90000
 
     private JedisPool jedisPool;
@@ -76,7 +76,7 @@ class RedisPubSubManagerIT extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("start succeeds and isRunning reflects running state via stats [GH-90000]")
+    @DisplayName("start succeeds and isRunning reflects running state via stats")
     void startAndStop() { // GH-90000
         runPromise(() -> subscriberManager.start()); // GH-90000
         RedisPubSubManager.PubSubStats stats = subscriberManager.getStats(); // GH-90000
@@ -88,11 +88,11 @@ class RedisPubSubManagerIT extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("publish increments publish count in stats [GH-90000]")
+    @DisplayName("publish increments publish count in stats")
     void publishIncrementsCount() { // GH-90000
         runPromise(() -> subscriberManager.start()); // GH-90000
         CacheInvalidationMessage msg = CacheInvalidationMessage.invalidateKeys( // GH-90000
-                Set.of("user:123 [GH-90000]"), "tenant-a", "publisher-1");
+                Set.of("user:123"), "tenant-a", "publisher-1");
 
         runPromise(() -> publisherManager.publish(msg)); // GH-90000
 
@@ -101,7 +101,7 @@ class RedisPubSubManagerIT extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("subscriber receives published message from a different instance [GH-90000]")
+    @DisplayName("subscriber receives published message from a different instance")
     void subscriberReceivesMessage() throws InterruptedException { // GH-90000
         CountDownLatch latch = new CountDownLatch(1); // GH-90000
         List<CacheInvalidationMessage> received = new ArrayList<>(); // GH-90000
@@ -116,7 +116,7 @@ class RedisPubSubManagerIT extends EventloopTestBase {
         });
 
         CacheInvalidationMessage outbound = CacheInvalidationMessage.invalidateKeys( // GH-90000
-                Set.of("key:abc [GH-90000]"), "tenant-b", "publisher-1");
+                Set.of("key:abc"), "tenant-b", "publisher-1");
         runPromise(() -> publisherManager.publish(outbound)); // GH-90000
 
         boolean delivered = latch.await(5, TimeUnit.SECONDS); // GH-90000
@@ -127,7 +127,7 @@ class RedisPubSubManagerIT extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("messages from same instance are skipped by subscriber [GH-90000]")
+    @DisplayName("messages from same instance are skipped by subscriber")
     void sameInstanceMessagesSkipped() throws InterruptedException { // GH-90000
         // Use same instanceId for both publisher and subscriber
         RedisPubSubManager sameInstance = new RedisPubSubManager( // GH-90000
@@ -146,7 +146,7 @@ class RedisPubSubManagerIT extends EventloopTestBase {
             });
 
             CacheInvalidationMessage selfMsg = CacheInvalidationMessage.invalidateKeys( // GH-90000
-                    Set.of("own-key [GH-90000]"), "tenant-x", "same-id");
+                    Set.of("own-key"), "tenant-x", "same-id");
             runPromise(() -> sameInstance.publish(selfMsg)); // GH-90000
 
             // Should NOT deliver because sourceInstance == instanceId
@@ -159,7 +159,7 @@ class RedisPubSubManagerIT extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("subscribe adds listener, unsubscribe removes it [GH-90000]")
+    @DisplayName("subscribe adds listener, unsubscribe removes it")
     void subscribeAndUnsubscribe() { // GH-90000
         List<CacheInvalidationMessage> received = new ArrayList<>(); // GH-90000
         CacheInvalidationListener listener = received::add;
@@ -172,7 +172,7 @@ class RedisPubSubManagerIT extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("clearNamespace message is published successfully [GH-90000]")
+    @DisplayName("clearNamespace message is published successfully")
     void publishClearNamespace() { // GH-90000
         runPromise(() -> subscriberManager.start()); // GH-90000
         CacheInvalidationMessage msg = CacheInvalidationMessage.clearNamespace( // GH-90000
@@ -183,7 +183,7 @@ class RedisPubSubManagerIT extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("double start is idempotent — does not throw [GH-90000]")
+    @DisplayName("double start is idempotent — does not throw")
     void doubleStart() { // GH-90000
         runPromise(() -> subscriberManager.start()); // GH-90000
         runPromise(() -> subscriberManager.start()); // idempotent // GH-90000
@@ -191,7 +191,7 @@ class RedisPubSubManagerIT extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("double stop is idempotent — does not throw [GH-90000]")
+    @DisplayName("double stop is idempotent — does not throw")
     void doubleStop() { // GH-90000
         runPromise(() -> subscriberManager.start()); // GH-90000
         runPromise(() -> subscriberManager.stop()); // GH-90000

@@ -36,7 +36,7 @@ import org.junit.jupiter.api.Test;
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DeliveryCoordinatorGenerator Tests [GH-90000]")
+@DisplayName("DeliveryCoordinatorGenerator Tests")
 class DeliveryCoordinatorGeneratorTest extends EventloopTestBase {
 
   private YappcAgentRegistryAdapter agentRegistry;
@@ -55,16 +55,16 @@ class DeliveryCoordinatorGeneratorTest extends EventloopTestBase {
   // ===== Phase Ordering Tests =====
 
   @Nested
-  @DisplayName("Phase Execution Order [GH-90000]")
+  @DisplayName("Phase Execution Order")
   class PhaseExecutionOrder {
 
     @Test
-    @DisplayName("Should execute phases in SDLC dependency order [GH-90000]")
+    @DisplayName("Should execute phases in SDLC dependency order")
     void shouldExecutePhasesInOrder() { // GH-90000
       // Register agents for 3 phases
-      registerPhaseAgent("architecture [GH-90000]");
-      registerPhaseAgent("implementation [GH-90000]");
-      registerPhaseAgent("testing [GH-90000]");
+      registerPhaseAgent("architecture");
+      registerPhaseAgent("implementation");
+      registerPhaseAgent("testing");
 
       // Request phases in reverse order — generator should reorder them
       DeliveryRequest request = new DeliveryRequest( // GH-90000
@@ -87,16 +87,16 @@ class DeliveryCoordinatorGeneratorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should only execute requested phases [GH-90000]")
+    @DisplayName("Should only execute requested phases")
     void shouldOnlyExecuteRequestedPhases() { // GH-90000
-      registerPhaseAgent("architecture [GH-90000]");
-      registerPhaseAgent("implementation [GH-90000]");
-      registerPhaseAgent("testing [GH-90000]");
-      registerPhaseAgent("ops [GH-90000]");
+      registerPhaseAgent("architecture");
+      registerPhaseAgent("implementation");
+      registerPhaseAgent("testing");
+      registerPhaseAgent("ops");
 
       DeliveryRequest request = new DeliveryRequest( // GH-90000
           "Architecture review",
-          List.of("architecture [GH-90000]"),
+          List.of("architecture"),
           DeliveryRequest.Priority.HIGH,
           Map.of()); // GH-90000
 
@@ -106,21 +106,21 @@ class DeliveryCoordinatorGeneratorTest extends EventloopTestBase {
       StepResult<DeliveryResult> result = runPromise(() -> generator.generate(stepRequest, ctx)); // GH-90000
 
       assertThat(result.output().phaseResults()).hasSize(1); // GH-90000
-      assertThat(result.output().phaseResults()).containsKey("architecture [GH-90000]");
+      assertThat(result.output().phaseResults()).containsKey("architecture");
     }
   }
 
   // ===== Agent Availability Tests =====
 
   @Nested
-  @DisplayName("Agent Availability [GH-90000]")
+  @DisplayName("Agent Availability")
   class AgentAvailability {
 
     @Test
-    @DisplayName("Should skip phases with no registered agents [GH-90000]")
+    @DisplayName("Should skip phases with no registered agents")
     void shouldSkipPhasesWithNoAgents() { // GH-90000
       // Only register agents for architecture, not implementation
-      registerPhaseAgent("architecture [GH-90000]");
+      registerPhaseAgent("architecture");
 
       DeliveryRequest request = new DeliveryRequest( // GH-90000
           "Full build",
@@ -133,16 +133,16 @@ class DeliveryCoordinatorGeneratorTest extends EventloopTestBase {
 
       StepResult<DeliveryResult> result = runPromise(() -> generator.generate(stepRequest, ctx)); // GH-90000
 
-      assertThat(result.output().phaseResults().get("architecture [GH-90000]").status())
-          .isEqualTo("SUCCESS [GH-90000]");
-      assertThat(result.output().phaseResults().get("implementation [GH-90000]").status())
-          .isEqualTo("SKIPPED [GH-90000]");
+      assertThat(result.output().phaseResults().get("architecture").status())
+          .isEqualTo("SUCCESS");
+      assertThat(result.output().phaseResults().get("implementation").status())
+          .isEqualTo("SKIPPED");
     }
 
     @Test
-    @DisplayName("Should report not overall success when phases are skipped [GH-90000]")
+    @DisplayName("Should report not overall success when phases are skipped")
     void shouldReportPartialSuccess() { // GH-90000
-      registerPhaseAgent("architecture [GH-90000]");
+      registerPhaseAgent("architecture");
 
       DeliveryRequest request = new DeliveryRequest( // GH-90000
           "Full delivery",
@@ -163,15 +163,15 @@ class DeliveryCoordinatorGeneratorTest extends EventloopTestBase {
   // ===== Cost Estimation Tests =====
 
   @Nested
-  @DisplayName("Cost Estimation [GH-90000]")
+  @DisplayName("Cost Estimation")
   class CostEstimation {
 
     @Test
-    @DisplayName("Should estimate zero cost for rule-based coordination [GH-90000]")
+    @DisplayName("Should estimate zero cost for rule-based coordination")
     void shouldEstimateZeroCost() { // GH-90000
       DeliveryRequest request = new DeliveryRequest( // GH-90000
           "Estimate cost",
-          List.of("architecture [GH-90000]"),
+          List.of("architecture"),
           DeliveryRequest.Priority.NORMAL,
           Map.of()); // GH-90000
 
@@ -187,33 +187,33 @@ class DeliveryCoordinatorGeneratorTest extends EventloopTestBase {
   // ===== Metadata Tests =====
 
   @Nested
-  @DisplayName("Generator Metadata [GH-90000]")
+  @DisplayName("Generator Metadata")
   class MetadataTests {
 
     @Test
-    @DisplayName("Should provide accurate metadata [GH-90000]")
+    @DisplayName("Should provide accurate metadata")
     void shouldProvideMetadata() { // GH-90000
       GeneratorMetadata metadata = generator.getMetadata(); // GH-90000
 
-      assertThat(metadata.getName()).isEqualTo("DeliveryCoordinatorGenerator [GH-90000]");
-      assertThat(metadata.getType()).isEqualTo("rule-based [GH-90000]");
+      assertThat(metadata.getName()).isEqualTo("DeliveryCoordinatorGenerator");
+      assertThat(metadata.getType()).isEqualTo("rule-based");
     }
   }
 
   // ===== Result Structure Tests =====
 
   @Nested
-  @DisplayName("Result Structure [GH-90000]")
+  @DisplayName("Result Structure")
   class ResultStructure {
 
     @Test
-    @DisplayName("Should include all metadata in result [GH-90000]")
+    @DisplayName("Should include all metadata in result")
     void shouldIncludeResultMetadata() { // GH-90000
-      registerPhaseAgent("architecture [GH-90000]");
+      registerPhaseAgent("architecture");
 
       DeliveryRequest request = new DeliveryRequest( // GH-90000
           "Test metadata",
-          List.of("architecture [GH-90000]"),
+          List.of("architecture"),
           DeliveryRequest.Priority.CRITICAL,
           Map.of()); // GH-90000
 
@@ -229,13 +229,13 @@ class DeliveryCoordinatorGeneratorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should track total execution time [GH-90000]")
+    @DisplayName("Should track total execution time")
     void shouldTrackExecutionTime() { // GH-90000
-      registerPhaseAgent("architecture [GH-90000]");
+      registerPhaseAgent("architecture");
 
       DeliveryRequest request = new DeliveryRequest( // GH-90000
           "Timing test",
-          List.of("architecture [GH-90000]"),
+          List.of("architecture"),
           DeliveryRequest.Priority.NORMAL,
           Map.of()); // GH-90000
 
@@ -248,10 +248,10 @@ class DeliveryCoordinatorGeneratorTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should report overall success when all phases succeed [GH-90000]")
+    @DisplayName("Should report overall success when all phases succeed")
     void shouldReportOverallSuccess() { // GH-90000
-      registerPhaseAgent("architecture [GH-90000]");
-      registerPhaseAgent("testing [GH-90000]");
+      registerPhaseAgent("architecture");
+      registerPhaseAgent("testing");
 
       DeliveryRequest request = new DeliveryRequest( // GH-90000
           "Successful delivery",
@@ -286,10 +286,10 @@ class DeliveryCoordinatorGeneratorTest extends EventloopTestBase {
 
   private AgentContext createAgentContext() { // GH-90000
     return AgentContext.builder() // GH-90000
-        .agentId("DeliveryCoordinatorGenerator [GH-90000]")
-        .turnId("turn-001 [GH-90000]")
-        .tenantId("tenant-1 [GH-90000]")
-        .sessionId("session-1 [GH-90000]")
+        .agentId("DeliveryCoordinatorGenerator")
+        .turnId("turn-001")
+        .tenantId("tenant-1")
+        .sessionId("session-1")
         .memoryStore(memoryStore) // GH-90000
         .build(); // GH-90000
   }
@@ -301,7 +301,7 @@ class DeliveryCoordinatorGeneratorTest extends EventloopTestBase {
     StubPhaseAgent(String agentId, String stepName, MemoryStore memoryStore) { // GH-90000
       super(agentId, stepName, // GH-90000
           new StepContract(stepName, "#/definitions/Object", // GH-90000
-              "#/definitions/Object", List.of("phase-lead [GH-90000]"),
+              "#/definitions/Object", List.of("phase-lead"),
               Map.of("description", "Stub phase agent", "version", "1.0.0")), // GH-90000
           new StubPhaseGenerator(), // GH-90000
         defaultEventPublisher()); // GH-90000
@@ -338,8 +338,8 @@ class DeliveryCoordinatorGeneratorTest extends EventloopTestBase {
     @Override
     public @NotNull GeneratorMetadata getMetadata() { // GH-90000
       return GeneratorMetadata.builder() // GH-90000
-          .name("StubPhaseGenerator [GH-90000]").type("rule-based [GH-90000]")
-          .description("Stub [GH-90000]").version("1.0.0 [GH-90000]").build();
+          .name("StubPhaseGenerator").type("rule-based")
+          .description("Stub").version("1.0.0").build();
     }
   }
 }

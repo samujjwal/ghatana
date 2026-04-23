@@ -27,7 +27,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 /** Tests for ESLint auto-fix functionality. */
 @EnabledOnOs({OS.LINUX, OS.MAC, OS.WINDOWS}) // GH-90000
-@Tag("integration [GH-90000]")
+@Tag("integration")
 /**
  * @doc.type class
  * @doc.purpose Handles eslint auto fix test operations
@@ -48,7 +48,7 @@ public class EslintAutoFixTest extends EventloopTestBase {
     private boolean isEslintInstalled(Path directory) { // GH-90000
         try {
             // First check if ESLint is installed in node_modules
-            Path localEslint = directory.resolve("node_modules/.bin/eslint [GH-90000]");
+            Path localEslint = directory.resolve("node_modules/.bin/eslint");
             if (Files.exists(localEslint)) { // GH-90000
                 return true;
             }
@@ -70,7 +70,7 @@ public class EslintAutoFixTest extends EventloopTestBase {
         System.out.println("Installing ESLint locally in " + directory); // GH-90000
 
         // Create package.json if it doesn't exist
-        Path packageJson = directory.resolve("package.json [GH-90000]");
+        Path packageJson = directory.resolve("package.json");
         if (!Files.exists(packageJson)) { // GH-90000
             Files.writeString(packageJson, "{\"name\":\"eslint-test\"}", StandardCharsets.UTF_8); // GH-90000
         }
@@ -90,7 +90,7 @@ public class EslintAutoFixTest extends EventloopTestBase {
         boolean finished = installProcess.waitFor(120, TimeUnit.SECONDS); // GH-90000
         if (!finished) { // GH-90000
             installProcess.destroyForcibly(); // GH-90000
-            throw new RuntimeException("npm install timed out after 2 minutes [GH-90000]");
+            throw new RuntimeException("npm install timed out after 2 minutes");
         }
 
         int exitCode = installProcess.exitValue(); // GH-90000
@@ -99,19 +99,19 @@ public class EslintAutoFixTest extends EventloopTestBase {
             throw new RuntimeException( // GH-90000
                     "Failed to install ESLint locally. Exit code: " + exitCode + "\n" + output);
         }
-        System.out.println("Successfully installed ESLint locally [GH-90000]");
+        System.out.println("Successfully installed ESLint locally");
     }
 
     @BeforeEach
     void setUp() throws IOException, InterruptedException { // GH-90000
         // Print debug info
-        System.out.println("=== Test Setup === [GH-90000]");
+        System.out.println("=== Test Setup ===");
         System.out.println("Temp directory: " + tempDir.toAbsolutePath()); // GH-90000
         System.out.println("Node version: " + getNodeVersion()); // GH-90000
 
         // Skip if Node/npm are not available to avoid slow install attempts
-        assumeTrue(isCommandAvailable("node [GH-90000]"), "Node.js is required for ESLint tests");
-        assumeTrue(isCommandAvailable("npm [GH-90000]"), "npm is required for ESLint tests");
+        assumeTrue(isCommandAvailable("node"), "Node.js is required for ESLint tests");
+        assumeTrue(isCommandAvailable("npm"), "npm is required for ESLint tests");
 
         // Require ESLint to be available; if not, skip to keep CI green
         if (!isEslintInstalled(tempDir)) { // GH-90000
@@ -119,7 +119,7 @@ public class EslintAutoFixTest extends EventloopTestBase {
                     "ESLint is not available; skipping ESLint tests to avoid network installs.");
             assumeTrue(false, "Skipping: ESLint not available in this environment"); // GH-90000
         } else {
-            System.out.println("Using existing ESLint installation [GH-90000]");
+            System.out.println("Using existing ESLint installation");
         }
 
         // Verify local installation
@@ -128,7 +128,7 @@ public class EslintAutoFixTest extends EventloopTestBase {
         // installEslintLocally() // GH-90000
 
         // Create ESLint configuration
-        Path eslintConfig = tempDir.resolve(".eslintrc.json [GH-90000]");
+        Path eslintConfig = tempDir.resolve(".eslintrc.json");
         String eslintConfigContent =
                 """
         {
@@ -151,7 +151,7 @@ public class EslintAutoFixTest extends EventloopTestBase {
         """;
 
         // Create a test JavaScript file with issues
-        Path testJsFile = tempDir.resolve("test.js [GH-90000]");
+        Path testJsFile = tempDir.resolve("test.js");
         String testJsContent =
                 "// Test file with ESLint issues that can be auto-fixed\n\n"
                         + "// Missing semicolon\n"
@@ -168,7 +168,7 @@ public class EslintAutoFixTest extends EventloopTestBase {
         Files.writeString(testJsFile, testJsContent, StandardCharsets.UTF_8); // GH-90000
 
         // Create a local .eslintrc.js to use the locally installed packages
-        Path eslintConfigJs = tempDir.resolve(".eslintrc.js [GH-90000]");
+        Path eslintConfigJs = tempDir.resolve(".eslintrc.js");
         String eslintConfigJsContent =
                 "module.exports = {\n"
                         + "  root: true,\n"
@@ -190,14 +190,14 @@ public class EslintAutoFixTest extends EventloopTestBase {
 
         Files.writeString(eslintConfigJs, eslintConfigJsContent, StandardCharsets.UTF_8); // GH-90000
 
-        System.out.println("Using locally installed ESLint [GH-90000]");
+        System.out.println("Using locally installed ESLint");
 
         // Print the node_modules/.bin directory to help with debugging
-        Path nodeModulesBin = tempDir.resolve("node_modules/.bin [GH-90000]");
+        Path nodeModulesBin = tempDir.resolve("node_modules/.bin");
         System.out.println("node_modules/.bin exists: " + Files.exists(nodeModulesBin)); // GH-90000
         if (Files.exists(nodeModulesBin)) { // GH-90000
             try (Stream<Path> walk = Files.walk(nodeModulesBin, 1)) { // GH-90000
-                System.out.println("Contents of node_modules/.bin: [GH-90000]");
+                System.out.println("Contents of node_modules/.bin:");
                 walk.forEach(p -> System.out.println("  " + p.getFileName())); // GH-90000
             } catch (IOException e) { // GH-90000
                 System.err.println("Error listing node_modules/.bin: " + e.getMessage()); // GH-90000
@@ -211,14 +211,14 @@ public class EslintAutoFixTest extends EventloopTestBase {
         this.eslintRunner =
                 new EslintRunner(context) // GH-90000
                         .withFix(true) // GH-90000
-                        .withIncludePatterns(List.of("test.js [GH-90000]"))
-                        .withIgnorePatterns(List.of("**/node_modules/** [GH-90000]"));
+                        .withIncludePatterns(List.of("test.js"))
+                        .withIgnorePatterns(List.of("**/node_modules/**"));
     }
 
     @Test
     void testEslintAutoFix() throws ExecutionException, InterruptedException, IOException { // GH-90000
         // Use the test file we created in setUp() // GH-90000
-        Path testJsFile = tempDir.resolve("test.js [GH-90000]");
+        Path testJsFile = tempDir.resolve("test.js");
 
         // Verify the test file exists and is readable
         assertTrue(Files.exists(testJsFile), "Test file should exist: " + testJsFile); // GH-90000
@@ -229,8 +229,8 @@ public class EslintAutoFixTest extends EventloopTestBase {
         System.out.println("Test file size: " + initialContent.length() + " bytes"); // GH-90000
 
         // Verify node_modules exists and contains required packages
-        Path nodeModulesDir = tempDir.resolve("node_modules [GH-90000]");
-        System.out.println("=== Node Modules === [GH-90000]");
+        Path nodeModulesDir = tempDir.resolve("node_modules");
+        System.out.println("=== Node Modules ===");
         System.out.println("Node modules exists: " + Files.exists(nodeModulesDir)); // GH-90000
         if (Files.exists(nodeModulesDir)) { // GH-90000
             try (Stream<Path> walk = Files.walk(nodeModulesDir, 2)) { // GH-90000
@@ -239,46 +239,46 @@ public class EslintAutoFixTest extends EventloopTestBase {
                 System.err.println("Error walking node_modules: " + e.getMessage()); // GH-90000
             }
         }
-        System.out.println("=================== [GH-90000]");
+        System.out.println("===================");
 
         // Print the file content before ESLint with hex dump for debugging
         String beforeContent = Files.readString(testJsFile); // GH-90000
-        System.out.println("=== File Content Before ESLint === [GH-90000]");
+        System.out.println("=== File Content Before ESLint ===");
         System.out.println(beforeContent); // GH-90000
-        System.out.println("=== Hex Dump === [GH-90000]");
+        System.out.println("=== Hex Dump ===");
         byte[] fileBytes = Files.readAllBytes(testJsFile); // GH-90000
         for (int i = 0; i < Math.min(200, fileBytes.length); i++) { // GH-90000
             System.out.printf("%02x ", fileBytes[i]); // GH-90000
             if ((i + 1) % 16 == 0) System.out.println(); // GH-90000
         }
-        System.out.println("\n================================= [GH-90000]");
+        System.out.println("\n=================================");
 
         // Print the ESLint configuration
-        System.out.println("=== ESLint Configuration === [GH-90000]");
+        System.out.println("=== ESLint Configuration ===");
         System.out.println("Fix enabled: " + eslintRunner.toString()); // GH-90000
         System.out.println("Working directory: " + tempDir.toAbsolutePath()); // GH-90000
         System.out.println("Node version: " + getNodeVersion()); // GH-90000
         System.out.println("ESLint version: " + getEslintVersion(tempDir)); // GH-90000
-        System.out.println("=========================== [GH-90000]");
+        System.out.println("===========================");
 
         // Run ESLint with auto-fix and debug info
-        System.out.println("Running ESLint... [GH-90000]");
-        System.out.println("Current directory: " + System.getProperty("user.dir [GH-90000]"));
+        System.out.println("Running ESLint...");
+        System.out.println("Current directory: " + System.getProperty("user.dir"));
         System.out.println("Test directory: " + tempDir.toAbsolutePath()); // GH-90000
 
         // Print environment variables for debugging
-        System.out.println("=== Environment === [GH-90000]");
+        System.out.println("=== Environment ===");
         System.getenv() // GH-90000
                 .forEach( // GH-90000
                         (k, v) -> { // GH-90000
-                            if (k.contains("NODE [GH-90000]") || k.contains("PATH [GH-90000]") || k.contains("HOME [GH-90000]")) {
+                            if (k.contains("NODE") || k.contains("PATH") || k.contains("HOME")) {
                                 System.out.println(k + "=" + v); // GH-90000
                             }
                         });
-        System.out.println("================= [GH-90000]");
+        System.out.println("=================");
         // If ESLint is not available in this environment, skip the test to avoid build failures
         if (!isEslintInstalled(tempDir)) { // GH-90000
-            System.out.println("ESLint is not available; skipping ESLint auto-fix test. [GH-90000]");
+            System.out.println("ESLint is not available; skipping ESLint auto-fix test.");
             assumeTrue(false, "Skipping: ESLint not available in this environment"); // GH-90000
         }
 
@@ -294,7 +294,7 @@ public class EslintAutoFixTest extends EventloopTestBase {
 
         // Print diagnostics
         if (!diagnostics.isEmpty()) { // GH-90000
-            System.out.println("=== ESLint Diagnostics (" + diagnostics.size() +  [GH-90000]") ===");
+            System.out.println("=== ESLint Diagnostics (" + diagnostics.size() + ") ===");
             for (UnifiedDiagnostic d : diagnostics) { // GH-90000
                 System.out.printf( // GH-90000
                         "- %s: %s (line %d, col %d, rule: %s)%n", // GH-90000
@@ -304,9 +304,9 @@ public class EslintAutoFixTest extends EventloopTestBase {
                         d.column(), // GH-90000
                         d.getRuleId() != null ? d.getRuleId() : "<no-rule>"); // GH-90000
             }
-            System.out.println("============================== [GH-90000]");
+            System.out.println("==============================");
         } else {
-            System.out.println("No ESLint diagnostics found [GH-90000]");
+            System.out.println("No ESLint diagnostics found");
         }
 
         // Read the file after fixes and verify it was modified
@@ -314,19 +314,19 @@ public class EslintAutoFixTest extends EventloopTestBase {
         assertNotNull(fixedContent, "File content should not be null after ESLint"); // GH-90000
 
         // Print the file content after ESLint with hex dump
-        System.out.println("=== File Content After ESLint === [GH-90000]");
+        System.out.println("=== File Content After ESLint ===");
         System.out.println(fixedContent); // GH-90000
-        System.out.println("=== Hex Dump === [GH-90000]");
+        System.out.println("=== Hex Dump ===");
         byte[] afterBytes = Files.readAllBytes(testJsFile); // GH-90000
         for (int i = 0; i < Math.min(200, afterBytes.length); i++) { // GH-90000
             System.out.printf("%02x ", afterBytes[i]); // GH-90000
             if ((i + 1) % 16 == 0) System.out.println(); // GH-90000
         }
-        System.out.println("\n================================ [GH-90000]");
+        System.out.println("\n================================");
 
         // Verify the file was actually modified by ESLint
         if (fixedContent.equals(initialContent)) { // GH-90000
-            System.err.println("WARNING: File content was not modified by ESLint [GH-90000]");
+            System.err.println("WARNING: File content was not modified by ESLint");
             // Try to run ESLint manually for debugging
             try {
                 Process process =
@@ -342,7 +342,7 @@ public class EslintAutoFixTest extends EventloopTestBase {
                     System.out.println("Manual ESLint output:\n" + output); // GH-90000
                 } else {
                     process.destroyForcibly(); // GH-90000
-                    System.err.println("Manual ESLint execution timed out [GH-90000]");
+                    System.err.println("Manual ESLint execution timed out");
                 }
             } catch (Exception e) { // GH-90000
                 System.err.println("Error running manual ESLint: " + e.getMessage()); // GH-90000
@@ -350,12 +350,12 @@ public class EslintAutoFixTest extends EventloopTestBase {
         }
 
         // Print the fixed content for debugging
-        System.out.println("=== Final File Content === [GH-90000]");
+        System.out.println("=== Final File Content ===");
         System.out.println(fixedContent); // GH-90000
-        System.out.println("========================= [GH-90000]");
+        System.out.println("=========================");
 
         // Print the content as hex to check for invisible characters
-        System.out.println("=== File Content (hex) === [GH-90000]");
+        System.out.println("=== File Content (hex) ===");
         byte[] contentBytes = fixedContent.getBytes(StandardCharsets.UTF_8); // GH-90000
         for (int i = 0; i < contentBytes.length; i++) { // GH-90000
             System.out.printf("%02x ", contentBytes[i]); // GH-90000
@@ -363,26 +363,26 @@ public class EslintAutoFixTest extends EventloopTestBase {
                 System.out.println(); // GH-90000
             }
         }
-        System.out.println("=========================== [GH-90000]");
+        System.out.println("===========================");
 
         // Check specific fixes
-        boolean hasSemicolon = fixedContent.contains("const x = 1; [GH-90000]");
-        boolean hasFixedQuotes = fixedContent.contains("console.log('Hello, world!'); [GH-90000]");
-        boolean hasUnusedVar = fixedContent.contains("unusedVar [GH-90000]");
-        boolean hasTrailingSpaces = fixedContent.matches("(?s).*\\s+\n [GH-90000]");
-        boolean hasTrailingNewline = fixedContent.endsWith("\n [GH-90000]") || fixedContent.endsWith("\r\n [GH-90000]");
+        boolean hasSemicolon = fixedContent.contains("const x = 1;");
+        boolean hasFixedQuotes = fixedContent.contains("console.log('Hello, world!');");
+        boolean hasUnusedVar = fixedContent.contains("unusedVar");
+        boolean hasTrailingSpaces = fixedContent.matches("(?s).*\\s+\n");
+        boolean hasTrailingNewline = fixedContent.endsWith("\n") || fixedContent.endsWith("\r\n");
 
-        System.out.println("=== Fix Verification === [GH-90000]");
+        System.out.println("=== Fix Verification ===");
         System.out.println("- Added semicolon: " + hasSemicolon); // GH-90000
         System.out.println("- Fixed quotes: " + hasFixedQuotes); // GH-90000
         System.out.println("- Unused var warning: " + hasUnusedVar); // GH-90000
         System.out.println("- Has trailing spaces: " + hasTrailingSpaces); // GH-90000
         System.out.println("- Has trailing newline: " + hasTrailingNewline); // GH-90000
-        System.out.println("====================== [GH-90000]");
+        System.out.println("======================");
 
         // If ESLint couldn't apply fixes (e.g., missing config or not installed), skip the test // GH-90000
         if (!(hasSemicolon && hasFixedQuotes && hasTrailingNewline)) { // GH-90000
-            System.out.println("ESLint fixes not applied; skipping test due to environment/setup. [GH-90000]");
+            System.out.println("ESLint fixes not applied; skipping test due to environment/setup.");
             assumeTrue(false, "Skipping: ESLint fixes not applied in this environment"); // GH-90000
         }
 
@@ -395,7 +395,7 @@ public class EslintAutoFixTest extends EventloopTestBase {
                                                 && "error".equalsIgnoreCase(d.severity().name())); // GH-90000
 
         if (hasErrors) { // GH-90000
-            System.out.println("Found errors in diagnostics: [GH-90000]");
+            System.out.println("Found errors in diagnostics:");
             diagnostics.stream() // GH-90000
                     .filter( // GH-90000
                             d ->
@@ -418,9 +418,9 @@ public class EslintAutoFixTest extends EventloopTestBase {
                 "Should fix quotes. Expected 'Hello, world!' but got: "
                         + fixedContent
                                 .lines() // GH-90000
-                                .filter(l -> l.contains("console.log [GH-90000]"))
+                                .filter(l -> l.contains("console.log"))
                                 .findFirst() // GH-90000
-                                .orElse("<not found> [GH-90000]"));
+                                .orElse("<not found>"));
 
         assertTrue( // GH-90000
                 hasUnusedVar,
@@ -435,9 +435,9 @@ public class EslintAutoFixTest extends EventloopTestBase {
         assertTrue( // GH-90000
                 hasTrailingNewline,
                 "Should add trailing newline. Content ends with: "
-                        + (fixedContent.endsWith("\n [GH-90000]")
+                        + (fixedContent.endsWith("\n")
                                 ? "\\n"
-                                : fixedContent.endsWith("\r\n [GH-90000]") ? "\\r\\n" : "<no newline>"));
+                                : fixedContent.endsWith("\r\n") ? "\\r\\n" : "<no newline>"));
 
         assertFalse( // GH-90000
                 hasErrors,
@@ -450,7 +450,7 @@ public class EslintAutoFixTest extends EventloopTestBase {
                                                                 .equalsIgnoreCase( // GH-90000
                                                                         d.severity().name())) // GH-90000
                                 .map(d -> d.getRuleId() + ": " + d.message()) // GH-90000
-                                .collect(Collectors.joining(",  [GH-90000]")));
+                                .collect(Collectors.joining(", ")));
     }
 
     private String getNodeVersion() { // GH-90000
@@ -471,7 +471,7 @@ public class EslintAutoFixTest extends EventloopTestBase {
     private String getEslintVersion(Path workingDir) { // GH-90000
         try {
             // Try local eslint first
-            Path eslintBin = workingDir.resolve("node_modules/.bin/eslint [GH-90000]");
+            Path eslintBin = workingDir.resolve("node_modules/.bin/eslint");
             if (Files.exists(eslintBin)) { // GH-90000
                 Process process =
                         new ProcessBuilder(eslintBin.toString(), VERSION_FLAG) // GH-90000

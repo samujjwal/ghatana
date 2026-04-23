@@ -31,7 +31,7 @@ import static org.mockito.Mockito.mock;
  *   <li>Calibration edge cases (extreme raw values)</li> // GH-90000
  * </ul>
  */
-@DisplayName("Probabilistic Agent — Gap Tests [GH-90000]")
+@DisplayName("Probabilistic Agent — Gap Tests")
 class ProbabilisticAgentGapTest {
 
     private AgentContext ctx;
@@ -39,9 +39,9 @@ class ProbabilisticAgentGapTest {
     @BeforeEach
     void setUp() { // GH-90000
         ctx = AgentContext.builder() // GH-90000
-                .turnId("turn-1 [GH-90000]")
-                .agentId("prob-gap-test [GH-90000]")
-                .tenantId("test-tenant [GH-90000]")
+                .turnId("turn-1")
+                .agentId("prob-gap-test")
+                .tenantId("test-tenant")
                 .memoryStore(mock(MemoryStore.class)) // GH-90000
                 .build(); // GH-90000
     }
@@ -102,19 +102,19 @@ class ProbabilisticAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Model Inference Timeout [GH-90000]")
+    @DisplayName("Model Inference Timeout")
     class TimeoutTests {
 
         @Test
         void timeoutFallsToFallbackModel() { // GH-90000
-            ModelInference primary = timeoutModel("slow-primary [GH-90000]");
+            ModelInference primary = timeoutModel("slow-primary");
             ModelInference fallback = mockModel("fast-fallback", Map.of("label", "ok"), 0.85); // GH-90000
 
             ProbabilisticAgent agent = new ProbabilisticAgent("timeout-fb", primary); // GH-90000
             agent.setFallbackModels(List.of(fallback)); // GH-90000
 
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
-                    .agentId("timeout-fb [GH-90000]")
+                    .agentId("timeout-fb")
                     .type(AgentType.PROBABILISTIC) // GH-90000
                     .confidenceThreshold(0.5) // GH-90000
                     .build(); // GH-90000
@@ -128,13 +128,13 @@ class ProbabilisticAgentGapTest {
 
         @Test
         void timeoutWithNoFallbackReturnsFailed() { // GH-90000
-            ModelInference primary = timeoutModel("slow-only [GH-90000]");
+            ModelInference primary = timeoutModel("slow-only");
 
             ProbabilisticAgent agent = new ProbabilisticAgent("timeout-no-fb", primary); // GH-90000
             // No fallback models set
 
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
-                    .agentId("timeout-no-fb [GH-90000]")
+                    .agentId("timeout-no-fb")
                     .type(AgentType.PROBABILISTIC) // GH-90000
                     .build(); // GH-90000
 
@@ -146,15 +146,15 @@ class ProbabilisticAgentGapTest {
 
         @Test
         void timeoutChainsThroughMultipleFallbacks() { // GH-90000
-            ModelInference primary = timeoutModel("primary [GH-90000]");
-            ModelInference fb1 = failingModel("fallback-1 [GH-90000]");
+            ModelInference primary = timeoutModel("primary");
+            ModelInference fb1 = failingModel("fallback-1");
             ModelInference fb2 = mockModel("fallback-2", Map.of("recovered", true), 0.75); // GH-90000
 
             ProbabilisticAgent agent = new ProbabilisticAgent("chain-fb", primary); // GH-90000
             agent.setFallbackModels(List.of(fb1, fb2)); // GH-90000
 
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
-                    .agentId("chain-fb [GH-90000]")
+                    .agentId("chain-fb")
                     .type(AgentType.PROBABILISTIC) // GH-90000
                     .confidenceThreshold(0.5) // GH-90000
                     .build(); // GH-90000
@@ -172,7 +172,7 @@ class ProbabilisticAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Batch Inference [GH-90000]")
+    @DisplayName("Batch Inference")
     class BatchInferenceTests {
 
         @Test
@@ -181,7 +181,7 @@ class ProbabilisticAgentGapTest {
             ProbabilisticAgent agent = new ProbabilisticAgent("batch-test", model); // GH-90000
 
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
-                    .agentId("batch-test [GH-90000]")
+                    .agentId("batch-test")
                     .type(AgentType.PROBABILISTIC) // GH-90000
                     .confidenceThreshold(0.5) // GH-90000
                     .build(); // GH-90000
@@ -209,7 +209,7 @@ class ProbabilisticAgentGapTest {
             ProbabilisticAgent agent = new ProbabilisticAgent("batch-empty", model); // GH-90000
 
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
-                    .agentId("batch-empty [GH-90000]")
+                    .agentId("batch-empty")
                     .type(AgentType.PROBABILISTIC) // GH-90000
                     .confidenceThreshold(0.5) // GH-90000
                     .build(); // GH-90000
@@ -228,7 +228,7 @@ class ProbabilisticAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Shadow Mode — enriched [GH-90000]")
+    @DisplayName("Shadow Mode — enriched")
     class ShadowModeEnrichedTests {
 
         @Test
@@ -237,7 +237,7 @@ class ProbabilisticAgentGapTest {
             ProbabilisticAgent agent = new ProbabilisticAgent("shadow-enrich", model); // GH-90000
 
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
-                    .agentId("shadow-enrich [GH-90000]")
+                    .agentId("shadow-enrich")
                     .type(AgentType.PROBABILISTIC) // GH-90000
                     .shadowMode(true) // GH-90000
                     .build(); // GH-90000
@@ -248,7 +248,7 @@ class ProbabilisticAgentGapTest {
             assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SKIPPED); // GH-90000
             // Even in shadow, output should contain model metadata
             assertThat(result.getOutput()).containsEntry("_model.id", "shadow-model"); // GH-90000
-            assertThat(result.getOutput()).containsKey("_model.calibratedConfidence [GH-90000]");
+            assertThat(result.getOutput()).containsKey("_model.calibratedConfidence");
         }
     }
 
@@ -257,15 +257,15 @@ class ProbabilisticAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("No model set [GH-90000]")
+    @DisplayName("No model set")
     class NoModelTests {
 
         @Test
         void processWithoutPrimaryModelReturnsFailed() { // GH-90000
-            ProbabilisticAgent agent = new ProbabilisticAgent("no-model [GH-90000]");
+            ProbabilisticAgent agent = new ProbabilisticAgent("no-model");
 
             ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
-                    .agentId("no-model [GH-90000]")
+                    .agentId("no-model")
                     .type(AgentType.PROBABILISTIC) // GH-90000
                     .build(); // GH-90000
 
@@ -281,7 +281,7 @@ class ProbabilisticAgentGapTest {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("Calibration edge cases [GH-90000]")
+    @DisplayName("Calibration edge cases")
     class CalibrationEdgeCases {
 
         @Test

@@ -8,11 +8,11 @@ import java.util.ServiceLoader;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("EntityStore Service Registration Tests [GH-90000]")
+@DisplayName("EntityStore Service Registration Tests")
 class EntityStoreServiceRegistrationTest {
 
     @Test
-    @DisplayName("platform plugins expose the PostgreSQL EntityStore via ServiceLoader [GH-90000]")
+    @DisplayName("platform plugins expose the PostgreSQL EntityStore via ServiceLoader")
     void platformPluginsExposeThePostgresEntityStoreViaServiceLoader() { // GH-90000
         assertThat(ServiceLoader.load(EntityStore.class).findFirst()) // GH-90000
             .isPresent() // GH-90000
