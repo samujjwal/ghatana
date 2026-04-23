@@ -1006,11 +1006,13 @@ export type NlqIntent =
   | "trigger_reflect"
   | "kill_switch"
   | "status_query"
+  | "search"
   | "unknown";
 
 export interface NlqEntity {
-  type: "time_window" | "pipeline_name" | "status";
+  type: "time_window" | "pipeline_name" | "status" | "keyword";
   value?: string;
+  confidence?: number;
   amount?: number;
   unit?: string;
   iso8601?: string;

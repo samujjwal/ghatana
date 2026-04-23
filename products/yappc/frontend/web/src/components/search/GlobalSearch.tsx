@@ -123,39 +123,39 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
-  // Mock search data - will be replaced with real search implementation
-  const mockResults: SearchResult[] = useMemo(() => [
+  // Mounted navigation routes — the only searchable paths that are actively served
+  const mountedResults: SearchResult[] = useMemo(() => [
     {
-      id: '1',
-      title: 'Project Dashboard',
-      description: 'View project overview and metrics',
+      id: 'nav-workspaces',
+      title: 'Workspaces',
+      description: 'Manage your workspaces and contexts',
       category: 'page',
-      path: '/project/123/dashboard',
+      path: '/workspaces',
       icon: TrendingUp,
     },
     {
-      id: '2',
-      title: 'Development Canvas',
-      description: 'Visual project planning canvas',
+      id: 'nav-projects',
+      title: 'Projects',
+      description: 'Browse and create projects',
       category: 'page',
-      path: '/project/123/dev/canvas',
-      icon: Code,
-    },
-    {
-      id: '3',
-      title: 'Team Settings',
-      description: 'Manage team members and permissions',
-      category: 'setting',
-      path: '/project/123/settings/team',
-      icon: Users,
-    },
-    {
-      id: '4',
-      title: 'Sprint Board',
-      description: 'Manage sprint tasks and progress',
-      category: 'page',
-      path: '/project/123/dev/sprint',
+      path: '/projects',
       icon: FileText,
+    },
+    {
+      id: 'nav-settings',
+      title: 'Settings',
+      description: 'Product settings and preferences',
+      category: 'setting',
+      path: '/settings',
+      icon: Settings,
+    },
+    {
+      id: 'nav-profile',
+      title: 'Profile',
+      description: 'Your account summary',
+      category: 'page',
+      path: '/profile',
+      icon: Users,
     },
   ], []);
 
@@ -163,7 +163,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
   const filteredResults = useMemo(() => {
     if (!query.trim()) return [];
 
-    const results = mockResults
+    const results = mountedResults
       .map((result) => ({
         ...result,
         score: Math.max(
@@ -176,7 +176,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
       .slice(0, maxResults);
 
     return results;
-  }, [query, mockResults, maxResults]);
+  }, [query, mountedResults, maxResults]);
 
   // Keyboard shortcuts
   useEffect(() => {

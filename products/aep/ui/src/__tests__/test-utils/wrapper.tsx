@@ -1,7 +1,8 @@
 import React from 'react';
 import { BrowserRouter } from 'react-router';
 import { Provider, createStore } from 'jotai';
-import type { Store } from 'jotai/vanilla';
+
+type Store = ReturnType<typeof createStore>;
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from '@ghatana/theme';
 

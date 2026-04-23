@@ -7,4 +7,5 @@
  *   Before: import { ... } from '@ghatana/design-system/privacy';
  *   After:  import { ... } from '@ghatana/domain-components';
  */
-export * from '@ghatana/domain-components';
+// export * from '@ghatana/domain-components';
+// Temporarily commented out due to missing @ghatana/domain-components package

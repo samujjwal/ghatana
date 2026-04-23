@@ -134,7 +134,7 @@ describe('VoiceInput', () => {
     fireEvent.click(voiceButton);
 
     await waitFor(() => {
-      expect(recognitionInstance.start).toHaveBeenCalled();
+      expect(recognitionInstance!.start).toHaveBeenCalled();
     });
   });
 
@@ -181,12 +181,12 @@ describe('VoiceInput', () => {
     fireEvent.click(voiceButton);
 
     await waitFor(() => {
-      expect(recognitionInstance.start).toHaveBeenCalled();
+      expect(recognitionInstance!.start).toHaveBeenCalled();
     });
 
     // Simulate transcript result
-    if (recognitionInstance.onresult) {
-      recognitionInstance.onresult({
+    if (recognitionInstance!.onresult) {
+      recognitionInstance!.onresult({
         resultIndex: 0,
         results: [
           {
@@ -290,14 +290,14 @@ describe('VoiceInput', () => {
     fireEvent.click(voiceButton);
 
     await waitFor(() => {
-      expect(recognitionInstance.start).toHaveBeenCalled();
+      expect(recognitionInstance!.start).toHaveBeenCalled();
     });
 
     const stopButton = screen.getByLabelText(/Stop voice input/i);
     fireEvent.click(stopButton);
 
     await waitFor(() => {
-      expect(recognitionInstance.stop).toHaveBeenCalled();
+      expect(recognitionInstance!.stop).toHaveBeenCalled();
     });
   });
 

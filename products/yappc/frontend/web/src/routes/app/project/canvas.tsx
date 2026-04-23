@@ -19,20 +19,8 @@
  * @doc.purpose Complete canvas route (orchestrator)
  * @doc.layer routes
  */
-export const NODE_DEFAULT_SIZES: Record<string, { width: number; height: number }> = {
-  frame: { width: 400, height: 300 },
-  'sticky-note': { width: 200, height: 200 },
-  text: { width: 300, height: 150 },
-  task: { width: 250, height: 70 },
-  default: { width: 150, height: 150 },
-};
-
-/** Resolve width/height for a given node type. */
-function getNodeSize(type: string | undefined): { width: number; height: number } {
-  return NODE_DEFAULT_SIZES[type ?? 'default'] ?? NODE_DEFAULT_SIZES.default;
-}
-
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { getNodeSize } from './_canvas/CanvasCollaborationBanner';
 import { useParams, useNavigate } from 'react-router';
 import { Alert, Box, Snackbar } from '@ghatana/design-system';
 import {
@@ -73,7 +61,7 @@ import {
   chromeMinimapVisibleAtom,
   chromeZoomLevelAtom,
 } from '@ghatana/canvas';
-import { headerActionContextAtom, headerCanvasModeAtom, headerContextActionsAtom, headerOnCanvasModeChangeAtom, headerPhaseInfoAtom, headerRoleInfoAtom, headerShowCanvasModeAtom } from '../../../state/atoms/layoutAtom';
+import { headerActionContextAtom, headerCanvasModeAtom, headerContextActionsAtom, headerOnCanvasModeChangeAtom, headerPhaseInfoAtom, headerRoleInfoAtom, headerShowCanvasModeAtom, type HeaderAction } from '../../../state/atoms/layoutAtom';
 import '@xyflow/react/dist/style.css';
 import { DependencyEdge } from '../../../components/canvas/edges';
 import { KeyboardShortcutLegend } from '../../../components/canvas/KeyboardShortcutLegend';
@@ -88,9 +76,7 @@ import { type CanvasMode as NavCanvasMode } from '../../../components/navigation
 import { useKeyboardShortcuts } from '../../../components/keyboard/KeyboardShortcutsManager';
 import { useStudioMode } from '../../../components/studio/StudioLayout';
 import { useAIStatusBar } from '../../../components/ai/AIStatusBar';
-import { useAuth } from '../../../hooks/useAuth';
 import { useCanvasMode } from '../../../hooks/useCanvasMode';
-import { useCollaboration } from '../../../hooks/useCollaboration';
 import { useUnifiedCanvas } from '../../../hooks/useUnifiedCanvas';
 import { useWorkspaceContext } from '../../../hooks/useWorkspaceData';
 import { parseJsonResponse } from '@/lib/http';
@@ -98,8 +84,8 @@ import type { AlignmentType, DistributionAxis } from '../../../lib/canvas/Alignm
 import { getPhaseTheme, type LifecyclePhase } from '../../../theme/phaseTheme';
 import type { CanvasMode } from '../../../types/canvasMode';
 import { LifecyclePhase as RailLifecyclePhase } from '../../../types/lifecycle';
-import { currentUserAtom } from '../../../stores/user.store';
 import {
+  CanvasCollaborationBanner,
   CanvasNodeContextMenu,
   CanvasOutlinePanel,
   CanvasStatusBar,
@@ -125,61 +111,6 @@ interface CanvasProjectData {
 type KeyboardShortcutCanvas = Parameters<typeof useCanvasKeyboardShortcuts>[0]['canvas'];
 type KeyboardShortcutNode = Parameters<typeof useCanvasKeyboardShortcuts>[0]['copiedNodes'][number];
 
-function CanvasCollaborationBanner({ projectId }: { projectId: string }) {
-  const currentUser = useAtomValue(currentUserAtom);
-  const { getToken } = useAuth();
-  const collaboration = useCollaboration({
-    projectId,
-    getToken,
-    currentUser: currentUser
-      ? {
-          id: currentUser.id,
-          name: currentUser.name,
-          email: currentUser.email,
-          color: '#4ECDC4',
-        }
-      : null,
-    enabled: Boolean(projectId && currentUser),
-  });
-
-  if (!currentUser) {
-    return null;
-  }
-
-  const collaborators = Array.from(collaboration.presence.values()).slice(0, 3);
-  const onlineCount = 1 + collaboration.presence.size;
-
-  return (
-    <div
-      className="absolute right-4 top-4 z-20 rounded-xl border border-divider bg-bg-paper/95 px-4 py-3 shadow-lg backdrop-blur"
-      data-testid="canvas-collaboration-banner"
-    >
-      <div className="flex items-center gap-2 text-sm font-medium text-text-primary">
-        <span
-          className={`h-2.5 w-2.5 rounded-full ${collaboration.isConnected ? 'bg-green-500' : 'bg-amber-500'}`}
-          data-testid="canvas-collaboration-status-dot"
-        />
-        <span>{collaboration.isConnected ? 'Live collaboration connected' : 'Collaboration standby'}</span>
-      </div>
-      <p className="mt-1 text-xs text-text-secondary" data-testid="canvas-collaboration-summary">
-        {onlineCount} collaborator{onlineCount === 1 ? '' : 's'} visible for this canvas.
-      </p>
-      {collaborators.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {collaborators.map((presence) => (
-            <span
-              key={presence.user.id}
-              className="rounded-full bg-primary-50 px-2.5 py-1 text-[11px] font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-200"
-            >
-              {presence.user.name}
-            </span>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 function UnifiedCanvasInner() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
@@ -204,10 +135,9 @@ function UnifiedCanvasInner() {
     queryFn: async () => {
       const response = await fetch(`/api/projects/${projectId}`);
       if (!response.ok) return null;
-      return parseJsonResourceResponse<CanvasProjectData>(
+      return parseJsonResponse<CanvasProjectData>(
         response,
-        'project canvas query',
-        'project'
+        'project canvas query'
       );
     },
     enabled: !!projectId,
@@ -683,7 +613,7 @@ function UnifiedCanvasInner() {
 
   const contextActions = useMemo(
     () => {
-      const actions = [
+      const actions: HeaderAction[] = [
         { id: 'undo', label: 'Undo', icon: Undo, onClick: () => canvas.undo(), disabled: !canvas.canUndo, tooltip: 'Undo', shortcut: '⌘Z' },
         { id: 'redo', label: 'Redo', icon: Redo, onClick: () => canvas.redo(), disabled: !canvas.canRedo, tooltip: 'Redo', shortcut: '⌘⇧Z' },
         { id: 'zoom-in', label: 'Zoom In', icon: ZoomIn, onClick: () => reactFlowInstance.zoomIn(), tooltip: 'Zoom in', shortcut: '⌘+' },

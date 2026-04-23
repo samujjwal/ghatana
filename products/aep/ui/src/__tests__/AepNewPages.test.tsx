@@ -2,7 +2,7 @@
  * AEP New Pages — React Testing Library tests.
  *
  * Covers AgentRegistryPage, MonitoringDashboardPage, PatternStudioPage,
- * HitlReviewPage, and LearningPage with mock API responses.
+ * and HitlReviewPage with mock API responses.
  *
  * Patterns:
  *  - TanStack Query: each suite wraps in `QueryClientProvider` with fresh client
@@ -24,7 +24,6 @@ import { AgentRegistryPage } from '@/pages/AgentRegistryPage';
 import { MonitoringDashboardPage } from '@/pages/MonitoringDashboardPage';
 import { PatternStudioPage } from '@/pages/PatternStudioPage';
 import { HitlReviewPage } from '@/pages/HitlReviewPage';
-import { LearningPage } from '@/pages/LearningPage';
 
 // API modules mocked
 import * as aepApi from '@/api/aep.api';
@@ -327,7 +326,7 @@ describe('MonitoringDashboardPage', () => {
   it('shows empty state when no runs', async () => {
     vi.mocked(aepApi.listPipelineRuns).mockResolvedValue([]);
     renderWithQuery(<MonitoringDashboardPage />);
-    await waitFor(() => expect(screen.getByText(/no pipeline runs found/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/no pipeline runs yet/i)).toBeInTheDocument());
   });
 });
 
@@ -453,75 +452,5 @@ describe('HitlReviewPage', () => {
   });
 });
 
-// ════════════════════════════════════════════════════════════════════
-
-describe('LearningPage', () => {
-  beforeEach(() => {
-    vi.mocked(aepApi.listEpisodes).mockResolvedValue([EPISODE]);
-    vi.mocked(aepApi.listPolicies).mockResolvedValue([POLICY]);
-    vi.mocked(aepApi.approvePolicy).mockResolvedValue({ ...POLICY, status: 'APPROVED' });
-    vi.mocked(aepApi.rejectPolicy).mockResolvedValue({ ...POLICY, status: 'REJECTED' });
-    vi.mocked(aepApi.triggerReflection).mockResolvedValue({ triggered: true });
-  });
-
-  it('renders with Episodes tab active by default', async () => {
-    renderWithQuery(<LearningPage />);
-    await waitFor(() => expect(screen.getByText(/agent-001/)).toBeInTheDocument());
-    expect(screen.getByText('SUCCESS')).toBeInTheDocument();
-    expect(screen.getByText(/45.*ms/)).toBeInTheDocument();
-  });
-
-  it('shows empty episodes state', async () => {
-    vi.mocked(aepApi.listEpisodes).mockResolvedValue([]);
-    renderWithQuery(<LearningPage />);
-    await waitFor(() => expect(screen.getByText(/no episodes recorded/i)).toBeInTheDocument());
-  });
-
-  it('switches to Policies tab', async () => {
-    const user = userEvent.setup();
-    renderWithQuery(<LearningPage />);
-    await waitFor(() => screen.getByRole('button', { name: /policies/i }));
-    await user.click(screen.getByRole('button', { name: /policies/i }));
-    await waitFor(() => expect(screen.getByText('Auto-escalation rule')).toBeInTheDocument());
-    expect(screen.getByText('PENDING REVIEW')).toBeInTheDocument();
-  });
-
-  it('shows Approve / Reject for PENDING_REVIEW policies', async () => {
-    const user = userEvent.setup();
-    renderWithQuery(<LearningPage />);
-    await user.click(await screen.findByRole('button', { name: /policies/i }));
-    await waitFor(() => screen.getByText('Approve'));
-    expect(screen.getByText('Reject')).toBeInTheDocument();
-  });
-
-  it('calls approvePolicy on Approve click', async () => {
-    const user = userEvent.setup();
-    renderWithQuery(<LearningPage />);
-    await user.click(await screen.findByRole('button', { name: /policies/i }));
-    await waitFor(() => screen.getByText('Approve'));
-    await user.click(screen.getByText('Approve'));
-    await waitFor(() => expect(aepApi.approvePolicy).toHaveBeenCalledWith('pol-001', 'default'));
-  });
-
-  it('calls rejectPolicy after providing reject reason', async () => {
-    const user = userEvent.setup();
-    renderWithQuery(<LearningPage />);
-    await user.click(await screen.findByRole('button', { name: /policies/i }));
-    await waitFor(() => screen.getByText('Reject'));
-    await user.click(screen.getByText('Reject'));
-    await user.type(screen.getByPlaceholderText(/rejection reason/i), 'Insufficient data');
-    await user.click(screen.getByText('Confirm reject'));
-    await waitFor(() =>
-      expect(aepApi.rejectPolicy).toHaveBeenCalledWith('pol-001', 'Insufficient data', 'default'),
-    );
-  });
-
-  it('calls triggerReflection on button click', async () => {
-    const user = userEvent.setup();
-    renderWithQuery(<LearningPage />);
-    await user.click(await screen.findByRole('button', { name: /policies/i }));
-    await waitFor(() => screen.getByText(/trigger reflection/i));
-    await user.click(screen.getByText(/trigger reflection/i));
-    await waitFor(() => expect(aepApi.triggerReflection).toHaveBeenCalledWith('default'));
-  });
-});
+// NOTE: LearningPage removed; episodes and policies are tested via PatternStudioPage.
+// All learning-related API calls are exercised in the PatternStudioPage suite above.

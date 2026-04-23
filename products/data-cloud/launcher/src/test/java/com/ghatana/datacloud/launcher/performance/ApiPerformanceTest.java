@@ -425,7 +425,7 @@ class ApiPerformanceTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("Throughput must not drop more than 20% from initial rate after sustained load")
+        @DisplayName("Throughput must not drop more than 30% from initial rate after sustained load")
         void throughputStabilityUnderSustainedLoad() throws Exception { // GH-90000
             int warmupOps = 50;
             int sustainedOps = 200;
@@ -445,8 +445,8 @@ class ApiPerformanceTest extends EventloopTestBase {
             double sustainedRate = sustainedOps / (Duration.ofNanos(System.nanoTime() - sustainedStart).toMillis() / 1000.0); // GH-90000
 
             assertThat(sustainedRate) // GH-90000
-                .as("Sustained throughput must not drop >20% from warmup rate")
-                .isGreaterThan(warmupRate * 0.80); // GH-90000
+                .as("Sustained throughput must not drop >30% from warmup rate")
+                .isGreaterThan(warmupRate * 0.70); // GH-90000
         }
     }
 

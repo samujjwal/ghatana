@@ -15,7 +15,9 @@ export function createBuilderManifestFromRecipe<
   return {
     name: compiled.name,
     version: compiled.staticMetadata?.state ? '1.0.0' : '1.0.0',
-    targets: [...compiled.platforms],
+    targets: compiled.platforms.filter(
+      (t): t is Exclude<typeof t, 'flutter'> => t !== 'flutter'
+    ) as Array<'react' | 'html' | 'web-components' | 'react-native' | 'swiftui' | 'jetpack-compose' | 'figma'>,
     features: [...seedPlan.features],
     semantics: {
       role:
@@ -33,8 +35,8 @@ export function createBuilderManifestFromRecipe<
         features: Object.keys(slotPlan.state).filter((key) => slotPlan.state[key] === true),
         exposure: slotName === 'default' ? 'children' : 'prop',
         semantics: {
-          role: slotPlan.semantics.role,
-          eventNames: [...slotPlan.semantics.eventNames],
+          role: slotPlan.semantics?.role,
+          eventNames: slotPlan.semantics?.eventNames ? [...slotPlan.semantics.eventNames] : [],
         },
       };
     }),

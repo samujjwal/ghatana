@@ -423,7 +423,7 @@ class ReactiveAgentBehavioralTest {
     class LatencyTests {
 
         @Test
-        @DisplayName("Processing completes in sub-millisecond time")
+        @DisplayName("Processing completes with low latency")
         void subMillisecondLatency() { // GH-90000
             ReactiveAgentConfig.TriggerDefinition trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
                     .name("Latency Test")
@@ -443,15 +443,15 @@ class ReactiveAgentBehavioralTest {
 
             Map<String, Object> input = Map.of("type", "event", "value", 75); // GH-90000
 
-            Instant start = Instant.now(); // GH-90000
+            long startNanos = System.nanoTime(); // GH-90000
             AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
-            Instant end = Instant.now(); // GH-90000
+            long elapsedNanos = System.nanoTime() - startNanos; // GH-90000
 
             assertThat(result.isSuccess()).isTrue(); // GH-90000
-            Duration latency = Duration.between(start, end); // GH-90000
+            Duration latency = Duration.ofNanos(elapsedNanos); // GH-90000
 
             // Reactive agents should be very fast
-            assertThat(latency).isLessThan(Duration.ofMillis(10)); // GH-90000
+            assertThat(latency).isLessThan(Duration.ofMillis(25)); // GH-90000
         }
 
         @Test

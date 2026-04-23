@@ -21,3 +21,5 @@ export interface Point {
   x: number;
   y: number;
 }
+
+export type CanvasSyncStatus = 'local-only' | 'syncing' | 'synced' | 'error';

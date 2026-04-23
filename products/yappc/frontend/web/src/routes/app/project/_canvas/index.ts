@@ -9,7 +9,7 @@
  * @doc.pattern Module
  */
 
-export type { DrawingTool, NodeContextMenuState, Point } from './types';
+export type { CanvasSyncStatus, DrawingTool, NodeContextMenuState, Point } from './types';
 export { DraggableBox } from './DraggableBox';
 export { useCanvasKeyboardShortcuts } from './useCanvasKeyboardShortcuts';
 export { useCanvasDrawing } from './useCanvasDrawing';
@@ -18,3 +18,9 @@ export { useCanvasRoleInfo } from './useCanvasRoleInfo';
 export { CanvasNodeContextMenu } from './CanvasNodeContextMenu';
 export { CanvasStatusBar } from './CanvasStatusBar';
 export { CanvasOutlinePanel } from './CanvasOutlinePanel';
+export {
+  CanvasCollaborationBanner,
+  NODE_DEFAULT_SIZES,
+  getNodeSize,
+  type CanvasCollaborationBannerProps,
+} from './CanvasCollaborationBanner';

@@ -24,8 +24,11 @@ import {
   getSessionToken,
   setAuthToken,
   setSessionToken,
+  getSessionExpiry,
+  setSessionExpiry,
 } from '@/lib/http-client';
 import { isFeatureEnabled } from '@/lib/feature-flags';
+import { toast } from 'sonner';
 
 interface SessionResponse {
   session?: string;
@@ -66,8 +69,10 @@ async function requestSessionToken(): Promise<string | null> {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [authTokenState, setAuthTokenState] = useState<string | null>(() => getAuthToken());
   const [sessionTokenState, setSessionTokenState] = useState<string | null>(() => getSessionToken());
+  const [sessionExpiresAt, setSessionExpiresAt] = useState<number | null>(() => getSessionExpiry());
   const [isBootstrappingSession, setIsBootstrappingSession] = useState(false);
   const attemptedSessionBootstrap = useRef<string | null>(null);
+  const warnedRef = useRef(false);
 
   const bootstrapSession = async (): Promise<void> => {
     const token = getAuthToken();
@@ -77,8 +82,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setIsBootstrappingSession(true);
     try {
-      const issuedSessionToken = await requestSessionToken();
-      setSessionTokenState(issuedSessionToken);
+      const response = await apiClient.post<SessionResponse>('/api/v1/session');
+      const tokenFromHeader = response.headers.get('X-AEP-Session');
+      const issuedSessionToken = tokenFromHeader ?? response.data.session ?? null;
+      if (issuedSessionToken) {
+        setSessionToken(issuedSessionToken);
+        setSessionTokenState(issuedSessionToken);
+        if (response.data.expiresInSeconds) {
+          const expiresAt = Date.now() + response.data.expiresInSeconds * 1000;
+          setSessionExpiry(expiresAt);
+          setSessionExpiresAt(expiresAt);
+          warnedRef.current = false;
+        }
+      }
     } finally {
       setIsBootstrappingSession(false);
     }
@@ -92,6 +108,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     attemptedSessionBootstrap.current = authTokenState;
     void bootstrapSession();
   }, [authTokenState, sessionTokenState]);
+
+  // ── Session expiry guard ───────────────────────────────────────────
+  useEffect(() => {
+    if (!sessionExpiresAt) return;
+
+    const intervalId = window.setInterval(() => {
+      const remainingMs = sessionExpiresAt - Date.now();
+      if (remainingMs <= 0) {
+        clearInterval(intervalId);
+        clearAuthState();
+        setAuthTokenState(null);
+        setSessionTokenState(null);
+        setSessionExpiresAt(null);
+        warnedRef.current = false;
+        toast.error('Your session has expired. Please sign in again.');
+        window.location.reload();
+        return;
+      }
+      if (remainingMs <= 5 * 60 * 1000 && !warnedRef.current) {
+        warnedRef.current = true;
+        toast.warning('Your session expires in less than 5 minutes. Save your work and re-authenticate soon.');
+      }
+    }, 30_000);
+
+    return () => clearInterval(intervalId);
+  }, [sessionExpiresAt]);
 
   const bootstrapPlatformSession = async (): Promise<void> => {
     if (!isFeatureEnabled('LEGACY_JWT_PASTE')) {
@@ -110,7 +152,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     void bootstrapPlatformSession();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const value = useMemo<AuthContextValue>(
@@ -128,17 +169,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         attemptedSessionBootstrap.current = null;
         setAuthToken(normalizedToken);
         setAuthTokenState(normalizedToken);
-        const issuedSessionToken = await requestSessionToken();
-        setSessionTokenState(issuedSessionToken);
+        await bootstrapSession();
       },
       async loginWithPlatform(): Promise<void> {
         await bootstrapPlatformSession();
       },
       logout(): void {
         attemptedSessionBootstrap.current = null;
+        warnedRef.current = false;
         clearAuthState();
         setAuthTokenState(null);
         setSessionTokenState(null);
+        setSessionExpiresAt(null);
       },
     }),
     [authTokenState, isBootstrappingSession, sessionTokenState],

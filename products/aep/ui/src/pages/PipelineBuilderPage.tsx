@@ -37,8 +37,8 @@ import {
   runPipeline,
   getPipeline,
   suggestPipelineStages,
-} from '@/api/pipelines';
-import { exportPipelineSpec } from '@/lib/pipeline-export';
+  exportPipelineSpec,
+} from '@/api/pipeline.api';
 import { tenantIdAtom } from '@/stores/tenant.store';
 import type {
   PipelineSpec,
@@ -114,7 +114,9 @@ export function PipelineBuilderPage() {
   const [running, setRunning] = useState(false);
 
   // ── AI Assistance ───────────────────────────────────────────────
-  const [aiOpen, setAiOpen] = useState(false);
+  // Open by default for new pipelines to enable intent-first authoring (TASK-L2)
+  const isNewPipeline = !pipelineId;
+  const [aiOpen, setAiOpen] = useState(isNewPipeline);
   const [aiDescription, setAiDescription] = useState('');
   const [aiGoal, setAiGoal] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
@@ -148,7 +150,7 @@ export function PipelineBuilderPage() {
         position: { x: 100 + index * 250, y: 200 },
         data: {
           label: stage.name,
-          kind: stage.kind,
+          kind: stage.kind ?? 'custom',
           agents: stage.workflow ?? [],
           agentCount: stage.workflow?.length ?? 0,
           connectorIds: stage.connectorIds ?? [],
@@ -195,6 +197,17 @@ export function PipelineBuilderPage() {
   // ── Save ────────────────────────────────────────────────────────
 
   const handleSave = useCallback(async () => {
+    const stageNodes = nodes.filter((n) => n.type === 'stage');
+    const hasValidationOrEnrichment = stageNodes.some(
+      (n) => (n.data as StageNodeData).kind === 'validation' || (n.data as StageNodeData).kind === 'enrichment',
+    );
+    if (!hasValidationOrEnrichment) {
+      toast.warning(
+        'Governance cue: This pipeline has no validation or enrichment stage. Consider adding one before saving.',
+        { duration: 8000 },
+      );
+    }
+
     setSaving(true);
     try {
       const spec = nodesToSpec(pipeline, nodes);
@@ -313,18 +326,20 @@ export function PipelineBuilderPage() {
         {
           description: aiDescription,
           goal: aiGoal || undefined,
-          existingStages: nodes.map((n) => ({
-            name: n.data.label,
-            kind: n.data.kind,
-            description: n.data.description,
-          })),
+          existingStages: nodes
+            .filter((n): n is typeof n & { type: 'stage' } => n.type === 'stage')
+            .map((n) => ({
+              name: (n.data as StageNodeData).label,
+              kind: (n.data as StageNodeData).kind,
+              description: (n.data as StageNodeData).description,
+            })) satisfies import('@/api/pipeline.api').PipelineStage[],
         },
         tenantId,
       );
       setAiSuggestions(
-        result.suggestedStages.map((s: { name: string; kind: string; description?: string }) => ({
+        result.suggestedStages.map((s) => ({
           label: s.name,
-          kind: (s.kind as StageKind) || 'transform',
+          kind: (s.kind as StageKind) ?? 'custom',
           description: s.description ?? '',
         })),
       );

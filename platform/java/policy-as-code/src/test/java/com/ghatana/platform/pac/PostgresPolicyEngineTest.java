@@ -58,16 +58,16 @@ class PostgresPolicyEngineTest extends EventloopTestBase {
         try (Connection conn = dataSource.getConnection(); // GH-90000
              Statement stmt = conn.createStatement()) { // GH-90000
             stmt.execute("""
-                    CREATE TABLE IF NOT EXISTS policy_rules ( // GH-90000
+                    CREATE TABLE IF NOT EXISTS policy_rules (
                         id          BIGSERIAL    PRIMARY KEY,
-                        tenant_id   VARCHAR(255) NOT NULL, // GH-90000
-                        policy_name VARCHAR(512) NOT NULL, // GH-90000
+                        tenant_id   VARCHAR(255) NOT NULL,
+                        policy_name VARCHAR(512) NOT NULL,
                         condition   JSONB        NOT NULL DEFAULT '{}',
-                        effect      VARCHAR(10)  NOT NULL DEFAULT 'DENY', // GH-90000
+                        effect      VARCHAR(10)  NOT NULL DEFAULT 'DENY',
                         risk_score  SMALLINT     NOT NULL DEFAULT 50,
                         reason      TEXT         NOT NULL DEFAULT '',
                         enabled     BOOLEAN      NOT NULL DEFAULT TRUE,
-                        created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW() // GH-90000
+                        created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
                     )
                     """);
         }
@@ -86,9 +86,9 @@ class PostgresPolicyEngineTest extends EventloopTestBase {
 
     private void insertRule(String tenantId, String policyName, String effect, String reason) throws Exception { // GH-90000
         try (Connection conn = dataSource.getConnection(); // GH-90000
-             PreparedStatement ps = conn.prepareStatement("""
-                     INSERT INTO policy_rules (tenant_id, policy_name, condition, effect, reason) // GH-90000
-                     VALUES (?, ?, '{}', ?, ?) // GH-90000
+                 PreparedStatement ps = conn.prepareStatement("""
+                     INSERT INTO policy_rules (tenant_id, policy_name, condition, effect, reason)
+                     VALUES (?, ?, '{}', ?, ?)
                      """)) {
             ps.setString(1, tenantId); // GH-90000
             ps.setString(2, policyName); // GH-90000
@@ -146,9 +146,9 @@ class PostgresPolicyEngineTest extends EventloopTestBase {
     @DisplayName("disabled rules are ignored during evaluation")
     void evaluate_disabledRule_isIgnored() throws Exception { // GH-90000
         try (Connection conn = dataSource.getConnection(); // GH-90000
-             PreparedStatement ps = conn.prepareStatement("""
-                     INSERT INTO policy_rules (tenant_id, policy_name, condition, effect, reason, enabled) // GH-90000
-                     VALUES (?, ?, '{}', ?, ?, FALSE) // GH-90000
+                 PreparedStatement ps = conn.prepareStatement("""
+                     INSERT INTO policy_rules (tenant_id, policy_name, condition, effect, reason, enabled)
+                     VALUES (?, ?, '{}', ?, ?, FALSE)
                      """)) {
             ps.setString(1, "tenant-disabled"); // GH-90000
             ps.setString(2, "tool_execution_policy"); // GH-90000

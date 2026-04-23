@@ -141,7 +141,7 @@ export function useFormValidation<T extends Record<string, unknown>>(
   const [fieldStates, setFieldStates] = useState<FormState<T>>(initialFieldStates);
 
   // Debounce timers for async validation
-  const debounceTimers = useMemo(() => new Map<keyof T, NodeJS.Timeout>(), []);
+  const debounceTimers = useMemo(() => new Map<keyof T, number>(), []);
 
   const runFieldValidation = useCallback(
     async (field: keyof T, candidateValues: T): Promise<boolean> => {
@@ -229,7 +229,7 @@ export function useFormValidation<T extends Record<string, unknown>>(
           // Debounce async validation
           const timer = setTimeout(() => {
             runFieldValidation(field, nextValues);
-          }, debounceMs);
+          }, debounceMs) as unknown as number;
           debounceTimers.set(field, timer);
         } else {
           // Immediate validation for sync rules

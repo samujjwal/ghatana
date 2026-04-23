@@ -3,6 +3,7 @@
  * Stub implementation for canvas package imports
  */
 import type { ReactNode } from 'react';
+import { atom } from 'jotai';
 
 export type AISuggestionKind = 'content' | 'layout' | 'element' | 'workflow';
 
@@ -99,7 +100,17 @@ export const ReactComponentRenderer = () => null;
 export const AICanvasProvider = ({ children }: AICanvasProviderProps) => children;
 
 // Layout components
-export const CanvasChromeLayout = ({ children }: { children: ReactNode }) => children;
+interface CanvasChromeLayoutProps {
+  children: ReactNode;
+  defaultCalmMode?: boolean;
+  leftRail?: ReactNode;
+  outline?: ReactNode;
+  inspector?: ReactNode;
+  contextBar?: ReactNode;
+  topBar?: ReactNode;
+  showTopBar?: boolean;
+}
+export const CanvasChromeLayout = ({ children }: CanvasChromeLayoutProps) => children;
 
 // Hooks
 export const useCanvasCommands = () => ({
@@ -126,11 +137,11 @@ export const useCanvasAISuggestions = (): AISuggestion[] => [];
 export const useCanvasAILoading = (): boolean => false;
 
 // Atoms/state
-export const chromeCalmModeAtom = { init: false };
-export const chromeInspectorVisibleAtom = { init: false };
-export const chromeLeftRailVisibleAtom = { init: true };
-export const chromeMinimapVisibleAtom = { init: true };
-export const chromeZoomLevelAtom = { init: 1 };
+export const chromeCalmModeAtom = atom<boolean>(false);
+export const chromeInspectorVisibleAtom = atom<boolean>(false);
+export const chromeLeftRailVisibleAtom = atom<boolean>(true);
+export const chromeMinimapVisibleAtom = atom<boolean>(true);
+export const chromeZoomLevelAtom = atom<number>(1);
 
 // Default export
 export default Canvas;

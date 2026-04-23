@@ -100,8 +100,8 @@ export function LiveRegionProvider({
 }: LiveRegionProviderProps) {
     const [politeMessage, setPoliteMessage] = useState('');
     const [assertiveMessage, setAssertiveMessage] = useState('');
-    const politeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const assertiveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const politeTimeoutRef = useRef<number | null>(null);
+    const assertiveTimeoutRef = useRef<number | null>(null);
 
     const announce = useCallback(
         (message: string, politeness: LiveRegionPoliteness = 'polite') => {
@@ -117,7 +117,7 @@ export function LiveRegionProvider({
                 // Clear after delay
                 assertiveTimeoutRef.current = setTimeout(() => {
                     setAssertiveMessage('');
-                }, clearDelay);
+                }, clearDelay) as unknown as number;
             } else {
                 // Clear any existing timeout
                 if (politeTimeoutRef.current) {
@@ -128,7 +128,7 @@ export function LiveRegionProvider({
                 // Clear after delay
                 politeTimeoutRef.current = setTimeout(() => {
                     setPoliteMessage('');
-                }, clearDelay);
+                }, clearDelay) as unknown as number;
             }
         },
         [clearDelay]

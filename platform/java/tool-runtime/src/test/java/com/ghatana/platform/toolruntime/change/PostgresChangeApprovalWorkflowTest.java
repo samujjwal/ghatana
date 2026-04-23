@@ -58,18 +58,18 @@ class PostgresChangeApprovalWorkflowTest extends EventloopTestBase {
         try (Connection conn = dataSource.getConnection(); // GH-90000
              Statement stmt = conn.createStatement()) { // GH-90000
             stmt.execute("""
-                    CREATE TABLE IF NOT EXISTS change_requests ( // GH-90000
+                    CREATE TABLE IF NOT EXISTS change_requests (
                         change_id         UUID         PRIMARY KEY,
-                        tenant_id         VARCHAR(255) NOT NULL, // GH-90000
-                        requesting_agent  VARCHAR(512) NOT NULL, // GH-90000
-                        change_type       VARCHAR(100) NOT NULL, // GH-90000
+                        tenant_id         VARCHAR(255) NOT NULL,
+                        requesting_agent  VARCHAR(512) NOT NULL,
+                        change_type       VARCHAR(100) NOT NULL,
                         description       TEXT         NOT NULL,
                         metadata          JSONB        NOT NULL DEFAULT '{}',
-                        status            VARCHAR(50)  NOT NULL DEFAULT 'PENDING_REVIEW', // GH-90000
+                        status            VARCHAR(50)  NOT NULL DEFAULT 'PENDING_REVIEW',
                         risk_score        SMALLINT     NOT NULL,
-                        reviewer_id       VARCHAR(512), // GH-90000
+                        reviewer_id       VARCHAR(512),
                         review_notes      TEXT,
-                        submitted_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(), // GH-90000
+                        submitted_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
                         reviewed_at       TIMESTAMPTZ
                     )
                     """);

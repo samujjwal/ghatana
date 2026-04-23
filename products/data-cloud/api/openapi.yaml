@@ -4211,6 +4211,68 @@ paths:
                 additionalProperties:
                   type: string
 
+  /api/v1/settings:
+    get:
+      summary: Get general admin settings
+      operationId: apiV1SettingsGet
+      tags: [capabilities]
+      responses:
+        "200":
+          description: Current general settings.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+    post:
+      summary: Update general admin settings
+      operationId: apiV1SettingsPost
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FreeformObject"
+      tags: [capabilities]
+      responses:
+        "200":
+          description: Updated general settings.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /api/v1/settings/security:
+    get:
+      summary: Get admin security settings
+      operationId: apiV1SettingsSecurityGet
+      tags: [capabilities]
+      responses:
+        "200":
+          description: Current security settings.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+    post:
+      summary: Update admin security settings
+      operationId: apiV1SettingsSecurityPost
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FreeformObject"
+      tags: [capabilities]
+      responses:
+        "200":
+          description: Updated security settings.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+        "400": { $ref: "#/components/responses/BadRequest" }
+
   /api/v1/context:
     get:
       summary: Get all tenant context entries

@@ -181,6 +181,8 @@ export default defineConfig({
       '@dnd-kit/core',
       '@dnd-kit/sortable',
       '@dnd-kit/utilities',
+      '@emotion/react',
+      '@emotion/styled',
     ],
     exclude: ['@grpc/grpc-js', '@grpc/proto-loader'],
   },

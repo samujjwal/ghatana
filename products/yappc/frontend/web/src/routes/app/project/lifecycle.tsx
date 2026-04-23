@@ -594,17 +594,17 @@ export default function Component() {
                         createElement(
                             'p',
                             { className: 'text-sm font-semibold uppercase tracking-[0.18em] text-primary-600' },
-                            'Learn And Evolve'
+                            'Lifecycle Summary'
                         ),
                         createElement(
                             'h2',
                             { className: 'mt-2 text-2xl font-semibold text-text-primary' },
-                            'Signals for the current lifecycle stage'
+                            phaseSummary.headline
                         ),
                         createElement(
                             'p',
                             { className: 'mt-2 max-w-2xl text-sm text-text-secondary' },
-                            'Recommendations and evidence are surfaced directly in the lifecycle route so the active stage stays actionable without overselling automation.'
+                            phaseSummary.detail
                         )
                     ),
                     createElement(
@@ -622,7 +622,7 @@ export default function Component() {
                 'section',
                 {
                     className: 'rounded-2xl border border-divider bg-bg-paper p-6 shadow-sm',
-                    'data-testid': 'lifecycle-phase-summary-card',
+                    'data-testid': 'lifecycle-summary-status-card',
                 },
                 createElement(
                     'div',
@@ -633,7 +633,7 @@ export default function Component() {
                             className:
                                 'flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-sm font-semibold text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-300',
                         },
-                        'LS'
+                        'ST'
                     ),
                     createElement(
                         'div',
@@ -641,17 +641,12 @@ export default function Component() {
                         createElement(
                             'h3',
                             { className: 'text-lg font-semibold text-text-primary' },
-                            'Phase summary'
+                            'Stage readiness'
                         ),
                         createElement(
                             'p',
-                            { className: 'mt-1 text-sm font-medium text-text-primary' },
-                            phaseSummary.headline
-                        ),
-                        createElement(
-                            'p',
-                            { className: 'mt-2 text-sm text-text-secondary' },
-                            phaseSummary.detail
+                            { className: 'mt-1 text-sm text-text-secondary' },
+                            `Review status: ${reviewStatus.label}. ${reviewStatus.detail}`
                         )
                     )
                 )
@@ -662,6 +657,40 @@ export default function Component() {
                 createElement(
                     'div',
                     { className: 'space-y-6' },
+                    createElement(
+                        'section',
+                        {
+                            className: 'rounded-2xl border border-divider bg-bg-paper p-6 shadow-sm',
+                            'data-testid': 'lifecycle-readiness-anomalies-card',
+                        },
+                        createElement(
+                            'div',
+                            { className: 'mb-4 flex items-center gap-3' },
+                            createElement(
+                                'div',
+                                {
+                                    className:
+                                        'flex h-10 w-10 items-center justify-center rounded-full bg-red-50 text-sm font-semibold text-red-600 dark:bg-red-900/30 dark:text-red-300',
+                                },
+                                'AL'
+                            ),
+                            createElement(
+                                'div',
+                                null,
+                                createElement(
+                                    'h3',
+                                    { className: 'text-lg font-semibold text-text-primary' },
+                                    'Readiness anomalies'
+                                ),
+                                createElement(
+                                    'p',
+                                    { className: 'text-sm text-text-secondary' },
+                                    'Platform anomalies that should influence promotion and deployment decisions.'
+                                )
+                            )
+                        ),
+                        readinessContent
+                    ),
                     createElement(
                         'section',
                         {
@@ -762,56 +791,12 @@ export default function Component() {
                                 )
                             )
                         ),
-                        createElement(
-                            'div',
-                            {
-                                className: `mb-4 inline-flex rounded-full border px-3 py-1 text-xs font-medium ${reviewStatus.status === 'ready-for-guided-apply'
-                                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200'
-                                    : 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200'}`,
-                                'data-testid': 'decision-review-threshold',
-                            },
-                            `${reviewStatus.label}: ${reviewStatus.detail}`
-                        ),
                         decisionSupportContent
                     )
                 ),
                 createElement(
                     'div',
                     { className: 'space-y-6' },
-                    createElement(
-                        'section',
-                        {
-                            className: 'rounded-2xl border border-divider bg-bg-paper p-6 shadow-sm',
-                            'data-testid': 'lifecycle-readiness-anomalies-card',
-                        },
-                        createElement(
-                            'div',
-                            { className: 'mb-4 flex items-center gap-3' },
-                            createElement(
-                                'div',
-                                {
-                                    className:
-                                        'flex h-10 w-10 items-center justify-center rounded-full bg-red-50 text-sm font-semibold text-red-600 dark:bg-red-900/30 dark:text-red-300',
-                                },
-                                'AL'
-                            ),
-                            createElement(
-                                'div',
-                                null,
-                                createElement(
-                                    'h3',
-                                    { className: 'text-lg font-semibold text-text-primary' },
-                                    'Readiness anomalies'
-                                ),
-                                createElement(
-                                    'p',
-                                    { className: 'text-sm text-text-secondary' },
-                                    'Platform anomalies that should influence promotion and deployment decisions.'
-                                )
-                            )
-                        ),
-                        readinessContent
-                    ),
                     createElement(
                         'section',
                         {

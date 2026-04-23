@@ -109,6 +109,7 @@ class DatabaseHealthCheckTest {
     void checkHealthyStatusHasNoException() { // GH-90000
         DatabaseHealthCheck check = DatabaseHealthCheck.builder() // GH-90000
                 .dataSource(workingDataSource) // GH-90000
+            .timeout(Duration.ofSeconds(15)) // GH-90000
                 .build(); // GH-90000
 
         HealthStatus status = check.check(); // GH-90000

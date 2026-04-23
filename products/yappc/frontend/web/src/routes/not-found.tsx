@@ -59,7 +59,7 @@ export default function NotFoundRoute() {
                         to="/"
                         className="text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
                     >
-                        Contact support
+                        Return home
                     </Link>
                 </p>
             </div>

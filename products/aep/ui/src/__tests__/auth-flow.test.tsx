@@ -14,6 +14,11 @@ vi.mock('@/api/sse', () => ({
   subscribeToAepStream: () => ({ close: vi.fn() }),
 }));
 
+vi.mock('@/lib/feature-flags', () => ({
+  isFeatureEnabled: (flag: string) => flag === 'LEGACY_JWT_PASTE',
+  featureFlags: { LEGACY_JWT_PASTE: true },
+}));
+
 function renderWithProviders(ui: React.ReactElement, initialEntries: string[] = ['/login']) {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -34,12 +39,14 @@ function renderWithProviders(ui: React.ReactElement, initialEntries: string[] = 
 
 describe('AEP auth flow', () => {
   beforeEach(() => {
+    sessionStorage.clear();
     localStorage.clear();
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+    sessionStorage.clear();
     localStorage.clear();
   });
 
@@ -80,11 +87,11 @@ describe('AEP auth flow', () => {
 
     const user = userEvent.setup();
     await user.type(screen.getByLabelText(/jwt access token/i), 'jwt-token-value');
-    await user.click(screen.getByRole('button', { name: /sign in/i }));
+    await user.click(screen.getByRole('button', { name: /sign in with token/i }));
 
     await waitFor(() => expect(screen.getByText('Operate')).toBeInTheDocument());
-    expect(localStorage.getItem('aep-token')).toBe('jwt-token-value');
-    expect(localStorage.getItem('aep-session')).toBe('session-123');
+    expect(sessionStorage.getItem('aep-token')).toBe('jwt-token-value');
+    expect(sessionStorage.getItem('aep-session')).toBe('session-123');
     expect(fetchMock).toHaveBeenCalledWith(
       '/api/v1/session',
       expect.objectContaining({
@@ -94,16 +101,16 @@ describe('AEP auth flow', () => {
   });
 
   it('clears auth state when signing out from the nav bar', async () => {
-    localStorage.setItem('aep-token', 'jwt-token-value');
-    localStorage.setItem('aep-session', 'session-123');
+    sessionStorage.setItem('aep-token', 'jwt-token-value');
+    sessionStorage.setItem('aep-session', 'session-123');
 
     renderWithProviders(<NavBar />);
 
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: /sign out/i }));
 
-    expect(localStorage.getItem('aep-token')).toBeNull();
-    expect(localStorage.getItem('aep-session')).toBeNull();
+    expect(sessionStorage.getItem('aep-token')).toBeNull();
+    expect(sessionStorage.getItem('aep-session')).toBeNull();
     expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
   });
 });

@@ -2,16 +2,18 @@ import { test, expect } from '@playwright/test';
 
 test('basic navigation works', async ({ page }) => {
   // Navigate directly to the workspaces page to avoid redirect timing
-  await page.goto('/app/workspaces');
+  await page.goto('/workspaces');
   await expect(page.getByRole('heading', { name: 'Workspaces' })).toBeVisible();
-  
-  // Check that at least one workspace link is present
-  await expect(page.locator('a[href^="/app/w/"]').first()).toBeVisible();
+
+  // Check that at least one workspace card or the create prompt is present
+  const workspaceCard = page.getByTestId('workspace-card').first();
+  const createPrompt = page.getByRole('button', { name: /Create Workspace/i }).first();
+  await expect(workspaceCard.or(createPrompt)).toBeVisible();
 });
 
 test('theme toggle works', async ({ page }) => {
   // Navigate directly to the workspaces page and wait for UI
-  await page.goto('/app/workspaces');
+  await page.goto('/workspaces');
   await expect(page.getByRole('heading', { name: 'Workspaces' })).toBeVisible();
 
   // Check initial theme color is present (best-effort, varies per env)

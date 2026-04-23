@@ -9,6 +9,7 @@ import React, { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';
 import { tenantIdAtom } from '@/stores/tenant.store';
+import { toast } from 'sonner';
 import {
   createMarketplaceReview,
   getMarketplaceAgent,
@@ -137,6 +138,7 @@ export function AgentMarketplacePage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'browse' | 'publish'>('browse');
   const [publishForm, setPublishForm] = useState<PublishFormState>({
     name: '',
     description: '',
@@ -229,128 +231,159 @@ export function AgentMarketplacePage() {
           </p>
         </div>
 
-        <div className="border-b border-gray-100 px-6 py-4 dark:border-gray-800">
-          <TextField
-            type="search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search marketplace agents"
-            className="w-full text-sm"
-          />
-        </div>
-
-        <div className="grid gap-4 border-b border-gray-100 px-6 py-4 dark:border-gray-800 lg:grid-cols-2">
-          <label className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-            <span className="font-medium">Agent name</span>
-            <TextField
-              value={publishForm.name}
-              onChange={(event) => setPublishForm((current) => ({ ...current, name: event.target.value }))}
-              className="w-full text-sm"
-            />
-          </label>
-          <label className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-            <span className="font-medium">Version</span>
-            <TextField
-              value={publishForm.version}
-              onChange={(event) => setPublishForm((current) => ({ ...current, version: event.target.value }))}
-              className="w-full text-sm"
-            />
-          </label>
-          <label className="space-y-2 text-sm text-gray-600 dark:text-gray-300 lg:col-span-2">
-            <span className="font-medium">Description</span>
-            <TextArea
-              value={publishForm.description}
-              onChange={(event) => setPublishForm((current) => ({ ...current, description: event.target.value }))}
-              rows={2}
-              className="w-full text-sm"
-            />
-          </label>
-          <label className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-            <span className="font-medium">Capabilities</span>
-            <TextField
-              value={publishForm.capabilities}
-              onChange={(event) => setPublishForm((current) => ({ ...current, capabilities: event.target.value }))}
-              placeholder="triage, explain, deploy"
-              className="w-full text-sm"
-            />
-          </label>
-          <label className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-            <span className="font-medium">Tags</span>
-            <TextField
-              value={publishForm.tags}
-              onChange={(event) => setPublishForm((current) => ({ ...current, tags: event.target.value }))}
-              placeholder="beta, operator-approved"
-              className="w-full text-sm"
-            />
-          </label>
-          <label className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-            <span className="font-medium">Domain</span>
-            <TextField
-              value={publishForm.domain}
-              onChange={(event) => setPublishForm((current) => ({ ...current, domain: event.target.value }))}
-              className="w-full text-sm"
-            />
-          </label>
-          <label className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-            <span className="font-medium">Level</span>
-            <select
-              value={publishForm.level}
-              onChange={(event) => setPublishForm((current) => ({ ...current, level: event.target.value }))}
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
-            >
-              <option value="worker">worker</option>
-              <option value="expert">expert</option>
-              <option value="strategic">strategic</option>
-            </select>
-          </label>
-
-          <div className="lg:col-span-2 flex items-center justify-between gap-3">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Marketplace publishing stays tenant-scoped until shared distribution governance is enabled.
-            </p>
-            <Button
+        {/* Tab switcher: Browse | Publish */}
+        <div className="flex gap-1 border-b border-gray-200 px-6 py-2 dark:border-gray-800">
+          {(['browse', 'publish'] as const).map((tab) => (
+            <button
+              key={tab}
               type="button"
-              onClick={() =>
-                publishMutation.mutate({
-                  name: publishForm.name,
-                  description: publishForm.description || undefined,
-                  version: publishForm.version || undefined,
-                  domain: publishForm.domain || undefined,
-                  level: publishForm.level || undefined,
-                  capabilities: toList(publishForm.capabilities),
-                  tags: toList(publishForm.tags),
-                })
-              }
-              disabled={!publishForm.name.trim() || publishMutation.isPending}
-              variant="primary"
-              className="rounded-lg px-4 py-2 text-sm font-medium"
+              onClick={() => setActiveTab(tab)}
+              className={[
+                'rounded-md px-3 py-1.5 text-sm font-medium transition',
+                activeTab === tab
+                  ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300'
+                  : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800',
+              ].join(' ')}
             >
-              {publishMutation.isPending ? 'Publishing…' : 'Publish Agent'}
-            </Button>
-          </div>
+              {tab === 'browse' ? 'Browse' : 'Publish'}
+            </button>
+          ))}
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-          {isLoading ? <p className="text-sm text-gray-500 dark:text-gray-400">Loading marketplace agents…</p> : null}
-          {isError ? (
-            <p className="text-sm text-red-600 dark:text-red-400">
-              Failed to load marketplace agents: {error instanceof Error ? error.message : 'Unknown error'}
-            </p>
-          ) : null}
-          {!isLoading && !isError && filteredListings.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">No marketplace agents match the current filters.</p>
-          ) : null}
-          <div className="grid gap-4 xl:grid-cols-2">
-            {filteredListings.map((listing) => (
-              <MarketplaceCard
-                key={listing.id}
-                listing={listing}
-                selected={listing.id === selectedAgentId}
-                onSelect={setSelectedAgentId}
+        {activeTab === 'browse' ? (
+          <>
+            <div className="border-b border-gray-100 px-6 py-4 dark:border-gray-800">
+              <TextField
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search marketplace agents"
+                className="w-full text-sm"
               />
-            ))}
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+              {isLoading ? <p className="text-sm text-gray-500 dark:text-gray-400">Loading marketplace agents…</p> : null}
+              {isError ? (
+                <p className="text-sm text-red-600 dark:text-red-400">
+                  Failed to load marketplace agents: {error instanceof Error ? error.message : 'Unknown error'}
+                </p>
+              ) : null}
+              {!isLoading && !isError && filteredListings.length === 0 ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400">No marketplace agents match the current filters.</p>
+              ) : null}
+              <div className="grid gap-4 xl:grid-cols-2">
+                {filteredListings.map((listing) => (
+                  <MarketplaceCard
+                    key={listing.id}
+                    listing={listing}
+                    selected={listing.id === selectedAgentId}
+                    onSelect={setSelectedAgentId}
+                  />
+                ))}
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+            <div className="grid gap-4 lg:grid-cols-2">
+              <label className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                <span className="font-medium">Agent name</span>
+                <TextField
+                  value={publishForm.name}
+                  onChange={(event) => setPublishForm((current) => ({ ...current, name: event.target.value }))}
+                  className="w-full text-sm"
+                />
+              </label>
+              <label className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                <span className="font-medium">Version</span>
+                <TextField
+                  value={publishForm.version}
+                  onChange={(event) => setPublishForm((current) => ({ ...current, version: event.target.value }))}
+                  className="w-full text-sm"
+                />
+              </label>
+              <label className="space-y-2 text-sm text-gray-600 dark:text-gray-300 lg:col-span-2">
+                <span className="font-medium">Description</span>
+                <TextArea
+                  value={publishForm.description}
+                  onChange={(event) => setPublishForm((current) => ({ ...current, description: event.target.value }))}
+                  rows={2}
+                  className="w-full text-sm"
+                />
+              </label>
+              <label className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                <span className="font-medium">Capabilities</span>
+                <TextField
+                  value={publishForm.capabilities}
+                  onChange={(event) => setPublishForm((current) => ({ ...current, capabilities: event.target.value }))}
+                  placeholder="triage, explain, deploy"
+                  className="w-full text-sm"
+                />
+              </label>
+              <label className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                <span className="font-medium">Tags</span>
+                <TextField
+                  value={publishForm.tags}
+                  onChange={(event) => setPublishForm((current) => ({ ...current, tags: event.target.value }))}
+                  placeholder="beta, operator-approved"
+                  className="w-full text-sm"
+                />
+              </label>
+              <label className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                <span className="font-medium">Domain</span>
+                <TextField
+                  value={publishForm.domain}
+                  onChange={(event) => setPublishForm((current) => ({ ...current, domain: event.target.value }))}
+                  className="w-full text-sm"
+                />
+              </label>
+              <label className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                <span className="font-medium">Level</span>
+                <select
+                  value={publishForm.level}
+                  onChange={(event) => setPublishForm((current) => ({ ...current, level: event.target.value }))}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+                >
+                  <option value="worker">worker</option>
+                  <option value="expert">expert</option>
+                  <option value="strategic">strategic</option>
+                </select>
+              </label>
+
+              <div className="lg:col-span-2 flex items-center justify-between gap-3">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Marketplace publishing stays tenant-scoped until shared distribution governance is enabled.
+                </p>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    if (!publishForm.description.trim() || !publishForm.tags.trim()) {
+                      toast.warning(
+                        'Governance cue: Missing description or tags reduces discoverability and complicates reuse governance. Consider adding them.',
+                        { duration: 8000 },
+                      );
+                    }
+                    publishMutation.mutate({
+                      name: publishForm.name,
+                      description: publishForm.description || undefined,
+                      version: publishForm.version || undefined,
+                      domain: publishForm.domain || undefined,
+                      level: publishForm.level || undefined,
+                      capabilities: toList(publishForm.capabilities),
+                      tags: toList(publishForm.tags),
+                    });
+                  }}
+                  disabled={!publishForm.name.trim() || publishMutation.isPending}
+                  variant="primary"
+                  className="rounded-lg px-4 py-2 text-sm font-medium"
+                >
+                  {publishMutation.isPending ? 'Publishing…' : 'Publish Agent'}
+                </Button>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </section>
 
       <aside className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">

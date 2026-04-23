@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -160,7 +161,7 @@ public abstract class DataCloudHttpServerTestBase {
                 .uri(URI.create("http://127.0.0.1:" + port + path)) // GH-90000
                 .header("Content-Type", "application/json"); // GH-90000
         mergeTenantHeaders(headers).forEach(builder::header); // GH-90000
-        return httpClient.send(builder.build(), BodyHandlers.ofString()); // GH-90000
+            return sendWithTransientRetry(builder.build()); // GH-90000
     }
 
     protected java.net.http.HttpResponse<String> postJsonWithoutTenant(String path, Map<String, ?> body) // GH-90000
@@ -175,7 +176,7 @@ public abstract class DataCloudHttpServerTestBase {
                 .POST(HttpRequest.BodyPublishers.ofString(body)) // GH-90000
                 .uri(URI.create("http://127.0.0.1:" + port + path)) // GH-90000
                 .header("Content-Type", "application/json"); // GH-90000
-        return httpClient.send(builder.build(), BodyHandlers.ofString()); // GH-90000
+        return sendWithTransientRetry(builder.build()); // GH-90000
     }
 
     /**
@@ -191,7 +192,7 @@ public abstract class DataCloudHttpServerTestBase {
                 .GET() // GH-90000
                 .uri(URI.create("http://127.0.0.1:" + port + path)); // GH-90000
         mergeTenantHeaders(headers).forEach(builder::header); // GH-90000
-        return httpClient.send(builder.build(), BodyHandlers.ofString()); // GH-90000
+        return sendWithTransientRetry(builder.build()); // GH-90000
     }
 
     /**
@@ -221,7 +222,7 @@ public abstract class DataCloudHttpServerTestBase {
         HttpRequest.Builder builder = HttpRequest.newBuilder() // GH-90000
                 .GET() // GH-90000
                 .uri(URI.create("http://127.0.0.1:" + port + path)); // GH-90000
-        return httpClient.send(builder.build(), BodyHandlers.ofString()); // GH-90000
+        return sendWithTransientRetry(builder.build()); // GH-90000
     }
 
     /**
@@ -262,7 +263,7 @@ public abstract class DataCloudHttpServerTestBase {
                 .uri(URI.create("http://127.0.0.1:" + port + path)) // GH-90000
                 .header("Content-Type", "application/json"); // GH-90000
         mergeTenantHeaders(headers).forEach(builder::header); // GH-90000
-        return httpClient.send(builder.build(), BodyHandlers.ofString()); // GH-90000
+        return sendWithTransientRetry(builder.build()); // GH-90000
     }
 
     protected java.net.http.HttpResponse<String> putRawWithoutTenant(String path, String body) // GH-90000
@@ -272,7 +273,7 @@ public abstract class DataCloudHttpServerTestBase {
                 .uri(URI.create("http://127.0.0.1:" + port + path)) // GH-90000
                 .header("Content-Type", "application/json") // GH-90000
                 .build(); // GH-90000
-        return httpClient.send(req, BodyHandlers.ofString()); // GH-90000
+        return sendWithTransientRetry(req); // GH-90000
     }
 
     /**
@@ -290,7 +291,7 @@ public abstract class DataCloudHttpServerTestBase {
                 .DELETE() // GH-90000
                 .uri(URI.create("http://127.0.0.1:" + port + path)); // GH-90000
         mergeTenantHeaders(headers).forEach(builder::header); // GH-90000
-        return httpClient.send(builder.build(), BodyHandlers.ofString()); // GH-90000
+        return sendWithTransientRetry(builder.build()); // GH-90000
     }
 
     protected java.net.http.HttpResponse<String> deleteWithoutTenant(String path) throws Exception { // GH-90000
@@ -298,7 +299,29 @@ public abstract class DataCloudHttpServerTestBase {
                 .DELETE() // GH-90000
                 .uri(URI.create("http://127.0.0.1:" + port + path)) // GH-90000
                 .build(); // GH-90000
-        return httpClient.send(req, BodyHandlers.ofString()); // GH-90000
+        return sendWithTransientRetry(req); // GH-90000
+    }
+
+    private HttpResponse<String> sendWithTransientRetry(HttpRequest request) throws Exception {
+        try {
+            return httpClient.send(request, BodyHandlers.ofString());
+        } catch (IOException firstFailure) {
+            if (!isTransientConnectionBootstrapFailure(firstFailure)) {
+                throw firstFailure;
+            }
+            Thread.sleep(25);
+            return httpClient.send(request, BodyHandlers.ofString());
+        }
+    }
+
+    private boolean isTransientConnectionBootstrapFailure(IOException exception) {
+        String message = exception.getMessage();
+        if (message == null) {
+            return false;
+        }
+        return message.contains("header parser received no bytes")
+            || message.contains("Connection reset")
+            || message.contains("connection closed locally");
     }
 
     // ─────────────────────────────────────────────────────────────────────────

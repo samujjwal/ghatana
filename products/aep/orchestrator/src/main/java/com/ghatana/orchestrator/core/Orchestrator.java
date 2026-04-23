@@ -9,6 +9,7 @@ import com.ghatana.orchestrator.loader.SpecFormatLoader;
 import com.ghatana.orchestrator.models.OrchestratorPipelineEntity;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.workflow.planning.PlanCompiler;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import java.time.Duration;
@@ -42,6 +43,7 @@ import org.slf4j.LoggerFactory;
 public class Orchestrator {
 
     private static final Logger log = LoggerFactory.getLogger(Orchestrator.class);
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final PipelineCache pipelineCache;
     private final AgentRegistryClient agentRegistryClient;
@@ -322,8 +324,7 @@ public class Orchestrator {
 
         try {
             // Parse JSON config - common formats: {"steps": [{"agentId": "..."}]} or {"nodes": [...]}
-            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            com.fasterxml.jackson.databind.JsonNode root = mapper.readTree(spec);
+            com.fasterxml.jackson.databind.JsonNode root = OBJECT_MAPPER.readTree(spec);
 
             // Extract from "steps" array
             if (root.has("steps")) {

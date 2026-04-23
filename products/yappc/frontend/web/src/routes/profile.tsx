@@ -9,9 +9,8 @@
  * @doc.pattern Route Module
  */
 
-import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { User, Mail, Save, Camera } from 'lucide-react';
+import { User, Mail } from 'lucide-react';
 import { parseJsonResponse } from '@/lib/http';
 import { useCurrentUser } from '../providers/AuthProvider';
 import { RouteErrorBoundary } from '../components/route/ErrorBoundary';
@@ -25,24 +24,9 @@ interface UserProfile {
     createdAt?: string;
 }
 
-interface ProfileFormState {
-    firstName: string;
-    lastName: string;
-    email: string;
-    avatarUrl: string;
-}
-
-const inputCls =
-    'w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-fg placeholder-fg-muted focus:outline-none focus:ring-2 focus:ring-brand';
-const labelCls = 'block text-xs font-medium text-fg-muted mb-1';
-
-/**
- * Profile Page Component
- */
 export default function Component() {
     const currentUser = useCurrentUser();
 
-    // ── Fetch full profile from API ────────────────────────────────────────────
     const { data: profile, isLoading } = useQuery<UserProfile>({
         queryKey: ['user-profile'],
         queryFn: async () => {
@@ -52,31 +36,6 @@ export default function Component() {
         },
         enabled: currentUser.isAuthenticated,
     });
-
-    // ── Local form state, seeded from API data ─────────────────────────────────
-    const [form, setForm] = useState<ProfileFormState>({
-        firstName: '',
-        lastName: '',
-        email: '',
-        avatarUrl: '',
-    });
-
-    useEffect(() => {
-        if (profile) {
-            const [firstName = '', ...rest] = profile.name.split(' ');
-            setForm({
-                firstName,
-                lastName: rest.join(' '),
-                email: profile.email ?? '',
-                avatarUrl: profile.avatar ?? '',
-            });
-        }
-    }, [profile]);
-
-    // ── Derive initials for avatar fallback ────────────────────────────────────
-    const initials =
-        ((form.firstName[0] ?? '') + (form.lastName[0] ?? '')).toUpperCase() ||
-        currentUser.initials;
 
     if (!currentUser.isAuthenticated) {
         return (
@@ -101,37 +60,26 @@ export default function Component() {
 
     return (
         <div className="p-6 max-w-2xl mx-auto">
-            {/* Page header */}
             <div className="mb-6">
-                <h1 className="text-2xl font-semibold text-fg">Your Profile</h1>
+                <h1 className="text-2xl font-semibold text-fg">Account Summary</h1>
                 <p className="mt-1 text-sm text-fg-muted">
-                    Manage your personal information and account settings.
+                    Read-only view of your account details. Profile editing is not yet supported.
                 </p>
             </div>
 
             <div className="rounded-xl border border-border bg-surface-raised shadow-sm overflow-hidden">
-                {/* Avatar section */}
                 <div className="flex items-center gap-5 border-b border-border bg-surface px-6 py-5">
-                    <div className="relative">
-                        {form.avatarUrl ? (
-                            <img
-                                src={form.avatarUrl}
-                                alt={`${form.firstName} ${form.lastName}`}
-                                className="h-16 w-16 rounded-full object-cover border-2 border-border"
-                            />
-                        ) : (
-                            <div className="h-16 w-16 rounded-full bg-brand/20 border-2 border-border flex items-center justify-center">
-                                <span className="text-xl font-bold text-brand">{initials}</span>
-                            </div>
-                        )}
-                        <button
-                            className="absolute -bottom-1 -right-1 rounded-full bg-surface-raised border border-border p-1 hover:bg-surface-muted transition-colors"
-                            title="Change avatar"
-                            disabled
-                        >
-                            <Camera className="h-3 w-3 text-fg-muted" />
-                        </button>
-                    </div>
+                    {profile?.avatar ? (
+                        <img
+                            src={profile.avatar}
+                            alt={profile.name}
+                            className="h-16 w-16 rounded-full object-cover border-2 border-border"
+                        />
+                    ) : (
+                        <div className="h-16 w-16 rounded-full bg-brand/20 border-2 border-border flex items-center justify-center">
+                            <span className="text-xl font-bold text-brand">{currentUser.initials}</span>
+                        </div>
+                    )}
                     <div>
                         <p className="font-semibold text-fg">{currentUser.name}</p>
                         <p className="text-sm text-fg-muted">{currentUser.email}</p>
@@ -143,89 +91,30 @@ export default function Component() {
                     </div>
                 </div>
 
-                {/* Edit form */}
-                <div className="space-y-4 p-6">
+                <div className="p-6 space-y-4">
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
-                            <label className={labelCls} htmlFor="profile-first-name">
-                                First Name
-                            </label>
-                            <div className="relative">
-                                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-fg-muted pointer-events-none" />
-                                <input
-                                    id="profile-first-name"
-                                    className={`${inputCls} pl-9`}
-                                    value={form.firstName}
-                                    readOnly
-                                    placeholder="First name"
-                                />
+                            <p className="text-xs font-medium text-fg-muted mb-1">Name</p>
+                            <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-fg">
+                                <User className="h-4 w-4 text-fg-muted" />
+                                <span>{profile?.name ?? currentUser.name}</span>
                             </div>
                         </div>
                         <div>
-                            <label className={labelCls} htmlFor="profile-last-name">
-                                Last Name
-                            </label>
-                            <input
-                                id="profile-last-name"
-                                className={inputCls}
-                                value={form.lastName}
-                                readOnly
-                                placeholder="Last name"
-                            />
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className={labelCls} htmlFor="profile-email">
-                            Email Address
-                        </label>
-                        <div className="relative">
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-fg-muted pointer-events-none" />
-                            <input
-                                id="profile-email"
-                                type="email"
-                                className={`${inputCls} pl-9`}
-                                value={form.email}
-                                readOnly
-                                placeholder="you@example.com"
-                            />
+                            <p className="text-xs font-medium text-fg-muted mb-1">Email</p>
+                            <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-fg">
+                                <Mail className="h-4 w-4 text-fg-muted" />
+                                <span>{profile?.email ?? currentUser.email}</span>
+                            </div>
                         </div>
                     </div>
 
                     <p className="text-sm text-fg-muted" role="status">
-                        Profile data is available, but edits are disabled until the backed profile update API is restored.
+                        Editing is not yet available. Contact an administrator to update account details.
                     </p>
-                </div>
-
-                {/* Footer actions */}
-                <div className="flex justify-end gap-2 border-t border-border bg-surface px-6 py-4">
-                    <button
-                        className="rounded-lg border border-border px-4 py-2 text-sm text-fg-muted hover:bg-surface-muted transition-colors"
-                        onClick={() => {
-                            if (profile) {
-                                const [firstName = '', ...rest] = profile.name.split(' ');
-                                setForm({
-                                    firstName,
-                                    lastName: rest.join(' '),
-                                    email: profile.email ?? '',
-                                    avatarUrl: profile.avatar ?? '',
-                                });
-                            }
-                        }}
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        className="flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark transition-colors disabled:opacity-60"
-                        disabled
-                    >
-                        <Save className="h-4 w-4" />
-                        Editing Unavailable
-                    </button>
                 </div>
             </div>
 
-            {/* Account metadata */}
             {profile?.createdAt && (
                 <p className="mt-4 text-xs text-fg-muted">
                     Member since {new Date(profile.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}

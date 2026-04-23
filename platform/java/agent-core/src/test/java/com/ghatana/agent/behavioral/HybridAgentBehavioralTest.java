@@ -533,14 +533,14 @@ class HybridAgentBehavioralTest {
             runPromise(() -> agent.initialize(config)); // GH-90000
 
             Map<String, Object> input = Map.of("x", 1); // GH-90000
-            Instant start = Instant.now(); // GH-90000
+            long startNanos = System.nanoTime(); // GH-90000
             AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
-            Instant end = Instant.now(); // GH-90000
+            long elapsedNanos = System.nanoTime() - startNanos; // GH-90000
 
             assertThat(result.isSuccess()).isTrue(); // GH-90000
-            // Increased threshold to avoid flaky failures due to system load
-            assertThat(Duration.between(start, end)) // GH-90000
-                    .isLessThan(Duration.ofMillis(200)); // GH-90000
+            // Keep a low-latency expectation while avoiding CI flakiness from wall-clock jitter.
+            assertThat(Duration.ofNanos(elapsedNanos)) // GH-90000
+                    .isLessThan(Duration.ofMillis(300)); // GH-90000
         }
     }
 

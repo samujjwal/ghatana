@@ -220,7 +220,7 @@ class EventSchemaValidationTest {
                         "name": "Brute Force Detection",
                         "description": "Detects rapid failed logins",
                         "type": "ANOMALY",
-                        "specification": "count(event.type == 'login.failed') > 5 within 60s" // GH-90000
+                        "specification": "count(event.type == 'login.failed') > 5 within 60s"
                     }
                 }
                 """;

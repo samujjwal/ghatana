@@ -51,6 +51,8 @@ export default function Component() {
         navigate(`/projects`);
     }, [navigate, setWorkspaceBreadcrumb, switchWorkspace, workspaces]);
 
+    const [suggestedWorkspaceName, setSuggestedWorkspaceName] = useState<string | null>(null);
+
     const handleCreateWorkspace = useCallback(() => {
         setShowCreateWorkspace(true);
     }, []);
@@ -77,34 +79,22 @@ export default function Component() {
         }
 
         hasAttemptedStarterCreation.current = true;
-        setIsAutoCreatingStarter(true);
 
-        const createStarterWorkspace = async (): Promise<void> => {
+        const loadSuggestion = async (): Promise<void> => {
             try {
                 const suggestedName = await suggestWorkspace();
-                const workspace = await createWorkspace.mutateAsync({
-                    name: suggestedName,
-                    createDefaultProject: true,
-                });
-                switchWorkspace(workspace.id);
-                setWorkspaceBreadcrumb({ id: workspace.id, name: workspace.name });
-                navigate('/projects');
-            } catch (starterCreationError) {
-                console.error('Failed to auto-create starter workspace:', starterCreationError);
-            } finally {
-                setIsAutoCreatingStarter(false);
+                setSuggestedWorkspaceName(suggestedName);
+            } catch {
+                setSuggestedWorkspaceName(null);
             }
         };
 
-        void createStarterWorkspace();
+        void loadSuggestion();
     }, [
         createWorkspace,
         error,
         isLoading,
-        navigate,
-        setWorkspaceBreadcrumb,
         suggestWorkspace,
-        switchWorkspace,
         workspaces.length,
     ]);
 
@@ -210,11 +200,11 @@ export default function Component() {
                                             className="flex-1 px-3 py-2 text-sm font-medium text-primary-500 hover:bg-primary-50 rounded transition-colors"
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                navigate('/settings');
+                                                navigate(`/settings?workspaceId=${workspace.id}`);
                                             }}
                                         >
                                             <Settings className="w-4 h-4 inline mr-2" />
-                                            Settings
+                                            Workspace Settings
                                         </button>
                                         <button
                                             className="flex-1 px-3 py-2 text-sm font-medium text-text-primary hover:bg-surface-secondary rounded transition-colors"
@@ -230,12 +220,54 @@ export default function Component() {
                             </div>
                         ))}
                     </div>
-                ) : isAutoCreatingStarter || createWorkspace.isPending ? (
-                    <LoadingContainer message="Creating your starter workspace...">
-                        <div className="py-4" data-testid="starter-workspace-creation">
-                            <SkeletonProjectList />
-                        </div>
-                    </LoadingContainer>
+                ) : suggestedWorkspaceName || createWorkspace.isPending ? (
+                    <div className="text-center py-12" data-testid="starter-workspace-creation">
+                        {createWorkspace.isPending ? (
+                            <LoadingContainer message={`Creating "${suggestedWorkspaceName ?? 'starter'}" workspace...`}>
+                                <div className="py-4">
+                                    <SkeletonProjectList />
+                                </div>
+                            </LoadingContainer>
+                        ) : (
+                            <>
+                                <div className="mb-4">
+                                    <FolderOpen className="w-16 h-16 text-text-secondary mx-auto opacity-50" />
+                                </div>
+                                <h2 className="text-xl font-semibold text-text-primary mb-2">Welcome to YAPPC</h2>
+                                <p className="text-text-secondary mb-6">We suggest starting with a workspace called <strong className="text-text-primary">{suggestedWorkspaceName}</strong></p>
+                                <div className="flex gap-3 justify-center">
+                                    <button
+                                        onClick={async () => {
+                                            setIsAutoCreatingStarter(true);
+                                            try {
+                                                const workspace = await createWorkspace.mutateAsync({
+                                                    name: suggestedWorkspaceName!,
+                                                    createDefaultProject: true,
+                                                });
+                                                switchWorkspace(workspace.id);
+                                                setWorkspaceBreadcrumb({ id: workspace.id, name: workspace.name });
+                                                navigate('/projects');
+                                            } catch (err) {
+                                                console.error('Failed to create suggested workspace:', err);
+                                            } finally {
+                                                setIsAutoCreatingStarter(false);
+                                            }
+                                        }}
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
+                                    >
+                                        <Add className="w-5 h-5" />
+                                        Create "{suggestedWorkspaceName}" Workspace
+                                    </button>
+                                    <button
+                                        onClick={handleCreateWorkspace}
+                                        className="inline-flex items-center gap-2 px-4 py-2 border border-surface-secondary text-text-primary rounded-lg hover:bg-surface-secondary transition-colors"
+                                    >
+                                        Choose Different Name
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
                 ) : (
                     <div className="text-center py-12">
                         <div className="mb-4">

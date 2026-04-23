@@ -24,7 +24,7 @@ import {
 import { EpisodeTimeline } from '@/components/memory/EpisodeTimeline';
 import { FactTable } from '@/components/memory/FactTable';
 import { PolicyCard } from '@/components/memory/PolicyCard';
-import type { AgentRegistration } from '@/api/aep.api';
+import type { AgentRegistration, EpisodeRecord } from '@/api/aep.api';
 import { Button } from '@ghatana/design-system';
 import { EmptyState } from '@/components/core/EmptyState';
 import { ErrorState } from '@/components/core/ErrorState';
@@ -105,7 +105,9 @@ function TabBar({ active, onChange }: TabBarProps) {
 
 // ─── Episodes tab ─────────────────────────────────────────────────────────────
 
-function EpisodesTab({ episodes, isLoading, isError, refetch }: { episodes: Episode[]; isLoading: boolean; isError: boolean; refetch: () => void }) {
+function EpisodesTab({ agentId }: { agentId: string | undefined }) {
+  const { data: episodes = [], isLoading, isError, refetch } = useAllEpisodes(50);
+
   if (isLoading) {
     return <EmptyState title="Loading episodes…" description="Fetching agent episode history." />;
   }

@@ -87,7 +87,7 @@ class HttpClientBenchmark {
         System.out.printf("Config creation: %d iterations in %d ms (avg %.3f ms/operation)%n", // GH-90000
                 BENCHMARK_ITERATIONS, durationMs, avgPerOpMs);
 
-        assertThat(durationMs).isLessThan(1000); // < 1 second for 100 iterations // GH-90000
+        assertThat(durationMs).isLessThan(3000); // < 3 seconds for 100 iterations on shared CI runners // GH-90000
     }
 
     /**

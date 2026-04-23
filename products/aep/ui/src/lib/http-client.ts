@@ -79,6 +79,20 @@ export function setSessionToken(token: string): void {
 export function clearAuthState(): void {
   sessionStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
   sessionStorage.removeItem(SESSION_TOKEN_STORAGE_KEY);
+  sessionStorage.removeItem(SESSION_EXPIRY_STORAGE_KEY);
+}
+
+const SESSION_EXPIRY_STORAGE_KEY = "aep-session-expires-at";
+
+export function getSessionExpiry(): number | null {
+  const raw = sessionStorage.getItem(SESSION_EXPIRY_STORAGE_KEY);
+  if (!raw) return null;
+  const value = Number(raw);
+  return Number.isNaN(value) ? null : value;
+}
+
+export function setSessionExpiry(timestampMs: number): void {
+  sessionStorage.setItem(SESSION_EXPIRY_STORAGE_KEY, String(timestampMs));
 }
 
 /**

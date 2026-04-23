@@ -158,17 +158,19 @@ export async function resetJotaiAtoms(page: Page): Promise<void> {
 export async function clearMSWHandlers(page: Page): Promise<void> {
   await page.evaluate(() => {
     // Reset MSW handlers if available
-    if (
-      window.msw &&
-      window.msw.worker &&
-      'resetHandlers' in window.msw.worker
-    ) {
-      (window.msw.worker as unknown).resetHandlers();
+    const mswWindow = window as unknown as {
+      msw?: { worker?: { resetHandlers: () => void } };
+    };
+    if (mswWindow.msw?.worker?.resetHandlers) {
+      mswWindow.msw.worker.resetHandlers();
     }
 
     // Clear any mock data
-    if (window.__TEST_MOCKS__) {
-      window.__TEST_MOCKS__.clear();
+    const testMocksWindow = window as unknown as {
+      __TEST_MOCKS__?: { clear: () => void };
+    };
+    if (testMocksWindow.__TEST_MOCKS__) {
+      testMocksWindow.__TEST_MOCKS__.clear();
     }
   });
 }
@@ -406,13 +408,14 @@ export async function setupTest(
   // Clean state first
   await cleanTestState(page);
 
-  // Navigate to the specified URL or canvas by default
-  const targetUrl = options.url || '/canvas';
+  // Navigate to the specified URL or default app entry page
+  const targetUrl = options.url || '/workspaces';
   await page.goto(targetUrl);
 
   try {
     await page.evaluate(() => {
-      const provider = (window as unknown).mockCollaborationProvider;
+      const win = window as unknown as Record<string, unknown>;
+      const provider = win.mockCollaborationProvider as { resetForTests?: () => void } | undefined;
       if (provider && typeof provider.resetForTests === 'function') {
         provider.resetForTests();
       }
@@ -423,8 +426,9 @@ export async function setupTest(
 
   try {
     await page.evaluate(() => {
-      (window as unknown).__E2E_TEST_MODE = true;
-      (window as unknown).__E2E_TEST_NO_POINTER_BLOCK = true;
+      const win = window as unknown as Record<string, unknown>;
+      win.__E2E_TEST_MODE = true;
+      win.__E2E_TEST_NO_POINTER_BLOCK = true;
       try {
         localStorage.setItem('E2E_DISABLE_OVERLAYS', '1');
       } catch (err) {
@@ -473,13 +477,13 @@ export async function setupTest(
 
       disablePaletteFocus();
 
-      if (!(window as unknown).__E2E_OVERLAY_OBSERVER) {
+      if (!win.__E2E_OVERLAY_OBSERVER) {
         const observer = new MutationObserver(() => {
           neutralizeOverlays();
           disablePaletteFocus();
         });
         observer.observe(document.documentElement, { childList: true, subtree: true });
-        (window as unknown).__E2E_OVERLAY_OBSERVER = observer;
+        win.__E2E_OVERLAY_OBSERVER = observer;
       }
     });
   } catch (error) {
@@ -534,7 +538,7 @@ export async function setupTest(
   }
 
   // Wait for canvas to be ready (only for canvas pages)
-  if (targetUrl.includes('/canvas') || targetUrl === '/') {
+  if (targetUrl.includes('/canvas')) {
     await waitForCanvasReady(page);
   }
 

@@ -42,11 +42,6 @@ type Pages = {
       "projectId": string;
     };
   };
-  "/p/:projectId/canvas-workspace": {
-    params: {
-      "projectId": string;
-    };
-  };
   "/p/:projectId/preview": {
     params: {
       "projectId": string;
@@ -77,11 +72,11 @@ type Pages = {
 type RouteFiles = {
   "root.tsx": {
     id: "root";
-    page: "/" | "/login" | "/onboarding" | "/workspaces" | "/projects" | "/profile" | "/settings" | "/p/:projectId" | "/p/:projectId/canvas" | "/p/:projectId/canvas-workspace" | "/p/:projectId/preview" | "/p/:projectId/deploy" | "/p/:projectId/settings" | "/p/:projectId/lifecycle" | "/*";
+    page: "/" | "/login" | "/onboarding" | "/workspaces" | "/projects" | "/profile" | "/settings" | "/p/:projectId" | "/p/:projectId/canvas" | "/p/:projectId/preview" | "/p/:projectId/deploy" | "/p/:projectId/settings" | "/p/:projectId/lifecycle" | "/*";
   };
   "routes/_root.tsx": {
     id: "routes/_root";
-    page: "/" | "/login" | "/onboarding" | "/workspaces" | "/projects" | "/profile" | "/settings" | "/p/:projectId" | "/p/:projectId/canvas" | "/p/:projectId/canvas-workspace" | "/p/:projectId/preview" | "/p/:projectId/deploy" | "/p/:projectId/settings" | "/p/:projectId/lifecycle" | "/*";
+    page: "/" | "/login" | "/onboarding" | "/workspaces" | "/projects" | "/profile" | "/settings" | "/p/:projectId" | "/p/:projectId/canvas" | "/p/:projectId/preview" | "/p/:projectId/deploy" | "/p/:projectId/settings" | "/p/:projectId/lifecycle" | "/*";
   };
   "routes/dashboard.tsx": {
     id: "routes/dashboard";
@@ -97,7 +92,7 @@ type RouteFiles = {
   };
   "routes/_shell.tsx": {
     id: "routes/_shell";
-    page: "/workspaces" | "/projects" | "/profile" | "/settings" | "/p/:projectId" | "/p/:projectId/canvas" | "/p/:projectId/canvas-workspace" | "/p/:projectId/preview" | "/p/:projectId/deploy" | "/p/:projectId/settings" | "/p/:projectId/lifecycle";
+    page: "/workspaces" | "/projects" | "/profile" | "/settings" | "/p/:projectId" | "/p/:projectId/canvas" | "/p/:projectId/preview" | "/p/:projectId/deploy" | "/p/:projectId/settings" | "/p/:projectId/lifecycle";
   };
   "routes/app/workspaces.tsx": {
     id: "routes/app/workspaces";
@@ -117,7 +112,7 @@ type RouteFiles = {
   };
   "routes/app/project/_shell.tsx": {
     id: "routes/app/project/_shell";
-    page: "/p/:projectId" | "/p/:projectId/canvas" | "/p/:projectId/canvas-workspace" | "/p/:projectId/preview" | "/p/:projectId/deploy" | "/p/:projectId/settings" | "/p/:projectId/lifecycle";
+    page: "/p/:projectId" | "/p/:projectId/canvas" | "/p/:projectId/preview" | "/p/:projectId/deploy" | "/p/:projectId/settings" | "/p/:projectId/lifecycle";
   };
   "routes/app/project/index.tsx": {
     id: "routes/app/project/index";
@@ -126,10 +121,6 @@ type RouteFiles = {
   "routes/app/project/canvas.tsx": {
     id: "routes/app/project/canvas";
     page: "/p/:projectId/canvas";
-  };
-  "routes/app/project/canvas-workspace.tsx": {
-    id: "routes/app/project/canvas-workspace";
-    page: "/p/:projectId/canvas-workspace";
   };
   "routes/app/project/preview.tsx": {
     id: "routes/app/project/preview";
@@ -167,7 +158,6 @@ type RouteModules = {
   "routes/app/project/_shell": typeof import("./src/routes/app/project/_shell.tsx");
   "routes/app/project/index": typeof import("./src/routes/app/project/index.tsx");
   "routes/app/project/canvas": typeof import("./src/routes/app/project/canvas.tsx");
-  "routes/app/project/canvas-workspace": typeof import("./src/routes/app/project/canvas-workspace.tsx");
   "routes/app/project/preview": typeof import("./src/routes/app/project/preview.tsx");
   "routes/app/project/deploy": typeof import("./src/routes/app/project/deploy.tsx");
   "routes/app/project/settings": typeof import("./src/routes/app/project/settings.tsx");

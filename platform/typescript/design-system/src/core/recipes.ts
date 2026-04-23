@@ -89,6 +89,10 @@ export interface ComponentRecipeSlotPlan {
   state: PrimitiveStateBag;
   props: PrimitiveProps;
   attributes: PrimitiveProps;
+  semantics?: {
+    role?: string;
+    eventNames: readonly string[];
+  };
 }
 
 export interface ComponentRenderPlan<

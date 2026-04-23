@@ -13,7 +13,7 @@
 import { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { useSetAtom } from 'jotai';
-import { ArrowRight, FolderOpen, Plus, ShieldAlert } from 'lucide-react';
+import { ArrowRight, CheckCircle2, FolderOpen, Plus, ShieldAlert } from 'lucide-react';
 
 // Hooks
 import { useWorkspaceContext } from '../hooks/useWorkspaceData';
@@ -180,19 +180,31 @@ export default function Component() {
                         </p>
                     </button>
 
-                    <button
-                        type="button"
-                        onClick={() => navigate('/workspaces')}
-                        className="rounded-2xl border border-divider bg-bg-paper p-5 text-left shadow-sm transition-transform hover:-translate-y-0.5"
-                    >
-                        <div className="mb-4 inline-flex rounded-full bg-amber-50 p-2 text-amber-600 dark:bg-amber-900/30 dark:text-amber-300">
-                            <ShieldAlert className="h-5 w-5" />
+                    <div className="rounded-2xl border border-divider bg-bg-paper p-5 shadow-sm">
+                        <div className="mb-3 flex items-center gap-2">
+                            <div className="inline-flex rounded-full bg-amber-50 p-2 text-amber-600 dark:bg-amber-900/30 dark:text-amber-300">
+                                <ShieldAlert className="h-5 w-5" />
+                            </div>
+                            <h2 className="text-lg font-semibold text-text-primary">Workspace Health</h2>
                         </div>
-                        <h2 className="text-lg font-semibold text-text-primary">Review Blockers</h2>
-                        <p className="mt-2 text-sm text-text-secondary">
-                            Check workspace availability, loading failures, and unresolved setup issues before continuing.
-                        </p>
-                    </button>
+                        <div className="space-y-2">
+                            {workspaces.filter((ws) => !allProjects.some((p) => p.ownerWorkspaceId === ws.id)).length > 0 ? (
+                                workspaces
+                                    .filter((ws) => !allProjects.some((p) => p.ownerWorkspaceId === ws.id))
+                                    .slice(0, 2)
+                                    .map((ws) => (
+                                        <p key={ws.id} className="text-sm text-amber-700 dark:text-amber-300">
+                                            {ws.name} has no projects yet.
+                                        </p>
+                                    ))
+                            ) : (
+                                <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-300">
+                                    <CheckCircle2 className="h-4 w-4" />
+                                    <span>All workspaces have active projects.</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
 
                 <section className="rounded-2xl border border-divider bg-bg-paper p-6 shadow-sm">

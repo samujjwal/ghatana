@@ -114,6 +114,8 @@ describe('AgentMarketplacePage', () => {
     const user = userEvent.setup();
     renderWithQuery(<AgentMarketplacePage />);
 
+    // Switch to Publish tab first
+    await user.click(screen.getByRole('button', { name: /publish/i }));
     await waitFor(() => expect(screen.getByText('Publish Agent')).toBeInTheDocument());
     await user.type(screen.getByLabelText(/agent name/i), 'Tenant Agent');
     await user.click(screen.getByText('Publish Agent'));

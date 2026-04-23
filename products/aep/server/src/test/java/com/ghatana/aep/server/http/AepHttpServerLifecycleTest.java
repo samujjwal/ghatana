@@ -47,9 +47,16 @@ class AepHttpServerLifecycleTest {
     private int port;
     private HttpClient httpClient;
     private final ObjectMapper mapper = new ObjectMapper(); // GH-90000
+    private String previousAuthDisabled;
+    private String previousJwtSecret;
 
     @BeforeEach
     void setUp() throws Exception { // GH-90000
+        previousAuthDisabled = System.getProperty("AEP_AUTH_DISABLED");
+        previousJwtSecret = System.getProperty("AEP_JWT_SECRET");
+        System.setProperty("AEP_AUTH_DISABLED", "true");
+        System.clearProperty("AEP_JWT_SECRET");
+
         engine = Aep.forTesting(); // GH-90000
         port = findFreePort(); // GH-90000
         httpClient = HttpClient.newBuilder().build(); // GH-90000
@@ -59,6 +66,18 @@ class AepHttpServerLifecycleTest {
     void tearDown() { // GH-90000
         if (server != null) server.stop(); // GH-90000
         if (engine != null) engine.close(); // GH-90000
+
+        if (previousAuthDisabled == null) {
+            System.clearProperty("AEP_AUTH_DISABLED");
+        } else {
+            System.setProperty("AEP_AUTH_DISABLED", previousAuthDisabled);
+        }
+
+        if (previousJwtSecret == null) {
+            System.clearProperty("AEP_JWT_SECRET");
+        } else {
+            System.setProperty("AEP_JWT_SECRET", previousJwtSecret);
+        }
     }
 
     // ==================== POST /lifecycle/changes ====================

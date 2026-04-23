@@ -51,14 +51,14 @@ class RunLedgerBackedHistoryIntegrationTest extends EventloopTestBase {
              Connection connection = dataSource.getConnection(); // GH-90000
              Statement statement = connection.createStatement()) { // GH-90000
             statement.execute("""
-                CREATE TABLE IF NOT EXISTS agent_execution_history ( // GH-90000
+                CREATE TABLE IF NOT EXISTS agent_execution_history (
                     execution_id TEXT PRIMARY KEY,
                     agent_id TEXT NOT NULL,
                     status TEXT NOT NULL,
                     input_payload JSONB,
                     output_payload JSONB,
                     duration_ms BIGINT NOT NULL,
-                    executed_at TIMESTAMPTZ NOT NULL DEFAULT NOW() // GH-90000
+                    executed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
                 )
                 """);
 

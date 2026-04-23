@@ -212,6 +212,12 @@ export async function listTransforms(): Promise<
 
 // ─── AI Stage Suggestion ─────────────────────────────────────────────
 
+export interface PipelineStage {
+  name: string;
+  kind?: string;
+  description?: string;
+}
+
 export interface AiSuggestStagesRequest {
   description: string;
   existingStages?: PipelineStage[];

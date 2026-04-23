@@ -134,14 +134,14 @@ class PostgresRetentionPolicyEnforcerTest extends EventloopTestBase {
         try (Connection conn = dataSource.getConnection(); // GH-90000
              Statement stmt = conn.createStatement()) { // GH-90000
             stmt.execute("""
-                CREATE TABLE IF NOT EXISTS retention_policies ( // GH-90000
+                CREATE TABLE IF NOT EXISTS retention_policies (
                     tenant_id              TEXT        NOT NULL,
                     data_id                TEXT        NOT NULL,
                     expires_at             TIMESTAMPTZ NOT NULL,
                     scheduled_for_deletion BOOLEAN     NOT NULL DEFAULT FALSE,
-                    created_at             TIMESTAMPTZ NOT NULL DEFAULT NOW(), // GH-90000
-                    updated_at             TIMESTAMPTZ NOT NULL DEFAULT NOW(), // GH-90000
-                    PRIMARY KEY (tenant_id, data_id) // GH-90000
+                    created_at             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    PRIMARY KEY (tenant_id, data_id)
                 )
                 """);
         }

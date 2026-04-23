@@ -1,5 +1,4 @@
-l/**
-
+/**
  * Testing utilities for @ghatana/design-system components
  */
 

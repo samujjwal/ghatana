@@ -41,7 +41,6 @@ export default [
         // Project tabs
         index('routes/app/project/index.tsx'),
         route('canvas', 'routes/app/project/canvas.tsx'), // Unified canvas with all Epic 1-10 features
-        route('canvas-workspace', 'routes/app/project/canvas-workspace.tsx'), // Production workspace canvas
         route('preview', 'routes/app/project/preview.tsx'),
         route('deploy', 'routes/app/project/deploy.tsx'),
         route('settings', 'routes/app/project/settings.tsx'),

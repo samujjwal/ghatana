@@ -5,8 +5,17 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { auditLogService, useAuditLog, type AuditEvent } from '../audit-log';
 
-// Mock fetch
-global.fetch = vi.fn();
+vi.mock('@/lib/http-client', () => ({
+  apiClient: {
+    post: vi.fn(),
+    get: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
+  },
+}));
+
+import { apiClient } from '@/lib/http-client';
+const apiClientMock = apiClient as unknown as { post: ReturnType<typeof vi.fn>; get: ReturnType<typeof vi.fn>; put: ReturnType<typeof vi.fn>; delete: ReturnType<typeof vi.fn> };
 
 describe('auditLogService', () => {
   beforeEach(() => {
@@ -19,8 +28,10 @@ describe('auditLogService', () => {
   });
 
   it('logs audit event successfully', async () => {
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
+    apiClientMock.post.mockResolvedValueOnce({
+      data: { success: true },
+      status: 200,
+      headers: new Headers(),
     });
 
     const event = {
@@ -33,17 +44,14 @@ describe('auditLogService', () => {
 
     await auditLogService.log(event);
 
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(apiClientMock.post).toHaveBeenCalledWith(
       '/api/v1/audit/log',
-      expect.objectContaining({
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      })
+      expect.any(Object)
     );
   });
 
   it('stores event locally when API fails', async () => {
-    (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
+    apiClientMock.post.mockRejectedValueOnce(new Error('Network error'));
 
     const event = {
       userId: 'user-1',
@@ -73,13 +81,14 @@ describe('auditLogService', () => {
       },
     ];
 
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
+    apiClientMock.get.mockResolvedValueOnce({
+      data: {
         events: mockEvents,
         total: 1,
         hasMore: false,
-      }),
+      },
+      status: 200,
+      headers: new Headers(),
     });
 
     const result = await auditLogService.query({ userId: 'user-1' });
@@ -101,13 +110,14 @@ describe('auditLogService', () => {
       },
     ];
 
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
+    apiClientMock.get.mockResolvedValueOnce({
+      data: {
         events: mockEvents,
         total: 1,
         hasMore: false,
-      }),
+      },
+      status: 200,
+      headers: new Headers(),
     });
 
     const recent = await auditLogService.getRecent(5);
@@ -182,12 +192,16 @@ describe('auditLogService', () => {
     };
 
     auditLogService.storeLocally(event);
-    (global.fetch as any).mockResolvedValueOnce({ ok: true });
+    apiClientMock.post.mockResolvedValueOnce({
+      data: { success: true },
+      status: 200,
+      headers: new Headers(),
+    });
 
     await auditLogService.syncBackups();
 
     expect(auditLogService.getLocalBackups()).toHaveLength(0);
-    expect(global.fetch).toHaveBeenCalled();
+    expect(apiClientMock.post).toHaveBeenCalled();
   });
 });
 

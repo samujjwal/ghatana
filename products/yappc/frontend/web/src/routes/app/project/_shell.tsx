@@ -28,13 +28,13 @@ import {
   headerContextActionsAtom,
   headerPhaseInfoAtom
 } from '../../../state/atoms/layoutAtom';
-import { Share2 as Share, Settings as SettingsIcon, Download as FileDownload, Paintbrush as Brush, Boxes as Workspaces, Eye as Visibility, Rocket as RocketLaunch, Activity as LifecycleIcon, LayoutDashboard } from 'lucide-react';
+import { Share2 as Share, Settings as SettingsIcon, Download as FileDownload, Paintbrush as Brush, Eye as Visibility, Rocket as RocketLaunch, Activity as LifecycleIcon, LayoutDashboard } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 
 import { RouteErrorBoundary } from '../../../components/route/ErrorBoundary';
 import { IntentDrawer } from '../../../components/intent';
 import { LifecycleArtifactKind } from '@/shared/types/lifecycle-artifacts';
-import { parseJsonResourceResponse } from '@/lib/http';
+import { parseJsonResourceResponse, parseJsonResponse } from '@/lib/http';
 import { useLifecycleArtifacts } from '../../../services/canvas/lifecycle';
 import { useLastOpenedProject } from '../../../hooks/useLastOpenedProject';
 import { useWorkspaceContext } from '../../../hooks/useWorkspaceData';
@@ -53,12 +53,6 @@ const BASE_PROJECT_TABS = [
     label: 'Canvas',
     icon: Brush,
     tooltip: 'Unified canvas with all Epic 1-10 features',
-  },
-  {
-    key: 'canvas-workspace',
-    label: 'Workspace',
-    icon: Workspaces,
-    tooltip: 'Production workspace with lifecycle integration',
   },
   {
     key: 'lifecycle',
@@ -247,17 +241,16 @@ export function Layout() {
   }, [project, setHeaderActionContext, setHeaderContextActions, setHeaderPhaseInfo]);
 
   const projectName = project?.name || 'Loading...';
-  const projectTabs = previewEnabled
+  const projectTabs = (previewEnabled
     ? [
         BASE_PROJECT_TABS[0],
         BASE_PROJECT_TABS[1],
-        BASE_PROJECT_TABS[2],
         PREVIEW_TAB,
+        BASE_PROJECT_TABS[2],
         BASE_PROJECT_TABS[3],
         BASE_PROJECT_TABS[4],
-        BASE_PROJECT_TABS[5],
       ]
-    : [...BASE_PROJECT_TABS];
+    : [...BASE_PROJECT_TABS]) as (typeof BASE_PROJECT_TABS[number])[];
 
   // Initialize lifecycle services
   const { createArtifact, updateArtifact, artifacts } = useLifecycleArtifacts(

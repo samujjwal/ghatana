@@ -358,7 +358,10 @@ function ShellContent({
             );
           }}
           onNotifications={() => setShowInsightPanel((currentValue) => !currentValue)}
-          onHelp={() => window.open('/docs', '_blank')}
+          onHelp={() => {
+            // Contextual help: toggle the GuidancePanel instead of generic /docs
+            setShowGuidance(!showGuidance);
+          }}
           onKeyboardShortcuts={() => {
             /* Open shortcuts panel */
           }}

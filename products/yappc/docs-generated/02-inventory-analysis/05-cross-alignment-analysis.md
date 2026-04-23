@@ -1,7 +1,9 @@
+> **⚠️ DEPRECATION NOTICE:** This generated analysis is materially outdated as of 2026-04-22. It incorrectly claims **"No onboarding flow"** and **"No mobile apps"** despite the active product containing `routes/onboarding.tsx` and mobile route scaffolding. Do not rely on this document for current product truth. The canonical runtime truth is `products/yappc/frontend/web/src/routes.ts`.
+
 # Step 5 — Cross-Alignment Analysis
 
 **Status:** Complete cross-alignment analysis of code, tests, docs, UI, backend, data, and contracts  
-**Analysis Date:** 2026-04-04  
+**Analysis Date:** 2026-04-04 *(superseded — see deprecation notice above)*  
 **Scope:** Comparison between implementation, documentation, tests, and expectations
 
 ---
