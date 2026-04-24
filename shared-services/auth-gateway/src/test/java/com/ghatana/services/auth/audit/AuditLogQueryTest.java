@@ -333,4 +333,25 @@ class AuditLogQueryTest extends EventloopTestBase {
         assertThat(typeCounts.get(AuditLogger.AuditEventType.AUTH_LOGIN_FAILURE)).isEqualTo(1); // GH-90000
         assertThat(typeCounts.get(AuditLogger.AuditEventType.AUTH_LOGOUT)).isEqualTo(2); // GH-90000
     }
+
+    @Test
+    @DisplayName("Should redact PII and secrets in audit message and metadata")
+    void testAuditEventRedactionContract() throws Exception { // GH-90000
+        runPromise(() -> auditLogger.logLoginFailure(
+                "user@example.com",
+                "tenant1",
+                "192.168.1.5",
+                "token=abc123 email=user@example.com ssn=123-45-6789")); // GH-90000
+
+        AuditLogger.AuditEvent[] events = auditLogger.getRecentEvents(1); // GH-90000
+        assertThat(events).hasSize(1); // GH-90000
+
+        AuditLogger.AuditEvent event = events[0]; // GH-90000
+        assertThat(event.message()).doesNotContain("user@example.com");
+        assertThat(event.message()).doesNotContain("123-45-6789");
+        assertThat(event.message()).doesNotContain("abc123");
+        assertThat(event.metadata().get("reason")).doesNotContain("user@example.com");
+        assertThat(event.metadata().get("reason")).doesNotContain("123-45-6789");
+        assertThat(event.metadata().get("reason")).doesNotContain("abc123");
+    }
 }

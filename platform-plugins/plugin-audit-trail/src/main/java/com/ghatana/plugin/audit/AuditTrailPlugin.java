@@ -63,6 +63,18 @@ public interface AuditTrailPlugin extends Plugin {
     Promise<Void> exportTrail(String entityId, ExportFormat format, OutputStream out);
 
     /**
+     * Purges audit entries older than the given cutoff timestamp (retention policy enforcement).
+     *
+     * <p>Entries whose {@code timestamp} is strictly before {@code cutoffEpochMs} are deleted.
+     * This method is intended for regulatory retention policy enforcement and should only be
+     * called after confirming the retention period has elapsed.
+     *
+     * @param cutoffEpochMs epoch milliseconds; entries older than this are removed
+     * @return Promise containing the number of entries deleted
+     */
+    Promise<Integer> purgeEntriesOlderThan(long cutoffEpochMs);
+
+    /**
      * Export formats.
      */
     enum ExportFormat {

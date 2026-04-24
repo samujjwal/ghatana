@@ -3,6 +3,8 @@ package com.ghatana.platform.plugin.loader;
 import com.ghatana.platform.plugin.Plugin;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -23,6 +25,8 @@ import java.util.stream.Stream;
  * @doc.pattern Service
  */
 public class JarPluginLoader implements PluginLoader {
+
+    private static final Logger log = LoggerFactory.getLogger(JarPluginLoader.class);
 
     private final Executor executor;
 
@@ -62,9 +66,7 @@ public class JarPluginLoader implements PluginLoader {
                 }
             }
         } catch (Exception e) {
-            // Log error but continue loading other jars
-            // In a real system, use a proper logger
-            System.err.println("Failed to load plugin from " + jarPath + ": " + e.getMessage());
+            log.error("Failed to load plugin from {}: {}", jarPath, e.getMessage(), e);
         }
         return loaded;
     }

@@ -10,6 +10,7 @@ import com.ghatana.datacloud.analytics.ReportService;
 import com.ghatana.datacloud.analytics.ReportTemplate;
 import com.ghatana.datacloud.api.dto.report.GenerateReportRequest;
 import com.ghatana.datacloud.api.dto.report.ReportResponse;
+import com.ghatana.platform.http.security.filter.TenantExtractor;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.http.HttpHeaders;
@@ -178,8 +179,7 @@ public class ReportsController implements AsyncServlet {
     }
 
     private String extractTenantId(HttpRequest request) {
-        String tenantId = request.getHeader(HttpHeaders.of("X-Tenant-ID"));
-        return tenantId != null ? tenantId : "default-tenant";
+        return TenantExtractor.fromHttpOrDefault(request, "default-tenant");
     }
 
     private GenerateReportRequest parseRequest(String json) {

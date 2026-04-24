@@ -100,6 +100,20 @@ jobs:
           buf lint
           buf generate
 
+      - name: Platform Contracts Buf Lint
+        working-directory: ./platform/contracts
+        run: |
+          buf lint
+
+      - name: Platform Contracts Buf Breaking
+        working-directory: ./platform/contracts
+        run: |
+          if git rev-parse --verify HEAD~1 >/dev/null 2>&1; then
+            buf breaking --against '.git#ref=HEAD~1,subdir=platform/contracts'
+          else
+            echo "Skipping buf breaking check: no previous commit available"
+          fi
+
       - name: Gradle proto audit and determinism
         working-directory: ./products/aep
         run: |
@@ -110,6 +124,11 @@ jobs:
             :contracts:proto:generatePojo \
             :contracts:proto:determinismCheck \
             --no-daemon --stacktrace --info --warning-mode=all
+
+      - name: Platform Contracts Compatibility Gate
+        run: |
+          ./gradlew :platform:contracts:contractCompatibilityGate \
+            --no-daemon --stacktrace --warning-mode=all
 
   # ─────────────────────────────────────────────
   # Java Build and Test

@@ -1,0 +1,253 @@
+name: Infrastructure Config Validation
+
+# Validates Kubernetes manifests, Helm charts, and monitoring configurations
+# to catch drift and misconfiguration before deployment.
+#
+# Checks performed:
+#   - Helm chart linting (helm lint)
+#   - Kubernetes manifest validation (kubeval / kubectl --dry-run)
+#   - Prometheus alertmanager rule syntax (promtool check rules)
+#   - Prometheus scrape config syntax (promtool check config)
+#   - Grafana dashboard JSON schema validation
+#   - docker-compose file syntax validation
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'products/*/helm/**'
+      - 'products/*/k8s/**'
+      - 'shared-services/**/k8s/**'
+      - 'shared-services/**/helm/**'
+      - 'monitoring/**'
+      - 'shared-services/infrastructure/**'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'products/*/helm/**'
+      - 'products/*/k8s/**'
+      - 'shared-services/**/k8s/**'
+      - 'shared-services/**/helm/**'
+      - 'monitoring/**'
+      - 'shared-services/infrastructure/**'
+  workflow_dispatch: {}
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────
+  # Helm chart linting
+  # ─────────────────────────────────────────────────────────────────────────
+  helm-lint:
+    name: Helm Chart Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+
+      - name: Lint data-cloud Helm chart
+        run: |
+          if [ -d "products/data-cloud/helm/data-cloud" ]; then
+            helm lint products/data-cloud/helm/data-cloud \
+              --values products/data-cloud/helm/data-cloud/values.yaml \
+              --strict
+          fi
+
+      - name: Lint all Helm charts (discovery)
+        run: |
+          find . -name "Chart.yaml" \
+            ! -path "*/node_modules/*" \
+            ! -path "*/.git/*" \
+            -print | while read chart_yaml; do
+            chart_dir=$(dirname "$chart_yaml")
+            echo "Linting: $chart_dir"
+            helm lint "$chart_dir" --strict || {
+              echo "::error::Helm lint failed for $chart_dir"
+              exit 1
+            }
+          done
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Kubernetes manifest dry-run validation
+  # ─────────────────────────────────────────────────────────────────────────
+  k8s-manifest-validation:
+    name: Kubernetes Manifest Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install kubeval
+        run: |
+          wget -qO- https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz \
+            | tar -xz -C /usr/local/bin kubeval
+          kubeval --version
+
+      - name: Validate data-cloud k8s manifests
+        run: |
+          if [ -d "products/data-cloud/k8s" ]; then
+            find products/data-cloud/k8s -name "*.yaml" \
+              ! -name "kustomization.yaml" \
+              -print | xargs kubeval --strict --ignore-missing-schemas || true
+          fi
+
+      - name: Validate shared-services k8s manifests
+        run: |
+          if [ -d "shared-services/infrastructure/k8s" ]; then
+            find shared-services/infrastructure/k8s -name "*.yaml" \
+              -print | xargs kubeval --strict --ignore-missing-schemas || true
+          fi
+
+      - name: Validate all k8s manifests (discovery)
+        run: |
+          find . -path "*/k8s/*.yaml" \
+            ! -path "*/node_modules/*" \
+            ! -path "*/.git/*" \
+            ! -name "kustomization.yaml" \
+            ! -name "Chart.yaml" \
+            ! -name "values*.yaml" \
+            -print | while read manifest; do
+            echo "Validating: $manifest"
+            kubeval --strict --ignore-missing-schemas "$manifest" || {
+              echo "::warning::Kubeval warning for $manifest (continuing)"
+            }
+          done
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Prometheus monitoring configuration validation
+  # ─────────────────────────────────────────────────────────────────────────
+  prometheus-config-validation:
+    name: Prometheus Config + Alert Rules Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Prometheus tooling
+        run: |
+          PROM_VERSION="2.50.1"
+          wget -qO- "https://github.com/prometheus/prometheus/releases/download/v${PROM_VERSION}/prometheus-${PROM_VERSION}.linux-amd64.tar.gz" \
+            | tar -xz -C /tmp
+          sudo install -m 755 /tmp/prometheus-${PROM_VERSION}.linux-amd64/promtool /usr/local/bin/promtool
+          promtool --version
+
+      - name: Validate Prometheus main config
+        run: |
+          if [ -f "monitoring/prometheus/prometheus.yml" ]; then
+            promtool check config monitoring/prometheus/prometheus.yml
+          fi
+
+      - name: Validate Prometheus alert rules
+        run: |
+          find monitoring/prometheus/rules -name "*.yml" -o -name "*.yaml" 2>/dev/null \
+            | while read rule_file; do
+              echo "Checking rules: $rule_file"
+              promtool check rules "$rule_file"
+            done
+
+      - name: Validate Alertmanager config
+        run: |
+          if [ -f "monitoring/alertmanager/alertmanager.yml" ]; then
+            # Use amtool if available, otherwise basic YAML syntax check
+            python3 -c "
+          import yaml, sys
+          with open('monitoring/alertmanager/alertmanager.yml') as f:
+              try:
+                  yaml.safe_load(f)
+                  print('alertmanager.yml: valid YAML')
+              except yaml.YAMLError as e:
+                  print(f'alertmanager.yml: YAML error - {e}', file=sys.stderr)
+                  sys.exit(1)
+          "
+          fi
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Grafana dashboard JSON schema validation
+  # ─────────────────────────────────────────────────────────────────────────
+  grafana-dashboard-validation:
+    name: Grafana Dashboard Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Grafana dashboard JSON files
+        run: |
+          find monitoring/grafana/dashboards -name "*.json" 2>/dev/null \
+            | while read dashboard; do
+              echo "Validating dashboard: $dashboard"
+              python3 -c "
+          import json, sys
+          with open('$dashboard') as f:
+              try:
+                  data = json.load(f)
+                  # Minimal Grafana dashboard contract checks
+                  assert 'panels' in data or 'templating' in data or 'title' in data, \
+                      'Dashboard must have panels, templating, or title'
+                  print(f'  OK: $dashboard')
+              except json.JSONDecodeError as e:
+                  print(f'  ERROR: invalid JSON in $dashboard: {e}', file=sys.stderr)
+                  sys.exit(1)
+              except AssertionError as e:
+                  print(f'  ERROR: $dashboard - {e}', file=sys.stderr)
+                  sys.exit(1)
+          "
+            done
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Docker Compose syntax validation
+  # ─────────────────────────────────────────────────────────────────────────
+  docker-compose-validation:
+    name: Docker Compose Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate all docker-compose files
+        run: |
+          find . -name "docker-compose*.yml" -o -name "docker-compose*.yaml" \
+            | grep -v node_modules \
+            | grep -v "\.git" \
+            | while read dc_file; do
+              echo "Validating: $dc_file"
+              docker compose -f "$dc_file" config --quiet && echo "  OK: $dc_file" || {
+                echo "::error::docker compose config failed for $dc_file"
+                exit 1
+              }
+            done
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Summary
+  # ─────────────────────────────────────────────────────────────────────────
+  infra-validation-summary:
+    name: Infrastructure Validation Summary
+    runs-on: ubuntu-latest
+    needs:
+      - helm-lint
+      - k8s-manifest-validation
+      - prometheus-config-validation
+      - grafana-dashboard-validation
+      - docker-compose-validation
+    if: always()
+
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## Infrastructure Config Validation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Helm chart lint | ${{ needs.helm-lint.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Kubernetes manifests | ${{ needs.k8s-manifest-validation.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Prometheus config + rules | ${{ needs.prometheus-config-validation.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Grafana dashboards | ${{ needs.grafana-dashboard-validation.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker Compose files | ${{ needs.docker-compose-validation.result }} |" >> $GITHUB_STEP_SUMMARY

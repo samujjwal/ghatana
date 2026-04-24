@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Architecture tests for the platform layer.
@@ -105,10 +106,11 @@ class PlatformBoundaryRulesTest {
             long count = allClasses.stream() // GH-90000
                     .filter(c -> c.getPackageName().startsWith(pkg)) // GH-90000
                     .count(); // GH-90000
-            // Counts > 0 are OK — they're the merged classes. Just ensure they're reachable.
-            // This test documents they EXIST (not that they shouldn't — the merge moved them here). // GH-90000
+            assertThat(count)
+                    .as("Retired package '%s' must have 0 classes — all code was merged in Phase 1. "
+                            + "If classes remain, migrate them to the canonical module.", pkg)
+                    .isEqualTo(0);
         }
-        // If control reaches here, the merged packages are accessible and scannable.
     }
 
     /**

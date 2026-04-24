@@ -23,6 +23,7 @@ public final class PromptTemplateRegistry {
 
     private final ConcurrentMap<String, List<PromptTemplateVersion>> templatesByKey = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, String> activeVersionByKey = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, String> previousActiveVersionByKey = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, VariantScoreStats> scoreStatsByVariant = new ConcurrentHashMap<>();
 
     public void register(PromptTemplateVersion template) {
@@ -62,6 +63,11 @@ public final class PromptTemplateRegistry {
             throw new IllegalArgumentException("No template exists for key='" + key + "' and version='" + version + "'");
         }
 
+        String current = activeVersionByKey.get(key);
+        if (current != null && !current.equalsIgnoreCase(version)) {
+            previousActiveVersionByKey.put(key, current);
+        }
+
         activeVersionByKey.put(key, version);
     }
 
@@ -75,8 +81,35 @@ public final class PromptTemplateRegistry {
             return false;
         }
 
+        String current = activeVersionByKey.get(key);
+        if (current != null && !current.equalsIgnoreCase(version)) {
+            previousActiveVersionByKey.put(key, current);
+        }
+
         activeVersionByKey.put(key, version);
         return true;
+    }
+
+    public Optional<String> previousActiveVersion(String key) {
+        return Optional.ofNullable(previousActiveVersionByKey.get(key));
+    }
+
+    public Optional<String> rollbackToPreviousVersion(String key) {
+        Objects.requireNonNull(key, "key must not be null");
+
+        String previousVersion = previousActiveVersionByKey.get(key);
+        if (previousVersion == null) {
+            return Optional.empty();
+        }
+
+        String currentVersion = activeVersionByKey.put(key, previousVersion);
+        if (currentVersion != null && !currentVersion.equalsIgnoreCase(previousVersion)) {
+            previousActiveVersionByKey.put(key, currentVersion);
+        } else {
+            previousActiveVersionByKey.remove(key);
+        }
+
+        return Optional.of(previousVersion);
     }
 
     public Optional<PromptTemplateVersion> find(String key, String version, String variant) {

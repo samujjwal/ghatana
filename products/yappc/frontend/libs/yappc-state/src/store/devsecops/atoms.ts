@@ -10,7 +10,7 @@
 import { atom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
 
-import { devsecopsClient } from '@yappc/core/api/devsecops/client';
+import { devsecopsClient } from '@yappc/api/devsecops/client';
 import type {
   Item,
   ItemFilter,

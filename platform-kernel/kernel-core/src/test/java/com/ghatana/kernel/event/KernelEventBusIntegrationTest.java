@@ -303,8 +303,7 @@ class KernelEventBusIntegrationTest extends EventloopTestBase {
                     .then( // GH-90000
                         result -> Promise.complete(), // GH-90000
                         error -> {
-                            // Log error but don't fail other handlers
-                            System.err.println("Handler error: " + error.getMessage()); // GH-90000
+                            // Isolate handler failure — other subscribers still run
                             return Promise.complete(); // GH-90000
                         }
                     );

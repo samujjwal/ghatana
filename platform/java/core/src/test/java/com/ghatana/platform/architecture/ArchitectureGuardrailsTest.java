@@ -183,8 +183,7 @@ class ArchitectureGuardrailsTest {
                     .haveFullyQualifiedName("com.ghatana.platform.core.types.TenantId")
                     .because("Use com.ghatana.platform.domain.auth.TenantId (canonical) instead of deprecated variants");
 
-            // NOTE: This test documents the target state. Enable once migration is complete.
-            // rule.check(platformClasses); // GH-90000
+            rule.allowEmptyShould(true).check(platformClasses); // GH-90000 migration complete: TenantId canonical type enforced
         }
     }
 

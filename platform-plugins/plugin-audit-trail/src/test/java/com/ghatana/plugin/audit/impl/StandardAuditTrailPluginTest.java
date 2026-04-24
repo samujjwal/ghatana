@@ -123,6 +123,14 @@ class StandardAuditTrailPluginTest extends EventloopTestBase {
             assertThat(metadata.name()).isEqualTo("Audit Trail Plugin");
             assertThat(metadata.version()).isEqualTo("1.0.0");
             assertThat(metadata.description()).contains("audit trail");
+            assertThat(metadata.capabilities()).contains("audit:log", "audit:verify", "audit:export");
+            assertThat(metadata.properties())
+                    .containsEntry("variant", "standard-in-memory")
+                    .containsEntry("durability", "non-durable");
+            assertThat(metadata.properties().get("supportedExportFormats"))
+                    .isEqualTo(List.of("JSON", "CSV", "XML"));
+            assertThat(metadata.properties().get("unsupportedExportFormats"))
+                    .isEqualTo(List.of("PDF"));
         }
     }
 

@@ -393,6 +393,7 @@ describe('HTTP Reverse Proxy', () => {
 });
 
 // ── WebSocket authentication ───────────────────────────────────────────────────
+// @local-network — binds a real TCP port for WebSocket connection
 describe('WebSocket /tail/events auth', () => {
   let app: FastifyInstance;
   let baseUrl: string;
@@ -475,8 +476,70 @@ describe('SSE /events/stream tenant handling', () => {
   });
 
   afterEach(async () => {
+    if (app) {
+      await app.close();
+    }
+    if (backend?.listening) {
+      await new Promise<void>((resolve) => { backend.close(() => resolve()); });
+    }
+  });
+
+  it('rejects missing SSE credentials before contacting the backend', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/events/stream',
+    });
+
+    expect(res.statusCode).toBe(401);
+    expect(res.json()).toEqual({ error: 'Authentication required' });
+    expect(lastSseRequestUrl).toBeUndefined();
+  });
+
+  it('rejects invalid SSE credentials before contacting the backend', async () => {
+    const badToken = makeJwt({ sub: 'user-1' }, 'wrong-secret');
+    const res = await app.inject({
+      method: 'GET',
+      url: `/events/stream?token=${badToken}`,
+    });
+
+    expect(res.statusCode).toBe(403);
+    expect(res.json()).toEqual({ error: 'Invalid or expired token' });
+    expect(lastSseRequestUrl).toBeUndefined();
+  });
+
+  it('accepts SSE token from query parameter and propagates query tenantId', async () => {
+    const token = validToken();
+    const res = await app.inject({
+      method: 'GET',
+      url: `/events/stream?token=${token}&tenantId=tenant-query`,
+      headers: { 'x-correlation-id': 'corr-sse-query' },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['x-correlation-id']).toBe('corr-sse-query');
+    expect(lastSseRequestUrl).toBe('/events/stream?tenantId=tenant-query');
+    expect(lastSseHeaders.authorization).toBe(`Bearer ${token}`);
+  });
+
+  it('maps an unreachable SSE backend to 502', async () => {
     await app.close();
     await new Promise<void>((resolve) => { backend.close(() => resolve()); });
+
+    app = await buildApp({
+      jwtSecret: TEST_SECRET,
+      backendUrl: 'http://127.0.0.1:1',
+      allowedOrigins: ['http://localhost:5173'],
+    });
+    await app.ready();
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/events/stream',
+      headers: { authorization: `Bearer ${validToken()}` },
+    });
+
+    expect(res.statusCode).toBe(502);
+    expect(res.json()).toEqual({ error: 'Bad Gateway', message: 'SSE backend unreachable' });
   });
 
   it('rejects tenant mismatch between query tenantId and JWT tenantId', async () => {

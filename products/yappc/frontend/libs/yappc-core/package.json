@@ -45,8 +45,6 @@
     "@apollo/client": "^4.1.7",
     "@ghatana/api": "workspace:*",
     "@ghatana/platform-utils": "workspace:*",
-    "@yappc/ai": "workspace:*",
-    "@yappc/state": "workspace:*",
     "fastify": "^5.8.4",
     "fastify-plugin": "^5.1.0",
     "msw": "^2.13.2",

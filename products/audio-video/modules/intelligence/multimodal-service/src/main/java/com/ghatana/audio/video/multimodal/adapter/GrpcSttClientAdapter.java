@@ -3,6 +3,10 @@ package com.ghatana.audio.video.multimodal.adapter;
 import com.ghatana.audio.video.common.platform.AiInferenceClient;
 import com.ghatana.audio.video.multimodal.engine.AudioResult;
 import com.ghatana.audio.video.multimodal.engine.SttClientAdapter;
+import com.ghatana.stt.core.grpc.proto.STTServiceGrpc;
+import com.ghatana.stt.core.grpc.proto.TranscribeRequest;
+import com.ghatana.stt.core.grpc.proto.TranscribeResponse;
+import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
@@ -179,30 +183,52 @@ public class GrpcSttClientAdapter implements SttClientAdapter, AutoCloseable {
     /**
      * Transcribe audio via Whisper gRPC endpoint.
      *
-     * <p>This is a placeholder method. Once {@code stt_service.proto} is compiled
-     * and gRPC stubs are generated, replace this implementation with real gRPC calls.
+     * <p>Uses the real STTService gRPC stubs generated from stt_service.proto.
+     * Makes a synchronous transcription request with a 30-second deadline.
      *
      * @param audioData raw audio bytes
      * @return AudioResult with transcription and confidence
      */
     private AudioResult transcribeViaGrpc(byte[] audioData) {
-        // TODO: Replace with real gRPC call once proto stubs are generated
-        // Example implementation:
-        // SttServiceGrpc.SttServiceBlockingStub stub =
-        //     SttServiceGrpc.newBlockingStub(channel).withDeadlineAfter(30, TimeUnit.SECONDS);
-        // TranscribeRequest req = TranscribeRequest.newBuilder()
-        //     .setAudioData(ByteString.copyFrom(audioData))
-        //     .setSampleRate(16000)
-        //     .build();
-        // TranscribeResponse resp = stub.transcribe(req);
-        // return AudioResult.builder()
-        //     .transcription(resp.getTranscription())
-        //     .confidence(resp.getConfidence())
-        //     .build();
+        try {
+            // Create blocking stub with 30-second deadline
+            STTServiceGrpc.STTServiceBlockingStub stub =
+                STTServiceGrpc.newBlockingStub(channel)
+                    .withDeadlineAfter(30, TimeUnit.SECONDS);
 
-        LOG.warn("Whisper gRPC transcription not yet implemented - falling back to LLM");
-        currentMode = SttMode.LLM_FALLBACK;
-        return transcribeViaAiInference(audioData);
+            // Build transcribe request
+            TranscribeRequest req = TranscribeRequest.newBuilder()
+                .setAudioData(ByteString.copyFrom(audioData))
+                .setSampleRate(16000)  // Default sample rate
+                .setLanguage("")  // Auto-detect language
+                .build();
+
+            // Call transcribe RPC
+            TranscribeResponse resp = stub.transcribe(req);
+
+            // Convert response to AudioResult
+            String transcription = resp.getText() != null ? resp.getText() : "";
+            double confidence = resp.getConfidence() > 0 ? resp.getConfidence() : 0.0;
+
+            LOG.info("Whisper gRPC transcription completed: text_length={}, confidence={}", 
+                transcription.length(), confidence);
+
+            return AudioResult.builder()
+                .transcription(transcription)
+                .confidence(confidence)
+                .build();
+
+        } catch (io.grpc.StatusRuntimeException e) {
+            LOG.error("Whisper gRPC call failed with status {}: {}, falling back to LLM",
+                e.getStatus().getCode(), e.getStatus().getDescription(), e);
+            currentMode = SttMode.LLM_FALLBACK;
+            return transcribeViaAiInference(audioData);
+        } catch (Exception e) {
+            LOG.error("Unexpected error in Whisper gRPC transcription: {}, falling back to LLM",
+                e.getMessage(), e);
+            currentMode = SttMode.LLM_FALLBACK;
+            return transcribeViaAiInference(audioData);
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────

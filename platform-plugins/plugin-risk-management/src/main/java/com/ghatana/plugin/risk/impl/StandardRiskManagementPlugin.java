@@ -42,20 +42,23 @@ public class StandardRiskManagementPlugin implements RiskManagementPlugin {
     private final Map<String, List<RiskAlert>> alerts = new ConcurrentHashMap<>();
     private final Map<String, List<RiskScore>> scoreHistory = new ConcurrentHashMap<>();
 
+    private static final PluginMetadata METADATA = PluginMetadata.builder()
+        .id("risk-management-plugin")
+        .name("Risk Management Plugin")
+        .version("1.0.0")
+        .description("Cross-product risk management framework")
+        .type(PluginType.CUSTOM)
+        .author("Ghatana")
+        .license("Apache-2.0")
+        .capability("risk:calculate", "risk:set-limits", "risk:get-alerts", "risk:generate-report")
+        .build();
+
     private PluginContext context;
     private PluginState state = PluginState.UNLOADED;
 
     @Override
     public PluginMetadata metadata() {
-        return PluginMetadata.builder()
-            .id("risk-management-plugin")
-            .name("Risk Management Plugin")
-            .version("1.0.0")
-            .description("Cross-product risk management framework")
-            .type(PluginType.CUSTOM)
-            .author("Ghatana")
-            .license("Apache-2.0")
-            .build();
+        return METADATA;
     }
 
     @Override

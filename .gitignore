@@ -92,3 +92,28 @@ Compilation
 
 # Stale/archival files
 *.old.*
+
+# Python-specific artifacts
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.egg-info/
+dist/
+build/
+.Python
+python-env/
+venv/
+env/
+ENV/
+.eggs/
+*.egg
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Ensure all bin/ directories are ignored (compiled artifacts)
+bin/
+**/.bin/
+build-logic/conventions/bin/

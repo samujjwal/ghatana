@@ -2154,20 +2154,11 @@ public class AepHttpServer {
      * defaulting to {@code "default"}.
      */
     private String resolveTenantId(HttpRequest request) {
-        String fromHeader = request.getHeader(HttpHeaders.of("X-Tenant-Id"));
-        if (fromHeader != null && !fromHeader.isBlank()) return fromHeader;
-        String fromQuery = request.getQueryParameter("tenantId");
-        return (fromQuery != null && !fromQuery.isBlank()) ? fromQuery : "default";
+        return HttpHelper.resolveTenantId(request);
     }
 
     private String resolveTenantId(HttpRequest request, Map<String, Object> payload) {
-        String fromHeader = request.getHeader(HttpHeaders.of("X-Tenant-Id"));
-        if (fromHeader != null && !fromHeader.isBlank()) return fromHeader;
-        String tenantId = request.getQueryParameter("tenantId");
-        if ((tenantId == null || tenantId.isBlank()) && payload != null) {
-            tenantId = asString(payload.get("tenantId"));
-        }
-        return (tenantId == null || tenantId.isBlank()) ? "default" : tenantId;
+        return HttpHelper.resolveTenantId(request, payload);
     }
 
     private int parseIntQuery(String value, int fallback) {

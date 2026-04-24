@@ -42,11 +42,24 @@ import java.util.Map;
 final class ToolAwareOllamaCompletionService implements ToolAwareCompletionService {
 
     private static final Logger log = LoggerFactory.getLogger(ToolAwareOllamaCompletionService.class);
+    private static final ToolPermissionPolicy ALLOW_ALL_TOOLS = (request, tool) -> true;
+    private static final AgentActionAuditSink NOOP_AUDIT_SINK = new AgentActionAuditSink() { };
 
     private final OllamaCompletionService delegate;
+    private final ToolPermissionPolicy permissionPolicy;
+    private final AgentActionAuditSink auditSink;
 
     ToolAwareOllamaCompletionService(OllamaCompletionService delegate) {
+        this(delegate, ALLOW_ALL_TOOLS, NOOP_AUDIT_SINK);
+    }
+
+    ToolAwareOllamaCompletionService(
+            OllamaCompletionService delegate,
+            ToolPermissionPolicy permissionPolicy,
+            AgentActionAuditSink auditSink) {
         this.delegate = delegate;
+        this.permissionPolicy = permissionPolicy == null ? ALLOW_ALL_TOOLS : permissionPolicy;
+        this.auditSink = auditSink == null ? NOOP_AUDIT_SINK : auditSink;
     }
 
     // ── CompletionService ─────────────────────────────────────────────────────
@@ -85,7 +98,27 @@ final class ToolAwareOllamaCompletionService implements ToolAwareCompletionServi
             return delegate.complete(request);
         }
 
-        List<Map<String, Object>> toolPayload = tools.stream()
+        List<ToolDefinition> allowedTools = new ArrayList<>();
+        for (ToolDefinition tool : tools) {
+            if (permissionPolicy.isAllowed(request, tool)) {
+                allowedTools.add(tool);
+            } else {
+                auditSink.onToolDenied(getProviderName(), tool.getName(), "policy_denied");
+                log.warn("Tool '{}' denied by permission policy for provider {}",
+                        tool.getName(), getProviderName());
+            }
+        }
+
+        if (allowedTools.isEmpty()) {
+            Map<String, Object> metadata = new HashMap<>(request.getMetadata());
+            metadata.put("tool_choice", "none");
+            CompletionRequest noToolRequest = copyRequest(request)
+                    .metadata(metadata)
+                    .build();
+            return delegate.complete(noToolRequest);
+        }
+
+        List<Map<String, Object>> toolPayload = allowedTools.stream()
             .map(ToolDefinition::toOpenAIFormat)
             .toList();
 
@@ -97,7 +130,8 @@ final class ToolAwareOllamaCompletionService implements ToolAwareCompletionServi
             .metadata(metadata)
             .build();
 
-        log.debug("Ollama provider forwarding {} tool definitions", tools.size());
+        auditSink.onToolsForwarded(getProviderName(), allowedTools.size());
+        log.debug("Ollama provider forwarding {} tool definitions", allowedTools.size());
         return delegate.complete(toolAwareRequest);
     }
 
@@ -138,8 +172,20 @@ final class ToolAwareOllamaCompletionService implements ToolAwareCompletionServi
             .metadata(metadata)
             .build();
 
+        auditSink.onToolResultsForwarded(getProviderName(), toolResults.size());
         log.debug("Ollama provider forwarding {} tool results", toolResults.size());
         return delegate.complete(continuationRequest);
+    }
+
+    @FunctionalInterface
+    interface ToolPermissionPolicy {
+        boolean isAllowed(CompletionRequest request, ToolDefinition tool);
+    }
+
+    interface AgentActionAuditSink {
+        default void onToolDenied(String provider, String toolName, String reason) { }
+        default void onToolsForwarded(String provider, int toolCount) { }
+        default void onToolResultsForwarded(String provider, int resultCount) { }
     }
 
         private CompletionRequest.Builder copyRequest(CompletionRequest request) {

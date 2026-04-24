@@ -7,7 +7,7 @@ export default defineConfig({
     preserveSymlinks: true,
     alias: {
       "@ghatana/platform-utils": fileURLToPath(
-        new URL("../foundation/platform-utils/src/index.ts", import.meta.url),
+        new URL("../platform-utils/src/index.ts", import.meta.url),
       ),
       "@ghatana/tokens": fileURLToPath(
         new URL("../tokens/src/index.ts", import.meta.url),
@@ -28,7 +28,7 @@ export default defineConfig({
     setupFiles: ["./src/test/setup.ts"],
     coverage: {
       provider: "v8",
-      reporter: ["text", "json", "html"],
+      reporter: ["text", "json", "html", "lcov"],
       include: ["src/**/*.ts", "src/**/*.tsx"],
       exclude: [
         "src/**/*.test.ts",
@@ -37,6 +37,12 @@ export default defineConfig({
         "src/**/*.d.ts",
         "src/test/**",
       ],
+      thresholds: {
+        lines: 70,
+        functions: 70,
+        branches: 65,
+        statements: 70,
+      },
     },
   },
 });

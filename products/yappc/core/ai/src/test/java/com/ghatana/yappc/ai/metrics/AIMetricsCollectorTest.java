@@ -206,6 +206,53 @@ class AIMetricsCollectorTest {
         }
     }
 
+    @Nested
+    @DisplayName("quality and drift metrics")
+    class QualityMetrics {
+
+        @Test
+        @DisplayName("recordQualitySignal records confidence distribution")
+        void recordQualitySignalRecordsConfidence() {
+            collector.recordQualitySignal("claude-3-sonnet", "code_generation", "tenant-1", 0.82, 0.55);
+
+            double mean = registry.find("yappc.ai.quality.confidence")
+                    .tag("model", "claude-3-sonnet")
+                    .summary()
+                    .mean();
+            assertThat(mean).isEqualTo(0.82);
+        }
+
+        @Test
+        @DisplayName("recordQualitySignal emits low-confidence and drift counters")
+        void recordQualitySignalEmitsLowConfidenceAndDrift() {
+            collector.recordQualitySignal("claude-3-sonnet", "code_generation", "tenant-1", 0.21, 0.55);
+
+            double lowConfidence = registry.find("yappc.ai.quality.low_confidence.total")
+                    .tag("feature", "code_generation")
+                    .counter()
+                    .count();
+            double drift = registry.find("yappc.ai.quality.drift.total")
+                    .tag("feature", "code_generation")
+                    .counter()
+                    .count();
+
+            assertThat(lowConfidence).isEqualTo(1.0);
+            assertThat(drift).isEqualTo(1.0);
+        }
+    }
+
+    @Test
+    @DisplayName("recordHallucinationBlocked increments blocked counter")
+    void recordHallucinationBlockedIncrementsCounter() {
+        collector.recordHallucinationBlocked("gpt-4o", "reasoning", "tenant-1", "hallucination_marker");
+
+        double count = registry.find("yappc.ai.quality.hallucination.blocked.total")
+                .tag("reason", "hallucination_marker")
+                .counter()
+                .count();
+        assertThat(count).isEqualTo(1.0);
+    }
+
     // ── null safety ──────────────────────────────────────────────────────────
 
     @Test

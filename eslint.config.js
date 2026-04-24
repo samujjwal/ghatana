@@ -52,6 +52,23 @@ module.exports = [
       "ghatana/no-dev-auth-in-prod": "error",
       "ghatana/no-duplicate-utilities": "warn",
       "ghatana/no-duplicate-components": "warn",
+      "no-restricted-imports": [
+        "error",
+        {
+          "paths": [
+            {
+              "name": "@ghatana/sso-client",
+              "message": "Direct @ghatana/sso-client import is not allowed in product code. Use @yappc/auth or the platform auth abstraction."
+            }
+          ],
+          "patterns": [
+            {
+              "group": ["**/store/StateManager", "**/store/StateManager.ts", "@yappc/state/store/StateManager"],
+              "message": "StateManager is deprecated. Import createAtom / createPersistentAtom / createDerivedAtom from @ghatana/state (re-exported via @yappc/state) instead."
+            }
+          ]
+        }
+      ]
     },
   },
 ];

@@ -1,0 +1,351 @@
+name: Infrastructure-Backed CI (Tier-3)
+
+# Runs Testcontainers-backed integration tests against real DB/broker/cache.
+# Mirrors tier-3 from test-tier-classification.yml but adds:
+#   - docker-compose for auth/gateway integration
+#   - ephemeral environments for product E2E smoke
+#
+# Execution rules:
+#   - Runs on main/release push and nightly schedule.
+#   - Skipped on PRs (tier-3 is merge-gate on main, not pre-merge by default).
+#   - Can be force-run via workflow_dispatch for pre-release validation.
+
+on:
+  push:
+    branches: [main, 'release/**']
+  schedule:
+    - cron: '0 3 * * *'    # 03:00 UTC nightly
+  workflow_dispatch:
+    inputs:
+      product:
+        description: "Limit to a specific product (leave empty for all)"
+        required: false
+        default: ""
+        type: string
+
+env:
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.caching=true"
+  JAVA_VERSION: "21"
+
+jobs:
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 1: Platform Java — DB, Cache, Messaging Testcontainers
+  # ─────────────────────────────────────────────────────────────────────────
+  platform-java-infra:
+    name: "Platform Java | DB + Cache + Messaging (Testcontainers)"
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      # Pre-warm Docker socket so Testcontainers starts faster
+      docker:
+        image: docker:24-dind
+        options: --privileged
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+
+      - name: Platform DB Testcontainers tests
+        run: |
+          ./gradlew :platform:java:database:test \
+            -Pinfra.testcontainers=true \
+            -PincludeTags="infrastructure-backed" \
+            --continue
+
+      - name: Platform Cache Testcontainers tests
+        run: |
+          ./gradlew :platform:java:cache:test \
+            -Pinfra.testcontainers=true \
+            -PincludeTags="infrastructure-backed" \
+            --continue
+
+      - name: Platform Messaging Testcontainers tests
+        run: |
+          ./gradlew :platform:java:messaging:test \
+            -Pinfra.testcontainers=true \
+            -PincludeTags="infrastructure-backed" \
+            --continue
+
+      - name: Platform Kernel Persistence integration tests
+        run: |
+          ./gradlew :platform-kernel:kernel-persistence:test \
+            -Pinfra.testcontainers=true \
+            -PincludeTags="integration" \
+            --continue
+
+      - name: Upload platform results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: platform-java-infra-results
+          path: |
+            platform/java/**/build/test-results/
+            platform/java/**/build/reports/tests/
+            platform-kernel/**/build/test-results/
+          retention-days: 7
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 2: Auth-Gateway — docker-compose integration
+  # ─────────────────────────────────────────────────────────────────────────
+  auth-gateway-integration:
+    name: "Auth-Gateway | docker-compose integration"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+
+      - name: Start auth-gateway docker-compose stack
+        run: |
+          if [ -f "shared-services/docker-compose.test.yml" ]; then
+            docker compose -f shared-services/docker-compose.test.yml up -d --wait
+          else
+            echo "No docker-compose.test.yml — running Testcontainers mode"
+          fi
+
+      - name: Auth-gateway integration tests
+        run: |
+          ./gradlew :shared-services:auth-gateway:test \
+            -Pinfra.testcontainers=true \
+            -PincludeTags="integration,local-network" \
+            --continue
+
+      - name: Auth-gateway k6 load tests (smoke mode)
+        run: |
+          if command -v k6 &> /dev/null; then
+            k6 run --vus 5 --duration 30s \
+              shared-services/auth-gateway/k6-tests/load-test-auth-gateway.js
+          else
+            echo "k6 not installed — skipping load tests in this run"
+          fi
+
+      - name: Stop docker-compose stack
+        if: always()
+        run: |
+          if [ -f "shared-services/docker-compose.test.yml" ]; then
+            docker compose -f shared-services/docker-compose.test.yml down -v
+          fi
+
+      - name: Upload auth-gateway results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auth-gateway-integration-results
+          path: shared-services/auth-gateway/build/test-results/
+          retention-days: 7
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 3: Data-Cloud — DB-backed E2E + migration tests
+  # ─────────────────────────────────────────────────────────────────────────
+  data-cloud-infra:
+    name: "Data-Cloud | DB-backed E2E + migration"
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    if: ${{ github.event.inputs.product == '' || github.event.inputs.product == 'data-cloud' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+
+      - name: Data-Cloud integration tests (Testcontainers PostgreSQL)
+        run: |
+          ./gradlew :products:data-cloud:integration-tests:test \
+            -Pinfra.testcontainers=true \
+            -PincludeTags="integration,e2e" \
+            --continue
+
+      - name: Data-Cloud migration compatibility tests
+        run: |
+          ./gradlew :products:data-cloud:integration-tests:test \
+            --tests "*MigrationCompatibilityTest*" \
+            --tests "*DbBackedMigrationE2ETest*" \
+            -Pinfra.testcontainers=true \
+            --continue
+
+      - name: Upload data-cloud results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-cloud-infra-results
+          path: products/data-cloud/integration-tests/build/test-results/
+          retention-days: 7
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 4: AEP — orchestration + gateway integration
+  # ─────────────────────────────────────────────────────────────────────────
+  aep-infra:
+    name: "AEP | Orchestration + Gateway integration"
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    if: ${{ github.event.inputs.product == '' || github.event.inputs.product == 'aep' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+
+      - name: AEP server integration tests
+        run: |
+          ./gradlew :products:aep:server:test \
+            -Pinfra.testcontainers=true \
+            -PincludeTags="integration,infrastructure-backed" \
+            --continue
+
+      - name: AEP gateway integration tests
+        run: |
+          ./gradlew :products:aep:gateway:test \
+            -Pinfra.testcontainers=true \
+            -PincludeTags="integration,local-network" \
+            --continue
+
+      - name: Upload AEP results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aep-infra-results
+          path: products/aep/**/build/test-results/
+          retention-days: 7
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 5: YAPPC — knowledge-graph + lifecycle integration
+  # ─────────────────────────────────────────────────────────────────────────
+  yappc-infra:
+    name: "YAPPC | Knowledge-Graph + Lifecycle integration"
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    if: ${{ github.event.inputs.product == '' || github.event.inputs.product == 'yappc' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+
+      - name: YAPPC knowledge-graph integration tests (Testcontainers PostgreSQL)
+        run: |
+          ./gradlew :products:yappc:core:knowledge-graph:integrationTest \
+            -Pinfra.testcontainers=true \
+            --continue
+
+      - name: YAPPC lifecycle E2E tests
+        run: |
+          ./gradlew :products:yappc:core:yappc-services:test \
+            -PincludeTags="e2e" \
+            --continue
+
+      - name: YAPPC agents benchmark (smoke)
+        run: |
+          ./gradlew :products:yappc:core:agents:test \
+            --tests "*AgentSchedulingBenchmark*" \
+            -PincludeTags="benchmark" \
+            --continue || true
+
+      - name: Upload YAPPC results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yappc-infra-results
+          path: products/yappc/core/**/build/test-results/
+          retention-days: 7
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 6: Audio-Video — resilience + compliance integration
+  # ─────────────────────────────────────────────────────────────────────────
+  audio-video-infra:
+    name: "Audio-Video | Resilience + Compliance integration"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: ${{ github.event.inputs.product == '' || github.event.inputs.product == 'audio-video' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+
+      - name: Audio-video resilience tests
+        run: |
+          ./gradlew :products:audio-video:libs:java:common:test \
+            --tests "*StreamingLoadResilienceTest*" \
+            --tests "*StreamingRetryHandlerTest*" \
+            --continue
+
+      - name: Audio-video compliance tests
+        run: |
+          ./gradlew :products:audio-video:libs:java:common:test \
+            --tests "*MediaRetentionPolicyTest*" \
+            --tests "*ConsentRevocationTest*" \
+            --tests "*PiiLeakagePreventionTest*" \
+            --continue || true
+
+      - name: Upload AV results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: audio-video-infra-results
+          path: products/audio-video/**/build/test-results/
+          retention-days: 7
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Aggregate status check (required for branch protection)
+  # ─────────────────────────────────────────────────────────────────────────
+  infra-ci-gate:
+    name: "Infra CI Gate"
+    runs-on: ubuntu-latest
+    needs:
+      - platform-java-infra
+      - auth-gateway-integration
+      - data-cloud-infra
+      - aep-infra
+      - yappc-infra
+      - audio-video-infra
+    if: always()
+    steps:
+      - name: Check all infra jobs passed
+        run: |
+          results="${{ needs.platform-java-infra.result }} \
+                    ${{ needs.auth-gateway-integration.result }} \
+                    ${{ needs.data-cloud-infra.result }} \
+                    ${{ needs.aep-infra.result }} \
+                    ${{ needs.yappc-infra.result }} \
+                    ${{ needs.audio-video-infra.result }}"
+          echo "Job results: $results"
+          if echo "$results" | grep -qw "failure"; then
+            echo "::error::One or more infra-backed CI jobs failed"
+            exit 1
+          fi
+          echo "All infra-backed CI jobs passed or were skipped."

@@ -6,6 +6,8 @@ import com.ghatana.kernel.descriptor.KernelDependency;
 import com.ghatana.kernel.plugin.KernelPlugin;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,6 +33,7 @@ import java.util.stream.Collectors;
  */
 @KernelInternal("Use KernelRegistry for plugin discovery")
 public class PluginRegistry {
+    private static final Logger log = LoggerFactory.getLogger(PluginRegistry.class);
     private final Map<String, KernelPlugin> plugins = new ConcurrentHashMap<>();
     private final Map<String, Set<KernelCapability>> capabilitiesByPlugin = new ConcurrentHashMap<>();
     /** Plugin IDs that have been explicitly disabled at runtime. */
@@ -131,7 +134,7 @@ public class PluginRegistry {
             return Promise.complete();
         }
         return plugin.stop().whenException(e ->
-            System.err.println("Error stopping plugin " + pluginId + " during disable: " + e.getMessage()));
+            log.error("Error stopping plugin {} during disable: {}", pluginId, e.getMessage(), e));
     }
 
     /**
@@ -195,7 +198,7 @@ public class PluginRegistry {
             .map(plugin -> plugin.stop()
                 .then($ -> Promise.complete(),
                       e -> {
-                          System.err.println("Error stopping plugin " + plugin.getModuleId() + ": " + e.getMessage());
+                          log.error("Error stopping plugin {}: {}", plugin.getModuleId(), e.getMessage(), e);
                           return Promise.complete();
                       }))
             .collect(Collectors.toList());

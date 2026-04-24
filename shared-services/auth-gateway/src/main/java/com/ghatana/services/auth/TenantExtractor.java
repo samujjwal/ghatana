@@ -53,7 +53,7 @@ import java.util.Optional;
  * @see com.ghatana.core.auth.UserPrincipal
  * @doc.type class
  * @doc.purpose Tenant context extraction from HTTP requests
- * @doc.layer product
+ * @doc.layer platform
  * @doc.pattern Extractor
  */
 public class TenantExtractor {

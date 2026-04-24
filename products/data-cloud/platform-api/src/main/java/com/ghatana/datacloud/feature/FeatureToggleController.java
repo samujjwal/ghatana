@@ -4,6 +4,7 @@
  */
 package com.ghatana.datacloud.feature;
 
+import com.ghatana.platform.http.security.filter.TenantExtractor;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.http.AsyncServlet;
@@ -132,8 +133,7 @@ public class FeatureToggleController implements AsyncServlet {
     }
 
     private String extractTenantId(HttpRequest request) {
-        String tenantId = request.getHeader(HttpHeaders.of("X-Tenant-ID"));
-        return tenantId != null ? tenantId : "default-tenant";
+        return TenantExtractor.fromHttpOrDefault(request, "default-tenant");
     }
 
     private FeatureFlagService.FeatureFlag parseFlag(String json) {

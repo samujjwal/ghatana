@@ -7,5 +7,5 @@
  * @doc.pattern Selection Hook
  */
 
-export { useSelection } from '@ghatana/selection-ui';
-export type { SelectionItem, UseSelectionOptions, UseSelectionReturn } from '@ghatana/selection-ui';
+export { useSelection } from '@ghatana/domain-components/selection';
+export type { SelectionItem, UseSelectionOptions, UseSelectionReturn } from '@ghatana/domain-components/selection';

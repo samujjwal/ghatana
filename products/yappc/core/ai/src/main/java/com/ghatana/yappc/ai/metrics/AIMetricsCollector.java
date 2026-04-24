@@ -63,6 +63,10 @@ public final class AIMetricsCollector {
     private static final String FALLBACK_TRIGGERED  = "yappc.ai.fallback.total";
     private static final String SUGGESTION_ACCEPTED = "yappc.ai.suggestion.accepted.total";
     private static final String SUGGESTION_REJECTED = "yappc.ai.suggestion.rejected.total";
+        private static final String QUALITY_CONFIDENCE  = "yappc.ai.quality.confidence";
+        private static final String QUALITY_LOW_CONFIDENCE = "yappc.ai.quality.low_confidence.total";
+        private static final String QUALITY_DRIFT       = "yappc.ai.quality.drift.total";
+        private static final String HALLUCINATION_BLOCKED = "yappc.ai.quality.hallucination.blocked.total";
 
     private final MeterRegistry registry;
 
@@ -211,9 +215,72 @@ public final class AIMetricsCollector {
                 .tags(tags).register(registry).increment();
     }
 
+    /**
+     * Records confidence-driven quality signals used by drift and quality dashboards.
+     */
+    public void recordQualitySignal(
+            String model,
+            String feature,
+            String tenantId,
+            double confidence,
+            double threshold) {
+        double normalizedConfidence = normalize(confidence);
+        double normalizedThreshold = normalize(threshold);
+
+        Tags tags = Tags.of(
+                Tag.of("model", safe(model)),
+                Tag.of("feature", safe(feature)),
+                Tag.of("tenant", safe(tenantId))
+        );
+
+        DistributionSummary.builder(QUALITY_CONFIDENCE)
+                .description("AI response confidence distribution")
+                .tags(tags)
+                .register(registry)
+                .record(normalizedConfidence);
+
+        if (normalizedConfidence < normalizedThreshold) {
+            Counter.builder(QUALITY_LOW_CONFIDENCE)
+                    .description("Responses below confidence threshold")
+                    .tags(tags)
+                    .register(registry)
+                    .increment();
+
+            Counter.builder(QUALITY_DRIFT)
+                    .description("Quality drift indicators based on low confidence")
+                    .tags(tags)
+                    .register(registry)
+                    .increment();
+        }
+    }
+
+    /**
+     * Records that response output was blocked by hallucination controls.
+     */
+    public void recordHallucinationBlocked(String model, String feature, String tenantId, String reason) {
+        Tags tags = Tags.of(
+                Tag.of("model", safe(model)),
+                Tag.of("feature", safe(feature)),
+                Tag.of("tenant", safe(tenantId)),
+                Tag.of("reason", safe(reason))
+        );
+        Counter.builder(HALLUCINATION_BLOCKED)
+                .description("Responses blocked by hallucination controls")
+                .tags(tags)
+                .register(registry)
+                .increment();
+    }
+
     // ── Internal ─────────────────────────────────────────────────────────────
 
     private static String safe(String value) {
         return value != null ? value : "unknown";
     }
+
+        private static double normalize(double value) {
+                if (Double.isNaN(value) || Double.isInfinite(value)) {
+                        return 0.0;
+                }
+                return Math.max(0.0, Math.min(1.0, value));
+        }
 }

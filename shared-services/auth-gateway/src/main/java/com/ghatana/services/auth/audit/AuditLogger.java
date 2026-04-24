@@ -5,6 +5,7 @@ package com.ghatana.services.auth.audit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.core.util.JsonUtils;
+import com.ghatana.core.util.PiiRedactor;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -209,15 +210,35 @@ public class AuditLogger {
      * Logs a generic audit event.
      */
     public Promise<Void> logEvent(AuditEvent event) {
+        AuditEvent sanitizedEvent = sanitizeEvent(event);
         if (asyncMode) {
             return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> {
-                writeEvent(event);
+                writeEvent(sanitizedEvent);
                 return null;
             });
         } else {
-            writeEvent(event);
+            writeEvent(sanitizedEvent);
             return Promise.complete();
         }
+    }
+
+    private AuditEvent sanitizeEvent(AuditEvent event) {
+        Map<String, String> metadata = event.metadata() == null ? Map.of() : event.metadata();
+        Map<String, String> sanitizedMetadata = new HashMap<>();
+        metadata.forEach((key, value) -> sanitizedMetadata.put(key, PiiRedactor.redact(value)));
+
+        return new AuditEvent(
+                event.eventId(),
+                event.eventType(),
+                event.severity(),
+                event.userId(),
+                event.tenantId(),
+                event.ipAddress(),
+                PiiRedactor.redact(event.userAgent()),
+                PiiRedactor.redact(event.message()),
+                sanitizedMetadata,
+                event.timestamp()
+        );
     }
 
     private void writeEvent(AuditEvent event) {

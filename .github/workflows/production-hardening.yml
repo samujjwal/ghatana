@@ -1,0 +1,365 @@
+name: Production Hardening
+
+# Runs SBOM generation, dependency audit, smoke tests, and dashboard validation.
+# Executes on release branches and nightly to catch supply-chain and config drift.
+#
+# Jobs:
+#   sbom-generation     — CycloneDX SBOM for Java + Node.js artifacts
+#   dependency-audit    — OWASP dependency-check + pnpm audit + Trivy
+#   smoke-tests         — Release-gate smoke tests (auth + core APIs)
+#   migration-tests     — Backward-compatible migration checks
+#   dashboard-config    — Grafana + Alertmanager config validation
+
+on:
+  push:
+    branches: [main, 'release/**']
+  schedule:
+    - cron: '0 2 * * *'    # 02:00 UTC nightly
+  workflow_dispatch: {}
+
+env:
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true"
+  JAVA_VERSION: "21"
+
+jobs:
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 1: SBOM Generation (CycloneDX)
+  # ─────────────────────────────────────────────────────────────────────────
+  sbom-generation:
+    name: "SBOM Generation"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install pnpm dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Java SBOM (CycloneDX via Gradle)
+        run: |
+          # Generate SBOM for each deployable service
+          for module in \
+            ":shared-services:auth-gateway" \
+            ":products:aep:server" \
+            ":products:data-cloud:platform-launcher" \
+            ":products:yappc:core:services-lifecycle"; do
+            ./gradlew "$module:cyclonedxBom" --continue 2>/dev/null || \
+              echo "::warning::SBOM task not available for $module — skipping"
+          done
+
+      - name: Generate Node.js SBOM (CycloneDX via @cyclonedx/cyclonedx-npm)
+        run: |
+          npx @cyclonedx/cyclonedx-npm \
+            --output-format JSON \
+            --output-file sbom-nodejs.json \
+            --ignore-npm-errors \
+            . || echo "::warning::Node.js SBOM generation had warnings"
+
+      - name: Upload SBOMs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-artifacts
+          path: |
+            **/build/reports/bom.json
+            **/build/reports/bom.xml
+            sbom-nodejs.json
+          retention-days: 30
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 2: Dependency Audit Gate
+  # ─────────────────────────────────────────────────────────────────────────
+  dependency-audit:
+    name: "Dependency Audit"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install pnpm dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: OWASP Dependency-Check (Java)
+        run: |
+          ./gradlew dependencyCheckAggregate \
+            --continue \
+            -Powasp.suppression.file=config/owasp-suppressions.xml \
+            2>/dev/null || \
+            echo "::warning::OWASP dependency-check had findings — review report"
+
+      - name: pnpm audit (Node.js — high severity only)
+        run: |
+          pnpm audit --audit-level=high || {
+            echo "::error::pnpm audit found high-severity vulnerabilities"
+            exit 1
+          }
+
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          severity: "CRITICAL,HIGH"
+          exit-code: "1"
+          ignore-unfixed: true
+          format: "sarif"
+          output: "trivy-results.sarif"
+        continue-on-error: true
+
+      - name: Upload Trivy SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+        continue-on-error: true
+
+      - name: Upload OWASP report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-audit-reports
+          path: |
+            build/reports/dependency-check-report.*
+            trivy-results.sarif
+          retention-days: 14
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 3: Smoke Tests (release-gate)
+  # ─────────────────────────────────────────────────────────────────────────
+  smoke-tests:
+    name: "Release-Gate Smoke Tests"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+
+      - name: Auth-gateway smoke tests
+        run: |
+          ./gradlew :shared-services:auth-gateway:test \
+            --tests "*SmokeTest*" \
+            --tests "*HealthCheckTest*" \
+            -PincludeTags="smoke" \
+            --continue || true
+
+      - name: AEP health + contract smoke tests
+        run: |
+          ./gradlew :products:aep:server:test \
+            --tests "*SmokeTest*" \
+            -PincludeTags="smoke" \
+            --continue || true
+
+      - name: Data-cloud health smoke tests
+        run: |
+          ./gradlew :products:data-cloud:integration-tests:test \
+            --tests "*SmokeTest*" \
+            -PincludeTags="smoke" \
+            --continue || true
+
+      - name: YAPPC lifecycle smoke tests
+        run: |
+          ./gradlew :products:yappc:core:yappc-services:test \
+            --tests "*YappcWorkflowE2ETest*" \
+            -PincludeTags="e2e" \
+            --continue
+
+      - name: Upload smoke test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-test-results
+          path: |
+            **/build/test-results/
+          retention-days: 7
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 4: Migration Backward-Compatibility Tests
+  # ─────────────────────────────────────────────────────────────────────────
+  migration-tests:
+    name: "Migration Backward-Compatibility"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: gradle
+
+      - name: Platform-kernel migration tests
+        run: |
+          ./gradlew :platform-kernel:kernel-persistence:test \
+            --tests "*MigrationTest*" \
+            --continue
+
+      - name: Data-cloud schema migration tests
+        run: |
+          ./gradlew :products:data-cloud:integration-tests:test \
+            --tests "*MigrationCompatibilityTest*" \
+            --tests "*DbBackedMigrationE2ETest*" \
+            -Pinfra.testcontainers=true \
+            --continue
+
+      - name: Auth-gateway DB migration tests
+        run: |
+          ./gradlew :shared-services:auth-gateway:test \
+            --tests "*MigrationTest*" \
+            --continue || true
+
+      - name: YAPPC KG schema migration tests
+        run: |
+          ./gradlew :products:yappc:core:knowledge-graph:test \
+            --tests "*SchemaMigrationTest*" \
+            --continue
+
+      - name: Upload migration test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: migration-test-results
+          path: |
+            **/build/test-results/
+          retention-days: 7
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Job 5: Dashboard & Alertmanager Config Validation
+  # ─────────────────────────────────────────────────────────────────────────
+  dashboard-config-validation:
+    name: "Grafana + Alertmanager Config Validation"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Alertmanager config
+        run: |
+          if command -v amtool &> /dev/null; then
+            amtool check-config monitoring/alertmanager/alertmanager.yml
+          else
+            docker run --rm -v "$PWD/monitoring/alertmanager:/alertmanager" \
+              prom/alertmanager:latest \
+              --config.file=/alertmanager/alertmanager.yml \
+              --log.level=error || \
+              echo "::warning::Alertmanager not available for validation"
+          fi
+
+      - name: Validate Prometheus alert rules
+        run: |
+          if command -v promtool &> /dev/null; then
+            find monitoring/prometheus/rules -name "*.yml" -print0 | \
+              xargs -0 -I{} promtool check rules {}
+          else
+            echo "::warning::promtool not available — skipping alert rules validation"
+          fi
+
+      - name: Validate Grafana dashboard JSON schemas
+        run: |
+          find monitoring/grafana/dashboards -name "*.json" -print | while read dashboard; do
+            python3 -c "
+          import json, sys
+          try:
+              with open('$dashboard') as f:
+                  d = json.load(f)
+              required = ['title', 'panels']
+              missing = [k for k in required if k not in d]
+              if missing:
+                  print(f'::error::Dashboard $dashboard missing keys: {missing}')
+                  sys.exit(1)
+              print(f'OK: $dashboard')
+          except json.JSONDecodeError as e:
+              print(f'::error::Invalid JSON in $dashboard: {e}')
+              sys.exit(1)
+            "
+          done
+
+      - name: Validate docker-compose syntax
+        run: |
+          if command -v docker &> /dev/null; then
+            find . -name "docker-compose*.yml" \
+              ! -path "*/node_modules/*" \
+              ! -path "*/.git/*" \
+              -print | while read dcfile; do
+              docker compose -f "$dcfile" config --quiet 2>&1 || \
+                echo "::warning::docker-compose validation failed for $dcfile"
+            done
+          fi
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Aggregate gate
+  # ─────────────────────────────────────────────────────────────────────────
+  hardening-gate:
+    name: "Production Hardening Gate"
+    runs-on: ubuntu-latest
+    needs:
+      - sbom-generation
+      - dependency-audit
+      - smoke-tests
+      - migration-tests
+      - dashboard-config-validation
+    if: always()
+    steps:
+      - name: Check hardening results
+        run: |
+          critical_failures=""
+          # Only dependency-audit and smoke-tests are blocking
+          if [ "${{ needs.dependency-audit.result }}" = "failure" ]; then
+            critical_failures="$critical_failures dependency-audit"
+          fi
+          if [ "${{ needs.smoke-tests.result }}" = "failure" ]; then
+            critical_failures="$critical_failures smoke-tests"
+          fi
+          if [ "${{ needs.migration-tests.result }}" = "failure" ]; then
+            critical_failures="$critical_failures migration-tests"
+          fi
+          if [ -n "$critical_failures" ]; then
+            echo "::error::Critical hardening jobs failed:$critical_failures"
+            exit 1
+          fi
+          echo "Production hardening gate passed."

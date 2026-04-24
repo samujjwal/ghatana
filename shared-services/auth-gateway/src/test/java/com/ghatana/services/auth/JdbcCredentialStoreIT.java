@@ -31,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.pattern Test
  */
 @Tag("integration")
+@Tag("infrastructure-backed")
 @Testcontainers
 @DisplayName("JdbcCredentialStore — integration tests with PostgreSQL")
 class JdbcCredentialStoreIT extends EventloopTestBase {

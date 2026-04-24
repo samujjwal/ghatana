@@ -59,6 +59,16 @@ import java.util.concurrent.atomic.AtomicLong;
 public final class YAPPCAIService {
 
     private static final Logger logger = LoggerFactory.getLogger(YAPPCAIService.class);
+    private static final String[] HALLUCINATION_MARKERS = {
+        "as an ai language model",
+        "i cannot verify",
+        "i can't verify",
+        "i do not have access",
+        "cannot access realtime",
+        "not sure",
+        "might be",
+        "maybe"
+    };
 
     private final AIModelRouter router;
     private final AIServiceConfig config;
@@ -88,7 +98,11 @@ public final class YAPPCAIService {
             .whenComplete((v, error) -> {
                 if (error == null) {
                     initialized = true;
-                    logger.info("YAPPC AI Service initialized");
+                    logger.info(
+                        "YAPPC AI Service initialized (endpoint={}, maxConcurrentRequests={}, timeoutMs={})",
+                        config.getOllamaEndpoint(),
+                        config.getMaxConcurrentRequests(),
+                        config.getRequestTimeoutMs());
                 } else {
                     logger.error("Failed to initialize YAPPC AI Service", error);
                 }
@@ -257,6 +271,7 @@ public final class YAPPCAIService {
 
         long startMs = System.currentTimeMillis();
         return router.route(request)
+            .map(response -> enforceResponseQuality(request, response))
             .whenComplete((response, error) -> {
                 long latencyMs = System.currentTimeMillis() - startMs;
                 if (error != null) {
@@ -290,6 +305,94 @@ public final class YAPPCAIService {
                     }
                 }
             });
+    }
+
+    private AIResponse enforceResponseQuality(AIRequest request, AIResponse response) {
+        String content = response.getContent() == null ? "" : response.getContent().trim();
+        double confidence = estimateResponseConfidence(response, content);
+        double threshold = confidenceThreshold(request.getTaskType());
+
+        if (metricsCollector != null) {
+            metricsCollector.recordQualitySignal(
+                response.getModelId(),
+                request.getTaskType().name().toLowerCase(),
+                "unknown",
+                confidence,
+                threshold);
+        }
+
+        String hallucinationReason = findHallucinationRiskReason(request.getTaskType(), content, confidence, threshold);
+        if (hallucinationReason != null) {
+            if (metricsCollector != null) {
+                metricsCollector.recordHallucinationBlocked(
+                    response.getModelId(),
+                    request.getTaskType().name().toLowerCase(),
+                    "unknown",
+                    hallucinationReason);
+            }
+            throw new IllegalStateException(
+                "Potential hallucination detected for " + request.getTaskType() + ": " + hallucinationReason);
+        }
+
+        return response;
+    }
+
+    private String findHallucinationRiskReason(TaskType taskType, String content, double confidence, double threshold) {
+        if (content.isBlank()) {
+            return "empty_response";
+        }
+
+        String normalized = content.toLowerCase();
+        for (String marker : HALLUCINATION_MARKERS) {
+            if (normalized.contains(marker)) {
+                return "hallucination_marker";
+            }
+        }
+
+        boolean deterministicTask = taskType == TaskType.CODE_GENERATION
+            || taskType == TaskType.CODE_ANALYSIS
+            || taskType == TaskType.TEST_GENERATION
+            || taskType == TaskType.DOCUMENTATION;
+        if (deterministicTask && confidence < threshold) {
+            return "low_confidence";
+        }
+
+        return null;
+    }
+
+    private double confidenceThreshold(TaskType taskType) {
+        return switch (taskType) {
+            case CODE_GENERATION, TEST_GENERATION -> 0.55;
+            case CODE_ANALYSIS -> 0.5;
+            case DOCUMENTATION -> 0.45;
+            case REASONING -> 0.35;
+            case FAST_RESPONSE -> 0.3;
+            case CHAT, GENERAL -> 0.3;
+        };
+    }
+
+    private double estimateResponseConfidence(AIResponse response, String content) {
+        double score = 0.25;
+        int textLength = content.length();
+        if (textLength > 60) {
+            score += 0.2;
+        }
+        if (textLength > 220) {
+            score += 0.15;
+        }
+        if (content.contains("```") || content.contains("{") || content.contains("class ")) {
+            score += 0.2;
+        }
+        if (response.getMetrics() != null && response.getMetrics().getCompletionTokens() > 0) {
+            score += 0.2;
+        }
+
+        String normalized = content.toLowerCase();
+        if (normalized.contains("not sure") || normalized.contains("might") || normalized.contains("maybe")) {
+            score -= 0.2;
+        }
+
+        return Math.max(0.0, Math.min(1.0, score));
     }
 
     // ========== Prompt Builders ==========

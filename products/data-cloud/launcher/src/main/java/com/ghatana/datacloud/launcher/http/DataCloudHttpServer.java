@@ -46,6 +46,7 @@ import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.governance.security.ApiKeyResolver;
 import com.ghatana.platform.security.port.JwtTokenProvider;
 import com.ghatana.platform.http.security.filter.RateLimitFilter;
+import com.ghatana.platform.http.security.filter.TenantExtractor;
 import com.ghatana.governance.PolicyEngine;
 import com.ghatana.datacloud.launcher.http.handlers.HttpHandlerSupport;
 import com.ghatana.datacloud.launcher.http.handlers.EntityCrudHandler;
@@ -1358,12 +1359,12 @@ public class DataCloudHttpServer {
     }
 
     private static String rateLimitClientKey(HttpRequest request) {
-        String tenantId = request.getHeader(HttpHeaders.of("X-Tenant-ID"));
+        String tenantId = TenantExtractor.fromHttp(request).orElse(null);
         String clientIp = remoteIp(request);
-        if (tenantId == null || tenantId.isBlank()) {
+        if (tenantId == null) {
             return clientIp;
         }
-        return tenantId.trim() + "|" + clientIp;
+        return tenantId + "|" + clientIp;
     }
 
     /**

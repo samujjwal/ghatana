@@ -6,6 +6,7 @@ import com.ghatana.datacloud.launcher.http.ApiResponse;
 import com.ghatana.datacloud.launcher.http.RequestMetadataAttachment;
 import com.ghatana.datacloud.launcher.http.RequestTraceSupport;
 import com.ghatana.platform.governance.security.Principal;
+import com.ghatana.platform.http.security.filter.TenantExtractor;
 import io.activej.http.*;
 
 import java.nio.charset.StandardCharsets;
@@ -391,8 +392,8 @@ public class HttpHandlerSupport {
     }
 
     private static String findRawTenantCandidate(HttpRequest request) {
-        String fromHeader = request.getHeader(HttpHeaders.of("X-Tenant-Id"));
-        if (fromHeader != null && !fromHeader.isBlank()) {
+        String fromHeader = TenantExtractor.fromHttp(request).orElse(null);
+        if (fromHeader != null) {
             return fromHeader;
         }
 

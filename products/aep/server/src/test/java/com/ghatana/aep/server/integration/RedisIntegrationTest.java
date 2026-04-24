@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern IntegrationTest
  */
 @Tag("integration")
+@Tag("infrastructure-backed")
 @Testcontainers(disabledWithoutDocker = true) // GH-90000
 @DisplayName("RedisIntegrationTest")
 class RedisIntegrationTest {

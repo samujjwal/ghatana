@@ -23,6 +23,9 @@ dependencies {
     // Persistence integration
     implementation(project(":products:audio-video:modules:infrastructure:persistence"))
 
+    // STT Service proto stubs for gRPC client
+    implementation(project(":products:audio-video:modules:speech:stt-service"))
+
     // gRPC
     implementation(libs.grpc.netty.shaded)
     implementation(libs.grpc.protobuf)

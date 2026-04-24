@@ -3,6 +3,7 @@ package com.ghatana.yappc.ai.requirements.api.rest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.ai.vectorstore.VectorSearchResult;
 import com.ghatana.platform.core.util.JsonUtils;
+import com.ghatana.platform.http.security.filter.TenantExtractor;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
 import com.ghatana.platform.http.server.servlet.RoutingServlet;
 import com.ghatana.platform.security.model.User;
@@ -667,12 +668,7 @@ public final class RequirementController {
       }
     }
 
-    String header = request.getHeader(HttpHeaders.of("X-Tenant-Id"));
-    if (header != null && !header.isBlank()) {
-      return header;
-    }
-
-    return null;
+    return TenantExtractor.fromHttp(request).orElse(null);
   }
 
   private User extractUser(HttpRequest request) {

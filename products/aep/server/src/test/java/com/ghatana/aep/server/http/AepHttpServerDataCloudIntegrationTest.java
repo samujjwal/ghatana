@@ -15,6 +15,7 @@ import com.ghatana.pipeline.registry.model.PipelineVersionStatus;
 import com.ghatana.platform.domain.auth.TenantId;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -39,6 +40,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test
  */
+@Tag("local-network")
 @DisplayName("AepHttpServer – Data-Cloud Integration")
 class AepHttpServerDataCloudIntegrationTest {
 

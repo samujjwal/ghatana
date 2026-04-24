@@ -30,6 +30,9 @@
     "check:tsconfig-strict": "node ./scripts/check-typescript-strict.js",
     "check:jwt-policy": "./scripts/check-jwt-dependency-policy.sh",
     "check:license-policy": "./scripts/check-license-policy.sh",
+    "check:cross-workspace-deps": "node ./scripts/check-cross-workspace-deps.mjs",
+    "check:circular-deps": "node ./scripts/check-circular-deps.mjs",
+    "test:eslint-rules": "node ./eslint-rules/ghatana-architecture-rules.test.js",
     "prepare": "husky"
   },
   "devDependencies": {

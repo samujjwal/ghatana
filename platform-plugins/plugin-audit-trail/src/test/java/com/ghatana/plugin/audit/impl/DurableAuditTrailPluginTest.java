@@ -74,6 +74,21 @@ class DurableAuditTrailPluginTest extends EventloopTestBase {
         assertThat(plugin.getState()).isEqualTo(PluginState.UNLOADED); // GH-90000
     }
 
+        @Test
+        @DisplayName("Metadata must declare durable semantics and unsupported export formats")
+        void testMetadataDeclaresDurableSemantics() {
+        var metadata = plugin.metadata();
+
+        assertThat(metadata.capabilities()).contains("audit:log", "audit:verify", "audit:export");
+        assertThat(metadata.properties())
+            .containsEntry("variant", "durable-jdbc")
+            .containsEntry("durability", "durable");
+        assertThat(metadata.properties().get("supportedExportFormats"))
+            .isEqualTo(List.of("JSON", "CSV", "XML"));
+        assertThat(metadata.properties().get("unsupportedExportFormats"))
+            .isEqualTo(List.of("PDF"));
+        }
+
     // -------------------------------------------------------------------------
     // KP-010: Cross-tenant isolation
     // -------------------------------------------------------------------------

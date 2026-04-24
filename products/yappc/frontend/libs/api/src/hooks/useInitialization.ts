@@ -51,7 +51,7 @@ import {
   WIZARD_PROGRESS_SUBSCRIPTION,
   type WizardState,
   type InfrastructureConfig,
-} from '@yappc/core/api';
+} from '../graphql/operations/initialization.operations';
 
 // =============================================================================
 // Wizard Hooks

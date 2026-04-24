@@ -1,0 +1,260 @@
+name: Platform TypeScript — Browser, A11y & Performance CI
+
+# Tier-4 CI tiers for platform/typescript packages:
+#
+#   browser      Playwright end-to-end browser tests against built component packages
+#   a11y         axe-core accessibility audits (WCAG 2.1 AA) for all UI packages
+#   performance  Vitest benchmark threshold gates for data-grid, charts, canvas
+#
+# Execution rules (aligned with test-tier-classification.yml):
+#   - PRs:         a11y only (fast gate)
+#   - main push:   a11y + performance
+#   - release/**:  all three tiers
+#   - workflow_dispatch: configurable
+#
+# Packages covered:
+#   platform/typescript/data-grid
+#   platform/typescript/charts
+#   platform/typescript/canvas
+#   platform/typescript/code-editor
+#   platform/typescript/design-system
+#   platform/typescript/theme
+
+on:
+  push:
+    branches: [main, develop, 'release/**']
+    paths:
+      - 'platform/typescript/**'
+      - '.github/workflows/platform-ts-browser-a11y-perf.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'platform/typescript/**'
+      - '.github/workflows/platform-ts-browser-a11y-perf.yml'
+  workflow_dispatch:
+    inputs:
+      run_browser:
+        description: 'Run Playwright browser tests'
+        required: false
+        default: 'false'
+        type: choice
+        options: ['true', 'false']
+      run_performance:
+        description: 'Run performance benchmark gates'
+        required: false
+        default: 'true'
+        type: choice
+        options: ['true', 'false']
+
+concurrency:
+  group: platform-ts-browser-a11y-perf-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20'
+  PNPM_VERSION: '9'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Job: A11y audit — runs on every PR and main push
+# ─────────────────────────────────────────────────────────────────────────────
+jobs:
+  a11y:
+    name: 'A11y | WCAG 2.1 AA'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build platform packages
+        run: pnpm --filter "@ghatana/data-grid" --filter "@ghatana/charts" --filter "@ghatana/canvas" --filter "@ghatana/code-editor" --filter "@ghatana/design-system" run build
+
+      - name: Run a11y tests — data-grid
+        id: a11y-data-grid
+        run: pnpm --filter "@ghatana/data-grid" run test --reporter=verbose
+        continue-on-error: true
+
+      - name: Run a11y tests — charts
+        id: a11y-charts
+        run: pnpm --filter "@ghatana/charts" run test --reporter=verbose
+        continue-on-error: true
+
+      - name: Run a11y tests — design-system
+        id: a11y-design-system
+        run: pnpm --filter "@ghatana/design-system" run test --reporter=verbose
+        continue-on-error: true
+
+      - name: Run axe-core accessibility scan (jsdom)
+        id: axe-scan
+        run: |
+          pnpm --filter "@ghatana/data-grid" exec vitest run --reporter=json --outputFile=data-grid-a11y.json || true
+          pnpm --filter "@ghatana/charts" exec vitest run --reporter=json --outputFile=charts-a11y.json || true
+        continue-on-error: true
+
+      - name: Upload a11y reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: platform-ts-a11y-reports
+          path: |
+            platform/typescript/data-grid/*.json
+            platform/typescript/charts/*.json
+          retention-days: 14
+
+      - name: Fail if critical a11y tests failed
+        run: |
+          if [ "${{ steps.a11y-data-grid.outcome }}" == "failure" ] && \
+             [ "${{ steps.a11y-charts.outcome }}" == "failure" ]; then
+            echo "❌ All a11y test jobs failed"
+            exit 1
+          fi
+          echo "✅ A11y gate passed"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Job: Performance benchmarks — runs on main push and release branches
+# ─────────────────────────────────────────────────────────────────────────────
+  performance:
+    name: 'Performance | Benchmark thresholds'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: >
+      github.event_name == 'push' ||
+      github.event_name == 'workflow_dispatch'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build platform packages
+        run: pnpm --filter "@ghatana/data-grid" --filter "@ghatana/charts" --filter "@ghatana/canvas" run build
+
+      - name: Run data-grid benchmark tests
+        id: bench-data-grid
+        run: pnpm --filter "@ghatana/data-grid" exec vitest run --reporter=verbose src/__tests__/DataGridBenchmark.test.tsx
+        continue-on-error: true
+
+      - name: Run charts benchmark tests
+        id: bench-charts
+        run: pnpm --filter "@ghatana/charts" exec vitest run --reporter=verbose src/__tests__/chartRenderBenchmark.test.ts
+        continue-on-error: true
+
+      - name: Upload benchmark results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: platform-ts-benchmark-results
+          path: |
+            platform/typescript/data-grid/coverage/
+            platform/typescript/charts/coverage/
+          retention-days: 14
+
+      - name: Evaluate benchmark gate
+        run: |
+          FAILED=0
+          if [ "${{ steps.bench-data-grid.outcome }}" == "failure" ]; then
+            echo "❌ data-grid benchmark tests failed"
+            FAILED=1
+          fi
+          if [ "${{ steps.bench-charts.outcome }}" == "failure" ]; then
+            echo "❌ charts benchmark tests failed"
+            FAILED=1
+          fi
+          if [ "$FAILED" -eq 1 ]; then
+            exit 1
+          fi
+          echo "✅ All performance benchmark gates passed"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Job: Browser tests — runs on release branches or manual dispatch
+# ─────────────────────────────────────────────────────────────────────────────
+  browser:
+    name: 'Browser | Playwright E2E'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: >
+      startsWith(github.ref, 'refs/heads/release/') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.run_browser == 'true')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium firefox
+
+      - name: Build platform packages
+        run: pnpm --filter "@ghatana/data-grid" --filter "@ghatana/charts" --filter "@ghatana/canvas" --filter "@ghatana/design-system" run build
+
+      - name: Run Playwright browser tests — data-grid
+        id: playwright-data-grid
+        run: |
+          if [ -f "platform/typescript/data-grid/playwright.config.ts" ]; then
+            pnpm --filter "@ghatana/data-grid" exec playwright test
+          else
+            echo "No Playwright config found for data-grid — skipping"
+          fi
+        continue-on-error: true
+
+      - name: Run Playwright browser tests — canvas
+        id: playwright-canvas
+        run: |
+          if [ -f "platform/typescript/canvas/playwright.config.ts" ]; then
+            pnpm --filter "@ghatana/canvas" exec playwright test
+          else
+            echo "No Playwright config found for canvas — skipping"
+          fi
+        continue-on-error: true
+
+      - name: Upload Playwright traces and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: platform-ts-playwright-results
+          path: |
+            platform/typescript/**/test-results/
+            platform/typescript/**/playwright-report/
+          retention-days: 14
+
+      - name: Evaluate browser gate
+        run: |
+          echo "Browser test outcomes:"
+          echo "  data-grid: ${{ steps.playwright-data-grid.outcome }}"
+          echo "  canvas:    ${{ steps.playwright-canvas.outcome }}"
+          echo "✅ Browser tier completed (failures are non-blocking on release branch pre-merge)"

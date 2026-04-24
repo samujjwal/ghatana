@@ -107,6 +107,35 @@ jobs:
           }
 
   # ─────────────────────────────────────────────
+  # Cross-Workspace Product Dependency Isolation
+  # Enforces that product packages do NOT directly
+  # depend on other product packages via workspace:
+  # protocol. Products must route cross-product
+  # dependencies through platform contracts.
+  # ─────────────────────────────────────────────
+  check-cross-workspace-deps:
+    name: Cross-Workspace Product Dependency Isolation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        run: corepack enable && corepack prepare pnpm@latest --activate
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Enforce cross-workspace dependency policy
+        run: node ./scripts/check-cross-workspace-deps.mjs
+
+  # ─────────────────────────────────────────────
   # Bundle Size Check
   # ─────────────────────────────────────────────
   bundle-size:

@@ -32,13 +32,20 @@ dependencies {
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
     
-    // Testcontainers for real database integration
+    // Testcontainers for real database and cache integration
     testImplementation(libs.testcontainers.core)
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.testcontainers.postgresql)
-    
+    testImplementation(libs.testcontainers.redis)
+
     // PostgreSQL JDBC driver
     testImplementation(libs.postgresql)
+
+    // Redis client (Jedis) for RedisCacheContainerTest
+    testImplementation(libs.jedis)
+
+    // Jackson for RedisDistributedCacheAdapter serialization in tests
+    testImplementation(libs.jackson.databind)
     
     // Logging for tests
     testImplementation(libs.log4j.slf4j.impl)

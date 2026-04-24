@@ -100,6 +100,14 @@ public final class DurableAuditTrailPlugin implements AuditTrailPlugin {
                 .type(PluginType.CUSTOM)
                 .author("Ghatana")
                 .license("Apache-2.0")
+            .capability("audit:log", "audit:verify", "audit:export")
+            .properties(Map.of(
+                "variant", "durable-jdbc",
+                "durability", "durable",
+                "supportedExportFormats", List.of("JSON", "CSV", "XML"),
+                "unsupportedExportFormats", List.of("PDF"),
+                "unsupportedExportReason", "PDF export is not supported in durable variant"
+            ))
                 .build();
     }
 
@@ -217,6 +225,20 @@ public final class DurableAuditTrailPlugin implements AuditTrailPlugin {
     // -------------------------------------------------------------------------
     // Internal helpers
     // -------------------------------------------------------------------------
+
+    @Override
+    public Promise<Integer> purgeEntriesOlderThan(long cutoffEpochMs) {
+        String sql = "DELETE FROM %s WHERE entry_ts < ?".formatted(TABLE);
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, cutoffEpochMs);
+            int deleted = ps.executeUpdate();
+            LOG.info("purgeEntriesOlderThan({}): deleted {} audit entry/entries", cutoffEpochMs, deleted);
+            return Promise.of(deleted);
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to purge audit entries older than " + cutoffEpochMs, e);
+        }
+    }
 
     private void persist(AuditEntry entry) {
         String sql = """

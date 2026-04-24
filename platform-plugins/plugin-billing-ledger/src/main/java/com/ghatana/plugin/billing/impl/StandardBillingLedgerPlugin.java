@@ -45,20 +45,24 @@ public class StandardBillingLedgerPlugin implements BillingLedgerPlugin {
     private final Map<String, String> transactionToEntry = new ConcurrentHashMap<>();
     private final Set<String> reversedTransactions = ConcurrentHashMap.newKeySet();
 
+    private static final PluginMetadata METADATA = PluginMetadata.builder()
+        .id("billing-ledger-plugin")
+        .name("Billing Ledger Plugin")
+        .version("1.0.0")
+        .description("Cross-product billing ledger framework")
+        .type(PluginType.CUSTOM)
+        .author("Ghatana")
+        .license("Apache-2.0")
+        .capability("billing:post-transaction", "billing:reverse-transaction",
+                    "billing:create-account", "billing:query-entries")
+        .build();
+
     private PluginContext context;
     private PluginState state = PluginState.UNLOADED;
 
     @Override
     public PluginMetadata metadata() {
-        return PluginMetadata.builder()
-            .id("billing-ledger-plugin")
-            .name("Billing Ledger Plugin")
-            .version("1.0.0")
-            .description("Cross-product billing ledger framework")
-            .type(PluginType.CUSTOM)
-            .author("Ghatana")
-            .license("Apache-2.0")
-            .build();
+        return METADATA;
     }
 
     @Override

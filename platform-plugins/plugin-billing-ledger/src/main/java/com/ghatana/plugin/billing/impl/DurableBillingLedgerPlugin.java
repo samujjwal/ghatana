@@ -42,6 +42,18 @@ public final class DurableBillingLedgerPlugin implements BillingLedgerPlugin {
     private static final String ENTRIES_TABLE = "plugin_ledger_entries";
     private static final String ACCOUNTS_TABLE = "plugin_ledger_accounts";
 
+    private static final PluginMetadata METADATA = PluginMetadata.builder()
+            .id("durable-billing-ledger-plugin")
+            .name("Durable Billing Ledger Plugin")
+            .version("1.1.0")
+            .description("JDBC-backed durable double-entry ledger with idempotent posting")
+            .type(PluginType.CUSTOM)
+            .author("Ghatana")
+            .license("Apache-2.0")
+            .capability("billing:post-transaction", "billing:reverse-transaction",
+                        "billing:create-account", "billing:query-entries")
+            .build();
+
     private final DataSource dataSource;
     private PluginState state = PluginState.UNLOADED;
 
@@ -103,15 +115,7 @@ public final class DurableBillingLedgerPlugin implements BillingLedgerPlugin {
 
     @Override
     public PluginMetadata metadata() {
-        return PluginMetadata.builder()
-                .id("durable-billing-ledger-plugin")
-                .name("Durable Billing Ledger Plugin")
-                .version("1.1.0")
-                .description("JDBC-backed durable double-entry ledger with idempotent posting")
-                .type(PluginType.CUSTOM)
-                .author("Ghatana")
-                .license("Apache-2.0")
-                .build();
+        return METADATA;
     }
 
     @Override

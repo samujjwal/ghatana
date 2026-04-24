@@ -14,7 +14,9 @@ import net.sf.jsqlparser.statement.select.FromItem;
 import net.sf.jsqlparser.statement.select.GroupByElement;
 import net.sf.jsqlparser.statement.select.Join;
 import net.sf.jsqlparser.statement.select.Limit;
+import net.sf.jsqlparser.statement.select.OrderByElement;
 import net.sf.jsqlparser.statement.select.PlainSelect;
+import net.sf.jsqlparser.statement.select.Select;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -198,19 +200,32 @@ public class AnalyticsQueryEngine implements AutoCloseable {
 
         query.setStatus("RUNNING");
 
+        // Extract pagination parameters
+        int offset = extractOffset(query.getQueryText(), query.getParameters());
+        int limit = extractLimit(query.getQueryText());
+
         // Execute query against real data sources
         return executeQueryAgainstDataSources(query, plan)
             .then(rows -> {
                 long duration = System.currentTimeMillis() - startTime;
 
+                // Apply pagination to results
+                List<Map<String, Object>> paginatedRows = rows.stream()
+                        .skip(offset)
+                        .limit(limit)
+                        .collect(Collectors.toList());
+
                 QueryResult result = QueryResult.builder()
                     .queryId(query.getId())
-                    .rows(rows)
-                    .rowCount(rows.size())
-                    .columnCount(rows.isEmpty() ? 0 : rows.get(0).size())
+                    .rows(paginatedRows)
+                    .rowCount(paginatedRows.size())
+                    .columnCount(paginatedRows.isEmpty() ? 0 : paginatedRows.get(0).size())
                     .executionTimeMs(duration)
                     .queryType(plan.getQueryType().name())
                     .optimized(true)
+                    .offset(offset)
+                    .limit(limit)
+                    .totalRows(rows.size())
                     .build();
 
                 return Promise.of(result);
@@ -632,6 +647,63 @@ public class AnalyticsQueryEngine implements AutoCloseable {
             }
         }
         return "id";
+    }
+
+    /**
+     * Extracts ORDER BY clause from query.
+     *
+     * @param queryText SQL query
+     * @return ORDER BY expression or empty string if not present
+     */
+    private String extractOrderBy(String queryText) {
+        PlainSelect select = parsePlainSelect(queryText);
+        if (select != null && select.getOrderByElements() != null && !select.getOrderByElements().isEmpty()) {
+            return select.getOrderByElements().stream()
+                    .map(OrderByElement::toString)
+                    .collect(Collectors.joining(", "));
+        }
+        // Fallback: keyword scan
+        String upper = queryText.toUpperCase();
+        int orderIdx = upper.indexOf(" ORDER BY ");
+        if (orderIdx >= 0) {
+            String afterOrder = queryText.substring(orderIdx + 10).trim();
+            // Stop at LIMIT if present
+            int limitIdx = afterOrder.toUpperCase().indexOf(" LIMIT ");
+            return limitIdx >= 0 ? afterOrder.substring(0, limitIdx).trim() : afterOrder.trim();
+        }
+        return "";
+    }
+
+    /**
+     * Extracts OFFSET from query or parameters.
+     *
+     * @param queryText SQL query
+     * @param parameters query parameters
+     * @return offset value (default 0)
+     */
+    private int extractOffset(String queryText, Map<String, Object> parameters) {
+        // Check parameters first
+        if (parameters != null && parameters.containsKey("offset")) {
+            Object offset = parameters.get("offset");
+            if (offset instanceof Number) {
+                return ((Number) offset).intValue();
+            }
+        }
+        // Fallback: scan query text for OFFSET keyword
+        String upper = queryText.toUpperCase();
+        int offsetIdx = upper.indexOf(" OFFSET ");
+        if (offsetIdx >= 0) {
+            String afterOffset = queryText.substring(offsetIdx + 8).trim();
+            String[] tokens = afterOffset.split("\\s+");
+            if (tokens.length > 0) {
+                try {
+                    return Integer.parseInt(tokens[0]);
+                } catch (NumberFormatException e) {
+                    logger.debug("Failed to parse OFFSET value: {}", tokens[0]);
+                }
+            }
+        }
+        return 0;
     }
 
     /**

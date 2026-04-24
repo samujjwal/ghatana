@@ -33,6 +33,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.pattern Test
  */
 @Tag("integration")
+@Tag("infrastructure-backed")
 @Testcontainers
 @DisplayName("PostgresConsentManager — integration tests")
 class PostgresConsentManagerTest extends EventloopTestBase {

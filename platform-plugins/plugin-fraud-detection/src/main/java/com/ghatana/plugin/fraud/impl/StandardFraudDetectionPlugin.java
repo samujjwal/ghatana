@@ -42,20 +42,23 @@ public class StandardFraudDetectionPlugin implements FraudDetectionPlugin {
     private final Map<String, List<FraudRule>> productRules = new ConcurrentHashMap<>();
     private final Map<String, List<FraudPattern>> detectedPatterns = new ConcurrentHashMap<>();
 
+    private static final PluginMetadata METADATA = PluginMetadata.builder()
+        .id("fraud-detection-plugin")
+        .name("Fraud Detection Plugin")
+        .version("1.0.0")
+        .description("Cross-product fraud detection framework")
+        .type(PluginType.CUSTOM)
+        .author("Ghatana")
+        .license("Apache-2.0")
+        .capability("fraud:assess", "fraud:detect-patterns", "fraud:train-model", "fraud:get-metrics")
+        .build();
+
     private PluginContext context;
     private PluginState state = PluginState.UNLOADED;
 
     @Override
     public PluginMetadata metadata() {
-        return PluginMetadata.builder()
-            .id("fraud-detection-plugin")
-            .name("Fraud Detection Plugin")
-            .version("1.0.0")
-            .description("Cross-product fraud detection framework")
-            .type(PluginType.CUSTOM)
-            .author("Ghatana")
-            .license("Apache-2.0")
-            .build();
+        return METADATA;
     }
 
     @Override

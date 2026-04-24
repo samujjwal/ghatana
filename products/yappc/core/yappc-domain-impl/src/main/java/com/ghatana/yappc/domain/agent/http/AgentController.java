@@ -18,6 +18,7 @@ package com.ghatana.yappc.domain.agent.http;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.platform.http.security.filter.TenantExtractor;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
 import com.ghatana.products.yappc.domain.agent.*;
 import io.activej.http.HttpHeaders;
@@ -202,7 +203,7 @@ public final class AgentController {
      */
     public Promise<HttpResponse> executeAgent(HttpRequest request) {
         // Validate required tenant headers before any other processing
-        String tenantHeader = request.getHeader(HttpHeaders.of("X-Tenant-ID"));
+        String tenantHeader = TenantExtractor.fromHttp(request).orElse(null);
         String orgHeader = request.getHeader(HttpHeaders.of("X-Organization-ID"));
         String workspaceHeader = request.getHeader(HttpHeaders.of("X-Workspace-ID"));
 
@@ -698,7 +699,7 @@ public final class AgentController {
                 .orElseThrow(() -> new IllegalArgumentException("Missing required X-Workspace-ID header or workspaceId field")));
         String requestId = Optional.ofNullable(request.getHeader(HttpHeaders.of("X-Request-ID")))
             .orElse(UUID.randomUUID().toString());
-        String tenantId = Optional.ofNullable(request.getHeader(HttpHeaders.of("X-Tenant-ID")))
+        String tenantId = TenantExtractor.fromHttp(request)
             .orElseThrow(() -> new IllegalArgumentException("Missing required X-Tenant-ID header"));
         String organizationId = Optional.ofNullable(request.getHeader(HttpHeaders.of("X-Organization-ID")))
             .orElseThrow(() -> new IllegalArgumentException("Missing required X-Organization-ID header"));

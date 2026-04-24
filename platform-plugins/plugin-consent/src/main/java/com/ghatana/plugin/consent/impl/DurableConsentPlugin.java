@@ -292,6 +292,21 @@ public final class DurableConsentPlugin implements ConsentPlugin {
         return Promise.of(resolveCurrentStatus(subjectId, purpose));
     }
 
+    @Override
+    public Promise<Integer> deleteAllForSubject(String subjectId) {
+        Objects.requireNonNull(subjectId, "subjectId cannot be null");
+        String sql = "DELETE FROM %s WHERE subject_id = ?".formatted(TABLE);
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, subjectId);
+            int deleted = ps.executeUpdate();
+            LOG.info("deleteAllForSubject: erased {} consent record(s) for subject {}", deleted, subjectId);
+            return Promise.of(deleted);
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to erase consent data for subject " + subjectId, e);
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Maintenance
     // -------------------------------------------------------------------------

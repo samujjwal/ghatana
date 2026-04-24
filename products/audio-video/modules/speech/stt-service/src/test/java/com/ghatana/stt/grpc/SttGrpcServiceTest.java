@@ -60,10 +60,12 @@ class SttGrpcServiceTest {
     private SttEngine mockEngine;
 
     private SttGrpcService service;
+    private SimpleMeterRegistry meterRegistry;
 
     @BeforeEach
     void setUp() { // GH-90000
-        service = new SttGrpcService(mockLibrary, new SimpleMeterRegistry()); // GH-90000
+        meterRegistry = new SimpleMeterRegistry(); // GH-90000
+        service = new SttGrpcService(mockLibrary, meterRegistry); // GH-90000
         // Lenient: getSttEngine is not needed in every test
         lenient().when(mockLibrary.getSttEngine()).thenReturn(mockEngine); // GH-90000
     }
@@ -189,6 +191,43 @@ class SttGrpcServiceTest {
 
         assertThat(observer.hasError()).isFalse(); // GH-90000
         assertThat(observer.getValue().getText()).isEqualTo("test");
+    }
+
+    @Test
+    @DisplayName("transcribe: records stt.transcribe timer on success")
+    void transcribe_recordsTimerOnSuccess() throws Exception { // GH-90000
+        when(mockEngine.transcribe(any(), any(TranscriptionOptions.class))) // GH-90000
+            .thenReturn(new TranscriptionResult( // GH-90000
+                "metrics", 0.9, Collections.emptyList(), Collections.emptyList(),
+                Duration.ofMillis(15), "en", "whisper-base"));
+
+        TranscribeRequest request = TranscribeRequest.newBuilder() // GH-90000
+            .setAudioData(ByteString.copyFrom(new byte[]{0x01, 0x02, 0x03})) // GH-90000
+            .setSampleRate(16000) // GH-90000
+            .build(); // GH-90000
+        CapturingObserver<TranscribeResponse> observer = new CapturingObserver<>(); // GH-90000
+
+        service.transcribe(request, observer); // GH-90000
+
+        assertThat(observer.hasError()).isFalse(); // GH-90000
+        assertThat(meterRegistry.find("stt.transcribe").timer()).isNotNull();
+        assertThat(meterRegistry.find("stt.transcribe").timer().count()).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("transcribe: records stt.transcribe timer on validation error")
+    void transcribe_recordsTimerOnValidationError() { // GH-90000
+        TranscribeRequest request = TranscribeRequest.newBuilder() // GH-90000
+            .setAudioData(ByteString.EMPTY) // GH-90000
+            .setSampleRate(16000) // GH-90000
+            .build(); // GH-90000
+        CapturingObserver<TranscribeResponse> observer = new CapturingObserver<>(); // GH-90000
+
+        service.transcribe(request, observer); // GH-90000
+
+        assertThat(observer.hasError()).isTrue(); // GH-90000
+        assertThat(meterRegistry.find("stt.transcribe").timer()).isNotNull();
+        assertThat(meterRegistry.find("stt.transcribe").timer().count()).isEqualTo(1L);
     }
 
     // ─────────────────────────────────────────────────────────────

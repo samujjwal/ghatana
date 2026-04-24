@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Assumptions;
 import org.mockito.ArgumentCaptor;
 
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -29,6 +30,91 @@ import static org.mockito.Mockito.when;
 
 @DisplayName("ToolAwareOllamaCompletionService")
 class ToolAwareOllamaCompletionServiceTest extends EventloopTestBase {
+
+    @Test
+    @DisplayName("completeWithTools enforces tool permission policy and audits denied tools")
+    void shouldEnforceToolPermissionPolicy() {
+    OllamaCompletionService delegate = mock(OllamaCompletionService.class);
+    when(delegate.complete(any())).thenReturn(Promise.of(CompletionResult.of("ok")));
+
+    List<String> deniedToolNames = new ArrayList<>();
+    ToolAwareOllamaCompletionService.AgentActionAuditSink auditSink = new ToolAwareOllamaCompletionService.AgentActionAuditSink() {
+        @Override
+        public void onToolDenied(String provider, String toolName, String reason) {
+        deniedToolNames.add(toolName + ":" + reason);
+        }
+    };
+
+    ToolAwareOllamaCompletionService service = new ToolAwareOllamaCompletionService(
+        delegate,
+        (request, tool) -> "search_code".equals(tool.getName()),
+        auditSink);
+
+    CompletionRequest request = CompletionRequest.builder()
+        .prompt("Suggest next action")
+        .maxTokens(128)
+        .temperature(0.2)
+        .build();
+
+    ToolDefinition allowed = ToolDefinition.builder()
+        .name("search_code")
+        .description("Search the codebase")
+        .addParameter("query", "string", "Search phrase", true)
+        .build();
+
+    ToolDefinition denied = ToolDefinition.builder()
+        .name("write_file")
+        .description("Write file")
+        .addParameter("path", "string", "Path", true)
+        .build();
+
+    CompletionResult result = runPromise(() -> service.completeWithTools(request, List.of(allowed, denied)));
+
+    assertThat(result.text()).isEqualTo("ok");
+    assertThat(deniedToolNames).containsExactly("write_file:policy_denied");
+
+    ArgumentCaptor<CompletionRequest> captor = ArgumentCaptor.forClass(CompletionRequest.class);
+    verify(delegate).complete(captor.capture());
+
+    Object toolsMetadata = captor.getValue().getMetadata().get("tools");
+    assertThat(toolsMetadata).isInstanceOf(List.class);
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> tools = (List<Map<String, Object>>) toolsMetadata;
+    assertThat(tools).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("completeWithTools sets tool_choice=none when no tools are allowed")
+    void shouldDisableToolChoiceWhenAllToolsDenied() {
+    OllamaCompletionService delegate = mock(OllamaCompletionService.class);
+    when(delegate.complete(any())).thenReturn(Promise.of(CompletionResult.of("ok")));
+
+    ToolAwareOllamaCompletionService service = new ToolAwareOllamaCompletionService(
+        delegate,
+        (request, tool) -> false,
+        null);
+
+    CompletionRequest request = CompletionRequest.builder()
+        .prompt("Suggest next action")
+        .maxTokens(128)
+        .temperature(0.2)
+        .build();
+
+    ToolDefinition denied = ToolDefinition.builder()
+        .name("write_file")
+        .description("Write file")
+        .addParameter("path", "string", "Path", true)
+        .build();
+
+    CompletionResult result = runPromise(() -> service.completeWithTools(request, List.of(denied)));
+    assertThat(result.text()).isEqualTo("ok");
+
+    ArgumentCaptor<CompletionRequest> captor = ArgumentCaptor.forClass(CompletionRequest.class);
+    verify(delegate).complete(captor.capture());
+    CompletionRequest forwarded = captor.getValue();
+    assertThat(forwarded.getMetadata()).containsEntry("tool_choice", "none");
+    assertThat(forwarded.getMetadata()).doesNotContainKey("tools");
+    }
 
     @Test
     @DisplayName("completeWithTools forwards OpenAI-compatible tools payload")
@@ -100,6 +186,39 @@ class ToolAwareOllamaCompletionServiceTest extends EventloopTestBase {
         assertThat(forwarded.getMessages().get(1).getRole()).isEqualTo(ChatMessage.Role.TOOL); // GH-90000
         assertThat(forwarded.getMessages().get(1).getName()).isEqualTo("search_code");
         assertThat(forwarded.getMetadata()).containsKey("tool_results");
+    }
+
+    @Test
+    @DisplayName("continueWithToolResults emits audit event")
+    void shouldAuditToolResultsForwarding() {
+        OllamaCompletionService delegate = mock(OllamaCompletionService.class);
+        when(delegate.complete(any())).thenReturn(Promise.of(CompletionResult.of("final answer")));
+
+        List<Integer> forwardedCounts = new ArrayList<>();
+        ToolAwareOllamaCompletionService.AgentActionAuditSink auditSink = new ToolAwareOllamaCompletionService.AgentActionAuditSink() {
+            @Override
+            public void onToolResultsForwarded(String provider, int resultCount) {
+                forwardedCounts.add(resultCount);
+            }
+        };
+
+        ToolAwareOllamaCompletionService service = new ToolAwareOllamaCompletionService(delegate, null, auditSink);
+
+        CompletionRequest request = CompletionRequest.builder()
+                .messages(List.of(ChatMessage.user("Find impacted modules")))
+                .maxTokens(256)
+                .temperature(0.4)
+                .build();
+
+        ToolCallResult toolResult = ToolCallResult.success(
+                "call-1",
+                "search_code",
+                "{\"files\":[\"core/ai/module.java\"]}");
+
+        CompletionResult result = runPromise(() -> service.continueWithToolResults(request, List.of(toolResult)));
+
+        assertThat(result.text()).isEqualTo("final answer");
+        assertThat(forwardedCounts).containsExactly(1);
     }
 
     @Test

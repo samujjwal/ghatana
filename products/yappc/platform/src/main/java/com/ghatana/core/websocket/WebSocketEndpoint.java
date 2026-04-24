@@ -1,5 +1,6 @@
 package com.ghatana.core.websocket;
 
+import com.ghatana.platform.http.security.filter.TenantExtractor;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
 import io.activej.bytebuf.ByteBuf;
 import io.activej.csp.consumer.ChannelConsumer;
@@ -77,10 +78,7 @@ public class WebSocketEndpoint {
      */
     @Builder.Default
     private final Function<HttpRequest, String> tenantExtractor =
-            request -> {
-                String tenantId = request.getHeader(HttpHeaders.of("X-Tenant-Id"));
-                return tenantId != null ? tenantId : "";
-            };
+            request -> TenantExtractor.fromHttp(request).orElse("");
 
     /**
      * Connection established callback

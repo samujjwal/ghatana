@@ -228,6 +228,20 @@ public class StandardConsentPlugin implements ConsentPlugin {
         return Promise.of(record.status());
     }
 
+    @Override
+    public Promise<Integer> deleteAllForSubject(String subjectId) {
+        List<ConsentRecord> history = subjectHistory.remove(subjectId);
+        int deleted = 0;
+        if (history != null) {
+            for (ConsentRecord record : history) {
+                consents.remove(record.consentId());
+                deleted++;
+            }
+        }
+        LOG.info("deleteAllForSubject: erased {} consent record(s) for subject {}", deleted, subjectId);
+        return Promise.of(deleted);
+    }
+
     private String determineLegalBasis(String purpose) {
         // Map purposes to legal bases
         if (purpose.contains("healthcare") || purpose.contains("medical")) {

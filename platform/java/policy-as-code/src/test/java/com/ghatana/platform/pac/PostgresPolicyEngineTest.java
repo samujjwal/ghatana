@@ -32,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern Test
  */
 @Tag("integration")
+@Tag("infrastructure-backed")
 @Testcontainers
 @DisplayName("PostgresPolicyEngine — integration tests")
 class PostgresPolicyEngineTest extends EventloopTestBase {

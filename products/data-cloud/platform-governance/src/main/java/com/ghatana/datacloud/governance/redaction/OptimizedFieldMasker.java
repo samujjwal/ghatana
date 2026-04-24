@@ -126,6 +126,48 @@ public final class OptimizedFieldMasker {
     }
 
     /**
+     * Masks all registered fields in a batch export record.
+     *
+     * <p>This is a semantic alias for {@link #maskRecord(Map)} used by export flows.
+     *
+     * @param record the record to mask
+     * @return a new map with masked values
+     */
+    public Map<String, String> maskBatch(Map<String, String> record) {
+        return maskRecord(record);
+    }
+
+    /**
+     * Masks batch export fields with consent enforcement.
+     *
+     * <p>Consent enforcement is fail-closed: if a field has no consent signal or is explicitly
+     * denied, the exported value is replaced with {@code [REDACTED]}.
+     *
+     * @param record the record to mask
+     * @param fieldConsent consent map by field name; {@code true} allows export
+     * @return a new map with consent-aware masking applied
+     */
+    public Map<String, String> maskBatchWithConsent(
+            Map<String, String> record,
+            Map<String, Boolean> fieldConsent) {
+        if (record.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<String, Boolean> consent = fieldConsent == null ? Map.of() : fieldConsent;
+        Map<String, String> result = new java.util.LinkedHashMap<>(record.size());
+        record.forEach((field, value) -> {
+            boolean hasConsent = Boolean.TRUE.equals(consent.get(field));
+            if (!hasConsent) {
+                result.put(field, REDACTED);
+                return;
+            }
+            result.put(field, mask(field, value));
+        });
+        return result;
+    }
+
+    /**
      * Clears the masking result cache.
      */
     public void clearCache() {
@@ -199,6 +241,73 @@ public final class OptimizedFieldMasker {
     public record CacheStats(int currentSize, int maxSize) {
         public double utilization() {
             return maxSize > 0 ? (double) currentSize / maxSize : 0.0;
+        }
+    }
+
+    /**
+     * Policy configuration mapping field names to their {@link MaskingMode}.
+     *
+     * @doc.type class
+     * @doc.purpose Holds field-to-mode rules for data masking policies
+     * @doc.layer product
+     * @doc.pattern Policy
+     */
+    public static final class MaskingPolicy {
+
+        private final java.util.HashMap<String, MaskingMode> rules = new java.util.HashMap<>();
+
+        /**
+         * Adds a masking rule for the given field name.
+         *
+         * @param field the field name (case-sensitive)
+         * @param mode  the masking mode to apply
+         */
+        public void addRule(String field, MaskingMode mode) {
+            rules.put(field, mode);
+        }
+
+        /**
+         * Returns the masking mode for the given field, if a rule exists.
+         *
+         * @param field the field name
+         * @return the masking mode, or empty if no rule is configured
+         */
+        public Optional<MaskingMode> modeFor(String field) {
+            MaskingMode exactMatch = rules.get(field);
+            if (exactMatch != null) {
+                return Optional.of(exactMatch);
+            }
+
+            String bestPrefix = null;
+            for (String configuredField : rules.keySet()) {
+                if (field.startsWith(configuredField)
+                        && (bestPrefix == null || configuredField.length() > bestPrefix.length())) {
+                    bestPrefix = configuredField;
+                }
+            }
+
+            return bestPrefix == null
+                    ? Optional.empty()
+                    : Optional.ofNullable(rules.get(bestPrefix));
+        }
+
+        /**
+         * Returns whether a rule is configured for the given field.
+         *
+         * @param field the field name
+         * @return true if a rule exists
+         */
+        public boolean hasRuleFor(String field) {
+            return rules.containsKey(field);
+        }
+
+        /**
+         * Returns the number of configured masking rules.
+         *
+         * @return rule count
+         */
+        public int ruleCount() {
+            return rules.size();
         }
     }
 }

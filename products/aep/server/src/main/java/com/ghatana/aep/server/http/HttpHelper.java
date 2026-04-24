@@ -6,6 +6,7 @@ package com.ghatana.aep.server.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.core.util.JsonUtils;
+import com.ghatana.platform.http.security.filter.TenantExtractor;
 import com.ghatana.platform.http.server.response.ErrorResponse;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
 import io.activej.http.HttpRequest;
@@ -79,8 +80,8 @@ public final class HttpHelper {
      * Resolves tenant ID from X-Tenant-Id header or tenantId query parameter.
      */
     public static String resolveTenantId(HttpRequest request) {
-        String fromHeader = request.getHeader(io.activej.http.HttpHeaders.of("X-Tenant-Id"));
-        if (fromHeader != null && !fromHeader.isBlank()) return fromHeader;
+        String fromHeader = TenantExtractor.fromHttp(request).orElse(null);
+        if (fromHeader != null) return fromHeader;
         String fromQuery = request.getQueryParameter("tenantId");
         return (fromQuery != null && !fromQuery.isBlank()) ? fromQuery : "default";
     }

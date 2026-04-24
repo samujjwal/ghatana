@@ -72,6 +72,13 @@ class PromptTemplateRegistryTest {
                 .selectForActiveExperiment("intent.capture", "tenant-a", "exp-1") // GH-90000
                 .orElseThrow(); // GH-90000
         assertThat(rolledBack.version()).isEqualTo("v1");
+
+        assertThat(registry.previousActiveVersion("intent.capture")).contains("v2");
+        assertThat(registry.rollbackToPreviousVersion("intent.capture")).contains("v2");
+        PromptTemplateVersion previousRollback = registry
+            .selectForActiveExperiment("intent.capture", "tenant-a", "exp-1")
+            .orElseThrow();
+        assertThat(previousRollback.version()).isEqualTo("v2");
     }
 
     @Test

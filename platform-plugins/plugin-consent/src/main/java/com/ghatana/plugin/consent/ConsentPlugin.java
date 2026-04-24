@@ -69,6 +69,17 @@ public interface ConsentPlugin extends Plugin {
     Promise<ConsentStatus> getCurrentConsent(String subjectId, String purpose);
 
     /**
+     * Hard-deletes all consent records for a subject (GDPR right-to-erasure).
+     *
+     * <p>Once this method completes, {@link #verifyConsent} must return {@code false}
+     * and {@link #getConsentHistory} must return an empty list for the given subject.
+     *
+     * @param subjectId the subject whose data must be erased
+     * @return Promise containing the number of records deleted
+     */
+    Promise<Integer> deleteAllForSubject(String subjectId);
+
+    /**
      * Consent action.
      */
     enum ConsentAction {

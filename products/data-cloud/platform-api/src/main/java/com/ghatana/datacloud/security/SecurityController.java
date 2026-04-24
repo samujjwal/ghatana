@@ -8,6 +8,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.ghatana.platform.http.security.filter.TenantExtractor;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.http.AsyncServlet;
@@ -216,8 +217,7 @@ public class SecurityController implements AsyncServlet {
     }
 
     private String extractTenantId(HttpRequest request) {
-        String tenantId = request.getHeader(HttpHeaders.of("X-Tenant-ID"));
-        return tenantId != null ? tenantId : "default-tenant";
+        return TenantExtractor.fromHttpOrDefault(request, "default-tenant");
     }
 
     private RBACService.Role parseRole(String json) throws JsonProcessingException {

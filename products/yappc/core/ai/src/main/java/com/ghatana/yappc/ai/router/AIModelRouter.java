@@ -140,28 +140,56 @@ public final class AIModelRouter {
      * Executes request with automatic fallback to alternative models.
      */
     private Promise<AIResponse> executeWithFallback(AIRequest request, String primaryModel) {
+        return executeWithFallback(request, primaryModel, new LinkedHashSet<>());
+    }
+
+    private Promise<AIResponse> executeWithFallback(
+            AIRequest request,
+            String modelId,
+            LinkedHashSet<String> attemptedModels) {
         return Promise.ofCallback(cb -> {
-            ModelAdapter adapter = modelAdapters.get(primaryModel);
+            if (!attemptedModels.add(modelId)) {
+                cb.setException(new IllegalStateException(
+                        "Deterministic fallback cycle detected: " + String.join(" -> ", attemptedModels)
+                                + " -> " + modelId));
+                return;
+            }
+
+            ModelAdapter adapter = modelAdapters.get(modelId);
             if (adapter == null) {
-                cb.setException(new IllegalStateException("Model not found: " + primaryModel));
+                cb.setException(new IllegalStateException("Model not found: " + modelId));
                 return;
             }
 
             adapter.execute(request)
                 .whenComplete((response, error) -> {
                     if (error != null) {
-                        // Try fallback models
-                        ModelConfig config = modelConfigs.get(primaryModel);
-                        List<String> fallbackChain = config.getFallbackChain();
+                        ModelConfig config = modelConfigs.get(modelId);
+                        List<String> fallbackChain = config == null
+                                ? List.of()
+                                : config.getFallbackChain();
 
-                        if (fallbackChain.isEmpty()) {
+                        String nextModel = fallbackChain.stream()
+                                .filter(candidate -> !attemptedModels.contains(candidate))
+                                .findFirst()
+                                .orElse(null);
+
+                        if (nextModel == null) {
+                            if (!fallbackChain.isEmpty()) {
+                            cb.setException(new IllegalStateException(
+                                "Deterministic fallback cycle detected: "
+                                    + String.join(" -> ", attemptedModels)
+                                    + " -> " + fallbackChain.get(0),
+                                error));
+                            return;
+                            }
                             cb.setException(error);
                             return;
                         }
 
                         logger.warn("Primary model {} failed, trying fallback: {}",
-                            primaryModel, fallbackChain.get(0));
-                        executeWithFallback(request, fallbackChain.get(0))
+                            modelId, nextModel);
+                        executeWithFallback(request, nextModel, attemptedModels)
                             .whenComplete((fallbackResponse, fallbackError) -> {
                                 if (fallbackError != null) {
                                     cb.setException(fallbackError);

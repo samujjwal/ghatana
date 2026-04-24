@@ -71,6 +71,14 @@ public class StandardAuditTrailPlugin implements AuditTrailPlugin {
             .type(PluginType.CUSTOM)
             .author("Ghatana")
             .license("Apache-2.0")
+            .capability("audit:log", "audit:verify", "audit:export")
+            .properties(Map.of(
+                "variant", "standard-in-memory",
+                "durability", "non-durable",
+                "supportedExportFormats", List.of("JSON", "CSV", "XML"),
+                "unsupportedExportFormats", List.of("PDF"),
+                "unsupportedExportReason", "PDF export is not implemented in standard variant"
+            ))
             .build();
     }
 
@@ -220,6 +228,19 @@ public class StandardAuditTrailPlugin implements AuditTrailPlugin {
         } catch (UnsupportedOperationException e) {
             return Promise.ofException(e);
         }
+    }
+
+    @Override
+    public Promise<Integer> purgeEntriesOlderThan(long cutoffEpochMs) {
+        int totalDeleted = 0;
+        for (Map.Entry<String, List<AuditEntry>> trailEntry : trails.entrySet()) {
+            List<AuditEntry> entries = trailEntry.getValue();
+            int before = entries.size();
+            entries.removeIf(e -> e.timestamp().toEpochMilli() < cutoffEpochMs);
+            totalDeleted += before - entries.size();
+        }
+        LOG.info("purgeEntriesOlderThan({}): deleted {} audit entry/entries", cutoffEpochMs, totalDeleted);
+        return Promise.of(totalDeleted);
     }
 
     private void exportJson(List<AuditEntry> trail, OutputStream out) throws IOException {

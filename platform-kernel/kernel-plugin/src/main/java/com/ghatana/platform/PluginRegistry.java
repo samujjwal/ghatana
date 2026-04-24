@@ -4,6 +4,8 @@ import com.ghatana.platform.health.HealthStatus;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,6 +39,8 @@ import java.util.stream.Collectors;
  * @doc.pattern Registry
  */
 public class PluginRegistry {
+
+    private static final Logger log = LoggerFactory.getLogger(PluginRegistry.class);
 
     private final Map<String, Plugin> plugins = new ConcurrentHashMap<>();
     private final Map<PluginType, Set<String>> pluginsByType = new ConcurrentHashMap<>();
@@ -315,8 +319,7 @@ public class PluginRegistry {
                 count++;
             } catch (Exception e) {
                 // Log but continue discovering other plugins
-                System.err.println("Failed to create plugin from provider " +
-                    provider.getMetadata().id() + ": " + e.getMessage());
+                log.error("Failed to create plugin from provider {}: {}", provider.getMetadata().id(), e.getMessage(), e);
             }
         }
         return count;

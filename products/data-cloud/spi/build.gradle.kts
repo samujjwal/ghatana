@@ -9,12 +9,19 @@ description = "Data-Cloud SPI - Shared interfaces and types for cross-product in
 
 
 dependencies {
-    // Minimal dependencies - only what SPI types need
-    api(project(":products:data-cloud:platform-entity"))
+    // SPI now owns the base record contracts and concrete base classes (DataRecord, Collection,
+    // RecordQuery, RecordType, DataRecordInterface, EntityInterface, FilterCriteria, SortSpec,
+    // QuerySpecInterface, DataCloudColumnNames).
+    // platform-entity depends on spi for these types and extends/implements them.
     api(project(":platform-kernel:kernel-plugin"))
-    api(project(":platform:java:core"))       // Offset type
-    api(project(":platform:java:domain"))     // Platform event-store contracts for migration bridge
+    api(project(":platform:java:core"))        // Offset type
+    api(project(":platform:java:domain"))      // Platform event-store contracts for migration bridge
     api(libs.activej.promise)                  // Promise<T> in EventLogStore
+
+    // JPA + Hibernate: needed for @MappedSuperclass DataRecord and @Entity Collection
+    api(libs.jakarta.persistence.api)
+    api("jakarta.validation:jakarta.validation-api:3.0.2")
+    implementation(libs.hibernate.core)
 
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)

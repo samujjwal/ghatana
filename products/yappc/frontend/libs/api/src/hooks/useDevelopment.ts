@@ -108,7 +108,7 @@ import {
   type PullRequestFilter,
   type FeatureFlagFilter,
   type EpicFilter,
-} from '@yappc/core/api';
+} from '../graphql/operations/development.operations';
 
 // =============================================================================
 // Sprint Hooks

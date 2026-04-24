@@ -58,8 +58,64 @@ public interface QueueProducerStrategy {
      */
     default Promise<String> send(String key, String payload) {
         QueueMessage msg = new QueueMessage(key, payload, Map.of());
-        boolean result = send(msg);
-        return Promise.of(result ? key : null);
+        ConnectorSendResult result = sendWithResult(msg);
+        if (result.isSuccess()) {
+            return Promise.of(result.messageId());
+        }
+        return Promise.ofException(new ConnectorSendException(result.failure()));
+    }
+
+    /**
+     * Send a message and return a typed success/failure contract.
+     *
+     * <p>This default implementation wraps the legacy boolean-returning
+     * {@link #send(QueueMessage)} method and enriches failures with retry
+     * classification so callers can make explicit retry decisions.
+     *
+     * @param message message to send
+     * @return typed send result with message id or classified failure
+     */
+    default ConnectorSendResult sendWithResult(QueueMessage message) {
+        try {
+            boolean accepted = send(message);
+            if (accepted) {
+                return ConnectorSendResult.success(message.getId());
+            }
+            return ConnectorSendResult.failure(
+                ConnectorSendFailure.retryable(
+                    "Connector rejected message without exception"
+                )
+            );
+        } catch (RuntimeException e) {
+            return ConnectorSendResult.failure(
+                ConnectorSendFailure.of(classifyFailure(e), e.getMessage(), e)
+            );
+        }
+    }
+
+    /**
+     * Classify connector failure into retryability semantics.
+     *
+     * <p>Default rules:
+     * <ul>
+     *   <li>{@link IllegalArgumentException}, {@link IllegalStateException},
+     *       {@link UnsupportedOperationException}, {@link SecurityException} are non-retryable</li>
+     *   <li>All other runtime failures are retryable</li>
+     * </ul>
+     *
+     * Implementations can override for connector-specific behavior.
+     *
+     * @param throwable failure to classify
+     * @return retryability classification
+     */
+    default ConnectorFailureClassification classifyFailure(Throwable throwable) {
+        if (throwable instanceof IllegalArgumentException
+            || throwable instanceof IllegalStateException
+            || throwable instanceof UnsupportedOperationException
+            || throwable instanceof SecurityException) {
+            return ConnectorFailureClassification.NON_RETRYABLE;
+        }
+        return ConnectorFailureClassification.RETRYABLE;
     }
 
     /**

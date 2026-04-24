@@ -192,7 +192,7 @@ public final class PolicyRecommendationService {
                             Collectors.counting()));
 
             userViolations.forEach((userId, count) -> {
-                if (count > 5) {
+                if (count > 5 && count <= 10) {
                     recommendations.add(new Recommendation(
                             UUID.randomUUID().toString(),
                             RecommendationType.ACCESS_CONTROL_IMPROVEMENT,

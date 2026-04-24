@@ -1,6 +1,7 @@
 package com.ghatana.yappc.api.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.platform.http.security.filter.TenantExtractor;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
 import com.ghatana.products.yappc.domain.workflow.*;
 import io.activej.http.HttpHeaders;
@@ -409,7 +410,7 @@ public class WorkflowController {
     // ==================== HELPER METHODS ====================
 
     private String extractTenantId(HttpRequest request) {
-        String tenantId = request.getHeader(HttpHeaders.of("X-Tenant-ID"));
+        String tenantId = TenantExtractor.fromHttp(request).orElse(null);
         if (tenantId == null || tenantId.isBlank()) {
             throw new IllegalArgumentException("Missing required X-Tenant-ID header");
         }

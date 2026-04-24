@@ -29,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern Integration Test
  */
 @Tag("integration")
+@Tag("infrastructure-backed")
 @Testcontainers
 @DisplayName("AsyncRedisCache Integration Tests")
 class AsyncRedisCacheIT extends EventloopTestBase {

@@ -79,7 +79,7 @@ import {
   type AISuggestionContext,
   type RegenerateOptions,
   type BootstrapSessionFilter,
-} from '@yappc/core/api';
+} from '../graphql/operations/bootstrapping.operations';
 
 // =============================================================================
 // Session Hooks

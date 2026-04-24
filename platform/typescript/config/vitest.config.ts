@@ -6,9 +6,15 @@ export default defineConfig({
     globals: true,
     coverage: {
       provider: "v8",
-      reporter: ["text", "lcov"],
+      reporter: ["text", "lcov", "json", "html"],
       include: ["src/**/*.ts"],
       exclude: ["src/__tests__/**", "src/index.ts"],
+      thresholds: {
+        lines: 85,
+        functions: 85,
+        branches: 80,
+        statements: 85,
+      },
     },
   },
 });

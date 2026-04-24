@@ -9,6 +9,9 @@ description = "Data Cloud Platform Entity Module"
 
 
 dependencies {
+    // spi defines the contract interfaces (EntityInterface, DataRecordInterface, etc.)
+    // that platform-entity's concrete classes implement
+    api(project(":products:data-cloud:spi"))
     api(project(":platform:java:core"))
     api(project(":platform:java:domain"))
     api(project(":platform:java:database"))
@@ -33,7 +36,6 @@ dependencies {
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
     testImplementation(project(":platform:java:testing"))
-    testImplementation(project(":products:data-cloud:spi"))
     testRuntimeOnly(libs.junit.jupiter.engine)
 
     compileOnly(libs.lombok)

@@ -3,6 +3,7 @@ package com.ghatana.datacloud.launcher.http;
 import com.ghatana.governance.PolicyEngine;
 import com.ghatana.platform.audit.AuditEvent;
 import com.ghatana.platform.audit.AuditService;
+import com.ghatana.platform.http.security.filter.TenantExtractor;
 import com.ghatana.platform.http.security.filter.TenantIsolationHttpFilter;
 import com.ghatana.platform.governance.security.ApiKeyResolver;
 import com.ghatana.platform.governance.security.Principal;
@@ -436,9 +437,9 @@ public final class DataCloudSecurityFilter {
             return authenticatedPrincipal.getTenantId();
         }
 
-        String tenantHeader = request.getHeader(HttpHeaders.of("X-Tenant-ID"));
-        if (tenantHeader != null && !tenantHeader.isBlank()) {
-            return tenantHeader.trim();
+        String tenantHeader = TenantExtractor.fromHttp(request).orElse(null);
+        if (tenantHeader != null) {
+            return tenantHeader;
         }
 
         return TenantContext.getCurrentTenantId();
@@ -468,9 +469,9 @@ public final class DataCloudSecurityFilter {
     }
 
     private static String requestedTenantId(io.activej.http.HttpRequest request) {
-        String tenantHeader = request.getHeader(HttpHeaders.of("X-Tenant-ID"));
-        if (tenantHeader != null && !tenantHeader.isBlank()) {
-            return tenantHeader.trim();
+        String tenantHeader = TenantExtractor.fromHttp(request).orElse(null);
+        if (tenantHeader != null) {
+            return tenantHeader;
         }
 
         String tenantQuery = request.getQueryParameter("tenantId");

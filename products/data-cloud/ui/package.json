@@ -23,6 +23,7 @@
   "dependencies": {
     "@ghatana/canvas": "workspace:*",
     "@ghatana/design-system": "workspace:*",
+    "@ghatana/domain-components": "workspace:*",
     "@ghatana/platform-utils": "workspace:*",
     "@ghatana/realtime": "workspace:*",
     "@ghatana/theme": "workspace:*",

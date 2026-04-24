@@ -1,5 +1,6 @@
 package com.ghatana.datacloud.launcher.http.handlers;
 
+import com.ghatana.platform.http.security.filter.TenantExtractor;
 import io.activej.http.*;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -197,9 +198,9 @@ public final class DataCloudMiddleware {
      * @return tenant ID string, or {@code null} if not present
      */
     private static String extractTenantId(HttpRequest request) {
-        String header = request.getHeader(HttpHeaders.of("X-Tenant-Id"));
-        if (header != null && !header.isBlank()) {
-            return header.strip();
+        String header = TenantExtractor.fromHttp(request).orElse(null);
+        if (header != null) {
+            return header;
         }
         String queryParam = request.getQueryParameter("tenantId");
         if (queryParam != null && !queryParam.isBlank()) {

@@ -7,5 +7,5 @@
  * @doc.pattern Security Component
  */
 
-export { RBACGuard, usePermission } from '@ghatana/security-ui';
-export type { RBACGuardProps } from '@ghatana/security-ui';
+export { RBACGuard, usePermission } from '@ghatana/domain-components/security';
+export type { RBACGuardProps } from '@ghatana/domain-components/security';

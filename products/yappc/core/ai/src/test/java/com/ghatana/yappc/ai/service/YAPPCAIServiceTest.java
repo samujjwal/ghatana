@@ -1,11 +1,14 @@
 package com.ghatana.yappc.ai.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.ghatana.yappc.ai.metrics.AIMetricsCollector;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.yappc.ai.router.AIModelRouter;
 import com.ghatana.yappc.ai.router.AIRequest;
@@ -85,13 +88,13 @@ public class YAPPCAIServiceTest extends EventloopTestBase {
         when(router.route(any())).thenAnswer(invocation -> { // GH-90000
             AIRequest request = invocation.getArgument(0); // GH-90000
             assertThat(request.getTaskType()).isEqualTo(AIRequest.TaskType.CODE_ANALYSIS); // GH-90000
-            return Promise.of(responseFor(request, "Null pointer risk in processData()")); // GH-90000
+            return Promise.of(responseFor(request, "Null pointer risk in processData(). This code has potential issues including potential leaks.")); // GH-90000
         });
 
         YAPPCAIService.CodeAnalysis analysis = runPromise(() -> aiService.analyzeCode("class Demo {}"));
 
         assertThat(analysis.getSummary()).contains("Null pointer risk");
-        assertThat(analysis.getFindings()).containsEntry("raw", "Null pointer risk in processData()"); // GH-90000
+        assertThat(analysis.getFindings()).containsEntry("raw", "Null pointer risk in processData(). This code has potential issues including potential leaks."); // GH-90000
     }
 
     @Test
@@ -106,6 +109,44 @@ public class YAPPCAIServiceTest extends EventloopTestBase {
         String answer = runPromise(() -> aiService.reason("How should YAPPC structure a new feature?"));
 
         assertThat(answer).isEqualTo("Use a modular monolith first.");
+    }
+
+    @Test
+    @DisplayName("Should block risky hallucination-like code responses")
+    void shouldBlockRiskyHallucinationLikeCodeResponses() {
+        when(router.route(any())).thenAnswer(invocation -> {
+            AIRequest request = invocation.getArgument(0);
+            return Promise.of(responseFor(request,
+                "As an AI language model, I cannot verify this implementation. Maybe try pseudo-code."));
+        });
+
+        assertThatThrownBy(() -> runPromise(() -> aiService.generateCode(
+                "Create a production-grade payment service", Map.of("language", "Java"))))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("Potential hallucination detected");
+    }
+
+    @Test
+    @DisplayName("Should record quality and hallucination metrics when collector is configured")
+    void shouldRecordQualityAndHallucinationMetricsWhenCollectorConfigured() {
+        AIMetricsCollector collector = mock(AIMetricsCollector.class);
+        YAPPCAIService serviceWithMetrics = YAPPCAIService.builder()
+            .router(router)
+            .metricsCollector(collector)
+            .build();
+        runPromise(serviceWithMetrics::initialize);
+
+        when(router.route(any())).thenAnswer(invocation -> {
+            AIRequest request = invocation.getArgument(0);
+            return Promise.of(responseFor(request,
+                "As an AI language model, I cannot verify this implementation."));
+        });
+
+        assertThatThrownBy(() -> runPromise(() -> serviceWithMetrics.reason("Should we deploy now?")))
+            .isInstanceOf(IllegalStateException.class);
+
+        verify(collector).recordQualitySignal(any(), any(), any(), anyDouble(), anyDouble());
+        verify(collector).recordHallucinationBlocked(any(), any(), any(), any());
     }
 
     @Test

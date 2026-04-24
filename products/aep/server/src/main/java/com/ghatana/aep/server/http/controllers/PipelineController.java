@@ -365,17 +365,7 @@ public class PipelineController implements AepController {
     }
 
     private String extractTenantId(HttpRequest request) {
-        String headerTenant = request.getHeader(HttpHeaders.of("X-Tenant-Id"));
-        if (headerTenant != null && AepInputValidator.isValidTenantId(headerTenant)) {
-            return headerTenant;
-        }
-
-        String queryTenant = request.getQueryParameter("tenantId");
-        if (queryTenant != null && AepInputValidator.isValidTenantId(queryTenant)) {
-            return queryTenant;
-        }
-
-        return "default";
+        return HttpHelper.resolveTenantId(request);
     }
 
     private String extractConfig(Map<String, Object> payload) {

@@ -2,6 +2,8 @@ package com.ghatana.yappc.ai.router;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.junit.jupiter.api.Test;
 
 import static com.ghatana.yappc.ai.router.AIRequest.TaskType.*;
@@ -17,6 +19,55 @@ import static org.junit.jupiter.api.Assertions.*;
  * @doc.pattern Test
 */
 class AIModelRouterTest extends EventloopTestBase {
+
+    @Test
+    void testDeterministicFallbackUsesNextModel() {
+        AIRouterConfig config = AIRouterConfig.defaults();
+        TestModelAdapterFactory factory = new TestModelAdapterFactory();
+        AIModelRouter router = new AIModelRouter(config, factory);
+
+        runPromise(router::initialize);
+
+        factory.fail("codellama", new RuntimeException("codellama unavailable"));
+        factory.succeed("llama3.2", "fallback answer");
+
+        AIRequest request = AIRequest.builder()
+                .taskType(CODE_GENERATION)
+                .prompt("generate code")
+                .build();
+
+        AIResponse response = runPromise(() -> router.route(request));
+
+        assertEquals("llama3.2", response.getModelId());
+        assertTrue(response.isFallbackUsed());
+        assertEquals("fallback answer", response.getContent());
+
+        runPromise(router::shutdown);
+    }
+
+    @Test
+    void testDeterministicFallbackStopsOnCycle() {
+        AIRouterConfig config = AIRouterConfig.defaults();
+        TestModelAdapterFactory factory = new TestModelAdapterFactory();
+        AIModelRouter router = new AIModelRouter(config, factory);
+
+        runPromise(router::initialize);
+
+        factory.fail("codellama", new RuntimeException("codellama unavailable"));
+        factory.fail("llama3.2", new RuntimeException("llama unavailable"));
+        factory.fail("mistral", new RuntimeException("mistral unavailable"));
+        factory.fail("phi-3", new RuntimeException("phi unavailable"));
+
+        AIRequest request = AIRequest.builder()
+                .taskType(CODE_GENERATION)
+                .prompt("generate code")
+                .build();
+
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> runPromise(() -> router.route(request)));
+        assertTrue(exception.getMessage().contains("Deterministic fallback cycle detected"));
+
+        runPromise(router::shutdown);
+    }
 
     @Test
     void testRouterInitialization() throws Exception { // GH-90000
@@ -45,12 +96,6 @@ class AIModelRouterTest extends EventloopTestBase {
     void testModelSelection() { // GH-90000
         AIRouterConfig config = AIRouterConfig.defaults(); // GH-90000
         AIModelRouter router = new AIModelRouter(config); // GH-90000
-
-        // Test code generation selection
-        AIRequest codeRequest = AIRequest.builder() // GH-90000
-                .taskType(CODE_GENERATION) // GH-90000
-                .prompt("Write a Java function to calculate fibonacci")
-                .build(); // GH-90000
 
         // Should select codellama for code tasks
         // (This test assumes models are registered but not necessarily available) // GH-90000
@@ -140,5 +185,78 @@ class AIModelRouterTest extends EventloopTestBase {
 
         Thread.sleep(100); // GH-90000
         cache.clear(); // GH-90000
+    }
+
+    private static final class TestModelAdapterFactory implements AIModelRouter.ModelAdapterFactory {
+        private final Map<String, TestModelAdapter> adapters = new ConcurrentHashMap<>();
+
+        @Override
+        public ModelAdapter create(ModelConfig config) {
+            return adapters.computeIfAbsent(config.getModelId(), modelId -> new TestModelAdapter(config));
+        }
+
+        void fail(String modelId, RuntimeException error) {
+            adapter(modelId).error = error;
+            adapter(modelId).response = null;
+        }
+
+        void succeed(String modelId, String content) {
+            TestModelAdapter adapter = adapter(modelId);
+            adapter.error = null;
+            adapter.response = AIResponse.builder()
+                    .requestId("test-req")
+                    .modelId(modelId)
+                    .content(content)
+                    .metrics(AIResponse.ResponseMetrics.builder().latencyMs(1).build())
+                    .build();
+        }
+
+        private TestModelAdapter adapter(String modelId) {
+            return adapters.get(modelId);
+        }
+    }
+
+    private static final class TestModelAdapter implements ModelAdapter {
+        private final ModelConfig config;
+        private RuntimeException error;
+        private AIResponse response;
+
+        private TestModelAdapter(ModelConfig config) {
+            this.config = config;
+            this.response = AIResponse.builder()
+                    .requestId("default-req")
+                    .modelId(config.getModelId())
+                    .content("ok")
+                    .metrics(AIResponse.ResponseMetrics.builder().latencyMs(1).build())
+                    .build();
+        }
+
+        @Override
+        public Promise<Void> initialize() {
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<AIResponse> execute(AIRequest request) {
+            if (error != null) {
+                return Promise.ofException(error);
+            }
+            return Promise.of(response);
+        }
+
+        @Override
+        public ModelConfig getConfig() {
+            return config;
+        }
+
+        @Override
+        public Promise<Boolean> isAvailable() {
+            return Promise.of(Boolean.TRUE);
+        }
+
+        @Override
+        public Promise<Void> shutdown() {
+            return Promise.complete();
+        }
     }
 }

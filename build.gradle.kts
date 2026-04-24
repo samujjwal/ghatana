@@ -7,6 +7,7 @@
 
 import org.gradle.api.plugins.quality.Pmd
 import org.gradle.api.plugins.quality.PmdExtension
+import org.gradle.api.Project
 
 plugins {
     `java-platform`
@@ -25,6 +26,200 @@ apply(from = rootProject.file("gradle/doc-tag-check.gradle"))
 
 tasks.matching { it.name == "check" }.configureEach {
     dependsOn("checkDocTags")
+}
+
+data class ArchitectureDependencyEdge(
+    val fromProjectPath: String,
+    val toProjectPath: String,
+    val configurationName: String,
+)
+
+private val runtimeArchitectureConfigurations = setOf(
+    "api",
+    "implementation",
+    "compileOnly",
+    "runtimeOnly",
+    "annotationProcessor",
+)
+
+private val testArchitectureConfigurations = setOf(
+    "testImplementation",
+    "testCompileOnly",
+    "testRuntimeOnly",
+    "testAnnotationProcessor",
+    "testFixturesApi",
+    "testFixturesImplementation",
+    "testFixturesCompileOnly",
+    "testFixturesRuntimeOnly",
+)
+
+private val sharedProductApiAllowlist = setOf(
+    // Data Cloud shared APIs (all internal data-cloud modules are shared within the ecosystem)
+    ":products:data-cloud:spi",
+    ":products:data-cloud:agent-registry",
+    ":products:data-cloud:platform-launcher",
+    ":products:data-cloud:platform-plugins",
+    ":products:data-cloud:platform-analytics",
+    ":products:data-cloud:platform-api",
+    ":products:data-cloud:platform-config",
+    ":products:data-cloud:platform-entity",
+    ":products:data-cloud:platform-event",
+    // AEP shared APIs (agent runtime, execution engine, registry contracts)
+    ":products:aep:aep-operator-contracts",
+    ":products:aep:aep-agent-runtime",
+    ":products:aep:aep-engine",
+    ":products:aep:aep-registry",
+    ":products:aep:orchestrator",
+    // Virtual Org shared APIs (framework consumed by software-org)
+    ":products:virtual-org:modules:framework",
+)
+
+fun Project.architectureDependencyEdges(includeTests: Boolean = false): List<ArchitectureDependencyEdge> {
+    val trackedConfigurations = buildSet {
+        addAll(runtimeArchitectureConfigurations)
+        if (includeTests) {
+            addAll(testArchitectureConfigurations)
+        }
+    }
+
+    val trackedSuffixes = buildSet {
+        addAll(listOf("Api", "Implementation", "CompileOnly", "RuntimeOnly"))
+        if (includeTests) {
+            add("AnnotationProcessor")
+        }
+    }
+
+    return configurations
+        .filter { configuration ->
+            if (configuration.name in trackedConfigurations) {
+                return@filter true
+            }
+
+            if (!includeTests && configuration.name.startsWith("test", ignoreCase = true)) {
+                return@filter false
+            }
+
+            trackedSuffixes.any { suffix -> configuration.name.endsWith(suffix) }
+        }
+        .flatMap { configuration ->
+            configuration.dependencies
+                .withType(org.gradle.api.artifacts.ProjectDependency::class.java)
+                .map { dependency ->
+                    ArchitectureDependencyEdge(
+                        fromProjectPath = path,
+                        toProjectPath = dependency.path,
+                        configurationName = configuration.name,
+                    )
+                }
+        }
+}
+
+fun isSharedProductApi(projectPath: String): Boolean = projectPath in sharedProductApiAllowlist
+
+fun isTestConfiguration(configurationName: String): Boolean {
+    return configurationName in testArchitectureConfigurations ||
+        configurationName.startsWith("test", ignoreCase = true)
+}
+
+fun Project.testOnlyArchitectureDependencyEdges(): List<ArchitectureDependencyEdge> {
+    return architectureDependencyEdges(includeTests = true)
+        .filter { edge -> isTestConfiguration(edge.configurationName) }
+}
+
+fun architectureScope(projectPath: String): String = when {
+    projectPath.startsWith(":platform:contracts") -> "contracts"
+    projectPath.startsWith(":platform:") -> "platform"
+    projectPath.startsWith(":platform-kernel:") -> "platform-kernel"
+    projectPath.startsWith(":platform-plugins:") -> "platform-plugins"
+    projectPath.startsWith(":shared-services:") -> "shared-services"
+    projectPath.startsWith(":products:") && isSharedProductApi(projectPath) -> "shared-product-api"
+    projectPath.startsWith(":products:") -> "product"
+    else -> "other"
+}
+
+fun productRoot(projectPath: String): String? {
+    if (!projectPath.startsWith(":products:")) {
+        return null
+    }
+
+    val segments = projectPath.split(':').filter { it.isNotBlank() }
+    return if (segments.size >= 2) {
+        ":${segments[0]}:${segments[1]}"
+    } else {
+        null
+    }
+}
+
+fun isAllowedArchitectureDependency(fromProjectPath: String, toProjectPath: String): Boolean {
+    if (fromProjectPath == toProjectPath) {
+        return true
+    }
+
+    val fromScope = architectureScope(fromProjectPath)
+    val toScope = architectureScope(toProjectPath)
+
+    return when (fromScope) {
+        "contracts" -> toScope == "contracts"
+        "platform" -> toScope == "platform" || toScope == "contracts"
+        "platform-kernel" -> toScope == "platform-kernel" || toScope == "platform" || toScope == "contracts"
+        "platform-plugins" ->
+            toScope == "platform-plugins" ||
+                toScope == "platform-kernel" ||
+                toScope == "platform" ||
+                toScope == "contracts"
+        "shared-services" ->
+            toScope == "shared-services" ||
+                toScope == "platform-kernel" ||
+                toScope == "platform" ||
+                toScope == "contracts"
+        "shared-product-api" ->
+            toScope == "shared-product-api" ||
+                toScope == "platform-plugins" ||
+                toScope == "platform-kernel" ||
+                toScope == "platform" ||
+                toScope == "contracts"
+        "product" -> when (toScope) {
+            "platform", "platform-kernel", "platform-plugins", "contracts", "shared-services", "shared-product-api" -> true
+            "product" -> productRoot(fromProjectPath) == productRoot(toProjectPath)
+            else -> false
+        }
+        else -> true
+    }
+}
+
+fun detectArchitectureCycles(edges: List<ArchitectureDependencyEdge>): List<List<String>> {
+    val adjacency = edges
+        .groupBy({ edge -> edge.fromProjectPath }, { edge -> edge.toProjectPath })
+        .mapValues { (_, dependencies) -> dependencies.distinct().sorted() }
+
+    val visitState = mutableMapOf<String, Int>()
+    val stack = mutableListOf<String>()
+    val cycles = linkedSetOf<List<String>>()
+
+    fun walk(projectPath: String) {
+        when (visitState[projectPath]) {
+            1 -> {
+                val cycleStart = stack.indexOf(projectPath)
+                if (cycleStart >= 0) {
+                    val cycle = stack.subList(cycleStart, stack.size).toMutableList()
+                    cycle += projectPath
+                    cycles += cycle
+                }
+                return
+            }
+
+            2 -> return
+        }
+
+        visitState[projectPath] = 1
+        stack += projectPath
+        adjacency[projectPath].orEmpty().forEach(::walk)
+        stack.removeAt(stack.lastIndex)
+        visitState[projectPath] = 2
+    }
+
+    (adjacency.keys + adjacency.values.flatten()).distinct().sorted().forEach(::walk)
+    return cycles.toList()
 }
 
 subprojects {
@@ -135,6 +330,7 @@ tasks.register("buildHealth") {
 tasks.register("validateArchitecture") {
     group = "verification"
     description = "Validate monorepo architecture rules (dependency direction, module boundaries)"
+    notCompatibleWithConfigurationCache("Architecture checks traverse the full project dependency graph at execution time")
 
     dependsOn("validateNoCircularDependencies")
     dependsOn("validateModuleBoundaries")
@@ -149,32 +345,85 @@ tasks.register("validateArchitecture") {
 tasks.register("validateNoCircularDependencies") {
     group = "verification"
     description = "Check for circular dependencies between modules"
+    notCompatibleWithConfigurationCache("Cycle detection inspects all subproject dependency configurations at execution time")
 
     doLast {
-        println("Checking for circular dependencies...")
-        // This would be implemented with a dependency analyzer plugin
-        // For now, we rely on Gradle's built-in cycle detection
+        val edges = subprojects.flatMap { project -> project.architectureDependencyEdges(includeTests = false) }
+        val cycles = detectArchitectureCycles(edges)
+
+        if (cycles.isNotEmpty()) {
+            val message = buildString {
+                appendLine("Circular project dependencies detected:")
+                cycles.forEach { cycle ->
+                    appendLine("  - ${cycle.joinToString(" -> ")}")
+                }
+            }
+            throw GradleException(message)
+        }
+
+        println("✅ No circular project dependencies found")
     }
 }
 
 tasks.register("validateModuleBoundaries") {
     group = "verification"
     description = "Validate module boundaries per architecture rules"
+    notCompatibleWithConfigurationCache("Boundary validation inspects all subproject dependency configurations at execution time")
 
     doLast {
-        // Rule: platform modules should not depend on product modules
-        // Note: Full implementation requires dependency analysis plugin
-        // This is a placeholder that will be enhanced with ArchUnit
-        println("✅ Module boundary validation (placeholder - requires ArchUnit implementation)")
+        val edges = subprojects.flatMap { project -> project.architectureDependencyEdges(includeTests = false) }
+        val violations = edges.filter { edge ->
+            when (architectureScope(edge.fromProjectPath)) {
+                "platform" -> architectureScope(edge.toProjectPath) == "product"
+                "platform-kernel" -> architectureScope(edge.toProjectPath) == "product"
+                "platform-plugins" -> architectureScope(edge.toProjectPath) == "product"
+                "shared-services" -> architectureScope(edge.toProjectPath) == "product"
+                else -> false
+            }
+        }
+
+        if (violations.isNotEmpty()) {
+            val message = buildString {
+                appendLine("Module boundary violations detected:")
+                violations.sortedWith(compareBy({ it.fromProjectPath }, { it.toProjectPath }, { it.configurationName }))
+                    .forEach { violation ->
+                        appendLine(
+                            "  - ${violation.fromProjectPath} depends on ${violation.toProjectPath} via ${violation.configurationName}"
+                        )
+                    }
+            }
+            throw GradleException(message)
+        }
+
+        println("✅ Module boundary validation passed")
     }
 }
 
 tasks.register("validateDependencyDirection") {
     group = "verification"
     description = "Validate dependency direction (platform → products)"
+    notCompatibleWithConfigurationCache("Dependency direction validation inspects all subproject dependency configurations at execution time")
 
     doLast {
-        println("✅ Dependency direction validation complete (enforced by Gradle)")
+        val edges = subprojects.flatMap { project -> project.architectureDependencyEdges(includeTests = false) }
+        val violations = edges.filterNot { edge ->
+            isAllowedArchitectureDependency(edge.fromProjectPath, edge.toProjectPath)
+        }
+
+        if (violations.isNotEmpty()) {
+            val message = buildString {
+                appendLine("Dependency direction violations detected:")
+                violations.sortedWith(compareBy({ it.fromProjectPath }, { it.toProjectPath }, { it.configurationName }))
+                    .forEach { violation ->
+                        appendLine(
+                            "  - ${violation.fromProjectPath} -> ${violation.toProjectPath} (${violation.configurationName})"
+                        )
+                    }
+            }
+            throw GradleException(message)
+        }
+
+        println("✅ Dependency direction validation passed")
     }
 }
 
@@ -226,4 +475,8 @@ tasks.register("auditModuleCount") {
         println("Total: ${platformModules + productModules + sharedServices + kernelModules}")
         println("===========================")
     }
+}
+
+tasks.matching { it.name == "check" }.configureEach {
+    dependsOn("validateArchitecture")
 }
