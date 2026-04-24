@@ -13,10 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -158,7 +155,7 @@ class IdentityExpansionTest extends EventloopTestBase {
         void concurrentTokenCreation() throws Exception { // GH-90000
             int threadCount = 25;
             CountDownLatch latch = new CountDownLatch(threadCount); // GH-90000
-            List<String> tokens = new ArrayList<>(); // GH-90000
+            List<String> tokens = Collections.synchronizedList(new ArrayList<>()); // GH-90000
 
             ExecutorService exec = Executors.newFixedThreadPool(threadCount); // GH-90000
             try {

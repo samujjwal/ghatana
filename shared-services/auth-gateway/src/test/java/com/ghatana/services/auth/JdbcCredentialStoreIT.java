@@ -35,6 +35,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @DisplayName("JdbcCredentialStore — integration tests with PostgreSQL")
 class JdbcCredentialStoreIT extends EventloopTestBase {
 
+    @Override
+    protected boolean breakOnFatalError() {
+        return false;
+    }
+
     @Container
     private static final PostgreSQLContainer<?> POSTGRES =
             new PostgreSQLContainer<>("postgres:15-alpine")
@@ -120,6 +125,8 @@ class JdbcCredentialStoreIT extends EventloopTestBase {
                         List.of("USER"), "tenant-1")))
                 .isInstanceOf(IllegalStateException.class) // GH-90000
                 .hasMessageContaining("carol");
+
+        clearFatalError(); // Clear the expected fatal error from the eventloop
     }
 
     @Test

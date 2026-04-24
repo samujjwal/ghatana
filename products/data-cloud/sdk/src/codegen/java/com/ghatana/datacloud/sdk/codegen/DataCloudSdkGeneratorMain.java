@@ -140,8 +140,8 @@ public final class DataCloudSdkGeneratorMain {
      * Check if output directory exists and contains generated artifacts.
      */
     private static boolean outputExists(Path outputRoot) {
-        return Files.exists(outputRoot.resolve("metadata.json")) &&
-               Files.exists(outputRoot.resolve("java/src/main/java/com/ghatana/datacloud/sdk/generated/DataCloudJavaSdk.java"));
+        return Files.exists(outputRoot.resolve("metadata.json"))
+               && Files.exists(outputRoot.resolve("java/src/main/java/com/ghatana/datacloud/sdk/generated/DataCloudJavaSdk.java"));
     }
 
     /**

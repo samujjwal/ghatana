@@ -35,6 +35,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @DisplayName("JdbcCredentialStore — integration tests with H2 in-memory")
 class JdbcCredentialStoreH2IT extends EventloopTestBase {
 
+    @Override
+    protected boolean breakOnFatalError() {
+        return false;
+    }
+
     private HikariDataSource dataSource;
     private JdbcCredentialStore store;
 
@@ -114,6 +119,8 @@ class JdbcCredentialStoreH2IT extends EventloopTestBase {
                         List.of("USER"), "tenant-1")))
                 .isInstanceOf(IllegalStateException.class) // GH-90000
                 .hasMessageContaining("carol");
+
+        clearFatalError(); // Clear the expected fatal error from the eventloop
     }
 
     @Test

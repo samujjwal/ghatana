@@ -142,8 +142,8 @@ class ReportCacheConsistencyTest extends EventloopTestBase {
     @Test
     @DisplayName("stale entry is refreshed on next access")
     void staleEntriesAreRefreshedOnAccess() { // GH-90000
-        // Expire TTL of 0 means everything is immediately stale
-        ReportCache shortTtlCache = new ReportCache(Duration.ZERO); // GH-90000
+        // Use a very small TTL to ensure entries become stale quickly
+        ReportCache shortTtlCache = new ReportCache(Duration.ofMillis(1)); // GH-90000
         AtomicInteger refreshCount = new AtomicInteger(0); // GH-90000
 
         CacheKey key = new CacheKey("REFRESH_TEST", "tenant-r", "w-r"); // GH-90000
@@ -151,12 +151,18 @@ class ReportCacheConsistencyTest extends EventloopTestBase {
             refreshCount.incrementAndGet(); // GH-90000
             return "fresh-" + refreshCount.get(); // GH-90000
         });
+        // Small delay to ensure TTL expires
+        try {
+            Thread.sleep(2);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
         shortTtlCache.getOrLoad(key, () -> { // GH-90000
             refreshCount.incrementAndGet(); // GH-90000
             return "fresh-" + refreshCount.get(); // GH-90000
         });
 
-        // Both calls should have gone to the backend since TTL=0 makes entries instantly stale
+        // Both calls should have gone to the backend since TTL expired
         assertThat(refreshCount.get()).isEqualTo(2); // GH-90000
     }
 

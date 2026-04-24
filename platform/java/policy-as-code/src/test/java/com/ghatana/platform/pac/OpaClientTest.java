@@ -35,6 +35,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern IntegrationTest
  */
+@Tag("integration")
 @DisplayName("OpaClient Tests")
 @Testcontainers
 class OpaClientTest extends EventloopTestBase {

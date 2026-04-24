@@ -82,9 +82,23 @@ val verifyGeneratedTypeScriptSdk by tasks.registering(Exec::class) {
 
     dependsOn(generateDataCloudSdks)
     workingDir = rootDir
+
+    onlyIf {
+        try {
+            val process = ProcessBuilder("npx", "--version").start()
+            val exitCode = process.waitFor()
+            if (exitCode != 0) {
+                logger.lifecycle("Skipping TypeScript SDK verification: npx not found on this system")
+            }
+            exitCode == 0
+        } catch (e: Exception) {
+            logger.lifecycle("Skipping TypeScript SDK verification: npx not found on this system")
+            false
+        }
+    }
+
     commandLine(
-        "pnpm",
-        "exec",
+        "npx",
         "tsc",
         "--noEmit",
         "--project",
@@ -97,8 +111,9 @@ val verifyGeneratedPythonSdk by tasks.registering(Exec::class) {
     group = "verification"
 
     dependsOn(generateDataCloudSdks)
+    val pythonCommand = if (System.getProperty("os.name").lowercase().contains("windows")) "py" else "python3"
     commandLine(
-        "python3",
+        pythonCommand,
         "-m",
         "py_compile",
         generatedPythonDir.get().file("datacloud_sdk/__init__.py").asFile.absolutePath,

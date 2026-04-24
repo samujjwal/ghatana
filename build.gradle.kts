@@ -38,6 +38,18 @@ subprojects {
         }
     }
 
+    // Global test configuration: exclude integration tests by default
+    // Run integration tests with: ./gradlew test -DincludeIntegrationTests=true
+    plugins.withId("java") {
+        tasks.withType<Test>().configureEach {
+            useJUnitPlatform {
+                if (System.getProperty("includeIntegrationTests") == null) {
+                    excludeTags("integration")
+                }
+            }
+        }
+    }
+
     plugins.withId("pmd") {
         configure<PmdExtension> {
             toolVersion = "7.11.0"

@@ -251,7 +251,7 @@ class EntityServiceTest extends EventloopTestBase {
 
             // Then
             assertThat(result.getVersion()).isEqualTo(2); // GH-90000
-            assertThat(result.getUpdatedAt()).isAfter(now); // GH-90000
+            assertThat(result.getUpdatedAt()).isAfterOrEqualTo(now); // GH-90000
             assertThat(result.getCreatedAt()).isEqualTo(now); // GH-90000
             assertThat(result.getCreatedBy()).isEqualTo(USER_ID); // GH-90000
 

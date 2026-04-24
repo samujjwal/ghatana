@@ -189,15 +189,21 @@ public final class CatalogLoader {
         List<CatalogAgentEntry> definitions = new ArrayList<>();
 
         for (String glob : agentGlobs) {
-            PathMatcher matcher = FileSystems.getDefault()
-                    .getPathMatcher("glob:" + basePath.resolve(glob));
+            // Convert glob to regex for cross-platform matching
+            String globPattern = glob.replace(".", "\\.")
+                                   .replace("*", ".*")
+                                   .replace("?", ".");
+            String regexPattern = "^" + globPattern + "$";
 
             try {
                 Files.walkFileTree(basePath, EnumSet.noneOf(FileVisitOption.class), 10,
                         new SimpleFileVisitor<>() {
                             @Override
                             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                                if (matcher.matches(file) && file.toString().endsWith(".yaml")) {
+                                // Get relative path from base path and normalize to forward slashes
+                                Path relativePath = basePath.relativize(file);
+                                String relativePathStr = relativePath.toString().replace("\\", "/");
+                                if (relativePathStr.matches(regexPattern) && file.toString().endsWith(".yaml")) {
                                     try {
                                         CatalogAgentEntry def = parseAgentYaml(file, catalogId);
                                         if (def != null) {
