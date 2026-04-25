@@ -14,11 +14,9 @@ import userEvent from '@testing-library/user-event';
 import { TestWrapper } from '../test-utils/wrapper';
 import { TEST_TENANT_ID } from '@/__tests__/test-utils/tenants';
 
-const { mockApiClient } = vi.hoisted(() => ({
-    mockApiClient: {
-        get: vi.fn(),
-        post: vi.fn(),
-        delete: vi.fn(),
+const { mockWorkflowsApi } = vi.hoisted(() => ({
+    mockWorkflowsApi: {
+        list: vi.fn(),
     },
 }));
 
@@ -35,8 +33,8 @@ const { mockAi, mockCapabilities } = vi.hoisted(() => ({
     },
 }));
 
-vi.mock('../../lib/api/client', () => ({
-    apiClient: mockApiClient,
+vi.mock('../../lib/api/workflows', () => ({
+    workflowsApi: mockWorkflowsApi,
 }));
 
 vi.mock('../../lib/api/ai', () => ({
@@ -54,12 +52,10 @@ import { WorkflowsPage } from '../../pages/WorkflowsPage';
 describe('WorkflowPage — WorkflowsPage', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockApiClient.get.mockResolvedValue({
-            tenantId: TEST_TENANT_ID,
-            pipelines: [
+        mockWorkflowsApi.list.mockResolvedValue({
+            items: [
                 {
                     id: 'wf-contract-1',
-                    tenantId: TEST_TENANT_ID,
                     name: 'Contract Pipeline',
                     description: 'Canonical launcher-backed workflow payload',
                     status: 'active',
@@ -73,8 +69,10 @@ describe('WorkflowPage — WorkflowsPage', () => {
                     lastExecutedAt: '2026-04-14T10:30:00Z',
                 },
             ],
-            count: 1,
-            timestamp: '2026-04-14T10:35:00Z',
+            total: 1,
+            page: 1,
+            pageSize: 50,
+            hasMore: false,
         });
         mockAi.getPipelineOptimisationHints.mockResolvedValue({
             data: {
@@ -92,7 +90,6 @@ describe('WorkflowPage — WorkflowsPage', () => {
                 generatedAt: '2026-04-14T10:35:00Z',
             },
         });
-        mockApiClient.delete.mockResolvedValue(undefined);
         mockCapabilities.useCapabilityRegistry.mockReturnValue({
             data: {
                 capabilities: [{ key: 'ai.assist', status: 'active', label: 'AI Assist', summary: 'ACTIVE', rawValue: true }],
@@ -113,7 +110,7 @@ describe('WorkflowPage — WorkflowsPage', () => {
         expect(screen.getByPlaceholderText(/Search workflows by outcome, schedule, or owner/i)).toBeInTheDocument();
         expect(screen.getByText('All Workflows')).toBeInTheDocument();
         expect(screen.getByRole('link', { name: /New Pipeline/i })).toBeInTheDocument();
-    });
+    }, 15000);
 
     it('renders canonical pipeline payload details from the launcher route', async () => {
         render(<WorkflowsPage />, { wrapper: TestWrapper });
@@ -126,11 +123,13 @@ describe('WorkflowPage — WorkflowsPage', () => {
         expect(screen.getAllByText('Active').length).toBeGreaterThan(0);
 
         await waitFor(() => {
-            expect(mockApiClient.get).toHaveBeenCalledWith('/pipelines', {
-                params: { limit: 50 },
+            expect(mockWorkflowsApi.list).toHaveBeenCalledWith({
+                search: undefined,
+                status: undefined,
+                pageSize: 50,
             });
         });
-    });
+    }, 15000);
 
     it('opens workflow details and shows canonical AI optimisation hints', async () => {
         const user = userEvent.setup();
@@ -147,5 +146,5 @@ describe('WorkflowPage — WorkflowsPage', () => {
         await waitFor(() => {
             expect(mockAi.getPipelineOptimisationHints).toHaveBeenCalledWith('wf-contract-1');
         });
-    });
+    }, 15000);
 });

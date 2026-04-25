@@ -22,7 +22,7 @@ describe('RouteCapabilityRegistry', () => {
         expect(route.path).toBeDefined();
         expect(route.path.startsWith('/')).toBe(true);
         expect(route.label).toBeTruthy();
-        expect(route.lifecycle).toBeOneOf(['active', 'preview', 'deprecated', 'redirect', 'removed']);
+        expect(route.lifecycle).toBeOneOf(['active', 'preview', 'deprecated', 'redirect', 'removed', 'boundary']);
         expect(route.minimumShellRole).toBeOneOf(['primary-user', 'operator', 'admin']);
       });
     });

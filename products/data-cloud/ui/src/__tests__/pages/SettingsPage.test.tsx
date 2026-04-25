@@ -1,9 +1,20 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TestWrapper } from '../test-utils/wrapper';
 import { settingsSurfaceBoundaries } from '@/components/common/unsupportedSurfaceRegistry';
 import { SettingsPage } from '../../pages/SettingsPage';
+
+// The settings service raises a boundary error when the identity backend is
+// unavailable. Mock it to keep tests deterministic and network-free.
+vi.mock('../../api/settings.service', () => ({
+  settingsService: {
+    listApiKeys: vi.fn().mockRejectedValue(new Error('Settings API not available')),
+    getProfile: vi.fn().mockRejectedValue(new Error('Settings API not available')),
+    getPreferences: vi.fn().mockRejectedValue(new Error('Settings API not available')),
+    getNotificationPreferences: vi.fn().mockRejectedValue(new Error('Settings API not available')),
+  },
+}));
 
 
 describe('SettingsPage', () => {

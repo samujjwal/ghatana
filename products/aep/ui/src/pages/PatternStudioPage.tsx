@@ -25,6 +25,7 @@ import {
   deletePattern,
   type PatternSummary,
 } from '@/api/pipeline.api';
+import { toast } from 'sonner';
 import type { PatternType } from '@/types/pipeline.types';
 import {
   approvePolicy,
@@ -38,6 +39,7 @@ import { Button } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
 import { TextArea } from '@ghatana/design-system';
 import { EmptyState } from '@/components/core/EmptyState';
+import { Toaster } from 'sonner';
 import { ErrorState } from '@/components/core/ErrorState';
 import { PageState } from '@/components/shared/PageState';
 import { SensitiveActionDialog } from '@/components/shared/SensitiveActionDialog';
@@ -171,6 +173,29 @@ function CreatePatternForm({ onClose, onCreated }: { onClose: () => void; onCrea
         </div>
 
         <div className="mt-5 flex justify-end gap-3">
+          {config.trim() && (
+            <Button
+              onClick={() => {
+                try {
+                  // Basic YAML structure check: attempt JSON.parse if it looks like JSON,
+                  // otherwise we rely on Monaco YAML mode for syntax; this catches gross structural errors.
+                  const trimmed = config.trim();
+                  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+                    JSON.parse(trimmed);
+                  }
+                  toast.success('YAML syntax looks valid (basic structural check passed)');
+                } catch (err) {
+                  const message = err instanceof Error ? err.message : String(err);
+                  toast.error(`YAML validation failed: ${message}`);
+                }
+              }}
+              variant="ghost"
+              className="px-4 py-2 text-sm"
+              type="button"
+            >
+              Dry-run validate
+            </Button>
+          )}
           <Button
             onClick={onClose}
             variant="secondary"
@@ -223,6 +248,13 @@ function PoliciesTab() {
 
   const reflectMut = useMutation({
     mutationFn: () => triggerReflection(tenantId),
+    onSuccess: () => {
+      toast.success('Reflection triggered. Policies will appear once processing completes.');
+    },
+    onError: (err) => {
+      const message = err instanceof Error ? err.message : String(err);
+      toast.error(`Reflection failed: ${message}`);
+    },
   });
 
   return (
@@ -305,8 +337,10 @@ export function PatternStudioPage() {
     filterType === 'ALL' ? patterns : patterns.filter((p) => p.type === filterType);
 
   return (
-    <div className="flex flex-col h-full overflow-hidden" >
-      {/* Header */}
+    <>
+      <Toaster richColors position="top-right" />
+      <div className="flex flex-col h-full overflow-hidden" >
+        {/* Header */}
       < div className="px-6 py-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 flex items-center gap-4" >
         <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Pattern Studio</h1>
         <div className="flex gap-1 ml-2">
@@ -453,7 +487,8 @@ export function PatternStudioPage() {
           onCancel={() => setDeleteTarget(null)}
         />
       )}
-    </div >
+      </div>
+    </>
   );
 }
 

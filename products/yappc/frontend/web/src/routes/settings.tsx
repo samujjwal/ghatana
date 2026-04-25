@@ -10,9 +10,10 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';
-import { Settings, AlertTriangle, Save } from 'lucide-react';
+import { Settings, AlertTriangle, Save, AlertCircle } from 'lucide-react';
 import { parseJsonResourceResponse, readErrorResponse } from '@/lib/http';
 import type {
     SaveSyncStatusContract,
@@ -44,9 +45,13 @@ const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
  * Settings Page Component
  */
 export default function Component() {
-    const workspaceId = useAtomValue(currentWorkspaceIdAtom);
+    const [searchParams] = useSearchParams();
+    const atomWorkspaceId = useAtomValue(currentWorkspaceIdAtom);
+    const queryWorkspaceId = searchParams.get('workspaceId');
+    const workspaceId = queryWorkspaceId || atomWorkspaceId;
     const currentUser = useCurrentUser();
     const queryClient = useQueryClient();
+    const workspaceIdMismatch = Boolean(queryWorkspaceId && queryWorkspaceId !== atomWorkspaceId);
     const [activeTab, setActiveTab] = useState<Tab>('general');
     const [showAdvancedMetadata, setShowAdvancedMetadata] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
@@ -149,6 +154,14 @@ export default function Component() {
                 <p className="mt-1 text-sm text-fg-muted">
                     Manage the supported workspace identity fields and destructive actions.
                 </p>
+                {workspaceIdMismatch && (
+                    <div className="mt-3 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100" role="alert">
+                        <AlertCircle className="h-4 w-4 shrink-0" />
+                        <span>
+                            You are editing a different workspace than your current context. Changes will apply to this workspace.
+                        </span>
+                    </div>
+                )}
                 {(saveMutation.isPending || hasUnsavedChanges || saveStatus) && (
                     <div className="mt-3">
                         <SaveSyncStatusBadge

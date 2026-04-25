@@ -203,16 +203,25 @@ export const canonicalRouteRegistry: RouteCapabilityRegistry = {
     iconName: 'Settings',
     description: 'Operations console and diagnostics',
   },
-  // DC-UX-035: plugins uses pluginDependencyBoundary — lifecycle: 'boundary'
+  operationsJobs: {
+    path: '/operations/jobs',
+    label: 'Job Center',
+    minimumShellRole: 'admin',
+    lifecycle: 'active',
+    capabilities: ['ops-jobs', 'background-operations'],
+    discoverable: false,
+    description: 'Background operations timeline and status center',
+  },
+  // DC-UX-035: plugins page is active — boundary states are inside the page (catalog/delivery tabs)
   plugins: {
     path: '/plugins',
     label: 'Plugins',
-    minimumShellRole: 'primary-user',
-    lifecycle: 'boundary',
+    minimumShellRole: 'operator',
+    lifecycle: 'active',
     capabilities: ['plugin-management'],
     discoverable: true,
     iconName: 'Package',
-    description: 'Plugin management (dependency boundary — operator preview only)',
+    description: 'Plugin management (operator preview — catalog and delivery tabs are boundary-scoped)',
   },
   // DC-UX-035: settings surface has UnavailablePanel in all sections
   settings: {

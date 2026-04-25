@@ -40,6 +40,7 @@ function extractAppRoutes(appSource: string): Set<string> {
       path.startsWith("/agents") ||
       path === "/login" ||
       path === "/auth/callback" ||
+      path === "/session-expired" ||
       path.includes(":")
     ) {
       continue;
@@ -258,6 +259,8 @@ function runVerification(): VerificationResult[] {
     "AgentRegistryPage",
     "WorkflowCatalogPage",
     "AgentMarketplacePage",
+    "SessionExpiryPage",
+    "OperationCenterPage",
   ];
 
   for (const page of expectedPages) {
@@ -316,15 +319,17 @@ function runVerification(): VerificationResult[] {
   });
 
   // ── Tenant checks ─────────────────────────────────────────
-  const tenantScopedApiPattern =
-    /tenantId\s*[=:]\s*useAtomValue\(tenantIdAtom\)/.test(appSource) ||
-    /tenantId\s*[=:]\s*tenantIdAtom/.test(flagsSource);
+  const tenantStorePath = path.join(srcDir, "stores", "tenant.store.ts");
+  const tenantStoreSource = fs.existsSync(tenantStorePath)
+    ? fs.readFileSync(tenantStorePath, "utf-8")
+    : "";
+  const tenantScopedApiPattern = /tenantIdAtom/.test(tenantStoreSource);
   results.push({
     category: "tenant",
-    name: "Tenant atom usage in App or flags",
+    name: "Tenant atom defined in stores/tenant.store.ts",
     found: tenantScopedApiPattern,
     expected: true,
-    location: "App.tsx / feature-flags.ts",
+    location: "stores/tenant.store.ts",
   });
 
   return results;

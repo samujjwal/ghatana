@@ -4,9 +4,6 @@ export * from './lifecycleAtom';
 // Quality gates state management
 export * from './gatesAtom';
 
-// Canvas/diagram state management (migrated to workspace/canvasAtoms)
-export * from './unifiedCanvasAtom';
-
 // Project configuration state management
 export * from './projectAtom';
 

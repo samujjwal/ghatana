@@ -17,6 +17,7 @@ import {
   executeAnalyticsQuery,
   explainAnalyticsQuery,
   executeFederatedQuery,
+  evaluateQueryPolicy,
   useAnalyticsAiSuggestions,
 } from '../../api/analytics.service';
 import SessionBootstrap from '../../lib/auth/session';
@@ -157,5 +158,39 @@ describe('analytics.service', () => {
 
     expect(result.current.data?.every((item) => item.fallback)).toBe(true);
     expect(result.current.data?.[0]?.key).toBe('fallback-0');
+  });
+
+  it('uses backend policy evaluation when policy endpoint is available', async () => {
+    mockApiClient.post.mockResolvedValue({
+      verdict: 'review',
+      confidence: 0.92,
+      reasons: ['Cross-source join detected'],
+      requiresApproval: true,
+    });
+
+    const result = await evaluateQueryPolicy('SELECT * FROM events JOIN users ON users.id = events.user_id');
+
+    expect(mockApiClient.post).toHaveBeenCalledWith(
+      '/analytics/policy-evaluate',
+      { query: 'SELECT * FROM events JOIN users ON users.id = events.user_id' },
+      { headers: { 'X-Tenant-ID': 'tenant-a' } },
+    );
+    expect(result).toEqual({
+      verdict: 'review',
+      confidence: 0.92,
+      reasons: ['Cross-source join detected'],
+      requiresApproval: true,
+      source: 'policy-engine',
+    });
+  });
+
+  it('falls back to deterministic deny for destructive query patterns when policy endpoint fails', async () => {
+    mockApiClient.post.mockRejectedValue(new Error('policy endpoint unavailable'));
+
+    const result = await evaluateQueryPolicy('DELETE FROM events WHERE id = 1');
+
+    expect(result.verdict).toBe('deny');
+    expect(result.source).toBe('heuristic-fallback');
+    expect(result.reasons[0]).toContain('Potentially destructive');
   });
 });

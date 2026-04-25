@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { BrowserRouter, Routes, Route, Link, useParams } from 'react-router-dom';
+import { BrowserRouter, MemoryRouter, Routes, Route, Link, useParams } from 'react-router-dom';
 
 /**
  * Shell Routing Tests (TEST-001 / TEST-002)
@@ -80,11 +80,11 @@ describe('[TEST-001/002]: Shell Routing — Behavior-Driven', () => {
 
     it('resolves nested route parameters', () => {
       render(
-        <BrowserRouter initialEntries={['/entities/123/details']}>
+        <MemoryRouter initialEntries={['/entities/123/details']}>
           <Routes>
             <Route path="/entities/:entityId/details" element={<RouteTester />} />
           </Routes>
-        </BrowserRouter>
+          </MemoryRouter>
       );
 
       expect(screen.getByTestId('entity-detail')).toHaveTextContent('Entity 123');

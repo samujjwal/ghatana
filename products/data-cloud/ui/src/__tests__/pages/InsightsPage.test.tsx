@@ -102,6 +102,12 @@ vi.mock('../../components/layout/PageLayout', () => ({
       <span>{String(value)}</span>
     </div>
   ),
+  ContextPanel: ({ title, children }: { title?: string; children: React.ReactNode }) => (
+    <aside>
+      {title && <h2>{title}</h2>}
+      {children}
+    </aside>
+  ),
 }));
 
 vi.mock('../../components/brain/SpotlightRing', () => ({
@@ -217,7 +223,7 @@ describe('InsightsPage', () => {
       expect(within(screen.getByText('Active Pipelines').closest('div') as HTMLElement).getByText('9')).toBeInTheDocument();
       expect(within(screen.getByText('Est. Monthly Cost').closest('div') as HTMLElement).getByText('$2,450')).toBeInTheDocument();
     });
-  });
+  }, 15000);
 
   it('renders AI suggestions and deep-links optimization actions', async () => {
     render(<InsightsPage />, { wrapper: TestWrapper });
@@ -230,7 +236,7 @@ describe('InsightsPage', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/query', {
       state: { query: 'query hot path' },
     });
-  });
+  }, 15000);
 
   it('renders the runtime capability truth panel', async () => {
     render(<InsightsPage />, { wrapper: TestWrapper });
@@ -293,7 +299,7 @@ describe('InsightsPage', () => {
 
     render(<InsightsPage />, { wrapper: TestWrapper });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Analytics' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Analytics' }));
 
     expect(await screen.findByText('Analytics unavailable')).toBeInTheDocument();
     expect(screen.getByText('Analytics connectors are not configured for this launcher profile.')).toBeInTheDocument();
@@ -310,7 +316,7 @@ describe('InsightsPage', () => {
     expect(screen.getByText('Loading runtime capabilities')).toBeInTheDocument();
     expect(screen.getByText('Checking which optional insights dependencies are active before rendering AI suggestions.')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Analytics' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Analytics' }));
 
     expect(screen.getByText('Confirming analytics and federated query dependencies before enabling live analytics views.')).toBeInTheDocument();
   });

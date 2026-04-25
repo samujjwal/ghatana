@@ -11,10 +11,10 @@
 
 import { // Execution
     Code as CodeIcon, UserCog as SupervisorIcon, Cloud as CloudIcon, Bug as BugIcon, HeartPulse as MonitorIcon, Hammer as BuildIcon, // Governance
-    Security as SecurityIcon, Gavel as GavelIcon, Building2 as ArchitectureIcon, Shield as ShieldIcon, ShieldCheck as VerifiedUserIcon, // Strategic
+    Shield as SecurityIcon, Shield as ShieldIcon, Gavel as GavelIcon, Building2 as ArchitectureIcon, ShieldCheck as VerifiedUserIcon, // Strategic
     TrendingUp as TrendingIcon, ClipboardList as AssignmentIcon, GitBranch as AccountTreeIcon, LineChart as AnalyticsIcon, Users as GroupsIcon, BriefcaseBusiness as BusinessCenterIcon, User as PersonIcon, // Operations
-    RocketLaunch as RocketIcon, HardDrive as StorageIcon, Headset as SupportAgentIcon, Headset as HeadsetIcon, // Administrative
-    AdminPanelSettings as AdminIcon, Eye as VisibilityIcon, Settings as SettingsIcon } from 'lucide-react';
+    Rocket as RocketIcon, HardDrive as StorageIcon, Headset as SupportAgentIcon, Headset as HeadsetIcon, // Administrative
+    Eye as VisibilityIcon, Settings as SettingsIcon } from 'lucide-react';
 import type { ReactElement } from 'react';
 
 /**

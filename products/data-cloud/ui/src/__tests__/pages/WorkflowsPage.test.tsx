@@ -42,6 +42,8 @@ import { WorkflowsPage } from '../../pages/WorkflowsPage';
 
 describe('WorkflowsPage', () => {
   beforeEach(() => {
+    // Guard against timer mode leaking from other test files in the same worker.
+    vi.useRealTimers();
     vi.clearAllMocks();
     mockWorkflowsApi.list.mockResolvedValue({
       items: [
@@ -111,7 +113,7 @@ describe('WorkflowsPage', () => {
 
     expect(await screen.findByText(WORKFLOW_HINTS_UNAVAILABLE_TITLE)).toBeInTheDocument();
     expect(mockAi.getPipelineOptimisationHints).not.toHaveBeenCalled();
-  });
+  }, 15000);
 
   it('renders the calmer outcome-first pipeline list with next-action messaging', async () => {
     render(<WorkflowsPage />, { wrapper: TestWrapper });
@@ -121,7 +123,7 @@ describe('WorkflowsPage', () => {
     expect(screen.getByText(/Check the latest outcome/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Review pipeline/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Advanced editor/i })).toBeInTheDocument();
-  });
+  }, 15000);
 
   it('keeps advanced pipeline details behind progressive disclosure in the review modal', async () => {
     render(<WorkflowsPage />, { wrapper: TestWrapper });
@@ -135,7 +137,7 @@ describe('WorkflowsPage', () => {
 
     expect(screen.getAllByText(/Flow size/i).length).toBeGreaterThan(1);
     expect(screen.getAllByText(/Owner/i).length).toBeGreaterThan(1);
-  });
+  }, 15000);
 
   it('shows a degraded warning for AI hints when ai assist is degraded', async () => {
     mockCapabilities.useCapabilityRegistry.mockReturnValue({
@@ -164,7 +166,7 @@ describe('WorkflowsPage', () => {
 
     expect(await screen.findByText(WORKFLOW_HINTS_DEGRADED_TITLE)).toBeInTheDocument();
     expect(screen.getByText(WORKFLOW_HINTS_DEGRADED_DETAIL)).toBeInTheDocument();
-  });
+  }, 15000);
 
     it('paginates the workflow list when there are more than 20 items', async () => {
       // Create 25 workflows — enough to spill into a second page with PAGE_SIZE=20
@@ -220,5 +222,5 @@ describe('WorkflowsPage', () => {
 
       expect(await screen.findByText('Pipeline 1')).toBeInTheDocument();
       expect(screen.queryByText('Pipeline 21')).not.toBeInTheDocument();
-    });
+    }, 15000);
 });

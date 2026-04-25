@@ -230,13 +230,53 @@ export function createQualityCorrelationBoundaryMessage(datasetId: string, times
   return `${QUALITY_CORRELATION_BOUNDARY_PREFIX} for ${datasetId} at ${timestamp}.`;
 }
 
-export function createRuntimeBoundaryError(message: string): Error {
-  return new Error(message);
-}
+// ── Settings surface boundaries ─────────────────────────────────────────────
+
+export const SETTINGS_API_KEY_LIST_BOUNDARY_MESSAGE =
+  'API key listing is not exposed by the current Data Cloud launcher API. Key management requires the identity backend.';
+
+export const SETTINGS_API_KEY_CREATE_BOUNDARY_MESSAGE =
+  'API key creation is not exposed by the current Data Cloud launcher API. Key issuance requires the identity backend.';
+
+export const SETTINGS_API_KEY_REVOKE_BOUNDARY_MESSAGE =
+  'API key revocation is not exposed by the current Data Cloud launcher API. Key lifecycle management requires the identity backend.';
+
+export const SETTINGS_PROFILE_BOUNDARY_MESSAGE =
+  'User profile mutations are not exposed by the current Data Cloud launcher API. Profile management requires the launcher-backed identity API.';
+
+export const SETTINGS_PREFERENCES_BOUNDARY_MESSAGE =
+  'Preferences storage is not exposed by the current Data Cloud launcher API. Preference persistence requires the launcher-backed user API.';
+
+export const SETTINGS_NOTIFICATION_PREFS_BOUNDARY_MESSAGE =
+  'Notification preference updates are not exposed by the current Data Cloud launcher API. Notification routing requires the notification backend.';
+
+// ── AI operations boundaries ─────────────────────────────────────────────────
+
+export const AI_OPERATIONS_SUGGESTION_BOUNDARY_MESSAGE =
+  'AI-assisted operation suggestions are not exposed by the current Data Cloud launcher. The ML platform and feature scoring service are not yet available.';
+
+export const AI_OPERATIONS_CROSS_SURFACE_BOUNDARY_MESSAGE =
+  'Cross-surface AI correlation (alerts ↔ workflows ↔ quality ↔ fabric) is not exposed by the current Data Cloud launcher. The unified operation event model is not yet available.';
+
+export const AI_OPERATIONS_APPLY_BOUNDARY_MESSAGE =
+  'Applying AI-assisted operation suggestions is not exposed by the current Data Cloud launcher API.';
+
+export const AI_WORKFLOW_ADVISORY_BOUNDARY_MESSAGE =
+  'AI workflow advisories are not exposed by the current Data Cloud launcher. Workflow analysis requires the ML platform backend.';
+
+export const AI_QUALITY_ADVISORY_BOUNDARY_MESSAGE =
+  'AI data quality advisories are not exposed by the current Data Cloud launcher. Quality scoring requires the ML platform backend.';
+
+export const AI_FABRIC_ADVISORY_BOUNDARY_MESSAGE =
+  'AI fabric tier advisories are not exposed by the current Data Cloud launcher. Fabric placement scoring requires the ML platform backend.';
 
 export class UnsupportedRuntimeBoundaryError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'UnsupportedRuntimeBoundaryError';
   }
+}
+
+export function createRuntimeBoundaryError(message: string): UnsupportedRuntimeBoundaryError {
+  return new UnsupportedRuntimeBoundaryError(message);
 }

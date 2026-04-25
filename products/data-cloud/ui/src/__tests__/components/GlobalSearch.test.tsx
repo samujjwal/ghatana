@@ -43,6 +43,6 @@ describe('GlobalSearch', () => {
     expect(await screen.findByText('Insights')).toBeInTheDocument();
     expect(screen.getByText('Trust')).toBeInTheDocument();
     expect(screen.getByText('Events')).toBeInTheDocument();
-    expect(screen.getByText('Settings')).toBeInTheDocument();
+    expect(screen.queryByText('Settings')).not.toBeInTheDocument();
   });
 });

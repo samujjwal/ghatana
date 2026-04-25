@@ -44,6 +44,10 @@ import { GuardedAction } from '../components/common/GuardedAction';
 import { alertsSurfaceBoundary } from '../components/common/unsupportedSurfaceRegistry';
 import { ALERTS_UNSUPPORTED_MESSAGE, alertsService } from '../api/alerts.service';
 import type { Alert, AlertGroup, ResolutionSuggestion, AlertSeverity, AlertStatus } from '../api/alerts.service';
+import { aiOperationsService } from '../api/ai-operations.service';
+import type { AiCrossCorrelation } from '../api/ai-operations.service';
+import { getCapabilitySignal, useCapabilityRegistry } from '../api/capabilities.service';
+import { UnsupportedRuntimeBoundaryError } from '../lib/runtime-boundaries';
 
 function isAlertsUnsupportedError(error: unknown): boolean {
     return error instanceof Error && error.message.includes(ALERTS_UNSUPPORTED_MESSAGE);
@@ -251,6 +255,67 @@ function ResolutionSuggestionCard({
 
 const SUPPORTED_ALERT_ROUTE_COUNT = 7;
 
+/**
+ * AI Cross-Surface Correlations Panel
+ *
+ * Capability-gated. Renders when the ML platform ships cross-surface
+ * correlation data for alerts. Falls back to a pending notice when
+ * the backend is unavailable (404/405/501 → boundary).
+ */
+function AiCorrelationsPanel({
+    correlations,
+    isBoundary,
+}: {
+    correlations: AiCrossCorrelation[];
+    isBoundary: boolean;
+}) {
+    if (isBoundary) {
+        return (
+            <div
+                className="flex items-center gap-2 rounded-lg border border-purple-200 bg-purple-50 px-3 py-2 text-sm text-purple-700 dark:border-purple-800 dark:bg-purple-950/30 dark:text-purple-300"
+                data-testid="alerts-ai-correlations-boundary"
+            >
+                <Sparkles className="h-4 w-4 shrink-0" />
+                <span>
+                    Cross-surface AI correlations are pending — ML platform activation required. Correlations will appear here automatically once the feature scoring service is deployed.
+                </span>
+            </div>
+        );
+    }
+
+    if (correlations.length === 0) {
+        return null;
+    }
+
+    return (
+        <div
+            className="rounded-lg border border-purple-200 bg-purple-50 dark:border-purple-800 dark:bg-purple-950/30 p-4"
+            data-testid="alerts-ai-correlations-panel"
+        >
+            <div className="flex items-center gap-2 mb-3">
+                <Link2 className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                <p className="text-sm font-medium text-purple-900 dark:text-purple-200">
+                    AI-detected cross-surface correlations
+                </p>
+                <span className="ml-auto text-xs text-purple-500">{correlations.length} found</span>
+            </div>
+            <div className="space-y-2">
+                {correlations.slice(0, 5).map((c) => (
+                    <div key={c.id} className="flex items-start gap-2 text-sm">
+                        <span className="shrink-0 rounded px-1.5 py-0.5 text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 capitalize">
+                            {c.correlationType}
+                        </span>
+                        <span className="text-gray-700 dark:text-gray-300 flex-1">{c.explanation}</span>
+                        <span className="shrink-0 text-xs text-gray-400">
+                            {Math.round(c.confidence * 100)}%
+                        </span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
 function AlertTruthPanel({
     routeCoverage,
     streamHealth,
@@ -362,6 +427,20 @@ export function AlertsPage(): React.ReactElement {
         mutationFn: (suggestionId: string) => alertsService.applySuggestion(suggestionId),
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ['alerts'] }),
     });
+
+    // AI cross-surface correlations — capability-gated; boundary-aware.
+    const { data: capabilityRegistry } = useCapabilityRegistry();
+    const aiAssistCapability = getCapabilitySignal(capabilityRegistry?.capabilities, ['ai_assist', 'ai.assist', 'assist']);
+    const correlationsQuery = useQuery({
+        queryKey: ['ai', 'correlations', 'alerts'],
+        queryFn: () => aiOperationsService.getCrossCorrelations({ primarySurface: 'alerts', limit: 10 }),
+        staleTime: 5 * 60_000,
+        retry: false,
+        refetchOnWindowFocus: false,
+        enabled: aiAssistCapability?.status !== 'unavailable',
+    });
+    const aiCorrelations = correlationsQuery.data ?? [];
+    const aiCorrelationsBoundary = correlationsQuery.error instanceof UnsupportedRuntimeBoundaryError;
 
     // Only start live alert streaming when the launcher proves the routes exist.
     useEffect(() => {
@@ -517,6 +596,16 @@ export function AlertsPage(): React.ReactElement {
                 groupedCoverage={groupedCoverage}
                 suggestionCoverage={suggestionCoverage}
             />
+
+            {/* AI cross-surface correlations — shown when ai_assist capability is active */}
+            {aiAssistCapability?.status !== 'unavailable' && (aiCorrelations.length > 0 || aiCorrelationsBoundary) && (
+                <div className="mb-6">
+                    <AiCorrelationsPanel
+                        correlations={aiCorrelations}
+                        isBoundary={aiCorrelationsBoundary}
+                    />
+                </div>
+            )}
 
             {/* Search — OPS-001 */}
             <div className="mb-6">

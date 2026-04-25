@@ -58,13 +58,17 @@ import { collectionsApi } from '../lib/api/collections';
 import {
   executeAnalyticsQuery,
   explainAnalyticsQuery,
+  evaluateQueryPolicy,
   executeFederatedQuery,
   fetchAnalyticsQuerySuggestions,
   type AnalyticsExplainResult,
+  type QueryPolicyEvaluation,
   type QueryResultData,
 } from '../api/analytics.service';
 import { getCapabilitySignal, useCapabilityRegistry } from '../api/capabilities.service';
 import { CapabilityTruthPanel } from '../components/capabilities/CapabilityTruthPanel';
+import { aiOperationsService } from '../api/ai-operations.service';
+import { UnsupportedRuntimeBoundaryError } from '../lib/runtime-boundaries';
 import type { AnalyticsSuggestQuery } from '../contracts/schemas';
 import {
   getRecentActivity,
@@ -718,6 +722,9 @@ export function SqlWorkspacePage(): React.ReactElement {
   const [queryPlan, setQueryPlan] = useState<AnalyticsExplainResult | null>(null);
   const [queryError, setQueryError] = useState<string | null>(null);
   const [queryPlanError, setQueryPlanError] = useState<string | null>(null);
+  const [policyEvaluation, setPolicyEvaluation] = useState<QueryPolicyEvaluation | null>(null);
+  const [policyEvaluationPending, setPolicyEvaluationPending] = useState(false);
+  const [policyOverrideConfirmed, setPolicyOverrideConfirmed] = useState(false);
   const [expandedSchema, setExpandedSchema] = useState<string | null>(null);
   const [sidebarTab, setSidebarTab] = useState<'schema' | 'saved' | 'history'>('schema');
   const [resultsTab, setResultsTab] = useState<'results' | 'plan' | 'logs'>('results');
@@ -770,9 +777,25 @@ export function SqlWorkspacePage(): React.ReactElement {
     }
   }, [location.state]);
 
+  // AI quality advisory for the currently expanded schema collection.
+  // Enabled only when the ai_assist capability is active, backend-first, boundary-aware.
+  const qualityAdvisoryCollectionId = expandedSchema ?? schemas[0]?.name ?? null;
+  const qualityAdvisoryQuery = useQuery({
+    queryKey: ['ai', 'advisories', 'quality', qualityAdvisoryCollectionId],
+    queryFn: () => aiOperationsService.getQualityAdvisories(qualityAdvisoryCollectionId!),
+    staleTime: 5 * 60_000,
+    retry: false,
+    refetchOnWindowFocus: false,
+    enabled: aiAssistCapability?.status !== 'unavailable' && qualityAdvisoryCollectionId !== null,
+  });
+  const qualityAdvisories = qualityAdvisoryQuery.data?.advisories ?? [];
+  const qualityAdvisoryBoundary = qualityAdvisoryQuery.error instanceof UnsupportedRuntimeBoundaryError;
+
   useEffect(() => {
     setQueryPlan(null);
     setQueryPlanError(null);
+    setPolicyEvaluation(null);
+    setPolicyOverrideConfirmed(false);
   }, [query]);
 
   const handleSelectSavedQuery = (savedQuery: SavedQuery) => {
@@ -785,6 +808,23 @@ export function SqlWorkspacePage(): React.ReactElement {
     setResultsTab('results');
     setQueryError(null);
     try {
+      setPolicyEvaluationPending(true);
+      const evaluation = await evaluateQueryPolicy(query.trim());
+      setPolicyEvaluation(evaluation);
+      setPolicyEvaluationPending(false);
+
+      if (evaluation.verdict === 'deny') {
+        setQueryError('Execution blocked by policy evaluation. Review the policy decision details and modify the query.');
+        setQueryResult(null);
+        return;
+      }
+
+      if (evaluation.verdict === 'review' && !policyOverrideConfirmed) {
+        setQueryError('Policy review is required. Acknowledge the risk in the policy panel before running this query.');
+        setQueryResult(null);
+        return;
+      }
+
       // B13: Route through federated Trino connector when toggle is active
       const result = isFederated
         ? await executeFederatedQuery(query.trim())
@@ -800,12 +840,14 @@ export function SqlWorkspacePage(): React.ReactElement {
         ...prev.slice(0, 19),
       ]);
     } catch (err) {
+      setPolicyEvaluationPending(false);
       setQueryError(err instanceof Error ? err.message : 'Query failed');
       setQueryResult(null);
     } finally {
+      setPolicyEvaluationPending(false);
       setIsRunning(false);
     }
-  }, [query, isFederated]);
+  }, [query, isFederated, policyOverrideConfirmed]);
 
   const handleExplainQuery = useCallback(async () => {
     if (!query.trim()) {
@@ -902,10 +944,10 @@ export function SqlWorkspacePage(): React.ReactElement {
                 leadingIcon={<Play className="h-4 w-4" />}
                 loading={isRunning}
                 onClick={() => { void handleRunQuery(); }}
-                disabled={isRunning}
+                disabled={isRunning || policyEvaluationPending}
                 data-testid="sql-run-query"
               >
-                {isRunning ? 'Running...' : 'Run Query'}
+                {isRunning ? 'Running...' : policyEvaluationPending ? 'Evaluating policy...' : 'Run Query'}
               </Button>
             </div>
           </div>
@@ -927,6 +969,57 @@ export function SqlWorkspacePage(): React.ReactElement {
               >
                 Use recommended path
               </Button>
+            )}
+          </div>
+        </div>
+
+        <div className={cn(cardStyles.base, cardStyles.padded, 'mb-6')} data-testid="sql-policy-panel">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className={textStyles.h3}>Policy & Risk Evaluation</h2>
+              <p className={textStyles.muted}>
+                Query execution is gated by policy checks when available. If the policy backend is unavailable, deterministic heuristics are applied as a fallback.
+              </p>
+            </div>
+            <span className={cn(
+              'rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wide',
+              policyEvaluation?.verdict === 'deny'
+                ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+                : policyEvaluation?.verdict === 'review'
+                  ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                  : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+            )}>
+              {policyEvaluation ? policyEvaluation.verdict : 'not evaluated'}
+            </span>
+          </div>
+          <div className="mt-4 space-y-2 text-sm text-gray-700 dark:text-gray-300">
+            <p>
+              Source: <strong>{policyEvaluation?.source ?? 'pending'}</strong>
+              {policyEvaluation?.confidence !== undefined && (
+                <span> · Confidence {Math.round(policyEvaluation.confidence * 100)}%</span>
+              )}
+            </p>
+            {policyEvaluation?.reasons && policyEvaluation.reasons.length > 0 ? (
+              <ul className="list-disc space-y-1 pl-5">
+                {policyEvaluation.reasons.map((reason) => (
+                  <li key={reason}>{reason}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-xs text-gray-500">Run or explain the query to populate policy reasoning.</p>
+            )}
+            {policyEvaluation?.verdict === 'review' && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/30">
+                <label className="inline-flex items-center gap-2 text-sm font-medium text-amber-900 dark:text-amber-200">
+                  <input
+                    type="checkbox"
+                    checked={policyOverrideConfirmed}
+                    onChange={(event) => setPolicyOverrideConfirmed(event.target.checked)}
+                    data-testid="sql-policy-review-ack"
+                  />
+                  I reviewed this risk and want to proceed with execution.
+                </label>
+              </div>
             )}
           </div>
         </div>
@@ -958,13 +1051,34 @@ export function SqlWorkspacePage(): React.ReactElement {
 
         {/* UX-001: Question-first layout — AI Assist spans full width when visible */}
         {showAIAssist && (
-          <div className="mb-6" data-testid="sql-ai-assist-primary">
+          <div className="mb-6 space-y-4" data-testid="sql-ai-assist-primary">
             <AIQueryAssist
               onApply={handleApplyAISql}
               schemas={schemas}
               recentActivity={activityData?.activities ?? []}
               continueWorking={activityData?.continueWorking ?? []}
             />
+            {/* AI data quality advisory for the selected collection */}
+            {qualityAdvisoryCollectionId !== null && !qualityAdvisoryBoundary && qualityAdvisories.length > 0 && (
+              <div
+                className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 p-4"
+                data-testid="sql-ai-quality-advisory"
+              >
+                <p className="text-sm font-medium text-amber-900 dark:text-amber-200 mb-2">
+                  Data quality advisories — {qualityAdvisoryCollectionId}
+                </p>
+                <div className="space-y-1.5">
+                  {qualityAdvisories.slice(0, 4).map((advisory) => (
+                    <div key={advisory.id} className="flex items-start gap-2 text-sm">
+                      <span className="shrink-0 text-xs bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded capitalize">
+                        {advisory.type}
+                      </span>
+                      <span className="text-gray-700 dark:text-gray-300 flex-1">{advisory.description}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

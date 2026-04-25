@@ -39,8 +39,8 @@ vi.mock('react-router', async (importOriginal) => {
 // Imports (after mocks are set up)
 // =============================================================================
 
-import RegisterComponent from '../../routes/register';
-import ForgotPasswordComponent from '../../routes/forgot-password';
+import RegisterComponent from '../../routes/_archived/register';
+import ForgotPasswordComponent from '../../routes/_archived/forgot-password';
 import { authService } from '../../services/auth/AuthService';
 
 // =============================================================================

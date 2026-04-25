@@ -13,6 +13,57 @@ import { TestWrapper } from '../test-utils/wrapper';
 import React from 'react';
 import { dataFabricMetricsBoundary } from '@/components/common/unsupportedSurfaceRegistry';
 
+const SAMPLE_FABRIC_METRICS = {
+    tiers: [
+        {
+            tier: 'HOT' as const,
+            label: 'Redis Cluster',
+            throughputEps: 42_000,
+            latencyP99Ms: 0.8,
+            errorRate: 0.001,
+            queueDepth: 0,
+            status: 'healthy' as const,
+            instanceCount: 3,
+        },
+        {
+            tier: 'WARM' as const,
+            label: 'PostgreSQL',
+            throughputEps: 8_000,
+            latencyP99Ms: 6.5,
+            errorRate: 0,
+            queueDepth: 120,
+            status: 'healthy' as const,
+            instanceCount: 2,
+            storageGb: 42.7,
+        },
+        {
+            tier: 'COOL' as const,
+            label: 'Apache Iceberg',
+            throughputEps: 200,
+            latencyP99Ms: 85,
+            errorRate: 0,
+            queueDepth: 0,
+            status: 'healthy' as const,
+            instanceCount: 1,
+            storageGb: 850.3,
+        },
+        {
+            tier: 'COLD' as const,
+            label: 'S3 Archive',
+            throughputEps: 5,
+            latencyP99Ms: 2_000,
+            errorRate: 0,
+            queueDepth: 0,
+            status: 'healthy' as const,
+            instanceCount: 1,
+            storageGb: 10_200,
+        },
+    ],
+    totalEventsPerSec: 50_205,
+    totalStorageGb: 11_093,
+    lastUpdated: new Date().toISOString(),
+};
+
 const { mockApiClient } = vi.hoisted(() => ({
     mockApiClient: {
         get: vi.fn(),
@@ -54,7 +105,7 @@ import { DataFabricPage } from '../../pages/DataFabricPage';
 describe('PipelinePage — DataFabricPage', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockApiClient.get.mockResolvedValue([]);
+        mockApiClient.get.mockResolvedValue(SAMPLE_FABRIC_METRICS);
         mockApiClient.post.mockResolvedValue({
             collection: 'orders',
             targetTier: 'WARM',
@@ -72,7 +123,7 @@ describe('PipelinePage — DataFabricPage', () => {
         expect(screen.getByText(dataFabricMetricsBoundary.summary)).toBeInTheDocument();
     });
 
-    it('surfaces the preview boundary and static topology labels', () => {
+    it('surfaces the preview boundary and static topology labels', async () => {
         render(<DataFabricPage />, { wrapper: TestWrapper });
 
         expect(screen.getByText(dataFabricMetricsBoundary.summary)).toBeInTheDocument();
@@ -80,32 +131,26 @@ describe('PipelinePage — DataFabricPage', () => {
         expect(screen.getByText(/WARM \(PostgreSQL\)/i)).toBeInTheDocument();
         expect(screen.getByText(/COOL \(Iceberg\)/i)).toBeInTheDocument();
         expect(screen.getByText(/COLD \(S3\/Archive\)/i)).toBeInTheDocument();
-        expect(screen.getByText(/Total throughput:/i)).toBeInTheDocument();
-        expect(screen.getByText(/Total storage:/i)).toBeInTheDocument();
+
+        expect(await screen.findByText(/50205\.0/i)).toBeInTheDocument();
+        expect(screen.getByText(/events\/sec/i)).toBeInTheDocument();
+        expect(screen.getByText(/11093\.0/i)).toBeInTheDocument();
+        expect(screen.getByText(/GB/i)).toBeInTheDocument();
     });
 
-    it('submits a manual migration request through the canonical launcher route', async () => {
+    it('keeps governed migration execution disabled until required inputs are provided', async () => {
         render(<DataFabricPage />, { wrapper: TestWrapper });
 
-        fireEvent.click(screen.getByRole('button', { name: /migrate tier/i }));
-        fireEvent.change(screen.getByPlaceholderText(/collection \/ stream name/i), {
-            target: { value: 'orders' },
-        });
-        fireEvent.change(screen.getByRole('combobox'), {
-            target: { value: 'WARM' },
-        });
-        fireEvent.click(screen.getByRole('button', { name: /start migration/i }));
+        const openPanelButton = screen.getByRole('button', { name: /migrate tier/i });
+        expect(openPanelButton).toBeEnabled();
 
-        await waitFor(() => {
-            expect(mockApiClient.post).toHaveBeenCalledWith(
-                '/collections/orders/migrate',
-                {},
-                { params: { targetTier: 'WARM' } },
-            );
-        });
+        fireEvent.click(openPanelButton);
 
-        await waitFor(() => {
-            expect(screen.queryByPlaceholderText(/collection \/ stream name/i)).not.toBeInTheDocument();
-        });
+        const startMigrationButton = await screen.findByRole('button', { name: /start migration/i });
+
+        expect(screen.getByPlaceholderText(/collection \/ stream name/i)).toBeInTheDocument();
+        expect(screen.getByPlaceholderText(/reason for migration/i)).toBeInTheDocument();
+        expect(startMigrationButton).toBeDisabled();
+        expect(mockApiClient.post).not.toHaveBeenCalled();
     });
 });

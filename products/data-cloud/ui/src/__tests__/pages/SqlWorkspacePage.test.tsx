@@ -4,7 +4,7 @@ import { TestWrapper } from '../test-utils/wrapper';
 import { TEST_TENANT_ID } from '@/__tests__/test-utils/tenants';
 import { SQL_OPTIONAL_DEPENDENCIES_UNAVAILABLE_TITLE } from '@/lib/runtime-boundaries';
 
-const { mockCollectionsApi, mockAnalytics, mockCapabilities, mockUserActivity } = vi.hoisted(() => ({
+const { mockCollectionsApi, mockAnalytics, mockCapabilities, mockUserActivity, mockAiOperations } = vi.hoisted(() => ({
   mockCollectionsApi: {
     list: vi.fn(),
   },
@@ -13,12 +13,16 @@ const { mockCollectionsApi, mockAnalytics, mockCapabilities, mockUserActivity } 
     executeFederatedQuery: vi.fn(),
     explainAnalyticsQuery: vi.fn(),
     fetchAnalyticsQuerySuggestions: vi.fn(),
+    evaluateQueryPolicy: vi.fn(),
   },
   mockCapabilities: {
     useCapabilityRegistry: vi.fn(),
   },
   mockUserActivity: {
     getRecentActivity: vi.fn(),
+  },
+  mockAiOperations: {
+    getQualityAdvisories: vi.fn(),
   },
 }));
 
@@ -31,6 +35,11 @@ vi.mock('../../api/analytics.service', () => ({
   executeFederatedQuery: mockAnalytics.executeFederatedQuery,
   explainAnalyticsQuery: mockAnalytics.explainAnalyticsQuery,
   fetchAnalyticsQuerySuggestions: mockAnalytics.fetchAnalyticsQuerySuggestions,
+  evaluateQueryPolicy: mockAnalytics.evaluateQueryPolicy,
+}));
+
+vi.mock('../../api/ai-operations.service', () => ({
+  aiOperationsService: mockAiOperations,
 }));
 
 vi.mock('../../api/capabilities.service', () => ({
@@ -54,6 +63,14 @@ import {
 describe('SqlWorkspacePage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockAnalytics.evaluateQueryPolicy.mockResolvedValue({
+      verdict: 'allow' as const,
+      confidence: 1.0,
+      reasons: [],
+      requiresApproval: false,
+      source: 'heuristic-fallback' as const,
+    });
+    mockAiOperations.getQualityAdvisories.mockRejectedValue({ status: 404 });
     mockCollectionsApi.list.mockResolvedValue({
       items: [
         {

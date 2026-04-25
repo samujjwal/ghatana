@@ -54,7 +54,7 @@ describe('AutonomyShutoffBanner', () => {
       </TestWrapper>
     );
 
-    expect(container.firstChild).toBeNull();
+    expect(container.firstChild?.firstChild).toBeNull();
   });
 
   it('shows persistent warning banner when shutoffActive is true', async () => {

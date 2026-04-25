@@ -235,7 +235,7 @@ export default function ProjectIndexRoute() {
                 {formatActivityTime(project.updatedAt)}
               </p>
               <p className="mt-1 text-xs text-fg-muted">
-                Owner workspace: {project.ownerWorkspace?.name ?? project.ownerWorkspaceId}
+                Owner workspace: {project.ownerWorkspaceId}
               </p>
             </div>
           </div>

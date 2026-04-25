@@ -14,6 +14,67 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { SensitivityBadge, TrustBadge } from '../../../components/governance/TrustSignal';
 
+interface InferredSchemaField {
+  name: string;
+  type: string;
+  required: boolean;
+  description: string;
+}
+
+function inferFieldType(value: unknown): string {
+  if (value == null) return 'string';
+  if (typeof value === 'boolean') return 'boolean';
+  if (typeof value === 'number') return 'number';
+  if (typeof value === 'string') {
+    if (/^\d{4}-\d{2}-\d{2}(?:[tT][\d:.+-Zz]+)?$/.test(value)) {
+      return 'date';
+    }
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+      return 'email';
+    }
+    if (/^https?:\/\//.test(value)) {
+      return 'url';
+    }
+    return value.length > 120 ? 'text' : 'string';
+  }
+  if (Array.isArray(value)) return 'text';
+  if (typeof value === 'object') return 'text';
+  return 'string';
+}
+
+function toFieldName(key: string): string {
+  const cleaned = key.trim().replace(/[^a-zA-Z0-9_\s-]/g, '');
+  const segments = cleaned
+    .split(/[\s_-]+/)
+    .filter((segment) => segment.length > 0)
+    .map((segment) => segment.toLowerCase());
+
+  if (segments.length === 0) {
+    return 'field';
+  }
+
+  return segments
+    .map((segment, index) => (index === 0 ? segment : `${segment[0].toUpperCase()}${segment.slice(1)}`))
+    .join('');
+}
+
+function inferSchemaFieldsFromSample(sample: unknown): InferredSchemaField[] {
+  const sourceRecord = Array.isArray(sample)
+    ? sample.find((entry) => typeof entry === 'object' && entry !== null)
+    : sample;
+
+  if (typeof sourceRecord !== 'object' || sourceRecord === null) {
+    return [];
+  }
+
+  return Object.entries(sourceRecord).map(([rawName, rawValue]) => ({
+    name: toFieldName(rawName),
+    type: inferFieldType(rawValue),
+    required: rawValue !== null && rawValue !== undefined,
+    description: `Inferred from sample field "${rawName}"`,
+  }));
+}
+
 export const SensitivityLevelSchema = z.enum(['public', 'internal', 'confidential', 'pii', 'restricted']);
 export type SensitivityLevel = z.infer<typeof SensitivityLevelSchema>;
 
@@ -98,6 +159,8 @@ export function CollectionForm({ initialData, onSubmit, onCancel, isSubmitting }
   });
 
   const fields = watch('schema.fields') || [];
+  const [samplePayload, setSamplePayload] = React.useState('');
+  const [schemaInferenceError, setSchemaInferenceError] = React.useState<string | null>(null);
 
   const fieldTypes = [
     'string', 'number', 'boolean', 'date', 'email', 'url', 'text'
@@ -105,13 +168,41 @@ export function CollectionForm({ initialData, onSubmit, onCancel, isSubmitting }
 
   const addField = () => {
     const newFields = [...fields, { name: '', type: 'string', required: false, description: '' }];
-    setValue('schema.fields' as any, newFields);
+    setValue('schema.fields', newFields);
   };
 
   const removeField = (index: number) => {
     const newFields = [...fields];
     newFields.splice(index, 1);
-    setValue('schema.fields' as any, newFields);
+    setValue('schema.fields', newFields);
+  };
+
+  const handleInferSchemaFromSample = () => {
+    setSchemaInferenceError(null);
+    if (!samplePayload.trim()) {
+      setSchemaInferenceError('Provide a JSON sample before running schema inference.');
+      return;
+    }
+
+    try {
+      const parsed: unknown = JSON.parse(samplePayload);
+      const inferredFields = inferSchemaFieldsFromSample(parsed);
+
+      if (inferredFields.length === 0) {
+        setSchemaInferenceError('Sample JSON must be an object or an array containing at least one object item.');
+        return;
+      }
+
+      setValue('schema.fields', inferredFields, { shouldDirty: true });
+
+      const currentSchemaName = watch('schema.name');
+      if (!currentSchemaName || currentSchemaName.trim().length < 2) {
+        const inferredSchemaName = `${watch('name').trim().toLowerCase() || 'inferred'}Schema`;
+        setValue('schema.name', inferredSchemaName, { shouldDirty: true });
+      }
+    } catch {
+      setSchemaInferenceError('Invalid JSON. Paste a valid object or array sample to infer schema fields.');
+    }
   };
 
   const onSubmitForm: SubmitHandler<CollectionFormData> = (data) => {
@@ -122,6 +213,30 @@ export function CollectionForm({ initialData, onSubmit, onCancel, isSubmitting }
     <form onSubmit={handleSubmit(onSubmitForm)} className="space-y-6">
       <div className="space-y-4">
         <h2 className="text-lg font-medium">Collection Details</h2>
+
+        <div className="rounded-lg border border-indigo-200 dark:border-indigo-900 bg-indigo-50 dark:bg-indigo-950/30 p-4 space-y-3">
+          <div>
+            <h3 className="text-sm font-semibold text-indigo-800 dark:text-indigo-300">Schema Inference (Sample JSON)</h3>
+            <p className="text-xs text-indigo-700 dark:text-indigo-400">
+              Paste one representative JSON object (or an array with one object) to infer field names and types.
+            </p>
+          </div>
+          <TextArea
+            id="schema-sample-json"
+            value={samplePayload}
+            onChange={(event) => setSamplePayload(event.target.value)}
+            placeholder={'{"id":"evt_001","createdAt":"2026-04-24T10:00:00Z","isActive":true}'}
+            rows={5}
+          />
+          <div className="flex items-center gap-3">
+            <Button type="button" variant="outline" size="sm" onClick={handleInferSchemaFromSample}>
+              Infer Fields
+            </Button>
+            {schemaInferenceError && (
+              <p className="text-xs text-red-600 dark:text-red-400">{schemaInferenceError}</p>
+            )}
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-2">

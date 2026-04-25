@@ -37,6 +37,14 @@ export interface AnalyticsSqlSuggestionResult {
   reasons: string[];
 }
 
+export interface QueryPolicyEvaluation {
+  verdict: 'allow' | 'review' | 'deny';
+  confidence: number;
+  reasons: string[];
+  requiresApproval: boolean;
+  source: 'policy-engine' | 'heuristic-fallback';
+}
+
 export type AnalyticsExplainResult = AnalyticsExplainResponse;
 
 /**
@@ -128,6 +136,86 @@ export async function executeFederatedQuery(
     { headers: { 'X-Tenant-ID': tenantId } },
   );
   return AnalyticsSqlQueryResponseSchema.parse(response);
+}
+
+function fallbackPolicyEvaluation(sql: string): QueryPolicyEvaluation {
+  const normalized = sql.toLowerCase();
+  const reasons: string[] = [];
+
+  if (/\bdrop\s+table\b|\btruncate\b|\bdelete\s+from\b/.test(normalized)) {
+    reasons.push('Potentially destructive command detected.');
+    return {
+      verdict: 'deny',
+      confidence: 0.95,
+      reasons,
+      requiresApproval: true,
+      source: 'heuristic-fallback',
+    };
+  }
+
+  if (/\bselect\s+\*/.test(normalized) && !/\blimit\b/.test(normalized)) {
+    reasons.push('Wide scan detected without LIMIT.');
+  }
+
+  if (!/\bwhere\b/.test(normalized) && /\bfrom\b/.test(normalized)) {
+    reasons.push('No filter clause detected; query may scan broad datasets.');
+  }
+
+  if (reasons.length > 0) {
+    return {
+      verdict: 'review',
+      confidence: 0.74,
+      reasons,
+      requiresApproval: true,
+      source: 'heuristic-fallback',
+    };
+  }
+
+  return {
+    verdict: 'allow',
+    confidence: 0.68,
+    reasons: ['No high-risk patterns detected by local policy heuristics.'],
+    requiresApproval: false,
+    source: 'heuristic-fallback',
+  };
+}
+
+/**
+ * Evaluate query policy/risk before execution.
+ * Attempts backend policy endpoint first, then falls back to deterministic client heuristics.
+ */
+export async function evaluateQueryPolicy(sql: string): Promise<QueryPolicyEvaluation> {
+  const tenantId = getTenantId();
+
+  try {
+    const response = await apiClient.post<{
+      verdict?: 'allow' | 'review' | 'deny';
+      confidence?: number;
+      reasons?: string[];
+      requiresApproval?: boolean;
+    }>(
+      '/analytics/policy-evaluate',
+      { query: sql },
+      { headers: { 'X-Tenant-ID': tenantId } },
+    );
+
+    const verdict = response.verdict;
+    if (verdict === 'allow' || verdict === 'review' || verdict === 'deny') {
+      return {
+        verdict,
+        confidence: typeof response.confidence === 'number' ? response.confidence : 0.8,
+        reasons: Array.isArray(response.reasons) && response.reasons.length > 0
+          ? response.reasons
+          : ['Policy evaluation completed.'],
+        requiresApproval: response.requiresApproval ?? verdict !== 'allow',
+        source: 'policy-engine',
+      };
+    }
+  } catch {
+    // Policy endpoint is optional in current deployments; fallback is intentional.
+  }
+
+  return fallbackPolicyEvaluation(sql);
 }
 
 // =============================================================================

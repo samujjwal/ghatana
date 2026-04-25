@@ -1,0 +1,2230 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.5 [39m[90m/Users/samujjwal/Development/ghatana/products/data-cloud/ui[39m
+
+(node:51005) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51009) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51002) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51001) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51003) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51004) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51007) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51008) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51006) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [31m❯[39m src/components/privacy/__tests__/ConsentManager.test.tsx [2m([22m[2m0 test[22m[2m)[22m
+ [31m❯[39m src/__tests__/components/RouteErrorBoundary.test.tsx [2m([22m[2m12 tests[22m[2m | [22m[31m3 failed[39m[2m)[22m[33m 390[2mms[22m[39m
+[31m     [31m×[31m renders default error message for generic error[39m[32m 51[2mms[22m[39m
+     [32m✓[39m renders 404 status for route error response[32m 10[2mms[22m[39m
+     [32m✓[39m renders 500 status for server error[32m 5[2mms[22m[39m
+     [32m✓[39m renders error message from Error object[32m 11[2mms[22m[39m
+[31m     [31m×[31m shows developer details in DEV mode[39m[32m 8[2mms[22m[39m
+[31m     [31m×[31m does not show developer details in production mode[39m[32m 26[2mms[22m[39m
+     [32m✓[39m navigates to homepage when Go to Homepage button is clicked[32m 232[2mms[22m[39m
+     [32m✓[39m has accessible alert role[32m 11[2mms[22m[39m
+     [32m✓[39m has proper heading structure[32m 18[2mms[22m[39m
+     [32m✓[39m uses default message when route error has no data[32m 5[2mms[22m[39m
+     [32m✓[39m handles Error object without stack trace in DEV mode[32m 3[2mms[22m[39m
+     [32m✓[39m renders with dark mode support[32m 3[2mms[22m[39m
+ [31m❯[39m src/__tests__/components/ErrorStates.test.tsx [2m([22m[2m39 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[33m 595[2mms[22m[39m
+     [32m✓[39m renders nothing when error is null[32m 24[2mms[22m[39m
+     [32m✓[39m renders error message when error is provided[32m 26[2mms[22m[39m
+     [32m✓[39m uses custom message when provided[32m 8[2mms[22m[39m
+     [32m✓[39m calls onRetry when retry button is clicked[32m 284[2mms[22m[39m
+     [32m✓[39m calls onDismiss when dismiss button is clicked[32m 28[2mms[22m[39m
+     [32m✓[39m does not render retry button when onRetry is not provided[32m 3[2mms[22m[39m
+     [32m✓[39m does not render dismiss button when onDismiss is not provided[32m 2[2mms[22m[39m
+     [32m✓[39m applies error-specific styling for ValidationError[32m 2[2mms[22m[39m
+     [32m✓[39m applies error-specific styling for RateLimitError[32m 2[2mms[22m[39m
+     [32m✓[39m applies error-specific styling for PermissionError[32m 3[2mms[22m[39m
+     [32m✓[39m applies error-specific styling for NetworkError[32m 2[2mms[22m[39m
+     [32m✓[39m applies custom className when provided[32m 2[2mms[22m[39m
+     [32m✓[39m has accessible button labels[32m 5[2mms[22m[39m
+     [32m✓[39m renders nothing when error is null[32m 1[2mms[22m[39m
+     [32m✓[39m renders error page when error is provided[32m 6[2mms[22m[39m
+     [32m✓[39m uses custom title when provided[32m 6[2mms[22m[39m
+     [32m✓[39m uses custom subtitle when provided[32m 3[2mms[22m[39m
+     [32m✓[39m calls onRetry when Try Again button is clicked[32m 25[2mms[22m[39m
+     [32m✓[39m does not render Try Again button when onRetry is not provided[32m 7[2mms[22m[39m
+     [32m✓[39m renders Go to Home button by default[32m 3[2mms[22m[39m
+     [32m✓[39m does not render Go to Home button when showHomeButton is false[32m 3[2mms[22m[39m
+     [32m✓[39m displays error-specific title for ValidationError[32m 20[2mms[22m[39m
+     [32m✓[39m displays error-specific title for RateLimitError[32m 6[2mms[22m[39m
+     [32m✓[39m displays error-specific title for PermissionError[32m 8[2mms[22m[39m
+     [32m✓[39m displays error-specific title for NotFoundError[32m 5[2mms[22m[39m
+     [32m✓[39m displays error-specific title for NetworkError[32m 4[2mms[22m[39m
+     [32m✓[39m displays error-specific subtitle for RateLimitError[32m 3[2mms[22m[39m
+     [32m✓[39m displays error-specific subtitle for NetworkError[32m 2[2mms[22m[39m
+[31m     [31m×[31m has accessible error icon with proper styling[39m[32m 65[2mms[22m[39m
+     [32m✓[39m renders with title[32m 2[2mms[22m[39m
+     [32m✓[39m renders with description when provided[32m 1[2mms[22m[39m
+     [32m✓[39m does not render description when not provided[32m 1[2mms[22m[39m
+     [32m✓[39m renders custom icon when provided[32m 1[2mms[22m[39m
+[31m     [31m×[31m renders default icon when not provided[39m[32m 11[2mms[22m[39m
+     [32m✓[39m renders action when provided[32m 3[2mms[22m[39m
+     [32m✓[39m does not render action when not provided[32m 2[2mms[22m[39m
+     [32m✓[39m applies custom className when provided[32m 1[2mms[22m[39m
+     [32m✓[39m renders in centered layout by default[32m 2[2mms[22m[39m
+     [32m✓[39m has accessible heading level[32m 6[2mms[22m[39m
+(node:51018) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51019) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51020) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [31m❯[39m src/__tests__/components/GlobalSearch.test.tsx [2m([22m[2m2 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 252[2mms[22m[39m
+     [32m✓[39m hides operator and admin quick navigation in primary-user mode[32m 165[2mms[22m[39m
+[31m     [31m×[31m reveals operator and admin quick navigation only for the matching shell role[39m[32m 82[2mms[22m[39m
+[90mstderr[2m | src/__tests__/pages/WorkflowsPage.test.tsx[2m > [22m[2mWorkflowsPage[2m > [22m[2mshows an explicit unavailable state for AI hints when ai assist is not configured
+[22m[39mReact does not recognize the `InputLabelProps` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `inputlabelprops` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
+
+[90mstderr[2m | src/__tests__/pages/AlertsPage.test.tsx[2m > [22m[2mAlertsPage[2m > [22m[2mrenders the alerts shell with grouped-view triage controls
+[22m[39mReact does not recognize the `InputLabelProps` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `inputlabelprops` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
+
+ [31m❯[39m src/__tests__/pages/BrainPage.test.tsx [2m([22m[2m4 tests[22m[2m | [22m[31m3 failed[39m[2m)[22m[33m 631[2mms[22m[39m
+[31m     [31m×[31m renders the intelligent-hub shell with outcome launcher and unified intent input[39m[32m 144[2mms[22m[39m
+[31m     [31m×[31m keeps operator-only recommendations out of the primary-user launcher mode[39m[32m 72[2mms[22m[39m
+[31m     [31m×[31m reveals operator-only launcher actions when the shell role is elevated[39m[32m 45[2mms[22m[39m
+     [33m[2m✓[22m[39m routes unified intent to the workflow launcher when the request is automation-focused [33m 366[2mms[22m[39m
+[90mstderr[2m | src/__tests__/accessibility/AccessibilityAudit.test.tsx[2m > [22m[2mAccessibilityAudit — WorkflowsPage[2m > [22m[2mrenders page content
+[22m[39mReact does not recognize the `InputLabelProps` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `inputlabelprops` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
+
+(node:51029) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [32m✓[39m src/__tests__/pages/WorkflowsPage.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 2723[2mms[22m[39m
+     [33m[2m✓[22m[39m shows an explicit unavailable state for AI hints when ai assist is not configured [33m 418[2mms[22m[39m
+     [33m[2m✓[22m[39m paginates the workflow list when there are more than 20 items [33m 1820[2mms[22m[39m
+ [32m✓[39m src/__tests__/pages/SmartWorkflowBuilder.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 1592[2mms[22m[39m
+     [33m[2m✓[22m[39m shows an unavailable state when ai assist is not configured [33m 309[2mms[22m[39m
+     [33m[2m✓[22m[39m generates a runtime-backed workflow draft and persists it on deploy [33m 1197[2mms[22m[39m
+ [32m✓[39m src/__tests__/pages/TrustCenter.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[33m 2313[2mms[22m[39m
+     [33m[2m✓[22m[39m renders the trust-center shell with lifecycle truth and action-center commands [33m 558[2mms[22m[39m
+     [33m[2m✓[22m[39m loads the trust-center sections through the canonical governance service hooks [33m 336[2mms[22m[39m
+     [33m[2m✓[22m[39m submits a real PII redaction quick action [33m 351[2mms[22m[39m
+     [33m[2m✓[22m[39m runs retention purge as a dry run before executing with the returned token [33m 306[2mms[22m[39m
+ [32m✓[39m src/__tests__/pages/MiscPages.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[33m 2304[2mms[22m[39m
+     [33m[2m✓[22m[39m surfaces an explicit boundary instead of a fabricated generated workflow [33m 1085[2mms[22m[39m
+ [32m✓[39m src/__tests__/pages/SqlWorkspacePage.test.tsx [2m([22m[2m12 tests[22m[2m)[22m[33m 2360[2mms[22m[39m
+     [33m[2m✓[22m[39m renders the SQL workspace shell with editor and execution controls [33m 601[2mms[22m[39m
+     [33m[2m✓[22m[39m routes query execution through the federated path when the toggle is enabled [33m 307[2mms[22m[39m
+     [33m[2m✓[22m[39m uses live analytics suggestions for AI query assist instead of inserting a fake generated SQL comment [33m 433[2mms[22m[39m
+[90mstderr[2m | tests/e2e/mock-data-e2e.test.tsx[2m > [22m[2mWorkflows Page with Mock Data[2m > [22m[2mshould display all workflows
+[22m[39mReact does not recognize the `InputLabelProps` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `inputlabelprops` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
+
+ [32m✓[39m src/__tests__/accessibility/AccessibilityAudit.test.tsx [2m([22m[2m50 tests[22m[2m)[22m[33m 2732[2mms[22m[39m
+(node:51033) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [32m✓[39m src/__tests__/pages/AlertsPage.test.tsx [2m([22m[2m13 tests[22m[2m)[22m[33m 4297[2mms[22m[39m
+     [33m[2m✓[22m[39m renders the alerts shell with grouped-view triage controls [33m 573[2mms[22m[39m
+     [33m[2m✓[22m[39m opens the alert rule form from the canonical create action [33m 403[2mms[22m[39m
+     [33m[2m✓[22m[39m opens an existing alert rule from the live rules snapshot [33m 483[2mms[22m[39m
+     [33m[2m✓[22m[39m keeps rule management collapsed until explicitly requested [33m 344[2mms[22m[39m
+     [33m[2m✓[22m[39m requires a reason before acknowledging an alert through the GuardedAction gate [33m 651[2mms[22m[39m
+     [33m[2m✓[22m[39m requires a reason before resolving an alert through the GuardedAction gate [33m 819[2mms[22m[39m
+     [33m[2m✓[22m[39m cancelling the GuardedAction dialog does not invoke the alert service [33m 321[2mms[22m[39m
+ [32m✓[39m tests/e2e/mock-data-e2e.test.tsx [2m([22m[2m12 tests[22m[2m)[22m[33m 1245[2mms[22m[39m
+     [33m[2m✓[22m[39m should display all workflows [33m 544[2mms[22m[39m
+(node:51037) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+[90mstderr[2m | src/__tests__/pages/PluginPage.test.tsx[2m > [22m[2mPluginPage — PluginsPage[2m > [22m[2mrenders canonical bundled plugin inventory with live counts
+[22m[39mReact does not recognize the `InputLabelProps` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `inputlabelprops` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
+
+(node:51038) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51039) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51040) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51041) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51043) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [32m✓[39m src/__tests__/pages/PluginPage.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 1141[2mms[22m[39m
+     [33m[2m✓[22m[39m filters installed plugins by search, category, and status then clears filters [33m 505[2mms[22m[39m
+(node:51044) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51045) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+[90mstderr[2m | src/__tests__/pages/WorkflowPage.test.tsx[2m > [22m[2mWorkflowPage — WorkflowsPage[2m > [22m[2mrenders the workflows shell with canonical search and filter controls
+[22m[39mReact does not recognize the `InputLabelProps` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `inputlabelprops` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
+
+ [32m✓[39m src/__tests__/pages/SmartWorkflowBuilderBoundary.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 1417[2mms[22m[39m
+     [33m[2m✓[22m[39m renders the shared unsupported boundary when AI draft generation is unavailable [33m 1412[2mms[22m[39m
+ [32m✓[39m src/__tests__/pages/WorkflowPage.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 898[2mms[22m[39m
+     [33m[2m✓[22m[39m renders the workflows shell with canonical search and filter controls [33m 342[2mms[22m[39m
+     [33m[2m✓[22m[39m opens workflow details and shows canonical AI optimisation hints [33m 376[2mms[22m[39m
+ [32m✓[39m src/__tests__/pages/InsightsPage.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[33m 1177[2mms[22m[39m
+     [33m[2m✓[22m[39m renders live overview metrics from canonical services [33m 307[2mms[22m[39m
+[90mstderr[2m | src/__tests__/e2e/CriticalPathJourney.test.tsx[2m > [22m[2mCriticalPathJourney[2m > [22m[2mStep 4 — Build a Workflow[2m > [22m[2mWorkflowsPage renders without crashing
+[22m[39mReact does not recognize the `InputLabelProps` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `inputlabelprops` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
+
+ [32m✓[39m src/__tests__/pages/DcNewPages.test.tsx [2m([22m[2m29 tests[22m[2m)[22m[33m 1022[2mms[22m[39m
+ [32m✓[39m src/__tests__/pages/AgentPluginManagerPage.test.tsx [2m([22m[2m16 tests[22m[2m)[22m[33m 860[2mms[22m[39m
+ [32m✓[39m src/__tests__/pages/EventPage.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 824[2mms[22m[39m
+     [33m[2m✓[22m[39m renders the event-explorer shell with canonical header and live-tail controls [33m 440[2mms[22m[39m
+ [32m✓[39m src/__tests__/pages/GovernancePage.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 1008[2mms[22m[39m
+     [33m[2m✓[22m[39m shows an honest empty-state message when no policies match the governance query [33m 460[2mms[22m[39m
+(node:51048) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [32m✓[39m src/__tests__/e2e/CriticalPathJourney.test.tsx [2m([22m[2m14 tests[22m[2m)[22m[33m 911[2mms[22m[39m
+ [32m✓[39m src/__tests__/pages/ContractBacked.test.tsx [2m([22m[2m53 tests[22m[2m)[22m[33m 817[2mms[22m[39m
+       [33m[2m✓[22m[39m should render collection data that passes contract validation [33m 724[2mms[22m[39m
+(node:51055) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51054) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51056) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51057) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51058) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51059) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51060) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51061) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [32m✓[39m src/__tests__/pages/MemoryPage.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 578[2mms[22m[39m
+[90mstderr[2m | src/__tests__/pages/CollectionPage.test.tsx[2m > [22m[2mEditCollectionPage[2m > [22m[2mshows error state when collection load fails
+[22m[39mError loading collection: Error: Network error
+    at [90m/Users/samujjwal/Development/ghatana/products/data-cloud/ui/[39msrc/__tests__/pages/CollectionPage.test.tsx:141:45
+    at file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/@vitest+runner@4.1.5/node_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:302:11
+    at file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/@vitest+runner@4.1.5/node_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:1903:26
+    at file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/@vitest+runner@4.1.5/node_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/@vitest+runner@4.1.5/node_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:2323:10)
+    at file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/@vitest+runner@4.1.5/node_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/@vitest+runner@4.1.5/node_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:2272:10)
+    at file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/@vitest+runner@4.1.5/node_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:2955:64
+
+[90mstderr[2m | src/__tests__/pages/AnalyticsPage.test.tsx[2m > [22m[2mAnalyticsPage — InsightsPage[2m > [22m[2mrenders canonical analytics collection summaries and anomaly hints
+[22m[39m[MSW] Warning: intercepted a request without a matching request handler:
+
+  • GET /api/v1/capabilities
+
+If you still wish to intercept this unhandled request, please create a request handler for it.
+Read more: https://mswjs.io/docs/http/intercepting-requests
+
+ [32m✓[39m src/__tests__/pages/CollectionPage.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[33m 631[2mms[22m[39m
+[90mstderr[2m | src/__tests__/pages/AnalyticsPage.test.tsx[2m > [22m[2mAnalyticsPage — InsightsPage[2m > [22m[2msubmits quick analytics queries through the canonical mutation hook
+[22m[39m[MSW] Warning: intercepted a request without a matching request handler:
+
+  • GET /api/v1/capabilities
+
+If you still wish to intercept this unhandled request, please create a request handler for it.
+Read more: https://mswjs.io/docs/http/intercepting-requests
+
+ [32m✓[39m src/__tests__/pages/PipelinePage.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 560[2mms[22m[39m
+     [33m[2m✓[22m[39m renders the data-fabric shell with preview messaging and migration controls [33m 402[2mms[22m[39m
+ [32m✓[39m src/__tests__/pages/AnalyticsPage.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 855[2mms[22m[39m
+     [33m[2m✓[22m[39m renders canonical analytics collection summaries and anomaly hints [33m 654[2mms[22m[39m
+[90mstderr[2m | src/__tests__/pages/RemainingPages.test.tsx[2m > [22m[2mWorkflowsPage[2m > [22m[2mrenders the workflows shell with search and create controls
+[22m[39mReact does not recognize the `InputLabelProps` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `inputlabelprops` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
+
+ [32m✓[39m src/__tests__/pages/ContextExplorerPage.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 572[2mms[22m[39m
+     [33m[2m✓[22m[39m renders collection context details from the unified API [33m 335[2mms[22m[39m
+ [32m✓[39m src/__tests__/pages/SettingsPage.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 767[2mms[22m[39m
+     [33m[2m✓[22m[39m renders the settings shell with sidebar navigation and profile defaults [33m 349[2mms[22m[39m
+ [32m✓[39m src/__tests__/pages/RemainingPages.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 587[2mms[22m[39m
+     [33m[2m✓[22m[39m renders the workflows shell with search and create controls [33m 418[2mms[22m[39m
+ [32m✓[39m src/__tests__/pages/PluginDetailsPage.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 497[2mms[22m[39m
+(node:51065) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51068) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+[90mstderr[2m | src/__tests__/pages/PluginsPage.test.tsx[2m > [22m[2mPluginsPage[2m > [22m[2mrenders the plugin-management shell with stats, tabs, and search controls
+[22m[39mReact does not recognize the `InputLabelProps` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `inputlabelprops` instead. If you accidentally passed it from a parent component, remove it from the DOM element.
+
+ [32m✓[39m src/__tests__/pages/PluginsPage.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 458[2mms[22m[39m
+     [33m[2m✓[22m[39m renders the plugin-management shell with stats, tabs, and search controls [33m 450[2mms[22m[39m
+(node:51069) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51070) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51071) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51072) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51073) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [32m✓[39m src/__tests__/components/a11y.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[33m 491[2mms[22m[39m
+(node:51075) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51077) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+Not implemented: HTMLFormElement's requestSubmit() method
+[90mstderr[2m | src/__tests__/CollectionsUI.test.tsx[2m > [22m[2m[M003]: Collections UI[2m > [22m[2mCollection Creation[2m > [22m[2m[M003]: create_collection_with_valid_data_succeeds
+[22m[39mUse the `defaultValue` or `value` props instead of setting children on <textarea>.
+
+[90mstderr[2m | src/__tests__/CollectionsUI.test.tsx[2m > [22m[2m[M003]: Collections UI[2m > [22m[2mCollection Creation[2m > [22m[2m[M003]: collection_field_validation_configurable
+[22m[39mYou provided a `checked` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultChecked`. Otherwise, set either `onChange` or `readOnly`.
+
+[90mstderr[2m | src/__tests__/CollectionsUI.test.tsx[2m > [22m[2m[M003]: Collections UI[2m > [22m[2mCollection Editing[2m > [22m[2m[M003]: edit_collection_loads_existing_data
+[22m[39mYou provided a `value` prop to a form field without an `onChange` handler. This will render a read-only field. If the field should be mutable use `defaultValue`. Otherwise, set either `onChange` or `readOnly`.
+Use the `defaultValue` or `value` props instead of setting children on <textarea>.
+
+[90mstderr[2m | src/__tests__/WorkflowDesigner.test.tsx[2m > [22m[2m[M004]: Workflow Designer[2m > [22m[2mAI Integration[2m > [22m[2m[M004]: ai_assist_generates_workflow
+[22m[39mUse the `defaultValue` or `value` props instead of setting children on <textarea>.
+
+ [32m✓[39m src/__tests__/CollectionsUI.test.tsx [2m([22m[2m19 tests[22m[2m)[22m[33m 568[2mms[22m[39m
+ [32m✓[39m src/__tests__/ShellRouting.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 519[2mms[22m[39m
+ [32m✓[39m src/__tests__/WorkflowDesigner.test.tsx [2m([22m[2m27 tests[22m[2m)[22m[33m 718[2mms[22m[39m
+       [33m[2m✓[22m[39m [M004]: ai_assist_generates_workflow [33m 360[2mms[22m[39m
+ [32m✓[39m src/__tests__/components/AppErrorBoundary.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 671[2mms[22m[39m
+     [33m[2m✓[22m[39m resets state when "Try to recover" is clicked [33m 382[2mms[22m[39m
+ [32m✓[39m src/__tests__/hooks/useRouteEntryState.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[32m 248[2mms[22m[39m
+ [32m✓[39m src/components/brain/__tests__/AutonomyShutoffBanner.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 355[2mms[22m[39m
+ [32m✓[39m src/__tests__/App.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 516[2mms[22m[39m
+     [33m[2m✓[22m[39m shows onboarding on first load and hides it after completion [33m 344[2mms[22m[39m
+(node:51080) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51082) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [32m✓[39m src/__tests__/features/collection/useCollectionData.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 294[2mms[22m[39m
+(node:51083) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51084) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51090) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51089) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51093) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [32m✓[39m src/__tests__/api/analytics.service.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 267[2mms[22m[39m
+ [32m✓[39m src/components/security/__tests__/RBACGuard.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[32m 95[2mms[22m[39m
+(node:51094) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [32m✓[39m src/features/workflow/components/__tests__/AICollaborator.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 228[2mms[22m[39m
+ [32m✓[39m src/__tests__/components/core/AmbientIntelligenceBar.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 279[2mms[22m[39m
+ [32m✓[39m src/features/onboarding/__tests__/DataCloudOnboardingWizard.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[32m 235[2mms[22m[39m
+ [32m✓[39m src/lib/integrations/__tests__/agentIntegrationBoundary.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 100[2mms[22m[39m
+ [32m✓[39m src/hooks/__tests__/useValidation.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 79[2mms[22m[39m
+(node:51095) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [32m✓[39m src/hooks/__tests__/useSchemaSuggestion.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 161[2mms[22m[39m
+(node:51098) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [32m✓[39m src/hooks/__tests__/useSelection.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 69[2mms[22m[39m
+(node:51103) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51102) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51105) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51106) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51104) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+Warning: A vi.mock("../lib/api/workflow-client") call in "/Users/samujjwal/Development/ghatana/products/data-cloud/ui/tests/e2e/workflow.e2e.test.ts" is not at the top level of the module. Although it appears nested, it will be hoisted and executed before any tests run. Move it to the top level to reflect its actual execution order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+(node:51107) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51108) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [32m✓[39m src/__tests__/hooks/useAsyncState.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[32m 38[2mms[22m[39m
+ [32m✓[39m src/__tests__/api/capabilities.service.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m src/__tests__/pages/EntityBrowserPage.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 108[2mms[22m[39m
+[90mstderr[2m | tests/e2e/workflow.e2e.test.ts[2m > [22m[2mPipeline E2E Tests[2m > [22m[2mError Handling[2m > [22m[2mshould handle concurrent operations
+[22m[39mAn update to TestComponent inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to TestComponent inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to TestComponent inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to TestComponent inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to TestComponent inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+An update to TestComponent inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+ [32m✓[39m tests/e2e/workflow.e2e.test.ts [2m([22m[2m23 tests[22m[2m)[22m[32m 112[2mms[22m[39m
+ [32m✓[39m src/__tests__/api/governance.service.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 88[2mms[22m[39m
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mSchema Fetching[2m > [22m[2mshould fetch collection schema from API
+[22m[39mSchema cache cleared
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mSchema Fetching[2m > [22m[2mshould fetch collection schema from API
+[22m[39mSchema fetched and cached: tenant-123:users
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mSchema Fetching[2m > [22m[2mshould cache schema after fetching
+[22m[39mSchema cache cleared
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mSchema Fetching[2m > [22m[2mshould cache schema after fetching
+[22m[39mSchema fetched and cached: tenant-123:users
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mSchema Fetching[2m > [22m[2mshould cache schema after fetching
+[22m[39mSchema cache hit: tenant-123:users
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mSchema Fetching[2m > [22m[2mshould throw error on fetch failure
+[22m[39mSchema cache cleared
+
+[90mstderr[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mSchema Fetching[2m > [22m[2mshould throw error on fetch failure
+[22m[39mError fetching schema: Error: Failed to fetch schema: Not Found
+    at SchemaService.getCollectionSchema [90m(/Users/samujjwal/Development/ghatana/products/data-cloud/ui/[39msrc/api/schema.service.ts:127:15[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mSchema Fetching[2m > [22m[2mshould include tenant ID in request headers
+[22m[39mSchema cache cleared
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mSchema Fetching[2m > [22m[2mshould include tenant ID in request headers
+[22m[39mSchema fetched and cached: tenant-123:users
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mField Retrieval[2m > [22m[2mshould get collection fields
+[22m[39mSchema cache cleared
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mField Retrieval[2m > [22m[2mshould get collection fields
+[22m[39mSchema fetched and cached: tenant-123:users
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mField Retrieval[2m > [22m[2mshould cache fields after fetching
+[22m[39mSchema cache cleared
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mField Retrieval[2m > [22m[2mshould cache fields after fetching
+[22m[39mSchema fetched and cached: tenant-123:users
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mField Retrieval[2m > [22m[2mshould return empty array if schema has no fields
+[22m[39mSchema cache cleared
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mField Retrieval[2m > [22m[2mshould return empty array if schema has no fields
+[22m[39mSchema fetched and cached: tenant-123:users
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mField Mapping Validation[2m > [22m[2mshould validate exact type match
+[22m[39mSchema cache cleared
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mField Mapping Validation[2m > [22m[2mshould validate numeric type compatibility
+[22m[39mSchema cache cleared
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mField Mapping Validation[2m > [22m[2mshould validate string type compatibility
+[22m[39mSchema cache cleared
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mField Mapping Validation[2m > [22m[2mshould reject incompatible types
+[22m[39mSchema cache cleared
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mField Mapping Validation[2m > [22m[2mshould validate date type compatibility
+[22m[39mSchema cache cleared
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mField Suggestions[2m > [22m[2mshould suggest fields by name pattern
+[22m[39mSchema cache cleared
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mField Suggestions[2m > [22m[2mshould prioritize exact matches
+[22m[39mSchema cache cleared
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mField Suggestions[2m > [22m[2mshould prioritize fields starting with pattern
+[22m[39mSchema cache cleared
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mField Suggestions[2m > [22m[2mshould suggest fields by type
+[22m[39mSchema cache cleared
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mField Suggestions[2m > [22m[2mshould limit suggestions to 10
+[22m[39mSchema cache cleared
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mField Suggestions[2m > [22m[2mshould sort suggestions alphabetically as fallback
+[22m[39mSchema cache cleared
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mType Compatibility[2m > [22m[2mshould recognize numeric type compatibility
+[22m[39mSchema cache cleared
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mType Compatibility[2m > [22m[2mshould recognize string type compatibility
+[22m[39mSchema cache cleared
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mType Compatibility[2m > [22m[2mshould prioritize compatible types in suggestions
+[22m[39mSchema cache cleared
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mCache Management[2m > [22m[2mshould clear cache
+[22m[39mSchema cache cleared
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mCache Management[2m > [22m[2mshould clear cache
+[22m[39mSchema fetched and cached: tenant-123:users
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mCache Management[2m > [22m[2mshould clear cache
+[22m[39mSchema cache cleared
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mCache Management[2m > [22m[2mshould clear cache
+[22m[39mSchema fetched and cached: tenant-123:users
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mCache Management[2m > [22m[2mshould provide cache statistics
+[22m[39mSchema cache cleared
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mCache Management[2m > [22m[2mshould provide cache statistics
+[22m[39mSchema fetched and cached: tenant-123:users
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mCache Management[2m > [22m[2mshould return zero stats for empty cache
+[22m[39mSchema cache cleared
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mError Handling[2m > [22m[2mshould handle network errors
+[22m[39mSchema cache cleared
+
+[90mstderr[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mError Handling[2m > [22m[2mshould handle network errors
+[22m[39mError fetching schema: Error: Network error
+    at [90m/Users/samujjwal/Development/ghatana/products/data-cloud/ui/[39msrc/__tests__/api/schema.service.test.ts:452:51
+    at file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/@vitest+runner@4.1.5/node_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:302:11
+    at file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/@vitest+runner@4.1.5/node_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:1903:26
+    at file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/@vitest+runner@4.1.5/node_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/@vitest+runner@4.1.5/node_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:2323:10)
+    at file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/@vitest+runner@4.1.5/node_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/@vitest+runner@4.1.5/node_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:2272:10)
+    at file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/@vitest+runner@4.1.5/node_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:2955:64
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mError Handling[2m > [22m[2mshould handle invalid JSON response
+[22m[39mSchema cache cleared
+
+[90mstderr[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mError Handling[2m > [22m[2mshould handle invalid JSON response
+[22m[39mError fetching schema: Error: Invalid JSON
+    at Object.json [90m(/Users/samujjwal/Development/ghatana/products/data-cloud/ui/[39msrc/__tests__/api/schema.service.test.ts:465:17[90m)[39m
+    at SchemaService.getCollectionSchema [90m(/Users/samujjwal/Development/ghatana/products/data-cloud/ui/[39msrc/api/schema.service.ts:130:88[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+
+[90mstdout[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mError Handling[2m > [22m[2mshould throw when no exact collection match is returned
+[22m[39mSchema cache cleared
+
+[90mstderr[2m | src/__tests__/api/schema.service.test.ts[2m > [22m[2mSchema Service[2m > [22m[2mError Handling[2m > [22m[2mshould throw when no exact collection match is returned
+[22m[39mError fetching schema: Error: Collection 'users' not found
+    at SchemaService.parseSchemaResponse [90m(/Users/samujjwal/Development/ghatana/products/data-cloud/ui/[39msrc/api/schema.service.ts:86:13[90m)[39m
+    at SchemaService.getCollectionSchema [90m(/Users/samujjwal/Development/ghatana/products/data-cloud/ui/[39msrc/api/schema.service.ts:130:27[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at [90m/Users/samujjwal/Development/ghatana/products/data-cloud/ui/[39msrc/__tests__/api/schema.service.test.ts:493:7
+    at file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/@vitest+runner@4.1.5/node_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:1903:20
+
+ [32m✓[39m src/__tests__/api/schema.service.test.ts [2m([22m[2m27 tests[22m[2m)[22m[32m 51[2mms[22m[39m
+(node:51109) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [32m✓[39m src/features/workflow/components/__tests__/ExecutionMonitor.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 73[2mms[22m[39m
+ [32m✓[39m src/__tests__/lib/formValidation.test.ts [2m([22m[2m23 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+(node:51113) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [32m✓[39m src/__tests__/api/brain.service.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 33[2mms[22m[39m
+(node:51118) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51116) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51117) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51120) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51119) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51121) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [32m✓[39m src/__tests__/api/cost.service.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m tests/contract/events.contract.test.ts [2m([22m[2m25 tests[22m[2m)[22m[32m 30[2mms[22m[39m
+ [32m✓[39m src/features/workflow/hooks/__tests__/useWorkflowExecution.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 57[2mms[22m[39m
+ [32m✓[39m src/__tests__/lib/routing/RouteCapabilityRegistry.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 27[2mms[22m[39m
+ [32m✓[39m src/lib/integrations/__tests__/pluginIntegrationBoundary.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 27[2mms[22m[39m
+(node:51122) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [32m✓[39m src/lib/integrations/__tests__/visualizationIntegrationBoundary.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 31[2mms[22m[39m
+(node:51123) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [32m✓[39m tests/contract/storage-profiles.contract.test.ts [2m([22m[2m32 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m src/__tests__/api/alerts.service.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+(node:51126) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [32m✓[39m src/__tests__/api/client.contract.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+(node:51131) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51129) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51132) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51133) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51134) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51130) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [32m✓[39m src/__tests__/lib/apiAdapterContracts.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m tests/contract/connectors.contract.test.ts [2m([22m[2m37 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m src/__tests__/api/memory.service.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+(node:51137) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+[90mstdout[2m | src/__tests__/workflow.lifecycle.test.ts[2m > [22m[2mPipeline Lifecycle[2m > [22m[2mWorkflow Validation[2m > [22m[2mshould fail validation with no nodes
+[22m[39mvalidateWorkflow result: {
+  "isValid": false,
+  "valid": false,
+  "errors": [
+    {
+      "code": "NO_NODES",
+      "message": "Workflow must have at least one node",
+      "suggestion": "Add nodes to the workflow canvas"
+    }
+  ],
+  "warnings": [
+    {
+      "code": "NO_TRIGGERS",
+      "message": "Workflow has no triggers",
+      "suggestion": "Add at least one trigger to enable workflow execution"
+    }
+  ]
+}
+
+[90mstdout[2m | src/__tests__/workflow.lifecycle.test.ts[2m > [22m[2mPipeline Lifecycle[2m > [22m[2mWorkflow Validation[2m > [22m[2mshould warn about missing triggers
+[22m[39mvalidateWorkflow result: {
+  "isValid": true,
+  "valid": true,
+  "errors": [],
+  "warnings": [
+    {
+      "code": "NO_TRIGGERS",
+      "message": "Workflow has no triggers",
+      "suggestion": "Add at least one trigger to enable workflow execution"
+    }
+  ]
+}
+
+[90mstdout[2m | src/__tests__/workflow.lifecycle.test.ts[2m > [22m[2mPipeline Lifecycle[2m > [22m[2mWorkflow Validation[2m > [22m[2mshould pass validation with valid configuration
+[22m[39mvalidateWorkflow result: {
+  "isValid": true,
+  "valid": true,
+  "errors": [],
+  "warnings": []
+}
+
+ [32m✓[39m tests/contract/analytics.contract.test.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+[90mstdout[2m | src/__tests__/workflow.lifecycle.test.ts[2m > [22m[2mPipeline Lifecycle[2m > [22m[2mEdge Management[2m > [22m[2mshould detect invalid edge references
+[22m[39mvalidateWorkflow result: {
+  "isValid": false,
+  "valid": false,
+  "errors": [
+    {
+      "code": "INVALID_TARGET_NODE",
+      "message": "Edge references non-existent target node: node-999",
+      "edgeId": "edge-1",
+      "suggestion": "Ensure target node exists"
+    }
+  ],
+  "warnings": [
+    {
+      "code": "NO_TRIGGERS",
+      "message": "Workflow has no triggers",
+      "suggestion": "Add at least one trigger to enable workflow execution"
+    }
+  ]
+}
+
+[90mstdout[2m | src/__tests__/workflow.lifecycle.test.ts[2m > [22m[2mPipeline Lifecycle[2m > [22m[2mComplex Workflow Scenarios[2m > [22m[2mshould create multi-branch workflow
+[22m[39mvalidateWorkflow result: {
+  "isValid": true,
+  "valid": true,
+  "errors": [],
+  "warnings": []
+}
+
+[90mstderr[2m | src/__tests__/lib/persistence.test.ts[2m > [22m[2mPersistence Service[2m > [22m[2mExport/Import[2m > [22m[2mshould throw error for invalid JSON
+[22m[39mFailed to import workflow: SyntaxError: Unexpected token 'i', "invalid json" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at importWorkflow [90m(/Users/samujjwal/Development/ghatana/products/data-cloud/ui/[39msrc/lib/persistence.ts:250:27[90m)[39m
+    at [90m/Users/samujjwal/Development/ghatana/products/data-cloud/ui/[39msrc/__tests__/lib/persistence.test.ts:317:20
+    at Proxy.assertThrows (file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/chai@6.2.2/node_modules/[4mchai[24m/index.js:2798:5)
+    at Proxy.methodWrapper (file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/chai@6.2.2/node_modules/[4mchai[24m/index.js:1700:25)
+    at Proxy.<anonymous> (file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/@vitest+expect@4.1.5/node_modules/[4m@vitest/expect[24m/dist/index.js:1216:12)
+    at Proxy.overwritingMethodWrapper (file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/chai@6.2.2/node_modules/[4mchai[24m/index.js:1750:33)
+    at Proxy.<anonymous> (file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/@vitest+expect@4.1.5/node_modules/[4m@vitest/expect[24m/dist/index.js:1552:16)
+    at Proxy.<anonymous> (file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/@vitest+expect@4.1.5/node_modules/[4m@vitest/expect[24m/dist/index.js:1156:15)
+    at Proxy.methodWrapper (file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/chai@6.2.2/node_modules/[4mchai[24m/index.js:1700:25)
+
+[90mstderr[2m | src/__tests__/lib/persistence.test.ts[2m > [22m[2mPersistence Service[2m > [22m[2mExport/Import[2m > [22m[2mshould throw error for missing required fields
+[22m[39mFailed to import workflow: Error: Missing required fields: id, name
+    at importWorkflow [90m(/Users/samujjwal/Development/ghatana/products/data-cloud/ui/[39msrc/lib/persistence.ts:254:13[90m)[39m
+    at [90m/Users/samujjwal/Development/ghatana/products/data-cloud/ui/[39msrc/__tests__/lib/persistence.test.ts:322:20
+    at Proxy.assertThrows (file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/chai@6.2.2/node_modules/[4mchai[24m/index.js:2798:5)
+    at Proxy.methodWrapper (file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/chai@6.2.2/node_modules/[4mchai[24m/index.js:1700:25)
+    at Proxy.<anonymous> (file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/@vitest+expect@4.1.5/node_modules/[4m@vitest/expect[24m/dist/index.js:1216:12)
+    at Proxy.overwritingMethodWrapper (file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/chai@6.2.2/node_modules/[4mchai[24m/index.js:1750:33)
+    at Proxy.<anonymous> (file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/@vitest+expect@4.1.5/node_modules/[4m@vitest/expect[24m/dist/index.js:1552:16)
+    at Proxy.<anonymous> (file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/@vitest+expect@4.1.5/node_modules/[4m@vitest/expect[24m/dist/index.js:1156:15)
+    at Proxy.methodWrapper (file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/chai@6.2.2/node_modules/[4mchai[24m/index.js:1700:25)
+    at [90m/Users/samujjwal/Development/ghatana/products/data-cloud/ui/[39msrc/__tests__/lib/persistence.test.ts:322:70
+
+ [32m✓[39m src/__tests__/workflow.lifecycle.test.ts [2m([22m[2m20 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+[90mstderr[2m | src/__tests__/lib/persistence.test.ts[2m > [22m[2mPersistence Service[2m > [22m[2mExport/Import[2m > [22m[2mshould throw error for invalid workflow structure
+[22m[39mFailed to import workflow: Error: Invalid workflow structure: nodes and edges must be arrays
+    at importWorkflow [90m(/Users/samujjwal/Development/ghatana/products/data-cloud/ui/[39msrc/lib/persistence.ts:258:13[90m)[39m
+    at [90m/Users/samujjwal/Development/ghatana/products/data-cloud/ui/[39msrc/__tests__/lib/persistence.test.ts:330:9
+    at Proxy.assertThrows (file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/chai@6.2.2/node_modules/[4mchai[24m/index.js:2798:5)
+    at Proxy.methodWrapper (file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/chai@6.2.2/node_modules/[4mchai[24m/index.js:1700:25)
+    at Proxy.<anonymous> (file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/@vitest+expect@4.1.5/node_modules/[4m@vitest/expect[24m/dist/index.js:1216:12)
+    at Proxy.overwritingMethodWrapper (file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/chai@6.2.2/node_modules/[4mchai[24m/index.js:1750:33)
+    at Proxy.<anonymous> (file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/@vitest+expect@4.1.5/node_modules/[4m@vitest/expect[24m/dist/index.js:1552:16)
+    at Proxy.<anonymous> (file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/@vitest+expect@4.1.5/node_modules/[4m@vitest/expect[24m/dist/index.js:1156:15)
+    at Proxy.methodWrapper (file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/chai@6.2.2/node_modules/[4mchai[24m/index.js:1700:25)
+    at [90m/Users/samujjwal/Development/ghatana/products/data-cloud/ui/[39msrc/__tests__/lib/persistence.test.ts:349:9
+
+[90mstderr[2m | src/__tests__/lib/persistence.test.ts[2m > [22m[2mPersistence Service[2m > [22m[2mError Handling[2m > [22m[2mshould handle corrupted JSON gracefully
+[22m[39mFailed to load workflow state: SyntaxError: Expected property name or '}' in JSON at position 1 (line 1 column 2)
+    at JSON.parse (<anonymous>)
+    at loadWorkflowState [90m(/Users/samujjwal/Development/ghatana/products/data-cloud/ui/[39msrc/lib/persistence.ts:125:25[90m)[39m
+    at [90m/Users/samujjwal/Development/ghatana/products/data-cloud/ui/[39msrc/__tests__/lib/persistence.test.ts:438:22
+    at file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/@vitest+runner@4.1.5/node_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:302:11
+    at file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/@vitest+runner@4.1.5/node_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:1903:26
+    at file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/@vitest+runner@4.1.5/node_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:2326:20
+    at new Promise (<anonymous>)
+    at runWithCancel (file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/@vitest+runner@4.1.5/node_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:2323:10)
+    at file:///Users/samujjwal/Development/ghatana/node_modules/[4m.pnpm[24m/@vitest+runner@4.1.5/node_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:2305:20
+    at new Promise (<anonymous>)
+
+ [32m✓[39m src/__tests__/lib/persistence.test.ts [2m([22m[2m25 tests[22m[2m)[22m[32m 36[2mms[22m[39m
+(node:51138) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [32m✓[39m src/__tests__/api/workflowClientBoundary.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m src/__tests__/lib/userActivity.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+(node:51142) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [32m✓[39m src/__tests__/api/contextClient.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+(node:51144) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51148) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51149) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51145) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51150) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51151) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [32m✓[39m tests/contract/workflows.contract.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/features/data-fabric/services/__tests__/api.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32m✓[39m tests/contract/collections.contract.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32m✓[39m src/__tests__/api/events.service.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 37[2mms[22m[39m
+ [32m✓[39m src/__tests__/lib/collectionDataClient.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+(node:51152) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [32m✓[39m src/__tests__/api/plugin.service.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+(node:51153) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [32m✓[39m src/__tests__/components/common/unsupportedSurfaceRegistry.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/__tests__/lib/legacyApiBoundaries.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 30[2mms[22m[39m
+(node:51156) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+[90mstdout[2m | src/__tests__/validation.test.ts[2m > [22m[2mWorkflow Validation[2m > [22m[2mBasic Structure Validation[2m > [22m[2mshould fail validation with missing ID
+[22m[39mvalidateWorkflow result: {
+  "isValid": false,
+  "valid": false,
+  "errors": [
+    {
+      "code": "MISSING_ID",
+      "message": "Workflow must have an ID",
+      "suggestion": "Ensure workflow has a unique identifier"
+    },
+    {
+      "code": "NO_NODES",
+      "message": "Workflow must have at least one node",
+      "suggestion": "Add nodes to the workflow canvas"
+    }
+  ],
+  "warnings": [
+    {
+      "code": "NO_TRIGGERS",
+      "message": "Workflow has no triggers",
+      "suggestion": "Add at least one trigger to enable workflow execution"
+    }
+  ]
+}
+
+[90mstdout[2m | src/__tests__/validation.test.ts[2m > [22m[2mWorkflow Validation[2m > [22m[2mBasic Structure Validation[2m > [22m[2mshould fail validation with missing name
+[22m[39mvalidateWorkflow result: {
+  "isValid": false,
+  "valid": false,
+  "errors": [
+    {
+      "code": "MISSING_NAME",
+      "message": "Workflow must have a name",
+      "suggestion": "Provide a descriptive name for the workflow"
+    },
+    {
+      "code": "NO_NODES",
+      "message": "Workflow must have at least one node",
+      "suggestion": "Add nodes to the workflow canvas"
+    }
+  ],
+  "warnings": [
+    {
+      "code": "NO_TRIGGERS",
+      "message": "Workflow has no triggers",
+      "suggestion": "Add at least one trigger to enable workflow execution"
+    }
+  ]
+}
+
+[90mstdout[2m | src/__tests__/validation.test.ts[2m > [22m[2mWorkflow Validation[2m > [22m[2mBasic Structure Validation[2m > [22m[2mshould fail validation with missing collection
+[22m[39mvalidateWorkflow result: {
+  "isValid": false,
+  "valid": false,
+  "errors": [
+    {
+      "code": "MISSING_COLLECTION",
+      "message": "Workflow must be associated with a collection",
+      "suggestion": "Select a collection for this workflow"
+    },
+    {
+      "code": "NO_NODES",
+      "message": "Workflow must have at least one node",
+      "suggestion": "Add nodes to the workflow canvas"
+    }
+  ],
+  "warnings": [
+    {
+      "code": "NO_TRIGGERS",
+      "message": "Workflow has no triggers",
+      "suggestion": "Add at least one trigger to enable workflow execution"
+    }
+  ]
+}
+
+[90mstdout[2m | src/__tests__/validation.test.ts[2m > [22m[2mWorkflow Validation[2m > [22m[2mBasic Structure Validation[2m > [22m[2mshould fail validation with no nodes
+[22m[39mvalidateWorkflow result: {
+  "isValid": false,
+  "valid": false,
+  "errors": [
+    {
+      "code": "NO_NODES",
+      "message": "Workflow must have at least one node",
+      "suggestion": "Add nodes to the workflow canvas"
+    }
+  ],
+  "warnings": [
+    {
+      "code": "NO_TRIGGERS",
+      "message": "Workflow has no triggers",
+      "suggestion": "Add at least one trigger to enable workflow execution"
+    }
+  ]
+}
+
+[90mstdout[2m | src/__tests__/validation.test.ts[2m > [22m[2mWorkflow Validation[2m > [22m[2mNode Validation[2m > [22m[2mshould fail validation with duplicate node IDs
+[22m[39mvalidateWorkflow result: {
+  "isValid": false,
+  "valid": false,
+  "errors": [
+    {
+      "code": "DUPLICATE_NODE_ID",
+      "message": "Duplicate node ID: node-1",
+      "nodeId": "node-1",
+      "suggestion": "Ensure each node has a unique identifier"
+    }
+  ],
+  "warnings": [
+    {
+      "code": "ORPHANED_NODE",
+      "message": "Node is not connected to any other node",
+      "nodeId": "node-1",
+      "suggestion": "Connect this node to the workflow or remove it"
+    },
+    {
+      "code": "NO_TRIGGERS",
+      "message": "Workflow has no triggers",
+      "suggestion": "Add at least one trigger to enable workflow execution"
+    }
+  ]
+}
+
+[90mstdout[2m | src/__tests__/validation.test.ts[2m > [22m[2mWorkflow Validation[2m > [22m[2mNode Validation[2m > [22m[2mshould fail validation with missing node type
+[22m[39mvalidateWorkflow result: {
+  "isValid": false,
+  "valid": false,
+  "errors": [
+    {
+      "code": "MISSING_NODE_TYPE",
+      "message": "Node must have a type",
+      "nodeId": "node-1",
+      "suggestion": "Select a node type from the palette"
+    }
+  ],
+  "warnings": [
+    {
+      "code": "ORPHANED_NODE",
+      "message": "Node is not connected to any other node",
+      "nodeId": "node-1",
+      "suggestion": "Connect this node to the workflow or remove it"
+    },
+    {
+      "code": "UNREACHABLE_NODE",
+      "message": "Node is unreachable from the start node",
+      "nodeId": "node-1",
+      "suggestion": "Ensure there is a path from the start node to this node"
+    },
+    {
+      "code": "NO_TRIGGERS",
+      "message": "Workflow has no triggers",
+      "suggestion": "Add at least one trigger to enable workflow execution"
+    }
+  ]
+}
+
+[90mstdout[2m | src/__tests__/validation.test.ts[2m > [22m[2mWorkflow Validation[2m > [22m[2mNode Validation[2m > [22m[2mshould fail validation with missing API URL
+[22m[39mvalidateWorkflow result: {
+  "isValid": false,
+  "valid": false,
+  "errors": [
+    {
+      "code": "MISSING_API_URL",
+      "message": "API Call node must have a URL",
+      "nodeId": "node-1",
+      "suggestion": "Provide the API endpoint URL"
+    }
+  ],
+  "warnings": [
+    {
+      "code": "ORPHANED_NODE",
+      "message": "Node is not connected to any other node",
+      "nodeId": "node-1",
+      "suggestion": "Connect this node to the workflow or remove it"
+    },
+    {
+      "code": "UNREACHABLE_NODE",
+      "message": "Node is unreachable from the start node",
+      "nodeId": "node-1",
+      "suggestion": "Ensure there is a path from the start node to this node"
+    },
+    {
+      "code": "NO_TRIGGERS",
+      "message": "Workflow has no triggers",
+      "suggestion": "Add at least one trigger to enable workflow execution"
+    }
+  ]
+}
+
+[90mstdout[2m | src/__tests__/validation.test.ts[2m > [22m[2mWorkflow Validation[2m > [22m[2mNode Validation[2m > [22m[2mshould fail validation with missing decision condition
+[22m[39mvalidateWorkflow result: {
+  "isValid": false,
+  "valid": false,
+  "errors": [
+    {
+      "code": "MISSING_DECISION_CONDITION",
+      "message": "Decision node must have a condition",
+      "nodeId": "node-1",
+      "suggestion": "Define the decision condition"
+    }
+  ],
+  "warnings": [
+    {
+      "code": "ORPHANED_NODE",
+      "message": "Node is not connected to any other node",
+      "nodeId": "node-1",
+      "suggestion": "Connect this node to the workflow or remove it"
+    },
+    {
+      "code": "UNREACHABLE_NODE",
+      "message": "Node is unreachable from the start node",
+      "nodeId": "node-1",
+      "suggestion": "Ensure there is a path from the start node to this node"
+    },
+    {
+      "code": "NO_TRIGGERS",
+      "message": "Workflow has no triggers",
+      "suggestion": "Add at least one trigger to enable workflow execution"
+    }
+  ]
+}
+
+[90mstdout[2m | src/__tests__/validation.test.ts[2m > [22m[2mWorkflow Validation[2m > [22m[2mEdge Validation[2m > [22m[2mshould fail validation with invalid source node
+[22m[39mvalidateWorkflow result: {
+  "isValid": false,
+  "valid": false,
+  "errors": [
+    {
+      "code": "INVALID_SOURCE_NODE",
+      "message": "Edge references non-existent source node: node-999",
+      "edgeId": "edge-1",
+      "suggestion": "Ensure source node exists"
+    }
+  ],
+  "warnings": [
+    {
+      "code": "NO_TRIGGERS",
+      "message": "Workflow has no triggers",
+      "suggestion": "Add at least one trigger to enable workflow execution"
+    }
+  ]
+}
+
+[90mstdout[2m | src/__tests__/validation.test.ts[2m > [22m[2mWorkflow Validation[2m > [22m[2mEdge Validation[2m > [22m[2mshould fail validation with invalid target node
+[22m[39mvalidateWorkflow result: {
+  "isValid": false,
+  "valid": false,
+  "errors": [
+    {
+      "code": "INVALID_TARGET_NODE",
+      "message": "Edge references non-existent target node: node-999",
+      "edgeId": "edge-1",
+      "suggestion": "Ensure target node exists"
+    }
+  ],
+  "warnings": [
+    {
+      "code": "NO_TRIGGERS",
+      "message": "Workflow has no triggers",
+      "suggestion": "Add at least one trigger to enable workflow execution"
+    }
+  ]
+}
+
+[90mstdout[2m | src/__tests__/validation.test.ts[2m > [22m[2mWorkflow Validation[2m > [22m[2mEdge Validation[2m > [22m[2mshould warn about self-loop edges
+[22m[39mvalidateWorkflow result: {
+  "isValid": false,
+  "valid": false,
+  "errors": [
+    {
+      "code": "CYCLE_DETECTED",
+      "message": "Workflow contains a cycle",
+      "suggestion": "Remove edges to break the cycle"
+    }
+  ],
+  "warnings": [
+    {
+      "code": "SELF_LOOP",
+      "message": "Edge creates a self-loop",
+      "edgeId": "edge-1",
+      "suggestion": "Consider if this self-loop is intentional"
+    },
+    {
+      "code": "UNREACHABLE_NODE",
+      "message": "Node is unreachable from the start node",
+      "nodeId": "node-1",
+      "suggestion": "Ensure there is a path from the start node to this node"
+    },
+    {
+      "code": "NO_TRIGGERS",
+      "message": "Workflow has no triggers",
+      "suggestion": "Add at least one trigger to enable workflow execution"
+    }
+  ]
+}
+
+[90mstdout[2m | src/__tests__/validation.test.ts[2m > [22m[2mWorkflow Validation[2m > [22m[2mEdge Validation[2m > [22m[2mshould detect cycles in workflow
+[22m[39mvalidateWorkflow result: {
+  "isValid": false,
+  "valid": false,
+  "errors": [
+    {
+      "code": "CYCLE_DETECTED",
+      "message": "Workflow contains a cycle",
+      "suggestion": "Remove edges to break the cycle"
+    }
+  ],
+  "warnings": [
+    {
+      "code": "NO_TRIGGERS",
+      "message": "Workflow has no triggers",
+      "suggestion": "Add at least one trigger to enable workflow execution"
+    }
+  ]
+}
+
+[90mstdout[2m | src/__tests__/validation.test.ts[2m > [22m[2mWorkflow Validation[2m > [22m[2mEdge Validation[2m > [22m[2mshould detect orphaned nodes
+[22m[39mvalidateWorkflow result: {
+  "isValid": true,
+  "valid": true,
+  "errors": [],
+  "warnings": [
+    {
+      "code": "ORPHANED_NODE",
+      "message": "Node is not connected to any other node",
+      "nodeId": "node-3",
+      "suggestion": "Connect this node to the workflow or remove it"
+    },
+    {
+      "code": "UNREACHABLE_NODE",
+      "message": "Node is unreachable from the start node",
+      "nodeId": "node-3",
+      "suggestion": "Ensure there is a path from the start node to this node"
+    },
+    {
+      "code": "NO_TRIGGERS",
+      "message": "Workflow has no triggers",
+      "suggestion": "Add at least one trigger to enable workflow execution"
+    }
+  ]
+}
+
+[90mstdout[2m | src/__tests__/validation.test.ts[2m > [22m[2mWorkflow Validation[2m > [22m[2mTrigger Validation[2m > [22m[2mshould warn about missing triggers
+[22m[39mvalidateWorkflow result: {
+  "isValid": true,
+  "valid": true,
+  "errors": [],
+  "warnings": [
+    {
+      "code": "ORPHANED_NODE",
+      "message": "Node is not connected to any other node",
+      "nodeId": "node-2",
+      "suggestion": "Connect this node to the workflow or remove it"
+    },
+    {
+      "code": "UNREACHABLE_NODE",
+      "message": "Node is unreachable from the start node",
+      "nodeId": "node-2",
+      "suggestion": "Ensure there is a path from the start node to this node"
+    },
+    {
+      "code": "NO_TRIGGERS",
+      "message": "Workflow has no triggers",
+      "suggestion": "Add at least one trigger to enable workflow execution"
+    }
+  ]
+}
+
+[90mstdout[2m | src/__tests__/validation.test.ts[2m > [22m[2mWorkflow Validation[2m > [22m[2mValid Workflows[2m > [22m[2mshould validate simple linear workflow
+[22m[39mvalidateWorkflow result: {
+  "isValid": true,
+  "valid": true,
+  "errors": [],
+  "warnings": []
+}
+
+[90mstdout[2m | src/__tests__/validation.test.ts[2m > [22m[2mWorkflow Validation[2m > [22m[2mValid Workflows[2m > [22m[2mshould validate complex branching workflow
+[22m[39mvalidateWorkflow result: {
+  "isValid": true,
+  "valid": true,
+  "errors": [],
+  "warnings": []
+}
+
+ [32m✓[39m src/__tests__/validation.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+(node:51163) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51166) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51164) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51165) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51162) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51167) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [32m✓[39m src/__tests__/lib/websocket.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+(node:51168) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [32m✓[39m src/__tests__/api/agentRegistryBoundary.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m src/__tests__/lib/session.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/__tests__/lib/tokenStorage.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m src/__tests__/api/quality.service.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+(node:51169) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [32m✓[39m src/__tests__/api/ai-observability.service.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m src/__tests__/mocks/deprecatedRoutes.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m src/__tests__/api/lineage.service.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+(node:51173) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [32m✓[39m src/__tests__/mocks/openApiDrivenMocks.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+(node:51175) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51174) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51176) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51177) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51178) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51179) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ [32m✓[39m src/__tests__/pages/ModelPage.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/__tests__/pages/FeaturePage.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/__tests__/routes/routeTruthMatrix.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/mocks/__tests__/browser.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/__tests__/api/suggestionServiceBoundary.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/__tests__/layouts/DefaultLayout.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Suites 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/components/privacy/__tests__/ConsentManager.test.tsx[2m [ src/components/privacy/__tests__/ConsentManager.test.tsx ][22m
+[31m[1mError[22m: Failed to resolve import "@ghatana/privacy-ui" from "src/components/privacy/ConsentManager.tsx". Does the file exist?[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36m/Users/samujjwal/Development/ghatana/products/data-cloud/ui/src/components/privacy/ConsentManager.tsx[39m:10:43
+[33m  7  |  * @doc.pattern Privacy Component
+  8  |  */
+  9  |  export { ConsentManager, useConsent } from "@ghatana/privacy-ui";
+     |                                              ^
+  10 |  [39m
+[90m [2m❯[22m TransformPluginContext._formatLog ../../../node_modules/.pnpm/vite@8.0.3_@emnapi+core@1.9.1_@emnapi+runtime@1.9.1_@types+node@25.6.0_esbuild@0.27.3_j_3715b626e965501a8b6d868b1107f7dd/node_modules/vite/dist/node/chunks/node.js:[2m30259:39[22m[39m
+[90m [2m❯[22m TransformPluginContext.error ../../../node_modules/.pnpm/vite@8.0.3_@emnapi+core@1.9.1_@emnapi+runtime@1.9.1_@types+node@25.6.0_esbuild@0.27.3_j_3715b626e965501a8b6d868b1107f7dd/node_modules/vite/dist/node/chunks/node.js:[2m30256:14[22m[39m
+[90m [2m❯[22m normalizeUrl ../../../node_modules/.pnpm/vite@8.0.3_@emnapi+core@1.9.1_@emnapi+runtime@1.9.1_@types+node@25.6.0_esbuild@0.27.3_j_3715b626e965501a8b6d868b1107f7dd/node_modules/vite/dist/node/chunks/node.js:[2m27544:18[22m[39m
+[90m [2m❯[22m ../../../node_modules/.pnpm/vite@8.0.3_@emnapi+core@1.9.1_@emnapi+runtime@1.9.1_@types+node@25.6.0_esbuild@0.27.3_j_3715b626e965501a8b6d868b1107f7dd/node_modules/vite/dist/node/chunks/node.js:[2m27607:30[22m[39m
+[90m [2m❯[22m TransformPluginContext.transform ../../../node_modules/.pnpm/vite@8.0.3_@emnapi+core@1.9.1_@emnapi+runtime@1.9.1_@types+node@25.6.0_esbuild@0.27.3_j_3715b626e965501a8b6d868b1107f7dd/node_modules/vite/dist/node/chunks/node.js:[2m27575:4[22m[39m
+[90m [2m❯[22m EnvironmentPluginContainer.transform ../../../node_modules/.pnpm/vite@8.0.3_@emnapi+core@1.9.1_@emnapi+runtime@1.9.1_@types+node@25.6.0_esbuild@0.27.3_j_3715b626e965501a8b6d868b1107f7dd/node_modules/vite/dist/node/chunks/node.js:[2m30048:14[22m[39m
+[90m [2m❯[22m loadAndTransform ../../../node_modules/.pnpm/vite@8.0.3_@emnapi+core@1.9.1_@emnapi+runtime@1.9.1_@types+node@25.6.0_esbuild@0.27.3_j_3715b626e965501a8b6d868b1107f7dd/node_modules/vite/dist/node/chunks/node.js:[2m24177:26[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/10]⎯[22m[39m
+
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 9 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/__tests__/components/ErrorStates.test.tsx[2m > [22mErrorPage[2m > [22mhas accessible error icon with proper styling
+[31m[1mTestingLibraryElementError[22m: Unable to find an element with the role "img"
+
+Here are the available roles:
+
+  heading:
+
+  Name "Error":
+  [36m<h1[31m
+    [33mclass[31m=[32m"text-xl font-semibold text-gray-900 dark:text-white mb-2"[31m
+  [36m/>[31m
+
+  --------------------------------------------------
+  paragraph:
+
+  Name "":
+  [36m<p[31m
+    [33mclass[31m=[32m"text-sm text-gray-600 dark:text-gray-400 mb-6"[31m
+  [36m/>[31m
+
+  --------------------------------------------------
+  link:
+
+  Name "Go to Home":
+  [36m<a[31m
+    [33mclass[31m=[32m"w-full px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors font-medium"[31m
+    [33mhref[31m=[32m"/"[31m
+  [36m/>[31m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div>[31m
+    [36m<div[31m
+      [33mclass[31m=[32m"flex flex-col items-center justify-center min-h-screen p-6 bg-gray-50 dark:bg-gray-950"[31m
+    [36m>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"max-w-md w-full text-center"[31m
+      [36m>[31m
+        [36m<div[31m
+          [33mclass[31m=[32m"bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-8 shadow-sm"[31m
+        [36m>[31m
+          [36m<div[31m
+            [33mclass[31m=[32m"flex justify-center mb-4"[31m
+          [36m>[31m
+            [36m<div[31m
+              [33mclass[31m=[32m"bg-red-100 dark:bg-red-900 rounded-full p-4"[31m
+            [36m>[31m
+              [36m<svg[31m
+                [33maria-hidden[31m=[32m"true"[31m
+                [33mclass[31m=[32m"lucide lucide-circle-alert h-8 w-8 text-red-600 dark:text-red-400"[31m
+                [33mfill[31m=[32m"none"[31m
+                [33mheight[31m=[32m"24"[31m
+                [33mstroke[31m=[32m"currentColor"[31m
+                [33mstroke-linecap[31m=[32m"round"[31m
+                [33mstroke-linejoin[31m=[32m"round"[31m
+                [33mstroke-width[31m=[32m"2"[31m
+                [33mviewBox[31m=[32m"0 0 24 24"[31m
+                [33mwidth[31m=[32m"24"[31m
+                [33mxmlns[31m=[32m"http://www.w3.org/2000/svg"[31m
+              [36m>[31m
+                [36m<circle[31m
+                  [33mcx[31m=[32m"12"[31m
+                  [33mcy[31m=[32m"12"[31m
+                  [33mr[31m=[32m"10"[31m
+                [36m/>[31m
+                [36m<line[31m
+                  [33mx1[31m=[32m"12"[31m
+                  [33mx2[31m=[32m"12"[31m
+                  [33my1[31m=[32m"8"[31m
+                  [33my2[31m=[32m"12"[31m
+                [36m/>[31m
+                [36m<line[31m
+                  [33mx1[31m=[32m"12"[31m
+                  [33mx2[31m=[32m"12.01"[31m
+                  [33my1[31m=[32m"16"[31m
+                  [33my2[31m=[32m"16"[31m
+                [36m/>[31m
+              [36m</svg>[31m
+            [36m</div>[31m
+          [36m</div>[31m
+          [36m<h1[31m
+            [33mclass[31m=[32m"text-xl font-semibold text-gray-900 dark:text-white mb-2"[31m
+          [36m>[31m
+            [0mError[0m
+          [36m</h1>[31m
+          [36m<p[31m
+            [33mclass[31m=[32m"text-sm text-gray-600 dark:text-gray-400 mb-6"[31m
+          [36m>[31m
+            [0mSomething went wrong. Please try again or contact support if the problem persists.[0m
+          [36m</p>[31m
+          [36m<div[31m
+            [33mclass[31m=[32m"flex flex-col gap-3"[31m
+          [36m>[31m
+            [36m<a[31m
+              [33mclass[31m=[32m"w-full px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors font-medium"[31m
+              [33mhref[31m=[32m"/"[31m
+            [36m>[31m
+              [0mGo to Home[0m
+            [36m</a>[31m
+          [36m</div>[31m
+        [36m</div>[31m
+      [36m</div>[31m
+    [36m</div>[31m
+  [36m</div>[31m
+[36m</body>[31m[39m
+[90m [2m❯[22m Object.getElementError ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2m❯[22m ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m76:38[22m[39m
+[90m [2m❯[22m ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m52:17[22m[39m
+[90m [2m❯[22m ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m95:19[22m[39m
+[36m [2m❯[22m src/__tests__/components/ErrorStates.test.tsx:[2m262:34[22m[39m
+    [90m260|[39m     [34mrender[39m([33m<[39m[33mErrorPage[39m [33merror[39m[33m=[39m[33m{[39merror[33m}[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m261|[39m
+    [90m262|[39m     const iconContainer = screen.getByRole('img', { hidden: true })?.p…
+    [90m   |[39m                                  [31m^[39m
+    [90m263|[39m     [34mexpect[39m(iconContainer)[33m.[39m[34mtoHaveClass[39m([32m'bg-red-100'[39m)[33m;[39m
+    [90m264|[39m   })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/10]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/__tests__/components/ErrorStates.test.tsx[2m > [22mEmptyState[2m > [22mrenders default icon when not provided
+[31m[1mTestingLibraryElementError[22m: Unable to find an element with the role "img"
+
+Here are the available roles:
+
+  heading:
+
+  Name "No data":
+  [36m<h3[31m
+    [33mclass[31m=[32m"text-sm font-semibold text-gray-900 dark:text-white mt-4 mb-2"[31m
+  [36m/>[31m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div>[31m
+    [36m<div[31m
+      [33mclass[31m=[32m"flex flex-col items-center justify-center p-8 text-center "[31m
+    [36m>[31m
+      [36m<div[31m
+        [33mclass[31m=[32m"bg-gray-100 dark:bg-gray-800 rounded-full p-3"[31m
+      [36m>[31m
+        [36m<svg[31m
+          [33maria-hidden[31m=[32m"true"[31m
+          [33mclass[31m=[32m"lucide lucide-circle-alert h-6 w-6 text-gray-400"[31m
+          [33mfill[31m=[32m"none"[31m
+          [33mheight[31m=[32m"24"[31m
+          [33mstroke[31m=[32m"currentColor"[31m
+          [33mstroke-linecap[31m=[32m"round"[31m
+          [33mstroke-linejoin[31m=[32m"round"[31m
+          [33mstroke-width[31m=[32m"2"[31m
+          [33mviewBox[31m=[32m"0 0 24 24"[31m
+          [33mwidth[31m=[32m"24"[31m
+          [33mxmlns[31m=[32m"http://www.w3.org/2000/svg"[31m
+        [36m>[31m
+          [36m<circle[31m
+            [33mcx[31m=[32m"12"[31m
+            [33mcy[31m=[32m"12"[31m
+            [33mr[31m=[32m"10"[31m
+          [36m/>[31m
+          [36m<line[31m
+            [33mx1[31m=[32m"12"[31m
+            [33mx2[31m=[32m"12"[31m
+            [33my1[31m=[32m"8"[31m
+            [33my2[31m=[32m"12"[31m
+          [36m/>[31m
+          [36m<line[31m
+            [33mx1[31m=[32m"12"[31m
+            [33mx2[31m=[32m"12.01"[31m
+            [33my1[31m=[32m"16"[31m
+            [33my2[31m=[32m"16"[31m
+          [36m/>[31m
+        [36m</svg>[31m
+      [36m</div>[31m
+      [36m<h3[31m
+        [33mclass[31m=[32m"text-sm font-semibold text-gray-900 dark:text-white mt-4 mb-2"[31m
+      [36m>[31m
+        [0mNo data[0m
+      [36m</h3>[31m
+    [36m</div>[31m
+  [36m</div>[31m
+[36m</body>[31m[39m
+[90m [2m❯[22m Object.getElementError ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2m❯[22m ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m76:38[22m[39m
+[90m [2m❯[22m ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m52:17[22m[39m
+[90m [2m❯[22m ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m95:19[22m[39m
+[36m [2m❯[22m src/__tests__/components/ErrorStates.test.tsx:[2m298:25[22m[39m
+    [90m296|[39m   [34mit[39m([32m'renders default icon when not provided'[39m[33m,[39m () [33m=>[39m {
+    [90m297|[39m     [34mrender[39m([33m<[39m[33mEmptyState[39m [33mtitle[39m[33m=[39m[32m"No data"[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m298|[39m     [35mconst[39m icon [33m=[39m screen[33m.[39m[34mgetByRole[39m([32m'img'[39m[33m,[39m { hidden[33m:[39m [35mtrue[39m })[33m;[39m
+    [90m   |[39m                         [31m^[39m
+    [90m299|[39m     [34mexpect[39m(icon)[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m300|[39m   })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/10]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/__tests__/components/GlobalSearch.test.tsx[2m > [22mGlobalSearch[2m > [22mreveals operator and admin quick navigation only for the matching shell role
+[31m[1mTestingLibraryElementError[22m[39m: Unable to find an element with the text: Settings. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<main>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"fixed inset-0 z-50 overflow-y-auto"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"fixed inset-0 bg-black/50 backdrop-blur-sm"[39m
+        [36m/>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"relative min-h-screen flex items-start justify-center pt-[15vh] px-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"w-full max-w-xl rounded-xl shadow-2xl overflow-hidden bg-white dark:bg-gray-800"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-700"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-search h-5 w-5 text-gray-400"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"24"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"24"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m21 21-4.34-4.34"[39m
+                [36m/>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"11"[39m
+                  [33mcy[39m=[32m"11"[39m
+                  [33mr[39m=[32m"8"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [36m<input[39m
+                [33mclass[39m=[32m"flex-1 bg-transparent border-none outline-none text-gray-900 dark:text-white placeholder-gray-400"[39m
+                [33mplaceholder[39m=[32m"Search data, pipelines, and pages..."[39m
+                [33mtype[39m=[32m"text"[39m
+                [33mvalue[39m=[32m""[39m
+              [36m/>[39m
+              [36m<kbd[39m
+                [33mclass[39m=[32m"hidden sm:inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-400 bg-gray-100 dark:bg-gray-700 rounded"[39m
+              [36m>[39m
+                [0mESC[0m
+              [36m</kbd>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"max-h-[400px] overflow-y-auto py-2"[39m
+            [36m>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-xs text-gray-500 dark:text-gray-400 px-4 py-2"[39m
+              [36m>[39m
+                [0mQuick Navigation[0m
+              [36m</p>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"w-full flex items-center gap-3 px-4 py-2 text-left bg-blue-50 dark:bg-blue-900/30"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"lucide lucide-chart-column h-4 w-4"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"24"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"24"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M3 3v16a2 2 0 0 0 2 2h16"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M18 17V9"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M13 17V5"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M8 17v-3"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex-1 min-w-0"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"flex items-center gap-2"[39m
+                  [36m>[39m
+                    [36m<p[39m
+                      [33mclass[39m=[32m"text-sm font-medium text-gray-900 dark:text-white"[39m
+                    [36m>[39m
+                      [0mHome[0m
+                    [36m</p>[39m
+                  [36m</div>[39m
+                [36m</div>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-arrow-right h-4 w-4 text-gray-400"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"24"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"24"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M5 12h14"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"m12 5 7 7-7 7"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</button>[39m
+              [36m<button[39m
+                [33mclass[39m=[32m"w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-700"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"lucide lucide-database h-4 w-4"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"24"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                 ...
+[90m [2m❯[22m Object.getElementError ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2m❯[22m ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m76:38[22m[39m
+[90m [2m❯[22m ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m52:17[22m[39m
+[90m [2m❯[22m ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m95:19[22m[39m
+[36m [2m❯[22m src/__tests__/components/GlobalSearch.test.tsx:[2m46:19[22m[39m
+    [90m 44|[39m     [34mexpect[39m(screen[33m.[39m[34mgetByText[39m([32m'Trust'[39m))[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m 45|[39m     [34mexpect[39m(screen[33m.[39m[34mgetByText[39m([32m'Events'[39m))[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m 46|[39m     [34mexpect[39m(screen[33m.[39m[34mgetByText[39m([32m'Settings'[39m))[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m   |[39m                   [31m^[39m
+    [90m 47|[39m   })[33m;[39m
+    [90m 48|[39m })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/10]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/__tests__/components/RouteErrorBoundary.test.tsx[2m > [22mRouteErrorBoundary[2m > [22mrenders default error message for generic error
+[31m[1mTestingLibraryElementError[22m: Found multiple elements with the text: Something went wrong
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<h1[31m
+  [33mclass[31m=[32m"text-3xl font-bold text-gray-900 dark:text-white mb-2"[31m
+[36m>[31m
+  [0mSomething went wrong[0m
+[36m</h1>[31m
+
+Ignored nodes: comments, script, style
+[36m<p[31m
+  [33mclass[31m=[32m"text-gray-600 dark:text-gray-400 mb-6 max-w-lg text-center"[31m
+[36m>[31m
+  [0mSomething went wrong[0m
+[36m</p>[31m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div>[31m
+    [36m<div[31m
+      [33mclass[31m=[32m"flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 p-6 flex-col"[31m
+      [33mrole[31m=[32m"alert"[31m
+    [36m>[31m
+      [36m<h1[31m
+        [33mclass[31m=[32m"text-3xl font-bold text-gray-900 dark:text-white mb-2"[31m
+      [36m>[31m
+        [0mSomething went wrong[0m
+      [36m</h1>[31m
+      [36m<p[31m
+        [33mclass[31m=[32m"text-gray-600 dark:text-gray-400 mb-6 max-w-lg text-center"[31m
+      [36m>[31m
+        [0mSomething went wrong[0m
+      [36m</p>[31m
+      [36m<details[31m
+        [33mclass[31m=[32m"mb-8 w-full max-w-2xl text-left bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-3"[31m
+      [36m>[31m
+        [36m<summary[31m
+          [33mclass[31m=[32m"text-sm font-medium text-red-700 dark:text-red-300 cursor-pointer mb-2"[31m
+        [36m>[31m
+          [0mDeveloper details[0m
+        [36m</summary>[31m
+        [36m<pre[31m
+          [33mclass[31m=[32m"text-xs text-red-600 dark:text-red-400 overflow-auto max-h-48 whitespace-pre-wrap"[31m
+        [36m>[31m
+          [0mError: Something went wrong
+    at /Users/samujjwal/Development/ghatana/products/data-cloud/ui/src/__tests__/components/RouteErrorBoundary.test.tsx:51:19
+    at file:///Users/samujjwal/Development/ghatana/node_modules/.pnpm/@vitest+runner@4.1.5/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at file:///Users/samujjwal/Development/ghatana/node_modules/.pnpm/@vitest+runner@4.1.5/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
+    at file:///Users/samujjwal/Development/ghatana/node_modules/.pnpm/@vitest+runner@4.1.5/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
+    at new Promise (&lt;anonymous&gt;)
+    at runWithCancel (file:///Users/samujjwal/Development/ghatana/node_modules/.pnpm/@vitest+runner@4.1.5/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
+    at file:///Users/samujjwal/Development/ghatana/node_modules/.pnpm/@vitest+runner@4.1.5/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
+    at new Promise (&lt;anonymous&gt;)
+    at runWithTimeout (file:///Users/samujjwal/Development/ghatana/node_modules/.pnpm/@vitest+runner@4.1.5/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
+    at file:///Users/samujjwal/Development/ghatana/node_modules/.pnpm/@vitest+runner@4.1.5/node_modules/@vitest/runner/dist/chunk-artifact.js:2955:64[0m
+        [36m</pre>[31m
+      [36m</details>[31m
+      [36m<button[31m
+        [33mclass[31m=[32m"px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors"[31m
+      [36m>[31m
+        [0mGo to Homepage[0m
+      [36m</button>[31m
+    [36m</div>[31m
+  [36m</div>[31m
+[36m</body>[31m[39m
+[36m [2m❯[22m src/__tests__/components/RouteErrorBoundary.test.tsx:[2m51:19[22m[39m
+    [90m 49|[39m [34mdescribe[39m([32m'RouteErrorBoundary'[39m[33m,[39m () [33m=>[39m {
+    [90m 50|[39m   [34mit[39m([32m'renders default error message for generic error'[39m[33m,[39m () [33m=>[39m {
+    [90m 51|[39m     [35mconst[39m error [33m=[39m [35mnew[39m [33mError[39m([32m'Something went wrong'[39m)[33m;[39m
+    [90m   |[39m                   [31m^[39m
+    [90m 52|[39m     vi[33m.[39m[34mmocked[39m(useRouteError)[33m.[39m[34mmockReturnValue[39m(error)[33m;[39m
+    [90m 53|[39m     vi[33m.[39m[34mmocked[39m(isRouteErrorResponse)[33m.[39m[34mmockReturnValue[39m([35mfalse[39m)[33m;[39m
+[90m [2m❯[22m Object.getElementError ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2m❯[22m getElementError ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m20:35[22m[39m
+[90m [2m❯[22m getMultipleElementsFoundError ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m23:10[22m[39m
+[90m [2m❯[22m ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m55:13[22m[39m
+[90m [2m❯[22m ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m95:19[22m[39m
+[90m [2m❯[22m src/__tests__/components/RouteErrorBoundary.test.tsx:[2m58:19[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/10]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/__tests__/components/RouteErrorBoundary.test.tsx[2m > [22mRouteErrorBoundary[2m > [22mshows developer details in DEV mode
+[31m[1mTestingLibraryElementError[22m: Found multiple elements with the text: /Test error/i
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<p[31m
+  [33mclass[31m=[32m"text-gray-600 dark:text-gray-400 mb-6 max-w-lg text-center"[31m
+[36m>[31m
+  [0mTest error[0m
+[36m</p>[31m
+
+Ignored nodes: comments, script, style
+[36m<pre[31m
+  [33mclass[31m=[32m"text-xs text-red-600 dark:text-red-400 overflow-auto max-h-48 whitespace-pre-wrap"[31m
+[36m>[31m
+  [0mError: Test error
+    at Component.render (component.tsx:10)[0m
+[36m</pre>[31m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div>[31m
+    [36m<div[31m
+      [33mclass[31m=[32m"flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 p-6 flex-col"[31m
+      [33mrole[31m=[32m"alert"[31m
+    [36m>[31m
+      [36m<h1[31m
+        [33mclass[31m=[32m"text-3xl font-bold text-gray-900 dark:text-white mb-2"[31m
+      [36m>[31m
+        [0mSomething went wrong[0m
+      [36m</h1>[31m
+      [36m<p[31m
+        [33mclass[31m=[32m"text-gray-600 dark:text-gray-400 mb-6 max-w-lg text-center"[31m
+      [36m>[31m
+        [0mTest error[0m
+      [36m</p>[31m
+      [36m<details[31m
+        [33mclass[31m=[32m"mb-8 w-full max-w-2xl text-left bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-3"[31m
+      [36m>[31m
+        [36m<summary[31m
+          [33mclass[31m=[32m"text-sm font-medium text-red-700 dark:text-red-300 cursor-pointer mb-2"[31m
+        [36m>[31m
+          [0mDeveloper details[0m
+        [36m</summary>[31m
+        [36m<pre[31m
+          [33mclass[31m=[32m"text-xs text-red-600 dark:text-red-400 overflow-auto max-h-48 whitespace-pre-wrap"[31m
+        [36m>[31m
+          [0mError: Test error
+    at Component.render (component.tsx:10)[0m
+        [36m</pre>[31m
+      [36m</details>[31m
+      [36m<button[31m
+        [33mclass[31m=[32m"px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors"[31m
+      [36m>[31m
+        [0mGo to Homepage[0m
+      [36m</button>[31m
+    [36m</div>[31m
+  [36m</div>[31m
+[36m</body>[31m[39m
+[90m [2m❯[22m Object.getElementError ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2m❯[22m getElementError ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m20:35[22m[39m
+[90m [2m❯[22m getMultipleElementsFoundError ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m23:10[22m[39m
+[90m [2m❯[22m ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m55:13[22m[39m
+[90m [2m❯[22m ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m95:19[22m[39m
+[36m [2m❯[22m src/__tests__/components/RouteErrorBoundary.test.tsx:[2m115:19[22m[39m
+    [90m113|[39m
+    [90m114|[39m     [34mexpect[39m(screen[33m.[39m[34mgetByText[39m([36m/developer details/i[39m))[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m115|[39m     [34mexpect[39m(screen[33m.[39m[34mgetByText[39m([36m/Test error/i[39m))[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m   |[39m                   [31m^[39m
+    [90m116|[39m   })[33m;[39m
+    [90m117|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/10]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/__tests__/components/RouteErrorBoundary.test.tsx[2m > [22mRouteErrorBoundary[2m > [22mdoes not show developer details in production mode
+[31m[1mError[22m: [2mexpect([22m[31melement[31m[2m).not.toBeInTheDocument()[22m
+
+[31mexpected document not to contain element, found <summary
+  class="text-sm font-medium text-red-700 dark:text-red-300 cursor-pointer mb-2"
+>
+  Developer details
+</summary> instead[31m[39m
+[36m [2m❯[22m src/__tests__/components/RouteErrorBoundary.test.tsx:[2m127:58[22m[39m
+    [90m125|[39m     [34mrender[39m([33m<[39m[33mRouteErrorBoundary[39m [33m/[39m[33m>[39m)[33m;[39m
+    [90m126|[39m
+    [90m127|[39m     expect(screen.queryByText(/developer details/i)).not.toBeInTheDocu…
+    [90m   |[39m                                                          [31m^[39m
+    [90m128|[39m     [34mexpect[39m(screen[33m.[39m[34mqueryByText[39m([36m/Test error/i[39m))[33m.[39mnot[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m129|[39m   })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/10]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/__tests__/pages/BrainPage.test.tsx[2m > [22mBrainPage — IntelligentHub[2m > [22mrenders the intelligent-hub shell with outcome launcher and unified intent input
+[31m[1mTestingLibraryElementError[22m[39m: Unable to find an element with the text: Start with an outcome. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<main>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex h-full"[39m
+        [33mdata-testid[39m=[32m"intelligent-hub-page"[39m
+      [36m>[39m
+        [36m<aside[39m
+          [33mclass[39m=[32m"flex flex-col h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 w-72"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-700"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center gap-2"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"p-1.5 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-brain h-4 w-4 text-white"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"24"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"24"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M12 18V5"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M15 13a4.17 4.17 0 0 1-3-4 4.17 4.17 0 0 1-3 4"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M17.598 6.5A3 3 0 1 0 12 5a3 3 0 1 0-5.598 1.5"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M17.997 5.125a4 4 0 0 1 2.526 5.77"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M18 18a4 4 0 0 0 2-7.464"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M19.967 17.483A4 4 0 1 1 12 18a4 4 0 1 1-7.967-.517"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M6 18a4 4 0 0 1-2-7.464"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M6.003 5.125a4 4 0 0 0-2.526 5.77"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"font-semibold text-gray-900 dark:text-gray-100"[39m
+              [36m>[39m
+                [0mContext[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-chevron-left h-4 w-4 text-gray-500"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"24"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"24"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m15 18-6-6 6-6"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex-1 overflow-y-auto"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex flex-col h-full"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex border-b border-gray-200 dark:border-gray-700 px-3"[39m
+              [36m>[39m
+                [36m<button[39m
+                  [33mclass[39m=[32m"flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors border-purple-500 text-purple-600 dark:text-purple-400"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"lucide lucide-brain h-4 w-4"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"24"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"24"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M12 18V5"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M15 13a4.17 4.17 0 0 1-3-4 4.17 4.17 0 0 1-3 4"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M17.598 6.5A3 3 0 1 0 12 5a3 3 0 1 0-5.598 1.5"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M17.997 5.125a4 4 0 0 1 2.526 5.77"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M18 18a4 4 0 0 0 2-7.464"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M19.967 17.483A4 4 0 1 1 12 18a4 4 0 1 1-7.967-.517"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M6 18a4 4 0 0 1-2-7.464"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M6.003 5.125a4 4 0 0 0-2.526 5.77"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                  [0mSpotlight[0m
+                [36m</button>[39m
+                [36m<button[39m
+                  [33mclass[39m=[32m"flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray...
+[90m [2m❯[22m Object.getElementError ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2m❯[22m ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m76:38[22m[39m
+[90m [2m❯[22m ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m52:17[22m[39m
+[90m [2m❯[22m ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m95:19[22m[39m
+[36m [2m❯[22m src/__tests__/pages/BrainPage.test.tsx:[2m50:23[22m[39m
+    [90m 48|[39m
+    [90m 49|[39m         expect(screen.getByPlaceholderText(/What do you need to do/i))…
+    [90m 50|[39m         expect(screen.getByText('Start with an outcome')).toBeInTheDoc…
+    [90m   |[39m                       [31m^[39m
+    [90m 51|[39m         [34mexpect[39m(screen[33m.[39m[34mgetByText[39m([32m'Insights'[39m))[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m 52|[39m         expect(screen.getByText('Recommended Next Steps')).toBeInTheDo…
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/10]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/__tests__/pages/BrainPage.test.tsx[2m > [22mBrainPage — IntelligentHub[2m > [22mkeeps operator-only recommendations out of the primary-user launcher mode
+[31m[1mTestingLibraryElementError[22m[39m: Unable to find an element with the text: /Stay in primary mode until you need deeper controls/i. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<main>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex h-full"[39m
+        [33mdata-testid[39m=[32m"intelligent-hub-page"[39m
+      [36m>[39m
+        [36m<aside[39m
+          [33mclass[39m=[32m"flex flex-col h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 w-72"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-700"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center gap-2"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"p-1.5 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-brain h-4 w-4 text-white"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"24"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"24"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M12 18V5"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M15 13a4.17 4.17 0 0 1-3-4 4.17 4.17 0 0 1-3 4"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M17.598 6.5A3 3 0 1 0 12 5a3 3 0 1 0-5.598 1.5"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M17.997 5.125a4 4 0 0 1 2.526 5.77"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M18 18a4 4 0 0 0 2-7.464"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M19.967 17.483A4 4 0 1 1 12 18a4 4 0 1 1-7.967-.517"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M6 18a4 4 0 0 1-2-7.464"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M6.003 5.125a4 4 0 0 0-2.526 5.77"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"font-semibold text-gray-900 dark:text-gray-100"[39m
+              [36m>[39m
+                [0mContext[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-chevron-left h-4 w-4 text-gray-500"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"24"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"24"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m15 18-6-6 6-6"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex-1 overflow-y-auto"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex flex-col h-full"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex border-b border-gray-200 dark:border-gray-700 px-3"[39m
+              [36m>[39m
+                [36m<button[39m
+                  [33mclass[39m=[32m"flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors border-purple-500 text-purple-600 dark:text-purple-400"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"lucide lucide-brain h-4 w-4"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"24"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"24"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M12 18V5"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M15 13a4.17 4.17 0 0 1-3-4 4.17 4.17 0 0 1-3 4"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M17.598 6.5A3 3 0 1 0 12 5a3 3 0 1 0-5.598 1.5"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M17.997 5.125a4 4 0 0 1 2.526 5.77"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M18 18a4 4 0 0 0 2-7.464"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M19.967 17.483A4 4 0 1 1 12 18a4 4 0 1 1-7.967-.517"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M6 18a4 4 0 0 1-2-7.464"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M6.003 5.125a4 4 0 0 0-2.526 5.77"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                  [0mSpotlight[0m
+                [36m</button>[39m
+                [36m<button[39m
+                  [33mclass[39m=[32m"flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray...
+[90m [2m❯[22m Object.getElementError ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2m❯[22m ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m76:38[22m[39m
+[90m [2m❯[22m ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m52:17[22m[39m
+[90m [2m❯[22m ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m95:19[22m[39m
+[36m [2m❯[22m src/__tests__/pages/BrainPage.test.tsx:[2m62:23[22m[39m
+    [90m 60|[39m         expect(screen.queryByText('Review trust issues')).not.toBeInTh…
+    [90m 61|[39m         expect(screen.queryByText('Inspect recent failures')).not.toBe…
+    [90m 62|[39m         expect(screen.getByText(/Stay in primary mode until you need d…
+    [90m   |[39m                       [31m^[39m
+    [90m 63|[39m     })[33m;[39m
+    [90m 64|[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/10]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/__tests__/pages/BrainPage.test.tsx[2m > [22mBrainPage — IntelligentHub[2m > [22mreveals operator-only launcher actions when the shell role is elevated
+[31m[1mTestingLibraryElementError[22m[39m: Unable to find an element with the text: Review trust issues. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<main>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex h-full"[39m
+        [33mdata-testid[39m=[32m"intelligent-hub-page"[39m
+      [36m>[39m
+        [36m<aside[39m
+          [33mclass[39m=[32m"flex flex-col h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 w-72"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-700"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex items-center gap-2"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"p-1.5 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-brain h-4 w-4 text-white"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"24"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"24"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M12 18V5"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M15 13a4.17 4.17 0 0 1-3-4 4.17 4.17 0 0 1-3 4"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M17.598 6.5A3 3 0 1 0 12 5a3 3 0 1 0-5.598 1.5"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M17.997 5.125a4 4 0 0 1 2.526 5.77"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M18 18a4 4 0 0 0 2-7.464"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M19.967 17.483A4 4 0 1 1 12 18a4 4 0 1 1-7.967-.517"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M6 18a4 4 0 0 1-2-7.464"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M6.003 5.125a4 4 0 0 0-2.526 5.77"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+              [36m</div>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"font-semibold text-gray-900 dark:text-gray-100"[39m
+              [36m>[39m
+                [0mContext[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-chevron-left h-4 w-4 text-gray-500"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"24"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"24"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m15 18-6-6 6-6"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex-1 overflow-y-auto"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex flex-col h-full"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex border-b border-gray-200 dark:border-gray-700 px-3"[39m
+              [36m>[39m
+                [36m<button[39m
+                  [33mclass[39m=[32m"flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors border-purple-500 text-purple-600 dark:text-purple-400"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"lucide lucide-brain h-4 w-4"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"24"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"24"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M12 18V5"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M15 13a4.17 4.17 0 0 1-3-4 4.17 4.17 0 0 1-3 4"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M17.598 6.5A3 3 0 1 0 12 5a3 3 0 1 0-5.598 1.5"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M17.997 5.125a4 4 0 0 1 2.526 5.77"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M18 18a4 4 0 0 0 2-7.464"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M19.967 17.483A4 4 0 1 1 12 18a4 4 0 1 1-7.967-.517"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M6 18a4 4 0 0 1-2-7.464"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M6.003 5.125a4 4 0 0 0-2.526 5.77"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+                  [0mSpotlight[0m
+                [36m</button>[39m
+                [36m<button[39m
+                  [33mclass[39m=[32m"flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray...
+[90m [2m❯[22m Object.getElementError ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2m❯[22m ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m76:38[22m[39m
+[90m [2m❯[22m ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m52:17[22m[39m
+[90m [2m❯[22m ../../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m95:19[22m[39m
+[36m [2m❯[22m src/__tests__/pages/BrainPage.test.tsx:[2m70:23[22m[39m
+    [90m 68|[39m         [34mrender[39m([33m<[39m[33mIntelligentHub[39m [33m/[39m[33m>[39m[33m,[39m { wrapper[33m:[39m [33mTestWrapper[39m })[33m;[39m
+    [90m 69|[39m
+    [90m 70|[39m         expect(screen.getByText('Review trust issues')).toBeInTheDocum…
+    [90m   |[39m                       [31m^[39m
+    [90m 71|[39m         expect(screen.getByText('Inspect recent failures')).toBeInTheD…
+    [90m 72|[39m     })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/10]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m5 failed[39m[22m[2m | [22m[1m[32m96 passed[39m[22m[90m (101)[39m
+[2m      Tests [22m [1m[31m9 failed[39m[22m[2m | [22m[1m[32m905 passed[39m[22m[90m (914)[39m
+[2m   Start at [22m 18:57:54
+[2m   Duration [22m 37.70s[2m (transform 17.01s, setup 96.92s, import 44.32s, tests 44.27s, environment 115.14s)[22m
+

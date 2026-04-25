@@ -10,6 +10,7 @@
  *   /operate/costs        → CostDashboardPage (tenant spend and budget visibility)
  *   /operate/reviews      → HitlReviewPage (human review queue)
  *   /operate/runs/:runId  → RunDetailPage (unified run detail + lineage + decisions)
+ *   /operate/operations   → OperationCenterPage (active and historical operations)
  *   /build/pipelines      → PipelineListPage
  *   /build/pipelines/new  → PipelineBuilderPage
  *   /build/patterns       → PatternStudioPage
@@ -198,6 +199,12 @@ const LoginPage = lazy(() =>
 const SsoCallbackPage = lazy(() =>
   import('@/pages/SsoCallbackPage').then((m) => ({ default: m.SsoCallbackPage })),
 );
+const SessionExpiryPage = lazy(() =>
+  import('@/pages/SessionExpiryPage').then((m) => ({ default: m.SessionExpiryPage })),
+);
+const OperationCenterPage = lazy(() =>
+  import('@/pages/OperationCenterPage').then((m) => ({ default: m.OperationCenterPage })),
+);
 
 // ─── Redirect helpers ──────────────────────────────────────────────────
 
@@ -364,6 +371,7 @@ export function App() {
             <Routes>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/auth/callback" element={<SsoCallbackPage />} />
+              <Route path="/session-expired" element={<SessionExpiryPage />} />
 
               <Route element={<ProtectedShell />}>
                 {/* ── Canonical routes ─────────────────────────── */}
@@ -371,6 +379,7 @@ export function App() {
                 <Route path="/operate/costs" element={<CostDashboardPage />} />
                 <Route path="/operate/reviews" element={<HitlReviewPage />} />
                 <Route path="/operate/runs/:runId" element={<RunDetailPage />} />
+                <Route path="/operate/operations" element={<OperationCenterPage />} />
 
                 <Route path="/build/pipelines" element={<PipelineListPage />} />
                 <Route path="/build/pipelines/new" element={<PipelineBuilderPage />} />

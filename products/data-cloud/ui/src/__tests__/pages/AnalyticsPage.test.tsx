@@ -52,6 +52,7 @@ vi.mock('../../components/layout/PageLayout', () => ({
     PageHeader: ({ title }: { title: string }) => <div><h1>{title}</h1></div>,
     PageContent: ({ children, contextSidebar }: { children: React.ReactNode; contextSidebar?: React.ReactNode }) => <div>{children}{contextSidebar}</div>,
     ContextSidebar: ({ children }: { children: React.ReactNode }) => <section>{children}</section>,
+    ContextPanel: ({ title, children }: { title?: string; children: React.ReactNode }) => <aside>{title && <h2>{title}</h2>}{children}</aside>,
     SuggestionCard: ({ title, description }: { title: string; description: string }) => <div><span>{title}</span><span>{description}</span></div>,
     StatCard: ({ label, value }: { label: string; value: React.ReactNode }) => <div><span>{label}</span><span>{String(value)}</span></div>,
 }));
@@ -97,7 +98,7 @@ describe('AnalyticsPage — InsightsPage', () => {
     it('renders canonical analytics collection summaries and anomaly hints', async () => {
         render(<InsightsPage />, { wrapper: TestWrapper });
 
-        fireEvent.click(screen.getByRole('button', { name: /analytics/i }));
+        fireEvent.click(screen.getByRole('tab', { name: /analytics/i }));
 
         expect(await screen.findByText('Entity Distribution by Collection')).toBeInTheDocument();
 
@@ -122,7 +123,7 @@ describe('AnalyticsPage — InsightsPage', () => {
 
         render(<InsightsPage />, { wrapper: TestWrapper });
 
-        fireEvent.click(screen.getByRole('button', { name: /analytics/i }));
+        fireEvent.click(screen.getByRole('tab', { name: /analytics/i }));
 
         const editor = await screen.findByPlaceholderText(/select count\(\*\) as total/i);
         fireEvent.change(editor, { target: { value: '  SELECT id FROM orders  ' } });

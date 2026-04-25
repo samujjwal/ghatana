@@ -257,9 +257,9 @@ describe('ErrorPage', () => {
 
   it('has accessible error icon with proper styling', () => {
     const error = new Error('Test error');
-    render(<ErrorPage error={error} />);
-    
-    const iconContainer = screen.getByRole('img', { hidden: true })?.parentElement;
+    const { container } = render(<ErrorPage error={error} />);
+
+    const iconContainer = container.querySelector('svg')?.parentElement;
     expect(iconContainer).toHaveClass('bg-red-100');
   });
 });
@@ -294,8 +294,8 @@ describe('EmptyState', () => {
   });
 
   it('renders default icon when not provided', () => {
-    render(<EmptyState title="No data" />);
-    const icon = screen.getByRole('img', { hidden: true });
+    const { container } = render(<EmptyState title="No data" />);
+    const icon = container.querySelector('svg');
     expect(icon).toBeInTheDocument();
   });
 

@@ -29,32 +29,12 @@ export function MuiThemeConnector({
 }: {
   children: React.ReactNode;
 }): React.ReactElement {
-  const { resolvedTheme, themeDefinition } = useGhatanaTheme();
+  const { resolvedTheme } = useGhatanaTheme();
 
   const muiTheme = useMemo((): MuiTheme => {
     const baseTheme = resolvedTheme === 'dark' ? darkTheme : lightTheme;
-
-    const colors = themeDefinition?.computed?.colors;
-    if (colors) {
-      return createTheme(baseTheme, {
-        palette: {
-          mode: resolvedTheme === 'dark' ? 'dark' : 'light',
-          background: {
-            default: (colors.background as Record<string, string>)['default'],
-            paper: (colors.background as Record<string, string>)['paper'],
-          },
-          text: {
-            primary: (colors.text as Record<string, string>)['primary'],
-            secondary: (colors.text as Record<string, string>)['secondary'],
-            disabled: (colors.text as Record<string, string>)['disabled'],
-          },
-          divider: colors.divider as string,
-        },
-      });
-    }
-
-    return baseTheme;
-  }, [resolvedTheme, themeDefinition]);
+    return createTheme(baseTheme);
+  }, [resolvedTheme]);
 
   return (
     <MuiThemeProvider theme={muiTheme}>

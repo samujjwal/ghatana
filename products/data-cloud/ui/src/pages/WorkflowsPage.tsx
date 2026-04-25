@@ -42,6 +42,8 @@ import { SearchFilterBar } from '../components/common/SearchFilterBar';
 import { LoadingState, EmptyState, NotFoundState } from '../components/common/AsyncStates';
 import { TrustBadge } from '../components/governance/TrustSignal';
 import { getPipelineOptimisationHints, aiQueryKeys, type PipelineOptimisationHint } from '../lib/api/ai';
+import { aiOperationsService } from '../api/ai-operations.service';
+import { UnsupportedRuntimeBoundaryError } from '../lib/runtime-boundaries';
 import {
     WORKFLOW_HINTS_DEGRADED_DETAIL,
     WORKFLOW_HINTS_DEGRADED_TITLE,
@@ -243,6 +245,17 @@ function PipelineAiHintsPanel({ pipelineId }: { pipelineId: string }) {
         enabled: aiAssistCapability?.status !== 'unavailable',
     });
 
+    // AI operations workflow advisories — backend-first, boundary-aware.
+    const { data: advisoryData } = useQuery({
+        queryKey: ['ai', 'advisories', 'workflows', pipelineId],
+        queryFn: () => aiOperationsService.getWorkflowAdvisories(pipelineId),
+        staleTime: 5 * 60 * 1_000,
+        retry: false,
+        refetchOnWindowFocus: false,
+        enabled: aiAssistCapability?.status !== 'unavailable',
+    });
+    const advisories = advisoryData?.advisories ?? [];
+
     const hints = data?.data?.hints ?? [];
 
     if (aiAssistCapability?.status === 'unavailable') {
@@ -288,6 +301,39 @@ function PipelineAiHintsPanel({ pipelineId }: { pipelineId: string }) {
         return null; // Fail silently — hints are advisory, not critical
     }
 
+    // Render advisories from ai-operations.service below the hints list when available.
+    const advisoriesSection = advisories.length > 0 ? (
+        <div className="mt-3">
+            <h3 className="flex items-center gap-1.5 text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">
+                <Zap className="h-4 w-4" />
+                Operational Advisories
+            </h3>
+            <div className="rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 divide-y divide-blue-100 dark:divide-blue-900">
+                {advisories.slice(0, 3).map((advisory) => (
+                    <div key={advisory.id} className="px-3 py-2.5">
+                        <div className="flex items-start gap-2">
+                            <span className={cn(
+                                'mt-0.5 shrink-0 text-xs font-medium px-1.5 py-0.5 rounded uppercase',
+                                advisory.priority === 'critical' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' :
+                                    advisory.priority === 'high' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300' :
+                                        'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                            )}>
+                                {advisory.priority}
+                            </span>
+                            <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium text-gray-900 dark:text-white">{advisory.title}</p>
+                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">{advisory.description}</p>
+                            </div>
+                            <span className="shrink-0 text-xs text-gray-400">
+                                {Math.round(advisory.confidence * 100)}%
+                            </span>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    ) : null;
+
     return (
         <div>
             <h3 className="flex items-center gap-1.5 text-sm font-medium text-purple-700 dark:text-purple-300 mb-2">
@@ -331,6 +377,7 @@ function PipelineAiHintsPanel({ pipelineId }: { pipelineId: string }) {
                     </div>
                 ))}
             </div>
+            {advisoriesSection}
         </div>
     );
 }

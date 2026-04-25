@@ -18,6 +18,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router';
 import { Provider } from 'jotai';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from '@ghatana/theme';
 import React from 'react';
 import { apiClient } from '../../lib/api/client';
 
@@ -51,6 +52,18 @@ vi.mock('../../lib/api/client', () => ({
   },
 }));
 
+// Mock ai-operations service — ML platform not yet deployed; boundary responses expected
+vi.mock('../../api/ai-operations.service', () => ({
+  aiOperationsService: {
+    getFabricAdvisories: vi.fn().mockRejectedValue({ status: 404 }),
+    getCrossCorrelations: vi.fn().mockRejectedValue({ status: 404 }),
+    getSuggestions: vi.fn().mockRejectedValue({ status: 404 }),
+    applySuggestion: vi.fn().mockRejectedValue({ status: 404 }),
+    getWorkflowAdvisories: vi.fn().mockRejectedValue({ status: 404 }),
+    getQualityAdvisories: vi.fn().mockRejectedValue({ status: 404 }),
+  },
+}));
+
 // Mock @ghatana/canvas/flow so tests don't need ReactFlow DOM
 vi.mock('@ghatana/canvas/flow', () => ({
   FlowCanvas: ({ children }: { children?: React.ReactNode }) =>
@@ -77,7 +90,9 @@ function TestWrapper({ children }: { children: React.ReactNode }): React.ReactEl
   return (
     <Provider>
       <QueryClientProvider client={makeQueryClient()}>
-        <BrowserRouter>{children}</BrowserRouter>
+        <ThemeProvider>
+          <BrowserRouter>{children}</BrowserRouter>
+        </ThemeProvider>
       </QueryClientProvider>
     </Provider>
   );
@@ -528,6 +543,11 @@ const SAMPLE_FABRIC_METRICS = {
 
 // apiClient mock is applied top-level; DataFabricPage renders without network calls
 describe('DataFabricPage', () => {
+  beforeEach(() => {
+    mockedApiClientGet.mockReset();
+    mockedApiClientGet.mockResolvedValue(SAMPLE_FABRIC_METRICS);
+  });
+
   it('renders page header', () => {
     render(<DataFabricPage />, { wrapper: TestWrapper });
     expect(screen.getByText('Data Fabric')).toBeDefined();

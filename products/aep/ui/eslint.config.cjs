@@ -46,6 +46,7 @@ module.exports = [
       "ghatana/no-dev-auth-in-prod": "error",
       "ghatana/no-duplicate-utilities": "warn",
       "ghatana/no-duplicate-components": "warn",
+      "ghatana/prefer-design-system-primitives": "warn",
       "react-hooks/exhaustive-deps": "off",
     },
   },

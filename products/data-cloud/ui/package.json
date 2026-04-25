@@ -17,6 +17,8 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
+    "docs:routes:generate": "tsx scripts/generate-route-truth-matrix.ts",
+    "docs:routes:check": "tsx scripts/generate-route-truth-matrix.ts --check",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },

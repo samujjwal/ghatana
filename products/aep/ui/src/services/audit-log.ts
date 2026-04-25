@@ -192,21 +192,35 @@ export const auditLogService = {
    */
   storeLocally(event: AuditEvent): void {
     try {
+      // Minimize: strip PII fields before local backup
+      const minimal = {
+        id: event.id,
+        timestamp: event.timestamp,
+        userId: event.userId,
+        tenantId: event.tenantId,
+        action: event.action,
+        resource: event.resource,
+        resourceType: event.resourceType,
+        status: event.status,
+      };
       const key = `audit_backup_${event.id}`;
-      localStorage.setItem(key, JSON.stringify(event));
+      // Obfuscate with base64 to reduce casual exposure (not encryption)
+      sessionStorage.setItem(key, btoa(JSON.stringify(minimal)));
 
-      // Clean up old backups (keep last 100)
-      const keys = getStorageKeys(localStorage)
+      // Clean up old backups (keep last 50)
+      const keys = getStorageKeys(sessionStorage)
         .filter((k) => k.startsWith("audit_backup_"))
         .sort((a, b) => {
-          const aTime =
-            JSON.parse(localStorage.getItem(a) || "{}").timestamp || "";
-          const bTime =
-            JSON.parse(localStorage.getItem(b) || "{}").timestamp || "";
-          return bTime.localeCompare(aTime);
+          try {
+            const aData = JSON.parse(atob(sessionStorage.getItem(a) || "e30="));
+            const bData = JSON.parse(atob(sessionStorage.getItem(b) || "e30="));
+            return (bData.timestamp || "").localeCompare(aData.timestamp || "");
+          } catch {
+            return 0;
+          }
         });
 
-      keys.slice(100).forEach((k) => localStorage.removeItem(k));
+      keys.slice(50).forEach((k) => sessionStorage.removeItem(k));
     } catch (error) {
       console.error("Failed to store audit event locally:", error);
     }
@@ -219,17 +233,18 @@ export const auditLogService = {
    */
   getLocalBackups(): AuditEvent[] {
     try {
-      const keys = getStorageKeys(localStorage).filter((k) =>
+      const keys = getStorageKeys(sessionStorage).filter((k) =>
         k.startsWith("audit_backup_"),
       );
       return keys
         .map((k) => {
-          const data = localStorage.getItem(k);
-          if (!data) return null;
+          const encoded = sessionStorage.getItem(k);
+          if (!encoded) return null;
           try {
-            return AuditEvent.parse(JSON.parse(data));
+            const data = JSON.parse(atob(encoded));
+            return AuditEvent.parse(data);
           } catch {
-            localStorage.removeItem(k);
+            sessionStorage.removeItem(k);
             return null;
           }
         })
@@ -246,10 +261,10 @@ export const auditLogService = {
    */
   clearLocalBackups(): void {
     try {
-      const keys = getStorageKeys(localStorage).filter((k) =>
+      const keys = getStorageKeys(sessionStorage).filter((k) =>
         k.startsWith("audit_backup_"),
       );
-      keys.forEach((k) => localStorage.removeItem(k));
+      keys.forEach((k) => sessionStorage.removeItem(k));
     } catch (error) {
       console.error("Failed to clear local audit backups:", error);
     }
@@ -267,7 +282,7 @@ export const auditLogService = {
       try {
         await this.log(event);
         // Remove successful sync
-        localStorage.removeItem(`audit_backup_${event.id}`);
+        sessionStorage.removeItem(`audit_backup_${event.id}`);
       } catch (error) {
         console.error(`Failed to sync audit event ${event.id}:`, error);
       }

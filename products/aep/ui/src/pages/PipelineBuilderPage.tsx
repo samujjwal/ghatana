@@ -538,6 +538,26 @@ export function PipelineBuilderPage() {
                 {aiLoading ? 'Thinking...' : 'Suggest'}
               </button>
             </div>
+            <div className="mt-2 flex gap-2 flex-wrap">
+              {[
+                { label: 'Validate → Enrich → Route', template: 'Validate incoming events, enrich with metadata, then route to downstream systems' },
+                { label: 'Error triage pipeline', template: 'Triage error events by severity, correlate with traces, and alert on-call team' },
+                { label: 'Data quality gate', template: 'Check data quality rules, reject invalid records, and emit quality metrics' },
+                { label: 'Audit log collector', template: 'Collect audit events, normalize schema, and write to durable audit store' },
+              ].map((t) => (
+                <button
+                  key={t.label}
+                  type="button"
+                  onClick={() => {
+                    setAiDescription(t.template);
+                    void handleAiSuggest();
+                  }}
+                  className="rounded-full border border-gray-200 bg-white px-2.5 py-1 text-[11px] text-gray-600 hover:border-indigo-300 hover:bg-indigo-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-indigo-700 dark:hover:bg-indigo-950"
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
             {aiSuggestions && (
               <div className="mt-2">
                 <div className="flex items-center justify-between mb-1">

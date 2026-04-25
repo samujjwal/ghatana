@@ -57,7 +57,7 @@ describe('SmartWorkflowBuilder', () => {
   it('renders the smart workflow shell with natural-language input controls', () => {
     render(<SmartWorkflowBuilder />, { wrapper: TestWrapper });
 
-    expect(screen.getByRole('heading', { name: 'Smart Workflow Builder' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Workflow Builder' })).toBeInTheDocument();
     expect(screen.getAllByText(/Describe your pipeline/i).length).toBeGreaterThan(0);
     expect(screen.getByPlaceholderText(/Load data from S3/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Generate Draft/i })).toBeDisabled();
@@ -88,9 +88,10 @@ describe('IntelligentHub', () => {
     render(<IntelligentHub />, { wrapper: TestWrapper });
 
     expect(screen.getByPlaceholderText(/What do you need to do/i)).toBeInTheDocument();
-    expect(screen.getByText('Start with an outcome')).toBeInTheDocument();
-    expect(screen.getByText('Insights')).toBeInTheDocument();
-    expect(screen.getByText('Recommended Next Steps')).toBeInTheDocument();
+    expect(screen.getByText('Next action')).toBeInTheDocument();
+    expect(screen.getByText('Ask a question')).toBeInTheDocument();
+    expect(screen.getByText('Build an automated flow')).toBeInTheDocument();
+    expect(screen.getByText('Platform snapshot')).toBeInTheDocument();
   });
 });
 

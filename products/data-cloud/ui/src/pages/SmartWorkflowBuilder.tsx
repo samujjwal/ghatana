@@ -585,7 +585,7 @@ export function SmartWorkflowBuilder() {
         description: workflow.description,
         nodes: workflow.steps.map(toWorkflowNode),
         edges: toWorkflowEdges(workflow.steps),
-        tags: ['builder-generated'],
+        tags: ['smart-builder', 'ai-generated'],
         metadata: {
           aiConfidence: workflow.aiConfidence,
           fallback: workflow.fallback,

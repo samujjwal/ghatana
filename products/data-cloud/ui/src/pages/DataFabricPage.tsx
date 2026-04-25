@@ -15,6 +15,7 @@
 
 import React, { useMemo, useCallback, useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { Button } from '@ghatana/design-system';
 import {
   FlowCanvas,
   FlowControls,
@@ -28,8 +29,12 @@ import {
 } from '@ghatana/canvas/flow';
 import { apiClient } from '../lib/api/client';
 import { migrateCollection as migrateCollectionApi, type MigrationTargetTier } from '../api/cost.service';
+import { aiOperationsService, type AiFabricAdvisory } from '../api/ai-operations.service';
+import { UnsupportedRuntimeBoundaryError } from '../lib/runtime-boundaries';
 import { UnsupportedSurfaceBoundary } from '../components/common/UnsupportedSurfaceBoundary';
 import { dataFabricMetricsBoundary } from '../components/common/unsupportedSurfaceRegistry';
+import { GuardedAction } from '../components/common/GuardedAction';
+import { AIAssistSuggestion } from '../components/common/AIAssistSuggestion';
 
 // =============================================================================
 // Types
@@ -54,8 +59,53 @@ interface FabricMetricsResponse {
   lastUpdated: string;
 }
 
+interface PlacementRecommendation {
+  targetTier: MigrationTargetTier;
+  confidence: number;
+  rationale: string;
+  evidence: string[];
+}
+
 async function fetchFabricMetrics(): Promise<FabricMetricsResponse> {
   return apiClient.get<FabricMetricsResponse>('/data-fabric/metrics');
+}
+
+function derivePlacementRecommendation(metrics: FabricMetricsResponse | undefined): PlacementRecommendation {
+  if (!metrics || metrics.tiers.length === 0) {
+    return {
+      targetTier: 'WARM',
+      confidence: 0.35,
+      rationale: 'No live metrics available. Keep workloads on WARM tier until fabric telemetry is connected.',
+      evidence: ['No data-fabric tier metrics returned by API.', 'Recommendation is heuristic fallback only.'],
+    };
+  }
+
+  const hotTier = metrics.tiers.find((tier) => tier.tier === 'HOT');
+  const warmTier = metrics.tiers.find((tier) => tier.tier === 'WARM');
+
+  if (hotTier && hotTier.throughputEps < 120 && hotTier.queueDepth < 20) {
+    return {
+      targetTier: 'WARM',
+      confidence: 0.78,
+      rationale: 'HOT tier usage is low. Migrating inactive collections to WARM reduces hot-storage spend while preserving query latency.',
+      evidence: [
+        `HOT throughput: ${hotTier.throughputEps.toFixed(1)} events/sec`,
+        `HOT queue depth: ${hotTier.queueDepth}`,
+        `WARM status: ${warmTier?.status ?? 'unknown'}`,
+      ],
+    };
+  }
+
+  return {
+    targetTier: 'COLD',
+    confidence: 0.61,
+    rationale: 'Current metrics suggest long-tail archival opportunity. Move stale collections to COLD after validating retention constraints.',
+    evidence: [
+      `Total storage footprint: ${metrics.totalStorageGb.toFixed(1)} GB`,
+      `Tier count sampled: ${metrics.tiers.length}`,
+      'Recommendation is advisory and requires operator confirmation.',
+    ],
+  };
 }
 
 // =============================================================================
@@ -256,6 +306,7 @@ export function DataFabricPage(): React.ReactElement {
   const [migrateCollection, setMigrateCollection] = useState('');
   const [migrateTargetTier, setMigrateTargetTier] = useState<MigrationTargetTier>('WARM');
   const [migrateOpen, setMigrateOpen] = useState(false);
+  const [migrationReason, setMigrationReason] = useState('');
 
   const migrateMutation = useMutation({
     mutationFn: () => migrateCollection
@@ -263,17 +314,40 @@ export function DataFabricPage(): React.ReactElement {
       : Promise.reject(new Error('Collection is required')),
     onSuccess: () => {
       setMigrateCollection('');
+      setMigrationReason('');
       setMigrateOpen(false);
     },
   });
 
+  // AI-backed topology advisories — backend-first, heuristic fallback when ML platform is unavailable.
+  const { data: fabricAdvisories } = useQuery<AiFabricAdvisory, Error>({
+    queryKey: ['ai', 'advisories', 'fabric', 'topology'],
+    queryFn: () => aiOperationsService.getFabricAdvisories('topology'),
+    staleTime: 5 * 60_000,
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+
+  const placementRecommendation = useMemo(() => {
+    // Prefer ML-backed advisory when available; fall back to deterministic heuristic.
+    const topAdvisory = fabricAdvisories?.advisories[0];
+    if (topAdvisory) {
+      return {
+        rationale: topAdvisory.description,
+        confidence: topAdvisory.confidence,
+        evidence: topAdvisory.suggestedAction ? [topAdvisory.suggestedAction] : [],
+      };
+    }
+    return derivePlacementRecommendation(fabricMetrics);
+  }, [fabricAdvisories, fabricMetrics]);
+
   const initialNodes = useMemo<FlowNode[]>(
-    () => (fabricMetrics ? buildNodes(fabricMetrics.tiers) : []),
+    () => (fabricMetrics?.tiers ? buildNodes(fabricMetrics.tiers) : []),
     [fabricMetrics],
   );
 
   const initialEdges = useMemo<FlowEdge[]>(
-    () => (fabricMetrics ? buildEdges(fabricMetrics.tiers) : []),
+    () => (fabricMetrics?.tiers ? buildEdges(fabricMetrics.tiers) : []),
     [fabricMetrics],
   );
 
@@ -282,7 +356,7 @@ export function DataFabricPage(): React.ReactElement {
 
   // Sync nodes/edges when metrics update
   React.useEffect(() => {
-    if (fabricMetrics) {
+    if (fabricMetrics?.tiers) {
       setNodes(buildNodes(fabricMetrics.tiers));
       setEdges(buildEdges(fabricMetrics.tiers));
     }
@@ -304,16 +378,27 @@ export function DataFabricPage(): React.ReactElement {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {/* B10: Manual Tier Migration — disabled while surface is in boundary/preview state (DC-UX-047) */}
-          <button
+          <Button
             type="button"
-            disabled
-            title="Tier migration is not available while the Data Fabric surface is in preview"
-            className="px-3 py-1.5 text-sm border border-gray-200 rounded-md text-gray-400 cursor-not-allowed opacity-60"
+            variant="outline"
+            size="sm"
+            onClick={() => setMigrateOpen((open) => !open)}
+            data-testid="fabric-open-migration-panel"
           >
-            Migrate Tier
-          </button>
+            {migrateOpen ? 'Hide Migration Panel' : 'Migrate Tier'}
+          </Button>
         </div>
+      </div>
+
+      <div className="mx-6 mt-4">
+        <AIAssistSuggestion
+          headingLabel="Placement recommendation"
+          suggestion={placementRecommendation.rationale}
+          confidence={placementRecommendation.confidence}
+          evidence={placementRecommendation.evidence}
+          canApply={false}
+          data-testid="fabric-placement-recommendation"
+        />
       </div>
 
       {/* B10: Tier migration inline panel */}
@@ -339,14 +424,39 @@ export function DataFabricPage(): React.ReactElement {
             <option value="WARM">→ WARM (L1→L2 Iceberg)</option>
             <option value="COLD">→ COLD (L2→L3 S3 Archive)</option>
           </select>
-          <button
-            type="button"
-            disabled={!migrateCollection || migrateMutation.isPending}
-            onClick={() => migrateMutation.mutate()}
-            className="px-3 py-1 text-sm bg-amber-600 text-white rounded hover:bg-amber-700 disabled:opacity-50"
+          <input
+            type="text"
+            placeholder="Reason for migration"
+            aria-label="Reason for migration"
+            value={migrationReason}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => setMigrationReason(event.target.value)}
+            className="border border-gray-300 rounded px-2 py-1 text-sm w-56"
+          />
+          <GuardedAction
+            label="Start governed migration"
+            impact={`Collection ${migrateCollection || '(unset)'} will be migrated to ${migrateTargetTier}. This changes storage placement and may affect downstream query latency.`}
+            requiresReason
+            reasonPrompt="Confirm why this migration is required"
+            confirmLabel="Start migration"
+            onConfirm={() => {
+              if (!migrateCollection || !migrationReason.trim()) {
+                return;
+              }
+              migrateMutation.mutate();
+            }}
+            isExecuting={migrateMutation.isPending}
           >
-            {migrateMutation.isPending ? 'Migrating…' : 'Start Migration'}
-          </button>
+            {({ open }) => (
+              <Button
+                type="button"
+                size="sm"
+                disabled={!migrateCollection || !migrationReason.trim() || migrateMutation.isPending}
+                onClick={open}
+              >
+                {migrateMutation.isPending ? 'Migrating…' : 'Start Migration'}
+              </Button>
+            )}
+          </GuardedAction>
           {migrateMutation.isSuccess && (
             <span className="text-sm text-green-700">
               ✓ {migrateMutation.data?.status} — {migrateMutation.data?.eventsMigrated} events
@@ -357,13 +467,15 @@ export function DataFabricPage(): React.ReactElement {
               Error: {migrateMutation.error instanceof Error ? migrateMutation.error.message : 'Migration failed'}
             </span>
           )}
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => { setMigrateOpen(false); migrateMutation.reset(); }}
-            className="text-sm text-gray-500 hover:text-gray-700 ml-auto"
+            className="ml-auto"
           >
             Close
-          </button>
+          </Button>
         </div>
       )}
 

@@ -4,10 +4,7 @@
  * Consumers should import from @yappc/ui (or @yappc/ui/components) to access these.
  */
 
-// Re-export canonical platform tokens
-export * from '@ghatana/tokens';
-
-// Re-export YAPPC token modules consumed by the local theme implementation.
+// YAPPC token modules consumed by the local theme implementation.
 export * from './colors';
 export * from './typography';
 export * from './spacing';
@@ -39,7 +36,7 @@ export const borderRadiusFull = borderRadius.full; // 9999px
 // Font size aliases (rem)
 export const fontSizeXs = fontSize.xs; // 0.75rem (12px)
 export const fontSizeSm = fontSize.sm; // 0.875rem (14px)
-export const fontSizeMd = fontSize.md; // 1rem (16px)
+export const fontSizeMd = fontSize.base; // 1rem (16px)
 export const fontSizeLg = fontSize.lg; // 1.125rem (18px)
 export const fontSizeXl = fontSize.xl; // 1.25rem (20px)
 

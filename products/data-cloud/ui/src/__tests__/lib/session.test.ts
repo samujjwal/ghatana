@@ -50,10 +50,14 @@ describe('SessionBootstrap', () => {
   it('persists shell role in session bootstrap snapshots', () => {
     SessionBootstrap.setTenantId(TEST_TENANT_ID);
     SessionBootstrap.setShellRole('operator');
+    SessionBootstrap.setProductViewMode('steward');
 
     expect(SessionBootstrap.getShellRole()).toBe('operator');
+    expect(SessionBootstrap.getProductViewMode()).toBe('steward');
     expect(SessionBootstrap.bootstrap().shellRole).toBe('operator');
+    expect(SessionBootstrap.bootstrap().productViewMode).toBe('steward');
     expect(sessionStorage.getItem('dc:session:shellRole')).toBe('operator');
+    expect(sessionStorage.getItem('dc:session:productViewMode')).toBe('steward');
   });
 
   it('reports cookie-backed auth mode in bootstrap snapshots', () => {

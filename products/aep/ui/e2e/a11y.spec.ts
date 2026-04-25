@@ -11,6 +11,11 @@
  */
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import {
+  seedAuthenticatedSession,
+  clearAuthenticatedSession,
+  suppressViteErrorOverlay,
+} from './auth-helpers';
 
 type RouteAuditCase = {
     title: string;
@@ -34,34 +39,6 @@ const ROUTE_AUDIT_CASES: RouteAuditCase[] = [
 
 const AUTOMATED_A11Y_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 const STRUCTURAL_RULES = ['landmark-one-main', 'region', 'button-name', 'image-alt', 'label', 'color-contrast'];
-
-async function seedAuthenticatedSession(page: import('@playwright/test').Page): Promise<void> {
-    await page.addInitScript(() => {
-        window.sessionStorage.setItem('aep-token', 'playwright-jwt-token');
-        window.sessionStorage.setItem('aep-session', 'playwright-session-token');
-    });
-}
-
-async function clearAuthenticatedSession(page: import('@playwright/test').Page): Promise<void> {
-    await page.addInitScript(() => {
-        window.sessionStorage.removeItem('aep-token');
-        window.sessionStorage.removeItem('aep-session');
-    });
-}
-
-async function suppressViteErrorOverlay(page: import('@playwright/test').Page): Promise<void> {
-    await page.addInitScript(() => {
-        const removeOverlay = () => {
-            document.querySelectorAll('vite-error-overlay').forEach((overlay) => overlay.remove());
-        };
-
-        removeOverlay();
-        new MutationObserver(() => removeOverlay()).observe(document.documentElement, {
-            childList: true,
-            subtree: true,
-        });
-    });
-}
 
 async function navigateForAudit(page: import('@playwright/test').Page, auditCase: RouteAuditCase): Promise<void> {
     await suppressViteErrorOverlay(page);

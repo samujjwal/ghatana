@@ -30,6 +30,9 @@ import { cn, buttonStyles, textStyles, bgStyles } from '../lib/theme';
 import {
   PLUGINS_EMPTY_STATE_DETAIL,
   PLUGINS_INVENTORY_HEADER_DETAIL,
+  PLUGINS_CATALOG_BOUNDARY_DETAIL,
+  PLUGIN_DELIVERY_BOUNDARY_DETAIL,
+  PLUGIN_DELIVERY_BOUNDARY_CONTINUATION,
 } from '../lib/runtime-boundaries';
 import { PluginCard } from '../components/plugins/PluginCard';
 import {
@@ -91,6 +94,8 @@ export function PluginsPage(): React.ReactElement {
 
   const tabs = [
     { id: 'installed' as const, label: 'Installed', icon: <Package className="h-4 w-4" /> },
+    { id: 'catalog' as const, label: 'Catalog Boundary', icon: <Package className="h-4 w-4" /> },
+    { id: 'delivery' as const, label: 'Deployment', icon: <Package className="h-4 w-4" /> },
   ];
 
   // Filter installed plugins
@@ -268,18 +273,7 @@ export function PluginsPage(): React.ReactElement {
                 <span>
                   Showing {filteredInstalledPlugins.length} of {installedPlugins.length} plugins
                 </span>
-                {(searchQuery || categoryFilter !== 'all' || statusFilter !== 'all') && (
-                  <button
-                    onClick={() => {
-                      setSearchQuery('');
-                      setCategoryFilter('all');
-                      setStatusFilter('all');
-                    }}
-                    className="text-primary-600 hover:text-primary-700 font-medium"
-                  >
-                    Clear all filters
-                  </button>
-                )}
+
               </div>
             )}
 
@@ -292,36 +286,49 @@ export function PluginsPage(): React.ReactElement {
               onRetry={() => queryClient.invalidateQueries({ queryKey: ['plugins', 'installed'] })}
               loadingMessage="Loading plugins..."
             >
-            {installedPlugins.length === 0 ? (
-              <EmptyState
-                title="No plugins installed"
-                description={PLUGINS_EMPTY_STATE_DETAIL}
-                icon={<Package className="h-12 w-12 text-gray-400 mb-4" />}
-              />
-            ) : filteredInstalledPlugins.length === 0 ? (
-              <NotFoundState
-                query={searchQuery}
-                onClear={() => {
-                  setSearchQuery('');
-                  setCategoryFilter('all');
-                  setStatusFilter('all');
-                }}
-              />
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" data-testid="plugins-installed-grid">
-                {filteredInstalledPlugins.map((plugin) => (
-                  <PluginCard
-                    key={plugin.id}
-                    plugin={plugin}
-                    mode="installed"
-                    onEnable={(id) => enableMutation.mutate(id)}
-                    onDisable={(id) => disableMutation.mutate(id)}
-                    onViewDetails={(id) => navigate(`/plugins/${id}`)}
-                  />
-                ))}
-              </div>
-            )}
+              {installedPlugins.length === 0 ? (
+                <EmptyState
+                  title="No plugins installed"
+                  description={PLUGINS_EMPTY_STATE_DETAIL}
+                  icon={<Package className="h-12 w-12 text-gray-400 mb-4" />}
+                />
+              ) : filteredInstalledPlugins.length === 0 ? (
+                <NotFoundState
+                  query={searchQuery}
+                  onClear={() => {
+                    setSearchQuery('');
+                    setCategoryFilter('all');
+                    setStatusFilter('all');
+                  }}
+                />
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" data-testid="plugins-installed-grid">
+                  {filteredInstalledPlugins.map((plugin) => (
+                    <PluginCard
+                      key={plugin.id}
+                      plugin={plugin}
+                      mode="installed"
+                      onEnable={(id) => enableMutation.mutate(id)}
+                      onDisable={(id) => disableMutation.mutate(id)}
+                      onViewDetails={(id) => navigate(`/plugins/${id}`)}
+                    />
+                  ))}
+                </div>
+              )}
             </QueryStateBoundary>
+          </div>
+        )}
+        {activeTab === 'catalog' && (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-700 dark:text-gray-300">{PLUGINS_CATALOG_BOUNDARY_DETAIL}</p>
+          </div>
+        )}
+
+        {activeTab === 'delivery' && (
+          <div className="space-y-4">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">How Plugin Changes Ship</h3>
+            <p className="text-sm text-gray-700 dark:text-gray-300">{PLUGIN_DELIVERY_BOUNDARY_DETAIL}</p>
+            <p className="text-sm text-gray-700 dark:text-gray-300">{PLUGIN_DELIVERY_BOUNDARY_CONTINUATION}</p>
           </div>
         )}
       </div>

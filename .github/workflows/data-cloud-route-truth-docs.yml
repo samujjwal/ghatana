@@ -1,0 +1,40 @@
+name: Data Cloud Route Truth Docs
+
+on:
+  pull_request:
+    paths:
+      - 'products/data-cloud/ui/src/lib/routing/**'
+      - 'products/data-cloud/ui/scripts/generate-route-truth-matrix.ts'
+      - 'products/data-cloud/ui/docs/ROUTE_TRUTH_MATRIX.md'
+      - 'products/data-cloud/ui/package.json'
+  push:
+    branches:
+      - main
+    paths:
+      - 'products/data-cloud/ui/src/lib/routing/**'
+      - 'products/data-cloud/ui/scripts/generate-route-truth-matrix.ts'
+      - 'products/data-cloud/ui/docs/ROUTE_TRUTH_MATRIX.md'
+      - 'products/data-cloud/ui/package.json'
+
+jobs:
+  verify-route-truth-doc:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify generated route truth matrix
+        run: pnpm --filter @data-cloud/ui docs:routes:check

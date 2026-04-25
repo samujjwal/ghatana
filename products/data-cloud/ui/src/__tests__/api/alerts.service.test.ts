@@ -131,6 +131,48 @@ describe('alertsService', () => {
     expect(suggestions[0]?.steps).toEqual(['Inspect lag', 'Restart consumer']);
   });
 
+  it('builds heuristic fallback groups when group endpoint returns empty list', async () => {
+    mockApiClient.get
+      .mockResolvedValueOnce({
+        tenantId: TEST_TENANT_ID,
+        groups: [],
+        count: 0,
+        timestamp: '2026-04-24T11:00:00Z',
+      })
+      .mockResolvedValueOnce({
+        tenantId: TEST_TENANT_ID,
+        alerts: [
+          {
+            id: 'alert-1',
+            title: 'Kafka lag spike',
+            description: 'Consumer lag high',
+            severity: 'critical',
+            status: 'active',
+            source: 'kafka',
+            createdAt: '2026-04-24T11:00:00Z',
+          },
+          {
+            id: 'alert-2',
+            title: 'Kafka lag spike',
+            description: 'Consumer lag still elevated',
+            severity: 'critical',
+            status: 'active',
+            source: 'kafka',
+            createdAt: '2026-04-24T11:01:00Z',
+          },
+        ],
+        count: 2,
+        timestamp: '2026-04-24T11:02:00Z',
+      });
+
+    const groups = await alertsService.getAlertGroups();
+
+    expect(groups.length).toBe(1);
+    expect(groups[0]?.id.startsWith('fallback-group-')).toBe(true);
+    expect(groups[0]?.alertIds).toEqual(['alert-1', 'alert-2']);
+    expect(groups[0]?.suggestedActionType).toBe('manual');
+  });
+
   it('acknowledges and resolves alerts through canonical mutation routes', async () => {
     mockApiClient.post
       .mockResolvedValueOnce({

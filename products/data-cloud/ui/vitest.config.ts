@@ -14,6 +14,22 @@ const workspaceAliases = {
     __dirname,
     "../../../platform/typescript/design-system/src/index.ts",
   ),
+  "@ghatana/domain-components/privacy": path.resolve(
+    __dirname,
+    "../../../platform/typescript/domain-components/src/privacy/index.ts",
+  ),
+  "@ghatana/domain-components/security": path.resolve(
+    __dirname,
+    "../../../platform/typescript/domain-components/src/security/index.ts",
+  ),
+  "@ghatana/domain-components/selection": path.resolve(
+    __dirname,
+    "../../../platform/typescript/domain-components/src/selection/index.ts",
+  ),
+  "@ghatana/domain-components": path.resolve(
+    __dirname,
+    "../../../platform/typescript/domain-components/src/index.ts",
+  ),
   "@ghatana/theme": path.resolve(
     __dirname,
     "../../../platform/typescript/theme/src/index.ts",
@@ -88,6 +104,8 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./src/__tests__/setup.ts"],
     include: ["src/**/*.test.{ts,tsx}", "tests/**/*.test.{ts,tsx}"],
+    testTimeout: 15000,
+    hookTimeout: 15000,
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],

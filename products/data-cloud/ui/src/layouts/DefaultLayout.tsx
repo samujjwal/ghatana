@@ -35,7 +35,11 @@ import {
 } from 'lucide-react';
 import { cn, bgStyles, borderStyles, textStyles } from '../lib/theme';
 import SessionBootstrap, {
+    type ProductViewMode,
     type ShellRole,
+    PRODUCT_VIEW_MODES,
+    PRODUCT_VIEW_MODE_DESCRIPTIONS,
+    PRODUCT_VIEW_MODE_LABELS,
     SHELL_ROLE_CONTROL_LABEL,
     SHELL_ROLE_CONTROL_TITLE,
     SHELL_ROLE_DESCRIPTIONS,
@@ -66,6 +70,16 @@ interface NavItem {
     icon: React.ReactNode;
     exact?: boolean;
     minimumShellRole?: ShellRole;
+}
+
+function mapProductViewModeToShellRole(mode: ProductViewMode): ShellRole {
+    if (mode === 'admin') {
+        return 'admin';
+    }
+    if (mode === 'operator' || mode === 'steward' || mode === 'auditor') {
+        return 'operator';
+    }
+    return 'primary-user';
 }
 
 /**
@@ -308,12 +322,16 @@ function Header({
     notificationCenter,
     shellRole,
     onShellRoleChange,
+    productViewMode,
+    onProductViewModeChange,
 }: {
     onMenuClick: () => void;
     onSearchClick: () => void;
     notificationCenter: ReturnType<typeof useNotificationCenter>;
     shellRole: ShellRole;
     onShellRoleChange: (role: ShellRole) => void;
+    productViewMode: ProductViewMode;
+    onProductViewModeChange: (mode: ProductViewMode) => void;
 }) {
     const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
 
@@ -377,7 +395,7 @@ function Header({
                             aria-label={SHELL_ROLE_CONTROL_LABEL}
                             onClick={() => setIsRoleMenuOpen((current) => !current)}
                         >
-                            <span className="text-sm font-medium">{SHELL_ROLE_LABELS[shellRole]}</span>
+                            <span className="text-sm font-medium">{PRODUCT_VIEW_MODE_LABELS[productViewMode]}</span>
                             <ChevronDown className="h-4 w-4" />
                         </button>
 
@@ -392,6 +410,41 @@ function Header({
                                     </p>
                                 </div>
                                 <div className="space-y-1">
+                                    <div className="px-2 pb-1 pt-2">
+                                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                            Product mode
+                                        </p>
+                                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                            Product mode is a UI focus preset. It does not grant backend permissions.
+                                        </p>
+                                    </div>
+                                    {PRODUCT_VIEW_MODES.map((mode) => {
+                                        const isSelected = mode === productViewMode;
+                                        return (
+                                            <button
+                                                key={mode}
+                                                type="button"
+                                                onClick={() => {
+                                                    onProductViewModeChange(mode);
+                                                    setIsRoleMenuOpen(false);
+                                                }}
+                                                className={cn(
+                                                    'w-full rounded-lg px-3 py-2 text-left text-sm transition-colors',
+                                                    isSelected
+                                                        ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300'
+                                                        : 'text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700'
+                                                )}
+                                            >
+                                                <div className="font-medium">{PRODUCT_VIEW_MODE_LABELS[mode]}</div>
+                                                <div className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                                                    {PRODUCT_VIEW_MODE_DESCRIPTIONS[mode]}
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+
+                                    <div className="my-1 h-px bg-gray-200 dark:bg-gray-700" />
+
                                     {SHELL_ROLES.map((role) => {
                                         const isSelected = role === shellRole;
                                         return (
@@ -439,6 +492,7 @@ export default function DefaultLayout(): React.ReactElement {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [shellRole, setShellRole] = useState<ShellRole>(() => SessionBootstrap.getShellRole());
+    const [productViewMode, setProductViewMode] = useState<ProductViewMode>(() => SessionBootstrap.getProductViewMode());
 
     const globalSearch = useGlobalSearch();
     const keyboardShortcuts = useKeyboardShortcuts();
@@ -479,6 +533,14 @@ export default function DefaultLayout(): React.ReactElement {
                     onShellRoleChange={(role) => {
                         SessionBootstrap.setShellRole(role);
                         setShellRole(role);
+                    }}
+                    productViewMode={productViewMode}
+                    onProductViewModeChange={(mode) => {
+                        const mappedRole = mapProductViewModeToShellRole(mode);
+                        SessionBootstrap.setProductViewMode(mode);
+                        SessionBootstrap.setShellRole(mappedRole);
+                        setProductViewMode(mode);
+                        setShellRole(mappedRole);
                     }}
                 />
 

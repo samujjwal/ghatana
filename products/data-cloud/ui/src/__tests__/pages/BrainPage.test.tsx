@@ -47,9 +47,10 @@ describe('BrainPage — IntelligentHub', () => {
         render(<IntelligentHub />, { wrapper: TestWrapper });
 
         expect(screen.getByPlaceholderText(/What do you need to do/i)).toBeInTheDocument();
-        expect(screen.getByText('Start with an outcome')).toBeInTheDocument();
-        expect(screen.getByText('Insights')).toBeInTheDocument();
-        expect(screen.getByText('Recommended Next Steps')).toBeInTheDocument();
+        expect(screen.getByText('Next action')).toBeInTheDocument();
+        expect(screen.getByText('Ask a question')).toBeInTheDocument();
+        expect(screen.getByText('Build an automated flow')).toBeInTheDocument();
+        expect(screen.getByText('Platform snapshot')).toBeInTheDocument();
     });
 
     it('keeps operator-only recommendations out of the primary-user launcher mode', () => {
@@ -59,13 +60,15 @@ describe('BrainPage — IntelligentHub', () => {
 
         expect(screen.queryByText('Review trust issues')).not.toBeInTheDocument();
         expect(screen.queryByText('Inspect recent failures')).not.toBeInTheDocument();
-        expect(screen.getByText(/Stay in primary mode until you need deeper controls/i)).toBeInTheDocument();
+        expect(screen.getByText(/Query your data or build a pipeline/i)).toBeInTheDocument();
     });
 
     it('reveals operator-only launcher actions when the shell role is elevated', () => {
         SessionBootstrap.setShellRole('operator');
 
         render(<IntelligentHub />, { wrapper: TestWrapper });
+
+        fireEvent.click(screen.getByRole('button', { name: /Operator/i }));
 
         expect(screen.getByText('Review trust issues')).toBeInTheDocument();
         expect(screen.getByText('Inspect recent failures')).toBeInTheDocument();

@@ -202,9 +202,7 @@ function OperatorDiagnosticsPanel({
           <div className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Auth Bootstrap</div>
           <div className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
             {sessionSnapshot.isAuthenticated
-              ? sessionSnapshot.authMode === 'cookie-session'
-                ? 'Cookie-backed session present'
-                : 'Header-token session present'
+              ? 'Authenticated session present'
               : 'No authenticated session detected'}
           </div>
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -1189,7 +1187,7 @@ export function InsightsPage() {
       ) : capabilitiesLoading && !capabilityRegistry ? (
         <CapabilityLoadingState
           title="Loading runtime capabilities"
-          message="Checking which optional insights dependencies are active before rendering insights."
+          message="Checking which optional insights dependencies are active before rendering AI suggestions."
         />
       ) : aiLoading ? (
         <div className="flex items-center gap-2 text-sm text-gray-400 py-4 justify-center">
@@ -1215,7 +1213,10 @@ export function InsightsPage() {
             />
           ))}
           {(aiSuggestions ?? []).length === 0 && (
-            <p className="text-xs text-gray-400 text-center py-4">No suggestions right now</p>
+            <>
+              <p className="text-xs text-gray-400 text-center py-4">No suggestions right now</p>
+              <p className="text-xs text-gray-400 text-center">No active AI insights</p>
+            </>
           )}
           {aiSuggestions?.some((s) => s.fallback) && (
             <p className="text-xs text-gray-400 mt-2 italic">

@@ -28,12 +28,7 @@ interface AppThemeProviderProps {
  */
 function ThemedContent({ children }: { children: React.ReactNode }): React.ReactElement {
   return (
-    <GhatanaThemeProvider
-      defaultTheme="system"
-      attribute="class"
-      enableStorage={true}
-      enableSystem={true}
-    >
+    <GhatanaThemeProvider>
       <MuiThemeConnector>{children}</MuiThemeConnector>
     </GhatanaThemeProvider>
   );

@@ -279,6 +279,16 @@ export const OperationsConsolePage: React.FC = () => {
                   </span>
                   <ChevronRight className="h-4 w-4 ml-auto text-gray-400" />
                 </Link>
+                <Link
+                  to="/operations/jobs"
+                  className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <Clock className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">
+                    Job Center
+                  </span>
+                  <ChevronRight className="h-4 w-4 ml-auto text-gray-400" />
+                </Link>
               </div>
             </div>
           </div>

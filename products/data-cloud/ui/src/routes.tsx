@@ -51,6 +51,9 @@ const TrustCenter = React.lazy(() =>
 const OperationsConsole = React.lazy(() =>
   import('./pages/OperationsConsolePage').then((m) => ({ default: m.OperationsConsolePage }))
 );
+const OperationsJobCenterPage = React.lazy(() =>
+  import('./pages/OperationsJobCenterPage').then((m) => ({ default: m.OperationsJobCenterPage }))
+);
 const InsightsPage = React.lazy(() =>
   import('./pages/InsightsPage').then((m) => ({ default: m.InsightsPage }))
 );
@@ -284,6 +287,10 @@ export const routes: RouteObject[] = [
       {
         path: 'operations',
         element: withSuspense(OperationsConsole),
+      },
+      {
+        path: 'operations/jobs',
+        element: withSuspense(OperationsJobCenterPage),
       },
 
       // AEP Integration Pages

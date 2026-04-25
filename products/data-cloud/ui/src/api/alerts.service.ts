@@ -152,6 +152,42 @@ function getTenantId(explicitTenantId?: string): string {
   return explicitTenantId ?? SessionBootstrap.requireTenantId();
 }
 
+function normalizeRootCauseKey(alert: Alert): string {
+  const titleSignature = alert.title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter((segment) => segment.length > 0)
+    .slice(0, 4)
+    .join(' ');
+
+  return `${alert.source.toLowerCase()}::${alert.severity}::${titleSignature}`;
+}
+
+function buildFallbackAlertGroups(alerts: Alert[]): AlertGroup[] {
+  const activeAlerts = alerts.filter((alert) => alert.status === 'active');
+  const grouped = new Map<string, Alert[]>();
+
+  for (const alert of activeAlerts) {
+    const key = normalizeRootCauseKey(alert);
+    const current = grouped.get(key) ?? [];
+    current.push(alert);
+    grouped.set(key, current);
+  }
+
+  return Array.from(grouped.entries())
+    .filter(([, groupedAlerts]) => groupedAlerts.length >= 2)
+    .map(([key, groupedAlerts], index) => ({
+      id: `fallback-group-${index + 1}`,
+      title: `Potential correlation: ${groupedAlerts[0].source}`,
+      rootCause: `Local heuristic grouped ${groupedAlerts.length} alerts by source/severity/title signature (${key}).`,
+      alertIds: groupedAlerts.map((alert) => alert.id),
+      aiConfidence: 0.42,
+      suggestedAction: 'Review grouped alerts and verify whether they share the same incident root cause.',
+      suggestedActionType: 'manual',
+    }));
+}
+
 function normaliseApiError(error: unknown): never {
   if (typeof error === "object" && error !== null && "status" in error) {
     const status = Number((error as { status?: unknown }).status);
@@ -224,7 +260,13 @@ export class AlertsService {
         params: { tenantId },
         headers: { "X-Tenant-ID": tenantId },
       });
-      return AlertGroupListEnvelopeSchema.parse(response).groups;
+      const parsedGroups = AlertGroupListEnvelopeSchema.parse(response).groups;
+      if (parsedGroups.length > 0) {
+        return parsedGroups;
+      }
+
+      const alerts = await this.getAlerts({ status: 'active', tenantId });
+      return buildFallbackAlertGroups(alerts);
     } catch (error) {
       return normaliseApiError(error);
     }

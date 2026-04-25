@@ -7,5 +7,5 @@
  * @doc.pattern Privacy Component
  */
 
-export { ConsentManager, useConsent } from '@ghatana/privacy-ui';
-export type { ConsentRecord, ConsentManagerProps } from '@ghatana/privacy-ui';
+export { ConsentManager, useConsent } from '@ghatana/domain-components/privacy';
+export type { ConsentRecord, ConsentManagerProps } from '@ghatana/domain-components/privacy';

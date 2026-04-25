@@ -20,6 +20,7 @@ import { TokenStorage, type AuthMode } from './tokenStorage';
 const SESSION_TENANT_KEY = 'dc:session:tenantId';
 const SESSION_API_BASE_URL_KEY = 'dc:session:apiBaseUrl';
 const SESSION_SHELL_ROLE_KEY = 'dc:session:shellRole';
+const SESSION_PRODUCT_VIEW_MODE_KEY = 'dc:session:productViewMode';
 const LEGACY_TENANT_KEY = 'tenantId';
 
 const RESERVED_TENANT_IDS = new Set(['default', 'default-tenant']);
@@ -29,6 +30,30 @@ export const SHELL_ROLES = ['primary-user', 'operator', 'admin'] as const;
 export type ShellRole = (typeof SHELL_ROLES)[number];
 
 const SHELL_ROLE_SET = new Set<ShellRole>(SHELL_ROLES);
+
+export const PRODUCT_VIEW_MODES = ['standard', 'steward', 'operator', 'admin', 'auditor'] as const;
+
+export type ProductViewMode = (typeof PRODUCT_VIEW_MODES)[number];
+
+const PRODUCT_VIEW_MODE_SET = new Set<ProductViewMode>(PRODUCT_VIEW_MODES);
+
+export const DEFAULT_PRODUCT_VIEW_MODE: ProductViewMode = 'standard';
+
+export const PRODUCT_VIEW_MODE_LABELS: Record<ProductViewMode, string> = {
+  standard: 'Standard mode',
+  steward: 'Steward mode',
+  operator: 'Operator mode',
+  admin: 'Admin mode',
+  auditor: 'Auditor mode',
+};
+
+export const PRODUCT_VIEW_MODE_DESCRIPTIONS: Record<ProductViewMode, string> = {
+  standard: 'General workspace usage with core data exploration surfaces.',
+  steward: 'Data stewardship focus with governance and curation surfaces emphasized.',
+  operator: 'Operational monitoring focus for alerts, events, and diagnostics.',
+  admin: 'Administrative focus with operations and management surfaces visible.',
+  auditor: 'Read-focused oversight mode for compliance and traceability review.',
+};
 
 export const DEFAULT_SHELL_ROLE: ShellRole = 'primary-user';
 
@@ -71,6 +96,19 @@ function normalizeShellRole(value: string | null | undefined): ShellRole {
   }
 
   return DEFAULT_SHELL_ROLE;
+}
+
+function normalizeProductViewMode(value: string | null | undefined): ProductViewMode {
+  if (typeof value !== 'string') {
+    return DEFAULT_PRODUCT_VIEW_MODE;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (PRODUCT_VIEW_MODE_SET.has(normalized as ProductViewMode)) {
+    return normalized as ProductViewMode;
+  }
+
+  return DEFAULT_PRODUCT_VIEW_MODE;
 }
 
 export function canAccessShellRole(currentRole: ShellRole, requiredRole: ShellRole): boolean {
@@ -147,6 +185,7 @@ export interface SessionSnapshot {
   authMode: AuthMode;
   requiresTenantBootstrap: boolean;
   shellRole: ShellRole;
+  productViewMode: ProductViewMode;
   sessionExpiringSoon: boolean;
 }
 
@@ -161,6 +200,7 @@ export const SessionBootstrap = {
       authMode: TokenStorage.authMode(),
       requiresTenantBootstrap: tenantId === null,
       shellRole: this.getShellRole(),
+      productViewMode: this.getProductViewMode(),
       sessionExpiringSoon: TokenStorage.needsRefresh(),
     };
   },
@@ -238,10 +278,21 @@ export const SessionBootstrap = {
     return normalized;
   },
 
+  getProductViewMode(): ProductViewMode {
+    return normalizeProductViewMode(readStorageItem(sessionStorage, SESSION_PRODUCT_VIEW_MODE_KEY));
+  },
+
+  setProductViewMode(mode: ProductViewMode): ProductViewMode {
+    const normalized = normalizeProductViewMode(mode);
+    writeStorageItem(sessionStorage, SESSION_PRODUCT_VIEW_MODE_KEY, normalized);
+    return normalized;
+  },
+
   clear(): void {
     this.clearTenantId();
     removeStorageItem(sessionStorage, SESSION_API_BASE_URL_KEY);
     removeStorageItem(sessionStorage, SESSION_SHELL_ROLE_KEY);
+    removeStorageItem(sessionStorage, SESSION_PRODUCT_VIEW_MODE_KEY);
     TokenStorage.clear();
   },
 };

@@ -183,6 +183,8 @@ export default defineConfig({
       '@dnd-kit/utilities',
       '@emotion/react',
       '@emotion/styled',
+      '@mui/material',
+      '@mui/material/styles',
     ],
     exclude: ['@grpc/grpc-js', '@grpc/proto-loader'],
   },
@@ -318,7 +320,7 @@ export default defineConfig({
     }),
   ],
   ssr: {
-    noExternal: ['@emotion/react', '@emotion/styled'],
+    noExternal: ['@emotion/react', '@emotion/styled', '@mui/material', '@mui/material/styles'],
   },
   build: {
     target: 'es2020',

@@ -3,13 +3,19 @@
  * 
  * Admin-only settings boundary page.
  * 
+ * Wires the `settingsService` contract for each section. While the
+ * identity/security backend is unavailable, every section renders an
+ * `UnsupportedSurfaceBoundary`. When the backend is activated, each section
+ * can be promoted to display live data by removing the boundary branch.
+ * 
  * @doc.type page
- * @doc.purpose Admin-only settings boundary shell
+ * @doc.purpose Admin-only settings surface — service-contract-wired, boundary-first
  * @doc.layer frontend
  * @doc.pattern Page Component
  */
 
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
     cn,
     textStyles,
@@ -17,6 +23,7 @@ import {
 } from '../lib/theme';
 import { UnsupportedSurfaceBoundary } from '../components/common/UnsupportedSurfaceBoundary';
 import { settingsSurfaceBoundaries, type SettingsBoundaryKey } from '../components/common/unsupportedSurfaceRegistry';
+import { settingsService } from '../api/settings.service';
 
 // DC-UX-025/026: Settings is a boundary surface only. All write-path sections
 // are backed by launcher-managed APIs that do not exist yet. Until those APIs
@@ -140,14 +147,34 @@ function NotificationsSection(): React.ReactElement {
 }
 
 /**
- * API Keys Section — boundary only.
+ * API Keys Section
  *
  * DC-UX-026: API key management (create/revoke) must not be implemented
  * locally — keys are security-critical and must be managed via the
  * launcher-backed identity API. Until that API exists, this section
  * renders a boundary surface notice only.
+ *
+ * Wired to `settingsService.listApiKeys()` so that when the backend is
+ * activated, the boundary branch is replaced with the live key list.
  */
 function ApiKeysSection(): React.ReactElement {
+    const { isError } = useQuery({
+        queryKey: ['settings', 'api-keys'],
+        queryFn: () => settingsService.listApiKeys(),
+        retry: false,
+    });
+
+    // The identity backend is not yet available — service raises a boundary error
+    // on 404/405/501, which surfaces here as an error state. Render boundary.
+    if (isError) {
+        return (
+            <div className="max-w-2xl space-y-6" data-testid="settings-api-section">
+                <UnavailablePanel boundary={settingsSurfaceBoundaries.api} />
+            </div>
+        );
+    }
+
+    // When backend becomes available: render live key list here.
     return (
         <div className="max-w-2xl space-y-6" data-testid="settings-api-section">
             <UnavailablePanel boundary={settingsSurfaceBoundaries.api} />
