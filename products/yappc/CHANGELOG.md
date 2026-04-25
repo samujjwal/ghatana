@@ -1,6 +1,7 @@
 # YAPPC Changelog
 
 ## [Unreleased]
+- **Changed**: UI/UX refactor 11 [`e0febc9`](https://github.com/samujjwal/ghatana/commit/e0febc9b411bef68638974be561cbbad593a25c1)
 - **Changed**: build green [`008b154`](https://github.com/samujjwal/ghatana/commit/008b154d39484bfd2de8cad66b3d413baf31af5f)
 - **Changed**: Merge branch 'main' of https://github.com/samujjwal/ghatana [`935daa8`](https://github.com/samujjwal/ghatana/commit/935daa8be967c9b3e487ffc3846c167fccf82e7f)
 - **Changed**: Merge branch 'main' of https://github.com/samujjwal/ghatana [`b992d5d`](https://github.com/samujjwal/ghatana/commit/b992d5d914c7975c107a37c065ce7293d2826572)
