@@ -70,11 +70,11 @@ export function LoginPage() {
           </div>
           <div className="space-y-4">
             <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-              Enter the AEP control plane with a platform-issued JWT.
+              AEP Control Plane
             </h1>
             <p className="max-w-lg text-base leading-7 text-slate-300 sm:text-lg">
-              The console uses the bearer token for API access and automatically requests an
-              AEP session token for repeated calls when the backend accepts it.
+              Sign in through your platform identity provider for secure SSO access.
+              The console manages sessions automatically for repeated API calls.
             </p>
           </div>
           <div className="grid gap-3 text-sm text-slate-300 sm:grid-cols-3">
@@ -98,7 +98,7 @@ export function LoginPage() {
             <div className="space-y-2">
               <h2 className="text-2xl font-semibold text-white">Sign in</h2>
               <p className="text-sm leading-6 text-slate-300">
-                Sign in through the platform identity provider for secure single sign-on, or use a legacy token when enabled.
+                Use your platform identity for secure single sign-on.
               </p>
             </div>
 

@@ -20,6 +20,8 @@ import {
 } from '@/api/aep.api';
 import { isFeatureEnabled } from '@/lib/feature-flags';
 import { Button } from '@ghatana/design-system';
+import { PageState } from '@/components/shared/PageState';
+import { SensitiveActionDialog } from '@/components/shared/SensitiveActionDialog';
 
 type TabId = 'lineage' | 'decisions' | 'policies';
 
@@ -111,26 +113,56 @@ export function RunDetailPage() {
   const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState<TabId>('lineage');
 
-  const { data: run, isLoading, isError } = useQuery({
+  const {
+    data: run,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['aep', 'run', runId, tenantId],
     queryFn: () => getRunDetail(runId!, tenantId),
     enabled: !!runId,
     refetchInterval: (query) => query.state.data?.status === 'RUNNING' ? 3_000 : false,
   });
 
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+
   const cancelMut = useMutation({
     mutationFn: () => cancelRun(runId!, tenantId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['aep', 'run', runId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['aep', 'run', runId] });
+      setCancelDialogOpen(false);
+    },
   });
 
   if (isLoading) {
-    return <div className="flex h-full items-center justify-center text-sm text-gray-400">Loading run…</div>;
+    return <PageState mode="loading" title="Loading run…" description="Fetching execution details." className="h-full" />;
   }
 
   if (isError || !run) {
+    const errMsg = error instanceof Error ? error.message : '';
+    const isNotFound = errMsg.includes('404') || errMsg.toLowerCase().includes('not found');
+    const isForbidden = errMsg.includes('403') || errMsg.toLowerCase().includes('forbidden');
+    const isNetwork = errMsg.toLowerCase().includes('network') || errMsg.toLowerCase().includes('fetch');
+
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4">
-        <p className="text-sm text-red-500">Run not found.</p>
+        <PageState
+          mode={isNetwork ? 'unavailable' : 'degraded'}
+          title={isNotFound ? 'Run not found' : isForbidden ? 'Access denied' : 'Unable to load run'}
+          description={
+            isNotFound
+              ? 'This run ID does not exist or may have been removed.'
+              : isForbidden
+                ? 'You do not have permission to view this run.'
+                : isNetwork
+                  ? 'Network error while fetching run details.'
+                  : errMsg || 'An unexpected error occurred.'
+          }
+          onRetry={() => void refetch()}
+          className="py-0"
+        />
         <Link to="/operate" className="text-xs text-indigo-600 hover:underline dark:text-indigo-400">
           ← Back to Runs &amp; Alerts
         </Link>
@@ -160,14 +192,31 @@ export function RunDetailPage() {
 
           <div className="flex items-center gap-2">
             {run.status === 'RUNNING' && (
-              <Button
-                onClick={() => cancelMut.mutate()}
-                disabled={cancelMut.isPending}
-                variant="secondary"
-                className="rounded bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100 disabled:opacity-50 dark:bg-red-950 dark:text-red-400 dark:hover:bg-red-900"
-              >
-                {cancelMut.isPending ? 'Cancelling…' : 'Cancel run'}
-              </Button>
+              <>
+                <Button
+                  onClick={() => setCancelDialogOpen(true)}
+                  disabled={cancelMut.isPending}
+                  variant="secondary"
+                  className="rounded bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100 disabled:opacity-50 dark:bg-red-950 dark:text-red-400 dark:hover:bg-red-900"
+                >
+                  {cancelMut.isPending ? 'Cancelling…' : 'Cancel run'}
+                </Button>
+                <SensitiveActionDialog
+                  open={cancelDialogOpen}
+                  title="Cancel run"
+                  description={`This will immediately stop run ${run.id} for pipeline ${run.pipelineName || run.pipelineId}. This action cannot be undone.`}
+                  confirmKeyword="CANCEL"
+                  impactItems={[
+                    { label: 'Run ID', value: run.id, severity: 'high' },
+                    { label: 'Pipeline', value: run.pipelineName || run.pipelineId, severity: 'medium' },
+                    { label: 'Tenant', value: tenantId, severity: 'low' },
+                  ]}
+                  auditMessage={`Run cancellation recorded for ${run.id}`}
+                  reasonRequired
+                  onConfirm={() => cancelMut.mutate()}
+                  onCancel={() => setCancelDialogOpen(false)}
+                />
+              </>
             )}
             {run.status === 'FAILED' && (
               <Link

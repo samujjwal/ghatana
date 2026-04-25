@@ -5,34 +5,20 @@
  * Provides atom creation, management, and utilities for global state.
  *
  * Features:
- * - Centralized atom registry
- * - Persistent atom support (localStorage/sessionStorage)
- * - Derived and computed atoms
- * - Async atom patterns
- * - Yjs collaboration support
- * - Debug mode with statistics
- * - Type-safe state access
  *
  * @module state/StateManager
  * @doc.type class
- * @doc.purpose Centralized state management using Jotai
+ * @doc.purpose Legacy state management with registry pattern (deprecated)
  * @doc.layer product
- * @doc.pattern Singleton, Registry
+ * @doc.pattern Registry (deprecated in favor of direct imports)
  *
  * @example
- * ```typescript
- * // Create a simple atom
+ * // OLD (deprecated):
  * StateManager.createAtom('counter', 0, 'Counter state');
  *
- * // Create a persistent atom
- * StateManager.createPersistentAtom('user', defaultUser, {
- *   storage: 'local',
- *   description: 'User profile'
- * });
- *
- * // Use in components
- * const [count, setCount] = useGlobalState('counter');
- * ```
+ * // NEW (recommended):
+ * import { createAtom } from '@ghatana/state';
+ * export const counterAtom = createAtom('counter', 0);
  */
 
 import { atom } from 'jotai';

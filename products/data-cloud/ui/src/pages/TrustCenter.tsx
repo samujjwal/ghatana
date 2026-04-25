@@ -17,6 +17,10 @@
 
 import React, { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { Button, IconButton } from '@ghatana/design-system';
+import { useOperationHistory } from '../hooks/useOperationHistory';
+import { OperationHistory, OperationHistoryAlert } from '../components/common/OperationHistory';
+import { useOperations } from '../contexts/OperationsContext';
 import {
   Shield,
   CheckCircle,
@@ -421,13 +425,15 @@ function LifecycleTruthCard({
         ))}
       </ul>
       {surface.action && surface.actionLabel ? (
-        <button
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => onAction(surface.action!)}
           data-testid={`trust-lifecycle-action-${surface.id}`}
-          className="mt-4 rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-white dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+          className="mt-4"
         >
           {surface.actionLabel}
-        </button>
+        </Button>
       ) : null}
     </article>
   );
@@ -497,13 +503,14 @@ function RecommendationCard({
           <h3 className="mt-3 text-sm font-semibold text-gray-900 dark:text-gray-100">{recommendation.title}</h3>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{recommendation.summary}</p>
         </div>
-        <button
+        <Button
+          variant="solid"
+          size="sm"
           onClick={onApply}
           data-testid={`trust-recommendation-apply-${recommendation.id}`}
-          className="rounded-lg bg-purple-600 px-3 py-2 text-xs font-medium text-white hover:bg-purple-700"
         >
           {recommendation.actionLabel}
-        </button>
+        </Button>
       </div>
       <ul className="mt-4 space-y-2 text-xs text-purple-900 dark:text-purple-100">
         {recommendation.evidence.map((detail) => (
@@ -590,6 +597,9 @@ export function TrustCenter() {
   const [actionSummary, setActionSummary] = useState<GovernanceActionSummary | null>(null);
   const [purgePreview, setPurgePreview] = useState<RetentionPurgePreview | null>(null);
 
+  const { records: opHistory, addRecord: trackOp, updateOutcome: resolveOp, clearRecords: clearOpHistory } = useOperationHistory();
+  const { startJob, completeJob } = useOperations();
+
   const { data: rawPolicies = [], isLoading: policiesLoading, refetch: refetchPolicies } = useQuery({
     queryKey: ['governance-policies'],
     queryFn: () => governanceService.getPolicies(),
@@ -671,7 +681,14 @@ export function TrustCenter() {
       reason: classificationForm.reason,
       piiFields: parseCommaSeparatedValues(classificationForm.piiFields),
     }),
-    onSuccess: (result) => {
+    onMutate: () => {
+      const jobId = startJob(`Classify retention: ${classificationForm.collection}`);
+      const op = trackOp({ action: 'Classify retention', resource: classificationForm.collection, outcome: 'pending' });
+      return { op, jobId };
+    },
+    onSuccess: (result, _vars, ctx) => {
+      if (ctx?.op) resolveOp(ctx.op.id, 'success');
+      if (ctx?.jobId) completeJob(ctx.jobId, 'success');
       toast.success(`Retention tier applied to ${result.collection}`);
       setActionSummary({
         title: 'Retention policy applied',
@@ -682,7 +699,10 @@ export function TrustCenter() {
       closeQuickAction();
       refreshGovernanceData();
     },
-    onError: (error) => {
+    onError: (error, _vars, ctx) => {
+      const msg = error instanceof Error ? error.message : 'Failed';
+      if (ctx?.op) resolveOp(ctx.op.id, 'failure', msg);
+      if (ctx?.jobId) completeJob(ctx.jobId, 'failure', msg);
       toast.error(error instanceof Error ? error.message : 'Failed to classify retention policy');
     },
   });
@@ -694,7 +714,14 @@ export function TrustCenter() {
       fields: parseCommaSeparatedValues(redactionForm.fields),
       reason: redactionForm.reason,
     }),
-    onSuccess: (result) => {
+    onMutate: () => {
+      const jobId = startJob(`Redact PII: ${redactionForm.collection}/${redactionForm.entityId}`);
+      const op = trackOp({ action: 'Redact PII', resource: `${redactionForm.collection}/${redactionForm.entityId}`, outcome: 'pending' });
+      return { op, jobId };
+    },
+    onSuccess: (result, _vars, ctx) => {
+      if (ctx?.op) resolveOp(ctx.op.id, 'success');
+      if (ctx?.jobId) completeJob(ctx.jobId, 'success');
       const redactedCount = result.redactedFields.length;
       toast.success(redactedCount > 0 ? `Redacted ${redactedCount} field${redactedCount > 1 ? 's' : ''}` : 'No additional fields required redaction');
       setActionSummary({
@@ -706,7 +733,10 @@ export function TrustCenter() {
       closeQuickAction();
       refreshGovernanceData();
     },
-    onError: (error) => {
+    onError: (error, _vars, ctx) => {
+      const msg = error instanceof Error ? error.message : 'Failed';
+      if (ctx?.op) resolveOp(ctx.op.id, 'failure', msg);
+      if (ctx?.jobId) completeJob(ctx.jobId, 'failure', msg);
       toast.error(error instanceof Error ? error.message : 'Failed to redact PII fields');
     },
   });
@@ -755,7 +785,15 @@ export function TrustCenter() {
         confirmationToken: purgePreview.dryRun.confirmationToken,
       });
     },
-    onSuccess: (result) => {
+    onMutate: () => {
+      const resource = purgePreview?.dryRun.collection ?? 'unknown';
+      const jobId = startJob(`Purge retention: ${resource}`);
+      const op = trackOp({ action: 'Purge retention', resource, outcome: 'pending' });
+      return { op, jobId };
+    },
+    onSuccess: (result, _vars, ctx) => {
+      if (ctx?.op) resolveOp(ctx.op.id, 'success');
+      if (ctx?.jobId) completeJob(ctx.jobId, 'success');
       toast.success(`Retention purge completed for ${result.collection}`);
       setActionSummary({
         title: 'Retention purge completed',
@@ -766,7 +804,10 @@ export function TrustCenter() {
       closeQuickAction();
       refreshGovernanceData();
     },
-    onError: (error) => {
+    onError: (error, _vars, ctx) => {
+      const msg = error instanceof Error ? error.message : 'Failed';
+      if (ctx?.op) resolveOp(ctx.op.id, 'failure', msg);
+      if (ctx?.jobId) completeJob(ctx.jobId, 'failure', msg);
       toast.error(error instanceof Error ? error.message : 'Failed to execute retention purge');
     },
   });
@@ -842,19 +883,14 @@ export function TrustCenter() {
           </div>
           <div className="flex items-center gap-3">
             <CommandBarTrigger />
-            <button
+            <Button
+              variant="solid"
+              leadingIcon={<Shield className="h-4 w-4" />}
               onClick={() => triggerOperationalAction('classify-retention')}
               data-testid="trust-header-open-live-action"
-              className={cn(
-                'flex items-center gap-2 px-4 py-2 rounded-lg',
-                'bg-primary-600 hover:bg-primary-700',
-                'text-white text-sm font-medium',
-                'transition-colors'
-              )}
             >
-              <Shield className="h-4 w-4" />
               Open Live Action
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -879,22 +915,25 @@ export function TrustCenter() {
               )}
             />
           </div>
-          <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg" aria-label="Filter">
-            <Filter className="h-4 w-4 text-gray-400" />
-          </button>
-          <button
+          <IconButton
+            variant="ghost"
+            tone="neutral"
+            icon={<Filter className="h-4 w-4" />}
+            label="Filter"
+          />
+          <IconButton
+            variant="ghost"
+            tone="neutral"
+            icon={<RefreshCw className="h-4 w-4" />}
+            label="Refresh"
             onClick={() => refetchPolicies()}
             data-testid="trust-refresh-policies"
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
-            aria-label="Refresh"
-          >
-            <RefreshCw className="h-4 w-4 text-gray-400" />
-          </button>
+          />
         </div>
       </header>
 
       {/* Content */}
-      <main className="flex-1 overflow-y-auto p-6">
+      <section className="flex-1 overflow-y-auto p-6">
         {/* Compliance Score */}
         <section className="mb-8">
           <ComplianceScoreCard
@@ -1056,9 +1095,9 @@ export function TrustCenter() {
               <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">
                 Audit Timeline
               </h2>
-              <button className="text-xs text-primary-600 hover:underline">
+              <Button variant="link" size="sm">
                 View all
-              </button>
+              </Button>
             </div>
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4" data-testid="audit-timeline">
               {auditLoading ? (
@@ -1077,8 +1116,19 @@ export function TrustCenter() {
               )}
             </div>
           </section>
+
+          {/* Session Operation History (DC-UX-044) */}
+          <section>
+            <OperationHistoryAlert records={opHistory} />
+            <div className="mt-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+              <OperationHistory
+                records={opHistory}
+                onClear={clearOpHistory}
+              />
+            </div>
+          </section>
         </div>
-      </main>
+      </section>
 
       {activeQuickAction && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -1113,9 +1163,13 @@ export function TrustCenter() {
                         : 'Run a retention purge dry run, inspect the policy and candidates, then execute with the issued confirmation token.'}
                   </p>
                 </div>
-                <button onClick={closeQuickAction} className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-200">
-                  <X className="h-4 w-4" />
-                </button>
+                <IconButton
+                  variant="ghost"
+                  tone="neutral"
+                  icon={<X className="h-4 w-4" />}
+                  label="Close quick action dialog"
+                  onClick={closeQuickAction}
+                />
               </div>
 
               <div className="space-y-4 px-6 py-5">
@@ -1270,14 +1324,18 @@ export function TrustCenter() {
               </div>
 
               <div className="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
-                <button
+                <Button
+                  variant="outline"
                   onClick={closeQuickAction}
                   data-testid="trust-quick-action-cancel"
-                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="solid"
+                  loading={classifyMutation.isPending || redactionMutation.isPending || purgeDryRunMutation.isPending || purgeExecuteMutation.isPending}
+                  disabled={classifyMutation.isPending || redactionMutation.isPending || purgeDryRunMutation.isPending || purgeExecuteMutation.isPending}
+                  data-testid="trust-quick-action-submit"
                   onClick={() => {
                     if (activeQuickAction === 'classify-retention') {
                       classifyMutation.mutate();
@@ -1293,11 +1351,7 @@ export function TrustCenter() {
                     }
                     redactionMutation.mutate();
                   }}
-                  disabled={classifyMutation.isPending || redactionMutation.isPending || purgeDryRunMutation.isPending || purgeExecuteMutation.isPending}
-                  data-testid="trust-quick-action-submit"
-                  className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {(classifyMutation.isPending || redactionMutation.isPending || purgeDryRunMutation.isPending || purgeExecuteMutation.isPending) && <Loader2 className="h-4 w-4 animate-spin" />}
                   {activeQuickAction === 'classify-retention'
                     ? 'Apply retention tier'
                     : activeQuickAction === 'redact-pii'
@@ -1305,7 +1359,7 @@ export function TrustCenter() {
                       : purgePreview
                         ? 'Execute purge'
                         : 'Run dry run'}
-                </button>
+                </Button>
               </div>
             </div>
           </div>

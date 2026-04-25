@@ -60,7 +60,7 @@ export function getNewPipelineUrl(): string {
 
 /** Edit existing pipeline in builder. */
 export function getEditPipelineUrl(id: string): string {
-  return `/build/pipelines?id=${encodeURIComponent(id)}`;
+  return `/build/pipelines/${encodeURIComponent(id)}/edit`;
 }
 
 /** Pattern studio. */
@@ -112,14 +112,13 @@ export function getLoginUrl(): string {
 
 /** Check if a path is the pipeline builder (new or edit). */
 export function isPipelineBuilderPath(path: string): boolean {
-  return path === BUILD_NEW_PIPELINE || path.startsWith("/build/pipelines?");
+  return path === BUILD_NEW_PIPELINE || /^\/build\/pipelines\/[^/]+\/edit$/.test(path);
 }
 
-/** Extract pipeline ID from builder edit query param. */
+/** Extract pipeline ID from builder edit path. */
 export function extractPipelineIdFromBuilderPath(path: string): string | null {
-  if (!path.startsWith("/build/pipelines?")) return null;
-  const params = new URLSearchParams(path.slice("/build/pipelines?".length));
-  return params.get("id");
+  const match = /^\/build\/pipelines\/([^/]+)\/edit$/.exec(path);
+  return match ? decodeURIComponent(match[1]) : null;
 }
 
 /** Check if a path needs live SSE data. */

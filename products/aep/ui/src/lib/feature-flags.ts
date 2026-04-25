@@ -7,48 +7,121 @@
  */
 
 /**
+ * Feature flag safety classification
+ *
+ * - GA (General Availability): on by default; disable only when explicitly set "false"
+ * - EXPERIMENTAL: off by default; enable only when explicitly set "true"
+ * - SAFETY: off by default; enable only when explicitly set "true"
+ * - ADMIN: off by default; enable only when explicitly set "true"
+ */
+type FlagClass = 'GA' | 'EXPERIMENTAL' | 'SAFETY' | 'ADMIN';
+
+const FLAG_CLASSES: Record<FeatureFlag, FlagClass> = {
+  // Run detail tabs — GA
+  EVENT_LINEAGE: 'GA',
+  AGENT_DECISIONS: 'GA',
+  POLICY_REFERENCES: 'GA',
+
+  // Governance sections — GA (operators need safety controls)
+  COMPLIANCE_REPORTS: 'GA',
+  TENANT_MANAGEMENT: 'GA',
+  AUDIT_LOG: 'GA',
+
+  // Voice/NLP — GA
+  NLQ: 'GA',
+  // Voice commands — EXPERIMENTAL (not yet fully validated)
+  VOICE_COMMANDS: 'EXPERIMENTAL',
+
+  // AI features — GA
+  AI_SUGGESTIONS: 'GA',
+  ANOMALY_DETECTION: 'GA',
+  // Smart prioritization — EXPERIMENTAL
+  SMART_PRIORITIZATION: 'EXPERIMENTAL',
+
+  // Bulk operations — SAFETY (can affect many runs)
+  BULK_OPERATIONS: 'SAFETY',
+
+  // Advanced features — ADMIN (power-user only)
+  COMMAND_PALETTE: 'ADMIN',
+  BREADCRUMBS: 'ADMIN',
+
+  // Auth migration — SAFETY (legacy fallback)
+  LEGACY_JWT_PASTE: 'SAFETY',
+};
+
+function resolveFlag(flag: FeatureFlag): boolean {
+  const cls = FLAG_CLASSES[flag];
+  const raw = import.meta.env[`VITE_FEATURE_${flag}`];
+  const explicitValue = raw === 'true' || raw === 'false' ? raw === 'true' : undefined;
+
+  switch (cls) {
+    case 'GA':
+      return explicitValue ?? true;
+    case 'EXPERIMENTAL':
+    case 'SAFETY':
+    case 'ADMIN':
+      return explicitValue ?? false;
+    default:
+      return false;
+  }
+}
+
+/**
  * Feature flag configuration
  *
- * All flags default to false for safety. Features must be explicitly
- * enabled via environment variables or configuration.
+ * Flags are resolved by safety class. GA defaults on; EXPERIMENTAL/SAFETY/ADMIN
+ * default off. All can be overridden via VITE_FEATURE_<FLAG_NAME> env vars.
  */
-export const featureFlags = {
+export const featureFlags: Record<FeatureFlag, boolean> = {
   // Run detail tabs
-  EVENT_LINEAGE: import.meta.env.VITE_FEATURE_EVENT_LINEAGE === "true",
-  AGENT_DECISIONS: import.meta.env.VITE_FEATURE_AGENT_DECISIONS === "true",
-  POLICY_REFERENCES: import.meta.env.VITE_FEATURE_POLICY_REFERENCES === "true",
+  EVENT_LINEAGE: resolveFlag('EVENT_LINEAGE'),
+  AGENT_DECISIONS: resolveFlag('AGENT_DECISIONS'),
+  POLICY_REFERENCES: resolveFlag('POLICY_REFERENCES'),
 
-  // Governance sections — enabled by default so operators can access safety controls
-  COMPLIANCE_REPORTS:
-    import.meta.env.VITE_FEATURE_COMPLIANCE_REPORTS !== "false",
-  TENANT_MANAGEMENT: import.meta.env.VITE_FEATURE_TENANT_MANAGEMENT !== "false",
-  AUDIT_LOG: import.meta.env.VITE_FEATURE_AUDIT_LOG !== "false",
+  // Governance sections
+  COMPLIANCE_REPORTS: resolveFlag('COMPLIANCE_REPORTS'),
+  TENANT_MANAGEMENT: resolveFlag('TENANT_MANAGEMENT'),
+  AUDIT_LOG: resolveFlag('AUDIT_LOG'),
 
-  // Voice/NLP features — NLQ enabled by default (backend route now wired)
-  VOICE_COMMANDS: import.meta.env.VITE_FEATURE_VOICE_COMMANDS === "true",
-  NLQ: import.meta.env.VITE_FEATURE_NLQ !== "false",
+  // Voice/NLP
+  VOICE_COMMANDS: resolveFlag('VOICE_COMMANDS'),
+  NLQ: resolveFlag('NLQ'),
 
-  // AI features — AI_SUGGESTIONS and ANOMALY_DETECTION enabled by default (routes now wired)
-  AI_SUGGESTIONS: import.meta.env.VITE_FEATURE_AI_SUGGESTIONS !== "false",
-  SMART_PRIORITIZATION:
-    import.meta.env.VITE_FEATURE_SMART_PRIORITIZATION === "true",
-  ANOMALY_DETECTION: import.meta.env.VITE_FEATURE_ANOMALY_DETECTION !== "false",
+  // AI features
+  AI_SUGGESTIONS: resolveFlag('AI_SUGGESTIONS'),
+  SMART_PRIORITIZATION: resolveFlag('SMART_PRIORITIZATION'),
+  ANOMALY_DETECTION: resolveFlag('ANOMALY_DETECTION'),
 
-  // Bulk operations
-  BULK_OPERATIONS: import.meta.env.VITE_FEATURE_BULK_OPERATIONS === "true",
+  // Bulk operations — SAFETY class
+  BULK_OPERATIONS: resolveFlag('BULK_OPERATIONS'),
 
-  // Advanced features
-  COMMAND_PALETTE: import.meta.env.VITE_FEATURE_COMMAND_PALETTE === "true",
-  BREADCRUMBS: import.meta.env.VITE_FEATURE_BREADCRUMBS === "true",
+  // Advanced features — ADMIN class
+  COMMAND_PALETTE: resolveFlag('COMMAND_PALETTE'),
+  BREADCRUMBS: resolveFlag('BREADCRUMBS'),
 
-  // Auth migration (TASK-I4): legacy JWT paste fallback — disabled by default
-  LEGACY_JWT_PASTE: import.meta.env.VITE_ENABLE_LEGACY_JWT_PASTE === "true",
-} as const;
+  // Auth migration — SAFETY class
+  LEGACY_JWT_PASTE: resolveFlag('LEGACY_JWT_PASTE'),
+};
 
 /**
  * Feature flag type
  */
-export type FeatureFlag = keyof typeof featureFlags;
+export type FeatureFlag =
+  | 'EVENT_LINEAGE'
+  | 'AGENT_DECISIONS'
+  | 'POLICY_REFERENCES'
+  | 'COMPLIANCE_REPORTS'
+  | 'TENANT_MANAGEMENT'
+  | 'AUDIT_LOG'
+  | 'VOICE_COMMANDS'
+  | 'NLQ'
+  | 'AI_SUGGESTIONS'
+  | 'SMART_PRIORITIZATION'
+  | 'ANOMALY_DETECTION'
+  | 'BULK_OPERATIONS'
+  | 'COMMAND_PALETTE'
+  | 'BREADCRUMBS'
+  | 'LEGACY_JWT_PASTE';
 
 /**
  * Check if a feature flag is enabled

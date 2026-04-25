@@ -58,6 +58,15 @@
       ],
       "@ghatana/realtime": [
         "../../../platform/typescript/realtime/dist/index.d.ts"
+      ],
+      "@ghatana/canvas/topology": [
+        "../../../platform/typescript/canvas/src/topology/index.ts"
+      ],
+      "@ghatana/canvas/flow": [
+        "../../../platform/typescript/canvas/src/flow/index.ts"
+      ],
+      "@ghatana/canvas/hybrid": [
+        "../../../platform/typescript/canvas/src/hybrid/index.ts"
       ]
     },
     "typeRoots": [

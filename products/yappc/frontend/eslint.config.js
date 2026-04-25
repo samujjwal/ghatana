@@ -118,6 +118,26 @@ const governanceRules = {
     },
   ],
 
+  // Flag StateManager usage - deprecated in favor of @ghatana/state primitives
+  'import/no-restricted-imports': [
+    'warn',
+    {
+      patterns: [
+        {
+          group: ['@yappc/state/StateManager'],
+          message:
+            '⚠️ DEPRECATED: StateManager is deprecated. Use @ghatana/state primitives (createAtom, createPersistentAtom, createDerivedAtom, createWritableDerivedAtom) instead. See audit-todo-list.md for migration details.',
+        },
+        {
+          group: ['@ghatana/yappc-ui'],
+          importNames: ['StateManager'],
+          message:
+            '⚠️ DEPRECATED: StateManager export removed from @ghatana/yappc-ui. Use @ghatana/state primitives instead.',
+        },
+      ],
+    },
+  ],
+
   // Prefer type imports
   '@typescript-eslint/consistent-type-imports': [
     'warn',

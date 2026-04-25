@@ -1,33 +1,10 @@
 /**
  * Global State Management
  *
- * Complete state management system using Jotai.
+ * Complete state management system using Jotai with @ghatana/state primitives.
  *
  * @module state
  */
-
-// State Manager
-export { StateManager } from './StateManager';
-export type { AtomKey, AtomMetadata, StateManagerConfig } from './StateManager';
-
-// Hooks
-export {
-  useGlobalState,
-  useGlobalStateValue,
-  useSetGlobalState,
-  useResetGlobalState,
-  useToggleGlobalState,
-  useCounterGlobalState,
-  useArrayGlobalState,
-  useObjectGlobalState,
-  useBatchGlobalStateUpdate,
-  useGlobalStateKeys,
-  useGlobalStateStatistics,
-} from './useGlobalState';
-
-// Provider
-export { StateProvider } from './StateProvider';
-export type { StateProviderProps } from './StateProvider';
 
 // Pre-built atoms
 export * from './atoms';

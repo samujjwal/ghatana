@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TestWrapper } from '../test-utils/wrapper';
 import { alertsSurfaceBoundary } from '@/components/common/unsupportedSurfaceRegistry';
@@ -113,7 +113,7 @@ describe('AlertsPage', () => {
 
     expect(screen.getByRole('heading', { name: 'Alerts' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Review Rules/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /AI Grouped/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Grouped by root cause/i })).toBeInTheDocument();
     expect(screen.getByText(/1 enabled rules/i)).toBeInTheDocument();
   });
 
@@ -140,8 +140,9 @@ describe('AlertsPage', () => {
   it('renders AI grouped triage from canonical alert groups', async () => {
     render(<AlertsPage />, { wrapper: TestWrapper });
 
-    expect(await screen.findByText(/AI-Detected Correlations/i)).toBeInTheDocument();
-    expect(screen.getByText('Orders pipeline degradation')).toBeInTheDocument();
+    await screen.findByTestId('alerts-grouped-section');
+    expect(screen.getAllByText(/Grouped by root cause/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Orders pipeline degradation/i)).toBeInTheDocument();
     expect(screen.getByText(/91% confidence/i)).toBeInTheDocument();
   });
 
@@ -206,6 +207,94 @@ describe('AlertsPage', () => {
     await waitFor(() => {
       expect(mockAlertsService.applySuggestion).toHaveBeenCalledWith('suggestion-1');
     });
+  });
+
+  it('requires a reason before acknowledging an alert through the GuardedAction gate', async () => {
+    const user = userEvent.setup();
+    render(<AlertsPage />, { wrapper: TestWrapper });
+
+    // Switch to list view where per-alert action buttons are visible
+    await screen.findByText('Kafka backlog spike');
+    await user.click(screen.getByRole('button', { name: /list view/i }));
+    await screen.findByText('Kafka backlog spike');
+
+    // Click the Acknowledge trigger — should open the GuardedAction dialog
+    const ackButtons = screen.getAllByRole('button', { name: /^acknowledge$/i });
+    await user.click(ackButtons[0]!);
+
+    // Dialog should now be open
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog).toBeInTheDocument();
+    expect(screen.getByText(/Acknowledge alert/i)).toBeInTheDocument();
+
+    // Confirm button should be disabled until a reason is typed
+    const confirmButtons = screen.getAllByRole('button', { name: /^acknowledge$/i });
+    const dialogConfirm = confirmButtons.find((btn) => btn.closest('[role="dialog"]'));
+    expect(dialogConfirm).toBeDisabled();
+
+    // Type a reason and confirm
+    const reasonTextarea = screen.getByPlaceholderText(/provide a brief reason/i);
+    await user.type(reasonTextarea, 'Investigating with the on-call team.');
+    expect(dialogConfirm).not.toBeDisabled();
+
+    await user.click(dialogConfirm!);
+
+    await waitFor(() => {
+      expect(mockAlertsService.acknowledgeAlert).toHaveBeenCalledWith('alert-1');
+    });
+  });
+
+  it('requires a reason before resolving an alert through the GuardedAction gate', async () => {
+    const user = userEvent.setup();
+    render(<AlertsPage />, { wrapper: TestWrapper });
+
+    await screen.findByText('Kafka backlog spike');
+    await user.click(screen.getByRole('button', { name: /list view/i }));
+    await screen.findByText('Kafka backlog spike');
+
+    // Click the Resolve trigger for the first active alert
+    const resolveButtons = screen.getAllByRole('button', { name: /^resolve$/i });
+    await user.click(resolveButtons[0]!);
+
+    // Dialog should be open with the guard impact text
+    await screen.findByRole('dialog');
+    expect(screen.getByText(/Resolve alert/i)).toBeInTheDocument();
+
+    // Confirm button disabled without a reason
+    const dialogConfirmButtons = screen.getAllByRole('button', { name: /^resolve$/i });
+    const dialogConfirm = dialogConfirmButtons.find((btn) => btn.closest('[role="dialog"]'));
+    expect(dialogConfirm).toBeDisabled();
+
+    // Type a reason
+    const reasonTextarea = screen.getByPlaceholderText(/provide a brief reason/i);
+    await user.type(reasonTextarea, 'Root cause identified and remediation deployed.');
+
+    await user.click(dialogConfirm!);
+
+    await waitFor(() => {
+      expect(mockAlertsService.resolveAlert).toHaveBeenCalledWith('alert-1');
+    });
+  });
+
+  it('cancelling the GuardedAction dialog does not invoke the alert service', async () => {
+    const user = userEvent.setup();
+    render(<AlertsPage />, { wrapper: TestWrapper });
+
+    await screen.findByText('Kafka backlog spike');
+    await user.click(screen.getByRole('button', { name: /list view/i }));
+    await screen.findByText('Kafka backlog spike');
+
+    const ackButtons = screen.getAllByRole('button', { name: /^acknowledge$/i });
+    await user.click(ackButtons[0]!);
+
+    const dialog = await screen.findByRole('dialog');
+
+    const cancelButtons = within(dialog).getAllByRole('button', { name: /cancel/i });
+    const textCancelButton = cancelButtons.find((button) => button.textContent?.trim().toLowerCase() === 'cancel');
+    await user.click(textCancelButton ?? cancelButtons[0]!);
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(mockAlertsService.acknowledgeAlert).not.toHaveBeenCalled();
   });
 
   it('surfaces an honest unsupported-state banner when the launcher does not expose alerts routes', async () => {

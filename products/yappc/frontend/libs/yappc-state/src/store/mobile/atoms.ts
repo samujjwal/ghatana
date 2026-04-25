@@ -1,7 +1,7 @@
 /**
  * Mobile State Manager Atoms
  *
- * Centralized mobile-specific state definitions powered by the shared StateManager.
+ * Centralized mobile-specific state definitions powered by @ghatana/state primitives.
  *
  * @module state/mobile/atoms
  * @doc.type module
@@ -9,7 +9,11 @@
  * @doc.layer product
  */
 
-import { StateManager } from '../StateManager';
+import {
+  createAtom,
+  createPersistentAtom,
+  createDerivedAtom,
+} from '@ghatana/state';
 
 /**
  * Namespace used for all mobile state keys.
@@ -28,9 +32,9 @@ const createMobileKey = (suffix: string): string =>
 export type MobilePlatform = 'web' | 'desktop' | 'mobile';
 
 /**
- * Tracks the active execution platform for the mobile experience.
+ * Tracks the active execution platform for the mobile shell.
  */
-export const mobilePlatformAtom = StateManager.createAtom<MobilePlatform>(
+export const mobilePlatformAtom = createAtom<MobilePlatform>(
   createMobileKey('platform'),
   'mobile',
   'Active execution platform for the mobile shell'
@@ -79,23 +83,23 @@ const createDefaultMobileSettings = (): MobileSettings => ({
  * Persistent storage for mobile application settings.
  */
 export const mobileSettingsAtom =
-  StateManager.createPersistentAtom<MobileSettings>(
+  createPersistentAtom<MobileSettings>(
     createMobileKey('settings'),
     createDefaultMobileSettings(),
     {
-      description: 'Mobile application persistent settings',
-      storage: 'local',
-    }
+      storage: 'localStorage',
+      storageKey: createMobileKey('settings'),
+    },
+    'Mobile application persistent settings'
   );
 
 /**
  * Read-only atom exposing the current mobile theme preference.
  */
 export const mobileThemePreferenceAtom =
-  StateManager.createDerivedAtom<MobileThemePreference>(
+  createDerivedAtom<MobileThemePreference>(
     createMobileKey('themePreference'),
-    (get) => get(mobileSettingsAtom).theme,
-    'Preferred theme mode selected by the user'
+    (get) => get(mobileSettingsAtom).theme
   );
 
 /**
@@ -117,7 +121,7 @@ export const resolveSystemTheme = (): 'light' | 'dark' => {
 /**
  * Tracks the detected system colour scheme for auto theme resolution.
  */
-export const mobileSystemThemeAtom = StateManager.createAtom<'light' | 'dark'>(
+export const mobileSystemThemeAtom = createAtom<'light' | 'dark'>(
   createMobileKey('systemTheme'),
   resolveSystemTheme(),
   'Detected system colour scheme for the mobile shell'
@@ -126,7 +130,7 @@ export const mobileSystemThemeAtom = StateManager.createAtom<'light' | 'dark'>(
 /**
  * Derived atom providing the effective theme taking "auto" into account.
  */
-export const resolvedMobileThemeAtom = StateManager.createDerivedAtom<
+export const resolvedMobileThemeAtom = createDerivedAtom<
   'light' | 'dark'
 >(
   createMobileKey('resolvedTheme'),
@@ -134,24 +138,21 @@ export const resolvedMobileThemeAtom = StateManager.createDerivedAtom<
     const preference = get(mobileThemePreferenceAtom);
     const systemTheme = get(mobileSystemThemeAtom);
     return preference === 'auto' ? systemTheme : preference;
-  },
-  'Resolved mobile theme considering auto preference and system settings'
+  }
 );
 
 /**
  * Derived atom exposing notification preferences for convenience.
  */
-export const mobileNotificationSettingsAtom = StateManager.createDerivedAtom(
+export const mobileNotificationSettingsAtom = createDerivedAtom(
   createMobileKey('notificationSettings'),
-  (get) => get(mobileSettingsAtom).notifications,
-  'Notification preferences for the mobile shell'
+  (get) => get(mobileSettingsAtom).notifications
 );
 
 /**
  * Derived atom exposing offline preferences for convenience.
  */
-export const mobileOfflineSettingsAtom = StateManager.createDerivedAtom(
+export const mobileOfflineSettingsAtom = createDerivedAtom(
   createMobileKey('offlineSettings'),
-  (get) => get(mobileSettingsAtom).offline,
-  'Offline preferences for the mobile shell'
+  (get) => get(mobileSettingsAtom).offline
 );

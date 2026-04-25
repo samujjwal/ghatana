@@ -2,33 +2,55 @@ import React from 'react';
 import { describe, expect, it } from 'vitest';
 
 import { getNavigationSectionsForShellRole } from '../../layouts/DefaultLayout';
+import { getDiscoverableRoutes } from '../../lib/routing/RouteCapabilityRegistry';
+
+const NAV_SURFACE_PATHS = new Set([
+  '/',
+  '/data',
+  '/pipelines',
+  '/query',
+  '/insights',
+  '/trust',
+  '/events',
+  '/alerts',
+  '/plugins',
+  '/operations',
+]);
+
+function getSectionPaths(role: 'primary-user' | 'operator' | 'admin'): string[] {
+  const sections = getNavigationSectionsForShellRole(role);
+  return sections.flatMap((section) => section.items.map((item) => item.to)).sort();
+}
+
+function getExpectedPathsFromRegistry(role: 'primary-user' | 'operator' | 'admin'): string[] {
+  return getDiscoverableRoutes(role)
+    .map((route) => route.path)
+    .filter((path) => NAV_SURFACE_PATHS.has(path))
+    .sort();
+}
 
 describe('DefaultLayout navigation progressive disclosure', () => {
-  it('keeps operator and admin routes out of the primary shell', () => {
-    const sections = getNavigationSectionsForShellRole('primary-user');
-    const labels = sections.flatMap((section) => section.items.map((item) => item.label));
+  it('matches registry discoverability for primary-user shell', () => {
+    const paths = getSectionPaths('primary-user');
 
-    expect(labels).toEqual(['Home', 'Data', 'Pipelines', 'Query']);
+    expect(paths).toEqual(getExpectedPathsFromRegistry('primary-user'));
+    expect(paths).not.toContain('/operations');
   });
 
-  it('reveals operator routes without exposing admin-only settings', () => {
-    const sections = getNavigationSectionsForShellRole('operator');
-    const labels = sections.flatMap((section) => section.items.map((item) => item.label));
+  it('matches registry discoverability for operator shell', () => {
+    const paths = getSectionPaths('operator');
 
-    expect(labels).toContain('Insights');
-    expect(labels).toContain('Trust');
-    expect(labels).toContain('Events');
-    expect(labels).not.toContain('Settings');
+    expect(paths).toEqual(getExpectedPathsFromRegistry('operator'));
+    expect(paths).toContain('/insights');
+    expect(paths).toContain('/plugins');
+    expect(paths).not.toContain('/operations');
   });
 
-  it('reveals the full shell for admins', () => {
-    const sections = getNavigationSectionsForShellRole('admin');
-    const labels = sections.flatMap((section) => section.items.map((item) => item.label));
+  it('matches registry discoverability for admin shell', () => {
+    const paths = getSectionPaths('admin');
 
-    expect(labels).toContain('Insights');
-    expect(labels).toContain('Trust');
-    expect(labels).toContain('Events');
-    expect(labels).toContain('Alerts');
-    expect(labels).not.toContain('Settings');
+    expect(paths).toEqual(getExpectedPathsFromRegistry('admin'));
+    expect(paths).toContain('/operations');
+    expect(paths).not.toContain('/settings');
   });
 });

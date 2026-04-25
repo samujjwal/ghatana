@@ -12,6 +12,7 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
+import { Button, IconButton } from '@ghatana/design-system';
 import { getCapabilitySignal, useCapabilityRegistry } from '../api/capabilities.service';
 import {
     Play,
@@ -79,32 +80,58 @@ const getStatusColor = (status: Workflow['status']) => {
 
 /**
  * Workflow Actions Component
+ *
+ * DC-UX-015: Action menu items (Run Now, Edit, View Logs, Delete) are not yet
+ * wired to the pipeline execution API. They are rendered as disabled to prevent
+ * false affordance. Enable each when the corresponding API endpoint is available.
  */
 function WorkflowActions({ workflow }: { workflow: Workflow }) {
     const [showActions, setShowActions] = useState(false);
 
     return (
         <div className="relative">
-            <button
+            <IconButton
+                variant="ghost"
+                tone="neutral"
+                size="sm"
+                icon={<MoreVertical className="h-4 w-4" />}
+                label="Workflow actions"
                 onClick={() => setShowActions(!showActions)}
-                className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-            >
-                <MoreVertical className="h-4 w-4 text-gray-400" />
-            </button>
+            />
 
             {showActions && (
-                <div className="absolute right-0 top-8 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10 min-w-[150px]">
-                    <button className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700">
+                <div className="absolute right-0 top-8 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10 min-w-[200px]">
+                    <button
+                        disabled
+                        title="Pipeline execution API not yet available"
+                        className="w-full text-left px-3 py-2 text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed"
+                    >
                         Run Now
+                        <span className="ml-2 text-xs text-amber-500">(not yet wired)</span>
                     </button>
-                    <button className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <button
+                        disabled
+                        title="Pipeline edit API not yet available"
+                        className="w-full text-left px-3 py-2 text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed"
+                    >
                         Edit
+                        <span className="ml-2 text-xs text-amber-500">(not yet wired)</span>
                     </button>
-                    <button className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <button
+                        disabled
+                        title="Pipeline log API not yet available"
+                        className="w-full text-left px-3 py-2 text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed"
+                    >
                         View Logs
+                        <span className="ml-2 text-xs text-amber-500">(not yet wired)</span>
                     </button>
-                    <button className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600">
+                    <button
+                        disabled
+                        title="Pipeline delete API not yet available"
+                        className="w-full text-left px-3 py-2 text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed"
+                    >
                         Delete
+                        <span className="ml-2 text-xs text-amber-500">(not yet wired)</span>
                     </button>
                 </div>
             )}
@@ -317,6 +344,9 @@ export function WorkflowsPage() {
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);
     const [showAdvancedDetails, setShowAdvancedDetails] = useState(false);
+    // DC-UX-017: Pagination state — replaces hard slice(0, 12)
+    const [currentPage, setCurrentPage] = useState(1);
+    const PAGE_SIZE = 20;
 
     const { data: workflowsPage, isLoading, refetch } = useQuery({
         queryKey: ['workflows', searchQuery, statusFilter],
@@ -329,7 +359,10 @@ export function WorkflowsPage() {
     });
 
     const workflows = workflowsPage?.items ?? [];
-    const visibleWorkflows = workflows.slice(0, 12);
+    // DC-UX-017: Show all workflows with pagination instead of a silent slice(0, 12)
+    const totalWorkflows = workflowsPage?.total ?? workflows.length;
+    const totalPages = Math.max(1, Math.ceil(workflows.length / PAGE_SIZE));
+    const visibleWorkflows = workflows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
     const workflowsNeedingAttention = workflows.filter((workflow) => workflow.status === 'paused' || (workflow.status === 'draft' && !workflow.lastExecutedAt)).length;
     const workflowsScheduled = workflows.filter((workflow) => workflow.schedule != null && workflow.schedule !== '').length;
     const workflowsRecentlyRun = workflows.filter((workflow) => workflow.lastExecutedAt != null).length;
@@ -351,7 +384,7 @@ export function WorkflowsPage() {
     ];
 
     return (
-        <main className="p-6" data-testid="workflows-page" aria-label="Workflows">
+        <section className="p-6" data-testid="workflows-page" aria-label="Workflows">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
                 <div>
@@ -363,15 +396,16 @@ export function WorkflowsPage() {
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <button
-                        onClick={() => refetch()}
-                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-500"
-                        title="Refresh"
-                    >
-                        <RefreshCw className="h-4 w-4" />
-                    </button>
+                    <IconButton
+                        variant="ghost"
+                        tone="neutral"
+                        icon={<RefreshCw className="h-4 w-4" />}
+                        label="Refresh workflows"
+                        onClick={() => void refetch()}
+                    />
+                    {/* DC-UX-020: single creation entry point — SmartWorkflowBuilder at /workflows/new */}
                     <Link
-                        to="/pipelines/new"
+                        to="/workflows/new"
                         data-testid="create-pipeline-button"
                         className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                     >
@@ -390,14 +424,14 @@ export function WorkflowsPage() {
                             Review the most important next action for each workflow here, then open the advanced editor only when the flow itself needs deeper changes.
                         </p>
                     </div>
-                    <button
+                    <Button
+                        variant="solid"
                         type="button"
-                        onClick={() => navigate('/pipelines/new')}
-                        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                        onClick={() => navigate('/workflows/new')}
+                        leadingIcon={<ArrowRight className="h-4 w-4" />}
                     >
                         Start a new pipeline
-                        <ArrowRight className="h-4 w-4" />
-                    </button>
+                    </Button>
                 </div>
             </div>
 
@@ -582,26 +616,28 @@ export function WorkflowsPage() {
                                             )}
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <button
+                                            <Button
                                                 type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                trailingIcon={<ArrowRight className="h-4 w-4" />}
                                                 data-testid={`advanced-editor-${workflow.id}`}
                                                 onClick={() => navigate(`/pipelines/${workflow.id}`)}
-                                                className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
                                             >
                                                 Advanced editor
-                                                <ArrowRight className="h-4 w-4" />
-                                            </button>
-                                            <button
+                                            </Button>
+                                            <Button
                                                 type="button"
+                                                variant="solid"
+                                                size="sm"
                                                 data-testid={`review-pipeline-${workflow.id}`}
                                                 onClick={() => {
                                                     setSelectedWorkflow(workflow);
                                                     setShowAdvancedDetails(false);
                                                 }}
-                                                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
                                             >
                                                 Review pipeline
-                                            </button>
+                                            </Button>
                                         </div>
                                     </div>
                                 </div>
@@ -611,6 +647,34 @@ export function WorkflowsPage() {
                 )}
             </div>
 
+            {/* DC-UX-017: Pagination controls — replaces silent slice(0, 12) */}
+            {workflows.length > PAGE_SIZE && (
+                <div className="mt-4 flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
+                    <span>
+                        Showing {((currentPage - 1) * PAGE_SIZE) + 1}–{Math.min(currentPage * PAGE_SIZE, workflows.length)} of {workflows.length} workflows
+                    </span>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                        >
+                            Previous
+                        </Button>
+                        <span className="px-2">Page {currentPage} of {totalPages}</span>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages}
+                        >
+                            Next
+                        </Button>
+                    </div>
+                </div>
+            )}
+
             {/* Workflow Detail Modal */}
             {selectedWorkflow && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -619,12 +683,13 @@ export function WorkflowsPage() {
                             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                                 {selectedWorkflow.name}
                             </h2>
-                            <button
+                            <IconButton
+                                variant="ghost"
+                                tone="neutral"
+                                icon={<XCircle className="h-5 w-5" />}
+                                label="Close workflow detail"
                                 onClick={() => setSelectedWorkflow(null)}
-                                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-                            >
-                                <XCircle className="h-5 w-5 text-gray-400" />
-                            </button>
+                            />
                         </div>
 
                         <div className="space-y-4">
@@ -660,6 +725,7 @@ export function WorkflowsPage() {
                                 )}
                             </div>
 
+                            {/* DC-UX-019: Execution visibility — show outcome + duration next to timestamp */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Status</h3>
@@ -673,18 +739,34 @@ export function WorkflowsPage() {
                                 <div>
                                     <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Latest run</h3>
                                     <p className="text-gray-900 dark:text-white text-sm">{formatRunTime(selectedWorkflow.lastExecutedAt)}</p>
+                                    {selectedWorkflow.lastExecutionStatus && (
+                                        <p className={cn(
+                                            'mt-1 text-xs font-medium capitalize',
+                                            selectedWorkflow.lastExecutionStatus === 'completed' && 'text-green-600 dark:text-green-400',
+                                            selectedWorkflow.lastExecutionStatus === 'failed' && 'text-red-600 dark:text-red-400',
+                                            selectedWorkflow.lastExecutionStatus === 'running' && 'text-blue-600 dark:text-blue-400',
+                                            selectedWorkflow.lastExecutionStatus === 'cancelled' && 'text-gray-500',
+                                            selectedWorkflow.lastExecutionStatus === 'pending' && 'text-amber-600 dark:text-amber-400',
+                                        )}>
+                                            {selectedWorkflow.lastExecutionStatus}
+                                            {selectedWorkflow.lastExecutionDuration != null && ` · ${(selectedWorkflow.lastExecutionDuration / 1000).toFixed(1)}s`}
+                                        </p>
+                                    )}
+                                    {!selectedWorkflow.lastExecutionStatus && selectedWorkflow.lastExecutedAt && (
+                                        <p className="mt-1 text-xs text-gray-400">Outcome not available</p>
+                                    )}
                                 </div>
                             </div>
 
-                            <button
+                            <Button
                                 type="button"
+                                variant="link"
                                 data-testid="workflow-advanced-toggle"
+                                leadingIcon={showAdvancedDetails ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                                 onClick={() => setShowAdvancedDetails((current) => !current)}
-                                className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                             >
-                                {showAdvancedDetails ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                                 {showAdvancedDetails ? 'Hide pipeline details' : 'Show pipeline details'}
-                            </button>
+                            </Button>
 
                             {showAdvancedDetails && (
                                 <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/40">
@@ -728,27 +810,39 @@ export function WorkflowsPage() {
                                 </div>
                             )}
 
+                            {/* DC-UX-016: Run Now / Pause are inert until pipeline execution API is wired */}
                             <div className="flex gap-2 pt-4">
-                                <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                                    <Play className="h-4 w-4" />
+                                <Button
+                                    variant="solid"
+                                    disabled
+                                    title="Pipeline execution API not yet available"
+                                    leadingIcon={<Play className="h-4 w-4" />}
+                                >
                                     Run Now
-                                </button>
-                                <button className="flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">
-                                    <Pause className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    disabled
+                                    title="Pipeline execution API not yet available"
+                                    leadingIcon={<Pause className="h-4 w-4" />}
+                                >
                                     Pause
-                                </button>
-                                <button
+                                </Button>
+                                <Button
+                                    variant="outline"
                                     onClick={() => navigate(`/pipelines/${selectedWorkflow.id}`)}
-                                    className="flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
                                 >
                                     Advanced editor
-                                </button>
+                                </Button>
                             </div>
+                            <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                                Run and pause controls require the pipeline execution API. Contact your operator to trigger a run.
+                            </p>
                         </div>
                     </div>
                 </div>
             )}
-        </main>
+        </section>
     );
 }
 

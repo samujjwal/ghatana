@@ -373,8 +373,6 @@ export {
   useGlobalStateKeys,
   useGlobalStateStatistics,
 } from '@yappc/state';
-export { StateManager } from '@yappc/state';
-export type { AtomKey, AtomMetadata, StateManagerConfig } from '@yappc/state';
 export {
   configQueryKeys,
   usePersonas,

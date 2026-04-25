@@ -26,10 +26,10 @@ java {
 dependencies {
     // Platform plugin dependency
     implementation(project(":platform-kernel:kernel-plugin"))
-    // TODO(ADAPTER-SEAM): knowledge-graph access should be hidden behind a DataStorePort.
-    //   Move the actual DataCloud dependency to infrastructure:datacloud; inject via interface.
-    implementation(project(":products:data-cloud:platform-launcher"))
-    implementation(project(":products:data-cloud:platform-plugins"))
+    // YAPPC shared utilities (includes DataStorePort for adapter seam)
+    implementation(project(":products:yappc:core:yappc-shared"))
+    // YAPPC infrastructure (includes DataCloudDataStoreAdapter implementation)
+    implementation(project(":products:yappc:core:yappc-infrastructure"))
     implementation(project(":products:yappc:core:yappc-services"))
     implementation(project(":products:yappc:libs:java:yappc-domain"))
     implementation(project(":products:yappc:core:ai"))

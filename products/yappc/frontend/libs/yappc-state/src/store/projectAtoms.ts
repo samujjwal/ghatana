@@ -2,7 +2,7 @@
  * Project State Atoms
  *
  * Jotai atoms for project selection, listing, loading state, and errors.
- * All atoms use StateManager factory methods for consistent registration.
+ * All atoms use @ghatana/state factory methods for consistent registration.
  *
  * @module state/projectAtoms
  * @doc.type module
@@ -12,11 +12,14 @@
  */
 
 import { atom } from 'jotai';
-import type { WritableAtom } from 'jotai';
 
 import type { Project } from '@yappc/core/types';
 
-import { StateManager } from './StateManager';
+import {
+  createAtom,
+  createPersistentAtom,
+  createDerivedAtom,
+} from '@ghatana/state';
 
 // ============================================================================
 // Primitive atoms
@@ -26,17 +29,17 @@ import { StateManager } from './StateManager';
  * ID of the currently-selected project.
  * Persisted to sessionStorage so it survives soft navigations but resets on new sessions.
  */
-export const currentProjectIdAtom = StateManager.createPersistentAtom<
+export const currentProjectIdAtom = createPersistentAtom<
   string | null
 >('project:currentId', null, {
-  description: 'Currently selected project ID',
-  storage: 'session',
+  storage: 'sessionStorage',
+  storageKey: 'project:currentId',
 });
 
 /**
  * Full list of projects for the currently-active workspace.
  */
-export const projectsAtom = StateManager.createAtom<Project[]>(
+export const projectsAtom = createAtom<Project[]>(
   'project:list',
   [],
   'Projects in the active workspace'
@@ -45,7 +48,7 @@ export const projectsAtom = StateManager.createAtom<Project[]>(
 /**
  * Whether project data is currently being loaded.
  */
-export const projectLoadingAtom = StateManager.createAtom<boolean>(
+export const projectLoadingAtom = createAtom<boolean>(
   'project:loading',
   false,
   'Project data loading flag'
@@ -54,7 +57,7 @@ export const projectLoadingAtom = StateManager.createAtom<boolean>(
 /**
  * Last project-related error, or null if there is none.
  */
-export const projectErrorAtom = StateManager.createAtom<Error | null>(
+export const projectErrorAtom = createAtom<Error | null>(
   'project:error',
   null,
   'Project operation error'
@@ -67,27 +70,24 @@ export const projectErrorAtom = StateManager.createAtom<Error | null>(
 /**
  * The current Project object, derived from currentProjectIdAtom + projectsAtom.
  */
-export const currentProjectAtom =
-  StateManager.createDerivedAtom<Project | null>(
-    'project:current',
-    (get) => {
-      const id = get(currentProjectIdAtom);
-      const projects = get(projectsAtom);
-      return id ? (projects.find((p) => p.id === id) ?? null) : null;
-    },
-    'Currently selected project object'
-  );
+export const currentProjectAtom = createDerivedAtom<Project | null>(
+  'project:current',
+  (get) => {
+    const id = get(currentProjectIdAtom);
+    const projects = get(projectsAtom);
+    return id ? (projects.find((p) => p.id === id) ?? null) : null;
+  }
+);
 
 /**
  * Derived atom: projects filtered to ACTIVE status.
  */
-export const activeProjectsAtom = StateManager.createDerivedAtom<Project[]>(
+export const activeProjectsAtom = createDerivedAtom<Project[]>(
   'project:activeList',
   (get) => {
     const projects = get(projectsAtom);
     return projects.filter((p) => p.status === 'ACTIVE');
-  },
-  'Active projects only'
+  }
 );
 
 // ============================================================================

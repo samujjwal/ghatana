@@ -841,6 +841,90 @@ module.exports = {
     },
 
     /**
+     * Rule: prefer-design-system-primitives
+     *
+     * Warns when raw HTML form elements and buttons are used instead of
+     * @ghatana/design-system components. Helps enforce consistent UX,
+     * accessibility, and styling across all product surfaces.
+     *
+     * Excluded:
+     *   - Files inside @ghatana/design-system (they implement the primitives)
+     *   - Files that already import from @ghatana/design-system
+     */
+    "prefer-design-system-primitives": {
+      meta: {
+        type: "suggestion",
+        docs: {
+          description:
+            "Prefer @ghatana/design-system components over raw HTML elements",
+          category: "Best Practices",
+          recommended: true,
+        },
+        schema: [],
+        messages: {
+          rawPrimitive:
+            "⚠️ Raw <{{tag}}> element detected. " +
+            "Consider using '{{dsComponent}}' from '@ghatana/design-system' for consistent accessibility and styling.",
+        },
+      },
+
+      create(context) {
+        const currentFilePath = context.getFilename();
+        // Skip design-system package itself
+        if (currentFilePath.includes("/platform/typescript/design-system/")) {
+          return {};
+        }
+
+        // Check if the file already imports from design-system
+        let hasDsImport = false;
+        const DS_PRIMITIVES = new Map([
+          ["button", "Button"],
+          ["input", "Input (or TextField)"],
+          ["select", "Select"],
+          ["textarea", "Textarea (or TextField)"],
+          ["label", "Label"],
+          ["progress", "Progress"],
+          ["input[type=\"checkbox\"]", "Checkbox"],
+          ["input[type=\"radio\"]", "RadioGroup"],
+        ]);
+
+        const sourceCode = context.getSourceCode();
+        const ast = sourceCode.ast;
+        if (ast.type === "Program" || ast.type === "File") {
+          const body = ast.body || (ast.program && ast.program.body);
+          if (Array.isArray(body)) {
+            for (const node of body) {
+              if (
+                node.type === "ImportDeclaration" &&
+                String(node.source.value).startsWith("@ghatana/design-system")
+              ) {
+                hasDsImport = true;
+                break;
+              }
+            }
+          }
+        }
+
+        return {
+          JSXOpeningElement(node) {
+            const tag = node.name.name;
+            if (!DS_PRIMITIVES.has(tag)) return;
+
+            // Don't flag if the file already uses design-system
+            if (hasDsImport) return;
+
+            const dsComponent = DS_PRIMITIVES.get(tag);
+            context.report({
+              node,
+              messageId: "rawPrimitive",
+              data: { tag, dsComponent },
+            });
+          },
+        };
+      },
+    },
+
+    /**
      * Rule: no-platform-datagrid-duplicate
      *
      * Prevents direct imports from platform/typescript/data-grid when

@@ -14,6 +14,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { Button, IconButton, Select } from '@ghatana/design-system';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
     Sparkles,
@@ -34,12 +35,12 @@ import {
     cardStyles,
     textStyles,
     bgStyles,
-    buttonStyles,
     metricCardStyles,
 } from '../lib/theme';
 import { AlertRuleForm, type AlertRule } from '../components/alerts/AlertRuleForm';
 import { UnsupportedSurfaceBoundary } from '../components/common/UnsupportedSurfaceBoundary';
 import { SearchFilterBar } from '../components/common/SearchFilterBar';
+import { GuardedAction } from '../components/common/GuardedAction';
 import { alertsSurfaceBoundary } from '../components/common/unsupportedSurfaceRegistry';
 import { ALERTS_UNSUPPORTED_MESSAGE, alertsService } from '../api/alerts.service';
 import type { Alert, AlertGroup, ResolutionSuggestion, AlertSeverity, AlertStatus } from '../api/alerts.service';
@@ -113,21 +114,18 @@ function AlertGroupCard({
                 </div>
                 <div className="flex items-center gap-3">
                     {group.suggestedActionType === 'auto' && (
-                        <button
+                        <Button
+                            variant="solid"
+                            tone="success"
+                            size="sm"
+                            leadingIcon={<Zap className="h-3 w-3" />}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 onResolveGroup();
                             }}
-                            className={cn(
-                                'flex items-center gap-1 px-3 py-1.5 rounded-lg',
-                                'bg-green-600 hover:bg-green-700',
-                                'text-white text-sm font-medium',
-                                'transition-colors'
-                            )}
                         >
-                            <Zap className="h-3 w-3" />
                             Auto-resolve
-                        </button>
+                        </Button>
                     )}
                     {expanded ? (
                         <ChevronDown className="h-5 w-5 text-gray-400" />
@@ -206,12 +204,14 @@ function ResolutionSuggestionCard({
                                 {Math.round(suggestion.confidence * 100)}% confidence
                             </span>
                             {suggestion.steps && (
-                                <button
+                                <Button
+                                    variant="link"
+                                    size="sm"
+                                    tone="success"
                                     onClick={() => setShowSteps(!showSteps)}
-                                    className="text-xs text-green-600 dark:text-green-400 hover:underline"
                                 >
                                     {showSteps ? 'Hide steps' : 'Show steps'}
-                                </button>
+                                </Button>
                             )}
                         </div>
                         {showSteps && suggestion.steps && (
@@ -225,25 +225,24 @@ function ResolutionSuggestionCard({
                 </div>
                 <div className="flex items-center gap-2">
                     {suggestion.canAutoResolve && (
-                        <button
+                        <Button
+                            variant="solid"
+                            tone="success"
+                            size="sm"
+                            leadingIcon={<Play className="h-3 w-3" />}
                             onClick={onApply}
-                            className={cn(
-                                'flex items-center gap-1 px-2 py-1 rounded',
-                                'bg-green-600 hover:bg-green-700',
-                                'text-white text-xs',
-                                'transition-colors'
-                            )}
                         >
-                            <Play className="h-3 w-3" />
                             Apply
-                        </button>
+                        </Button>
                     )}
-                    <button
+                    <IconButton
+                        variant="ghost"
+                        tone="neutral"
+                        size="sm"
+                        icon={<X className="h-4 w-4" />}
+                        label="Dismiss suggestion"
                         onClick={onDismiss}
-                        className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
-                    >
-                        <X className="h-4 w-4 text-gray-400" />
-                    </button>
+                    />
                 </div>
             </div>
         </div>
@@ -489,16 +488,16 @@ export function AlertsPage(): React.ReactElement {
                     <p className={textStyles.muted}>Triage active incidents first, then step into grouped root-cause review or rule maintenance only when needed.</p>
                 </div>
                 <div className="flex gap-2">
-                    <button
+                    <Button
+                        variant="outline"
                         onClick={() => {
                             setShowRuleManagement((current) => !current);
                         }}
                         data-testid="alert-rule-management-toggle"
-                        className={buttonStyles.secondary}
                         disabled={alertsUnsupported}
                     >
                         {showRuleManagement ? 'Hide Rule Management' : 'Review Rules'}
-                    </button>
+                    </Button>
                 </div>
             </div>
 
@@ -573,13 +572,14 @@ export function AlertsPage(): React.ReactElement {
                             <p className={textStyles.label}>Rule Management</p>
                             <p className={textStyles.h3}>{enabledRuleCount} enabled rules</p>
                         </div>
-                        <button
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            leadingIcon={showRuleManagement ? <EyeOff className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                             onClick={() => setShowRuleManagement((current) => !current)}
-                            className={cn(buttonStyles.secondary, buttonStyles.sm)}
                         >
-                            {showRuleManagement ? <EyeOff className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                             {showRuleManagement ? 'Collapse' : 'Expand'}
-                        </button>
+                        </Button>
                     </div>
                     <p className={textStyles.muted}>
                         Keep rule editing out of the main triage path unless an alert pattern needs to be changed.
@@ -587,12 +587,13 @@ export function AlertsPage(): React.ReactElement {
 
                     {showRuleManagement && (
                         <div className="mt-4 space-y-3">
-                            <button
+                            <Button
+                                variant="solid"
+                                size="sm"
                                 onClick={openCreateRuleForm}
-                                className={cn(buttonStyles.primary, buttonStyles.sm)}
                             >
                                 + Create Alert Rule
-                            </button>
+                            </Button>
                             {alertRules.slice(0, 5).map((rule) => (
                                 <button
                                     key={rule.id ?? rule.name}
@@ -621,32 +622,37 @@ export function AlertsPage(): React.ReactElement {
             {/* Filters */}
             <div className="flex items-center justify-between gap-4 mb-6">
                 <div className="flex gap-4">
-                    <select
+                    <Select
                         value={filter}
                         onChange={(e) => setFilter(e.target.value as 'all' | AlertSeverity)}
-                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm"
-                    >
-                        <option value="all">All Severities</option>
-                        <option value="critical">Critical</option>
-                        <option value="warning">Warning</option>
-                        <option value="info">Info</option>
-                    </select>
-                    <select
+                        aria-label="Filter by severity"
+                        size="sm"
+                        options={[
+                            { value: 'all', label: 'All Severities' },
+                            { value: 'critical', label: 'Critical' },
+                            { value: 'warning', label: 'Warning' },
+                            { value: 'info', label: 'Info' },
+                        ]}
+                    />
+                    <Select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value as 'all' | AlertStatus)}
-                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm"
-                    >
-                        <option value="all">All Statuses</option>
-                        <option value="active">Active</option>
-                        <option value="acknowledged">Acknowledged</option>
-                        <option value="resolved">Resolved</option>
-                    </select>
+                        aria-label="Filter by status"
+                        size="sm"
+                        options={[
+                            { value: 'all', label: 'All Statuses' },
+                            { value: 'active', label: 'Active' },
+                            { value: 'acknowledged', label: 'Acknowledged' },
+                            { value: 'resolved', label: 'Resolved' },
+                        ]}
+                    />
                 </div>
 
                 {/* View Mode Toggle */}
-                <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+                <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg" role="group" aria-label="Alert view mode">
                     <button
                         onClick={() => setViewMode('grouped')}
+                        aria-pressed={viewMode === 'grouped'}
                         className={cn(
                             'flex items-center gap-2 px-3 py-1.5 rounded-md text-sm',
                             viewMode === 'grouped'
@@ -655,10 +661,11 @@ export function AlertsPage(): React.ReactElement {
                         )}
                     >
                         <Sparkles className="h-4 w-4" />
-                        AI Grouped
+                        Grouped by root cause
                     </button>
                     <button
                         onClick={() => setViewMode('list')}
+                        aria-pressed={viewMode === 'list'}
                         className={cn(
                             'flex items-center gap-2 px-3 py-1.5 rounded-md text-sm',
                             viewMode === 'list'
@@ -671,12 +678,12 @@ export function AlertsPage(): React.ReactElement {
                 </div>
             </div>
 
-            {/* AI Grouped View */}
+            {/* Grouped by root cause view */}
             {viewMode === 'grouped' && alertGroups.length > 0 && (
                 <div className="mb-6" data-testid="alerts-grouped-section">
                     <div className="flex items-center gap-2 mb-4">
                         <Sparkles className="h-5 w-5 text-purple-500" />
-                        <h2 className={textStyles.h3}>AI-Detected Correlations</h2>
+                        <h2 className={textStyles.h3}>Grouped by root cause</h2>
                         <span className="text-xs px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded">
                             {alertGroups.length} groups found
                         </span>
@@ -768,22 +775,53 @@ export function AlertsPage(): React.ReactElement {
                                 </p>
                             </div>
                             <div className="flex gap-2">
-                                {alert.status === 'active' && (
-                                    <button
-                                        onClick={() => acknowledgeMutation.mutate(alert.id)}
-                                        className={cn(buttonStyles.secondary, buttonStyles.sm)}
-                                    >
-                                        Acknowledge
-                                    </button>
-                                )}
-                                {alert.status !== 'resolved' && (
-                                    <button
-                                        onClick={() => resolveMutation.mutate(alert.id)}
-                                        className={cn(buttonStyles.success, buttonStyles.sm)}
-                                    >
-                                        Resolve
-                                    </button>
-                                )}
+                                    {alert.status === 'active' && (
+                                        <GuardedAction
+                                            label="Acknowledge alert"
+                                            impact={`Alert "${alert.title}" will be marked as acknowledged. It will remain visible but suppressed from critical notifications.`}
+                                            requiresReason
+                                            reasonPrompt="Why are you acknowledging this alert? (recorded for audit)"
+                                            confirmLabel="Acknowledge"
+                                            onConfirm={(_reason) => { acknowledgeMutation.mutate(alert.id); }}
+                                            isExecuting={acknowledgeMutation.isPending}
+                                            data-testid={`guarded-acknowledge-${alert.id}`}
+                                        >
+                                            {({ open }) => (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    loading={acknowledgeMutation.isPending}
+                                                    onClick={open}
+                                                >
+                                                    Acknowledge
+                                                </Button>
+                                            )}
+                                        </GuardedAction>
+                                    )}
+                                    {alert.status !== 'resolved' && (
+                                        <GuardedAction
+                                            label="Resolve alert"
+                                            impact={`Alert "${alert.title}" will be marked as resolved and closed. This action is final — contact your team lead to reopen if needed.`}
+                                            requiresReason
+                                            reasonPrompt="What resolved this alert? (recorded for audit)"
+                                            confirmLabel="Resolve"
+                                            onConfirm={(_reason) => { resolveMutation.mutate(alert.id); }}
+                                            isExecuting={resolveMutation.isPending}
+                                            data-testid={`guarded-resolve-${alert.id}`}
+                                        >
+                                            {({ open }) => (
+                                                <Button
+                                                    variant="solid"
+                                                    tone="success"
+                                                    size="sm"
+                                                    loading={resolveMutation.isPending}
+                                                    onClick={open}
+                                                >
+                                                    Resolve
+                                                </Button>
+                                            )}
+                                        </GuardedAction>
+                                    )}
                             </div>
                         </div>
                     </div>

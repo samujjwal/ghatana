@@ -30,7 +30,6 @@ import {
   Sparkles,
   TrendingUp,
   AlertTriangle,
-  Clock,
   ArrowRight,
   Plus,
   Search,
@@ -40,7 +39,6 @@ import {
   Play,
   FileText,
   Table2,
-  Layers,
   User,
   Wrench,
 } from 'lucide-react';
@@ -530,11 +528,6 @@ export function IntelligentHub(): React.ReactElement {
     mutationFn: logActivity,
   });
 
-  const quickActions = useMemo(
-    () => buildQuickActions(navigate, logActivityMutation, shellRole),
-    [logActivityMutation, navigate, shellRole],
-  );
-
   // Insights — using real data wherever available; filtered by persona
   const insights: Insight[] = [
     {
@@ -636,47 +629,6 @@ export function IntelligentHub(): React.ReactElement {
     return actions;
   }, [collectionsPage?.total, navigate, recentActivity.length, shellRole, workflowsPage?.total, persona]);
 
-  const recommendationCards = useMemo(
-    () => [
-      {
-        id: 'query',
-        title: 'Ask a live data question',
-        description: 'Route intent into the SQL workspace instead of starting from a module picker.',
-        icon: <TrendingUp className="h-4 w-4 text-purple-600" />,
-        iconClassName: 'bg-purple-100 dark:bg-purple-900/50',
-      },
-      ...(persona === 'operator' || persona === 'admin'
-        ? [
-          {
-            id: 'trust',
-            title: 'Review trust and retention actions',
-            description: 'Trust Center remains the canonical place for purge, redaction, and audit review.',
-            icon: <AlertTriangle className="h-4 w-4 text-amber-600" />,
-            iconClassName: 'bg-amber-100 dark:bg-amber-900/50',
-          },
-          {
-            id: 'ops',
-            title: 'Inspect runtime health before acting on failures',
-            description: 'Use Insights for operator diagnostics instead of the unsupported alerts surface.',
-            icon: <Clock className="h-4 w-4 text-green-600" />,
-            iconClassName: 'bg-green-100 dark:bg-green-900/50',
-          },
-        ]
-        : [
-          {
-            id: 'mode',
-            title: persona === 'primary'
-              ? 'Stay focused — switch persona when you need deeper controls'
-              : 'Switch personas in the header to access operator or admin surfaces',
-            description: 'Operator and admin surfaces are hidden by default. Switch workspace view when you need them.',
-            icon: <Layers className="h-4 w-4 text-green-600" />,
-            iconClassName: 'bg-green-100 dark:bg-green-900/50',
-          },
-        ]),
-    ],
-    [persona],
-  );
-
   // Handle ask anything
   const handleAskAnything = useCallback((query: string) => {
     const intent = classifyOutcomeIntent(query);
@@ -715,10 +667,10 @@ export function IntelligentHub(): React.ReactElement {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            {/* Persona Switcher — IA-004 progressive disclosure */}
-            <div className="hidden sm:flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1" data-testid="persona-switcher">
+            {/* View mode switcher — IA-004 progressive disclosure; does not change backend permissions */}
+            <div className="hidden sm:flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1" data-testid="persona-switcher" aria-label="View mode">
               {([
-                { id: 'primary' as Persona, label: 'Primary', icon: <User className="h-3.5 w-3.5" /> },
+                { id: 'primary' as Persona, label: 'Standard', icon: <User className="h-3.5 w-3.5" /> },
                 { id: 'operator' as Persona, label: 'Operator', icon: <Wrench className="h-3.5 w-3.5" /> },
                 { id: 'admin' as Persona, label: 'Admin', icon: <Shield className="h-3.5 w-3.5" /> },
               ] as { id: Persona; label: string; icon: React.ReactNode }[]).map((p) => (
@@ -742,39 +694,14 @@ export function IntelligentHub(): React.ReactElement {
           </div>
         </header>
 
-        {/* Content Area */}
-        <main className="flex-1 overflow-y-auto p-6">
-          <section className="mb-8" data-testid="intelligent-hub-outcome-section">
-            <div className="mb-4">
-              <p className="text-sm font-medium uppercase tracking-wide text-gray-500">Start with an outcome</p>
-              <h2 className="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">
-                Launch the next action without choosing the architecture first
-              </h2>
-              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                {persona === 'primary'
-                  ? 'Primary mode keeps the launcher focused on query and workflow outcomes. Switch persona for diagnostics, trust, and admin controls.'
-                  : persona === 'operator'
-                    ? 'Operator mode exposes diagnostics, trust workflows, alerts, events, and runtime investigation paths inline.'
-                    : 'Admin mode surfaces privileged controls, system settings, and blast-radius warnings. Use with caution.'}
-              </p>
-            </div>
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-4">
-              {outcomeActions.map((action) => (
-                <OutcomeActionCard key={action.id} action={action} />
-              ))}
-            </div>
-          </section>
+        {/* Content Area — DC-UX-008: Prioritized work queue layout */}
+        <section className="flex-1 overflow-y-auto p-6">
 
-          {/* Ask Anything */}
-          <section className="mb-8" data-testid="intelligent-hub-intent-input">
-            <AskAnythingInput onSubmit={handleAskAnything} />
-          </section>
-
-          {/* Continue Working */}
+          {/* 1. Resume work — most important for returning users */}
           {continueWorking.length > 0 && (
             <section className="mb-8" data-testid="intelligent-hub-continue-working">
-              <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-4">
-                Continue Working
+              <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
+                Continue Where You Left Off
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {continueWorking.map((item) => (
@@ -788,80 +715,60 @@ export function IntelligentHub(): React.ReactElement {
             </section>
           )}
 
-          {/* Quick Actions */}
-          <section className="mb-8" data-testid="intelligent-hub-quick-actions">
-            <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-4">
-              Quick Actions
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {quickActions.map((action) => (
-                <QuickActionCard key={action.id} action={action} />
+          {/* 2. What to do next — one outcome at a time */}
+          <section className="mb-8" data-testid="intelligent-hub-outcome-section">
+            <div className="mb-4">
+              <p className="text-sm font-medium uppercase tracking-wide text-gray-500">Next action</p>
+              <h2 className="mt-1 text-xl font-semibold text-gray-900 dark:text-gray-100">
+                {persona === 'primary'
+                  ? 'Query your data or build a pipeline'
+                  : persona === 'operator'
+                    ? 'Inspect, review trust, and manage operational health'
+                    : 'Admin controls — check blast radius before acting'}
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-4">
+              {outcomeActions.map((action) => (
+                <OutcomeActionCard key={action.id} action={action} />
               ))}
             </div>
           </section>
 
-          {/* Insights */}
+          {/* 3. Natural language intent */}
+          <section className="mb-8" data-testid="intelligent-hub-intent-input">
+            <AskAnythingInput onSubmit={handleAskAnything} />
+          </section>
+
+          {/* 4. Key metrics — only the most useful numbers */}
           <section className="mb-8" data-testid="intelligent-hub-insights">
             <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-4">
-              Insights
+              Platform snapshot
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {insights.map((insight) => (
                 <InsightCard key={insight.id} insight={insight} />
               ))}
             </div>
           </section>
 
-          {/* Two Column Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Recent Activity */}
+          {/* 5. Recent activity — only when populated */}
+          {recentActivity.length > 0 && (
             <section data-testid="intelligent-hub-recent-activity">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">
                   Recent Activity
                 </h2>
-                <button className="text-xs text-primary-600 dark:text-primary-400 hover:underline">
-                  View all
-                </button>
               </div>
               <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
                 <div className="divide-y divide-gray-100 dark:divide-gray-700">
-                  {recentActivity.map((item) => (
+                  {recentActivity.slice(0, 6).map((item) => (
                     <RecentActivityItem key={item.id} item={item} />
                   ))}
                 </div>
               </div>
             </section>
-
-            {/* Recommended Next Steps */}
-            <section data-testid="intelligent-hub-recommendations">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">
-                  Recommended Next Steps
-                </h2>
-              </div>
-              <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4">
-                <div className="space-y-3">
-                  {recommendationCards.map((card) => (
-                    <div key={card.id} className="flex items-start gap-3 p-3 bg-white/80 dark:bg-gray-800/80 rounded-lg">
-                      <div className={cn('p-1.5 rounded', card.iconClassName)}>
-                        {card.icon}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                          {card.title}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          {card.description}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </section>
-          </div>
-        </main>
+          )}
+        </section>
 
         {/* Ambient Intelligence Bar */}
         <AmbientIntelligenceBar />

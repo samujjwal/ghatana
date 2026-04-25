@@ -374,6 +374,7 @@ export function App() {
 
                 <Route path="/build/pipelines" element={<PipelineListPage />} />
                 <Route path="/build/pipelines/new" element={<PipelineBuilderPage />} />
+                <Route path="/build/pipelines/:pipelineId/edit" element={<PipelineBuilderPage />} />
                 <Route path="/build/patterns" element={<PatternStudioPage />} />
 
                 <Route path="/learn/episodes" element={<Navigate to="/build/patterns?tab=learning" replace />} />
@@ -382,7 +383,7 @@ export function App() {
                 <Route path="/govern" element={<GovernancePage />} />
 
                 <Route path="/catalog/agents" element={<AgentRegistryPage />} />
-                <Route path="/catalog/agents/:agentId" element={<Navigate to="/catalog/agents" replace />} />
+                <Route path="/catalog/agents/:agentId" element={<AgentRegistryPage />} />
                 <Route path="/catalog/marketplace" element={<AgentMarketplacePage />} />
                 <Route path="/catalog/workflows" element={<WorkflowCatalogPage />} />
 

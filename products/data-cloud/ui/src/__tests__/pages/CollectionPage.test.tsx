@@ -183,7 +183,29 @@ describe('EditCollectionPage', () => {
         });
     });
 
+    it('loads the collection by the route ID from useParams - durable deep-link contract', async () => {
+        // Simulate a direct navigation to /data/col-xyz (deep-link)
+        mockUseParams.mockReturnValue({ id: 'col-xyz' });
+        mockGetCollection.mockResolvedValue({
+            id: 'col-xyz',
+            name: 'Deep-Linked Collection',
+            description: 'Loaded via direct URL',
+            schema: { fields: [] },
+        } as never);
+
+        render(<EditCollectionPage />, { wrapper: TestWrapper });
+
+        // The component must call the canonical get API with the route ID, not a list fetch
+        await waitFor(() => {
+            expect(mockGetCollection).toHaveBeenCalledWith('col-xyz');
+        });
+
+        // The loaded collection detail is surfaced in the form
+        expect(await screen.findByTestId('initial-name')).toHaveTextContent('Deep-Linked Collection');
+    });
+
     it('uses the cancel action to navigate back to the collection detail page', async () => {
+
         mockGetCollection.mockResolvedValue({
             id: 'col-123', name: 'Existing Collection', description: 'A test', schema: { fields: [] },
         } as never);

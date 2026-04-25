@@ -47,6 +47,10 @@ function pipelineToWorkflow(p: BackendPipeline): Workflow {
         updatedAt: String(p.updatedAt ?? new Date().toISOString()),
         createdBy: String(p.createdBy ?? 'unknown'),
         lastExecutedAt: p.lastExecutedAt ? String(p.lastExecutedAt) : undefined,
+        lastExecutionStatus: (p as { lastExecutionStatus?: string }).lastExecutionStatus as Workflow['lastExecutionStatus'] | undefined,
+        lastExecutionDuration: typeof (p as { lastExecutionDuration?: unknown }).lastExecutionDuration === 'number'
+            ? (p as { lastExecutionDuration: number }).lastExecutionDuration
+            : undefined,
     };
 }
 
@@ -99,8 +103,10 @@ export interface Workflow {
     createdAt: string;
     updatedAt: string;
     createdBy: string;
-    lastExecutedAt?: string;
-}
+    lastExecutedAt?: string;    /** DC-UX-019: last execution outcome, mapped from lastExecutionStatus on the pipeline response */
+    lastExecutionStatus?: 'completed' | 'failed' | 'cancelled' | 'running' | 'pending';
+    /** DC-UX-019: last execution duration in ms */
+    lastExecutionDuration?: number;}
 
 /**
  * Workflow execution
@@ -177,8 +183,15 @@ export const workflowsApi = {
      */
     list: async (params?: WorkflowQueryParams): Promise<PaginatedResponse<Workflow>> => {
         const limit = params?.pageSize ?? 50;
+        // DC-UX-018: Pass all supported filter/sort params to the backend instead of silently dropping them
         const rawResponse = await apiClient.get<BackendPipelineListResponse>('/pipelines', {
-            params: { limit, ...(params?.status ? { status: params.status } : {}) },
+            params: {
+                limit,
+                ...(params?.status ? { status: params.status } : {}),
+                ...(params?.search ? { search: params.search } : {}),
+                ...(params?.sortBy ? { sortBy: params.sortBy } : {}),
+                ...(params?.sortOrder ? { sortOrder: params.sortOrder } : {}),
+            },
         });
         const raw = PipelineListResponseSchema.parse(rawResponse);
         const items = (raw.pipelines ?? []).map(pipelineToWorkflow);

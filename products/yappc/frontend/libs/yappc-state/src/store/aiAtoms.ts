@@ -2,7 +2,7 @@
  * AI Interaction State Atoms
  *
  * Jotai atoms for copilot session management, AI insight caching, and
- * prediction data.  All atoms use StateManager factory methods.
+ * prediction data. All atoms use @ghatana/state factory methods.
  *
  * @module state/aiAtoms
  * @doc.type module
@@ -12,9 +12,8 @@
  */
 
 import { atom } from 'jotai';
-import type { WritableAtom } from 'jotai';
 
-import { StateManager } from './StateManager';
+import { createAtom } from '@ghatana/state';
 
 // ============================================================================
 // Types
@@ -67,17 +66,16 @@ export interface AIPrediction {
 /**
  * Active copilot session, or null when no session is in progress.
  */
-export const copilotSessionAtom =
-  StateManager.createAtom<CopilotSession | null>(
-    'ai:copilot:session',
-    null,
-    'Active copilot session'
-  );
+export const copilotSessionAtom = createAtom<CopilotSession | null>(
+  'ai:copilot:session',
+  null,
+  'Active copilot session'
+);
 
 /**
  * Whether the copilot is currently generating a response.
  */
-export const copilotLoadingAtom = StateManager.createAtom<boolean>(
+export const copilotLoadingAtom = createAtom<boolean>(
   'ai:copilot:loading',
   false,
   'Copilot response loading flag'
@@ -86,7 +84,7 @@ export const copilotLoadingAtom = StateManager.createAtom<boolean>(
 /**
  * Last copilot error, or null.
  */
-export const copilotErrorAtom = StateManager.createAtom<Error | null>(
+export const copilotErrorAtom = createAtom<Error | null>(
   'ai:copilot:error',
   null,
   'Copilot error state'
@@ -99,7 +97,7 @@ export const copilotErrorAtom = StateManager.createAtom<Error | null>(
 /**
  * AI insights for the currently active project.
  */
-export const aiInsightsAtom = StateManager.createAtom<AIInsight[]>(
+export const aiInsightsAtom = createAtom<AIInsight[]>(
   'ai:insights',
   [],
   'AI insights for the current project'
@@ -108,7 +106,7 @@ export const aiInsightsAtom = StateManager.createAtom<AIInsight[]>(
 /**
  * Whether AI insights are being fetched.
  */
-export const aiInsightsLoadingAtom = StateManager.createAtom<boolean>(
+export const aiInsightsLoadingAtom = createAtom<boolean>(
   'ai:insights:loading',
   false,
   'AI insights loading flag'
@@ -121,7 +119,7 @@ export const aiInsightsLoadingAtom = StateManager.createAtom<boolean>(
 /**
  * AI predictions for the currently active project.
  */
-export const aiPredictionsAtom = StateManager.createAtom<AIPrediction[]>(
+export const aiPredictionsAtom = createAtom<AIPrediction[]>(
   'ai:predictions',
   [],
   'AI predictions for the current project'

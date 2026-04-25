@@ -20,6 +20,7 @@ import {
 import { getCostSummary } from '@/api/aep.api';
 import { tenantIdAtom } from '@/stores/tenant.store';
 import { Link } from 'react-router';
+import { getEditPipelineUrl, getRunDetailUrl } from '@/lib/routes';
 import { EmptyState } from '@/components/core/EmptyState';
 import { ErrorState } from '@/components/core/ErrorState';
 
@@ -147,19 +148,61 @@ export function CostDashboardPage() {
                   <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
                     Current {alert.currentValue.toFixed(2)} • Threshold {alert.thresholdValue.toFixed(2)}
                   </p>
-                  <div className="mt-3 flex gap-2">
-                    <Link
-                      to="/build/pipelines"
-                      className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
-                    >
-                      Review pipelines →
-                    </Link>
-                    <Link
-                      to="/operate"
-                      className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
-                    >
-                      Check runs →
-                    </Link>
+                  {/* Lifecycle badges */}
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {alert.acknowledgedAt && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 font-medium">
+                        Acknowledged
+                      </span>
+                    )}
+                    {alert.resolvedAt && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300 font-medium">
+                        Resolved
+                      </span>
+                    )}
+                    {alert.snoozedUntil && new Date(alert.snoozedUntil) > new Date() && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300 font-medium">
+                        Snoozed until {new Date(alert.snoozedUntil).toLocaleDateString()}
+                      </span>
+                    )}
+                    {alert.owner && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 font-medium">
+                        Owner: {alert.owner}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="mt-3 flex gap-2 flex-wrap">
+                    {alert.relatedPipelineId ? (
+                      <Link
+                        to={getEditPipelineUrl(alert.relatedPipelineId)}
+                        className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+                      >
+                        Open pipeline →
+                      </Link>
+                    ) : (
+                      <Link
+                        to="/build/pipelines"
+                        className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+                      >
+                        Review pipelines →
+                      </Link>
+                    )}
+                    {alert.relatedRunId ? (
+                      <Link
+                        to={getRunDetailUrl(alert.relatedRunId)}
+                        className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+                      >
+                        View run →
+                      </Link>
+                    ) : (
+                      <Link
+                        to="/operate"
+                        className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+                      >
+                        Check runs →
+                      </Link>
+                    )}
                   </div>
                 </div>
               ))
@@ -188,7 +231,7 @@ export function CostDashboardPage() {
                 {data.perPipeline.map((item) => (
                   <tr key={item.id}>
                     <td className="py-3 pr-4 font-medium text-gray-900 dark:text-gray-100">
-                      <Link to={`/build/pipelines`} className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline transition-colors">
+                      <Link to={getEditPipelineUrl(item.id)} className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline transition-colors">
                         {item.name}
                       </Link>
                     </td>
@@ -227,7 +270,7 @@ export function CostDashboardPage() {
                   {data.perAgent.map((item) => (
                     <tr key={item.id}>
                       <td className="py-3 pr-4 font-medium text-gray-900 dark:text-gray-100">
-                        <Link to="/catalog/agents" className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline transition-colors">
+                        <Link to={`/catalog/agents/${encodeURIComponent(item.id)}`} className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline transition-colors">
                           {item.name}
                         </Link>
                       </td>

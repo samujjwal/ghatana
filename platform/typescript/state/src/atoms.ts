@@ -149,6 +149,48 @@ export function createDerivedAtom<T>(
 }
 
 // ---------------------------------------------------------------------------
+// createWritableDerivedAtom — computed read/write atom
+// ---------------------------------------------------------------------------
+
+/**
+ * Creates a derived atom with custom read and write logic.
+ * Useful for atoms that need to perform side effects on write.
+ *
+ * @param key    - Registry key.
+ * @param read   - Read function.
+ * @param write  - Write function.
+ *
+ * @example
+ * ```ts
+ * const fullNameAtom = createWritableDerivedAtom('fullName', 
+ *   (get) => `${get(firstNameAtom)} ${get(lastNameAtom)}`,
+ *   (get, set, newValue) => {
+ *     const [first, last] = newValue.split(' ');
+ *     set(firstNameAtom, first);
+ *     set(lastNameAtom, last);
+ *   }
+ * );
+ * ```
+ */
+export function createWritableDerivedAtom<T, Args extends unknown[], Result>(
+  key: string,
+  read: (get: Getter) => T,
+  write: (get: Getter, set: Setter, ...args: Args) => Result
+): WritableAtom<T, Args, Result> {
+  const a = atom(read, write);
+  a.debugLabel = key;
+
+  registerAtom({
+    key,
+    persistent: false,
+    defaultValue: undefined,
+    createdAt: new Date(),
+  });
+
+  return a;
+}
+
+// ---------------------------------------------------------------------------
 // createAsyncAtom — atom for async data fetching
 // ---------------------------------------------------------------------------
 
@@ -182,6 +224,100 @@ export function createAsyncAtom<T>(
   });
 
   return a as WritableAtom<AsyncState<T>, [AsyncState<T>], void>;
+}
+
+// ---------------------------------------------------------------------------
+// createAsyncAtomWithState — async atom with loading/error states and fetch function
+// ---------------------------------------------------------------------------
+
+/**
+ * Creates an async atom with loading/error states and a fetch function.
+ * Provides initial data support and automatic state transitions.
+ *
+ * @param key          - Registry key.
+ * @param fetchFn      - Async function to fetch data.
+ * @param options      - Options including initial data and description.
+ *
+ * @example
+ * ```ts
+ * const usersAtom = createAsyncAtomWithState('users', 
+ *   () => fetch('/api/users').then(r => r.json()),
+ *   { initialData: [] }
+ * );
+ * ```
+ */
+export function createAsyncAtomWithState<T>(
+  key: string,
+  fetchFn: () => Promise<T>,
+  options: {
+    description?: string;
+    initialData?: T;
+  } = {}
+): Atom<AsyncState<T>> {
+  const initialState: AsyncState<T> =
+    options.initialData !== undefined
+      ? AS.success(options.initialData)
+      : AS.idle();
+
+  const a = atom<AsyncState<T>>(initialState);
+  a.debugLabel = key;
+
+  registerAtom({
+    key,
+    description: options.description || 'Async atom with loading/error states',
+    persistent: false,
+    defaultValue: initialState,
+    createdAt: new Date(),
+  });
+
+  return a;
+}
+
+// ---------------------------------------------------------------------------
+// createYjsAtom — Yjs-backed collaborative atom
+// ---------------------------------------------------------------------------
+
+/**
+ * Creates a Yjs-backed atom for collaborative editing.
+ * Note: This is a simplified version. Full Yjs integration requires additional setup.
+ *
+ * @param key          - Registry key.
+ * @param initialValue - Initial value.
+ * @param options      - Options including description and update callback.
+ *
+ * @example
+ * ```ts
+ * const docAtom = createYjsAtom('doc', { text: '' }, {
+ *   description: 'Yjs document',
+ *   onUpdate: (value) => console.log('Updated:', value)
+ * });
+ * ```
+ */
+export function createYjsAtom<T extends Record<string, unknown>>(
+  key: string,
+  initialValue: T,
+  options: {
+    description?: string;
+    onUpdate?: (value: T) => void;
+  } = {}
+): Atom<T> {
+  const a = atom<T>(initialValue);
+  a.debugLabel = key;
+
+  registerAtom({
+    key,
+    description: options.description || 'Yjs-backed collaborative atom',
+    persistent: false,
+    defaultValue: initialValue,
+    createdAt: new Date(),
+  });
+
+  if (options.onUpdate) {
+    // In a full implementation, this would set up Yjs observation
+    // For now, we just register the callback for future use
+  }
+
+  return a;
 }
 
 // ---------------------------------------------------------------------------

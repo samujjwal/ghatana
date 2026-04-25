@@ -11,7 +11,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { useAtom, useSetAtom, useAtomValue } from 'jotai';
-import { useSearchParams } from 'react-router';
+import { useSearchParams, useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { toast, Toaster } from 'sonner';
 import {
@@ -106,7 +106,8 @@ export function PipelineBuilderPage() {
 
   const tenantId = useAtomValue(tenantIdAtom);
   const [searchParams] = useSearchParams();
-  const pipelineId = searchParams.get('id');
+  const routeParams = useParams<{ pipelineId?: string }>();
+  const pipelineId = routeParams.pipelineId ?? searchParams.get('id') ?? undefined;
 
   // Loading states for async actions
   const [saving, setSaving] = useState(false);
@@ -129,6 +130,11 @@ export function PipelineBuilderPage() {
   // ── Responsive panel toggles ────────────────────────────────────
   const [leftPanelOpen, setLeftPanelOpen] = useState(true);
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
+
+  // ── Mobile viewport advisory ──────────────────────────────────
+  const [mobileAdvisoryDismissed, setMobileAdvisoryDismissed] = useState(false);
+  const isMobileViewport = typeof window !== 'undefined' && window.innerWidth < 1024;
+  const showMobileAdvisory = isMobileViewport && !mobileAdvisoryDismissed;
 
   // ── Load existing pipeline when ?id= present ───────────────────
   const {
@@ -211,7 +217,7 @@ export function PipelineBuilderPage() {
     setSaving(true);
     try {
       const spec = nodesToSpec(pipeline, nodes);
-      const saved = await savePipeline(spec);
+      const saved = await savePipeline(spec, tenantId);
       setPipeline(saved);
       setDirty(false);
       toast.success('Pipeline saved');
@@ -221,7 +227,7 @@ export function PipelineBuilderPage() {
     } finally {
       setSaving(false);
     }
-  }, [pipeline, nodes, setPipeline, setDirty]);
+  }, [pipeline, nodes, tenantId, setPipeline, setDirty]);
 
   // ── Validate ────────────────────────────────────────────────────
 
@@ -229,7 +235,7 @@ export function PipelineBuilderPage() {
     setValidating(true);
     try {
       const spec = nodesToSpec(pipeline, nodes);
-      const result = await validatePipeline(spec);
+      const result = await validatePipeline(spec, tenantId);
       setValidation(result);
       setStatus(result.isValid ? 'VALID' : 'DRAFT');
       if (result.isValid) {
@@ -243,7 +249,7 @@ export function PipelineBuilderPage() {
     } finally {
       setValidating(false);
     }
-  }, [pipeline, nodes, setValidation, setStatus]);
+  }, [pipeline, nodes, tenantId, setValidation, setStatus]);
 
   // ── Export (JSON) ───────────────────────────────────────────────
 
@@ -289,9 +295,60 @@ export function PipelineBuilderPage() {
     setDirty(true);
   }, [history, historyIndex, setNodes, setEdges, setHistoryIndex, setDirty]);
 
+  // ── Keyboard shortcuts ───────────────────────────────────────────
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const isMeta = e.ctrlKey || e.metaKey;
+      if (!isMeta) return;
+
+      // Save: Ctrl/Cmd+S
+      if (e.key === 's') {
+        e.preventDefault();
+        void handleSave();
+        return;
+      }
+
+      // Validate: Ctrl/Cmd+Shift+V
+      if (e.key === 'V' && e.shiftKey) {
+        e.preventDefault();
+        void handleValidate();
+        return;
+      }
+
+      // Undo: Ctrl/Cmd+Z
+      if (e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        handleUndo();
+        return;
+      }
+
+      // Redo: Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y
+      if ((e.key === 'z' && e.shiftKey) || e.key === 'y') {
+        e.preventDefault();
+        handleRedo();
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [handleSave, handleValidate, handleUndo, handleRedo]);
+
   // ── Run Now ─────────────────────────────────────────────────────
 
+  const [pipelineStatus] = useAtom(pipelineStatusAtom);
+  const [validationResult] = useAtom(validationAtom);
+
   const handleRunNow = useCallback(async () => {
+    if (!pipeline.id) {
+      toast.error('Save the pipeline before running.');
+      return;
+    }
+    if (pipelineStatus !== 'VALID' && !validationResult?.isValid) {
+      toast.error('Validate the pipeline before running.');
+      return;
+    }
     setRunning(true);
     try {
       const result = await runPipeline(pipeline.id, tenantId);
@@ -302,7 +359,7 @@ export function PipelineBuilderPage() {
     } finally {
       setRunning(false);
     }
-  }, [pipeline.id, tenantId]);
+  }, [pipeline.id, pipelineStatus, validationResult, tenantId]);
 
   // ── New Pipeline ───────────────────────────────────────────────
 
@@ -406,6 +463,27 @@ export function PipelineBuilderPage() {
   return (
     <>
       <Toaster richColors position="top-right" />
+      {showMobileAdvisory && (
+        <div className="lg:hidden fixed bottom-4 left-4 right-4 z-50 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 shadow-lg dark:border-amber-900 dark:bg-amber-950/80 dark:text-amber-100">
+          <div className="flex items-start gap-3">
+            <div className="flex-1">
+              <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+                Mobile authoring is limited
+              </p>
+              <p className="mt-0.5 text-xs text-amber-700 dark:text-amber-300">
+                Drag-and-drop and advanced stage editing work best on a desktop. You can view and make basic edits here.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setMobileAdvisoryDismissed(true)}
+              className="text-xs font-medium text-amber-800 dark:text-amber-300 hover:underline flex-shrink-0"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
       <div className="flex flex-col h-screen w-screen bg-white" data-testid="pipeline-builder">
         <PipelineToolbar
           onSave={handleSave}

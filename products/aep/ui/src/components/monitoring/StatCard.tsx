@@ -15,9 +15,10 @@ interface StatCardProps {
   /** Positive/negative trend indicator for colouring. */
   trend?: 'up' | 'down' | 'neutral';
   className?: string;
+  loading?: boolean;
 }
 
-export function StatCard({ label, value, sub, trend, className = '' }: StatCardProps) {
+export function StatCard({ label, value, sub, trend, className = '', loading = false }: StatCardProps) {
   const trendColor =
     trend === 'up' ? 'text-green-600' : trend === 'down' ? 'text-red-500' : 'text-gray-500';
 
@@ -31,10 +32,14 @@ export function StatCard({ label, value, sub, trend, className = '' }: StatCardP
       <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
         {label}
       </span>
-      <span className={['text-2xl font-bold tabular-nums', trendColor].join(' ')}>
-        {value}
-      </span>
-      {sub && (
+      {loading ? (
+        <span className="text-2xl font-bold tabular-nums text-gray-300 dark:text-gray-600">—</span>
+      ) : (
+        <span className={['text-2xl font-bold tabular-nums', trendColor].join(' ')}>
+          {value}
+        </span>
+      )}
+      {sub && !loading && (
         <span className="text-xs text-gray-400 dark:text-gray-500">{sub}</span>
       )}
     </div>

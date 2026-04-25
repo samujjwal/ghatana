@@ -165,4 +165,60 @@ describe('WorkflowsPage', () => {
     expect(await screen.findByText(WORKFLOW_HINTS_DEGRADED_TITLE)).toBeInTheDocument();
     expect(screen.getByText(WORKFLOW_HINTS_DEGRADED_DETAIL)).toBeInTheDocument();
   });
+
+    it('paginates the workflow list when there are more than 20 items', async () => {
+      // Create 25 workflows — enough to spill into a second page with PAGE_SIZE=20
+      const manyWorkflows = Array.from({ length: 25 }, (_, i) => ({
+        id: `wf-page-${i + 1}`,
+        name: `Pipeline ${i + 1}`,
+        description: `Auto-generated pipeline ${i + 1} for pagination test.`,
+        status: 'active',
+        nodes: [],
+        edges: [],
+        tags: [],
+        createdAt: '2026-04-01T00:00:00Z',
+        updatedAt: '2026-04-17T00:00:00Z',
+        createdBy: 'tester',
+        lastExecutedAt: null,
+      }));
+
+      mockWorkflowsApi.list.mockResolvedValue({
+        items: manyWorkflows,
+        total: 25,
+        page: 1,
+        pageSize: 50,
+        hasMore: false,
+      });
+
+      render(<WorkflowsPage />, { wrapper: TestWrapper });
+
+      // Page 1: first 20 items visible
+      expect(await screen.findByText('Pipeline 1')).toBeInTheDocument();
+      expect(screen.getByText('Pipeline 20')).toBeInTheDocument();
+      expect(screen.queryByText('Pipeline 21')).not.toBeInTheDocument();
+
+      // Pagination controls present
+      const nextButton = screen.getByRole('button', { name: /^next$/i });
+      const prevButton = screen.getByRole('button', { name: /^previous$/i });
+      expect(prevButton).toBeDisabled();
+      expect(nextButton).not.toBeDisabled();
+
+      // Navigate to page 2
+      fireEvent.click(nextButton);
+
+      // Page 2: items 21-25 visible, first 20 gone
+      expect(await screen.findByText('Pipeline 21')).toBeInTheDocument();
+      expect(screen.getByText('Pipeline 25')).toBeInTheDocument();
+      expect(screen.queryByText('Pipeline 1')).not.toBeInTheDocument();
+
+      // Previous button re-enabled; next disabled on final page
+      expect(screen.getByRole('button', { name: /^previous$/i })).not.toBeDisabled();
+      expect(screen.getByRole('button', { name: /^next$/i })).toBeDisabled();
+
+      // Navigate back to page 1
+      fireEvent.click(screen.getByRole('button', { name: /^previous$/i }));
+
+      expect(await screen.findByText('Pipeline 1')).toBeInTheDocument();
+      expect(screen.queryByText('Pipeline 21')).not.toBeInTheDocument();
+    });
 });

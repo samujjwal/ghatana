@@ -1,7 +1,7 @@
 /**
  * Mobile State Hooks
  *
- * Convenience hooks for accessing mobile-specific state managed by the shared StateManager.
+ * Convenience hooks for accessing mobile-specific state managed by @ghatana/state.
  *
  * @module state/mobile/hooks
  * @doc.type module

@@ -22,7 +22,10 @@
 import { atom } from 'jotai';
 import type { PreviewMode } from '@ghatana/ui-builder';
 
-import { StateManager } from './StateManager';
+import {
+  createAtom,
+  createPersistentAtom,
+} from '@ghatana/state';
 
 // ============================================================================
 // Active builder document
@@ -32,11 +35,11 @@ import { StateManager } from './StateManager';
  * ID of the builder document currently open in the editor.
  * Null when no document is loaded.
  */
-export const builderActiveDocumentIdAtom = StateManager.createPersistentAtom<
+export const builderActiveDocumentIdAtom = createPersistentAtom<
   string | null
 >('builder:activeDocumentId', null, {
-  description: 'ID of the active builder document',
-  storage: 'session',
+  storage: 'sessionStorage',
+  storageKey: 'builder:activeDocumentId',
 });
 
 // ============================================================================
@@ -53,14 +56,14 @@ export const builderActiveDocumentIdAtom = StateManager.createPersistentAtom<
  */
 export type AutosaveStatus = 'idle' | 'pending' | 'saving' | 'saved' | 'error';
 
-export const builderAutosaveStatusAtom = StateManager.createAtom<AutosaveStatus>(
+export const builderAutosaveStatusAtom = createAtom<AutosaveStatus>(
   'builder:autosaveStatus',
   'idle',
   'Autosave status for the active builder document',
 );
 
 /** ISO timestamp of the most recent successful save. Null if never saved this session. */
-export const builderLastSavedAtAtom = StateManager.createAtom<string | null>(
+export const builderLastSavedAtAtom = createAtom<string | null>(
   'builder:lastSavedAt',
   null,
   'Timestamp of the last successful autosave',
@@ -74,7 +77,7 @@ export const builderLastSavedAtAtom = StateManager.createAtom<string | null>(
  * Count of AI action proposals that are in "pending" review state.
  * Surfaced in the editor top bar so users know when review is needed.
  */
-export const builderAIPendingReviewCountAtom = StateManager.createAtom<number>(
+export const builderAIPendingReviewCountAtom = createAtom<number>(
   'builder:aiPendingReviewCount',
   0,
   'Count of AI proposals awaiting review',
@@ -89,10 +92,10 @@ export const builderAIPendingReviewCountAtom = StateManager.createAtom<number>(
  * Matches the canonical PreviewMode type from @ghatana/ui-builder.
  * Null when no preview is active.
  */
-export const builderPreviewModeAtom = StateManager.createAtom<PreviewMode | null>(
+export const builderPreviewModeAtom = createAtom<PreviewMode | null>(
   'builder:previewMode',
   null,
-  'Active preview trust mode',
+  'Active preview trust mode'
 );
 
 // ============================================================================
@@ -112,10 +115,10 @@ export interface BuilderCollabSession {
  * Active collaboration session for the builder editor.
  * Null when not in a collab session.
  */
-export const builderCollabSessionAtom = StateManager.createAtom<BuilderCollabSession | null>(
+export const builderCollabSessionAtom = createAtom<BuilderCollabSession | null>(
   'builder:collabSession',
   null,
-  'Active collab session for the builder',
+  'Active collab session for the builder'
 );
 
 // ============================================================================

@@ -25,7 +25,10 @@ export {
   createAtom,
   createPersistentAtom,
   createDerivedAtom,
+  createWritableDerivedAtom,
   createAsyncAtom,
+  createAsyncAtomWithState,
+  createYjsAtom,
   createWritableAtom,
   getRegisteredAtoms,
 } from "./atoms";

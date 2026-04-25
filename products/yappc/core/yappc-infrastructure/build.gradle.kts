@@ -9,7 +9,7 @@ dependencies {
     implementation(project(":platform:java:database"))
     implementation(project(":platform:java:observability"))
 
-    // YAPPC shared utilities (includes AgentRegistryPort)
+    // YAPPC shared utilities (includes AgentRegistryPort, DataStorePort)
     implementation(project(":products:yappc:core:yappc-shared"))
 
     // AEP Agent Registry — for AepAgentRegistryAdapter only
@@ -18,6 +18,10 @@ dependencies {
     // AEP Unified Runtime — for AepAgentRuntimeAdapter (Phase 1.6: aep-engine + aep-agent-runtime + aep-central-runtime)
     implementation(project(":products:aep:aep-engine"))
     implementation(project(":products:aep:aep-agent-runtime"))
+
+    // Data-Cloud — for DataCloudDataStoreAdapter
+    implementation(project(":products:data-cloud:platform-launcher"))
+    implementation(project(":products:data-cloud:platform-plugins"))
 
     // Database
     implementation(libs.postgresql)

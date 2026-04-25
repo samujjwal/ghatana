@@ -98,6 +98,10 @@ export interface GovernanceComplianceSummary {
       controlId: string;
       description: string;
       status: string;
+      /** Link to audit evidence or scan report for this control. */
+      evidenceUrl?: string;
+      /** Related audit entry ID that generated this control status. */
+      auditEntryId?: string;
     }>;
   };
   timestamp: string;
@@ -218,6 +222,14 @@ export interface LearnedPolicy {
   version: number;
   createdAt: string;
   updatedAt: string;
+  /** Related review queue item for pending policies. */
+  reviewId?: string;
+  /** Pipeline this policy was derived from. */
+  relatedPipelineId?: string;
+  /** Run that produced this policy. */
+  relatedRunId?: string;
+  /** Agent that generated this policy. */
+  relatedAgentId?: string;
 }
 
 export interface MarketplaceAgentListing {
@@ -288,6 +300,18 @@ export interface CostAlert {
   description: string;
   currentValue: number;
   thresholdValue: number;
+  relatedPipelineId?: string;
+  relatedRunId?: string;
+  /** Owner or assignee who acknowledged this alert. */
+  owner?: string;
+  /** Whether the alert has been acknowledged. */
+  acknowledgedAt?: string;
+  /** Whether the alert has been snoozed until this ISO timestamp. */
+  snoozedUntil?: string;
+  /** Whether the alert has been resolved. */
+  resolvedAt?: string;
+  /** Resolution note. */
+  resolutionNote?: string;
 }
 
 export interface CostSummary {

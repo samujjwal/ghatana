@@ -11,6 +11,7 @@ import type { PipelineRun } from '@/api/aep.api';
 import type { AiSuggestion } from './AiSuggestionsPanel';
 import { Button } from '@ghatana/design-system';
 import { Zap } from 'lucide-react';
+import { ReviewDecisionDialog } from '@/components/shared/ReviewDecisionDialog';
 
 interface RunTableProps {
   runs: PipelineRun[];
@@ -64,9 +65,10 @@ export function RunTable({
   onSelectAll,
   isAllSelected,
   isIndeterminate,
-  aiSuggestions = [],
-  className = ''
+  aiSuggestions,
+  className,
 }: RunTableProps) {
+  const [rejectTarget, setRejectTarget] = useState<{ runId: string; pipelineName: string } | null>(null);
   if (runs.length === 0) {
     return (
       <p className={['text-sm text-gray-400', className].join(' ')}>No pipeline runs found.</p>
@@ -142,14 +144,12 @@ export function RunTable({
                     {run.status}
                   </span>
                   {(() => {
-                    const runSuggestions = aiSuggestions.filter(
-                      (s) => s.resourceId === run.id || s.resourceId === run.pipelineId
-                    );
+                    const runSuggestions = (aiSuggestions ?? []).filter((s) => s.runId === run.id);
                     if (runSuggestions.length === 0) return null;
                     return (
                       <div className="flex flex-wrap gap-1">
-                        {runSuggestions.slice(0, 2).map((s) => (
-                          <AiSuggestionPill key={s.id} suggestion={s} />
+                        {runSuggestions.slice(0, 2).map((suggestion) => (
+                          <AiSuggestionPill key={suggestion.id} suggestion={suggestion} />
                         ))}
                         {runSuggestions.length > 2 && (
                           <span className="text-[10px] text-gray-400 dark:text-gray-500">+{runSuggestions.length - 2}</span>
@@ -186,10 +186,7 @@ export function RunTable({
                       )}
                       {onReject && (
                         <Button
-                          onClick={() => {
-                            const reason = prompt('Enter rejection reason:');
-                            if (reason) onReject(run.id, reason);
-                          }}
+                          onClick={() => setRejectTarget({ runId: run.id, pipelineName: run.pipelineName || run.pipelineId })}
                           variant="text"
                           className="text-xs text-red-500 hover:text-red-700 font-medium"
                           aria-label={`Reject run ${run.id}`}
@@ -228,6 +225,19 @@ export function RunTable({
           ))}
         </tbody>
       </table>
+
+      {rejectTarget && onReject && (
+        <ReviewDecisionDialog
+          open={!!rejectTarget}
+          mode="reject"
+          runId={rejectTarget.runId}
+          onConfirm={(note) => {
+            onReject(rejectTarget.runId, note);
+            setRejectTarget(null);
+          }}
+          onCancel={() => setRejectTarget(null)}
+        />
+      )}
     </div>
   );
 }

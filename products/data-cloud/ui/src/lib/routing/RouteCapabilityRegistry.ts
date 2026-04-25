@@ -18,8 +18,9 @@ import type { ShellRole } from '../auth/session';
  * Route lifecycle states
  */
 export const RouteLifecycleSchema = z.enum([
-  'active',      // Fully functional
-  'preview',     // Functional but flagged as preview
+  'active',      // Fully functional and fully implemented
+  'preview',     // Functional but explicitly flagged as preview
+  'boundary',    // Route exists but surface is handled by UnsupportedSurfaceBoundary
   'deprecated',  // Still routes but scheduled for removal
   'redirect',    // Redirects to another route
   'removed',     // No longer available
@@ -135,30 +136,31 @@ export const canonicalRouteRegistry: RouteCapabilityRegistry = {
     iconName: 'Activity',
     description: 'Real-time AEP event stream explorer',
   },
+  // DC-UX-035: alerts surface is backed by UnsupportedSurfaceBoundary — lifecycle: 'boundary'
   alerts: {
     path: '/alerts',
     label: 'Alerts',
     minimumShellRole: 'operator',
-    lifecycle: 'active',
+    lifecycle: 'boundary',
     capabilities: ['alert-triage', 'monitoring'],
     discoverable: true,
     iconName: 'Bell',
-    description: 'Operator alert triage console',
+    description: 'Operator alert triage console (surface under development)',
   },
   memory: {
     path: '/memory',
     label: 'Memory',
     minimumShellRole: 'operator',
-    lifecycle: 'active',
+    lifecycle: 'boundary',
     capabilities: ['memory-plane', 'context'],
     discoverable: false,
-    description: 'Memory plane viewer',
+    description: 'Memory plane viewer (surface under development)',
   },
   entities: {
     path: '/entities',
     label: 'Entities',
     minimumShellRole: 'operator',
-    lifecycle: 'active',
+    lifecycle: 'preview',
     capabilities: ['entity-browser'],
     discoverable: false,
     description: 'Entity browser',
@@ -167,25 +169,26 @@ export const canonicalRouteRegistry: RouteCapabilityRegistry = {
     path: '/context',
     label: 'Context',
     minimumShellRole: 'operator',
-    lifecycle: 'active',
+    lifecycle: 'preview',
     capabilities: ['context-explorer'],
     discoverable: false,
     description: 'Context explorer',
   },
+  // DC-UX-035: fabric uses dataFabricMetricsBoundary — lifecycle: 'boundary'
   fabric: {
     path: '/fabric',
     label: 'Data Fabric',
     minimumShellRole: 'operator',
-    lifecycle: 'active',
+    lifecycle: 'boundary',
     capabilities: ['data-fabric'],
     discoverable: false,
-    description: 'Data fabric management',
+    description: 'Data fabric management (surface under development)',
   },
   agents: {
     path: '/agents',
     label: 'Agents',
     minimumShellRole: 'operator',
-    lifecycle: 'active',
+    lifecycle: 'preview',
     capabilities: ['agent-catalog'],
     discoverable: false,
     description: 'Agent plugin manager',
@@ -200,24 +203,26 @@ export const canonicalRouteRegistry: RouteCapabilityRegistry = {
     iconName: 'Settings',
     description: 'Operations console and diagnostics',
   },
+  // DC-UX-035: plugins uses pluginDependencyBoundary — lifecycle: 'boundary'
   plugins: {
     path: '/plugins',
     label: 'Plugins',
     minimumShellRole: 'primary-user',
-    lifecycle: 'active',
+    lifecycle: 'boundary',
     capabilities: ['plugin-management'],
     discoverable: true,
     iconName: 'Package',
-    description: 'Plugin inventory and management',
+    description: 'Plugin management (dependency boundary — operator preview only)',
   },
+  // DC-UX-035: settings surface has UnavailablePanel in all sections
   settings: {
     path: '/settings',
     label: 'Settings',
     minimumShellRole: 'admin',
-    lifecycle: 'active',
+    lifecycle: 'boundary',
     capabilities: ['settings'],
     discoverable: false,
-    description: 'System settings (admin only)',
+    description: 'System settings (surface under development)',
   },
 };
 
@@ -227,13 +232,35 @@ export const canonicalRouteRegistry: RouteCapabilityRegistry = {
 
 /**
  * Get all discoverable routes for a given role.
+ * DC-UX-035: Excludes 'boundary' routes from navigation by default;
+ * pass includesBoundary=true to surface them (e.g., for admin tooling).
  */
-export function getDiscoverableRoutes(role: ShellRole): RouteCapability[] {
+export function getDiscoverableRoutes(role: ShellRole, includesBoundary = false): RouteCapability[] {
   return Object.values(canonicalRouteRegistry).filter(
     (route) =>
       route.discoverable &&
-      roleMeetsMinimum(role, route.minimumShellRole)
+      roleMeetsMinimum(role, route.minimumShellRole) &&
+      (includesBoundary || route.lifecycle !== 'boundary')
   );
+}
+
+/**
+ * DC-UX-034: Get all routes grouped by lifecycle state.
+ * Used to generate the route truth matrix doc and CI validation.
+ */
+export function getRoutesByLifecycle(): Record<RouteLifecycle, RouteCapability[]> {
+  const result: Record<RouteLifecycle, RouteCapability[]> = {
+    active: [],
+    preview: [],
+    boundary: [],
+    deprecated: [],
+    redirect: [],
+    removed: [],
+  };
+  for (const route of Object.values(canonicalRouteRegistry)) {
+    result[route.lifecycle].push(route);
+  }
+  return result;
 }
 
 /**

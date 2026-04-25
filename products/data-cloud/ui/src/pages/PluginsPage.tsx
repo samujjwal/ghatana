@@ -24,7 +24,8 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { SearchFilterBar } from '../components/common/SearchFilterBar';
-import { LoadingState, EmptyState, ErrorState, NotFoundState } from '../components/common/AsyncStates';
+import { EmptyState, NotFoundState } from '../components/common/AsyncStates';
+import { QueryStateBoundary } from '../components/common/QueryStateBoundary';
 import { cn, buttonStyles, textStyles, bgStyles } from '../lib/theme';
 import {
   PLUGINS_EMPTY_STATE_DETAIL,
@@ -126,7 +127,7 @@ export function PluginsPage(): React.ReactElement {
   };
 
   return (
-    <main className={cn('min-h-screen', bgStyles.page)} data-testid="plugins-page" aria-label="Plugins">
+    <section className={cn('min-h-screen', bgStyles.page)} data-testid="plugins-page" aria-label="Plugins">
       {/* Header */}
       <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
         <div className="px-6 py-4">
@@ -282,15 +283,16 @@ export function PluginsPage(): React.ReactElement {
               </div>
             )}
 
-            {loadingInstalled ? (
-              <LoadingState message="Loading plugins..." />
-            ) : installedError ? (
-              <ErrorState
-                title="Failed to load plugins"
-                message="There was an error loading the installed plugins. Please try again."
-                onRetry={() => queryClient.invalidateQueries({ queryKey: ['plugins', 'installed'] })}
-              />
-            ) : installedPlugins.length === 0 ? (
+            <QueryStateBoundary
+              isLoading={loadingInstalled}
+              isError={!!installedError}
+              error={installedError instanceof Error ? installedError : null}
+              errorTitle="Failed to load plugins"
+              errorFallback="There was an error loading the installed plugins. Please try again."
+              onRetry={() => queryClient.invalidateQueries({ queryKey: ['plugins', 'installed'] })}
+              loadingMessage="Loading plugins..."
+            >
+            {installedPlugins.length === 0 ? (
               <EmptyState
                 title="No plugins installed"
                 description={PLUGINS_EMPTY_STATE_DETAIL}
@@ -319,9 +321,10 @@ export function PluginsPage(): React.ReactElement {
                 ))}
               </div>
             )}
+            </QueryStateBoundary>
           </div>
         )}
       </div>
-    </main>
+    </section>
   );
 }

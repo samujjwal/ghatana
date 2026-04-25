@@ -16,6 +16,7 @@ import { BrowserRouter } from 'react-router';
 import { Provider } from 'jotai';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from '@ghatana/theme';
+import { OperationsProvider } from '../../contexts/OperationsContext';
 
 /**
  * Creates a fresh QueryClient per test render.
@@ -35,7 +36,11 @@ export function TestWrapper({ children }: { children: React.ReactNode }): React.
     <Provider>
       <QueryClientProvider client={makeQueryClient()}>
         <ThemeProvider>
-          <BrowserRouter>{children}</BrowserRouter>
+          <BrowserRouter>
+            <OperationsProvider>
+              <main>{children}</main>
+            </OperationsProvider>
+          </BrowserRouter>
         </ThemeProvider>
       </QueryClientProvider>
     </Provider>

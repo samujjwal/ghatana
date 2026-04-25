@@ -70,15 +70,49 @@ function extractDocumentedRoutes(appSource: string): Set<string> {
 
 /**
  * Extract feature flags from feature-flags.ts source.
+ * Matches both legacy `import.meta.env` and new `resolveFlag('NAME')` patterns.
  */
 function extractFeatureFlags(flagsSource: string): Set<string> {
   const flags = new Set<string>();
-  const flagRegex = /(\w+):\s*import\.meta\.env/g;
+  // Legacy: `FLAG: import.meta.env...`
+  const legacyRegex = /(\w+):\s*import\.meta\.env/g;
   let match: RegExpExecArray | null;
-  while ((match = flagRegex.exec(flagsSource)) !== null) {
+  while ((match = legacyRegex.exec(flagsSource)) !== null) {
+    flags.add(match[1]);
+  }
+  // New: `resolveFlag('FLAG')`
+  const newRegex = /resolveFlag\('(\w+)'\)/g;
+  while ((match = newRegex.exec(flagsSource)) !== null) {
     flags.add(match[1]);
   }
   return flags;
+}
+
+/**
+ * Check if global CSS is imported in main.tsx.
+ */
+function hasGlobalCssImport(mainSource: string): boolean {
+  return /import\s+['"]\.\/index\.css['"]/.test(mainSource);
+}
+
+/**
+ * Check if tailwindcss Vite plugin is present in vite.config.ts.
+ */
+function hasTailwindPlugin(viteSource: string): boolean {
+  return /tailwindcss\(\)/.test(viteSource);
+}
+
+/**
+ * Extract route definitions from App.tsx (all Route path=...).
+ */
+function extractAllAppRoutes(appSource: string): Set<string> {
+  const routes = new Set<string>();
+  const regex = /<Route\s+path="([^"]+)"/g;
+  let m: RegExpExecArray | null;
+  while ((m = regex.exec(appSource)) !== null) {
+    routes.add(m[1]);
+  }
+  return routes;
 }
 
 /**
@@ -128,6 +162,8 @@ function runVerification(): VerificationResult[] {
   const pagesDir = path.join(srcDir, "pages");
   const appPath = path.join(srcDir, "App.tsx");
   const flagsPath = path.join(srcDir, "lib", "feature-flags.ts");
+  const mainPath = path.join(srcDir, "main.tsx");
+  const vitePath = path.join(rootDir, "vite.config.ts");
   const planPath = path.join(
     rootDir,
     "..",
@@ -138,6 +174,8 @@ function runVerification(): VerificationResult[] {
   // Read sources
   const appSource = fs.readFileSync(appPath, "utf-8");
   const flagsSource = fs.readFileSync(flagsPath, "utf-8");
+  const mainSource = fs.existsSync(mainPath) ? fs.readFileSync(mainPath, "utf-8") : "";
+  const viteSource = fs.existsSync(vitePath) ? fs.readFileSync(vitePath, "utf-8") : "";
   const planSource = fs.existsSync(planPath)
     ? fs.readFileSync(planPath, "utf-8")
     : "";
@@ -231,6 +269,63 @@ function runVerification(): VerificationResult[] {
       location: `pages/${page}.tsx`,
     });
   }
+
+  // ── Style checks ──────────────────────────────────────────
+  results.push({
+    category: "style",
+    name: "Global CSS import in main.tsx",
+    found: hasGlobalCssImport(mainSource),
+    expected: true,
+    location: "src/main.tsx",
+  });
+  results.push({
+    category: "style",
+    name: "Tailwind Vite plugin in vite.config.ts",
+    found: hasTailwindPlugin(viteSource),
+    expected: true,
+    location: "vite.config.ts",
+  });
+
+  // ── Route checks ──────────────────────────────────────────
+  const allRoutes = extractAllAppRoutes(appSource);
+  const canonicalEditRoute = "/build/pipelines/:pipelineId/edit";
+  results.push({
+    category: "route",
+    name: `Explicit pipeline edit route (${canonicalEditRoute})`,
+    found: allRoutes.has(canonicalEditRoute),
+    expected: true,
+    location: "App.tsx",
+  });
+
+  // ── Auth checks ───────────────────────────────────────────
+  const authCallbackRoute = "/auth/callback";
+  const loginRoute = "/login";
+  results.push({
+    category: "auth",
+    name: "SSO callback route",
+    found: allRoutes.has(authCallbackRoute),
+    expected: true,
+    location: "App.tsx",
+  });
+  results.push({
+    category: "auth",
+    name: "Login route",
+    found: allRoutes.has(loginRoute),
+    expected: true,
+    location: "App.tsx",
+  });
+
+  // ── Tenant checks ─────────────────────────────────────────
+  const tenantScopedApiPattern =
+    /tenantId\s*[=:]\s*useAtomValue\(tenantIdAtom\)/.test(appSource) ||
+    /tenantId\s*[=:]\s*tenantIdAtom/.test(flagsSource);
+  results.push({
+    category: "tenant",
+    name: "Tenant atom usage in App or flags",
+    found: tenantScopedApiPattern,
+    expected: true,
+    location: "App.tsx / feature-flags.ts",
+  });
 
   return results;
 }

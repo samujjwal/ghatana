@@ -174,7 +174,10 @@ export function MonitoringDashboardPage() {
                 <p className="mt-1 text-xs opacity-90">{durability.description}</p>
               </div>
               <span className="text-[11px] uppercase tracking-wide opacity-75">
-                Checked {new Date(durability.checkedAt).toLocaleTimeString()}
+                Checked{' '}
+                {durability.checkedAt && !Number.isNaN(new Date(durability.checkedAt).getTime())
+                  ? new Date(durability.checkedAt).toLocaleTimeString()
+                  : 'not available'}
               </span>
             </div>
             {formatRuntimeContext(durability).length > 0 ? (
@@ -210,22 +213,25 @@ export function MonitoringDashboardPage() {
 
         {/* KPI row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <StatCard label="Total runs" value={runs.length} />
+          <StatCard label="Total runs" value={runs.length} loading={runsLoading} />
           <StatCard
             label="Active"
             value={activeRuns}
             trend={activeRuns > 0 ? 'up' : 'neutral'}
+            loading={runsLoading}
           />
           <StatCard
             label="Success rate"
             value={`${successRate}%`}
             sub={`${succeededRuns} succeeded`}
             trend={successRate >= 90 ? 'up' : successRate >= 70 ? 'neutral' : 'down'}
+            loading={runsLoading}
           />
           <StatCard
             label="Failed"
             value={failedRuns}
             trend={failedRuns > 0 ? 'down' : 'neutral'}
+            loading={runsLoading}
           />
         </div>
 

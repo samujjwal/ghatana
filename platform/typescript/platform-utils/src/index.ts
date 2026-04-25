@@ -23,6 +23,9 @@ export * from './responsive';
 // Export accessibility utilities
 export * from './accessibility';
 
+// Export result type for explicit error handling
+export * from './result';
+
 /**
  * Migration notes for products:
  *

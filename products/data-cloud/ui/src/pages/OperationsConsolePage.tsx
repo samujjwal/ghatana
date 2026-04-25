@@ -58,7 +58,7 @@ function mapCapabilitiesToHealth(capabilities: CapabilitySignal[]): HealthStatus
     return {
       component: cap.label || cap.key,
       status,
-      lastCheck: new Date().toLocaleTimeString(),
+      lastCheck: '—',
       uptime: cap.summary || '-',
     };
   });
@@ -203,19 +203,19 @@ export const OperationsConsolePage: React.FC = () => {
                 <div className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
                   <span className="text-sm text-gray-700 dark:text-gray-300">Critical</span>
                   <span className="text-2xl font-semibold text-red-600 dark:text-red-400">
-                    {alertSummary?.critical ?? 0}
+                    {alertSummary ? (alertSummary.critical ?? 0) : '—'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
                   <span className="text-sm text-gray-700 dark:text-gray-300">Warning</span>
                   <span className="text-2xl font-semibold text-yellow-600 dark:text-yellow-400">
-                    {alertSummary?.warning ?? 0}
+                    {alertSummary ? (alertSummary.warning ?? 0) : '—'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                   <span className="text-sm text-gray-700 dark:text-gray-300">Info</span>
                   <span className="text-2xl font-semibold text-blue-600 dark:text-blue-400">
-                    {alertSummary?.info ?? 0}
+                    {alertSummary ? (alertSummary.info ?? 0) : '—'}
                   </span>
                 </div>
                 <div className="pt-3 border-t border-gray-200 dark:border-gray-700">

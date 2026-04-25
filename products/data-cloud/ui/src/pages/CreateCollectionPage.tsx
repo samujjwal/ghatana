@@ -35,7 +35,7 @@ export function CreateCollectionPage() {
   };
 
   return (
-    <main className="container mx-auto py-8" aria-label="Create new collection">
+    <section className="container mx-auto py-8" aria-label="Create new collection">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Create New Collection</h1>
         <p className="text-gray-600 dark:text-gray-400">Define a new collection and its schema</p>
@@ -48,7 +48,7 @@ export function CreateCollectionPage() {
           isSubmitting={isSubmitting}
         />
       </div>
-    </main>
+    </section>
   );
 }
 

@@ -17,6 +17,9 @@
  * @doc.purpose Explicit error handling without exceptions
  * @doc.layer infrastructure
  * @doc.pattern Result Type / Railway-Oriented Programming
+ *
+ * @deprecated Canonical implementation now in @ghatana/platform-utils/src/result.ts
+ * This local file will be removed after platform-utils is built and all callers are migrated.
  */
 
 /**

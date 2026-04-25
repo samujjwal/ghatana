@@ -32,6 +32,11 @@ export interface HttpClient {
     body?: unknown,
     config?: HttpRequestConfig,
   ): Promise<HttpResponse<T>>;
+  patch<T>(
+    url: string,
+    body?: unknown,
+    config?: HttpRequestConfig,
+  ): Promise<HttpResponse<T>>;
   delete<T>(url: string, config?: HttpRequestConfig): Promise<HttpResponse<T>>;
 }
 
@@ -112,6 +117,9 @@ export const apiClient: HttpClient = {
   put<T>(url: string, body?: unknown, config?: HttpRequestConfig) {
     return request<T>("PUT", url, body, config);
   },
+  patch<T>(url: string, body?: unknown, config?: HttpRequestConfig) {
+    return request<T>("PATCH", url, body, config);
+  },
   delete<T>(url: string, config?: HttpRequestConfig) {
     return request<T>("DELETE", url, undefined, config);
   },
@@ -136,7 +144,7 @@ function buildUrl(path: string, params?: HttpRequestConfig["params"]): string {
 }
 
 async function request<T>(
-  method: "GET" | "POST" | "PUT" | "DELETE",
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
   path: string,
   body?: unknown,
   config: HttpRequestConfig = {},
@@ -168,16 +176,22 @@ async function request<T>(
   const contentType = response.headers.get("content-type") ?? "";
   let data: unknown = null;
   if (response.status !== 204) {
-    data = contentType.includes("application/json")
-      ? await response.json()
-      : await response.text();
+    try {
+      data = contentType.includes("application/json")
+        ? await response.json()
+        : await response.text();
+    } catch {
+      // Body already consumed or empty — leave data as null
+    }
   }
 
   if (!response.ok) {
     const message =
       typeof data === "string" && data
         ? data
-        : response.statusText || `HTTP ${response.status}`;
+        : (typeof data === "object" && data && "message" in data)
+          ? String((data as { message: unknown }).message)
+          : response.statusText || `HTTP ${response.status}`;
     throw new Error(message);
   }
 

@@ -17,14 +17,14 @@ import { useAtomValue } from 'jotai';
 import { tenantIdAtom } from '@/stores/tenant.store';
 import { useAgents } from '@/hooks/useAgents';
 import {
-  useAllEpisodes,
+  useAgentEpisodes,
   usePolicies,
   useAgentFacts,
 } from '@/hooks/useAgentMemory';
 import { EpisodeTimeline } from '@/components/memory/EpisodeTimeline';
 import { FactTable } from '@/components/memory/FactTable';
 import { PolicyCard } from '@/components/memory/PolicyCard';
-import type { AgentRegistration, EpisodeRecord } from '@/api/aep.api';
+import type { AgentRegistration, EpisodeRecord, AgentEpisodeRecord } from '@/api/aep.api';
 import { Button } from '@ghatana/design-system';
 import { EmptyState } from '@/components/core/EmptyState';
 import { ErrorState } from '@/components/core/ErrorState';
@@ -103,10 +103,27 @@ function TabBar({ active, onChange }: TabBarProps) {
   );
 }
 
+// ─── Type helpers ─────────────────────────────────────────────────────────────
+
+function normalizeAgentEpisodes(records: AgentEpisodeRecord[]): EpisodeRecord[] {
+  return records.map((r) => ({
+    id: r.id,
+    tenantId: r.tenantId,
+    agentId: r.agentId,
+    pipelineId: '-',
+    outcome: (r.outcome as EpisodeRecord['outcome']) ?? 'SUCCESS',
+    latencyMs: r.latencyMs ?? 0,
+    inputSummary: (r.input as string) ?? undefined,
+    outputSummary: (r.output as string) ?? undefined,
+    timestamp: r.timestamp,
+  }));
+}
+
 // ─── Episodes tab ─────────────────────────────────────────────────────────────
 
 function EpisodesTab({ agentId }: { agentId: string | undefined }) {
-  const { data: episodes = [], isLoading, isError, refetch } = useAllEpisodes(50);
+  const { data: rawEpisodes = [], isLoading, isError, refetch } = useAgentEpisodes(agentId, 50);
+  const episodes = React.useMemo(() => normalizeAgentEpisodes(rawEpisodes), [rawEpisodes]);
 
   if (isLoading) {
     return <EmptyState title="Loading episodes…" description="Fetching agent episode history." />;
@@ -115,7 +132,16 @@ function EpisodesTab({ agentId }: { agentId: string | undefined }) {
     return <ErrorState title="Failed to load episodes" onRetry={() => void refetch()} />;
   }
   if (episodes.length === 0) {
-    return <EmptyState title="No episodes found" description="Episodes will appear once the agent records memory events." />;
+    return (
+      <EmptyState
+        title="No episodes found"
+        description={
+          agentId
+            ? 'This agent has not recorded any episodes yet.'
+            : 'Episodes will appear once agents record memory events.'
+        }
+      />
+    );
   }
 
   return <EpisodeTimeline episodes={episodes} />;

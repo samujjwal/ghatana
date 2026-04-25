@@ -14,7 +14,12 @@ import type {
 } from '@yappc/core/types';
 import { atom } from 'jotai';
 
-import { StateManager } from './StateManager';
+import {
+  createAtom,
+  createPersistentAtom,
+  createDerivedAtom,
+  createWritableDerivedAtom,
+} from '@ghatana/state';
 
 async function parseJsonResponse<T>(
   response: Response,
@@ -38,31 +43,32 @@ async function parseJsonResponse<T>(
 // Theme State
 // ============================================================================
 
-export const themeAtom = StateManager.createPersistentAtom(
+export const themeAtom = createPersistentAtom(
   'theme',
   'base' as 'base' | 'brand' | 'workspace' | 'app',
   {
-    description: 'Current theme layer',
-    storage: 'local',
-  }
+    storage: 'sessionStorage',
+    storageKey: 'theme',
+  },
+  'Current theme layer'
 );
 
-export const darkModeAtom = StateManager.createPersistentAtom(
+export const darkModeAtom = createPersistentAtom(
   'darkMode',
   false,
   {
-    description: 'Dark mode enabled',
-    storage: 'local',
-  }
+    storage: 'sessionStorage',
+    storageKey: 'darkMode',
+  },
+  'Dark mode enabled'
 );
 
-export const colorSchemeAtom = StateManager.createDerivedAtom(
+export const colorSchemeAtom = createDerivedAtom(
   'colorScheme',
   (get) => {
     const darkMode = get(darkModeAtom);
     return darkMode ? 'dark' : 'light';
-  },
-  'Computed color scheme based on dark mode'
+  }
 );
 
 // ============================================================================
@@ -80,31 +86,30 @@ export interface User {
   role: 'admin' | 'user' | 'guest';
 }
 
-export const userAtom = StateManager.createPersistentAtom<User | null>(
+export const userAtom = createPersistentAtom<User | null>(
   'user',
   null,
   {
-    description: 'Current user information',
-    storage: 'local',
-  }
+    storage: 'sessionStorage',
+    storageKey: 'user',
+  },
+  'Current user information'
 );
 
-export const isAuthenticatedAtom = StateManager.createDerivedAtom(
+export const isAuthenticatedAtom = createDerivedAtom(
   'isAuthenticated',
   (get) => {
     const user = get(userAtom);
     return user !== null;
-  },
-  'User authentication status'
+  }
 );
 
-export const userRoleAtom = StateManager.createDerivedAtom(
+export const userRoleAtom = createDerivedAtom(
   'userRole',
   (get) => {
     const user = get(userAtom);
     return user?.role || 'guest';
-  },
-  'Current user role'
+  }
 );
 
 // ============================================================================
@@ -123,76 +128,70 @@ export interface UserPreferences {
   compactMode: boolean;
 }
 
-export const userPreferencesAtom =
-  StateManager.createPersistentAtom<UserPreferences>(
-    'userPreferences',
-    {
-      language: 'en',
-      timezone: 'UTC',
-      dateFormat: 'MM/DD/YYYY',
-      notifications: true,
-      soundEnabled: true,
-      compactMode: false,
-    },
-    {
-      description: 'User preferences and settings',
-      storage: 'local',
-    }
-  );
+export const userPreferencesAtom = createPersistentAtom<UserPreferences>(
+  'userPreferences',
+  {
+    language: 'en',
+    timezone: 'UTC',
+    dateFormat: 'MM/DD/YYYY',
+    notifications: true,
+    soundEnabled: true,
+    compactMode: false,
+  },
+  {
+    storage: 'sessionStorage',
+  },
+  'User preferences and settings'
+);
 
 // ============================================================================
 // UI State
 // ============================================================================
 
-export const sidebarOpenAtom = StateManager.createPersistentAtom(
+export const sidebarOpenAtom = createPersistentAtom(
   'sidebarOpen',
   true,
   {
-    description: 'Sidebar open/closed state',
-    storage: 'local',
-  }
+    storage: 'sessionStorage',
+  },
+  'Sidebar open/closed state'
 );
 
-export const sidebarCollapsedAtom = StateManager.createPersistentAtom(
+export const sidebarCollapsedAtom = createPersistentAtom(
   'sidebarCollapsed',
   false,
   {
-    description: 'Sidebar collapsed state',
-    storage: 'local',
-  }
+    storage: 'sessionStorage',
+  },
+  'Sidebar collapsed state'
 );
 
-export const activeModalAtom = StateManager.createAtom<string | null>(
+export const activeModalAtom = createAtom<string | null>(
   'activeModal',
-  null,
-  'Currently active modal ID'
+  null
 );
 
-export const modalStackAtom = StateManager.createAtom<string[]>(
+export const modalStackAtom = createAtom<string[]>(
   'modalStack',
-  [],
-  'Stack of open modals'
+  []
 );
 
-export const loadingAtom = StateManager.createAtom<boolean>(
+export const loadingAtom = createAtom<boolean>(
   'loading',
-  false,
-  'Global loading state'
+  false
 );
 
-export const loadingMessageAtom = StateManager.createAtom<string>(
+export const loadingMessageAtom = createAtom<string>(
   'loadingMessage',
-  '',
-  'Loading message text'
+  ''
 );
 
-export const errorAtom = StateManager.createAtom<Error | null>(
+export const errorAtom = createAtom<Error | null>(
   'error',
-  null,
-  'Global error state'
+  null
 );
 
-export const notificationsAtom = StateManager.createAtom<
+export const notificationsAtom = createAtom<
   Array<{
     id: string;
     type: 'info' | 'success' | 'warning' | 'error';
@@ -217,7 +216,7 @@ export interface CanvasState {
   mode: 'select' | 'pan' | 'draw' | 'edit';
 }
 
-export const canvasStateAtom = StateManager.createAtom<CanvasState>(
+export const canvasStateAtom = createAtom<CanvasState>(
   'canvasState',
   {
     selectedNodeIds: [],
@@ -230,14 +229,13 @@ export const canvasStateAtom = StateManager.createAtom<CanvasState>(
   'Canvas editor state'
 );
 
-export const canvasHistoryAtom = StateManager.createAtom<
+export const canvasHistoryAtom = createAtom<
   Array<{ action: string; timestamp: Date }>
->('canvasHistory', [], 'Canvas action history');
+>('canvasHistory', []);
 
-export const canvasDirtyAtom = StateManager.createAtom<boolean>(
+export const canvasDirtyAtom = createAtom<boolean>(
   'canvasDirty',
-  false,
-  'Canvas has unsaved changes'
+  false
 );
 
 // ============================================================================
@@ -257,52 +255,46 @@ export interface FormState {
   };
 }
 
-export const formsAtom = StateManager.createAtom<FormState>(
+export const formsAtom = createAtom<FormState>(
   'forms',
-  {},
-  'Active forms state'
+  {}
 );
 
 // ============================================================================
 // Navigation State
 // ============================================================================
 
-export const currentRouteAtom = StateManager.createAtom<string>(
+export const currentRouteAtom = createAtom<string>(
   'currentRoute',
-  '/',
-  'Current route path'
+  '/'
 );
 
-export const navigationHistoryAtom = StateManager.createAtom<string[]>(
+export const navigationHistoryAtom = createAtom<string[]>(
   'navigationHistory',
-  [],
-  'Navigation history'
+  []
 );
 
-export const breadcrumbsAtom = StateManager.createAtom<
+export const breadcrumbsAtom = createAtom<
   Array<{ label: string; path: string }>
->('breadcrumbs', [], 'Navigation breadcrumbs');
+>('breadcrumbs', []);
 
 // ============================================================================
 // Search State
 // ============================================================================
 
-export const searchQueryAtom = StateManager.createAtom<string>(
+export const searchQueryAtom = createAtom<string>(
   'searchQuery',
-  '',
-  'Global search query'
+  ''
 );
 
-export const searchResultsAtom = StateManager.createAtom<unknown[]>(
+export const searchResultsAtom = createAtom<unknown[]>(
   'searchResults',
-  [],
-  'Search results'
+  []
 );
 
-export const searchLoadingAtom = StateManager.createAtom<boolean>(
+export const searchLoadingAtom = createAtom<boolean>(
   'searchLoading',
-  false,
-  'Search in progress'
+  false
 );
 
 // ============================================================================
@@ -319,31 +311,30 @@ export interface PerformanceMetrics {
   lastUpdate: Date;
 }
 
-export const performanceMetricsAtom =
-  StateManager.createAtom<PerformanceMetrics>(
-    'performanceMetrics',
-    {
-      fps: 60,
-      renderTime: 0,
-      memoryUsage: 0,
-      lastUpdate: new Date(),
-    },
-    'Performance monitoring metrics'
-  );
+export const performanceMetricsAtom = createAtom<PerformanceMetrics>(
+  'performanceMetrics',
+  {
+    fps: 60,
+    renderTime: 0,
+    memoryUsage: 0,
+    lastUpdate: new Date(),
+  },
+  'Performance monitoring metrics'
+);
 
 // ============================================================================
 // Feature Flags
 // ============================================================================
 
-export const featureFlagsAtom = StateManager.createPersistentAtom<
+export const featureFlagsAtom = createPersistentAtom<
   Record<string, boolean>
 >(
   'featureFlags',
   {},
   {
-    description: 'Feature flags configuration',
-    storage: 'local',
-  }
+    storage: 'sessionStorage',
+  },
+  'Feature flags configuration'
 );
 
 // ============================================================================
@@ -378,15 +369,14 @@ const createDefaultMobileSettings = (): MobileSettings => ({
   language: 'en',
 });
 
-export const mobileSettingsAtom =
-  StateManager.createPersistentAtom<MobileSettings>(
-    'mobile:settings',
-    createDefaultMobileSettings(),
-    {
-      description: 'Mobile application persistent settings',
-      storage: 'local',
-    }
-  );
+export const mobileSettingsAtom = createPersistentAtom<MobileSettings>(
+  'mobile:settings',
+  createDefaultMobileSettings(),
+  {
+    storage: 'sessionStorage',
+  },
+  'Mobile application persistent settings'
+);
 
 // ============================================================================
 // Legacy Store Compatibility
@@ -443,29 +433,26 @@ export interface LegacyNotification {
 }
 
 // Auth compatibility
-export const storeAuthStateAtom = StateManager.createAtom<LegacyAuthState>(
+export const storeAuthStateAtom = createAtom<LegacyAuthState>(
   'store:authState',
-  createDefaultLegacyAuthState(),
-  'Legacy store authentication composite state'
+  createDefaultLegacyAuthState()
 );
 
-export const storeAccessTokenAtom = StateManager.createPersistentAtom<
+export const storeAccessTokenAtom = createPersistentAtom<
   string | null
 >('store:accessToken', null, {
-  description: 'Legacy store JWT access token',
-  storage: 'local',
+  storage: 'localStorage',
   storageKey: 'access-token',
 });
 
-export const storeRefreshTokenAtom = StateManager.createPersistentAtom<
+export const storeRefreshTokenAtom = createPersistentAtom<
   string | null
 >('store:refreshToken', null, {
-  description: 'Legacy store refresh token',
-  storage: 'local',
+  storage: 'localStorage',
   storageKey: 'refresh-token',
 });
 
-export const storeUserAtom = StateManager.createWritableDerivedAtom<
+export const storeUserAtom = createWritableDerivedAtom<
   StoreUser | null,
   [StoreUser | null],
   void
@@ -479,17 +466,15 @@ export const storeUserAtom = StateManager.createWritableDerivedAtom<
       user,
       isAuthenticated: user !== null,
     });
-  },
-  'Legacy store current user accessor'
+  }
 );
 
-export const storeIsLoggedInAtom = StateManager.createDerivedAtom(
+export const storeIsLoggedInAtom = createDerivedAtom(
   'store:isLoggedIn',
-  (get) => get(storeAuthStateAtom).isAuthenticated,
-  'Legacy store authentication status'
+  (get) => get(storeAuthStateAtom).isAuthenticated
 );
 
-export const storeAuthLoadingAtom = StateManager.createWritableDerivedAtom<
+export const storeAuthLoadingAtom = createWritableDerivedAtom<
   boolean,
   [boolean],
   void
@@ -499,11 +484,10 @@ export const storeAuthLoadingAtom = StateManager.createWritableDerivedAtom<
   (get, set, isLoading) => {
     const current = get(storeAuthStateAtom);
     set(storeAuthStateAtom, { ...current, isLoading });
-  },
-  'Legacy store auth loading state'
+  }
 );
 
-export const storeAuthErrorAtom = StateManager.createWritableDerivedAtom<
+export const storeAuthErrorAtom = createWritableDerivedAtom<
   string | null,
   [string | null],
   void
@@ -513,8 +497,7 @@ export const storeAuthErrorAtom = StateManager.createWritableDerivedAtom<
   (get, set, error) => {
     const current = get(storeAuthStateAtom);
     set(storeAuthStateAtom, { ...current, error });
-  },
-  'Legacy store auth error state'
+  }
 );
 
 export interface AuthState {
@@ -582,7 +565,7 @@ export const authErrorAtom = atom(
   }
 );
 
-export const storeLoginAtom = StateManager.createWritableDerivedAtom<
+export const storeLoginAtom = createWritableDerivedAtom<
   null,
   [{ email: string; password: string }],
   Promise<void>
@@ -617,11 +600,10 @@ export const storeLoginAtom = StateManager.createWritableDerivedAtom<
     } finally {
       set(storeAuthLoadingAtom, false);
     }
-  },
-  'Legacy store login action'
+  }
 );
 
-export const storeLogoutAtom = StateManager.createWritableDerivedAtom<
+export const storeLogoutAtom = createWritableDerivedAtom<
   null,
   [],
   void
@@ -632,11 +614,10 @@ export const storeLogoutAtom = StateManager.createWritableDerivedAtom<
     set(storeAccessTokenAtom, null);
     set(storeRefreshTokenAtom, null);
     set(storeAuthStateAtom, createDefaultLegacyAuthState());
-  },
-  'Legacy store logout action'
+  }
 );
 
-export const storeRefreshTokensAtom = StateManager.createWritableDerivedAtom<
+export const storeRefreshTokensAtom = createWritableDerivedAtom<
   null,
   [],
   Promise<void>
@@ -669,79 +650,69 @@ export const storeRefreshTokensAtom = StateManager.createWritableDerivedAtom<
     } catch {
       set(storeLogoutAtom);
     }
-  },
-  'Legacy store refresh token action'
+  }
 );
 
-export const storeHasPermissionAtom = StateManager.createDerivedAtom(
+export const storeHasPermissionAtom = createDerivedAtom(
   'store:auth:hasPermission',
   (get) => (permission: string) => {
     const user = get(storeUserAtom);
     const permissions = (user as unknown as { permissions?: string[] } | null)
       ?.permissions;
     return permissions?.includes(permission) ?? false;
-  },
-  'Legacy store permission guard'
+  }
 );
 
-export const storeHasRoleAtom = StateManager.createDerivedAtom(
+export const storeHasRoleAtom = createDerivedAtom(
   'store:auth:hasRole',
   (get) => (role: string) => {
     const user = get(storeUserAtom);
     return user?.role === role;
-  },
-  'Legacy store role guard'
+  }
 );
 
 // General store state
-export const storeThemeAtom = StateManager.createPersistentAtom<
+export const storeThemeAtom = createPersistentAtom<
   'light' | 'dark'
 >('store:theme', 'light', {
-  description: 'Legacy store theme preference',
-  storage: 'local',
+  storage: 'sessionStorage',
 });
 
-export const storeThemeModeAtom =
-  StateManager.createPersistentAtom<LegacyThemeMode>(
-    'store:themeMode',
-    'system',
-    {
-      description: 'Legacy store theme mode',
-      storage: 'local',
-      storageKey: 'theme-mode',
-    }
-  );
+export const storeThemeModeAtom = createPersistentAtom<LegacyThemeMode>(
+  'store:themeMode',
+  'system',
+  {
+    storage: 'sessionStorage',
+    storageKey: 'theme-mode',
+  }
+);
 
-export const storeSidebarOpenAtom = StateManager.createPersistentAtom<boolean>(
+export const storeSidebarOpenAtom = createPersistentAtom<boolean>(
   'store:sidebarOpen',
   true,
   {
-    description: 'Legacy store sidebar state',
-    storage: 'local',
+    storage: 'sessionStorage',
     storageKey: 'sidebar-open',
   }
 );
 
-export const storePlatformAtom = StateManager.createAtom<StorePlatform>(
+export const storePlatformAtom = createAtom<StorePlatform>(
   'store:platform',
-  'web',
-  'Legacy store platform context'
+  'web'
 );
 
-export const storeWorkspacesAtom = StateManager.createAtom<StoreWorkspace[]>(
+export const storeWorkspacesAtom = createAtom<StoreWorkspace[]>(
   'store:workspaces',
-  [],
-  'Legacy store workspace list'
+  []
 );
 
-export const storeCurrentWorkspaceIdAtom = StateManager.createPersistentAtom<
+export const storeCurrentWorkspaceIdAtom = createPersistentAtom<
   string | null
 >('store:currentWorkspaceId', null, {
-  description: 'Legacy store current workspace ID',
-  storage: 'local',
+  storage: 'localStorage',
 });
 
-export const storeCurrentWorkspaceAtom = StateManager.createWritableDerivedAtom<
+export const storeCurrentWorkspaceAtom = createWritableDerivedAtom<
   StoreWorkspace | null,
   [string | null],
   void
@@ -756,24 +727,21 @@ export const storeCurrentWorkspaceAtom = StateManager.createWritableDerivedAtom<
   },
   (_get, set, workspaceId) => {
     set(storeCurrentWorkspaceIdAtom, workspaceId);
-  },
-  'Legacy store current workspace accessor'
+  }
 );
 
-export const storeProjectsAtom = StateManager.createAtom<StoreProject[]>(
+export const storeProjectsAtom = createAtom<StoreProject[]>(
   'store:projects',
-  [],
-  'Legacy store project list'
+  []
 );
 
-export const storeCurrentProjectIdAtom = StateManager.createPersistentAtom<
+export const storeCurrentProjectIdAtom = createPersistentAtom<
   string | null
 >('store:currentProjectId', null, {
-  description: 'Legacy store current project ID',
-  storage: 'local',
+  storage: 'localStorage',
 });
 
-export const storeCurrentProjectAtom = StateManager.createWritableDerivedAtom<
+export const storeCurrentProjectAtom = createWritableDerivedAtom<
   StoreProject | null,
   [string | null],
   void
@@ -788,17 +756,15 @@ export const storeCurrentProjectAtom = StateManager.createWritableDerivedAtom<
   },
   (_get, set, projectId) => {
     set(storeCurrentProjectIdAtom, projectId);
-  },
-  'Legacy store current project accessor'
+  }
 );
 
-export const storeTasksAtom = StateManager.createAtom<StoreTask[]>(
+export const storeTasksAtom = createAtom<StoreTask[]>(
   'store:tasks',
-  [],
-  'Legacy store task list'
+  []
 );
 
-export const storeCurrentProjectTasksAtom = StateManager.createDerivedAtom(
+export const storeCurrentProjectTasksAtom = createDerivedAtom(
   'store:currentProjectTasks',
   (get) => {
     const tasks = get(storeTasksAtom);
@@ -806,21 +772,19 @@ export const storeCurrentProjectTasksAtom = StateManager.createDerivedAtom(
     return currentProject
       ? tasks.filter((task) => task.projectId === currentProject.id)
       : [];
-  },
-  'Legacy store tasks scoped to current project'
+  }
 );
 
-export const storeLoadingStatesAtom = StateManager.createAtom<
+export const storeLoadingStatesAtom = createAtom<
   Record<string, boolean>
->('store:loadingStates', {}, 'Legacy store loading state map');
+>('store:loadingStates', {});
 
-export const storeIsLoadingAtom = StateManager.createDerivedAtom(
+export const storeIsLoadingAtom = createDerivedAtom(
   'store:isLoading',
-  (get) => Object.values(get(storeLoadingStatesAtom)).some(Boolean),
-  'Legacy store aggregate loading flag'
+  (get) => Object.values(get(storeLoadingStatesAtom)).some(Boolean)
 );
 
-export const storeSetLoadingAtom = StateManager.createWritableDerivedAtom<
+export const storeSetLoadingAtom = createWritableDerivedAtom<
   null,
   [{ key: string; isLoading: boolean }],
   void
@@ -833,59 +797,52 @@ export const storeSetLoadingAtom = StateManager.createWritableDerivedAtom<
       ...current,
       [payload.key]: payload.isLoading,
     });
-  },
-  'Legacy store loading state mutator'
+  }
 );
 
-export const storeGlobalLoadingAtom = StateManager.createAtom<boolean>(
+export const storeGlobalLoadingAtom = createAtom<boolean>(
   'store:globalLoading',
-  false,
-  'Legacy store global loading indicator'
+  false
 );
 
-export const storeNotificationsAtom = StateManager.createAtom<
+export const storeNotificationsAtom = createAtom<
   LegacyNotification[]
->('store:notifications', [], 'Legacy store notifications collection');
+>('store:notifications', []);
 
-export const storeCommandPaletteOpenAtom = StateManager.createAtom<boolean>(
+export const storeCommandPaletteOpenAtom = createAtom<boolean>(
   'store:commandPaletteOpen',
-  false,
-  'Legacy store command palette visibility'
+  false
 );
 
-export const storeSearchQueryAtom = StateManager.createAtom<string>(
+export const storeSearchQueryAtom = createAtom<string>(
   'store:searchQuery',
-  '',
-  'Legacy store search query'
+  ''
 );
 
-export const storeSearchResultsAtom = StateManager.createAtom<
+export const storeSearchResultsAtom = createAtom<
   Array<Record<string, unknown>>
->('store:searchResults', [], 'Legacy store search results');
+>('store:searchResults', []);
 
-export const storeBreadcrumbsAtom = StateManager.createAtom<
+export const storeBreadcrumbsAtom = createAtom<
   Array<{ label: string; href?: string }>
->('store:breadcrumbs', [], 'Legacy store breadcrumb trail');
+>('store:breadcrumbs', []);
 
-export const storePageTitleAtom = StateManager.createAtom<string>(
+export const storePageTitleAtom = createAtom<string>(
   'store:pageTitle',
-  '',
-  'Legacy store page title'
+  ''
 );
 
-export const storeFullscreenAtom = StateManager.createAtom<boolean>(
+export const storeFullscreenAtom = createAtom<boolean>(
   'store:fullscreen',
-  false,
-  'Legacy store fullscreen state'
+  false
 );
 
-export const storeModalAtom = StateManager.createAtom<LegacyModalState>(
+export const storeModalAtom = createAtom<LegacyModalState>(
   'store:modal',
-  createDefaultLegacyModalState(),
-  'Legacy store modal state'
+  createDefaultLegacyModalState()
 );
 
-export const storeOpenModalAtom = StateManager.createWritableDerivedAtom<
+export const storeOpenModalAtom = createWritableDerivedAtom<
   null,
   [{ modalId: string; data?: Record<string, unknown> }],
   void
@@ -898,11 +855,10 @@ export const storeOpenModalAtom = StateManager.createWritableDerivedAtom<
       modalId: payload.modalId,
       data: payload.data,
     });
-  },
-  'Legacy store open modal action'
+  }
 );
 
-export const storeCloseModalAtom = StateManager.createWritableDerivedAtom<
+export const storeCloseModalAtom = createWritableDerivedAtom<
   null,
   [],
   void
@@ -911,17 +867,15 @@ export const storeCloseModalAtom = StateManager.createWritableDerivedAtom<
   () => null,
   (_get, set) => {
     set(storeModalAtom, createDefaultLegacyModalState());
-  },
-  'Legacy store close modal action'
+  }
 );
 
-export const storeDrawerAtom = StateManager.createAtom<LegacyDrawerState>(
+export const storeDrawerAtom = createAtom<LegacyDrawerState>(
   'store:drawer',
-  createDefaultLegacyDrawerState(),
-  'Legacy store drawer state'
+  createDefaultLegacyDrawerState()
 );
 
-export const storeOpenDrawerAtom = StateManager.createWritableDerivedAtom<
+export const storeOpenDrawerAtom = createWritableDerivedAtom<
   null,
   [
     {
@@ -941,11 +895,10 @@ export const storeOpenDrawerAtom = StateManager.createWritableDerivedAtom<
       position: payload.position ?? 'right',
       data: payload.data,
     });
-  },
-  'Legacy store open drawer action'
+  }
 );
 
-export const storeCloseDrawerAtom = StateManager.createWritableDerivedAtom<
+export const storeCloseDrawerAtom = createWritableDerivedAtom<
   null,
   [],
   void
@@ -954,11 +907,10 @@ export const storeCloseDrawerAtom = StateManager.createWritableDerivedAtom<
   () => null,
   (_get, set) => {
     set(storeDrawerAtom, createDefaultLegacyDrawerState());
-  },
-  'Legacy store close drawer action'
+  }
 );
 
-export const storeAddNotificationAtom = StateManager.createWritableDerivedAtom<
+export const storeAddNotificationAtom = createWritableDerivedAtom<
   null,
   [Omit<LegacyNotification, 'id'>],
   void
@@ -966,27 +918,16 @@ export const storeAddNotificationAtom = StateManager.createWritableDerivedAtom<
   'store:addNotification',
   () => null,
   (get, set, notification) => {
-    const id = Math.random().toString(36).slice(2, 11);
-    const newNotification: LegacyNotification = { ...notification, id };
+    const id = Date.now().toString();
     set(storeNotificationsAtom, [
       ...get(storeNotificationsAtom),
-      newNotification,
+      { ...notification, id },
     ]);
-
-    if (notification.duration !== 0) {
-      setTimeout(() => {
-        set(
-          storeNotificationsAtom,
-          get(storeNotificationsAtom).filter((existing) => existing.id !== id)
-        );
-      }, notification.duration ?? 5000);
-    }
-  },
-  'Legacy store add notification action'
+  }
 );
 
 export const storeRemoveNotificationAtom =
-  StateManager.createWritableDerivedAtom<null, [string], void>(
+  createWritableDerivedAtom<null, [string], void>(
     'store:removeNotification',
     () => null,
     (get, set, id) => {
@@ -994,8 +935,7 @@ export const storeRemoveNotificationAtom =
         storeNotificationsAtom,
         get(storeNotificationsAtom).filter((existing) => existing.id !== id)
       );
-    },
-    'Legacy store remove notification action'
+    }
   );
 
 // ============================================================================

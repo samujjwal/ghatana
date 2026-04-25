@@ -172,6 +172,11 @@ export function CollectionForm({ initialData, onSubmit, onCancel, isSubmitting }
             <Shield className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Trust & Governance</h3>
           </div>
+            {/* DC-UX-013: Governance fields are form-draft state only.
+                They are persisted when the collection is saved. */}
+            <p className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded px-2 py-1">
+              These settings take effect after the collection is saved.
+            </p>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
@@ -188,7 +193,7 @@ export function CollectionForm({ initialData, onSubmit, onCancel, isSubmitting }
                 <option value="restricted">Restricted</option>
               </select>
               <div className="pt-1">
-                <SensitivityBadge level={watch('sensitivity') as SensitivityLevel} />
+                <SensitivityBadge level={watch('sensitivity')} />
               </div>
             </div>
 

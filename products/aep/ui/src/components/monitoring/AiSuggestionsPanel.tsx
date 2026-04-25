@@ -10,9 +10,9 @@
  * @doc.pattern AI Component
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { AlertTriangle, TrendingUp, Zap, X, CheckCircle } from 'lucide-react';
+import { AlertTriangle, TrendingUp, Zap, X, CheckCircle, Info, ChevronDown, ChevronUp } from 'lucide-react';
 import { isFeatureEnabled } from '@/lib/feature-flags';
 import { RBACGuard } from '../security/RBACGuard';
 import { Button } from '@ghatana/design-system';
@@ -23,6 +23,7 @@ import { apiClient } from '@/lib/http-client';
  */
 export interface AiSuggestion {
   id: string;
+  runId: string;
   type: 'anomaly' | 'optimization' | 'warning' | 'recommendation';
   severity: 'low' | 'medium' | 'high' | 'critical';
   message: string;
@@ -33,6 +34,10 @@ export interface AiSuggestion {
   resourceId?: string;
   resourceType?: 'pipeline' | 'run' | 'agent' | 'policy';
   confidence?: number;
+  /** Human-readable explanation of why this suggestion was generated. */
+  reasoning?: string;
+  /** Evidence or source that supports this suggestion. */
+  evidenceUrl?: string;
 }
 
 /**
@@ -159,10 +164,14 @@ export const AiSuggestionsPanel: React.FC<AiSuggestionsPanelProps> = ({
               <Icon className="h-4 w-4 mt-0.5 flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium">{suggestion.message}</p>
-                {suggestion.confidence && (
-                  <p className="text-xs opacity-75 mt-1">
-                    Confidence: {(suggestion.confidence * 100).toFixed(0)}%
-                  </p>
+                {suggestion.confidence !== undefined && (
+                  <div className="mt-1">
+                    <ConfidenceBadge
+                      value={suggestion.confidence}
+                      reasoning={suggestion.reasoning}
+                      evidenceUrl={suggestion.evidenceUrl}
+                    />
+                  </div>
                 )}
                 {suggestion.action && (
                   <RBACGuard permission="write:pipeline" resource={suggestion.resourceId} action="write">
@@ -200,6 +209,64 @@ export const AiSuggestionsPanel: React.FC<AiSuggestionsPanelProps> = ({
 /**
  * Hook for using AI suggestions
  */
+/**
+ * Visual confidence tier badge with reasoning and evidence link.
+ */
+function ConfidenceBadge({
+  value,
+  reasoning,
+  evidenceUrl,
+}: {
+  value: number;
+  reasoning?: string;
+  evidenceUrl?: string;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const tier = value >= 0.8 ? 'high' : value >= 0.5 ? 'medium' : 'low';
+  const label = tier === 'high' ? 'High' : tier === 'medium' ? 'Medium' : 'Low';
+  const color =
+    tier === 'high'
+      ? 'text-green-600 dark:text-green-400'
+      : tier === 'medium'
+      ? 'text-amber-600 dark:text-amber-400'
+      : 'text-red-600 dark:text-red-400';
+
+  return (
+    <div className="text-xs">
+      <span className={['font-medium', color].join(' ')}>{label} confidence</span>
+      <span className="text-gray-500 dark:text-gray-400 ml-1">({(value * 100).toFixed(0)}%)</span>
+      {reasoning && (
+        <button
+          type="button"
+          onClick={() => setExpanded(!expanded)}
+          className="ml-1.5 inline-flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+          aria-label={expanded ? 'Hide reasoning' : 'Show reasoning'}
+        >
+          {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+        </button>
+      )}
+      {expanded && reasoning && (
+        <div className="mt-1.5 rounded bg-white/60 dark:bg-gray-900/40 p-2 border border-gray-100 dark:border-gray-800 text-gray-600 dark:text-gray-300">
+          <p className="flex items-start gap-1">
+            <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
+            <span>{reasoning}</span>
+          </p>
+          {evidenceUrl && (
+            <a
+              href={evidenceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 inline-block text-indigo-600 dark:text-indigo-400 hover:underline"
+            >
+              View evidence →
+            </a>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function useAiSuggestions(tenantId: string) {
   const { data: suggestions, isLoading, error, refetch } = useQuery({
     queryKey: ['aep', 'ai-suggestions', tenantId],

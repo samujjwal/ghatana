@@ -179,7 +179,7 @@ function OperatorDiagnosticsPanel({
     <section className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
       <div className="flex items-start justify-between gap-4 mb-4">
         <div>
-          <h3 className="text-sm font-medium text-gray-900 dark:text-white">Operator Diagnostics</h3>
+          <h2 className="text-sm font-medium text-gray-900 dark:text-white">Operator Diagnostics</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             One place to confirm tenant bootstrap, auth session state, and capability boundary truth before investigating deeper product behavior.
           </p>
@@ -257,7 +257,7 @@ function ModelTelemetryPanel({
     <section className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4" data-testid="insights-model-telemetry-panel">
       <div className="flex items-start justify-between gap-4 mb-4">
         <div>
-          <h3 className="text-sm font-medium text-gray-900 dark:text-white">Model Telemetry</h3>
+          <h2 className="text-sm font-medium text-gray-900 dark:text-white">Model Telemetry</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             Launcher-process fallback and confidence telemetry for the AI routes behind query suggestions, workflow drafting, and explanation flows.
           </p>
@@ -409,10 +409,10 @@ function OverviewTab({
         {/* Assistance Spotlight */}
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
+            <h2 className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
               <Zap className="h-4 w-4 text-yellow-500" />
               Assistance Spotlight
-            </h3>
+            </h2>
             <div className="text-right">
               <span className="block text-xs text-gray-500">
                 {brainStats?.hotTierRecords || 0} hot-tier records
@@ -447,10 +447,10 @@ function OverviewTab({
         {/* Recent Activity */}
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
+            <h2 className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
               <Activity className="h-4 w-4 text-blue-500" />
               Recent Actions
-            </h3>
+            </h2>
             <button className="text-xs text-primary-600 dark:text-primary-400 hover:underline">
               View all
             </button>
@@ -1228,7 +1228,7 @@ export function InsightsPage() {
   );
 
   return (
-    <main className="flex flex-col h-full" aria-label="Insights">
+    <section className="flex flex-col h-full" aria-label="Insights">
       <PageHeader
         title="Insights"
         subtitle="Operational analytics, system intelligence, and cost optimization"
@@ -1295,7 +1295,7 @@ export function InsightsPage() {
           {activeTab === 'cost' && <CostTab costBreakdown={costData} aiSuggestions={aiSuggestions ?? []} />}
         </div>
       </PageContent>
-    </main>
+    </section>
   );
 }
 

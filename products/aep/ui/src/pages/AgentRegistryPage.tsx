@@ -12,14 +12,16 @@
  * @doc.purpose AEP agent catalog browser
  * @doc.layer frontend
  */
-import React, { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router';
 import type { AgentRegistration } from '@/api/aep.api';
 import { useAgents, useDeregisterAgent } from '@/hooks/useAgents';
+import { PageState } from '@/components/shared/PageState';
 import { AgentTable } from '@/components/agents/AgentTable';
 import { AgentStatusBadge } from '@/components/agents/AgentStatusBadge';
 import { Button } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
+import { SensitiveActionDialog } from '@/components/shared/SensitiveActionDialog';
 
 // ─── Status styling ──────────────────────────────────────────────────
 
@@ -133,10 +135,23 @@ function AgentDetailPanel({
 
 export function AgentRegistryPage() {
   const navigate = useNavigate();
+  const { agentId } = useParams<{ agentId?: string }>();
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<AgentRegistration | null>(null);
+  const [deregisterTarget, setDeregisterTarget] = useState<AgentRegistration | null>(null);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 20;
 
   const { data: agents = [], isLoading, isError } = useAgents();
+
+  // Auto-select agent when deep-linked via /catalog/agents/:agentId
+  useEffect(() => {
+    if (!agentId || agents.length === 0) return;
+    const matched = agents.find((a) => a.id === agentId);
+    if (matched) {
+      setSelected(matched);
+    }
+  }, [agentId, agents]);
   const deregisterMut = useDeregisterAgent();
 
   const filtered = useMemo(() => {
@@ -152,8 +167,23 @@ export function AgentRegistryPage() {
     );
   }, [agents, search]);
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(Math.max(1, page), totalPages);
+  const pagedAgents = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
   function handleDeregister(id: string) {
-    deregisterMut.mutate(id, { onSuccess: () => setSelected(null) });
+    const target = agents.find((a) => a.id === id) ?? null;
+    setDeregisterTarget(target);
+  }
+
+  function confirmDeregister(reason: string) {
+    if (!deregisterTarget) return;
+    deregisterMut.mutate(deregisterTarget.id, {
+      onSuccess: () => {
+        setSelected(null);
+        setDeregisterTarget(null);
+      },
+    });
   }
 
   return (
@@ -176,9 +206,9 @@ export function AgentRegistryPage() {
 
         {/* Table */}
         <div className="flex-1 overflow-auto px-6 py-4">
-          {isLoading && <p className="text-center text-gray-400 py-12">Loading agents…</p>}
+          {isLoading && <PageState mode="loading" title="Loading agents…" description="Fetching registered agents for this tenant." className="h-full" />}
           {isError && (
-            <p className="text-center text-red-500 py-12">Failed to load agents. Is the AEP backend running?</p>
+            <PageState mode="unavailable" title="Failed to load agents" description="The agent registry service is not reachable." className="h-full" />
           )}
           {!isLoading && !isError && filtered.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -210,11 +240,41 @@ export function AgentRegistryPage() {
             </div>
           )}
           {!isLoading && !isError && filtered.length > 0 && (
-            <AgentTable
-              agents={filtered}
-              selectedId={selected?.id}
-              onSelect={setSelected}
-            />
+            <>
+              <AgentTable
+                agents={pagedAgents}
+                selectedId={selected?.id}
+                onSelect={setSelected}
+              />
+              {totalPages > 1 && (
+                <div className="mt-4 flex items-center justify-between">
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    Showing {pagedAgents.length} of {filtered.length} agents
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={safePage <= 1}
+                      variant="ghost"
+                      className="px-2 py-1 text-xs"
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300 px-2">
+                      {safePage} / {totalPages}
+                    </span>
+                    <Button
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={safePage >= totalPages}
+                      variant="ghost"
+                      className="px-2 py-1 text-xs"
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -226,6 +286,26 @@ export function AgentRegistryPage() {
           onClose={() => setSelected(null)}
           onDeregister={handleDeregister}
           isDeregistering={deregisterMut.isPending}
+        />
+      )}
+
+      {/* Deregister confirmation */}
+      {deregisterTarget && (
+        <SensitiveActionDialog
+          open={!!deregisterTarget}
+          title="Deregister agent"
+          description={`This will remove agent "${deregisterTarget.name}" (${deregisterTarget.id}) from the registry. Any pipelines using this agent may fail.`}
+          confirmKeyword="DEREGISTER"
+          impactItems={[
+            { label: 'Agent', value: deregisterTarget.name, severity: 'high' },
+            { label: 'ID', value: deregisterTarget.id, severity: 'medium' },
+            { label: 'Tenant', value: deregisterTarget.tenantId, severity: 'low' },
+            { label: 'Capabilities', value: deregisterTarget.capabilities.join(', ') || 'none', severity: 'medium' },
+          ]}
+          auditMessage={`Agent ${deregisterTarget.id} deregistered by user`}
+          reasonRequired
+          onConfirm={confirmDeregister}
+          onCancel={() => setDeregisterTarget(null)}
         />
       )}
     </div>

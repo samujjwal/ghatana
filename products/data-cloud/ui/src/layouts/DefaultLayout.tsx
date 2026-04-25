@@ -42,7 +42,6 @@ import SessionBootstrap, {
     SHELL_ROLE_DISCLOSURE_NOTE,
     SHELL_ROLE_LABELS,
     SHELL_ROLES,
-    canAccessShellRole,
 } from '../lib/auth/session';
 import { GlobalSearch, useGlobalSearch } from '../components/common/GlobalSearch';
 import { KeyboardShortcuts, useKeyboardShortcuts } from '../components/common/KeyboardShortcuts';
@@ -50,6 +49,8 @@ import { AiAssistant, useAiAssistant, AiAssistantTrigger } from '../components/a
 import { useNotificationCenter, NotificationTrigger, NotificationPanel } from '../components/notifications/NotificationCenter';
 import { useWebSocketAutoConnect, useWebSocketState } from '../lib/websocket';
 import { getDiscoverableRoutes } from '../lib/routing/RouteCapabilityRegistry';
+import { OperationsProvider } from '../contexts/OperationsContext';
+import { ActiveOperationsBar } from '../components/common/ActiveOperationsBar';
 
 /**
  * Navigation section configuration
@@ -89,7 +90,8 @@ const navSections: NavSection[] = [
         ],
     },
     {
-        title: 'Intelligence',
+        // DC-UX-040: renamed from 'Intelligence' to 'Observability' — these are operational views, not an AI product surface
+        title: 'Observability',
         items: [
             { to: '/insights', label: 'Insights', icon: <Brain className="h-4 w-4" />, minimumShellRole: 'operator' },
             { to: '/trust', label: 'Trust', icon: <Shield className="h-4 w-4" />, minimumShellRole: 'operator' },
@@ -146,22 +148,24 @@ export function buildNavFromRegistry(shellRole: ShellRole): NavSection[] {
 
     return [
         ...(coreItems.length > 0 ? [{ title: 'Core', items: coreItems }] : []),
-        ...(intelItems.length > 0 ? [{ title: 'Intelligence', items: intelItems }] : []),
+        ...(intelItems.length > 0 ? [{ title: 'Observability', items: intelItems }] : []),
         ...(manageItems.length > 0 ? [{ title: 'Manage', items: manageItems }] : []),
     ];
 }
 
 /**
- * Filter navigation sections based on shell role.
- * Uses canonical route registry to ensure nav matches route truth.
+ * DC-UX-002: Access control derived from canonical route registry.
+ * `getDiscoverableRoutes` is the single source of truth for which paths are
+ * visible for a given shell role. Presentation data (icons, labels, grouping)
+ * stays in `navSections`; the static `minimumShellRole` on nav items is ignored.
  */
-function getNavigationSectionsForShellRole(role: ShellRole): NavSection[] {
+export function getNavigationSectionsForShellRole(role: ShellRole): NavSection[] {
+    const accessiblePaths = new Set(getDiscoverableRoutes(role).map((r) => r.path));
+
     return navSections
         .map((section: NavSection) => ({
             ...section,
-            items: section.items.filter((item: NavItem) =>
-                !item.minimumShellRole || canAccessShellRole(role, item.minimumShellRole)
-            ),
+            items: section.items.filter((item: NavItem) => accessiblePaths.has(item.to)),
         }))
         .filter((section: NavSection) => section.items.length > 0);
 }
@@ -448,6 +452,7 @@ export default function DefaultLayout(): React.ReactElement {
     useWebSocketAutoConnect();
 
     return (
+        <OperationsProvider>
         <div className={cn('min-h-screen', bgStyles.page)}>
             {/* Sidebar */}
             <Sidebar
@@ -524,7 +529,11 @@ export default function DefaultLayout(): React.ReactElement {
                     WS: {wsState}
                 </div>
             )}
+
+            {/* Active Operations Bar (DC-UX-046) */}
+            <ActiveOperationsBar />
         </div>
+        </OperationsProvider>
     );
 }
 

@@ -39,6 +39,8 @@ import { TextField } from '@ghatana/design-system';
 import { TextArea } from '@ghatana/design-system';
 import { EmptyState } from '@/components/core/EmptyState';
 import { ErrorState } from '@/components/core/ErrorState';
+import { PageState } from '@/components/shared/PageState';
+import { SensitiveActionDialog } from '@/components/shared/SensitiveActionDialog';
 
 // ─── Status badge ────────────────────────────────────────────────────
 
@@ -270,15 +272,14 @@ export function PatternStudioPage() {
   const tenantId = useAtomValue(tenantIdAtom);
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialTab = searchParams.get('tab') === 'learning' ? 'learning' : 'patterns';
-  const [mainTab, setMainTab] = useState<MainTab>(initialTab);
+  const [mainTab, setMainTabState] = useState<MainTab>((searchParams.get('tab') as MainTab) ?? 'patterns');
   const [filterType, setFilterType] = useState<PatternType | 'ALL'>('ALL');
   const [showCreate, setShowCreate] = useState(false);
   const [learningSubTab, setLearningSubTab] = useState<'episodes' | 'policies'>('episodes');
+  const [deleteTarget, setDeleteTarget] = useState<PatternSummary | null>(null);
 
-  // Keep URL in sync when switching main tabs
-  const handleSetMainTab = (tab: MainTab) => {
-    setMainTab(tab);
+  const setMainTab = (tab: MainTab) => {
+    setMainTabState(tab);
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       if (tab === 'learning') {
@@ -360,8 +361,8 @@ export function PatternStudioPage() {
         mainTab === 'patterns' ? (
           <>
             <div className="flex-1 overflow-auto px-6 py-4">
-              {isLoading && <EmptyState title="Loading patterns…" description="Fetching event-detection patterns." />}
-              {isError && <ErrorState title="Failed to load patterns" onRetry={() => void refetch()} />}
+              {isLoading && <PageState mode="loading" title="Loading patterns…" description="Fetching event-detection patterns." className="h-full" />}
+              {isError && <PageState mode="unavailable" title="Failed to load patterns" description="The pattern service is not reachable." onRetry={() => void refetch()} className="h-full" />}
               {!isLoading && !isError && (
                 <div className="space-y-2">
                   {filtered.length === 0 && (
@@ -386,7 +387,7 @@ export function PatternStudioPage() {
                         {pattern.status}
                       </span>
                       <Button
-                        onClick={() => deleteMut.mutate(pattern.id)}
+                        onClick={() => setDeleteTarget(pattern)}
                         aria-label={`Delete pattern ${pattern.name}`}
                         variant="ghost"
                         className="text-gray-400 hover:text-red-500 transition-colors text-sm ml-2 p-1"
@@ -431,6 +432,28 @@ export function PatternStudioPage() {
           />
         )
       }
+
+      {deleteTarget && (
+        <SensitiveActionDialog
+          open={!!deleteTarget}
+          title="Delete pattern"
+          description={`This will permanently remove pattern "${deleteTarget.name}" (${deleteTarget.id}). Any pipelines using this pattern may fail.`}
+          confirmKeyword="DELETE"
+          impactItems={[
+            { label: 'Pattern', value: deleteTarget.name, severity: 'high' },
+            { label: 'Type', value: deleteTarget.type, severity: 'medium' },
+            { label: 'Tenant', value: tenantId, severity: 'low' },
+          ]}
+          auditMessage={`Pattern ${deleteTarget.id} deleted by user`}
+          reasonRequired
+          onConfirm={() => {
+            if (deleteTarget) deleteMut.mutate(deleteTarget.id);
+            setDeleteTarget(null);
+          }}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
     </div >
   );
 }
+

@@ -32,18 +32,21 @@ const SHELL_ROLE_SET = new Set<ShellRole>(SHELL_ROLES);
 
 export const DEFAULT_SHELL_ROLE: ShellRole = 'primary-user';
 
+// DC-UX-036: Labels use "view" suffix to reinforce that this is a UI disclosure control,
+// not an authorization or permission control. Backend permissions are always enforced independently.
 export const SHELL_ROLE_LABELS: Record<ShellRole, string> = {
-  'primary-user': 'Primary User',
-  operator: 'Operator',
-  admin: 'Admin',
+  'primary-user': 'Standard view',
+  operator: 'Operator view',
+  admin: 'Admin view',
 };
 
-export const SHELL_ROLE_CONTROL_LABEL = 'Workspace view menu';
+export const SHELL_ROLE_CONTROL_LABEL = 'View mode menu';
 
-export const SHELL_ROLE_CONTROL_TITLE = 'Workspace View';
+// DC-UX-036: Renamed from 'Workspace View' → 'View mode' to clearly distinguish from authorization roles.
+export const SHELL_ROLE_CONTROL_TITLE = 'View mode';
 
 export const SHELL_ROLE_DISCLOSURE_NOTE =
-  'This control only changes which UI surfaces are disclosed. Backend authentication and authorization stay enforced independently.';
+  'Switching view mode changes which surfaces are visible. It does not grant or remove backend permissions — authorization is always enforced independently.';
 
 /**
  * Shell role descriptions for UI display.
@@ -52,9 +55,9 @@ export const SHELL_ROLE_DISCLOSURE_NOTE =
  * not for security authorization.
  */
 export const SHELL_ROLE_DESCRIPTIONS: Record<ShellRole, string> = {
-  'primary-user': 'Focus the UI on data exploration and analytics surfaces only.',
-  operator: 'Reveal runtime diagnostics and trust workflows without changing backend permissions.',
-  admin: 'Reveal administrative shell surfaces while backend permissions remain enforced separately.',
+  'primary-user': 'Show data exploration and analytics surfaces. Operator and admin surfaces are hidden.',
+  operator: 'Also show runtime diagnostics and trust workflows. Does not change backend permissions.',
+  admin: 'Also show administrative surfaces. Backend permissions remain independently enforced.',
 };
 
 function normalizeShellRole(value: string | null | undefined): ShellRole {

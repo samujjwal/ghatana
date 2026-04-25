@@ -47,6 +47,7 @@ import {
   Zap,
   LayoutGrid,
 } from 'lucide-react';
+import { Button, IconButton } from '@ghatana/design-system';
 import { cn } from '../lib/theme';
 import {
   SMART_WORKFLOW_AI_ASSIST_DEGRADED_DETAIL,
@@ -627,35 +628,23 @@ export function SmartWorkflowBuilder() {
             <CommandBarTrigger />
             {workflow && (
               <>
-                <button
+                <Button
+                  variant="outline"
+                  size="sm"
+                  leadingIcon={<LayoutGrid className="h-4 w-4" />}
                   onClick={handleAdvancedMode}
-                  className={cn(
-                    'flex items-center gap-2 px-3 py-2 rounded-lg',
-                    'border border-gray-200 dark:border-gray-700',
-                    'text-sm text-gray-600 dark:text-gray-400',
-                    'hover:bg-gray-100 dark:hover:bg-gray-800',
-                    'transition-colors'
-                  )}
                 >
-                  <LayoutGrid className="h-4 w-4" />
                   Advanced Mode
-                </button>
-                <button
-                  onClick={() => {
-                    void handleDeploy();
-                  }}
+                </Button>
+                <Button
+                  variant="solid"
+                  loading={isDeploying}
+                  leadingIcon={isDeploying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                  onClick={() => { void handleDeploy(); }}
                   disabled={isDeploying}
-                  className={cn(
-                    'flex items-center gap-2 px-4 py-2 rounded-lg',
-                    'bg-primary-600 hover:bg-primary-700',
-                    'text-white text-sm font-medium',
-                    'transition-colors',
-                    'disabled:opacity-60 disabled:cursor-not-allowed'
-                  )}
                 >
-                  {isDeploying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
                   {isDeploying ? 'Saving…' : 'Deploy'}
-                </button>
+                </Button>
               </>
             )}
           </div>
@@ -663,7 +652,7 @@ export function SmartWorkflowBuilder() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-6">
+      <section className="flex-1 overflow-y-auto p-6">
         {/* Input Section */}
         <div className="max-w-3xl mx-auto mb-8">
           <div
@@ -698,31 +687,16 @@ export function SmartWorkflowBuilder() {
                   'outline-none resize-none'
                 )}
               />
-              <button
+              <Button
+                variant="solid"
+                className="absolute right-3 bottom-3"
+                loading={isGenerating}
+                leadingIcon={isGenerating ? undefined : <Zap className="h-4 w-4" />}
                 onClick={handleGenerate}
                 disabled={!prompt.trim() || isGenerating}
-                className={cn(
-                  'absolute right-3 bottom-3',
-                  'flex items-center gap-2 px-4 py-2 rounded-lg',
-                  'bg-gradient-to-r from-purple-600 to-pink-600',
-                  'hover:from-purple-700 hover:to-pink-700',
-                  'text-white text-sm font-medium',
-                  'transition-colors',
-                  'disabled:opacity-50 disabled:cursor-not-allowed'
-                )}
               >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Zap className="h-4 w-4" />
-                    Generate Draft
-                  </>
-                )}
-              </button>
+                {isGenerating ? 'Generating...' : 'Generate Draft'}
+              </Button>
             </div>
 
             {generationError && (
@@ -740,18 +714,20 @@ export function SmartWorkflowBuilder() {
                   state={smartWorkflowGenerationBoundary.state}
                 />
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <button
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => navigate('/pipelines')}
-                    className="rounded-lg bg-white px-3 py-2 text-xs font-medium text-amber-900 hover:bg-amber-100 dark:bg-gray-900 dark:text-amber-200 dark:hover:bg-gray-800"
                   >
                     Open Pipelines
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setShowGenerationBoundary(false)}
-                    className="rounded-lg border border-amber-400 px-3 py-2 text-xs font-medium hover:bg-amber-100 dark:border-amber-700 dark:hover:bg-amber-900/30"
                   >
                     Dismiss
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -817,22 +793,22 @@ export function SmartWorkflowBuilder() {
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    void handleGenerate();
-                  }}
-                  className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  leadingIcon={<RefreshCw className="h-4 w-4" />}
+                  onClick={() => { void handleGenerate(); }}
                 >
-                  <RefreshCw className="h-4 w-4" />
                   Regenerate
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  leadingIcon={<Plus className="h-4 w-4" />}
                   onClick={handleAddStep}
-                  className="flex items-center gap-1 px-3 py-1.5 text-sm text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg"
                 >
-                  <Plus className="h-4 w-4" />
                   Add Step
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -882,12 +858,14 @@ export function SmartWorkflowBuilder() {
             {workflow.steps.length === 0 && (
               <div className="text-center py-12 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
                 <p className="text-gray-500">No steps in pipeline</p>
-                <button
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="mt-2"
                   onClick={handleAddStep}
-                  className="mt-2 text-primary-600 hover:underline text-sm"
                 >
                   Add a step
-                </button>
+                </Button>
               </div>
             )}
           </div>
@@ -929,7 +907,7 @@ export function SmartWorkflowBuilder() {
             </div>
           </div>
         )}
-      </main>
+      </section>
 
       {/* Ambient Intelligence Bar */}
       <AmbientIntelligenceBar />

@@ -158,7 +158,7 @@ export function WorkflowCatalogPage() {
       setInstantiatingIds((prev) => new Set(prev).add(templateId));
     },
     onSuccess: (result, templateId) => {
-      queryClient.invalidateQueries({ queryKey: ['pipelines', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['aep', 'pipelines', tenantId] });
       const template = templates?.find((t) => t.id === templateId);
       setInstantiatedPipeline({
         name: template?.name ?? 'Untitled',

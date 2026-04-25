@@ -53,7 +53,7 @@ export function CapabilityTruthPanel({
     <section className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4">
       <div className="flex items-start justify-between gap-4 mb-4">
         <div>
-          <h3 className="text-sm font-medium text-gray-900 dark:text-white">{title}</h3>
+          <h2 className="text-sm font-medium text-gray-900 dark:text-white">{title}</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{description}</p>
         </div>
         <span className="text-xs text-gray-400 whitespace-nowrap">{capabilities.length} capabilities</span>

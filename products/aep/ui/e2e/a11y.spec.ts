@@ -37,15 +37,15 @@ const STRUCTURAL_RULES = ['landmark-one-main', 'region', 'button-name', 'image-a
 
 async function seedAuthenticatedSession(page: import('@playwright/test').Page): Promise<void> {
     await page.addInitScript(() => {
-        window.localStorage.setItem('aep-token', 'playwright-jwt-token');
-        window.localStorage.setItem('aep-session', 'playwright-session-token');
+        window.sessionStorage.setItem('aep-token', 'playwright-jwt-token');
+        window.sessionStorage.setItem('aep-session', 'playwright-session-token');
     });
 }
 
 async function clearAuthenticatedSession(page: import('@playwright/test').Page): Promise<void> {
     await page.addInitScript(() => {
-        window.localStorage.removeItem('aep-token');
-        window.localStorage.removeItem('aep-session');
+        window.sessionStorage.removeItem('aep-token');
+        window.sessionStorage.removeItem('aep-session');
     });
 }
 
@@ -74,6 +74,10 @@ async function navigateForAudit(page: import('@playwright/test').Page, auditCase
 
     await page.goto(auditCase.path);
     await expect(page.locator('main')).toBeVisible();
+
+    // Assert page identity before running axe to avoid auditing a login redirect or error state
+    const pageTitle = await page.title();
+    expect(pageTitle.toLowerCase()).toContain('aep');
 }
 
 async function analyzeCriticalAndSeriousViolations(page: import('@playwright/test').Page) {

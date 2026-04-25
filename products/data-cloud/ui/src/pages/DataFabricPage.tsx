@@ -1,8 +1,9 @@
 /**
  * DataFabricPage — Four-tier data fabric topology visualizer.
  *
- * Renders the live HOT→WARM→COOL→COLD event-cloud topology using
- * `@ghatana/canvas/flow` with real-time throughput metrics from DC API.
+ * Renders the HOT→WARM→COOL→COLD event-cloud topology using
+ * `@ghatana/canvas/flow` with throughput metrics from DC API.
+ * This surface is in preview — live topology metrics are not yet connected.
  *
  * This is the first production consumer of the `@ghatana/canvas/flow` library.
  *
@@ -61,7 +62,7 @@ async function fetchFabricMetrics(): Promise<FabricMetricsResponse> {
 // Node layout
 // =============================================================================
 
-/** Build topology nodes from live tier metrics */
+/** Build topology nodes from tier metrics */
 function buildNodes(tiers: TierMetrics[]): FlowNode[] {
   const byTier = new Map(tiers.map((t) => [t.tier, t]));
 
@@ -237,12 +238,12 @@ function TierLegend(): React.ReactElement {
  * DataFabricPage — four-tier topology visualizer using `@ghatana/canvas/flow`.
  *
  * @doc.type component
- * @doc.purpose Data fabric topology view with live metrics
+ * @doc.purpose Data fabric topology view (preview — metrics not yet live)
  * @doc.layer product
  * @doc.pattern Page
  */
 export function DataFabricPage(): React.ReactElement {
-  // Real-time fabric metrics from DC API
+  // Fabric metrics from DC API (preview — live data not yet connected)
   const { data: fabricMetrics } = useQuery<FabricMetricsResponse>({
     queryKey: ['data-fabric', 'metrics'],
     queryFn: fetchFabricMetrics,
@@ -279,7 +280,7 @@ export function DataFabricPage(): React.ReactElement {
   const [nodes, setNodes, onNodesChange] = useNodesState<FlowNode>(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState<FlowEdge>(initialEdges);
 
-  // Sync nodes/edges when live data updates
+  // Sync nodes/edges when metrics update
   React.useEffect(() => {
     if (fabricMetrics) {
       setNodes(buildNodes(fabricMetrics.tiers));
@@ -299,15 +300,16 @@ export function DataFabricPage(): React.ReactElement {
         <div>
           <h1 className="text-xl font-semibold text-gray-900">Data Fabric</h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            Live four-tier event cloud topology — HOT → WARM → COOL → COLD
+            Four-tier event cloud topology — HOT → WARM → COOL → COLD
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {/* B10: Manual Tier Migration */}
+          {/* B10: Manual Tier Migration — disabled while surface is in boundary/preview state (DC-UX-047) */}
           <button
             type="button"
-            onClick={() => setMigrateOpen((v) => !v)}
-            className="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700"
+            disabled
+            title="Tier migration is not available while the Data Fabric surface is in preview"
+            className="px-3 py-1.5 text-sm border border-gray-200 rounded-md text-gray-400 cursor-not-allowed opacity-60"
           >
             Migrate Tier
           </button>

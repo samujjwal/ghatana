@@ -312,6 +312,12 @@ export default tseslint.config(
               message:
                 'CanvasAIClient.ts (gRPC) is deprecated. Use getCanvasAIService() from services/canvas/api/CanvasAIService instead.',
             },
+            // Direct @ghatana/sso-client imports are not allowed in YAPPC app code
+            {
+              group: ['@ghatana/sso-client', '@ghatana/sso-client/*'],
+              message:
+                'Direct @ghatana/sso-client import is not allowed in YAPPC app code. Use @yappc/auth or the platform auth abstraction instead.',
+            },
 
             // -----------------------------------------------------------------------
             // Deleted compat/* packages — guard against re-introduction

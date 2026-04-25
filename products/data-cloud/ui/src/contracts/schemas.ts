@@ -178,6 +178,8 @@ export const PipelineSchema = z.object({
   updatedAt: z.string().optional(),
   createdBy: z.string().optional(),
   lastExecutedAt: z.string().optional(),
+  lastExecutionStatus: z.enum(['completed', 'failed', 'cancelled', 'running', 'pending']).optional(),
+  lastExecutionDuration: z.number().optional(),
 }).catchall(z.unknown());
 
 export const PipelineListResponseSchema = z.object({

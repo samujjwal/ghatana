@@ -70,16 +70,14 @@ export function SsoCallbackPage(): React.ReactElement {
       if (session) {
         setSessionToken(session);
       }
-      // AuthProvider will detect the new tokens and set isAuthenticated
-      // Redirect after a brief delay to allow state propagation
-      const timer = setTimeout(() => {
-        navigate(redirectTarget, { replace: true });
-      }, 100);
-      return () => clearTimeout(timer);
+      // Intentional reload so AuthProvider re-reads tokens from storage on mount.
+      // Direct navigate() is unreliable because AuthProvider state was initialized
+      // before this page mutated sessionStorage.
+      window.location.href = redirectTarget;
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to process authentication response.');
     }
-  }, [isAuthenticated, navigate, redirectTarget, searchParams]);
+  }, [navigate, redirectTarget, searchParams]);
 
   if (error) {
     return (

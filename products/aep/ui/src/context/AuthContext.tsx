@@ -11,6 +11,7 @@
  */
 import React, {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -40,11 +41,17 @@ interface PlatformSessionResponse {
   expiresInSeconds?: number;
 }
 
+/** Known AEP user roles. */
+export type UserRole = 'admin' | 'operator' | 'viewer' | 'auditor';
+
 interface AuthContextValue {
   authToken: string | null;
   sessionToken: string | null;
   isAuthenticated: boolean;
   isBootstrappingSession: boolean;
+  roles: UserRole[];
+  hasRole: (role: UserRole) => boolean;
+  hasAnyRole: (roles: UserRole[]) => boolean;
   loginWithToken: (token: string) => Promise<void>;
   loginWithPlatform: () => Promise<void>;
   logout: () => void;
@@ -71,6 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [sessionTokenState, setSessionTokenState] = useState<string | null>(() => getSessionToken());
   const [sessionExpiresAt, setSessionExpiresAt] = useState<number | null>(() => getSessionExpiry());
   const [isBootstrappingSession, setIsBootstrappingSession] = useState(false);
+  const [roles, setRoles] = useState<UserRole[]>([]);
   const attemptedSessionBootstrap = useRef<string | null>(null);
   const warnedRef = useRef(false);
 
@@ -154,12 +162,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     void bootstrapPlatformSession();
   }, []);
 
+  const hasRole = useCallback(
+    (role: UserRole) => roles.includes(role),
+    [roles],
+  );
+
+  const hasAnyRole = useCallback(
+    (targetRoles: UserRole[]) => targetRoles.some((r) => roles.includes(r)),
+    [roles],
+  );
+
   const value = useMemo<AuthContextValue>(
     () => ({
       authToken: authTokenState,
       sessionToken: sessionTokenState,
       isAuthenticated: authTokenState !== null || sessionTokenState !== null,
       isBootstrappingSession,
+      roles,
+      hasRole,
+      hasAnyRole,
       async loginWithToken(token: string): Promise<void> {
         const normalizedToken = token.trim();
         if (!normalizedToken) {
@@ -181,9 +202,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setAuthTokenState(null);
         setSessionTokenState(null);
         setSessionExpiresAt(null);
+        setRoles([]);
       },
     }),
-    [authTokenState, isBootstrappingSession, sessionTokenState],
+    [authTokenState, hasAnyRole, hasRole, isBootstrappingSession, roles, sessionTokenState],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

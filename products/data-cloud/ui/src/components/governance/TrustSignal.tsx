@@ -37,7 +37,8 @@ import { cn } from '../../lib/theme';
 export type SensitivityLevel = 'public' | 'internal' | 'confidential' | 'pii' | 'restricted';
 
 interface SensitivityBadgeProps {
-  level: SensitivityLevel;
+  /** Sensitivity level value. Accepts undefined gracefully (DC-UX-014). */
+  level: SensitivityLevel | undefined | null | string;
   showLabel?: boolean;
   className?: string;
 }
@@ -74,12 +75,25 @@ const sensitivityConfig: Record<SensitivityLevel, {
   },
 };
 
+function isSensitivityLevel(level: string): level is SensitivityLevel {
+  return Object.prototype.hasOwnProperty.call(sensitivityConfig, level);
+}
+
 export const SensitivityBadge = React.memo(function SensitivityBadge({
   level,
   showLabel = true,
   className,
 }: SensitivityBadgeProps) {
-  const config = sensitivityConfig[level];
+  // DC-UX-014: Defensive fallback for undefined/invalid level values.
+  // CollectionForm may pass the raw form value before it is set, which is undefined.
+  const resolvedLevel = typeof level === 'string' && isSensitivityLevel(level)
+    ? level
+    : null;
+  const config = resolvedLevel
+    ? sensitivityConfig[resolvedLevel]
+    : sensitivityConfig.internal;
+
+  const displayLabel = config.label + (resolvedLevel ? '' : ' (unknown)');
 
   return (
     <span
@@ -88,10 +102,10 @@ export const SensitivityBadge = React.memo(function SensitivityBadge({
         config.badgeClass,
         className
       )}
-      title={`Sensitivity: ${config.label}`}
+      title={`Sensitivity: ${displayLabel}`}
     >
       {config.icon}
-      {showLabel && config.label}
+      {showLabel && displayLabel}
     </span>
   );
 });

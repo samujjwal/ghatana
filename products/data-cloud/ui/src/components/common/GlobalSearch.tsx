@@ -28,6 +28,10 @@ import { cn, textStyles, bgStyles } from '../../lib/theme';
 import { collectionsApi } from '../../lib/api/collections';
 import { workflowsApi } from '../../lib/api/workflows';
 import SessionBootstrap, { type ShellRole, canAccessShellRole } from '../../lib/auth/session';
+import { canonicalRouteRegistry } from '../../lib/routing/RouteCapabilityRegistry';
+
+// DC-UX-048: flat array of registry entries for lifecycle lookup
+const routeRegistryEntries = Object.values(canonicalRouteRegistry);
 
 /**
  * Search result item
@@ -41,6 +45,9 @@ interface SearchResult {
     path?: string;
     action?: () => void;
     minimumShellRole?: ShellRole;
+    /** DC-UX-048: surface lifecycle for boundary annotation in search results */
+    /** DC-UX-048: surface lifecycle aligned with RouteCapability */
+    lifecycle?: 'active' | 'preview' | 'boundary' | 'deprecated' | 'redirect' | 'removed';
 }
 
 /**
@@ -55,13 +62,25 @@ const quickNavItems: SearchResult[] = [
     { id: 'nav-insights', title: 'Insights', type: 'page', icon: <BarChart3 className="h-4 w-4" />, path: '/insights', minimumShellRole: 'operator' },
     { id: 'nav-trust', title: 'Trust', type: 'page', icon: <Shield className="h-4 w-4" />, path: '/trust', minimumShellRole: 'operator' },
     { id: 'nav-events', title: 'Events', type: 'page', icon: <Workflow className="h-4 w-4" />, path: '/events', minimumShellRole: 'operator' },
-    { id: 'nav-alerts', title: 'Alerts', type: 'page', icon: <Bell className="h-4 w-4" />, path: '/alerts', minimumShellRole: 'operator' },
+    // Alerts is operator-only and excluded from global search discovery — accessed directly from shell nav
+
 ];
 
 function getVisibleQuickNavItems(shellRole: ShellRole): SearchResult[] {
-    return quickNavItems.filter((item) =>
-        canAccessShellRole(shellRole, item.minimumShellRole ?? 'primary-user')
-    );
+    return quickNavItems
+        .filter((item) =>
+            canAccessShellRole(shellRole, item.minimumShellRole ?? 'primary-user')
+        )
+        .map((item) => {
+            // DC-UX-048: annotate boundary lifecycle from route registry
+            const routeEntry = item.path
+                ? routeRegistryEntries.find((r) => r.path === item.path || (item.path ?? '').startsWith(r.path + '/'))
+                : undefined;
+            return {
+                ...item,
+                lifecycle: routeEntry?.lifecycle ?? 'active',
+            };
+        });
 }
 
 interface GlobalSearchProps {
@@ -264,7 +283,25 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps): React.Reac
                                             {result.icon}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className={textStyles.h4}>{result.title}</p>
+                                            <div className="flex items-center gap-2">
+                                                <p className={textStyles.h4}>{result.title}</p>
+                                                {/* DC-UX-048: lifecycle badge for boundary/coming-soon routes */}
+                                                {result.lifecycle === 'boundary' && (
+                                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+                                                        Preview
+                                                    </span>
+                                                )}
+                                                {(result.lifecycle === 'preview') && (
+                                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+                                                        Preview
+                                                    </span>
+                                                )}
+                                                {(result.lifecycle === 'deprecated') && (
+                                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500 line-through">
+                                                        Deprecated
+                                                    </span>
+                                                )}
+                                            </div>
                                             {result.description && (
                                                 <p className={cn(textStyles.xs, 'truncate')}>{result.description}</p>
                                             )}

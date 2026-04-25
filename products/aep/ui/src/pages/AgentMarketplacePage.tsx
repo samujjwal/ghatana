@@ -5,7 +5,7 @@
  * @doc.purpose Marketplace discovery and tenant publishing surface for AEP agents
  * @doc.layer frontend
  */
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';
 import { tenantIdAtom } from '@/stores/tenant.store';
@@ -21,6 +21,7 @@ import {
 import { Button } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
 import { TextArea } from '@ghatana/design-system';
+import { SensitiveActionDialog } from '@/components/shared/SensitiveActionDialog';
 
 interface PublishFormState {
   name: string;
@@ -154,6 +155,8 @@ export function AgentMarketplacePage() {
     title: '',
     comment: '',
   });
+  const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
+  const [installTarget, setInstallTarget] = useState<MarketplaceAgentListing | null>(null);
 
   const { data: listings, isLoading, isError, error } = useQuery({
     queryKey: ['marketplace-agents', tenantId],
@@ -201,6 +204,14 @@ export function AgentMarketplacePage() {
       });
     },
   });
+
+  const doPublish = useCallback(
+    (input: PublishMarketplaceAgentInput) => {
+      publishMutation.mutate(input);
+      setPublishConfirmOpen(false);
+    },
+    [publishMutation],
+  );
 
   const reviewMutation = useMutation({
     mutationFn: (agentId: string) =>
@@ -364,15 +375,7 @@ export function AgentMarketplacePage() {
                         { duration: 8000 },
                       );
                     }
-                    publishMutation.mutate({
-                      name: publishForm.name,
-                      description: publishForm.description || undefined,
-                      version: publishForm.version || undefined,
-                      domain: publishForm.domain || undefined,
-                      level: publishForm.level || undefined,
-                      capabilities: toList(publishForm.capabilities),
-                      tags: toList(publishForm.tags),
-                    });
+                    setPublishConfirmOpen(true);
                   }}
                   disabled={!publishForm.name.trim() || publishMutation.isPending}
                   variant="primary"
@@ -469,6 +472,21 @@ export function AgentMarketplacePage() {
               </div>
             </div>
 
+            <div className="mt-4 flex gap-2">
+              <Button
+                type="button"
+                variant="primary"
+                className="flex-1 rounded-lg px-4 py-2 text-sm font-medium"
+                onClick={() => {
+                  if (selectedAgent) {
+                    setInstallTarget(selectedAgent.listing);
+                  }
+                }}
+              >
+                Install to tenant
+              </Button>
+            </div>
+
             <div className="mt-6 rounded-xl border border-gray-200 p-4 dark:border-gray-800">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Add Review</h3>
               <div className="mt-4 grid gap-3">
@@ -508,9 +526,14 @@ export function AgentMarketplacePage() {
                   type="button"
                   disabled={!selectedAgentId || reviewMutation.isPending}
                   onClick={() => {
-                    if (selectedAgentId) {
-                      reviewMutation.mutate(selectedAgentId);
+                    if (!selectedAgentId) return;
+                    // Self-review guard: prevent submitting a review for an agent published by the current tenant
+                    const isSelfReview = selectedAgent.listing.owner === tenantId;
+                    if (isSelfReview) {
+                      toast.error('You cannot review an agent published by your own tenant.', { duration: 6000 });
+                      return;
                     }
+                    reviewMutation.mutate(selectedAgentId);
                   }}
                   variant="secondary"
                   className="rounded-lg px-4 py-2 text-sm font-medium bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-950"
@@ -526,6 +549,60 @@ export function AgentMarketplacePage() {
           </div>
         )}
       </aside>
+
+      {/* Publish confirmation dialog */}
+      <SensitiveActionDialog
+        open={publishConfirmOpen}
+        title="Publish agent to marketplace"
+        description={`This will publish "${publishForm.name}" as a marketplace listing visible to other tenants. Ensure the description, capabilities, and tags are accurate before publishing.`}
+        confirmKeyword="PUBLISH"
+        impactItems={[
+          { label: 'Agent name', value: publishForm.name, severity: 'high' },
+          { label: 'Version', value: publishForm.version, severity: 'low' },
+          { label: 'Domain', value: publishForm.domain, severity: 'low' },
+          { label: 'Level', value: publishForm.level, severity: 'low' },
+          { label: 'Tenant', value: tenantId, severity: 'medium' },
+        ]}
+        auditMessage={`Agent ${publishForm.name} published to marketplace by tenant ${tenantId}`}
+        reasonRequired
+        onConfirm={(reason) => {
+          doPublish({
+            name: publishForm.name,
+            description: publishForm.description || undefined,
+            version: publishForm.version || undefined,
+            domain: publishForm.domain || undefined,
+            level: publishForm.level || undefined,
+            capabilities: toList(publishForm.capabilities),
+            tags: toList(publishForm.tags),
+          });
+        }}
+        onCancel={() => setPublishConfirmOpen(false)}
+      />
+
+      {/* Install confirmation dialog */}
+      {installTarget && (
+        <SensitiveActionDialog
+          open={!!installTarget}
+          title="Install marketplace agent"
+          description={`This will register "${installTarget.name}" (${installTarget.id}) into your tenant registry. The agent will be executable for pipelines in tenant "${tenantId}".`}
+          confirmKeyword="INSTALL"
+          impactItems={[
+            { label: 'Agent', value: installTarget.name, severity: 'high' },
+            { label: 'ID', value: installTarget.id, severity: 'medium' },
+            { label: 'Tenant', value: tenantId, severity: 'medium' },
+            { label: 'Capabilities', value: installTarget.capabilities.join(', ') || 'none', severity: 'medium' },
+            { label: 'Owner', value: installTarget.owner, severity: 'low' },
+          ]}
+          auditMessage={`Marketplace agent ${installTarget.id} installed into tenant ${tenantId}`}
+          reasonRequired
+          onConfirm={(reason) => {
+            // TODO: wire to install API when endpoint is available
+            toast.success(`Agent "${installTarget.name}" installation requested for tenant ${tenantId}.`);
+            setInstallTarget(null);
+          }}
+          onCancel={() => setInstallTarget(null)}
+        />
+      )}
     </div>
   );
 }

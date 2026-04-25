@@ -36,16 +36,15 @@ import {
   Network,
   AlertTriangle,
   Terminal,
-  Shield,
 } from 'lucide-react';
-import { TrustBadge, SensitivityBadge, AccessLevelIndicator } from '../components/governance/TrustSignal';
-import { Table } from '@ghatana/design-system';
+import { TrustSignalGroup } from '../components/common/TrustSignalGroup';
+import type { TrustSignalDescriptor } from '../components/common/TrustSignalGroup';
+import { Table, Button } from '@ghatana/design-system';
 import {
   cn,
   cardStyles,
   textStyles,
   bgStyles,
-  buttonStyles,
   inputStyles,
   tableStyles,
 } from '../lib/theme';
@@ -722,7 +721,7 @@ export function SqlWorkspacePage(): React.ReactElement {
   const [expandedSchema, setExpandedSchema] = useState<string | null>(null);
   const [sidebarTab, setSidebarTab] = useState<'schema' | 'saved' | 'history'>('schema');
   const [resultsTab, setResultsTab] = useState<'results' | 'plan' | 'logs'>('results');
-  const [showAIAssist, setShowAIAssist] = useState(true); // UX-001: Question-first — AI assist is primary
+  const [showAIAssist, setShowAIAssist] = useState(false); // UX-001: AI assist opened on demand
   const [showSQLEditor, setShowSQLEditor] = useState(false); // UX-001: SQL editor is secondary / progressive disclosure
   const [isFederated, setIsFederated] = useState(false); // B13: Federated Trino query toggle
   const [schemas, setSchemas] = useState<SchemaItem[]>([]);
@@ -737,9 +736,11 @@ export function SqlWorkspacePage(): React.ReactElement {
 
   const analyticsCapability = getCapabilitySignal(capabilityRegistry?.capabilities, ['analytics']);
   const federatedCapability = getCapabilitySignal(capabilityRegistry?.capabilities, ['trino', 'federated_query', 'federatedQuery']);
-  const aiAssistCapability = getCapabilitySignal(capabilityRegistry?.capabilities, ['ai_assist', 'aiAssist', 'assist']);
+  // DC-UX-021: canonical capability key is 'query_assist'; legacy aliases 'ai_assist'/'aiAssist'/'assist' kept for backward compat
+  const aiAssistCapability = getCapabilitySignal(capabilityRegistry?.capabilities, ['query_assist', 'ai_assist', 'aiAssist', 'assist']);
   const capabilitySubset = capabilityRegistry?.capabilities.filter((capability) =>
-    ['analytics', 'trino', 'federated_query', 'federatedQuery', 'ai_assist', 'aiAssist', 'assist', 'voice'].includes(capability.key),
+    // DC-UX-021: canonical key 'query_assist'; legacy aliases included for backward compat
+    ['analytics', 'trino', 'federated_query', 'federatedQuery', 'query_assist', 'ai_assist', 'aiAssist', 'assist', 'voice'].includes(capability.key),
   ) ?? [];
   const federatedUnavailable = federatedCapability?.status !== 'active';
   const executionRecommendation = useMemo(
@@ -829,6 +830,7 @@ export function SqlWorkspacePage(): React.ReactElement {
   const handleApplyAISql = useCallback((sql: string) => {
     setQuery(sql);
     setShowAIAssist(false);
+    setShowSQLEditor(true); // Reveal the SQL editor so the applied query is visible
   }, []);
 
   return (
@@ -838,39 +840,35 @@ export function SqlWorkspacePage(): React.ReactElement {
         <div className={cn(cardStyles.base, cardStyles.padded, 'mb-6')} data-testid="sql-workspace-header">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className={textStyles.h1}>Query</h1>
+              <h1 className={textStyles.h1}>SQL Workspace</h1>
               <p className={textStyles.muted}>
                 Ask a question in plain English, or write SQL directly when you need control
               </p>
             </div>
             <div className="flex gap-2">
-              <button
+              <Button
+                variant="outline"
+                leadingIcon={<Sparkles className="h-4 w-4" />}
                 onClick={() => setShowAIAssist(!showAIAssist)}
                 title={aiAssistCapability?.detail ?? 'AI assist status is derived from the capability registry and current deployment behavior.'}
                 data-testid="sql-ai-assist-toggle"
-                className={cn(
-                  buttonStyles.secondary,
-                  'flex items-center gap-2',
-                  showAIAssist && 'bg-purple-100 dark:bg-purple-900/30 border-purple-300 dark:border-purple-700'
-                )}
+                className={cn(showAIAssist && 'border-purple-400 dark:border-purple-600')}
               >
-                <Sparkles className="h-4 w-4" />
-                {showAIAssist ? 'Hide Question' : 'Ask a Question'}
-              </button>
-              <button
+                {showAIAssist ? 'Hide AI Assist' : 'AI Assist'}
+              </Button>
+              <Button
+                variant="outline"
+                leadingIcon={<Terminal className="h-4 w-4" />}
                 onClick={() => setShowSQLEditor(!showSQLEditor)}
                 data-testid="sql-editor-toggle"
-                className={cn(
-                  buttonStyles.secondary,
-                  'flex items-center gap-2',
-                  showSQLEditor && 'bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700'
-                )}
+                className={cn(showSQLEditor && 'border-blue-400 dark:border-blue-600')}
               >
-                <Terminal className="h-4 w-4" />
                 {showSQLEditor ? 'Hide SQL Editor' : 'Edit SQL'}
-              </button>
+              </Button>
               {/* B13: Federated Trino query toggle */}
-              <button
+              <Button
+                variant="outline"
+                leadingIcon={<Network className="h-4 w-4" />}
                 onClick={() => setIsFederated((f) => !f)}
                 title={federatedUnavailable
                   ? federatedCapability?.detail ?? SQL_FEDERATED_QUERY_UNAVAILABLE_DETAIL
@@ -879,38 +877,36 @@ export function SqlWorkspacePage(): React.ReactElement {
                     : 'Using direct analytics engine'}
                 disabled={federatedUnavailable}
                 data-testid="sql-engine-toggle"
-                className={cn(
-                  buttonStyles.secondary,
-                  'flex items-center gap-2',
-                  isFederated && 'bg-blue-100 dark:bg-blue-900/30 border-blue-400 dark:border-blue-600 text-blue-700 dark:text-blue-300',
-                  federatedUnavailable && 'opacity-50 cursor-not-allowed'
-                )}
+                className={cn(isFederated && 'border-blue-400 dark:border-blue-600 text-blue-700 dark:text-blue-300')}
               >
-                <Network className="h-4 w-4" />
                 {isFederated ? 'Federated' : 'Direct'}
-              </button>
-              <button className={cn(buttonStyles.secondary, 'flex items-center gap-2')}>
-                <Save className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                leadingIcon={<Save className="h-4 w-4" />}
+              >
                 Save Query
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="outline"
+                leadingIcon={<FileText className="h-4 w-4" />}
+                loading={isExplaining}
                 onClick={() => { void handleExplainQuery(); }}
                 disabled={isExplaining}
                 data-testid="sql-explain-query"
-                className={cn(buttonStyles.secondary, 'flex items-center gap-2')}
               >
-                <FileText className="h-4 w-4" />
                 {isExplaining ? 'Explaining...' : 'Explain'}
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="solid"
+                leadingIcon={<Play className="h-4 w-4" />}
+                loading={isRunning}
                 onClick={() => { void handleRunQuery(); }}
                 disabled={isRunning}
                 data-testid="sql-run-query"
-                className={cn(buttonStyles.primary, 'flex items-center gap-2')}
               >
-                <Play className="h-4 w-4" />
                 {isRunning ? 'Running...' : 'Run Query'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -922,14 +918,15 @@ export function SqlWorkspacePage(): React.ReactElement {
               <p className={textStyles.muted}>{executionRecommendation.detail}</p>
             </div>
             {!executionRecommendation.requiresReview && (
-              <button
+              <Button
+                variant="outline"
+                size="sm"
+                leadingIcon={<Network className="h-4 w-4" />}
                 onClick={() => setIsFederated(executionRecommendation.path === 'federated')}
                 data-testid="sql-use-recommended-path"
-                className={cn(buttonStyles.secondary, 'flex items-center gap-2 self-start lg:self-auto')}
               >
-                <Network className="h-4 w-4" />
                 Use recommended path
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -1099,8 +1096,8 @@ export function SqlWorkspacePage(): React.ReactElement {
                 <div className={cn(cardStyles.header, 'flex items-center justify-between')}>
                   <h3 className={textStyles.h4}>Query Editor</h3>
                   <div className="flex gap-2">
-                    <button className={cn(buttonStyles.ghost, buttonStyles.sm)}>Format</button>
-                    <button className={cn(buttonStyles.ghost, buttonStyles.sm)}>Clear</button>
+                    <Button variant="ghost" size="sm">Format</Button>
+                    <Button variant="ghost" size="sm">Clear</Button>
                   </div>
                 </div>
                 <div className="p-4">
@@ -1124,21 +1121,20 @@ LIMIT 100;"
               </div>
             )}
 
-            {/* Trust Signals — query execution context */}
-            <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30 p-3 flex items-center gap-3 flex-wrap" data-testid="sql-trust-signals">
-              <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
-                <Shield className="h-4 w-4 text-blue-500" />
-                <span className="font-medium">Data access:</span>
-              </div>
-              <AccessLevelIndicator level="tenant" />
-              <SensitivityBadge level="internal" />
-              {executionRecommendation.requiresReview && (
-                <TrustBadge status="warning" label="Review required before execution" />
-              )}
-              {queryPlan && queryPlan.dataSources.length > 1 && (
-                <TrustBadge status="warning" label={`Cross-source query (${queryPlan.dataSources.length} sources)`} />
-              )}
-            </div>
+            {/* Trust Signals — query execution context (DC-UX-045: policy-derived via TrustSignalGroup) */}
+            <TrustSignalGroup
+              accessLevel="tenant"
+              data-testid="sql-trust-signals"
+              signals={[
+                // DC-UX-022: Per-result sensitivity omitted until execution API provides metadata
+                ...(executionRecommendation.requiresReview
+                  ? [{ status: 'warning' as TrustSignalDescriptor['status'], label: 'Review required before execution' }]
+                  : []),
+                ...(queryPlan && queryPlan.dataSources.length > 1
+                  ? [{ status: 'warning' as TrustSignalDescriptor['status'], label: `Cross-source query (${queryPlan.dataSources.length} sources)` }]
+                  : []),
+              ]}
+            />
 
             {/* Results */}
             <div className={cn(cardStyles.base)} data-testid="sql-results-panel">
@@ -1157,32 +1153,41 @@ LIMIT 100;"
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setResultsTab('results')}
                     data-testid="sql-results-tab"
-                    className={cn(buttonStyles.ghost, buttonStyles.sm, resultsTab === 'results' && 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200')}
+                    className={cn(resultsTab === 'results' && 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200')}
                   >
                     Results
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setResultsTab('plan')}
                     data-testid="sql-plan-tab"
-                    className={cn(buttonStyles.ghost, buttonStyles.sm, resultsTab === 'plan' && 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200')}
+                    className={cn(resultsTab === 'plan' && 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200')}
                   >
                     Plan
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setResultsTab('logs')}
                     data-testid="sql-logs-tab"
-                    className={cn(buttonStyles.ghost, buttonStyles.sm, resultsTab === 'logs' && 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200')}
+                    className={cn(resultsTab === 'logs' && 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200')}
                   >
                     Logs
-                  </button>
+                  </Button>
                   {resultsTab === 'results' && queryResult && (
-                    <button className={cn(buttonStyles.ghost, buttonStyles.sm, 'flex items-center gap-1')}>
-                      <Download className="h-3 w-3" />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      leadingIcon={<Download className="h-3 w-3" />}
+                    >
                       Export CSV
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>
@@ -1270,7 +1275,11 @@ LIMIT 100;"
                       </div>
 
                       <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/40 dark:bg-amber-900/10" data-testid="sql-query-plan-guardrails">
-                        <p className="text-xs uppercase tracking-wide text-amber-700 dark:text-amber-200">Execution guardrails</p>
+                        {/* DC-UX-023: Clearly labelled as advisory/heuristic, not policy-enforced */}
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-xs uppercase tracking-wide text-amber-700 dark:text-amber-200">Query advisories</p>
+                          <span className="text-xs text-amber-600 dark:text-amber-300 italic">Local heuristics — not policy-enforced</span>
+                        </div>
                         <div className="mt-3 space-y-3">
                           {queryPlanGuardrails.length > 0 ? queryPlanGuardrails.map((guardrail) => (
                             <div key={`${guardrail.severity}-${guardrail.title}`} className="rounded-lg bg-white/80 px-3 py-3 dark:bg-gray-900/40">
@@ -1278,7 +1287,7 @@ LIMIT 100;"
                               <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{guardrail.detail}</p>
                             </div>
                           )) : (
-                            <p className="text-sm text-amber-900 dark:text-amber-100">No additional guardrails fired for the current plan.</p>
+                            <p className="text-sm text-amber-900 dark:text-amber-100">No advisories for the current query shape.</p>
                           )}
                         </div>
                       </div>

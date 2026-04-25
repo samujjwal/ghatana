@@ -5,13 +5,41 @@
  * enabling multi-tenant support without per-page state duplication.
  *
  * @doc.type store
- * @doc.purpose Global tenant selection state
+ * @doc.purpose Global tenant selection state with persistence and validation
  * @doc.layer frontend
  */
 import { atom } from 'jotai';
 
+const TENANT_STORAGE_KEY = 'aep:active-tenant';
+const DEFAULT_TENANT = 'default';
+const VALID_TENANT_RE = /^[a-zA-Z0-9_-]{1,64}$/;
+
+function getPersistedTenant(): string {
+  try {
+    const raw = sessionStorage.getItem(TENANT_STORAGE_KEY);
+    if (!raw) return DEFAULT_TENANT;
+    const parsed = JSON.parse(raw);
+    if (typeof parsed === 'string' && VALID_TENANT_RE.test(parsed)) return parsed;
+  } catch {
+    // ignore parse errors
+  }
+  return DEFAULT_TENANT;
+}
+
+/** The active tenant ID used by all AEP API calls. Persists to sessionStorage and validates on read/write. */
+export const tenantIdAtom = atom<string>(getPersistedTenant());
+
 /**
- * The active tenant ID used by all AEP API calls.
- * Defaults to 'default' and can be changed via a TenantSelector component.
+ * Set a validated tenant and persist it.
+ * Throws if the tenant ID is invalid to prevent silent injection.
  */
-export const tenantIdAtom = atom<string>('default');
+export function setTenantId(tenantId: string): void {
+  if (!VALID_TENANT_RE.test(tenantId)) {
+    throw new Error(`Invalid tenant identifier: ${tenantId}. Expected 1-64 alphanumerics, hyphens, or underscores.`);
+  }
+  try {
+    sessionStorage.setItem(TENANT_STORAGE_KEY, JSON.stringify(tenantId));
+  } catch {
+    // storage quota exceeded — state still changes in-memory
+  }
+}

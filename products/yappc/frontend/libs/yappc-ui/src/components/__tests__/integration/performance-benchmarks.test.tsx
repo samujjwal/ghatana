@@ -522,6 +522,227 @@ describe('Performance Benchmarks', () => {
     });
   });
 
+  describe('Canvas Rendering Performance', () => {
+    it('should render simple canvas efficiently', async () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 800;
+      canvas.height = 600;
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) {
+        throw new Error('Could not get canvas context');
+      }
+
+      const result = await benchmark(
+        'Canvas - Render simple shapes',
+        () => {
+          ctx.clearRect(0, 0, 800, 600);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, 800, 600);
+          ctx.fillStyle = '#3b82f6';
+          ctx.fillRect(100, 100, 200, 150);
+          ctx.strokeStyle = '#ef4444';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(350, 100, 200, 150);
+          ctx.fillStyle = '#10b981';
+          ctx.beginPath();
+          ctx.arc(600, 175, 75, 0, Math.PI * 2);
+          ctx.fill();
+        },
+        100
+      );
+
+      logBenchmark(result);
+
+      // Baseline: Should render at least 60 frames per second (1000ms / 60 = ~16.67ms per frame)
+      expect(result.averageTime).toBeLessThan(20);
+    });
+
+    it('should render complex canvas with multiple nodes efficiently', async () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1200;
+      canvas.height = 800;
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) {
+        throw new Error('Could not get canvas context');
+      }
+
+      // Simulate rendering workflow nodes
+      const nodes = Array.from({ length: 50 }, (_, i) => ({
+        x: 50 + (i % 10) * 110,
+        y: 50 + Math.floor(i / 10) * 120,
+        width: 100,
+        height: 100,
+        color: `hsl(${(i * 7) % 360}, 70%, 60%)`,
+      }));
+
+      const result = await benchmark(
+        'Canvas - Render 50 workflow nodes',
+        () => {
+          ctx.clearRect(0, 0, 1200, 800);
+          ctx.fillStyle = '#f8fafc';
+          ctx.fillRect(0, 0, 1200, 800);
+
+          // Draw grid
+          ctx.strokeStyle = '#e2e8f0';
+          ctx.lineWidth = 1;
+          for (let x = 0; x < 1200; x += 50) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, 800);
+            ctx.stroke();
+          }
+          for (let y = 0; y < 800; y += 50) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(1200, y);
+            ctx.stroke();
+          }
+
+          // Draw nodes
+          nodes.forEach((node) => {
+            ctx.fillStyle = node.color;
+            ctx.fillRect(node.x, node.y, node.width, node.height);
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(node.x, node.y, node.width, node.height);
+            
+            // Draw node label
+            ctx.fillStyle = '#1e293b';
+            ctx.font = '12px sans-serif';
+            ctx.fillText(`Node ${nodes.indexOf(node) + 1}`, node.x + 10, node.y + 20);
+          });
+
+          // Draw connections (simplified)
+          ctx.strokeStyle = '#64748b';
+          ctx.lineWidth = 2;
+          for (let i = 0; i < nodes.length - 1; i++) {
+            ctx.beginPath();
+            ctx.moveTo(nodes[i].x + nodes[i].width / 2, nodes[i].y + nodes[i].height);
+            ctx.lineTo(nodes[i + 1].x + nodes[i + 1].width / 2, nodes[i + 1].y);
+            ctx.stroke();
+          }
+        },
+        50
+      );
+
+      logBenchmark(result);
+
+      // Baseline: Should render complex canvas at least 30 frames per second
+      expect(result.averageTime).toBeLessThan(33);
+    });
+
+    it('should handle canvas zoom and pan efficiently', async () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1200;
+      canvas.height = 800;
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) {
+        throw new Error('Could not get canvas context');
+      }
+
+      let zoom = 1;
+      let panX = 0;
+      let panY = 0;
+
+      const result = await benchmark(
+        'Canvas - Zoom and pan operations',
+        () => {
+          ctx.save();
+          ctx.clearRect(0, 0, 1200, 800);
+          ctx.translate(panX, panY);
+          ctx.scale(zoom, zoom);
+          
+          // Draw content
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, 800, 600);
+          ctx.fillStyle = '#3b82f6';
+          ctx.fillRect(100, 100, 200, 150);
+          
+          ctx.restore();
+          
+          // Update zoom/pan for next iteration
+          zoom = 0.8 + (zoom % 3) * 0.2;
+          panX = (panX + 10) % 100;
+          panY = (panY + 5) % 50;
+        },
+        100
+      );
+
+      logBenchmark(result);
+
+      // Baseline: Should handle zoom/pan at least 30 frames per second
+      expect(result.averageTime).toBeLessThan(33);
+    });
+
+    it('should render workflow with connections efficiently', async () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1600;
+      canvas.height = 1200;
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) {
+        throw new Error('Could not get canvas context');
+      }
+
+      // Simulate workflow with nodes and connections
+      const nodes = Array.from({ length: 30 }, (_, i) => ({
+        id: i,
+        x: 100 + (i % 6) * 200,
+        y: 100 + Math.floor(i / 6) * 150,
+        width: 150,
+        height: 100,
+      }));
+
+      const connections = Array.from({ length: 45 }, (_, i) => ({
+        from: i % 30,
+        to: (i + 1) % 30,
+      }));
+
+      const result = await benchmark(
+        'Canvas - Render workflow with 30 nodes and 45 connections',
+        () => {
+          ctx.clearRect(0, 0, 1600, 1200);
+          ctx.fillStyle = '#f8fafc';
+          ctx.fillRect(0, 0, 1600, 1200);
+
+          // Draw connections first (behind nodes)
+          ctx.strokeStyle = '#94a3b8';
+          ctx.lineWidth = 2;
+          connections.forEach((conn) => {
+            const fromNode = nodes[conn.from];
+            const toNode = nodes[conn.to];
+            ctx.beginPath();
+            ctx.moveTo(fromNode.x + fromNode.width / 2, fromNode.y + fromNode.height);
+            ctx.lineTo(toNode.x + toNode.width / 2, toNode.y);
+            ctx.stroke();
+          });
+
+          // Draw nodes
+          nodes.forEach((node) => {
+            ctx.fillStyle = '#3b82f6';
+            ctx.fillRect(node.x, node.y, node.width, node.height);
+            ctx.strokeStyle = '#1e40af';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(node.x, node.y, node.width, node.height);
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '14px sans-serif';
+            ctx.fillText(`Node ${node.id}`, node.x + 10, node.y + 30);
+          });
+        },
+        30
+      );
+
+      logBenchmark(result);
+
+      // Baseline: Should render workflow at least 20 frames per second
+      expect(result.averageTime).toBeLessThan(50);
+    });
+  });
+
   describe('Performance Baselines Summary', () => {
     it('should log all performance baselines', () => {
       const logSpy = jest.spyOn(console, 'log').mockImplementation(() => undefined);
@@ -544,6 +765,12 @@ describe('Performance Benchmarks', () => {
 ║  Form Validation:                                          ║
 ║    • Simple field: > 5,000 ops/sec                        ║
 ║    • Complex form: > 1,000 ops/sec                        ║
+║                                                            ║
+║  Canvas Rendering:                                         ║
+║    • Simple shapes: > 60 fps (< 20ms/frame)              ║
+║    • 50 workflow nodes: > 30 fps (< 33ms/frame)           ║
+║    • Zoom/pan operations: > 30 fps (< 33ms/frame)         ║
+║    • Workflow with connections: > 20 fps (< 50ms/frame)    ║
 ║                                                            ║
 ║  Integrated Workflows:                                     ║
 ║    • Single workflow: < 100ms                             ║

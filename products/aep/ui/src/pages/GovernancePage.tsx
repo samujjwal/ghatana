@@ -21,6 +21,9 @@ import { isFeatureEnabled } from '@/lib/feature-flags';
 import { Button } from '@ghatana/design-system';
 import { EmptyState } from '@/components/core/EmptyState';
 import { ErrorState } from '@/components/core/ErrorState';
+import { PageState } from '@/components/shared/PageState';
+import { Link } from 'react-router';
+import { getEditPipelineUrl, getRunDetailUrl, getAgentRegistryUrl } from '@/lib/routes';
 
 type GovSection = 'policies' | 'compliance' | 'tenancy' | 'audit';
 
@@ -108,13 +111,13 @@ function PoliciesPanel({ tenantId }: { tenantId: string }) {
   const pendingCount = policies?.filter((policy) => policy.status === 'PENDING_REVIEW').length;
 
   if (isLoading) {
-    return <EmptyState title="Loading policies…" description="Fetching governance policies for this tenant." />;
+    return <PageState mode="loading" title="Loading policies…" description="Fetching governance policies for this tenant." className="h-full" />;
   }
   if (isError) {
-    return <ErrorState title="Failed to load policies" onRetry={() => void refetch()} />;
+    return <PageState mode="unavailable" title="Failed to load policies" description="The policy service is not reachable." onRetry={() => void refetch()} className="h-full" />;
   }
   if (!policies || policies.length === 0) {
-    return <EmptyState title="No policies registered" description="Policies will appear once they are configured for this tenant." />;
+    return <PageState mode="empty" title="No policies registered" description="Policies will appear once they are configured for this tenant." className="h-full" />;
   }
 
   return (
@@ -137,7 +140,7 @@ function PoliciesPanel({ tenantId }: { tenantId: string }) {
         <table className="min-w-full divide-y divide-gray-200 text-sm dark:divide-gray-800">
           <thead className="bg-gray-50 dark:bg-gray-900">
             <tr>
-              {['Policy ID', 'Skill', 'Version', 'Confidence', 'Status'].map((header) => (
+              {['Policy ID', 'Skill', 'Version', 'Confidence', 'Status', 'Actions'].map((header) => (
                 <th key={header} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                   {header}
                 </th>
@@ -158,6 +161,42 @@ function PoliciesPanel({ tenantId }: { tenantId: string }) {
                 <td className="px-4 py-3">
                   <PolicyStatusBadge status={policy.status} />
                 </td>
+                <td className="px-4 py-3">
+                  <div className="flex flex-wrap gap-2">
+                    {policy.status === 'PENDING_REVIEW' && policy.reviewId && (
+                      <Link
+                        to={`/operate/reviews?id=${encodeURIComponent(policy.reviewId)}`}
+                        className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+                      >
+                        Review →
+                      </Link>
+                    )}
+                    {policy.relatedPipelineId && (
+                      <Link
+                        to={getEditPipelineUrl(policy.relatedPipelineId)}
+                        className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+                      >
+                        Pipeline →
+                      </Link>
+                    )}
+                    {policy.relatedRunId && (
+                      <Link
+                        to={getRunDetailUrl(policy.relatedRunId)}
+                        className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+                      >
+                        Run →
+                      </Link>
+                    )}
+                    {policy.relatedAgentId && (
+                      <Link
+                        to={`${getAgentRegistryUrl()}/${encodeURIComponent(policy.relatedAgentId)}`}
+                        className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+                      >
+                        Agent →
+                      </Link>
+                    )}
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -176,13 +215,13 @@ function CompliancePanel({ tenantId }: { tenantId: string }) {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   if (isLoading) {
-    return <EmptyState title="Loading compliance…" description="Fetching compliance summary." />;
+    return <PageState mode="loading" title="Loading compliance…" description="Fetching compliance summary." className="h-full" />;
   }
   if (isError) {
-    return <ErrorState title="Failed to load compliance data" onRetry={() => void refetch()} />;
+    return <PageState mode="unavailable" title="Failed to load compliance data" description="The compliance service is not reachable." onRetry={() => void refetch()} className="h-full" />;
   }
   if (!summary) {
-    return <EmptyState title="No compliance data" description="Compliance metrics will populate once scans are run." />;
+    return <PageState mode="degraded" title="No compliance data" description="Compliance metrics will populate once scans are run." className="h-full" />;
   }
 
   return (
@@ -223,8 +262,22 @@ function CompliancePanel({ tenantId }: { tenantId: string }) {
         <div className="rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-950">
           <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">SOC 2 posture</h3>
           <p className="text-sm text-gray-700 dark:text-gray-300">{summary.soc2.title}</p>
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Generated {new Date(summary.soc2.generatedAt).toLocaleString()}</p>
-          <p className="mt-3 inline-flex rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700 dark:bg-green-950 dark:text-green-300">
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            Generated{' '}
+            {Number.isNaN(new Date(summary.soc2.generatedAt).getTime())
+              ? 'not available'
+              : new Date(summary.soc2.generatedAt).toLocaleString()}
+          </p>
+          <p className={[
+            'mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold',
+            summary.soc2.overallStatus === 'PASS'
+              ? 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300'
+              : summary.soc2.overallStatus === 'FAIL'
+              ? 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300'
+              : summary.soc2.overallStatus === 'PENDING'
+              ? 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
+              : 'bg-gray-50 text-gray-700 dark:bg-gray-950 dark:text-gray-300',
+          ].join(' ')}>
             {summary.soc2.overallStatus}
           </p>
 
@@ -240,11 +293,39 @@ function CompliancePanel({ tenantId }: { tenantId: string }) {
               <div className="mt-3 space-y-2">
                 {summary.soc2.controls.map((control) => (
                   <div key={control.controlId} className="flex items-start justify-between gap-3 rounded border border-gray-100 px-3 py-2 text-sm dark:border-gray-800">
-                    <div>
+                    <div className="min-w-0">
                       <p className="font-medium text-gray-900 dark:text-white">{control.controlId}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">{control.description}</p>
+                      {(control.evidenceUrl || control.auditEntryId) && (
+                        <div className="mt-1 flex gap-2 flex-wrap">
+                          {control.evidenceUrl && (
+                            <a
+                              href={control.evidenceUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+                            >
+                              Evidence →
+                            </a>
+                          )}
+                          {control.auditEntryId && (
+                            <span className="text-xs text-gray-400 font-mono">#{control.auditEntryId}</span>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <span className="text-xs font-semibold text-green-600 dark:text-green-400">{control.status}</span>
+                    <span className={[
+                      'text-xs font-semibold',
+                      control.status === 'PASS'
+                        ? 'text-green-600 dark:text-green-400'
+                        : control.status === 'FAIL'
+                        ? 'text-red-600 dark:text-red-400'
+                        : control.status === 'PENDING'
+                        ? 'text-amber-600 dark:text-amber-400'
+                        : 'text-gray-600 dark:text-gray-400',
+                    ].join(' ')}>
+                      {control.status}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -264,11 +345,11 @@ function TenancyPanel({ tenantId }: { tenantId: string }) {
   });
 
   if (isLoading) {
-    return <p className="py-10 text-center text-sm text-gray-400">Loading tenancy controls…</p>;
+    return <PageState mode="loading" title="Loading tenancy controls…" description="Fetching tenant isolation settings." className="h-full" />;
   }
 
   if (!data) {
-    return null;
+    return <PageState mode="degraded" title="No tenancy data" description="Tenant isolation settings could not be loaded. The backend may be unavailable." className="h-full" />;
   }
 
   return (
@@ -315,11 +396,11 @@ function AuditPanel({ tenantId }: { tenantId: string }) {
   });
 
   if (isLoading) {
-    return <p className="py-10 text-center text-sm text-gray-400">Loading audit evidence…</p>;
+    return <PageState mode="loading" title="Loading audit evidence…" description="Fetching audit records for this tenant." className="h-full" />;
   }
 
   if (!data) {
-    return null;
+    return <PageState mode="degraded" title="No audit data" description="Audit records could not be loaded. The backend may be unavailable." className="h-full" />;
   }
 
   return (

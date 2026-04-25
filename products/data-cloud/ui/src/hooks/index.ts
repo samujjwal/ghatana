@@ -47,3 +47,6 @@ export {
 // Route state and async state hooks
 export * from "./useRouteEntryState";
 export * from "./useAsyncState";
+
+// Operation history hook (DC-UX-044)
+export * from "./useOperationHistory";

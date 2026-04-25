@@ -1,7 +1,6 @@
 package com.ghatana.yappc.knowledge;
 
-import com.ghatana.datacloud.plugins.knowledgegraph.model.GraphEdge;
-import com.ghatana.datacloud.plugins.knowledgegraph.model.GraphNode;
+import com.ghatana.yappc.knowledge.spi.DataStorePort;
 import com.ghatana.yappc.knowledge.model.*;
 import lombok.extern.slf4j.Slf4j;
 
@@ -9,7 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Maps between YAPPC and Data-Cloud graph models.
+ * Maps between YAPPC and platform-agnostic graph models (DataStorePort).
  */
 @Slf4j
 /**
@@ -20,7 +19,7 @@ import java.util.Map;
  */
 public class YAPPCGraphMapper {
 
-    public GraphNode toDataCloudNode(YAPPCGraphNode yappcNode) {
+    public DataStorePort.GraphNode toPortNode(YAPPCGraphNode yappcNode) {
         Map<String, Object> properties = new HashMap<>(yappcNode.properties());
         properties.put("name", yappcNode.name());
         properties.put("description", yappcNode.description());
@@ -31,79 +30,79 @@ public class YAPPCGraphMapper {
             properties.put("workspaceId", yappcNode.metadata().workspaceId());
         }
 
-        return GraphNode.builder()
-                .id(yappcNode.id())
-                .type(yappcNode.type().name())
-                .properties(properties)
-                .labels(yappcNode.tags())
-                .tenantId(yappcNode.metadata().tenantId())
-                .createdAt(yappcNode.metadata().createdAt())
-                .updatedAt(yappcNode.metadata().updatedAt())
-                .version(Long.parseLong(yappcNode.metadata().version()))
-                .build();
+        return new DataStorePort.GraphNode(
+                yappcNode.id(),
+                yappcNode.type().name(),
+                properties,
+                yappcNode.tags(),
+                yappcNode.metadata().tenantId(),
+                yappcNode.metadata().createdAt(),
+                yappcNode.metadata().updatedAt(),
+                Long.parseLong(yappcNode.metadata().version())
+        );
     }
 
-    public YAPPCGraphNode fromDataCloudNode(GraphNode dcNode) {
-        Map<String, Object> props = new HashMap<>(dcNode.getProperties());
+    public YAPPCGraphNode fromPortNode(DataStorePort.GraphNode portNode) {
+        Map<String, Object> props = new HashMap<>(portNode.properties());
         String name = (String) props.remove("name");
         String description = (String) props.remove("description");
         String projectId = (String) props.remove("projectId");
         String workspaceId = (String) props.remove("workspaceId");
 
         YAPPCGraphMetadata metadata = new YAPPCGraphMetadata(
-                dcNode.getTenantId(),
+                portNode.tenantId(),
                 projectId,
                 workspaceId,
                 "system",
-                dcNode.getCreatedAt(),
-                dcNode.getUpdatedAt(),
-                String.valueOf(dcNode.getVersion()),
+                portNode.createdAt(),
+                portNode.updatedAt(),
+                String.valueOf(portNode.version()),
                 Map.of()
         );
 
         return YAPPCGraphNode.builder()
-                .id(dcNode.getId())
-                .type(YAPPCGraphNode.YAPPCNodeType.valueOf(dcNode.getType()))
-                .name(name != null ? name : dcNode.getId())
+                .id(portNode.id())
+                .type(YAPPCGraphNode.YAPPCNodeType.valueOf(portNode.type()))
+                .name(name != null ? name : portNode.id())
                 .description(description != null ? description : "")
                 .properties(props)
-                .tags(dcNode.getLabels())
+                .tags(portNode.labels())
                 .metadata(metadata)
                 .build();
     }
 
-    public GraphEdge toDataCloudEdge(YAPPCGraphEdge yappcEdge) {
-        return GraphEdge.builder()
-                .id(yappcEdge.id())
-                .sourceNodeId(yappcEdge.sourceNodeId())
-                .targetNodeId(yappcEdge.targetNodeId())
-                .relationshipType(yappcEdge.relationshipType().name())
-                .properties(yappcEdge.properties())
-                .tenantId(yappcEdge.metadata().tenantId())
-                .createdAt(yappcEdge.metadata().createdAt())
-                .updatedAt(yappcEdge.metadata().updatedAt())
-                .version(Long.parseLong(yappcEdge.metadata().version()))
-                .build();
+    public DataStorePort.GraphEdge toPortEdge(YAPPCGraphEdge yappcEdge) {
+        return new DataStorePort.GraphEdge(
+                yappcEdge.id(),
+                yappcEdge.sourceNodeId(),
+                yappcEdge.targetNodeId(),
+                yappcEdge.relationshipType().name(),
+                yappcEdge.properties(),
+                yappcEdge.metadata().tenantId(),
+                yappcEdge.metadata().createdAt(),
+                yappcEdge.metadata().updatedAt(),
+                Long.parseLong(yappcEdge.metadata().version())
+        );
     }
 
-    public YAPPCGraphEdge fromDataCloudEdge(GraphEdge dcEdge) {
+    public YAPPCGraphEdge fromPortEdge(DataStorePort.GraphEdge portEdge) {
         YAPPCGraphMetadata metadata = new YAPPCGraphMetadata(
-                dcEdge.getTenantId(),
+                portEdge.tenantId(),
                 null,
                 null,
                 "system",
-                dcEdge.getCreatedAt(),
-                dcEdge.getUpdatedAt(),
-                String.valueOf(dcEdge.getVersion()),
+                portEdge.createdAt(),
+                portEdge.updatedAt(),
+                String.valueOf(portEdge.version()),
                 Map.of()
         );
 
         return YAPPCGraphEdge.builder()
-                .id(dcEdge.getId())
-                .sourceNodeId(dcEdge.getSourceNodeId())
-                .targetNodeId(dcEdge.getTargetNodeId())
-                .relationshipType(YAPPCGraphEdge.YAPPCRelationshipType.valueOf(dcEdge.getRelationshipType()))
-                .properties(dcEdge.getProperties())
+                .id(portEdge.id())
+                .sourceNodeId(portEdge.sourceNodeId())
+                .targetNodeId(portEdge.targetNodeId())
+                .relationshipType(YAPPCGraphEdge.YAPPCRelationshipType.valueOf(portEdge.relationshipType()))
+                .properties(portEdge.properties())
                 .metadata(metadata)
                 .build();
     }

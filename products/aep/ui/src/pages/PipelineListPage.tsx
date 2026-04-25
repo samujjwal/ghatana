@@ -24,6 +24,7 @@ import {
 } from '@/lib/routes';
 import { EmptyState } from '@/components/core/EmptyState';
 import { ErrorState } from '@/components/core/ErrorState';
+import { SensitiveActionDialog } from '@/components/shared/SensitiveActionDialog';
 
 // ─── Status badge ────────────────────────────────────────────────────
 
@@ -209,30 +210,22 @@ export function PipelineListPage() {
 
       {/* Delete confirmation modal */}
       {confirmDelete && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-900 rounded-xl p-6 max-w-sm w-full mx-4 shadow-xl">
-            <h2 className="font-semibold text-gray-900 dark:text-white mb-2">Delete pipeline?</h2>
-            <p className="text-sm text-gray-500 mb-4">
-              This will permanently remove the pipeline. This action cannot be undone.
-            </p>
-            <div className="flex gap-2 justify-end">
-              <Button
-                onClick={() => setConfirmDelete(null)}
-                variant="secondary"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={() => deleteMutation.mutate(confirmDelete)}
-                disabled={deleteMutation.isPending}
-                variant="primary"
-                style={{ backgroundColor: '#dc2626' }}
-              >
-                {deleteMutation.isPending ? 'Deleting…' : 'Delete'}
-              </Button>
-            </div>
-          </div>
-        </div>
+        <SensitiveActionDialog
+          open={!!confirmDelete}
+          title="Delete pipeline"
+          description="This will permanently remove the pipeline and all associated runs. This action cannot be undone."
+          confirmKeyword="DELETE"
+          impactItems={[
+            { label: 'Pipeline ID', value: confirmDelete, severity: 'high' },
+            { label: 'Tenant', value: tenantId, severity: 'medium' },
+          ]}
+          auditMessage={`Pipeline ${confirmDelete} deleted by user`}
+          reasonRequired
+          onConfirm={() => {
+            if (confirmDelete) deleteMutation.mutate(confirmDelete);
+          }}
+          onCancel={() => setConfirmDelete(null)}
+        />
       )}
     </div>
   );

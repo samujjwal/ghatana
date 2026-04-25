@@ -1,10 +1,7 @@
 package com.ghatana.yappc.knowledge;
 
 import com.ghatana.core.activej.promise.PromiseUtils;
-import com.ghatana.datacloud.plugins.knowledgegraph.KnowledgeGraphPlugin;
-import com.ghatana.datacloud.plugins.knowledgegraph.model.GraphEdge;
-import com.ghatana.datacloud.plugins.knowledgegraph.model.GraphNode;
-import com.ghatana.datacloud.plugins.knowledgegraph.model.GraphQuery;
+import com.ghatana.yappc.knowledge.spi.DataStorePort;
 import com.ghatana.yappc.knowledge.embedding.KGEmbeddingService;
 import com.ghatana.yappc.knowledge.persistence.KGEdgeRepository;
 import com.ghatana.yappc.knowledge.persistence.KGNodeRepository;
@@ -26,8 +23,8 @@ import java.util.stream.Collectors;
 /**
  * Main service facade for YAPPC Knowledge Graph functionality.
  *
- * <p>Wraps the Data-Cloud Knowledge Graph plugin with YAPPC-specific
- * business logic, validation, and integration patterns.
+ * <p>Uses the DataStorePort adapter seam to access knowledge graph storage,
+ * with YAPPC-specific business logic, validation, and integration patterns.
  *
  * <p><b>Responsibilities:</b>
  * <ul>
@@ -46,7 +43,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class YAPPCGraphService {
 
-    private final KnowledgeGraphPlugin graphPlugin;
+    private final @Nullable DataStorePort dataStorePort;
     private final YAPPCGraphMapper mapper;
     private final YAPPCGraphValidator validator;
         private final @Nullable KGNodeRepository nodeRepository;
@@ -56,34 +53,34 @@ public class YAPPCGraphService {
         private final @Nullable KGQueryService queryService;
 
     public YAPPCGraphService(
-            KnowledgeGraphPlugin graphPlugin,
+            @Nullable DataStorePort dataStorePort,
             YAPPCGraphMapper mapper,
             YAPPCGraphValidator validator) {
-                this(graphPlugin, mapper, validator, null, null, null, null, null);
+                this(dataStorePort, mapper, validator, null, null, null, null, null);
         }
 
         public YAPPCGraphService(
-                        @Nullable KnowledgeGraphPlugin graphPlugin,
+                        @Nullable DataStorePort dataStorePort,
                         YAPPCGraphMapper mapper,
                         YAPPCGraphValidator validator,
                         @Nullable KGNodeRepository nodeRepository,
                         @Nullable KGEdgeRepository edgeRepository) {
-                this(graphPlugin, mapper, validator, nodeRepository, edgeRepository, null, null, null);
+                this(dataStorePort, mapper, validator, nodeRepository, edgeRepository, null, null, null);
         }
 
         public YAPPCGraphService(
-                        @Nullable KnowledgeGraphPlugin graphPlugin,
+                        @Nullable DataStorePort dataStorePort,
                         YAPPCGraphMapper mapper,
                         YAPPCGraphValidator validator,
                         @Nullable KGNodeRepository nodeRepository,
                         @Nullable KGEdgeRepository edgeRepository,
                         @Nullable KGEmbeddingService embeddingService,
                         @Nullable KGSemanticSearchService semanticSearchService) {
-                this(graphPlugin, mapper, validator, nodeRepository, edgeRepository, embeddingService, semanticSearchService, null);
+                this(dataStorePort, mapper, validator, nodeRepository, edgeRepository, embeddingService, semanticSearchService, null);
         }
 
         public YAPPCGraphService(
-                        @Nullable KnowledgeGraphPlugin graphPlugin,
+                        @Nullable DataStorePort dataStorePort,
                         YAPPCGraphMapper mapper,
                         YAPPCGraphValidator validator,
                         @Nullable KGNodeRepository nodeRepository,
@@ -91,7 +88,7 @@ public class YAPPCGraphService {
                         @Nullable KGEmbeddingService embeddingService,
                         @Nullable KGSemanticSearchService semanticSearchService,
                         @Nullable KGQueryService queryService) {
-        this.graphPlugin = graphPlugin;
+        this.dataStorePort = dataStorePort;
                 this.mapper = Objects.requireNonNull(mapper, "mapper must not be null");
                 this.validator = Objects.requireNonNull(validator, "validator must not be null");
                 this.nodeRepository = nodeRepository;
@@ -114,13 +111,12 @@ public class YAPPCGraphService {
                                 ? nodeRepository.saveNode(yappcNode)
                                 : Promise.of(yappcNode);
 
-                Promise<YAPPCGraphNode> published = graphPlugin == null
+                Promise<YAPPCGraphNode> published = dataStorePort == null
                                 ? persisted
                                 : persisted.then(savedNode -> {
-                                        GraphNode dcNode = mapper.toDataCloudNode(savedNode);
-                                        return PromiseUtils.fromCompletableFuture(
-                                                        graphPlugin.createNode(dcNode).toCompletableFuture()
-                                        ).map(mapper::fromDataCloudNode);
+                                        DataStorePort.GraphNode portNode = mapper.toPortNode(savedNode);
+                                        return dataStorePort.createNode(savedNode.metadata().tenantId(), portNode)
+                                                .map(mapper::fromPortNode);
                                 });
 
                 if (embeddingService == null) {
@@ -143,15 +139,19 @@ public class YAPPCGraphService {
                                         Set.of("DEPENDS_ON", "IMPORTS", "EXTENDS", "IMPLEMENTS"));
                 }
 
-        GraphQuery query = GraphQuery.builder()
+        if (dataStorePort == null) {
+            return Promise.of(List.of());
+        }
+
+        DataStorePort.GraphQuery query = DataStorePort.GraphQuery.builder()
                 .sourceNodeId(componentId)
                 .relationshipTypes(Set.of("DEPENDS_ON", "IMPORTS", "EXTENDS", "IMPLEMENTS"))
-                .tenantId(tenantId)
+                .tenantId(com.ghatana.platform.domain.auth.TenantId.of(tenantId))
                 .build();
 
-        return graphPlugin.queryEdges(query)
+        return dataStorePort.queryEdges(com.ghatana.platform.domain.auth.TenantId.of(tenantId), query)
                 .map(edges -> edges.stream()
-                        .map(mapper::fromDataCloudEdge)
+                        .map(mapper::fromPortEdge)
                         .collect(Collectors.toList()));
     }
 
@@ -171,10 +171,14 @@ public class YAPPCGraphService {
                     ));
         }
 
-        return graphPlugin.getNeighbors(componentId, 5, tenantId)
+        if (dataStorePort == null) {
+            return Promise.of(new YAPPCImpactAnalysis(componentId, List.of(), 0.0, List.of()));
+        }
+
+        return dataStorePort.getNeighbors(com.ghatana.platform.domain.auth.TenantId.of(tenantId), componentId, 5)
                 .map(neighbors -> {
                     List<YAPPCGraphNode> affectedNodes = neighbors.stream()
-                            .map(mapper::fromDataCloudNode)
+                            .map(mapper::fromPortNode)
                             .collect(Collectors.toList());
 
                     return new YAPPCImpactAnalysis(
@@ -196,15 +200,19 @@ public class YAPPCGraphService {
                         return nodeRepository.findNodesByType(type, tenantId, 1000);
                 }
 
-        GraphQuery query = GraphQuery.builder()
+        if (dataStorePort == null) {
+            return Promise.of(List.of());
+        }
+
+        DataStorePort.GraphQuery query = DataStorePort.GraphQuery.builder()
                 .nodeTypes(Set.of(type))
-                .tenantId(tenantId)
+                .tenantId(com.ghatana.platform.domain.auth.TenantId.of(tenantId))
                 .limit(1000)
                 .build();
 
-        return graphPlugin.queryNodes(query)
+        return dataStorePort.queryNodes(com.ghatana.platform.domain.auth.TenantId.of(tenantId), query)
                 .map(nodes -> nodes.stream()
-                        .map(mapper::fromDataCloudNode)
+                        .map(mapper::fromPortNode)
                         .collect(Collectors.toList()));
     }
 
@@ -230,21 +238,24 @@ public class YAPPCGraphService {
 
         log.debug("Creating code relationship: {} -> {} ({})", sourceId, targetId, relationshipType);
 
-        GraphEdge edge = GraphEdge.builder()
-                .id(generateEdgeId(sourceId, targetId, relationshipType))
-                .sourceNodeId(sourceId)
-                .targetNodeId(targetId)
-                .relationshipType(relationshipType)
-                .properties(Map.of("createdBy", "yappc"))
-                .tenantId(tenantId)
-                .build();
+        DataStorePort.GraphEdge portEdge = new DataStorePort.GraphEdge(
+                generateEdgeId(sourceId, targetId, relationshipType),
+                sourceId,
+                targetId,
+                relationshipType,
+                Map.of("createdBy", "yappc"),
+                com.ghatana.platform.domain.auth.TenantId.of(tenantId),
+                java.time.Instant.now(),
+                java.time.Instant.now(),
+                1L
+        );
 
         YAPPCGraphEdge yappcEdge = YAPPCGraphEdge.builder()
-                .id(edge.getId())
+                .id(portEdge.id())
                 .sourceNodeId(sourceId)
                 .targetNodeId(targetId)
                 .relationshipType(YAPPCGraphEdge.YAPPCRelationshipType.valueOf(relationshipType))
-                .properties(edge.getProperties())
+                .properties(portEdge.properties())
                 .metadata(new com.ghatana.yappc.knowledge.model.YAPPCGraphMetadata(
                         tenantId,
                         null,
@@ -260,12 +271,12 @@ public class YAPPCGraphService {
                 ? edgeRepository.saveEdge(yappcEdge)
                 : Promise.of(yappcEdge);
 
-        if (graphPlugin == null) {
+        if (dataStorePort == null) {
             return persisted;
         }
 
-        return persisted.then(savedEdge -> graphPlugin.createEdge(edge)
-                .map(mapper::fromDataCloudEdge));
+        return persisted.then(savedEdge -> dataStorePort.createEdge(com.ghatana.platform.domain.auth.TenantId.of(tenantId), portEdge)
+                .map(mapper::fromPortEdge));
     }
 
     /**
@@ -283,9 +294,13 @@ public class YAPPCGraphService {
                     .map(paths -> paths.isEmpty() ? List.of() : paths.getFirst());
         }
 
-        return graphPlugin.findShortestPath(sourceId, targetId, tenantId)
+        if (dataStorePort == null) {
+            return Promise.of(List.of());
+        }
+
+        return dataStorePort.findShortestPath(com.ghatana.platform.domain.auth.TenantId.of(tenantId), sourceId, targetId)
                 .map(path -> path.stream()
-                        .map(mapper::fromDataCloudNode)
+                        .map(mapper::fromPortNode)
                         .collect(Collectors.toList()));
     }
 
@@ -307,17 +322,21 @@ public class YAPPCGraphService {
                             .collect(Collectors.groupingBy(edge -> edge.relationshipType().name())));
         }
 
-        GraphQuery query = GraphQuery.builder()
+        if (dataStorePort == null) {
+            return Promise.of(Map.of());
+        }
+
+        DataStorePort.GraphQuery query = DataStorePort.GraphQuery.builder()
                 .propertyFilters(Map.of("workspaceId", workspaceId))
                 .relationshipTypes(Set.of("DEPENDS_ON", "USES", "CALLS"))
-                .tenantId(tenantId)
+                .tenantId(com.ghatana.platform.domain.auth.TenantId.of(tenantId))
                 .limit(10000)
                 .build();
 
-        return graphPlugin.queryEdges(query)
+        return dataStorePort.queryEdges(com.ghatana.platform.domain.auth.TenantId.of(tenantId), query)
                 .map(edges -> {
                     Map<String, List<YAPPCGraphEdge>> grouped = edges.stream()
-                            .map(mapper::fromDataCloudEdge)
+                            .map(mapper::fromPortEdge)
                             .collect(Collectors.groupingBy(edge -> edge.relationshipType().name()));
                     return grouped;
                 });

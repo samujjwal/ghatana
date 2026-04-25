@@ -6,6 +6,8 @@ const workspaceAliases = {
   '@ghatana/design-system': path.resolve(__dirname, '../../../platform/typescript/design-system/src/index.ts'),
   '@ghatana/canvas/flow': path.resolve(__dirname, '../../../platform/typescript/canvas/src/flow/index.ts'),
   '@ghatana/canvas/hybrid': path.resolve(__dirname, '../../../platform/typescript/canvas/src/hybrid/index.ts'),
+  // DC-UX-050: add missing topology alias that was causing dev-console module resolution warnings
+  '@ghatana/canvas/topology': path.resolve(__dirname, '../../../platform/typescript/canvas/src/topology/index.ts'),
   '@ghatana/theme': path.resolve(__dirname, '../../../platform/typescript/theme/src/index.ts'),
   '@ghatana/tokens': path.resolve(__dirname, '../../../platform/typescript/tokens/src/index.ts'),
   '@ghatana/platform-utils': path.resolve(__dirname, '../../../platform/typescript/platform-utils/src/index.ts'),

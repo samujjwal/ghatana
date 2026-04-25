@@ -293,7 +293,7 @@ export function ContextExplorerPage(): React.ReactElement {
             </SectionCard>
           </aside>
 
-          <main className="space-y-6">
+          <section className="space-y-6">
             {contextQuery.isLoading || !context ? (
               <SectionCard
                 title="Collection context"
@@ -426,7 +426,7 @@ export function ContextExplorerPage(): React.ReactElement {
                 </SectionCard>
               </>
             )}
-          </main>
+          </section>
         </div>
       </div>
     </div>
