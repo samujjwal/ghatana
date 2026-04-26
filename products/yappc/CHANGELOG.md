@@ -1,6 +1,7 @@
 # YAPPC Changelog
 
 ## [Unreleased]
+- **Changed**: Merge branch 'main' of https://github.com/samujjwal/ghatana [`f9c7b18`](https://github.com/samujjwal/ghatana/commit/f9c7b184777b4125db59e5b58edcfb414dcfff36)
 - **Changed**: Merge branch 'main' of https://github.com/samujjwal/ghatana [`641d1ab`](https://github.com/samujjwal/ghatana/commit/641d1ab47b6de521aa037a9e412d56b9368adfa9)
 - **Changed**: yappc+aep+dc [`41a6e8b`](https://github.com/samujjwal/ghatana/commit/41a6e8b5e3910936e892e5e28f1ca9d28d54d077)
 - **Changed**: UI/UX refactor 11 [`e0febc9`](https://github.com/samujjwal/ghatana/commit/e0febc9b411bef68638974be561cbbad593a25c1)
