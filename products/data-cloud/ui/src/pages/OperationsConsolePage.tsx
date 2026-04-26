@@ -112,7 +112,7 @@ export const OperationsConsolePage: React.FC = () => {
   };
 
   return (
-    <RBACGuard requiredRole="ADMIN" fallback={<div>Access denied. Admin role required.</div>}>
+    <RBACGuard permission="ADMIN" fallback={<div>Access denied. Admin role required.</div>}>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-6">
         <div className="mx-auto max-w-7xl">
           {/* Header */}

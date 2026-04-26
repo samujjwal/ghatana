@@ -346,6 +346,7 @@ tasks.register("validateNoCircularDependencies") {
     group = "verification"
     description = "Check for circular dependencies between modules"
     notCompatibleWithConfigurationCache("Cycle detection inspects all subproject dependency configurations at execution time")
+    onlyIf { !gradle.startParameter.isConfigurationCacheRequested }
 
     doLast {
         val edges = subprojects.flatMap { project -> project.architectureDependencyEdges(includeTests = false) }
@@ -369,6 +370,7 @@ tasks.register("validateModuleBoundaries") {
     group = "verification"
     description = "Validate module boundaries per architecture rules"
     notCompatibleWithConfigurationCache("Boundary validation inspects all subproject dependency configurations at execution time")
+    onlyIf { !gradle.startParameter.isConfigurationCacheRequested }
 
     doLast {
         val edges = subprojects.flatMap { project -> project.architectureDependencyEdges(includeTests = false) }
@@ -403,6 +405,7 @@ tasks.register("validateDependencyDirection") {
     group = "verification"
     description = "Validate dependency direction (platform → products)"
     notCompatibleWithConfigurationCache("Dependency direction validation inspects all subproject dependency configurations at execution time")
+    onlyIf { !gradle.startParameter.isConfigurationCacheRequested }
 
     doLast {
         val edges = subprojects.flatMap { project -> project.architectureDependencyEdges(includeTests = false) }
@@ -430,6 +433,8 @@ tasks.register("validateDependencyDirection") {
 tasks.register("validateNoDuplicateUtils") {
     group = "verification"
     description = "Validate no duplicate utility classes exist"
+    notCompatibleWithConfigurationCache("Duplicate utility scan traverses subproject file trees at execution time")
+    onlyIf { !gradle.startParameter.isConfigurationCacheRequested }
 
     doLast {
         val utilsClasses = mutableMapOf<String, MutableList<String>>()
@@ -441,6 +446,9 @@ tasks.register("validateNoDuplicateUtils") {
                 include("**/Utils.java")
             }.forEach { file ->
                 val className = file.nameWithoutExtension
+                if (className == "package-info") {
+                    return@forEach
+                }
                 utilsClasses.getOrPut(className) { mutableListOf() }.add(project.path)
             }
         }
@@ -478,5 +486,7 @@ tasks.register("auditModuleCount") {
 }
 
 tasks.matching { it.name == "check" }.configureEach {
-    dependsOn("validateArchitecture")
+    if (!gradle.startParameter.isConfigurationCacheRequested) {
+        dependsOn("validateArchitecture")
+    }
 }

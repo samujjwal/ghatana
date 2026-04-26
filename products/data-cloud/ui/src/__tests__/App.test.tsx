@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 
-const routerProviderMock = vi.fn(() => <div data-testid="router-provider">router</div>);
+const routerProviderMock = vi.fn((_props: unknown) => <div data-testid="router-provider">router</div>);
 
 vi.mock('react-router', async () => {
   const actual = await vi.importActual<typeof import('react-router')>('react-router');

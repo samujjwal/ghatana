@@ -138,6 +138,10 @@ class DataCloudHttpServerGovernanceTest {
             EntityStore.QuerySpec querySpec = invocation.getArgument(1); // GH-90000
             return Promise.of((long) entityState.getOrDefault(querySpec.collection(), Map.of()).size()); // GH-90000
         });
+        when(mockEntityStore.listCollections(any())).thenAnswer(invocation -> { // GH-90000
+            List<String> collections = entityState.keySet().stream().sorted().toList(); // GH-90000
+            return Promise.of(collections); // GH-90000
+        });
         port       = findFreePort(); // GH-90000
         httpClient = HttpClient.newBuilder().build(); // GH-90000
     }

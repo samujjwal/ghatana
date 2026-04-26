@@ -88,7 +88,7 @@ public class GrpcSttClientAdapter implements SttClientAdapter, AutoCloseable {
                     "GrpcSttClientAdapter supports SttMode.LLM_FALLBACK only. " +
                     "Use LLM_FALLBACK for production transcription via AI Inference Service.");
         }
-        
+
         this.channel = ManagedChannelBuilder.forAddress(host, port)
                 .usePlaintext()
                 .build();
@@ -210,7 +210,7 @@ public class GrpcSttClientAdapter implements SttClientAdapter, AutoCloseable {
             String transcription = resp.getText() != null ? resp.getText() : "";
             double confidence = resp.getConfidence() > 0 ? resp.getConfidence() : 0.0;
 
-            LOG.info("Whisper gRPC transcription completed: text_length={}, confidence={}", 
+            LOG.info("Whisper gRPC transcription completed: text_length={}, confidence={}",
                 transcription.length(), confidence);
 
             return AudioResult.builder()

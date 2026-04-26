@@ -48,6 +48,7 @@ interface Entity {
   createdAt: string;
   updatedAt: string;
   version: number;
+  [key: string]: unknown;
 }
 
 interface EntityListResponse {

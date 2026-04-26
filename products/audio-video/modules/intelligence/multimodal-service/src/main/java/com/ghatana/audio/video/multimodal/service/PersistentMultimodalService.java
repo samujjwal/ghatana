@@ -5,14 +5,12 @@ import com.ghatana.audio.video.infrastructure.persistence.entity.TranscriptionEn
 import com.ghatana.audio.video.infrastructure.persistence.service.AudioFileService;
 import com.ghatana.audio.video.infrastructure.persistence.service.TranscriptionService;
 import com.ghatana.media.common.AudioData;
-import com.ghatana.media.common.AudioFormat;
 import com.ghatana.media.common.ImageData;
 import com.ghatana.media.common.ImageFormat;
 import com.ghatana.media.common.ColorSpace;
 import com.ghatana.media.stt.api.SttEngine;
 import com.ghatana.media.stt.api.TranscriptionResult;
 import com.ghatana.media.vision.api.VisionEngine;
-import com.ghatana.media.vision.api.DetectionResult;
 import io.activej.promise.Promise;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;

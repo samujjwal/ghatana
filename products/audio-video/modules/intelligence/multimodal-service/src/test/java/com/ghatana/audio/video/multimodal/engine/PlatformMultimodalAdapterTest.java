@@ -53,4 +53,3 @@ class PlatformMultimodalAdapterTest {
         assertThat(actual.getConfidence()).isEqualTo(0.93); // GH-90000
     }
 }
-

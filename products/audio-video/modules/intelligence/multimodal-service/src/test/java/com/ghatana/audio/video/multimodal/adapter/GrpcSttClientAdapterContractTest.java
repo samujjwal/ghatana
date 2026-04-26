@@ -1,24 +1,17 @@
 package com.ghatana.audio.video.multimodal.adapter;
 
-import com.ghatana.audio.video.multimodal.engine.AudioResult;
 import com.ghatana.stt.core.grpc.proto.TranscribeRequest;
 import com.ghatana.stt.core.grpc.proto.TranscribeResponse;
 import com.google.protobuf.ByteString;
-import io.grpc.ManagedChannel;
 import io.grpc.StatusRuntimeException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.stubbing.Answer;
 
-import java.lang.reflect.Field;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 /**
@@ -187,11 +180,9 @@ class GrpcSttClientAdapterContractTest {
     void adapterModeTrackingWorks() {
         // Assert initial mode
         assertThat(adapter.getCurrentMode()).isNotNull();
-        
+
         // Verify mode can be accessed and is LLM_FALLBACK
         GrpcSttClientAdapter.SttMode mode = adapter.getCurrentMode();
         assertThat(mode).isEqualTo(GrpcSttClientAdapter.SttMode.LLM_FALLBACK);
     }
 }
-
-

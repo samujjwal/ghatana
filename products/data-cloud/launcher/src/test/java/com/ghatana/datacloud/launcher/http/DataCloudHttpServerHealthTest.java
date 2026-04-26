@@ -192,6 +192,27 @@ class DataCloudHttpServerHealthTest {
     }
 
     @Test
+    @DisplayName("ready returns 503 when database probe is not configured")
+    void readyReturns503WhenDatabaseProbeIsNotConfigured() throws Exception { // GH-90000
+        server = new DataCloudHttpServer(mockClient, port) // GH-90000
+            .withHealthSubsystem("database", () -> Map.of("status", "NOT_CONFIGURED", "note", "db-unconfigured")); // GH-90000
+        server.start(); // GH-90000
+
+        HttpResponse<String> response = get("/ready");
+
+        assertThat(response.statusCode()).isEqualTo(503); // GH-90000
+        @SuppressWarnings("unchecked")
+        Map<String, Object> body = mapper.readValue(response.body(), Map.class); // GH-90000
+        assertThat(body).containsEntry("status", "NOT_READY"); // GH-90000
+        assertThat(body).containsEntry("message", "Critical dependencies are not ready"); // GH-90000
+        @SuppressWarnings("unchecked")
+        Map<String, Object> subsystems = (Map<String, Object>) body.get("subsystems");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> database = (Map<String, Object>) subsystems.get("database");
+        assertThat(database).containsEntry("status", "NOT_CONFIGURED"); // GH-90000
+    }
+
+    @Test
     @DisplayName("ready returns 200 when required dependencies are up")
     void readyReturns200WhenRequiredDependenciesAreUp() throws Exception { // GH-90000
         server = new DataCloudHttpServer(mockClient, port) // GH-90000

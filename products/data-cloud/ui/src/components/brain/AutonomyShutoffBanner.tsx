@@ -114,7 +114,7 @@ export function AutonomyShutoffBanner({
               Autonomy HALTED — all AI actions require human approval
             </span>
           </div>
-          <RBACGuard requiredRole="ADMIN">
+          <RBACGuard permission="ADMIN">
             <button
               onClick={handleRestore}
               disabled={setLevelMutation.isPending}
@@ -130,7 +130,7 @@ export function AutonomyShutoffBanner({
 
       {/* Inline toggle shown in header for ADMIN users when autonomy is active */}
       {!shutoffActive && (
-        <RBACGuard requiredRole="ADMIN">
+        <RBACGuard permission="ADMIN">
           <div className="flex items-center gap-2 px-4">
             <button
               onClick={handleHalt}

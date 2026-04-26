@@ -5,6 +5,7 @@
 package com.ghatana.datacloud.launcher.http;
 
 import com.ghatana.datacloud.DataCloudClient;
+import com.ghatana.datacloud.spi.EntityStore;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -52,6 +53,9 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
     @BeforeEach
     void setUp() throws Exception { // GH-90000
         mockClient = mock(DataCloudClient.class); // GH-90000
+        EntityStore mockStore = mock(EntityStore.class);
+        when(mockClient.entityStore()).thenReturn(mockStore); // GH-90000
+        when(mockStore.count(any(), any())).thenReturn(Promise.of(2L)); // GH-90000
         port = findFreePort(); // GH-90000
     }
 
@@ -222,7 +226,7 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
     class QueryEntitiesTests {
 
         @Test
-        @DisplayName("returns 200 with entities list and count")
+        @DisplayName("returns 200 with entities list and pagination metadata")
         void queryEntities_returns200WithList() throws Exception { // GH-90000
             List<DataCloudClient.Entity> entities = List.of( // GH-90000
                     DataCloudClient.Entity.of("e1", "products", Map.of("name", "A")), // GH-90000
@@ -241,6 +245,10 @@ class DataCloudHttpServerEntityTest extends DataCloudHttpServerTestBase {
             List<?> items = (List<?>) body.get("entities");
             assertThat(items).hasSize(2); // GH-90000
             assertThat(((Number) body.get("count")).intValue()).isEqualTo(2);
+            assertThat(((Number) body.get("total")).intValue()).isEqualTo(2);
+            assertThat(((Number) body.get("offset")).intValue()).isEqualTo(0);
+            assertThat(((Number) body.get("limit")).intValue()).isEqualTo(100);
+            assertThat(body.get("hasMore")).isEqualTo(Boolean.FALSE);
         }
 
         @Test

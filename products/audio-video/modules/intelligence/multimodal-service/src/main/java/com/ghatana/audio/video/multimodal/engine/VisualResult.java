@@ -5,12 +5,12 @@ import java.util.List;
 
 /**
  * Result from vision analysis (image or video).
-  * @doc.type class
+ * @doc.type class
  * @doc.purpose Provides visual result functionality.
  * @doc.layer product
  * @doc.pattern ValueObject
-*/
-public class VisualResult {
+ */
+public final class VisualResult {
 
     private final String sceneDescription;
     private final List<DetectionResult> detections;
@@ -38,11 +38,25 @@ public class VisualResult {
         return error != null && !error.isEmpty();
     }
 
-    public String getSceneDescription() { return sceneDescription; }
-    public List<DetectionResult> getDetections() { return detections; }
-    public List<FrameResult> getFrameResults() { return frameResults; }
-    public Double getConfidence() { return confidence; }
-    public String getError() { return error; }
+    public String getSceneDescription() {
+        return sceneDescription;
+    }
+
+    public List<DetectionResult> getDetections() {
+        return detections;
+    }
+
+    public List<FrameResult> getFrameResults() {
+        return frameResults;
+    }
+
+    public Double getConfidence() {
+        return confidence;
+    }
+
+    public String getError() {
+        return error;
+    }
 
     public static class Builder {
         private String sceneDescription = "";
@@ -51,11 +65,33 @@ public class VisualResult {
         private Double confidence;
         private String error;
 
-        public Builder sceneDescription(String s) { this.sceneDescription = s; return this; }
-        public Builder detections(List<DetectionResult> d) { this.detections = d; return this; }
-        public Builder frameResults(List<FrameResult> f) { this.frameResults = f; return this; }
-        public Builder confidence(Double c) { this.confidence = c; return this; }
-        public Builder error(String e) { this.error = e; return this; }
-        public VisualResult build() { return new VisualResult(this); }
+        public Builder sceneDescription(String s) {
+            this.sceneDescription = s;
+            return this;
+        }
+
+        public Builder detections(List<DetectionResult> d) {
+            this.detections = d;
+            return this;
+        }
+
+        public Builder frameResults(List<FrameResult> f) {
+            this.frameResults = f;
+            return this;
+        }
+
+        public Builder confidence(Double c) {
+            this.confidence = c;
+            return this;
+        }
+
+        public Builder error(String e) {
+            this.error = e;
+            return this;
+        }
+
+        public VisualResult build() {
+            return new VisualResult(this);
+        }
     }
 }

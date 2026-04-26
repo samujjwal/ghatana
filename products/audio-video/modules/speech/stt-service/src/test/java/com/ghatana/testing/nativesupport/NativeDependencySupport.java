@@ -20,7 +20,14 @@ public class NativeDependencySupport {
     @Retention(RetentionPolicy.RUNTIME) // GH-90000
     @ExtendWith(NativeDependencyCondition.class) // GH-90000
     public @interface RequireNative {
+        /**
+         * Required native dependency type.
+         */
         NativeType value() default NativeType.ANY; // GH-90000
+
+        /**
+         * Optional custom disable reason displayed by JUnit.
+         */
         String message() default "Native dependencies not available"; // GH-90000
     }
 
@@ -62,8 +69,8 @@ public class NativeDependencySupport {
             case COQUI_TTS:
                 return isClassAvailable("com.ghatana.tts.core.coqui.CoquiTTSAdapter");
             case ANY:
-                return isClassAvailable("com.ghatana.stt.core.whisper.WhisperCppAdapter") ||
-                       isClassAvailable("com.ghatana.tts.core.coqui.CoquiTTSAdapter");
+                return isClassAvailable("com.ghatana.stt.core.whisper.WhisperCppAdapter")
+                    || isClassAvailable("com.ghatana.tts.core.coqui.CoquiTTSAdapter");
             default:
                 return false;
         }

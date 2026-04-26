@@ -8,6 +8,7 @@ import com.ghatana.agent.AgentConfig;
 import com.ghatana.agent.AgentResult;
 import com.ghatana.agent.AgentType;
 import com.ghatana.agent.framework.api.AgentContext;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -22,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Unit tests for {@link AudioTranscriptionAgent} and {@link MultimodalAnalysisAgent}.
  */
 @DisplayName("AV Domain Agents (P7-T5)")
-class AvAgentsTest {
+class AvAgentsTest extends EventloopTestBase {
 
     private AgentContext ctx;
 
@@ -48,7 +49,7 @@ class AvAgentsTest {
                     .agentId(AudioTranscriptionAgent.AGENT_ID) // GH-90000
                     .type(AgentType.REACTIVE) // GH-90000
                     .build(); // GH-90000
-            agent.initialize(config).getResult(); // GH-90000
+            runPromise(() -> agent.initialize(config)); // GH-90000
         }
 
         @Test
@@ -63,7 +64,7 @@ class AvAgentsTest {
         void transcribesFromAudioSource() { // GH-90000
             AudioTranscriptionRequest request = AudioTranscriptionRequest.fromSource("artifact-001", "en-US"); // GH-90000
 
-            AgentResult<AudioTranscriptionResult> result = agent.process(ctx, request).getResult(); // GH-90000
+            AgentResult<AudioTranscriptionResult> result = runPromise(() -> agent.process(ctx, request)); // GH-90000
 
             assertThat(result.isSuccess()).isTrue(); // GH-90000
             AudioTranscriptionResult transcription = result.getOutput(); // GH-90000
@@ -77,7 +78,7 @@ class AvAgentsTest {
             AudioTranscriptionRequest request = AudioTranscriptionRequest.fromBytes( // GH-90000
                     new byte[]{0x00, 0x01, 0x02}, "fr-FR");
 
-            AgentResult<AudioTranscriptionResult> result = agent.process(ctx, request).getResult(); // GH-90000
+            AgentResult<AudioTranscriptionResult> result = runPromise(() -> agent.process(ctx, request)); // GH-90000
 
             assertThat(result.isSuccess()).isTrue(); // GH-90000
         }
@@ -121,7 +122,7 @@ class AvAgentsTest {
                     .agentId(MultimodalAnalysisAgent.AGENT_ID) // GH-90000
                     .type(AgentType.COMPOSITE) // GH-90000
                     .build(); // GH-90000
-            agent.initialize(config).getResult(); // GH-90000
+            runPromise(() -> agent.initialize(config)); // GH-90000
         }
 
         @Test
@@ -136,7 +137,7 @@ class AvAgentsTest {
         void processesWithoutVision() { // GH-90000
             MultimodalAnalysisRequest request = MultimodalAnalysisRequest.forArtifact("artifact-999");
 
-            AgentResult<MultimodalAnalysisResult> result = agent.process(ctx, request).getResult(); // GH-90000
+            AgentResult<MultimodalAnalysisResult> result = runPromise(() -> agent.process(ctx, request)); // GH-90000
 
             assertThat(result.isSuccess()).isTrue(); // GH-90000
             MultimodalAnalysisResult analysis = result.getOutput(); // GH-90000
@@ -152,7 +153,7 @@ class AvAgentsTest {
                     "artifact-v1", List.of("objects", "scenes"), // GH-90000
                     "FULL", false, null, null);
 
-            AgentResult<MultimodalAnalysisResult> result = agent.process(ctx, request).getResult(); // GH-90000
+            AgentResult<MultimodalAnalysisResult> result = runPromise(() -> agent.process(ctx, request)); // GH-90000
 
             assertThat(result.isSuccess()).isTrue(); // GH-90000
             MultimodalAnalysisResult analysis = result.getOutput(); // GH-90000
@@ -165,7 +166,7 @@ class AvAgentsTest {
             MultimodalAnalysisRequest request = new MultimodalAnalysisRequest( // GH-90000
                     "artifact-t1", List.of(), "SUMMARY", true, "en-US", null); // GH-90000
 
-            AgentResult<MultimodalAnalysisResult> result = agent.process(ctx, request).getResult(); // GH-90000
+            AgentResult<MultimodalAnalysisResult> result = runPromise(() -> agent.process(ctx, request)); // GH-90000
 
             assertThat(result.isSuccess()).isTrue(); // GH-90000
             MultimodalAnalysisResult analysis = result.getOutput(); // GH-90000

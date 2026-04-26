@@ -245,34 +245,165 @@ public class EntityCrudHandler {
         if (!limitResult.isValid()) return Promise.of(http.errorResponse(400, limitResult.getError().orElseThrow()));
         int limit = limitResult.getValue();
 
+        int offset = parseOffset(request.getQueryParameter("offset"));
+        String search = request.getQueryParameter("search");
+        List<DataCloudClient.Sort> sorts = parseSorts(request.getQueryParameter("sort"));
+        List<DataCloudClient.Filter> filters = parseFilters(request.getQueryParameter("filter"));
+
+        if (search != null && !search.isBlank()) {
+            Optional<String> searchErr = ApiInputValidator.validateSearchQuery(search);
+            if (searchErr.isPresent()) {
+                return Promise.of(http.errorResponse(400, searchErr.get()));
+            }
+            filters = new ArrayList<>(filters);
+            filters.add(DataCloudClient.Filter.like("id", "%" + search + "%"));
+        }
+
+        DataCloudClient.Query query = DataCloudClient.Query.builder()
+            .filters(filters)
+            .sorts(sorts)
+            .offset(offset)
+            .limit(limit)
+            .build();
+
         TraceSpanSupport.TraceSpanScope handlerSpan = traceSupport.startSpan(
                 request,
                 tenantId,
                 "datacloud.http.entity.query",
                 traceSupport.requestSpanId(request),
-                Map.of("collection", collection, "limit", limit));
+                Map.of("collection", collection, "limit", limit, "offset", offset));
 
-        DataCloudClient.Query query = DataCloudClient.Query.limit(limit);
+        com.ghatana.datacloud.spi.EntityStore store = client.entityStore();
+        com.ghatana.datacloud.spi.TenantContext tenantContext = com.ghatana.datacloud.spi.TenantContext.of(tenantId);
+        com.ghatana.datacloud.spi.EntityStore.QuerySpec countSpec = toEntityStoreQuerySpec(collection, query);
+
+        Promise<Long> totalPromise = store != null
+            ? store.count(tenantContext, countSpec)
+            : Promise.of(-1L);
 
         return traceSupport.trace(
             request,
             tenantId,
             "datacloud.entity.store.query",
             handlerSpan.spanId(),
-            Map.of("collection", collection, "limit", limit),
+            Map.of("collection", collection, "limit", limit, "offset", offset),
             () -> client.query(tenantId, collection, query))
-            .map(entities -> http.jsonResponse(Map.of(
-                "entities", entities.stream().map(e -> Map.of(
-                    "id", e.id(),
-                    "collection", e.collection(),
-                    "data", e.data(),
-                    "version", e.version(),
-                    "createdAt", e.createdAt() != null ? e.createdAt().toString() : null,
-                    "updatedAt", e.updatedAt() != null ? e.updatedAt().toString() : null
-                )).toList(),
-                "count", entities.size(),
-                "timestamp", Instant.now().toString()
-            ))).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
+            .combine(totalPromise, (entities, total) -> {
+                boolean hasMore = total >= 0 && offset + entities.size() < total;
+                return http.jsonResponse(Map.of(
+                    "entities", entities.stream().map(e -> Map.of(
+                        "id", e.id(),
+                        "collection", e.collection(),
+                        "data", e.data(),
+                        "version", e.version(),
+                        "createdAt", e.createdAt() != null ? e.createdAt().toString() : null,
+                        "updatedAt", e.updatedAt() != null ? e.updatedAt().toString() : null
+                    )).toList(),
+                    "total", total >= 0 ? total : entities.size(),
+                    "count", entities.size(),
+                    "offset", offset,
+                    "limit", limit,
+                    "hasMore", hasMore,
+                    "timestamp", Instant.now().toString()
+                ));
+            }).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
+    }
+
+    private int parseOffset(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return 0;
+        }
+        try {
+            return Math.max(0, Integer.parseInt(raw.strip()));
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    private List<DataCloudClient.Sort> parseSorts(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return List.of();
+        }
+        List<DataCloudClient.Sort> result = new ArrayList<>();
+        for (String part : raw.split(",")) {
+            String trimmed = part.trim();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            String[] tokens = trimmed.split(":");
+            String field = tokens[0];
+            boolean ascending = tokens.length < 2 || "asc".equalsIgnoreCase(tokens[1]);
+            result.add(ascending ? DataCloudClient.Sort.asc(field) : DataCloudClient.Sort.desc(field));
+        }
+        return List.copyOf(result);
+    }
+
+    private List<DataCloudClient.Filter> parseFilters(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return List.of();
+        }
+        List<DataCloudClient.Filter> result = new ArrayList<>();
+        for (String part : raw.split(",")) {
+            String trimmed = part.trim();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            String[] tokens = trimmed.split(":");
+            if (tokens.length >= 3) {
+                String field = tokens[0];
+                String op = tokens[1];
+                String value = tokens[2];
+                result.add(switch (op) {
+                    case "eq" -> DataCloudClient.Filter.eq(field, value);
+                    case "ne" -> DataCloudClient.Filter.ne(field, value);
+                    case "gt" -> DataCloudClient.Filter.gt(field, value);
+                    case "gte" -> DataCloudClient.Filter.gte(field, value);
+                    case "lt" -> DataCloudClient.Filter.lt(field, value);
+                    case "lte" -> DataCloudClient.Filter.lte(field, value);
+                    case "like" -> DataCloudClient.Filter.like(field, value);
+                    default -> DataCloudClient.Filter.eq(field, value);
+                });
+            }
+        }
+        return List.copyOf(result);
+    }
+
+    private com.ghatana.datacloud.spi.EntityStore.QuerySpec toEntityStoreQuerySpec(String collection, DataCloudClient.Query query) {
+        com.ghatana.datacloud.spi.EntityStore.QuerySpec.Builder builder =
+            com.ghatana.datacloud.spi.EntityStore.QuerySpec.builder()
+                .collection(collection)
+                .offset(query.offset())
+                .limit(query.limit());
+        if (!query.filters().isEmpty()) {
+            List<com.ghatana.datacloud.spi.EntityStore.Filter> storeFilters = new ArrayList<>();
+            for (DataCloudClient.Filter f : query.filters()) {
+                storeFilters.add(toStoreFilter(f));
+            }
+            builder.filters(storeFilters);
+        }
+        if (!query.sorts().isEmpty()) {
+            List<com.ghatana.datacloud.spi.EntityStore.Sort> storeSorts = new ArrayList<>();
+            for (DataCloudClient.Sort s : query.sorts()) {
+                storeSorts.add(s.ascending()
+                    ? com.ghatana.datacloud.spi.EntityStore.Sort.asc(s.field())
+                    : com.ghatana.datacloud.spi.EntityStore.Sort.desc(s.field()));
+            }
+            builder.sorts(storeSorts);
+        }
+        return builder.build();
+    }
+
+    private com.ghatana.datacloud.spi.EntityStore.Filter toStoreFilter(DataCloudClient.Filter filter) {
+        return switch (filter.operator()) {
+            case "eq" -> com.ghatana.datacloud.spi.EntityStore.Filter.eq(filter.field(), filter.value());
+            case "ne" -> com.ghatana.datacloud.spi.EntityStore.Filter.ne(filter.field(), filter.value());
+            case "gt" -> com.ghatana.datacloud.spi.EntityStore.Filter.gt(filter.field(), filter.value());
+            case "gte" -> com.ghatana.datacloud.spi.EntityStore.Filter.gte(filter.field(), filter.value());
+            case "lt" -> com.ghatana.datacloud.spi.EntityStore.Filter.lt(filter.field(), filter.value());
+            case "lte" -> com.ghatana.datacloud.spi.EntityStore.Filter.lte(filter.field(), filter.value());
+            case "like" -> com.ghatana.datacloud.spi.EntityStore.Filter.like(filter.field(), (String) filter.value());
+            default -> com.ghatana.datacloud.spi.EntityStore.Filter.eq(filter.field(), filter.value());
+        };
     }
 
     public Promise<HttpResponse> handleDeleteEntity(HttpRequest request) {

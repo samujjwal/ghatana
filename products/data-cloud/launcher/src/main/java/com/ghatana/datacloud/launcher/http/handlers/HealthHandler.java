@@ -254,11 +254,15 @@ public class HealthHandler {
     }
 
     private boolean isCriticalSubsystemDown(Map<String, Object> subsystems) {
-        return isDown(subsystems.get("database")) || isDown(subsystems.get("event_store"));
+        return isNotReady(subsystems.get("database")) || isNotReady(subsystems.get("event_store"));
     }
 
-    private boolean isDown(Object subsystem) {
-        return subsystem instanceof Map<?, ?> values && "DOWN".equals(values.get("status"));
+    private boolean isNotReady(Object subsystem) {
+        if (!(subsystem instanceof Map<?, ?> values)) {
+            return false;
+        }
+        String status = String.valueOf(values.get("status"));
+        return "DOWN".equals(status) || "NOT_CONFIGURED".equals(status);
     }
 
     public Promise<HttpResponse> handleLive(HttpRequest request) {

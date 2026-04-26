@@ -342,7 +342,17 @@ public final class DataCloudSecurityFilter {
         String method = request.getMethod().name();
         String tenantId = principal.getTenantId();
 
-        if (sensitivity != EndpointSensitivity.CRITICAL || policyEngine == null || policyExcludedTenants.contains(tenantId)) {
+        if (sensitivity != EndpointSensitivity.CRITICAL || policyExcludedTenants.contains(tenantId)) {
+            return serveDelegate(tenantWrapped, request);
+        }
+
+        if (policyEngine == null) {
+            log.error("[DC-SEC] Policy engine unavailable for CRITICAL route {} {} tenant={} requestId={} — denying request",
+                      method, path, tenantId, requestId);
+            if (enforcing) {
+                return Promise.of(policyDenyResponse(requestId));
+            }
+            log.warn("[DC-SEC][AUDIT-ONLY] Allowing CRITICAL route despite missing policy engine (enforcing=false)");
             return serveDelegate(tenantWrapped, request);
         }
 
@@ -394,7 +404,13 @@ public final class DataCloudSecurityFilter {
             String tenantId,
             String principalName) {
 
-        if (auditService == null) return;
+        if (auditService == null) {
+            if (sensitivity == EndpointSensitivity.CRITICAL || sensitivity == EndpointSensitivity.SENSITIVE) {
+                log.error("[DC-SEC] Audit service unavailable for {} route {} {} tenant={} requestId={} — audit event dropped",
+                          sensitivity, method, path, tenantId, requestId);
+            }
+            return;
+        }
 
         AuditEvent event = AuditEvent.builder()
             .tenantId(tenantId)
@@ -628,7 +644,8 @@ public final class DataCloudSecurityFilter {
 
         /**
          * Platform policy engine for CRITICAL route evaluation.
-         * When null, policy checks are skipped (audit still runs).
+         * When null and {@code enforcing=true} (default), CRITICAL routes are denied.
+         * When null and {@code enforcing=false}, CRITICAL routes are allowed (audit-only mode).
          */
         public Builder policyEngine(PolicyEngine engine) {
             this.policyEngine = engine;

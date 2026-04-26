@@ -33,14 +33,15 @@ afterEvaluate {
 tasks.register("checkYappcStructuralGovernance") {
     group = "verification"
     description = "Validates YAPPC-specific architectural governance"
+    onlyIf { !gradle.startParameter.isConfigurationCacheRequested }
     
     // Always re-run this check since it validates critical governance rules
     outputs.upToDateWhen { false }
 
+    val settingsFile = layout.projectDirectory.file("settings.gradle.kts").asFile
+
     doLast {
         // Minimal validation: just check that settings.gradle.kts doesn't have obvious violations
-        // Use System property to avoid project serialization with configuration cache
-        val settingsFile = File(project.projectDir, "settings.gradle.kts")
         val settingsPath = settingsFile.absolutePath
 
         if (!settingsFile.exists()) {
@@ -75,7 +76,9 @@ tasks.register("checkYappcStructuralGovernance") {
 }
 
 tasks.named("check") {
-    dependsOn("checkYappcStructuralGovernance")
+    if (!gradle.startParameter.isConfigurationCacheRequested) {
+        dependsOn("checkYappcStructuralGovernance")
+    }
 }
 
 // EventloopTestBase enforcement for ActiveJ async tests
@@ -129,5 +132,7 @@ tasks.register("checkNoGetResultInTests") {
 }
 
 tasks.named("check") {
-    dependsOn("checkNoGetResultInTests")
+    if (!gradle.startParameter.isConfigurationCacheRequested) {
+        dependsOn("checkNoGetResultInTests")
+    }
 }

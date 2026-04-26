@@ -238,6 +238,30 @@ public final class H2SovereignEntityStore implements EntityStore, AutoCloseable 
         return findById(tenant, id).map(Optional::isPresent);
     }
 
+    private static final String LIST_COLLECTIONS_SQL = """
+        SELECT DISTINCT collection_name
+          FROM dc_entities
+         WHERE tenant_id = ? AND deleted = FALSE
+         ORDER BY collection_name ASC
+        """;
+
+    @Override
+    public Promise<List<String>> listCollections(TenantContext tenant) {
+        return Promise.ofBlocking(executor, () -> {
+            List<String> collections = new ArrayList<>();
+            try (Connection connection = dataSource.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(LIST_COLLECTIONS_SQL)) {
+                statement.setString(1, tenant.tenantId());
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    while (resultSet.next()) {
+                        collections.add(resultSet.getString("collection_name"));
+                    }
+                }
+            }
+            return collections;
+        });
+    }
+
     public Promise<Map<String, Long>> countTombstones() {
         return Promise.ofBlocking(executor, () -> {
             Map<String, Long> counts = new LinkedHashMap<>();

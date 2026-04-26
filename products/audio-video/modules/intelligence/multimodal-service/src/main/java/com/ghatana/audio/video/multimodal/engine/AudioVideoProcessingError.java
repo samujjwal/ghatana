@@ -13,6 +13,9 @@ import com.ghatana.media.error.ErrorHandler;
  */
 public record AudioVideoProcessingError(String code, String category, boolean retryable, String message) {
 
+    /**
+     * Maps an arbitrary throwable to a standardized audio-video processing error.
+     */
     public static AudioVideoProcessingError fromThrowable(String context, Throwable throwable) {
         String message = throwable == null ? context : context + ": " + throwable.getMessage();
         boolean retryable = ErrorHandler.isRetryable(throwable);
@@ -25,6 +28,9 @@ public record AudioVideoProcessingError(String code, String category, boolean re
         return new AudioVideoProcessingError("media.processing_failed", "runtime", false, message);
     }
 
+    /**
+     * Converts this domain error into the shared media contract payload.
+     */
     public AudioVideoError toContract() {
         return AudioVideoError.newBuilder()
                 .setCode(toContractCode(code))
@@ -34,6 +40,9 @@ public record AudioVideoProcessingError(String code, String category, boolean re
                 .build();
     }
 
+    /**
+     * Rehydrates a domain error from the shared media contract payload.
+     */
     public static AudioVideoProcessingError fromContract(AudioVideoError error) {
         return new AudioVideoProcessingError(
                 fromContractCode(error.getCode()),

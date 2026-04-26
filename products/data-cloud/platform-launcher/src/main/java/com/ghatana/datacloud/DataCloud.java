@@ -351,13 +351,30 @@ public final class DataCloud {
             checkNotClosed();
             TenantContext tenant = TenantContext.of(tenantId);
 
-            EntityStore.QuerySpec spec = EntityStore.QuerySpec.builder()
+            EntityStore.QuerySpec.Builder specBuilder = EntityStore.QuerySpec.builder()
                 .collection(collection)
                 .offset(query.offset())
-                .limit(query.limit())
-                .build();
+                .limit(query.limit());
 
-            return entityStore.query(tenant, spec)
+            if (!query.filters().isEmpty()) {
+                List<EntityStore.Filter> storeFilters = new ArrayList<>();
+                for (DataCloudClient.Filter f : query.filters()) {
+                    storeFilters.add(toStoreFilter(f));
+                }
+                specBuilder.filters(storeFilters);
+            }
+
+            if (!query.sorts().isEmpty()) {
+                List<EntityStore.Sort> storeSorts = new ArrayList<>();
+                for (DataCloudClient.Sort s : query.sorts()) {
+                    storeSorts.add(s.ascending()
+                        ? EntityStore.Sort.asc(s.field())
+                        : EntityStore.Sort.desc(s.field()));
+                }
+                specBuilder.sorts(storeSorts);
+            }
+
+            return entityStore.query(tenant, specBuilder.build())
                 .map(result -> result.entities().stream()
                     .map(e -> new Entity(
                         e.id().value(),
@@ -368,6 +385,19 @@ public final class DataCloud {
                         e.metadata().version()
                     ))
                     .toList());
+        }
+
+        private EntityStore.Filter toStoreFilter(DataCloudClient.Filter filter) {
+            return switch (filter.operator()) {
+                case "eq" -> EntityStore.Filter.eq(filter.field(), filter.value());
+                case "ne" -> EntityStore.Filter.ne(filter.field(), filter.value());
+                case "gt" -> EntityStore.Filter.gt(filter.field(), filter.value());
+                case "gte" -> EntityStore.Filter.gte(filter.field(), filter.value());
+                case "lt" -> EntityStore.Filter.lt(filter.field(), filter.value());
+                case "lte" -> EntityStore.Filter.lte(filter.field(), filter.value());
+                case "like" -> EntityStore.Filter.like(filter.field(), (String) filter.value());
+                default -> EntityStore.Filter.eq(filter.field(), filter.value());
+            };
         }
 
         @Override
@@ -550,12 +580,80 @@ public final class DataCloud {
         @Override
         public Promise<QueryResult> query(TenantContext tenant, QuerySpec query) {
             Map<String, Entity> tenantStore = store.getOrDefault(tenant.tenantId(), Map.of());
-            List<Entity> results = tenantStore.values().stream()
+            List<Entity> filtered = tenantStore.values().stream()
                 .filter(e -> e.collection().equals(query.collection()))
+                .filter(e -> matchesFilters(e, query.filters()))
+                .sorted(buildComparator(query.sorts()))
+                .toList();
+            long totalCount = filtered.size();
+            List<Entity> page = filtered.stream()
                 .skip(query.offset())
                 .limit(query.limit())
                 .toList();
-            return Promise.of(QueryResult.of(results));
+            return Promise.of(QueryResult.of(page, totalCount));
+        }
+
+        private boolean matchesFilters(Entity entity, List<Filter> filters) {
+            if (filters.isEmpty()) {
+                return true;
+            }
+            for (Filter filter : filters) {
+                Object actual = resolveField(entity, filter.field());
+                Object expected = filter.value();
+                boolean match = switch (filter.operator()) {
+                    case EQ -> Objects.equals(actual, expected);
+                    case NE -> !Objects.equals(actual, expected);
+                    case GT -> compareValues(actual, expected) > 0;
+                    case GTE -> compareValues(actual, expected) >= 0;
+                    case LT -> compareValues(actual, expected) < 0;
+                    case LTE -> compareValues(actual, expected) <= 0;
+                    case LIKE -> actual instanceof String s && s.contains(String.valueOf(expected));
+                    default -> Objects.equals(actual, expected);
+                };
+                if (!match) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        @SuppressWarnings("unchecked")
+        private int compareValues(Object a, Object b) {
+            if (a == null && b == null) return 0;
+            if (a == null) return -1;
+            if (b == null) return 1;
+            if (a instanceof Comparable<?> ca && b instanceof Comparable<?> cb && a.getClass().equals(b.getClass())) {
+                return ((Comparable<Object>) ca).compareTo(cb);
+            }
+            return String.valueOf(a).compareTo(String.valueOf(b));
+        }
+
+        private Object resolveField(Entity entity, String field) {
+            return switch (field) {
+                case "id" -> entity.id().value();
+                case "collection" -> entity.collection();
+                case "version" -> entity.metadata().version();
+                case "createdAt" -> entity.metadata().createdAt();
+                case "updatedAt" -> entity.metadata().updatedAt();
+                default -> entity.data().get(field);
+            };
+        }
+
+        private java.util.Comparator<Entity> buildComparator(List<Sort> sorts) {
+            if (sorts.isEmpty()) {
+                return java.util.Comparator.comparing((Entity e) -> e.metadata().updatedAt(), java.util.Comparator.nullsLast(java.util.Comparator.reverseOrder()))
+                    .thenComparing(e -> e.id().value());
+            }
+            java.util.Comparator<Entity> comparator = null;
+            for (Sort sort : sorts) {
+                java.util.Comparator<Entity> next =
+                    (left, right) -> compareValues(resolveField(left, sort.field()), resolveField(right, sort.field()));
+                if (sort.direction() == Direction.DESC) {
+                    next = next.reversed();
+                }
+                comparator = comparator == null ? next : comparator.thenComparing(next);
+            }
+            return comparator != null ? comparator : java.util.Comparator.comparing(e -> e.id().value());
         }
 
         @Override
@@ -588,6 +686,17 @@ public final class DataCloud {
         public Promise<Boolean> exists(TenantContext tenant, EntityId id) {
             Map<String, Entity> tenantStore = store.get(tenant.tenantId());
             return Promise.of(tenantStore != null && tenantStore.containsKey(id.value()));
+        }
+
+        @Override
+        public Promise<List<String>> listCollections(TenantContext tenant) {
+            Map<String, Entity> tenantStore = store.getOrDefault(tenant.tenantId(), Map.of());
+            List<String> collections = tenantStore.values().stream()
+                .map(Entity::collection)
+                .distinct()
+                .sorted()
+                .toList();
+            return Promise.of(collections);
         }
     }
 

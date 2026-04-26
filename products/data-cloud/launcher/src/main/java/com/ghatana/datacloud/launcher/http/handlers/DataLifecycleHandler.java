@@ -756,7 +756,14 @@ public class DataLifecycleHandler {
         TenantContext tenantContext = buildTenantContext(tenantId, requestId);
         return loadRetentionPolicies(tenantContext)
             .then(policies -> {
-                Map<String, Object> summary = buildBaseComplianceSummary(tenantId, policies);
+                EntityStore store = client.entityStore();
+                if (store != null) {
+                    return store.listCollections(tenantContext)
+                        .map(collections -> buildBaseComplianceSummary(tenantId, policies, collections));
+                }
+                return Promise.of(buildBaseComplianceSummary(tenantId, policies, List.of()));
+            })
+            .then(summary -> {
                 if (auditService instanceof AuditSummaryProvider auditSummaryProvider) {
                     return auditSummaryProvider.summarize(tenantId, Instant.now().minusSeconds(30L * 24 * 60 * 60), 500)
                         .map(auditSummary -> enrichComplianceSummary(summary, auditSummary))
@@ -785,9 +792,15 @@ public class DataLifecycleHandler {
         return List.of();
     }
 
-    private Map<String, Object> buildBaseComplianceSummary(String tenantId, List<Map<String, Object>> policies) {
-        long collectionsClassified = policies.size();
-        long collectionsTotal = collectionsClassified;
+    private Map<String, Object> buildBaseComplianceSummary(String tenantId, List<Map<String, Object>> policies, List<String> collections) {
+        Set<String> policyCollections = policies.stream()
+            .map(policy -> String.valueOf(policy.getOrDefault("collection", policy.get("id"))))
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+
+        long collectionsTotal = collections.isEmpty() ? policyCollections.size() : collections.size();
+        long collectionsClassified = policyCollections.size();
+        long collectionsUnclassified = Math.max(0, collectionsTotal - collectionsClassified);
         long expiringIn30Days = policies.stream()
             .map(policy -> policy.get("expiresAt"))
             .filter(String.class::isInstance)
@@ -800,11 +813,20 @@ public class DataLifecycleHandler {
             .flatMap(policy -> readPolicyPiiFields(policy).stream())
             .collect(Collectors.toCollection(java.util.TreeSet::new));
 
+        String complianceStatus;
+        if (collectionsTotal == 0) {
+            complianceStatus = "NEEDS_CLASSIFICATION";
+        } else if (collectionsUnclassified > 0) {
+            complianceStatus = "PARTIAL";
+        } else {
+            complianceStatus = "COMPLIANT";
+        }
+
         Map<String, Object> summary = new LinkedHashMap<>();
         summary.put("tenantId", tenantId);
         summary.put("collectionsTotal", collectionsTotal);
         summary.put("collectionsClassified", collectionsClassified);
-        summary.put("collectionsUnclassified", 0L);
+        summary.put("collectionsUnclassified", collectionsUnclassified);
         summary.put("piiFieldsRegistered", tenantSpecificPiiFields.size());
         summary.put("legalHoldsActive", 0);
         summary.put("retentionExpirationsIn30Days", expiringIn30Days);
@@ -814,7 +836,7 @@ public class DataLifecycleHandler {
         summary.put("redactionsIn30Days", 0L);
         summary.put("purgesIn30Days", 0L);
         summary.put("recentAuditEvents", List.of());
-        summary.put("complianceStatus", collectionsClassified == 0 ? "NEEDS_CLASSIFICATION" : "COMPLIANT");
+        summary.put("complianceStatus", complianceStatus);
         summary.put("generatedAt", Instant.now().toString());
         return summary;
     }

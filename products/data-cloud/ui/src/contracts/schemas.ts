@@ -1481,3 +1481,4 @@ export type UpdateStorageProfileRequest = z.infer<typeof UpdateStorageProfileReq
 export type ConnectorType = z.infer<typeof ConnectorTypeSchema>;
 export type CreateConnectorRequest = z.infer<typeof CreateConnectorRequestSchema>;
 export type UpdateConnectorRequest = z.infer<typeof UpdateConnectorRequestSchema>;
+export type AiQualitySummary = z.infer<typeof AiQualitySummarySchema>;

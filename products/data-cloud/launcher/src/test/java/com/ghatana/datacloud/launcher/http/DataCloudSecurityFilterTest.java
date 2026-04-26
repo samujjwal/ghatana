@@ -644,13 +644,30 @@ class DataCloudSecurityFilterTest extends EventloopTestBase {
     class NullCollaboratorTests {
 
         @Test
-        @DisplayName("null PolicyEngine skips policy check on CRITICAL path")
-        void nullPolicyEngine_criticalPath_passesThrough() { // GH-90000
+        @DisplayName("null PolicyEngine fails-closed on CRITICAL path when enforcing")
+        void nullPolicyEngine_criticalPath_failsClosed() { // GH-90000
             DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder() // GH-90000
                     .apiKeyResolver(apiKeyResolver) // GH-90000
                     .policyEngine(null)    // no policy engine // GH-90000
                     .auditService(auditService) // GH-90000
                     .enforcing(true) // GH-90000
+                    .build(); // GH-90000
+            AsyncServlet secured = filter.apply(OK_DELEGATE); // GH-90000
+            HttpRequest req = get(CRITICAL_PATH); // GH-90000
+
+            int status = runPromise(() -> secured.serve(req).map(HttpResponse::getCode)); // GH-90000
+
+            assertThat(status).isEqualTo(403); // GH-90000
+        }
+
+        @Test
+        @DisplayName("null PolicyEngine allows CRITICAL path in audit-only mode")
+        void nullPolicyEngine_criticalPath_auditOnly_passesThrough() { // GH-90000
+            DataCloudSecurityFilter filter = DataCloudSecurityFilter.builder() // GH-90000
+                    .apiKeyResolver(apiKeyResolver) // GH-90000
+                    .policyEngine(null)    // no policy engine // GH-90000
+                    .auditService(auditService) // GH-90000
+                    .enforcing(false) // audit-only // GH-90000
                     .build(); // GH-90000
             AsyncServlet secured = filter.apply(OK_DELEGATE); // GH-90000
             HttpRequest req = get(CRITICAL_PATH); // GH-90000

@@ -110,6 +110,14 @@ public interface EntityStore {
      */
     Promise<Boolean> exists(TenantContext tenant, EntityId id);
 
+    /**
+     * List all distinct collection names for a tenant.
+     *
+     * @param tenant tenant context
+     * @return promise of distinct collection names
+     */
+    Promise<List<String>> listCollections(TenantContext tenant);
+
     // ==================== Supporting Types ====================
 
     /**

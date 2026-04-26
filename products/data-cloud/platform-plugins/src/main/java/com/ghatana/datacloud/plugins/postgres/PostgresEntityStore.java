@@ -316,6 +316,26 @@ public class PostgresEntityStore implements EntityStore, AutoCloseable {
     }
 
     @Override
+    public Promise<List<String>> listCollections(TenantContext tenant) {
+        Objects.requireNonNull(tenant, "tenant required");
+
+        return Promise.ofBlocking(blockingExecutor, () -> {
+            String sql = "SELECT DISTINCT collection_name FROM entities WHERE tenant_id = ? AND active = TRUE ORDER BY collection_name ASC";
+            List<String> collections = new ArrayList<>();
+            try (Connection connection = openTenantConnection(tenant);
+                 PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, tenant.tenantId());
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    while (resultSet.next()) {
+                        collections.add(resultSet.getString("collection_name"));
+                    }
+                }
+            }
+            return collections;
+        });
+    }
+
+    @Override
     public void close() {
         HikariDataSource current = dataSource;
         if (current != null) {

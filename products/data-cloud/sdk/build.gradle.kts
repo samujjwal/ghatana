@@ -83,27 +83,49 @@ val verifyGeneratedTypeScriptSdk by tasks.registering(Exec::class) {
     dependsOn(generateDataCloudSdks)
     workingDir = rootDir
 
+    val hasPnpm = try {
+        val process = ProcessBuilder("pnpm", "--version").start()
+        process.waitFor() == 0
+    } catch (_: Exception) {
+        false
+    }
+
+    val hasNpx = try {
+        val process = ProcessBuilder("npx", "--version").start()
+        process.waitFor() == 0
+    } catch (_: Exception) {
+        false
+    }
+
     onlyIf {
-        try {
-            val process = ProcessBuilder("npx", "--version").start()
-            val exitCode = process.waitFor()
-            if (exitCode != 0) {
-                logger.lifecycle("Skipping TypeScript SDK verification: npx not found on this system")
+        when {
+            hasPnpm -> true
+            hasNpx -> true
+            else -> {
+                logger.lifecycle("Skipping TypeScript SDK verification: neither pnpm nor npx is available")
+                false
             }
-            exitCode == 0
-        } catch (e: Exception) {
-            logger.lifecycle("Skipping TypeScript SDK verification: npx not found on this system")
-            false
         }
     }
 
-    commandLine(
-        "npx",
-        "tsc",
-        "--noEmit",
-        "--project",
-        generatedTypeScriptDir.get().file("tsconfig.json").asFile.absolutePath
-    )
+    if (hasPnpm) {
+        commandLine(
+            "pnpm",
+            "exec",
+            "tsc",
+            "--noEmit",
+            "--project",
+            generatedTypeScriptDir.get().file("tsconfig.json").asFile.absolutePath
+        )
+    } else {
+        commandLine(
+            "npx",
+            "tsc",
+            "--noEmit",
+            "--project",
+            generatedTypeScriptDir.get().file("tsconfig.json").asFile.absolutePath
+        )
+    }
 }
 
 val verifyGeneratedPythonSdk by tasks.registering(Exec::class) {

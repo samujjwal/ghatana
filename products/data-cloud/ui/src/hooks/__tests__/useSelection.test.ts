@@ -9,6 +9,7 @@ import { useSelection } from '../useSelection';
 interface TestItem {
   id: string;
   name: string;
+  [key: string]: unknown;
 }
 
 describe('useSelection', () => {
